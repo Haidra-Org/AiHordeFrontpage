@@ -1,0 +1,1 @@
+import{ba as o,lb as r,mb as i,sb as a,vb as s}from"./chunk-TSANLP43.js";var d=(()=>{let e=class e{};e.\u0275fac=function(n){return new(n||e)},e.\u0275cmp=o({type:e,selectors:[["app-terms"]],standalone:!0,features:[s],decls:2,vars:0,template:function(n,p){n&1&&(r(0,"p"),a(1,"terms works!"),i())}});let t=e;return t})();export{d as TermsComponent};
