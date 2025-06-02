@@ -162,7 +162,7 @@
   dependencies:
     tslib "^2.3.0"
 
-"@angular/build@20.0.0":
+"@angular/build@^20.0.0", "@angular/build@20.0.0":
   version "20.0.0"
   resolved "https://registry.npmjs.org/@angular/build/-/build-20.0.0.tgz"
   integrity sha512-b/FAvvUbsMEgr+UlvTtDz4NCv+BFi+55swtKRmaritvZ2rDfhF1x9tUmSkT6GebGXkI/Gg0kl5rJoD5iv5lY3A==
