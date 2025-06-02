@@ -6,8 +6,6 @@ import {provideClientHydration} from '@angular/platform-browser';
 import {provideHttpClient, withFetch} from '@angular/common/http';
 import {TranslocoHttpLoader} from './transloco-loader';
 import {provideTransloco} from '@jsverse/transloco';
-import {defaultTranslocoMarkupTranspilers} from "ngx-transloco-markup";
-import {translocoMarkupRouterLinkRenderer} from "ngx-transloco-markup-router-link";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,7 +23,5 @@ export const appConfig: ApplicationConfig = {
       },
       loader: TranslocoHttpLoader
     }),
-    defaultTranslocoMarkupTranspilers(),
-    translocoMarkupRouterLinkRenderer(),
   ]
 };

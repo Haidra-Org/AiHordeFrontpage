@@ -1,12 +1,11 @@
 import {Component, computed, OnDestroy, OnInit, signal} from '@angular/core';
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
 import {Title} from "@angular/platform-browser";
 import {toPromise} from "../../types/resolvable";
 import {TranslatorService} from "../../services/translator.service";
 import {FooterColorService} from "../../services/footer-color.service";
 import {InlineSvgComponent} from "../../components/inline-svg/inline-svg.component";
 import {JsonPipe, KeyValuePipe} from "@angular/common";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 import {ToggleCheckboxComponent} from "../../components/toggle-checkbox/toggle-checkbox.component";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {DatabaseService, StorageType} from "../../services/database.service";
@@ -22,13 +21,10 @@ import {ActivatedRoute, RouterLink} from "@angular/router";
   selector: 'app-transfer',
   standalone: true,
   imports: [
-    TranslocoMarkupComponent,
-    InlineSvgComponent,
-    KeyValuePipe,
     TranslocoPipe,
+    TranslocoModule,
     ToggleCheckboxComponent,
     ReactiveFormsModule,
-    JsonPipe,
     FormatNumberPipe,
     RouterLink
   ],
@@ -83,8 +79,8 @@ export class TransferComponent implements OnInit, OnDestroy {
   }
 
   public async ngOnInit(): Promise<void> {
-    this.title.setTitle(await toPromise(this.translator.get('transfer')) + ' | ' + await toPromise(this.translator.get('app_title')));
-    this.footerColor.dark.set(true);
+    this.title.setTitle(await toPromise(this.translator.get('transfer.title')) + ' | ' + await toPromise(this.translator.get('app_title')));
+    this.footerColor.setDarkMode(true);
 
     const remember = this.database.get('remember_api_key', true);
     const apiKey = this.database.get('api_key', remember ? StorageType.Permanent : StorageType.Session);

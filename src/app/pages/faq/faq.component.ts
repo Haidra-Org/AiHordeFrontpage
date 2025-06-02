@@ -1,11 +1,10 @@
 import {Component, OnInit, signal} from '@angular/core';
 import {Title} from "@angular/platform-browser";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 import {DataService} from "../../services/data.service";
 import {FaqItem} from "../../types/faq-item";
 import {toPromise} from "../../types/resolvable";
-import {KeyValuePipe, NgOptimizedImage} from "@angular/common";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
+import {KeyValuePipe} from "@angular/common";
 import {InlineSvgComponent} from "../../components/inline-svg/inline-svg.component";
 import {TranslatorService} from "../../services/translator.service";
 import {FooterColorService} from "../../services/footer-color.service";
@@ -16,10 +15,9 @@ import {NoSorterKeyValue} from "../../types/no-sorter-key-value";
   selector: 'app-faq',
   standalone: true,
   imports: [
-    NgOptimizedImage,
-    TranslocoMarkupComponent,
     KeyValuePipe,
     TranslocoPipe,
+    TranslocoModule,
     InlineSvgComponent
   ],
   templateUrl: './faq.component.html',
@@ -42,6 +40,6 @@ export class FaqComponent implements OnInit {
   public async ngOnInit(): Promise<void> {
     this.title.setTitle(await toPromise(this.translator.get('frequently_asked_questions')) + ' | ' + await toPromise(this.translator.get('app_title')));
     this.faq.set(await toPromise(this.dataService.faq));
-    this.footerColor.dark.set(true);
+    this.footerColor.setDarkMode(true);
   }
 }

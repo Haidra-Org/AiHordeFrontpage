@@ -64,19 +64,29 @@ export class AiHordeService {
   }
 
   public getNews(count?: number): Observable<NewsItem[]> {
-    return this.httpClient.get<HordeNewsItem[]>('https://aihorde.net/api/v2/status/news').pipe(
-      map(newsItems => count ? newsItems.slice(0, count) : newsItems),
-      map(newsItems => newsItems.map(newsItem => {
-        return {
-          title: newsItem.title,
-          datePublished: newsItem.date_published,
-          excerpt: newsItem.newspiece,
-          moreLink: newsItem.more_info_urls.length > 0 ? newsItem.more_info_urls[0] : null,
-        };
-      })),
-    );
-  }
-
+      return this.httpClient.get<HordeNewsItem[]>('https://aihorde.net/api/v2/status/news').pipe(
+        map(newsItems => count ? newsItems.slice(0, count) : newsItems),
+        map(newsItems => {
+          const titleMap = new Map<string, number>();
+          return newsItems.map(newsItem => {
+            let title = newsItem.title;
+            if (titleMap.has(title)) {
+              const count = titleMap.get(title)! + 1;
+              titleMap.set(title, count);
+              title = `${title} (${count})`;
+            } else {
+              titleMap.set(title, 1);
+            }
+            return {
+              title: title,
+              datePublished: newsItem.date_published,
+              excerpt: newsItem.newspiece,
+              moreLink: newsItem.more_info_urls.length > 0 ? newsItem.more_info_urls[0] : null,
+            };
+          });
+        }),
+      );
+    }
   public getUserByApiKey(apiKey: string): Observable<HordeUser | null> {
     return this.httpClient.get<HordeUser>('https://aihorde.net/api/v2/find_user', {
       headers: {

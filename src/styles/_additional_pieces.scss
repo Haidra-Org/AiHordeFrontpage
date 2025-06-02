@@ -1,10 +1,11 @@
-@import "mixins";
+@use "sass:meta";
+@use "mixins";
 
 .mt-12 {
-  @include mt(12);
+  @include mixins.mt(12);
 
   &\:not-first {
-    @include mt(12);
+    @include mixins.mt(12);
 
     &:first-of-type {
       margin-top: revert;
@@ -13,14 +14,14 @@
 }
 
 .pt-12 {
-  @include pt(12);
+  @include mixins.pt(12);
 }
 
 .mt-8 {
-  @include mt(8);
+  @include mixins.mt(8);
 
   &\:not-first {
-    @include mt(8);
+    @include mixins.mt(8);
 
     &:first-of-type {
       margin-top: revert;
@@ -29,13 +30,13 @@
 }
 
 .space-y-2 > :not([hidden]) ~ :not([hidden]) {
-  @include spaceY(2);
+  @include mixins.spaceY(2);
 }
 
 .w-auto {
   width: auto;
 }
 
-@import "md";
-@import "lg";
-@import "xl";
+@include meta.load-css("md");
+@include meta.load-css("lg");
+@include meta.load-css("xl");

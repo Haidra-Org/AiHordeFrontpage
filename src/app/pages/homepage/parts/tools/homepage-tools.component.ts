@@ -1,7 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {GuiCardComponent} from "../../../../components/gui-card/gui-card.component";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoModule} from "@jsverse/transloco";
 import {ToolCardComponent} from "../../../../components/tool-card/tool-card.component";
 import {DataService} from "../../../../services/data.service";
 import {toSignal} from "@angular/core/rxjs-interop";
@@ -12,9 +10,7 @@ import {NoSorterKeyValue} from "../../../../types/no-sorter-key-value";
   selector: 'app-homepage-tools',
   standalone: true,
   imports: [
-    GuiCardComponent,
-    TranslocoMarkupComponent,
-    TranslocoPipe,
+    TranslocoModule,
     ToolCardComponent,
     KeyValuePipe
   ],

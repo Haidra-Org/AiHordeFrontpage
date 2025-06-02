@@ -1,6 +1,7 @@
-@import "styles/additional_pieces";
-@import "styles/landwind";
-@import "styles/colors";
+@use "sass:color";
+@use "styles/additional_pieces";
+@use "styles/landwind";
+@use "styles/colors";
 
 h3, p, .underline-links {
   a {
@@ -8,7 +9,7 @@ h3, p, .underline-links {
 
     &:hover {
       text-decoration: none;
-      color: darken($lightTextColor, 30%);
+      color: color.adjust(colors.$lightTextColor, $lightness: -30%);
     }
   }
 }
@@ -16,7 +17,7 @@ h3, p, .underline-links {
 .dark {
   h3, p, .underline-links {
     a:hover {
-      color: lighten($darkTextColor, 30%);
+      color: color.adjust(colors.$darkTextColor, $lightness: 30%);
     }
   }
 
@@ -31,7 +32,7 @@ h3, p, .underline-links {
 }
 
 .built-with a {
-  color: $purpleTextColor600;
+  color: colors.$purpleTextColor600;
 
   &:hover {
     text-decoration: underline;
@@ -40,7 +41,7 @@ h3, p, .underline-links {
 
 .dark {
   .built-with a {
-    color: $purpleTextColor500;
+    color: colors.$purpleTextColor500;
   }
 }
 
@@ -89,7 +90,7 @@ h3, p, .underline-links {
 }
 
 .bg-gray-600 {
-  background-color: $bgGray600;
+  background-color: colors.$bgGray600;
 }
 
 .text-red {

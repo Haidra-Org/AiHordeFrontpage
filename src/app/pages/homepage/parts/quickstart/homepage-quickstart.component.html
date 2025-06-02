@@ -3,22 +3,24 @@
     <div class="items-center gap-8 lg:grid xl:gap-16">
       <div class="text-gray-500 sm:text-lg dark:text-gray-400">
         <h2 class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          <transloco key="quickstart" />
+          {{ 'quickstart' | transloco }}
+
         </h2>
 
         <p class="mb-4" [innerHTML]="'quickstart.register_account' | transloco"></p>
         <ul class="mb-2 space-y-2 underline-links">
           <li class="flex space-x-3">
             <inline-svg href="assets/img/li-checkbox.svg" />
-            <span class="text-base">
-              <transloco key="quickstart.anonymous_api_key" />
-            </span>
+            <!-- <span class="text-base">
+              {{ 'quickstart.anonymous_api_key' | transloco }}
+            </span> -->
+            <span class="text-base" [innerHTML]="'quickstart.anonymous_api_key' | transloco: {
+              anonymousApiKey: '<b>0000000000</b> (10 zeros)',
+            }"></span>
           </li>
           <li class="flex space-x-3">
             <inline-svg href="assets/img/li-checkbox.svg" />
-            <span class="text-base">
-              <transloco key="quickstart.explanation_api_key" [params]="{kudosExplanationLink: 'https://dbzer0.com/blog/the-kudos-based-economy-for-the-koboldai-horde/'}" />
-            </span>
+            <span class="text-base" [innerHTML]="'quickstart.explanation_api_key' | transloco: {kudosExplanationLink: 'https://dbzer0.com/blog/the-kudos-based-economy-for-the-koboldai-horde/'}"></span>
           </li>
         </ul>
       </div>
