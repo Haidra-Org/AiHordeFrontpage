@@ -1,14 +1,8 @@
 import {Component, input} from '@angular/core';
-import {NgOptimizedImage} from "@angular/common";
-import {TranslocoPipe} from "@jsverse/transloco";
 
 @Component({
   selector: 'app-tool-card',
   standalone: true,
-  imports: [
-    NgOptimizedImage,
-    TranslocoPipe
-  ],
   templateUrl: './tool-card.component.html',
   styleUrl: './tool-card.component.scss'
 })

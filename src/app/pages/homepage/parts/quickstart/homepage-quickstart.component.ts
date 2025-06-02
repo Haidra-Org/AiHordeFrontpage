@@ -1,16 +1,13 @@
 import { Component } from '@angular/core';
-import {RouterLink} from "@angular/router";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 import {InlineSvgComponent} from "../../../../components/inline-svg/inline-svg.component";
 
 @Component({
   selector: 'app-homepage-quickstart',
   standalone: true,
   imports: [
-    RouterLink,
-    TranslocoMarkupComponent,
     TranslocoPipe,
+    TranslocoModule,
     InlineSvgComponent
   ],
   templateUrl: './homepage-quickstart.component.html',

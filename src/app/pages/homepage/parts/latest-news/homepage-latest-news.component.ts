@@ -3,8 +3,7 @@ import {NewsItem} from "../../../../types/news.types";
 import {AiHordeService} from "../../../../services/ai-horde.service";
 import {toPromise} from "../../../../types/resolvable";
 import {RouterLink} from "@angular/router";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 import {MarkdownPipe} from "../../../../pipes/markdown.pipe";
 import {StripWrapperTagPipe} from "../../../../pipes/strip-wrapper-tag.pipe";
 
@@ -14,8 +13,8 @@ import {StripWrapperTagPipe} from "../../../../pipes/strip-wrapper-tag.pipe";
   standalone: true,
   imports: [
     RouterLink,
-    TranslocoMarkupComponent,
     TranslocoPipe,
+    TranslocoModule,
     MarkdownPipe,
     StripWrapperTagPipe,
   ],

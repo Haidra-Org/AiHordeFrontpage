@@ -4,8 +4,7 @@ import {FormatNumberPipe} from "../../../../pipes/format-number.pipe";
 import {InlineSvgComponent} from "../../../../components/inline-svg/inline-svg.component";
 import {ShiftDecimalsLeftPipe} from "../../../../pipes/shift-decimals-left.pipe";
 import {SiPrefixPipe} from "../../../../pipes/si-prefix.pipe";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 import {isPlatformBrowser, UpperCasePipe} from "@angular/common";
 import {HordePerformance} from "../../../../types/horde-performance";
 import {SingleImageStatPoint} from "../../../../types/single-image-stat-point";
@@ -25,8 +24,8 @@ import {SingleInterrogationStatPoint} from "../../../../types/single-interrogati
     InlineSvgComponent,
     ShiftDecimalsLeftPipe,
     SiPrefixPipe,
-    TranslocoMarkupComponent,
     TranslocoPipe,
+    TranslocoModule,
     UpperCasePipe
   ],
   templateUrl: './homepage-stats.component.html',

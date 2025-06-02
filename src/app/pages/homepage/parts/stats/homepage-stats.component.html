@@ -12,47 +12,53 @@
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.average_recent_performance_images" [params]="{
+              <b> {{ 'stats.average_recent_performance_images.label' | transloco }}: </b>
+              {{ 'stats.average_recent_performance_images.value' | transloco: {
                  performance: (stats()!.past_minute_megapixelsteps / 60) | formatNumber:1,
                  prefix: (stats()!.past_minute_megapixelsteps / 60) | siPrefix:1:2
-              }" />
+              } }}
+
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.total_pixelsteps" [params]="{
+              <b> {{ 'stats.total_pixelsteps.label' | transloco }}: </b>
+              {{ 'stats.total_pixelsteps.value' | transloco: {
                  amount: imageStats()!.ps | shiftDecimalsLeft:2 | formatNumber:1,
                  prefix: imageStats()!.ps | siPrefix:2
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.total_images" [params]="{
+              <b> {{ 'stats.total_images.label' | transloco }}: </b>
+              {{ 'stats.total_images.value' | transloco: {
                  amount: imageStats()!.images | shiftDecimalsLeft | formatNumber:1,
                  unit: imageStats()!.images | siPrefix | cut:1 | uppercase
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.active_workers" [params]="{
+              <b> {{ 'stats.active_workers.label' | transloco }}: </b>
+              {{ 'stats.active_workers.value' | transloco: {
                  workers: stats()!.worker_count | formatNumber,
                  threads: stats()!.thread_count | formatNumber
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.image_queue" [params]="{
+              <b> {{ 'stats.image_queue.label' | transloco }}: </b>
+              {{ 'stats.image_queue.value' | transloco: {
                  requests: stats()!.queued_requests | formatNumber,
                  amount: stats()!.queued_megapixelsteps | shiftDecimalsLeft | formatNumber:1,
                  prefix: stats()!.queued_megapixelsteps | siPrefix:1:2
-              }" />
+              } }}
             </span>
             </li>
           </ul>
@@ -64,47 +70,52 @@
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.average_recent_performance_text" [params]="{
+              <b> {{ 'stats.average_recent_performance_text.label' | transloco }}: </b>
+              {{ 'stats.average_recent_performance_text.value' | transloco: {
                  performance: (stats()!.past_minute_tokens / 60) | formatNumber:1,
                  prefix: (stats()!.past_minute_tokens / 60) | siPrefix
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.total_tokens" [params]="{
+              <b> {{ 'stats.total_tokens.label' | transloco }}: </b>
+              {{ 'stats.total_tokens.value' | transloco: {
                  amount: textStats()!.tokens | shiftDecimalsLeft | formatNumber:1,
                  prefix: textStats()!.tokens | siPrefix
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.total_texts" [params]="{
+              <b> {{ 'stats.total_texts.label' | transloco }}: </b>
+              {{ 'stats.total_texts.value' | transloco: {
                  amount: textStats()!.requests | shiftDecimalsLeft | formatNumber:1,
                  unit: textStats()!.requests | siPrefix | cut:1 | uppercase
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.active_workers" [params]="{
+              <b> {{ 'stats.active_workers.label' | transloco }}: </b>
+              {{ 'stats.active_workers.value' | transloco: {
                  workers: stats()!.text_worker_count | formatNumber,
                  threads: stats()!.text_thread_count | formatNumber
-              }" />
+              } }}
             </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-              <transloco key="stats.text_queue" [params]="{
+              <b> {{ 'stats.text_queue.label' | transloco }}: </b>
+              {{ 'stats.text_queue.value' | transloco: {
                  requests: stats()!.queued_text_requests | formatNumber,
                  amount: stats()!.queued_tokens | shiftDecimalsLeft | formatNumber:1,
                  prefix: stats()!.queued_tokens | siPrefix
-              }" />
+              } }}
             </span>
             </li>
           </ul>
@@ -118,27 +129,30 @@
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-                <transloco key="stats.total_alchemy_processed" [params]="{
+                <b> {{ 'stats.total_alchemy_processed.label' | transloco }}: </b>
+                {{ 'stats.total_alchemy_processed.value' | transloco: {
                    amount: interrogationStats()!.processed | shiftDecimalsLeft | formatNumber:1,
                    unit: interrogationStats()!.processed | siPrefix | cut:1 | uppercase
-                }" />
+                } }}
               </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-                <transloco key="stats.active_workers" [params]="{
+                <b> {{ 'stats.active_workers.label' | transloco }}: </b>
+                {{ 'stats.active_workers.value' | transloco: {
                    workers: stats()!.interrogator_count | formatNumber,
                    threads: stats()!.interrogator_thread_count | formatNumber
-                }" />
+                } }}
               </span>
             </li>
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
               <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-                <transloco key="stats.interrogation_queue" [params]="{
+                <b> {{ 'stats.interrogation_queue.label' | transloco }}: </b>
+                {{ 'stats.interrogation_queue.value' | transloco: {
                    forms: stats()!.queued_forms | formatNumber
-                }" />
+                } }}
               </span>
             </li>
           </ul>
@@ -149,10 +163,16 @@
           <ul role="list" class="pt-8 space-y-5 border-t border-gray-200 my-7 dark:border-gray-700 underline-links">
             <li class="flex space-x-3">
               <inline-svg href="assets/img/li-checkbox.svg" />
-              <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
-                <transloco key="stats.realtime" [params]="{
-                   grafanaLink: 'https://grafana.aihorde.net'
-                }" />
+              <!-- <span class="text-base font-medium leading-tight text-gray-900 dark:text-white">
+                {{ 'stats.realtime' | transloco: {
+                   grafanaLink: '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot;>' + ('more_information.grafanaLink' | transloco) + '</a>'
+                } }}
+              </span> -->
+              <span class="text-base font-medium leading-tight text-gray-900 dark:text-white" [innerHTML]="
+                 'stats.realtime' | transloco: {
+                   grafanaLink: '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot;>' + ('stats.realtime.grafanaLink' | transloco) + '</a>'
+                } 
+              ">
               </span>
             </li>
             <li class="flex space-x-3">

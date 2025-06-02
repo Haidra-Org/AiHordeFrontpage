@@ -1,11 +1,5 @@
 import {Component, computed, OnInit} from '@angular/core';
-import {InlineSvgComponent} from "../../../../components/inline-svg/inline-svg.component";
-import {TranslocoMarkupComponent} from "ngx-transloco-markup";
-import {CutPipe} from "../../../../pipes/cut.pipe";
-import {FormatNumberPipe} from "../../../../pipes/format-number.pipe";
-import {ShiftDecimalsLeftPipe} from "../../../../pipes/shift-decimals-left.pipe";
-import {SiPrefixPipe} from "../../../../pipes/si-prefix.pipe";
-import {TranslocoPipe, TranslocoService} from "@jsverse/transloco";
+import {TranslocoModule, TranslocoService} from "@jsverse/transloco";
 import {KeyValuePipe, UpperCasePipe} from "@angular/common";
 import {GuiCardComponent} from "../../../../components/gui-card/gui-card.component";
 import {DataService} from "../../../../services/data.service";
@@ -16,14 +10,7 @@ import {NoSorterKeyValue} from "../../../../types/no-sorter-key-value";
   selector: 'app-homepage-guis',
   standalone: true,
   imports: [
-    InlineSvgComponent,
-    TranslocoMarkupComponent,
-    CutPipe,
-    FormatNumberPipe,
-    ShiftDecimalsLeftPipe,
-    SiPrefixPipe,
-    TranslocoPipe,
-    UpperCasePipe,
+    TranslocoModule,
     GuiCardComponent,
     KeyValuePipe
   ],

@@ -1,6 +1,6 @@
 import {Component, input} from '@angular/core';
 import {NgOptimizedImage} from "@angular/common";
-import {TranslocoPipe} from "@jsverse/transloco";
+import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
 
 @Component({
   selector: 'app-gui-card',

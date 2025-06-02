@@ -4,7 +4,9 @@
       <div class="items-center gap-8 lg:grid xl:gap-16">
         <div class="text-gray-500 sm:text-lg dark:text-gray-400">
           <h2 class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-            <transloco key="tools" />
+            <ng-container *transloco="let t">
+              {{t('tools')}}
+            </ng-container>
           </h2>
 
           @for (pair of tools()! | keyvalue:NoSorterKeyValue; track pair) {

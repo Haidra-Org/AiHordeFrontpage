@@ -2,7 +2,9 @@
   <div class="grid max-w-screen-xl px-4 pt-20 pb-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:pt-28">
     <div class="mr-auto place-self-center lg:col-span-7">
       <h1 class="mb-4 text-4xl font-extrabold leading-none tracking-tight md:text-5xl xl:text-6xl dark:text-white">
-        <transloco key="transfer" />
+        <ng-container *transloco="let t">
+          {{t('transfer.title')}}
+        </ng-container>
       </h1>
     </div>
   </div>
@@ -12,7 +14,16 @@
   <div class="max-w-screen-xl px-4 py-8 mx-auto space-y-12 lg:space-y-20 lg:py-24 lg:px-6">
     <div class="items-center gap-8 lg:grid xl:gap-16">
       <div class="text-gray-500 sm:text-lg dark:text-gray-400">
-        <p class="mb-6"><transloco key="transfer.visit_old" [params]="{oldUrl: '/transfer'}" /></p>
+        <p class="mb-6">
+          <ng-container *transloco="let t">
+            <!-- <transloco key="transfer.visit_old" [params]="{oldUrl: '/transfer'}" /> -->
+            {{t('transfer.visit_old_pre')}} 
+            <a href="/transfer" class="text-blue-600 dark:text-blue-500 hover:underline">{{t('transfer.visit_old_link_text')}}</a>
+            <!-- ... and a trailing period-->
+            .
+
+          </ng-container>
+        </p>
         <form class="max-w-sm mx-auto" [formGroup]="form" (ngSubmit)="transfer()">
           <div class="mb-2">
             <label for="source_api_key" class="block mb-2 font-medium text-gray-900 dark:text-white">{{'transfer.source_api_key' | transloco}}</label>
