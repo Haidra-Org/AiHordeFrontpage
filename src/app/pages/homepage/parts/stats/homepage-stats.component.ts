@@ -56,12 +56,23 @@ export class HomepageStatsComponent implements OnInit, OnDestroy {
     await this.updateStats();
 
     this.zone.runOutsideAngular(() => {
-      this.subscriptions.add(interval(60_000).pipe(
-        startWith(0),
-      ).subscribe(async () => {
-        await this.zone.run(async () => await this.updateStats());
-      }));
+    setTimeout(async () => {
+        await this.updateStats();
+    }, 300);
     });
+
+    // I don't think we need to update the stats after the initial load,
+    // as its unlikely to add any value to the user experience.
+    // They can always refresh the page to get the latest stats or go to the grafana
+    // via the link.
+    //
+    // this.zone.runOutsideAngular(() => {
+    //   this.subscriptions.add(interval(60_000).pipe(
+    //     startWith(0),
+    //   ).subscribe(async () => {
+    //     await this.zone.run(async () => await this.updateStats());
+    //   }));
+    // });
   }
 
   private async updateStats(): Promise<void> {
