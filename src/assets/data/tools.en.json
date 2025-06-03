@@ -1,14 +1,8 @@
 [
   {
-    "name": "Horde Worker reGen",
+    "name": "horde-worker-reGen",
     "description": "The official way to add your GPU to the horde for image generation.",
     "link": "https://github.com/Haidra-Org/horde-worker-reGen",
-    "category": "Official tools"
-  },
-  {
-    "name": "AI Horde CLI",
-    "description": "The official AI Horde CLI that supports all features of AI Horde.",
-    "link": "https://github.com/Haidra-Org/AI-Horde-CLI",
     "category": "Official tools"
   },
   {
@@ -19,7 +13,7 @@
   },
   {
     "name": "Discord Bot",
-    "description": "Add to your server to generate images for free and transfer kudos.",
+    "description": "Add to your Discord server to generate images for free, transfer kudos and lookup user information.",
     "link": "https://github.com/ZeldaFan0225/Stable_Horde_Discord",
     "category": "Official tools"
   },
@@ -42,6 +36,12 @@
     "category": "Official tools"
   },
   {
+    "name": "AI Horde CLI",
+    "description": "The official AI Horde CLI that supports all features of AI Horde.",
+    "link": "https://github.com/Haidra-Org/AI-Horde-CLI",
+    "category": "Official tools"
+  },
+  {
     "name": "CraiyonArt Bot",
     "description": "A Telegram bot that generates images using AI Horde",
     "link": "https://t.me/CraiyonArtBot",
@@ -51,12 +51,6 @@
     "name": "WriterBot",
     "description": "A Discord bot that generates images using AI Horde",
     "link": "https://harrisonvanderbyl.github.io/WriterBot/",
-    "category": "Community Bots"
-  },
-  {
-    "name": "Turing Bot",
-    "description": "A Discord bot that generates images using AI Horde",
-    "link": "https://github.com/MrlolDev/turing-bot",
     "category": "Community Bots"
   },
   {
@@ -84,7 +78,7 @@
     "category": "Community plugins"
   },
   {
-    "name": "Automatic1111 plugin",
+    "name": "A1111 plugin",
     "description": "A plugin for using AI Horde inside the popular Automatic1111 frontend.",
     "link": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde",
     "category": "Community plugins"

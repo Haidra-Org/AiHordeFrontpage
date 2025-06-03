@@ -32,22 +32,6 @@
     "name": "AI Painter",
     "description": "A Chinese language app which has both a simple mode and advanced features.",
     "image": "assets/img/guis/ai-painter.jpg",
-    "link": "https://play.google.com/store/apps/details?id=wkygame.ai.all.in.one",
-    "downloadButtonText": "Get {name}",
-    "categories": "Android"
-  },
-  {
-    "name": "HordeNG",
-    "description": "HordeNG aims to be very simple to use for beginners, while allowing the full set of options for advanced users.",
-    "image": "assets/img/guis/horde-ng-android.jpg",
-    "link": "https://play.google.com/store/apps/details?id=org.horde_ng.twa",
-    "downloadButtonText": "Get {name}",
-    "categories": "Android"
-  },
-  {
-    "name": "AI Painter",
-    "description": "A Chinese language app which has both a simple mode and advanced features.",
-    "image": "assets/img/guis/ai-painter.jpg",
     "link": "https://apps.apple.com/hk/app/%E6%A9%9F%E7%95%AB%E5%B8%AB-%E5%B0%88%E6%A5%AD%E7%9A%84ai%E7%B9%AA%E7%95%ABapp/id1644645946",
     "downloadButtonText": "Get {name}",
     "categories": "iOS"

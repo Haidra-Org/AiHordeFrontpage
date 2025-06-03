@@ -44,104 +44,103 @@
   </header>
 
   <router-outlet></router-outlet>
-
   <footer
-    [class.bg-gray-50]="!darkFooter"
-    [class.dark:bg-gray-800]="!darkFooter"
-    [class.bg-white]="darkFooter"
-    [class.dark:bg-gray-900]="darkFooter"
-  >
-    <div class="max-w-screen-xl p-4 py-6 mx-auto lg:py-16 md:p-8 lg:p-10">
-      <div class="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5">
-        <div>
-          <h3 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'community' | transloco}}</h3>
-          <ul class="text-gray-500 dark:text-gray-400">
-            <li class="mb-4">
-              <a href="https://discord.gg/3DxrhksKzn" class="hover:underline" target="_blank">{{'discord' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://www.patreon.com/db0" class="hover:underline" target="_blank">{{'patreon' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://github.com/Haidra-Org" class="hover:underline" target="_blank">{{'github' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://sigmoid.social/@stablehorde" class="hover:underline" target="_blank">{{'mastodon' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://lemmy.dbzer0.com/c/aihorde" class="hover:underline" target="_blank">{{'lemmy' | transloco}}</a>
-            </li>
-          </ul>
+      [class.bg-gray-50]="!darkFooter"
+      [class.dark:bg-gray-800]="!darkFooter"
+      [class.bg-white]="darkFooter"
+      [class.dark:bg-gray-900]="darkFooter"
+    >
+      <div class="max-w-screen-xl p-4 py-4 mx-auto lg:py-8 md:p-6 lg:p-8">
+        <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
+          <div>
+            <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'community' | transloco}}</h3>
+            <ul class="text-gray-500 dark:text-gray-400">
+              <li class="mb-3">
+                <a href="https://discord.gg/3DxrhksKzn" class="hover:underline" target="_blank">{{'discord' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://www.patreon.com/db0" class="hover:underline" target="_blank">{{'patreon' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://github.com/Haidra-Org" class="hover:underline" target="_blank">{{'github' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://sigmoid.social/@stablehorde" class="hover:underline" target="_blank">{{'mastodon' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://lemmy.dbzer0.com/c/aihorde" class="hover:underline" target="_blank">{{'lemmy' | transloco}}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{ 'credits' | transloco }}</h3>
+            <ul class="text-gray-500 dark:text-gray-400">
+              <li class="mb-3">
+                <a href="https://dbzer0.com/" class="hover:underline" target="_blank">db0</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://github.com/haidra-org" class="hover:underline" target="_blank">Haidra</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/sponsors" class="hover:underline">{{'sponsors' | transloco}}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'legal' | transloco}}</h3>
+            <ul class="text-gray-500 dark:text-gray-400">
+              <li class="mb-3">
+                <a routerLink="/privacy" class="hover:underline">{{'privacy_policy' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/terms" class="hover:underline">{{'terms_of_service' | transloco}}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'documentation' | transloco}}</h3>
+            <ul class="text-gray-500 dark:text-gray-400">
+              <li class="mb-3">
+                <a href="https://aihorde.net/api/" class=" hover:underline" target="_blank">{{'rest_api' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a href="https://github.com/Haidra-Org/AI-Horde/blob/main/README_StableHorde.md#joining-the-horde" class="hover:underline" target="_blank">{{'join_horde' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/faq" class="hover:underline">{{'frequently_asked_questions' | transloco}}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'other_links' | transloco}}</h3>
+            <ul class="text-gray-500 dark:text-gray-400">
+              <li class="mb-3">
+                <a href="/register" class="hover:underline">{{'register_account' | transloco}}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/transfer-v2" class="hover:underline">{{'transfer.title' | transloco}}</a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div>
-          <h3 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{ 'credits' | transloco }}</h3>
-          <ul class="text-gray-500 dark:text-gray-400">
-            <li class="mb-4">
-              <a href="https://dbzer0.com/" class="hover:underline" target="_blank">db0</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://github.com/haidra-org" class="hover:underline" target="_blank">Haidra</a>
-            </li>
-            <li class="mb-4">
-              <a routerLink="/sponsors" class="hover:underline">{{'sponsors' | transloco}}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'legal' | transloco}}</h3>
-          <ul class="text-gray-500 dark:text-gray-400">
-            <li class="mb-4">
-              <a routerLink="/privacy" class="hover:underline">{{'privacy_policy' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a routerLink="/terms" class="hover:underline">{{'terms_of_service' | transloco}}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'documentation' | transloco}}</h3>
-          <ul class="text-gray-500 dark:text-gray-400">
-            <li class="mb-4">
-              <a href="https://aihorde.net/api/" class=" hover:underline" target="_blank">{{'rest_api' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a href="https://github.com/Haidra-Org/AI-Horde/blob/main/README_StableHorde.md#joining-the-horde" class="hover:underline" target="_blank">{{'join_horde' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a routerLink="/faq" class="hover:underline">{{'frequently_asked_questions' | transloco}}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="mb-6 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'other_links' | transloco}}</h3>
-          <ul class="text-gray-500 dark:text-gray-400">
-            <li class="mb-4">
-              <a href="/register" class="hover:underline">{{'register_account' | transloco}}</a>
-            </li>
-            <li class="mb-4">
-              <a routerLink="/transfer-v2" class="hover:underline">{{'transfer.title' | transloco}}</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <hr class="my-6 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-8">
-      <div class="text-center">
-        <a href="#" class="flex items-center justify-center mb-5 text-2xl font-semibold text-gray-900 dark:text-white">
-          <img ngSrc="./assets/img/logo.png" class="h-6 mr-3 sm:h-9 w-auto" [alt]="'logo.alt' | transloco" height="455" width="393"/>
-          {{'app_title' | transloco}}
-        </a>
-        <!-- <span class="block text-sm text-center text-gray-500 dark:text-gray-400 built-with">
-           {{ 'built_with' | transloco: {flowbiteLink: 'https://flowbite.com', tailwindLink: 'https://tailwindcss.com', angularLink: 'https://angular.dev'} }}
+        <hr class="my-4 border-gray-200 sm:mx-auto dark:border-gray-700 lg:my-6">
+        <div class="text-center mt-6">
+          <a href="#" class="flex items-center justify-center mb-4 text-2xl font-semibold text-gray-900 dark:text-white">
+            <img ngSrc="./assets/img/logo.png" class="h-6 mr-3 sm:h-9 w-auto" [alt]="'logo.alt' | transloco" height="455" width="393"/>
+            {{'app_title' | transloco}}
+          </a>
+          <!-- <span class="block text-sm text-center text-gray-500 dark:text-gray-400 built-with">
+            {{ 'built_with' | transloco: {flowbiteLink: 'https://flowbite.com', tailwindLink: 'https://tailwindcss.com', angularLink: 'https://angular.dev'} }}
 
-        </span> -->
-        <span class="block text-sm text-center text-gray-500 dark:text-gray-400" [innerHTML]="
-          'built_with' | transloco: {
-            flowbiteLink: '<a href=&quot;https://flowbite.com&quot; target=&quot;_blank&quot;>' + ('built_with.flowbiteLink' | transloco) + '</a>',
-            tailwindLink: '<a href=&quot;https://tailwindcss.com&quot; target=&quot;_blank&quot;>' + ('built_with.tailwindLink' | transloco) + '</a>',
-            angularLink: '<a href=&quot;https://angular.dev&quot; target=&quot;_blank&quot;>' + ('built_with.angularLink' | transloco) + '</a>'
-          }
-        "></span>
+          </span> -->
+          <span class="block text-sm text-center text-gray-500 dark:text-gray-400" [innerHTML]="
+            'built_with' | transloco: {
+              flowbiteLink: '<a href=&quot;https://flowbite.com&quot; target=&quot;_blank&quot;>' + ('built_with.flowbiteLink' | transloco) + '</a>',
+              tailwindLink: '<a href=&quot;https://tailwindcss.com&quot; target=&quot;_blank&quot;>' + ('built_with.tailwindLink' | transloco) + '</a>',
+              angularLink: '<a href=&quot;https://angular.dev&quot; target=&quot;_blank&quot;>' + ('built_with.angularLink' | transloco) + '</a>'
+            }
+          "></span>
+        </div>
       </div>
-    </div>
-  </footer>
+    </footer>
 </div>

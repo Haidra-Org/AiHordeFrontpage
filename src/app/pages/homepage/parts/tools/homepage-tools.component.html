@@ -1,6 +1,6 @@
 @if (tools()) {
   <section class="bg-white dark:bg-gray-900">
-    <div class="max-w-screen-xl px-4 py-8 mx-auto space-y-12 lg:space-y-20 lg:py-24 lg:px-6">
+    <div class="max-w-screen-xl px-4 py-6 mx-auto space-y-12 lg:space-y-20 lg:py-12 lg:px-6">
       <div class="items-center gap-8 lg:grid xl:gap-16">
         <div class="text-gray-500 sm:text-lg dark:text-gray-400">
           <h2 class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
@@ -11,10 +11,18 @@
 
           @for (pair of tools()! | keyvalue:NoSorterKeyValue; track pair) {
             <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{pair.key}}</h3>
-            <div class="items-center border-t max-w-screen-xl px-4 mx-auto grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 xl:gap-10 lg:px-6 py-6">
-              @for (tool of pair.value; track tool.name) {
-                <app-tool-card [name]="tool.name" [link]="tool.link" [description]="tool.description" />
-              }
+            <div class="border-t max-w-screen-xl px-4 mx-auto py-6 lg:px-6">
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                @for (tool of pair.value; track tool.name) {
+                  <div class="flex">
+                    <app-tool-card 
+                      class="flex-1" 
+                      [name]="tool.name" 
+                      [link]="tool.link" 
+                      [description]="tool.description" />
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>
