@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, NgZone, OnInit, signal} from '@angular/core';
 import {NewsItem} from "../../../../types/news.types";
 import {AiHordeService} from "../../../../services/ai-horde.service";
 import {toPromise} from "../../../../types/resolvable";
@@ -26,10 +26,18 @@ export class HomepageLatestNewsComponent implements OnInit {
 
   constructor(
     private readonly aiHorde: AiHordeService,
+    private readonly zone: NgZone,
   ) {
   }
 
   public async ngOnInit(): Promise<void> {
     this.news.set(await toPromise(this.aiHorde.getNews(3)));
+
+    this.zone.runOutsideAngular(() => {
+      setTimeout(async () => {
+        this.news.set(await toPromise(this.aiHorde.getNews(3)));
+      }, 300);
+    });
+
   }
 }
