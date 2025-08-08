@@ -62,7 +62,13 @@
   {
     "name": "GIMP plugin",
     "description": "A plugin for using AI Horde inside the GIMP image editor.",
-    "link": "https://github.com/blueturtleai/gimp-stable-diffusion/tree/main/stablehorde",
+    "link": "https://github.com/ikks/gimp-stable-diffusion/",
+    "category": "Community plugins"
+  },
+  {
+    "name": "LibreOffice extension",
+    "description": "An extension for using AI Horde inside the LibreOffice suite.",
+    "link": "https://extensions.libreoffice.org/en/extensions/show/99431",
     "category": "Community plugins"
   },
   {

@@ -38,7 +38,7 @@
   },
   {
     "name": "Aislingeach",
-    "description": "A iOS and Android app that allows you to generate images using AI, as well as rate images.",
+    "description": "An iOS app that allows you to generate images using AI, as well as rate images.",
     "image": "assets/img/guis/aislingeach.png",
     "link": "https://github.com/amiantos/aislingeach",
     "downloadButtonText": "Get {name}",
