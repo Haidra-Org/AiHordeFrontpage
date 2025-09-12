@@ -112,5 +112,11 @@
     "description": "Communicate with AI Horde api from node.js projects",
     "link": "https://www.npmjs.com/package/@zeldafan0225/ai_horde",
     "category": "Community SDKs"
+  },
+  {
+    "name": "Go SDK",
+    "description": "A Go Package for the AI Horde API",
+    "link": "https://github.com/zeozeozeo/aihorde-go",
+    "category": "Community SDKs"
   }
 ]
