@@ -15,7 +15,7 @@ import { OnChange, OnTouched } from '../../types/value-accessor';
   standalone: true,
   imports: [],
   templateUrl: './toggle-checkbox.component.html',
-  styleUrl: './toggle-checkbox.component.scss',
+  styleUrl: './toggle-checkbox.component.css',
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

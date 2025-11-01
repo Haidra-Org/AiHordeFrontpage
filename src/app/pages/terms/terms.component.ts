@@ -7,7 +7,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
   standalone: true,
   imports: [],
   templateUrl: './terms.component.html',
-  styleUrl: './terms.component.scss',
+  styleUrl: './terms.component.css',
 })
 export class TermsComponent {
   private readonly aiHorde = inject(AiHordeService);

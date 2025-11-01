@@ -1,0 +1,5 @@
+@media screen and (min-width: 1024px) {
+  .lg\:pt-0 {
+    padding-top: 0;
+  }
+}

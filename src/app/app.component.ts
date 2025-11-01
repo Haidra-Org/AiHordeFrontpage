@@ -16,7 +16,7 @@ import { FooterColorService } from './services/footer-color.service';
     InlineSvgComponent,
   ],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss',
+  styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
   private readonly footerColor = inject(FooterColorService);

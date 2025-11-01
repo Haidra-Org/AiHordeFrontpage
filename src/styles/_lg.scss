@@ -1,9 +1,0 @@
-@use "breakpoints";
-
-@media screen and (min-width: breakpoints.$lg) {
-  .lg {
-    &\:pt-0 {
-      padding-top: 0;
-    }
-  }
-}

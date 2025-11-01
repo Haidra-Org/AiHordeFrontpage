@@ -23,7 +23,7 @@ import { HomepageToolsComponent } from './parts/tools/homepage-tools.component';
     HomepageToolsComponent,
   ],
   templateUrl: './homepage.component.html',
-  styleUrl: './homepage.component.scss',
+  styleUrl: './homepage.component.css',
 })
 export class HomepageComponent implements OnInit {
   private readonly title = inject(Title);

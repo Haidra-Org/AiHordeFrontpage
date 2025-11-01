@@ -1,10 +1,10 @@
-<section class="bg-white dark:bg-gray-900">
+<section class="section-primary">
   <div
-    class="grid max-w-screen-xl px-4 pt-20 pb-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:pt-28"
+    class="container-page-header"
   >
-    <div class="mr-auto place-self-center lg:col-span-7">
+    <div class="place-center">
       <h1
-        class="mb-4 text-4xl font-extrabold leading-none tracking-tight md:text-5xl xl:text-6xl dark:text-white"
+        class="heading-hero"
       >
         {{ "frequently_asked_questions" | transloco }}
       </h1>
@@ -13,8 +13,8 @@
 </section>
 
 @if (faq()) {
-  <section class="bg-gray-50 dark:bg-gray-800">
-    <div class="max-w-screen-xl px-4 pb-8 mx-auto lg:pb-24 lg:px-6">
+  <section class="section-secondary">
+    <div class="container-content">
       <div class="max-w-screen-xl mx-auto">
         <div
           data-active-classes="bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
@@ -26,7 +26,7 @@
           ) {
             @if (sectionItemPair.key !== "") {
               <h2
-                class="mt-12 text-3xl font-extrabold tracking-tight text-center text-gray-900 lg:text-3xl dark:text-white"
+                class="mt-12 heading-section text-center"
               >
                 {{ sectionItemPair.key }}
               </h2>
@@ -44,7 +44,7 @@
                   [class.text-gray-900]="selectedFaq() === faqItem.question"
                   [class.dark:text-white]="selectedFaq() === faqItem.question"
                   [class.font-bold]="selectedFaq() === faqItem.question"
-                  class="flex items-center justify-between w-full py-5 font-medium text-left border-b border-gray-200 dark:border-gray-700"
+                  class="faq-button"
                   (click)="
                     selectedFaq.set(
                       selectedFaq() === faqItem.question

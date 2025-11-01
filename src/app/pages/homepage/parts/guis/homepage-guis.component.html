@@ -10,11 +10,11 @@
       [class.bg-gray-50]="topmostIndex % 2 !== 0"
       [class.dark:bg-gray-800]="topmostIndex % 2 !== 0"
     >
-      <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
-        <div class="items-center gap-8 lg:grid xl:gap-16">
-          <div class="text-gray-500 sm:text-lg dark:text-gray-400">
+      <div class="container-content-sm">
+        <div class="grid-items">
+          <div class="text-secondary-lg">
             <h2
-              class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+              class="mb-6 heading-section"
             >
               {{ superTypeGuisPair.key }}
             </h2>
@@ -24,13 +24,13 @@
               track categoryItemsPair
             ) {
               <h3
-                class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                class="heading-subsection"
               >
                 {{ categoryItemsPair.key }}
               </h3>
-              <div class="border-t max-w-screen-xl px-4 mx-auto py-6 lg:px-6">
+              <div class="divider-section">
                 <div
-                  class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+                  class="grid-cards"
                 >
                   @for (gui of categoryItemsPair.value; track gui.name) {
                     <div class="flex">

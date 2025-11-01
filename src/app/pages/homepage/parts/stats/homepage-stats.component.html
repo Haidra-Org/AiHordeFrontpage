@@ -1,6 +1,6 @@
 @if (stats() && imageStats() && textStats() && interrogationStats()) {
-  <section class="bg-white dark:bg-gray-900">
-    <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
+  <section class="section-primary">
+    <div class="container-content-sm">
       <div class="max-w-screen-md mx-auto mb-4 text-center">
         <h2
           class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
@@ -11,20 +11,20 @@
 
       <!-- Main stats grid - 4 columns on large screens, 2 on medium, 1 on small -->
       <div
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+        class="grid-stats"
       >
         <!-- Image stats -->
         <div class="space-y-3">
           <h3
-            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+            class="heading-stats"
           >
             {{ "image_stats" | transloco }}
           </h3>
-          <ul role="list" class="space-y-2 mt-3">
+          <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -51,7 +51,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -75,7 +75,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -103,7 +103,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -124,7 +124,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -153,15 +153,15 @@
         <!-- Text stats -->
         <div class="space-y-3">
           <h3
-            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+            class="heading-stats"
           >
             {{ "text_stats" | transloco }}
           </h3>
-          <ul role="list" class="space-y-2 mt-3">
+          <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -185,7 +185,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -209,7 +209,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -237,7 +237,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -258,7 +258,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -287,15 +287,15 @@
         <!-- Interrogation stats -->
         <div class="space-y-3">
           <h3
-            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+            class="heading-stats"
           >
             {{ "image_alchemy" | transloco }}
           </h3>
-          <ul role="list" class="space-y-2 mt-3">
+          <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -325,7 +325,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -347,7 +347,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -370,7 +370,7 @@
         <!-- Realtime stats -->
         <div class="space-y-3">
           <h3
-            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+            class="heading-stats"
           >
             {{ "realtime_stats" | transloco }}
           </h3>
@@ -378,7 +378,7 @@
             <li class="flex items-start space-x-2">
               <inline-svg
                 href="assets/img/li-checkbox.svg"
-                class="flex-shrink-0 w-4 h-4 mt-0.5"
+                class="icon-sm"
               />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
@@ -402,11 +402,11 @@
   </section>
 } @else {
   <!-- Loading skeleton -->
-  <section class="bg-white dark:bg-gray-900">
-    <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
+  <section class="section-primary">
+    <div class="container-content-sm">
       <div class="max-w-screen-md mx-auto mb-4 text-center">
         <h2
-          class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+          class="mb-3 heading-section-lg"
         >
           {{ "stats" | transloco }}
         </h2>
@@ -414,7 +414,7 @@
 
       <!-- Loading grid matching the real stats layout -->
       <div
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 animate-pulse"
+        class="grid-stats skeleton-pulse"
       >
         <!-- Image stats skeleton -->
         <div class="space-y-3">
@@ -595,3 +595,4 @@
     </div>
   </section>
 }
+

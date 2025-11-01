@@ -6,6 +6,6 @@ import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg
   standalone: true,
   imports: [InlineSvgComponent],
   templateUrl: './homepage-sponsors.component.html',
-  styleUrl: './homepage-sponsors.component.scss',
+  styleUrl: './homepage-sponsors.component.css',
 })
 export class HomepageSponsorsComponent {}
