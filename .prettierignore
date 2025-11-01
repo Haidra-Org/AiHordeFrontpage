@@ -1,0 +1,18 @@
+# Ignore artifacts:
+build
+coverage
+node_modules
+dist
+.tmp
+out-tsc
+.angular
+# Ignore IDE specific files:
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Ignore MacOS specific files:
+.DS_Store

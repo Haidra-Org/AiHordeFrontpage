@@ -43,7 +43,8 @@
     "question": "Is Kudos a cryptocurrency?",
     "answer": "<p><strong>No!</strong> <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#kudos' target='_blank'>Kudos</a> are completely centralized and do not involve any blockchain technology. The AI Horde is explicitly opposed to blockchain technologies and will never integrate with them. Likewise, there is no way to convert Kudos to anything other than favors that benefit the improvement of the AI Horde.</p>",
     "section": "Kudos"
-  },  {
+  },
+  {
     "question": "What is a worker?",
     "answer": "<p>A <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#worker' target='_blank'>worker</a> is a computer, usually with a mid-range or higher GPU, that has installed specific software to generate images via <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#stable-diffusion' target='_blank'>Stable Diffusion</a> or <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#koboldai-client' target='_blank'>KoboldAI</a> locally. It connects to the horde through what we call the \"<a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#bridge' target='_blank'>bridge</a>.\" The worker constantly polls the horde for new <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#job' target='_blank'>jobs</a> and receives <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#kudos' target='_blank'>Kudos</a> in return for completing them.</p>",
     "section": "Workers"
@@ -72,7 +73,7 @@
     "question": "Can I prioritize myself and my friends on my own worker?",
     "answer": "<p>Yes! By default, your own requests are always served first by your <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#worker' target='_blank'>worker</a>, regardless of <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#kudos' target='_blank'>Kudos</a>. You can also specify certain usernames to be prioritized in the same way.</p>",
     "section": "Workers"
-  },  
+  },
   {
     "question": "Why is it called \"AI Horde\"?",
     "answer": "<p>This project began as a way to consolidate resources for the <a href='https://github.com/Haidra-Org/haidra-assets/blob/main/docs/definitions.md#koboldai-client' target='_blank'>KoboldAI Client</a>. We needed a name, so I chose something thematic for \"Kobolds\": \"A Horde of Kobolds.\" When image generation was added, I kept the \"AI Horde\" part.</p>",

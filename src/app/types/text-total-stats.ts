@@ -1,4 +1,4 @@
-import {SingleTextStatPoint} from "./single-text-stat-point";
+import { SingleTextStatPoint } from './single-text-stat-point';
 
 export interface TextTotalStats {
   minute: SingleTextStatPoint;

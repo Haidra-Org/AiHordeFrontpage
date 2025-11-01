@@ -1,6 +1,14 @@
-import {Component, effect, input, OnInit, output, signal, WritableSignal} from '@angular/core';
-import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
-import {OnChange, OnTouched} from "../../types/value-accessor";
+import {
+  Component,
+  effect,
+  input,
+  OnInit,
+  output,
+  signal,
+  WritableSignal,
+} from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { OnChange, OnTouched } from '../../types/value-accessor';
 
 @Component({
   selector: 'app-toggle-checkbox',
@@ -38,7 +46,7 @@ export class ToggleCheckboxComponent implements ControlValueAccessor, OnInit {
         if (this.onChange() === null) {
           return;
         }
-        (this.onChange()!)(this.value());
+        this.onChange()!(this.value());
       } else {
         this.valueChanged.emit(this.value());
       }

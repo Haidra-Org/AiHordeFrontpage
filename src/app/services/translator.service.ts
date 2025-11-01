@@ -1,21 +1,18 @@
-import {Injectable} from '@angular/core';
-import {HashMap, TranslocoService} from "@jsverse/transloco";
-import {map, Observable, of, switchMap, tap} from "rxjs";
+import { Injectable } from '@angular/core';
+import { HashMap, TranslocoService } from '@jsverse/transloco';
+import { map, Observable, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TranslatorService {
   private loadedLanguages: string[] = [];
 
-  constructor(
-    private readonly transloco: TranslocoService,
-  ) {
-  }
+  constructor(private readonly transloco: TranslocoService) {}
 
   public get(key: string, params?: HashMap): Observable<string> {
     return this.loadCurrentLanguage().pipe(
-      map (() => this.transloco.translate(key, params)),
+      map(() => this.transloco.translate(key, params)),
     );
   }
 
@@ -29,7 +26,7 @@ export class TranslatorService {
 
         return this.transloco.load(language);
       }),
-      tap (result => {
+      tap((result) => {
         if (result === null) {
           return;
         }
@@ -44,7 +41,7 @@ export class TranslatorService {
 
         return this.transloco.load(language);
       }),
-      tap (result => {
+      tap((result) => {
         if (result === null) {
           return;
         }
@@ -52,6 +49,6 @@ export class TranslatorService {
         this.loadedLanguages.push(language);
       }),
       map(() => void 0),
-    )
+    );
   }
 }

@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import { Injectable } from '@angular/core';
 
 export enum StorageType {
   Session,
@@ -7,14 +7,18 @@ export enum StorageType {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DatabaseService {
   private values: { [key: string]: any } = {};
 
   public store(key: string, value: any): void;
   public store(key: string, value: any, storageType: StorageType): void;
-  public store(key: string, value: any, storageType: StorageType = StorageType.Permanent): void {
+  public store(
+    key: string,
+    value: any,
+    storageType: StorageType = StorageType.Permanent,
+  ): void {
     if (typeof window === 'undefined') {
       storageType = StorageType.Ephemeral;
     }
@@ -33,25 +37,39 @@ export class DatabaseService {
   }
 
   public get(key: string): any;
-  public get<T>(key: string, defaultValue: T extends StorageType ? never : T): T;
+  public get<T>(
+    key: string,
+    defaultValue: T extends StorageType ? never : T,
+  ): T;
   public get(key: string, storageType: StorageType): any;
   public get<T>(key: string, defaultValue: T, storageType: StorageType): T;
-  public get<T>(key: string, defaultValueOrStorageType?: T | StorageType, storageType?: StorageType): any {
-    const hasDefault: boolean = typeof defaultValueOrStorageType !== 'undefined'
-      && (typeof defaultValueOrStorageType !== 'number' || !Object.values(StorageType).includes(defaultValueOrStorageType));
+  public get<T>(
+    key: string,
+    defaultValueOrStorageType?: T | StorageType,
+    storageType?: StorageType,
+  ): any {
+    const hasDefault: boolean =
+      typeof defaultValueOrStorageType !== 'undefined' &&
+      (typeof defaultValueOrStorageType !== 'number' ||
+        !Object.values(StorageType).includes(defaultValueOrStorageType));
 
     if (typeof window === 'undefined') {
       storageType = StorageType.Ephemeral;
     }
     if (storageType === undefined) {
-      if (typeof defaultValueOrStorageType === 'number' && Object.values(StorageType).includes(defaultValueOrStorageType)) {
+      if (
+        typeof defaultValueOrStorageType === 'number' &&
+        Object.values(StorageType).includes(defaultValueOrStorageType)
+      ) {
         storageType = defaultValueOrStorageType;
       } else {
         storageType = StorageType.Permanent;
       }
     }
 
-    const defaultValue: T | null = hasDefault ? <T>defaultValueOrStorageType : null;
+    const defaultValue: T | null = hasDefault
+      ? <T>defaultValueOrStorageType
+      : null;
 
     let value: T | null;
     switch (storageType) {

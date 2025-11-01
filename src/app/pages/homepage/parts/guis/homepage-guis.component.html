@@ -1,31 +1,48 @@
 @if (guis()) {
-  @for (superTypeGuisPair of guis()!|keyvalue:NoSorterKeyValue; track topmostIndex; let topmostIndex = $index) {
+  @for (
+    superTypeGuisPair of guis()! | keyvalue: NoSorterKeyValue;
+    track topmostIndex;
+    let topmostIndex = $index
+  ) {
     <section
       [class.bg-white]="topmostIndex % 2 === 0"
       [class.dark:bg-gray-900]="topmostIndex % 2 === 0"
       [class.bg-gray-50]="topmostIndex % 2 !== 0"
-      [class.dark:bg-gray-800]="topmostIndex %2 !== 0"
+      [class.dark:bg-gray-800]="topmostIndex % 2 !== 0"
     >
       <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
         <div class="items-center gap-8 lg:grid xl:gap-16">
           <div class="text-gray-500 sm:text-lg dark:text-gray-400">
-            <h2 class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-              {{superTypeGuisPair.key}}
+            <h2
+              class="mb-6 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+            >
+              {{ superTypeGuisPair.key }}
             </h2>
-            @for (categoryItemsPair of superTypeGuisPair.value|keyvalue:NoSorterKeyValue; track categoryItemsPair) {
-              <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{{categoryItemsPair.key}}</h3>
+            @for (
+              categoryItemsPair of superTypeGuisPair.value
+                | keyvalue: NoSorterKeyValue;
+              track categoryItemsPair
+            ) {
+              <h3
+                class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+              >
+                {{ categoryItemsPair.key }}
+              </h3>
               <div class="border-t max-w-screen-xl px-4 mx-auto py-6 lg:px-6">
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                <div
+                  class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
+                >
                   @for (gui of categoryItemsPair.value; track gui.name) {
                     <div class="flex">
-                      <app-gui-card 
-                        class="flex-1" 
-                        [name]="gui.name" 
-                        [description]="gui.description" 
-                        [image]="gui.image" 
-                        [link]="gui.link" 
-                        [goToLinkName]="gui.downloadButtonText ?? null" 
-                        [darkBackground]="topmostIndex % 2 !== 0" />
+                      <app-gui-card
+                        class="flex-1"
+                        [name]="gui.name"
+                        [description]="gui.description"
+                        [image]="gui.image"
+                        [link]="gui.link"
+                        [goToLinkName]="gui.downloadButtonText ?? null"
+                        [darkBackground]="topmostIndex % 2 !== 0"
+                      />
                     </div>
                   }
                 </div>

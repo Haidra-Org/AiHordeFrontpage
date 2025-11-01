@@ -1,18 +1,24 @@
-import { Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  afterNextRender,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { UpperCasePipe } from "@angular/common";
-import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
-import { CutPipe } from "../../../../pipes/cut.pipe";
-import { FormatNumberPipe } from "../../../../pipes/format-number.pipe";
-import { InlineSvgComponent } from "../../../../components/inline-svg/inline-svg.component";
-import { ShiftDecimalsLeftPipe } from "../../../../pipes/shift-decimals-left.pipe";
-import { SiPrefixPipe } from "../../../../pipes/si-prefix.pipe";
-import { HordePerformance } from "../../../../types/horde-performance";
-import { SingleImageStatPoint } from "../../../../types/single-image-stat-point";
-import { SingleTextStatPoint } from "../../../../types/single-text-stat-point";
-import { AiHordeService } from "../../../../services/ai-horde.service";
-import { SingleInterrogationStatPoint } from "../../../../types/single-interrogation-stat-point";
-import { forkJoin } from "rxjs";
+import { UpperCasePipe } from '@angular/common';
+import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { CutPipe } from '../../../../pipes/cut.pipe';
+import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
+import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg.component';
+import { ShiftDecimalsLeftPipe } from '../../../../pipes/shift-decimals-left.pipe';
+import { SiPrefixPipe } from '../../../../pipes/si-prefix.pipe';
+import { HordePerformance } from '../../../../types/horde-performance';
+import { SingleImageStatPoint } from '../../../../types/single-image-stat-point';
+import { SingleTextStatPoint } from '../../../../types/single-text-stat-point';
+import { AiHordeService } from '../../../../services/ai-horde.service';
+import { SingleInterrogationStatPoint } from '../../../../types/single-interrogation-stat-point';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-homepage-stats',
@@ -25,10 +31,10 @@ import { forkJoin } from "rxjs";
     SiPrefixPipe,
     TranslocoPipe,
     TranslocoModule,
-    UpperCasePipe
+    UpperCasePipe,
   ],
   templateUrl: './homepage-stats.component.html',
-  styleUrl: './homepage-stats.component.scss'
+  styleUrl: './homepage-stats.component.scss',
 })
 export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);
@@ -53,13 +59,13 @@ export class HomepageStatsComponent {
       imageStats: this.aiHorde.imageStats,
       textStats: this.aiHorde.textStats,
       interrogationStats: this.aiHorde.interrogationStats,
-    }).pipe(
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(responses => {
-      this.stats.set(responses.performance);
-      this.imageStats.set(responses.imageStats.total);
-      this.textStats.set(responses.textStats.total);
-      this.interrogationStats.set(responses.interrogationStats);
-    });
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((responses) => {
+        this.stats.set(responses.performance);
+        this.imageStats.set(responses.imageStats.total);
+        this.textStats.set(responses.textStats.total);
+        this.interrogationStats.set(responses.interrogationStats);
+      });
   }
 }

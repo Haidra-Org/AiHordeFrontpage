@@ -4,7 +4,7 @@
 $small: 576px;
 @mixin mediaMax($maxWidth) {
   @media screen and (max-width: $maxWidth) {
-    @content
+    @content;
   }
 }
 $mainTextColor: colors.$darkTextColor;
@@ -38,14 +38,19 @@ $successColor: #1c64f2;
 
   &:before {
     display: block;
-    background: linear-gradient(to bottom, $mainTextColor 0%, color.adjust($mainTextColor, $lightness: 10%) 100%);
+    background: linear-gradient(
+      to bottom,
+      $mainTextColor 0%,
+      color.adjust($mainTextColor, $lightness: 10%) 100%
+    );
     border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(
-      color.channel($shadowColor, "red", $space: rgb),
-      color.channel($shadowColor, "green", $space: rgb),
-      color.channel($shadowColor, "blue", $space: rgb),
-      0.15
-    );    
+    box-shadow: 0 0 0 1px
+      rgba(
+        color.channel($shadowColor, "red", $space: rgb),
+        color.channel($shadowColor, "green", $space: rgb),
+        color.channel($shadowColor, "blue", $space: rgb),
+        0.15
+      );
     width: 20px;
     height: 20px;
     position: absolute;
@@ -60,7 +65,11 @@ $successColor: #1c64f2;
   }
 
   .toggle:hover &:before {
-    background: linear-gradient(to bottom, $mainTextColor 0%, $mainTextColor 100%);
+    background: linear-gradient(
+      to bottom,
+      $mainTextColor 0%,
+      $mainTextColor 100%
+    );
   }
 
   .toggle-checkbox:checked + & {
