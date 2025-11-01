@@ -1,7 +1,6 @@
-import { Component, signal, ViewEncapsulation } from '@angular/core';
-import {toPromise} from "../../types/resolvable";
-
-import {AiHordeService} from "../../services/ai-horde.service";
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AiHordeService } from "../../services/ai-horde.service";
 
 @Component({
   selector: 'app-terms',
@@ -11,15 +10,8 @@ import {AiHordeService} from "../../services/ai-horde.service";
   styleUrl: './terms.component.scss'
 })
 export class TermsComponent {
-  public terms = signal<string>('');
-
-  constructor(
-    private readonly aiHorde: AiHordeService,
-  ) {
-  }
-
-  public async ngOnInit(): Promise<void> {
-    this.terms.set(await toPromise(this.aiHorde.terms));
-  }
-
+  private readonly aiHorde = inject(AiHordeService);
+  
+  // Automatically unsubscribes when component is destroyed
+  public readonly terms = toSignal(this.aiHorde.terms, { initialValue: '' });
 }

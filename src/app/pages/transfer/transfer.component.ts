@@ -1,21 +1,18 @@
-import {Component, computed, OnDestroy, OnInit, signal} from '@angular/core';
-import {Title} from "@angular/platform-browser";
-import {toPromise} from "../../types/resolvable";
-import {TranslatorService} from "../../services/translator.service";
-import {FooterColorService} from "../../services/footer-color.service";
-import {InlineSvgComponent} from "../../components/inline-svg/inline-svg.component";
-import {JsonPipe, KeyValuePipe} from "@angular/common";
-import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
-import {ToggleCheckboxComponent} from "../../components/toggle-checkbox/toggle-checkbox.component";
-import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
-import {DatabaseService, StorageType} from "../../services/database.service";
-import {debounceTime} from "rxjs";
-import {Subscriptions} from "../../helper/subscriptions";
-import {AiHordeService} from "../../services/ai-horde.service";
-import {HordeUser} from "../../types/horde-user";
-import {toSignal} from "@angular/core/rxjs-interop";
-import {FormatNumberPipe} from "../../pipes/format-number.pipe";
-import {ActivatedRoute, RouterLink} from "@angular/router";
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Title } from "@angular/platform-browser";
+import { ActivatedRoute, RouterLink } from "@angular/router";
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
+import { debounceTime } from "rxjs";
+import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
+import { TranslatorService } from "../../services/translator.service";
+import { FooterColorService } from "../../services/footer-color.service";
+import { ToggleCheckboxComponent } from "../../components/toggle-checkbox/toggle-checkbox.component";
+import { DatabaseService, StorageType } from "../../services/database.service";
+import { AiHordeService } from "../../services/ai-horde.service";
+import { HordeUser } from "../../types/horde-user";
+import { FormatNumberPipe } from "../../pipes/format-number.pipe";
 
 @Component({
   selector: 'app-transfer',
@@ -31,8 +28,14 @@ import {ActivatedRoute, RouterLink} from "@angular/router";
   templateUrl: './transfer.component.html',
   styleUrl: './transfer.component.scss'
 })
-export class TransferComponent implements OnInit, OnDestroy {
-  private subscriptions = new Subscriptions();
+export class TransferComponent implements OnInit {
+  private readonly title = inject(Title);
+  private readonly translator = inject(TranslatorService);
+  private readonly footerColor = inject(FooterColorService);
+  private readonly database = inject(DatabaseService);
+  private readonly aiHorde = inject(AiHordeService);
+  public readonly activatedRoute = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   private exampleUsers = signal([
     'db0#1',
@@ -68,39 +71,49 @@ export class TransferComponent implements OnInit, OnDestroy {
     kudosAmountValidated: new FormControl<boolean | null>(null, [Validators.requiredTrue]),
   });
 
-  constructor(
-    private readonly title: Title,
-    private readonly translator: TranslatorService,
-    private readonly footerColor: FooterColorService,
-    private readonly database: DatabaseService,
-    private readonly aiHorde: AiHordeService,
-    public readonly activatedRoute: ActivatedRoute,
-  ) {
-  }
-
-  public async ngOnInit(): Promise<void> {
-    this.title.setTitle(await toPromise(this.translator.get('transfer.title')) + ' | ' + await toPromise(this.translator.get('app_title')));
+  ngOnInit(): void {
+    // Set title
+    this.translator.get('transfer.title').pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(transferTitle => {
+      this.translator.get('app_title').subscribe(appTitle => {
+        this.title.setTitle(`${transferTitle} | ${appTitle}`);
+      });
+    });
+    
     this.footerColor.setDarkMode(true);
 
     const remember = this.database.get('remember_api_key', true);
     const apiKey = this.database.get('api_key', remember ? StorageType.Permanent : StorageType.Session);
 
-    this.subscriptions.add(this.form.controls.apiKey.valueChanges.subscribe(() => {
+    // Setup form value change subscriptions with automatic cleanup
+    this.form.controls.apiKey.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.currentUser.set(null);
       this.form.patchValue({apiKeyValidated: null});
-    }));
-    this.subscriptions.add(this.form.controls.targetUser.valueChanges.subscribe(() => {
+    });
+    
+    this.form.controls.targetUser.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.form.patchValue({targetUserValidated: null});
-    }));
-    this.subscriptions.add(this.form.controls.kudosAmount.valueChanges.subscribe(kudosAmount => {
+    });
+    
+    this.form.controls.kudosAmount.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(kudosAmount => {
       kudosAmount ??= 0;
       if (this.maximumKudos() === null) {
         this.form.patchValue({kudosAmountValidated: null});
         return;
       }
       this.form.patchValue({kudosAmountValidated: kudosAmount <= this.maximumKudos()!});
-    }));
-    this.subscriptions.add(this.form.controls.educatorAccount.valueChanges.subscribe(accountId => {
+    });
+    
+    this.form.controls.educatorAccount.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(accountId => {
       // @ts-ignore
       if (accountId === 'null') {
         accountId = null;
@@ -118,20 +131,25 @@ export class TransferComponent implements OnInit, OnDestroy {
 
       this.form.controls.targetUser.disable();
       this.form.patchValue({targetUser: account.username});
-    }));
+    });
 
-    this.subscriptions.add(this.form.controls.apiKey.valueChanges.pipe(
-      debounceTime(500)
+    this.form.controls.apiKey.valueChanges.pipe(
+      debounceTime(500),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(async apiKey => {
       if (!apiKey) {
         return;
       }
 
-      this.currentUser.set(await toPromise(this.aiHorde.getUserByApiKey(apiKey)));
-      this.form.patchValue({apiKeyValidated: this.currentUser() !== null});
-    }));
-    this.subscriptions.add(this.form.controls.targetUser.valueChanges.pipe(
-      debounceTime(500)
+      this.aiHorde.getUserByApiKey(apiKey).subscribe(user => {
+        this.currentUser.set(user);
+        this.form.patchValue({apiKeyValidated: user !== null});
+      });
+    });
+    
+    this.form.controls.targetUser.valueChanges.pipe(
+      debounceTime(500),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(async targetUser => {
       if (!targetUser) {
         return;
@@ -144,9 +162,10 @@ export class TransferComponent implements OnInit, OnDestroy {
       }
 
       const id = Number(parts[1]);
-      const user = await toPromise(this.aiHorde.getUserById(id));
-      this.form.patchValue({targetUserValidated: user !== null && targetUser.toLowerCase() === user.username.toLowerCase()});
-    }));
+      this.aiHorde.getUserById(id).subscribe(user => {
+        this.form.patchValue({targetUserValidated: user !== null && targetUser.toLowerCase() === user.username.toLowerCase()});
+      });
+    });
 
     this.form.patchValue({
       remember: remember,
@@ -157,38 +176,39 @@ export class TransferComponent implements OnInit, OnDestroy {
       });
     }
 
-    this.subscriptions.add(this.form.valueChanges.pipe(
-      debounceTime(300)
+    this.form.valueChanges.pipe(
+      debounceTime(300),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(value => {
       this.database.store('remember_api_key', value.remember ?? false);
       this.database.store('api_key', value.apiKey ?? '', value.remember ? StorageType.Permanent : StorageType.Session);
 
       this.sentSuccessfully.set(null);
-    }));
+    });
 
-    this.subscriptions.add(this.activatedRoute.fragment.subscribe(fragment => {
+    this.activatedRoute.fragment.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(fragment => {
       this.fragment.set(fragment);
-      if (fragment) {
+      // Only scroll in browser environment (not during SSR)
+      if (fragment && typeof document !== 'undefined') {
         document.querySelector(`#${fragment}`)?.scrollIntoView();
       }
-    }));
+    });
   }
 
-  public ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
-
-  public async transfer(): Promise<void> {
+  public transfer(): void {
     this.sentSuccessfully.set(null);
     if (!this.form.valid) {
       return;
     }
 
-    const success = await toPromise(this.aiHorde.transferKudos(
+    this.aiHorde.transferKudos(
       this.form.value.apiKey!,
       this.form.controls.targetUser.value!,
       this.form.value.kudosAmount!,
-    ));
-    this.sentSuccessfully.set(success);
+    ).subscribe(success => {
+      this.sentSuccessfully.set(success);
+    });
   }
 }
