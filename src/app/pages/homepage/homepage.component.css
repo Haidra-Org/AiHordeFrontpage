@@ -1,8 +1,1 @@
-:host ::ng-deep .sponsor-svg svg {
-  filter: grayscale(1);
-  transition: filter 500ms;
-}
-
-:host ::ng-deep .sponsor-svg svg:hover {
-  filter: none;
-}
+/* Sponsor SVG styles moved to global styles.css to avoid deprecated ::ng-deep */
