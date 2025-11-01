@@ -83,7 +83,12 @@
               "buildTarget": "AiHordeWebsite:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+        "disableHostCheck": true,
+        "port": 4200,
+        "browserTarget": "jwt-youtube-ui:build"
+      },
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",

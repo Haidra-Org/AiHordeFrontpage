@@ -7,22 +7,36 @@
             {{ 'latest_news.title' | transloco }}
           </a>
         </h2>
-        @for (newsItem of news(); track newsItem.title) {
-          <div class="mb-4">
-            <h3 class="mb-2 text-xl text-gray-900 dark:text-white">
-              <span class="text-gray-500 dark:text-gray-200">{{newsItem.datePublished}}</span> - <span [innerHTML]="newsItem.title"></span>
-            </h3>
-            @if (newsItem.excerpt) {
-              <p class="mb-2 font-light lg:text-lg" [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"></p>
-            }
-            @if (newsItem.moreLink) {
-              <p class="mb-2 font-light lg:text-lg">
-                <a [href]="newsItem.moreLink" target="_blank">{{'read_more' | transloco}}</a>
-              </p>
+        @if (news().length > 0) {
+          @for (newsItem of news(); track newsItem.title) {
+            <div class="mb-4">
+              <h3 class="mb-2 text-xl text-gray-900 dark:text-white">
+                <span class="text-gray-500 dark:text-gray-200">{{newsItem.datePublished}}</span> - <span [innerHTML]="newsItem.title"></span>
+              </h3>
+              @if (newsItem.excerpt) {
+                <p class="mb-2 font-light lg:text-lg" [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"></p>
+              }
+              @if (newsItem.moreLink) {
+                <p class="mb-2 font-light lg:text-lg">
+                  <a [href]="newsItem.moreLink" target="_blank">{{'read_more' | transloco}}</a>
+                </p>
+              }
+            </div>
+          }
+        } @else {
+          <!-- Loading skeleton for news -->
+          <div class="animate-pulse space-y-4">
+            @for (i of [1, 2, 3]; track i) {
+              <div class="mb-4">
+                <div class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                <div class="space-y-2">
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                </div>
+              </div>
             }
           </div>
-        } @empty {
-          <p class="mb-2 font-light lg:text-lg">{{'no_news' | transloco}}</p>
         }
       </div>
     </div>
