@@ -11,7 +11,7 @@ import { NoSorterKeyValue } from '../../../../types/no-sorter-key-value';
   standalone: true,
   imports: [TranslocoModule, ToolCardComponent, KeyValuePipe],
   templateUrl: './homepage-tools.component.html',
-  styleUrl: './homepage-tools.component.scss',
+  styleUrl: './homepage-tools.component.css',
 })
 export class HomepageToolsComponent {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;

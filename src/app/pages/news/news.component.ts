@@ -11,7 +11,7 @@ import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
   standalone: true,
   imports: [TranslocoPipe, TranslocoModule, MarkdownPipe, StripWrapperTagPipe],
   templateUrl: './news.component.html',
-  styleUrl: './news.component.scss',
+  styleUrl: './news.component.css',
 })
 export class NewsComponent {
   private readonly aiHorde = inject(AiHordeService);

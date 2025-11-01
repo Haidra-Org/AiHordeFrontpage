@@ -1,0 +1,694 @@
+@import "tailwindcss";
+
+/* =================================================================
+   REUSABLE SECTION STYLES
+   ================================================================= */
+
+/* Primary section - white background */
+.section-primary {
+  background-color: white;
+}
+
+.dark .section-primary {
+  background-color: rgb(17 24 39); /* gray-900 */
+}
+
+/* Secondary section - gray background */
+.section-secondary {
+  background-color: rgb(249 250 251); /* gray-50 */
+}
+
+.dark .section-secondary {
+  background-color: rgb(31 41 55); /* gray-800 */
+}
+
+/* =================================================================
+   CONTAINER STYLES
+   ================================================================= */
+
+/* Page header container */
+.container-page-header {
+  display: grid;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 5rem;
+  padding-bottom: 2rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+  .container-page-header {
+    gap: 2rem;
+    padding-top: 7rem;
+    padding-bottom: 4rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-page-header {
+    gap: 0;
+  }
+}
+
+/* Content container */
+.container-content {
+  max-width: 80rem;
+  padding: 2rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+  .container-content {
+    padding: 6rem 1.5rem;
+  }
+}
+
+/* Reduced padding content container */
+.container-content-sm {
+  max-width: 80rem;
+  padding: 1.5rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+  .container-content-sm {
+    padding: 3rem 1.5rem;
+  }
+}
+
+/* Spaced content container */
+.container-spaced {
+  max-width: 80rem;
+  padding: 2rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container-spaced > * + * {
+  margin-top: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .container-spaced {
+    padding: 6rem 1.5rem;
+  }
+  .container-spaced > * + * {
+    margin-top: 5rem;
+  }
+}
+
+/* Reduced spaced content container */
+.container-spaced-sm {
+  max-width: 80rem;
+  padding: 1.5rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container-spaced-sm > * + * {
+  margin-top: 3rem;
+}
+
+@media (min-width: 1024px) {
+  .container-spaced-sm {
+    padding: 3rem 1.5rem;
+  }
+  .container-spaced-sm > * + * {
+    margin-top: 5rem;
+  }
+}
+
+/* Standard grid container for items */
+.grid-items {
+  align-items: center;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .grid-items {
+    display: grid;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-items {
+    gap: 4rem;
+  }
+}
+
+/* =================================================================
+   HEADING STYLES
+   ================================================================= */
+
+/* Hero heading (h1) */
+.heading-hero {
+  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+@media (min-width: 768px) {
+  .heading-hero {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .heading-hero {
+    font-size: 3.75rem;
+  }
+}
+
+.dark .heading-hero {
+  color: white;
+}
+
+/* Section heading (h2) */
+.heading-section {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-section {
+  color: white;
+}
+
+/* Section heading with margin */
+.heading-section-mb {
+  margin-bottom: 1.5rem;
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-section-mb {
+  color: white;
+}
+
+/* Large section heading (h2) */
+.heading-section-lg {
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-section-lg {
+  color: white;
+}
+
+/* Subsection heading (h3) */
+.heading-subsection {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-subsection {
+  color: white;
+}
+
+/* Stats category heading */
+.heading-stats {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+  border-bottom: 1px solid rgb(229 231 235);
+  padding-bottom: 0.75rem;
+}
+
+.dark .heading-stats {
+  color: white;
+  border-bottom-color: rgb(55 65 81);
+}
+
+/* =================================================================
+   TEXT STYLES
+   ================================================================= */
+
+/* Secondary text color */
+.text-secondary {
+  color: rgb(107 114 128);
+}
+
+.dark .text-secondary {
+  color: rgb(156 163 175);
+}
+
+/* Secondary text with large size */
+.text-secondary-lg {
+  color: rgb(107 114 128);
+}
+
+@media (min-width: 640px) {
+  .text-secondary-lg {
+    font-size: 1.125rem;
+  }
+}
+
+.dark .text-secondary-lg {
+  color: rgb(156 163 175);
+}
+
+/* Primary text color */
+.text-primary {
+  color: rgb(17 24 39);
+}
+
+.dark .text-primary {
+  color: white;
+}
+
+/* Error text */
+.text-error {
+  color: red;
+}
+
+/* Success text */
+.text-success {
+  color: rgb(34 197 94);
+}
+
+/* =================================================================
+   FORM STYLES
+   ================================================================= */
+
+/* Form label */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: rgb(17 24 39);
+}
+
+.dark .form-label {
+  color: white;
+}
+
+/* Form input field */
+.form-input {
+  background-color: rgb(249 250 251);
+  border: 1px solid rgb(209 213 219);
+  color: rgb(17 24 39);
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  display: block;
+  width: 100%;
+  padding: 0.625rem;
+}
+
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.5);
+  border-color: rgb(59 130 246);
+}
+
+.dark .form-input {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  color: white;
+}
+
+.dark .form-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+/* =================================================================
+   BUTTON STYLES
+   ================================================================= */
+
+/* Primary button */
+.btn-primary {
+  color: white;
+  background-color: rgb(29 78 216);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  text-align: center;
+}
+
+.btn-primary:hover {
+  background-color: rgb(30 64 175);
+}
+
+.btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(147 197 253 / 0.5);
+}
+
+.dark .btn-primary {
+  background-color: rgb(37 99 235);
+}
+
+.dark .btn-primary:hover {
+  background-color: rgb(29 78 216);
+}
+
+.dark .btn-primary:focus {
+  box-shadow: 0 0 0 4px rgb(30 58 138 / 0.5);
+}
+
+/* Disabled button */
+.btn-disabled {
+  cursor: not-allowed;
+  background-color: rgb(75 85 99);
+  color: rgb(107 114 128);
+}
+
+/* Purple button */
+.btn-purple {
+  color: white;
+  background-color: rgb(147 51 234);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  text-align: center;
+}
+
+.btn-purple:hover {
+  background-color: rgb(126 34 206);
+}
+
+.btn-purple:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(233 213 255 / 0.5);
+}
+
+.dark .btn-purple:focus {
+  box-shadow: 0 0 0 4px rgb(88 28 135 / 0.5);
+}
+
+/* =================================================================
+   CARD STYLES
+   ================================================================= */
+
+/* Card base */
+.card {
+  display: flex;
+  flex-direction: column;
+  max-width: 32rem;
+  padding: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  color: rgb(17 24 39);
+  border: 1px solid rgb(243 244 246);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+@media (min-width: 1280px) {
+  .card {
+    padding: 2rem;
+  }
+}
+
+.dark .card {
+  color: white;
+  border-color: rgb(75 85 99);
+}
+
+/* Card with primary background */
+.card-bg-primary {
+  background-color: white;
+}
+
+.dark .card-bg-primary {
+  background-color: rgb(31 41 55);
+}
+
+/* Card with secondary background */
+.card-bg-secondary {
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-bg-secondary {
+  background-color: rgb(17 24 39);
+}
+
+/* =================================================================
+   LINK STYLES
+   ================================================================= */
+
+/* Standard link */
+.link {
+  color: rgb(37 99 235);
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.dark .link {
+  color: rgb(59 130 246);
+}
+
+/* =================================================================
+   LIST STYLES
+   ================================================================= */
+
+/* List with checkboxes */
+.list-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.list-checkboxes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Stats list */
+.list-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* =================================================================
+   GRID LAYOUTS
+   ================================================================= */
+
+/* 4-column responsive grid for cards */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .grid-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Stats grid (4 columns) */
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .grid-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* =================================================================
+   UTILITY STYLES
+   ================================================================= */
+
+/* Center placement */
+.place-center {
+  margin-right: auto;
+  place-self: center;
+}
+
+@media (min-width: 1024px) {
+  .place-center {
+    grid-column: span 7 / span 7;
+  }
+}
+
+/* Icon sizing */
+.icon-sm {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.125rem;
+}
+
+/* Divider with padding */
+.divider-section {
+  border-top: 1px solid;
+  max-width: 80rem;
+  padding: 1.5rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1024px) {
+  .divider-section {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* FAQ button base */
+.faq-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+  font-weight: 500;
+  text-align: left;
+  border-bottom: 1px solid rgb(229 231 235);
+}
+
+.dark .faq-button {
+  border-bottom-color: rgb(55 65 81);
+}
+
+/* Loading skeleton */
+.skeleton-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* =================================================================
+   EXISTING CUSTOM STYLES
+   ================================================================= */
+
+h3 a,
+p a,
+.underline-links a {
+  text-decoration: underline;
+}
+
+h3 a:hover,
+p a:hover,
+.underline-links a:hover {
+  text-decoration: none;
+  color: rgb(80, 87, 101);
+}
+
+.dark h3 a:hover,
+.dark p a:hover,
+.dark .underline-links a:hover {
+  color: rgb(203, 207, 211);
+}
+
+.dark .dark\:fill-white {
+  fill: white;
+}
+
+#mobile-menu-2 {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.built-with a {
+  color: var(--purple-text-color-600);
+}
+
+.built-with a:hover {
+  text-decoration: underline;
+}
+
+.dark .built-with a {
+  color: var(--purple-text-color-500);
+}
+
+/* The terms are dynamically loaded and due to encapsulation, we need to use the global styles */
+.terms ul {
+  list-style-type: disc;
+  padding-left: 40px;
+}
+
+.terms h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 20px;
+  margin-top: 40px;
+  border-bottom: 3px solid #a0a0a0;
+  display: inline-block;
+}
+
+.terms h2 {
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.terms p {
+  font-size: 1em;
+  margin-bottom: 10px;
+}
+
+.terms strong {
+  font-weight: bold;
+}
+
+.terms .last_updated {
+  font-style: italic;
+}
+
+.terms .important {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.bg-gray-600 {
+  background-color: var(--bg-gray-600);
+}
+
+.text-red {
+  color: red;
+}

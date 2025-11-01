@@ -38,7 +38,7 @@ import { FormatNumberPipe } from '../../pipes/format-number.pipe';
     RouterLink,
   ],
   templateUrl: './transfer.component.html',
-  styleUrl: './transfer.component.scss',
+  styleUrl: './transfer.component.css',
 })
 export class TransferComponent implements OnInit {
   private readonly title = inject(Title);

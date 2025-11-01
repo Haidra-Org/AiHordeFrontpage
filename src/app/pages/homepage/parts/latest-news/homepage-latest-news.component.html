@@ -1,9 +1,9 @@
-<section class="bg-gray-50 dark:bg-gray-800">
-  <div class="max-w-screen-xl px-4 py-8 mx-auto lg:py-16 lg:px-6">
-    <div class="items-center gap-8 lg:grid xl:gap-16">
-      <div class="text-gray-500 sm:text-lg dark:text-gray-400">
+<section class="section-secondary">
+  <div class="container-content">
+    <div class="grid-items">
+      <div class="text-secondary-lg">
         <h2
-          class="mb-5 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+          class="mb-5 heading-section-lg"
         >
           <a routerLink="/news">
             {{ "latest_news.title" | transloco }}
@@ -12,8 +12,8 @@
         @if (news().length > 0) {
           @for (newsItem of news(); track newsItem.title) {
             <div class="mb-4">
-              <h3 class="mb-2 text-xl text-gray-900 dark:text-white">
-                <span class="text-gray-500 dark:text-gray-200">{{
+              <h3 class="mb-2 text-xl text-primary">
+                <span class="text-secondary dark:text-gray-200">{{
                   newsItem.datePublished
                 }}</span>
                 - <span [innerHTML]="newsItem.title"></span>

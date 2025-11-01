@@ -7,7 +7,7 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
   standalone: true,
   imports: [NgOptimizedImage, TranslocoPipe],
   templateUrl: './gui-card.component.html',
-  styleUrl: './gui-card.component.scss',
+  styleUrl: './gui-card.component.css',
 })
 export class GuiCardComponent {
   public name = input.required<string>();

@@ -11,7 +11,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
   selector: 'app-privacy',
   standalone: true,
   templateUrl: './privacy.component.html',
-  styleUrl: './privacy.component.scss',
+  styleUrl: './privacy.component.css',
 })
 export class PrivacyComponent implements OnInit {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;

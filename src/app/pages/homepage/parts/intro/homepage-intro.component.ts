@@ -8,7 +8,7 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
   standalone: true,
   imports: [NgOptimizedImage, TranslocoPipe, TranslocoModule],
   templateUrl: './homepage-intro.component.html',
-  styleUrl: './homepage-intro.component.scss',
+  styleUrl: './homepage-intro.component.css',
 })
 export class HomepageIntroComponent {
   faqLink: string;

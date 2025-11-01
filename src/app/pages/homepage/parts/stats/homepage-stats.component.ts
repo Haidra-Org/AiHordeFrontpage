@@ -34,7 +34,7 @@ import { forkJoin } from 'rxjs';
     UpperCasePipe,
   ],
   templateUrl: './homepage-stats.component.html',
-  styleUrl: './homepage-stats.component.scss',
+  styleUrl: './homepage-stats.component.css',
 })
 export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);

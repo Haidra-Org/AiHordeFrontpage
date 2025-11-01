@@ -24,7 +24,7 @@ import { StripWrapperTagPipe } from '../../../../pipes/strip-wrapper-tag.pipe';
     StripWrapperTagPipe,
   ],
   templateUrl: './homepage-latest-news.component.html',
-  styleUrl: './homepage-latest-news.component.scss',
+  styleUrl: './homepage-latest-news.component.css',
 })
 export class HomepageLatestNewsComponent {
   private readonly aiHorde = inject(AiHordeService);

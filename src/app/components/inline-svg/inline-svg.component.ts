@@ -8,7 +8,7 @@ import { toPromise } from '../../types/resolvable';
   standalone: true,
   imports: [],
   templateUrl: './inline-svg.component.html',
-  styleUrl: './inline-svg.component.scss',
+  styleUrl: './inline-svg.component.css',
 })
 export class InlineSvgComponent implements OnInit {
   public href = input.required<string>();

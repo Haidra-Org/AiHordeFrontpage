@@ -4,7 +4,7 @@ import { Component, input } from '@angular/core';
   selector: 'app-tool-card',
   standalone: true,
   templateUrl: './tool-card.component.html',
-  styleUrl: './tool-card.component.scss',
+  styleUrl: './tool-card.component.css',
 })
 export class ToolCardComponent {
   public name = input.required<string>();

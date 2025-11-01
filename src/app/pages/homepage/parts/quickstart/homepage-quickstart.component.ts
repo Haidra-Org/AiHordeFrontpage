@@ -7,6 +7,6 @@ import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg
   standalone: true,
   imports: [TranslocoPipe, TranslocoModule, InlineSvgComponent],
   templateUrl: './homepage-quickstart.component.html',
-  styleUrl: './homepage-quickstart.component.scss',
+  styleUrl: './homepage-quickstart.component.css',
 })
 export class HomepageQuickstartComponent {}

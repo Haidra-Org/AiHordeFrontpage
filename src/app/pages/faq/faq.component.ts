@@ -17,7 +17,7 @@ import { NoSorterKeyValue } from '../../types/no-sorter-key-value';
   standalone: true,
   imports: [KeyValuePipe, TranslocoPipe, TranslocoModule, InlineSvgComponent],
   templateUrl: './faq.component.html',
-  styleUrl: './faq.component.scss',
+  styleUrl: './faq.component.css',
 })
 export class FaqComponent implements OnInit {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;

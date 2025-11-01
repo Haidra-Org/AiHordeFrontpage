@@ -1,10 +1,10 @@
-<section class="bg-white dark:bg-gray-900">
+<section class="section-primary">
   <div
-    class="grid max-w-screen-xl px-4 pt-20 pb-8 mx-auto lg:gap-8 xl:gap-0 lg:py-16 lg:pt-28"
+    class="container-page-header"
   >
-    <div class="mr-auto place-self-center lg:col-span-7">
+    <div class="place-center">
       <h1
-        class="mb-4 text-4xl font-extrabold leading-none tracking-tight md:text-5xl xl:text-6xl dark:text-white"
+        class="heading-hero"
       >
         <ng-container *transloco="let t">
           {{ t("transfer.title") }}
@@ -14,19 +14,19 @@
   </div>
 </section>
 
-<section class="bg-gray-50 dark:bg-gray-800">
+<section class="section-secondary">
   <div
-    class="max-w-screen-xl px-4 py-8 mx-auto space-y-12 lg:space-y-20 lg:py-24 lg:px-6"
+    class="container-spaced"
   >
-    <div class="items-center gap-8 lg:grid xl:gap-16">
-      <div class="text-gray-500 sm:text-lg dark:text-gray-400">
+    <div class="grid-items">
+      <div class="text-secondary-lg">
         <p class="mb-6">
           <ng-container *transloco="let t">
             <!-- <transloco key="transfer.visit_old" [params]="{oldUrl: '/transfer'}" /> -->
             {{ t("transfer.visit_old_pre") }}
             <a
               href="/transfer"
-              class="text-blue-600 dark:text-blue-500 hover:underline"
+              class="link"
               >{{ t("transfer.visit_old_link_text") }}</a
             >
             <!-- ... and a trailing period-->
@@ -41,20 +41,20 @@
           <div class="mb-2">
             <label
               for="source_api_key"
-              class="block mb-2 font-medium text-gray-900 dark:text-white"
+              class="form-label"
               >{{ "transfer.source_api_key" | transloco }}</label
             >
             <input
               formControlName="apiKey"
               type="text"
               id="source_api_key"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="form-input"
               required
               [placeholder]="'transfer.source_api_key.description' | transloco"
             />
           </div>
           @if (form.value.apiKeyValidated === false) {
-            <p class="mb-1 text-red">
+            <p class="mb-1 text-error">
               <small>{{ "invalid_api_key" | transloco }}</small>
             </p>
           }
@@ -79,14 +79,14 @@
           >
             <label
               for="target_user"
-              class="block mb-2 font-medium text-gray-900 dark:text-white"
+              class="form-label"
               >{{ "transfer.target_user" | transloco }}</label
             >
             <input
               formControlName="targetUser"
               type="text"
               id="target_user"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="form-input"
               required
               [placeholder]="
                 'transfer.target_user.description'
@@ -96,7 +96,7 @@
           </div>
           @if (educatorAccounts()) {
             <div
-              class="dark:text-white text-gray-900"
+              class="text-primary"
               [class.mb-5]="form.value.targetUserValidated !== false"
               [class.mb-1]="form.value.targetUserValidated === false"
             >
@@ -116,7 +116,7 @@
 
               <select
                 formControlName="educatorAccount"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                class="form-input"
               >
                 @for (user of educatorAccounts(); track user.id) {
                   <option [value]="null">
@@ -134,7 +134,7 @@
             </div>
           }
           @if (form.value.targetUserValidated === false) {
-            <p class="mb-5 text-red">
+            <p class="mb-5 text-error">
               <small>{{ "invalid_target_user" | transloco }}</small>
             </p>
           }
@@ -145,7 +145,7 @@
           >
             <label
               for="kudos_amount"
-              class="block mb-2 font-medium text-gray-900 dark:text-white"
+              class="form-label"
               >{{ "transfer.kudos_amount" | transloco }}</label
             >
             <input
@@ -153,7 +153,7 @@
               type="number"
               min="1"
               id="kudos_amount"
-              class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              class="form-input"
               required
               [placeholder]="
                 'transfer.kudos_amount.description'
@@ -168,18 +168,18 @@
             />
           </div>
           @if (form.value.kudosAmountValidated === false) {
-            <p class="mb-5 text-red">
+            <p class="mb-5 text-error">
               <small>{{ "transfer.too_many_kudos" | transloco }}</small>
             </p>
           }
 
           @if (sentSuccessfully() !== null) {
             @if (sentSuccessfully()) {
-              <p class="mb-5 text-green-500">
+              <p class="mb-5 text-success">
                 {{ "transfer.success" | transloco }}
               </p>
             } @else {
-              <p class="mb-5 text-red">{{ "transfer.error" | transloco }}</p>
+              <p class="mb-5 text-error">{{ "transfer.error" | transloco }}</p>
             }
           }
           <button
