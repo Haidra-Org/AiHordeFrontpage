@@ -1,33 +1,37 @@
-import {Component, OnInit, signal} from '@angular/core';
-import {toPromise} from "../../types/resolvable";
-import {FooterColorService} from "../../services/footer-color.service";
-import {NoSorterKeyValue} from "../../types/no-sorter-key-value";
-import {TranslatorService} from "../../services/translator.service";
-import {Title} from "@angular/platform-browser";
-import {AiHordeService} from "../../services/ai-horde.service";
+import { Component, inject, OnInit } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Title } from "@angular/platform-browser";
+import { combineLatest, map } from 'rxjs';
+import { FooterColorService } from "../../services/footer-color.service";
+import { NoSorterKeyValue } from "../../types/no-sorter-key-value";
+import { TranslatorService } from "../../services/translator.service";
+import { AiHordeService } from "../../services/ai-horde.service";
 
 @Component({
   selector: 'app-privacy',
   standalone: true,
-
   templateUrl: './privacy.component.html',
   styleUrl: './privacy.component.scss'
 })
 export class PrivacyComponent implements OnInit {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;
-  public policy = signal<string | null>(null);
+  private readonly footerColor = inject(FooterColorService);
+  private readonly translator = inject(TranslatorService);
+  private readonly titleService = inject(Title);
+  private readonly aiHorde = inject(AiHordeService);
+  
+  // Automatically unsubscribes when component is destroyed
+  public readonly policy = toSignal(this.aiHorde.privacyPolicy, { initialValue: '' });
 
-  constructor(
-    private readonly footerColor: FooterColorService,
-    private readonly translator: TranslatorService,
-    private readonly titleService: Title,
-    private readonly aiHorde: AiHordeService,
-  ) {
-  }
-
-  public async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
     this.footerColor.setDarkMode(true);
-    this.policy.set(await toPromise(this.aiHorde.privacyPolicy));
-    this.titleService.setTitle(await toPromise(this.translator.get('privacy_policy')));
+    
+    // Set title reactively
+    combineLatest([
+      this.translator.get('privacy_policy'),
+      this.translator.get('app_title')
+    ]).pipe(
+      map(([privacy, app]) => `${privacy} | ${app}`)
+    ).subscribe(title => this.titleService.setTitle(title));
   }
 }

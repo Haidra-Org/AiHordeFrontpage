@@ -1,15 +1,16 @@
-import {Component, OnInit, signal} from '@angular/core';
-import {Title} from "@angular/platform-browser";
-import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
-import {DataService} from "../../services/data.service";
-import {FaqItem} from "../../types/faq-item";
-import {toPromise} from "../../types/resolvable";
-import {KeyValuePipe} from "@angular/common";
-import {InlineSvgComponent} from "../../components/inline-svg/inline-svg.component";
-import {TranslatorService} from "../../services/translator.service";
-import {FooterColorService} from "../../services/footer-color.service";
-import {SortedItems} from "../../types/sorted-items";
-import {NoSorterKeyValue} from "../../types/no-sorter-key-value";
+import { Component, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { Title } from "@angular/platform-browser";
+import { KeyValuePipe } from "@angular/common";
+import { combineLatest, map } from 'rxjs';
+import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
+import { DataService } from "../../services/data.service";
+import { FaqItem } from "../../types/faq-item";
+import { InlineSvgComponent } from "../../components/inline-svg/inline-svg.component";
+import { TranslatorService } from "../../services/translator.service";
+import { FooterColorService } from "../../services/footer-color.service";
+import { SortedItems } from "../../types/sorted-items";
+import { NoSorterKeyValue } from "../../types/no-sorter-key-value";
 
 @Component({
   selector: 'app-faq',
@@ -25,21 +26,26 @@ import {NoSorterKeyValue} from "../../types/no-sorter-key-value";
 })
 export class FaqComponent implements OnInit {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;
+  private readonly title = inject(Title);
+  private readonly translator = inject(TranslatorService);
+  private readonly dataService = inject(DataService);
+  private readonly footerColor = inject(FooterColorService);
 
-  public faq = signal<SortedItems<FaqItem>>(new Map<string, FaqItem[]>());
+  // Automatically unsubscribes when component is destroyed
+  public readonly faq = toSignal(this.dataService.faq, { 
+    initialValue: new Map<string, FaqItem[]>() as SortedItems<FaqItem> 
+  });
   public selectedFaq = signal<string | null>(null);
 
-  constructor(
-    private readonly title: Title,
-    private readonly translator: TranslatorService,
-    private readonly dataService: DataService,
-    private readonly footerColor: FooterColorService,
-  ) {
-  }
-
-  public async ngOnInit(): Promise<void> {
-    this.title.setTitle(await toPromise(this.translator.get('frequently_asked_questions')) + ' | ' + await toPromise(this.translator.get('app_title')));
-    this.faq.set(await toPromise(this.dataService.faq));
+  ngOnInit(): void {
     this.footerColor.setDarkMode(true);
+    
+    // Set title reactively
+    combineLatest([
+      this.translator.get('frequently_asked_questions'),
+      this.translator.get('app_title')
+    ]).pipe(
+      map(([faq, app]) => `${faq} | ${app}`)
+    ).subscribe(title => this.title.setTitle(title));
   }
 }

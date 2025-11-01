@@ -1,11 +1,10 @@
-import {Component, OnInit, signal} from '@angular/core';
-import {NewsItem} from "../../types/news.types";
-import {AiHordeService} from "../../services/ai-horde.service";
-import {toPromise} from "../../types/resolvable";
-import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
-import {MarkdownPipe} from "../../pipes/markdown.pipe";
-import {StripWrapperTagPipe} from "../../pipes/strip-wrapper-tag.pipe";
-
+import { Component, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
+import { NewsItem } from "../../types/news.types";
+import { AiHordeService } from "../../services/ai-horde.service";
+import { MarkdownPipe } from "../../pipes/markdown.pipe";
+import { StripWrapperTagPipe } from "../../pipes/strip-wrapper-tag.pipe";
 
 @Component({
   selector: 'app-news',
@@ -19,15 +18,9 @@ import {StripWrapperTagPipe} from "../../pipes/strip-wrapper-tag.pipe";
   templateUrl: './news.component.html',
   styleUrl: './news.component.scss'
 })
-export class NewsComponent implements OnInit {
-  public news = signal<NewsItem[]>([]);
-
-  constructor(
-    private readonly aiHorde: AiHordeService,
-  ) {
-  }
-
-  public async ngOnInit(): Promise<void> {
-    this.news.set(await toPromise(this.aiHorde.getNews()));
-  }
+export class NewsComponent {
+  private readonly aiHorde = inject(AiHordeService);
+  
+  // Automatically unsubscribes when component is destroyed
+  public readonly news = toSignal(this.aiHorde.getNews(), { initialValue: [] as NewsItem[] });
 }

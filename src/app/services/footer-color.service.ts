@@ -1,18 +1,14 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FooterColorService {
-  public readonly dark = new BehaviorSubject<boolean>(true); // Default to true for dark mode
+  // Signal-based reactive state (default to true for dark mode)
+  public readonly dark = signal<boolean>(true);
 
-  // You can add methods to update or retrieve the value
+  // Update dark mode state
   setDarkMode(isDark: boolean): void {
-    this.dark.next(isDark);
-  }
-
-  getDarkMode(): boolean {
-    return this.dark.value;
+    this.dark.set(isDark);
   }
 }

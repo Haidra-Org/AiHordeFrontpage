@@ -23,7 +23,7 @@
               <a routerLink="/" class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white" aria-current="page">{{'home' | transloco}}</a>
             </li>
             <li>
-              <a href="/register" class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white" aria-current="page">{{'register_account' | transloco}}</a>
+              <a routerLink="/register" class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white" aria-current="page">{{'register_account' | transloco}}</a>
             </li>
             <li>
               <a routerLink="/transfer-v2" class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white" aria-current="page">{{'transfer.title' | transloco}}</a>
@@ -45,10 +45,10 @@
 
   <router-outlet></router-outlet>
   <footer
-      [class.bg-gray-50]="!darkFooter"
-      [class.dark:bg-gray-800]="!darkFooter"
-      [class.bg-white]="darkFooter"
-      [class.dark:bg-gray-900]="darkFooter"
+      [class.bg-gray-50]="!darkFooter()"
+      [class.dark:bg-gray-800]="!darkFooter()"
+      [class.bg-white]="darkFooter()"
+      [class.dark:bg-gray-900]="darkFooter()"
     >
       <div class="max-w-screen-xl p-4 py-4 mx-auto lg:py-8 md:p-6 lg:p-8">
         <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">
@@ -115,7 +115,7 @@
             <h3 class="mb-4 text-sm font-semibold text-gray-900 uppercase dark:text-white">{{'other_links' | transloco}}</h3>
             <ul class="text-gray-500 dark:text-gray-400">
               <li class="mb-3">
-                <a href="/register" class="hover:underline">{{'register_account' | transloco}}</a>
+                <a routerLink="/register" class="hover:underline">{{'register_account' | transloco}}</a>
               </li>
               <li class="mb-3">
                 <a routerLink="/transfer-v2" class="hover:underline">{{'transfer.title' | transloco}}</a>
@@ -133,6 +133,7 @@
             {{ 'built_with' | transloco: {flowbiteLink: 'https://flowbite.com', tailwindLink: 'https://tailwindcss.com', angularLink: 'https://angular.dev'} }}
 
           </span> -->
+          <!-- Safe: Translated credits with framework links from trusted i18n files, sanitized by Angular -->
           <span class="block text-sm text-center text-gray-500 dark:text-gray-400" [innerHTML]="
             'built_with' | transloco: {
               flowbiteLink: '<a href=&quot;https://flowbite.com&quot; target=&quot;_blank&quot;>' + ('built_with.flowbiteLink' | transloco) + '</a>',
