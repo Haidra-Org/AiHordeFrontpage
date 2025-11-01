@@ -2,67 +2,149 @@
   <section class="bg-white dark:bg-gray-900">
     <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
       <div class="max-w-screen-md mx-auto mb-4 text-center">
-        <h2 class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{'stats' | transloco}}</h2>
+        <h2
+          class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+        >
+          {{ "stats" | transloco }}
+        </h2>
       </div>
-      
+
       <!-- Main stats grid - 4 columns on large screens, 2 on medium, 1 on small -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-        
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+      >
         <!-- Image stats -->
         <div class="space-y-3">
-          <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3">
-            {{'image_stats' | transloco}}
+          <h3
+            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+          >
+            {{ "image_stats" | transloco }}
           </h3>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.average_recent_performance_images.label' | transloco }}:</span>
-                {{ 'stats.average_recent_performance_images.value' | transloco: {
-                   performance: (stats()!.past_minute_megapixelsteps / 60) | formatNumber:1,
-                   prefix: (stats()!.past_minute_megapixelsteps / 60) | siPrefix:1:2
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{
+                    "stats.average_recent_performance_images.label" | transloco
+                  }}:</span
+                >
+                {{
+                  "stats.average_recent_performance_images.value"
+                    | transloco
+                      : {
+                          performance:
+                            stats()!.past_minute_megapixelsteps / 60
+                            | formatNumber: 1,
+                          prefix:
+                            stats()!.past_minute_megapixelsteps / 60
+                            | siPrefix: 1 : 2,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.total_pixelsteps.label' | transloco }}:</span>
-                {{ 'stats.total_pixelsteps.value' | transloco: {
-                   amount: imageStats()!.ps | shiftDecimalsLeft:2 | formatNumber:1,
-                   prefix: imageStats()!.ps | siPrefix:2
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.total_pixelsteps.label" | transloco }}:</span
+                >
+                {{
+                  "stats.total_pixelsteps.value"
+                    | transloco
+                      : {
+                          amount:
+                            imageStats()!.ps
+                            | shiftDecimalsLeft: 2
+                            | formatNumber: 1,
+                          prefix: imageStats()!.ps | siPrefix: 2,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.total_images.label' | transloco }}:</span>
-                {{ 'stats.total_images.value' | transloco: {
-                   amount: imageStats()!.images | shiftDecimalsLeft | formatNumber:1,
-                   unit: imageStats()!.images | siPrefix | cut:1 | uppercase
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.total_images.label" | transloco }}:</span
+                >
+                {{
+                  "stats.total_images.value"
+                    | transloco
+                      : {
+                          amount:
+                            imageStats()!.images
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          unit:
+                            imageStats()!.images
+                            | siPrefix
+                            | cut: 1
+                            | uppercase,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.active_workers.label' | transloco }}:</span>
-                {{ 'stats.active_workers.value' | transloco: {
-                   workers: stats()!.worker_count | formatNumber,
-                   threads: stats()!.thread_count | formatNumber
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.active_workers.label" | transloco }}:</span
+                >
+                {{
+                  "stats.active_workers.value"
+                    | transloco
+                      : {
+                          workers: stats()!.worker_count | formatNumber,
+                          threads: stats()!.thread_count | formatNumber,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.image_queue.label' | transloco }}:</span>
-                {{ 'stats.image_queue.value' | transloco: {
-                   requests: stats()!.queued_requests | formatNumber,
-                   amount: stats()!.queued_megapixelsteps | shiftDecimalsLeft | formatNumber:1,
-                   prefix: stats()!.queued_megapixelsteps | siPrefix:1:2
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.image_queue.label" | transloco }}:</span
+                >
+                {{
+                  "stats.image_queue.value"
+                    | transloco
+                      : {
+                          requests: stats()!.queued_requests | formatNumber,
+                          amount:
+                            stats()!.queued_megapixelsteps
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          prefix:
+                            stats()!.queued_megapixelsteps | siPrefix: 1 : 2,
+                        }
+                }}
               </span>
             </li>
           </ul>
@@ -70,59 +152,133 @@
 
         <!-- Text stats -->
         <div class="space-y-3">
-          <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3">
-            {{'text_stats' | transloco}}
+          <h3
+            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+          >
+            {{ "text_stats" | transloco }}
           </h3>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.average_recent_performance_text.label' | transloco }}:</span>
-                {{ 'stats.average_recent_performance_text.value' | transloco: {
-                   performance: (stats()!.past_minute_tokens / 60) | formatNumber:1,
-                   prefix: (stats()!.past_minute_tokens / 60) | siPrefix
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{
+                    "stats.average_recent_performance_text.label" | transloco
+                  }}:</span
+                >
+                {{
+                  "stats.average_recent_performance_text.value"
+                    | transloco
+                      : {
+                          performance:
+                            stats()!.past_minute_tokens / 60 | formatNumber: 1,
+                          prefix: stats()!.past_minute_tokens / 60 | siPrefix,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.total_tokens.label' | transloco }}:</span>
-                {{ 'stats.total_tokens.value' | transloco: {
-                   amount: textStats()!.tokens | shiftDecimalsLeft | formatNumber:1,
-                   prefix: textStats()!.tokens | siPrefix
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.total_tokens.label" | transloco }}:</span
+                >
+                {{
+                  "stats.total_tokens.value"
+                    | transloco
+                      : {
+                          amount:
+                            textStats()!.tokens
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          prefix: textStats()!.tokens | siPrefix,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.total_texts.label' | transloco }}:</span>
-                {{ 'stats.total_texts.value' | transloco: {
-                   amount: textStats()!.requests | shiftDecimalsLeft | formatNumber:1,
-                   unit: textStats()!.requests | siPrefix | cut:1 | uppercase
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.total_texts.label" | transloco }}:</span
+                >
+                {{
+                  "stats.total_texts.value"
+                    | transloco
+                      : {
+                          amount:
+                            textStats()!.requests
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          unit:
+                            textStats()!.requests
+                            | siPrefix
+                            | cut: 1
+                            | uppercase,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.active_workers.label' | transloco }}:</span>
-                {{ 'stats.active_workers.value' | transloco: {
-                   workers: stats()!.text_worker_count | formatNumber,
-                   threads: stats()!.text_thread_count | formatNumber
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.active_workers.label" | transloco }}:</span
+                >
+                {{
+                  "stats.active_workers.value"
+                    | transloco
+                      : {
+                          workers: stats()!.text_worker_count | formatNumber,
+                          threads: stats()!.text_thread_count | formatNumber,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.text_queue.label' | transloco }}:</span>
-                {{ 'stats.text_queue.value' | transloco: {
-                   requests: stats()!.queued_text_requests | formatNumber,
-                   amount: stats()!.queued_tokens | shiftDecimalsLeft | formatNumber:1,
-                   prefix: stats()!.queued_tokens | siPrefix
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.text_queue.label" | transloco }}:</span
+                >
+                {{
+                  "stats.text_queue.value"
+                    | transloco
+                      : {
+                          requests:
+                            stats()!.queued_text_requests | formatNumber,
+                          amount:
+                            stats()!.queued_tokens
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          prefix: stats()!.queued_tokens | siPrefix,
+                        }
+                }}
               </span>
             </li>
           </ul>
@@ -130,37 +286,82 @@
 
         <!-- Interrogation stats -->
         <div class="space-y-3">
-          <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3">
-            {{'image_alchemy' | transloco}}
+          <h3
+            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+          >
+            {{ "image_alchemy" | transloco }}
           </h3>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.total_alchemy_processed.label' | transloco }}:</span>
-                {{ 'stats.total_alchemy_processed.value' | transloco: {
-                   amount: interrogationStats()!.processed | shiftDecimalsLeft | formatNumber:1,
-                   unit: interrogationStats()!.processed | siPrefix | cut:1 | uppercase
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{
+                    "stats.total_alchemy_processed.label" | transloco
+                  }}:</span
+                >
+                {{
+                  "stats.total_alchemy_processed.value"
+                    | transloco
+                      : {
+                          amount:
+                            interrogationStats()!.processed
+                            | shiftDecimalsLeft
+                            | formatNumber: 1,
+                          unit:
+                            interrogationStats()!.processed
+                            | siPrefix
+                            | cut: 1
+                            | uppercase,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.active_workers.label' | transloco }}:</span>
-                {{ 'stats.active_workers.value' | transloco: {
-                   workers: stats()!.interrogator_count | formatNumber,
-                   threads: stats()!.interrogator_thread_count | formatNumber
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.active_workers.label" | transloco }}:</span
+                >
+                {{
+                  "stats.active_workers.value"
+                    | transloco
+                      : {
+                          workers: stats()!.interrogator_count | formatNumber,
+                          threads:
+                            stats()!.interrogator_thread_count | formatNumber,
+                        }
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                <span class="font-medium">{{ 'stats.interrogation_queue.label' | transloco }}:</span>
-                {{ 'stats.interrogation_queue.value' | transloco: {
-                   forms: stats()!.queued_forms | formatNumber
-                } }}
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <span class="font-medium"
+                  >{{ "stats.interrogation_queue.label" | transloco }}:</span
+                >
+                {{
+                  "stats.interrogation_queue.value"
+                    | transloco
+                      : {
+                          forms: stats()!.queued_forms | formatNumber,
+                        }
+                }}
               </span>
             </li>
           </ul>
@@ -168,22 +369,34 @@
 
         <!-- Realtime stats -->
         <div class="space-y-3">
-          <h3 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3">
-            {{'realtime_stats' | transloco}}
+          <h3
+            class="text-lg font-bold tracking-tight text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-3"
+          >
+            {{ "realtime_stats" | transloco }}
           </h3>
           <ul role="list" class="space-y-2 underline-links mt-3">
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/li-checkbox.svg" class="flex-shrink-0 w-4 h-4 mt-0.5" />
-              <span class="text-sm leading-relaxed text-gray-900 dark:text-white" [innerHTML]="
-                 'stats.realtime' | transloco: {
-                   grafanaLink: '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot;>' + ('stats.realtime.grafanaLink' | transloco) + '</a>'
-                } 
-              ">
+              <inline-svg
+                href="assets/img/li-checkbox.svg"
+                class="flex-shrink-0 w-4 h-4 mt-0.5"
+              />
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+                [innerHTML]="
+                  'stats.realtime'
+                    | transloco
+                      : {
+                          grafanaLink:
+                            '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot;>' +
+                            ('stats.realtime.grafanaLink' | transloco) +
+                            '</a>',
+                        }
+                "
+              >
               </span>
             </li>
           </ul>
         </div>
-
       </div>
     </div>
   </section>
@@ -192,44 +405,71 @@
   <section class="bg-white dark:bg-gray-900">
     <div class="max-w-screen-xl px-4 py-6 mx-auto lg:py-12 lg:px-6">
       <div class="max-w-screen-md mx-auto mb-4 text-center">
-        <h2 class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white">{{'stats' | transloco}}</h2>
+        <h2
+          class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
+        >
+          {{ "stats" | transloco }}
+        </h2>
       </div>
-      
+
       <!-- Loading grid matching the real stats layout -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 animate-pulse">
-        
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8 animate-pulse"
+      >
         <!-- Image stats skeleton -->
         <div class="space-y-3">
-          <div class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"></div>
+          <div
+            class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
+          ></div>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                ></div>
               </div>
             </li>
           </ul>
@@ -237,36 +477,58 @@
 
         <!-- Text stats skeleton -->
         <div class="space-y-3">
-          <div class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"></div>
+          <div
+            class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
+          ></div>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"
+                ></div>
               </div>
             </li>
           </ul>
@@ -274,24 +536,38 @@
 
         <!-- Interrogation stats skeleton -->
         <div class="space-y-3">
-          <div class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"></div>
+          <div
+            class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
+          ></div>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full"
+                ></div>
               </div>
             </li>
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/5"
+                ></div>
               </div>
             </li>
           </ul>
@@ -299,17 +575,22 @@
 
         <!-- Realtime stats skeleton -->
         <div class="space-y-3">
-          <div class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"></div>
+          <div
+            class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
+          ></div>
           <ul role="list" class="space-y-2 mt-3">
             <li class="flex items-start space-x-2">
-              <div class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                class="flex-shrink-0 w-4 h-4 mt-0.5 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
               <div class="flex-1 space-y-2">
-                <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+                <div
+                  class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                ></div>
               </div>
             </li>
           </ul>
         </div>
-
       </div>
     </div>
   </section>

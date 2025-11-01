@@ -1,15 +1,12 @@
-import {Pipe, PipeTransform} from '@angular/core';
-import {TranslocoService} from "@jsverse/transloco";
+import { Pipe, PipeTransform } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 
 @Pipe({
   name: 'siPrefix',
-  standalone: true
+  standalone: true,
 })
 export class SiPrefixPipe implements PipeTransform {
-  constructor(
-    private readonly translator: TranslocoService,
-  ) {
-  }
+  constructor(private readonly translator: TranslocoService) {}
 
   transform(value: number, keep: number = 1, startAt: number = 0): string {
     if (String(value).includes('.')) {
@@ -54,5 +51,4 @@ export class SiPrefixPipe implements PipeTransform {
 
     return this.translator.translate(key);
   }
-
 }

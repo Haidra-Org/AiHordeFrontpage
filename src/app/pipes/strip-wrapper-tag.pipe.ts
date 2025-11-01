@@ -2,10 +2,9 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'stripWrapperTag',
-  standalone: true
+  standalone: true,
 })
 export class StripWrapperTagPipe implements PipeTransform {
-
   transform(value: string): string {
     if (!value.startsWith('<')) {
       return value;
@@ -26,5 +25,4 @@ export class StripWrapperTagPipe implements PipeTransform {
 
     return value.substring(tag.length, value.length - closing.length - 1);
   }
-
 }

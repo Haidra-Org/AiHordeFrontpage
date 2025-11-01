@@ -1,21 +1,17 @@
-import {Component, computed, OnInit} from '@angular/core';
-import {TranslocoModule, TranslocoService} from "@jsverse/transloco";
-import {KeyValuePipe, UpperCasePipe} from "@angular/common";
-import {GuiCardComponent} from "../../../../components/gui-card/gui-card.component";
-import {DataService} from "../../../../services/data.service";
-import {toSignal} from "@angular/core/rxjs-interop";
-import {NoSorterKeyValue} from "../../../../types/no-sorter-key-value";
+import { Component, computed, OnInit } from '@angular/core';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+import { KeyValuePipe, UpperCasePipe } from '@angular/common';
+import { GuiCardComponent } from '../../../../components/gui-card/gui-card.component';
+import { DataService } from '../../../../services/data.service';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NoSorterKeyValue } from '../../../../types/no-sorter-key-value';
 
 @Component({
   selector: 'app-homepage-guis',
   standalone: true,
-  imports: [
-    TranslocoModule,
-    GuiCardComponent,
-    KeyValuePipe
-  ],
+  imports: [TranslocoModule, GuiCardComponent, KeyValuePipe],
   templateUrl: './homepage-guis.component.html',
-  styleUrl: './homepage-guis.component.scss'
+  styleUrl: './homepage-guis.component.scss',
 })
 export class HomepageGuisComponent {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;
@@ -37,6 +33,5 @@ export class HomepageGuisComponent {
   constructor(
     private readonly dataService: DataService,
     private readonly translator: TranslocoService,
-  ) {
-  }
+  ) {}
 }

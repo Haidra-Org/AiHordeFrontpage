@@ -1,10 +1,10 @@
 @use "sass:color";
 @use "../../../styles/colors";
 
-
 :host ::ng-deep {
   .faq-answer {
-    p, ul {
+    p,
+    ul {
       margin-bottom: 0.5rem;
       color: colors.$lightTextColor;
       margin-top: 0.2rem;
@@ -22,7 +22,7 @@
 
       &:hover {
         text-decoration: none;
-        
+
         color: color.adjust(colors.$lightTextColor, $lightness: -30%);
       }
     }
@@ -32,12 +32,13 @@
 .dark {
   :host ::ng-deep {
     .faq-answer {
-      p, ul {
+      p,
+      ul {
         color: colors.$darkTextColor;
       }
 
       a:hover {
-        color: color.adjust(colors.$darkTextColor, $lightness: -30%)
+        color: color.adjust(colors.$darkTextColor, $lightness: -30%);
       }
     }
   }

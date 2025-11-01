@@ -1,4 +1,4 @@
-import {Unsubscribable} from "../types/unsubscribable";
+import { Unsubscribable } from '../types/unsubscribable';
 
 export class Subscriptions {
   private subscriptions: Unsubscribable[];

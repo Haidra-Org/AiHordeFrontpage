@@ -1,16 +1,13 @@
-import {Component, input} from '@angular/core';
-import {NgOptimizedImage} from "@angular/common";
-import {TranslocoPipe, TranslocoModule} from "@jsverse/transloco";
+import { Component, input } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
+import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-gui-card',
   standalone: true,
-  imports: [
-    NgOptimizedImage,
-    TranslocoPipe
-  ],
+  imports: [NgOptimizedImage, TranslocoPipe],
   templateUrl: './gui-card.component.html',
-  styleUrl: './gui-card.component.scss'
+  styleUrl: './gui-card.component.scss',
 })
 export class GuiCardComponent {
   public name = input.required<string>();

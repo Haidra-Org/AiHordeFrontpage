@@ -1,4 +1,4 @@
-import {from, lastValueFrom, Observable, of} from "rxjs";
+import { from, lastValueFrom, Observable, of } from 'rxjs';
 
 export type Resolvable<T> = Promise<T> | Observable<T> | T;
 

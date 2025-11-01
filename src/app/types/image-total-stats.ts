@@ -1,4 +1,4 @@
-import {SingleImageStatPoint} from "./single-image-stat-point";
+import { SingleImageStatPoint } from './single-image-stat-point';
 
 export interface ImageTotalStats {
   minute: SingleImageStatPoint;
