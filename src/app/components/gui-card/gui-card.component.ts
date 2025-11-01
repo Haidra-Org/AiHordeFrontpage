@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, ViewEncapsulation } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 
@@ -8,6 +8,7 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
   imports: [NgOptimizedImage, TranslocoPipe],
   templateUrl: './gui-card.component.html',
   styleUrl: './gui-card.component.css',
+  encapsulation: ViewEncapsulation.Emulated,
 })
 export class GuiCardComponent {
   public name = input.required<string>();

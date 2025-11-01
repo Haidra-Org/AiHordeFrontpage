@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewEncapsulation } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { HomepageIntroComponent } from './parts/intro/homepage-intro.component';
 import { HomepageSponsorsComponent } from './parts/sponsors/homepage-sponsors.component';
@@ -24,6 +24,7 @@ import { HomepageToolsComponent } from './parts/tools/homepage-tools.component';
   ],
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.css',
+  encapsulation: ViewEncapsulation.Emulated,
 })
 export class HomepageComponent implements OnInit {
   private readonly title = inject(Title);
