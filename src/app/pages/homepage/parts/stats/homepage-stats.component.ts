@@ -1,6 +1,6 @@
-import { Component, DestroyRef, Inject, inject, NgZone, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, UpperCasePipe } from "@angular/common";
+import { UpperCasePipe } from "@angular/common";
 import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
 import { CutPipe } from "../../../../pipes/cut.pipe";
 import { FormatNumberPipe } from "../../../../pipes/format-number.pipe";
@@ -30,56 +30,21 @@ import { forkJoin } from "rxjs";
   templateUrl: './homepage-stats.component.html',
   styleUrl: './homepage-stats.component.scss'
 })
-export class HomepageStatsComponent implements OnInit {
-  private readonly isBrowser: boolean;
+export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);
-  private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
 
   public stats = signal<HordePerformance | null>(null);
   public imageStats = signal<SingleImageStatPoint | null>(null);
   public textStats = signal<SingleTextStatPoint | null>(null);
   public interrogationStats = signal<SingleInterrogationStatPoint | null>(null);
-  private timeoutId: number | null = null;
 
-  constructor(
-    @Inject(PLATFORM_ID) platformId: string,
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
-
-  ngOnInit(): void {
-    this.updateStats();
-
-    // Only schedule timeout in browser environment (not during SSR)
-    if (this.isBrowser) {
-      this.zone.runOutsideAngular(() => {
-        this.timeoutId = window.setTimeout(() => {
-          this.zone.run(() => this.updateStats());
-        }, 300);
-      });
-      
-      // Cleanup timeout on destroy
-      this.destroyRef.onDestroy(() => {
-        if (this.timeoutId !== null) {
-          clearTimeout(this.timeoutId);
-        }
-      });
-    }
-
-    // I don't think we need to update the stats after the initial load,
-    // as its unlikely to add any value to the user experience.
-    // They can always refresh the page to get the latest stats or go to the grafana
-    // via the link.
-    //
-    // this.zone.runOutsideAngular(() => {
-    //   interval(60_000).pipe(
-    //     startWith(0),
-    //     takeUntilDestroyed(this.destroyRef)
-    //   ).subscribe(() => {
-    //     this.zone.run(() => this.updateStats());
-    //   });
-    // });
+  constructor() {
+    // Fetch stats only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.updateStats();
+    });
   }
 
   private updateStats(): void {

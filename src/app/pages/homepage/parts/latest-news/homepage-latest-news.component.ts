@@ -1,6 +1,5 @@
-import { Component, DestroyRef, Inject, inject, NgZone, OnInit, PLATFORM_ID } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser } from "@angular/common";
+import { Component, DestroyRef, afterNextRender, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from "@angular/router";
 import { TranslocoPipe, TranslocoModule } from "@jsverse/transloco";
 import { NewsItem } from "../../../../types/news.types";
@@ -21,41 +20,21 @@ import { StripWrapperTagPipe } from "../../../../pipes/strip-wrapper-tag.pipe";
   templateUrl: './homepage-latest-news.component.html',
   styleUrl: './homepage-latest-news.component.scss'
 })
-export class HomepageLatestNewsComponent implements OnInit {
-  private readonly isBrowser: boolean;
+export class HomepageLatestNewsComponent {
   private readonly aiHorde = inject(AiHordeService);
-  private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
   
-  // Automatically unsubscribes when component is destroyed
-  public readonly news = toSignal(this.aiHorde.getNews(3), { initialValue: [] as NewsItem[] });
-  private timeoutId: number | null = null;
+  public readonly news = signal<NewsItem[]>([]);
 
-  constructor(
-    @Inject(PLATFORM_ID) platformId: string,
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-  }
-
-  ngOnInit(): void {
-    // Only schedule timeout in browser environment (not during SSR)
-    if (this.isBrowser) {
-      // Delayed refresh with proper cleanup
-      this.zone.runOutsideAngular(() => {
-        this.timeoutId = window.setTimeout(() => {
-          this.zone.run(() => {
-            // Trigger a refresh by re-subscribing
-            this.aiHorde.getNews(3).subscribe();
-          });
-        }, 300);
+  constructor() {
+    // Fetch news only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.aiHorde.getNews(3).pipe(
+        takeUntilDestroyed(this.destroyRef)
+      ).subscribe(newsItems => {
+        this.news.set(newsItems);
       });
-      
-      // Cleanup timeout on destroy
-      this.destroyRef.onDestroy(() => {
-        if (this.timeoutId !== null) {
-          clearTimeout(this.timeoutId);
-        }
-      });
-    }
+    });
   }
 }
