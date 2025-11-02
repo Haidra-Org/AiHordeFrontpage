@@ -1,0 +1,1 @@
+import{Gb as s,Xa as i,qb as o,rb as r}from"./chunk-3RXFYBCK.js";var m=(()=>{let e=class e{};e.\u0275fac=function(n){return new(n||e)},e.\u0275cmp=i({type:e,selectors:[["app-register"]],decls:2,vars:0,template:function(n,a){n&1&&(o(0,"p"),s(1,"register works!"),r())},encapsulation:2});let t=e;return t})();export{m as RegisterComponent};

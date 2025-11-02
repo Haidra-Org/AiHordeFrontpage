@@ -5,28 +5,36 @@
     "image": "assets/img/guis/lucid-creations.png",
     "link": "https://dbzer0.itch.io/lucid-creations",
     "downloadButtonText": "Get {name}",
-    "categories": ["Desktop", "Web"]
+    "categories": ["Desktop", "Web"],
+    "domain": "image",
+    "platform": ["desktop", "web"]
   },
   {
     "name": "Artbot",
     "description": "One of the most popular web-based clients.",
     "image": "assets/img/guis/artbot.png",
     "link": "https://artbot.site",
-    "categories": "Web"
+    "categories": "Web",
+    "domain": "image",
+    "platform": ["web"]
   },
   {
     "name": "HordeNG",
     "description": "HordeNG aims to be very simple to use for beginners, while allowing the full set of options for advanced users.",
     "image": "assets/img/guis/horde-ng.png",
     "link": "https://horde-ng.org/generate",
-    "categories": "Web"
+    "categories": "Web",
+    "domain": "image",
+    "platform": ["web"]
   },
   {
     "name": "AI Scribbles",
     "description": "A simplified web image generator with handmade custom styles",
     "image": "assets/img/guis/ai-scribbles.png",
     "link": "https://www.aiscribbles.com/generate/",
-    "categories": "Web"
+    "categories": "Web",
+    "domain": "image",
+    "platform": ["web"]
   },
   {
     "name": "AI Painter",
@@ -34,7 +42,9 @@
     "image": "assets/img/guis/ai-painter.jpg",
     "link": "https://apps.apple.com/hk/app/%E6%A9%9F%E7%95%AB%E5%B8%AB-%E5%B0%88%E6%A5%AD%E7%9A%84ai%E7%B9%AA%E7%95%ABapp/id1644645946",
     "downloadButtonText": "Get {name}",
-    "categories": "iOS"
+    "categories": "iOS",
+    "domain": "image",
+    "platform": ["ios"]
   },
   {
     "name": "Aislingeach",
@@ -42,6 +52,8 @@
     "image": "assets/img/guis/aislingeach.png",
     "link": "https://github.com/amiantos/aislingeach",
     "downloadButtonText": "Get {name}",
-    "categories": "iOS"
+    "categories": "iOS",
+    "domain": "image",
+    "platform": ["ios"]
   }
 ]
