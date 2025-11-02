@@ -1,21 +1,10 @@
 <section class="section-primary">
   <div class="container-content-minimal">
-    <div class="grid-items">
-      <div class="text-secondary sm:text-lg">
-        <h2 class="mb-3 heading-section">
-          {{ "homepage_guis.title" | transloco }}
-        </h2>
-        <div class="card card-bg-primary">
-          <div class="p-4">
-            <p class="text-gray-700 dark:text-gray-300 mb-4">
-              {{ "homepage_guis.description" | transloco }}
-            </p>
-            <a href="/guis-and-tools" class="btn-purple inline-block">
-              {{ "homepage_guis.view_all_guis" | transloco }}
-            </a>
-          </div>
-        </div>
-      </div>
+    <div class="text-secondary sm:text-lg">
+      <h2 class="mb-3 heading-section">
+        {{ "homepage_guis.title" | transloco }}
+      </h2>
+      <app-beginner-header [showButton]="true" />
     </div>
   </div>
 </section>

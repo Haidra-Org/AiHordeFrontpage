@@ -4,9 +4,19 @@
       <h1 class="heading-hero">
         {{ "frequently_asked_questions" | transloco }}
       </h1>
-      <p class="text-description mt-4 max-w-2xl">
-        {{ "faq_subtitle" | transloco }}
-      </p>
+      <p
+        class="text-description mt-4 max-w-2xl"
+        [innerHTML]="
+          'faq_subtitle'
+            | transloco
+              : {
+                  discordLink:
+                    '<a href=&quot;https://discord.gg/3DxrhksKzn&quot; target=&quot;_blank&quot; class=&quot;font-semibold text-purple-600 dark:text-purple-400 hover:underline&quot;>' +
+                    ('faq_subtitle.discordLink' | transloco) +
+                    '</a>',
+                }
+        "
+      ></p>
     </div>
   </div>
 </section>
