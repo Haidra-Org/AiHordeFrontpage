@@ -31,6 +31,7 @@ export class FaqComponent implements OnInit {
     initialValue: new Map<string, FaqItem[]>() as SortedItems<FaqItem>,
   });
   public selectedFaq = signal<string | null>(null);
+  public collapsedSections = signal<Set<string>>(new Set());
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
@@ -42,5 +43,19 @@ export class FaqComponent implements OnInit {
     ])
       .pipe(map(([faq, app]) => `${faq} | ${app}`))
       .subscribe((title) => this.title.setTitle(title));
+  }
+
+  public toggleSection(sectionKey: string): void {
+    const collapsed = new Set(this.collapsedSections());
+    if (collapsed.has(sectionKey)) {
+      collapsed.delete(sectionKey);
+    } else {
+      collapsed.add(sectionKey);
+    }
+    this.collapsedSections.set(collapsed);
+  }
+
+  public isSectionCollapsed(sectionKey: string): boolean {
+    return this.collapsedSections().has(sectionKey);
   }
 }

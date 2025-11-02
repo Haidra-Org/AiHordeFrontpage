@@ -4,6 +4,9 @@
       <h1 class="heading-hero">
         {{ "frequently_asked_questions" | transloco }}
       </h1>
+      <p class="text-description mt-4 max-w-2xl">
+        {{ "faq_subtitle" | transloco }}
+      </p>
     </div>
   </div>
 </section>
@@ -11,58 +14,76 @@
 @if (faq()) {
   <section class="section-secondary">
     <div class="container-content">
-      <div class="max-w-screen-xl mx-auto">
-        <div
-          data-active-classes="bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-          data-inactive-classes="text-gray-500 dark:text-gray-400"
-        >
-          @for (
-            sectionItemPair of faq()! | keyvalue: NoSorterKeyValue;
-            track sectionItemPair
-          ) {
+      <div class="max-w-4xl mx-auto">
+        @for (
+          sectionItemPair of faq()! | keyvalue: NoSorterKeyValue;
+          track sectionItemPair
+        ) {
+          <div style="position: relative; padding-bottom: 1rem">
             @if (sectionItemPair.key !== "") {
-              <h2 class="mt-12 heading-section text-center">
-                {{ sectionItemPair.key }}
+              <h2
+                class="heading-section section-header-collapsible"
+                (click)="toggleSection(sectionItemPair.key)"
+              >
+                <span>{{ sectionItemPair.key }}</span>
+                <svg
+                  class="chevron-icon"
+                  [class.expanded]="!isSectionCollapsed(sectionItemPair.key)"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </h2>
-              <!-- todo make translatable -->
             }
 
-            @for (faqItem of sectionItemPair.value; track faqItem.question) {
-              <h3>
-                <button
-                  type="button"
-                  [class.text-gray-500]="selectedFaq() !== faqItem.question"
-                  [class.dark:text-gray-400]="
-                    selectedFaq() !== faqItem.question
-                  "
-                  [class.text-gray-900]="selectedFaq() === faqItem.question"
-                  [class.dark:text-white]="selectedFaq() === faqItem.question"
-                  [class.font-bold]="selectedFaq() === faqItem.question"
-                  class="faq-button"
-                  (click)="
-                    selectedFaq.set(
-                      selectedFaq() === faqItem.question
-                        ? null
-                        : faqItem.question
-                    )
-                  "
-                >
-                  <span>{{ faqItem.question }}</span>
-                  <inline-svg
-                    href="assets/img/faq-closed.svg"
-                    [class.rotate-180]="selectedFaq() === faqItem.question"
-                  />
-                </button>
-              </h3>
-              <div [class.hidden]="selectedFaq() !== faqItem.question">
-                <div class="py-5 border-b border-gray-200 dark:border-gray-700">
-                  <div [innerHTML]="faqItem.answer"></div>
-                  <!--                  <p class="mb-2 text-gray-500 dark:text-gray-400" [innerHTML]="faqItem.answer"></p>-->
-                </div>
+            @if (!isSectionCollapsed(sectionItemPair.key)) {
+              <div class="space-y-0">
+                @for (faqItem of sectionItemPair.value; track faqItem.question) {
+                  <div>
+                    <h3>
+                      <button
+                        type="button"
+                        [class.is-active]="selectedFaq() === faqItem.question"
+                        class="faq-question"
+                        [attr.aria-expanded]="selectedFaq() === faqItem.question"
+                        [attr.aria-controls]="'faq-answer-' + faqItem.question"
+                        (click)="
+                          selectedFaq.set(
+                            selectedFaq() === faqItem.question
+                              ? null
+                              : faqItem.question
+                          )
+                        "
+                      >
+                        <span class="text-left pr-4">{{ faqItem.question }}</span>
+                        <inline-svg
+                          href="assets/img/faq-closed.svg"
+                          class="faq-chevron"
+                        />
+                      </button>
+                    </h3>
+                    @if (selectedFaq() === faqItem.question) {
+                      <div
+                        class="faq-answer"
+                        [id]="'faq-answer-' + faqItem.question"
+                        role="region"
+                      >
+                        <div class="prose-content" [innerHTML]="faqItem.answer"></div>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
-          }
-        </div>
+          </div>
+        }
       </div>
     </div>
   </section>
