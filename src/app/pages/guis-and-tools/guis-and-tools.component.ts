@@ -23,6 +23,7 @@ import {
   DisplayItem,
 } from '../../components/item-list-section/item-list-section.component';
 import { EnumDisplayService } from '../../services/enum-display.service';
+import { BeginnerHeaderComponent } from '../../components/beginner-header/beginner-header.component';
 
 interface ExtendedItem extends GuiItem {
   itemType: 'gui-image' | 'gui-text' | 'tool';
@@ -38,7 +39,12 @@ interface ExtendedItem extends GuiItem {
 @Component({
   selector: 'app-guis-and-tools',
   standalone: true,
-  imports: [CommonModule, TranslocoModule, ItemListSectionComponent],
+  imports: [
+    CommonModule,
+    TranslocoModule,
+    ItemListSectionComponent,
+    BeginnerHeaderComponent,
+  ],
   templateUrl: './guis-and-tools.component.html',
   styleUrl: './guis-and-tools.component.css',
 })
@@ -60,7 +66,6 @@ export class GuisAndToolsComponent implements OnInit {
   public selectedCategories = signal<Set<string>>(new Set());
   public expandedRows = signal<Set<string>>(new Set());
   public collapsedSections = signal<Set<string>>(new Set());
-  public introExpanded = signal<boolean>(true); // Start expanded by default
   public showScrollToTop = signal<boolean>(false);
 
   // Combined items (GUIs and Tools)
@@ -334,14 +339,6 @@ export class GuisAndToolsComponent implements OnInit {
 
   public isSectionCollapsed(sectionName: string): boolean {
     return this.collapsedSections().has(sectionName);
-  }
-
-  public toggleIntro(): void {
-    this.introExpanded.set(!this.introExpanded());
-  }
-
-  public isIntroExpanded(): boolean {
-    return this.introExpanded();
   }
 
   public getButtonText(item: ExtendedItem): string {

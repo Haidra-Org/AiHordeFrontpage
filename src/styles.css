@@ -334,6 +334,218 @@
   color: rgb(156 163 175);
 }
 
+/* Intro paragraph text - emphasized secondary text for homepage intro */
+.text-intro {
+  max-width: 42rem;
+  margin-bottom: 1rem;
+  font-weight: 400;
+  color: rgb(107 114 128);
+}
+
+@media (min-width: theme("screens.md")) {
+  .text-intro {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .text-intro {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.dark .text-intro {
+  color: rgb(156 163 175);
+}
+
+/* Intro lead text - large, attention-grabbing intro text */
+.text-intro-lead {
+  max-width: 48rem;
+  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgb(55 65 81);
+}
+
+@media (min-width: theme("screens.md")) {
+  .text-intro-lead {
+    font-size: 1.375rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .text-intro-lead {
+    font-size: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+}
+
+.dark .text-intro-lead {
+  color: rgb(209 213 219);
+}
+
+/* Intro feature cards container */
+.intro-features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  max-width: 48rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: theme("screens.md")) {
+  .intro-features {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .intro-features {
+    gap: 1.5rem;
+  }
+}
+
+/* Intro feature card */
+.intro-feature-card {
+  position: relative;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgb(249 250 251) 0%, rgb(255 255 255) 100%);
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.75rem;
+  transition: all 250ms ease;
+  overflow: hidden;
+}
+
+.intro-feature-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 250ms ease;
+}
+
+.intro-feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  border-color: rgb(209 213 219);
+}
+
+.intro-feature-card:hover::before {
+  transform: scaleY(1);
+  transform-origin: top;
+}
+
+.dark .intro-feature-card {
+  background: linear-gradient(135deg, rgb(31 41 55) 0%, rgb(55 65 81) 100%);
+  border-color: rgb(55 65 81);
+}
+
+.dark .intro-feature-card:hover {
+  border-color: rgb(75 85 99);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4);
+}
+
+.dark .intro-feature-card::before {
+  background: linear-gradient(180deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+}
+
+/* Intro feature icon */
+.intro-feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dark .intro-feature-icon {
+  background: linear-gradient(135deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+}
+
+/* Intro feature title */
+.intro-feature-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+  margin-bottom: 0.5rem;
+}
+
+.dark .intro-feature-title {
+  color: rgb(243 244 246);
+}
+
+/* Intro feature text */
+.intro-feature-text {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgb(107 114 128);
+}
+
+.dark .intro-feature-text {
+  color: rgb(156 163 175);
+}
+
+/* Intro links section */
+.intro-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin-top: 2rem;
+}
+
+/* Intro link badge */
+.intro-link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgb(249 250 251);
+  border: 1px solid rgb(229 231 235);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(55 65 81);
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+.intro-link-badge:hover {
+  background-color: white;
+  border-color: rgb(147 51 234);
+  color: rgb(147 51 234);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgb(147 51 234 / 0.2);
+}
+
+.dark .intro-link-badge {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+  color: rgb(209 213 219);
+}
+
+.dark .intro-link-badge:hover {
+  background-color: rgb(55 65 81);
+  border-color: rgb(168 85 247);
+  color: rgb(168 85 247);
+  box-shadow: 0 4px 12px -2px rgb(168 85 247 / 0.2);
+}
+
 /* Primary text color */
 .text-primary {
   color: var(--color-text-primary);
@@ -604,6 +816,95 @@
 .dark .card-expanded {
   border-top-color: rgb(55 65 81);
   background-color: rgb(31 41 55);
+}
+
+/* Feature card base - clickable card with hover effects */
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  border-color: rgb(147 51 234);
+}
+
+.dark .feature-card {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.dark .feature-card:hover {
+  border-color: rgb(168 85 247);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4);
+}
+
+/* Feature card disabled state - no hover effects */
+.feature-card-disabled {
+  cursor: default;
+}
+
+.feature-card-disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgb(229 231 235);
+}
+
+.dark .feature-card-disabled:hover {
+  border-color: rgb(55 65 81);
+}
+
+/* Feature card icon base */
+.feature-card-icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: white;
+}
+
+/* Purple icon variant */
+.feature-card-icon-purple {
+  background-color: rgb(243 232 255);
+  color: rgb(147 51 234);
+}
+
+.dark .feature-card-icon-purple {
+  background-color: rgb(88 28 135);
+  color: rgb(216 180 254);
+}
+
+/* Blue icon variant */
+.feature-card-icon-blue {
+  background-color: rgb(219 234 254);
+  color: rgb(37 99 235);
+}
+
+.dark .feature-card-icon-blue {
+  background-color: rgb(30 58 138);
+  color: rgb(147 197 253);
+}
+
+/* Green icon variant */
+.feature-card-icon-green {
+  background-color: rgb(220 252 231);
+  color: rgb(21 128 61);
+}
+
+.dark .feature-card-icon-green {
+  background-color: rgb(22 101 52);
+  color: rgb(134 239 172);
 }
 
 /* =================================================================

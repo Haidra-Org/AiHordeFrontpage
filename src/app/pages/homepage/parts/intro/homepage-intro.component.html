@@ -1,66 +1,96 @@
 <section class="section-primary">
   <div class="container-page-header lg:grid-cols-12">
     <div class="place-center">
-      <h1 class="max-w-2xl heading-hero">
+      <h1 class="heading-hero">
         {{ "app_title" | transloco }}
       </h1>
-      <p
-        class="max-w-2xl mb-4 font-light text-gray-500 lg:mb-5 md:text-lg lg:text-xl dark:text-gray-400"
-      >
-        <span
-          [innerHTML]="
-            'service_description'
-              | transloco
-                : {
-                    serverLink:
-                      '<a href=&quot;https://github.com/Haidra-Org/AI-Horde&quot; target=&quot;_blank&quot;>' +
-                      ('service_description.serverLink' | transloco) +
-                      '</a>',
-                    imageWorkerLink:
-                      '<a href=&quot;https://github.com/Haidra-Org/horde-worker-reGen&quot; target=&quot;_blank&quot;>' +
-                      ('service_description.imageWorkerLink' | transloco) +
-                      '</a>',
-                    textWorkerLink:
-                      '<a href=&quot;https://github.com/Haidra-Org/AI-Horde-Worker&quot; target=&quot;_blank&quot;>' +
-                      ('service_description.textWorkerLink' | transloco) +
-                      '</a>',
-                    haidraLink:
-                      '<a href=&quot;https://haidra.net/&quot; target=&quot;_blank&quot;>' +
-                      ('service_description.haidraLink' | transloco) +
-                      '</a>',
-                    joinHordeLink:
-                      '<a href=&quot;https://github.com/Haidra-Org/AI-Horde/blob/main/README_StableHorde.md#joining-the-horde&quot; target=&quot;_blank&quot;>' +
-                      ('service_description.joinHordeLink' | transloco) +
-                      '</a>',
-                  }
-          "
-        ></span>
+
+      <!-- Lead paragraph with key message -->
+      <p class="text-intro-lead">
+        A crowdsourced distributed cluster of
+        <a
+          href="https://github.com/Haidra-Org/horde-worker-reGen"
+          target="_blank"
+          >{{ "service_description.imageWorkerLink" | transloco }}</a
+        >
+        and
+        <a
+          href="https://github.com/Haidra-Org/AI-Horde-Worker"
+          target="_blank"
+          >{{ "service_description.textWorkerLink" | transloco }}</a
+        >
+        for generating AI media.
       </p>
-      <p
-        class="max-w-2xl mb-4 font-light text-gray-500 lg:mb-5 md:text-lg lg:text-xl dark:text-gray-400"
-      >
-        <span
-          [innerHTML]="
-            'more_information'
-              | transloco
-                : {
-                    faqLink:
-                      '<a href=&quot;' +
-                      faqLink +
-                      '&quot;>' +
-                      ('more_information.faqLink' | transloco) +
-                      '</a>',
-                    haidraLink:
-                      '<a href=&quot;https://haidra.net/&quot; target=&quot;_blank&quot;>haidra.net</a>',
-                    developerBlogLink:
-                      '<a href=&quot;https://dbzer0.com/&quot; target=&quot;_blank&quot;>' +
-                      ('more_information.developerBlogLink' | transloco) +
-                      '</a>',
-                  }
-          "
-        ></span>
-      </p>
+
+      <!-- Feature cards grid -->
+      <div class="intro-features">
+        <div class="intro-feature-card">
+          <div class="intro-feature-icon">🎨</div>
+          <div class="intro-feature-title">Free & Open Source</div>
+          <div class="intro-feature-text">
+            Powered by volunteers running
+            <a
+              href="https://github.com/Haidra-Org/AI-Horde"
+              target="_blank"
+              >open source software</a
+            >
+            on their own hardware
+          </div>
+        </div>
+
+        <div class="intro-feature-card">
+          <div class="intro-feature-icon">🤝</div>
+          <div class="intro-feature-title">Community Driven</div>
+          <div class="intro-feature-text">
+            Join the
+            <a href="https://haidra.net/" target="_blank">Haidra</a> community
+            and contribute your resources
+          </div>
+        </div>
+
+        <div class="intro-feature-card">
+          <div class="intro-feature-icon">⚡</div>
+          <div class="intro-feature-title">Distributed Power</div>
+          <div class="intro-feature-text">
+            Harness the collective GPU power of the community for your
+            generations
+          </div>
+        </div>
+
+        <div class="intro-feature-card">
+          <div class="intro-feature-icon">🔓</div>
+          <div class="intro-feature-title">No Lock-in</div>
+          <div class="intro-feature-text">
+            Use any compatible client or build your own with our open APIs
+          </div>
+        </div>
+      </div>
+
+      <!-- Links section -->
+      <div class="intro-links">
+        <a [href]="faqLink" class="intro-link-badge">
+          <span>📚</span>
+          <span>{{ "more_information.faqLink" | transloco }}</span>
+        </a>
+        <a
+          href="https://github.com/Haidra-Org/AI-Horde/blob/main/README_StableHorde.md#joining-the-horde"
+          target="_blank"
+          class="intro-link-badge"
+        >
+          <span>🚀</span>
+          <span>{{ "service_description.joinHordeLink" | transloco }}</span>
+        </a>
+        <a href="https://discord.gg/3DxrhksKzn" target="_blank" class="intro-link-badge">
+          <span>💬</span>
+          <span>{{ "more_information.discordLink" | transloco }}</span>
+        </a>
+        <a href="https://dbzer0.com/" target="_blank" class="intro-link-badge">
+          <span>✍️</span>
+          <span>{{ "more_information.developerBlogLink" | transloco }}</span>
+        </a>
+      </div>
     </div>
+
     <div class="hidden lg:mt-0 lg:col-span-5 lg:flex">
       <img
         ngSrc="assets/img/front-image.png"
