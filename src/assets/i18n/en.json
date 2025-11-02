@@ -23,7 +23,7 @@
   "average_images.tooltip.line3": "Average images = megapixelsteps / 20",
   "tokens": "tokens",
   "stats.average_recent_performance_images.label": "Average recent performance",
-  "stats.average_recent_performance_images.value": "{{performance}} {{prefix}}{{unit}} per second",
+  "stats.average_recent_performance_images.value": "{{performance}} {{prefix}}{{unit}}average images per second",
   "stats.average_recent_performance_text.label": "Average recent performance",
   "stats.average_recent_performance_text.value": "{{performance}} {{prefix}}{{tokens}} per second",
   "stats.total_pixelsteps.label": "Total generated",

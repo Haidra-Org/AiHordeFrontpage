@@ -46,6 +46,7 @@
                 routerLink="/"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "home" | transloco }}</a
               >
             </li>
@@ -54,6 +55,7 @@
                 href="https://aihorde.net/register"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "register_account" | transloco }}</a
               >
             </li>
@@ -62,6 +64,7 @@
                 routerLink="/v2-transfer"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "transfer.title" | transloco }}</a
               >
             </li>
@@ -70,13 +73,15 @@
                 routerLink="/news"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "news" | transloco }}</a
               >
             </li>
             <li>
               <a
-                routerLink="/guis-and-tools"
+                routerLink="/guis"
                 class="block py-2 pl-3 pr-4 text-gray-700 rounded hover:bg-gray-100 lg:hover:bg-transparent lg:hover:text-purple-700 lg:p-0 dark:text-gray-400 lg:dark:hover:text-white dark:hover:bg-gray-700 dark:hover:text-white lg:dark:hover:bg-transparent dark:border-gray-700"
+                (click)="closeMobileMenu()"
                 >{{ "guis_and_tools" | transloco }}</a
               >
             </li>
@@ -85,6 +90,7 @@
                 routerLink="/faq"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "faq" | transloco }}</a
               >
             </li>
@@ -93,6 +99,7 @@
                 href="/api/"
                 class="block py-2 pl-3 pr-4 text-gray-500 bg-gray-400 rounded lg:bg-transparent lg:text-gray-500 lg:p-0 dark:text-white"
                 aria-current="page"
+                (click)="closeMobileMenu()"
                 >{{ "api" | transloco }}</a
               >
             </li>

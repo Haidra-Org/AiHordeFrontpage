@@ -14,15 +14,15 @@ export const routes: Routes = [
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),
   },
   {
-    path: 'guis-and-tools',
+    path: 'guis',
     loadComponent: () =>
       import('./pages/guis-and-tools/guis-and-tools.component').then(
         (c) => c.GuisAndToolsComponent,
       ),
   },
   {
-    path: 'guis',
-    redirectTo: 'guis-and-tools',
+    path: 'guis-and-tools',
+    redirectTo: 'guis',
     pathMatch: 'full',
   },
   {

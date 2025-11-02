@@ -1,11 +1,12 @@
 import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-beginner-header',
   standalone: true,
-  imports: [CommonModule, TranslocoModule],
+  imports: [CommonModule, RouterLink, TranslocoModule],
   templateUrl: './beginner-header.component.html',
   styleUrl: './beginner-header.component.css',
 })

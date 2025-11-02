@@ -412,7 +412,11 @@
 .intro-feature-card {
   position: relative;
   padding: 1.25rem;
-  background: linear-gradient(135deg, rgb(249 250 251) 0%, rgb(255 255 255) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(249 250 251) 0%,
+    rgb(255 255 255) 100%
+  );
   border: 1px solid rgb(229 231 235);
   border-radius: 0.75rem;
   transition: all 250ms ease;
@@ -1698,8 +1702,9 @@
 
 /* Prose code */
 .prose-content code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
   font-size: 0.875em;
   background-color: rgb(243 244 246);
   padding: 0.125rem 0.375rem;
@@ -1819,7 +1824,9 @@
   flex-shrink: 0;
   margin-left: 1rem;
   color: rgb(156 163 175);
-  transition: transform 200ms ease, color 200ms ease;
+  transition:
+    transform 200ms ease,
+    color 200ms ease;
 }
 
 .faq-question:hover .faq-chevron {

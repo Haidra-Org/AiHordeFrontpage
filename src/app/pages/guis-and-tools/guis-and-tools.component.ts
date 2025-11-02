@@ -269,7 +269,11 @@ export class GuisAndToolsComponent implements OnInit {
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
     // Show button after scrolling down 300px
-    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    const scrollPosition =
+      window.pageYOffset ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
     this.showScrollToTop.set(scrollPosition > 300);
   }
 

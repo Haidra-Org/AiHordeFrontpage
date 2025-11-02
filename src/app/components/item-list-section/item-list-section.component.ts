@@ -44,7 +44,7 @@ export interface DisplayItem {
 })
 export class ItemListSectionComponent {
   private readonly platformId = inject(PLATFORM_ID);
-  
+
   constructor(private enumDisplayService: EnumDisplayService) {
     // Set up IntersectionObserver when header element is available (browser only)
     effect(() => {
@@ -56,13 +56,13 @@ export class ItemListSectionComponent {
       }
     });
   }
-  
+
   // View child for the section header element
   readonly sectionHeader = viewChild<ElementRef<HTMLElement>>('sectionHeader');
-  
+
   // Signal to track if header is stuck
   readonly isStuck = signal(false);
-  
+
   // Inputs
   readonly items = input.required<DisplayItem[]>();
   readonly sectionName = input.required<string>();
@@ -192,11 +192,11 @@ export class ItemListSectionComponent {
 
   private setupStickyObserver(headerRef: ElementRef<HTMLElement>): void {
     const header = headerRef.nativeElement;
-    
+
     // Get the parent container
     const parent = header.parentElement;
     if (!parent) return;
-    
+
     // Create a sentinel element to detect when sticky activates
     // The sentinel should be positioned right where the header starts sticking
     const sentinel = document.createElement('div');
@@ -208,10 +208,10 @@ export class ItemListSectionComponent {
     sentinel.style.top = '0';
     sentinel.style.pointerEvents = 'none';
     sentinel.style.visibility = 'hidden';
-    
+
     // Insert sentinel at the beginning of the parent
     parent.insertBefore(sentinel, parent.firstChild);
-    
+
     // Observe the sentinel to detect when it leaves viewport (header becomes stuck)
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -221,13 +221,13 @@ export class ItemListSectionComponent {
           this.isStuck.set(!entry.isIntersecting);
         });
       },
-      { 
+      {
         threshold: [0],
         // Root margin set to detect when top edge crosses viewport top
         rootMargin: '0px 0px 0px 0px',
-      }
+      },
     );
-    
+
     observer.observe(sentinel);
   }
 }
