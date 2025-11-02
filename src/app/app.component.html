@@ -1,4 +1,4 @@
-<div class="wrapper" [class.dark]="true" (click)="closeMobileMenu()">
+<div class="wrapper" (click)="closeMobileMenu()">
   <header class="fixed w-full">
     <nav class="bg-white border-gray-200 py-2.5 dark:bg-gray-900">
       <div
@@ -18,7 +18,8 @@
             >{{ "app_title" | transloco }}</span
           >
         </a>
-        <div class="flex items-end lg:order-2">
+        <div class="flex items-end lg:order-2 gap-1">
+          <theme-toggle />
           <button
             data-collapse-toggle="mobile-menu-2"
             type="button"
@@ -111,10 +112,10 @@
 
   <router-outlet></router-outlet>
   <footer
+    class="dark:bg-gray-800 dark:has-[.footer-dark]:bg-gray-900"
     [class.bg-gray-50]="!darkFooter()"
-    [class.dark:bg-gray-800]="!darkFooter()"
     [class.bg-white]="darkFooter()"
-    [class.dark:bg-gray-900]="darkFooter()"
+    [class.footer-dark]="darkFooter()"
   >
     <div class="max-w-screen-xl p-4 py-4 mx-auto lg:py-8 md:p-6 lg:p-8">
       <div class="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-5">

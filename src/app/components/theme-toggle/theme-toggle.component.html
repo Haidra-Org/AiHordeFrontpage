@@ -1,0 +1,159 @@
+<div class="relative">
+  <!-- Toggle Button -->
+  <button
+    type="button"
+    class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+    [attr.aria-expanded]="isOpen()"
+    aria-label="Toggle theme menu"
+    (click)="toggleDropdown($event)"
+  >
+    <span class="sr-only">Toggle theme</span>
+
+    <!-- Sun icon (shown in dark mode) -->
+    @if (themeService.isDark()) {
+      <inline-svg
+        href="assets/img/sun.svg"
+        class="w-5 h-5"
+        aria-hidden="true"
+      />
+    }
+
+    <!-- Moon icon (shown in light mode) -->
+    @if (!themeService.isDark()) {
+      <inline-svg
+        href="assets/img/moon.svg"
+        class="w-5 h-5"
+        aria-hidden="true"
+      />
+    }
+  </button>
+
+  <!-- Dropdown Menu -->
+  @if (isOpen()) {
+    <div
+      class="absolute right-0 z-50 mt-2 w-48 bg-white rounded-lg shadow-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+      (click)="$event.stopPropagation()"
+    >
+      <ul
+        class="py-1 text-sm text-gray-700 dark:text-gray-200"
+        role="menu"
+        aria-orientation="vertical"
+        aria-labelledby="theme-menu-button"
+      >
+        <!-- Light Mode Option -->
+        <li>
+          <button
+            type="button"
+            class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
+            [class.bg-gray-100]="isSelected('light') && !themeService.isDark()"
+            [class.bg-gray-600]="isSelected('light') && themeService.isDark()"
+            role="menuitem"
+            (click)="selectTheme('light', $event)"
+          >
+            <span class="flex items-center gap-2">
+              <inline-svg
+                href="assets/img/sun.svg"
+                class="w-4 h-4"
+                aria-hidden="true"
+              />
+              <span>Light</span>
+            </span>
+            @if (isSelected('light')) {
+              <svg
+                class="w-4 h-4 text-purple-600 dark:text-purple-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            }
+          </button>
+        </li>
+
+        <!-- Dark Mode Option -->
+        <li>
+          <button
+            type="button"
+            class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
+            [class.bg-gray-100]="isSelected('dark') && !themeService.isDark()"
+            [class.bg-gray-600]="isSelected('dark') && themeService.isDark()"
+            role="menuitem"
+            (click)="selectTheme('dark', $event)"
+          >
+            <span class="flex items-center gap-2">
+              <inline-svg
+                href="assets/img/moon.svg"
+                class="w-4 h-4"
+                aria-hidden="true"
+              />
+              <span>Dark</span>
+            </span>
+            @if (isSelected('dark')) {
+              <svg
+                class="w-4 h-4 text-purple-600 dark:text-purple-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            }
+          </button>
+        </li>
+
+        <!-- System Mode Option -->
+        <li>
+          <button
+            type="button"
+            class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
+            [class.bg-gray-100]="
+              isSelected('system') && !themeService.isDark()
+            "
+            [class.bg-gray-600]="isSelected('system') && themeService.isDark()"
+            role="menuitem"
+            (click)="selectTheme('system', $event)"
+          >
+            <span class="flex items-center gap-2">
+              <svg
+                class="w-4 h-4"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>System</span>
+            </span>
+            @if (isSelected('system')) {
+              <svg
+                class="w-4 h-4 text-purple-600 dark:text-purple-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            }
+          </button>
+        </li>
+      </ul>
+    </div>
+  }
+</div>

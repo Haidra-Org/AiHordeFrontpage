@@ -1,0 +1,7 @@
+/* Theme toggle component styles */
+
+/* Ensure dropdown appears above other content */
+:host {
+  position: relative;
+  display: block;
+}

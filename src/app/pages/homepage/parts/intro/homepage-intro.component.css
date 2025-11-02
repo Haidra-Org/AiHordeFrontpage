@@ -1,1 +1,9 @@
-/* Empty file - no styles */
+/* Align image container to visually center with intro-features section */
+@media (min-width: 1024px) {
+  .image-align-features {
+    /* Offset the image down to align its vertical center with the intro-features grid
+       This accounts for the heading and lead text above the features */
+    align-self: center;
+    transform: translateY(3rem);
+  }
+}

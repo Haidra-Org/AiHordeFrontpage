@@ -4,6 +4,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { InlineSvgComponent } from './components/inline-svg/inline-svg.component';
 import { FooterColorService } from './services/footer-color.service';
+import { ThemeService } from './services/theme.service';
+import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
 
 @Component({
   selector: 'app-root',
@@ -14,12 +16,14 @@ import { FooterColorService } from './services/footer-color.service';
     TranslocoPipe,
     RouterLink,
     InlineSvgComponent,
+    ThemeToggleComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
 export class AppComponent implements OnInit {
   private readonly footerColor = inject(FooterColorService);
+  public readonly themeService = inject(ThemeService);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;
