@@ -55,14 +55,19 @@
 
             @if (!isSectionCollapsed(sectionItemPair.key)) {
               <div class="space-y-0">
-                @for (faqItem of sectionItemPair.value; track faqItem.question) {
+                @for (
+                  faqItem of sectionItemPair.value;
+                  track faqItem.question
+                ) {
                   <div>
                     <h3>
                       <button
                         type="button"
                         [class.is-active]="selectedFaq() === faqItem.question"
                         class="faq-question"
-                        [attr.aria-expanded]="selectedFaq() === faqItem.question"
+                        [attr.aria-expanded]="
+                          selectedFaq() === faqItem.question
+                        "
                         [attr.aria-controls]="'faq-answer-' + faqItem.question"
                         (click)="
                           selectedFaq.set(
@@ -72,7 +77,9 @@
                           )
                         "
                       >
-                        <span class="text-left pr-4">{{ faqItem.question }}</span>
+                        <span class="text-left pr-4">{{
+                          faqItem.question
+                        }}</span>
                         <inline-svg
                           href="assets/img/faq-closed.svg"
                           class="faq-chevron"
@@ -85,7 +92,10 @@
                         [id]="'faq-answer-' + faqItem.question"
                         role="region"
                       >
-                        <div class="prose-content" [innerHTML]="faqItem.answer"></div>
+                        <div
+                          class="prose-content"
+                          [innerHTML]="faqItem.answer"
+                        ></div>
                       </div>
                     }
                   </div>

@@ -13,6 +13,7 @@
 .tooltip-text {
   visibility: hidden;
   width: 300px;
+  max-width: calc(100vw - 2rem);
   background-color: #1f2937;
   color: #fff;
   text-align: left;
@@ -22,7 +23,7 @@
   z-index: 1000;
   bottom: 125%;
   left: 50%;
-  margin-left: -150px;
+  transform: translateX(-50%);
   opacity: 0;
   transition: opacity 0.3s ease;
   font-size: 0.75rem;
@@ -32,6 +33,21 @@
   white-space: normal;
 }
 
+/* Ensure tooltip stays within viewport */
+@media (max-width: 640px) {
+  .tooltip-text {
+    left: auto;
+    right: 0;
+    transform: none;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .tooltip-text::after {
+    left: auto;
+    right: 1rem;
+  }
+}
+
 .tooltip-text strong {
   color: #60a5fa;
   font-size: 0.8125rem;
@@ -39,7 +55,7 @@
 
 .tooltip-text .math-equation {
   color: #a78bfa;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "Courier New", Courier, monospace;
   font-size: 0.75rem;
   font-weight: 500;
 }
