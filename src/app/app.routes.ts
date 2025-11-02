@@ -14,6 +14,18 @@ export const routes: Routes = [
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),
   },
   {
+    path: 'guis-and-tools',
+    loadComponent: () =>
+      import('./pages/guis-and-tools/guis-and-tools.component').then(
+        (c) => c.GuisAndToolsComponent,
+      ),
+  },
+  {
+    path: 'guis',
+    redirectTo: 'guis-and-tools',
+    pathMatch: 'full',
+  },
+  {
     path: 'news',
     loadComponent: () =>
       import('./pages/news/news.component').then((c) => c.NewsComponent),

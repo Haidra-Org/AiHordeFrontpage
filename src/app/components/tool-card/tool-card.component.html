@@ -3,12 +3,10 @@
   [class.card-bg-primary]="!darkBackground()"
   [class.card-bg-secondary]="darkBackground()"
 >
-  <h3 class="mb-4 text-xl font-semibold">
+  <h3 class="heading-card">
     <a [href]="link()" target="_blank">{{ name() }}</a>
   </h3>
-  <p
-    class="text-secondary-lg description mb-2"
-  >
+  <p class="text-secondary sm:text-lg description mb-2">
     {{ description() }}
   </p>
 </div>

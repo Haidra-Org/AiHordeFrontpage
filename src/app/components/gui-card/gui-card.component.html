@@ -3,8 +3,8 @@
   [class.card-bg-primary]="!darkBackground()"
   [class.card-bg-secondary]="darkBackground()"
 >
-  <h3 class="mb-4 text-2xl font-semibold">{{ name() }}</h3>
-  <p class="text-secondary-lg description">
+  <h3 class="heading-card">{{ name() }}</h3>
+  <p class="text-secondary sm:text-lg description">
     {{ description() }}
   </p>
   <div class="flex items-baseline justify-center my-8">
@@ -16,11 +16,7 @@
     />
   </div>
 
-  <a
-    href="{{ link() }}"
-    target="_blank"
-    class="btn-purple"
-  >
+  <a href="{{ link() }}" target="_blank" class="btn-purple">
     @if (goToLinkName()) {
       {{ goToLinkName() }}
     } @else {

@@ -1,11 +1,7 @@
 <section class="section-primary">
-  <div
-    class="container-page-header"
-  >
+  <div class="container-page-header">
     <div class="place-center">
-      <h1
-        class="heading-hero"
-      >
+      <h1 class="heading-hero">
         <ng-container *transloco="let t">
           {{ t("transfer.title") }}
         </ng-container>
@@ -15,20 +11,16 @@
 </section>
 
 <section class="section-secondary">
-  <div
-    class="container-spaced"
-  >
+  <div class="container-spaced">
     <div class="grid-items">
-      <div class="text-secondary-lg">
+      <div class="text-secondary sm:text-lg">
         <p class="mb-6">
           <ng-container *transloco="let t">
             <!-- <transloco key="transfer.visit_old" [params]="{oldUrl: '/transfer'}" /> -->
             {{ t("transfer.visit_old_pre") }}
-            <a
-              href="/transfer"
-              class="link"
-              >{{ t("transfer.visit_old_link_text") }}</a
-            >
+            <a href="/transfer" class="link">{{
+              t("transfer.visit_old_link_text")
+            }}</a>
             <!-- ... and a trailing period-->
             .
           </ng-container>
@@ -39,11 +31,9 @@
           (ngSubmit)="transfer()"
         >
           <div class="mb-2">
-            <label
-              for="source_api_key"
-              class="form-label"
-              >{{ "transfer.source_api_key" | transloco }}</label
-            >
+            <label for="source_api_key" class="form-label">{{
+              "transfer.source_api_key" | transloco
+            }}</label>
             <input
               formControlName="apiKey"
               type="text"
@@ -77,11 +67,9 @@
             [class.mb-1]="educatorAccounts()"
             [class.mb-5]="!educatorAccounts()"
           >
-            <label
-              for="target_user"
-              class="form-label"
-              >{{ "transfer.target_user" | transloco }}</label
-            >
+            <label for="target_user" class="form-label">{{
+              "transfer.target_user" | transloco
+            }}</label>
             <input
               formControlName="targetUser"
               type="text"
@@ -114,10 +102,7 @@
                 >
               </p>
 
-              <select
-                formControlName="educatorAccount"
-                class="form-input"
-              >
+              <select formControlName="educatorAccount" class="form-input">
                 @for (user of educatorAccounts(); track user.id) {
                   <option [value]="null">
                     {{ "option.empty" | transloco }}
@@ -143,11 +128,9 @@
             [class.mb-5]="form.value.kudosAmountValidated !== false"
             [class.mb-1]="form.value.kudosAmountValidated === false"
           >
-            <label
-              for="kudos_amount"
-              class="form-label"
-              >{{ "transfer.kudos_amount" | transloco }}</label
-            >
+            <label for="kudos_amount" class="form-label">{{
+              "transfer.kudos_amount" | transloco
+            }}</label>
             <input
               formControlName="kudosAmount"
               type="number"

@@ -1,28 +1,20 @@
 @if (tools()) {
   <section class="section-primary">
-    <div
-      class="container-spaced-sm"
-    >
+    <div class="container-content-sm space-y-8 lg:space-y-12">
       <div class="grid-items">
-        <div class="text-secondary-lg">
-          <h2
-            class="mb-6 heading-section"
-          >
+        <div class="text-secondary sm:text-lg">
+          <h2 class="mb-4 heading-section">
             <ng-container *transloco="let t">
               {{ t("tools") }}
             </ng-container>
           </h2>
 
           @for (pair of tools()! | keyvalue: NoSorterKeyValue; track pair) {
-            <h3
-              class="heading-subsection"
-            >
+            <h3 class="heading-subsection">
               {{ pair.key }}
             </h3>
             <div class="divider-section">
-              <div
-                class="grid-cards"
-              >
+              <div class="grid-cards">
                 @for (tool of pair.value; track tool.name) {
                   <div class="flex">
                     <app-tool-card
