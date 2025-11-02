@@ -1,1 +1,71 @@
-/* Empty file - no styles */
+/* Tooltip styles for average images explanation */
+.tooltip-wrapper {
+  position: relative;
+  display: inline;
+  margin-left: 0.125rem;
+}
+
+.dotted-underline {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  width: 300px;
+  background-color: #1f2937;
+  color: #fff;
+  text-align: left;
+  border-radius: 6px;
+  padding: 10px 14px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -150px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  white-space: normal;
+}
+
+.tooltip-text strong {
+  color: #60a5fa;
+  font-size: 0.8125rem;
+}
+
+.tooltip-text .math-equation {
+  color: #a78bfa;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.tooltip-wrapper:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Dark mode support */
+:host-context(.dark) .tooltip-text {
+  background-color: #374151;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+:host-context(.dark) .tooltip-text::after {
+  border-color: #374151 transparent transparent transparent;
+}
