@@ -8,7 +8,6 @@ import { TranslatorService } from '../../services/translator.service';
 import { HomepageQuickstartComponent } from './parts/quickstart/homepage-quickstart.component';
 import { HomepageGuisComponent } from './parts/guis/homepage-guis.component';
 import { FooterColorService } from '../../services/footer-color.service';
-import { HomepageToolsComponent } from './parts/tools/homepage-tools.component';
 
 @Component({
   selector: 'app-homepage',
@@ -20,7 +19,6 @@ import { HomepageToolsComponent } from './parts/tools/homepage-tools.component';
     HomepageStatsComponent,
     HomepageQuickstartComponent,
     HomepageGuisComponent,
-    HomepageToolsComponent,
   ],
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.css',

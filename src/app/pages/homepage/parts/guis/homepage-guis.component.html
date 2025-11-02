@@ -1,56 +1,21 @@
-@if (guis()) {
-  @for (
-    superTypeGuisPair of guis()! | keyvalue: NoSorterKeyValue;
-    track topmostIndex;
-    let topmostIndex = $index
-  ) {
-    <section
-      [class.bg-white]="topmostIndex % 2 === 0"
-      [class.dark:bg-gray-900]="topmostIndex % 2 === 0"
-      [class.bg-gray-50]="topmostIndex % 2 !== 0"
-      [class.dark:bg-gray-800]="topmostIndex % 2 !== 0"
-    >
-      <div class="container-content-sm">
-        <div class="grid-items">
-          <div class="text-secondary-lg">
-            <h2
-              class="mb-6 heading-section"
-            >
-              {{ superTypeGuisPair.key }}
-            </h2>
-            @for (
-              categoryItemsPair of superTypeGuisPair.value
-                | keyvalue: NoSorterKeyValue;
-              track categoryItemsPair
-            ) {
-              <h3
-                class="heading-subsection"
-              >
-                {{ categoryItemsPair.key }}
-              </h3>
-              <div class="divider-section">
-                <div
-                  class="grid-cards"
-                >
-                  @for (gui of categoryItemsPair.value; track gui.name) {
-                    <div class="flex">
-                      <app-gui-card
-                        class="flex-1"
-                        [name]="gui.name"
-                        [description]="gui.description"
-                        [image]="gui.image"
-                        [link]="gui.link"
-                        [goToLinkName]="gui.downloadButtonText ?? null"
-                        [darkBackground]="topmostIndex % 2 !== 0"
-                      />
-                    </div>
-                  }
-                </div>
-              </div>
-            }
+<section class="bg-white dark:bg-gray-900">
+  <div class="container-content-sm">
+    <div class="grid-items">
+      <div class="text-secondary sm:text-lg">
+        <h2 class="mb-4 heading-section">
+          {{ "homepage_guis.title" | transloco }}
+        </h2>
+        <div class="card card-bg-primary">
+          <div class="p-6">
+            <p class="text-gray-700 dark:text-gray-300 mb-6">
+              {{ "homepage_guis.description" | transloco }}
+            </p>
+            <a href="/guis-and-tools" class="btn-purple inline-block">
+              {{ "homepage_guis.view_all_guis" | transloco }}
+            </a>
           </div>
         </div>
       </div>
-    </section>
-  }
-}
+    </div>
+  </div>
+</section>

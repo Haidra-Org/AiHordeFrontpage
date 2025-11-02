@@ -10,7 +10,7 @@
   --color-brand-purple-hover: #7e22ce;
   --color-brand-blue: #1d4ed8;
   --color-brand-blue-hover: #1e40af;
-  
+
   /* Semantic Colors - Light Mode */
   --color-text-primary: rgb(17 24 39);
   --color-text-secondary: rgb(107 114 128);
@@ -18,17 +18,19 @@
   --color-bg-secondary: rgb(249 250 251);
   --color-border-primary: rgb(229 231 235);
   --color-border-secondary: rgb(243 244 246);
-  
+
   /* Container & Spacing */
   --spacing-container-padding: 1.5rem;
   --spacing-container-padding-mobile: 1rem;
   --max-width-container: 80rem;
-  
+
   /* Custom Breakpoint */
   --breakpoint-3xl: 120rem;
-}
 
-/* =================================================================
+  /* Navigation Bar Heights (including border) */
+  --nav-height-mobile: 48px;
+  --nav-height-desktop: 55px;
+} /* =================================================================
    REUSABLE SECTION STYLES
    ================================================================= */
 
@@ -60,111 +62,119 @@
   max-width: var(--max-width-container);
   padding-left: var(--spacing-container-padding-mobile);
   padding-right: var(--spacing-container-padding-mobile);
-  padding-top: 5rem;
-  padding-bottom: 2rem;
+  padding-top: 3rem;
+  padding-bottom: 1.5rem;
   margin-left: auto;
   margin-right: auto;
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .container-page-header {
     gap: 2rem;
-    padding-top: 7rem;
-    padding-bottom: 4rem;
+    padding-top: 4rem;
+    padding-bottom: 2rem;
   }
 }
 
-@media (min-width: theme('screens.xl')) {
+@media (min-width: theme("screens.xl")) {
   .container-page-header {
     gap: 0;
+  }
+}
+
+/* Centered content box - constrained width, centered */
+.container-centered-md {
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-centered-md {
+    margin-bottom: 3rem;
+  }
+}
+
+/* Content wrapper with max-width and padding */
+.container-page-content {
+  max-width: 80rem;
+  padding: 2rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-page-content {
+    padding: 4rem 1.5rem;
   }
 }
 
 /* Content container */
 .container-content {
   max-width: var(--max-width-container);
-  padding: 2rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme('screens.lg')) {
-  .container-content {
-    padding: 6rem var(--spacing-container-padding);
-  }
-}
-
-/* Reduced padding content container */
-.container-content-sm {
-  max-width: var(--max-width-container);
   padding: 1.5rem var(--spacing-container-padding-mobile);
   margin-left: auto;
   margin-right: auto;
 }
 
-@media (min-width: theme('screens.lg')) {
-  .container-content-sm {
+@media (min-width: theme("screens.lg")) {
+  .container-content {
     padding: 3rem var(--spacing-container-padding);
   }
 }
 
-/* Spaced content container */
+/* Reduced padding content container - use container-content with custom padding utilities */
+.container-content-sm {
+  max-width: var(--max-width-container);
+  padding: 1rem var(--spacing-container-padding-mobile);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-content-sm {
+    padding: 2rem var(--spacing-container-padding);
+  }
+}
+
+/* Spaced content container - prefer using container-content with space-y utilities */
 .container-spaced {
   max-width: var(--max-width-container);
-  padding: 2rem var(--spacing-container-padding-mobile);
+  padding: 1.5rem var(--spacing-container-padding-mobile);
   margin-left: auto;
   margin-right: auto;
 }
 
 .container-spaced > * + * {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .container-spaced {
-    padding: 6rem var(--spacing-container-padding);
-  }
-  .container-spaced > * + * {
-    margin-top: 5rem;
-  }
-}
-
-/* Reduced spaced content container */
-.container-spaced-sm {
-  max-width: var(--max-width-container);
-  padding: 1.5rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.container-spaced-sm > * + * {
-  margin-top: 3rem;
-}
-
-@media (min-width: theme('screens.lg')) {
-  .container-spaced-sm {
     padding: 3rem var(--spacing-container-padding);
   }
-  .container-spaced-sm > * + * {
-    margin-top: 5rem;
+  .container-spaced > * + * {
+    margin-top: 3rem;
   }
 }
 
 /* Standard grid container for items */
 .grid-items {
   align-items: center;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .grid-items {
     display: grid;
   }
 }
 
-@media (min-width: theme('screens.xl')) {
+@media (min-width: theme("screens.xl")) {
   .grid-items {
-    gap: 4rem;
+    gap: 2.5rem;
   }
 }
 
@@ -174,26 +184,57 @@
 
 /* Hero heading (h1) */
 .heading-hero {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-size: 2.25rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.025em;
 }
 
-@media (min-width: theme('screens.md')) {
+@media (min-width: theme("screens.md")) {
   .heading-hero {
     font-size: 3rem;
   }
 }
 
-@media (min-width: theme('screens.xl')) {
+@media (min-width: theme("screens.xl")) {
   .heading-hero {
     font-size: 3.75rem;
   }
 }
 
 .dark .heading-hero {
+  color: white;
+}
+
+/* Page title - large title with margin */
+.heading-page-title {
+  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-page-title {
+  color: white;
+}
+
+/* Card heading - h3 for card components */
+.heading-card {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Card heading item - h3 for list items */
+.heading-item {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-item {
   color: white;
 }
 
@@ -209,22 +250,9 @@
   color: white;
 }
 
-/* Section heading with margin */
-.heading-section-mb {
-  margin-bottom: 1.5rem;
-  font-size: 1.875rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-  color: var(--color-text-primary);
-}
-
-.dark .heading-section-mb {
-  color: white;
-}
-
-/* Large section heading (h2) */
+/* Large section heading (h2) - can use heading-section with mb-4 utility */
 .heading-section-lg {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -237,7 +265,7 @@
 
 /* Subsection heading (h3) */
 .heading-subsection {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -267,7 +295,7 @@
    TEXT STYLES
    ================================================================= */
 
-/* Secondary text color */
+/* Secondary text color - use with sm:text-lg for larger variant */
 .text-secondary {
   color: var(--color-text-secondary);
 }
@@ -276,36 +304,19 @@
   color: rgb(156 163 175);
 }
 
-/* Stat text with icon */
-.text-stat {
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--color-text-primary);
+/* Description text - light secondary text */
+.text-description {
+  font-weight: 300;
+  color: rgb(107 114 128);
 }
 
-.dark .text-stat {
-  color: white;
-}
-
-/* List item with icon layout */
-.list-item-with-icon {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-/* Secondary text with large size */
-.text-secondary-lg {
-  color: var(--color-text-secondary);
-}
-
-@media (min-width: theme('screens.sm')) {
-  .text-secondary-lg {
-    font-size: 1.125rem;
+@media (min-width: theme("screens.sm")) {
+  .text-description {
+    font-size: 1.25rem;
   }
 }
 
-.dark .text-secondary-lg {
+.dark .text-description {
   color: rgb(156 163 175);
 }
 
@@ -342,6 +353,57 @@
 
 .dark .form-label {
   color: white;
+}
+
+/* Filter label - used in filter sections */
+.filter-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(17 24 39);
+}
+
+.dark .filter-label {
+  color: white;
+}
+
+/* Checkbox input - standard form checkbox */
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  color: rgb(37 99 235);
+  background-color: rgb(243 244 246);
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.25rem;
+}
+
+.checkbox-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(191 219 254);
+  border-color: rgb(37 99 235);
+}
+
+.dark .checkbox-input {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  box-shadow: 0 0 0 0 rgb(31 41 55);
+}
+
+.dark .checkbox-input:focus {
+  box-shadow: 0 0 0 2px rgb(30 58 138);
+}
+
+/* Checkbox label - label next to checkbox */
+.checkbox-label {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(17 24 39);
+  cursor: pointer;
+}
+
+.dark .checkbox-label {
+  color: rgb(209 213 219);
 }
 
 /* Form input field */
@@ -461,7 +523,7 @@
   contain: layout style;
 }
 
-@media (min-width: theme('screens.xl')) {
+@media (min-width: theme("screens.xl")) {
   .card {
     padding: 2rem;
   }
@@ -490,6 +552,46 @@
   background-color: rgb(17 24 39);
 }
 
+/* Expandable card item - used in lists */
+.card-expandable {
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+}
+
+.dark .card-expandable {
+  border-color: rgb(55 65 81);
+}
+
+/* Card row clickable - interactive card row */
+.card-row-clickable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.card-row-clickable:hover {
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-row-clickable:hover {
+  background-color: rgb(31 41 55);
+}
+
+/* Card expanded section - details section */
+.card-expanded {
+  border-top: 1px solid rgb(229 231 235);
+  padding: 1rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-expanded {
+  border-top-color: rgb(55 65 81);
+  background-color: rgb(31 41 55);
+}
+
 /* =================================================================
    LINK STYLES
    ================================================================= */
@@ -505,6 +607,24 @@
 
 .dark .link {
   color: rgb(59 130 246);
+}
+
+/* Link button small - used for filter actions */
+.link-btn-sm {
+  font-size: 0.75rem;
+  color: rgb(37 99 235);
+}
+
+.link-btn-sm:hover {
+  color: rgb(29 78 216);
+}
+
+.dark .link-btn-sm {
+  color: rgb(96 165 250);
+}
+
+.dark .link-btn-sm:hover {
+  color: rgb(147 197 253);
 }
 
 /* =================================================================
@@ -543,14 +663,14 @@
   gap: 1rem;
 }
 
-@media (min-width: theme('screens.md')) {
+@media (min-width: theme("screens.md")) {
   .grid-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1.5rem;
   }
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .grid-cards {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2rem;
@@ -564,13 +684,13 @@
   gap: 1.5rem;
 }
 
-@media (min-width: theme('screens.md')) {
+@media (min-width: theme("screens.md")) {
   .grid-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .grid-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 2rem;
@@ -587,7 +707,7 @@
   place-self: center;
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .place-center {
     grid-column: span 7 / span 7;
   }
@@ -605,12 +725,12 @@
 .divider-section {
   border-top: 1px solid;
   max-width: var(--max-width-container);
-  padding: 1.5rem var(--spacing-container-padding-mobile);
+  padding: 1rem var(--spacing-container-padding-mobile);
   margin-left: auto;
   margin-right: auto;
 }
 
-@media (min-width: theme('screens.lg')) {
+@media (min-width: theme("screens.lg")) {
   .divider-section {
     padding-left: var(--spacing-container-padding);
     padding-right: var(--spacing-container-padding);
@@ -647,6 +767,497 @@
   50% {
     opacity: 0.5;
   }
+}
+
+/* Badge base - for tags and labels */
+.badge-base {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: rgb(219 234 254);
+  color: rgb(30 64 175);
+}
+
+.dark .badge-primary {
+  background-color: rgb(30 58 138);
+  color: rgb(147 197 253);
+}
+
+.badge-secondary {
+  background-color: rgb(220 252 231);
+  color: rgb(22 101 52);
+}
+
+.dark .badge-secondary {
+  background-color: rgb(20 83 45);
+  color: rgb(134 239 172);
+}
+
+.badge-info {
+  background-color: rgb(224 242 254);
+  color: rgb(7 89 133);
+}
+
+.dark .badge-info {
+  background-color: rgb(12 74 110);
+  color: rgb(125 211 252);
+}
+
+.badge-warning {
+  background-color: rgb(254 243 199);
+  color: rgb(133 77 14);
+}
+
+.dark .badge-warning {
+  background-color: rgb(120 53 15);
+  color: rgb(253 224 71);
+}
+
+.badge-success {
+  background-color: rgb(220 252 231);
+  color: rgb(21 128 61);
+}
+
+.dark .badge-success {
+  background-color: rgb(22 101 52);
+  color: rgb(134 239 172);
+}
+
+.badge-danger {
+  background-color: rgb(254 226 226);
+  color: rgb(153 27 27);
+}
+
+.dark .badge-danger {
+  background-color: rgb(127 29 29);
+  color: rgb(252 165 165);
+}
+
+.badge-purple {
+  background-color: rgb(243 232 255);
+  color: rgb(107 33 168);
+}
+
+.dark .badge-purple {
+  background-color: rgb(88 28 135);
+  color: rgb(216 180 254);
+}
+
+.badge-pink {
+  background-color: rgb(252 231 243);
+  color: rgb(157 23 77);
+}
+
+.dark .badge-pink {
+  background-color: rgb(131 24 67);
+  color: rgb(249 168 212);
+}
+
+.badge-indigo {
+  background-color: rgb(224 231 255);
+  color: rgb(55 48 163);
+}
+
+.dark .badge-indigo {
+  background-color: rgb(55 48 163);
+  color: rgb(199 210 254);
+}
+
+.badge-teal {
+  background-color: rgb(204 251 241);
+  color: rgb(17 94 89);
+}
+
+.dark .badge-teal {
+  background-color: rgb(19 78 74);
+  color: rgb(153 246 228);
+}
+
+/* Filter container with scrollable content */
+.filter-scroll-container {
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.5rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .filter-scroll-container {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+}
+
+/* Filter header - label and action button */
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+/* =================================================================
+   TABLE/LIST ITEM STYLES
+   ================================================================= */
+
+/* Table header row - desktop only */
+.table-header-row {
+  display: none;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: rgb(249 250 251);
+  border-radius: 0.5rem;
+  border: 1px solid rgb(229 231 235);
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 0.75fr 1fr auto;
+  }
+}
+
+.dark .table-header-row {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+/* Table header cell label */
+.table-header-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(75 85 99);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark .table-header-label {
+  color: rgb(156 163 175);
+}
+
+/* Table row - base styles for item rows */
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto auto;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+  background-color: white;
+}
+
+.table-row:hover {
+  background-color: rgb(249 250 251);
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-row {
+    grid-template-columns: 2fr 1fr 0.75fr 1fr auto;
+    grid-template-rows: auto;
+    gap: 1rem;
+  }
+}
+
+.dark .table-row {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.dark .table-row:hover {
+  background-color: rgb(55 65 81 / 0.5);
+}
+
+/* Table cell - name and tags column */
+.table-cell-name {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-cell-name {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* Table cell - metadata column (function, domain, platform) */
+.table-cell-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Position metadata cells in grid on mobile */
+.table-cell-meta:nth-of-type(2) {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+
+.table-cell-meta:nth-of-type(3) {
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
+}
+
+.table-cell-meta:nth-of-type(4) {
+  grid-column: 1 / 2;
+  grid-row: 4 / 5;
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-cell-meta {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+
+  .table-cell-meta:nth-of-type(2),
+  .table-cell-meta:nth-of-type(3),
+  .table-cell-meta:nth-of-type(4) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* Mobile label for table cells */
+.table-cell-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgb(107 114 128);
+  margin-bottom: 0;
+  margin-right: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-cell-label {
+    display: none;
+  }
+}
+
+.dark .table-cell-label {
+  color: rgb(156 163 175);
+}
+
+/* Table actions column */
+.table-cell-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  min-width: auto;
+  grid-column: 2 / 3;
+  grid-row: 1 / 5;
+}
+
+@media (min-width: theme("screens.md")) {
+  .table-cell-actions {
+    flex-direction: row;
+    justify-content: center;
+    grid-column: auto;
+    grid-row: auto;
+    min-width: 120px;
+  }
+}
+
+/* Non-sticky collapsible header button (for intro sections) */
+.collapsible-header-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 200ms ease;
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.collapsible-header-button:hover {
+  color: rgb(147 51 234);
+}
+
+.dark .collapsible-header-button:hover {
+  color: rgb(168 85 247);
+}
+
+/* Sticky collapsible section header (for table sections) */
+.section-header-collapsible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 200ms ease;
+  position: sticky;
+  top: var(--nav-height-mobile);
+  z-index: 30;
+  background-color: white;
+  padding: 0.75rem 1rem;
+  margin: -0.75rem -1rem 0.75rem -1rem;
+  border-radius: 0.5rem;
+}
+
+/* Desktop - use desktop navbar height */
+@media (min-width: 768px) {
+  .section-header-collapsible {
+    top: var(--nav-height-desktop);
+  }
+}
+
+/* Mobile-specific margin adjustments for full-width appearance */
+@media (max-width: 767px) {
+  .section-header-collapsible {
+    /* Ensure background extends fully on mobile */
+    margin-left: calc(-1 * var(--spacing-container-padding-mobile));
+    margin-right: calc(-1 * var(--spacing-container-padding-mobile));
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+  }
+}
+
+/* Add shadow when sticky (appears after scrolling) */
+.section-header-collapsible::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(229 231 235),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.section-header-collapsible.is-stuck::after {
+  opacity: 1;
+}
+
+.section-header-collapsible:hover {
+  color: rgb(147 51 234);
+}
+
+.dark .section-header-collapsible {
+  background-color: rgb(17 24 39);
+}
+
+.dark .section-header-collapsible::after {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(55 65 81),
+    transparent
+  );
+}
+
+.dark .section-header-collapsible:hover {
+  color: rgb(168 85 247);
+}
+
+/* Chevron icon for collapsible sections */
+.chevron-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* Small chevron icon for expandable rows */
+.chevron-icon-sm {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  color: rgb(107 114 128);
+  transition: transform 200ms ease;
+}
+
+.chevron-icon-sm.expanded {
+  transform: rotate(180deg);
+}
+
+.dark .chevron-icon-sm {
+  color: rgb(156 163 175);
+}
+
+/* Expanded detail panel */
+.expanded-detail-panel {
+  border-top: 1px solid rgb(229 231 235);
+  padding: 1rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .expanded-detail-panel {
+  border-top-color: rgb(55 65 81);
+  background-color: rgb(55 65 81 / 0.3);
+}
+
+/* Detail grid - 2 column layout for expanded details */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: theme("screens.md")) {
+  .detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Detail image container */
+.detail-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-image img {
+  max-width: 100%;
+  height: auto;
+  max-height: 300px;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Detail text content */
+.detail-text {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: rgb(55 65 81);
+}
+
+.dark .detail-text {
+  color: rgb(209 213 219);
 }
 
 /* =================================================================
@@ -753,4 +1364,61 @@ p a:hover,
 
 .text-red {
   color: red;
+}
+
+/* =================================================================
+   SCROLL TO TOP BUTTON
+   ================================================================= */
+
+.scroll-to-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  z-index: 50;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(147 51 234);
+  color: white;
+  border-radius: 9999px;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transition: all 200ms ease;
+  border: none;
+  cursor: pointer;
+  animation: fadeIn 200ms ease-in;
+}
+
+.scroll-to-top-btn:hover {
+  background-color: rgb(126 34 206);
+  transform: translateY(-2px);
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.scroll-to-top-btn:active {
+  transform: translateY(0);
+}
+
+.dark .scroll-to-top-btn {
+  background-color: rgb(168 85 247);
+}
+
+.dark .scroll-to-top-btn:hover {
+  background-color: rgb(147 51 234);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

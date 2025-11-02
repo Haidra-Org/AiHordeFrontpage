@@ -1,10 +1,8 @@
 <section class="section-secondary">
   <div class="container-content">
     <div class="grid-items">
-      <div class="text-secondary-lg">
-        <h2
-          class="mb-5 heading-section-lg"
-        >
+      <div class="text-secondary sm:text-lg">
+        <h2 class="mb-3 heading-section-lg">
           {{ "quickstart" | transloco }}
         </h2>
 
@@ -12,12 +10,10 @@
           class="mb-4"
           [innerHTML]="'quickstart.register_account' | transloco"
         ></p>
+
         <ul class="space-y-2 underline-links">
           <li class="flex space-x-3">
-            <inline-svg
-              href="assets/img/li-checkbox.svg"
-              class="icon-sm"
-            />
+            <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
             <span
               class="text-base"
               [innerHTML]="
@@ -30,10 +26,7 @@
             ></span>
           </li>
           <li class="flex space-x-3">
-            <inline-svg
-              href="assets/img/li-checkbox.svg"
-              class="icon-sm"
-            />
+            <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
             <span
               class="text-base"
               [innerHTML]="
@@ -50,6 +43,36 @@
             >
             </span>
           </li>
+          <!--Frontend Call-to-Action -->
+          <br />
+          <div
+            class="mb-6 p-4 bg-white dark:bg-gray-800 border-2 border-purple-500 dark:border-purple-400 rounded-lg"
+          >
+            <h3
+              class="text-lg font-semibold mb-2 text-gray-900 dark:text-white"
+            >
+              {{ "quickstart.try_frontend_title" | transloco }}
+            </h3>
+            <p
+              class="mb-3 text-base text-gray-700 dark:text-gray-300"
+              [innerHTML]="'quickstart.try_frontend_description' | transloco"
+            ></p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <a
+                href="https://artbot.site"
+                target="_blank"
+                class="btn-purple inline-flex items-center justify-center"
+              >
+                {{ "quickstart.try_artbot_button" | transloco }}
+              </a>
+              <a
+                href="/guis-and-tools"
+                class="btn-primary inline-flex items-center justify-center"
+              >
+                {{ "quickstart.explore_all_frontends" | transloco }}
+              </a>
+            </div>
+          </div>
         </ul>
       </div>
     </div>

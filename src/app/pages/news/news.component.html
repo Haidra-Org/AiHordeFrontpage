@@ -1,9 +1,7 @@
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
-      <h1
-        class="heading-hero"
-      >
+      <h1 class="heading-hero">
         <ng-container *transloco="let t">
           {{ t("latest_news.title") }}
         </ng-container>
@@ -15,7 +13,7 @@
 <section class="section-secondary">
   <div class="container-content">
     <div class="grid-items">
-      <div class="text-secondary-lg">
+      <div class="text-secondary sm:text-lg">
         @for (newsItem of news(); track newsItem.title) {
           <div class="mb-6">
             <h3 class="mb-3 heading-subsection">
