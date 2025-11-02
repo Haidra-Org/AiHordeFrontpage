@@ -57,7 +57,7 @@ export const routes: Routes = [
       import('./pages/terms/terms.component').then((c) => c.TermsComponent),
   },
   {
-    path: 'transfer-v2',
+    path: 'v2-transfer',
     loadComponent: () =>
       import('./pages/transfer/transfer.component').then(
         (c) => c.TransferComponent,
