@@ -1,6 +1,12 @@
 @import "tailwindcss";
 
 /* =================================================================
+   DARK MODE CONFIGURATION
+   ================================================================= */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =================================================================
    TAILWIND V4 THEME CONFIGURATION
    ================================================================= */
 
@@ -391,7 +397,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 1rem;
-  max-width: 48rem;
+  max-width: 42rem;
   margin-bottom: 2rem;
 }
 
