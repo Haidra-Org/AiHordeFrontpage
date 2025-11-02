@@ -1,0 +1,1 @@
+import{Hb as p,Ya as o,rb as s,sb as i}from"./chunk-NHSVOF7I.js";var m=(()=>{let e=class e{};e.\u0275fac=function(n){return new(n||e)},e.\u0275cmp=o({type:e,selectors:[["app-sponsors"]],decls:2,vars:0,template:function(n,a){n&1&&(s(0,"p"),p(1,"sponsors works!"),i())},encapsulation:2});let t=e;return t})();export{m as SponsorsComponent};
