@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ItemType, Domain, Platform, FunctionType } from '../types/item-types';
+import { ItemType, Domain, Platform, FunctionKind } from '../types/item-types';
 
 /**
  * Configuration for how an enum value should be displayed
@@ -60,6 +60,16 @@ export class EnumDisplayService {
       translationKey: 'tools.tool',
       badgeClass: 'badge-warning',
     },
+    [ItemType.RESOURCE]: {
+      label: 'Resource',
+      translationKey: 'resources.resource',
+      badgeClass: 'badge-teal',
+    },
+    [ItemType.DATASET]: {
+      label: 'Dataset',
+      translationKey: 'datasets.dataset',
+      badgeClass: 'badge-purple',
+    },
   };
 
   /**
@@ -74,10 +84,6 @@ export class EnumDisplayService {
       label: 'Image',
       badgeClass: 'badge-purple',
     },
-    [Domain.BOTH]: {
-      label: 'Both',
-      badgeClass: 'badge-purple',
-    },
   };
 
   /**
@@ -88,8 +94,16 @@ export class EnumDisplayService {
       label: 'Web',
       badgeClass: 'badge-info',
     },
-    [Platform.DESKTOP]: {
-      label: 'Desktop',
+    [Platform.WINDOWS]: {
+      label: 'Windows',
+      badgeClass: 'badge-info',
+    },
+    [Platform.LINUX]: {
+      label: 'Linux',
+      badgeClass: 'badge-info',
+    },
+    [Platform.MACOS]: {
+      label: 'macOS',
       badgeClass: 'badge-info',
     },
     [Platform.IOS]: {
@@ -112,38 +126,66 @@ export class EnumDisplayService {
       label: 'Programming',
       badgeClass: 'badge-info',
     },
+    [Platform.SOCIAL]: {
+      label: 'Social',
+      badgeClass: 'badge-info',
+    },
+    [Platform.FEDIVERSE]: {
+      label: 'Fediverse',
+      badgeClass: 'badge-info',
+    },
   };
 
   /**
    * Mapping for FunctionType enum values
    */
-  private readonly functionTypeMap: EnumDisplayMap<FunctionType> = {
-    [FunctionType.FRONTEND]: {
+  private readonly functionTypeMap: EnumDisplayMap<FunctionKind> = {
+    [FunctionKind.FRONTEND]: {
       label: 'Frontend',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.WORKER]: {
+    [FunctionKind.WORKER]: {
       label: 'Worker',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.BOT]: {
+    [FunctionKind.BOT]: {
       label: 'Bot',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.PLUGIN]: {
+    [FunctionKind.PLUGIN]: {
       label: 'Plugin',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.SDK]: {
+    [FunctionKind.SDK]: {
       label: 'SDK',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.CLI_TOOL]: {
+    [FunctionKind.CLI_TOOL]: {
       label: 'CLI',
       badgeClass: 'badge-warning',
     },
-    [FunctionType.TOOL]: {
+    [FunctionKind.TOOL]: {
       label: 'Tool',
+      badgeClass: 'badge-warning',
+    },
+    [FunctionKind.INTERFACE]: {
+      label: 'Interface',
+      badgeClass: 'badge-warning',
+    },
+    [FunctionKind.UTILITY]: {
+      label: 'Utility',
+      badgeClass: 'badge-warning',
+    },
+    [FunctionKind.RESOURCE_COLLECTION]: {
+      label: 'Resource Collection',
+      badgeClass: 'badge-warning',
+    },
+    [FunctionKind.INFORMATIONAL]: {
+      label: 'Informational',
+      badgeClass: 'badge-warning',
+    },
+    [FunctionKind.COMMUNITY]: {
+      label: 'Community',
       badgeClass: 'badge-warning',
     },
   };
@@ -226,6 +268,16 @@ export class EnumDisplayService {
     return 'badge-secondary';
   }
 
+  /**
+   * Get display label for array of domains
+   * @param domains - Array of Domain enum values
+   * @returns Joined display labels (e.g., "Image & Text")
+   */
+  getDomainArrayLabel(domains: Domain[] | undefined): string {
+    if (!domains || domains.length === 0) return 'N/A';
+    return domains.map((d) => this.getDomainLabel(d)).join(' & ');
+  }
+
   // ============================================================================
   // Platform Methods
   // ============================================================================
@@ -254,6 +306,57 @@ export class EnumDisplayService {
     return 'badge-secondary';
   }
 
+  /**
+   * Get the list of desktop platforms
+   * @returns Array of desktop Platform enum values
+   */
+  getDesktopPlatforms(): Platform[] {
+    return [Platform.WINDOWS, Platform.LINUX, Platform.MACOS];
+  }
+
+  /**
+   * Check if a platform is a desktop platform (Windows, Linux, or macOS)
+   * @param platform - The Platform enum value to check
+   * @returns True if platform is desktop-related
+   */
+  isDesktopPlatform(platform: Platform | string): boolean {
+    const desktopPlatforms = [Platform.WINDOWS, Platform.LINUX, Platform.MACOS];
+    return desktopPlatforms.includes(platform as Platform);
+  }
+
+  /**
+   * Group platforms for display, combining desktop OS platforms
+   * @param platforms - Array of platforms
+   * @returns Grouped display string (e.g., "Desktop (Windows, Linux, macOS), Web")
+   */
+  getPlatformGroupedLabel(platforms: Platform[] | undefined): string {
+    if (!platforms || platforms.length === 0) return 'N/A';
+
+    const desktopPlatforms = this.getDesktopPlatforms();
+    const itemDesktopPlatforms = platforms.filter((p) =>
+      desktopPlatforms.includes(p),
+    );
+    const otherPlatforms = platforms.filter(
+      (p) => !desktopPlatforms.includes(p),
+    );
+
+    const labels: string[] = [];
+
+    if (itemDesktopPlatforms.length > 0) {
+      if (itemDesktopPlatforms.length === desktopPlatforms.length) {
+        labels.push('Desktop');
+      } else {
+        labels.push(
+          ...itemDesktopPlatforms.map((p) => this.getPlatformLabel(p)),
+        );
+      }
+    }
+
+    labels.push(...otherPlatforms.map((p) => this.getPlatformLabel(p)));
+
+    return labels.join(', ');
+  }
+
   // ============================================================================
   // FunctionType Methods
   // ============================================================================
@@ -263,7 +366,7 @@ export class EnumDisplayService {
    * @param functionType - The FunctionType enum value
    * @returns Display label or fallback string
    */
-  getFunctionTypeLabel(functionType: FunctionType | string): string {
+  getFunctionTypeLabel(functionType: FunctionKind | string): string {
     if (this.isFunctionType(functionType)) {
       return this.functionTypeMap[functionType].label;
     }
@@ -275,7 +378,7 @@ export class EnumDisplayService {
    * @param functionType - The FunctionType enum value
    * @returns CSS class name
    */
-  getFunctionTypeBadgeClass(functionType: FunctionType | string): string {
+  getFunctionTypeBadgeClass(functionType: FunctionKind | string): string {
     if (this.isFunctionType(functionType)) {
       return this.functionTypeMap[functionType].badgeClass || 'badge-secondary';
     }
@@ -298,13 +401,16 @@ export class EnumDisplayService {
     // Platform types
     if (
       [
-        'desktop',
+        'windows',
+        'linux',
+        'macos',
         'ios',
         'android',
         'web',
         'cli',
         'server',
         'programming',
+        'fediverse',
       ].includes(categoryLower)
     ) {
       return 'badge-info';
@@ -376,8 +482,8 @@ export class EnumDisplayService {
   /**
    * Type guard to check if a string is a valid FunctionType
    */
-  private isFunctionType(value: string): value is FunctionType {
-    return Object.values(FunctionType).includes(value as FunctionType);
+  private isFunctionType(value: string): value is FunctionKind {
+    return Object.values(FunctionKind).includes(value as FunctionKind);
   }
 
   // ============================================================================
@@ -467,13 +573,16 @@ export class EnumDisplayService {
    */
   isPlatformCategory(category: string): boolean {
     const platformKeywords = [
-      'desktop',
+      'windows',
+      'linux',
+      'macos',
       'ios',
       'android',
       'web',
       'server',
       'cli',
       'programming',
+      'fediverse',
     ];
     return platformKeywords.includes(category.toLowerCase());
   }

@@ -84,7 +84,7 @@
 
       <!-- Items List using Sub-Components -->
       <div class="space-y-8">
-        <!-- GUIs Section -->
+        <!-- GUIs & Frontends Section -->
         <app-item-list-section
           [items]="filteredGuis()"
           [sectionName]="'guis'"
@@ -106,11 +106,43 @@
           (sectionToggle)="toggleSection($event)"
         />
 
-        <!-- Tools Section -->
+        <!-- Resources Section -->
         <app-item-list-section
-          [items]="filteredTools()"
-          [sectionName]="'tools'"
-          [title]="'guis_and_tools_page.tools_section_title'"
+          [items]="filteredResources()"
+          [sectionName]="'resources'"
+          [title]="'guis_and_tools_page.resources_section_title'"
+          [expandedRows]="expandedRows"
+          [collapsedSections]="collapsedSections"
+          (rowToggle)="toggleRow($event)"
+          (sectionToggle)="toggleSection($event)"
+        />
+
+        <!-- Utilities Section -->
+        <app-item-list-section
+          [items]="filteredUtilities()"
+          [sectionName]="'utilities'"
+          [title]="'guis_and_tools_page.utilities_section_title'"
+          [expandedRows]="expandedRows"
+          [collapsedSections]="collapsedSections"
+          (rowToggle)="toggleRow($event)"
+          (sectionToggle)="toggleSection($event)"
+        />
+        <!-- Bots Section -->
+        <app-item-list-section
+          [items]="filteredBots()"
+          [sectionName]="'bots'"
+          [title]="'guis_and_tools_page.bots_section_title'"
+          [expandedRows]="expandedRows"
+          [collapsedSections]="collapsedSections"
+          (rowToggle)="toggleRow($event)"
+          (sectionToggle)="toggleSection($event)"
+        />
+
+        <!-- Developer Tools Section -->
+        <app-item-list-section
+          [items]="filteredDeveloperTools()"
+          [sectionName]="'developer_tools'"
+          [title]="'guis_and_tools_page.developer_tools_section_title'"
           [expandedRows]="expandedRows"
           [collapsedSections]="collapsedSections"
           (rowToggle)="toggleRow($event)"

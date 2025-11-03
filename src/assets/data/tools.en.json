@@ -3,242 +3,347 @@
     "name": "horde-worker-reGen",
     "description": "The official way to add your GPU to the horde for image generation.",
     "link": "https://github.com/Haidra-Org/horde-worker-reGen",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Worker", "Image Generation"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["server"],
-    "functionType": "worker"
+    "functionKind": "worker"
   },
   {
     "name": "AI-Horde-Worker",
     "description": "The official way to add your GPU to the horde for text generation. Requires an existing installation of compatible text generation software.",
     "link": "https://github.com/Haidra-Org/AI-Horde-worker",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Worker", "Text Generation"],
-    "domain": "text",
+    "itemType": "tool",
+    "domain": ["text"],
     "platform": ["server"],
-    "functionType": "worker"
+    "functionKind": "worker"
   },
   {
     "name": "koboldcpp",
     "description": "KoboldCpp is an easy-to-use AI text-generation software for GGML and GGUF models, inspired by the original KoboldAI. It features built-in worker support for AI Horde.",
     "link": "https://github.com/LostRuins/koboldcpp",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Worker", "Text Generation"],
-    "domain": "text",
+    "itemType": "tool",
+    "domain": ["text"],
     "platform": ["server"],
-    "functionType": "worker"
+    "functionKind": "worker"
   },
   {
     "name": "Godot Engine plugin",
     "description": "Easily integrate AI Horde image generation into your games.",
     "link": "https://github.com/Haidra-Org/AI-Horde-Godot-Addon",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Discord Bot",
     "description": "Add to your Discord server to generate images for free, transfer kudos and lookup user information.",
     "link": "https://github.com/ZeldaFan0225/Stable_Horde_Discord",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["server"],
-    "functionType": "bot"
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/Haidra-Org/AI-Horde-Discord"
   },
   {
     "name": "Fediverse bots",
     "description": "Generate images via ActivityPub just by pinging the bots.",
     "link": "https://github.com/Haidra-Org/fediverse-ai-horde-generate",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation"],
-    "domain": "image",
-    "platform": ["server"],
-    "functionType": "bot"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "fediverse"],
+    "functionKind": "bot"
   },
   {
     "name": "Reddit bot",
     "description": "Generate images directly via Reddit by tagging the bot.",
     "link": "https://github.com/Haidra-Org/reddit-stable-horde-generate",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["server"],
-    "functionType": "bot"
+    "functionKind": "bot"
   },
   {
     "name": "Python SDK",
     "description": "Python bindings for AI Horde",
     "link": "https://github.com/Haidra-Org/horde-sdk",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["SDK", "Development"],
-    "domain": "both",
+    "itemType": "tool",
+    "domain": ["image", "text"],
     "platform": ["programming"],
-    "functionType": "sdk"
+    "functionKind": "sdk"
   },
   {
     "name": "AI Horde CLI",
     "description": "The official AI Horde CLI that supports all features of AI Horde.",
     "link": "https://github.com/Haidra-Org/AI-Horde-CLI",
-    "category": "Official tools",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["CLI", "Development"],
-    "domain": "both",
+    "itemType": "tool",
+    "domain": ["image", "text"],
     "platform": ["cli"],
-    "functionType": "cli"
+    "functionKind": "cli"
   },
   {
     "name": "CraiyonArt Bot",
     "description": "A Telegram bot that generates images using AI Horde",
     "link": "https://t.me/CraiyonArtBot",
-    "category": "Community Bots",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["server"],
-    "functionType": "bot"
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/JelNiSlaw/craiyon-bot"
   },
   {
     "name": "WriterBot",
     "description": "A Discord bot that generates images using AI Horde",
     "link": "https://harrisonvanderbyl.github.io/WriterBot/",
-    "category": "Community Bots",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation", "Text Generation"],
-    "domain": "both",
+    "itemType": "tool",
+    "domain": ["image", "text"],
     "platform": ["server"],
-    "functionType": "bot"
+    "functionKind": "bot"
   },
   {
     "name": "Imaginarium",
     "description": "Telegram AI Art Generator bot Powered by AI Horde.",
     "link": "https://t.me/ImaginariumAIbot",
-    "category": "Community Bots",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Bot", "Image Generation"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["server"],
-    "functionType": "bot"
+    "functionKind": "bot"
   },
   {
     "name": "GIMP plugin",
     "description": "A plugin for using AI Horde inside the GIMP image editor.",
     "link": "https://github.com/ikks/gimp-stable-diffusion/",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "LibreOffice extension",
     "description": "An extension for using AI Horde inside the LibreOffice suite.",
     "link": "https://extensions.libreoffice.org/en/extensions/show/99431",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Krita plugin",
     "description": "A plugin for using AI Horde inside the Krita image editor.",
     "link": "https://github.com/dunkeroni/krita-stable-horde",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Unreal Engine plugin",
     "description": "Plugin that generates AI synthesized images in Unreal Editor using AI Horde.",
     "link": "https://github.com/Mystfit/Unreal-StableDiffusionTools",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "A1111 plugin",
     "description": "A plugin for using AI Horde inside the popular Automatic1111 frontend.",
     "link": "https://github.com/natanjunges/stable-diffusion-webui-stable-horde",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Blender plugin",
     "description": "Render an AI generated image based on a text prompt and your scene in Blender.",
     "link": "https://github.com/benrugg/AI-Render",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Photoshop plugin",
     "description": "Use the capabilities of AI Horde in Photoshop without switching between programs",
     "link": "https://github.com/grizbil/Auto-Photoshop-StableDiffusion-Plugin",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Image Generation"],
-    "domain": "image",
-    "platform": ["desktop"],
-    "functionType": "plugin"
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "macos"],
+    "functionKind": "plugin"
   },
   {
     "name": "Chrome accessibility",
     "description": "Generates descriptive alternate text of images online for those who need them!",
     "link": "https://chrome.google.com/webstore/detail/genalt-generated-alt-text/ekbmkapnmnhhgfmjdnchgmcfggibebnn",
-    "category": "Community plugins",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["Plugin", "Accessibility"],
-    "domain": "image",
+    "itemType": "tool",
+    "domain": ["image"],
     "platform": ["web"],
-    "functionType": "plugin"
+    "functionKind": "plugin"
   },
   {
     "name": "Node.js SDK",
     "description": "Communicate with AI Horde api from node.js projects",
     "link": "https://www.npmjs.com/package/@zeldafan0225/ai_horde",
-    "category": "Community SDKs",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["SDK", "Development"],
-    "domain": "both",
+    "itemType": "tool",
+    "domain": ["image", "text"],
     "platform": ["programming"],
-    "functionType": "sdk"
+    "functionKind": "sdk"
   },
   {
     "name": "Go SDK",
     "description": "A Go Package for the AI Horde API",
     "link": "https://github.com/zeozeozeo/aihorde-go",
-    "category": "Community SDKs",
-    "image": "assets/img/tools/placeholder.png",
     "categories": ["SDK", "Development"],
-    "domain": "both",
+    "itemType": "tool",
+    "domain": ["image", "text"],
     "platform": ["programming"],
-    "functionType": "sdk"
+    "functionKind": "sdk"
+  },
+  {
+    "name": "AI Horde (sitew3)",
+    "description": "Web interface to see workers, models, and set alerts for the AI Horde.",
+    "link": "https://aihorde.sitew3.com/",
+    "categories": ["Web", "Interface"],
+    "itemType": "tool",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "interface"
+  },
+  {
+    "name": "Kobold Horde Overseer",
+    "description": "Web-based overseer UI for Kobold/Horde (frontend to manage/generate jobs).",
+    "link": "https://logicismdev.github.io/KoboldHordeOverseer",
+    "categories": ["Web", "Interface"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["web"],
+    "functionKind": "interface"
+  },
+  {
+    "name": "Horde OpenAI Proxy",
+    "description": "Proxy that exposes the Horde as an OpenAI-compatible API (developer tool).",
+    "link": "https://github.com/GoldenWind8/horde-openai-proxy.git",
+    "categories": ["Developer", "GitHub", "Proxy"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["server", "web"],
+    "functionKind": "utility"
+  },
+  {
+    "name": "AI Horde Monitor",
+    "description": "Monitoring dashboard for your workers.",
+    "link": "https://github.com/MangoLion/aihorde-monitor",
+    "categories": ["Monitoring", "GitHub", "Dashboard"],
+    "itemType": "tool",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "utility"
+  },
+  {
+    "name": "GPU_Monitor (hoardworker)",
+    "description": "GPU monitor for workers using autohotkey — posted on Discord and available on GitHub.",
+    "link": "https://github.com/hoardworker/GPU_Monitor",
+    "categories": ["Monitoring", "GitHub", "Utility"],
+    "itemType": "tool",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "utility"
+  },
+  {
+    "name": "SD API Timer (user info refresher)",
+    "description": "Web tool to refresh your user info on a timer (handy when user info changes frequently).",
+    "link": "https://cloud.efreakbnc.net/sd/apitimer.html",
+    "categories": ["Web", "Utility"],
+    "itemType": "tool",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "utility"
+  },
+  {
+    "name": "Tag-based Prompt Generator (magnabos)",
+    "description": "Tag-based prompt generator to create structured prompts from tags.",
+    "link": "https://magnabos.co/tag-generator.html",
+    "categories": ["Utility", "Prompts", "Generator"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "utility"
+  },
+  {
+    "name": "Acura NSX — Worker Info Script",
+    "description": "Script posted on Discord to show reGen worker info (link points to the original Discord message).",
+    "link": "https://discord.com/channels/781145214752129095/1022617696413679696/1390214688603901952",
+    "categories": ["Script", "Discord", "Utility"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["cli"],
+    "functionKind": "utility"
+  },
+
+  {
+    "name": "DreamDiffusion",
+    "description": "Community image-generation group (Discord + Guilded).",
+    "link": "https://discord.dreamdiffusion.net/",
+    "otherLinks": ["https://www.guilded.gg/dreamdiffusion"],
+    "categories": ["Community", "Chat"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "community"
+  },
+  {
+    "name": "Ketsuna",
+    "description": "Image generation front-end / community site.",
+    "link": "https://ketsuna.com/",
+    "categories": ["Bot", "Image Generation", "Site"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "frontend",
+    "sourceControlLink": "https://github.com/gazes-media/ketsuna"
+  },
+  {
+    "name": "Lemmy Bot",
+    "description": "Fediverse/Lemmy integration to generate images via AI Horde.",
+    "link": "https://lemmy.dbzer0.com/post/13211160",
+    "categories": ["Bot", "Fediverse", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "fediverse"],
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/Haidra-Org/fediverse-ai-horde-generate"
+  },
+  {
+    "name": "Mastodon Bot",
+    "description": "Mastodon ActivityPub bot that generates images via AI Horde.",
+    "link": "https://sigmoid.social/@stablehorde_generator",
+    "categories": ["Bot", "Fediverse", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "fediverse"],
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/Haidra-Org/mastodon-stable-horde-generate"
   }
 ]

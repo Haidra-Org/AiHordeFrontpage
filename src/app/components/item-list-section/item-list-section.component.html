@@ -105,15 +105,10 @@
               <!-- Platform Column -->
               <div class="table-cell-meta">
                 <div class="table-cell-label">Platform</div>
-                <div class="flex flex-wrap gap-1">
-                  @for (platform of getPlatformDisplay(item); track platform) {
-                    <span class="badge-base badge-info text-xs">
-                      {{ platform }}
-                    </span>
-                  }
-                  @if (getPlatformDisplay(item).length === 0) {
-                    <span class="badge-base badge-secondary text-xs">N/A</span>
-                  }
+                <div>
+                  <span class="badge-base badge-info text-xs">
+                    {{ getPlatformDisplay(item) }}
+                  </span>
                 </div>
               </div>
 
@@ -122,12 +117,26 @@
                 <a
                   [href]="item.link"
                   target="_blank"
-                  class="btn-purple text-xs px-3 py-1.5 whitespace-nowrap flex-shrink-0"
+                  class="btn-purple text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
                   (click)="$event.stopPropagation()"
                   [title]="getButtonText(item)"
                 >
                   Visit
                 </a>
+                @if (item.sourceControlLink) {
+                  <a
+                    [href]="item.sourceControlLink"
+                    target="_blank"
+                    class="btn-source-control text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
+                    (click)="$event.stopPropagation()"
+                    [title]="
+                      'View source code on ' +
+                      getSourceControlDomain(item.sourceControlLink)
+                    "
+                  >
+                    {{ getSourceControlDomain(item.sourceControlLink) }}
+                  </a>
+                }
                 <svg
                   class="chevron-icon-sm"
                   [class.expanded]="isExpanded(item.name)"
@@ -155,15 +164,17 @@
                       {{ item.description }}
                     </p>
                   </div>
-                  <div class="detail-image">
-                    <img
-                      [src]="item.image"
-                      [alt]="
-                        'guis_and_tools.item_image_alt'
-                          | transloco: { name: item.name }
-                      "
-                    />
-                  </div>
+                  @if (item.image) {
+                    <div class="detail-image">
+                      <img
+                        [src]="item.image"
+                        [alt]="
+                          'guis_and_tools.item_image_alt'
+                            | transloco: { name: item.name }
+                        "
+                      />
+                    </div>
+                  }
                 </div>
               </div>
             }

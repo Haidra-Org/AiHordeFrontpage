@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { EnumDisplayService } from '../services/enum-display.service';
-import { ItemType, Domain, Platform, FunctionType } from '../types/item-types';
+import { ItemType, Domain, Platform, FunctionKind } from '../types/item-types';
 
 /**
  * Type of display information to retrieve
@@ -57,7 +57,7 @@ export class EnumDisplayPipe implements PipeTransform {
    * @returns Display string (label, CSS class, or translation key)
    */
   transform(
-    value: string | ItemType | Domain | Platform | FunctionType,
+    value: string | ItemType | Domain | Platform | FunctionKind,
     enumCategory: EnumCategory = 'category',
     displayType: DisplayType = 'label',
   ): string | undefined {
@@ -157,17 +157,17 @@ export class EnumDisplayPipe implements PipeTransform {
     switch (displayType) {
       case 'label':
         return this.enumDisplayService.getFunctionTypeLabel(
-          value as FunctionType,
+          value as FunctionKind,
         );
       case 'badge':
         return this.enumDisplayService.getFunctionTypeBadgeClass(
-          value as FunctionType,
+          value as FunctionKind,
         );
       case 'translation':
         return undefined; // Function types don't have translation keys currently
       default:
         return this.enumDisplayService.getFunctionTypeLabel(
-          value as FunctionType,
+          value as FunctionKind,
         );
     }
   }

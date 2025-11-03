@@ -31,7 +31,7 @@ export class DataService {
 
   public get tools(): Observable<SortedItems<ToolItem>> {
     return this.getData<ToolItem>('tools').pipe(
-      map((tools) => this.formatToMapped(tools, 'category')),
+      map((tools) => this.formatToMapped(tools, 'categories')),
     );
   }
 
@@ -48,6 +48,17 @@ export class DataService {
 
   public get textGuis(): Observable<SortedItems<GuiItem>> {
     return this.getData<GuiItem>('text-guis').pipe(
+      map((items) =>
+        items.map((item) =>
+          replaceContext(item, ['description', 'downloadButtonText']),
+        ),
+      ),
+      map((items) => this.formatToMapped(items, 'categories')),
+    );
+  }
+
+  public get resources(): Observable<SortedItems<GuiItem>> {
+    return this.getData<GuiItem>('resource').pipe(
       map((items) =>
         items.map((item) =>
           replaceContext(item, ['description', 'downloadButtonText']),

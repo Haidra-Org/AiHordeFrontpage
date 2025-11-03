@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { EnumDisplayService } from './enum-display.service';
-import { ItemType, Domain, Platform, FunctionType } from '../types/item-types';
+import { ItemType, Domain, Platform, FunctionKind } from '../types/item-types';
 
 describe('EnumDisplayService', () => {
   let service: EnumDisplayService;
@@ -87,12 +87,26 @@ describe('EnumDisplayService', () => {
       expect(service.getDomainLabel(Domain.IMAGE)).toBe('Image');
     });
 
-    it('should return correct label for BOTH domain', () => {
-      expect(service.getDomainLabel(Domain.BOTH)).toBe('Both');
-    });
-
     it('should return capitalized fallback for unknown domain', () => {
       expect(service.getDomainLabel('other')).toBe('Other');
+    });
+
+    it('should return joined label for domain arrays', () => {
+      expect(service.getDomainArrayLabel([Domain.IMAGE, Domain.TEXT])).toBe(
+        'Image & Text',
+      );
+    });
+
+    it('should return single label for one-element domain array', () => {
+      expect(service.getDomainArrayLabel([Domain.IMAGE])).toBe('Image');
+    });
+
+    it('should return N/A for empty domain array', () => {
+      expect(service.getDomainArrayLabel([])).toBe('N/A');
+    });
+
+    it('should return N/A for undefined domain array', () => {
+      expect(service.getDomainArrayLabel(undefined)).toBe('N/A');
     });
 
     it('should return correct badge class for TEXT domain', () => {
@@ -117,8 +131,16 @@ describe('EnumDisplayService', () => {
       expect(service.getPlatformLabel(Platform.WEB)).toBe('Web');
     });
 
-    it('should return correct label for DESKTOP platform', () => {
-      expect(service.getPlatformLabel(Platform.DESKTOP)).toBe('Desktop');
+    it('should return correct label for WINDOWS platform', () => {
+      expect(service.getPlatformLabel(Platform.WINDOWS)).toBe('Windows');
+    });
+
+    it('should return correct label for LINUX platform', () => {
+      expect(service.getPlatformLabel(Platform.LINUX)).toBe('Linux');
+    });
+
+    it('should return correct label for MACOS platform', () => {
+      expect(service.getPlatformLabel(Platform.MACOS)).toBe('macOS');
     });
 
     it('should return correct label for IOS platform', () => {
@@ -129,15 +151,20 @@ describe('EnumDisplayService', () => {
       expect(service.getPlatformLabel(Platform.ANDROID)).toBe('Android');
     });
 
+    it('should return correct label for FEDIVERSE platform', () => {
+      expect(service.getPlatformLabel(Platform.FEDIVERSE)).toBe('Fediverse');
+    });
+
     it('should return capitalized fallback for unknown platform', () => {
       expect(service.getPlatformLabel('unknown')).toBe('Unknown');
     });
 
     it('should return correct badge class for platforms', () => {
       expect(service.getPlatformBadgeClass(Platform.WEB)).toBe('badge-info');
-      expect(service.getPlatformBadgeClass(Platform.DESKTOP)).toBe(
+      expect(service.getPlatformBadgeClass(Platform.WINDOWS)).toBe(
         'badge-info',
       );
+      expect(service.getPlatformBadgeClass(Platform.LINUX)).toBe('badge-info');
     });
 
     it('should return fallback badge class for unknown platform', () => {
@@ -153,6 +180,51 @@ describe('EnumDisplayService', () => {
     it('should handle empty platform array', () => {
       expect(service.getPlatformDisplayArray([])).toEqual([]);
     });
+
+    it('should return desktop platforms list', () => {
+      const desktopPlatforms = service.getDesktopPlatforms();
+      expect(desktopPlatforms).toEqual([
+        Platform.WINDOWS,
+        Platform.LINUX,
+        Platform.MACOS,
+      ]);
+    });
+
+    it('should identify desktop platforms', () => {
+      expect(service.isDesktopPlatform(Platform.WINDOWS)).toBe(true);
+      expect(service.isDesktopPlatform(Platform.LINUX)).toBe(true);
+      expect(service.isDesktopPlatform(Platform.MACOS)).toBe(true);
+      expect(service.isDesktopPlatform(Platform.WEB)).toBe(false);
+      expect(service.isDesktopPlatform(Platform.IOS)).toBe(false);
+    });
+
+    it('should group all desktop platforms as "Desktop"', () => {
+      const platforms = [Platform.WINDOWS, Platform.LINUX, Platform.MACOS];
+      expect(service.getPlatformGroupedLabel(platforms)).toBe('Desktop');
+    });
+
+    it('should show individual desktop platforms when not all present', () => {
+      const platforms = [Platform.WINDOWS, Platform.LINUX];
+      expect(service.getPlatformGroupedLabel(platforms)).toBe('Windows, Linux');
+    });
+
+    it('should combine desktop group with other platforms', () => {
+      const platforms = [
+        Platform.WINDOWS,
+        Platform.LINUX,
+        Platform.MACOS,
+        Platform.WEB,
+      ];
+      expect(service.getPlatformGroupedLabel(platforms)).toBe('Desktop, Web');
+    });
+
+    it('should handle undefined platform array', () => {
+      expect(service.getPlatformGroupedLabel(undefined)).toBe('N/A');
+    });
+
+    it('should handle empty platform array', () => {
+      expect(service.getPlatformGroupedLabel([])).toBe('N/A');
+    });
   });
 
   // ============================================================================
@@ -161,29 +233,41 @@ describe('EnumDisplayService', () => {
 
   describe('FunctionType methods', () => {
     it('should return correct label for FRONTEND', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.FRONTEND)).toBe(
+      expect(service.getFunctionTypeLabel(FunctionKind.FRONTEND)).toBe(
         'Frontend',
       );
     });
 
     it('should return correct label for WORKER', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.WORKER)).toBe('Worker');
+      expect(service.getFunctionTypeLabel(FunctionKind.WORKER)).toBe('Worker');
     });
 
     it('should return correct label for BOT', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.BOT)).toBe('Bot');
+      expect(service.getFunctionTypeLabel(FunctionKind.BOT)).toBe('Bot');
     });
 
     it('should return correct label for PLUGIN', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.PLUGIN)).toBe('Plugin');
+      expect(service.getFunctionTypeLabel(FunctionKind.PLUGIN)).toBe('Plugin');
     });
 
     it('should return correct label for SDK', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.SDK)).toBe('SDK');
+      expect(service.getFunctionTypeLabel(FunctionKind.SDK)).toBe('SDK');
     });
 
     it('should return correct label for CLI_TOOL', () => {
-      expect(service.getFunctionTypeLabel(FunctionType.CLI_TOOL)).toBe('CLI');
+      expect(service.getFunctionTypeLabel(FunctionKind.CLI_TOOL)).toBe('CLI');
+    });
+
+    it('should return correct label for INTERFACE', () => {
+      expect(service.getFunctionTypeLabel(FunctionKind.INTERFACE)).toBe(
+        'Interface',
+      );
+    });
+
+    it('should return correct label for UTILITY', () => {
+      expect(service.getFunctionTypeLabel(FunctionKind.UTILITY)).toBe(
+        'Utility',
+      );
     });
 
     it('should return capitalized fallback for unknown function type', () => {
@@ -193,10 +277,10 @@ describe('EnumDisplayService', () => {
     });
 
     it('should return correct badge class for function types', () => {
-      expect(service.getFunctionTypeBadgeClass(FunctionType.WORKER)).toBe(
+      expect(service.getFunctionTypeBadgeClass(FunctionKind.WORKER)).toBe(
         'badge-warning',
       );
-      expect(service.getFunctionTypeBadgeClass(FunctionType.BOT)).toBe(
+      expect(service.getFunctionTypeBadgeClass(FunctionKind.BOT)).toBe(
         'badge-warning',
       );
     });
@@ -214,12 +298,15 @@ describe('EnumDisplayService', () => {
 
   describe('getCategoryBadgeClass', () => {
     it('should return badge-info for platform categories', () => {
-      expect(service.getCategoryBadgeClass('desktop')).toBe('badge-info');
+      expect(service.getCategoryBadgeClass('windows')).toBe('badge-info');
+      expect(service.getCategoryBadgeClass('linux')).toBe('badge-info');
+      expect(service.getCategoryBadgeClass('macos')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('iOS')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('Android')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('Web')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('CLI')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('Server')).toBe('badge-info');
+      expect(service.getCategoryBadgeClass('fediverse')).toBe('badge-info');
     });
 
     it('should return badge-purple for domain categories', () => {
@@ -270,7 +357,7 @@ describe('EnumDisplayService', () => {
     });
 
     it('should be case-insensitive', () => {
-      expect(service.getCategoryBadgeClass('DESKTOP')).toBe('badge-info');
+      expect(service.getCategoryBadgeClass('WINDOWS')).toBe('badge-info');
       expect(service.getCategoryBadgeClass('Worker')).toBe('badge-warning');
     });
   });
@@ -304,23 +391,27 @@ describe('EnumDisplayService', () => {
 
     describe('isPlatformCategory', () => {
       it('should return true for platform keywords', () => {
-        expect(service.isPlatformCategory('desktop')).toBe(true);
+        expect(service.isPlatformCategory('windows')).toBe(true);
+        expect(service.isPlatformCategory('linux')).toBe(true);
+        expect(service.isPlatformCategory('macos')).toBe(true);
         expect(service.isPlatformCategory('iOS')).toBe(true);
         expect(service.isPlatformCategory('Android')).toBe(true);
         expect(service.isPlatformCategory('Web')).toBe(true);
         expect(service.isPlatformCategory('cli')).toBe(true);
         expect(service.isPlatformCategory('server')).toBe(true);
         expect(service.isPlatformCategory('programming')).toBe(true);
+        expect(service.isPlatformCategory('fediverse')).toBe(true);
       });
 
       it('should return false for non-platform categories', () => {
         expect(service.isPlatformCategory('worker')).toBe(false);
         expect(service.isPlatformCategory('text generation')).toBe(false);
+        expect(service.isPlatformCategory('desktop')).toBe(false);
       });
 
       it('should be case-insensitive', () => {
-        expect(service.isPlatformCategory('DESKTOP')).toBe(true);
-        expect(service.isPlatformCategory('Desktop')).toBe(true);
+        expect(service.isPlatformCategory('WINDOWS')).toBe(true);
+        expect(service.isPlatformCategory('Windows')).toBe(true);
       });
     });
 

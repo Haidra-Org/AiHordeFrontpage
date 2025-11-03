@@ -15,7 +15,7 @@ import { DataService } from '../../services/data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { GuiItem } from '../../types/gui-item';
 import { ToolItem } from '../../types/tool-item';
-import { Domain, Platform, FunctionType } from '../../types/item-types';
+import { Domain, Platform, FunctionKind } from '../../types/item-types';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import {
@@ -24,16 +24,12 @@ import {
 } from '../../components/item-list-section/item-list-section.component';
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { BeginnerHeaderComponent } from '../../components/beginner-header/beginner-header.component';
+import { ItemType } from '../../types/item-types';
 
 interface ExtendedItem extends GuiItem {
-  itemType: 'gui-image' | 'gui-text' | 'tool';
   uniqueId: string;
-  guiType?: 'image' | 'text';
   categories: string[]; // Always an array after normalization
   hasFrontend?: boolean;
-  domain?: Domain;
-  platform?: Platform[];
-  functionType?: FunctionType;
 }
 
 @Component({
@@ -60,6 +56,7 @@ export class GuisAndToolsComponent implements OnInit {
   private imageGuis = toSignal(this.dataService.imageGuis);
   private textGuis = toSignal(this.dataService.textGuis);
   private tools = toSignal(this.dataService.tools);
+  private resources = toSignal(this.dataService.resources);
 
   // Filter signals - multi-select
   public selectedTypes = signal<Set<string>>(new Set());
@@ -68,16 +65,18 @@ export class GuisAndToolsComponent implements OnInit {
   public collapsedSections = signal<Set<string>>(new Set());
   public showScrollToTop = signal<boolean>(false);
 
-  // Combined items (GUIs and Tools)
+  // Combined items (GUIs, Tools, and Resources)
   public allItems = computed(() => {
     const imageGuis = this.imageGuis();
     const textGuis = this.textGuis();
     const tools = this.tools();
+    const resources = this.resources();
 
     if (
       imageGuis === undefined ||
       textGuis === undefined ||
-      tools === undefined
+      tools === undefined ||
+      resources === undefined
     ) {
       return [];
     }
@@ -86,6 +85,7 @@ export class GuisAndToolsComponent implements OnInit {
     const seenGuisImage = new Set<string>();
     const seenGuisText = new Set<string>();
     const seenTools = new Set<string>();
+    const seenResources = new Set<string>();
 
     // Add image GUIs (deduplicate by name)
     imageGuis.forEach((items) => {
@@ -96,12 +96,7 @@ export class GuisAndToolsComponent implements OnInit {
             categories: Array.isArray(item.categories)
               ? item.categories
               : [item.categories],
-            itemType: 'gui-image',
-            guiType: 'image',
             uniqueId: `gui-image-${item.name}`,
-            // Use explicit domain/platform from data, fallback to inference
-            domain: item.domain || Domain.IMAGE,
-            platform: item.platform || [],
           });
           seenGuisImage.add(item.name);
         }
@@ -117,12 +112,7 @@ export class GuisAndToolsComponent implements OnInit {
             categories: Array.isArray(item.categories)
               ? item.categories
               : [item.categories],
-            itemType: 'gui-text',
-            guiType: 'text',
             uniqueId: `gui-text-${item.name}`,
-            // Use explicit domain/platform from data, fallback to inference
-            domain: item.domain || Domain.TEXT,
-            platform: item.platform || [],
           });
           seenGuisText.add(item.name);
         }
@@ -135,24 +125,35 @@ export class GuisAndToolsComponent implements OnInit {
         toolArray.forEach((tool: ToolItem) => {
           if (!seenTools.has(tool.name)) {
             result.push({
-              name: tool.name,
-              description: tool.description,
-              link: tool.link,
-              image: tool.image || 'assets/img/tools/placeholder.png',
+              ...tool,
               categories: Array.isArray(tool.categories)
                 ? tool.categories
                 : tool.categories
                   ? [tool.categories]
                   : [],
-              hasFrontend: tool.hasFrontend,
-              // Use explicit properties from data
-              domain: tool.domain,
-              platform: tool.platform,
-              functionType: tool.functionType,
-              itemType: 'tool',
               uniqueId: `tool-${tool.name}`,
             });
             seenTools.add(tool.name);
+          }
+        });
+      });
+    }
+
+    // Add resources (flatten and deduplicate by name)
+    if (resources) {
+      resources.forEach((resourceArray) => {
+        resourceArray.forEach((resource: GuiItem) => {
+          if (!seenResources.has(resource.name)) {
+            result.push({
+              ...resource,
+              categories: Array.isArray(resource.categories)
+                ? resource.categories
+                : resource.categories
+                  ? [resource.categories]
+                  : [],
+              uniqueId: `resource-${resource.name}`,
+            });
+            seenResources.add(resource.name);
           }
         });
       });
@@ -187,34 +188,54 @@ export class GuisAndToolsComponent implements OnInit {
     });
   });
 
-  // Separate GUIs, Workers, and Tools for grouped display
+  // Separate items by category for grouped display
   public filteredGuis = computed(() => {
     return this.filteredItems().filter(
-      (item) => item.itemType === 'gui-image' || item.itemType === 'gui-text',
+      (item) =>
+        item.itemType === ItemType.GUI_IMAGE ||
+        item.itemType === ItemType.GUI_TEXT,
+    );
+  });
+
+  public filteredBots = computed(() => {
+    return this.filteredItems().filter(
+      (item) => item.functionKind === FunctionKind.BOT,
+    );
+  });
+
+  public filteredDeveloperTools = computed(() => {
+    return this.filteredItems().filter(
+      (item) =>
+        item.functionKind === FunctionKind.SDK ||
+        item.functionKind === FunctionKind.CLI_TOOL ||
+        item.functionKind === FunctionKind.PLUGIN ||
+        (item.platform && item.platform.includes(Platform.PROGRAMMING)),
+    );
+  });
+
+  public filteredUtilities = computed(() => {
+    return this.filteredItems().filter(
+      (item) =>
+        item.functionKind === FunctionKind.UTILITY ||
+        item.functionKind === FunctionKind.INTERFACE ||
+        item.functionKind === FunctionKind.TOOL,
+    );
+  });
+
+  public filteredResources = computed(() => {
+    return this.filteredItems().filter(
+      (item) =>
+        item.functionKind === FunctionKind.RESOURCE_COLLECTION ||
+        item.functionKind === FunctionKind.INFORMATIONAL ||
+        item.functionKind === FunctionKind.COMMUNITY ||
+        item.itemType === ItemType.RESOURCE ||
+        item.itemType === ItemType.DATASET,
     );
   });
 
   public filteredWorkers = computed(() => {
     return this.filteredItems().filter(
-      (item) =>
-        item.itemType === 'tool' &&
-        item.categories.some(
-          (cat) =>
-            this.enumDisplayService.isFunctionTypeCategory(cat) &&
-            cat.toLowerCase() === 'worker',
-        ),
-    );
-  });
-
-  public filteredTools = computed(() => {
-    return this.filteredItems().filter(
-      (item) =>
-        item.itemType === 'tool' &&
-        !item.categories.some(
-          (cat) =>
-            this.enumDisplayService.isFunctionTypeCategory(cat) &&
-            cat.toLowerCase() === 'worker',
-        ),
+      (item) => item.functionKind === FunctionKind.WORKER,
     );
   });
 
@@ -350,7 +371,7 @@ export class GuisAndToolsComponent implements OnInit {
       // The downloadButtonText already has the name interpolated from context-replacer
       return item.downloadButtonText;
     }
-    if (item.itemType === 'tool') {
+    if (item.itemType === ItemType.TOOL) {
       return this.translocoService.translate('guis_and_tools.go_to_tool', {
         toolName: item.name,
       });
@@ -372,8 +393,9 @@ export class GuisAndToolsComponent implements OnInit {
       categories: item.categories,
       domain: item.domain,
       platform: item.platform,
-      functionType: item.functionType,
+      functionKind: item.functionKind,
       downloadButtonText: item.downloadButtonText,
+      sourceControlLink: item.sourceControlLink,
     };
   }
 }

@@ -739,6 +739,44 @@
   box-shadow: 0 0 0 4px rgb(88 28 135 / 0.5);
 }
 
+/* Source control button (drab/muted) */
+.btn-source-control {
+  color: rgb(75 85 99);
+  background-color: rgb(229 231 235);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  padding: 0.625rem 1.25rem;
+  text-align: center;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.btn-source-control:hover {
+  background-color: rgb(209 213 219);
+  color: rgb(55 65 81);
+}
+
+.dark .btn-source-control {
+  color: rgb(156 163 175);
+  background-color: rgb(55 65 81);
+}
+
+.dark .btn-source-control:hover {
+  background-color: rgb(75 85 99);
+  color: rgb(209 213 219);
+}
+
+.btn-source-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(229 231 235 / 0.5);
+}
+
+.dark .btn-source-control:focus {
+  box-shadow: 0 0 0 4px rgb(55 65 81 / 0.5);
+}
+
 /* =================================================================
    CARD STYLES
    ================================================================= */
@@ -1579,10 +1617,14 @@
   font-size: 0.875rem;
   line-height: 1.625;
   color: rgb(55 65 81);
+  background-color: rgb(249 250 251);
+  padding: 1rem;
+  border-radius: 0.5rem;
 }
 
 .dark .detail-text {
   color: rgb(209 213 219);
+  background-color: rgb(31 41 55);
 }
 
 /* =================================================================

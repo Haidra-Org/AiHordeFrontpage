@@ -58,7 +58,7 @@
               />
               <span>Light</span>
             </span>
-            @if (isSelected('light')) {
+            @if (isSelected("light")) {
               <svg
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
                 fill="currentColor"
@@ -93,7 +93,7 @@
               />
               <span>Dark</span>
             </span>
-            @if (isSelected('dark')) {
+            @if (isSelected("dark")) {
               <svg
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
                 fill="currentColor"
@@ -115,9 +115,7 @@
           <button
             type="button"
             class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 flex items-center justify-between"
-            [class.bg-gray-100]="
-              isSelected('system') && !themeService.isDark()
-            "
+            [class.bg-gray-100]="isSelected('system') && !themeService.isDark()"
             [class.bg-gray-600]="isSelected('system') && themeService.isDark()"
             role="menuitem"
             (click)="selectTheme('system', $event)"
@@ -137,7 +135,7 @@
               </svg>
               <span>System</span>
             </span>
-            @if (isSelected('system')) {
+            @if (isSelected("system")) {
               <svg
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
                 fill="currentColor"
