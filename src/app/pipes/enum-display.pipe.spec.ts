@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { EnumDisplayPipe } from './enum-display.pipe';
 import { EnumDisplayService } from '../services/enum-display.service';
-import { ItemType, Domain, Platform, FunctionType } from '../types/item-types';
+import { ItemType, Domain, Platform, FunctionKind } from '../types/item-types';
 
 describe('EnumDisplayPipe', () => {
   let pipe: EnumDisplayPipe;
@@ -77,7 +77,6 @@ describe('EnumDisplayPipe', () => {
     it('should transform domain to label', () => {
       expect(pipe.transform(Domain.TEXT, 'domain', 'label')).toBe('Text');
       expect(pipe.transform(Domain.IMAGE, 'domain', 'label')).toBe('Image');
-      expect(pipe.transform(Domain.BOTH, 'domain', 'label')).toBe('Both');
     });
 
     it('should transform domain to badge class', () => {
@@ -110,12 +109,17 @@ describe('EnumDisplayPipe', () => {
   describe('Platform transformations', () => {
     it('should transform platform to label', () => {
       expect(pipe.transform(Platform.WEB, 'platform', 'label')).toBe('Web');
-      expect(pipe.transform(Platform.DESKTOP, 'platform', 'label')).toBe(
-        'Desktop',
+      expect(pipe.transform(Platform.WINDOWS, 'platform', 'label')).toBe(
+        'Windows',
       );
+      expect(pipe.transform(Platform.LINUX, 'platform', 'label')).toBe('Linux');
+      expect(pipe.transform(Platform.MACOS, 'platform', 'label')).toBe('macOS');
       expect(pipe.transform(Platform.IOS, 'platform', 'label')).toBe('iOS');
       expect(pipe.transform(Platform.ANDROID, 'platform', 'label')).toBe(
         'Android',
+      );
+      expect(pipe.transform(Platform.FEDIVERSE, 'platform', 'label')).toBe(
+        'Fediverse',
       );
     });
 
@@ -123,7 +127,7 @@ describe('EnumDisplayPipe', () => {
       expect(pipe.transform(Platform.WEB, 'platform', 'badge')).toBe(
         'badge-info',
       );
-      expect(pipe.transform(Platform.DESKTOP, 'platform', 'badge')).toBe(
+      expect(pipe.transform(Platform.WINDOWS, 'platform', 'badge')).toBe(
         'badge-info',
       );
     });
@@ -149,37 +153,37 @@ describe('EnumDisplayPipe', () => {
   describe('FunctionType transformations', () => {
     it('should transform functionType to label', () => {
       expect(
-        pipe.transform(FunctionType.FRONTEND, 'functionType', 'label'),
+        pipe.transform(FunctionKind.FRONTEND, 'functionType', 'label'),
       ).toBe('Frontend');
-      expect(pipe.transform(FunctionType.WORKER, 'functionType', 'label')).toBe(
+      expect(pipe.transform(FunctionKind.WORKER, 'functionType', 'label')).toBe(
         'Worker',
       );
-      expect(pipe.transform(FunctionType.BOT, 'functionType', 'label')).toBe(
+      expect(pipe.transform(FunctionKind.BOT, 'functionType', 'label')).toBe(
         'Bot',
       );
-      expect(pipe.transform(FunctionType.PLUGIN, 'functionType', 'label')).toBe(
+      expect(pipe.transform(FunctionKind.PLUGIN, 'functionType', 'label')).toBe(
         'Plugin',
       );
-      expect(pipe.transform(FunctionType.SDK, 'functionType', 'label')).toBe(
+      expect(pipe.transform(FunctionKind.SDK, 'functionType', 'label')).toBe(
         'SDK',
       );
       expect(
-        pipe.transform(FunctionType.CLI_TOOL, 'functionType', 'label'),
+        pipe.transform(FunctionKind.CLI_TOOL, 'functionType', 'label'),
       ).toBe('CLI');
     });
 
     it('should transform functionType to badge class', () => {
-      expect(pipe.transform(FunctionType.WORKER, 'functionType', 'badge')).toBe(
+      expect(pipe.transform(FunctionKind.WORKER, 'functionType', 'badge')).toBe(
         'badge-warning',
       );
-      expect(pipe.transform(FunctionType.BOT, 'functionType', 'badge')).toBe(
+      expect(pipe.transform(FunctionKind.BOT, 'functionType', 'badge')).toBe(
         'badge-warning',
       );
     });
 
     it('should return undefined for functionType translation (not supported)', () => {
       expect(
-        pipe.transform(FunctionType.FRONTEND, 'functionType', 'translation'),
+        pipe.transform(FunctionKind.FRONTEND, 'functionType', 'translation'),
       ).toBeUndefined();
     });
 
@@ -204,7 +208,7 @@ describe('EnumDisplayPipe', () => {
     });
 
     it('should transform category to appropriate badge class', () => {
-      expect(pipe.transform('desktop', 'category', 'badge')).toBe('badge-info');
+      expect(pipe.transform('windows', 'category', 'badge')).toBe('badge-info');
       expect(pipe.transform('worker', 'category', 'badge')).toBe(
         'badge-warning',
       );
@@ -281,9 +285,9 @@ describe('EnumDisplayPipe', () => {
 
     it('should use service for functionType labels', () => {
       spyOn(service, 'getFunctionTypeLabel').and.returnValue('Mocked Function');
-      pipe.transform(FunctionType.WORKER, 'functionType', 'label');
+      pipe.transform(FunctionKind.WORKER, 'functionType', 'label');
       expect(service.getFunctionTypeLabel).toHaveBeenCalledWith(
-        FunctionType.WORKER,
+        FunctionKind.WORKER,
       );
     });
 

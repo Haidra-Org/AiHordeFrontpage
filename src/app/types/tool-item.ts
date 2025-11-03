@@ -1,15 +1,16 @@
-import { Domain, Platform, FunctionType } from './item-types';
+import { Domain, Platform, FunctionKind, ItemType } from './item-types';
 
 export interface ToolItem {
   name: string;
   description: string;
   link: string;
-  category: string; // Legacy field - kept for backward compatibility
   image?: string;
-  categories?: string[];
+  categories: string[];
   hasFrontend?: boolean;
-  // Enhanced explicit properties
-  domain?: Domain;
+  itemType: ItemType;
+  domain?: Domain[];
   platform?: Platform[];
-  functionType?: FunctionType;
+  functionKind: FunctionKind;
+  sourceControlLink?: string;
+  downloadButtonText?: string | null;
 }

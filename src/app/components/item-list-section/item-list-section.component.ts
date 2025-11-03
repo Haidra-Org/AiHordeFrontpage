@@ -18,21 +18,22 @@ import {
   ItemType,
   Domain,
   Platform,
-  FunctionType,
+  FunctionKind,
 } from '../../types/item-types';
 
 export interface DisplayItem {
   name: string;
   description: string;
-  image: string;
+  image?: string;
   link: string;
   uniqueId: string;
-  itemType: string;
+  itemType: ItemType;
   categories: string[];
-  domain?: string;
-  platform?: string[];
-  functionType?: string;
+  domain?: Domain[];
+  platform?: Platform[];
+  functionKind: FunctionKind;
   downloadButtonText?: string | null;
+  sourceControlLink?: string;
 }
 
 @Component({
@@ -110,76 +111,15 @@ export class ItemListSectionComponent {
   }
 
   public getPrimaryFunction(item: DisplayItem): string {
-    // Use explicit functionType if available
-    if (item.functionType) {
-      return this.enumDisplayService.getFunctionTypeLabel(
-        item.functionType as FunctionType,
-      );
-    }
-
-    // Fallback to GUI detection
-    if (
-      item.itemType === ItemType.GUI_IMAGE ||
-      item.itemType === ItemType.GUI_TEXT
-    ) {
-      return this.enumDisplayService.getFunctionTypeLabel(
-        FunctionType.FRONTEND,
-      );
-    }
-
-    // Fallback to category-based inference
-    const categoryLower = item.categories.map((c) => c.toLowerCase());
-
-    if (categoryLower.includes('worker'))
-      return this.enumDisplayService.getFunctionTypeLabel(FunctionType.WORKER);
-    if (categoryLower.includes('bot'))
-      return this.enumDisplayService.getFunctionTypeLabel(FunctionType.BOT);
-    if (categoryLower.includes('plugin'))
-      return this.enumDisplayService.getFunctionTypeLabel(FunctionType.PLUGIN);
-    if (categoryLower.includes('sdk'))
-      return this.enumDisplayService.getFunctionTypeLabel(FunctionType.SDK);
-    if (categoryLower.includes('cli'))
-      return this.enumDisplayService.getFunctionTypeLabel(
-        FunctionType.CLI_TOOL,
-      );
-
-    return this.enumDisplayService.getFunctionTypeLabel(FunctionType.TOOL);
+    return this.enumDisplayService.getFunctionTypeLabel(item.functionKind);
   }
 
   public getDomainDisplay(item: DisplayItem): string {
-    // Use explicit domain if available
-    if (item.domain) {
-      return this.enumDisplayService.getDomainLabel(item.domain as Domain);
-    }
-
-    // Fallback to item type inference
-    if (item.itemType === ItemType.GUI_IMAGE)
-      return this.enumDisplayService.getDomainLabel(Domain.IMAGE);
-    if (item.itemType === ItemType.GUI_TEXT)
-      return this.enumDisplayService.getDomainLabel(Domain.TEXT);
-
-    // Fallback to category-based inference
-    const categoryLower = item.categories.map((c) => c.toLowerCase());
-    if (categoryLower.includes('image generation'))
-      return this.enumDisplayService.getDomainLabel(Domain.IMAGE);
-    if (categoryLower.includes('text generation'))
-      return this.enumDisplayService.getDomainLabel(Domain.TEXT);
-
-    return 'N/A';
+    return this.enumDisplayService.getDomainArrayLabel(item.domain);
   }
 
-  public getPlatformDisplay(item: DisplayItem): string[] {
-    // Use explicit platform if available
-    if (item.platform && item.platform.length > 0) {
-      return this.enumDisplayService.getPlatformDisplayArray(item.platform);
-    }
-
-    // Fallback to category-based extraction
-    const platforms: string[] = item.categories.filter((cat) =>
-      this.enumDisplayService.isPlatformCategory(cat),
-    );
-
-    return this.enumDisplayService.getPlatformDisplayArray(platforms);
+  public getPlatformDisplay(item: DisplayItem): string {
+    return this.enumDisplayService.getPlatformGroupedLabel(item.platform);
   }
 
   public getButtonText(item: DisplayItem): string {
@@ -188,6 +128,30 @@ export class ItemListSectionComponent {
     }
     // Default translation key can be handled by parent or transloco pipe
     return 'Visit';
+  }
+
+  public getSourceControlDomain(url: string): string {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+
+      if (hostname.includes('github.com')) return 'GitHub';
+      if (hostname.includes('gitlab.com')) return 'GitLab';
+      if (hostname.includes('bitbucket.org')) return 'Bitbucket';
+      if (hostname.includes('codeberg.org')) return 'Codeberg';
+      if (hostname.includes('sourceforge.net')) return 'SourceForge';
+
+      // Fallback: extract domain without TLD
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        const domain = parts[parts.length - 2];
+        return domain.charAt(0).toUpperCase() + domain.slice(1);
+      }
+
+      return 'Source';
+    } catch {
+      return 'Source';
+    }
   }
 
   private setupStickyObserver(headerRef: ElementRef<HTMLElement>): void {

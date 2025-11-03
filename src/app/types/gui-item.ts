@@ -1,13 +1,15 @@
-import { Domain, Platform } from './item-types';
+import { Domain, FunctionKind, ItemType, Platform } from './item-types';
 
 export interface GuiItem {
   name: string;
   description: string;
-  image: string;
+  image?: string;
   link: string;
+  sourceControlLink?: string;
   downloadButtonText?: string | null;
-  categories: string | string[];
-  // New explicit properties to eliminate magic string inference
-  domain?: Domain;
+  categories: string[];
+  itemType: ItemType;
+  domain?: Domain[];
+  functionKind: FunctionKind;
   platform?: Platform[];
 }

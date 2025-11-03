@@ -5,17 +5,22 @@
     "image": "assets/img/guis/lucid-creations.png",
     "link": "https://dbzer0.itch.io/lucid-creations",
     "downloadButtonText": "Get {name}",
-    "categories": ["Desktop", "Web"],
-    "domain": "image",
-    "platform": ["desktop", "web"]
+    "categories": ["Web", "Desktop"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux", "macos", "web"],
+    "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations"
   },
   {
     "name": "Artbot",
     "description": "One of the most popular web-based clients.",
     "image": "assets/img/guis/artbot.png",
     "link": "https://artbot.site",
-    "categories": "Web",
-    "domain": "image",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
     "platform": ["web"]
   },
   {
@@ -23,17 +28,22 @@
     "description": "HordeNG aims to be very simple to use for beginners, while allowing the full set of options for advanced users.",
     "image": "assets/img/guis/horde-ng.png",
     "link": "https://horde-ng.org/generate",
-    "categories": "Web",
-    "domain": "image",
-    "platform": ["web"]
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/RikudouSage/HordeNG"
   },
   {
     "name": "AI Scribbles",
     "description": "A simplified web image generator with handmade custom styles",
     "image": "assets/img/guis/ai-scribbles.png",
     "link": "https://www.aiscribbles.com/generate/",
-    "categories": "Web",
-    "domain": "image",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
     "platform": ["web"]
   },
   {
@@ -42,8 +52,10 @@
     "image": "assets/img/guis/ai-painter.jpg",
     "link": "https://apps.apple.com/hk/app/%E6%A9%9F%E7%95%AB%E5%B8%AB-%E5%B0%88%E6%A5%AD%E7%9A%84ai%E7%B9%AA%E7%95%ABapp/id1644645946",
     "downloadButtonText": "Get {name}",
-    "categories": "iOS",
-    "domain": "image",
+    "categories": ["iOS"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
     "platform": ["ios"]
   },
   {
@@ -52,8 +64,84 @@
     "image": "assets/img/guis/aislingeach.png",
     "link": "https://github.com/amiantos/aislingeach",
     "downloadButtonText": "Get {name}",
-    "categories": "iOS",
-    "domain": "image",
-    "platform": ["ios"]
+    "categories": ["iOS"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["ios"],
+    "sourceControlLink": "https://github.com/amiantos/aislingeach"
+  },
+  {
+    "name": "AIBrush",
+    "description": "Web-based image generation client.",
+    "link": "https://www.aibrush.art/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "BreadImagine",
+    "description": "Web client for image generation (BreadImagine).",
+    "link": "https://imagine.breadtm.xyz/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/ItsBreadTime/BreadImagine"
+  },
+  {
+    "name": "ComicsMaker",
+    "description": "Web-based comics/illustration generator.",
+    "link": "https://comicsmaker.ai/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "HordeQT",
+    "description": "Desktop client (Qt) for interacting with Horde backends.",
+    "link": "https://github.com/Unit1208/HordeQT",
+    "categories": ["Desktop"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux", "macos"],
+    "sourceControlLink": "https://github.com/Unit1208/HordeQT"
+  },
+  {
+    "name": "Justaaa",
+    "description": "A web-based image UI instance.",
+    "link": "https://justaaa.fyrean.com/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "Aeionic Diffusion Deluxe",
+    "description": "Desktop app available for Windows and Linux.",
+    "link": "https://aeionic.com/",
+    "categories": ["Desktop"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux"]
+  },
+  {
+    "name": "Stable UI",
+    "description": "Stable UI forks (improved fork + original); quick-access UIs for model-driven generation.",
+    "link": "https://efreak.github.io/stableui",
+    "notes": "Improved fork at efreak.github.io; original at https://aqualxx.github.io/stableui",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
   }
 ]
