@@ -114,15 +114,6 @@
 
               <!-- Actions Column -->
               <div class="table-cell-actions">
-                <a
-                  [href]="item.link"
-                  target="_blank"
-                  class="btn-purple text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
-                  (click)="$event.stopPropagation()"
-                  [title]="getButtonText(item)"
-                >
-                  Visit
-                </a>
                 @if (item.sourceControlLink) {
                   <a
                     [href]="item.sourceControlLink"
@@ -137,6 +128,15 @@
                     {{ getSourceControlDomain(item.sourceControlLink) }}
                   </a>
                 }
+                <a
+                  [href]="item.link"
+                  target="_blank"
+                  class="btn-purple text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
+                  (click)="$event.stopPropagation()"
+                  [title]="getButtonText(item)"
+                >
+                  Visit
+                </a>
                 <svg
                   class="chevron-icon-sm"
                   [class.expanded]="isExpanded(item.name)"

@@ -1428,7 +1428,7 @@
   align-items: center;
   justify-content: flex-start;
   gap: 0.5rem;
-  min-width: auto;
+  width: auto;
   grid-column: 2 / 3;
   grid-row: 1 / 5;
 }
@@ -1436,10 +1436,11 @@
 @media (min-width: theme("screens.md")) {
   .table-cell-actions {
     flex-direction: row;
-    justify-content: center;
+    justify-content: flex-end;
     grid-column: auto;
     grid-row: auto;
-    min-width: 120px;
+    width: 240px;
+    min-width: 240px;
   }
 }
 
