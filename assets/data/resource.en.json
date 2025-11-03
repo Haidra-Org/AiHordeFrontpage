@@ -1,0 +1,82 @@
+[
+  {
+    "name": "Horde Tools (community)",
+    "description": "Discord thread collecting Horde tools created by the community.",
+    "link": "https://discord.com/channels/781145214752129095/1339333106712444958/1346971182192132127",
+    "categories": ["Community", "Discord", "Collection"],
+    "itemType": "resource",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "resource_collection"
+  },
+  {
+    "name": "Horde Projects on GitHub",
+    "description": "A curated GitHub list of Horde-related projects (community-maintained).",
+    "link": "https://github.com/stars/Efreak/lists/horde",
+    "categories": ["GitHub", "Projects", "Community"],
+    "itemType": "resource",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "resource_collection"
+  },
+  {
+    "name": "Horde Wiki — Available client interfaces",
+    "description": "Horde Wiki page listing available client interfaces and tools.",
+    "link": "https://github.com/Haidra-Org/AI-Horde/wiki/Available-client-interfaces",
+    "categories": ["Docs", "Wiki", "Documentation"],
+    "itemType": "resource",
+    "domain": ["image", "text"],
+    "platform": ["web"],
+    "functionKind": "informational"
+  },
+  {
+    "name": "AI-Horde-Ratings (Haidra)",
+    "description": "Haidra's dataset of AI-Horde ratings hosted on Hugging Face (useful for training/analysis).",
+    "link": "https://huggingface.co/datasets/Haidra-Org/AI-Horde-Ratings",
+    "categories": ["Data", "Dataset"],
+    "itemType": "dataset",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "informational"
+  },
+  {
+    "name": "DiffusionDB",
+    "description": "Large dataset of images and prompts collected for research and analysis.",
+    "link": "https://poloclub.github.io/diffusiondb/",
+    "categories": ["Data", "Research"],
+    "itemType": "dataset",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "informational"
+  },
+  {
+    "name": "stable-prompts (Superintendent)",
+    "description": "A Hugging Face dataset of stable prompts curated by Superintendent.",
+    "link": "https://huggingface.co/datasets/Superintendent/stable-prompts",
+    "categories": ["Data", "Dataset"],
+    "itemType": "dataset",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "informational"
+  },
+  {
+    "name": "Stable Foundation Pantheon (Prompts & Images)",
+    "description": "Collection of prompts and images that were accepted into the Stable Foundation Pantheon (mostly SDXL).",
+    "link": "https://sddscrd.sfury.com/?filter=pantheon",
+    "categories": ["Gallery", "Prompts", "Data"],
+    "itemType": "resource",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "resource_collection"
+  },
+  {
+    "name": "30k SDXL Prompts (Stable Foundation testing)",
+    "description": "A collection of ~30k prompts used during SDXL testing (link points to the Discord post).",
+    "link": "https://discord.com/channels/781145214752129095/1022617696413679696/1143337436638888036",
+    "categories": ["Data", "Prompts"],
+    "itemType": "dataset",
+    "domain": ["image"],
+    "platform": ["web"],
+    "functionKind": "informational"
+  }
+]
