@@ -7,6 +7,30 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- Theme initialization (prevent FOUC) -->
+    <script>
+      // Apply theme before Angular hydration to prevent flash of unstyled content
+      // This is critical for SSR/pre-rendering
+      (function () {
+        try {
+          var theme = localStorage.getItem("theme-preference") || "system";
+          var isDark =
+            theme === "dark" ||
+            (theme === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+          if (isDark) {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {
+          // If localStorage fails, default to dark mode (current default)
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />

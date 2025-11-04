@@ -1,4 +1,1 @@
-/* Fixed navigation bar - always visible at top of viewport */
-header {
-  z-index: 1000; /* Above all page content including sticky elements (z-index: 30) */
-}
+/* Navigation styles have been consolidated into styles.css */
