@@ -84,6 +84,18 @@
           >
             {{ "api" | transloco }}
           </a>
+          <a
+            routerLink="/profile"
+            class="nav-link"
+            role="menuitem"
+            routerLinkActive="nav-link-active"
+          >
+            @if (auth.isLoggedIn()) {
+              {{ "profile.nav_profile" | transloco }}
+            } @else {
+              {{ "profile.nav_login" | transloco }}
+            }
+          </a>
         </div>
 
         <!-- Right Side Actions -->
@@ -96,7 +108,7 @@
             type="button"
             class="mobile-menu-button"
             [attr.aria-expanded]="showMobileMenu"
-            [attr.aria-label]="(showMobileMenu ? 'Close main menu' : 'Open main menu') | transloco"
+            [attr.aria-label]="(showMobileMenu ? 'close_main_menu' : 'open_main_menu') | transloco"
             aria-controls="mobile-navigation"
             (click)="toggleMobileMenu(); $event.stopPropagation()"
             (keydown.escape)="closeMobileMenu()"
@@ -194,6 +206,19 @@
               (click)="closeMobileMenu()"
             >
               {{ "api" | transloco }}
+            </a>
+            <a
+              routerLink="/profile"
+              class="mobile-nav-link"
+              role="menuitem"
+              routerLinkActive="mobile-nav-link-active"
+              (click)="closeMobileMenu()"
+            >
+              @if (auth.isLoggedIn()) {
+                {{ "profile.nav_profile" | transloco }}
+              } @else {
+                {{ "profile.nav_login" | transloco }}
+              }
             </a>
           </div>
         </div>
@@ -338,6 +363,11 @@
             <li class="mb-3">
               <a href="https://aihorde.net/register" class="hover:underline">{{
                 "register_account" | transloco
+              }}</a>
+            </li>
+            <li class="mb-3">
+              <a routerLink="/profile" class="hover:underline">{{
+                "profile.title" | transloco
               }}</a>
             </li>
             <li class="mb-3">

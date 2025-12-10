@@ -1,0 +1,337 @@
+/* =================================================================
+   ADMIN COMPONENT STYLES
+   Responsive admin layout with sidebar navigation
+   
+   Breakpoints:
+   - Mobile: < 1024px (sidebar as slide-out drawer)
+   - Desktop: >= 1024px (sidebar permanently visible)
+   ================================================================= */
+
+/* Admin layout container */
+.admin-layout {
+  min-height: 100vh;
+  display: flex;
+  position: relative;
+}
+
+/* =================================================================
+   SIDEBAR - Mobile-first approach
+   ================================================================= */
+
+/* Sidebar base - Hidden off-screen by default on mobile */
+.admin-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  height: 100vh;
+  width: 16rem;
+  transform: translateX(-100%);
+  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* Sidebar visible on mobile when opened */
+.admin-sidebar.open {
+  transform: translateX(0);
+}
+
+/* Desktop sidebar - always visible and static */
+.admin-sidebar.desktop {
+  position: sticky;
+  transform: translateX(0);
+}
+
+.admin-sidebar-content {
+  height: 100%;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  background-color: rgb(31 41 55);
+  width: 100%;
+}
+
+/* Sidebar header */
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.admin-sidebar-logo {
+  display: flex;
+  align-items: center;
+}
+
+.admin-sidebar-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* Close button - always visible on mobile, hidden on desktop */
+.admin-sidebar-close-btn {
+  padding: 0.5rem;
+  color: rgb(156 163 175);
+  border-radius: 0.375rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-sidebar-close-btn:hover {
+  background-color: rgb(55 65 81);
+  color: white;
+}
+
+.admin-sidebar-close-btn:focus {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+}
+
+/* Hide close button on desktop */
+.admin-sidebar.desktop .admin-sidebar-close-btn {
+  display: none;
+}
+
+.admin-sidebar-close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Sidebar navigation */
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  color: rgb(209 213 219);
+  border-radius: 0.5rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-nav-item:hover {
+  background-color: rgb(55 65 81);
+  color: white;
+}
+
+.admin-nav-item:focus {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+}
+
+.admin-nav-item.active {
+  background-color: rgb(55 65 81);
+  color: white;
+}
+
+.admin-nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.admin-nav-label {
+  margin-left: 0.75rem;
+}
+
+/* Status indicators section */
+.admin-status-section {
+  margin-top: 2rem;
+  padding: 0 0.5rem;
+}
+
+.admin-status-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgb(156 163 175);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.admin-status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.admin-status-label {
+  color: rgb(209 213 219);
+}
+
+/* Back to site link */
+.admin-back-link-container {
+  position: absolute;
+  bottom: 1rem;
+  left: 0.75rem;
+  right: 0.75rem;
+}
+
+.admin-back-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  color: rgb(156 163 175);
+  border-radius: 0.5rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-back-link:hover {
+  background-color: rgb(55 65 81);
+  color: white;
+}
+
+.admin-back-link:focus {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+}
+
+.admin-back-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* =================================================================
+   MOBILE OVERLAY
+   ================================================================= */
+
+.admin-mobile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background-color: rgb(0 0 0 / 0.5);
+  cursor: pointer;
+  animation: fade-in 200ms ease;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* =================================================================
+   MAIN CONTENT AREA
+   ================================================================= */
+
+.admin-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =================================================================
+   MOBILE HEADER
+   ================================================================= */
+
+.admin-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: rgb(17 24 39);
+  border-bottom: 1px solid rgb(75 85 99);
+  padding: 0.75rem 1rem;
+}
+
+/* Hide mobile header on desktop */
+.admin-mobile-header.desktop-hidden {
+  display: none;
+}
+
+.admin-mobile-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-mobile-menu-btn {
+  padding: 0.5rem;
+  color: rgb(156 163 175);
+  border-radius: 0.375rem;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.admin-mobile-menu-btn:hover {
+  background-color: rgb(55 65 81);
+  color: white;
+}
+
+.admin-mobile-menu-btn:focus {
+  outline: 2px solid rgb(59 130 246);
+  outline-offset: 2px;
+}
+
+.admin-mobile-menu-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.admin-mobile-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.admin-mobile-spacer {
+  width: 2.5rem;
+}
+
+/* =================================================================
+   PAGE CONTENT
+   ================================================================= */
+
+.admin-content {
+  padding: 1rem;
+  background-color: rgb(17 24 39);
+  flex: 1;
+  min-height: calc(100vh - 57px); /* Account for mobile header */
+}
+
+/* More padding on larger screens */
+@media (min-width: 640px) {
+  .admin-content {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-content {
+    padding: 2rem;
+    min-height: 100vh;
+  }
+}
+
+/* Access denied section */
+.admin-access-denied {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.admin-access-denied-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.admin-access-denied-text {
+  color: rgb(156 163 175);
+  margin-bottom: 1.5rem;
+}
+

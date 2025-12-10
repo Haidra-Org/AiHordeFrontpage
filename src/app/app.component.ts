@@ -6,6 +6,7 @@ import { DOCUMENT } from '@angular/common';
 import { FooterColorService } from './services/footer-color.service';
 import { ThemeService } from './services/theme.service';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly renderer = inject(Renderer2);
   public readonly themeService = inject(ThemeService);
+  public readonly auth = inject(AuthService);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;

@@ -1,0 +1,97 @@
+/* =================================================================
+   FEATURE CARD STYLES
+   
+   Includes:
+   - Feature card base
+   - Feature card disabled state
+   - Feature card icons (purple, blue, green variants)
+   ================================================================= */
+
+/* Feature card base - clickable card with hover effects */
+.feature-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: white;
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 200ms ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+  border-color: rgb(147 51 234);
+}
+
+.dark .feature-card {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.dark .feature-card:hover {
+  border-color: rgb(168 85 247);
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4);
+}
+
+/* Feature card disabled state - no hover effects */
+.feature-card-disabled {
+  cursor: default;
+}
+
+.feature-card-disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgb(229 231 235);
+}
+
+.dark .feature-card-disabled:hover {
+  border-color: rgb(55 65 81);
+}
+
+/* Feature card icon base */
+.feature-card-icon {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: white;
+}
+
+/* Purple icon variant */
+.feature-card-icon-purple {
+  background-color: rgb(243 232 255);
+  color: rgb(147 51 234);
+}
+
+.dark .feature-card-icon-purple {
+  background-color: rgb(88 28 135);
+  color: rgb(216 180 254);
+}
+
+/* Blue icon variant */
+.feature-card-icon-blue {
+  background-color: rgb(219 234 254);
+  color: rgb(37 99 235);
+}
+
+.dark .feature-card-icon-blue {
+  background-color: rgb(30 58 138);
+  color: rgb(147 197 253);
+}
+
+/* Green icon variant */
+.feature-card-icon-green {
+  background-color: rgb(220 252 231);
+  color: rgb(21 128 61);
+}
+
+.dark .feature-card-icon-green {
+  background-color: rgb(22 101 52);
+  color: rgb(134 239 172);
+}

@@ -9,6 +9,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'profile',
+    loadComponent: () =>
+      import('./pages/profile/profile.component').then(
+        (c) => c.ProfileComponent,
+      ),
+  },
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./pages/admin/admin.component').then((c) => c.AdminComponent),
+    loadChildren: () =>
+      import('./pages/admin/admin.routes').then((m) => m.adminRoutes),
+  },
+  {
     path: 'faq',
     loadComponent: () =>
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),

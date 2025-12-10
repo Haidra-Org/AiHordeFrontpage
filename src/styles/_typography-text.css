@@ -1,0 +1,110 @@
+/* =================================================================
+   TYPOGRAPHY - TEXT STYLES
+   
+   Includes:
+   - Text color utilities
+   - Description text
+   - Intro text variants
+   - Error/success text
+   ================================================================= */
+
+/* Secondary text color */
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.dark .text-secondary {
+  color: rgb(156 163 175);
+}
+
+/* Description text - light secondary text */
+.text-description {
+  font-weight: 300;
+  color: rgb(107 114 128);
+}
+
+@media (min-width: theme("screens.sm")) {
+  .text-description {
+    font-size: 1.25rem;
+  }
+}
+
+.dark .text-description {
+  color: rgb(156 163 175);
+}
+
+/* Intro paragraph text - emphasized secondary text for homepage intro */
+.text-intro {
+  max-width: 42rem;
+  margin-bottom: 1rem;
+  font-weight: 400;
+  color: rgb(107 114 128);
+}
+
+@media (min-width: theme("screens.md")) {
+  .text-intro {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .text-intro {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+.dark .text-intro {
+  color: rgb(156 163 175);
+}
+
+/* Intro lead text - large, attention-grabbing intro text */
+.text-intro-lead {
+  max-width: 48rem;
+  margin-bottom: 2rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: rgb(55 65 81);
+}
+
+@media (min-width: theme("screens.md")) {
+  .text-intro-lead {
+    font-size: 1.375rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .text-intro-lead {
+    font-size: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+}
+
+.dark .text-intro-lead {
+  color: rgb(209 213 219);
+}
+
+/* Primary text color */
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.dark .text-primary {
+  color: white;
+}
+
+/* Error text */
+.text-error {
+  color: red;
+}
+
+/* Success text */
+.text-success {
+  color: rgb(34 197 94);
+}
+
+/* Legacy text colors */
+.text-red {
+  color: red;
+}

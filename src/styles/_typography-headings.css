@@ -1,0 +1,120 @@
+/* =================================================================
+   TYPOGRAPHY - HEADINGS
+   
+   Includes:
+   - Hero heading (h1)
+   - Page title
+   - Section headings (h2)
+   - Subsection headings (h3)
+   - Card headings
+   - Stats headings
+   ================================================================= */
+
+/* Hero heading (h1) */
+.heading-hero {
+  margin-bottom: 0.5rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+@media (min-width: theme("screens.md")) {
+  .heading-hero {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: theme("screens.xl")) {
+  .heading-hero {
+    font-size: 3.75rem;
+  }
+}
+
+.dark .heading-hero {
+  color: white;
+}
+
+/* Page title - large title with margin */
+.heading-page-title {
+  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-page-title {
+  color: white;
+}
+
+/* Card heading - h3 for card components */
+.heading-card {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Card heading item - h3 for list items */
+.heading-item {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: rgb(17 24 39);
+}
+
+.dark .heading-item {
+  color: white;
+}
+
+/* Section heading (h2) */
+.heading-section {
+  font-size: 1.875rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+}
+
+.dark .heading-section {
+  color: white;
+}
+
+/* Large section heading (h2) */
+.heading-section-lg {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+}
+
+.dark .heading-section-lg {
+  color: white;
+}
+
+/* Subsection heading (h3) */
+.heading-subsection {
+  margin-bottom: 0.375rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+}
+
+.dark .heading-subsection {
+  color: white;
+}
+
+/* Stats category heading */
+.heading-stats {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border-primary);
+  padding-bottom: 0.75rem;
+}
+
+.dark .heading-stats {
+  color: white;
+  border-bottom-color: rgb(55 65 81);
+}

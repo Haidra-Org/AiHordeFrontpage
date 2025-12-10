@@ -1,0 +1,121 @@
+/* =================================================================
+   NAVIGATION LINKS
+   
+   Includes:
+   - Desktop navigation links
+   - Desktop navigation menu bar
+   - Mobile navigation links
+   - Active states for both
+   - Focus management for accessibility
+   ================================================================= */
+
+/* Desktop navigation menu bar */
+.nav-menu-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .nav-menu-desktop {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+}
+
+/* Desktop Navigation Links */
+.nav-link {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--color-brand-purple);
+  background-color: var(--color-bg-secondary);
+}
+
+.nav-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-brand-purple), 0 0 0 4px rgba(147, 51, 234, 0.1);
+}
+
+.dark .nav-link {
+  color: rgb(156 163 175);
+}
+
+.dark .nav-link:hover {
+  color: rgb(216 180 254);
+  background-color: rgb(55 65 81);
+}
+
+.nav-link-active {
+  color: var(--color-brand-purple);
+  background-color: rgb(243 232 255);
+  font-weight: 600;
+}
+
+.dark .nav-link-active {
+  color: rgb(216 180 254);
+  background-color: rgba(88, 28, 135, 0.3);
+}
+
+/* Mobile Navigation Links */
+.mobile-nav-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+.mobile-nav-link:hover {
+  color: var(--color-brand-purple);
+  background-color: var(--color-bg-secondary);
+}
+
+.mobile-nav-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-brand-purple), 0 0 0 4px rgba(147, 51, 234, 0.1);
+}
+
+.dark .mobile-nav-link {
+  color: rgb(156 163 175);
+}
+
+.dark .mobile-nav-link:hover {
+  color: rgb(216 180 254);
+  background-color: rgb(55 65 81);
+}
+
+.mobile-nav-link-active {
+  color: var(--color-brand-purple);
+  background-color: rgb(243 232 255);
+  font-weight: 600;
+}
+
+.dark .mobile-nav-link-active {
+  color: rgb(216 180 254);
+  background-color: rgba(88, 28, 135, 0.3);
+}
+
+/* Smooth hover transitions for all interactive elements */
+.nav-link,
+.mobile-nav-link,
+button {
+  will-change: transform;
+}
+
+/* Focus management for accessibility */
+.nav-link:focus-visible,
+.mobile-nav-link:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-brand-purple);
+  outline-offset: 2px;
+}

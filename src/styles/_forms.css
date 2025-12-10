@@ -1,0 +1,123 @@
+/* =================================================================
+   FORM STYLES
+   
+   Includes:
+   - Form labels
+   - Form inputs
+   - Checkboxes
+   - Filter components
+   ================================================================= */
+
+/* Form label */
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.dark .form-label {
+  color: white;
+}
+
+/* Filter label - used in filter sections */
+.filter-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(17 24 39);
+}
+
+.dark .filter-label {
+  color: white;
+}
+
+/* Checkbox input - standard form checkbox */
+.checkbox-input {
+  width: 1rem;
+  height: 1rem;
+  color: rgb(37 99 235);
+  background-color: rgb(243 244 246);
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.25rem;
+}
+
+.checkbox-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(191 219 254);
+  border-color: rgb(37 99 235);
+}
+
+.dark .checkbox-input {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  box-shadow: 0 0 0 0 rgb(31 41 55);
+}
+
+.dark .checkbox-input:focus {
+  box-shadow: 0 0 0 2px rgb(30 58 138);
+}
+
+/* Checkbox label - label next to checkbox */
+.checkbox-label {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(17 24 39);
+  cursor: pointer;
+}
+
+.dark .checkbox-label {
+  color: rgb(209 213 219);
+}
+
+/* Form input field */
+.form-input {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid rgb(209 213 219);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  display: block;
+  width: 100%;
+  padding: 0.625rem;
+}
+
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(59 130 246 / 0.5);
+  border-color: rgb(59 130 246);
+}
+
+.dark .form-input {
+  background-color: rgb(55 65 81);
+  border-color: rgb(75 85 99);
+  color: white;
+}
+
+.dark .form-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+/* Filter container with scrollable content */
+.filter-scroll-container {
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.5rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .filter-scroll-container {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+}
+
+/* Filter header - label and action button */
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}

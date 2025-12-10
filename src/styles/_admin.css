@@ -1,0 +1,850 @@
+/* =================================================================
+   ADMIN PANEL STYLES
+   
+   Includes:
+   - Admin containers
+   - Admin headers
+   - Panels
+   - Stat cards
+   - Worker cards
+   - Status icons
+   - Dialogs/Modals
+   - Toasts
+   - Toggle switches
+   - Field layouts
+   - Icon buttons
+   - Admin-specific list items
+   ================================================================= */
+
+/* =================================================================
+   ADMIN CONTAINERS
+   ================================================================= */
+
+/* Admin container - standard width */
+.admin-container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Admin container - large/full width */
+.admin-container-lg {
+  max-width: 100%;
+}
+
+/* Admin header with title and controls */
+.admin-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .admin-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+/* =================================================================
+   PANELS
+   ================================================================= */
+
+/* Panel - generic container with dark background */
+.panel {
+  background-color: rgb(31 41 55);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Panel with unsaved changes - yellow border */
+.panel-unsaved {
+  outline: 2px solid rgb(234 179 8);
+  outline-offset: 0px;
+}
+
+/* Panel link - interactive panel item */
+.panel-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgb(55 65 81);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease;
+}
+
+.panel-link:hover {
+  background-color: rgb(75 85 99);
+}
+
+/* =================================================================
+   STAT CARDS
+   ================================================================= */
+
+/* Stat card container */
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+/* Stat card icon wrapper */
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Stat card icon color variants */
+.stat-card-icon-purple {
+  background-color: rgb(88 28 135 / 0.5);
+  color: rgb(192 132 252);
+}
+
+.stat-card-icon-blue {
+  background-color: rgb(30 58 138 / 0.5);
+  color: rgb(96 165 250);
+}
+
+.stat-card-icon-green {
+  background-color: rgb(22 101 52 / 0.5);
+  color: rgb(74 222 128);
+}
+
+.stat-card-icon-yellow {
+  background-color: rgb(113 63 18 / 0.5);
+  color: rgb(250 204 21);
+}
+
+.stat-card-icon-indigo {
+  background-color: rgb(49 46 129 / 0.5);
+  color: rgb(129 140 248);
+}
+
+/* Stat card content */
+.stat-card-content {
+  margin-left: 1rem;
+}
+
+/* Stat card label */
+.stat-card-label {
+  font-size: 0.875rem;
+  color: rgb(156 163 175);
+}
+
+/* Stat card value */
+.stat-card-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* =================================================================
+   WORKER CARDS
+   ================================================================= */
+
+/* Worker card base */
+.worker-card {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* Worker card backgrounds */
+.worker-card-bg-normal {
+  background-color: rgb(31 41 55);
+}
+
+.worker-card-bg-issue {
+  background-color: rgb(127 29 29 / 0.3);
+}
+
+/* Status icon container */
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* Status icon variants */
+.status-icon-success {
+  background-color: rgb(22 101 52);
+  color: rgb(74 222 128);
+}
+
+.status-icon-error {
+  background-color: rgb(127 29 29);
+  color: rgb(248 113 113);
+}
+
+/* =================================================================
+   DIALOGS / MODALS
+   ================================================================= */
+
+/* Modal overlay container */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgb(0 0 0 / 0.5);
+}
+
+/* Dialog panel */
+.dialog-panel {
+  position: relative;
+  background-color: rgb(31 41 55);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+/* =================================================================
+   TOASTS
+   ================================================================= */
+
+/* Toast base */
+.toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  animation: toast-slide-in 300ms ease;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Toast variants */
+.toast-success {
+  background-color: rgb(22 101 52);
+  color: white;
+}
+
+.toast-error {
+  background-color: rgb(127 29 29);
+  color: white;
+}
+
+/* =================================================================
+   UNSAVED CHANGES WARNING
+   ================================================================= */
+
+/* Unsaved changes warning banner */
+.unsaved-changes-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: rgb(113 63 18 / 0.3);
+  border-bottom: 1px solid rgb(234 179 8 / 0.5);
+  color: rgb(250 204 21);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* =================================================================
+   EXPANDABLE SECTIONS
+   ================================================================= */
+
+/* Expandable header button */
+.expandable-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.expandable-header:hover {
+  background-color: rgb(55 65 81 / 0.5);
+}
+
+/* Expandable icon (chevron) */
+.expandable-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: rgb(156 163 175);
+  transition: transform 200ms ease;
+}
+
+.expandable-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* =================================================================
+   TOGGLE SWITCHES
+   ================================================================= */
+
+/* Toggle switch container */
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Toggle switch track */
+.toggle-switch-track {
+  width: 2.75rem;
+  height: 1.5rem;
+  background-color: rgb(75 85 99);
+  border-radius: 9999px;
+  transition: background-color 200ms ease;
+}
+
+.toggle-switch input:checked + .toggle-switch-track {
+  background-color: rgb(37 99 235);
+}
+
+/* Toggle switch thumb */
+.toggle-switch-thumb {
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: white;
+  border-radius: 9999px;
+  transition: transform 200ms ease;
+}
+
+.toggle-switch input:checked ~ .toggle-switch-thumb {
+  transform: translateX(1.25rem);
+}
+
+/* =================================================================
+   FIELD LAYOUTS
+   ================================================================= */
+
+/* Field row compact - inline label and input */
+.field-row-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: rgb(55 65 81 / 0.3);
+  border-radius: 0.5rem;
+  transition: opacity 200ms ease;
+}
+
+/* Field row dimmed state - for "off" toggles */
+.field-row-dimmed {
+  opacity: 0.5;
+}
+
+/* Field row stacked - label above input */
+.field-row-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .field-row-stacked {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+/* Field label container */
+.field-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Field label text */
+.field-label-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(209 213 219);
+}
+
+/* Field label description */
+.field-label-desc {
+  font-size: 0.75rem;
+  color: rgb(107 114 128);
+  margin-top: 0.125rem;
+}
+
+/* =================================================================
+   BUTTONS
+   ================================================================= */
+
+/* Muted button */
+.btn-muted {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(209 213 219);
+  background-color: rgb(55 65 81);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.btn-muted:hover {
+  background-color: rgb(75 85 99);
+  color: white;
+}
+
+.btn-muted:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Danger button */
+.btn-danger {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background-color: rgb(185 28 28);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease;
+}
+
+.btn-danger:hover {
+  background-color: rgb(153 27 27);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Icon button */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  color: rgb(156 163 175);
+  background-color: rgb(55 65 81);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+.btn-icon:hover {
+  background-color: rgb(75 85 99);
+  color: white;
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =================================================================
+   LIST ITEM BUTTON
+   ================================================================= */
+
+/* List item button - clickable list items */
+.list-item-button {
+  width: 100%;
+  padding: 0.75rem;
+  text-align: left;
+  background-color: rgb(55 65 81 / 0.5);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease;
+}
+
+.list-item-button:hover {
+  background-color: rgb(55 65 81);
+}
+
+/* =================================================================
+   GRID LAYOUTS (ADMIN-SPECIFIC)
+   ================================================================= */
+
+/* 2-column grid for stats */
+.admin-grid-stats-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* 4-column responsive grid for stats */
+.admin-grid-stats-4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-grid-stats-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* 2-column responsive grid for workers */
+.admin-grid-workers {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .admin-grid-workers {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 3-column responsive grid for worker list */
+.admin-grid-workers-3 {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .admin-grid-workers-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-grid-workers-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 3-column responsive grid for user history */
+.admin-grid-history {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .admin-grid-history {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-grid-history {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 2-3 column responsive grid for permissions */
+.admin-grid-permissions {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-grid-permissions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-grid-permissions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 2-column responsive grid for limits */
+.admin-grid-limits {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .admin-grid-limits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 2-column grid for moderator tools */
+.admin-grid-tools {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .admin-grid-tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =================================================================
+   TEXT UTILITIES (ADMIN-SPECIFIC)
+   Use Tailwind text-sm, text-xs, font-mono, truncate for standard sizing
+   ================================================================= */
+
+/* Admin heading - page title */
+.admin-heading-page {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+/* Admin heading - large */
+.admin-heading-lg {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+/* Admin heading - section */
+.admin-heading-section {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* Admin heading - card */
+.admin-heading-card {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+/* =================================================================
+   LOADING STATES
+   ================================================================= */
+
+/* Loading container */
+.admin-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+/* Loading spinner */
+.admin-spinner {
+  width: 2rem;
+  height: 2rem;
+  color: rgb(59 130 246);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading text */
+.admin-loading-text {
+  margin-top: 1rem;
+  color: rgb(156 163 175);
+}
+
+/* =================================================================
+   EMPTY STATES
+   ================================================================= */
+
+/* Empty state container */
+.admin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+/* Empty state icon */
+.admin-empty-icon {
+  width: 3rem;
+  height: 3rem;
+  color: rgb(107 114 128);
+}
+
+/* Empty state text */
+.admin-empty-text {
+  margin-top: 1rem;
+  color: rgb(156 163 175);
+}
+
+/* =================================================================
+   MISC UTILITIES (Admin-specific only - use Tailwind for standard utilities)
+   ================================================================= */
+
+/* Border top separator - admin specific dark color */
+.admin-border-t {
+  border-top: 1px solid rgb(55 65 81);
+}
+
+/* Background utilities - admin specific dark colors */
+.admin-bg-dark {
+  background-color: rgb(55 65 81);
+}
+
+.admin-bg-darker {
+  background-color: rgb(31 41 55);
+}
+
+/* Moderator badge text */
+.admin-badge-moderator {
+  font-size: 0.875rem;
+  color: rgb(192 132 252);
+  margin-left: 0.5rem;
+}
+
+/* Capability badge for worker cards */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+}
+
+.admin-badge-capability {
+  background-color: rgb(55 65 81);
+  color: rgb(156 163 175);
+}
+
+/* Deleted user warning */
+.admin-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: rgb(127 29 29);
+  border-radius: 0.5rem;
+  color: rgb(254 202 202);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Admin-specific color utilities (dark theme colors) */
+.admin-text-blue {
+  color: rgb(96 165 250);
+}
+
+.admin-text-green {
+  color: rgb(74 222 128);
+}
+
+.admin-text-yellow {
+  color: rgb(250 204 21);
+}
+
+.admin-text-red {
+  color: rgb(248 113 113);
+}
+
+.admin-text-purple {
+  color: rgb(192 132 252);
+}
+
+/* Admin text colors - specific shades for dark admin UI */
+.admin-text-muted {
+  color: rgb(156 163 175);
+}
+
+.admin-text-light {
+  color: rgb(209 213 219);
+}
+
+.admin-text-white {
+  color: white;
+}
+
+/* Admin link - styled link in admin panel */
+.admin-link {
+  color: rgb(96 165 250);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.admin-link:hover {
+  color: rgb(147 197 253);
+  text-decoration: underline;
+}
+
+/* Icon color utilities */
+.admin-icon-muted {
+  color: rgb(107 114 128);
+}
+
+/* Transform utilities */
+.admin-flip-x {
+  transform: scaleX(-1);
+}
+
+/* Dialog scroll container */
+.admin-dialog-scroll {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+/* Max width for bridge agent text */
+.admin-max-w-bridge {
+  max-width: 200px;
+  margin-left: 0.5rem;
+}
+
+/* Spinner styles */
+.admin-spinner-track {
+  opacity: 0.25;
+}
+
+.admin-spinner-head {
+  opacity: 0.75;
+}
