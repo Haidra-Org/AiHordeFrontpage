@@ -1,0 +1,69 @@
+/* =================================================================
+   BASE STYLES
+   
+   Includes:
+   - Dark mode configuration (@custom-variant)
+   - Screen reader utilities
+   - Body scroll lock
+   - Global animation keyframes
+   ================================================================= */
+
+/* Dark mode selector variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Screen reader only text - for accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Body scroll lock for mobile menu */
+body.overflow-hidden {
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  body.overflow-hidden {
+    overflow: auto;
+  }
+}
+
+/* Global keyframes */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

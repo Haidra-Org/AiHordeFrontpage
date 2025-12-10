@@ -1,0 +1,117 @@
+/* =================================================================
+   BADGE STYLES
+   
+   Includes:
+   - Badge base
+   - Badge color variants (primary, secondary, info, warning, success, danger, purple, pink, indigo, teal)
+   ================================================================= */
+
+/* Badge base - for tags and labels */
+.badge-base {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: rgb(219 234 254);
+  color: rgb(30 64 175);
+}
+
+.dark .badge-primary {
+  background-color: rgb(30 58 138);
+  color: rgb(147 197 253);
+}
+
+.badge-secondary {
+  background-color: rgb(220 252 231);
+  color: rgb(22 101 52);
+}
+
+.dark .badge-secondary {
+  background-color: rgb(20 83 45);
+  color: rgb(134 239 172);
+}
+
+.badge-info {
+  background-color: rgb(224 242 254);
+  color: rgb(7 89 133);
+}
+
+.dark .badge-info {
+  background-color: rgb(12 74 110);
+  color: rgb(125 211 252);
+}
+
+.badge-warning {
+  background-color: rgb(254 243 199);
+  color: rgb(133 77 14);
+}
+
+.dark .badge-warning {
+  background-color: rgb(120 53 15);
+  color: rgb(253 224 71);
+}
+
+.badge-success {
+  background-color: rgb(220 252 231);
+  color: rgb(21 128 61);
+}
+
+.dark .badge-success {
+  background-color: rgb(22 101 52);
+  color: rgb(134 239 172);
+}
+
+.badge-danger {
+  background-color: rgb(254 226 226);
+  color: rgb(153 27 27);
+}
+
+.dark .badge-danger {
+  background-color: rgb(127 29 29);
+  color: rgb(252 165 165);
+}
+
+.badge-purple {
+  background-color: rgb(243 232 255);
+  color: rgb(107 33 168);
+}
+
+.dark .badge-purple {
+  background-color: rgb(88 28 135);
+  color: rgb(216 180 254);
+}
+
+.badge-pink {
+  background-color: rgb(252 231 243);
+  color: rgb(157 23 77);
+}
+
+.dark .badge-pink {
+  background-color: rgb(131 24 67);
+  color: rgb(249 168 212);
+}
+
+.badge-indigo {
+  background-color: rgb(224 231 255);
+  color: rgb(55 48 163);
+}
+
+.dark .badge-indigo {
+  background-color: rgb(55 48 163);
+  color: rgb(199 210 254);
+}
+
+.badge-teal {
+  background-color: rgb(204 251 241);
+  color: rgb(17 94 89);
+}
+
+.dark .badge-teal {
+  background-color: rgb(19 78 74);
+  color: rgb(153 246 228);
+}

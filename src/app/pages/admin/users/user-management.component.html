@@ -1,0 +1,972 @@
+<!-- Success Toast -->
+@if (showSuccess()) {
+  <div class="toast toast-success">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span>{{ "admin.users.success" | transloco }}</span>
+  </div>
+}
+
+<!-- Dialog -->
+@if (dialogOpen()) {
+  <div class="modal">
+    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-panel">
+      <h3 class="admin-heading-card mb-4">
+        {{ "admin.users.dialog.reset_suspicion_title" | transloco: { username: selectedUser()!.username } }}
+      </h3>
+      <div class="flex justify-end gap-3">
+        <button
+          (click)="closeDialog()"
+          class="btn-muted"
+        >
+          {{ "admin.users.dialog.cancel" | transloco }}
+        </button>
+        <button
+          (click)="confirmDialog()"
+          [disabled]="isUpdating()"
+          class="btn-primary"
+        >
+          {{ "admin.users.dialog.confirm" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="admin-container">
+  <!-- Header -->
+  <h1 class="admin-heading-page">{{ "admin.users.title" | transloco }}</h1>
+
+  <!-- Debug: remove after testing -->
+  <div class="admin-text-white mb-4">History count: {{ userHistory().length }}</div>
+
+  <!-- User History -->
+  @if (userHistory().length > 0) {
+    <div class="panel mb-6">
+      <button
+        (click)="toggleHistorySection()"
+        class="expandable-header"
+      >
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 admin-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span class="admin-text-light">Recent Users ({{ userHistory().length }})</span>
+        </div>
+        <div class="flex items-center gap-2">
+          @if (historyExpanded()) {
+            <button
+              (click)="clearUserHistory(); $event.stopPropagation()"
+              class="btn-muted text-sm px-2 py-1"
+              title="Clear history"
+            >
+              Clear
+            </button>
+          }
+          <svg
+            class="expandable-icon"
+            [class.expanded]="historyExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      @if (historyExpanded()) {
+        <div class="p-4 pt-0">
+          <div class="admin-grid-history">
+            @for (item of userHistory(); track item.id) {
+              <button
+                (click)="selectUserFromHistory(item)"
+                class="list-item-button"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex-1 min-w-0">
+                    <div class="admin-text-white truncate">{{ item.username }}</div>
+                    <div class="admin-text-muted text-sm">#{{ item.id }}</div>
+                  </div>
+                  <svg class="w-4 h-4 admin-icon-muted shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Search Bar -->
+  <div class="mb-6">
+    <div class="flex gap-3">
+      <input
+        type="text"
+        [value]="searchQuery()"
+        (input)="onSearchChange($event)"
+        (keydown.enter)="searchUser()"
+        [placeholder]="'admin.users.search_placeholder' | transloco"
+        class="form-input flex-1"
+      />
+      <button
+        (click)="searchUser()"
+        [disabled]="loading() || !searchQuery()"
+        class="btn-primary"
+      >
+        {{ "admin.users.search_button" | transloco }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="admin-loading">
+      <svg class="admin-spinner" fill="none" viewBox="0 0 24 24">
+        <circle class="admin-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="admin-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="admin-loading-text">{{ "admin.users.loading" | transloco }}</p>
+    </div>
+  } @else if (userNotFound()) {
+    <div class="admin-empty">
+      <svg class="admin-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+      <p class="admin-empty-text">{{ "admin.users.not_found" | transloco }}</p>
+    </div>
+  } @else if (!selectedUser()) {
+    <div class="admin-empty">
+      <svg class="admin-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <p class="admin-empty-text">{{ "admin.users.select_user" | transloco }}</p>
+    </div>
+  } @else {
+    <!-- User Details -->
+    <div 
+      class="panel"
+      [class.panel-unsaved]="isDirty()"
+    >
+      <!-- Deleted User Warning -->
+      @if (selectedUser()!.deleted) {
+        <div class="bg-red-900/50 border-b border-red-700 px-6 py-3 flex items-center gap-3">
+          <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+          </svg>
+          <span class="text-red-300">{{ "admin.users.deleted_warning" | transloco }}</span>
+        </div>
+      }
+
+      <!-- Unsaved Changes Warning -->
+      @if (isDirty()) {
+        <div class="unsaved-changes-warning">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+          </svg>
+          <span>{{ "admin.users.unsaved_changes" | transloco }}</span>
+        </div>
+      }
+
+      <!-- User Info Header -->
+      <div class="p-6 pb-3">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="admin-heading-section flex items-center gap-2">
+            {{ selectedUser()!.username }}
+            @if (trustedValue()) {
+              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20" aria-label="Trusted user">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+              </svg>
+            }
+            @if (flaggedValue()) {
+              <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20" aria-label="Flagged user">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+              </svg>
+            }
+            @if (selectedUser()!.moderator) {
+              <span class="admin-badge-moderator">{{ "admin.users.moderator_badge" | transloco }}</span>
+            }
+          </h2>
+          @if (isDirty()) {
+            <button
+              (click)="saveChanges()"
+              [disabled]="isSaving()"
+              class="btn-primary"
+            >
+              {{ "admin.users.save" | transloco }}
+            </button>
+          }
+        </div>
+
+        <!-- Quick Stats Grid -->
+        <div class="admin-grid-stats-4 mb-6">
+          <div class="admin-bg-dark rounded-lg p-3">
+            <div class="text-xs admin-text-muted mb-1">{{ "admin.users.field.kudos" | transloco }}</div>
+            <div class="admin-heading-card">{{ selectedUser()!.kudos | formatNumber }}</div>
+          </div>
+          <div class="admin-bg-dark rounded-lg p-3">
+            <div class="text-xs admin-text-muted mb-1">{{ "admin.users.field.worker_count" | transloco }}</div>
+            <div class="admin-heading-card">{{ selectedUser()!.worker_count }}</div>
+          </div>
+          @if (selectedUser()!.evaluating_kudos !== undefined) {
+            <div class="admin-bg-dark rounded-lg p-3">
+              <div class="text-xs admin-text-muted mb-1">{{ "admin.users.field.evaluating_kudos" | transloco }}</div>
+              <div class="admin-heading-card">{{ selectedUser()!.evaluating_kudos }}</div>
+            </div>
+          }
+          <div 
+            class="admin-bg-dark rounded-lg p-3"
+            [class.border-2]="selectedUser()!.suspicious > 10 && !trustedValue()"
+            [class.border-red-500]="selectedUser()!.suspicious > 10 && !trustedValue()"
+          >
+            <div class="text-xs admin-text-muted mb-1">{{ "admin.users.field.suspicious" | transloco }}</div>
+            <div class="admin-heading-card">{{ selectedUser()!.suspicious }}</div>
+            @if (selectedUser()!.suspicious > 0) {
+              <button
+                (click)="openResetSuspicionDialog()"
+                class="btn-danger text-xs mt-2 px-2 py-1"
+              >
+                Reset
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Permissions & Flags Section -->
+      <div class="admin-border-t">
+        <button
+          (click)="togglePermissionsSection()"
+          class="expandable-header"
+        >
+          <span class="admin-text-light">{{ "admin.users.section.permissions" | transloco }}</span>
+          <svg
+            class="expandable-icon"
+            [class.expanded]="permissionsExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        @if (permissionsExpanded()) {
+          <div class="p-6 pt-4">
+            <div class="admin-grid-permissions">
+              <!-- Moderator -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!moderatorValue()" [attr.title]="'admin.users.desc.moderator' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.moderator" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.moderator" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="moderatorValue()"
+                    (change)="onModeratorChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Trusted -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!trustedValue()" [attr.title]="'admin.users.desc.trusted' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.trusted" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.trusted" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="trustedValue()"
+                    (change)="onTrustedChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Flagged -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!flaggedValue()" [attr.title]="'admin.users.desc.flagged' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.flagged" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.flagged" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="flaggedValue()"
+                    (change)="onFlaggedChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Customizer -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!customizerValue()" [attr.title]="'admin.users.desc.customizer' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.customizer" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.customizer" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="customizerValue()"
+                    (change)="onCustomizerChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Service -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!serviceValue()" [attr.title]="'admin.users.desc.service' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.service" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.service" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="serviceValue()"
+                    (change)="onServiceChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Education -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!educationValue()" [attr.title]="'admin.users.desc.education' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.education" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.education" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="educationValue()"
+                    (change)="onEducationChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Special -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!specialValue()" [attr.title]="'admin.users.desc.special' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.special" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.special" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="specialValue()"
+                    (change)="onSpecialChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Filtered -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!filteredValue()" [attr.title]="'admin.users.desc.filtered' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.filtered" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.filtered" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="filteredValue()"
+                    (change)="onFilteredChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- VPN Access -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!vpnValue()" [attr.title]="'admin.users.desc.vpn_access' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.vpn_access" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.vpn_access" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="vpnValue()"
+                    (change)="onVpnChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+
+              <!-- Public Workers -->
+              <div class="field-row-compact" [class.field-row-dimmed]="!publicWorkersValue()" [attr.title]="'admin.users.desc.public_workers' | transloco">
+                <div class="field-label">
+                  <span class="field-label-text">{{ "admin.users.field.public_workers" | transloco }}</span>
+                  <span class="field-label-desc">{{ "admin.users.desc.public_workers" | transloco }}</span>
+                </div>
+                <label class="toggle-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="publicWorkersValue()"
+                    (change)="onPublicWorkersChange($event)"
+                  />
+                  <div class="toggle-switch-track"></div>
+                  <div class="toggle-switch-thumb"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Limits & Configuration Section -->
+      <div class="admin-border-t">
+        <button
+          (click)="toggleLimitsSection()"
+          class="expandable-header"
+        >
+          <span class="admin-text-light">{{ "admin.users.section.limits" | transloco }}</span>
+          <svg
+            class="expandable-icon"
+            [class.expanded]="limitsExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        @if (limitsExpanded()) {
+          <div class="p-6 pt-4">
+            <div class="admin-grid-limits gap-4">
+              <!-- Worker Invites -->
+              <div [attr.title]="'admin.users.desc.worker_invites' | transloco">
+                <label class="field-label-text block mb-1">{{ "admin.users.field.worker_invites" | transloco }}</label>
+                <p class="field-label-desc mb-2">{{ "admin.users.desc.worker_invites" | transloco }}</p>
+                <input
+                  type="number"
+                  [value]="workerInvitesValue()"
+                  (input)="onWorkerInvitesChange($event)"
+                  min="0"
+                  class="form-input w-full"
+                />
+              </div>
+
+              <!-- Usage Multiplier -->
+              <div [attr.title]="'admin.users.desc.usage_multiplier' | transloco">
+                <label class="field-label-text block mb-1">{{ "admin.users.field.usage_multiplier" | transloco }}</label>
+                <p class="field-label-desc mb-2">{{ "admin.users.desc.usage_multiplier" | transloco }}</p>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  [value]="usageMultiplierValue()"
+                  (input)="onUsageMultiplierChange($event)"
+                  class="form-input w-full"
+                />
+              </div>
+
+              <!-- Concurrency -->
+              <div [attr.title]="'admin.users.desc.concurrency' | transloco">
+                <label class="field-label-text block mb-1">{{ "admin.users.field.concurrency" | transloco }}</label>
+                <p class="field-label-desc mb-2">{{ "admin.users.desc.concurrency" | transloco }}</p>
+                <input
+                  type="number"
+                  min="0"
+                  [value]="concurrencyValue()"
+                  (input)="onConcurrencyChange($event)"
+                  class="form-input w-full"
+                />
+              </div>
+
+              <!-- Monthly Kudos -->
+              <div [attr.title]="'admin.users.desc.monthly_kudos' | transloco">
+                <label class="field-label-text block mb-1">{{ "admin.users.field.monthly_kudos" | transloco }}</label>
+                <p class="field-label-desc mb-2">{{ "admin.users.desc.monthly_kudos" | transloco }}</p>
+                <input
+                  type="number"
+                  min="0"
+                  [value]="monthlyKudosValue()"
+                  (input)="onMonthlyKudosChange($event)"
+                  class="form-input w-full"
+                />
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Contact & Notes Section -->
+      <div class="admin-border-t">
+        <button
+          (click)="toggleContactSection()"
+          class="expandable-header"
+        >
+          <span class="admin-text-light">{{ "admin.users.section.contact" | transloco }}</span>
+          <svg
+            class="expandable-icon"
+            [class.expanded]="contactExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        @if (contactExpanded()) {
+          <div class="p-6 pt-4 space-y-4">
+            <!-- Contact -->
+            <div class="field-row-stacked" [attr.title]="'admin.users.desc.contact' | transloco">
+              <div class="field-label max-w-sm">
+                <span class="field-label-text">{{ "admin.users.field.contact" | transloco }}</span>
+                <span class="field-label-desc">{{ "admin.users.desc.contact" | transloco }}</span>
+              </div>
+              <input
+                type="text"
+                class="form-input flex-1"
+                [value]="contactValue()"
+                (input)="onContactChange($event)"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            <!-- Admin Comment -->
+            <div class="field-row-stacked" [attr.title]="'admin.users.desc.admin_comment' | transloco">
+              <div class="field-label pt-2 max-w-sm">
+                <span class="field-label-text">{{ "admin.users.field.admin_comment" | transloco }}</span>
+                <span class="field-label-desc">{{ "admin.users.desc.admin_comment" | transloco }}</span>
+              </div>
+              <textarea
+                class="form-input flex-1 min-h-20"
+                [value]="adminCommentValue()"
+                (input)="onAdminCommentChange($event)"
+                placeholder="{{ 'admin.users.field.admin_comment' | transloco }}"
+              ></textarea>
+            </div>
+
+            <!-- Proxy Passkey -->
+            @if (selectedUser()!.proxy_passkey) {
+              <div class="flex items-center justify-between py-2 admin-border-t gap-3 pt-4" [attr.title]="'admin.users.desc.proxy_passkey' | transloco">
+                <div class="flex flex-col">
+                  <span class="admin-text-light">{{ "admin.users.field.proxy_passkey" | transloco }}</span>
+                  <span class="text-xs admin-icon-muted">{{ "admin.users.desc.proxy_passkey" | transloco }}</span>
+                  <span class="text-xs admin-icon-muted">{{ "admin.users.hint.proxy_passkey" | transloco }}</span>
+                  <span class="admin-text-white font-mono text-sm break-all">{{ selectedUser()!.proxy_passkey }}</span>
+                </div>
+                <button
+                  class="btn-primary whitespace-nowrap"
+                  [disabled]="isRegeneratingPasskey()"
+                  (click)="regenerateProxyPasskey()"
+                >
+                  {{ "admin.users.action.regenerate_proxy_passkey" | transloco }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Kudos Details Section -->
+      <div class="admin-border-t">
+        <button
+          (click)="toggleKudosDetailsSection()"
+          class="expandable-header"
+        >
+          <span class="admin-text-light">{{ "admin.users.section.kudos_details" | transloco }}</span>
+          <svg
+            class="expandable-icon"
+            [class.expanded]="kudosDetailsExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        @if (kudosDetailsExpanded()) {
+          <div class="p-6 pt-4">
+            <div class="admin-grid-stats-4 gap-4">
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.accumulated" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.accumulated | formatNumber }}</div>
+              </div>
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.gifted" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.gifted | formatNumber }}</div>
+              </div>
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.received" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.received | formatNumber }}</div>
+              </div>
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.admin" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.admin | formatNumber }}</div>
+              </div>
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.recurring" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.recurring | formatNumber }}</div>
+              </div>
+              <div class="admin-bg-dark rounded-lg p-3">
+                <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.awarded" | transloco }}</div>
+                <div class="admin-heading-card">{{ selectedUser()!.kudos_details.awarded | formatNumber }}</div>
+              </div>
+              @if (selectedUser()!.kudos_details.donated !== undefined) {
+                <div class="admin-bg-dark rounded-lg p-3">
+                  <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.donated" | transloco }}</div>
+                  <div class="admin-heading-card">{{ (selectedUser()!.kudos_details.donated ?? 0) | formatNumber }}</div>
+                </div>
+              }
+              @if (selectedUser()!.kudos_details.styled !== undefined) {
+                <div class="admin-bg-dark rounded-lg p-3">
+                  <div class="text-xs admin-text-muted mb-1">{{ "admin.users.kudos.styled" | transloco }}</div>
+                  <div class="admin-heading-card">{{ (selectedUser()!.kudos_details.styled ?? 0) | formatNumber }}</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Records Section -->
+      @if (selectedUser()!.records) {
+        <div class="admin-border-t">
+          <button
+            (click)="toggleRecordsSection()"
+            class="expandable-header"
+          >
+            <span class="admin-text-light">{{ "admin.users.section.records" | transloco }}</span>
+            <svg
+              class="expandable-icon"
+              [class.expanded]="recordsExpanded()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          @if (recordsExpanded()) {
+            <div class="p-6 pt-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Usage Records -->
+                @if (selectedUser()!.records!.usage) {
+                  <div class="admin-bg-dark rounded-lg p-4">
+                    <h4 class="text-sm font-medium admin-text-light mb-3">{{ "admin.users.records.usage" | transloco }}</h4>
+                    <div class="space-y-2 text-sm">
+                      @if (selectedUser()!.records!.usage!.megapixelsteps !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.megapixelsteps" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.usage!.megapixelsteps ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.usage!.tokens !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.tokens" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.usage!.tokens ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Contribution Records -->
+                @if (selectedUser()!.records!.contribution) {
+                  <div class="admin-bg-dark rounded-lg p-4">
+                    <h4 class="text-sm font-medium admin-text-light mb-3">{{ "admin.users.records.contribution" | transloco }}</h4>
+                    <div class="space-y-2 text-sm">
+                      @if (selectedUser()!.records!.contribution!.megapixelsteps !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.megapixelsteps" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.contribution!.megapixelsteps ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.contribution!.tokens !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.tokens" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.contribution!.tokens ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Request Records -->
+                @if (selectedUser()!.records!.request) {
+                  <div class="admin-bg-dark rounded-lg p-4">
+                    <h4 class="text-sm font-medium admin-text-light mb-3">{{ "admin.users.records.requests" | transloco }}</h4>
+                    <div class="space-y-2 text-sm">
+                      @if (selectedUser()!.records!.request!.image !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.image" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.request!.image ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.request!.text !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.text" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.request!.text ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.request!.interrogation !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.interrogation" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.request!.interrogation ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Fulfillment Records -->
+                @if (selectedUser()!.records!.fulfillment) {
+                  <div class="admin-bg-dark rounded-lg p-4">
+                    <h4 class="text-sm font-medium admin-text-light mb-3">{{ "admin.users.records.fulfillments" | transloco }}</h4>
+                    <div class="space-y-2 text-sm">
+                      @if (selectedUser()!.records!.fulfillment!.image !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.image" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.fulfillment!.image ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.fulfillment!.text !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.text" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.fulfillment!.text ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.fulfillment!.interrogation !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.interrogation" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.fulfillment!.interrogation ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Style Records -->
+                @if (selectedUser()!.records!.style) {
+                  <div class="admin-bg-dark rounded-lg p-4">
+                    <h4 class="text-sm font-medium admin-text-light mb-3">{{ "admin.users.records.styles" | transloco }}</h4>
+                    <div class="space-y-2 text-sm">
+                      @if (selectedUser()!.records!.style!.image !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.image" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.style!.image ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                      @if (selectedUser()!.records!.style!.text !== undefined) {
+                        <div class="flex justify-between">
+                          <span class="admin-text-muted">{{ "admin.users.records.text" | transloco }}:</span>
+                          <span class="admin-text-light">{{ (selectedUser()!.records!.style!.text ?? 0) | formatNumber }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Active Generations Section -->
+      @if (hasActiveGenerations(selectedUser())) {
+        <div class="admin-border-t">
+          <button
+            (click)="toggleActiveGenerationsSection()"
+            class="expandable-header"
+          >
+            <span class="admin-text-light">{{ "admin.users.section.active_generations" | transloco }}</span>
+            <svg
+              class="expandable-icon"
+              [class.expanded]="activeGenerationsExpanded()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          @if (activeGenerationsExpanded()) {
+            <div class="p-6 pt-4">
+              <div class="space-y-4">
+                @if (selectedUser()!.active_generations?.image?.length) {
+                  <div>
+                    <h4 class="text-sm font-medium admin-text-light mb-2">{{ "admin.users.active_generations.image" | transloco }} ({{ selectedUser()!.active_generations!.image!.length }})</h4>
+                    <div class="flex flex-wrap gap-2">
+                      @for (id of selectedUser()!.active_generations!.image!.slice(0, 10); track id) {
+                        <span class="text-xs font-mono admin-bg-dark px-2 py-1 rounded">{{ id }}</span>
+                      }
+                      @if (selectedUser()!.active_generations!.image!.length > 10) {
+                        <span class="text-xs admin-text-muted">+{{ selectedUser()!.active_generations!.image!.length - 10 }} more</span>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (selectedUser()!.active_generations?.text?.length) {
+                  <div>
+                    <h4 class="text-sm font-medium admin-text-light mb-2">{{ "admin.users.active_generations.text" | transloco }} ({{ selectedUser()!.active_generations!.text!.length }})</h4>
+                    <div class="flex flex-wrap gap-2">
+                      @for (id of selectedUser()!.active_generations!.text!.slice(0, 10); track id) {
+                        <span class="text-xs font-mono admin-bg-dark px-2 py-1 rounded">{{ id }}</span>
+                      }
+                      @if (selectedUser()!.active_generations!.text!.length > 10) {
+                        <span class="text-xs admin-text-muted">+{{ selectedUser()!.active_generations!.text!.length - 10 }} more</span>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (selectedUser()!.active_generations?.alchemy?.length) {
+                  <div>
+                    <h4 class="text-sm font-medium admin-text-light mb-2">{{ "admin.users.active_generations.alchemy" | transloco }} ({{ selectedUser()!.active_generations!.alchemy!.length }})</h4>
+                    <div class="flex flex-wrap gap-2">
+                      @for (id of selectedUser()!.active_generations!.alchemy!.slice(0, 10); track id) {
+                        <span class="text-xs font-mono admin-bg-dark px-2 py-1 rounded">{{ id }}</span>
+                      }
+                      @if (selectedUser()!.active_generations!.alchemy!.length > 10) {
+                        <span class="text-xs admin-text-muted">+{{ selectedUser()!.active_generations!.alchemy!.length - 10 }} more</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Styles Section -->
+      @if (selectedUser()!.styles && selectedUser()!.styles!.length > 0) {
+        <div class="admin-border-t">
+          <button
+            (click)="toggleStylesSection()"
+            class="expandable-header"
+          >
+            <span class="admin-text-light">{{ "admin.users.section.styles" | transloco }} ({{ selectedUser()!.styles!.length }})</span>
+            <svg
+              class="expandable-icon"
+              [class.expanded]="stylesExpanded()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          @if (stylesExpanded()) {
+            <div class="p-6 pt-4">
+              <div class="admin-grid-history">
+                @for (style of selectedUser()!.styles; track style.id) {
+                  <div class="admin-bg-dark rounded-lg p-3">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="admin-text-light text-sm">{{ style.name }}</div>
+                        <div class="text-xs admin-text-muted">{{ style.type }}</div>
+                      </div>
+                      <span class="text-xs font-mono admin-text-muted">{{ style.id.slice(0, 8) }}...</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Shared Keys Section -->
+      @if (selectedUser()!.sharedkey_ids && selectedUser()!.sharedkey_ids!.length > 0) {
+        <div class="admin-border-t">
+          <button
+            (click)="toggleSharedKeysSection()"
+            class="expandable-header"
+          >
+            <span class="admin-text-light">{{ "admin.users.section.shared_keys" | transloco }} ({{ selectedUser()!.sharedkey_ids!.length }})</span>
+            <svg
+              class="expandable-icon"
+              [class.expanded]="sharedKeysExpanded()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          @if (sharedKeysExpanded()) {
+            <div class="p-6 pt-4">
+              <div class="flex flex-wrap gap-2">
+                @for (keyId of selectedUser()!.sharedkey_ids; track keyId) {
+                  <span class="text-xs font-mono admin-bg-dark px-2 py-1 rounded">{{ keyId }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Workers Accordion -->
+      @if (selectedUser()!.worker_ids && selectedUser()!.worker_ids!.length > 0) {
+        <div class="admin-border-t">
+          <button
+            (click)="toggleWorkersSection()"
+            class="expandable-header"
+          >
+            <span class="admin-text-light">{{ "admin.users.section.workers" | transloco }}</span>
+            <svg
+              class="expandable-icon"
+              [class.expanded]="workersExpanded()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          @if (workersExpanded()) {
+            <div class="p-4">
+              @if (loadingWorkers()) {
+                <div class="admin-loading">
+                  <svg class="admin-spinner w-6 h-6" fill="none" viewBox="0 0 24 24">
+                    <circle class="admin-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="admin-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
+              } @else {
+                <div class="admin-grid-workers">
+                  @for (worker of userWorkers(); track worker.id) {
+                    <app-worker-card
+                      [worker]="worker"
+                      [isModerator]="auth.currentUser()?.moderator ?? false"
+                      (workerUpdated)="onWorkerUpdated()"
+                    />
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

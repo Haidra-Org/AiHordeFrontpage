@@ -1,0 +1,40 @@
+/* =================================================================
+   TAILWIND V4 THEME CONFIGURATION
+   
+   This file contains all @theme variables for the design system:
+   - Brand colors
+   - Semantic colors (light/dark mode)
+   - Container & spacing
+   - Custom breakpoints
+   - Navigation heights
+   ================================================================= */
+
+@theme {
+  /* Brand Colors */
+  --color-brand-purple: #9333ea;
+  --color-brand-purple-hover: #7e22ce;
+  --color-brand-blue: #1d4ed8;
+  --color-brand-blue-hover: #1e40af;
+
+  /* Semantic Colors - Light Mode */
+  --color-text-primary: rgb(17 24 39);
+  --color-text-secondary: rgb(107 114 128);
+  --color-bg-primary: rgb(255 255 255);
+  --color-bg-secondary: rgb(249 250 251);
+  --color-border-primary: rgb(229 231 235);
+  --color-border-secondary: rgb(243 244 246);
+
+  /* Container & Spacing */
+  --spacing-container-padding: 1.5rem;
+  --spacing-container-padding-mobile: 1rem;
+  --max-width-container: 80rem;
+
+  /* Custom Breakpoint */
+  --breakpoint-3xl: 120rem;
+
+  /* Navigation Bar Heights (including border and padding) */
+  /* Mobile: Updated for new responsive design */
+  --nav-height-mobile: 64px;
+  /* Desktop: Updated for new responsive design */
+  --nav-height-desktop: 80px;
+}

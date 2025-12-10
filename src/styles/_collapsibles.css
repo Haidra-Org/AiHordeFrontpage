@@ -1,0 +1,193 @@
+/* =================================================================
+   COLLAPSIBLE & EXPANDABLE SECTION STYLES
+   
+   Includes:
+   - Collapsible header button
+   - Sticky section header
+   - Chevron icons
+   - Expanded detail panel
+   - Detail grid
+   ================================================================= */
+
+/* Non-sticky collapsible header button (for intro sections) */
+.collapsible-header-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 200ms ease;
+  padding: 0.5rem 0;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.collapsible-header-button:hover {
+  color: rgb(147 51 234);
+}
+
+.dark .collapsible-header-button:hover {
+  color: rgb(168 85 247);
+}
+
+/* Sticky collapsible section header (for table sections) */
+.section-header-collapsible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 200ms ease;
+  position: sticky;
+  top: var(--nav-height-mobile);
+  z-index: 30;
+  background-color: white;
+  padding: 0.75rem 1rem;
+  margin: -0.75rem -1rem 0.75rem -1rem;
+  border-radius: 0.5rem;
+}
+
+/* Desktop - use desktop navbar height */
+@media (min-width: 768px) {
+  .section-header-collapsible {
+    top: var(--nav-height-desktop);
+  }
+}
+
+/* Mobile-specific margin adjustments for full-width appearance */
+@media (max-width: 767px) {
+  .section-header-collapsible {
+    margin-left: calc(-1 * var(--spacing-container-padding-mobile));
+    margin-right: calc(-1 * var(--spacing-container-padding-mobile));
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+  }
+}
+
+/* Add shadow when sticky (appears after scrolling) */
+.section-header-collapsible::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(229 231 235),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.section-header-collapsible.is-stuck::after {
+  opacity: 1;
+}
+
+.section-header-collapsible:hover {
+  color: rgb(147 51 234);
+}
+
+.dark .section-header-collapsible {
+  background-color: rgb(17 24 39);
+}
+
+.dark .section-header-collapsible::after {
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgb(55 65 81),
+    transparent
+  );
+}
+
+.dark .section-header-collapsible:hover {
+  color: rgb(168 85 247);
+}
+
+/* Chevron icon for collapsible sections */
+.chevron-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+/* Small chevron icon for expandable rows */
+.chevron-icon-sm {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  color: rgb(107 114 128);
+  transition: transform 200ms ease;
+}
+
+.chevron-icon-sm.expanded {
+  transform: rotate(180deg);
+}
+
+.dark .chevron-icon-sm {
+  color: rgb(156 163 175);
+}
+
+/* Expanded detail panel */
+.expanded-detail-panel {
+  border-top: 1px solid rgb(229 231 235);
+  padding: 1rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .expanded-detail-panel {
+  border-top-color: rgb(55 65 81);
+  background-color: rgb(55 65 81 / 0.3);
+}
+
+/* Detail grid - 2 column layout for expanded details */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: theme("screens.md")) {
+  .detail-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Detail image container */
+.detail-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-image img {
+  max-width: 100%;
+  height: auto;
+  max-height: 300px;
+  border-radius: 0.5rem;
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Detail text content */
+.detail-text {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: rgb(55 65 81);
+  background-color: rgb(249 250 251);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.dark .detail-text {
+  color: rgb(209 213 219);
+  background-color: rgb(31 41 55);
+}

@@ -1,0 +1,94 @@
+/* =================================================================
+   CARD STYLES
+   
+   Includes:
+   - Base card
+   - Card backgrounds
+   - Expandable card
+   - Card row clickable
+   ================================================================= */
+
+/* Card base */
+.card {
+  display: flex;
+  flex-direction: column;
+  max-width: 32rem;
+  padding: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  contain: layout style;
+}
+
+@media (min-width: theme("screens.xl")) {
+  .card {
+    padding: 2rem;
+  }
+}
+
+.dark .card {
+  color: white;
+  border-color: rgb(75 85 99);
+}
+
+/* Card with primary background */
+.card-bg-primary {
+  background-color: white;
+}
+
+.dark .card-bg-primary {
+  background-color: rgb(31 41 55);
+}
+
+/* Card with secondary background */
+.card-bg-secondary {
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-bg-secondary {
+  background-color: rgb(17 24 39);
+}
+
+/* Expandable card item - used in lists */
+.card-expandable {
+  border: 1px solid rgb(229 231 235);
+  border-radius: 0.5rem;
+}
+
+.dark .card-expandable {
+  border-color: rgb(55 65 81);
+}
+
+/* Card row clickable - interactive card row */
+.card-row-clickable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.card-row-clickable:hover {
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-row-clickable:hover {
+  background-color: rgb(31 41 55);
+}
+
+/* Card expanded section - details section */
+.card-expanded {
+  border-top: 1px solid rgb(229 231 235);
+  padding: 1rem;
+  background-color: rgb(249 250 251);
+}
+
+.dark .card-expanded {
+  border-top-color: rgb(55 65 81);
+  background-color: rgb(31 41 55);
+}

@@ -39,19 +39,14 @@
           <div class="flex items-center">
             <span class="table-header-label"> Platform </span>
           </div>
-          <div
-            class="flex items-center justify-center"
-            style="min-width: 120px"
-          >
+          <div class="flex items-center justify-end">
             <span class="table-header-label"> Action </span>
           </div>
         </div>
 
         <!-- Table Rows -->
         @for (item of items(); track item.uniqueId) {
-          <div
-            class="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
-          >
+          <div class="table-item-wrapper">
             <!-- Collapsed Row -->
             <div class="table-row" (click)="toggleRow(item.name)">
               <!-- Name and Tags Column -->

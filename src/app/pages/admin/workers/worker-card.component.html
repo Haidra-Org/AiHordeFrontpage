@@ -1,0 +1,366 @@
+<!-- Success Toast -->
+@if (showSuccess()) {
+  <div class="toast toast-success">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span>{{ "admin.workers.success" | transloco }}</span>
+  </div>
+}
+
+<!-- Dialog -->
+@if (dialogOpen()) {
+  <div class="modal">
+    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-panel">
+      @switch (dialogType()) {
+        @case ('models') {
+          <h3 class="admin-heading-card mb-4">
+            {{ "admin.workers.dialog.models_title" | transloco: { name: worker.name } }}
+          </h3>
+          <div class="admin-dialog-scroll">
+            @if (getSortedModels().length > 0) {
+              <p class="admin-text-light text-sm">{{ getSortedModels().join(', ') }}</p>
+            } @else {
+              <p class="admin-text-muted text-sm">{{ "admin.common.none" | transloco }}</p>
+            }
+          </div>
+          <div class="flex justify-end mt-6">
+            <button
+              (click)="closeDialog()"
+              class="btn-muted"
+            >
+              Close
+            </button>
+          </div>
+        }
+        @case ('maintenance') {
+          <h3 class="admin-heading-card mb-4">
+            @if (worker.maintenance_mode) {
+              {{ "admin.workers.dialog.unset_maintenance_title" | transloco: { name: worker.name } }}
+            } @else {
+              {{ "admin.workers.dialog.set_maintenance_title" | transloco: { name: worker.name } }}
+            }
+          </h3>
+          @if (!worker.maintenance_mode) {
+            <div class="mb-4">
+              <label class="text-sm admin-text-light mb-2 block">
+                {{ "admin.workers.dialog.maintenance_reason" | transloco }}
+              </label>
+              <textarea
+                [value]="maintenanceReason()"
+                (input)="onMaintenanceReasonChange($event)"
+                rows="3"
+                class="form-input"
+              ></textarea>
+            </div>
+          }
+          <div class="flex justify-end gap-3">
+            <button
+              (click)="closeDialog()"
+              class="btn-muted"
+            >
+              {{ "admin.workers.dialog.cancel" | transloco }}
+            </button>
+            <button
+              (click)="confirmMaintenance()"
+              [disabled]="isUpdating()"
+              class="btn-primary"
+            >
+              {{ "admin.workers.dialog.confirm" | transloco }}
+            </button>
+          </div>
+        }
+        @case ('pause') {
+          <h3 class="admin-heading-card mb-4">
+            @if (worker.paused) {
+              {{ "admin.workers.dialog.unset_paused_title" | transloco: { name: worker.name } }}
+            } @else {
+              {{ "admin.workers.dialog.set_paused_title" | transloco: { name: worker.name } }}
+            }
+          </h3>
+          <div class="flex justify-end gap-3">
+            <button
+              (click)="closeDialog()"
+              class="btn-muted"
+            >
+              {{ "admin.workers.dialog.cancel" | transloco }}
+            </button>
+            <button
+              (click)="confirmPause()"
+              [disabled]="isUpdating()"
+              class="btn-primary"
+            >
+              {{ "admin.workers.dialog.confirm" | transloco }}
+            </button>
+          </div>
+        }
+      }
+    </div>
+  </div>
+}
+
+<!-- Card -->
+<div class="worker-card" [class]="getCardBackground()">
+  <!-- Header -->
+  <div class="p-4 admin-border-t">
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Status Icon -->
+        @if (!hasIssue()) {
+          <div class="status-icon status-icon-success" [title]="'admin.workers.card.online' | transloco">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        } @else {
+          <div class="status-icon status-icon-error" [title]="'admin.workers.card.issue' | transloco">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+        }
+
+        <div class="min-w-0">
+          <h3 class="admin-heading-card truncate" [title]="worker.name">
+            {{ truncateName(worker.name) }}
+          </h3>
+          <p class="text-xs admin-text-muted truncate">{{ worker.id }}</p>
+        </div>
+      </div>
+
+      <!-- Status Badges -->
+      <div class="flex items-center gap-1 shrink-0">
+        @if (isLowSpeed()) {
+          <div class="p-1" [title]="'admin.workers.card.low_speed_warning' | transloco">
+            <svg class="w-5 h-5 admin-text-yellow admin-flip-x" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        }
+        @if (isHighSpeed()) {
+          <div class="p-1" [title]="'admin.workers.card.high_speed_warning' | transloco">
+            <svg class="w-5 h-5 admin-text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+        }
+        @if (worker.paused) {
+          <div class="p-1" [title]="'admin.workers.card.paused' | transloco">
+            <svg class="w-5 h-5 admin-text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+          </div>
+        }
+        @if (worker.maintenance_mode) {
+          <div class="p-1" [title]="'admin.workers.card.maintenance' | transloco">
+            <svg class="w-5 h-5 admin-text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        }
+        @if (worker.flagged) {
+          <div class="p-1" [title]="'admin.workers.card.flagged' | transloco">
+            <svg class="w-5 h-5 admin-text-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+            </svg>
+          </div>
+        }
+        @if (worker.trusted) {
+          <div class="p-1" [title]="'admin.workers.card.trusted' | transloco">
+            <svg class="w-5 h-5 admin-text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4 text-sm space-y-1">
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.owner" | transloco }}:</span>
+      @if (getOwnerUserId() && isModerator) {
+        <a
+          [routerLink]="['/admin/users', getOwnerUserId()]"
+          class="admin-link truncate"
+          [title]="worker.owner"
+        >{{ getOwnerDisplayName() }}</a>
+      } @else {
+        <span class="admin-text-light" [title]="worker.owner ?? ''">{{ getOwnerDisplayName() }}</span>
+      }
+    </div>
+    @if (worker.team) {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.team" | transloco }}:</span>
+        <span class="admin-text-light truncate" [title]="worker.team.name ?? worker.team.id">{{ worker.team.name ?? worker.team.id }}</span>
+      </div>
+    }
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.bridge_agent" | transloco }}:</span>
+      @if (getParsedBridgeAgent(); as parsed) {
+        <span class="admin-text-light truncate admin-max-w-bridge" [title]="worker.bridge_agent">{{ parsed.name }} v{{ parsed.version }}</span>
+      } @else {
+        <span class="admin-text-light truncate admin-max-w-bridge" [title]="worker.bridge_agent">{{ worker.bridge_agent }}</span>
+      }
+    </div>
+    @if (getParsedBridgeAgent(); as parsed) {
+      <div class="flex justify-between gap-2">
+        <span class="admin-text-muted shrink-0">{{ "admin.workers.card.software_contact" | transloco }}:</span>
+        <span class="admin-text-light text-right break-all">{{ parsed.contact }}</span>
+      </div>
+    }
+    @if (worker.contact && isModerator) {
+      <div class="flex justify-between gap-2">
+        <span class="admin-text-muted shrink-0">{{ "admin.workers.card.contact" | transloco }}:</span>
+        <span class="admin-text-light text-right break-all">{{ worker.contact }}</span>
+      </div>
+    }
+    @if (worker.ipaddr && isModerator) {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.ipaddr" | transloco }}:</span>
+        <span class="admin-text-light font-mono text-xs">{{ worker.ipaddr }}</span>
+      </div>
+    }
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.uptime" | transloco }}:</span>
+      <span class="admin-text-light">{{ formatUptime(worker.uptime) }}</span>
+    </div>
+    @if (worker.type !== 'interrogation') {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.models_loaded" | transloco }}:</span>
+        <span class="admin-text-light">{{ worker.models?.length ?? 0 }}</span>
+      </div>
+    }
+    @if (worker.type === 'image' && worker.megapixelsteps_generated !== undefined) {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.mps_generated" | transloco }}:</span>
+        <span class="admin-text-light">{{ worker.megapixelsteps_generated | formatNumber }}</span>
+      </div>
+    }
+    @if (worker.type === 'text' && worker.tokens_generated !== undefined) {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.tokens_generated" | transloco }}:</span>
+        <span class="admin-text-light">{{ worker.tokens_generated | formatNumber }}</span>
+      </div>
+    }
+    @if (worker.type === 'interrogation' && worker.forms && worker.forms.length > 0) {
+      <div class="flex justify-between">
+        <span class="admin-text-muted">{{ "admin.workers.card.forms" | transloco }}:</span>
+        <span class="admin-text-light">{{ worker.forms.join(', ') }}</span>
+      </div>
+    }
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.speed" | transloco }}:</span>
+      <span class="admin-text-light">{{ worker.performance }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.threads" | transloco }}:</span>
+      <span class="admin-text-light">{{ worker.threads }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.requests_fulfilled" | transloco }}:</span>
+      <span class="admin-text-light">{{ worker.requests_fulfilled | formatNumber }}</span>
+    </div>
+    <div class="flex justify-between">
+      <span class="admin-text-muted">{{ "admin.workers.card.nsfw" | transloco }}:</span>
+      <span class="admin-text-light">{{ worker.nsfw ? ('admin.common.yes' | transloco) : ('admin.common.no' | transloco) }}</span>
+    </div>
+
+    <!-- Capabilities (Image workers) -->
+    @if (worker.type === 'image' && hasImageCapabilities()) {
+      <div class="mt-3 pt-3 admin-border-t">
+        <span class="admin-text-muted text-xs block mb-2">{{ "admin.workers.card.capabilities" | transloco }}:</span>
+        <div class="flex flex-wrap gap-1">
+          @if (worker.img2img) {
+            <span class="admin-badge admin-badge-capability">img2img</span>
+          }
+          @if (worker.painting) {
+            <span class="admin-badge admin-badge-capability">inpainting</span>
+          }
+          @if (worker['post-processing']) {
+            <span class="admin-badge admin-badge-capability">post-processing</span>
+          }
+          @if (worker.lora) {
+            <span class="admin-badge admin-badge-capability">LoRA</span>
+          }
+          @if (worker.controlnet) {
+            <span class="admin-badge admin-badge-capability">ControlNet</span>
+          }
+          @if (worker.sdxl_controlnet) {
+            <span class="admin-badge admin-badge-capability">SDXL ControlNet</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Messages (Moderator only) -->
+    @if (worker.messages && worker.messages.length > 0 && isModerator) {
+      <div class="mt-3 pt-3 admin-border-t">
+        <span class="admin-text-muted text-xs block mb-2">{{ "admin.workers.card.messages" | transloco }} ({{ worker.messages.length }}):</span>
+        <div class="space-y-2 max-h-24 overflow-y-auto">
+          @for (msg of worker.messages; track msg.message) {
+            <div class="text-xs admin-bg-dark rounded p-2">
+              <span class="admin-text-light">{{ msg.message }}</span>
+              @if (msg.origin) {
+                <span class="admin-text-muted ml-1">({{ msg.origin }})</span>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="px-4 py-3 admin-border-t flex gap-2">
+    <!-- Show Models -->
+    <button
+      (click)="openModelsDialog()"
+      class="btn-icon"
+      [title]="'admin.workers.action.show_models' | transloco"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+      </svg>
+    </button>
+
+    @if (isModerator) {
+      <!-- Maintenance Toggle -->
+      <button
+        (click)="openMaintenanceDialog()"
+        class="btn-icon"
+        [title]="worker.maintenance_mode ? ('admin.workers.action.unset_maintenance' | transloco) : ('admin.workers.action.set_maintenance' | transloco)"
+      >
+        @if (worker.maintenance_mode) {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        } @else {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        }
+      </button>
+
+      <!-- Pause Toggle -->
+      <button
+        (click)="openPauseDialog()"
+        class="btn-icon"
+        [title]="worker.paused ? ('admin.workers.action.unset_paused' | transloco) : ('admin.workers.action.set_paused' | transloco)"
+      >
+        @if (worker.paused) {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+        } @else {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+        }
+      </button>
+    }
+  </div>
+</div>

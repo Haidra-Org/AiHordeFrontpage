@@ -1,0 +1,239 @@
+/* =================================================================
+   LAYOUT STYLES
+   
+   Includes:
+   - Section backgrounds
+   - Container variants
+   - Main wrapper
+   - Grid layouts
+   ================================================================= */
+
+/* Main content needs top padding to account for fixed header */
+.wrapper {
+  padding-top: var(--nav-height-mobile);
+}
+
+@media (min-width: 1024px) {
+  .wrapper {
+    padding-top: var(--nav-height-desktop);
+  }
+}
+
+/* =================================================================
+   SECTION STYLES
+   ================================================================= */
+
+/* Primary section - white background */
+.section-primary {
+  background-color: var(--color-bg-primary);
+}
+
+.dark .section-primary {
+  background-color: rgb(17 24 39);
+}
+
+/* Secondary section - gray background */
+.section-secondary {
+  background-color: var(--color-bg-secondary);
+}
+
+.dark .section-secondary {
+  background-color: rgb(31 41 55);
+}
+
+/* =================================================================
+   CONTAINER STYLES
+   ================================================================= */
+
+/* Page header container */
+.container-page-header {
+  display: grid;
+  max-width: var(--max-width-container);
+  padding-left: var(--spacing-container-padding-mobile);
+  padding-right: var(--spacing-container-padding-mobile);
+  padding-top: 1rem;
+  padding-bottom: 0.75rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-page-header {
+    gap: 2rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+  }
+}
+
+@media (min-width: theme("screens.xl")) {
+  .container-page-header {
+    gap: 0;
+  }
+}
+
+/* Centered content box - constrained width, centered */
+.container-centered-md {
+  max-width: 48rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-centered-md {
+    margin-bottom: 3rem;
+  }
+}
+
+/* Content wrapper with max-width and padding */
+.container-page-content {
+  max-width: 80rem;
+  padding: 2rem 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-page-content {
+    padding: 4rem 1.5rem;
+  }
+}
+
+/* Content container */
+.container-content {
+  max-width: var(--max-width-container);
+  padding: 1.5rem var(--spacing-container-padding-mobile);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-content {
+    padding: 3rem var(--spacing-container-padding);
+  }
+}
+
+/* Reduced padding content container */
+.container-content-sm {
+  max-width: var(--max-width-container);
+  padding: 1rem var(--spacing-container-padding-mobile);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-content-sm {
+    padding: 2rem var(--spacing-container-padding);
+  }
+}
+
+/* Minimal padding content container - for tightly spaced sections */
+.container-content-minimal {
+  max-width: var(--max-width-container);
+  padding: 0.75rem var(--spacing-container-padding-mobile);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-content-minimal {
+    padding: 1.25rem var(--spacing-container-padding);
+  }
+}
+
+/* Spaced content container */
+.container-spaced {
+  max-width: var(--max-width-container);
+  padding: 1.5rem var(--spacing-container-padding-mobile);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container-spaced > * + * {
+  margin-top: 2rem;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .container-spaced {
+    padding: 3rem var(--spacing-container-padding);
+  }
+  .container-spaced > * + * {
+    margin-top: 3rem;
+  }
+}
+
+/* =================================================================
+   GRID LAYOUTS
+   ================================================================= */
+
+/* Standard grid container for items */
+.grid-items {
+  align-items: center;
+  gap: 1.5rem;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .grid-items {
+    display: grid;
+  }
+}
+
+@media (min-width: theme("screens.xl")) {
+  .grid-items {
+    gap: 2.5rem;
+  }
+}
+
+/* 4-column responsive grid for cards */
+.grid-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: theme("screens.md")) {
+  .grid-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .grid-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Stats grid (4 columns) */
+.grid-stats {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: theme("screens.md")) {
+  .grid-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: theme("screens.lg")) {
+  .grid-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Center placement utility */
+.place-center {
+  margin-right: auto;
+  place-self: center;
+}
+
+@media (min-width: theme("screens.lg")) {
+  .place-center {
+    grid-column: span 7 / span 7;
+  }
+}

@@ -1,0 +1,110 @@
+<div class="admin-container-lg">
+  <!-- Header -->
+  <div class="admin-header">
+    <div class="flex items-center gap-4">
+      <h1 class="admin-heading-page">{{ "admin.workers.title" | transloco }}</h1>
+
+      <!-- Filter Input -->
+      <div>
+        <input
+          type="text"
+          [value]="filterText()"
+          (input)="onFilterChange($event)"
+          [placeholder]="'admin.workers.filter_placeholder' | transloco"
+          class="form-input w-64"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Worker Type Select -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm admin-text-muted">{{ "admin.workers.type" | transloco }}:</label>
+        <select
+          [value]="workerType()"
+          (change)="onWorkerTypeChange($any($event.target).value)"
+          class="form-input w-44"
+        >
+          <option value="image">{{ "admin.workers.type.image" | transloco }}</option>
+          <option value="text">{{ "admin.workers.type.text" | transloco }}</option>
+          <option value="interrogation">{{ "admin.workers.type.interrogation" | transloco }}</option>
+        </select>
+      </div>
+
+      <!-- Sort Key Select -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm admin-text-muted">{{ "admin.workers.sort_by" | transloco }}:</label>
+        <select
+          [value]="sortKey()"
+          (change)="onSortKeyChange($any($event.target).value)"
+          class="form-input w-48"
+        >
+          <option value="name">{{ "admin.workers.sort.name" | transloco }}</option>
+          <option value="performance">{{ "admin.workers.sort.performance" | transloco }}</option>
+          <option value="bridge_agent">{{ "admin.workers.sort.bridge_agent" | transloco }}</option>
+          <option value="uptime">{{ "admin.workers.sort.uptime" | transloco }}</option>
+          @if (workerType() === 'image') {
+            <option value="megapixelsteps_generated">{{ "admin.workers.sort.mps_generated" | transloco }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Sort Order Toggle -->
+      <button
+        (click)="toggleSortOrder()"
+        class="btn-icon"
+        [title]="sortOrder() === 'asc' ? ('admin.workers.sort_order.asc' | transloco) : ('admin.workers.sort_order.desc' | transloco)"
+      >
+        @if (sortOrder() === 'asc') {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+          </svg>
+        } @else {
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        }
+      </button>
+
+      <!-- Refresh Button -->
+      <button
+        (click)="refreshWorkers()"
+        class="btn-icon"
+        [disabled]="loading()"
+      >
+        <svg class="w-5 h-5" [class.admin-spinner]="loading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="admin-loading">
+      <svg class="admin-spinner" fill="none" viewBox="0 0 24 24">
+        <circle class="admin-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="admin-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="admin-loading-text">{{ "admin.workers.loading" | transloco }}</p>
+    </div>
+  } @else if (filteredWorkers().length === 0) {
+    <div class="admin-empty">
+      <svg class="admin-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+      </svg>
+      <p class="admin-empty-text">{{ "admin.workers.no_workers" | transloco }}</p>
+    </div>
+  } @else {
+    <!-- Worker Grid -->
+    <div class="admin-grid-workers-3">
+      @for (worker of filteredWorkers(); track worker.id) {
+        <app-worker-card
+          [worker]="worker"
+          [isModerator]="auth.currentUser()?.moderator ?? false"
+          (workerUpdated)="onWorkerUpdated()"
+        />
+      }
+    </div>
+  }
+</div>
