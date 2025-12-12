@@ -1,0 +1,1 @@
+import{Pb as s,Xa as i,sb as o,tb as r}from"./chunk-T5FNS33L.js";import"./chunk-4CLCTAJ7.js";var m=(()=>{let e=class e{};e.\u0275fac=function(n){return new(n||e)},e.\u0275cmp=i({type:e,selectors:[["app-register"]],decls:2,vars:0,template:function(n,a){n&1&&(o(0,"p"),s(1,"register works!"),r())},encapsulation:2});let t=e;return t})();export{m as RegisterComponent};
