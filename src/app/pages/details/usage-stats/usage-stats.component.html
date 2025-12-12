@@ -142,7 +142,7 @@
               @if (imagePerformanceRate(); as rate) {
                 <span class="data-value-xl">{{ rate.primary.value | number: '1.1-1' }}</span>
                 <span class="data-label-spaced">
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'average_images' | transloco" />
+                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'standard_images' | transloco" />
                   {{ "details.usage.per_second" | transloco }}
                 </span>
               }
