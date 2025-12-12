@@ -16,6 +16,80 @@
   color: var(--color-text-primary);
 }
 
+/* Form header */
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Form container spacing */
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Form sections */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Form rows and fields */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 16rem;
+}
+
+.form-field-half {
+  flex: 1;
+  min-width: 18rem;
+}
+
+.form-field-third {
+  flex: 1;
+  min-width: 14rem;
+}
+
+.form-field-quarter {
+  flex: 1;
+  min-width: 12rem;
+}
+
+.form-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-checkbox .checkbox-label {
+  margin-left: 0;
+}
+
+/* Form hint and error text */
+.form-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.form-input-error {
+  border-color: red;
+}
+
 .dark .form-label {
   color: white;
 }
@@ -81,6 +155,7 @@
   display: block;
   width: 100%;
   padding: 0.625rem;
+  margin-bottom: 0.25rem;
 }
 
 .form-input:focus {
@@ -97,6 +172,101 @@
 
 .dark .form-input::placeholder {
   color: rgb(156 163 175);
+}
+
+/* Form input with unsaved changes - yellow border */
+.form-input.form-input-changed,
+.dark .form-input.form-input-changed {
+  outline: 2px solid rgb(234 179 8);
+  outline-offset: 0px;
+}
+
+/* Disabled form input - grayed out with striped pattern */
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: rgb(243 244 246);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.03) 10px,
+    rgba(0, 0, 0, 0.03) 20px
+  );
+  color: rgb(107 114 128);
+}
+
+.dark .form-input:disabled {
+  background-color: rgb(31 41 55);
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.05) 10px,
+    rgba(255, 255, 255, 0.05) 20px
+  );
+  color: rgb(156 163 175);
+}
+
+/* Form field container for inputs with unlimited overlay */
+.form-field-container {
+  position: relative;
+}
+
+/* Unlimited overlay badge */
+.form-input-unlimited-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgb(37 99 235);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.dark .form-input-unlimited-overlay {
+  background-color: rgb(59 130 246);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* JSON / code inputs */
+.form-json {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+.form-toggle-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Form actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+  .form-actions {
+    flex-direction: column;
+  }
 }
 
 /* Filter container with scrollable content */

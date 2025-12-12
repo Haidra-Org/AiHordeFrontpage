@@ -1,0 +1,719 @@
+/* =================================================================
+   DETAILS PAGE TABS
+   
+   Tab navigation for the /details pages (Workers, Models, Usage Stats)
+   ================================================================= */
+
+.details-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border-secondary);
+  padding-bottom: 0.5rem;
+}
+
+.dark .details-tabs {
+  border-bottom-color: rgb(55 65 81);
+}
+
+.details-tab {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+  border-bottom: none;
+  position: relative;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.details-tab:hover {
+  color: var(--color-brand-purple);
+  background-color: var(--color-bg-secondary);
+}
+
+.dark .details-tab {
+  color: rgb(156 163 175);
+}
+
+.dark .details-tab:hover {
+  color: rgb(216 180 254);
+  background-color: rgb(55 65 81);
+}
+
+.details-tab-active {
+  color: var(--color-brand-purple);
+  background-color: var(--color-bg-primary);
+  border-color: var(--color-border-secondary);
+}
+
+.details-tab-active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-brand-purple);
+}
+
+.dark .details-tab-active {
+  color: rgb(216 180 254);
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.details-content {
+  margin-top: 1rem;
+}
+
+/* =================================================================
+   DETAILS PAGE SUMMARY STATS
+   ================================================================= */
+
+.details-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+}
+
+.dark .details-summary {
+  background-color: rgb(17 24 39);
+  border-color: rgb(55 65 81);
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  padding: 0.5rem 1rem;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.dark .summary-label {
+  color: rgb(107 114 128);
+}
+
+.summary-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.375rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.dark .summary-value {
+  color: rgb(243 244 246);
+}
+
+/* Period badge in summary */
+.summary-period-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--color-brand-purple);
+  background-color: color-mix(in srgb, var(--color-brand-purple) 12%, transparent);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+
+.dark .summary-period-badge {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 25%, transparent);
+  color: rgb(216 180 254);
+}
+
+/* =================================================================
+   DETAILS PAGE FILTERS
+   ================================================================= */
+
+.details-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .details-filters {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+.filter-search {
+  position: relative;
+  flex: 1;
+  max-width: 24rem;
+}
+
+.filter-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.dark .filter-search-icon {
+  color: rgb(107 114 128);
+}
+
+.filter-input {
+  width: 100%;
+  padding: 0.625rem 0.75rem 0.625rem 2.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.5rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: var(--color-brand-blue);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-blue) 20%, transparent);
+}
+
+.filter-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dark .filter-input {
+  color: rgb(243 244 246);
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.dark .filter-input:focus {
+  border-color: rgb(96 165 250);
+  box-shadow: 0 0 0 3px color-mix(in srgb, rgb(96 165 250) 20%, transparent);
+}
+
+.dark .filter-input::placeholder {
+  color: rgb(107 114 128);
+}
+
+.filter-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.sort-button:hover {
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+.dark .sort-button {
+  color: rgb(156 163 175);
+  border-color: rgb(55 65 81);
+}
+
+.dark .sort-button:hover {
+  background-color: rgb(55 65 81);
+  color: rgb(243 244 246);
+}
+
+.sort-button.sort-active {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 15%, var(--color-bg-primary));
+  border-color: var(--color-brand-purple);
+  color: var(--color-brand-purple);
+}
+
+.dark .sort-button.sort-active {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+  border-color: var(--color-brand-purple);
+  color: rgb(216 180 254);
+}
+
+.sort-indicator {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* =================================================================
+   MODELS TABLE - Row/column layout for model lists
+   ================================================================= */
+
+.models-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Table header - visible on desktop only */
+.models-table-header {
+  display: none;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .models-table-header {
+    display: grid;
+    grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 5.5rem;
+    gap: 0.75rem;
+    align-items: center;
+  }
+}
+
+/* Usage stats table - optimized columns for rank/name/generations/share */
+@media (min-width: 768px) {
+  .models-table-header.usage-table-header {
+    grid-template-columns: 3rem 1fr 7rem 9rem;
+  }
+}
+
+.dark .models-table-header {
+  background-color: rgb(17 24 39);
+  border-color: rgb(55 65 81);
+}
+
+.models-table-th {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.dark .models-table-th {
+  color: rgb(107 114 128);
+}
+
+.models-table-th-right {
+  text-align: right;
+}
+
+/* Table row */
+.models-table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 0.5rem 1rem;
+  padding: 0.875rem 1rem;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.5rem;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+.models-table-row:hover {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-border-secondary);
+}
+
+@media (min-width: 768px) {
+  .models-table-row {
+    grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 5.5rem;
+    grid-template-rows: auto;
+    gap: 0.75rem;
+    align-items: center;
+  }
+}
+
+/* Usage stats table rows - optimized columns for rank/name/generations/share */
+@media (min-width: 768px) {
+  .models-table-row.usage-table-row {
+    grid-template-columns: 3rem 1fr 7rem 9rem;
+  }
+}
+
+.dark .models-table-row {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.dark .models-table-row:hover {
+  background-color: rgb(55 65 81 / 0.5);
+  border-color: rgb(75 85 99);
+}
+
+/* Name cell - spans full width on mobile */
+.models-table-cell-name {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .models-table-cell-name {
+    grid-column: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+}
+
+.models-table-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .models-table-name {
+  color: rgb(243 244 246);
+}
+
+.models-table-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+/* Data cells */
+.models-table-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+@media (min-width: 768px) {
+  .models-table-cell {
+    justify-content: center;
+    text-align: right;
+  }
+}
+
+/* Mobile-only label */
+.models-table-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 768px) {
+  .models-table-label {
+    display: none;
+  }
+}
+
+.dark .models-table-label {
+  color: rgb(107 114 128);
+}
+
+.models-table-value {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .models-table-value {
+  color: rgb(229 231 235);
+}
+
+/* Highlight high values */
+.models-table-value-highlight {
+  color: var(--color-brand-purple);
+  font-weight: 600;
+}
+
+.dark .models-table-value-highlight {
+  color: rgb(216 180 254);
+}
+
+/* Muted values (zero or unavailable) */
+.models-table-value-muted {
+  color: var(--color-text-muted);
+}
+
+.dark .models-table-value-muted {
+  color: rgb(107 114 128);
+}
+
+/* =================================================================
+   USAGE STATS - Page-specific layouts
+   ================================================================= */
+
+.usage-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.usage-totals-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .usage-totals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.usage-models {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Card header with flex layout */
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-header-flex .heading-card {
+  margin-bottom: 0;
+}
+
+/* Model list for overview cards */
+.model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.model-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  background-color: var(--color-bg-secondary);
+}
+
+.dark .model-list-item {
+  background-color: rgb(31 41 55);
+}
+
+.model-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-brand-purple);
+  background-color: color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.dark .model-rank {
+  background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+}
+
+.model-name {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark .model-name {
+  color: rgb(229 231 235);
+}
+
+.model-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .model-count {
+  color: rgb(156 163 175);
+}
+
+/* Rank badge in table */
+.model-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dark .model-rank-badge {
+  background-color: rgb(55 65 81);
+  color: rgb(156 163 175);
+}
+
+/* Top 3 rank badges get special styling */
+.model-rank-badge.rank-1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #451a03;
+}
+
+.model-rank-badge.rank-2 {
+  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+  color: #1e293b;
+}
+
+.model-rank-badge.rank-3 {
+  background: linear-gradient(135deg, #fdba74, #f97316);
+  color: #431407;
+}
+
+/* Sort header button */
+.sort-header-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.sort-header-button:hover {
+  color: var(--color-brand-purple);
+}
+
+.dark .sort-header-button:hover {
+  color: rgb(216 180 254);
+}
+
+/* Percentage bar */
+.percentage-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.percentage-bar {
+  height: 0.375rem;
+  background: linear-gradient(to right, var(--color-brand-purple), var(--color-brand-blue));
+  border-radius: 9999px;
+  min-width: 2px;
+  max-width: 5rem;
+  transition: width 300ms ease;
+}
+
+.percentage-text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.dark .percentage-text {
+  color: rgb(156 163 175);
+}
+
+/* Period filter group */
+.filter-period {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.dark .filter-label {
+  color: rgb(107 114 128);
+}
+
+/* Small link button */
+.btn-link-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-brand-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 200ms ease;
+}
+
+.btn-link-sm:hover {
+  color: var(--color-brand-blue-hover);
+  text-decoration: underline;
+}
+
+.dark .btn-link-sm {
+  color: rgb(96 165 250);
+}
+
+.dark .btn-link-sm:hover {
+  color: rgb(147 197 253);
+}

@@ -1,99 +1,470 @@
 <div class="admin-container-lg">
   <!-- Header -->
   <div class="admin-header">
-    <div class="flex items-center gap-4">
-      <h1 class="admin-heading-page">{{ "admin.workers.title" | transloco }}</h1>
+    <h1 class="admin-heading-page">
+      {{ titleKey() | transloco }}
+    </h1>
+  </div>
 
-      <!-- Filter Input -->
-      <div>
-        <input
-          type="text"
-          [value]="filterText()"
-          (input)="onFilterChange($event)"
-          [placeholder]="'admin.workers.filter_placeholder' | transloco"
-          class="form-input w-64"
+  @if (errorMessage()) {
+    <div class="toast toast-error" role="alert" aria-live="assertive">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
         />
-      </div>
-    </div>
-
-    <div class="flex flex-wrap items-center gap-3">
-      <!-- Worker Type Select -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm admin-text-muted">{{ "admin.workers.type" | transloco }}:</label>
-        <select
-          [value]="workerType()"
-          (change)="onWorkerTypeChange($any($event.target).value)"
-          class="form-input w-44"
-        >
-          <option value="image">{{ "admin.workers.type.image" | transloco }}</option>
-          <option value="text">{{ "admin.workers.type.text" | transloco }}</option>
-          <option value="interrogation">{{ "admin.workers.type.interrogation" | transloco }}</option>
-        </select>
-      </div>
-
-      <!-- Sort Key Select -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm admin-text-muted">{{ "admin.workers.sort_by" | transloco }}:</label>
-        <select
-          [value]="sortKey()"
-          (change)="onSortKeyChange($any($event.target).value)"
-          class="form-input w-48"
-        >
-          <option value="name">{{ "admin.workers.sort.name" | transloco }}</option>
-          <option value="performance">{{ "admin.workers.sort.performance" | transloco }}</option>
-          <option value="bridge_agent">{{ "admin.workers.sort.bridge_agent" | transloco }}</option>
-          <option value="uptime">{{ "admin.workers.sort.uptime" | transloco }}</option>
-          @if (workerType() === 'image') {
-            <option value="megapixelsteps_generated">{{ "admin.workers.sort.mps_generated" | transloco }}</option>
-          }
-        </select>
-      </div>
-
-      <!-- Sort Order Toggle -->
-      <button
-        (click)="toggleSortOrder()"
-        class="btn-icon"
-        [title]="sortOrder() === 'asc' ? ('admin.workers.sort_order.asc' | transloco) : ('admin.workers.sort_order.desc' | transloco)"
-      >
-        @if (sortOrder() === 'asc') {
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-          </svg>
-        } @else {
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        }
+      </svg>
+      <span>{{ errorMessage() }}</span>
+      <button class="btn-muted text-xs" type="button" (click)="clearError()">
+        Dismiss
       </button>
+    </div>
+  }
 
-      <!-- Refresh Button -->
-      <button
-        (click)="refreshWorkers()"
-        class="btn-icon"
-        [disabled]="loading()"
+  <!-- Sub-Tab Navigation -->
+  <div class="details-tabs mb-6">
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="workerType() === 'image'"
+      (click)="setWorkerType('image')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
       >
-        <svg class="w-5 h-5" [class.admin-spinner]="loading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+        />
+      </svg>
+      {{ "admin.workers.tabs.image" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="workerType() === 'text'"
+      (click)="setWorkerType('text')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+        />
+      </svg>
+      {{ "admin.workers.tabs.text" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="workerType() === 'interrogation'"
+      (click)="setWorkerType('interrogation')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"
+        />
+      </svg>
+      {{ "admin.workers.tabs.interrogation" | transloco }}
+    </button>
+
+    <button
+      type="button"
+      class="btn-source-control"
+      (click)="refreshWorkers()"
+      [disabled]="loading()"
+    >
+      @if (loading()) {
+        <div class="spinner spinner-sm" aria-hidden="true"></div>
+      } @else {
+        <svg
+          class="icon-sm"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+          />
         </svg>
-      </button>
+      }
+      {{ "admin.workers.refresh" | transloco }}
+    </button>
+  </div>
+
+  <!-- Statistics Section -->
+  @if (!loading() && filteredWorkers().length > 0) {
+    @if (statisticsCollapsed()) {
+      <!-- Compact Summary -->
+      <div
+        class="panel dark:bg-gray-800 mb-6 cursor-pointer hover:bg-opacity-90 transition-colors"
+        (click)="toggleStatistics()"
+      >
+        <div class="p-4 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-6 flex-wrap">
+            <div class="flex items-center gap-2">
+              <span class="admin-text-muted text-sm"
+                >{{ "admin.workers.stats.total_workers" | transloco }}:</span
+              >
+              <span class="data-value text-lg">{{ totalWorkers() }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="admin-text-muted text-sm"
+                >{{ "admin.workers.stats.total_threads" | transloco }}:</span
+              >
+              <span class="data-value text-lg">{{ totalThreads() }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="admin-text-muted text-sm">
+                @if (workerType() === "image") {
+                  {{ "admin.workers.stats.total_mps" | transloco }}:
+                } @else if (workerType() === "text") {
+                  {{ "admin.workers.stats.total_tokens" | transloco }}:
+                } @else {
+                  {{ "admin.workers.stats.mean_interrogation" | transloco }}:
+                }
+              </span>
+              <span class="data-value text-lg"
+                >{{ totalPerformance() | number: "1.2-2" }}
+                {{ performanceLabel() }}</span
+              >
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="admin-text-muted text-sm">{{
+              "admin.workers.stats.more_stats" | transloco
+            }}</span>
+            <button
+              type="button"
+              class="btn-icon shrink-0"
+              [title]="'admin.workers.stats.expand' | transloco"
+            >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- Full Statistics Panel -->
+      <div class="panel dark:bg-gray-800 mb-6">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="admin-heading-section">
+              {{ "admin.workers.statistics" | transloco }}
+            </h2>
+            <button
+              type="button"
+              class="btn-icon"
+              (click)="toggleStatistics()"
+              [title]="'admin.workers.stats.collapse' | transloco"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 15l7-7 7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Basic Stats Grid -->
+          <div class="data-grid-1-2-3 mb-6">
+          <!-- Total Workers -->
+          <div class="data-item-box admin-bg-dark">
+            <div class="data-label">
+              {{ "admin.workers.stats.total_workers" | transloco }}
+            </div>
+            <div class="data-value-lg">{{ totalWorkers() }}</div>
+          </div>
+
+          <!-- Total Threads -->
+          <div class="data-item-box admin-bg-dark">
+            <div class="data-label">
+              {{ "admin.workers.stats.total_threads" | transloco }}
+            </div>
+            <div class="data-value-lg">{{ totalThreads() }}</div>
+          </div>
+
+          <!-- Total Performance (MPS/S or tokens/s or mean seconds per form) -->
+          <div class="data-item-box admin-bg-dark">
+            <div class="data-label">
+              @if (workerType() === "image") {
+                {{ "admin.workers.stats.total_mps" | transloco }}
+              } @else if (workerType() === "text") {
+                {{ "admin.workers.stats.total_tokens" | transloco }}
+              } @else {
+                {{ "admin.workers.stats.mean_interrogation" | transloco }}
+              }
+            </div>
+            <div class="data-value-lg">
+              {{ totalPerformance() | number: "1.2-2" }}
+              <span class="text-sm admin-text-muted">{{
+                performanceLabel()
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Worker Versions -->
+          <div class="data-item-box admin-bg-dark">
+            <div class="data-label mb-2">
+              {{ "admin.workers.stats.worker_versions" | transloco }}
+            </div>
+            <div class="space-y-2">
+              @for (
+                version of workerVersionsExpanded()
+                  ? workerVersions()
+                  : workerVersions().slice(0, 3);
+                track version.version
+              ) {
+                <div class="flex flex-col gap-1">
+                  <div class="flex justify-between items-center">
+                    <span class="admin-text-white text-sm font-medium">{{
+                      version.parsed.displayName
+                    }}</span>
+                    <span class="admin-badge admin-badge-capability">{{
+                      version.count
+                    }}</span>
+                  </div>
+                  @if (version.parsed.url) {
+                    <a
+                      [href]="version.parsed.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="admin-link text-xs truncate"
+                    >
+                      {{ version.parsed.url }}
+                    </a>
+                  }
+                </div>
+              }
+              @if (workerVersions().length > 3) {
+                <button
+                  (click)="toggleWorkerVersions()"
+                  class="admin-link text-xs text-left"
+                >
+                  @if (workerVersionsExpanded()) {
+                    {{ "admin.workers.stats.hide_additional" | transloco }}
+                  } @else {
+                    {{
+                      "admin.workers.stats.show_more"
+                        | transloco
+                          : { count: workerVersions().length - 3 }
+                    }}
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Capability Statistics (Image workers only) -->
+        @if (workerType() === "image" && capabilityStats().length > 0) {
+          <div class="admin-border-t pt-6">
+            <h3 class="admin-heading-card mb-3">
+              {{ "admin.workers.stats.capabilities" | transloco }}
+            </h3>
+            <div class="data-grid-1-2-3">
+              @for (capability of capabilityStats(); track capability.name) {
+                <div class="data-item-box admin-bg-dark">
+                  <div class="data-label mb-1">{{ capability.name }}</div>
+                  <div class="flex justify-between items-baseline gap-2">
+                    <div class="data-value text-lg">
+                      {{ capability.totalPerformance | number: "1.2-2" }}
+                      <span class="text-sm admin-text-muted">{{
+                        performanceLabel()
+                      }}</span>
+                    </div>
+                    <div class="admin-badge admin-badge-capability">
+                      {{ capability.workerCount }}
+                      {{
+                        capability.workerCount === 1
+                          ? ("admin.workers.stats.worker" | transloco)
+                          : ("admin.workers.stats.workers" | transloco)
+                      }}
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
     </div>
+    }
+  }
+
+  <!-- Filters and Controls -->
+  <div class="flex flex-wrap items-center gap-3 mb-6">
+    <!-- Filter Input -->
+    <div class="flex-1 min-w-64">
+      <input
+        type="text"
+        [value]="filterText()"
+        (input)="onFilterChange($event)"
+        [placeholder]="'admin.workers.filter_placeholder' | transloco"
+        class="form-input w-full"
+      />
+    </div>
+
+    <!-- Sort Key Select -->
+    <div class="flex items-center gap-2">
+      <label class="text-sm admin-text-muted"
+        >{{ "admin.workers.sort_by" | transloco }}:</label
+      >
+      <select
+        [value]="sortKey()"
+        (change)="onSortKeyChange($any($event.target).value)"
+        class="form-input w-48"
+      >
+        <option value="name">
+          {{ "admin.workers.sort.name" | transloco }}
+        </option>
+        <option value="performance">
+          {{ "admin.workers.sort.performance" | transloco }}
+        </option>
+        <option value="bridge_agent">
+          {{ "admin.workers.sort.bridge_agent" | transloco }}
+        </option>
+        <option value="uptime">
+          {{ "admin.workers.sort.uptime" | transloco }}
+        </option>
+        @if (workerType() === "image") {
+          <option value="megapixelsteps_generated">
+            {{ "admin.workers.sort.mps_generated" | transloco }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <!-- Sort Order Toggle -->
+    <button
+      (click)="toggleSortOrder()"
+      class="btn-icon"
+      [title]="
+        sortOrder() === 'asc'
+          ? ('admin.workers.sort_order.asc' | transloco)
+          : ('admin.workers.sort_order.desc' | transloco)
+      "
+    >
+      @if (sortOrder() === "asc") {
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 15l7-7 7 7"
+          />
+        </svg>
+      } @else {
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      }
+    </button>
   </div>
 
   <!-- Loading State -->
   @if (loading()) {
     <div class="admin-loading">
       <svg class="admin-spinner" fill="none" viewBox="0 0 24 24">
-        <circle class="admin-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="admin-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <circle
+          class="admin-spinner-track"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="admin-spinner-head"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
       </svg>
-      <p class="admin-loading-text">{{ "admin.workers.loading" | transloco }}</p>
+      <p class="admin-loading-text">
+        {{ "admin.workers.loading" | transloco }}
+      </p>
     </div>
   } @else if (filteredWorkers().length === 0) {
     <div class="admin-empty">
-      <svg class="admin-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+      <svg
+        class="admin-empty-icon"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+        />
       </svg>
-      <p class="admin-empty-text">{{ "admin.workers.no_workers" | transloco }}</p>
+      <p class="admin-empty-text">
+        {{ "admin.workers.no_workers" | transloco }}
+      </p>
     </div>
   } @else {
     <!-- Worker Grid -->
@@ -102,6 +473,7 @@
         <app-worker-card
           [worker]="worker"
           [isModerator]="auth.currentUser()?.moderator ?? false"
+          [viewMode]="viewMode()"
           (workerUpdated)="onWorkerUpdated()"
         />
       }

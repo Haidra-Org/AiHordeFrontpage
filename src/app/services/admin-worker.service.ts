@@ -2,7 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { HordeWorker, PutWorkerRequest, WorkerModifyResponse } from '../types/horde-worker';
+import {
+  HordeWorker,
+  PutWorkerRequest,
+  WorkerModifyResponse,
+} from '../types/horde-worker';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -31,7 +35,7 @@ export class AdminWorkerService {
   public getWorker(id: string): Observable<HordeWorker | null> {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
-    
+
     return this.httpClient
       .get<HordeWorker>(`${this.baseUrl}/workers/${id}`, options)
       .pipe(catchError(() => of(null)));
@@ -47,18 +51,21 @@ export class AdminWorkerService {
     }
 
     // Fetch each worker individually using forkJoin
-    const workerRequests = workerIds.map(id => this.getWorker(id));
-    
+    const workerRequests = workerIds.map((id) => this.getWorker(id));
+
     return forkJoin(workerRequests).pipe(
-      map(workers => workers.filter((w): w is HordeWorker => w !== null)),
-      catchError(() => of([]))
+      map((workers) => workers.filter((w): w is HordeWorker => w !== null)),
+      catchError(() => of([])),
     );
   }
 
   /**
    * Modify a worker (requires moderator or owner permissions)
    */
-  public updateWorker(id: string, data: PutWorkerRequest): Observable<WorkerModifyResponse | null> {
+  public updateWorker(
+    id: string,
+    data: PutWorkerRequest,
+  ): Observable<WorkerModifyResponse | null> {
     const apiKey = this.auth.getStoredApiKey();
     if (!apiKey) {
       return of(null);
@@ -74,7 +81,11 @@ export class AdminWorkerService {
   /**
    * Set worker to maintenance mode
    */
-  public setMaintenance(id: string, maintenance: boolean, message?: string): Observable<WorkerModifyResponse | null> {
+  public setMaintenance(
+    id: string,
+    maintenance: boolean,
+    message?: string,
+  ): Observable<WorkerModifyResponse | null> {
     const data: PutWorkerRequest = {
       maintenance,
       maintenance_msg: maintenance ? message : '',
@@ -85,7 +96,10 @@ export class AdminWorkerService {
   /**
    * Set worker paused state
    */
-  public setPaused(id: string, paused: boolean): Observable<WorkerModifyResponse | null> {
+  public setPaused(
+    id: string,
+    paused: boolean,
+  ): Observable<WorkerModifyResponse | null> {
     return this.updateWorker(id, { paused });
   }
 }

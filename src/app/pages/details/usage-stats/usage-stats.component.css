@@ -1,0 +1,6 @@
+/* Usage stats page styles */
+
+/* Secondary text color for synthesized units */
+.text-secondary-inline {
+  color: var(--color-text-secondary);
+}

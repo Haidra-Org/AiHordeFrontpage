@@ -1,0 +1,106 @@
+<div class="shared-keys-container">
+  @if (showHeader()) {
+    <div class="shared-keys-header">
+      <div>
+        <h3 class="heading-card">
+          {{ "profile.tabs.shared_keys" | transloco }}
+        </h3>
+        <p class="text-secondary text-sm">
+          {{ "profile.shared_keys.description" | transloco }}
+        </p>
+        <p class="text-secondary text-xs mt-1">
+          {{ "profile.shared_keys.cache_notice" | transloco }}
+        </p>
+      </div>
+      @if (!isExternalData()) {
+        <button
+          type="button"
+          class="btn-source-control"
+          (click)="loadSharedKeys()"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+            {{ "profile.shared_keys.loading" | transloco }}
+          } @else {
+            {{ "profile.shared_keys.refresh" | transloco }}
+          }
+        </button>
+      }
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <p class="alert-title">
+        {{ "profile.shared_keys.error_title" | transloco }}
+      </p>
+      <p class="alert-body">{{ error() }}</p>
+    </div>
+  }
+
+  @if (success()) {
+    <div class="alert alert-success" role="status">
+      <p class="alert-title">
+        {{ "profile.shared_keys.success_title" | transloco }}
+      </p>
+      <p class="alert-body">{{ success() }}</p>
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="text-secondary text-sm py-4">
+      {{ "profile.shared_keys.loading" | transloco }}
+    </p>
+  } @else {
+    @if (sharedKeys().length === 0) {
+      <p class="text-secondary text-sm py-4">
+        {{ "profile.shared_keys.none" | transloco }}
+      </p>
+    } @else {
+      <div class="shared-key-grid">
+        @for (sharedKey of sharedKeys(); track sharedKey.id) {
+          <app-shared-key-card
+            [sharedKey]="sharedKey"
+            [saving]="isSaving(sharedKey.id)"
+            [deleting]="isDeleting(sharedKey.id)"
+            [readonly]="readonly()"
+            (update)="onUpdate(sharedKey.id, $event)"
+            (delete)="onDelete(sharedKey.id)"
+          />
+        }
+      </div>
+    }
+  }
+
+  @if (!readonly()) {
+    <div class="section-divider-top">
+      @if (createFormCollapsed()) {
+        <button
+          type="button"
+          class="btn-primary w-full"
+          (click)="toggleCreateForm()"
+        >
+          {{ "profile.shared_keys.create_title" | transloco }}
+        </button>
+      } @else {
+        <h4 class="section-title-sm mb-2">
+          {{ "profile.shared_keys.create_title" | transloco }}
+        </h4>
+        <app-shared-key-form
+          [initialValues]="createFormDefaults"
+          [submitLabel]="'profile.shared_keys.create' | transloco"
+          [submittingLabel]="'profile.shared_keys.creating' | transloco"
+          [submitting]="creating()"
+          (formSubmit)="onCreateSubmit($event)"
+        />
+        <button
+          type="button"
+          class="btn-secondary mt-3"
+          (click)="toggleCreateForm()"
+        >
+          {{ "profile.shared_keys.cancel" | transloco }}
+        </button>
+      }
+    </div>
+  }
+</div>

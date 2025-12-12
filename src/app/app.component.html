@@ -1,13 +1,18 @@
 <div class="wrapper" (click)="closeMobileMenu()">
   <!-- Main Navigation Header -->
-  <header class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-    <nav class="container mx-auto px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Main navigation">
+  <header
+    class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700"
+  >
+    <nav
+      class="container mx-auto px-4 sm:px-6 lg:px-8"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <div class="nav-container">
-        
         <!-- Logo and Site Title -->
         <div class="logo-container">
-          <a 
-            routerLink="/" 
+          <a
+            routerLink="/"
             class="logo-link"
             [attr.aria-label]="'Navigate to homepage' | transloco"
           >
@@ -32,26 +37,9 @@
             class="nav-link"
             role="menuitem"
             routerLinkActive="nav-link-active"
-            [routerLinkActiveOptions]="{exact: true}"
+            [routerLinkActiveOptions]="{ exact: true }"
           >
             {{ "home" | transloco }}
-          </a>
-          <a
-            href="https://aihorde.net/register"
-            class="nav-link"
-            role="menuitem"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {{ "register_account" | transloco }}
-          </a>
-          <a
-            routerLink="/v2-transfer"
-            class="nav-link"
-            role="menuitem"
-            routerLinkActive="nav-link-active"
-          >
-            {{ "transfer.title" | transloco }}
           </a>
           <a
             routerLink="/news"
@@ -69,6 +57,7 @@
           >
             {{ "guis_and_tools" | transloco }}
           </a>
+
           <a
             routerLink="/faq"
             class="nav-link"
@@ -77,53 +66,195 @@
           >
             {{ "faq" | transloco }}
           </a>
-          <a
-            href="/api/"
-            class="nav-link"
-            role="menuitem"
-          >
+          <a href="/api/" class="nav-link" role="menuitem">
             {{ "api" | transloco }}
           </a>
-          <a
-            routerLink="/profile"
-            class="nav-link"
-            role="menuitem"
-            routerLinkActive="nav-link-active"
-          >
-            @if (auth.isLoggedIn()) {
-              {{ "profile.nav_profile" | transloco }}
-            } @else {
-              {{ "profile.nav_login" | transloco }}
+          <!-- Active Details Dropdown -->
+          <div class="nav-dropdown-container" data-dropdown="details">
+            <button
+              type="button"
+              class="nav-link nav-dropdown-trigger"
+              [class.nav-link-active]="showDetailsDropdown"
+              (click)="toggleDetailsDropdown(); $event.stopPropagation()"
+              aria-haspopup="true"
+              [attr.aria-expanded]="showDetailsDropdown"
+            >
+              {{ "nav.active_details" | transloco }}
+              <svg
+                class="nav-dropdown-chevron"
+                [class.nav-dropdown-chevron-open]="showDetailsDropdown"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            @if (showDetailsDropdown) {
+              <div class="nav-dropdown-menu" role="menu">
+                <a
+                  routerLink="/details/workers"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.workers" | transloco }}
+                </a>
+                <a
+                  routerLink="/details/models"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.models" | transloco }}
+                </a>
+                <a
+                  routerLink="/details/usage"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.usage_stats" | transloco }}
+                </a>
+                <a
+                  routerLink="/details/styles"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.styles" | transloco }}
+                </a>
+              </div>
             }
-          </a>
+          </div>
+          <!-- Account Dropdown -->
+          <div class="nav-dropdown-container" data-dropdown="account">
+            <button
+              type="button"
+              class="nav-link nav-dropdown-trigger"
+              [class.nav-link-active]="showAccountDropdown"
+              (click)="toggleAccountDropdown(); $event.stopPropagation()"
+              aria-haspopup="true"
+              [attr.aria-expanded]="showAccountDropdown"
+            >
+              {{ "nav.account" | transloco }}
+              <svg
+                class="nav-dropdown-chevron"
+                [class.nav-dropdown-chevron-open]="showAccountDropdown"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            @if (showAccountDropdown) {
+              <div class="nav-dropdown-menu" role="menu">
+                <a
+                  routerLink="/profile"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeAccountDropdown()"
+                >
+                  @if (auth.isLoggedIn()) {
+                    {{ "profile.nav_profile" | transloco }}
+                  } @else {
+                    {{ "profile.nav_login" | transloco }}
+                  }
+                </a>
+                <a
+                  href="https://aihorde.net/register"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  (click)="closeAccountDropdown()"
+                >
+                  {{ "register_account" | transloco }}
+                </a>
+                <a
+                  routerLink="/v2-transfer"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeAccountDropdown()"
+                >
+                  {{ "transfer.title" | transloco }}
+                </a>
+              </div>
+            }
+          </div>
         </div>
 
         <!-- Right Side Actions -->
         <div class="nav-actions">
           <!-- Theme Toggle -->
           <theme-toggle />
-          
+
           <!-- Mobile Menu Button -->
           <button
             type="button"
             class="mobile-menu-button"
             [attr.aria-expanded]="showMobileMenu"
-            [attr.aria-label]="(showMobileMenu ? 'close_main_menu' : 'open_main_menu') | transloco"
+            [attr.aria-label]="
+              (showMobileMenu ? 'close_main_menu' : 'open_main_menu')
+                | transloco
+            "
             aria-controls="mobile-navigation"
             (click)="toggleMobileMenu(); $event.stopPropagation()"
             (keydown.escape)="closeMobileMenu()"
           >
-            <span class="sr-only">{{ (showMobileMenu ? "close_main_menu" : "open_main_menu") | transloco }}</span>
+            <span class="sr-only">{{
+              (showMobileMenu ? "close_main_menu" : "open_main_menu")
+                | transloco
+            }}</span>
             <!-- Hamburger Icon -->
             @if (!showMobileMenu) {
-              <svg class="menu-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              <svg
+                class="menu-icon"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+                />
               </svg>
             }
             <!-- Close Icon -->
             @if (showMobileMenu) {
-              <svg class="menu-icon" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                class="menu-icon"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             }
           </button>
@@ -147,30 +278,11 @@
               class="mobile-nav-link"
               role="menuitem"
               routerLinkActive="mobile-nav-link-active"
-              [routerLinkActiveOptions]="{exact: true}"
+              [routerLinkActiveOptions]="{ exact: true }"
               (click)="closeMobileMenu()"
               (keydown.escape)="closeMobileMenu()"
             >
               {{ "home" | transloco }}
-            </a>
-            <a
-              href="https://aihorde.net/register"
-              class="mobile-nav-link"
-              role="menuitem"
-              target="_blank"
-              rel="noopener noreferrer"
-              (click)="closeMobileMenu()"
-            >
-              {{ "register_account" | transloco }}
-            </a>
-            <a
-              routerLink="/v2-transfer"
-              class="mobile-nav-link"
-              role="menuitem"
-              routerLinkActive="mobile-nav-link-active"
-              (click)="closeMobileMenu()"
-            >
-              {{ "transfer.title" | transloco }}
             </a>
             <a
               routerLink="/news"
@@ -190,6 +302,72 @@
             >
               {{ "guis_and_tools" | transloco }}
             </a>
+            <!-- Active Details Submenu -->
+            <div class="mobile-nav-submenu">
+              <button
+                type="button"
+                class="mobile-nav-link mobile-nav-submenu-trigger"
+                (click)="toggleMobileDetailsSubmenu(); $event.stopPropagation()"
+                aria-haspopup="true"
+                [attr.aria-expanded]="showMobileDetailsSubmenu"
+              >
+                {{ "nav.active_details" | transloco }}
+                <svg
+                  class="mobile-nav-chevron"
+                  [class.mobile-nav-chevron-open]="showMobileDetailsSubmenu"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              @if (showMobileDetailsSubmenu) {
+                <div class="mobile-nav-submenu-items">
+                  <a
+                    routerLink="/details/workers"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.workers" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/details/models"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.models" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/details/usage"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.usage_stats" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/details/styles"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.styles" | transloco }}
+                  </a>
+                </div>
+              }
+            </div>
             <a
               routerLink="/faq"
               class="mobile-nav-link"
@@ -207,19 +385,68 @@
             >
               {{ "api" | transloco }}
             </a>
-            <a
-              routerLink="/profile"
-              class="mobile-nav-link"
-              role="menuitem"
-              routerLinkActive="mobile-nav-link-active"
-              (click)="closeMobileMenu()"
-            >
-              @if (auth.isLoggedIn()) {
-                {{ "profile.nav_profile" | transloco }}
-              } @else {
-                {{ "profile.nav_login" | transloco }}
+            <!-- Account Submenu -->
+            <div class="mobile-nav-submenu">
+              <button
+                type="button"
+                class="mobile-nav-link mobile-nav-submenu-trigger"
+                (click)="toggleMobileAccountSubmenu(); $event.stopPropagation()"
+                aria-haspopup="true"
+                [attr.aria-expanded]="showMobileAccountSubmenu"
+              >
+                {{ "nav.account" | transloco }}
+                <svg
+                  class="mobile-nav-chevron"
+                  [class.mobile-nav-chevron-open]="showMobileAccountSubmenu"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              @if (showMobileAccountSubmenu) {
+                <div class="mobile-nav-submenu-items">
+                  <a
+                    routerLink="/profile"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    @if (auth.isLoggedIn()) {
+                      {{ "profile.nav_profile" | transloco }}
+                    } @else {
+                      {{ "profile.nav_login" | transloco }}
+                    }
+                  </a>
+                  <a
+                    href="https://aihorde.net/register"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "register_account" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/v2-transfer"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "transfer.title" | transloco }}
+                  </a>
+                </div>
               }
-            </a>
+            </div>
           </div>
         </div>
       </div>
@@ -380,10 +607,7 @@
       </div>
       <hr class="footer-divider" />
       <div class="footer-bottom">
-        <a
-          href="#"
-          class="footer-logo-wrapper"
-        >
+        <a href="#" class="footer-logo-wrapper">
           <img
             ngSrc="./assets/img/logo.png"
             class="footer-logo-image"

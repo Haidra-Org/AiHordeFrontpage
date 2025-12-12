@@ -1,0 +1,106 @@
+/* =================================================================
+   TOOLTIP STYLES
+   
+   Reusable tooltip component with hover trigger.
+   
+   Usage:
+   <span class="tooltip-trigger">
+     <span class="tooltip-underline">hover text</span>
+     <span class="tooltip-content">
+       Tooltip content here
+     </span>
+   </span>
+   ================================================================= */
+
+/* Tooltip trigger wrapper */
+.tooltip-trigger {
+  position: relative;
+  display: inline;
+  margin-left: 0.125rem;
+}
+
+/* Dotted underline style for hover hint */
+.tooltip-underline {
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+
+/* Tooltip content bubble */
+.tooltip-content {
+  visibility: hidden;
+  width: 300px;
+  max-width: calc(100vw - 2rem);
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  text-align: left;
+  border-radius: 6px;
+  padding: 10px 14px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  white-space: normal;
+  border: 1px solid var(--color-border-primary);
+}
+
+/* Tooltip arrow */
+.tooltip-content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--color-bg-secondary) transparent transparent transparent;
+}
+
+/* Show tooltip on hover */
+.tooltip-trigger:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Mobile positioning - align right to stay in viewport */
+@media (max-width: 640px) {
+  .tooltip-content {
+    left: auto;
+    right: 0;
+    transform: none;
+    max-width: calc(100vw - 1rem);
+  }
+
+  .tooltip-content::after {
+    left: auto;
+    right: 1rem;
+  }
+}
+
+/* Tooltip text utilities */
+.tooltip-highlight {
+  color: var(--color-brand-blue);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.tooltip-code {
+  color: var(--color-brand-purple);
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.tooltip-muted {
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  font-style: italic;
+}
+
+/* Dark mode support - handled by theme variables */

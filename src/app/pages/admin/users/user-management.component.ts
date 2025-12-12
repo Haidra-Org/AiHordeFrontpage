@@ -1,12 +1,14 @@
 import {
+  ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   OnInit,
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -18,8 +20,21 @@ import { AdminUserService } from '../../../services/admin-user.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { AdminUserDetails } from '../../../types/horde-user-admin';
 import { HordeWorker } from '../../../types/horde-worker';
+import { SharedKeyDetails } from '../../../types/shared-key';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { WorkerCardComponent } from '../workers/worker-card.component';
+import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
+import {
+  AdminToastBarComponent,
+  AdminToast,
+} from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
+import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
+import { combineLatest } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import {
+  highlightJson,
+  stringifyAsJson,
+} from '../../../helper/json-formatter';
 
 type DialogType = 'resetSuspicion';
 
@@ -41,9 +56,14 @@ const MAX_HISTORY_SIZE = 30;
     FormsModule,
     FormatNumberPipe,
     WorkerCardComponent,
+    DatePipe,
+    AdminDialogComponent,
+    AdminToastBarComponent,
+    KudosBreakdownPanelComponent,
   ],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserManagementComponent implements OnInit {
   private readonly title = inject(Title);
@@ -65,6 +85,11 @@ export class UserManagementComponent implements OnInit {
   public userWorkers = signal<HordeWorker[]>([]);
   public loadingWorkers = signal<boolean>(false);
 
+  // User shared keys
+  public userSharedKeys = signal<SharedKeyDetails[]>([]);
+  public loadingSharedKeys = signal<boolean>(false);
+  public sharedKeysFetched = signal<boolean>(false);
+
   // Expanded sections
   public workersExpanded = signal<boolean>(false);
   public permissionsExpanded = signal<boolean>(true);
@@ -75,6 +100,7 @@ export class UserManagementComponent implements OnInit {
   public activeGenerationsExpanded = signal<boolean>(false);
   public stylesExpanded = signal<boolean>(false);
   public sharedKeysExpanded = signal<boolean>(false);
+  public rawJsonModalOpen = signal<boolean>(false);
 
   // Form state
   public trustedValue = signal<boolean>(false);
@@ -97,24 +123,122 @@ export class UserManagementComponent implements OnInit {
   public isDirty = signal<boolean>(false);
   public isSaving = signal<boolean>(false);
 
+  // Raw JSON snapshots
+  public userJson = computed(() => stringifyAsJson(this.selectedUser()));
+  public workersJson = computed(() => stringifyAsJson(this.userWorkers()));
+  public sharedKeysJson = computed(() =>
+    stringifyAsJson(this.userSharedKeys()),
+  );
+  public stylesJson = computed(() =>
+    stringifyAsJson(this.selectedUser()?.styles ?? []),
+  );
+  public userJsonHighlighted = computed(() =>
+    highlightJson(this.userJson()),
+  );
+  public workersJsonHighlighted = computed(() =>
+    highlightJson(this.workersJson()),
+  );
+  public sharedKeysJsonHighlighted = computed(() =>
+    highlightJson(this.sharedKeysJson()),
+  );
+  public stylesJsonHighlighted = computed(() =>
+    highlightJson(this.stylesJson()),
+  );
+
+  // Computed signals for tracking individual field changes
+  public trustedChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.trustedValue() !== user.trusted : false;
+  });
+  public flaggedChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.flaggedValue() !== user.flagged : false;
+  });
+  public moderatorChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.moderatorValue() !== user.moderator : false;
+  });
+  public publicWorkersChanged = computed(() => {
+    const user = this.selectedUser();
+    return user
+      ? this.publicWorkersValue() !== (user.public_workers ?? false)
+      : false;
+  });
+  public customizerChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.customizerValue() !== (user.customizer ?? false) : false;
+  });
+  public serviceChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.serviceValue() !== (user.service ?? false) : false;
+  });
+  public educationChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.educationValue() !== (user.education ?? false) : false;
+  });
+  public specialChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.specialValue() !== (user.special ?? false) : false;
+  });
+  public filteredChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.filteredValue() !== (user.filtered ?? false) : false;
+  });
+  public vpnChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.vpnValue() !== (user.vpn ?? false) : false;
+  });
+  public workerInvitesChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.workerInvitesValue() !== user.worker_invited : false;
+  });
+  public usageMultiplierChanged = computed(() => {
+    const user = this.selectedUser();
+    return user
+      ? this.usageMultiplierValue() !== (user.usage_multiplier ?? 1)
+      : false;
+  });
+  public concurrencyChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.concurrencyValue() !== (user.concurrency ?? 0) : false;
+  });
+  public monthlyKudosChanged = computed(() => {
+    const user = this.selectedUser();
+    return user
+      ? this.monthlyKudosValue() !== (user.monthly_kudos?.amount ?? 0)
+      : false;
+  });
+  public contactChanged = computed(() => {
+    const user = this.selectedUser();
+    return user ? this.contactValue().trim() !== (user.contact ?? '') : false;
+  });
+  public adminCommentChanged = computed(() => {
+    const user = this.selectedUser();
+    return user
+      ? this.adminCommentValue().trim() !== (user.admin_comment ?? '')
+      : false;
+  });
+
   // Dialog state
   public dialogOpen = signal<boolean>(false);
   public dialogType = signal<DialogType>('resetSuspicion');
   public isUpdating = signal<boolean>(false);
-  public showSuccess = signal<boolean>(false);
+
+  // Toast notifications
+  public toasts = signal<AdminToast[]>([]);
 
   // User history
   public userHistory = signal<UserHistoryItem[]>([]);
   public historyExpanded = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.translator
-      .get('admin.users.title')
+    combineLatest([
+      this.translator.get('admin.users.title'),
+      this.translator.get('app_title'),
+    ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((usersTitle) => {
-        this.translator.get('app_title').subscribe((appTitle) => {
-          this.title.setTitle(`${usersTitle} | ${appTitle}`);
-        });
+      .subscribe(([usersTitle, appTitle]) => {
+        this.title.setTitle(`${usersTitle} | ${appTitle}`);
       });
 
     // Load user history from local storage
@@ -146,10 +270,14 @@ export class UserManagementComponent implements OnInit {
     if (!query) return;
 
     this.loading.set(true);
+    this.clearToasts();
     this.userNotFound.set(false);
     this.selectedUser.set(null);
     this.userWorkers.set([]);
     this.workersExpanded.set(false);
+    this.userSharedKeys.set([]);
+    this.sharedKeysFetched.set(false);
+    this.sharedKeysExpanded.set(false);
 
     // Extract user ID from the query
     // Supports: numeric ID, "username#id", or "#id"
@@ -170,15 +298,23 @@ export class UserManagementComponent implements OnInit {
     if (userId !== null) {
       this.userService
         .getUser(userId)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((user) => {
-          this.loading.set(false);
-          if (user) {
-            this.setSelectedUser(user);
-            this.addToUserHistory(user);
-          } else {
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => this.loading.set(false)),
+        )
+        .subscribe({
+          next: (user) => {
+            if (user) {
+              this.setSelectedUser(user);
+              this.addToUserHistory(user);
+            } else {
+              this.userNotFound.set(true);
+            }
+          },
+          error: () => {
             this.userNotFound.set(true);
-          }
+            this.showToast('error', 'Failed to load user data.');
+          },
         });
     } else {
       this.loading.set(false);
@@ -207,102 +343,63 @@ export class UserManagementComponent implements OnInit {
     this.isDirty.set(false);
   }
 
-  public onTrustedChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.trustedValue.set(target.checked);
+  /**
+   * Consolidated field change handler.
+   * Handles boolean, number, and string field updates.
+   */
+  public onFieldChange(
+    field: keyof typeof this.fieldSignals,
+    event: Event,
+  ): void {
+    const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+    const signalRef = this.fieldSignals[field];
+
+    if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+      (signalRef as ReturnType<typeof signal<boolean>>).set(target.checked);
+    } else if (
+      target instanceof HTMLInputElement &&
+      target.type === 'number'
+    ) {
+      const rawValue = target.value;
+      // Handle float for usage multiplier, integer for others
+      if (field === 'usageMultiplier') {
+        const value = parseFloat(rawValue);
+        (signalRef as ReturnType<typeof signal<number>>).set(
+          Number.isFinite(value) ? value : 1,
+        );
+      } else {
+        (signalRef as ReturnType<typeof signal<number>>).set(
+          parseInt(rawValue, 10) || 0,
+        );
+      }
+    } else {
+      (signalRef as ReturnType<typeof signal<string>>).set(target.value);
+    }
+
     this.checkDirty();
   }
 
-  public onFlaggedChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.flaggedValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onModeratorChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.moderatorValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onPublicWorkersChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.publicWorkersValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onCustomizerChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.customizerValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onServiceChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.serviceValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onEducationChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.educationValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onSpecialChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.specialValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onFilteredChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.filteredValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onVpnChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.vpnValue.set(target.checked);
-    this.checkDirty();
-  }
-
-  public onWorkerInvitesChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.workerInvitesValue.set(parseInt(target.value, 10) || 0);
-    this.checkDirty();
-  }
-
-  public onUsageMultiplierChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    const value = parseFloat(target.value);
-    this.usageMultiplierValue.set(Number.isFinite(value) ? value : 1);
-    this.checkDirty();
-  }
-
-  public onConcurrencyChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.concurrencyValue.set(parseInt(target.value, 10) || 0);
-    this.checkDirty();
-  }
-
-  public onMonthlyKudosChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.monthlyKudosValue.set(parseInt(target.value, 10) || 0);
-    this.checkDirty();
-  }
-
-  public onContactChange(event: Event): void {
-    const target = event.target as HTMLInputElement;
-    this.contactValue.set(target.value);
-    this.checkDirty();
-  }
-
-  public onAdminCommentChange(event: Event): void {
-    const target = event.target as HTMLTextAreaElement;
-    this.adminCommentValue.set(target.value);
-    this.checkDirty();
-  }
+  /**
+   * Map of field names to their signal references for dynamic updates.
+   */
+  private readonly fieldSignals = {
+    trusted: this.trustedValue,
+    flagged: this.flaggedValue,
+    moderator: this.moderatorValue,
+    publicWorkers: this.publicWorkersValue,
+    customizer: this.customizerValue,
+    service: this.serviceValue,
+    education: this.educationValue,
+    special: this.specialValue,
+    filtered: this.filteredValue,
+    vpn: this.vpnValue,
+    workerInvites: this.workerInvitesValue,
+    usageMultiplier: this.usageMultiplierValue,
+    concurrency: this.concurrencyValue,
+    monthlyKudos: this.monthlyKudosValue,
+    contact: this.contactValue,
+    adminComment: this.adminCommentValue,
+  } as const;
 
   private checkDirty(): void {
     const user = this.selectedUser();
@@ -324,7 +421,7 @@ export class UserManagementComponent implements OnInit {
         this.concurrencyValue() !== (user.concurrency ?? 0) ||
         this.monthlyKudosValue() !== (user.monthly_kudos?.amount ?? 0) ||
         this.contactValue().trim() !== (user.contact ?? '') ||
-        this.adminCommentValue().trim() !== (user.admin_comment ?? '')
+        this.adminCommentValue().trim() !== (user.admin_comment ?? ''),
     );
   }
 
@@ -388,22 +485,27 @@ export class UserManagementComponent implements OnInit {
 
     this.userService
       .updateUser(user.id, payload)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.isSaving.set(false);
-        if (result) {
-          // Refresh user data
-          this.userService
-            .getUser(user.id)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((updatedUser) => {
-              if (updatedUser) {
-                this.setSelectedUser(updatedUser);
-              }
-            });
-          this.showSuccess.set(true);
-          setTimeout(() => this.showSuccess.set(false), 3000);
-        }
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isSaving.set(false)),
+      )
+      .subscribe({
+        next: (result) => {
+          if (result) {
+            this.userService
+              .getUser(user.id)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe((updatedUser) => {
+                if (updatedUser) {
+                  this.setSelectedUser(updatedUser);
+                }
+              });
+            this.showToast('success', 'Changes saved successfully.');
+          }
+        },
+        error: () => {
+          this.showToast('error', 'Failed to save changes.');
+        },
       });
   }
 
@@ -445,15 +547,73 @@ export class UserManagementComponent implements OnInit {
   }
 
   public toggleSharedKeysSection(): void {
-    this.sharedKeysExpanded.set(!this.sharedKeysExpanded());
+    const expanded = !this.sharedKeysExpanded();
+    this.sharedKeysExpanded.set(expanded);
+
+    if (expanded && !this.sharedKeysFetched()) {
+      this.loadUserSharedKeys();
+    }
+  }
+
+  public openRawJsonModal(): void {
+    const user = this.selectedUser();
+    if (!user) return;
+
+    // Ensure we have the freshest related entities before showing JSON
+    if (
+      user.worker_ids?.length &&
+      this.userWorkers().length === 0 &&
+      !this.loadingWorkers()
+    ) {
+      this.loadUserWorkers();
+    }
+    if (
+      user.sharedkey_ids?.length &&
+      !this.sharedKeysFetched() &&
+      !this.loadingSharedKeys()
+    ) {
+      this.loadUserSharedKeys();
+    }
+
+    this.rawJsonModalOpen.set(true);
+  }
+
+  public closeRawJsonModal(): void {
+    this.rawJsonModalOpen.set(false);
+  }
+
+  private loadUserSharedKeys(): void {
+    const user = this.selectedUser();
+    if (!user || !user.sharedkey_ids || user.sharedkey_ids.length === 0) return;
+
+    this.loadingSharedKeys.set(true);
+
+    this.userService
+      .getSharedKeysByIds(user.sharedkey_ids)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.loadingSharedKeys.set(false)),
+      )
+      .subscribe({
+        next: (sharedKeys) => {
+          this.userSharedKeys.set(sharedKeys);
+          this.sharedKeysFetched.set(true);
+        },
+        error: () => {
+          this.sharedKeysFetched.set(true);
+          this.showToast('error', 'Failed to load shared keys.');
+        },
+      });
   }
 
   public hasActiveGenerations(user: AdminUserDetails | null): boolean {
     if (!user || !user.active_generations) return false;
     const gen = user.active_generations;
-    return (gen.image?.length ?? 0) > 0 || 
-           (gen.text?.length ?? 0) > 0 || 
-           (gen.alchemy?.length ?? 0) > 0;
+    return (
+      (gen.image?.length ?? 0) > 0 ||
+      (gen.text?.length ?? 0) > 0 ||
+      (gen.alchemy?.length ?? 0) > 0
+    );
   }
 
   private loadUserWorkers(): void {
@@ -465,10 +625,17 @@ export class UserManagementComponent implements OnInit {
     // Fetch workers by their IDs (this will include inactive workers)
     this.workerService
       .getWorkersByIds(user.worker_ids)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((workers) => {
-        this.userWorkers.set(workers);
-        this.loadingWorkers.set(false);
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.loadingWorkers.set(false)),
+      )
+      .subscribe({
+        next: (workers) => {
+          this.userWorkers.set(workers);
+        },
+        error: () => {
+          this.showToast('error', 'Failed to load workers.');
+        },
       });
   }
 
@@ -490,23 +657,32 @@ export class UserManagementComponent implements OnInit {
 
     const action$ = this.userService.resetSuspicion(user.id);
 
-    action$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      this.isUpdating.set(false);
-      if (result) {
-        // Refresh user data
-        this.userService
-          .getUser(user.id)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((updatedUser) => {
-            if (updatedUser) {
-              this.setSelectedUser(updatedUser);
-            }
-          });
-        this.showSuccess.set(true);
-        setTimeout(() => this.showSuccess.set(false), 3000);
-      }
-      this.closeDialog();
-    });
+    action$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.isUpdating.set(false);
+          this.closeDialog();
+        }),
+      )
+      .subscribe({
+        next: (result) => {
+          if (result) {
+            this.userService
+              .getUser(user.id)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe((updatedUser) => {
+                if (updatedUser) {
+                  this.setSelectedUser(updatedUser);
+                }
+              });
+            this.showToast('success', 'Suspicion reset successfully.');
+          }
+        },
+        error: () => {
+          this.showToast('error', 'Failed to reset suspicion.');
+        },
+      });
   }
 
   public onWorkerUpdated(): void {
@@ -521,22 +697,61 @@ export class UserManagementComponent implements OnInit {
 
     this.userService
       .updateUser(user.id, { generate_proxy_passkey: true })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        if (result) {
-          this.userService
-            .getUser(user.id)
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe((updatedUser) => {
-              if (updatedUser) {
-                this.setSelectedUser(updatedUser);
-              }
-              this.isRegeneratingPasskey.set(false);
-            });
-        } else {
-          this.isRegeneratingPasskey.set(false);
-        }
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isRegeneratingPasskey.set(false)),
+      )
+      .subscribe({
+        next: (result) => {
+          if (result) {
+            this.userService
+              .getUser(user.id)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe((updatedUser) => {
+                if (updatedUser) {
+                  this.setSelectedUser(updatedUser);
+                }
+              });
+          }
+        },
+        error: () => {
+          this.showToast('error', 'Failed to regenerate passkey.');
+        },
       });
+  }
+
+  // Toast notification methods
+  /**
+   * Show a toast notification.
+   * @param type Toast type: success, error, or warning
+   * @param message The message to display
+   * @param autoDismiss Whether to auto-dismiss after 3 seconds (default: true for success)
+   */
+  public showToast(
+    type: AdminToast['type'],
+    message: string,
+    autoDismiss = type === 'success',
+  ): void {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    this.toasts.update((current) => [...current, { id, type, message }]);
+
+    if (autoDismiss) {
+      setTimeout(() => this.dismissToast(id), 3000);
+    }
+  }
+
+  /**
+   * Dismiss a toast by ID.
+   */
+  public dismissToast(id: string): void {
+    this.toasts.update((current) => current.filter((t) => t.id !== id));
+  }
+
+  /**
+   * Clear all toasts.
+   */
+  public clearToasts(): void {
+    this.toasts.set([]);
   }
 
   // User history methods
@@ -561,22 +776,22 @@ export class UserManagementComponent implements OnInit {
       return;
     }
     const history = this.userHistory();
-    
+
     // Remove existing entry for this user if present
-    const filtered = history.filter(item => item.id !== user.id);
-    
+    const filtered = history.filter((item) => item.id !== user.id);
+
     // Add the new entry at the beginning
     const newEntry: UserHistoryItem = {
       id: user.id,
       username: user.username,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     // Keep only the last MAX_HISTORY_SIZE entries
     const updated = [newEntry, ...filtered].slice(0, MAX_HISTORY_SIZE);
-    
+
     this.userHistory.set(updated);
-    
+
     // Save to local storage
     try {
       localStorage.setItem(USER_HISTORY_KEY, JSON.stringify(updated));

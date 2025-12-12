@@ -1,0 +1,184 @@
+<form class="shared-key-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="shared-key-form-grid">
+    <!-- Name -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.name" | transloco
+      }}</label>
+      <input
+        class="form-input"
+        type="text"
+        formControlName="name"
+        [placeholder]="'profile.shared_keys.name_placeholder' | transloco"
+      />
+    </div>
+
+    <!-- Kudos -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.kudos" | transloco
+      }}</label>
+      <div class="form-field-container">
+        <input
+          class="form-input"
+          type="number"
+          formControlName="kudos"
+          aria-describedby="shared-key-kudos-hint"
+        />
+        @if (isUnlimited("kudos")) {
+          <span class="form-input-unlimited-overlay">{{
+            "profile.shared_keys.unlimited" | transloco
+          }}</span>
+        }
+      </div>
+      <app-toggle-checkbox
+        [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+        formControlName="kudos_unlimited"
+      />
+    </div>
+
+    <!-- Expiry -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.expiry_days" | transloco
+      }}</label>
+      <div class="form-field-container">
+        <input
+          class="form-input"
+          type="number"
+          formControlName="expiry"
+          aria-describedby="shared-key-expiry-hint"
+        />
+        @if (isUnlimited("expiry")) {
+          <span class="form-input-unlimited-overlay">{{
+            "profile.shared_keys.unlimited" | transloco
+          }}</span>
+        }
+      </div>
+      <app-toggle-checkbox
+        [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+        formControlName="expiry_unlimited"
+      />
+    </div>
+
+    <!-- Max Image Pixels -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.max_image_pixels" | transloco
+      }}</label>
+      <div class="form-field-container">
+        <input
+          class="form-input"
+          type="number"
+          formControlName="max_image_pixels"
+          aria-describedby="shared-key-limit-hint"
+        />
+        @if (squareDimensionFromPixels(getMaxImagePixelsValue())) {
+          <p class="square-dims-text text-secondary text-xs mt-1">
+            ~ {{ squareDimensionFromPixels(getMaxImagePixelsValue()) }} px
+          </p>
+        }
+        @if (isUnlimited("max_image_pixels")) {
+          <span class="form-input-unlimited-overlay">{{
+            "profile.shared_keys.unlimited" | transloco
+          }}</span>
+        }
+      </div>
+      <app-toggle-checkbox
+        [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+        formControlName="max_image_pixels_unlimited"
+      />
+      <div class="quick-fill-row" aria-label="Quick pixel presets">
+        @for (preset of imagePixelPresets; track preset.value) {
+          <button
+            type="button"
+            class="btn-source-control btn-xs"
+            (click)="applyImagePixelsPreset(preset.value)"
+          >
+            {{ preset.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Max Image Steps -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.max_image_steps" | transloco
+      }}</label>
+      <div class="form-field-container">
+        <input
+          class="form-input"
+          type="number"
+          formControlName="max_image_steps"
+          aria-describedby="shared-key-limit-hint"
+        />
+        @if (isUnlimited("max_image_steps")) {
+          <span class="form-input-unlimited-overlay">{{
+            "profile.shared_keys.unlimited" | transloco
+          }}</span>
+        }
+      </div>
+      <app-toggle-checkbox
+        [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+        formControlName="max_image_steps_unlimited"
+      />
+    </div>
+
+    <!-- Max Text Tokens -->
+    <div>
+      <label class="form-label">{{
+        "profile.shared_keys.max_text_tokens" | transloco
+      }}</label>
+      <div class="form-field-container">
+        <input
+          class="form-input"
+          type="number"
+          formControlName="max_text_tokens"
+          aria-describedby="shared-key-limit-hint"
+        />
+        @if (isUnlimited("max_text_tokens")) {
+          <span class="form-input-unlimited-overlay">{{
+            "profile.shared_keys.unlimited" | transloco
+          }}</span>
+        }
+      </div>
+      <app-toggle-checkbox
+        [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+        formControlName="max_text_tokens_unlimited"
+      />
+    </div>
+  </div>
+
+  <p id="shared-key-limit-hint" class="text-secondary text-xs">
+    {{ "profile.shared_keys.limit_hint" | transloco }}
+  </p>
+  <p id="shared-key-expiry-hint" class="text-secondary text-xs">
+    {{ "profile.shared_keys.expiry_hint" | transloco }}
+  </p>
+
+  <div class="shared-key-actions mt-3">
+    @if (showCancel()) {
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="onCancel()"
+        [disabled]="submitting()"
+      >
+        {{ cancelLabel() }}
+      </button>
+    }
+    <button
+      type="submit"
+      class="btn-primary"
+      [class.btn-disabled]="!form.valid || submitting()"
+      [disabled]="!form.valid || submitting()"
+    >
+      @if (submitting()) {
+        {{ submittingLabel() }}
+      } @else {
+        {{ submitLabel() }}
+      }
+    </button>
+  </div>
+</form>

@@ -1,1 +1,62 @@
-/* User management component styles */
+/* User management component styles - Theme-aware */
+
+.json-dialog {
+  max-width: none;
+  width: calc(100vw - 2rem);
+  height: calc(100vh - 2rem);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.json-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  flex: 1;
+  overflow: auto;
+  align-items: stretch;
+}
+
+.json-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  height: 100%;
+}
+
+.json-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+:host-context(.dark) .json-section-title {
+  color: white;
+}
+
+.json-block {
+  font-family:
+    ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-primary);
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+:host-context(.dark) .json-block {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* JSON syntax highlighting inherits from _admin.css */

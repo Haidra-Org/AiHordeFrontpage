@@ -1,0 +1,280 @@
+<div class="stack-lg">
+  <!-- Sub-Tab Navigation -->
+  <div class="details-tabs">
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="activeTab() === 'image'"
+      (click)="setActiveTab('image')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
+        />
+      </svg>
+      {{ "styles.tabs.image" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="activeTab() === 'text'"
+      (click)="setActiveTab('text')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+        />
+      </svg>
+      {{ "styles.tabs.text" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="details-tab"
+      [class.details-tab-active]="activeTab() === 'collections'"
+      (click)="setActiveTab('collections')"
+    >
+      <svg
+        class="icon-sm"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
+        />
+      </svg>
+      {{ "styles.tabs.collections" | transloco }}
+    </button>
+
+    @if (isLoggedIn() && activeTab() !== 'collections') {
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="openCreateForm()"
+        [disabled]="showCreateForm()"
+      >
+        <svg
+          class="icon-sm"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4.5v15m7.5-7.5h-15"
+          />
+        </svg>
+        {{ "styles.create" | transloco }}
+      </button>
+    }
+  </div>
+
+  <!-- Create Form -->
+  @if (showCreateForm()) {
+    <div class="card card-bg-primary card-full">
+      <app-style-form
+        [mode]="'create'"
+        [styleType]="currentStyleType()"
+        [saving]="creating()"
+        (formSubmit)="onCreateStyle($event)"
+        (formCancel)="closeCreateForm()"
+      />
+    </div>
+  }
+
+  <!-- Filters -->
+  @if (!showCreateForm()) {
+    <app-style-filters
+      [queryParams]="queryParams()"
+      [clientFilters]="clientFilters()"
+      [availableTags]="availableTags()"
+      [availableModels]="availableModels()"
+      [loading]="loading()"
+      (queryParamsChange)="onQueryParamsChange($event)"
+      (clientFiltersChange)="onClientFiltersChange($event)"
+    />
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="state-container state-container-sm state-error">
+      <svg
+        class="state-icon"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+        />
+      </svg>
+      <p>{{ error() }}</p>
+      <button type="button" class="btn-source-control" (click)="loadStyles()">
+        {{ "styles.retry" | transloco }}
+      </button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading() && !error()) {
+    <div class="state-container state-container-sm text-secondary">
+      <div class="spinner spinner-md"></div>
+      <p>{{ "styles.loading" | transloco }}</p>
+    </div>
+  }
+
+  <!-- Styles Grid (Image/Text) -->
+  @if (!loading() && !error() && activeTab() !== 'collections' && !showCreateForm()) {
+    @if (filteredStyles().length === 0) {
+      <div class="state-container state-container-sm state-muted">
+        <svg
+          class="state-icon-lg"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
+          />
+        </svg>
+        <p>{{ "styles.no_styles" | transloco }}</p>
+      </div>
+    } @else {
+      <div class="grid-cards">
+        @for (style of filteredStyles(); track style.id) {
+          <app-style-card
+            [style]="style"
+            [styleType]="activeTab() === 'image' ? 'image' : 'text'"
+            (navigate)="navigateToStyle(style, activeTab() === 'image' ? 'image' : 'text')"
+          />
+        }
+      </div>
+    }
+  }
+
+  <!-- Collections Grid -->
+  @if (!loading() && !error() && activeTab() === 'collections' && !showCreateForm()) {
+    @if (filteredCollections().length === 0) {
+      <div class="state-container state-container-sm state-muted">
+        <svg
+          class="state-icon-lg"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
+          />
+        </svg>
+        <p>{{ "styles.no_collections" | transloco }}</p>
+      </div>
+    } @else {
+      <div class="grid-cards">
+        @for (collection of filteredCollections(); track collection.id) {
+          <div class="card card-bg-primary card-full card-interactive stack-lg">
+            <div class="card-header-row">
+              <span
+                class="badge-base"
+                [class.badge-primary]="collection.type === 'image'"
+                [class.badge-success]="collection.type === 'text'"
+              >
+                @if (collection.type === 'image') {
+                  {{ "styles.type.image" | transloco }}
+                } @else {
+                  {{ "styles.type.text" | transloco }}
+                }
+              </span>
+            </div>
+            <h3 class="card-title">{{ collection.name }}</h3>
+            @if (collection.info) {
+              <p class="card-description">{{ collection.info }}</p>
+            }
+            <div class="card-footer">
+              <span class="card-stat">
+                {{ collection.styles.length }}
+                {{ "styles.styles_count" | transloco }}
+              </span>
+              <span class="card-stat">
+                {{ collection.use_count }} {{ "styles.uses" | transloco }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- Load More -->
+  @if (!loading() && !error() && !showCreateForm() && hasMore()) {
+    <div class="action-row action-row-responsive">
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="loadMore()"
+        [disabled]="loadingMore()"
+      >
+        @if (loadingMore()) {
+          <div class="spinner spinner-sm" aria-hidden="true"></div>
+        } @else {
+          <svg
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.5v15m7.5-7.5h-15"
+            />
+          </svg>
+        }
+        {{ "styles.load_more" | transloco }}
+      </button>
+    </div>
+  }
+
+  @if (!loading() && !error() && !showCreateForm() && exhaustionNote()) {
+    <div class="action-row action-row-responsive text-secondary">
+      <span>{{ exhaustionNote() | transloco }}</span>
+    </div>
+  }
+</div>

@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
@@ -11,18 +12,14 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [
-    TranslocoPipe,
-    TranslocoModule,
-    RouterLink,
-    FormatNumberPipe,
-  ],
+  imports: [TranslocoPipe, TranslocoModule, RouterLink, FormatNumberPipe],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardComponent implements OnInit {
   private readonly title = inject(Title);
@@ -31,13 +28,13 @@ export class DashboardComponent implements OnInit {
   public readonly auth = inject(AuthService);
 
   ngOnInit(): void {
-    this.translator
-      .get('admin.dashboard.title')
+    combineLatest([
+      this.translator.get('admin.dashboard.title'),
+      this.translator.get('app_title'),
+    ])
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((dashboardTitle) => {
-        this.translator.get('app_title').subscribe((appTitle) => {
-          this.title.setTitle(`${dashboardTitle} | ${appTitle}`);
-        });
+      .subscribe(([dashboardTitle, appTitle]) => {
+        this.title.setTitle(`${dashboardTitle} | ${appTitle}`);
       });
   }
 

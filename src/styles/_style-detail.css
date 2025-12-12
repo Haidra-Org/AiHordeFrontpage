@@ -1,0 +1,448 @@
+/* =================================================================
+   STYLE DETAIL PAGE STYLES
+   
+   Compact, full-width layout for displaying style information.
+   ================================================================= */
+
+/* =================================================================
+   MAIN CARD CONTAINER
+   ================================================================= */
+
+.style-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* =================================================================
+   HEADER SECTION
+   ================================================================= */
+
+.style-detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.dark .style-detail-header {
+  border-bottom-color: rgb(55 65 81);
+}
+
+.style-detail-title-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .style-detail-title-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+
+.style-detail-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.style-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.style-detail-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .style-detail-title {
+    font-size: 1.75rem;
+  }
+}
+
+.dark .style-detail-title {
+  color: white;
+}
+
+.style-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.dark .style-detail-meta {
+  color: rgb(156 163 175);
+}
+
+.style-detail-meta-divider {
+  color: var(--color-border-primary);
+}
+
+.dark .style-detail-meta-divider {
+  color: rgb(75 85 99);
+}
+
+.style-detail-id {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  word-break: break-all;
+}
+
+.dark .style-detail-id {
+  color: rgb(107 114 128);
+}
+
+.style-detail-description {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dark .style-detail-description {
+  color: rgb(156 163 175);
+}
+
+/* =================================================================
+   ACTIONS ROW
+   ================================================================= */
+
+.style-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* =================================================================
+   CONTENT GRID - Two Column Layout
+   ================================================================= */
+
+.style-detail-content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .style-detail-content {
+    grid-template-columns: 1fr 320px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .style-detail-content {
+    grid-template-columns: 1fr 400px;
+  }
+}
+
+.style-detail-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.style-detail-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* =================================================================
+   SECTIONS
+   ================================================================= */
+
+.style-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.style-detail-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.style-detail-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.dark .style-detail-section-title {
+  color: rgb(107 114 128);
+}
+
+/* =================================================================
+   PARAMETERS SECTION
+   ================================================================= */
+
+.style-detail-params-section {
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.dark .style-detail-params-section {
+  background-color: rgb(17 24 39);
+}
+
+.style-detail-params {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem 1rem;
+  margin: 0;
+}
+
+@media (min-width: 1280px) {
+  .style-detail-params {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.style-detail-params-compact {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.style-detail-param {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.style-detail-param dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--color-text-muted);
+}
+
+.dark .style-detail-param dt {
+  color: rgb(107 114 128);
+}
+
+.style-detail-param dd {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.dark .style-detail-param dd {
+  color: rgb(229 231 235);
+}
+
+.style-detail-param-full {
+  grid-column: 1 / -1;
+}
+
+.style-detail-param-flags {
+  grid-column: 1 / -1;
+}
+
+.style-detail-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* =================================================================
+   LORAS AND TEXTUAL INVERSIONS
+   ================================================================= */
+
+.style-detail-loras,
+.style-detail-tis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.style-detail-lora-item,
+.style-detail-ti-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem;
+  background-color: var(--color-bg-primary);
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-border-primary);
+}
+
+.dark .style-detail-lora-item,
+.dark .style-detail-ti-item {
+  background-color: rgb(31 41 55);
+  border-color: rgb(55 65 81);
+}
+
+.style-detail-lora-name,
+.style-detail-ti-name {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.dark .style-detail-lora-name,
+.dark .style-detail-ti-name {
+  color: rgb(243 244 246);
+}
+
+.style-detail-lora-values,
+.style-detail-ti-values {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+}
+
+.dark .style-detail-lora-values,
+.dark .style-detail-ti-values {
+  color: rgb(156 163 175);
+}
+
+/* =================================================================
+   INLINE SECTIONS (Tags, Models)
+   ================================================================= */
+
+.style-detail-tags-models {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .style-detail-tags-models {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+}
+
+.style-detail-inline-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.style-detail-inline-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.dark .style-detail-inline-label {
+  color: rgb(156 163 175);
+}
+
+.style-detail-code-inline {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.5rem;
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.25rem;
+  color: var(--color-text-primary);
+}
+
+.dark .style-detail-code-inline {
+  background-color: rgb(17 24 39);
+  color: rgb(229 231 235);
+}
+
+/* =================================================================
+   BADGE CONTAINER INLINE
+   ================================================================= */
+
+.badge-container-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+/* Small badge variant */
+.badge-sm {
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* =================================================================
+   CODE BLOCK COMPACT
+   ================================================================= */
+
+.code-block-compact {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border-primary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dark .code-block-compact {
+  background-color: rgb(17 24 39);
+  border-color: rgb(55 65 81);
+  color: rgb(229 231 235);
+}
+
+/* =================================================================
+   BUTTON SMALL VARIANT
+   ================================================================= */
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.btn-sm svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* =================================================================
+   EXAMPLES SECTION
+   ================================================================= */
+
+.style-detail-examples {
+  border-top: 1px solid var(--color-border-primary);
+  padding-top: 1rem;
+}
+
+.dark .style-detail-examples {
+  border-top-color: rgb(55 65 81);
+}
+
+/* Compact image grid */
+.image-grid-compact {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .image-grid-compact {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}

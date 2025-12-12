@@ -91,7 +91,9 @@
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border-primary);
   border-radius: 0 0 0.5rem 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
   transform: translateY(-10px);
   opacity: 0;
   visibility: hidden;
@@ -108,7 +110,9 @@
 .dark .mobile-menu-panel {
   background-color: rgb(31 41 55);
   border-color: rgb(55 65 81);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.4),
+    0 4px 6px -4px rgba(0, 0, 0, 0.3);
 }
 
 /* Mobile menu animation improvements */
@@ -117,7 +121,7 @@
     animation-duration: 0.3s;
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .mobile-menu-panel.open {
     animation-name: slideDown;
   }

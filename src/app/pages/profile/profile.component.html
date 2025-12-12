@@ -3,7 +3,10 @@
     <div class="place-center">
       <h1 class="heading-hero">
         @if (auth.isLoggedIn()) {
-          {{ "profile.welcome" | transloco: { username: auth.currentUser()!.username } }}
+          {{
+            "profile.welcome"
+              | transloco: { username: auth.currentUser()!.username }
+          }}
         } @else {
           {{ "profile.login_title" | transloco }}
         }
@@ -20,418 +23,723 @@
           <!-- Login Form -->
           <div class="container-centered-md">
             <div class="card card-bg-primary">
-            <h2 class="heading-card">{{ "profile.login_title" | transloco }}</h2>
-            <p class="text-intro">
-              {{ "profile.login_description" | transloco }}
-            </p>
-            <p class="text-intro text-secondary">
-              {{ "profile.no_auth_warning" | transloco }}
-            </p>
+              <h2 class="heading-card">
+                {{ "profile.login_title" | transloco }}
+              </h2>
+              <p class="text-intro">
+                {{ "profile.login_description" | transloco }}
+              </p>
+              <p class="text-intro text-secondary">
+                {{ "profile.no_auth_warning" | transloco }}
+              </p>
 
-            <form
-              [formGroup]="form"
-              (ngSubmit)="login()"
-            >
-              <div>
-                <label for="api_key" class="form-label">{{
-                  "profile.api_key" | transloco
-                }}</label>
-                <input
-                  formControlName="apiKey"
-                  type="password"
-                  id="api_key"
-                  class="form-input"
-                  required
-                  [placeholder]="'profile.api_key_placeholder' | transloco"
-                />
-              </div>
-              @if (loginError()) {
-                <p class="text-error">
-                  <small>{{ "invalid_api_key" | transloco }}</small>
-                </p>
-              }
-
-              <div>
-                <app-toggle-checkbox
-                  [description]="'profile.remember_api_key' | transloco"
-                  formControlName="remember"
-                />
-              </div>
-
-              <button
-                [disabled]="!form.valid || auth.isLoading()"
-                [class.btn-disabled]="!form.valid || auth.isLoading()"
-                [class.btn-primary]="form.valid && !auth.isLoading()"
-                type="submit"
-              >
-                @if (auth.isLoading()) {
-                  {{ "profile.logging_in" | transloco }}
-                } @else {
-                  {{ "profile.login_button" | transloco }}
+              <form [formGroup]="form" (ngSubmit)="login()">
+                <div>
+                  <label for="api_key" class="form-label">{{
+                    "profile.api_key" | transloco
+                  }}</label>
+                  <input
+                    formControlName="apiKey"
+                    type="password"
+                    id="api_key"
+                    class="form-input"
+                    required
+                    [placeholder]="'profile.api_key_placeholder' | transloco"
+                  />
+                </div>
+                @if (loginError()) {
+                  <p class="text-error">
+                    <small>{{ "invalid_api_key" | transloco }}</small>
+                  </p>
                 }
-              </button>
-            </form>
 
-            <p class="text-secondary">
-              {{ "profile.no_account" | transloco }}
-              <a href="https://aihorde.net/register" class="link" target="_blank" rel="noopener noreferrer">
-                {{ "register_account" | transloco }}
-              </a>
-            </p>
+                <div>
+                  <app-toggle-checkbox
+                    [description]="'profile.remember_api_key' | transloco"
+                    formControlName="remember"
+                  />
+                </div>
+
+                <button
+                  [disabled]="!form.valid || auth.isLoading()"
+                  [class.btn-disabled]="!form.valid || auth.isLoading()"
+                  [class.btn-primary]="form.valid && !auth.isLoading()"
+                  type="submit"
+                >
+                  @if (auth.isLoading()) {
+                    {{ "profile.logging_in" | transloco }}
+                  } @else {
+                    {{ "profile.login_button" | transloco }}
+                  }
+                </button>
+              </form>
+
+              <p class="text-secondary">
+                {{ "profile.no_account" | transloco }}
+                <a
+                  href="https://aihorde.net/register"
+                  class="link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {{ "register_account" | transloco }}
+                </a>
+              </p>
             </div>
           </div>
         } @else {
           <!-- User Profile -->
-          <div class="profile-container">
-            <!-- Profile Header -->
-            <div class="card card-bg-primary profile-header-card">
-              <div class="profile-header">
-              <div class="profile-avatar">
-                <span class="profile-avatar-text">{{ auth.currentUser()!.username.charAt(0).toUpperCase() }}</span>
-              </div>
-              <div class="profile-header-content">
-                <h2 class="profile-username">{{ auth.currentUser()!.username }}</h2>
-                <p class="profile-info">ID: {{ auth.currentUser()!.id }}</p>
-                @if (auth.currentUser()!.account_age) {
-                  <p class="profile-info">
-                    {{ "profile.account_age" | transloco: { age: formatAccountAge(auth.currentUser()!.account_age!) } }}
+          <div class="container-page-content">
+            <!-- Tab Navigation -->
+            <div class="details-tabs">
+              <button
+                (click)="setActiveTab('profile')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'profile'"
+              >
+                {{ "profile.tabs.profile" | transloco }}
+              </button>
+              <button
+                (click)="setActiveTab('records')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'records'"
+              >
+                {{ "profile.tabs.detailed_records" | transloco }}
+              </button>
+              <button
+                (click)="setActiveTab('workers')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'workers'"
+              >
+                {{ "profile.tabs.your_workers" | transloco }}
+                @if (
+                  auth.currentUser()!.worker_ids &&
+                  auth.currentUser()!.worker_ids!.length > 0
+                ) {
+                  <span class="text-secondary text-sm"
+                    >({{ auth.currentUser()!.worker_ids!.length }})</span
+                  >
+                }
+              </button>
+              <button
+                (click)="setActiveTab('styles')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'styles'"
+              >
+                {{ "profile.tabs.styles" | transloco }}
+              </button>
+              <button
+                (click)="setActiveTab('shared-keys')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'shared-keys'"
+              >
+                {{ "profile.tabs.shared_keys" | transloco }}
+              </button>
+            </div>
+
+            <!-- Profile Card -->
+            @if (activeTab() === "profile") {
+              <div class="card card-bg-primary card-full">
+                <div class="profile-header section-divider-bottom">
+                  <div class="avatar-circle avatar-lg avatar-gradient">
+                    <span class="avatar-text">{{
+                      auth.currentUser()!.username.charAt(0).toUpperCase()
+                    }}</span>
+                  </div>
+                  <div class="profile-header-content">
+                    <h2 class="heading-subsection">
+                      {{ auth.currentUser()!.username }}
+                    </h2>
+                    <p class="text-secondary text-sm">
+                      ID: {{ auth.currentUser()!.id }}
+                    </p>
+                    @if (auth.currentUser()!.account_age) {
+                      <p class="text-secondary text-sm">
+                        {{
+                          "profile.account_age"
+                            | transloco
+                              : {
+                                  age: formatAccountAge(
+                                    auth.currentUser()!.account_age!
+                                  ),
+                                }
+                        }}
+                      </p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="badge-container">
+                  @if (auth.currentUser()!.trusted) {
+                    <span
+                      class="badge-base badge-success"
+                      [attr.title]="'admin.users.desc.trusted' | transloco"
+                      >{{ "profile.badge.trusted" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.moderator) {
+                    <span
+                      class="badge-base badge-purple"
+                      [attr.title]="'admin.users.desc.moderator' | transloco"
+                      >{{ "profile.badge.moderator" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.education) {
+                    <span
+                      class="badge-base badge-info"
+                      [attr.title]="'admin.users.desc.education' | transloco"
+                      >{{ "profile.badge.education" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.service) {
+                    <span
+                      class="badge-base badge-warning"
+                      [attr.title]="'admin.users.desc.service' | transloco"
+                      >{{ "profile.badge.service" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.customizer) {
+                    <span
+                      class="badge-base badge-pink"
+                      [attr.title]="'admin.users.desc.customizer' | transloco"
+                      >{{ "profile.badge.customizer" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.special) {
+                    <span
+                      class="badge-base badge-secondary"
+                      [attr.title]="'admin.users.desc.special' | transloco"
+                      >{{ "profile.badge.special" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.pseudonymous) {
+                    <span class="badge-base badge-secondary">{{
+                      "profile.badge.anonymous" | transloco
+                    }}</span>
+                  }
+                  @if (auth.currentUser()!.filtered) {
+                    <span
+                      class="badge-base badge-warning"
+                      [attr.title]="'admin.users.desc.filtered' | transloco"
+                      >{{ "profile.badge.filtered" | transloco }}</span
+                    >
+                  }
+                  @if (auth.currentUser()!.flagged) {
+                    <span
+                      class="badge-base badge-danger"
+                      [attr.title]="'admin.users.desc.flagged' | transloco"
+                      >{{ "profile.badge.flagged" | transloco }}</span
+                    >
+                  }
+                </div>
+
+                <!-- Kudos Section -->
+                <h3 class="heading-card">{{ "profile.kudos" | transloco }}</h3>
+                <div class="highlight-box">
+                  <span class="data-value-xl">{{
+                    auth.currentUser()!.kudos | formatNumber
+                  }}</span>
+                  <span class="data-label-spaced">{{
+                    "profile.kudos_balance" | transloco
+                  }}</span>
+                </div>
+
+                @if (auth.currentUser()!.monthly_kudos?.amount) {
+                  <p class="text-secondary text-sm text-center">
+                    {{
+                      "profile.monthly_kudos"
+                        | transloco
+                          : {
+                              amount:
+                                auth.currentUser()!.monthly_kudos!.amount!
+                                | formatNumber,
+                            }
+                    }}
                   </p>
                 }
-              </div>
-            </div>
 
-            <!-- Badges -->
-            <div class="profile-badges">   
-                  @if (auth.currentUser()!.trusted) {
-                <span class="badge-base badge-success" [attr.title]="'admin.users.desc.trusted' | transloco">{{ "profile.badge.trusted" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.moderator) {
-                <span class="badge-base badge-purple" [attr.title]="'admin.users.desc.moderator' | transloco">{{ "profile.badge.moderator" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.education) {
-                <span class="badge-base badge-info" [attr.title]="'admin.users.desc.education' | transloco">{{ "profile.badge.education" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.service) {
-                <span class="badge-base badge-warning" [attr.title]="'admin.users.desc.service' | transloco">{{ "profile.badge.service" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.customizer) {
-                <span class="badge-base badge-pink" [attr.title]="'admin.users.desc.customizer' | transloco">{{ "profile.badge.customizer" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.special) {
-                <span class="badge-base badge-secondary" [attr.title]="'admin.users.desc.special' | transloco">{{ "profile.badge.special" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.pseudonymous) {
-                <span class="badge-base badge-secondary">{{ "profile.badge.anonymous" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.filtered) {
-                <span class="badge-base badge-warning" [attr.title]="'admin.users.desc.filtered' | transloco">{{ "profile.badge.filtered" | transloco }}</span>
-              }
-              @if (auth.currentUser()!.flagged) {
-                <span class="badge-base badge-error" [attr.title]="'admin.users.desc.flagged' | transloco">{{ "profile.badge.flagged" | transloco }}</span>
-              }
-            </div>
-
-            <!-- Kudos Section -->
-            <h3 class="heading-card">{{ "profile.kudos" | transloco }}</h3>
-            <div class="profile-kudos-display">
-              <span class="profile-kudos-amount">{{ auth.currentUser()!.kudos | formatNumber }}</span>
-              <span class="profile-kudos-label">{{ "profile.kudos_balance" | transloco }}</span>
-            </div>
-
-            @if (auth.currentUser()!.monthly_kudos?.amount) {
-              <p class="profile-info text-align-center">
-                {{ "profile.monthly_kudos" | transloco: { amount: auth.currentUser()!.monthly_kudos!.amount! | formatNumber } }}
-              </p>
-            }
-
-            @if (auth.currentUser()!.evaluating_kudos !== undefined && auth.currentUser()!.evaluating_kudos !== null && !auth.currentUser()!.trusted) {
-              <p class="profile-info text-align-center" [attr.title]="'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'">
-                <strong>Evaluating Kudos:</strong> {{ auth.currentUser()!.evaluating_kudos! | formatNumber }}
-              </p>
-            }
-
-            @if (auth.currentUser()!.kudos_details) {
-              <div class="profile-kudos-breakdown">
-                <h4 class="profile-kudos-breakdown-title">{{ "profile.kudos_breakdown" | transloco }}</h4>
-                <div class="profile-kudos-grid">
-                  @if (auth.currentUser()!.kudos_details!.accumulated) {
-                    <div class="profile-kudos-item">
-                      <span class="profile-kudos-item-label">{{ "profile.kudos_accumulated" | transloco }}</span>
-                      <span class="profile-kudos-item-value">{{ (auth.currentUser()!.kudos_details!.accumulated ?? 0) | formatNumber }}</span>
-                    </div>
-                  }
-                  @if (auth.currentUser()!.kudos_details!.gifted) {
-                    <div class="profile-kudos-item">
-                      <span class="profile-kudos-item-label">{{ "profile.kudos_gifted" | transloco }}</span>
-                      <span class="profile-kudos-item-value">{{ (auth.currentUser()!.kudos_details!.gifted ?? 0) | formatNumber }}</span>
-                    </div>
-                  }
-                  @if (auth.currentUser()!.kudos_details!.received) {
-                    <div class="profile-kudos-item">
-                      <span class="profile-kudos-item-label">{{ "profile.kudos_received" | transloco }}</span>
-                      <span class="profile-kudos-item-value">{{ (auth.currentUser()!.kudos_details!.received ?? 0) | formatNumber }}</span>
-                    </div>
-                  }
-                  @if (auth.currentUser()!.kudos_details!.awarded) {
-                    <div class="profile-kudos-item">
-                      <span class="profile-kudos-item-label">{{ "profile.kudos_awarded" | transloco }}</span>
-                      <span class="profile-kudos-item-value">{{ (auth.currentUser()!.kudos_details!.awarded ?? 0) | formatNumber }}</span>
-                    </div>
-                  }
-                  @if (auth.currentUser()!.kudos_details!.recurring) {
-                    <div class="profile-kudos-item">
-                      <span class="profile-kudos-item-label">{{ "profile.kudos_recurring" | transloco }}</span>
-                      <span class="profile-kudos-item-value">{{ (auth.currentUser()!.kudos_details!.recurring ?? 0) | formatNumber }}</span>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-            </div>
-
-            <!-- Detailed Records -->
-            @if (auth.currentUser()!.records || auth.currentUser()!.usage || auth.currentUser()!.contributions) {
-              <div class="card card-bg-secondary profile-records-card">
-                <h3 class="heading-card">{{ "profile.detailed_records" | transloco }}</h3>
-                <div class="profile-records-content">
-                  <!-- Statistics Section -->
-                  @if (auth.currentUser()!.usage || auth.currentUser()!.contributions || auth.currentUser()!.worker_count || auth.currentUser()!.concurrency) {
-                    <div class="profile-records-section">
-                      <h4 class="profile-records-title">{{ "profile.stats" | transloco }}</h4>
-                      <div class="profile-records-grid-4">
-                        @if (auth.currentUser()!.usage?.requests) {
-                          <div class="profile-record-item centered" [attr.title]="'Total number of images you have requested'">
-                            <span class="profile-kudos-item-label">{{ "profile.images_requested" | transloco }}</span>
-                            <span class="profile-kudos-item-value">{{ (auth.currentUser()!.usage!.requests ?? 0) | formatNumber }}</span>
-                          </div>
-                        }
-                        @if (auth.currentUser()!.contributions?.fulfillments) {
-                          <div class="profile-record-item centered" [attr.title]="'Total number of images your workers have generated'">
-                            <span class="profile-kudos-item-label">{{ "profile.images_generated" | transloco }}</span>
-                            <span class="profile-kudos-item-value">{{ (auth.currentUser()!.contributions!.fulfillments ?? 0) | formatNumber }}</span>
-                          </div>
-                        }
-                        @if (auth.currentUser()!.worker_count) {
-                          <div class="profile-record-item centered" [attr.title]="'Number of workers you have created'">
-                            <span class="profile-kudos-item-label">{{ "profile.workers" | transloco }}</span>
-                            <span class="profile-kudos-item-value">{{ auth.currentUser()!.worker_count }}</span>
-                          </div>
-                        }
-                        @if (auth.currentUser()!.concurrency) {
-                          <div class="profile-record-item centered" [attr.title]="'Maximum number of concurrent generation requests you can have'">
-                            <span class="profile-kudos-item-label">{{ "profile.concurrency" | transloco }}</span>
-                            <span class="profile-kudos-item-value">{{ auth.currentUser()!.concurrency }}</span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                    <!-- Usage Records -->
-                    @if (auth.currentUser()!.records!.usage) {
-                      <div class="profile-records-section">
-                        <h4 class="profile-records-title">{{ "profile.records.usage" | transloco }}</h4>
-                        <div class="profile-records-grid">
-                          @if (auth.currentUser()!.records!.usage!.megapixelsteps) {
-                            <div class="profile-record-item" [attr.title]="'Total megapixelsteps you have requested for image generation'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.megapixelsteps" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.usage!.megapixelsteps ?? 0) | formatNumber }} 
-                                <span class="tooltip-wrapper">
-                                  <span class="dotted-underline text-secondary">({{ (auth.currentUser()!.records!.usage!.megapixelsteps ?? 0) / 20 | formatNumber }} avg images)</span>
-                                  <span class="tooltip-text">
-                                    <strong>{{ (auth.currentUser()!.records!.usage!.megapixelsteps ?? 0) | formatNumber }} megapixelsteps</strong><br /><br />
-                                    <span class="math-equation">{{ "average_images.tooltip.line1" | transloco }}</span><br /><br />
-                                    {{ "average_images.tooltip.line2" | transloco }}<br /><br />
-                                    <span class="math-equation">{{ "average_images.tooltip.line3" | transloco }}</span>
-                                  </span>
-                                </span>
-                              </span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.usage!.tokens) {
-                            <div class="profile-record-item" [attr.title]="'Total tokens you have requested for text generation'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.tokens" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.usage!.tokens ?? 0) | formatNumber }} 
-                                <span class="tooltip-wrapper">
-                                  <span class="dotted-underline text-secondary">({{ (auth.currentUser()!.records!.usage!.tokens ?? 0) * 0.75 / 500 | formatNumber: 1 }} pages of text)</span>
-                                  <span class="tooltip-text">
-                                    <strong>{{ (auth.currentUser()!.records!.usage!.tokens ?? 0) * 0.75 / 500 | formatNumber: 1 }} pages of text</strong><br />
-                                    <span class="tooltip-muted">({{ (auth.currentUser()!.records!.usage!.tokens ?? 0) | formatNumber }} tokens)</span><br /><br />
-                                    <span class="math-equation">{{ "pages_of_text.tooltip.line1" | transloco }}</span><br /><br />
-                                    {{ "pages_of_text.tooltip.line2" | transloco }}<br /><br />
-                                    <span class="math-equation">{{ "pages_of_text.tooltip.line3" | transloco }}</span>
-                                  </span>
-                                </span>
-                              </span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-
-                    <!-- Contribution Records -->
-                    @if (auth.currentUser()!.records!.contribution) {
-                      <div class="profile-records-section">
-                        <h4 class="profile-records-title">{{ "profile.records.contribution" | transloco }}</h4>
-                        <div class="profile-records-grid">
-                          @if (auth.currentUser()!.records!.contribution!.megapixelsteps) {
-                            <div class="profile-record-item" [attr.title]="'Total megapixelsteps your workers have generated'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.megapixelsteps" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.contribution!.megapixelsteps ?? 0) | formatNumber }} 
-                                <span class="tooltip-wrapper">
-                                  <span class="dotted-underline text-secondary">({{ (auth.currentUser()!.records!.contribution!.megapixelsteps ?? 0) / 20 | formatNumber }} avg images)</span>
-                                  <span class="tooltip-text">
-                                    <strong>{{ (auth.currentUser()!.records!.contribution!.megapixelsteps ?? 0) | formatNumber }} megapixelsteps</strong><br /><br />
-                                    <span class="math-equation">{{ "average_images.tooltip.line1" | transloco }}</span><br /><br />
-                                    {{ "average_images.tooltip.line2" | transloco }}<br /><br />
-                                    <span class="math-equation">{{ "average_images.tooltip.line3" | transloco }}</span>
-                                  </span>
-                                </span>
-                              </span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.contribution!.tokens) {
-                            <div class="profile-record-item" [attr.title]="'Total tokens your workers have generated'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.tokens" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.contribution!.tokens ?? 0) | formatNumber }} 
-                                <span class="tooltip-wrapper">
-                                  <span class="dotted-underline text-secondary">({{ (auth.currentUser()!.records!.contribution!.tokens ?? 0) * 0.75 / 500 | formatNumber: 1 }} pages of text)</span>
-                                  <span class="tooltip-text">
-                                    <strong>{{ (auth.currentUser()!.records!.contribution!.tokens ?? 0) * 0.75 / 500 | formatNumber: 1 }} pages of text</strong><br />
-                                    <span class="tooltip-muted">({{ (auth.currentUser()!.records!.contribution!.tokens ?? 0) | formatNumber }} tokens)</span><br /><br />
-                                    <span class="math-equation">{{ "pages_of_text.tooltip.line1" | transloco }}</span><br /><br />
-                                    {{ "pages_of_text.tooltip.line2" | transloco }}<br /><br />
-                                    <span class="math-equation">{{ "pages_of_text.tooltip.line3" | transloco }}</span>
-                                  </span>
-                                </span>
-                              </span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-
-                    <!-- Request Records -->
-                    @if (auth.currentUser()!.records!.request) {
-                      <div class="profile-records-section">
-                        <h4 class="profile-records-title">{{ "profile.records.requests" | transloco }}</h4>
-                        <div class="profile-records-grid-3">
-                          @if (auth.currentUser()!.records!.request!.image) {
-                            <div class="profile-record-item centered" [attr.title]="'Total image generation requests you have made'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.image" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.request!.image ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.request!.text) {
-                            <div class="profile-record-item centered" [attr.title]="'Total text generation requests you have made'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.text" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.request!.text ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.request!.interrogation) {
-                            <div class="profile-record-item centered" [attr.title]="'Total image interrogation requests you have made'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.interrogation" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.request!.interrogation ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-
-                    <!-- Fulfillment Records -->
-                    @if (auth.currentUser()!.records!.fulfillment) {
-                      <div class="profile-records-section">
-                        <h4 class="profile-records-title">{{ "profile.records.fulfillments" | transloco }}</h4>
-                        <div class="profile-records-grid-3">
-                          @if (auth.currentUser()!.records!.fulfillment!.image) {
-                            <div class="profile-record-item centered" [attr.title]="'Total image generations your workers have fulfilled'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.image" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.fulfillment!.image ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.fulfillment!.text) {
-                            <div class="profile-record-item centered" [attr.title]="'Total text generations your workers have fulfilled'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.text" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.fulfillment!.text ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                          @if (auth.currentUser()!.records!.fulfillment!.interrogation) {
-                            <div class="profile-record-item centered" [attr.title]="'Total image interrogations your workers have fulfilled'">
-                              <span class="profile-kudos-item-label">{{ "profile.records.interrogation" | transloco }}</span>
-                              <span class="profile-kudos-item-value">{{ (auth.currentUser()!.records!.fulfillment!.interrogation ?? 0) | formatNumber }}</span>
-                            </div>
-                          }
-                        </div>
-                      </div>
-                    }
-                </div>
-              </div>
-            }
-
-            <!-- Workers Section -->
-            @if (auth.currentUser()!.worker_ids && auth.currentUser()!.worker_ids!.length > 0) {
-              <div class="card card-bg-secondary profile-workers-card">
-                <button
-                  (click)="toggleWorkersSection()"
-                  class="profile-collapsible-btn"
-                >
-                  <h3 class="heading-card">
-                    {{ "profile.your_workers" | transloco }}
-                    <span class="profile-info">({{ auth.currentUser()!.worker_ids!.length }})</span>
-                  </h3>
-                  <svg
-                    class="profile-collapsible-icon"
-                    [class.expanded]="workersExpanded()"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                @if (
+                  auth.currentUser()!.evaluating_kudos !== undefined &&
+                  auth.currentUser()!.evaluating_kudos !== null &&
+                  !auth.currentUser()!.trusted
+                ) {
+                  <p
+                    class="text-secondary text-sm text-center"
+                    [attr.title]="
+                      'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'
+                    "
                   >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                    <strong>Evaluating Kudos:</strong>
+                    {{ auth.currentUser()!.evaluating_kudos! | formatNumber }}
+                  </p>
+                }
 
-                @if (workersExpanded()) {
-                  <div>
-                    @if (loadingWorkers()) {
-                      <div class="profile-workers-loading">
-                        <svg class="profile-loading-spinner" fill="none" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <p class="profile-loading-text">{{ "profile.loading_workers" | transloco }}</p>
-                      </div>
-                    } @else if (userWorkers().length === 0) {
-                      <p class="profile-workers-empty">{{ "profile.no_workers_found" | transloco }}</p>
-                    } @else {
-                      <div class="profile-workers-grid">
-                        @for (worker of userWorkers(); track worker.id) {
-                          <app-worker-card
-                            [worker]="worker"
-                            [isModerator]="auth.currentUser()?.moderator ?? false"
-                            (workerUpdated)="onWorkerUpdated()"
-                          />
-                        }
-                      </div>
-                    }
+                @if (auth.currentUser()!.kudos < 100) {
+                  <div
+                    class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
+                  >
+                    <h4
+                      class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2"
+                    >
+                      {{ "profile.low_kudos_info_title" | transloco }}
+                    </h4>
+                    <p class="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                      {{ "profile.low_kudos_info_message" | transloco }}
+                    </p>
+                    <a
+                      routerLink="/faq"
+                      fragment="kudos"
+                      class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {{ "profile.low_kudos_info_link" | transloco }} →
+                    </a>
+                  </div>
+                }
+
+                @if (auth.currentUser()!.kudos_details) {
+                  <div class="section-divider-top">
+                    <h4 class="section-title-sm">
+                      {{ "profile.kudos_breakdown" | transloco }}
+                    </h4>
+                    <app-kudos-breakdown-panel
+                      [kudosDetails]="auth.currentUser()!.kudos_details!"
+                      variant="profile"
+                      [showZeroValues]="false"
+                    />
+                  </div>
+                  <!-- Actions -->
+                  <div class="section-divider-top">
+                    <div class="action-row">
+                      @if (auth.currentUser()!.moderator) {
+                        <a routerLink="/admin" class="btn-primary">{{
+                          "profile.admin_panel" | transloco
+                        }}</a>
+                      }
+                      <a routerLink="/v2-transfer" class="btn-primary">{{
+                        "profile.transfer_kudos" | transloco
+                      }}</a>
+                      <button (click)="logout()" class="btn-source-control">
+                        {{ "profile.logout" | transloco }}
+                      </button>
+                    </div>
                   </div>
                 }
               </div>
             }
 
-            <!-- Actions -->
-            <div class="card card-bg-secondary profile-actions-card">
-              <div class="profile-actions">
-              <a routerLink="/admin" class="btn-primary">
-                {{ "profile.admin_panel" | transloco }}
-              </a>
-              <a routerLink="/v2-transfer" class="btn-primary">
-                {{ "profile.transfer_kudos" | transloco }}
-              </a>
-              <button (click)="logout()" class="btn-source-control">
-                {{ "profile.logout" | transloco }}
-              </button>
-            </div>
-            </div>
+            <!-- Detailed Records -->
+            @if (
+              activeTab() === "records" &&
+              (auth.currentUser()!.records ||
+                auth.currentUser()!.usage ||
+                auth.currentUser()!.contributions)
+            ) {
+              <div class="card card-bg-primary card-full card-spaced">
+                <h3 class="heading-card">
+                  {{ "profile.detailed_records" | transloco }}
+                </h3>
+                <div class="records-section-wrapper">
+                  <!-- Usage Records -->
+                  @if (auth.currentUser()!.records!.usage) {
+                    <div class="record-group">
+                      <h4 class="section-title-sm">
+                        {{ "profile.records.usage" | transloco }}
+                      </h4>
+                      <div class="data-grid-1-2">
+                        @if (usageMegapixelsteps(); as ps) {
+                          <div
+                            class="data-item-box"
+                            [attr.title]="
+                              'Total megapixelsteps you have requested for image generation'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.megapixelsteps" | transloco
+                            }}</span>
+                            <span class="data-value">
+                              {{ ps.primary.formatted }}
+                              <span class="text-secondary">
+                                (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
+                              </span>
+                            </span>
+                          </div>
+                        }
+                        @if (usageTokens(); as tokens) {
+                          <div
+                            class="data-item-box"
+                            [attr.title]="
+                              'Total tokens you have requested for text generation'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.tokens" | transloco
+                            }}</span>
+                            <span class="data-value">
+                              {{ tokens.primary.formatted }}
+                              <span class="text-secondary">
+                                (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
+                              </span>
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Contribution Records -->
+                  @if (auth.currentUser()!.records!.contribution) {
+                    <div class="record-group">
+                      <h4 class="section-title-sm">
+                        {{ "profile.records.contribution" | transloco }}
+                      </h4>
+                      <div class="data-grid-1-2">
+                        @if (contributionMegapixelsteps(); as ps) {
+                          <div
+                            class="data-item-box"
+                            [attr.title]="
+                              'Total megapixelsteps your workers have generated'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.megapixelsteps" | transloco
+                            }}</span>
+                            <span class="data-value">
+                              {{ ps.primary.formatted }}
+                              <span class="text-secondary">
+                                (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
+                              </span>
+                            </span>
+                          </div>
+                        }
+                        @if (contributionTokens(); as tokens) {
+                          <div
+                            class="data-item-box"
+                            [attr.title]="
+                              'Total tokens your workers have generated'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.tokens" | transloco
+                            }}</span>
+                            <span class="data-value">
+                              {{ tokens.primary.formatted }}
+                              <span class="text-secondary">
+                                (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
+                              </span>
+                            </span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Request Records -->
+                  @if (auth.currentUser()!.records!.request) {
+                    <div class="record-group">
+                      <h4 class="section-title-sm">
+                        {{ "profile.records.requests" | transloco }}
+                      </h4>
+                      <div class="data-grid-1-2-3">
+                        @if (auth.currentUser()!.records!.request!.image) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total image generation requests you have made'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.image" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.request!.image ?? 0
+                                | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                        @if (auth.currentUser()!.records!.request!.text) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total text generation requests you have made'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.text" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.request!.text ?? 0
+                                | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                        @if (
+                          auth.currentUser()!.records!.request!.interrogation
+                        ) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total image interrogation requests you have made'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.interrogation" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.request!
+                                .interrogation ?? 0 | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Fulfillment Records -->
+                  @if (auth.currentUser()!.records!.fulfillment) {
+                    <div class="record-group">
+                      <h4 class="section-title-sm">
+                        {{ "profile.records.fulfillments" | transloco }}
+                      </h4>
+                      <div class="data-grid-1-2-3">
+                        @if (auth.currentUser()!.records!.fulfillment!.image) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total image generations your workers have fulfilled'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.image" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.fulfillment!.image ??
+                                0 | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                        @if (auth.currentUser()!.records!.fulfillment!.text) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total text generations your workers have fulfilled'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.text" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.fulfillment!.text ??
+                                0 | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                        @if (
+                          auth.currentUser()!.records!.fulfillment!
+                            .interrogation
+                        ) {
+                          <div
+                            class="data-item-box data-item-centered"
+                            [attr.title]="
+                              'Total image interrogations your workers have fulfilled'
+                            "
+                          >
+                            <span class="data-label">{{
+                              "profile.records.interrogation" | transloco
+                            }}</span>
+                            <span class="data-value">{{
+                              auth.currentUser()!.records!.fulfillment!
+                                .interrogation ?? 0 | formatNumber
+                            }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Workers Section -->
+            @if (activeTab() === "workers") {
+              <div class="card card-bg-primary card-full card-spaced">
+                <h3 class="heading-card">
+                  {{ "profile.your_workers" | transloco }}
+                  @if (
+                    auth.currentUser()!.worker_ids &&
+                    auth.currentUser()!.worker_ids!.length > 0
+                  ) {
+                    <span class="text-secondary text-sm"
+                      >({{ auth.currentUser()!.worker_ids!.length }})</span
+                    >
+                  }
+                </h3>
+
+                @if (
+                  !auth.currentUser()!.worker_ids ||
+                  auth.currentUser()!.worker_ids!.length === 0
+                ) {
+                  <p class="text-secondary text-center py-4">
+                    {{ "profile.no_workers_registered" | transloco }}
+                  </p>
+                } @else {
+                  <!-- Filter Controls -->
+                  <div class="mb-4 flex flex-wrap gap-3 items-end">
+                    <!-- Search Filter -->
+                    <div class="flex-1 min-w-[200px]">
+                      <label for="worker-search" class="form-label text-sm">{{
+                        "profile.workers.search" | transloco
+                      }}</label>
+                      <input
+                        type="text"
+                        id="worker-search"
+                        [value]="filterText()"
+                        (input)="onFilterTextChange($event)"
+                        [placeholder]="
+                          'profile.workers.search_placeholder' | transloco
+                        "
+                        class="form-input"
+                      />
+                    </div>
+
+                    <!-- Worker Type Filter -->
+                    <div>
+                      <label for="worker-type" class="form-label text-sm">{{
+                        "profile.workers.type" | transloco
+                      }}</label>
+                      <select
+                        id="worker-type"
+                        [value]="filterWorkerType()"
+                        (change)="
+                          onFilterTypeChange($any($event.target).value)
+                        "
+                        class="form-input"
+                      >
+                        <option value="all">
+                          {{ "profile.workers.type.all" | transloco }}
+                        </option>
+                        <option value="image">
+                          {{ "profile.workers.type.image" | transloco }}
+                        </option>
+                        <option value="text">
+                          {{ "profile.workers.type.text" | transloco }}
+                        </option>
+                        <option value="interrogation">
+                          {{
+                            "profile.workers.type.interrogation" | transloco
+                          }}
+                        </option>
+                      </select>
+                    </div>
+
+                    <!-- Maintenance Status Filter -->
+                    <div>
+                      <label for="worker-status" class="form-label text-sm">{{
+                        "profile.workers.status" | transloco
+                      }}</label>
+                      <select
+                        id="worker-status"
+                        [value]="filterMaintenance()"
+                        (change)="
+                          onFilterMaintenanceChange($any($event.target).value)
+                        "
+                        class="form-input"
+                      >
+                        <option value="all">
+                          {{ "profile.workers.status.all" | transloco }}
+                        </option>
+                        <option value="active">
+                          {{ "profile.workers.status.active" | transloco }}
+                        </option>
+                        <option value="maintenance">
+                          {{
+                            "profile.workers.status.maintenance" | transloco
+                          }}
+                        </option>
+                        <option value="offline">
+                          {{ "profile.workers.status.offline" | transloco }}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  @if (loadingWorkers()) {
+                    <p class="text-secondary text-sm mb-2">
+                      {{ "profile.loading_workers" | transloco }}
+                    </p>
+                  }
+                  
+                  @if (!loadingWorkers() && filteredAndSortedWorkers().length === 0 && userWorkers().length > 0) {
+                    <p class="text-secondary text-center py-4">
+                      {{ "profile.no_workers_match_filters" | transloco }}
+                    </p>
+                  } @else {
+                    <div class="worker-grid">
+                      @for (
+                        workerEntry of filteredAndSortedWorkers();
+                        track workerEntry.id
+                      ) {
+                      @if (workerEntry.loading) {
+                        <div class="skeleton-box" aria-busy="true">
+                          <p class="data-value text-sm break-all">
+                            {{ workerEntry.id }}
+                          </p>
+                          <div class="skeleton-bar skeleton-bar-sm"></div>
+                          <div class="skeleton-bar skeleton-bar-lg"></div>
+                          <p class="text-secondary text-sm">
+                            {{ "profile.loading_workers" | transloco }}
+                          </p>
+                        </div>
+                      } @else if (workerEntry.worker) {
+                        <app-worker-card
+                          [worker]="workerEntry.worker"
+                          [isModerator]="auth.currentUser()?.moderator ?? false"
+                          (workerUpdated)="onWorkerUpdated()"
+                        />
+                      } @else {
+                        <div
+                          class="skeleton-box skeleton-box-dashed"
+                          role="status"
+                        >
+                          <p class="data-value text-sm break-all">
+                            {{ workerEntry.id }}
+                          </p>
+                          <p class="text-secondary text-sm">
+                            {{ "profile.no_workers_found" | transloco }}
+                          </p>
+                        </div>
+                      }
+                    }
+                    </div>
+                  }
+                }
+              </div>
+            }
+
+            <!-- Styles Section -->
+            @if (activeTab() === "styles") {
+              <div class="card card-bg-primary card-full card-spaced">
+                <h3 class="heading-card">
+                  {{ "profile.tabs.styles" | transloco }}
+                  @if (
+                    auth.currentUser()!.styles &&
+                    auth.currentUser()!.styles!.length > 0
+                  ) {
+                    <span class="text-secondary text-sm"
+                      >({{ auth.currentUser()!.styles!.length }})</span
+                    >
+                  }
+                </h3>
+                <app-profile-styles-list />
+              </div>
+            }
+
+            <!-- Shared Keys Section -->
+            @if (activeTab() === "shared-keys") {
+              <div class="card card-bg-primary card-full card-spaced">
+                <app-shared-key-list />
+              </div>
+            }
           </div>
         }
       </div>

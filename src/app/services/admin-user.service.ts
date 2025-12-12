@@ -1,7 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, map } from 'rxjs';
-import { AdminUserDetails, PutUserRequest, UserListEntry } from '../types/horde-user-admin';
+import { Observable, catchError, of, map, forkJoin } from 'rxjs';
+import {
+  AdminUserDetails,
+  PutUserRequest,
+  UserListEntry,
+} from '../types/horde-user-admin';
+import { SharedKeyDetails } from '../types/shared-key';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -36,7 +41,10 @@ export class AdminUserService {
     // For now, we just search the current user if they match
     // A full implementation would require a cached user list
     const currentUser = this.auth.currentUser();
-    if (currentUser && currentUser.username.toLowerCase().includes(query.toLowerCase())) {
+    if (
+      currentUser &&
+      currentUser.username.toLowerCase().includes(query.toLowerCase())
+    ) {
       return of([{ id: currentUser.id, username: currentUser.username }]);
     }
     return of([]);
@@ -45,7 +53,10 @@ export class AdminUserService {
   /**
    * Modify user properties (requires moderator permissions)
    */
-  public updateUser(id: number, data: PutUserRequest): Observable<PutUserRequest | null> {
+  public updateUser(
+    id: number,
+    data: PutUserRequest,
+  ): Observable<PutUserRequest | null> {
     const apiKey = this.auth.getStoredApiKey();
     if (!apiKey) {
       return of(null);
@@ -61,14 +72,20 @@ export class AdminUserService {
   /**
    * Toggle user trusted status
    */
-  public setTrusted(id: number, trusted: boolean): Observable<PutUserRequest | null> {
+  public setTrusted(
+    id: number,
+    trusted: boolean,
+  ): Observable<PutUserRequest | null> {
     return this.updateUser(id, { trusted });
   }
 
   /**
    * Toggle user flagged status
    */
-  public setFlagged(id: number, flagged: boolean): Observable<PutUserRequest | null> {
+  public setFlagged(
+    id: number,
+    flagged: boolean,
+  ): Observable<PutUserRequest | null> {
     return this.updateUser(id, { flagged });
   }
 
@@ -82,14 +99,52 @@ export class AdminUserService {
   /**
    * Set user VPN access
    */
-  public setVpnAccess(id: number, vpn: boolean): Observable<PutUserRequest | null> {
+  public setVpnAccess(
+    id: number,
+    vpn: boolean,
+  ): Observable<PutUserRequest | null> {
     return this.updateUser(id, { vpn });
   }
 
   /**
    * Set worker invites count
    */
-  public setWorkerInvites(id: number, count: number): Observable<PutUserRequest | null> {
+  public setWorkerInvites(
+    id: number,
+    count: number,
+  ): Observable<PutUserRequest | null> {
     return this.updateUser(id, { worker_invite: count });
+  }
+
+  /**
+   * Get shared key details by ID
+   */
+  public getSharedKey(
+    sharedKeyId: string,
+  ): Observable<SharedKeyDetails | null> {
+    return this.httpClient
+      .get<SharedKeyDetails>(`${this.baseUrl}/sharedkeys/${sharedKeyId}`)
+      .pipe(catchError(() => of(null)));
+  }
+
+  /**
+   * Get multiple shared keys by their IDs
+   */
+  public getSharedKeysByIds(
+    sharedKeyIds: string[],
+  ): Observable<SharedKeyDetails[]> {
+    if (sharedKeyIds.length === 0) {
+      return of([]);
+    }
+
+    const requests = sharedKeyIds.map((id) =>
+      this.getSharedKey(id).pipe(catchError(() => of(null))),
+    );
+
+    return forkJoin(requests).pipe(
+      map((results) =>
+        results.filter((key): key is SharedKeyDetails => key !== null),
+      ),
+    );
   }
 }

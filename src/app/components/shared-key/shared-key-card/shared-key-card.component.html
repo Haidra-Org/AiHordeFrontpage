@@ -1,0 +1,151 @@
+<div class="shared-key-card">
+  <div class="shared-key-card__header">
+    <div class="shared-key-name-row">
+      <p class="data-label">
+        {{ sharedKey().name || ("profile.shared_keys.untitled" | transloco) }}
+      </p>
+      @if (status() === "active") {
+        <span class="badge-base badge-success">{{
+          "profile.shared_keys.status.active" | transloco
+        }}</span>
+      } @else if (status() === "expired") {
+        <span class="badge-base badge-warning">{{
+          "profile.shared_keys.status.expired" | transloco
+        }}</span>
+      } @else if (status() === "exhausted") {
+        <span class="badge-base badge-danger">{{
+          "profile.shared_keys.status.exhausted" | transloco
+        }}</span>
+      }
+    </div>
+    <div class="shared-key-id">
+      <code class="shared-key-id-value">{{ sharedKey().id }}</code>
+    </div>
+  </div>
+
+  <div class="shared-key-card__body">
+    <div class="shared-key-field">
+      <span class="data-label">{{
+        "profile.shared_keys.kudos" | transloco
+      }}</span>
+      <span class="data-value">
+        @if (sharedKey().kudos === -1) {
+          {{ "profile.shared_keys.unlimited" | transloco }}
+        } @else {
+          {{ sharedKey().kudos ?? 0 | formatNumber }}
+        }
+      </span>
+    </div>
+    @if (sharedKey().utilized !== undefined) {
+      <div class="shared-key-field">
+        <span class="data-label">{{
+          "profile.shared_keys.utilized" | transloco
+        }}</span>
+        <span class="data-value">{{
+          sharedKey().utilized ?? 0 | formatNumber
+        }}</span>
+      </div>
+    }
+    <div class="shared-key-field">
+      <span class="data-label">{{
+        "profile.shared_keys.max_image_pixels" | transloco
+      }}</span>
+      <span class="data-value">
+        @if (sharedKey().max_image_pixels === -1) {
+          {{ "profile.shared_keys.unlimited" | transloco }}
+        } @else {
+          {{ sharedKey().max_image_pixels ?? 0 | formatNumber }}
+        }
+      </span>
+    </div>
+    @if (
+      sharedKey().max_image_pixels !== -1 &&
+      squareDimensionFromPixels(sharedKey().max_image_pixels ?? null)
+    ) {
+      <div class="shared-key-dim-row text-secondary text-xs">
+        ~
+        {{ squareDimensionFromPixels(sharedKey().max_image_pixels ?? null) }} px
+      </div>
+    }
+    <div class="shared-key-field">
+      <span class="data-label">{{
+        "profile.shared_keys.max_image_steps" | transloco
+      }}</span>
+      <span class="data-value">
+        @if (sharedKey().max_image_steps === -1) {
+          {{ "profile.shared_keys.unlimited" | transloco }}
+        } @else {
+          {{ sharedKey().max_image_steps ?? 0 | formatNumber }}
+        }
+      </span>
+    </div>
+    <div class="shared-key-field">
+      <span class="data-label">{{
+        "profile.shared_keys.max_text_tokens" | transloco
+      }}</span>
+      <span class="data-value">
+        @if (sharedKey().max_text_tokens === -1) {
+          {{ "profile.shared_keys.unlimited" | transloco }}
+        } @else {
+          {{ sharedKey().max_text_tokens ?? 0 | formatNumber }}
+        }
+      </span>
+    </div>
+    <div class="shared-key-field">
+      <span class="data-label">{{
+        "profile.shared_keys.expires" | transloco
+      }}</span>
+      <span class="data-value">
+        @if (sharedKey().expiry) {
+          {{ formatExpiry(sharedKey().expiry) }}
+        } @else {
+          {{ "profile.shared_keys.never" | transloco }}
+        }
+      </span>
+    </div>
+  </div>
+
+  <div class="shared-key-card__footer">
+    @if (!readonly()) {
+      <div class="shared-key-actions">
+        <button
+          type="button"
+          class="btn-source-control"
+          (click)="startEdit()"
+          [disabled]="saving()"
+        >
+          @if (saving()) {
+            {{ "profile.shared_keys.updating" | transloco }}
+          } @else {
+            {{ "profile.shared_keys.edit" | transloco }}
+          }
+        </button>
+        <button
+          type="button"
+          class="btn-danger"
+          (click)="onDelete()"
+          [disabled]="deleting()"
+        >
+          @if (deleting()) {
+            {{ "profile.shared_keys.deleting" | transloco }}
+          } @else {
+            {{ "profile.shared_keys.delete" | transloco }}
+          }
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (isEditing() && !readonly()) {
+    <app-shared-key-form
+      [initialValues]="editFormValues()"
+      [submitLabel]="'profile.shared_keys.save_changes' | transloco"
+      [submittingLabel]="'profile.shared_keys.updating' | transloco"
+      [submitting]="saving()"
+      [showCancel]="true"
+      [cancelLabel]="'profile.shared_keys.cancel' | transloco"
+      (formSubmit)="onFormSubmit($event)"
+      (formCancel)="cancelEdit()"
+    />
+  }
+</div>
