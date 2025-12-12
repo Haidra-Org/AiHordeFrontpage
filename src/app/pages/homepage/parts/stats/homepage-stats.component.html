@@ -29,7 +29,7 @@
                 >
                 @if (imagePerformanceRate(); as rate) {
                   {{ rate.primary.value | number: '1.1-1' }}
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'average_images' | transloco" />
+                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'standard_images' | transloco" />
                   per second
                 }
               </span>

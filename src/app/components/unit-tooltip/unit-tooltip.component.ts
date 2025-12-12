@@ -11,7 +11,7 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
  * A reusable component for displaying synthesized units with tooltips.
  *
  * This component provides a consistent way to display values that have both
- * a "human friendly" synthesized unit (like "average images") and a technical
+ * a "human friendly" synthesized unit (like "standard images") and a technical
  * underlying unit (like "megapixelsteps").
  *
  * Usage:
@@ -146,7 +146,7 @@ export class UnitTooltipComponent {
 
   /**
    * When true, swaps primary and technical displays:
-   * - Dotted underline shows technical (e.g., "average images")
+   * - Dotted underline shows technical (e.g., "standard images")
    * - Tooltip shows primary (e.g., "pixelsteps")
    */
   public readonly swapDisplay = input(false);
@@ -174,7 +174,7 @@ export class UnitTooltipComponent {
 
   /**
    * Bold line in tooltip - shows the synthesized human-friendly value
-   * For normal display: shows primary (e.g., "2.3 average images/sec")
+   * For normal display: shows primary (e.g., "2.3 standard images/sec")
    * For swapped display: shows primary (e.g., "2.7 petapixelsteps")
    */
   public readonly tooltipBoldDisplay = computed(() => {
@@ -182,7 +182,7 @@ export class UnitTooltipComponent {
     if (!u) return '';
 
     // When swapped, the tooltip explains the synthesized unit (which is in technical)
-    // So bold should show technical (the synthesized value like "134.9 million average images")
+    // So bold should show technical (the synthesized value like "134.9 million standard images")
     // And muted should show primary (the native SI value like "2.7 petapixelsteps")
     return this.swapDisplay() ? u.technical.formatted : u.primary.formatted;
   });

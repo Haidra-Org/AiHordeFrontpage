@@ -173,7 +173,7 @@ export class UsageStatsComponent implements OnInit {
   // COMPUTED UNIT CONVERSIONS
   // ============================================================================
 
-  /** Image performance rate (average images/sec) */
+  /** Image performance rate (standard images/sec) */
   public readonly imagePerformanceRate = computed(() => {
     const perf = this.performance();
     if (!perf) return null;
@@ -187,7 +187,7 @@ export class UsageStatsComponent implements OnInit {
     return this.units.formatTextPerformanceRate(perf.past_minute_tokens);
   });
 
-  /** Queued image work (average images) */
+  /** Queued image work (standard images) */
   public readonly queuedImageWork = computed(() => {
     const perf = this.performance();
     if (!perf) return null;

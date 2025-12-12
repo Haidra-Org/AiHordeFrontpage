@@ -74,9 +74,9 @@ const HUMAN_PREFIXES = [
  *
  * ## Synthesized units:
  *
- * ### "Average Images"
- * - 1 megapixelstep = approximately 1/20th of an average image
- * - Formula: average_images = megapixelsteps / 20
+ * ### "standard images"
+ * - 1 megapixelstep = approximately 1/20th of an standard image
+ * - Formula: standard_images = megapixelsteps / 20
  * - Assumes ~20 steps per image at 1024x1024 (1 megapixel)
  *
  * ### "Pages of Text"
@@ -101,9 +101,9 @@ export class UnitConversionService {
 
     // Build formatted string with proper spacing
     // "164.7 mega" + "pixelsteps" → "164.7 megapixelsteps"
-    // "164.7 mega" + "average images" → "164.7 mega average images"
+    // "164.7 mega" + "standard images" → "164.7 mega standard images"
     // Use prefix directly attached to unit for compound units like "megapixelsteps"
-    // But add a space for multi-word units like "average images"
+    // But add a space for multi-word units like "standard images"
     const hasMultiWordUnit = unit.includes(' ');
     const prefixUnitSeparator = hasMultiWordUnit && siPrefix.prefix ? ' ' : '';
 
@@ -119,7 +119,7 @@ export class UnitConversionService {
 
   /**
    * Formats a number with human-readable prefix (million, billion, etc.)
-   * Use this for synthesized units like "average images", "pages of text"
+   * Use this for synthesized units like "standard images", "pages of text"
    */
   formatWithHumanPrefix(
     value: number,
@@ -129,7 +129,7 @@ export class UnitConversionService {
     const prefix = this.getHumanPrefix(value);
     const scaledValue = value / prefix.threshold;
 
-    // Build formatted string with proper spacing: "134.9 million average images"
+    // Build formatted string with proper spacing: "134.9 million standard images"
     const parts = [scaledValue.toFixed(decimals)];
     if (prefix.prefix) {
       parts.push(prefix.prefix);
@@ -171,21 +171,21 @@ export class UnitConversionService {
    * Converts megapixelsteps/minute (from performance API) to per-second metrics.
    *
    * @param megapixelstepsPerMinute - The `past_minute_megapixelsteps` value from API
-   * @returns SynthesizedUnit with "average images/sec" as primary and megapixelsteps/sec as technical
+   * @returns SynthesizedUnit with "standard images/sec" as primary and megapixelsteps/sec as technical
    */
   formatImagePerformanceRate(megapixelstepsPerMinute: number): SynthesizedUnit {
     // Convert to per-second
     const megapixelstepsPerSecond = megapixelstepsPerMinute / 60;
 
-    // Convert to "average images" (1 average image = 20 megapixelsteps)
-    const averageImagesPerSecond = megapixelstepsPerSecond / 20;
+    // Convert to "standard images" (1 standard image = 20 megapixelsteps)
+    const standardImagesPerSecond = megapixelstepsPerSecond / 20;
 
     // For the tooltip, show the megapixelsteps/sec value
     // The API gives us values in megapixelsteps, so that's the "raw" technical unit
     return {
       primary: this.formatWithSiPrefix(
-        averageImagesPerSecond,
-        'average images',
+        standardImagesPerSecond,
+        'standard images',
         1,
       ),
       technical: {
@@ -198,9 +198,9 @@ export class UnitConversionService {
       },
       rawValue: megapixelstepsPerMinute,
       explanationKeys: [
-        'average_images.tooltip.line1',
-        'average_images.tooltip.line2',
-        'average_images.tooltip.line3',
+        'standard_images.tooltip.line1',
+        'standard_images.tooltip.line2',
+        'standard_images.tooltip.line3',
       ],
     };
   }
@@ -209,13 +209,13 @@ export class UnitConversionService {
    * Converts queued megapixelsteps to synthesized unit.
    *
    * @param queuedMegapixelsteps - The `queued_megapixelsteps` value from API
-   * @returns SynthesizedUnit with "average images" as primary
+   * @returns SynthesizedUnit with "standard images" as primary
    */
   formatQueuedImageWork(queuedMegapixelsteps: number): SynthesizedUnit {
-    const averageImages = queuedMegapixelsteps / 20;
+    const standardImages = queuedMegapixelsteps / 20;
 
     return {
-      primary: this.formatWithSiPrefix(averageImages, 'average images', 1),
+      primary: this.formatWithSiPrefix(standardImages, 'standard images', 1),
       technical: {
         value: queuedMegapixelsteps,
         prefix: '',
@@ -226,9 +226,9 @@ export class UnitConversionService {
       },
       rawValue: queuedMegapixelsteps,
       explanationKeys: [
-        'average_images.tooltip.line1',
-        'average_images.tooltip.line2',
-        'average_images.tooltip.line3',
+        'standard_images.tooltip.line1',
+        'standard_images.tooltip.line2',
+        'standard_images.tooltip.line3',
       ],
     };
   }
@@ -237,23 +237,23 @@ export class UnitConversionService {
    * Converts raw pixelsteps (from stats API totals) to formatted values.
    *
    * @param rawPixelsteps - The `ps` value from stats API (raw pixelsteps, NOT mega)
-   * @returns SynthesizedUnit with pixelsteps as primary and average images as secondary
+   * @returns SynthesizedUnit with pixelsteps as primary and standard images as secondary
    */
   formatTotalPixelsteps(rawPixelsteps: number): SynthesizedUnit {
-    // Convert raw pixelsteps to megapixelsteps for the "average images" calculation
+    // Convert raw pixelsteps to megapixelsteps for the "standard images" calculation
     const megapixelsteps = rawPixelsteps / 1e6;
-    const averageImages = megapixelsteps / 20;
+    const standardImages = megapixelsteps / 20;
 
     // Primary: show pixelsteps with SI prefix (technical unit)
-    // Technical: show average images with human prefix (synthesized unit)
+    // Technical: show standard images with human prefix (synthesized unit)
     return {
       primary: this.formatWithSiPrefix(rawPixelsteps, 'pixelsteps', 1),
-      technical: this.formatWithHumanPrefix(averageImages, 'average images', 1),
+      technical: this.formatWithHumanPrefix(standardImages, 'standard images', 1),
       rawValue: rawPixelsteps,
       explanationKeys: [
-        'average_images.tooltip.line1',
-        'average_images.tooltip.line2',
-        'average_images.tooltip.line3',
+        'standard_images.tooltip.line1',
+        'standard_images.tooltip.line2',
+        'standard_images.tooltip.line3',
       ],
     };
   }
