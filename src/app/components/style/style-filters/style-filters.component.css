@@ -1,0 +1,23 @@
+.style-filters-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.style-filters-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.style-filters-search-input {
+  padding-left: 2.5rem;
+}
+
+.style-filters-checkbox {
+  min-width: auto;
+  align-items: center;
+}

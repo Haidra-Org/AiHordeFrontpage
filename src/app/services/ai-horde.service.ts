@@ -9,6 +9,9 @@ import { SingleInterrogationStatPoint } from '../types/single-interrogation-stat
 import { HtmlHordeDocument } from '../types/horde-document';
 import { HordeNewsItem } from '../types/horde-news-item';
 import { HordeUser } from '../types/horde-user';
+import { ActiveModel, ModelType } from '../types/active-model';
+import { ImageModelStats } from '../types/image-model-stats';
+import { TextModelStats } from '../types/text-model-stats';
 
 @Injectable({
   providedIn: 'root',
@@ -147,6 +150,55 @@ export class AiHordeService {
       userIds.map((userId) =>
         this.getUserById(userId).pipe(map((user) => user!)),
       ),
+    );
+  }
+
+  /**
+   * Get active models by type.
+   * @param type - The model type: 'image' or 'text'
+   * @param modelState - Filter by model state: 'known', 'custom', or 'all'
+   */
+  public getModels(
+    type: ModelType = 'image',
+    modelState: 'known' | 'custom' | 'all' = 'all',
+  ): Observable<ActiveModel[]> {
+    return this.httpClient.get<ActiveModel[]>(
+      `https://aihorde.net/api/v2/status/models?type=${type}&model_state=${modelState}`,
+    );
+  }
+
+  /** Get active image models. */
+  public getImageModels(
+    modelState: 'known' | 'custom' | 'all' = 'all',
+  ): Observable<ActiveModel[]> {
+    return this.getModels('image', modelState);
+  }
+
+  /** Get active text models. */
+  public getTextModels(
+    modelState: 'known' | 'custom' | 'all' = 'all',
+  ): Observable<ActiveModel[]> {
+    return this.getModels('text', modelState);
+  }
+
+  /**
+   * Get image generation stats per model.
+   * @param modelState - Filter by model state: 'known', 'custom', or 'all'
+   */
+  public getImageModelStats(
+    modelState: 'known' | 'custom' | 'all' = 'known',
+  ): Observable<ImageModelStats> {
+    return this.httpClient.get<ImageModelStats>(
+      `https://aihorde.net/api/v2/stats/img/models?model_state=${modelState}`,
+    );
+  }
+
+  /**
+   * Get text generation stats per model.
+   */
+  public getTextModelStats(): Observable<TextModelStats> {
+    return this.httpClient.get<TextModelStats>(
+      'https://aihorde.net/api/v2/stats/text/models',
     );
   }
 }

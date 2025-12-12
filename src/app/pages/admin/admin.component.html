@@ -8,16 +8,32 @@
     <div class="admin-sidebar-content">
       <!-- Logo/Title -->
       <div class="admin-sidebar-header">
-        <a routerLink="/admin" class="admin-sidebar-logo" (click)="closeSidebarOnMobile()">
-          <span class="admin-sidebar-title">{{ "admin.title" | transloco }}</span>
+        <a
+          routerLink="/admin"
+          class="admin-sidebar-logo"
+          (click)="closeSidebarOnMobile()"
+        >
+          <span class="admin-sidebar-title">{{
+            "admin.title" | transloco
+          }}</span>
         </a>
         <button
           (click)="toggleSidebar()"
           class="admin-sidebar-close-btn"
           aria-label="Close sidebar"
         >
-          <svg class="admin-sidebar-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          <svg
+            class="admin-sidebar-close-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
       </div>
@@ -27,13 +43,29 @@
         <a
           routerLink="/admin"
           class="admin-nav-item"
-          [class.active]="isActive('/admin') && !isActive('/admin/workers') && !isActive('/admin/users')"
+          [class.active]="
+            isActive('/admin') &&
+            !isActive('/admin/workers') &&
+            !isActive('/admin/users')
+          "
           (click)="closeSidebarOnMobile()"
         >
-          <svg class="admin-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          <svg
+            class="admin-nav-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
           </svg>
-          <span class="admin-nav-label">{{ "admin.nav.dashboard" | transloco }}</span>
+          <span class="admin-nav-label">{{
+            "admin.nav.dashboard" | transloco
+          }}</span>
         </a>
 
         <a
@@ -42,10 +74,22 @@
           [class.active]="isActive('/admin/workers')"
           (click)="closeSidebarOnMobile()"
         >
-          <svg class="admin-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+          <svg
+            class="admin-nav-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+            />
           </svg>
-          <span class="admin-nav-label">{{ "admin.nav.workers" | transloco }}</span>
+          <span class="admin-nav-label">{{
+            "admin.nav.workers" | transloco
+          }}</span>
         </a>
 
         @if (auth.currentUser()?.moderator) {
@@ -55,10 +99,22 @@
             [class.active]="isActive('/admin/users')"
             (click)="closeSidebarOnMobile()"
           >
-            <svg class="admin-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            <svg
+              class="admin-nav-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
             </svg>
-            <span class="admin-nav-label">{{ "admin.nav.users" | transloco }}</span>
+            <span class="admin-nav-label">{{
+              "admin.nav.users" | transloco
+            }}</span>
           </a>
         }
       </nav>
@@ -69,36 +125,52 @@
           <h4 class="admin-status-title">Horde Status</h4>
           <div class="admin-status-list">
             <div class="admin-status-item">
-              <span class="admin-status-label">{{ "admin.status.maintenance_mode" | transloco }}</span>
+              <span class="admin-status-label">{{
+                "admin.status.maintenance_mode" | transloco
+              }}</span>
               @if (statusModes()!.maintenance_mode) {
-                <span class="badge-base badge-danger">{{ "admin.status.active" | transloco }}</span>
+                <span class="badge-base badge-danger">{{
+                  "admin.status.active" | transloco
+                }}</span>
               } @else {
-                <span class="badge-base badge-success">{{ "admin.status.inactive" | transloco }}</span>
+                <span class="badge-base badge-success">{{
+                  "admin.status.inactive" | transloco
+                }}</span>
               }
             </div>
             <div class="admin-status-item">
-              <span class="admin-status-label">{{ "admin.status.invite_only" | transloco }}</span>
+              <span class="admin-status-label">{{
+                "admin.status.invite_only" | transloco
+              }}</span>
               @if (statusModes()!.invite_only_mode) {
-                <span class="badge-base badge-danger">{{ "admin.status.active" | transloco }}</span>
+                <span class="badge-base badge-danger">{{
+                  "admin.status.active" | transloco
+                }}</span>
               } @else {
-                <span class="badge-base badge-success">{{ "admin.status.inactive" | transloco }}</span>
+                <span class="badge-base badge-success">{{
+                  "admin.status.inactive" | transloco
+                }}</span>
               }
             </div>
             @if (statusModes()!.raid_mode !== undefined) {
               <div class="admin-status-item">
-                <span class="admin-status-label">{{ "admin.status.raid_mode" | transloco }}</span>
+                <span class="admin-status-label">{{
+                  "admin.status.raid_mode" | transloco
+                }}</span>
                 @if (statusModes()!.raid_mode) {
-                  <span class="badge-base badge-danger">{{ "admin.status.active" | transloco }}</span>
+                  <span class="badge-base badge-danger">{{
+                    "admin.status.active" | transloco
+                  }}</span>
                 } @else {
-                  <span class="badge-base badge-success">{{ "admin.status.inactive" | transloco }}</span>
+                  <span class="badge-base badge-success">{{
+                    "admin.status.inactive" | transloco
+                  }}</span>
                 }
               </div>
             }
           </div>
         </div>
       }
-
-
     </div>
   </aside>
 
@@ -125,8 +197,18 @@
           class="admin-mobile-menu-btn"
           aria-label="Open sidebar menu"
         >
-          <svg class="admin-mobile-menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          <svg
+            class="admin-mobile-menu-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            />
           </svg>
         </button>
         <span class="admin-mobile-title">{{ "admin.title" | transloco }}</span>
@@ -140,8 +222,12 @@
         <router-outlet />
       } @else {
         <div class="admin-access-denied">
-          <h2 class="admin-access-denied-title">{{ "admin.common.access_denied" | transloco }}</h2>
-          <p class="admin-access-denied-text">{{ "admin.common.login_prompt" | transloco }}</p>
+          <h2 class="admin-access-denied-title">
+            {{ "admin.common.access_denied" | transloco }}
+          </h2>
+          <p class="admin-access-denied-text">
+            {{ "admin.common.login_prompt" | transloco }}
+          </p>
           <a routerLink="/profile" class="btn-primary">
             {{ "profile.nav_login" | transloco }}
           </a>

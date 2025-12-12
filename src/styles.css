@@ -54,6 +54,12 @@
 @import "./styles/_cards.css";
 @import "./styles/_feature-cards.css";
 
+/* Data Display */
+@import "./styles/_data-display.css";
+
+/* Tooltips */
+@import "./styles/_tooltips.css";
+
 /* Links */
 @import "./styles/_links.css";
 
@@ -68,6 +74,9 @@
 
 /* Collapsible/Expandable sections */
 @import "./styles/_collapsibles.css";
+
+/* Details page tabs */
+@import "./styles/_details-tabs.css";
 
 /* Prose/Rich text content */
 @import "./styles/_prose.css";
@@ -85,6 +94,11 @@
    ADMIN PANEL STYLES
    ================================================================= */
 @import "./styles/_admin.css";
+
+/* =================================================================
+   STYLE DETAIL PAGE STYLES
+   ================================================================= */
+@import "./styles/_style-detail.css";
 
 /* =================================================================
    LEGACY & ADDITIONAL STYLES

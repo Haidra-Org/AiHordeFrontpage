@@ -1,0 +1,32 @@
+/* Shared key form component styles */
+
+.shared-key-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.quick-fill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.square-dims-text {
+  font-style: italic;
+  margin-bottom: 0.25rem;
+}
+
+.btn-xs {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.shared-key-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

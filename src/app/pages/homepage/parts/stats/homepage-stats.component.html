@@ -27,31 +27,11 @@
                     "stats.average_recent_performance_images.label" | transloco
                   }}:</span
                 >
-                {{ stats()!.past_minute_megapixelsteps / 60 / 20 | formatNumber: 1 }}
-                {{ stats()!.past_minute_megapixelsteps / 60 / 20 | siPrefix }}<span class="tooltip-wrapper">
-                  <span class="dotted-underline">average images</span>
-                  <span class="tooltip-text">
-                    <strong>{{
-                      (stats()!.past_minute_megapixelsteps / 60
-                        | shiftDecimalsLeft
-                        | formatNumber: 2) +
-                        " " +
-                        (stats()!.past_minute_megapixelsteps / 60 | siPrefix: 1 : 2) +
-                        "pixelsteps/sec"
-                    }}</strong
-                    ><br />
-                    <span class="tooltip-muted">({{ stats()!.past_minute_megapixelsteps / 60 | formatNumber: 2 }} megapixelsteps/sec)</span
-                    ><br /><br />
-                    <span class="math-equation">{{
-                      "average_images.tooltip.line1" | transloco
-                    }}</span
-                    ><br /><br />
-                    {{ "average_images.tooltip.line2" | transloco }}<br /><br />
-                    <span class="math-equation">{{
-                      "average_images.tooltip.line3" | transloco
-                    }}</span>
-                  </span>
-                </span> per second
+                @if (imagePerformanceRate(); as rate) {
+                  {{ rate.primary.value | number: '1.1-1' }}
+                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'average_images' | transloco" />
+                  per second
+                }
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -62,17 +42,12 @@
                 <span class="font-medium"
                   >{{ "stats.total_pixelsteps.label" | transloco }}:</span
                 >
-                {{
-                  "stats.total_pixelsteps.value"
-                    | transloco
-                      : {
-                          amount:
-                            imageStats()!.ps
-                            | shiftDecimalsLeft: 2
-                            | formatNumber: 1,
-                          prefix: imageStats()!.ps | siPrefix: 2,
-                        }
-                }}
+                @if (totalPixelsteps(); as ps) {
+                  {{ ps.primary.formatted }}
+                  <span class="text-secondary">
+                    (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
+                  </span>
+                }
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -83,21 +58,7 @@
                 <span class="font-medium"
                   >{{ "stats.total_images.label" | transloco }}:</span
                 >
-                {{
-                  "stats.total_images.value"
-                    | transloco
-                      : {
-                          amount:
-                            imageStats()!.images
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          unit:
-                            imageStats()!.images
-                            | siPrefix
-                            | cut: 1
-                            | uppercase,
-                        }
-                }}
+                {{ units.formatLargeNumber(imageStats()!.images, 'images') }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -112,8 +73,8 @@
                   "stats.active_workers.value"
                     | transloco
                       : {
-                          workers: stats()!.worker_count | formatNumber,
-                          threads: stats()!.thread_count | formatNumber,
+                          workers: stats()!.worker_count | number,
+                          threads: stats()!.thread_count | number,
                         }
                 }}
               </span>
@@ -126,46 +87,12 @@
                 <span class="font-medium"
                   >{{ "stats.image_queue.label" | transloco }}:</span
                 >
-                {{
-                  "stats.image_queue.value"
-                    | transloco
-                      : {
-                          requests: stats()!.queued_requests | formatNumber,
-                          amount:
-                            stats()!.queued_megapixelsteps / 20
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          prefix:
-                            stats()!.queued_megapixelsteps / 20 | siPrefix,
-                          unit: "",
-                        }
-                }}
-                <span class="tooltip-wrapper">
-                  <span class="dotted-underline">{{
-                    "average_images" | transloco
-                  }}</span>
-                  <span class="tooltip-text">
-                    <strong>{{
-                      (stats()!.queued_megapixelsteps
-                        | shiftDecimalsLeft
-                        | formatNumber: 2) +
-                        " " +
-                        (stats()!.queued_megapixelsteps | siPrefix: 1 : 2) +
-                        "pixelsteps"
-                    }}</strong
-                    ><br />
-                    <span class="tooltip-muted">({{ stats()!.queued_megapixelsteps | formatNumber }} megapixelsteps)</span
-                    ><br /><br />
-                    <span class="math-equation">{{
-                      "average_images.tooltip.line1" | transloco
-                    }}</span
-                    ><br /><br />
-                    {{ "average_images.tooltip.line2" | transloco }}<br /><br />
-                    <span class="math-equation">{{
-                      "average_images.tooltip.line3" | transloco
-                    }}</span>
+                {{ stats()!.queued_requests | number }} requests
+                @if (queuedImageWork(); as work) {
+                  <span class="text-secondary">
+                    (<app-unit-tooltip [unit]="work" />)
                   </span>
-                </span>
+                }
               </span>
             </li>
           </ul>
@@ -187,15 +114,11 @@
                     "stats.average_recent_performance_text.label" | transloco
                   }}:</span
                 >
-                {{
-                  "stats.average_recent_performance_text.value"
-                    | transloco
-                      : {
-                          performance:
-                            stats()!.past_minute_tokens / 60 | formatNumber: 1,
-                          prefix: stats()!.past_minute_tokens / 60 | siPrefix,
-                        }
-                }}
+                @if (textPerformanceRate(); as rate) {
+                  {{ rate.technical.value | number: '1.1-1' }}
+                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'tokens'" />
+                  per second
+                }
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -206,32 +129,12 @@
                 <span class="font-medium"
                   >{{ "stats.total_tokens.label" | transloco }}:</span
                 >
-                {{
-                  "stats.total_tokens.value"
-                    | transloco
-                      : {
-                          amount:
-                            textStats()!.tokens
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          prefix: textStats()!.tokens | siPrefix,
-                        }
-                }}
-                <span class="tooltip-wrapper">
-                  <span class="dotted-underline text-secondary">({{ textStats()!.tokens * 0.75 / 500 | shiftDecimalsLeft | formatNumber: 1 }} {{ textStats()!.tokens * 0.75 / 500 | siPrefix }}pages of text)</span>
-                  <span class="tooltip-text">
-                    <strong>{{ textStats()!.tokens * 0.75 / 500 | shiftDecimalsLeft | formatNumber: 1 }} {{ textStats()!.tokens * 0.75 / 500 | siPrefix }}pages of text</strong><br />
-                    <span class="tooltip-muted">({{ textStats()!.tokens | shiftDecimalsLeft | formatNumber: 2 }} {{ textStats()!.tokens | siPrefix }}tokens)</span><br /><br />
-                    <span class="math-equation">{{
-                      "pages_of_text.tooltip.line1" | transloco
-                    }}</span
-                    ><br /><br />
-                    {{ "pages_of_text.tooltip.line2" | transloco }}<br /><br />
-                    <span class="math-equation">{{
-                      "pages_of_text.tooltip.line3" | transloco
-                    }}</span>
+                @if (totalTokens(); as tokens) {
+                  {{ tokens.primary.formatted }}
+                  <span class="text-secondary">
+                    (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
                   </span>
-                </span>
+                }
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -242,21 +145,7 @@
                 <span class="font-medium"
                   >{{ "stats.total_texts.label" | transloco }}:</span
                 >
-                {{
-                  "stats.total_texts.value"
-                    | transloco
-                      : {
-                          amount:
-                            textStats()!.requests
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          unit:
-                            textStats()!.requests
-                            | siPrefix
-                            | cut: 1
-                            | uppercase,
-                        }
-                }}
+                {{ units.formatLargeNumber(textStats()!.requests, 'requests') }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -271,8 +160,8 @@
                   "stats.active_workers.value"
                     | transloco
                       : {
-                          workers: stats()!.text_worker_count | formatNumber,
-                          threads: stats()!.text_thread_count | formatNumber,
+                          workers: stats()!.text_worker_count | number,
+                          threads: stats()!.text_thread_count | number,
                         }
                 }}
               </span>
@@ -285,34 +174,12 @@
                 <span class="font-medium"
                   >{{ "stats.text_queue.label" | transloco }}:</span
                 >
-                {{
-                  "stats.text_queue.value"
-                    | transloco
-                      : {
-                          requests:
-                            stats()!.queued_text_requests | formatNumber,
-                          amount:
-                            stats()!.queued_tokens
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          prefix: stats()!.queued_tokens | siPrefix,
-                        }
-                }}
-                <span class="tooltip-wrapper">
-                  <span class="dotted-underline text-secondary">({{ stats()!.queued_tokens * 0.75 / 500 | shiftDecimalsLeft | formatNumber: 1 }} {{ stats()!.queued_tokens * 0.75 / 500 | siPrefix }}pages of text)</span>
-                  <span class="tooltip-text">
-                    <strong>{{ stats()!.queued_tokens * 0.75 / 500 | shiftDecimalsLeft | formatNumber: 1 }} {{ stats()!.queued_tokens * 0.75 / 500 | siPrefix }}pages of text</strong><br />
-                    <span class="tooltip-muted">({{ stats()!.queued_tokens | shiftDecimalsLeft | formatNumber: 2 }} {{ stats()!.queued_tokens | siPrefix }}tokens)</span><br /><br />
-                    <span class="math-equation">{{
-                      "pages_of_text.tooltip.line1" | transloco
-                    }}</span
-                    ><br /><br />
-                    {{ "pages_of_text.tooltip.line2" | transloco }}<br /><br />
-                    <span class="math-equation">{{
-                      "pages_of_text.tooltip.line3" | transloco
-                    }}</span>
+                {{ stats()!.queued_text_requests | number }} requests
+                @if (queuedTextWork(); as work) {
+                  <span class="text-secondary">
+                    (<app-unit-tooltip [unit]="work" />)
                   </span>
-                </span>
+                }
               </span>
             </li>
           </ul>
@@ -334,21 +201,7 @@
                     "stats.total_alchemy_processed.label" | transloco
                   }}:</span
                 >
-                {{
-                  "stats.total_alchemy_processed.value"
-                    | transloco
-                      : {
-                          amount:
-                            interrogationStats()!.processed
-                            | shiftDecimalsLeft
-                            | formatNumber: 1,
-                          unit:
-                            interrogationStats()!.processed
-                            | siPrefix
-                            | cut: 1
-                            | uppercase,
-                        }
-                }}
+                {{ units.formatLargeNumber(interrogationStats()!.processed, 'forms') }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -363,9 +216,8 @@
                   "stats.active_workers.value"
                     | transloco
                       : {
-                          workers: stats()!.interrogator_count | formatNumber,
-                          threads:
-                            stats()!.interrogator_thread_count | formatNumber,
+                          workers: stats()!.interrogator_count | number,
+                          threads: stats()!.interrogator_thread_count | number,
                         }
                 }}
               </span>
@@ -378,13 +230,7 @@
                 <span class="font-medium"
                   >{{ "stats.interrogation_queue.label" | transloco }}:</span
                 >
-                {{
-                  "stats.interrogation_queue.value"
-                    | transloco
-                      : {
-                          forms: stats()!.queued_forms | formatNumber,
-                        }
-                }}
+                {{ stats()!.queued_forms | number }} forms
               </span>
             </li>
           </ul>

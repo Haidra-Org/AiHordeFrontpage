@@ -2,36 +2,31 @@ import {
   Component,
   DestroyRef,
   afterNextRender,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { UpperCasePipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { CutPipe } from '../../../../pipes/cut.pipe';
-import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
 import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg.component';
-import { ShiftDecimalsLeftPipe } from '../../../../pipes/shift-decimals-left.pipe';
-import { SiPrefixPipe } from '../../../../pipes/si-prefix.pipe';
+import { UnitTooltipComponent } from '../../../../components/unit-tooltip/unit-tooltip.component';
 import { HordePerformance } from '../../../../types/horde-performance';
 import { SingleImageStatPoint } from '../../../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../../../types/single-text-stat-point';
 import { AiHordeService } from '../../../../services/ai-horde.service';
+import { UnitConversionService } from '../../../../services/unit-conversion.service';
 import { SingleInterrogationStatPoint } from '../../../../types/single-interrogation-stat-point';
 import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-homepage-stats',
-  standalone: true,
   imports: [
-    CutPipe,
-    FormatNumberPipe,
+    DecimalPipe,
     InlineSvgComponent,
-    ShiftDecimalsLeftPipe,
-    SiPrefixPipe,
     TranslocoPipe,
     TranslocoModule,
-    UpperCasePipe,
+    UnitTooltipComponent,
   ],
   templateUrl: './homepage-stats.component.html',
   styleUrl: './homepage-stats.component.css',
@@ -39,11 +34,51 @@ import { forkJoin } from 'rxjs';
 export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
+  public readonly units = inject(UnitConversionService);
 
   public stats = signal<HordePerformance | null>(null);
   public imageStats = signal<SingleImageStatPoint | null>(null);
   public textStats = signal<SingleTextStatPoint | null>(null);
   public interrogationStats = signal<SingleInterrogationStatPoint | null>(null);
+
+  // Computed synthesized units for real-time performance
+  public readonly imagePerformanceRate = computed(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return this.units.formatImagePerformanceRate(s.past_minute_megapixelsteps);
+  });
+
+  public readonly textPerformanceRate = computed(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return this.units.formatTextPerformanceRate(s.past_minute_tokens);
+  });
+
+  // Computed synthesized units for queued work
+  public readonly queuedImageWork = computed(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return this.units.formatQueuedImageWork(s.queued_megapixelsteps);
+  });
+
+  public readonly queuedTextWork = computed(() => {
+    const s = this.stats();
+    if (!s) return null;
+    return this.units.formatQueuedTextWork(s.queued_tokens);
+  });
+
+  // Computed synthesized units for totals
+  public readonly totalPixelsteps = computed(() => {
+    const s = this.imageStats();
+    if (!s) return null;
+    return this.units.formatTotalPixelsteps(s.ps);
+  });
+
+  public readonly totalTokens = computed(() => {
+    const s = this.textStats();
+    if (!s) return null;
+    return this.units.formatTotalTokens(s.tokens);
+  });
 
   constructor() {
     // Fetch stats only in the browser after rendering completes.

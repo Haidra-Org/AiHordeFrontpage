@@ -1,0 +1,139 @@
+<div class="card card-bg-secondary card-full form-stack">
+  <!-- Search Input -->
+  <div class="form-field">
+    <label for="style-search" class="sr-only">
+      {{ "styles.filters.search" | transloco }}
+    </label>
+    <div class="style-filters-search-wrapper">
+      <svg
+        class="style-filters-search-icon"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+        />
+      </svg>
+      <input
+        type="search"
+        id="style-search"
+        class="form-input style-filters-search-input"
+        [placeholder]="'styles.filters.search_placeholder' | transloco"
+        [value]="searchQuery()"
+        (input)="onSearchInput($any($event.target).value)"
+        [disabled]="loading()"
+      />
+    </div>
+  </div>
+
+  <!-- Filter Controls Row -->
+  <div class="form-row">
+    <!-- Sort Dropdown -->
+    <div class="form-field form-field-third">
+      <label for="style-sort" class="filter-label">
+        {{ "styles.filters.sort_by" | transloco }}
+      </label>
+      <select
+        id="style-sort"
+        class="form-input"
+        [value]="currentSort()"
+        (change)="onSortChange($any($event.target).value)"
+        [disabled]="loading()"
+      >
+        @for (option of sortOptions; track option.value) {
+          <option [value]="option.value">
+            {{ option.label | transloco }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <!-- Tag Filter -->
+    @if (availableTags().length > 0) {
+      <div class="form-field form-field-third">
+        <label for="style-tag" class="filter-label">
+          {{ "styles.filters.tag" | transloco }}
+        </label>
+        <select
+          id="style-tag"
+          class="form-input"
+          [value]="currentTag()"
+          (change)="onTagChange($any($event.target).value)"
+          [disabled]="loading()"
+        >
+          <option value="">{{ "styles.filters.all_tags" | transloco }}</option>
+          @for (tag of availableTags(); track tag) {
+            <option [value]="tag">{{ tag }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <!-- Model Filter -->
+    @if (availableModels().length > 0) {
+      <div class="form-field form-field-third">
+        <label for="style-model" class="filter-label">
+          {{ "styles.filters.model" | transloco }}
+        </label>
+        <select
+          id="style-model"
+          class="form-input"
+          [value]="currentModel()"
+          (change)="onModelChange($any($event.target).value)"
+          [disabled]="loading()"
+        >
+          <option value="">{{ "styles.filters.all_models" | transloco }}</option>
+          @for (model of availableModels(); track model) {
+            <option [value]="model">{{ model }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    <!-- Hide NSFW Checkbox -->
+    <div class="form-field form-checkbox style-filters-checkbox">
+      <input
+        type="checkbox"
+        id="hide-nsfw"
+        class="checkbox-input"
+        [checked]="hideNsfw()"
+        (change)="onHideNsfwChange($any($event.target).checked)"
+        [disabled]="loading()"
+      />
+      <label for="hide-nsfw" class="checkbox-label">
+        {{ "styles.filters.hide_nsfw" | transloco }}
+      </label>
+    </div>
+
+    <!-- Clear Filters Button -->
+    @if (hasActiveFilters()) {
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="clearFilters()"
+        [disabled]="loading()"
+      >
+        <svg
+          class="style-filters-clear-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18 18 6M6 6l12 12"
+          />
+        </svg>
+        {{ "styles.filters.clear" | transloco }}
+      </button>
+    }
+  </div>
+</div>

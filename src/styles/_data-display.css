@@ -1,0 +1,770 @@
+/* =================================================================
+   DATA DISPLAY STYLES
+   
+   Reusable patterns for displaying data, stats, and key-value pairs.
+   
+   Includes:
+   - Data item (label + value pairs)
+   - Data grids (responsive column layouts)
+   - Highlight boxes (gradient backgrounds for emphasis)
+   - Section dividers (internal section borders)
+   - Avatar circles
+   - Loading skeletons/placeholders
+   ================================================================= */
+
+/* =================================================================
+   DATA ITEMS - Label + Value pairs
+   ================================================================= */
+
+/* Base data item - vertical stack */
+.data-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Data item with background - for stat boxes */
+.data-item-box {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+}
+
+.dark .data-item-box {
+  border-color: var(--color-border-primary);
+}
+
+/* Centered variant */
+.data-item-centered {
+  text-align: center;
+  align-items: center;
+}
+
+/* Data item label */
+.data-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.dark .data-label {
+  color: var(--dark-text-color);
+}
+
+/* Data label with top margin - for spacing below values */
+.data-label-spaced {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.dark .data-label-spaced {
+  color: var(--color-text-secondary);
+}
+
+/* Data item value */
+.data-value {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dark .data-value {
+  color: var(--color-bg-primary);
+}
+
+/* Large data value - for prominent stats */
+.data-value-lg {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.dark .data-value-lg {
+  color: var(--color-bg-primary);
+}
+
+/* Extra large data value - for hero stats */
+.data-value-xl {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--color-brand-purple);
+}
+
+.dark .data-value-xl {
+  color: var(--color-brand-purple);
+}
+
+/* =================================================================
+   DATA GRIDS - Responsive column layouts
+   ================================================================= */
+
+/* 2-column grid */
+.data-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* 2-3 column responsive grid */
+.data-grid-2-3 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+  .data-grid-2-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 1-2 column responsive grid */
+.data-grid-1-2 {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .data-grid-1-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 1-2-3 column responsive grid */
+.data-grid-1-2-3 {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .data-grid-1-2-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .data-grid-1-2-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* 2-4 column responsive grid */
+.data-grid-2-4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .data-grid-2-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* =================================================================
+   HIGHLIGHT BOXES - Gradient backgrounds for emphasis
+   ================================================================= */
+
+/* Purple-blue gradient highlight - for kudos, important stats */
+.highlight-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    to bottom right,
+    rgb(243 232 255),
+    rgb(219 234 254)
+  );
+}
+
+.dark .highlight-box {
+  background: linear-gradient(
+    to bottom right,
+    color-mix(in srgb, var(--color-brand-purple) 30%, transparent),
+    color-mix(in srgb, var(--color-brand-blue) 30%, transparent)
+  );
+}
+
+/* =================================================================
+   SECTION DIVIDERS - Internal section separators
+   ================================================================= */
+
+/* Top border divider */
+.section-divider-top {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.dark .section-divider-top {
+  border-top-color: var(--color-border-primary);
+}
+
+/* Bottom border divider */
+.section-divider-bottom {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border-primary);
+}
+
+.dark .section-divider-bottom {
+  border-bottom-color: var(--color-border-primary);
+}
+
+/* =================================================================
+   AVATAR CIRCLES
+   ================================================================= */
+
+/* Base avatar circle */
+.avatar-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+/* Large avatar - 5rem */
+.avatar-lg {
+  width: 5rem;
+  height: 5rem;
+}
+
+/* Avatar with gradient background */
+.avatar-gradient {
+  background: linear-gradient(
+    to bottom right,
+    var(--color-brand-purple),
+    var(--color-brand-blue)
+  );
+}
+
+/* Avatar text */
+.avatar-text {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-bg-primary);
+}
+
+/* =================================================================
+   SECTION TITLE - Small caps section headers
+   ================================================================= */
+
+.section-title-sm {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark .section-title-sm {
+  color: var(--dark-text-color);
+}
+
+/* =================================================================
+   LOADING SKELETONS / PLACEHOLDERS
+   ================================================================= */
+
+/* Placeholder container */
+.skeleton-box {
+  border: 1px solid var(--color-border-primary);
+  border-radius: 0.75rem;
+  background-color: var(--color-bg-secondary);
+  padding: 1rem;
+  min-height: 8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.dark .skeleton-box {
+  border-color: var(--color-border-primary);
+  background-color: var(--color-text-primary);
+}
+
+/* Dashed border variant for missing items */
+.skeleton-box-dashed {
+  border-style: dashed;
+}
+
+/* Placeholder animated bar */
+.skeleton-bar {
+  height: 0.625rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-primary),
+    var(--color-text-secondary),
+    var(--color-border-primary)
+  );
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.dark .skeleton-bar {
+  background: linear-gradient(
+    90deg,
+    var(--color-border-primary),
+    var(--color-text-secondary),
+    var(--color-border-primary)
+  );
+}
+
+/* Skeleton bar widths */
+.skeleton-bar-sm {
+  width: 40%;
+}
+
+.skeleton-bar-md {
+  width: 60%;
+}
+
+.skeleton-bar-lg {
+  width: 70%;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.4;
+  }
+}
+
+/* =================================================================
+   TWO-COLUMN CARD LAYOUT
+   ================================================================= */
+
+/* Side-by-side cards container */
+.card-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .card-row-2 {
+    grid-template-columns: repeat(2, 1fr);
+    align-items: stretch;
+  }
+}
+
+.card-row-2 > .card {
+  max-width: none;
+  text-align: left;
+}
+
+/* =================================================================
+   ACTION BUTTON ROW
+   ================================================================= */
+
+/* Horizontal/vertical responsive button group */
+.action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .action-row {
+    flex-direction: row;
+  }
+}
+
+/* =================================================================
+   WORKER GRID
+   ================================================================= */
+
+/* 1-2-3 column responsive grid for workers */
+.worker-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .worker-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .worker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =================================================================
+   WORKER CARDS - Theme-aware worker display cards
+   ================================================================= */
+
+/* Worker card base */
+.worker-card-normal {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: var(--color-bg-primary);
+  border: 2px solid var(--color-border-secondary);
+}
+
+.dark .worker-card-normal {
+  background-color: unset;
+  border: 1px solid var(--color-border-primary);
+}
+
+/* Worker card with issue state */
+.worker-card-issue {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: rgb(254 242 242);
+  border: 1px solid rgb(252 165 165);
+}
+
+.dark .worker-card-issue {
+  background-color: rgb(127 29 29 / 0.3);
+  border-color: rgb(185 28 28 / 0.5);
+}
+
+/* Worker card section dividers */
+.worker-card-section {
+  border-top: 1px solid var(--color-border-primary);
+}
+
+.dark .worker-card-section {
+  border-top-color: var(--color-border-primary);
+}
+
+/* Worker card info rows */
+.worker-card-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.worker-card-label {
+  color: var(--color-text-secondary);
+}
+
+.dark .worker-card-label {
+  color: var(--color-text-secondary);
+}
+
+.worker-card-value {
+  color: var(--color-text-primary);
+}
+
+.dark .worker-card-value {
+  color: var(--color-border-primary);
+}
+
+/* Worker status icon containers */
+.worker-status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.worker-status-icon-success {
+  background-color: rgb(220 252 231);
+  color: rgb(22 163 74);
+}
+
+.dark .worker-status-icon-success {
+  background-color: rgb(22 101 52);
+  color: rgb(74 222 128);
+}
+
+.worker-status-icon-error {
+  background-color: rgb(254 226 226);
+  color: rgb(220 38 38);
+}
+
+.dark .worker-status-icon-error {
+  background-color: rgb(127 29 29);
+  color: rgb(248 113 113);
+}
+
+/* Worker status indicator colors */
+.worker-indicator-yellow {
+  color: rgb(202 138 4);
+}
+
+.dark .worker-indicator-yellow {
+  color: rgb(250 204 21);
+}
+
+.worker-indicator-red {
+  color: rgb(220 38 38);
+}
+
+.dark .worker-indicator-red {
+  color: rgb(248 113 113);
+}
+
+.worker-indicator-green {
+  color: rgb(22 163 74);
+}
+
+.dark .worker-indicator-green {
+  color: rgb(74 222 128);
+}
+
+/* Worker capability badges */
+.worker-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  background-color: var(--color-border-secondary);
+  color: var(--color-text-secondary);
+}
+
+.dark .worker-badge {
+  background-color: var(--green-background);
+  color: var(--color-border-primary);
+}
+
+/* Worker card link style */
+.worker-link {
+  color: var(--color-brand-blue);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.worker-link:hover {
+  color: var(--color-brand-blue-hover);
+  text-decoration: underline;
+}
+
+.dark .worker-link {
+  color: var(--color-brand-blue);
+}
+
+.dark .worker-link:hover {
+  color: var(--color-brand-blue-hover);
+}
+
+/* Worker card button styles */
+.worker-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: var(--color-border-secondary);
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.worker-btn:hover {
+  background-color: var(--color-border-primary);
+  color: var(--color-text-primary);
+}
+
+.dark .worker-btn {
+  color: var(--color-border-primary);
+  background-color: var(--bg-gray-600);
+}
+
+.dark .worker-btn:hover {
+  background-color: var(--color-text-secondary);
+  color: var(--color-bg-primary);
+}
+
+.worker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Models button - fits with overall theme */
+.worker-btn-models {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(37, 99, 235);
+  background-color: rgb(219, 234, 254);
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.worker-btn-models:hover {
+  background-color: rgb(191, 219, 254);
+  color: rgb(29, 78, 216);
+}
+
+.dark .worker-btn-models {
+  color: rgb(147, 197, 253);
+  background-color: rgb(30, 58, 138);
+}
+
+.dark .worker-btn-models:hover {
+  background-color: rgb(37, 99, 235);
+  color: rgb(219, 234, 254);
+}
+
+/* Maintenance button - yellow/warning theme */
+.worker-btn-maintenance {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(146, 64, 14);
+  background-color: rgb(254, 243, 199);
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.worker-btn-maintenance:hover {
+  background-color: rgb(253, 224, 71);
+  color: rgb(113, 63, 18);
+}
+
+.dark .worker-btn-maintenance {
+  color: rgb(253, 224, 71);
+  background-color: rgb(113, 63, 18);
+}
+
+.dark .worker-btn-maintenance:hover {
+  background-color: rgb(161, 98, 7);
+  color: rgb(254, 243, 199);
+}
+
+/* Pause button - red/danger theme */
+.worker-btn-pause {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(185, 28, 28);
+  background-color: rgb(254, 226, 226);
+  border-radius: 0.5rem;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.worker-btn-pause:hover {
+  background-color: rgb(252, 165, 165);
+  color: rgb(153, 27, 27);
+}
+
+.dark .worker-btn-pause {
+  color: rgb(252, 165, 165);
+  background-color: rgb(153, 27, 27);
+}
+
+.dark .worker-btn-pause:hover {
+  background-color: rgb(185, 28, 28);
+  color: rgb(254, 226, 226);
+}
+
+.worker-btn-models:disabled,
+.worker-btn-maintenance:disabled,
+.worker-btn-pause:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Worker messages section */
+.worker-message {
+  font-size: 0.75rem;
+  background-color: var(--color-bg-secondary);
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+}
+
+.dark .worker-message {
+  background-color: var(--color-border-primary);
+}
+
+/* =================================================================
+   RECORDS SECTION - Data record containers
+   ================================================================= */
+
+/* Records section wrapper - consistent spacing for record groups */
+.records-section-wrapper {
+  margin-top: 1rem;
+}
+
+/* Record group container - spacing between different record types */
+.record-group {
+  margin-bottom: 2rem;
+}
+
+.record-group:last-child {
+  margin-bottom: 0;
+}
+
+/* =================================================================
+   PARAMETER GRID - Key-value pairs in responsive grid
+   ================================================================= */
+
+/* Parameter grid container */
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .param-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Single parameter item */
+.param-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Full-width parameter */
+.param-item-full {
+  grid-column: 1 / -1;
+}
+
+/* Parameter label (dt) */
+.param-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  color: var(--color-text-muted);
+}
+
+.dark .param-label {
+  color: rgb(107 114 128);
+}
+
+/* Parameter value (dd) */
+.param-value {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.dark .param-value {
+  color: rgb(229 231 235);
+}

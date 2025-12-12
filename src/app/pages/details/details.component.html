@@ -1,0 +1,53 @@
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-hero">
+        {{ "details.title" | transloco }}
+      </h1>
+      <p class="text-intro">
+        {{ "details.subtitle" | transloco }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
+  <div class="container-page-content">
+    <!-- Tab Navigation -->
+    <div class="details-tabs">
+      <a
+        routerLink="workers"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.workers" | transloco }}
+      </a>
+      <a
+        routerLink="models"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.models" | transloco }}
+      </a>
+      <a
+        routerLink="usage"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.usage_stats" | transloco }}
+      </a>
+      <a
+        routerLink="styles"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.styles" | transloco }}
+      </a>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="details-content">
+      <router-outlet />
+    </div>
+  </div>
+</section>

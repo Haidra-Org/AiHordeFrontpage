@@ -16,14 +16,71 @@
   font-weight: 500;
 }
 
+/* Badge container - wrapping flex container for badge groups */
+.badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Badge outline - bordered, transparent background */
+.badge-outline {
+  background-color: transparent;
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+.dark .badge-outline {
+  border-color: rgb(75 85 99);
+  color: rgb(156 163 175);
+}
+
+/* Badge online status - green with dot indicator */
+.badge-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background-color: rgb(220 252 231);
+  color: rgb(22 101 52);
+  border: 1px solid rgb(134 239 172);
+}
+
+.dark .badge-online {
+  background-color: rgb(20 83 45 / 0.5);
+  color: rgb(134 239 172);
+  border-color: rgb(22 101 52);
+}
+
+.badge-online::before {
+  content: "";
+  display: block;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background-color: rgb(22 163 74);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.dark .badge-online::before {
+  background-color: rgb(74 222 128);
+}
+
 .badge-primary {
-  background-color: rgb(219 234 254);
-  color: rgb(30 64 175);
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand-blue) 20%,
+    var(--color-bg-primary)
+  );
+  color: var(--color-brand-blue-hover);
 }
 
 .dark .badge-primary {
-  background-color: rgb(30 58 138);
-  color: rgb(147 197 253);
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand-blue) 40%,
+    transparent
+  );
+  color: var(--color-brand-blue);
 }
 
 .badge-secondary {
@@ -77,13 +134,21 @@
 }
 
 .badge-purple {
-  background-color: rgb(243 232 255);
-  color: rgb(107 33 168);
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand-purple) 20%,
+    var(--color-bg-primary)
+  );
+  color: var(--color-brand-purple-hover);
 }
 
 .dark .badge-purple {
-  background-color: rgb(88 28 135);
-  color: rgb(216 180 254);
+  background-color: color-mix(
+    in srgb,
+    var(--color-brand-purple) 40%,
+    transparent
+  );
+  color: var(--color-brand-purple);
 }
 
 .badge-pink {

@@ -41,7 +41,9 @@ nav {
 
 .logo-link:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-brand-purple), 0 0 0 4px rgba(147, 51, 234, 0.1);
+  box-shadow:
+    0 0 0 2px var(--color-brand-purple),
+    0 0 0 4px rgba(147, 51, 234, 0.1);
 }
 
 .logo-link:hover {

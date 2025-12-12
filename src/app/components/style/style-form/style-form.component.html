@@ -1,0 +1,548 @@
+<div class="card card-full card-bg-primary form-stack">
+  <!-- View Toggle -->
+  <div class="form-header">
+    <h3 class="text-primary">
+      @if (mode() === "create") {
+        @if (isImageStyle()) {
+          {{ "styles.form.create_image_style" | transloco }}
+        } @else {
+          {{ "styles.form.create_text_style" | transloco }}
+        }
+      } @else {
+        {{ "styles.form.edit_style" | transloco }}
+      }
+    </h3>
+    <button
+      type="button"
+      class="btn-source-control"
+      (click)="toggleJsonView()"
+      [attr.aria-pressed]="showJsonView()"
+    >
+      @if (showJsonView()) {
+        <svg
+          class="form-toggle-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
+          />
+        </svg>
+        {{ "styles.form.show_form" | transloco }}
+      } @else {
+        <svg
+          class="form-toggle-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
+          />
+        </svg>
+        {{ "styles.form.show_json" | transloco }}
+      }
+    </button>
+  </div>
+
+  @if (showJsonView()) {
+    <!-- JSON Editor View -->
+    <div class="form-json">
+      <label for="json-editor" class="form-label">
+        {{ "styles.form.json_content" | transloco }}
+      </label>
+      <textarea
+        id="json-editor"
+        class="form-input form-code"
+        [class.form-input-error]="jsonError()"
+        [value]="jsonContent()"
+        (input)="onJsonInput($any($event.target).value)"
+        rows="20"
+        spellcheck="false"
+      ></textarea>
+      @if (jsonError()) {
+        <p class="text-error">{{ jsonError() }}</p>
+      }
+    </div>
+  } @else {
+    <!-- Form Fields View -->
+    <form [formGroup]="form" class="form-stack">
+      <!-- Basic Info Section -->
+      <div class="card card-bg-secondary card-full form-section">
+        <h4 class="text-primary">
+          {{ "styles.form.section.basic" | transloco }}
+        </h4>
+
+        <div class="form-field">
+          <label for="style-name" class="form-label">
+            {{ "styles.form.name" | transloco }}
+            <span class="text-error">*</span>
+          </label>
+          <input
+            type="text"
+            id="style-name"
+            formControlName="name"
+            class="form-input"
+            [placeholder]="'styles.form.name_placeholder' | transloco"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="style-info" class="form-label">
+            {{ "styles.form.description" | transloco }}
+          </label>
+          <textarea
+            id="style-info"
+            formControlName="info"
+            class="form-input"
+            rows="3"
+            [placeholder]="'styles.form.description_placeholder' | transloco"
+          ></textarea>
+          <p class="form-hint">
+            {{ "styles.form.description_hint" | transloco }}
+          </p>
+        </div>
+
+        <div class="form-field">
+          <label for="style-prompt" class="form-label">
+            {{ "styles.form.prompt" | transloco }}
+            <span class="text-error">*</span>
+          </label>
+          <textarea
+            id="style-prompt"
+            formControlName="prompt"
+            class="form-input"
+            rows="4"
+            [placeholder]="
+              isImageStyle()
+                ? ('styles.form.prompt_placeholder_image' | transloco)
+                : ('styles.form.prompt_placeholder_text' | transloco)
+            "
+          ></textarea>
+          <p class="form-hint">
+            @if (isImageStyle()) {
+              {{ "styles.form.prompt_hint_image" | transloco }}
+            } @else {
+              {{ "styles.form.prompt_hint_text" | transloco }}
+            }
+          </p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field form-field-half">
+            <label for="style-tags" class="form-label">
+              {{ "styles.form.tags" | transloco }}
+            </label>
+            <input
+              type="text"
+              id="style-tags"
+              formControlName="tags"
+              class="form-input"
+              [placeholder]="'styles.form.tags_placeholder' | transloco"
+            />
+          </div>
+
+          <div class="form-field form-field-half">
+            <label for="style-models" class="form-label">
+              {{ "styles.form.models" | transloco }}
+            </label>
+            <input
+              type="text"
+              id="style-models"
+              formControlName="models"
+              class="form-input"
+              [placeholder]="'styles.form.models_placeholder' | transloco"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-checkbox">
+            <input
+              type="checkbox"
+              id="style-public"
+              formControlName="public"
+              class="checkbox-input"
+            />
+            <label for="style-public" class="checkbox-label">
+              {{ "styles.form.public" | transloco }}
+            </label>
+          </div>
+
+          <div class="form-checkbox">
+            <input
+              type="checkbox"
+              id="style-nsfw"
+              formControlName="nsfw"
+              class="checkbox-input"
+            />
+            <label for="style-nsfw" class="checkbox-label">
+              {{ "styles.form.nsfw" | transloco }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Image Style Parameters -->
+      @if (isImageStyle()) {
+        <div class="card card-bg-secondary card-full form-section">
+          <h4 class="text-primary">
+            {{ "styles.form.section.image_params" | transloco }}
+          </h4>
+
+          <div class="form-row">
+            <div class="form-field form-field-third">
+              <label for="style-sampler" class="form-label">
+                {{ "styles.form.sampler" | transloco }}
+              </label>
+              <select
+                id="style-sampler"
+                formControlName="sampler_name"
+                class="form-input"
+              >
+                <option value="">{{ "styles.form.default" | transloco }}</option>
+                <option value="k_euler">k_euler</option>
+                <option value="k_euler_a">k_euler_a</option>
+                <option value="k_heun">k_heun</option>
+                <option value="k_dpm_2">k_dpm_2</option>
+                <option value="k_dpm_2_a">k_dpm_2_a</option>
+                <option value="k_dpmpp_2s_a">k_dpmpp_2s_a</option>
+                <option value="k_dpmpp_2m">k_dpmpp_2m</option>
+                <option value="k_dpmpp_sde">k_dpmpp_sde</option>
+                <option value="dpmsolver">dpmsolver</option>
+                <option value="k_lms">k_lms</option>
+                <option value="DDIM">DDIM</option>
+                <option value="lcm">lcm</option>
+              </select>
+            </div>
+
+            <div class="form-field form-field-third">
+              <label for="style-cfg" class="form-label">
+                {{ "styles.form.cfg_scale" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-cfg"
+                formControlName="cfg_scale"
+                class="form-input"
+                min="0"
+                max="100"
+                step="0.5"
+              />
+            </div>
+
+            <div class="form-field form-field-third">
+              <label for="style-steps" class="form-label">
+                {{ "styles.form.steps" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-steps"
+                formControlName="steps"
+                class="form-input"
+                min="1"
+                max="500"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field form-field-third">
+              <label for="style-width" class="form-label">
+                {{ "styles.form.width" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-width"
+                formControlName="width"
+                class="form-input"
+                min="64"
+                max="3072"
+                step="64"
+              />
+            </div>
+
+            <div class="form-field form-field-third">
+              <label for="style-height" class="form-label">
+                {{ "styles.form.height" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-height"
+                formControlName="height"
+                class="form-input"
+                min="64"
+                max="3072"
+                step="64"
+              />
+            </div>
+
+            <div class="form-field form-field-third">
+              <label for="style-clip-skip" class="form-label">
+                {{ "styles.form.clip_skip" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-clip-skip"
+                formControlName="clip_skip"
+                class="form-input"
+                min="1"
+                max="12"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-karras"
+                formControlName="karras"
+                class="checkbox-input"
+              />
+              <label for="style-karras" class="checkbox-label">
+                {{ "styles.form.karras" | transloco }}
+              </label>
+            </div>
+
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-tiling"
+                formControlName="tiling"
+                class="checkbox-input"
+              />
+              <label for="style-tiling" class="checkbox-label">
+                {{ "styles.form.tiling" | transloco }}
+              </label>
+            </div>
+
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-hires-fix"
+                formControlName="hires_fix"
+                class="checkbox-input"
+              />
+              <label for="style-hires-fix" class="checkbox-label">
+                {{ "styles.form.hires_fix" | transloco }}
+              </label>
+            </div>
+
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-transparent"
+                formControlName="transparent"
+                class="checkbox-input"
+              />
+              <label for="style-transparent" class="checkbox-label">
+                {{ "styles.form.transparent" | transloco }}
+              </label>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="style-post-processing" class="form-label">
+              {{ "styles.form.post_processing" | transloco }}
+            </label>
+            <input
+              type="text"
+              id="style-post-processing"
+              formControlName="post_processing"
+              class="form-input"
+              [placeholder]="
+                'styles.form.post_processing_placeholder' | transloco
+              "
+            />
+          </div>
+
+          <div class="form-field">
+            <label for="style-loras" class="form-label">
+              {{ "styles.form.loras" | transloco }}
+            </label>
+            <textarea
+              id="style-loras"
+              formControlName="loras_json"
+              class="form-input form-code"
+              rows="4"
+              [placeholder]="'styles.form.loras_placeholder' | transloco"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="style-tis" class="form-label">
+              {{ "styles.form.textual_inversions" | transloco }}
+            </label>
+            <textarea
+              id="style-tis"
+              formControlName="tis_json"
+              class="form-input form-code"
+              rows="4"
+              [placeholder]="'styles.form.tis_placeholder' | transloco"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="style-sharedkey" class="form-label">
+              {{ "styles.form.shared_key" | transloco }}
+            </label>
+            <input
+              type="text"
+              id="style-sharedkey"
+              formControlName="sharedkey"
+              class="form-input"
+              [placeholder]="'styles.form.shared_key_placeholder' | transloco"
+            />
+          </div>
+        </div>
+      }
+
+      <!-- Text Style Parameters -->
+      @if (!isImageStyle()) {
+        <div class="card card-bg-secondary card-full form-section">
+          <h4 class="text-primary">
+            {{ "styles.form.section.text_params" | transloco }}
+          </h4>
+
+          <div class="form-row">
+            <div class="form-field form-field-quarter">
+              <label for="style-temperature" class="form-label">
+                {{ "styles.form.temperature" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-temperature"
+                formControlName="temperature"
+                class="form-input"
+                min="0"
+                max="5"
+                step="0.1"
+              />
+            </div>
+
+            <div class="form-field form-field-quarter">
+              <label for="style-top-p" class="form-label">
+                {{ "styles.form.top_p" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-top-p"
+                formControlName="top_p"
+                class="form-input"
+                min="0.001"
+                max="1"
+                step="0.01"
+              />
+            </div>
+
+            <div class="form-field form-field-quarter">
+              <label for="style-top-k" class="form-label">
+                {{ "styles.form.top_k" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-top-k"
+                formControlName="top_k"
+                class="form-input"
+                min="0"
+                max="200"
+              />
+            </div>
+
+            <div class="form-field form-field-quarter">
+              <label for="style-rep-pen" class="form-label">
+                {{ "styles.form.rep_pen" | transloco }}
+              </label>
+              <input
+                type="number"
+                id="style-rep-pen"
+                formControlName="rep_pen"
+                class="form-input"
+                min="1"
+                max="3"
+                step="0.05"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-singleline"
+                formControlName="singleline"
+                class="checkbox-input"
+              />
+              <label for="style-singleline" class="checkbox-label">
+                {{ "styles.form.singleline" | transloco }}
+              </label>
+            </div>
+
+            <div class="form-checkbox">
+              <input
+                type="checkbox"
+                id="style-frmttriminc"
+                formControlName="frmttriminc"
+                class="checkbox-input"
+              />
+              <label for="style-frmttriminc" class="checkbox-label">
+                {{ "styles.form.trim_incomplete" | transloco }}
+              </label>
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="style-stop-sequence" class="form-label">
+              {{ "styles.form.stop_sequence" | transloco }}
+            </label>
+            <input
+              type="text"
+              id="style-stop-sequence"
+              formControlName="stop_sequence"
+              class="form-input"
+              [placeholder]="'styles.form.stop_sequence_placeholder' | transloco"
+            />
+          </div>
+        </div>
+      }
+    </form>
+  }
+
+  <!-- Form Actions -->
+  <div class="form-actions">
+    <button
+      type="button"
+      class="btn-source-control"
+      (click)="onCancel()"
+      [disabled]="saving()"
+    >
+      {{ "styles.form.cancel" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="onSubmit()"
+      [disabled]="saving() || (!showJsonView() && !form.valid) || (showJsonView() && jsonError())"
+    >
+      @if (saving()) {
+        {{ "styles.form.saving" | transloco }}
+      } @else if (mode() === "create") {
+        {{ "styles.form.create" | transloco }}
+      } @else {
+        {{ "styles.form.save" | transloco }}
+      }
+    </button>
+  </div>
+</div>

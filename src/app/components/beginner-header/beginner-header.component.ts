@@ -8,7 +8,6 @@ import { TranslocoModule } from '@jsverse/transloco';
   standalone: true,
   imports: [CommonModule, RouterLink, TranslocoModule],
   templateUrl: './beginner-header.component.html',
-  styleUrl: './beginner-header.component.css',
 })
 export class BeginnerHeaderComponent {
   /**
