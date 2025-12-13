@@ -37,9 +37,9 @@ export const authGuard: CanActivateFn = () => {
 /**
  * Guard that prompts before navigating away when there are unsaved changes.
  */
-export const unsavedChangesGuard: CanDeactivateFn<{ isDirty: () => boolean }> = (
-  component,
-) => {
+export const unsavedChangesGuard: CanDeactivateFn<{
+  isDirty: () => boolean;
+}> = (component) => {
   const platformId = inject(PLATFORM_ID);
 
   if (!isPlatformBrowser(platformId)) {

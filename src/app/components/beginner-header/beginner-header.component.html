@@ -14,7 +14,7 @@
       <!-- 3-column feature cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @if (!disableLinks()) {
-          <a routerLink="/guis" class="feature-card">
+          <a routerLink="/guis/" class="feature-card">
             <div class="feature-card-icon feature-card-icon-purple">
               <svg
                 class="w-6 h-6"
@@ -64,7 +64,7 @@
         }
 
         @if (!disableLinks()) {
-          <a routerLink="/guis" class="feature-card">
+          <a routerLink="/guis/" class="feature-card">
             <div class="feature-card-icon feature-card-icon-blue">
               <svg
                 class="w-6 h-6"
@@ -126,7 +126,7 @@
         }
 
         @if (!disableLinks()) {
-          <a routerLink="/guis" class="feature-card">
+          <a routerLink="/guis/" class="feature-card">
             <div class="feature-card-icon feature-card-icon-green">
               <svg
                 class="w-6 h-6"
@@ -185,7 +185,7 @@
       <!-- Optional "View all Frontends" button -->
       @if (showButton()) {
         <div class="mt-4">
-          <a routerLink="/guis" class="btn-purple inline-block">
+          <a routerLink="/guis/" class="btn-purple inline-block">
             {{ "homepage_guis.view_all_guis" | transloco }}
           </a>
         </div>

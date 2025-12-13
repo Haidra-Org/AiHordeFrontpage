@@ -31,10 +31,7 @@ import {
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import {
-  highlightJson,
-  stringifyAsJson,
-} from '../../../helper/json-formatter';
+import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
 type DialogType = 'resetSuspicion';
 
@@ -132,9 +129,7 @@ export class UserManagementComponent implements OnInit {
   public stylesJson = computed(() =>
     stringifyAsJson(this.selectedUser()?.styles ?? []),
   );
-  public userJsonHighlighted = computed(() =>
-    highlightJson(this.userJson()),
-  );
+  public userJsonHighlighted = computed(() => highlightJson(this.userJson()));
   public workersJsonHighlighted = computed(() =>
     highlightJson(this.workersJson()),
   );
@@ -356,10 +351,7 @@ export class UserManagementComponent implements OnInit {
 
     if (target instanceof HTMLInputElement && target.type === 'checkbox') {
       (signalRef as ReturnType<typeof signal<boolean>>).set(target.checked);
-    } else if (
-      target instanceof HTMLInputElement &&
-      target.type === 'number'
-    ) {
+    } else if (target instanceof HTMLInputElement && target.type === 'number') {
       const rawValue = target.value;
       // Handle float for usage multiplier, integer for others
       if (field === 'usageMultiplier') {
@@ -687,6 +679,15 @@ export class UserManagementComponent implements OnInit {
 
   public onWorkerUpdated(): void {
     this.loadUserWorkers();
+  }
+
+  public onWorkerDeleted(workerId: string): void {
+    // Remove worker from the list immediately
+    this.userWorkers.update((workers) =>
+      workers.filter((w) => w.id !== workerId),
+    );
+    // Show success toast
+    this.showToast('success', 'Worker deleted successfully! Note: It may take up to a minute for the API to reflect this change.');
   }
 
   public regenerateProxyPasskey(): void {

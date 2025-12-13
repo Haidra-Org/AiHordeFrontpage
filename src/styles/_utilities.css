@@ -130,7 +130,8 @@
 .code-block {
   margin: 0;
   padding: 1rem;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.875rem;
   line-height: 1.5;
   color: var(--color-text-primary);

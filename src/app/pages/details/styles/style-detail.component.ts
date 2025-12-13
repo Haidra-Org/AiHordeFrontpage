@@ -12,13 +12,21 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../../services/auth.service';
 import { StyleService } from '../../../services/style.service';
-import { ImageStyle, isImageStyle, isTextStyle, TextStyle } from '../../../types/style';
-import { UpdateImageStyleInput, UpdateTextStyleInput } from '../../../types/style-api';
-import { StyleFormComponent, StyleFormSubmitEvent } from '../../../components/style/style-form/style-form.component';
 import {
-  highlightJson,
-  stringifyAsJson,
-} from '../../../helper/json-formatter';
+  ImageStyle,
+  isImageStyle,
+  isTextStyle,
+  TextStyle,
+} from '../../../types/style';
+import {
+  UpdateImageStyleInput,
+  UpdateTextStyleInput,
+} from '../../../types/style-api';
+import {
+  StyleFormComponent,
+  StyleFormSubmitEvent,
+} from '../../../components/style/style-form/style-form.component';
+import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
 type StyleType = 'image' | 'text';
 
@@ -100,20 +108,20 @@ export class StyleDetailComponent implements OnInit {
     return stringifyAsJson(style);
   });
 
-  public styleJsonHighlighted = computed(() =>
-    highlightJson(this.styleJson()),
-  );
+  public styleJsonHighlighted = computed(() => highlightJson(this.styleJson()));
 
   public ngOnInit(): void {
     // Watch for route param changes
-    this.route.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      const type = params['type'] as StyleType;
-      const styleId = params['styleId'];
-      if (type && styleId) {
-        this.styleType.set(type);
-        this.loadStyle(styleId, type);
-      }
-    });
+    this.route.params
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const type = params['type'] as StyleType;
+        const styleId = params['styleId'];
+        if (type && styleId) {
+          this.styleType.set(type);
+          this.loadStyle(styleId, type);
+        }
+      });
   }
 
   private loadStyle(styleId: string, type: StyleType): void {

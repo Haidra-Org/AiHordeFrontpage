@@ -1,4 +1,24 @@
 <div class="admin-container-lg">
+  <!-- Deletion Success Toast -->
+  @if (deletionSuccessMessage()) {
+    <div class="toast toast-success" role="status" aria-live="polite">
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span>{{ "admin.workers.deletion_success" | transloco }}</span>
+    </div>
+  }
+
   <!-- Header -->
   <div class="admin-header">
     <h1 class="admin-heading-page">
@@ -8,7 +28,12 @@
 
   @if (errorMessage()) {
     <div class="toast toast-error" role="alert" aria-live="assertive">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -167,20 +192,20 @@
               class="btn-icon shrink-0"
               [title]="'admin.workers.stats.expand' | transloco"
             >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -216,127 +241,126 @@
 
           <!-- Basic Stats Grid -->
           <div class="data-grid-1-2-3 mb-6">
-          <!-- Total Workers -->
-          <div class="data-item-box admin-bg-dark">
-            <div class="data-label">
-              {{ "admin.workers.stats.total_workers" | transloco }}
+            <!-- Total Workers -->
+            <div class="data-item-box admin-bg-dark">
+              <div class="data-label">
+                {{ "admin.workers.stats.total_workers" | transloco }}
+              </div>
+              <div class="data-value-lg">{{ totalWorkers() }}</div>
             </div>
-            <div class="data-value-lg">{{ totalWorkers() }}</div>
-          </div>
 
-          <!-- Total Threads -->
-          <div class="data-item-box admin-bg-dark">
-            <div class="data-label">
-              {{ "admin.workers.stats.total_threads" | transloco }}
+            <!-- Total Threads -->
+            <div class="data-item-box admin-bg-dark">
+              <div class="data-label">
+                {{ "admin.workers.stats.total_threads" | transloco }}
+              </div>
+              <div class="data-value-lg">{{ totalThreads() }}</div>
             </div>
-            <div class="data-value-lg">{{ totalThreads() }}</div>
-          </div>
 
-          <!-- Total Performance (MPS/S or tokens/s or mean seconds per form) -->
-          <div class="data-item-box admin-bg-dark">
-            <div class="data-label">
-              @if (workerType() === "image") {
-                {{ "admin.workers.stats.total_mps" | transloco }}
-              } @else if (workerType() === "text") {
-                {{ "admin.workers.stats.total_tokens" | transloco }}
-              } @else {
-                {{ "admin.workers.stats.mean_interrogation" | transloco }}
-              }
+            <!-- Total Performance (MPS/S or tokens/s or mean seconds per form) -->
+            <div class="data-item-box admin-bg-dark">
+              <div class="data-label">
+                @if (workerType() === "image") {
+                  {{ "admin.workers.stats.total_mps" | transloco }}
+                } @else if (workerType() === "text") {
+                  {{ "admin.workers.stats.total_tokens" | transloco }}
+                } @else {
+                  {{ "admin.workers.stats.mean_interrogation" | transloco }}
+                }
+              </div>
+              <div class="data-value-lg">
+                {{ totalPerformance() | number: "1.2-2" }}
+                <span class="text-sm admin-text-muted">{{
+                  performanceLabel()
+                }}</span>
+              </div>
             </div>
-            <div class="data-value-lg">
-              {{ totalPerformance() | number: "1.2-2" }}
-              <span class="text-sm admin-text-muted">{{
-                performanceLabel()
-              }}</span>
-            </div>
-          </div>
 
-          <!-- Worker Versions -->
-          <div class="data-item-box admin-bg-dark">
-            <div class="data-label mb-2">
-              {{ "admin.workers.stats.worker_versions" | transloco }}
-            </div>
-            <div class="space-y-2">
-              @for (
-                version of workerVersionsExpanded()
-                  ? workerVersions()
-                  : workerVersions().slice(0, 3);
-                track version.version
-              ) {
-                <div class="flex flex-col gap-1">
-                  <div class="flex justify-between items-center">
-                    <span class="admin-text-white text-sm font-medium">{{
-                      version.parsed.displayName
-                    }}</span>
-                    <span class="admin-badge admin-badge-capability">{{
-                      version.count
-                    }}</span>
-                  </div>
-                  @if (version.parsed.url) {
-                    <a
-                      [href]="version.parsed.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="admin-link text-xs truncate"
-                    >
-                      {{ version.parsed.url }}
-                    </a>
-                  }
-                </div>
-              }
-              @if (workerVersions().length > 3) {
-                <button
-                  (click)="toggleWorkerVersions()"
-                  class="admin-link text-xs text-left"
-                >
-                  @if (workerVersionsExpanded()) {
-                    {{ "admin.workers.stats.hide_additional" | transloco }}
-                  } @else {
-                    {{
-                      "admin.workers.stats.show_more"
-                        | transloco
-                          : { count: workerVersions().length - 3 }
-                    }}
-                  }
-                </button>
-              }
-            </div>
-          </div>
-        </div>
-
-        <!-- Capability Statistics (Image workers only) -->
-        @if (workerType() === "image" && capabilityStats().length > 0) {
-          <div class="admin-border-t pt-6">
-            <h3 class="admin-heading-card mb-3">
-              {{ "admin.workers.stats.capabilities" | transloco }}
-            </h3>
-            <div class="data-grid-1-2-3">
-              @for (capability of capabilityStats(); track capability.name) {
-                <div class="data-item-box admin-bg-dark">
-                  <div class="data-label mb-1">{{ capability.name }}</div>
-                  <div class="flex justify-between items-baseline gap-2">
-                    <div class="data-value text-lg">
-                      {{ capability.totalPerformance | number: "1.2-2" }}
-                      <span class="text-sm admin-text-muted">{{
-                        performanceLabel()
+            <!-- Worker Versions -->
+            <div class="data-item-box admin-bg-dark">
+              <div class="data-label mb-2">
+                {{ "admin.workers.stats.worker_versions" | transloco }}
+              </div>
+              <div class="space-y-2">
+                @for (
+                  version of workerVersionsExpanded()
+                    ? workerVersions()
+                    : workerVersions().slice(0, 3);
+                  track version.version
+                ) {
+                  <div class="flex flex-col gap-1">
+                    <div class="flex justify-between items-center">
+                      <span class="admin-text-white text-sm font-medium">{{
+                        version.parsed.displayName
+                      }}</span>
+                      <span class="admin-badge admin-badge-capability">{{
+                        version.count
                       }}</span>
                     </div>
-                    <div class="admin-badge admin-badge-capability">
-                      {{ capability.workerCount }}
-                      {{
-                        capability.workerCount === 1
-                          ? ("admin.workers.stats.worker" | transloco)
-                          : ("admin.workers.stats.workers" | transloco)
-                      }}
-                    </div>
+                    @if (version.parsed.url) {
+                      <a
+                        [href]="version.parsed.url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="admin-link text-xs truncate"
+                      >
+                        {{ version.parsed.url }}
+                      </a>
+                    }
                   </div>
-                </div>
-              }
+                }
+                @if (workerVersions().length > 3) {
+                  <button
+                    (click)="toggleWorkerVersions()"
+                    class="admin-link text-xs text-left"
+                  >
+                    @if (workerVersionsExpanded()) {
+                      {{ "admin.workers.stats.hide_additional" | transloco }}
+                    } @else {
+                      {{
+                        "admin.workers.stats.show_more"
+                          | transloco: { count: workerVersions().length - 3 }
+                      }}
+                    }
+                  </button>
+                }
+              </div>
             </div>
           </div>
-        }
+
+          <!-- Capability Statistics (Image workers only) -->
+          @if (workerType() === "image" && capabilityStats().length > 0) {
+            <div class="admin-border-t pt-6">
+              <h3 class="admin-heading-card mb-3">
+                {{ "admin.workers.stats.capabilities" | transloco }}
+              </h3>
+              <div class="data-grid-1-2-3">
+                @for (capability of capabilityStats(); track capability.name) {
+                  <div class="data-item-box admin-bg-dark">
+                    <div class="data-label mb-1">{{ capability.name }}</div>
+                    <div class="flex justify-between items-baseline gap-2">
+                      <div class="data-value text-lg">
+                        {{ capability.totalPerformance | number: "1.2-2" }}
+                        <span class="text-sm admin-text-muted">{{
+                          performanceLabel()
+                        }}</span>
+                      </div>
+                      <div class="admin-badge admin-badge-capability">
+                        {{ capability.workerCount }}
+                        {{
+                          capability.workerCount === 1
+                            ? ("admin.workers.stats.worker" | transloco)
+                            : ("admin.workers.stats.workers" | transloco)
+                        }}
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
       </div>
-    </div>
     }
   }
 
@@ -475,6 +499,7 @@
           [isModerator]="auth.currentUser()?.moderator ?? false"
           [viewMode]="viewMode()"
           (workerUpdated)="onWorkerUpdated()"
+          (workerDeleted)="onWorkerDeleted($event)"
         />
       }
     </div>

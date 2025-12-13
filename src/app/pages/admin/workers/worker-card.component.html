@@ -130,6 +130,54 @@
             </button>
           </div>
         }
+        @case ("delete") {
+          <h3 class="heading-card mb-4">
+            {{
+              "admin.workers.dialog.delete_title"
+                | transloco: { name: worker().name }
+            }}
+          </h3>
+          <div class="mb-4 space-y-3">
+            <div
+              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+            >
+              <p class="text-sm text-red-800 dark:text-red-200 font-medium">
+                {{ "admin.workers.dialog.delete_warning_permanent" | transloco }}
+              </p>
+            </div>
+            <div
+              class="p-3 rounded-lg bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700"
+            >
+              <p class="text-sm text-amber-800 dark:text-amber-200">
+                {{
+                  "admin.workers.dialog.delete_warning_offline_requirement"
+                    | transloco
+                }}
+              </p>
+            </div>
+            @if (deleteError()) {
+              <div
+                class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+              >
+                <p class="text-sm text-red-800 dark:text-red-200">
+                  {{ "admin.workers.dialog.delete_error" | transloco }}
+                </p>
+              </div>
+            }
+          </div>
+          <div class="flex justify-end gap-3">
+            <button (click)="closeDialog()" class="worker-btn">
+              {{ "admin.workers.dialog.cancel" | transloco }}
+            </button>
+            <button
+              (click)="confirmDelete()"
+              [disabled]="isUpdating()"
+              class="btn-danger"
+            >
+              {{ "admin.workers.dialog.delete_confirm" | transloco }}
+            </button>
+          </div>
+        }
       }
     </div>
   </div>
@@ -592,6 +640,17 @@
         } @else {
           {{ "admin.workers.button.pause" | transloco }}
         }
+      </button>
+    }
+
+    @if (canDelete()) {
+      <!-- Delete Worker -->
+      <button
+        (click)="openDeleteDialog()"
+        class="btn-danger text-sm"
+        [title]="'admin.workers.action.delete' | transloco"
+      >
+        {{ "admin.workers.button.delete" | transloco }}
       </button>
     }
   </div>

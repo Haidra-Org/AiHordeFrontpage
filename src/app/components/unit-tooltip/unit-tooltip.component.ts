@@ -27,8 +27,10 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
       <span class="tooltip-wrapper">
         <span class="dotted-underline">{{ primaryDisplay() }}</span>
         <span class="tooltip-text">
-          <strong>{{ tooltipBoldDisplay() }}</strong><br />
-          <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span><br /><br />
+          <strong>{{ tooltipBoldDisplay() }}</strong
+          ><br />
+          <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span
+          ><br /><br />
           @for (key of unit()!.explanationKeys; track key; let i = $index) {
             @if (i === 0 || i === 2) {
               <span class="math-equation">{{ key | transloco }}</span>
@@ -36,7 +38,10 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
               {{ key | transloco }}
             }
             @if (i < unit()!.explanationKeys.length - 1) {
-              <br />@if (i === 0 || i === 1) {<br />}
+              <br />
+              @if (i === 0 || i === 1) {
+                <br />
+              }
             }
           }
         </span>
@@ -99,7 +104,7 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
 
     .tooltip-text .math-equation {
       color: #a78bfa;
-      font-family: "Courier New", Courier, monospace;
+      font-family: 'Courier New', Courier, monospace;
       font-size: 0.75rem;
       font-weight: 500;
     }
@@ -111,7 +116,7 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
     }
 
     .tooltip-text::after {
-      content: "";
+      content: '';
       position: absolute;
       top: 100%;
       left: 50%;

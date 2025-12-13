@@ -10,7 +10,15 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute } from '@angular/router';
-import { combineLatest, concatMap, EMPTY, finalize, from, tap, Observable } from 'rxjs';
+import {
+  combineLatest,
+  concatMap,
+  EMPTY,
+  finalize,
+  from,
+  tap,
+  Observable,
+} from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
@@ -31,7 +39,10 @@ import {
 } from '../../../types/style-api';
 import { StyleCardComponent } from '../../../components/style/style-card/style-card.component';
 import { StyleFiltersComponent } from '../../../components/style/style-filters/style-filters.component';
-import { StyleFormComponent, StyleFormSubmitEvent } from '../../../components/style/style-form/style-form.component';
+import {
+  StyleFormComponent,
+  StyleFormSubmitEvent,
+} from '../../../components/style/style-form/style-form.component';
 
 export type StylesTab = 'image' | 'text' | 'collections';
 
@@ -82,7 +93,9 @@ export class StylesListComponent implements OnInit {
   public readonly queryParams = signal<StyleQueryParams>(DEFAULT_QUERY_PARAMS);
 
   /** Client-side filters. */
-  public readonly clientFilters = signal<StyleClientFilters>(DEFAULT_CLIENT_FILTERS);
+  public readonly clientFilters = signal<StyleClientFilters>(
+    DEFAULT_CLIENT_FILTERS,
+  );
 
   /** Whether to show create form. */
   public readonly showCreateForm = signal(false);
@@ -107,7 +120,8 @@ export class StylesListComponent implements OnInit {
 
   /** Get available tags from current styles. */
   public readonly availableTags = computed(() => {
-    const styles = this.activeTab() === 'image' ? this.imageStyles() : this.textStyles();
+    const styles =
+      this.activeTab() === 'image' ? this.imageStyles() : this.textStyles();
     const tagSet = new Set<string>();
     styles.forEach((s) => s.tags?.forEach((t) => tagSet.add(t)));
     return Array.from(tagSet).sort();
@@ -115,7 +129,8 @@ export class StylesListComponent implements OnInit {
 
   /** Get available models from current styles. */
   public readonly availableModels = computed(() => {
-    const styles = this.activeTab() === 'image' ? this.imageStyles() : this.textStyles();
+    const styles =
+      this.activeTab() === 'image' ? this.imageStyles() : this.textStyles();
     const modelSet = new Set<string>();
     styles.forEach((s) => s.models?.forEach((m) => modelSet.add(m)));
     return Array.from(modelSet).sort();
@@ -243,7 +258,9 @@ export class StylesListComponent implements OnInit {
                 this.hasMore.set(false);
                 this.exhaustionNote.set('styles.all_loaded');
               } else {
-                this.hasMore.set(items.length === this.pageSize && dedupe.addedCount > 0);
+                this.hasMore.set(
+                  items.length === this.pageSize && dedupe.addedCount > 0,
+                );
               }
             }),
           );
@@ -252,7 +269,8 @@ export class StylesListComponent implements OnInit {
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        error: (err: { message?: string }) => this.error.set(err.message || this.getLoadError(tab)),
+        error: (err: { message?: string }) =>
+          this.error.set(err.message || this.getLoadError(tab)),
       });
   }
 
@@ -280,10 +298,13 @@ export class StylesListComponent implements OnInit {
             this.hasMore.set(false);
             this.exhaustionNote.set('styles.all_loaded');
           } else {
-            this.hasMore.set(items.length === this.pageSize && dedupe.addedCount > 0);
+            this.hasMore.set(
+              items.length === this.pageSize && dedupe.addedCount > 0,
+            );
           }
         },
-        error: (err: { message?: string }) => this.error.set(err.message || this.getLoadError(tab)),
+        error: (err: { message?: string }) =>
+          this.error.set(err.message || this.getLoadError(tab)),
       });
   }
 
@@ -302,9 +323,18 @@ export class StylesListComponent implements OnInit {
   public onCreateStyle(event: StyleFormSubmitEvent): void {
     this.creating.set(true);
 
-    const observable = event.type === 'image'
-      ? this.styleService.createImageStyle(event.payload as Parameters<typeof this.styleService.createImageStyle>[0])
-      : this.styleService.createTextStyle(event.payload as Parameters<typeof this.styleService.createTextStyle>[0]);
+    const observable =
+      event.type === 'image'
+        ? this.styleService.createImageStyle(
+            event.payload as Parameters<
+              typeof this.styleService.createImageStyle
+            >[0],
+          )
+        : this.styleService.createTextStyle(
+            event.payload as Parameters<
+              typeof this.styleService.createTextStyle
+            >[0],
+          );
 
     observable
       .pipe(
@@ -342,21 +372,27 @@ export class StylesListComponent implements OnInit {
     this.collections.set([]);
   }
 
-  private fetchPage(
-    tab: StylesTab,
-    page: number,
-  ): Observable<StyleList> {
+  private fetchPage(tab: StylesTab, page: number): Observable<StyleList> {
     const params = this.queryParams();
 
     if (tab === 'image') {
-      return this.styleService.getImageStyles({ ...params, page }) as Observable<StyleList>;
+      return this.styleService.getImageStyles({
+        ...params,
+        page,
+      }) as Observable<StyleList>;
     }
 
     if (tab === 'text') {
-      return this.styleService.getTextStyles({ ...params, page }) as Observable<StyleList>;
+      return this.styleService.getTextStyles({
+        ...params,
+        page,
+      }) as Observable<StyleList>;
     }
 
-    return this.styleService.getCollections({ sort: params.sort, page }) as Observable<StyleList>;
+    return this.styleService.getCollections({
+      sort: params.sort,
+      page,
+    }) as Observable<StyleList>;
   }
 
   private appendPageResults(

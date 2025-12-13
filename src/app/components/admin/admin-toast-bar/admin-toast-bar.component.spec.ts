@@ -89,7 +89,9 @@ describe('AdminToastBarComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const toasts = fixture.nativeElement.querySelectorAll('.toast-container > div');
+    const toasts = fixture.nativeElement.querySelectorAll(
+      '.toast-container > div',
+    );
     expect(toasts.length).toBe(3);
   });
 

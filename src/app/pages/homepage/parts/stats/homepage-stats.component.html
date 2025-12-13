@@ -28,8 +28,11 @@
                   }}:</span
                 >
                 @if (imagePerformanceRate(); as rate) {
-                  {{ rate.primary.value | number: '1.1-1' }}
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'standard_images' | transloco" />
+                  {{ rate.primary.value | number: "1.1-1" }}
+                  <app-unit-tooltip
+                    [unit]="rate"
+                    [primaryOverride]="'standard_images' | transloco"
+                  />
                   per second
                 }
               </span>
@@ -58,7 +61,7 @@
                 <span class="font-medium"
                   >{{ "stats.total_images.label" | transloco }}:</span
                 >
-                {{ units.formatLargeNumber(imageStats()!.images, 'images') }}
+                {{ units.formatLargeNumber(imageStats()!.images, "images") }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -115,8 +118,11 @@
                   }}:</span
                 >
                 @if (textPerformanceRate(); as rate) {
-                  {{ rate.technical.value | number: '1.1-1' }}
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'tokens'" />
+                  {{ rate.technical.value | number: "1.1-1" }}
+                  <app-unit-tooltip
+                    [unit]="rate"
+                    [primaryOverride]="'tokens'"
+                  />
                   per second
                 }
               </span>
@@ -145,7 +151,7 @@
                 <span class="font-medium"
                   >{{ "stats.total_texts.label" | transloco }}:</span
                 >
-                {{ units.formatLargeNumber(textStats()!.requests, 'requests') }}
+                {{ units.formatLargeNumber(textStats()!.requests, "requests") }}
               </span>
             </li>
             <li class="flex items-start space-x-2">
@@ -201,7 +207,12 @@
                     "stats.total_alchemy_processed.label" | transloco
                   }}:</span
                 >
-                {{ units.formatLargeNumber(interrogationStats()!.processed, 'forms') }}
+                {{
+                  units.formatLargeNumber(
+                    interrogationStats()!.processed,
+                    "forms"
+                  )
+                }}
               </span>
             </li>
             <li class="flex items-start space-x-2">

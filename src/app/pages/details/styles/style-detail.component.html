@@ -115,7 +115,9 @@
             <div class="style-detail-meta">
               <span>{{ "styles.by" | transloco }} {{ style()?.creator }}</span>
               <span class="style-detail-meta-divider">•</span>
-              <span>{{ style()?.use_count }} {{ "styles.uses" | transloco }}</span>
+              <span
+                >{{ style()?.use_count }} {{ "styles.uses" | transloco }}</span
+              >
               <span class="style-detail-meta-divider">•</span>
               <span class="style-detail-id">{{ style()?.id }}</span>
             </div>
@@ -146,7 +148,11 @@
                   d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
                 />
               </svg>
-              {{ showJsonView() ? ("styles.hide_json" | transloco) : ("styles.show_json" | transloco) }}
+              {{
+                showJsonView()
+                  ? ("styles.hide_json" | transloco)
+                  : ("styles.show_json" | transloco)
+              }}
             </button>
 
             @if (isOwner()) {
@@ -235,7 +241,9 @@
           <!-- Prompt Template -->
           <div class="style-detail-section">
             <div class="style-detail-section-header">
-              <h2 class="style-detail-section-title">{{ "styles.prompt_template" | transloco }}</h2>
+              <h2 class="style-detail-section-title">
+                {{ "styles.prompt_template" | transloco }}
+              </h2>
               <button
                 type="button"
                 class="btn-source-control btn-sm"
@@ -264,20 +272,28 @@
           <div class="style-detail-tags-models">
             @if (style()?.tags && style()!.tags!.length > 0) {
               <div class="style-detail-inline-section">
-                <span class="style-detail-inline-label">{{ "styles.tags" | transloco }}:</span>
+                <span class="style-detail-inline-label"
+                  >{{ "styles.tags" | transloco }}:</span
+                >
                 <div class="badge-container-inline">
                   @for (tag of style()!.tags; track tag) {
-                    <span class="badge-base badge-info badge-sm">{{ tag }}</span>
+                    <span class="badge-base badge-info badge-sm">{{
+                      tag
+                    }}</span>
                   }
                 </div>
               </div>
             }
             @if (style()?.models && style()!.models!.length > 0) {
               <div class="style-detail-inline-section">
-                <span class="style-detail-inline-label">{{ "styles.compatible_models" | transloco }}:</span>
+                <span class="style-detail-inline-label"
+                  >{{ "styles.compatible_models" | transloco }}:</span
+                >
                 <div class="badge-container-inline">
                   @for (model of style()!.models; track model) {
-                    <span class="badge-base badge-secondary badge-sm">{{ model }}</span>
+                    <span class="badge-base badge-secondary badge-sm">{{
+                      model
+                    }}</span>
                   }
                 </div>
               </div>
@@ -288,7 +304,9 @@
           @if (showJsonView()) {
             <div class="style-detail-section">
               <div class="style-detail-section-header">
-                <h2 class="style-detail-section-title">{{ "styles.json_view" | transloco }}</h2>
+                <h2 class="style-detail-section-title">
+                  {{ "styles.json_view" | transloco }}
+                </h2>
                 <button
                   type="button"
                   class="btn-source-control btn-sm"
@@ -310,7 +328,10 @@
                   {{ "styles.copy" | transloco }}
                 </button>
               </div>
-              <pre class="code-block code-block-sm code-block-bordered code-block-scroll" [innerHTML]="styleJsonHighlighted()"></pre>
+              <pre
+                class="code-block code-block-sm code-block-bordered code-block-scroll"
+                [innerHTML]="styleJsonHighlighted()"
+              ></pre>
             </div>
           }
 
@@ -319,13 +340,24 @@
             @let imageStyle = $any(style());
             @if (imageStyle.examples && imageStyle.examples.length > 0) {
               <div class="style-detail-section style-detail-examples">
-                <h2 class="style-detail-section-title">{{ "styles.examples" | transloco }}</h2>
+                <h2 class="style-detail-section-title">
+                  {{ "styles.examples" | transloco }}
+                </h2>
                 <div class="image-grid image-grid-compact">
                   @for (example of imageStyle.examples; track example.id) {
-                    <div class="image-grid-item" [class.image-grid-item-primary]="example.primary">
-                      <img [src]="example.url" [alt]="'Example for ' + style()?.name" loading="lazy" />
+                    <div
+                      class="image-grid-item"
+                      [class.image-grid-item-primary]="example.primary"
+                    >
+                      <img
+                        [src]="example.url"
+                        [alt]="'Example for ' + style()?.name"
+                        loading="lazy"
+                      />
                       @if (example.primary) {
-                        <span class="image-badge">{{ "styles.primary" | transloco }}</span>
+                        <span class="image-badge">{{
+                          "styles.primary" | transloco
+                        }}</span>
                       }
                     </div>
                   }
@@ -340,7 +372,9 @@
           <!-- Image Style Parameters -->
           @if (imageStyleParams()) {
             <div class="style-detail-section">
-              <h2 class="style-detail-section-title">{{ "styles.generation_params" | transloco }}</h2>
+              <h2 class="style-detail-section-title">
+                {{ "styles.generation_params" | transloco }}
+              </h2>
               <div class="style-detail-params-section">
                 <dl class="style-detail-params">
                   @if (imageStyleParams()?.sampler_name) {
@@ -381,13 +415,17 @@
                   }
                   @if (imageStyleParams()?.denoising_strength !== undefined) {
                     <div class="style-detail-param">
-                      <dt>{{ "styles.form.denoising_strength" | transloco }}</dt>
+                      <dt>
+                        {{ "styles.form.denoising_strength" | transloco }}
+                      </dt>
                       <dd>{{ imageStyleParams()?.denoising_strength }}</dd>
                     </div>
                   }
                   @if (imageStyleParams()?.facefixer_strength !== undefined) {
                     <div class="style-detail-param">
-                      <dt>{{ "styles.form.facefixer_strength" | transloco }}</dt>
+                      <dt>
+                        {{ "styles.form.facefixer_strength" | transloco }}
+                      </dt>
                       <dd>{{ imageStyleParams()?.facefixer_strength }}</dd>
                     </div>
                   }
@@ -410,44 +448,71 @@
                     <dt>{{ "styles.flags" | transloco }}</dt>
                     <dd class="style-detail-flags">
                       @if (imageStyleParams()?.karras) {
-                        <span class="badge-base badge-success badge-sm">Karras</span>
+                        <span class="badge-base badge-success badge-sm"
+                          >Karras</span
+                        >
                       }
                       @if (imageStyleParams()?.hires_fix) {
-                        <span class="badge-base badge-success badge-sm">Hires Fix</span>
+                        <span class="badge-base badge-success badge-sm"
+                          >Hires Fix</span
+                        >
                       }
                       @if (imageStyleParams()?.tiling) {
-                        <span class="badge-base badge-success badge-sm">Tiling</span>
+                        <span class="badge-base badge-success badge-sm"
+                          >Tiling</span
+                        >
                       }
                       @if (imageStyleParams()?.transparent) {
-                        <span class="badge-base badge-success badge-sm">Transparent</span>
+                        <span class="badge-base badge-success badge-sm"
+                          >Transparent</span
+                        >
                       }
                     </dd>
                   </div>
                 }
 
                 <!-- Post Processing -->
-                @if (imageStyleParams()?.post_processing && imageStyleParams()!.post_processing!.length > 0) {
+                @if (
+                  imageStyleParams()?.post_processing &&
+                  imageStyleParams()!.post_processing!.length > 0
+                ) {
                   <div class="style-detail-param style-detail-param-full">
                     <dt>{{ "styles.form.post_processing" | transloco }}</dt>
                     <dd class="badge-container-inline">
-                      @for (pp of imageStyleParams()!.post_processing; track pp) {
-                        <span class="badge-base badge-purple badge-sm">{{ pp }}</span>
+                      @for (
+                        pp of imageStyleParams()!.post_processing;
+                        track pp
+                      ) {
+                        <span class="badge-base badge-purple badge-sm">{{
+                          pp
+                        }}</span>
                       }
                     </dd>
                   </div>
                 }
 
                 <!-- LoRAs -->
-                @if (imageStyleParams()?.loras && imageStyleParams()!.loras!.length > 0) {
+                @if (
+                  imageStyleParams()?.loras &&
+                  imageStyleParams()!.loras!.length > 0
+                ) {
                   <div class="style-detail-param style-detail-param-full">
                     <dt>{{ "styles.form.loras" | transloco }}</dt>
                     <dd class="style-detail-loras">
-                      @for (lora of imageStyleParams()!.loras; track lora.name) {
+                      @for (
+                        lora of imageStyleParams()!.loras;
+                        track lora.name
+                      ) {
                         <div class="style-detail-lora-item">
-                          <span class="style-detail-lora-name">{{ lora.name }}</span>
+                          <span class="style-detail-lora-name">{{
+                            lora.name
+                          }}</span>
                           <span class="style-detail-lora-values">
-                            model: {{ lora.model ?? 1 }} | clip: {{ lora.clip ?? 1 }}
-                            @if (lora.inject_trigger) { | trigger: {{ lora.inject_trigger }} }
+                            model: {{ lora.model ?? 1 }} | clip:
+                            {{ lora.clip ?? 1 }}
+                            @if (lora.inject_trigger) {
+                              | trigger: {{ lora.inject_trigger }}
+                            }
                           </span>
                         </div>
                       }
@@ -456,15 +521,20 @@
                 }
 
                 <!-- Textual Inversions -->
-                @if (imageStyleParams()?.tis && imageStyleParams()!.tis!.length > 0) {
+                @if (
+                  imageStyleParams()?.tis && imageStyleParams()!.tis!.length > 0
+                ) {
                   <div class="style-detail-param style-detail-param-full">
                     <dt>{{ "styles.form.tis" | transloco }}</dt>
                     <dd class="style-detail-tis">
                       @for (ti of imageStyleParams()!.tis; track ti.name) {
                         <div class="style-detail-ti-item">
-                          <span class="style-detail-ti-name">{{ ti.name }}</span>
+                          <span class="style-detail-ti-name">{{
+                            ti.name
+                          }}</span>
                           <span class="style-detail-ti-values">
-                            inject: {{ ti.inject_ti ?? 'prompt' }} | strength: {{ ti.strength ?? 1 }}
+                            inject: {{ ti.inject_ti ?? "prompt" }} | strength:
+                            {{ ti.strength ?? 1 }}
                           </span>
                         </div>
                       }
@@ -478,7 +548,9 @@
           <!-- Text Style Parameters -->
           @if (textStyleParams()) {
             <div class="style-detail-section">
-              <h2 class="style-detail-section-title">{{ "styles.generation_params" | transloco }}</h2>
+              <h2 class="style-detail-section-title">
+                {{ "styles.generation_params" | transloco }}
+              </h2>
               <div class="style-detail-params-section">
                 <dl class="style-detail-params style-detail-params-compact">
                   @if (textStyleParams()?.temperature !== undefined) {
@@ -574,41 +646,64 @@
                     <dt>{{ "styles.flags" | transloco }}</dt>
                     <dd class="style-detail-flags">
                       @if (textStyleParams()?.singleline) {
-                        <span class="badge-base badge-info badge-sm">Single Line</span>
+                        <span class="badge-base badge-info badge-sm"
+                          >Single Line</span
+                        >
                       }
                       @if (textStyleParams()?.use_default_badwordsids) {
-                        <span class="badge-base badge-info badge-sm">Default Bad Words</span>
+                        <span class="badge-base badge-info badge-sm"
+                          >Default Bad Words</span
+                        >
                       }
                       @if (textStyleParams()?.frmtadsnsp) {
-                        <span class="badge-base badge-outline badge-sm">Add Sentence Space</span>
+                        <span class="badge-base badge-outline badge-sm"
+                          >Add Sentence Space</span
+                        >
                       }
                       @if (textStyleParams()?.frmtrmblln) {
-                        <span class="badge-base badge-outline badge-sm">Remove Blank Lines</span>
+                        <span class="badge-base badge-outline badge-sm"
+                          >Remove Blank Lines</span
+                        >
                       }
                       @if (textStyleParams()?.frmtrmspch) {
-                        <span class="badge-base badge-outline badge-sm">Remove Special Chars</span>
+                        <span class="badge-base badge-outline badge-sm"
+                          >Remove Special Chars</span
+                        >
                       }
                       @if (textStyleParams()?.frmttriminc) {
-                        <span class="badge-base badge-outline badge-sm">Trim Incomplete</span>
+                        <span class="badge-base badge-outline badge-sm"
+                          >Trim Incomplete</span
+                        >
                       }
                     </dd>
                   </div>
                 }
 
                 <!-- Sampler Order -->
-                @if (textStyleParams()?.sampler_order && textStyleParams()!.sampler_order!.length > 0) {
+                @if (
+                  textStyleParams()?.sampler_order &&
+                  textStyleParams()!.sampler_order!.length > 0
+                ) {
                   <div class="style-detail-param style-detail-param-full">
                     <dt>{{ "styles.form.sampler_order" | transloco }}</dt>
-                    <dd class="style-detail-code-inline">{{ textStyleParams()?.sampler_order?.join(', ') }}</dd>
+                    <dd class="style-detail-code-inline">
+                      {{ textStyleParams()?.sampler_order?.join(", ") }}
+                    </dd>
                   </div>
                 }
 
                 <!-- Stop Sequences -->
-                @if (textStyleParams()?.stop_sequence && textStyleParams()!.stop_sequence!.length > 0) {
+                @if (
+                  textStyleParams()?.stop_sequence &&
+                  textStyleParams()!.stop_sequence!.length > 0
+                ) {
                   <div class="style-detail-param style-detail-param-full">
                     <dt>{{ "styles.form.stop_sequence" | transloco }}</dt>
                     <dd class="badge-container-inline">
-                      @for (seq of textStyleParams()!.stop_sequence; track seq) {
+                      @for (
+                        seq of textStyleParams()!.stop_sequence;
+                        track seq
+                      ) {
                         <span class="style-detail-code-inline">{{ seq }}</span>
                       }
                     </dd>

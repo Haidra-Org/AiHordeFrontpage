@@ -1,5 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpErrorResponse,
+  HttpParams,
+} from '@angular/common/http';
 import { Observable, catchError, map, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
@@ -84,7 +88,9 @@ export class StyleService {
     return httpParams;
   }
 
-  private buildCollectionQueryParams(params: CollectionQueryParams): HttpParams {
+  private buildCollectionQueryParams(
+    params: CollectionQueryParams,
+  ): HttpParams {
     let httpParams = new HttpParams();
     if (params.sort) {
       httpParams = httpParams.set('sort', params.sort);
@@ -105,7 +111,9 @@ export class StyleService {
   /**
    * Get a paginated list of public image styles.
    */
-  public getImageStyles(params: StyleQueryParams = {}): Observable<ImageStyle[]> {
+  public getImageStyles(
+    params: StyleQueryParams = {},
+  ): Observable<ImageStyle[]> {
     const httpParams = this.buildQueryParams(params);
     return this.httpClient
       .get<ImageStyle[]>(`${this.baseUrl}/styles/image`, {
@@ -131,9 +139,12 @@ export class StyleService {
    */
   public getImageStyleByName(styleName: string): Observable<ImageStyle> {
     return this.httpClient
-      .get<ImageStyle>(`${this.baseUrl}/styles/image_by_name/${encodeURIComponent(styleName)}`, {
-        headers: this.buildHeaders(),
-      })
+      .get<ImageStyle>(
+        `${this.baseUrl}/styles/image_by_name/${encodeURIComponent(styleName)}`,
+        {
+          headers: this.buildHeaders(),
+        },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -145,7 +156,9 @@ export class StyleService {
    * Create a new image style.
    * Requires authentication.
    */
-  public createImageStyle(payload: CreateImageStyleInput): Observable<StyleModifyResponse> {
+  public createImageStyle(
+    payload: CreateImageStyleInput,
+  ): Observable<StyleModifyResponse> {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .post<StyleModifyResponse>(`${this.baseUrl}/styles/image`, payload, {
@@ -164,9 +177,13 @@ export class StyleService {
   ): Observable<StyleModifyResponse> {
     const apiKey = this.requireApiKey();
     return this.httpClient
-      .patch<StyleModifyResponse>(`${this.baseUrl}/styles/image/${styleId}`, payload, {
-        headers: this.buildHeaders(apiKey),
-      })
+      .patch<StyleModifyResponse>(
+        `${this.baseUrl}/styles/image/${styleId}`,
+        payload,
+        {
+          headers: this.buildHeaders(apiKey),
+        },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -276,9 +293,12 @@ export class StyleService {
    */
   public getTextStyleByName(styleName: string): Observable<TextStyle> {
     return this.httpClient
-      .get<TextStyle>(`${this.baseUrl}/styles/text_by_name/${encodeURIComponent(styleName)}`, {
-        headers: this.buildHeaders(),
-      })
+      .get<TextStyle>(
+        `${this.baseUrl}/styles/text_by_name/${encodeURIComponent(styleName)}`,
+        {
+          headers: this.buildHeaders(),
+        },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -290,7 +310,9 @@ export class StyleService {
    * Create a new text style.
    * Requires authentication.
    */
-  public createTextStyle(payload: CreateTextStyleInput): Observable<StyleModifyResponse> {
+  public createTextStyle(
+    payload: CreateTextStyleInput,
+  ): Observable<StyleModifyResponse> {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .post<StyleModifyResponse>(`${this.baseUrl}/styles/text`, payload, {
@@ -309,9 +331,13 @@ export class StyleService {
   ): Observable<StyleModifyResponse> {
     const apiKey = this.requireApiKey();
     return this.httpClient
-      .patch<StyleModifyResponse>(`${this.baseUrl}/styles/text/${styleId}`, payload, {
-        headers: this.buildHeaders(apiKey),
-      })
+      .patch<StyleModifyResponse>(
+        `${this.baseUrl}/styles/text/${styleId}`,
+        payload,
+        {
+          headers: this.buildHeaders(apiKey),
+        },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -338,7 +364,9 @@ export class StyleService {
   /**
    * Get a paginated list of public collections.
    */
-  public getCollections(params: CollectionQueryParams = {}): Observable<StyleCollection[]> {
+  public getCollections(
+    params: CollectionQueryParams = {},
+  ): Observable<StyleCollection[]> {
     const httpParams = this.buildCollectionQueryParams(params);
     return this.httpClient
       .get<StyleCollection[]>(`${this.baseUrl}/collections`, {
@@ -362,7 +390,9 @@ export class StyleService {
   /**
    * Get a collection by name.
    */
-  public getCollectionByName(collectionName: string): Observable<StyleCollection> {
+  public getCollectionByName(
+    collectionName: string,
+  ): Observable<StyleCollection> {
     return this.httpClient
       .get<StyleCollection>(
         `${this.baseUrl}/collection_by_name/${encodeURIComponent(collectionName)}`,
@@ -381,10 +411,13 @@ export class StyleService {
    */
   public createCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
-    return throwError(() => ({
-      status: 501,
-      message: 'Collection creation not yet implemented (Phase 2)',
-    } satisfies StyleApiError));
+    return throwError(
+      () =>
+        ({
+          status: 501,
+          message: 'Collection creation not yet implemented (Phase 2)',
+        }) satisfies StyleApiError,
+    );
   }
 
   /**
@@ -393,10 +426,13 @@ export class StyleService {
    */
   public updateCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
-    return throwError(() => ({
-      status: 501,
-      message: 'Collection update not yet implemented (Phase 2)',
-    } satisfies StyleApiError));
+    return throwError(
+      () =>
+        ({
+          status: 501,
+          message: 'Collection update not yet implemented (Phase 2)',
+        }) satisfies StyleApiError,
+    );
   }
 
   /**
@@ -405,9 +441,12 @@ export class StyleService {
    */
   public deleteCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
-    return throwError(() => ({
-      status: 501,
-      message: 'Collection deletion not yet implemented (Phase 2)',
-    } satisfies StyleApiError));
+    return throwError(
+      () =>
+        ({
+          status: 501,
+          message: 'Collection deletion not yet implemented (Phase 2)',
+        }) satisfies StyleApiError,
+    );
   }
 }

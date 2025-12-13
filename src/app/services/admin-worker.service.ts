@@ -102,4 +102,26 @@ export class AdminWorkerService {
   ): Observable<WorkerModifyResponse | null> {
     return this.updateWorker(id, { paused });
   }
+
+  /**
+   * Delete a worker (requires moderator or owner permissions)
+   * Note: The worker must have been offline for more than 30 days
+   */
+  public deleteWorker(
+    id: string,
+  ): Observable<{ deleted_id: string; deleted_name: string } | null> {
+    const apiKey = this.auth.getStoredApiKey();
+    if (!apiKey) {
+      return of(null);
+    }
+
+    return this.httpClient
+      .delete<{ deleted_id: string; deleted_name: string }>(
+        `${this.baseUrl}/workers/${id}`,
+        {
+          headers: { apikey: apiKey },
+        },
+      )
+      .pipe(catchError(() => of(null)));
+  }
 }

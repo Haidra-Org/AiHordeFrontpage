@@ -14,7 +14,6 @@ import { HordeWorker } from '../../../types/horde-worker';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { AuthService } from '../../../services/auth.service';
-import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-worker-card',
@@ -32,14 +31,18 @@ export class WorkerCardComponent {
   public isModerator = input(false);
   public viewMode = input<'admin' | 'public'>('admin');
   public workerUpdated = output<void>();
+  public workerDeleted = output<string>();
 
   // Dialog state
   public dialogOpen = signal<boolean>(false);
-  public dialogType = signal<'models' | 'maintenance' | 'pause'>('models');
+  public dialogType = signal<'models' | 'maintenance' | 'pause' | 'delete'>(
+    'models',
+  );
   public maintenanceReason = signal<string>('');
   public modelSearch = signal<string>('');
   public isUpdating = signal<boolean>(false);
   public showSuccess = signal<boolean>(false);
+  public deleteError = signal<string | null>(null);
 
   /**
    * Check if the current user is a moderator
@@ -69,18 +72,22 @@ export class WorkerCardComponent {
   }
 
   /**
-   * Maintenance actions are hidden for public view and for workers owned by the current user.
+   * Maintenance actions are hidden for public view
    */
   public canToggleMaintenance(): boolean {
-    return (
-      this.viewMode() === 'admin' &&
-      this.isModerator() &&
-      !this.isOwnedByCurrentUser()
-    );
+    return this.isOwnedByCurrentUser() || this.isModerator();
   }
 
   public canTogglePause(): boolean {
     return this.viewMode() === 'admin' && this.isUserModerator;
+  }
+
+  /**
+   * Check if the current user can delete this worker
+   * Only moderators or the worker owner can delete
+   */
+  public canDelete(): boolean {
+    return this.isOwnedByCurrentUser() || this.isModerator();
   }
 
   /**
@@ -240,19 +247,15 @@ export class WorkerCardComponent {
         setMaintenance,
         this.maintenanceReason(),
       )
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.isUpdating.set(false);
-          this.closeDialog();
-        }),
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        this.isUpdating.set(false);
         if (result) {
           this.showSuccess.set(true);
           setTimeout(() => this.showSuccess.set(false), 3000);
           this.workerUpdated.emit();
         }
+        this.closeDialog();
       });
   }
 
@@ -263,18 +266,38 @@ export class WorkerCardComponent {
 
     this.workerService
       .setPaused(this.worker().id, setPaused)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => {
-          this.isUpdating.set(false);
-          this.closeDialog();
-        }),
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
+        this.isUpdating.set(false);
         if (result) {
           this.showSuccess.set(true);
           setTimeout(() => this.showSuccess.set(false), 3000);
           this.workerUpdated.emit();
+        }
+        this.closeDialog();
+      });
+  }
+
+  public openDeleteDialog(): void {
+    this.dialogType.set('delete');
+    this.deleteError.set(null);
+    this.dialogOpen.set(true);
+  }
+
+  public confirmDelete(): void {
+    this.isUpdating.set(true);
+    this.deleteError.set(null);
+
+    this.workerService
+      .deleteWorker(this.worker().id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.isUpdating.set(false);
+        if (result) {
+          this.workerDeleted.emit(this.worker().id);
+          this.closeDialog();
+        } else {
+          this.deleteError.set('delete_failed');
         }
       });
   }

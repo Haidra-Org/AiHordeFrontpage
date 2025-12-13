@@ -78,11 +78,14 @@ export class ProfileComponent implements OnInit {
   public userWorkers = signal<WorkerListItem[]>([]);
   public loadingWorkers = signal<boolean>(false);
   public workersExpanded = signal<boolean>(false);
-  
+
   // Worker filters
   public filterText = signal<string>('');
   public filterWorkerType = signal<WorkerType | 'all'>('all');
-  public filterMaintenance = signal<'all' | 'active' | 'maintenance' | 'offline'>('all');
+  public filterMaintenance = signal<
+    'all' | 'active' | 'maintenance' | 'offline'
+  >('all');
+  public deletionSuccessMessage = signal<boolean>(false);
 
   // Computed filtered workers
   public filteredAndSortedWorkers = computed(() => {
@@ -97,20 +100,11 @@ export class ProfileComponent implements OnInit {
     // Filter by maintenance/active status
     const maintenanceFilter = this.filterMaintenance();
     if (maintenanceFilter === 'active') {
-      result = result.filter(
-        (item) =>
-          item.worker!.online,
-      );
+      result = result.filter((item) => item.worker!.online);
     } else if (maintenanceFilter === 'maintenance') {
-      result = result.filter(
-        (item) =>
-          item.worker!.maintenance_mode,
-      );
+      result = result.filter((item) => item.worker!.maintenance_mode);
     } else if (maintenanceFilter === 'offline') {
-      result = result.filter(
-        (item) =>
-          !item.worker!.online,
-      );
+      result = result.filter((item) => !item.worker!.online);
     }
 
     // Filter by name (partial matching)
@@ -300,17 +294,29 @@ export class ProfileComponent implements OnInit {
   public onWorkerUpdated(): void {
     this.loadUserWorkers();
   }
-  
+
+  public onWorkerDeleted(workerId: string): void {
+    // Remove worker from the list immediately
+    this.userWorkers.update((workers) =>
+      workers.filter((w) => w.id !== workerId),
+    );
+    // Show success toast
+    this.deletionSuccessMessage.set(true);
+    setTimeout(() => this.deletionSuccessMessage.set(false), 5000);
+  }
+
   public onFilterTextChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.filterText.set(target.value);
   }
-  
+
   public onFilterTypeChange(type: WorkerType | 'all'): void {
     this.filterWorkerType.set(type);
   }
-  
-  public onFilterMaintenanceChange(status: 'all' | 'active' | 'maintenance' | 'offline'): void {
+
+  public onFilterMaintenanceChange(
+    status: 'all' | 'active' | 'maintenance' | 'offline',
+  ): void {
     this.filterMaintenance.set(status);
   }
 
