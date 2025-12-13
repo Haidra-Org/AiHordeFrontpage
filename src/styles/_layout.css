@@ -9,7 +9,11 @@
    ================================================================= */
 
 /* Main content needs top padding to account for fixed header */
+/* Ensure full viewport height coverage for proper background display */
 .wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   padding-top: var(--nav-height-mobile);
 }
 

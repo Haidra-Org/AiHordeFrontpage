@@ -68,7 +68,7 @@
       {{ "styles.tabs.collections" | transloco }}
     </button>
 
-    @if (isLoggedIn() && activeTab() !== 'collections') {
+    @if (isLoggedIn() && activeTab() !== "collections") {
       <button
         type="button"
         class="btn-primary"
@@ -153,7 +153,9 @@
   }
 
   <!-- Styles Grid (Image/Text) -->
-  @if (!loading() && !error() && activeTab() !== 'collections' && !showCreateForm()) {
+  @if (
+    !loading() && !error() && activeTab() !== "collections" && !showCreateForm()
+  ) {
     @if (filteredStyles().length === 0) {
       <div class="state-container state-container-sm state-muted">
         <svg
@@ -178,7 +180,9 @@
           <app-style-card
             [style]="style"
             [styleType]="activeTab() === 'image' ? 'image' : 'text'"
-            (navigate)="navigateToStyle(style, activeTab() === 'image' ? 'image' : 'text')"
+            (navigate)="
+              navigateToStyle(style, activeTab() === 'image' ? 'image' : 'text')
+            "
           />
         }
       </div>
@@ -186,7 +190,9 @@
   }
 
   <!-- Collections Grid -->
-  @if (!loading() && !error() && activeTab() === 'collections' && !showCreateForm()) {
+  @if (
+    !loading() && !error() && activeTab() === "collections" && !showCreateForm()
+  ) {
     @if (filteredCollections().length === 0) {
       <div class="state-container state-container-sm state-muted">
         <svg
@@ -215,7 +221,7 @@
                 [class.badge-primary]="collection.type === 'image'"
                 [class.badge-success]="collection.type === 'text'"
               >
-                @if (collection.type === 'image') {
+                @if (collection.type === "image") {
                   {{ "styles.type.image" | transloco }}
                 } @else {
                   {{ "styles.type.text" | transloco }}

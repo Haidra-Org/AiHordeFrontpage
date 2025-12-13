@@ -151,9 +151,11 @@ export class UnitConversionService {
   /**
    * Get the appropriate SI prefix for a value
    */
-  private getSiPrefix(
-    value: number,
-  ): { threshold: number; prefix: string; short: string } {
+  private getSiPrefix(value: number): {
+    threshold: number;
+    prefix: string;
+    short: string;
+  } {
     const absValue = Math.abs(value);
     for (const prefix of SI_PREFIXES) {
       if (absValue >= prefix.threshold) {
@@ -248,7 +250,11 @@ export class UnitConversionService {
     // Technical: show standard images with human prefix (synthesized unit)
     return {
       primary: this.formatWithSiPrefix(rawPixelsteps, 'pixelsteps', 1),
-      technical: this.formatWithHumanPrefix(standardImages, 'standard images', 1),
+      technical: this.formatWithHumanPrefix(
+        standardImages,
+        'standard images',
+        1,
+      ),
       rawValue: rawPixelsteps,
       explanationKeys: [
         'standard_images.tooltip.line1',
@@ -343,10 +349,14 @@ export class UnitConversionService {
    * Formats a large number with human-readable prefix (million, billion, etc.)
    * Use this for everyday units like "images", "requests"
    */
-  formatLargeNumber(value: number, unit: string = '', decimals: number = 1): string {
+  formatLargeNumber(
+    value: number,
+    unit: string = '',
+    decimals: number = 1,
+  ): string {
     const prefix = this.getHumanPrefix(value);
     const scaledValue = value / prefix.threshold;
-    
+
     // Use proper English: "164.7 million images" not "164.7 megaimages"
     const parts = [scaledValue.toFixed(decimals)];
     if (prefix.prefix) {
@@ -362,7 +372,11 @@ export class UnitConversionService {
    * Formats a large number with SI prefix (kilo, mega, giga)
    * Use this for technical units like "pixelsteps", "tokens/sec"
    */
-  formatLargeNumberTechnical(value: number, unit: string = '', decimals: number = 1): string {
+  formatLargeNumberTechnical(
+    value: number,
+    unit: string = '',
+    decimals: number = 1,
+  ): string {
     const formatted = this.formatWithSiPrefix(value, unit, decimals);
     return formatted.formatted;
   }
@@ -370,9 +384,11 @@ export class UnitConversionService {
   /**
    * Get the appropriate human-readable prefix for a value
    */
-  private getHumanPrefix(
-    value: number,
-  ): { threshold: number; prefix: string; short: string } {
+  private getHumanPrefix(value: number): {
+    threshold: number;
+    prefix: string;
+    short: string;
+  } {
     const absValue = Math.abs(value);
     for (const prefix of HUMAN_PREFIXES) {
       if (absValue >= prefix.threshold) {
@@ -390,5 +406,123 @@ export class UnitConversionService {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });
+  }
+  // ============================================================================
+  // MODEL-SPECIFIC UNIT FORMATTING (for /v2/status/models endpoint)
+  // ============================================================================
+
+  /**
+   * Formats queued pixelsteps (from image model API) to megapixelsteps.
+   *
+   * The `/v2/status/models` endpoint returns `queued` as raw pixelsteps for image models.
+   * This converts to megapixelsteps (mps) for display.
+   *
+   * @param queuedPixelsteps - Raw pixelsteps from the model API
+   * @returns SynthesizedUnit with megapixelsteps as primary and standard images as technical
+   */
+  formatModelQueuedImage(queuedPixelsteps: number): SynthesizedUnit {
+    // Convert raw pixelsteps to megapixelsteps
+    const megapixelsteps = queuedPixelsteps / 1e6;
+    // Convert to standard images (1 standard image = 20 megapixelsteps)
+    const standardImages = megapixelsteps / 20;
+
+    return {
+      primary: this.formatWithSiPrefix(megapixelsteps, 'mps', 1),
+      technical: this.formatWithHumanPrefix(
+        standardImages,
+        'standard images',
+        1,
+      ),
+      rawValue: queuedPixelsteps,
+      explanationKeys: [
+        'mps.tooltip.line1',
+        'mps.tooltip.line2',
+        'standard_images.tooltip.line3',
+      ],
+    };
+  }
+
+  /**
+   * Formats queued tokens (from text model API).
+   *
+   * The `/v2/status/models` endpoint returns `queued` as raw tokens for text models.
+   *
+   * @param queuedTokens - Raw tokens from the model API
+   * @returns SynthesizedUnit with tokens as primary and pages as technical
+   */
+  formatModelQueuedText(queuedTokens: number): SynthesizedUnit {
+    const pagesOfText = (queuedTokens * 0.75) / 500;
+
+    return {
+      primary: this.formatWithSiPrefix(queuedTokens, 'tokens', 1),
+      technical: this.formatWithHumanPrefix(pagesOfText, 'pages of text', 1),
+      rawValue: queuedTokens,
+      explanationKeys: [
+        'pages_of_text.tooltip.line1',
+        'pages_of_text.tooltip.line2',
+        'pages_of_text.tooltip.line3',
+      ],
+    };
+  }
+
+  /**
+   * Formats image model performance rate.
+   *
+   * The `/v2/status/models` endpoint returns `performance` as megapixelsteps/second for image models.
+   *
+   * @param megapixelstepsPerSecond - Performance rate from the model API (mps/s)
+   * @returns SynthesizedUnit with mps/s as primary and standard images/s as technical
+   */
+  formatModelPerformanceImage(
+    megapixelstepsPerSecond: number,
+  ): SynthesizedUnit {
+    // Convert to standard images per second (1 standard image = 20 megapixelsteps)
+    const standardImagesPerSecond = megapixelstepsPerSecond / 20;
+
+    return {
+      primary: {
+        value: megapixelstepsPerSecond,
+        prefix: '',
+        prefixShort: '',
+        unit: 'mps/s',
+        formatted: `${megapixelstepsPerSecond.toFixed(2)} mps/s`,
+        formattedShort: `${megapixelstepsPerSecond.toFixed(2)} mps/s`,
+      },
+      technical: this.formatWithSiPrefix(
+        standardImagesPerSecond,
+        'std img/s',
+        2,
+      ),
+      rawValue: megapixelstepsPerSecond,
+      explanationKeys: [
+        'mps.tooltip.line1',
+        'mps.tooltip.line2',
+        'standard_images.tooltip.line3',
+      ],
+    };
+  }
+
+  /**
+   * Formats text model performance rate.
+   *
+   * The `/v2/status/models` endpoint returns `performance` as tokens/second for text models.
+   *
+   * @param tokensPerSecond - Performance rate from the model API (tokens/s)
+   * @returns SynthesizedUnit with tokens/s as primary and pages/s as technical
+   */
+  formatModelPerformanceText(tokensPerSecond: number): SynthesizedUnit {
+    // Convert to pages per second
+    const pagesPerSecond = (tokensPerSecond * 0.75) / 500;
+
+    return {
+      primary: this.formatWithSiPrefix(tokensPerSecond, 'tokens/s', 1),
+      technical: this.formatWithSiPrefix(pagesPerSecond, 'pages/s', 3),
+      rawValue: tokensPerSecond,
+      explanationKeys: [
+        'pages_of_text.tooltip.line1',
+        'pages_of_text.tooltip.line2',
+        'pages_of_text.tooltip.line3',
+      ],
+    };
   }
 }

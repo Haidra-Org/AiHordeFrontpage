@@ -1,13 +1,13 @@
 <!-- Toasts -->
-<app-admin-toast-bar
-  [toasts]="toasts()"
-  (dismiss)="dismissToast($event)"
-/>
+<app-admin-toast-bar [toasts]="toasts()" (dismiss)="dismissToast($event)" />
 
 <!-- Dialog -->
 <app-admin-dialog
   [open]="dialogOpen()"
-  [title]="'admin.users.dialog.reset_suspicion_title' | transloco: { username: selectedUser()?.username }"
+  [title]="
+    'admin.users.dialog.reset_suspicion_title'
+      | transloco: { username: selectedUser()?.username }
+  "
   [confirmLabel]="'admin.users.dialog.confirm' | transloco"
   [cancelLabel]="'admin.users.dialog.cancel' | transloco"
   [loading]="isUpdating()"
@@ -1566,6 +1566,7 @@
                       [worker]="worker"
                       [isModerator]="auth.currentUser()?.moderator ?? false"
                       (workerUpdated)="onWorkerUpdated()"
+                      (workerDeleted)="onWorkerDeleted($event)"
                     />
                   }
                 </div>

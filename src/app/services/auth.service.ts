@@ -51,7 +51,10 @@ export class AuthService {
     }
   }
 
-  public login(apiKey: string, remember: boolean = false): Observable<HordeUser | null> {
+  public login(
+    apiKey: string,
+    remember: boolean = false,
+  ): Observable<HordeUser | null> {
     this._isLoading.set(true);
 
     return this.aiHorde.getUserByApiKey(apiKey).pipe(

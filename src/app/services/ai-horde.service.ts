@@ -12,6 +12,7 @@ import { HordeUser } from '../types/horde-user';
 import { ActiveModel, ModelType } from '../types/active-model';
 import { ImageModelStats } from '../types/image-model-stats';
 import { TextModelStats } from '../types/text-model-stats';
+import { LeaderboardUser } from '../types/leaderboard-user';
 
 @Injectable({
   providedIn: 'root',
@@ -200,5 +201,51 @@ export class AiHordeService {
     return this.httpClient.get<TextModelStats>(
       'https://aihorde.net/api/v2/stats/text/models',
     );
+  }
+
+  /**
+   * Get kudos leaderboard - top users sorted by kudos.
+   * @param page - Page number (1-indexed)
+   * @param limit - Number of users per page (max 25)
+   */
+  public getKudosLeaderboard(
+    page: number = 1,
+    limit: number = 25,
+  ): Observable<LeaderboardUser[]> {
+    return this.httpClient
+      .get<
+        HordeUser[]
+      >(`https://aihorde.net/api/v2/users?page=${page}&sort=kudos`)
+      .pipe(
+        map((users) =>
+          users.slice(0, limit).map((user) => ({
+            username: user.username,
+            id: user.id,
+            kudos: user.kudos,
+          })),
+        ),
+        catchError(() => of([])),
+      );
+  }
+
+  /**
+   * Get a page of users sorted by kudos for rank lookup.
+   * @param page - Page number (1-indexed)
+   */
+  public getKudosLeaderboardPage(page: number): Observable<LeaderboardUser[]> {
+    return this.httpClient
+      .get<
+        HordeUser[]
+      >(`https://aihorde.net/api/v2/users?page=${page}&sort=kudos`)
+      .pipe(
+        map((users) =>
+          users.map((user) => ({
+            username: user.username,
+            id: user.id,
+            kudos: user.kudos,
+          })),
+        ),
+        catchError(() => of([])),
+      );
   }
 }

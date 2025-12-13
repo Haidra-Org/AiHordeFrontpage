@@ -109,7 +109,11 @@
         />
       </svg>
       <p>{{ error() }}</p>
-      <button type="button" class="btn-source-control" (click)="loadUserStyles()">
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="loadUserStyles()"
+      >
         {{ "styles.retry" | transloco }}
       </button>
     </div>
@@ -165,7 +169,7 @@
   <!-- Browse All Styles Link -->
   @if (!showCreateForm() && !compact()) {
     <div class="action-row action-row-responsive">
-      <a routerLink="/details/styles" class="btn-source-control">
+      <a routerLink="/details/styles/" class="btn-source-control">
         <svg
           class="icon-sm"
           fill="none"

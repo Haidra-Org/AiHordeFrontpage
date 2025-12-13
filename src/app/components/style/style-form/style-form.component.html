@@ -209,7 +209,9 @@
                 formControlName="sampler_name"
                 class="form-input"
               >
-                <option value="">{{ "styles.form.default" | transloco }}</option>
+                <option value="">
+                  {{ "styles.form.default" | transloco }}
+                </option>
                 <option value="k_euler">k_euler</option>
                 <option value="k_euler_a">k_euler_a</option>
                 <option value="k_heun">k_heun</option>
@@ -512,7 +514,9 @@
               id="style-stop-sequence"
               formControlName="stop_sequence"
               class="form-input"
-              [placeholder]="'styles.form.stop_sequence_placeholder' | transloco"
+              [placeholder]="
+                'styles.form.stop_sequence_placeholder' | transloco
+              "
             />
           </div>
         </div>
@@ -534,7 +538,11 @@
       type="button"
       class="btn-primary"
       (click)="onSubmit()"
-      [disabled]="saving() || (!showJsonView() && !form.valid) || (showJsonView() && jsonError())"
+      [disabled]="
+        saving() ||
+        (!showJsonView() && !form.valid) ||
+        (showJsonView() && jsonError())
+      "
     >
       @if (saving()) {
         {{ "styles.form.saving" | transloco }}

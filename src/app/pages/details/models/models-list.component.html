@@ -78,11 +78,17 @@
   @if (!loading() && !error() && currentModels().length > 0) {
     <div class="details-summary">
       <div class="summary-stat">
-        <span class="summary-label">{{ "details.models.total_models" | transloco }}</span>
-        <span class="summary-value">{{ formatNumber(currentModels().length) }}</span>
+        <span class="summary-label">{{
+          "details.models.total_models" | transloco
+        }}</span>
+        <span class="summary-value">{{
+          formatNumber(currentModels().length)
+        }}</span>
       </div>
       <div class="summary-stat">
-        <span class="summary-label">{{ "details.models.total_queued" | transloco }}</span>
+        <span class="summary-label">{{
+          "details.models.total_queued" | transloco
+        }}</span>
         <span class="summary-value">{{ formatNumber(totalQueued()) }}</span>
       </div>
     </div>
@@ -115,7 +121,9 @@
         />
       </div>
       <div class="filter-sort">
-        <span class="filter-label">{{ "details.models.sort_by" | transloco }}</span>
+        <span class="filter-label">{{
+          "details.models.sort_by" | transloco
+        }}</span>
         <button
           type="button"
           class="sort-button"
@@ -123,8 +131,10 @@
           (click)="setSortField('name')"
         >
           {{ "details.models.sort.name" | transloco }}
-          @if (sortField() === 'name') {
-            <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortField() === "name") {
+            <span class="sort-indicator">{{
+              sortDirection() === "asc" ? "↑" : "↓"
+            }}</span>
           }
         </button>
         <button
@@ -134,8 +144,10 @@
           (click)="setSortField('count')"
         >
           {{ "details.models.sort.workers" | transloco }}
-          @if (sortField() === 'count') {
-            <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortField() === "count") {
+            <span class="sort-indicator">{{
+              sortDirection() === "asc" ? "↑" : "↓"
+            }}</span>
           }
         </button>
         <button
@@ -145,8 +157,10 @@
           (click)="setSortField('queued')"
         >
           {{ "details.models.sort.queued" | transloco }}
-          @if (sortField() === 'queued') {
-            <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortField() === "queued") {
+            <span class="sort-indicator">{{
+              sortDirection() === "asc" ? "↑" : "↓"
+            }}</span>
           }
         </button>
         <button
@@ -156,8 +170,10 @@
           (click)="setSortField('eta')"
         >
           {{ "details.models.sort.eta" | transloco }}
-          @if (sortField() === 'eta') {
-            <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortField() === "eta") {
+            <span class="sort-indicator">{{
+              sortDirection() === "asc" ? "↑" : "↓"
+            }}</span>
           }
         </button>
       </div>
@@ -225,12 +241,24 @@
       <div class="models-table">
         <!-- Table Header -->
         <div class="models-table-header">
-          <span class="models-table-th">{{ "details.models.sort.name" | transloco }}</span>
-          <span class="models-table-th models-table-th-right">{{ "details.models.workers" | transloco }}</span>
-          <span class="models-table-th models-table-th-right">{{ "details.models.queued" | transloco }}</span>
-          <span class="models-table-th models-table-th-right">{{ "details.models.jobs" | transloco }}</span>
-          <span class="models-table-th models-table-th-right">{{ "details.models.eta" | transloco }}</span>
-          <span class="models-table-th models-table-th-right">{{ "details.models.performance" | transloco }}</span>
+          <span class="models-table-th">{{
+            "details.models.sort.name" | transloco
+          }}</span>
+          <span class="models-table-th models-table-th-right">{{
+            "details.models.workers" | transloco
+          }}</span>
+          <span class="models-table-th models-table-th-right">{{
+            "details.models.queued" | transloco
+          }}</span>
+          <span class="models-table-th models-table-th-right">{{
+            "details.models.jobs" | transloco
+          }}</span>
+          <span class="models-table-th models-table-th-right">{{
+            "details.models.eta" | transloco
+          }}</span>
+          <span class="models-table-th models-table-th-right">{{
+            "details.models.performance" | transloco
+          }}</span>
         </div>
 
         <!-- Table Rows -->
@@ -238,12 +266,16 @@
           <div class="models-table-row">
             <!-- Name + Badges -->
             <div class="models-table-cell-name">
-              <span class="models-table-name" [title]="model.name">{{ model.name }}</span>
+              <span class="models-table-name" [title]="model.name">{{
+                model.name
+              }}</span>
             </div>
 
             <!-- Workers -->
             <div class="models-table-cell">
-              <span class="models-table-label">{{ "details.models.workers" | transloco }}</span>
+              <span class="models-table-label">{{
+                "details.models.workers" | transloco
+              }}</span>
               <span
                 class="models-table-value"
                 [class.models-table-value-highlight]="model.count > 10"
@@ -255,7 +287,9 @@
 
             <!-- Queued -->
             <div class="models-table-cell">
-              <span class="models-table-label">{{ "details.models.queued" | transloco }}</span>
+              <span class="models-table-label">{{
+                "details.models.queued" | transloco
+              }}</span>
               <span
                 class="models-table-value"
                 [class.models-table-value-muted]="model.queued === 0"
@@ -266,7 +300,9 @@
 
             <!-- Jobs -->
             <div class="models-table-cell">
-              <span class="models-table-label">{{ "details.models.jobs" | transloco }}</span>
+              <span class="models-table-label">{{
+                "details.models.jobs" | transloco
+              }}</span>
               <span
                 class="models-table-value"
                 [class.models-table-value-muted]="model.jobs === 0"
@@ -277,7 +313,9 @@
 
             <!-- ETA -->
             <div class="models-table-cell">
-              <span class="models-table-label">{{ "details.models.eta" | transloco }}</span>
+              <span class="models-table-label">{{
+                "details.models.eta" | transloco
+              }}</span>
               <span
                 class="models-table-value"
                 [class.models-table-value-muted]="!model.eta || model.eta <= 0"
@@ -288,13 +326,17 @@
 
             <!-- Performance -->
             <div class="models-table-cell">
-              <span class="models-table-label">{{ "details.models.performance" | transloco }}</span>
+              <span class="models-table-label">{{
+                "details.models.performance" | transloco
+              }}</span>
               <span
                 class="models-table-value"
-                [class.models-table-value-muted]="!model.performance || model.performance <= 0"
+                [class.models-table-value-muted]="
+                  !model.performance || model.performance <= 0
+                "
               >
                 @if (model.performance !== undefined && model.performance > 0) {
-                  {{ model.performance | number:'1.2-2' }}
+                  {{ model.performance | number: "1.2-2" }}
                 } @else {
                   -
                 }

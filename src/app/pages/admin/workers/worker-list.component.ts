@@ -62,6 +62,7 @@ export class WorkerListComponent implements OnInit {
   public sortOrder = signal<SortOrder>('asc');
   public workerVersionsExpanded = signal<boolean>(false);
   public statisticsCollapsed = signal<boolean>(true);
+  public deletionSuccessMessage = signal<boolean>(false);
 
   public setWorkerType(type: WorkerType): void {
     if (this.workerType() === type) return;
@@ -137,17 +138,17 @@ export class WorkerListComponent implements OnInit {
   public totalPerformance = computed(() => {
     const workers = this.filteredWorkers();
     if (workers.length === 0) return 0;
-    
+
     const total = workers.reduce(
       (sum, w) => sum + (parseFloat(w.performance) || 0),
       0,
     );
-    
+
     // For interrogation workers, return mean average
     if (this.workerType() === 'interrogation') {
       return total / workers.length;
     }
-    
+
     // For image and text workers, return total
     return total;
   });
@@ -179,12 +180,12 @@ export class WorkerListComponent implements OnInit {
   } {
     // Split on first two colons: "Worker Name:Version:URL"
     const parts = versionString.split(':');
-    
+
     if (parts.length >= 3) {
       const name = parts[0].trim();
       const version = parts[1].trim();
       const url = parts.slice(2).join(':').trim(); // Rejoin in case URL has colons
-      
+
       return {
         displayName: `${name} v${version}`,
         url: url || null,
@@ -197,7 +198,7 @@ export class WorkerListComponent implements OnInit {
         url: null,
       };
     }
-    
+
     // Fallback for strings that don't match the pattern
     return {
       displayName: versionString,
@@ -215,14 +216,22 @@ export class WorkerListComponent implements OnInit {
 
     if (this.workerType() === 'image') {
       const img2img = { name: 'img2img', totalPerformance: 0, workerCount: 0 };
-      const painting = { name: 'painting', totalPerformance: 0, workerCount: 0 };
+      const painting = {
+        name: 'painting',
+        totalPerformance: 0,
+        workerCount: 0,
+      };
       const postProcessing = {
         name: 'post-processing',
         totalPerformance: 0,
         workerCount: 0,
       };
       const lora = { name: 'lora', totalPerformance: 0, workerCount: 0 };
-      const controlnet = { name: 'controlnet', totalPerformance: 0, workerCount: 0 };
+      const controlnet = {
+        name: 'controlnet',
+        totalPerformance: 0,
+        workerCount: 0,
+      };
       const sdxlControlnet = {
         name: 'sdxl_controlnet',
         totalPerformance: 0,
@@ -324,6 +333,16 @@ export class WorkerListComponent implements OnInit {
 
   public onWorkerUpdated(): void {
     this.loadWorkers();
+  }
+
+  public onWorkerDeleted(workerId: string): void {
+    // Remove worker from the list immediately
+    this.workers.update((workers) =>
+      workers.filter((w) => w.id !== workerId),
+    );
+    // Show success toast
+    this.deletionSuccessMessage.set(true);
+    setTimeout(() => this.deletionSuccessMessage.set(false), 5000);
   }
 
   public toggleWorkerVersions(): void {

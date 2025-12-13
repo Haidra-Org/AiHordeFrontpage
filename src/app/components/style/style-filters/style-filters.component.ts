@@ -27,7 +27,9 @@ export class StyleFiltersComponent {
   public readonly queryParams = input.required<StyleQueryParams>();
 
   /** Current client-side filters. */
-  public readonly clientFilters = input<StyleClientFilters>(DEFAULT_CLIENT_FILTERS);
+  public readonly clientFilters = input<StyleClientFilters>(
+    DEFAULT_CLIENT_FILTERS,
+  );
 
   /** Available tags for filtering (populated from loaded styles). */
   public readonly availableTags = input<string[]>([]);
@@ -57,7 +59,9 @@ export class StyleFiltersComponent {
   ];
 
   /** Current sort value. */
-  public readonly currentSort = computed(() => this.queryParams().sort ?? 'popular');
+  public readonly currentSort = computed(
+    () => this.queryParams().sort ?? 'popular',
+  );
 
   /** Current tag filter. */
   public readonly currentTag = computed(() => this.queryParams().tag ?? '');
@@ -132,10 +136,7 @@ export class StyleFiltersComponent {
     const params = this.queryParams();
     const client = this.clientFilters();
     return Boolean(
-      params.tag ||
-      params.model ||
-      client.searchQuery ||
-      client.hideNsfw
+      params.tag || params.model || client.searchQuery || client.hideNsfw,
     );
   });
 }

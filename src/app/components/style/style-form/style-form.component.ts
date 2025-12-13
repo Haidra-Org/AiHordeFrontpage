@@ -33,7 +33,11 @@ export type StyleFormMode = 'create' | 'edit';
 
 export interface StyleFormSubmitEvent {
   type: StyleType;
-  payload: CreateImageStyleInput | CreateTextStyleInput | UpdateImageStyleInput | UpdateTextStyleInput;
+  payload:
+    | CreateImageStyleInput
+    | CreateTextStyleInput
+    | UpdateImageStyleInput
+    | UpdateTextStyleInput;
 }
 
 @Component({
@@ -88,9 +92,22 @@ export class StyleFormComponent implements OnInit {
 
     // Base form fields
     const baseFields = {
-      name: [initial?.name ?? '', [Validators.required, Validators.minLength(1), Validators.maxLength(100)]],
-      info: [initial?.info ?? '', [Validators.minLength(10), Validators.maxLength(1000)]],
-      prompt: [initial?.prompt ?? (isImage ? '{p}{np}' : '{p}'), [Validators.required]],
+      name: [
+        initial?.name ?? '',
+        [
+          Validators.required,
+          Validators.minLength(1),
+          Validators.maxLength(100),
+        ],
+      ],
+      info: [
+        initial?.info ?? '',
+        [Validators.minLength(10), Validators.maxLength(1000)],
+      ],
+      prompt: [
+        initial?.prompt ?? (isImage ? '{p}{np}' : '{p}'),
+        [Validators.required],
+      ],
       public: [initial?.public ?? true],
       nsfw: [initial?.nsfw ?? false],
       tags: [initial?.tags?.join(', ') ?? ''],
@@ -178,13 +195,20 @@ export class StyleFormComponent implements OnInit {
       this.jsonError.set(null);
 
       // Update form fields from parsed JSON
-      if (parsed.name !== undefined) this.form.patchValue({ name: parsed.name });
-      if (parsed.info !== undefined) this.form.patchValue({ info: parsed.info });
-      if (parsed.prompt !== undefined) this.form.patchValue({ prompt: parsed.prompt });
-      if (parsed.public !== undefined) this.form.patchValue({ public: parsed.public });
-      if (parsed.nsfw !== undefined) this.form.patchValue({ nsfw: parsed.nsfw });
-      if (parsed.tags !== undefined) this.form.patchValue({ tags: parsed.tags.join(', ') });
-      if (parsed.models !== undefined) this.form.patchValue({ models: parsed.models.join(', ') });
+      if (parsed.name !== undefined)
+        this.form.patchValue({ name: parsed.name });
+      if (parsed.info !== undefined)
+        this.form.patchValue({ info: parsed.info });
+      if (parsed.prompt !== undefined)
+        this.form.patchValue({ prompt: parsed.prompt });
+      if (parsed.public !== undefined)
+        this.form.patchValue({ public: parsed.public });
+      if (parsed.nsfw !== undefined)
+        this.form.patchValue({ nsfw: parsed.nsfw });
+      if (parsed.tags !== undefined)
+        this.form.patchValue({ tags: parsed.tags.join(', ') });
+      if (parsed.models !== undefined)
+        this.form.patchValue({ models: parsed.models.join(', ') });
 
       if (this.isImageStyle() && parsed.params) {
         const p = parsed.params as ImageStyleParams;
@@ -251,16 +275,25 @@ export class StyleFormComponent implements OnInit {
 
   private parseCommaSeparated(value: string): string[] {
     if (!value || !value.trim()) return [];
-    return value.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
   }
 
-  private parseOptionalNumber(value: string | number | null | undefined): number | undefined {
+  private parseOptionalNumber(
+    value: string | number | null | undefined,
+  ): number | undefined {
     if (value === null || value === undefined || value === '') return undefined;
     const num = typeof value === 'number' ? value : parseFloat(value);
     return isNaN(num) ? undefined : num;
   }
 
-  private buildPayload(): CreateImageStyleInput | CreateTextStyleInput | UpdateImageStyleInput | UpdateTextStyleInput {
+  private buildPayload():
+    | CreateImageStyleInput
+    | CreateTextStyleInput
+    | UpdateImageStyleInput
+    | UpdateTextStyleInput {
     const f = this.form.value;
     const isImage = this.isImageStyle();
 
@@ -275,8 +308,10 @@ export class StyleFormComponent implements OnInit {
     };
 
     // Remove empty arrays
-    if (base.tags.length === 0) delete (base as Record<string, unknown>)['tags'];
-    if (base.models.length === 0) delete (base as Record<string, unknown>)['models'];
+    if (base.tags.length === 0)
+      delete (base as Record<string, unknown>)['tags'];
+    if (base.models.length === 0)
+      delete (base as Record<string, unknown>)['models'];
 
     if (isImage) {
       const params: ImageStyleParams = {};
@@ -285,7 +320,8 @@ export class StyleFormComponent implements OnInit {
       const cfgScale = this.parseOptionalNumber(f.cfg_scale);
       if (cfgScale !== undefined) params.cfg_scale = cfgScale;
       const denoisingStrength = this.parseOptionalNumber(f.denoising_strength);
-      if (denoisingStrength !== undefined) params.denoising_strength = denoisingStrength;
+      if (denoisingStrength !== undefined)
+        params.denoising_strength = denoisingStrength;
       const height = this.parseOptionalNumber(f.height);
       if (height !== undefined) params.height = height;
       const width = this.parseOptionalNumber(f.width);
@@ -298,9 +334,12 @@ export class StyleFormComponent implements OnInit {
       const clipSkip = this.parseOptionalNumber(f.clip_skip);
       if (clipSkip !== undefined) params.clip_skip = clipSkip;
       const facefixerStrength = this.parseOptionalNumber(f.facefixer_strength);
-      if (facefixerStrength !== undefined) params.facefixer_strength = facefixerStrength;
+      if (facefixerStrength !== undefined)
+        params.facefixer_strength = facefixerStrength;
       const postProcessing = this.parseCommaSeparated(f.post_processing);
-      if (postProcessing.length > 0) params.post_processing = postProcessing as ImageStyleParams['post_processing'];
+      if (postProcessing.length > 0)
+        params.post_processing =
+          postProcessing as ImageStyleParams['post_processing'];
       if (f.transparent) params.transparent = true;
       if (f.workflow) params.workflow = f.workflow;
 
@@ -359,11 +398,13 @@ export class StyleFormComponent implements OnInit {
       const stopSequence = this.parseCommaSeparated(f.stop_sequence);
       if (stopSequence.length > 0) params.stop_sequence = stopSequence;
       const smoothingFactor = this.parseOptionalNumber(f.smoothing_factor);
-      if (smoothingFactor !== undefined) params.smoothing_factor = smoothingFactor;
+      if (smoothingFactor !== undefined)
+        params.smoothing_factor = smoothingFactor;
       const dynatempRange = this.parseOptionalNumber(f.dynatemp_range);
       if (dynatempRange !== undefined) params.dynatemp_range = dynatempRange;
       const dynatempExponent = this.parseOptionalNumber(f.dynatemp_exponent);
-      if (dynatempExponent !== undefined) params.dynatemp_exponent = dynatempExponent;
+      if (dynatempExponent !== undefined)
+        params.dynatemp_exponent = dynatempExponent;
 
       const payload: CreateTextStyleInput = {
         ...base,

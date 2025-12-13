@@ -41,4 +41,11 @@ export const detailsRoutes: Routes = [
         (c) => c.StyleDetailComponent,
       ),
   },
+  {
+    path: 'leaderboard',
+    loadComponent: () =>
+      import('./kudos-leaderboard/kudos-leaderboard.component').then(
+        (c) => c.KudosLeaderboardComponent,
+      ),
+  },
 ];

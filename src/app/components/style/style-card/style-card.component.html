@@ -8,11 +8,7 @@
   <!-- Image Preview (for image styles) -->
   @if (isImage() && primaryExampleUrl()) {
     <div class="card-preview">
-      <img
-        [src]="primaryExampleUrl()"
-        [alt]="style().name"
-        loading="lazy"
-      />
+      <img [src]="primaryExampleUrl()" [alt]="style().name" loading="lazy" />
     </div>
   }
 

@@ -131,51 +131,81 @@
   <!-- Content -->
   @if (!loading() && !error() && performance()) {
     <!-- Overview Tab -->
-    @if (activeTab() === 'overview') {
+    @if (activeTab() === "overview") {
       <div class="usage-overview">
         <!-- Real-time Performance Section -->
         <div class="card card-bg-primary">
-          <h3 class="heading-card">{{ "details.usage.realtime_performance" | transloco }}</h3>
-          <div class="data-grid-2-4">
-            <!-- Image Performance -->
-            <div class="data-item-box highlight-box">
-              @if (imagePerformanceRate(); as rate) {
-                <span class="data-value-xl">{{ rate.primary.value | number: '1.1-1' }}</span>
-                <span class="data-label-spaced">
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="'standard_images' | transloco" />
-                  {{ "details.usage.per_second" | transloco }}
-                </span>
-              }
+          <h3 class="heading-card">
+            {{ "details.usage.realtime_performance" | transloco }}
+          </h3>
+          <div class="space-y-4">
+            <!-- Performance Rates -->
+            <div class="data-grid-1-2">
+              <!-- Image Performance -->
+              <div class="data-item-box highlight-box">
+                @if (imagePerformanceRate(); as rate) {
+                  <span class="data-value-xl">{{
+                    rate.primary.value | number: "1.0-1"
+                  }}</span>
+                  <span class="data-label-spaced">
+                    <app-unit-tooltip
+                      [unit]="rate"
+                      [primaryOverride]="'standard_images' | transloco"
+                    />
+                    {{ "details.usage.per_second" | transloco }}
+                  </span>
+                }
+              </div>
+              <!-- Text Performance -->
+              <div class="data-item-box highlight-box">
+                @if (textPerformanceRate(); as rate) {
+                  <span class="data-value-xl">{{
+                    rate.technical.value | number: "1.0-1"
+                  }}</span>
+                  <span class="data-label-spaced">
+                    <app-unit-tooltip
+                      [unit]="rate"
+                      [primaryOverride]="rate.technical.unit"
+                    />
+                    {{ "details.usage.per_second" | transloco }}
+                  </span>
+                }
+              </div>
             </div>
-            <!-- Text Performance -->
-            <div class="data-item-box highlight-box">
-              @if (textPerformanceRate(); as rate) {
-                <span class="data-value-xl">{{ rate.technical.value | number: '1.1-1' }}</span>
-                <span class="data-label-spaced">
-                  <app-unit-tooltip [unit]="rate" [primaryOverride]="rate.technical.unit" />
-                  {{ "details.usage.per_second" | transloco }}
-                </span>
-              }
-            </div>
-            <!-- Image Workers -->
-            <div class="data-item-box">
-              <span class="data-value-lg">{{ performance()!.worker_count | number }}</span>
-              <span class="data-label-spaced">{{ "details.usage.image_workers" | transloco }}</span>
-            </div>
-            <!-- Text Workers -->
-            <div class="data-item-box">
-              <span class="data-value-lg">{{ performance()!.text_worker_count | number }}</span>
-              <span class="data-label-spaced">{{ "details.usage.text_workers" | transloco }}</span>
+            <!-- Worker Counts -->
+            <div class="data-grid-1-2">
+              <!-- Image Workers -->
+              <div class="data-item-box">
+                <span class="data-value-lg">{{
+                  performance()!.worker_count | number
+                }}</span>
+                <span class="data-label-spaced">{{
+                  "details.usage.image_workers" | transloco
+                }}</span>
+              </div>
+              <!-- Text Workers -->
+              <div class="data-item-box">
+                <span class="data-value-lg">{{
+                  performance()!.text_worker_count | number
+                }}</span>
+                <span class="data-label-spaced">{{
+                  "details.usage.text_workers" | transloco
+                }}</span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Queue Status Section -->
         <div class="card card-bg-primary">
-          <h3 class="heading-card">{{ "details.usage.queue_status" | transloco }}</h3>
+          <h3 class="heading-card">
+            {{ "details.usage.queue_status" | transloco }}
+          </h3>
           <div class="data-grid-1-2-3">
             <div class="data-item-box">
-              <span class="data-value-lg">{{ performance()!.queued_requests | number }}</span>
+              <span class="data-value-lg">{{
+                performance()!.queued_requests | number
+              }}</span>
               <span class="data-label-spaced">
                 {{ "details.usage.queued_image_requests" | transloco }}
                 @if (queuedImageWork(); as work) {
@@ -186,7 +216,9 @@
               </span>
             </div>
             <div class="data-item-box">
-              <span class="data-value-lg">{{ performance()!.queued_text_requests | number }}</span>
+              <span class="data-value-lg">{{
+                performance()!.queued_text_requests | number
+              }}</span>
               <span class="data-label-spaced">
                 {{ "details.usage.queued_text_requests" | transloco }}
                 @if (queuedTextWork(); as work) {
@@ -197,8 +229,12 @@
               </span>
             </div>
             <div class="data-item-box">
-              <span class="data-value-lg">{{ performance()!.queued_forms | number }}</span>
-              <span class="data-label-spaced">{{ "details.usage.queued_alchemy_forms" | transloco }}</span>
+              <span class="data-value-lg">{{
+                performance()!.queued_forms | number
+              }}</span>
+              <span class="data-label-spaced">{{
+                "details.usage.queued_alchemy_forms" | transloco
+              }}</span>
             </div>
           </div>
         </div>
@@ -208,16 +244,27 @@
           <div class="usage-totals-grid">
             <!-- Image Totals -->
             <div class="card card-bg-primary">
-              <h3 class="heading-card">{{ "details.usage.image_totals" | transloco }}</h3>
+              <h3 class="heading-card">
+                {{ "details.usage.image_totals" | transloco }}
+              </h3>
               <div class="space-y-4">
                 <div class="data-item">
-                  <span class="data-label">{{ "details.usage.total_images_generated" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.total_images_generated" | transloco
+                  }}</span>
                   <span class="data-value-lg">
-                    {{ units.formatLargeNumber(imageStats()!.total.images, 'images') }}
+                    {{
+                      units.formatLargeNumber(
+                        imageStats()!.total.images,
+                        "images"
+                      )
+                    }}
                   </span>
                 </div>
                 <div class="data-item">
-                  <span class="data-label">{{ "details.usage.total_pixelsteps" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.total_pixelsteps" | transloco
+                  }}</span>
                   <span class="data-value">
                     @if (totalPixelsteps(); as ps) {
                       {{ ps.primary.formatted }}
@@ -228,9 +275,16 @@
                   </span>
                 </div>
                 <div class="section-divider-top">
-                  <span class="data-label">{{ "details.usage.last_24h" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.last_24h" | transloco
+                  }}</span>
                   <span class="data-value">
-                    {{ units.formatLargeNumber(imageStats()!.day.images, 'images') }}
+                    {{
+                      units.formatLargeNumber(
+                        imageStats()!.day.images,
+                        "images"
+                      )
+                    }}
                   </span>
                 </div>
               </div>
@@ -238,29 +292,50 @@
 
             <!-- Text Totals -->
             <div class="card card-bg-primary">
-              <h3 class="heading-card">{{ "details.usage.text_totals" | transloco }}</h3>
+              <h3 class="heading-card">
+                {{ "details.usage.text_totals" | transloco }}
+              </h3>
               <div class="space-y-4">
                 <div class="data-item">
-                  <span class="data-label">{{ "details.usage.total_requests" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.total_requests" | transloco
+                  }}</span>
                   <span class="data-value-lg">
-                    {{ units.formatLargeNumber(textStats()!.total.requests, 'requests') }}
+                    {{
+                      units.formatLargeNumber(
+                        textStats()!.total.requests,
+                        "requests"
+                      )
+                    }}
                   </span>
                 </div>
                 <div class="data-item">
-                  <span class="data-label">{{ "details.usage.total_tokens" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.total_tokens" | transloco
+                  }}</span>
                   <span class="data-value">
                     @if (totalTokens(); as tokens) {
                       {{ tokens.primary.formatted }}
                       <span class="text-secondary-inline">
-                        (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
+                        (<app-unit-tooltip
+                          [unit]="tokens"
+                          [swapDisplay]="true"
+                        />)
                       </span>
                     }
                   </span>
                 </div>
                 <div class="section-divider-top">
-                  <span class="data-label">{{ "details.usage.last_24h" | transloco }}</span>
+                  <span class="data-label">{{
+                    "details.usage.last_24h" | transloco
+                  }}</span>
                   <span class="data-value">
-                    {{ units.formatLargeNumber(textStats()!.day.requests, 'requests') }}
+                    {{
+                      units.formatLargeNumber(
+                        textStats()!.day.requests,
+                        "requests"
+                      )
+                    }}
                   </span>
                 </div>
               </div>
@@ -274,7 +349,9 @@
             <!-- Top Image Models -->
             <div class="card card-bg-primary">
               <div class="card-header-flex">
-                <h3 class="heading-card">{{ "details.usage.top_image_models" | transloco }}</h3>
+                <h3 class="heading-card">
+                  {{ "details.usage.top_image_models" | transloco }}
+                </h3>
                 <button
                   type="button"
                   class="btn-link-sm"
@@ -284,15 +361,25 @@
                 </button>
               </div>
               <div class="model-list">
-                @for (model of topImageModels().slice(0, 5); track model.name; let i = $index) {
+                @for (
+                  model of topImageModels().slice(0, 5);
+                  track model.name;
+                  let i = $index
+                ) {
                   <div class="model-list-item">
                     <span class="model-rank">{{ i + 1 }}</span>
-                    <span class="model-name" [title]="model.name">{{ model.name }}</span>
-                    <span class="model-count">{{ formatNumber(model.count) }}</span>
+                    <span class="model-name" [title]="model.name">{{
+                      model.name
+                    }}</span>
+                    <span class="model-count">{{
+                      formatNumber(model.count)
+                    }}</span>
                   </div>
                 }
                 @if (topImageModels().length === 0) {
-                  <p class="text-secondary text-sm">{{ "details.usage.no_data" | transloco }}</p>
+                  <p class="text-secondary text-sm">
+                    {{ "details.usage.no_data" | transloco }}
+                  </p>
                 }
               </div>
             </div>
@@ -300,7 +387,9 @@
             <!-- Top Text Models -->
             <div class="card card-bg-primary">
               <div class="card-header-flex">
-                <h3 class="heading-card">{{ "details.usage.top_text_models" | transloco }}</h3>
+                <h3 class="heading-card">
+                  {{ "details.usage.top_text_models" | transloco }}
+                </h3>
                 <button
                   type="button"
                   class="btn-link-sm"
@@ -310,15 +399,25 @@
                 </button>
               </div>
               <div class="model-list">
-                @for (model of topTextModels().slice(0, 5); track model.name; let i = $index) {
+                @for (
+                  model of topTextModels().slice(0, 5);
+                  track model.name;
+                  let i = $index
+                ) {
                   <div class="model-list-item">
                     <span class="model-rank">{{ i + 1 }}</span>
-                    <span class="model-name" [title]="model.name">{{ model.name }}</span>
-                    <span class="model-count">{{ formatNumber(model.count) }}</span>
+                    <span class="model-name" [title]="model.name">{{
+                      model.name
+                    }}</span>
+                    <span class="model-count">{{
+                      formatNumber(model.count)
+                    }}</span>
                   </div>
                 }
                 @if (topTextModels().length === 0) {
-                  <p class="text-secondary text-sm">{{ "details.usage.no_data" | transloco }}</p>
+                  <p class="text-secondary text-sm">
+                    {{ "details.usage.no_data" | transloco }}
+                  </p>
                 }
               </div>
             </div>
@@ -327,9 +426,9 @@
 
         <!-- Grafana Link -->
         <div class="card card-bg-secondary">
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
             <svg
-              class="icon-lg text-brand-purple"
+              class="icon-sm text-brand-purple flex-shrink-0"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -342,15 +441,19 @@
                 d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
               />
             </svg>
-            <div>
-              <h4 class="font-semibold text-primary">{{ "details.usage.grafana_title" | transloco }}</h4>
-              <p class="text-secondary text-sm">{{ "details.usage.grafana_description" | transloco }}</p>
+            <div class="flex-1">
+              <h4 class="font-semibold text-primary text-sm">
+                {{ "details.usage.grafana_title" | transloco }}
+              </h4>
+              <p class="text-secondary text-xs">
+                {{ "details.usage.grafana_description" | transloco }}
+              </p>
             </div>
             <a
               href="https://grafana.aihorde.net/"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn-primary ml-auto"
+              class="btn-primary"
             >
               {{ "details.usage.open_grafana" | transloco }}
             </a>
@@ -360,12 +463,14 @@
     }
 
     <!-- Image Models Tab -->
-    @if (activeTab() === 'image') {
+    @if (activeTab() === "image") {
       <div class="usage-models">
         <!-- Period Selector & Search -->
         <div class="details-filters">
           <div class="filter-period">
-            <span class="filter-label">{{ "details.usage.time_period" | transloco }}</span>
+            <span class="filter-label">{{
+              "details.usage.time_period" | transloco
+            }}</span>
             <button
               type="button"
               class="sort-button"
@@ -419,14 +524,20 @@
         <!-- Summary Stats -->
         <div class="details-summary">
           <div class="summary-stat">
-            <span class="summary-label">{{ "details.usage.total_models" | transloco }}</span>
+            <span class="summary-label">{{
+              "details.usage.total_models" | transloco
+            }}</span>
             <span class="summary-value">{{ sortedImageModels().length }}</span>
           </div>
           <div class="summary-stat">
-            <span class="summary-label">{{ "details.usage.total_generations" | transloco }}</span>
+            <span class="summary-label">{{
+              "details.usage.total_generations" | transloco
+            }}</span>
             <span class="summary-value">
               {{ formatNumber(totalImageModelRequests()) }}
-              <span class="summary-period-badge">{{ timePeriodLabel() | transloco }}</span>
+              <span class="summary-period-badge">{{
+                timePeriodLabel() | transloco
+              }}</span>
             </span>
           </div>
         </div>
@@ -436,7 +547,9 @@
           <div class="models-table">
             <div class="models-table-header usage-table-header">
               <span class="models-table-th">#</span>
-              <span class="models-table-th">{{ "details.usage.model_name" | transloco }}</span>
+              <span class="models-table-th">{{
+                "details.usage.model_name" | transloco
+              }}</span>
               <span class="models-table-th models-table-th-right">
                 <button
                   type="button"
@@ -444,31 +557,59 @@
                   (click)="toggleSortDirection()"
                 >
                   {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{ sortDirection() === 'desc' ? '↓' : '↑' }}</span>
+                  <span class="sort-indicator">{{
+                    sortDirection() === "desc" ? "↓" : "↑"
+                  }}</span>
                 </button>
               </span>
-              <span class="models-table-th models-table-th-right">{{ "details.usage.percentage" | transloco }}</span>
+              <span class="models-table-th models-table-th-right">{{
+                "details.usage.percentage" | transloco
+              }}</span>
             </div>
-            @for (model of sortedImageModels(); track model.name; let i = $index) {
+            @for (
+              model of sortedImageModels();
+              track model.name;
+              let i = $index
+            ) {
               <div class="models-table-row usage-table-row">
                 <div class="models-table-cell">
-                  <span class="model-rank-badge" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2">{{ i + 1 }}</span>
+                  <span
+                    class="model-rank-badge"
+                    [class.rank-1]="i === 0"
+                    [class.rank-2]="i === 1"
+                    [class.rank-3]="i === 2"
+                    >{{ i + 1 }}</span
+                  >
                 </div>
                 <div class="models-table-cell-name">
-                  <span class="models-table-name" [title]="model.name">{{ model.name }}</span>
+                  <span class="models-table-name" [title]="model.name">{{
+                    model.name
+                  }}</span>
                 </div>
                 <div class="models-table-cell">
-                  <span class="models-table-label">{{ "details.usage.generations" | transloco }}</span>
-                  <span class="models-table-value">{{ formatNumber(model.count) }}</span>
+                  <span class="models-table-label">{{
+                    "details.usage.generations" | transloco
+                  }}</span>
+                  <span class="models-table-value">{{
+                    formatNumber(model.count)
+                  }}</span>
                 </div>
                 <div class="models-table-cell">
-                  <span class="models-table-label">{{ "details.usage.percentage" | transloco }}</span>
+                  <span class="models-table-label">{{
+                    "details.usage.percentage" | transloco
+                  }}</span>
                   <div class="percentage-bar-container">
                     <div
                       class="percentage-bar"
-                      [style.width.%]="getPercentage(model.count, totalImageModelRequests())"
+                      [style.width.%]="
+                        getPercentage(model.count, totalImageModelRequests())
+                      "
                     ></div>
-                    <span class="percentage-text">{{ getPercentage(model.count, totalImageModelRequests()) }}%</span>
+                    <span class="percentage-text"
+                      >{{
+                        getPercentage(model.count, totalImageModelRequests())
+                      }}%</span
+                    >
                   </div>
                 </div>
               </div>
@@ -483,12 +624,14 @@
     }
 
     <!-- Text Models Tab -->
-    @if (activeTab() === 'text') {
+    @if (activeTab() === "text") {
       <div class="usage-models">
         <!-- Period Selector & Search -->
         <div class="details-filters">
           <div class="filter-period">
-            <span class="filter-label">{{ "details.usage.time_period" | transloco }}</span>
+            <span class="filter-label">{{
+              "details.usage.time_period" | transloco
+            }}</span>
             <button
               type="button"
               class="sort-button"
@@ -542,14 +685,20 @@
         <!-- Summary Stats -->
         <div class="details-summary">
           <div class="summary-stat">
-            <span class="summary-label">{{ "details.usage.total_models" | transloco }}</span>
+            <span class="summary-label">{{
+              "details.usage.total_models" | transloco
+            }}</span>
             <span class="summary-value">{{ sortedTextModels().length }}</span>
           </div>
           <div class="summary-stat">
-            <span class="summary-label">{{ "details.usage.total_generations" | transloco }}</span>
+            <span class="summary-label">{{
+              "details.usage.total_generations" | transloco
+            }}</span>
             <span class="summary-value">
               {{ formatNumber(totalTextModelRequests()) }}
-              <span class="summary-period-badge">{{ timePeriodLabel() | transloco }}</span>
+              <span class="summary-period-badge">{{
+                timePeriodLabel() | transloco
+              }}</span>
             </span>
           </div>
         </div>
@@ -559,7 +708,9 @@
           <div class="models-table">
             <div class="models-table-header usage-table-header">
               <span class="models-table-th">#</span>
-              <span class="models-table-th">{{ "details.usage.model_name" | transloco }}</span>
+              <span class="models-table-th">{{
+                "details.usage.model_name" | transloco
+              }}</span>
               <span class="models-table-th models-table-th-right">
                 <button
                   type="button"
@@ -567,31 +718,59 @@
                   (click)="toggleSortDirection()"
                 >
                   {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{ sortDirection() === 'desc' ? '↓' : '↑' }}</span>
+                  <span class="sort-indicator">{{
+                    sortDirection() === "desc" ? "↓" : "↑"
+                  }}</span>
                 </button>
               </span>
-              <span class="models-table-th models-table-th-right">{{ "details.usage.percentage" | transloco }}</span>
+              <span class="models-table-th models-table-th-right">{{
+                "details.usage.percentage" | transloco
+              }}</span>
             </div>
-            @for (model of sortedTextModels(); track model.name; let i = $index) {
+            @for (
+              model of sortedTextModels();
+              track model.name;
+              let i = $index
+            ) {
               <div class="models-table-row usage-table-row">
                 <div class="models-table-cell">
-                  <span class="model-rank-badge" [class.rank-1]="i === 0" [class.rank-2]="i === 1" [class.rank-3]="i === 2">{{ i + 1 }}</span>
+                  <span
+                    class="model-rank-badge"
+                    [class.rank-1]="i === 0"
+                    [class.rank-2]="i === 1"
+                    [class.rank-3]="i === 2"
+                    >{{ i + 1 }}</span
+                  >
                 </div>
                 <div class="models-table-cell-name">
-                  <span class="models-table-name" [title]="model.name">{{ model.name }}</span>
+                  <span class="models-table-name" [title]="model.name">{{
+                    model.name
+                  }}</span>
                 </div>
                 <div class="models-table-cell">
-                  <span class="models-table-label">{{ "details.usage.generations" | transloco }}</span>
-                  <span class="models-table-value">{{ formatNumber(model.count) }}</span>
+                  <span class="models-table-label">{{
+                    "details.usage.generations" | transloco
+                  }}</span>
+                  <span class="models-table-value">{{
+                    formatNumber(model.count)
+                  }}</span>
                 </div>
                 <div class="models-table-cell">
-                  <span class="models-table-label">{{ "details.usage.percentage" | transloco }}</span>
+                  <span class="models-table-label">{{
+                    "details.usage.percentage" | transloco
+                  }}</span>
                   <div class="percentage-bar-container">
                     <div
                       class="percentage-bar"
-                      [style.width.%]="getPercentage(model.count, totalTextModelRequests())"
+                      [style.width.%]="
+                        getPercentage(model.count, totalTextModelRequests())
+                      "
                     ></div>
-                    <span class="percentage-text">{{ getPercentage(model.count, totalTextModelRequests()) }}%</span>
+                    <span class="percentage-text"
+                      >{{
+                        getPercentage(model.count, totalTextModelRequests())
+                      }}%</span
+                    >
                   </div>
                 </div>
               </div>

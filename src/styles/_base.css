@@ -3,6 +3,7 @@
    
    Includes:
    - Dark mode configuration (@custom-variant)
+   - HTML/Body base styles
    - Screen reader utilities
    - Body scroll lock
    - Global animation keyframes
@@ -10,6 +11,20 @@
 
 /* Dark mode selector variant */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* Ensure full viewport coverage and proper background color */
+html {
+  min-height: 100vh;
+  background-color: var(--color-bg-secondary);
+}
+
+html.dark {
+  background-color: rgb(31 41 55);
+}
+
+body {
+  min-height: 100vh;
+}
 
 /* Screen reader only text - for accessibility */
 .sr-only {

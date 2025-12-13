@@ -23,7 +23,10 @@ import {
   isImageStyle,
 } from '../../types/style';
 import { StyleCardComponent } from '../style/style-card/style-card.component';
-import { StyleFormComponent, StyleFormSubmitEvent } from '../style/style-form/style-form.component';
+import {
+  StyleFormComponent,
+  StyleFormSubmitEvent,
+} from '../style/style-form/style-form.component';
 
 type StylesTab = 'image' | 'text';
 
@@ -37,12 +40,7 @@ export interface LoadedStyle {
 
 @Component({
   selector: 'app-profile-styles-list',
-  imports: [
-    TranslocoPipe,
-    StyleCardComponent,
-    StyleFormComponent,
-    RouterLink,
-  ],
+  imports: [TranslocoPipe, StyleCardComponent, StyleFormComponent, RouterLink],
   templateUrl: './profile-styles-list.component.html',
   styleUrl: './profile-styles-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -284,10 +282,14 @@ export class ProfileStylesListComponent implements OnInit {
     const observable =
       event.type === 'image'
         ? this.styleService.createImageStyle(
-            event.payload as Parameters<typeof this.styleService.createImageStyle>[0],
+            event.payload as Parameters<
+              typeof this.styleService.createImageStyle
+            >[0],
           )
         : this.styleService.createTextStyle(
-            event.payload as Parameters<typeof this.styleService.createTextStyle>[0],
+            event.payload as Parameters<
+              typeof this.styleService.createTextStyle
+            >[0],
           );
 
     observable

@@ -32,11 +32,7 @@ interface ModelUsageEntry {
 
 @Component({
   selector: 'app-usage-stats',
-  imports: [
-    TranslocoPipe,
-    DecimalPipe,
-    UnitTooltipComponent,
-  ],
+  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -177,7 +173,9 @@ export class UsageStatsComponent implements OnInit {
   public readonly imagePerformanceRate = computed(() => {
     const perf = this.performance();
     if (!perf) return null;
-    return this.units.formatImagePerformanceRate(perf.past_minute_megapixelsteps);
+    return this.units.formatImagePerformanceRate(
+      perf.past_minute_megapixelsteps,
+    );
   });
 
   /** Text performance rate (tokens/sec) */

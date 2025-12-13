@@ -87,7 +87,9 @@
           (change)="onModelChange($any($event.target).value)"
           [disabled]="loading()"
         >
-          <option value="">{{ "styles.filters.all_models" | transloco }}</option>
+          <option value="">
+            {{ "styles.filters.all_models" | transloco }}
+          </option>
           @for (model of availableModels(); track model) {
             <option [value]="model">{{ model }}</option>
           }

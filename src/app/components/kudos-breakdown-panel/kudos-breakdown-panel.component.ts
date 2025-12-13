@@ -127,8 +127,6 @@ export class KudosBreakdownPanelComponent {
    * Default translation prefix based on variant.
    */
   private defaultPrefix(): string {
-    return this.variant() === 'admin'
-      ? 'admin.users.kudos.'
-      : 'profile.kudos_';
+    return this.variant() === 'admin' ? 'admin.users.kudos.' : 'profile.kudos_';
   }
 }

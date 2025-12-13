@@ -42,7 +42,7 @@
             {{ "home" | transloco }}
           </a>
           <a
-            routerLink="/news"
+            routerLink="/news/"
             class="nav-link"
             role="menuitem"
             routerLinkActive="nav-link-active"
@@ -50,7 +50,7 @@
             {{ "news" | transloco }}
           </a>
           <a
-            routerLink="/guis"
+            routerLink="/guis/"
             class="nav-link"
             role="menuitem"
             routerLinkActive="nav-link-active"
@@ -59,7 +59,7 @@
           </a>
 
           <a
-            routerLink="/faq"
+            routerLink="/faq/"
             class="nav-link"
             role="menuitem"
             routerLinkActive="nav-link-active"
@@ -98,7 +98,7 @@
             @if (showDetailsDropdown) {
               <div class="nav-dropdown-menu" role="menu">
                 <a
-                  routerLink="/details/workers"
+                  routerLink="/details/workers/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
@@ -107,7 +107,7 @@
                   {{ "nav.active_details.workers" | transloco }}
                 </a>
                 <a
-                  routerLink="/details/models"
+                  routerLink="/details/models/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
@@ -116,7 +116,7 @@
                   {{ "nav.active_details.models" | transloco }}
                 </a>
                 <a
-                  routerLink="/details/usage"
+                  routerLink="/details/usage/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
@@ -125,13 +125,22 @@
                   {{ "nav.active_details.usage_stats" | transloco }}
                 </a>
                 <a
-                  routerLink="/details/styles"
+                  routerLink="/details/styles/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
                   (click)="closeDetailsDropdown()"
                 >
                   {{ "nav.active_details.styles" | transloco }}
+                </a>
+                <a
+                  routerLink="/details/leaderboard/"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.leaderboard" | transloco }}
                 </a>
               </div>
             }
@@ -165,7 +174,7 @@
             @if (showAccountDropdown) {
               <div class="nav-dropdown-menu" role="menu">
                 <a
-                  routerLink="/profile"
+                  routerLink="/profile/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
@@ -188,7 +197,7 @@
                   {{ "register_account" | transloco }}
                 </a>
                 <a
-                  routerLink="/v2-transfer"
+                  routerLink="/v2-transfer/"
                   class="nav-dropdown-item"
                   role="menuitem"
                   routerLinkActive="nav-dropdown-item-active"
@@ -285,7 +294,7 @@
               {{ "home" | transloco }}
             </a>
             <a
-              routerLink="/news"
+              routerLink="/news/"
               class="mobile-nav-link"
               role="menuitem"
               routerLinkActive="mobile-nav-link-active"
@@ -294,7 +303,7 @@
               {{ "news" | transloco }}
             </a>
             <a
-              routerLink="/guis"
+              routerLink="/guis/"
               class="mobile-nav-link"
               role="menuitem"
               routerLinkActive="mobile-nav-link-active"
@@ -330,7 +339,7 @@
               @if (showMobileDetailsSubmenu) {
                 <div class="mobile-nav-submenu-items">
                   <a
-                    routerLink="/details/workers"
+                    routerLink="/details/workers/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -339,7 +348,7 @@
                     {{ "nav.active_details.workers" | transloco }}
                   </a>
                   <a
-                    routerLink="/details/models"
+                    routerLink="/details/models/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -348,7 +357,7 @@
                     {{ "nav.active_details.models" | transloco }}
                   </a>
                   <a
-                    routerLink="/details/usage"
+                    routerLink="/details/usage/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -357,7 +366,7 @@
                     {{ "nav.active_details.usage_stats" | transloco }}
                   </a>
                   <a
-                    routerLink="/details/styles"
+                    routerLink="/details/styles/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -369,7 +378,7 @@
               }
             </div>
             <a
-              routerLink="/faq"
+              routerLink="/faq/"
               class="mobile-nav-link"
               role="menuitem"
               routerLinkActive="mobile-nav-link-active"
@@ -413,7 +422,7 @@
               @if (showMobileAccountSubmenu) {
                 <div class="mobile-nav-submenu-items">
                   <a
-                    routerLink="/profile"
+                    routerLink="/profile/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -436,7 +445,7 @@
                     {{ "register_account" | transloco }}
                   </a>
                   <a
-                    routerLink="/v2-transfer"
+                    routerLink="/v2-transfer/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"
                     routerLinkActive="mobile-nav-link-active"
@@ -576,7 +585,7 @@
               >
             </li>
             <li class="mb-3">
-              <a routerLink="/faq" class="hover:underline">{{
+              <a routerLink="/faq/" class="hover:underline">{{
                 "frequently_asked_questions" | transloco
               }}</a>
             </li>
@@ -593,12 +602,12 @@
               }}</a>
             </li>
             <li class="mb-3">
-              <a routerLink="/profile" class="hover:underline">{{
+              <a routerLink="/profile/" class="hover:underline">{{
                 "profile.title" | transloco
               }}</a>
             </li>
             <li class="mb-3">
-              <a routerLink="/v2-transfer" class="hover:underline">{{
+              <a routerLink="/v2-transfer/" class="hover:underline">{{
                 "transfer.title" | transloco
               }}</a>
             </li>

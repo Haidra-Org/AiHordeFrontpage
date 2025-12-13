@@ -1,3 +1,23 @@
+<!-- Deletion Success Toast -->
+@if (deletionSuccessMessage()) {
+  <div class="toast toast-success" role="status" aria-live="polite">
+    <svg
+      class="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+    <span>{{ "admin.workers.deletion_success" | transloco }}</span>
+  </div>
+}
+
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
@@ -288,7 +308,7 @@
                       {{ "profile.low_kudos_info_message" | transloco }}
                     </p>
                     <a
-                      routerLink="/faq"
+                      routerLink="/faq/"
                       fragment="kudos"
                       class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
                     >
@@ -312,11 +332,11 @@
                   <div class="section-divider-top">
                     <div class="action-row">
                       @if (auth.currentUser()!.moderator) {
-                        <a routerLink="/admin" class="btn-primary">{{
+                        <a routerLink="/admin/" class="btn-primary">{{
                           "profile.admin_panel" | transloco
                         }}</a>
                       }
-                      <a routerLink="/v2-transfer" class="btn-primary">{{
+                      <a routerLink="/v2-transfer/" class="btn-primary">{{
                         "profile.transfer_kudos" | transloco
                       }}</a>
                       <button (click)="logout()" class="btn-source-control">
@@ -360,7 +380,10 @@
                             <span class="data-value">
                               {{ ps.primary.formatted }}
                               <span class="text-secondary">
-                                (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
+                                (<app-unit-tooltip
+                                  [unit]="ps"
+                                  [swapDisplay]="true"
+                                />)
                               </span>
                             </span>
                           </div>
@@ -378,7 +401,10 @@
                             <span class="data-value">
                               {{ tokens.primary.formatted }}
                               <span class="text-secondary">
-                                (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
+                                (<app-unit-tooltip
+                                  [unit]="tokens"
+                                  [swapDisplay]="true"
+                                />)
                               </span>
                             </span>
                           </div>
@@ -407,7 +433,10 @@
                             <span class="data-value">
                               {{ ps.primary.formatted }}
                               <span class="text-secondary">
-                                (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
+                                (<app-unit-tooltip
+                                  [unit]="ps"
+                                  [swapDisplay]="true"
+                                />)
                               </span>
                             </span>
                           </div>
@@ -425,7 +454,10 @@
                             <span class="data-value">
                               {{ tokens.primary.formatted }}
                               <span class="text-secondary">
-                                (<app-unit-tooltip [unit]="tokens" [swapDisplay]="true" />)
+                                (<app-unit-tooltip
+                                  [unit]="tokens"
+                                  [swapDisplay]="true"
+                                />)
                               </span>
                             </span>
                           </div>
@@ -610,9 +642,7 @@
                       <select
                         id="worker-type"
                         [value]="filterWorkerType()"
-                        (change)="
-                          onFilterTypeChange($any($event.target).value)
-                        "
+                        (change)="onFilterTypeChange($any($event.target).value)"
                         class="form-input"
                       >
                         <option value="all">
@@ -625,9 +655,7 @@
                           {{ "profile.workers.type.text" | transloco }}
                         </option>
                         <option value="interrogation">
-                          {{
-                            "profile.workers.type.interrogation" | transloco
-                          }}
+                          {{ "profile.workers.type.interrogation" | transloco }}
                         </option>
                       </select>
                     </div>
@@ -652,9 +680,7 @@
                           {{ "profile.workers.status.active" | transloco }}
                         </option>
                         <option value="maintenance">
-                          {{
-                            "profile.workers.status.maintenance" | transloco
-                          }}
+                          {{ "profile.workers.status.maintenance" | transloco }}
                         </option>
                         <option value="offline">
                           {{ "profile.workers.status.offline" | transloco }}
@@ -668,8 +694,12 @@
                       {{ "profile.loading_workers" | transloco }}
                     </p>
                   }
-                  
-                  @if (!loadingWorkers() && filteredAndSortedWorkers().length === 0 && userWorkers().length > 0) {
+
+                  @if (
+                    !loadingWorkers() &&
+                    filteredAndSortedWorkers().length === 0 &&
+                    userWorkers().length > 0
+                  ) {
                     <p class="text-secondary text-center py-4">
                       {{ "profile.no_workers_match_filters" | transloco }}
                     </p>
@@ -679,37 +709,40 @@
                         workerEntry of filteredAndSortedWorkers();
                         track workerEntry.id
                       ) {
-                      @if (workerEntry.loading) {
-                        <div class="skeleton-box" aria-busy="true">
-                          <p class="data-value text-sm break-all">
-                            {{ workerEntry.id }}
-                          </p>
-                          <div class="skeleton-bar skeleton-bar-sm"></div>
-                          <div class="skeleton-bar skeleton-bar-lg"></div>
-                          <p class="text-secondary text-sm">
-                            {{ "profile.loading_workers" | transloco }}
-                          </p>
-                        </div>
-                      } @else if (workerEntry.worker) {
-                        <app-worker-card
-                          [worker]="workerEntry.worker"
-                          [isModerator]="auth.currentUser()?.moderator ?? false"
-                          (workerUpdated)="onWorkerUpdated()"
-                        />
-                      } @else {
-                        <div
-                          class="skeleton-box skeleton-box-dashed"
-                          role="status"
-                        >
-                          <p class="data-value text-sm break-all">
-                            {{ workerEntry.id }}
-                          </p>
-                          <p class="text-secondary text-sm">
-                            {{ "profile.no_workers_found" | transloco }}
-                          </p>
-                        </div>
+                        @if (workerEntry.loading) {
+                          <div class="skeleton-box" aria-busy="true">
+                            <p class="data-value text-sm break-all">
+                              {{ workerEntry.id }}
+                            </p>
+                            <div class="skeleton-bar skeleton-bar-sm"></div>
+                            <div class="skeleton-bar skeleton-bar-lg"></div>
+                            <p class="text-secondary text-sm">
+                              {{ "profile.loading_workers" | transloco }}
+                            </p>
+                          </div>
+                        } @else if (workerEntry.worker) {
+                          <app-worker-card
+                            [worker]="workerEntry.worker"
+                            [isModerator]="
+                              auth.currentUser()?.moderator ?? false
+                            "
+                            (workerUpdated)="onWorkerUpdated()"
+                            (workerDeleted)="onWorkerDeleted($event)"
+                          />
+                        } @else {
+                          <div
+                            class="skeleton-box skeleton-box-dashed"
+                            role="status"
+                          >
+                            <p class="data-value text-sm break-all">
+                              {{ workerEntry.id }}
+                            </p>
+                            <p class="text-secondary text-sm">
+                              {{ "profile.no_workers_found" | transloco }}
+                            </p>
+                          </div>
+                        }
                       }
-                    }
                     </div>
                   }
                 }

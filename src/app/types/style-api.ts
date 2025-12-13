@@ -2,11 +2,7 @@
  * API request/response types for style operations.
  */
 
-import {
-  ImageStyleParams,
-  StyleExample,
-  TextStyleParams,
-} from './style';
+import { ImageStyleParams, StyleExample, TextStyleParams } from './style';
 import { CollectionType, StyleReference } from './style-collection';
 
 // ============================================================================

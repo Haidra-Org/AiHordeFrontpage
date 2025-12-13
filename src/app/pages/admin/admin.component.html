@@ -9,7 +9,7 @@
       <!-- Logo/Title -->
       <div class="admin-sidebar-header">
         <a
-          routerLink="/admin"
+          routerLink="/admin/"
           class="admin-sidebar-logo"
           (click)="closeSidebarOnMobile()"
         >
@@ -41,7 +41,7 @@
       <!-- Navigation -->
       <nav class="admin-nav">
         <a
-          routerLink="/admin"
+          routerLink="/admin/"
           class="admin-nav-item"
           [class.active]="
             isActive('/admin') &&
@@ -69,7 +69,7 @@
         </a>
 
         <a
-          routerLink="/admin/workers"
+          routerLink="/admin/workers/"
           class="admin-nav-item"
           [class.active]="isActive('/admin/workers')"
           (click)="closeSidebarOnMobile()"
@@ -94,7 +94,7 @@
 
         @if (auth.currentUser()?.moderator) {
           <a
-            routerLink="/admin/users"
+            routerLink="/admin/users/"
             class="admin-nav-item"
             [class.active]="isActive('/admin/users')"
             (click)="closeSidebarOnMobile()"
@@ -228,7 +228,7 @@
           <p class="admin-access-denied-text">
             {{ "admin.common.login_prompt" | transloco }}
           </p>
-          <a routerLink="/profile" class="btn-primary">
+          <a routerLink="/profile/" class="btn-primary">
             {{ "profile.nav_login" | transloco }}
           </a>
         </div>
