@@ -61,6 +61,13 @@
   margin-right: auto;
 }
 
+@media (min-width: theme("screens.sm")) {
+  .container-page-header {
+    padding-left: var(--spacing-container-padding);
+    padding-right: var(--spacing-container-padding);
+  }
+}
+
 @media (min-width: theme("screens.lg")) {
   .container-page-header {
     gap: 2rem;
@@ -232,12 +239,17 @@
 
 /* Center placement utility */
 .place-center {
-  margin-right: auto;
-  place-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
 }
 
 @media (min-width: theme("screens.lg")) {
   .place-center {
+    align-items: flex-start;
+    text-align: left;
     grid-column: span 7 / span 7;
   }
 }

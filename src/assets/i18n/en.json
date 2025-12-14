@@ -453,6 +453,7 @@
   "admin.workers.card.bridge_agent": "Bridge Agent",
   "admin.workers.card.software_contact": "Software Contact",
   "admin.workers.card.uptime": "Uptime",
+  "admin.workers.card.model_loaded": "Model Loaded",
   "admin.workers.card.models_loaded": "Models Loaded",
   "admin.workers.card.mps_generated": "MPS Generated",
   "admin.workers.card.speed": "Speed",
