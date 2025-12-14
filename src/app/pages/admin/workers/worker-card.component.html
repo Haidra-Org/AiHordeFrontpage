@@ -514,14 +514,25 @@
     <!-- Capabilities & Features -->
     <div class="space-y-1 pt-3 border-t border-gray-200 dark:border-gray-700">
       @if (worker().type !== "interrogation") {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.models_loaded" | transloco }}:</span
-          >
-          <span class="worker-card-value">{{
-            worker().models?.length ?? 0
-          }}</span>
-        </div>
+        @if ((worker().models?.length ?? 0) === 1) {
+          <div class="flex flex-col">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.model_loaded" | transloco }}:</span
+            >
+            <span class="worker-card-value break-words">{{
+              worker().models![0]
+            }}</span>
+          </div>
+        } @else {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.models_loaded" | transloco }}:</span
+            >
+            <span class="worker-card-value">{{
+              worker().models?.length ?? 0
+            }}</span>
+          </div>
+        }
       }
       @if (
         worker().type === "interrogation" && (worker().forms?.length ?? 0) > 0
