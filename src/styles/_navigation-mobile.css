@@ -25,7 +25,7 @@
     @apply inline-flex items-center justify-center p-2 rounded-md;
     @apply text-gray-600 bg-transparent border-none cursor-pointer;
     @apply transition-all duration-200;
-    @apply lg:hidden;
+    @apply lg:hidden relative z-50;
     @apply hover:text-gray-900 hover:bg-gray-100;
     @apply focus:outline-none;
     @apply dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700;

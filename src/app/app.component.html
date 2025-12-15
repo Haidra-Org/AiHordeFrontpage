@@ -277,7 +277,7 @@
         role="menu"
         (click)="$event.stopPropagation()"
       >
-        <div class="mobile-menu-backdrop" [class.show]="showMobileMenu"></div>
+        <div class="mobile-menu-backdrop" [class.show]="showMobileMenu" (click)="closeMobileMenu()"></div>
         <div class="mobile-menu-panel" [class.open]="showMobileMenu">
           <div class="mobile-nav-list">
             <a
