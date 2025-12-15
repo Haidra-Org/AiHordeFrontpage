@@ -1,12 +1,13 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
+  input,
   OnInit,
   signal,
-  computed,
-  input,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -279,6 +280,14 @@ export class WorkerListComponent implements OnInit {
     return capabilities;
   });
 
+  constructor() {
+    // Fetch workers only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadWorkers();
+    });
+  }
+
   ngOnInit(): void {
     if (this.setPageTitle()) {
       combineLatest([
@@ -290,8 +299,6 @@ export class WorkerListComponent implements OnInit {
           this.title.setTitle(`${workersTitle} | ${appTitle}`);
         });
     }
-
-    this.loadWorkers();
   }
 
   private loadWorkers(): void {

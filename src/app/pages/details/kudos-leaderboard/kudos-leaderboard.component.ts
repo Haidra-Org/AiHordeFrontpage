@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -72,6 +73,14 @@ export class KudosLeaderboardComponent implements OnInit {
   /** Whether to show thank you message after rank search. */
   public readonly showThankYou = signal(false);
 
+  constructor() {
+    // Fetch leaderboard only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadLeaderboard();
+    });
+  }
+
   ngOnInit(): void {
     combineLatest([
       this.translator.get('details.leaderboard.title'),
@@ -81,8 +90,6 @@ export class KudosLeaderboardComponent implements OnInit {
       .subscribe(([leaderboardTitle, appTitle]) => {
         this.title.setTitle(`${leaderboardTitle} | ${appTitle}`);
       });
-
-    this.loadLeaderboard();
   }
 
   public loadLeaderboard(): void {

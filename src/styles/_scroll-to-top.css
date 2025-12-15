@@ -28,4 +28,14 @@
   .dark .scroll-to-top-btn:hover {
     @apply bg-purple-600;
   }
+
+  /* Mobile-only variant - hidden on medium screens and up */
+  .scroll-to-top-btn-mobile {
+    @apply md:hidden;
+  }
+
+  /* Icon sizing inside scroll-to-top button */
+  .scroll-to-top-btn svg {
+    @apply w-6 h-6;
+  }
 }

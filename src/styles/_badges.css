@@ -12,9 +12,19 @@
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
 
+  /* Badge small - for compact badge displays */
+  .badge-sm {
+    @apply text-xs;
+  }
+
   /* Badge container - wrapping flex container for badge groups */
   .badge-container {
     @apply flex flex-wrap gap-2;
+  }
+
+  /* Badge container tight - narrower gap for compact layouts */
+  .badge-container-tight {
+    @apply flex flex-wrap gap-1.5;
   }
 
   /* Badge outline - bordered, transparent background */

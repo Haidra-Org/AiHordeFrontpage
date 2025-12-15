@@ -28,6 +28,8 @@
   .section-primary {
     @apply bg-surface-primary;
     @apply dark:bg-gray-900;
+    @apply px-2;
+    @apply xl:px-0;
   }
 
   /* Secondary section - gray background */
@@ -35,6 +37,8 @@
     @apply bg-surface-secondary;
     @apply dark:bg-gray-800;
     @apply py-4;
+    @apply px-2;
+    @apply xl:px-0;
   }
 
   /* =================================================================
@@ -65,8 +69,6 @@
   .container-content {
     @apply mx-auto;
     max-width: var(--max-width-container);
-    padding-left: var(--spacing-container-padding-mobile);
-    padding-right: var(--spacing-container-padding-mobile);
 
     @apply lg:px-6;
   }
@@ -75,8 +77,6 @@
   .container-content-sm {
     @apply mx-auto py-4 lg:py-8;
     max-width: var(--max-width-container);
-    padding-left: var(--spacing-container-padding-mobile);
-    padding-right: var(--spacing-container-padding-mobile);
 
     @apply lg:px-6;
   }
@@ -85,8 +85,6 @@
   .container-content-minimal {
     @apply mx-auto py-3 lg:py-5;
     max-width: var(--max-width-container);
-    padding-left: var(--spacing-container-padding-mobile);
-    padding-right: var(--spacing-container-padding-mobile);
 
     @apply lg:px-6;
   }
@@ -95,8 +93,6 @@
   .container-spaced {
     @apply mx-auto py-6 lg:py-12;
     max-width: var(--max-width-container);
-    padding-left: var(--spacing-container-padding-mobile);
-    padding-right: var(--spacing-container-padding-mobile);
 
     @apply lg:px-6;
   }

@@ -87,6 +87,17 @@
     @apply py-12 px-8;
   }
 
+  /* Minimal empty state - for inline "no results" messages */
+  .state-empty {
+    @apply text-center py-8;
+  }
+
+  /* Muted text for empty states */
+  .state-empty-text {
+    @apply text-gray-500;
+    @apply dark:text-gray-400;
+  }
+
   /* State icon sizing */
   .state-icon {
     @apply w-12 h-12;

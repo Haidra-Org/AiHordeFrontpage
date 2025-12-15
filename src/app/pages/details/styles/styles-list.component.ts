@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -186,6 +187,14 @@ export class StylesListComponent implements OnInit {
     return colls;
   });
 
+  constructor() {
+    // Fetch styles only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadStyles();
+    });
+  }
+
   ngOnInit(): void {
     // Set page title
     combineLatest([
@@ -207,9 +216,6 @@ export class StylesListComponent implements OnInit {
           this.activeTab.set('collections');
         }
       });
-
-    // Load initial data
-    this.loadStyles();
   }
 
   public setActiveTab(tab: StylesTab): void {

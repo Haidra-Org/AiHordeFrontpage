@@ -4,12 +4,24 @@
    Includes:
    - Table header row
    - Table header label
+   - Table header cell
    - Table row
    - Table cell variants (name, meta, actions)
    - Table cell labels
+   - Table section wrappers
    ================================================================= */
 
 @layer components {
+  /* Table section wrapper - contains heading and table content */
+  .table-section-wrapper {
+    @apply relative pb-4;
+  }
+
+  /* Table items container - vertical list with spacing */
+  .table-items {
+    @apply flex flex-col gap-2;
+  }
+
   /* Table header row - desktop only */
   .table-header-row {
     display: none;
@@ -31,6 +43,16 @@
   .table-header-label {
     @apply text-xs font-semibold uppercase tracking-wide;
     @apply text-gray-600 dark:text-gray-400;
+  }
+
+  /* Table header cell - flex container for header content */
+  .table-header-cell {
+    @apply flex items-center;
+  }
+
+  /* Table header cell - right aligned for actions column */
+  .table-header-cell-end {
+    @apply flex items-center justify-end;
   }
 
   /* Item list row - base styles for item rows */

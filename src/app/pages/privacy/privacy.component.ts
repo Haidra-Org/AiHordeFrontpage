@@ -1,5 +1,12 @@
-import { Component, inject, OnInit } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { combineLatest, map } from 'rxjs';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -19,11 +26,21 @@ export class PrivacyComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly titleService = inject(Title);
   private readonly aiHorde = inject(AiHordeService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  // Automatically unsubscribes when component is destroyed
-  public readonly policy = toSignal(this.aiHorde.privacyPolicy, {
-    initialValue: '',
-  });
+  public readonly policy = signal('');
+
+  constructor() {
+    // Fetch privacy policy only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.aiHorde.privacyPolicy
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((policyContent) => {
+          this.policy.set(policyContent);
+        });
+    });
+  }
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
