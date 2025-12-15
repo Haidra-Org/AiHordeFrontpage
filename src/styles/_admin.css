@@ -1182,4 +1182,150 @@
   .admin-spinner-head {
     @apply opacity-75;
   }
+
+  /* =================================================================
+     FORM ELEMENTS
+     ================================================================= */
+
+  .form-group {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .form-label {
+    @apply font-medium text-sm;
+    color: var(--color-text-primary);
+  }
+
+  .dark .form-label {
+    @apply text-gray-200;
+  }
+
+  .form-hint {
+    @apply text-xs;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .form-hint {
+    @apply text-gray-400;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    @apply py-2.5 px-3.5 text-sm rounded-lg transition-all duration-150;
+    border: 1px solid var(--color-border-primary);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+  }
+
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    @apply outline-none;
+    border-color: var(--color-brand-blue);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+  }
+
+  .dark .form-input,
+  .dark .form-select,
+  .dark .form-textarea {
+    @apply bg-gray-800 border-gray-600 text-gray-200;
+  }
+
+  .dark .form-input:focus,
+  .dark .form-select:focus,
+  .dark .form-textarea:focus {
+    @apply border-blue-400;
+    box-shadow: 0 0 0 3px rgb(96 165 250 / 0.1);
+  }
+
+  /* =================================================================
+     ADMIN TABLES
+     ================================================================= */
+
+  .admin-table-wrapper {
+    @apply overflow-x-auto;
+  }
+
+  .admin-table {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+  }
+
+  .admin-table th {
+    @apply text-left py-3 px-4 font-semibold;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .dark .admin-table th {
+    @apply text-gray-400 bg-gray-700;
+    border-color: #4b5563;
+  }
+
+  .admin-table td {
+    @apply py-3 px-4 align-middle;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .dark .admin-table td {
+    @apply text-gray-200;
+    border-color: #374151;
+  }
+
+  .admin-table tbody tr:hover {
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .admin-table tbody tr:hover {
+    @apply bg-gray-700;
+  }
+
+  /* =================================================================
+     CODE BLOCKS
+     ================================================================= */
+
+  .code-block {
+    @apply text-sm leading-relaxed p-4 rounded-lg overflow-x-auto whitespace-pre m-0;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .code-block {
+    @apply bg-gray-800;
+  }
+
+  .code-inline {
+    @apply text-sm py-0.5 px-1.5 rounded;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .code-inline {
+    @apply bg-gray-700;
+  }
+
+  /* =================================================================
+     BUTTON SIZES
+     ================================================================= */
+
+  .btn-sm {
+    @apply py-1.5 px-3 text-sm;
+  }
+
+  .btn-icon-danger {
+    color: var(--color-text-secondary);
+  }
+
+  .btn-icon-danger:hover {
+    @apply text-red-600;
+    background-color: rgb(254 226 226);
+  }
+
+  .dark .btn-icon-danger:hover {
+    @apply text-red-400;
+    background-color: rgb(127 29 29 / 0.3);
+  }
 }

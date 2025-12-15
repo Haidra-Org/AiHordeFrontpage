@@ -38,4 +38,13 @@ export const adminRoutes: Routes = [
         (c) => c.UserManagementComponent,
       ),
   },
+  {
+    path: 'filters',
+    canActivate: [moderatorGuard],
+    canDeactivate: [unsavedChangesGuard],
+    loadComponent: () =>
+      import('./filters/filter-management.component').then(
+        (c) => c.FilterManagementComponent,
+      ),
+  },
 ];
