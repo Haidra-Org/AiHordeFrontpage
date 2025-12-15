@@ -550,18 +550,16 @@
               <span class="models-table-th">{{
                 "details.usage.model_name" | transloco
               }}</span>
-              <span class="models-table-th models-table-th-right">
-                <button
-                  type="button"
-                  class="sort-header-button"
-                  (click)="toggleSortDirection()"
-                >
-                  {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{
-                    sortDirection() === "desc" ? "↓" : "↑"
-                  }}</span>
-                </button>
-              </span>
+              <button
+                type="button"
+                class="models-table-th models-table-th-right models-table-th-sortable"
+                (click)="toggleSortDirection()"
+              >
+                {{ "details.usage.generations" | transloco }}
+                <span class="sort-indicator">{{
+                  sortDirection() === "desc" ? "↓" : "↑"
+                }}</span>
+              </button>
               <span class="models-table-th models-table-th-right">{{
                 "details.usage.percentage" | transloco
               }}</span>
@@ -711,18 +709,16 @@
               <span class="models-table-th">{{
                 "details.usage.model_name" | transloco
               }}</span>
-              <span class="models-table-th models-table-th-right">
-                <button
-                  type="button"
-                  class="sort-header-button"
-                  (click)="toggleSortDirection()"
-                >
-                  {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{
-                    sortDirection() === "desc" ? "↓" : "↑"
-                  }}</span>
-                </button>
-              </span>
+              <button
+                type="button"
+                class="models-table-th models-table-th-right models-table-th-sortable"
+                (click)="toggleSortDirection()"
+              >
+                {{ "details.usage.generations" | transloco }}
+                <span class="sort-indicator">{{
+                  sortDirection() === "desc" ? "↓" : "↑"
+                }}</span>
+              </button>
               <span class="models-table-th models-table-th-right">{{
                 "details.usage.percentage" | transloco
               }}</span>

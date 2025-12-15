@@ -99,7 +99,7 @@
     </div>
   }
 
-  <!-- Search and Sort -->
+  <!-- Search -->
   @if (!loading() && !error() && currentModels().length > 0) {
     <div class="details-filters">
       <div class="filter-search">
@@ -124,76 +124,6 @@
           [value]="searchQuery()"
           (input)="onSearchChange($event)"
         />
-      </div>
-      <div class="filter-sort">
-        <span class="filter-label">{{
-          "details.models.sort_by" | transloco
-        }}</span>
-        <button
-          type="button"
-          class="sort-button"
-          [class.sort-active]="sortField() === 'name'"
-          (click)="setSortField('name')"
-        >
-          {{ "details.models.sort.name" | transloco }}
-          @if (sortField() === "name") {
-            <span class="sort-indicator">{{
-              sortDirection() === "asc" ? "↑" : "↓"
-            }}</span>
-          }
-        </button>
-        <button
-          type="button"
-          class="sort-button"
-          [class.sort-active]="sortField() === 'count'"
-          (click)="setSortField('count')"
-        >
-          {{ "details.models.sort.workers" | transloco }}
-          @if (sortField() === "count") {
-            <span class="sort-indicator">{{
-              sortDirection() === "asc" ? "↑" : "↓"
-            }}</span>
-          }
-        </button>
-        <button
-          type="button"
-          class="sort-button"
-          [class.sort-active]="sortField() === 'queued'"
-          (click)="setSortField('queued')"
-        >
-          {{ "details.models.sort.queued" | transloco }}
-          @if (sortField() === "queued") {
-            <span class="sort-indicator">{{
-              sortDirection() === "asc" ? "↑" : "↓"
-            }}</span>
-          }
-        </button>
-        <button
-          type="button"
-          class="sort-button"
-          [class.sort-active]="sortField() === 'jobs'"
-          (click)="setSortField('jobs')"
-        >
-          {{ "details.models.sort.jobs" | transloco }}
-          @if (sortField() === "jobs") {
-            <span class="sort-indicator">{{
-              sortDirection() === "asc" ? "↑" : "↓"
-            }}</span>
-          }
-        </button>
-        <button
-          type="button"
-          class="sort-button"
-          [class.sort-active]="sortField() === 'eta'"
-          (click)="setSortField('eta')"
-        >
-          {{ "details.models.sort.eta" | transloco }}
-          @if (sortField() === "eta") {
-            <span class="sort-indicator">{{
-              sortDirection() === "asc" ? "↑" : "↓"
-            }}</span>
-          }
-        </button>
       </div>
     </div>
   }
@@ -259,24 +189,72 @@
       <div class="models-table">
         <!-- Table Header -->
         <div class="models-table-header">
-          <span class="models-table-th">{{
-            "details.models.sort.name" | transloco
-          }}</span>
-          <span class="models-table-th models-table-th-right">{{
-            "details.models.workers" | transloco
-          }}</span>
-          <span class="models-table-th models-table-th-right">{{
-            "details.models.queued" | transloco
-          }}</span>
-          <span class="models-table-th models-table-th-right">{{
-            "details.models.jobs" | transloco
-          }}</span>
-          <span class="models-table-th models-table-th-right">{{
-            "details.models.eta" | transloco
-          }}</span>
-          <span class="models-table-th models-table-th-right">{{
-            "details.models.performance" | transloco
-          }}</span>
+          <button
+            type="button"
+            class="models-table-th models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'name'"
+            (click)="setSortField('name')"
+          >
+            {{ "details.models.sort.name" | transloco }}
+            @if (sortField() === 'name') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="models-table-th models-table-th-right models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'count'"
+            (click)="setSortField('count')"
+          >
+            {{ "details.models.workers" | transloco }}
+            @if (sortField() === 'count') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="models-table-th models-table-th-right models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'queued'"
+            (click)="setSortField('queued')"
+          >
+            {{ "details.models.queued" | transloco }}
+            @if (sortField() === 'queued') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="models-table-th models-table-th-right models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'jobs'"
+            (click)="setSortField('jobs')"
+          >
+            {{ "details.models.jobs" | transloco }}
+            @if (sortField() === 'jobs') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="models-table-th models-table-th-right models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'eta'"
+            (click)="setSortField('eta')"
+          >
+            {{ "details.models.eta" | transloco }}
+            @if (sortField() === 'eta') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="models-table-th models-table-th-right models-table-th-sortable"
+            [class.models-table-th-active]="sortField() === 'performance'"
+            (click)="setSortField('performance')"
+          >
+            {{ "details.models.performance" | transloco }}
+            @if (sortField() === 'performance') {
+              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            }
+          </button>
         </div>
 
         <!-- Table Rows -->
@@ -313,8 +291,9 @@
                 [class.models-table-value-muted]="model.queued === 0"
               >
                 @if (model.queued && model.queued > 0) {
-                  {{ getModelQueuedUnit(model).primary.value | number: "1.1-1" }}
-                  <app-unit-tooltip [unit]="getModelQueuedUnit(model)" [primaryOverride]="activeTab() === 'image' ? 'mps' : 'tokens'" />
+                  @let queuedUnit = getModelQueuedUnit(model);
+                  {{ queuedUnit.primary.value | number: "1.1-1" }}
+                  <app-unit-tooltip [unit]="queuedUnit" [primaryOverride]="queuedUnit.primary.prefix + queuedUnit.primary.unit" />
                 } @else {
                   -
                 }
@@ -360,7 +339,7 @@
               >
                 @if (getModelPerformanceUnit(model); as perfUnit) {
                   {{ perfUnit.primary.value | number: "1.2-2" }}
-                  <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="activeTab() === 'image' ? 'mps/sec' : 'tokens/sec'" />
+                  <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="perfUnit.primary.prefix + perfUnit.primary.unit" />
                 } @else {
                   -
                 }
