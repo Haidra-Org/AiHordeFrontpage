@@ -6,40 +6,100 @@
           {{ t("latest_news.title") }}
         </ng-container>
       </h1>
+      <p class="text-description mt-4 max-w-2xl">
+        {{ "latest_news.subtitle" | transloco }}
+      </p>
     </div>
   </div>
 </section>
 
 <section class="section-secondary">
-  <div class="container-content">
-    <div class="grid-items">
-      <div class="text-secondary sm:text-lg">
-        @for (newsItem of news(); track newsItem.title) {
-          <div class="mb-6">
-            <h3 class="mb-3 heading-subsection">
-              <span class="text-secondary dark:text-gray-200">{{
-                newsItem.datePublished
+  <div class="container-content-sm">
+    <div class="news-timeline">
+      @for (newsItem of news(); track newsItem.title; let i = $index) {
+        <article class="news-card" [class.news-card-featured]="i === 0">
+          <div class="news-card-header">
+            <div class="news-date-badge">
+              <svg
+                class="news-date-icon"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <time class="news-date-text">{{ newsItem.datePublished }}</time>
+            </div>
+            @if (i === 0) {
+              <span class="badge-base badge-purple">{{
+                "latest" | transloco
               }}</span>
-              - <span [innerHTML]="newsItem.title"></span>
-            </h3>
-            @if (newsItem.excerpt) {
-              <p
-                class="mb-2 font-light lg:text-xl"
-                [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"
-              ></p>
-            }
-            @if (newsItem.moreLink) {
-              <p class="mb-2 font-light lg:text-xl">
-                <a [href]="newsItem.moreLink" target="_blank">{{
-                  "read_more" | transloco
-                }}</a>
-              </p>
             }
           </div>
-        } @empty {
-          <p class="mb-2 font-light lg:text-xl">{{ "no_news" | transloco }}</p>
-        }
-      </div>
+
+          <h2 class="news-card-title" [innerHTML]="newsItem.title"></h2>
+
+          @if (newsItem.excerpt) {
+            <div
+              class="news-card-excerpt prose-content"
+              [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"
+            ></div>
+          }
+
+          @if (newsItem.moreLink) {
+            <div class="news-card-footer">
+              <a
+                [href]="newsItem.moreLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="news-read-more"
+              >
+                {{ "read_more" | transloco }}
+                <svg
+                  class="news-arrow-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </a>
+            </div>
+          }
+        </article>
+      } @empty {
+        <div class="news-empty-state">
+          <div class="news-empty-icon-container">
+            <svg
+              class="news-empty-icon"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+              />
+            </svg>
+          </div>
+          <p class="news-empty-text">{{ "no_news" | transloco }}</p>
+        </div>
+      }
     </div>
   </div>
 </section>
