@@ -1105,6 +1105,10 @@
     @apply text-red-600 dark:text-red-400;
   }
 
+  .admin-text-red {
+    @apply text-red-600 dark:text-red-400;
+  }
+
   .admin-text-purple {
     color: var(--color-brand-purple);
   }
@@ -1327,5 +1331,468 @@
   .dark .btn-icon-danger:hover {
     @apply text-red-400;
     background-color: rgb(127 29 29 / 0.3);
+  }
+
+  /* =================================================================
+     SIDEBAR BACK LINK
+     ================================================================= */
+
+  .admin-back-link-container {
+    @apply absolute bottom-4 left-3 right-3;
+  }
+
+  .admin-back-link {
+    @apply flex items-center p-3 rounded-lg transition-colors duration-150;
+    color: var(--color-text-secondary);
+  }
+
+  .admin-back-link:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-back-link {
+    @apply text-gray-400;
+  }
+
+  .dark .admin-back-link:hover {
+    @apply bg-gray-700 text-white;
+  }
+
+  .admin-back-link:focus {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  .admin-back-icon {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  /* =================================================================
+     JSON DIALOG / CODE VIEWER
+     ================================================================= */
+
+  .json-dialog {
+    @apply flex flex-col p-4;
+    max-width: none;
+    width: calc(100vw - 2rem);
+    height: calc(100vh - 2rem);
+  }
+
+  .json-grid {
+    @apply grid gap-3 flex-1 overflow-auto items-stretch;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .json-section {
+    @apply flex flex-col gap-1.5 min-h-0 h-full;
+  }
+
+  .json-section-title {
+    @apply text-sm font-semibold;
+    color: var(--color-text-primary);
+  }
+
+  .dark .json-section-title {
+    @apply text-white;
+  }
+
+  .json-block {
+    @apply text-xs leading-snug p-3 rounded-lg overflow-auto flex-1 min-h-0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-primary);
+  }
+
+  .dark .json-block {
+    background-color: #0f172a;
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* =================================================================
+     TABS - Generic tab navigation
+     ================================================================= */
+
+  .tab-nav {
+    @apply flex gap-2 mb-6 pb-2;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .tab-btn {
+    @apply py-3 px-6 font-medium rounded-t-lg cursor-pointer transition-all duration-150;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+  }
+
+  .tab-btn:hover {
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-secondary);
+  }
+
+  .tab-btn.active {
+    color: var(--color-brand-blue);
+    background-color: var(--color-bg-secondary);
+    border-bottom-color: var(--color-brand-blue);
+  }
+
+  /* =================================================================
+     FILTER CONTROLS - Search & filter bar
+     ================================================================= */
+
+  .filter-controls {
+    @apply flex flex-wrap gap-4 items-center;
+  }
+
+  .filter-search {
+    @apply flex-1 min-w-48 max-w-md;
+  }
+
+  .filter-type-select {
+    @apply min-w-48;
+  }
+
+  .filter-count {
+    @apply text-sm;
+    color: var(--color-text-secondary);
+  }
+
+  /* =================================================================
+     DATA TABLE - Generic data table styling
+     ================================================================= */
+
+  .data-table-wrapper {
+    @apply overflow-x-auto;
+  }
+
+  .data-table {
+    @apply w-full text-sm;
+    border-collapse: collapse;
+  }
+
+  .data-table th,
+  .data-table td {
+    @apply py-3 px-4 text-left;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .data-table th {
+    @apply font-semibold;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
+  }
+
+  .data-table td {
+    @apply align-middle;
+    color: var(--color-text-primary);
+  }
+
+  .data-table tbody tr:hover {
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .data-table th {
+    @apply text-gray-400 bg-gray-700;
+    border-color: #4b5563;
+  }
+
+  .dark .data-table td {
+    @apply text-gray-200;
+    border-color: #374151;
+  }
+
+  .dark .data-table tbody tr:hover {
+    @apply bg-gray-700;
+  }
+
+  /* Monospace cells for regex/code */
+  .data-table-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    @apply text-xs py-0.5 px-1.5 rounded;
+    word-break: break-all;
+  }
+
+  .data-table-mono-primary {
+    @apply bg-blue-900 text-gray-200;
+  }
+
+  .data-table-mono-accent {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .dark .data-table-mono-accent {
+    @apply bg-yellow-900/30 text-yellow-400;
+  }
+
+  /* Truncated description */
+  .data-table-truncate {
+    @apply max-w-xs overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  /* Action buttons cell */
+  .data-table-actions {
+    @apply flex gap-2;
+  }
+
+  /* =================================================================
+     TEST RESULT - Prompt testing feedback
+     ================================================================= */
+
+  .test-result {
+    @apply p-4 rounded-lg border;
+  }
+
+  .test-result-blocked {
+    @apply bg-red-100 border-red-300;
+  }
+
+  .dark .test-result-blocked {
+    @apply bg-red-900/30 border-red-800/50;
+  }
+
+  .test-result-safe {
+    @apply bg-green-100 border-green-300;
+  }
+
+  .dark .test-result-safe {
+    @apply bg-green-900/30 border-green-800/50;
+  }
+
+  .test-result-header {
+    @apply flex items-center gap-2;
+  }
+
+  .test-result-label {
+    @apply font-medium;
+  }
+
+  .test-result-value {
+    @apply font-bold text-lg;
+  }
+
+  .test-result-matches {
+    @apply mt-3 pt-3;
+    border-top: 1px solid var(--color-border-primary);
+  }
+
+  .test-result-matches-label {
+    @apply block text-sm font-medium mb-2;
+    color: var(--color-text-secondary);
+  }
+
+  .test-result-matches-list {
+    @apply flex flex-wrap gap-2;
+  }
+
+  /* =================================================================
+     COMPILED REGEX SECTION
+     ================================================================= */
+
+  .compiled-regex-header-row {
+    @apply flex justify-between items-center p-4;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .compiled-regex-content {
+    @apply p-4;
+  }
+
+  .compiled-regex-content pre {
+    @apply max-h-48 overflow-auto;
+  }
+
+  /* =================================================================
+     WORKER DROPDOWN - Autocomplete for worker selection
+     ================================================================= */
+
+  .worker-dropdown {
+    @apply absolute z-50 w-full mt-1 max-h-64 overflow-y-auto rounded-lg shadow-lg;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+  }
+
+  .dark .worker-dropdown {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .worker-dropdown-item {
+    @apply flex items-center gap-2 w-full py-2 px-3 text-left text-sm transition-colors duration-150;
+    color: var(--color-text-primary);
+    background: transparent;
+    border: none;
+  }
+
+  .worker-dropdown-item:hover {
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .worker-dropdown-item {
+    @apply text-gray-200;
+  }
+
+  .dark .worker-dropdown-item:hover {
+    @apply bg-gray-700;
+  }
+
+  .worker-dropdown-name {
+    @apply font-medium truncate;
+  }
+
+  .worker-dropdown-id {
+    @apply text-xs shrink-0;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .worker-dropdown-id {
+    @apply text-gray-400;
+  }
+
+  .worker-dropdown-loading {
+    @apply py-4 text-center text-sm;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .worker-dropdown-loading {
+    @apply text-gray-400;
+  }
+
+  /* =================================================================
+     WARNING TEXT - Yellow muted warning text
+     ================================================================= */
+
+  .admin-text-warning {
+    @apply text-yellow-700;
+  }
+
+  .dark .admin-text-warning {
+    @apply text-yellow-400;
+  }
+
+  /* =================================================================
+     ADMIN SECTION DIVIDERS - Internal panel separators
+     ================================================================= */
+
+  .admin-section-divider {
+    @apply mt-4 pt-4;
+    border-top: 1px solid var(--color-border-primary);
+  }
+
+  .dark .admin-section-divider {
+    @apply border-gray-700;
+  }
+
+  /* =================================================================
+     ADMIN INFO GRID - 2-column responsive grid for info display
+     ================================================================= */
+
+  .admin-info-grid {
+    @apply grid grid-cols-1 gap-3 text-sm;
+    @apply sm:grid-cols-2;
+  }
+
+  .admin-info-item {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .admin-info-item-full {
+    @apply sm:col-span-2;
+  }
+
+  .admin-info-label {
+    @apply shrink-0;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .admin-info-label {
+    @apply text-gray-400;
+  }
+
+  .admin-info-value {
+    @apply font-medium;
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-info-value {
+    @apply text-gray-200;
+  }
+
+  /* =================================================================
+     ADMIN SECTION TITLE - Small section headers within panels
+     ================================================================= */
+
+  .admin-section-title {
+    @apply text-sm font-medium mb-3;
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-section-title {
+    @apply text-gray-200;
+  }
+
+  /* =================================================================
+     ADMIN ICON INLINE - Inline icon sizing
+     ================================================================= */
+
+  .admin-icon-inline {
+    @apply inline w-4 h-4 mr-1;
+  }
+
+  /* =================================================================
+     ADMIN FORM LAYOUTS
+     ================================================================= */
+
+  /* Horizontal form row - stacks on mobile, inline on larger screens */
+  .admin-form-row {
+    @apply flex flex-col gap-4;
+    @apply sm:flex-row sm:items-end;
+  }
+
+  /* Form actions row - button group within forms */
+  .admin-form-actions {
+    @apply flex gap-2;
+  }
+
+  /* =================================================================
+     ADMIN TWO-COLUMN LAYOUT - Side-by-side sections
+     ================================================================= */
+
+  .admin-grid-2-col {
+    @apply grid grid-cols-1 gap-8 mb-8;
+    @apply lg:grid-cols-2;
+  }
+
+  /* =================================================================
+     INPUT CLEAR BUTTON - Clear button inside input fields
+     ================================================================= */
+
+  .input-clear-btn {
+    @apply absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded;
+    @apply transition-colors duration-150;
+    color: var(--color-text-secondary);
+  }
+
+  .input-clear-btn:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .dark .input-clear-btn {
+    @apply text-gray-400;
+  }
+
+  .dark .input-clear-btn:hover {
+    @apply bg-gray-700 text-white;
+  }
+
+  /* =================================================================
+     ADMIN LOOKUP ROW - Inline text with action button
+     ================================================================= */
+
+  .admin-lookup-row {
+    @apply flex items-center gap-3;
   }
 }
