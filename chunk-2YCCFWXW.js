@@ -1,1 +1,0 @@
-import{Rb as p,Za as o,ub as s,vb as i}from"./chunk-7X6QMTFM.js";import"./chunk-4CLCTAJ7.js";var m=(()=>{let e=class e{};e.\u0275fac=function(n){return new(n||e)},e.\u0275cmp=o({type:e,selectors:[["app-sponsors"]],decls:2,vars:0,template:function(n,a){n&1&&(s(0,"p"),p(1,"sponsors works!"),i())},encapsulation:2});let t=e;return t})();export{m as SponsorsComponent};
