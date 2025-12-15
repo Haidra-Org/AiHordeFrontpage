@@ -1,6 +1,8 @@
 /* =================================================================
    FAQ STYLES
    
+   Uses Tailwind CSS v4 @apply directive.
+   
    Includes:
    - FAQ section divider
    - FAQ question button
@@ -9,133 +11,99 @@
    - FAQ button base
    ================================================================= */
 
-/* FAQ button base */
-.faq-button {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-  font-weight: 500;
-  text-align: left;
-  border-bottom: 1px solid var(--color-border-primary);
-}
+@layer components {
+  /* FAQ button base */
+  .faq-button {
+    @apply flex items-center justify-between w-full py-5 font-medium text-left;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
 
-.dark .faq-button {
-  border-bottom-color: rgb(55 65 81);
-}
+  .dark .faq-button {
+    @apply border-gray-700;
+  }
 
-/* FAQ section divider */
-.faq-section-divider {
-  margin-top: 3rem;
-  margin-bottom: 2rem;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* FAQ section divider */
   .faq-section-divider {
-    margin-top: 4rem;
-    margin-bottom: 2.5rem;
+    @apply mt-12 mb-8;
+    @apply lg:mt-16 lg:mb-10;
   }
-}
 
-/* FAQ question button */
-.faq-question {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-  font-size: 1.125rem;
-  font-weight: 500;
-  text-align: left;
-  border-bottom: 1px solid rgb(229 231 235);
-  transition: all 200ms ease;
-  color: rgb(107 114 128);
-}
-
-.faq-question:hover {
-  color: rgb(17 24 39);
-}
-
-.faq-question.is-active {
-  color: rgb(17 24 39);
-  font-weight: 600;
-}
-
-.dark .faq-question {
-  border-bottom-color: rgb(55 65 81);
-  color: rgb(156 163 175);
-}
-
-.dark .faq-question:hover {
-  color: rgb(243 244 246);
-}
-
-.dark .faq-question.is-active {
-  color: rgb(255 255 255);
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* FAQ question button */
   .faq-question {
-    font-size: 1.25rem;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    @apply flex items-center justify-between w-full py-5 text-lg font-medium text-left text-gray-500 transition-all duration-200;
+    border-bottom: 1px solid rgb(229 231 235);
   }
-}
 
-/* FAQ answer container */
-.faq-answer {
-  padding: 1.5rem 0.75rem 2rem 0.75rem;
-  border-bottom: 1px solid rgb(229 231 235);
-}
+  .faq-question:hover {
+    @apply text-gray-900;
+  }
 
-.dark .faq-answer {
-  border-bottom-color: rgb(55 65 81);
-}
+  .faq-question.is-active {
+    @apply text-gray-900 font-semibold;
+  }
 
-@media (min-width: theme("screens.md")) {
+  .dark .faq-question {
+    @apply border-gray-700 text-gray-400;
+  }
+
+  .dark .faq-question:hover {
+    @apply text-gray-100;
+  }
+
+  .dark .faq-question.is-active {
+    @apply text-white;
+  }
+
+  @media (min-width: 1024px) {
+    .faq-question {
+      @apply text-xl py-6;
+    }
+  }
+
+  /* FAQ answer container */
   .faq-answer {
-    padding: 2rem 1.5rem 2.5rem 1.5rem;
+    @apply py-6 px-3 pb-8;
+    border-bottom: 1px solid rgb(229 231 235);
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .faq-answer {
-    padding: 2.5rem 2rem 3rem 2rem;
+  .dark .faq-answer {
+    @apply border-gray-700;
   }
-}
 
-/* FAQ chevron icon */
-.faq-chevron {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex-shrink: 0;
-  margin-left: 1rem;
-  color: rgb(156 163 175);
-  transition:
-    transform 200ms ease,
-    color 200ms ease;
-}
+  @media (min-width: 768px) {
+    .faq-answer {
+      @apply py-8 px-6 pb-10;
+    }
+  }
 
-.faq-question:hover .faq-chevron {
-  color: rgb(107 114 128);
-}
+  @media (min-width: 1024px) {
+    .faq-answer {
+      @apply py-10 px-8 pb-12;
+    }
+  }
 
-.faq-question.is-active .faq-chevron {
-  transform: rotate(180deg);
-  color: rgb(59 130 246);
-}
+  /* FAQ chevron icon */
+  .faq-chevron {
+    @apply w-6 h-6 shrink-0 ml-4 text-gray-400 transition-all duration-200;
+  }
 
-.dark .faq-chevron {
-  color: rgb(75 85 99);
-}
+  .faq-question:hover .faq-chevron {
+    @apply text-gray-500;
+  }
 
-.dark .faq-question:hover .faq-chevron {
-  color: rgb(156 163 175);
-}
+  .faq-question.is-active .faq-chevron {
+    @apply rotate-180 text-blue-500;
+  }
 
-.dark .faq-question.is-active .faq-chevron {
-  color: rgb(96 165 250);
+  .dark .faq-chevron {
+    @apply text-gray-600;
+  }
+
+  .dark .faq-question:hover .faq-chevron {
+    @apply text-gray-400;
+  }
+
+  .dark .faq-question.is-active .faq-chevron {
+    @apply text-blue-400;
+  }
 }

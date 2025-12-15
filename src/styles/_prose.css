@@ -2,6 +2,7 @@
    PROSE STYLES
    
    Rich text content styles for HTML from external sources.
+   Uses Tailwind CSS v4 @apply directive.
    
    Includes:
    - Prose container
@@ -12,151 +13,120 @@
    - Strong and emphasis
    ================================================================= */
 
-/* Prose container - for rich text content with HTML */
-.prose-content {
-  line-height: 1.75;
-  color: rgb(75 85 99);
-}
+@layer components {
+  /* Prose container - for rich text content with HTML */
+  .prose-content {
+    @apply leading-7 text-gray-600;
+    @apply dark:text-gray-300;
+  }
 
-.dark .prose-content {
-  color: rgb(209 213 219);
-}
+  /* Prose paragraphs */
+  .prose-content p {
+    @apply mb-4 mt-0 leading-7;
+  }
 
-/* Prose paragraphs */
-.prose-content p {
-  margin-bottom: 1rem;
-  margin-top: 0;
-  line-height: 1.75;
-}
+  .prose-content p:first-child {
+    @apply mt-0;
+  }
 
-.prose-content p:first-child {
-  margin-top: 0;
-}
+  .prose-content p:last-child {
+    @apply mb-0;
+  }
 
-.prose-content p:last-child {
-  margin-bottom: 0;
-}
+  .prose-content p + p {
+    @apply mt-4;
+  }
 
-.prose-content p + p {
-  margin-top: 1rem;
-}
+  /* Remove top margin on first headings within a prose block */
+  .prose-no-top-margin h2:first-of-type,
+  .prose-no-top-margin h3:first-of-type {
+    @apply mt-0;
+  }
 
-/* Prose lists */
-.prose-content ul,
-.prose-content ol {
-  margin-top: 1rem;
-  margin-bottom: 1rem;
-  padding-left: 2rem;
-  line-height: 1.75;
-}
+  /* Prose lists */
+  .prose-content ul,
+  .prose-content ol {
+    @apply my-4 pl-8 leading-7;
+  }
 
-.prose-content ul {
-  list-style-type: disc;
-  list-style-position: outside;
-}
+  .prose-content ul {
+    @apply list-disc list-outside;
+  }
 
-.prose-content ol {
-  list-style-type: decimal;
-  list-style-position: outside;
-}
+  .prose-content ol {
+    @apply list-decimal list-outside;
+  }
 
-.prose-content li {
-  margin-bottom: 0.75rem;
-  padding-left: 0.5rem;
-}
+  .prose-content li {
+    @apply mb-3 pl-2;
+  }
 
-.prose-content li:last-child {
-  margin-bottom: 0;
-}
+  .prose-content li:last-child {
+    @apply mb-0;
+  }
 
-/* List marker styling */
-.prose-content ul > li::marker {
-  color: rgb(107 114 128);
-}
+  /* List marker styling */
+  .prose-content ul > li::marker {
+    @apply text-gray-500;
+  }
 
-.dark .prose-content ul > li::marker {
-  color: rgb(156 163 175);
-}
+  .dark .prose-content ul > li::marker {
+    @apply text-gray-400;
+  }
 
-.prose-content ol > li::marker {
-  color: rgb(107 114 128);
-  font-weight: 600;
-}
+  .prose-content ol > li::marker {
+    @apply text-gray-500 font-semibold;
+  }
 
-.dark .prose-content ol > li::marker {
-  color: rgb(156 163 175);
-}
+  .dark .prose-content ol > li::marker {
+    @apply text-gray-400;
+  }
 
-/* Nested lists */
-.prose-content ul ul,
-.prose-content ol ol,
-.prose-content ul ol,
-.prose-content ol ul {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
-}
+  /* Nested lists */
+  .prose-content ul ul,
+  .prose-content ol ol,
+  .prose-content ul ol,
+  .prose-content ol ul {
+    @apply my-3;
+  }
 
-/* Paragraph followed by list */
-.prose-content p + ul,
-.prose-content p + ol {
-  margin-top: 0.75rem;
-}
+  /* Paragraph followed by list */
+  .prose-content p + ul,
+  .prose-content p + ol {
+    @apply mt-3;
+  }
 
-/* List followed by paragraph */
-.prose-content ul + p,
-.prose-content ol + p {
-  margin-top: 1rem;
-}
+  /* List followed by paragraph */
+  .prose-content ul + p,
+  .prose-content ol + p {
+    @apply mt-4;
+  }
 
-/* Prose links */
-.prose-content a {
-  color: rgb(59 130 246);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 150ms ease;
-}
+  /* Prose links */
+  .prose-content a {
+    @apply text-blue-500 underline underline-offset-2 transition-colors duration-150;
+    @apply dark:text-blue-400;
+  }
 
-.prose-content a:hover {
-  color: rgb(37 99 235);
-  text-decoration: none;
-}
+  .prose-content a:hover {
+    @apply text-blue-600 no-underline;
+    @apply dark:text-blue-300;
+  }
 
-.dark .prose-content a {
-  color: rgb(96 165 250);
-}
+  /* Prose code */
+  .prose-content code {
+    @apply font-mono text-sm bg-gray-100 px-1.5 py-0.5 rounded text-gray-900;
+    @apply dark:bg-gray-700 dark:text-gray-200;
+  }
 
-.dark .prose-content a:hover {
-  color: rgb(147 197 253);
-}
+  /* Prose strong text */
+  .prose-content strong {
+    @apply font-semibold text-gray-900;
+    @apply dark:text-gray-100;
+  }
 
-/* Prose code */
-.prose-content code {
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-  font-size: 0.875em;
-  background-color: rgb(243 244 246);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  color: rgb(17 24 39);
-}
-
-.dark .prose-content code {
-  background-color: rgb(55 65 81);
-  color: rgb(229 231 235);
-}
-
-/* Prose strong text */
-.prose-content strong {
-  font-weight: 600;
-  color: rgb(17 24 39);
-}
-
-.dark .prose-content strong {
-  color: rgb(243 244 246);
-}
-
-/* Prose emphasis */
-.prose-content em {
-  font-style: italic;
+  /* Prose emphasis */
+  .prose-content em {
+    @apply italic;
+  }
 }

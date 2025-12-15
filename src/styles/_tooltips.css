@@ -12,95 +12,68 @@
    </span>
    ================================================================= */
 
-/* Tooltip trigger wrapper */
-.tooltip-trigger {
-  position: relative;
-  display: inline;
-  margin-left: 0.125rem;
-}
-
-/* Dotted underline style for hover hint */
-.tooltip-underline {
-  border-bottom: 1px dotted currentColor;
-  cursor: help;
-}
-
-/* Tooltip content bubble */
-.tooltip-content {
-  visibility: hidden;
-  width: 300px;
-  max-width: calc(100vw - 2rem);
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  text-align: left;
-  border-radius: 6px;
-  padding: 10px 14px;
-  position: absolute;
-  z-index: 1000;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  font-size: 0.75rem;
-  line-height: 1.5;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  pointer-events: none;
-  white-space: normal;
-  border: 1px solid var(--color-border-primary);
-}
-
-/* Tooltip arrow */
-.tooltip-content::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: var(--color-bg-secondary) transparent transparent transparent;
-}
-
-/* Show tooltip on hover */
-.tooltip-trigger:hover .tooltip-content {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* Mobile positioning - align right to stay in viewport */
-@media (max-width: 640px) {
-  .tooltip-content {
-    left: auto;
-    right: 0;
-    transform: none;
-    max-width: calc(100vw - 1rem);
+@layer components {
+  /* Tooltip trigger wrapper */
+  .tooltip-trigger,
+  .tooltip-wrapper {
+    @apply relative inline ml-0.5;
   }
 
-  .tooltip-content::after {
-    left: auto;
-    right: 1rem;
+  /* Dotted underline style for hover hint */
+  .tooltip-underline,
+  .dotted-underline {
+    @apply border-b border-dotted border-current cursor-help;
+  }
+
+  /* Tooltip content bubble */
+  .tooltip-content,
+  .tooltip-text {
+    @apply invisible absolute z-[1000] w-[300px] max-w-[calc(100vw-2rem)];
+    @apply bottom-[125%] left-1/2 -translate-x-1/2;
+    @apply bg-surface-secondary text-content-primary text-left;
+    @apply rounded-md px-3.5 py-2.5;
+    @apply text-xs leading-relaxed;
+    @apply opacity-0 transition-opacity duration-300;
+    @apply pointer-events-none whitespace-normal;
+    @apply border border-edge-primary shadow-lg;
+
+    /* Tooltip arrow */
+    &::after {
+      content: "";
+      @apply absolute top-full left-1/2 -ml-1.5;
+      @apply border-[5px] border-solid;
+      border-color: var(--color-surface-secondary) transparent transparent transparent;
+    }
+  }
+
+  /* Show tooltip on hover */
+  .tooltip-trigger:hover .tooltip-content,
+  .tooltip-wrapper:hover .tooltip-text {
+    @apply visible opacity-100;
+  }
+
+  /* Mobile positioning - align right to stay in viewport */
+  @media (max-width: 640px) {
+    .tooltip-content,
+    .tooltip-text {
+      @apply left-auto right-0 translate-x-0 max-w-[calc(100vw-1rem)];
+
+      &::after {
+        @apply left-auto right-4;
+      }
+    }
+  }
+
+  /* Tooltip text utilities */
+  .tooltip-highlight {
+    @apply text-brand-blue text-sm font-semibold;
+  }
+
+  .tooltip-code {
+    @apply text-brand-purple font-mono text-xs font-medium;
+  }
+
+  .tooltip-muted {
+    @apply text-content-secondary text-xs italic;
   }
 }
-
-/* Tooltip text utilities */
-.tooltip-highlight {
-  color: var(--color-brand-blue);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.tooltip-code {
-  color: var(--color-brand-purple);
-  font-family: "Courier New", Courier, monospace;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.tooltip-muted {
-  color: var(--color-text-secondary);
-  font-size: 0.6875rem;
-  font-style: italic;
-}
-
-/* Dark mode support - handled by theme variables */

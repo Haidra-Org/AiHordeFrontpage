@@ -2,7 +2,7 @@
    ADMIN PANEL STYLES
    
    Theme-aware admin panel components with light/dark mode support.
-   Uses Tailwind CSS v4 patterns and CSS custom properties for theming.
+   Uses Tailwind CSS v4 @apply directive.
    
    Includes:
    - Admin layout (sidebar navigation, mobile drawer)
@@ -17,1613 +17,1169 @@
    - Icon buttons
    - Admin-specific grids & text utilities
    
-   Note: Worker card styles are in _data-display.css
-   Note: Badge styles are in _badges.css
-   Note: Button styles extend _buttons.css
-   
    Breakpoints:
    - Mobile: < 1024px (sidebar as slide-out drawer)
    - Desktop: >= 1024px (sidebar permanently visible)
    ================================================================= */
 
-/* =================================================================
-   ADMIN LAYOUT - Responsive sidebar navigation
-   ================================================================= */
+@layer components {
+  /* =================================================================
+     ADMIN LAYOUT - Responsive sidebar navigation
+     ================================================================= */
 
-/* Admin layout container */
-.admin-layout {
-  min-height: 100vh;
-  display: flex;
-  position: relative;
-}
-
-/* =================================================================
-   SIDEBAR - Mobile-first approach with theme support
-   ================================================================= */
-
-/* Sidebar base - Hidden off-screen by default on mobile */
-.admin-sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 40;
-  height: 100vh;
-  width: 16rem;
-  transform: translateX(-100%);
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Sidebar visible on mobile when opened */
-.admin-sidebar.open {
-  transform: translateX(0);
-}
-
-/* Desktop sidebar - always visible and static */
-.admin-sidebar.desktop {
-  position: sticky;
-  transform: none;
-}
-
-.admin-sidebar-content {
-  height: 100%;
-  padding: 1rem 0.75rem;
-  overflow-y: auto;
-  background-color: var(--color-bg-primary);
-  border-right: 1px solid var(--color-border-primary);
-  width: 100%;
-}
-
-.dark .admin-sidebar-content {
-  background-color: rgb(31 41 55);
-  border-right-color: rgb(55 65 81);
-}
-
-/* Sidebar header */
-.admin-sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding: 0 0.5rem;
-}
-
-.admin-sidebar-logo {
-  display: flex;
-  align-items: center;
-}
-
-.admin-sidebar-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.dark .admin-sidebar-title {
-  color: white;
-}
-
-/* Close button - always visible on mobile, hidden on desktop */
-.admin-sidebar-close-btn {
-  padding: 0.5rem;
-  color: var(--color-text-secondary);
-  border-radius: 0.375rem;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-}
-
-.admin-sidebar-close-btn:hover {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
-
-.dark .admin-sidebar-close-btn {
-  color: rgb(156 163 175);
-}
-
-.dark .admin-sidebar-close-btn:hover {
-  background-color: rgb(55 65 81);
-  color: white;
-}
-
-.admin-sidebar-close-btn:focus {
-  outline: 2px solid rgb(59 130 246);
-  outline-offset: 2px;
-}
-
-/* Hide close button on desktop */
-.admin-sidebar.desktop .admin-sidebar-close-btn {
-  display: none;
-}
-
-.admin-sidebar-close-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* Sidebar navigation */
-.admin-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.admin-nav-item {
-  display: flex;
-  align-items: center;
-  padding: 0.75rem;
-  color: var(--color-text-secondary);
-  border-radius: 0.5rem;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-}
-
-.admin-nav-item:hover {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
-
-.dark .admin-nav-item {
-  color: rgb(209 213 219);
-}
-
-.dark .admin-nav-item:hover {
-  background-color: rgb(55 65 81);
-  color: white;
-}
-
-.admin-nav-item:focus {
-  outline: 2px solid rgb(59 130 246);
-  outline-offset: 2px;
-}
-
-.admin-nav-item.active {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
-
-.dark .admin-nav-item.active {
-  background-color: rgb(55 65 81);
-  color: white;
-}
-
-.admin-nav-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
-
-.admin-nav-label {
-  margin-left: 0.75rem;
-}
-
-/* Status indicators section */
-.admin-status-section {
-  margin-top: 2rem;
-  padding: 0 0.5rem;
-}
-
-.admin-status-title {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-}
-
-.dark .admin-status-title {
-  color: rgb(156 163 175);
-}
-
-.admin-status-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.admin-status-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.875rem;
-}
-
-.admin-status-label {
-  color: var(--color-text-secondary);
-}
-
-.dark .admin-status-label {
-  color: rgb(209 213 219);
-}
-
-/* =================================================================
-   MOBILE OVERLAY
-   ================================================================= */
-
-.admin-mobile-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  background-color: rgb(0 0 0 / 0.5);
-  cursor: pointer;
-  animation: admin-fade-in 200ms ease;
-}
-
-@keyframes admin-fade-in {
-  from {
-    opacity: 0;
+  .admin-layout {
+    @apply min-h-screen flex relative;
   }
-  to {
-    opacity: 1;
+
+  /* =================================================================
+     SIDEBAR
+     ================================================================= */
+
+  .admin-sidebar {
+    @apply fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full transition-transform duration-[250ms] ease-out;
   }
-}
 
-/* =================================================================
-   MAIN CONTENT AREA
-   ================================================================= */
+  .admin-sidebar.open {
+    @apply translate-x-0;
+  }
 
-.admin-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
+  .admin-sidebar.desktop {
+    @apply sticky translate-x-0;
+  }
 
-/* =================================================================
-   MOBILE HEADER - Theme-aware
-   ================================================================= */
+  .admin-sidebar-content {
+    @apply h-full py-4 px-3 overflow-y-auto w-full;
+    background-color: var(--color-bg-primary);
+    border-right: 1px solid var(--color-border-primary);
+  }
 
-.admin-mobile-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background-color: var(--color-bg-primary);
-  border-bottom: 1px solid var(--color-border-primary);
-  padding: 0.75rem 1rem;
-}
+  .dark .admin-sidebar-content {
+    @apply bg-gray-800 border-gray-700;
+  }
 
-.dark .admin-mobile-header {
-  background-color: rgb(17 24 39);
-  border-bottom-color: rgb(75 85 99);
-}
+  .admin-sidebar-header {
+    @apply flex items-center justify-between mb-6 px-2;
+  }
 
-/* Hide mobile header on desktop */
-.admin-mobile-header.desktop-hidden {
-  display: none;
-}
+  .admin-sidebar-logo {
+    @apply flex items-center;
+  }
 
-.admin-mobile-header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+  .admin-sidebar-title {
+    @apply text-xl font-semibold;
+    color: var(--color-text-primary);
+  }
 
-.admin-mobile-menu-btn {
-  padding: 0.5rem;
-  color: var(--color-text-secondary);
-  border-radius: 0.375rem;
-  transition:
-    background-color 150ms ease,
-    color 150ms ease;
-}
+  .dark .admin-sidebar-title {
+    @apply text-white;
+  }
 
-.admin-mobile-menu-btn:hover {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-}
+  .admin-sidebar-close-btn {
+    @apply p-2 rounded-md transition-colors duration-150;
+    color: var(--color-text-secondary);
+  }
 
-.dark .admin-mobile-menu-btn {
-  color: rgb(156 163 175);
-}
+  .admin-sidebar-close-btn:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
 
-.dark .admin-mobile-menu-btn:hover {
-  background-color: rgb(55 65 81);
-  color: white;
-}
+  .dark .admin-sidebar-close-btn {
+    @apply text-gray-400;
+  }
 
-.admin-mobile-menu-btn:focus {
-  outline: 2px solid rgb(59 130 246);
-  outline-offset: 2px;
-}
+  .dark .admin-sidebar-close-btn:hover {
+    @apply bg-gray-700 text-white;
+  }
 
-.admin-mobile-menu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-}
+  .admin-sidebar-close-btn:focus {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
 
-.admin-mobile-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
+  .admin-sidebar.desktop .admin-sidebar-close-btn {
+    @apply hidden;
+  }
 
-.dark .admin-mobile-title {
-  color: white;
-}
+  .admin-sidebar-close-icon {
+    @apply w-5 h-5;
+  }
 
-.admin-mobile-spacer {
-  width: 2.5rem;
-}
+  /* Sidebar navigation */
+  .admin-nav {
+    @apply flex flex-col gap-2;
+  }
 
-/* =================================================================
-   PAGE CONTENT - Theme-aware
-   ================================================================= */
+  .admin-nav-item {
+    @apply flex items-center p-3 rounded-lg transition-colors duration-150;
+    color: var(--color-text-secondary);
+  }
 
-.admin-content {
-  padding: 1rem;
-  background-color: var(--color-bg-secondary);
-  flex: 1;
-  min-height: calc(100vh - 57px); /* Account for mobile header */
-}
+  .admin-nav-item:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
 
-.dark .admin-content {
-  background-color: rgb(17 24 39);
-}
+  .dark .admin-nav-item {
+    @apply text-gray-300;
+  }
 
-/* More padding on larger screens */
-@media (min-width: 640px) {
+  .dark .admin-nav-item:hover {
+    @apply bg-gray-700 text-white;
+  }
+
+  .admin-nav-item:focus {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  .admin-nav-item.active {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-nav-item.active {
+    @apply bg-gray-700 text-white;
+  }
+
+  .admin-nav-icon {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  .admin-nav-label {
+    @apply ml-3;
+  }
+
+  /* Status indicators section */
+  .admin-status-section {
+    @apply mt-8 px-2;
+  }
+
+  .admin-status-title {
+    @apply text-xs font-semibold uppercase mb-3;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .admin-status-title {
+    @apply text-gray-400;
+  }
+
+  .admin-status-list {
+    @apply flex flex-col gap-2;
+  }
+
+  .admin-status-item {
+    @apply flex items-center justify-between text-sm;
+  }
+
+  .admin-status-label {
+    color: var(--color-text-secondary);
+  }
+
+  .dark .admin-status-label {
+    @apply text-gray-300;
+  }
+
+  /* =================================================================
+     MOBILE OVERLAY
+     ================================================================= */
+
+  .admin-mobile-overlay {
+    @apply fixed inset-0 z-30 cursor-pointer;
+    background-color: rgb(0 0 0 / 0.5);
+    animation: admin-fade-in 200ms ease;
+  }
+
+  @keyframes admin-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* =================================================================
+     MAIN CONTENT AREA
+     ================================================================= */
+
+  .admin-main {
+    @apply flex-1 min-w-0 flex flex-col;
+  }
+
+  /* =================================================================
+     MOBILE HEADER
+     ================================================================= */
+
+  .admin-mobile-header {
+    @apply sticky top-0 z-20 py-3 px-4;
+    background-color: var(--color-bg-primary);
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .dark .admin-mobile-header {
+    @apply bg-gray-900 border-gray-600;
+  }
+
+  .admin-mobile-header.desktop-hidden {
+    @apply hidden;
+  }
+
+  .admin-mobile-header-content {
+    @apply flex items-center justify-between;
+  }
+
+  .admin-mobile-menu-btn {
+    @apply p-2 rounded-md transition-colors duration-150;
+    color: var(--color-text-secondary);
+  }
+
+  .admin-mobile-menu-btn:hover {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-mobile-menu-btn {
+    @apply text-gray-400;
+  }
+
+  .dark .admin-mobile-menu-btn:hover {
+    @apply bg-gray-700 text-white;
+  }
+
+  .admin-mobile-menu-btn:focus {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+
+  .admin-mobile-menu-icon {
+    @apply w-6 h-6;
+  }
+
+  .admin-mobile-title {
+    @apply text-lg font-semibold;
+    color: var(--color-text-primary);
+  }
+
+  .dark .admin-mobile-title {
+    @apply text-white;
+  }
+
+  .admin-mobile-spacer {
+    @apply w-10;
+  }
+
+  /* =================================================================
+     PAGE CONTENT
+     ================================================================= */
+
   .admin-content {
-    padding: 1.5rem;
+    @apply p-4 flex-1;
+    background-color: var(--color-bg-secondary);
+    min-height: calc(100vh - 57px);
   }
-}
 
-@media (min-width: 1024px) {
-  .admin-content {
-    padding: 2rem;
-    min-height: 100vh;
+  .dark .admin-content {
+    @apply bg-gray-900;
   }
-}
 
-/* Access denied section */
-.admin-access-denied {
-  text-align: center;
-  padding: 3rem 1rem;
-}
+  @media (min-width: 640px) {
+    .admin-content {
+      @apply p-6;
+    }
+  }
 
-.admin-access-denied-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 1rem;
-}
+  @media (min-width: 1024px) {
+    .admin-content {
+      @apply p-8 min-h-screen;
+    }
+  }
 
-.dark .admin-access-denied-title {
-  color: white;
-}
+  /* Access denied section */
+  .admin-access-denied {
+    @apply text-center py-12 px-4;
+  }
 
-.admin-access-denied-text {
-  color: var(--color-text-secondary);
-  margin-bottom: 1.5rem;
-}
+  .admin-access-denied-title {
+    @apply text-2xl font-bold mb-4;
+    color: var(--color-text-primary);
+  }
 
-.dark .admin-access-denied-text {
-  color: rgb(156 163 175);
-}
+  .dark .admin-access-denied-title {
+    @apply text-white;
+  }
 
-/* =================================================================
-   ADMIN CONTAINERS
-   ================================================================= */
+  .admin-access-denied-text {
+    @apply mb-6;
+    color: var(--color-text-secondary);
+  }
 
-/* Admin container - standard width */
-.admin-container {
-  max-width: 72rem;
-  margin-inline: auto;
-}
+  .dark .admin-access-denied-text {
+    @apply text-gray-400;
+  }
 
-/* Admin container - large/full width */
-.admin-container-lg {
-  max-width: 100%;
-}
+  /* =================================================================
+     ADMIN CONTAINERS
+     ================================================================= */
 
-/* Admin header with title and controls */
-.admin-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
+  .admin-container {
+    @apply max-w-6xl mx-auto;
+  }
 
-@media (min-width: 768px) {
+  .admin-container-lg {
+    @apply max-w-full;
+  }
+
   .admin-header {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    @apply flex flex-col gap-4 mb-6;
+    @apply md:flex-row md:flex-wrap md:items-center md:justify-between;
   }
-}
 
-/* =================================================================
-   PANELS - Theme-aware panel containers
-   ================================================================= */
+  /* =================================================================
+     PANELS
+     ================================================================= */
 
-/* Panel - generic container with themed background */
-.panel {
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
+  .panel {
+    @apply rounded-lg overflow-hidden;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+  }
 
-.dark .panel {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
+  .dark .panel {
+    @apply bg-gray-800 border-gray-700;
+  }
 
-/* Panel with unsaved changes - yellow border */
-.panel-unsaved {
-  outline: 2px solid rgb(234 179 8);
-  outline-offset: 0;
-}
+  .panel-unsaved {
+    @apply outline-2 outline-yellow-500 outline-offset-0;
+  }
 
-/* Panel link - interactive panel item */
-.panel-link {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  transition: background-color 200ms ease;
-}
+  .panel-link {
+    @apply flex items-center p-4 rounded-lg transition-colors duration-200;
+    background-color: var(--color-bg-secondary);
+  }
 
-.panel-link:hover {
-  background-color: var(--color-border-primary);
-}
+  .panel-link:hover {
+    background-color: var(--color-border-primary);
+  }
 
-.dark .panel-link {
-  background-color: rgb(55 65 81);
-}
+  .dark .panel-link {
+    @apply bg-gray-700;
+  }
 
-.dark .panel-link:hover {
-  background-color: rgb(75 85 99);
-}
+  .dark .panel-link:hover {
+    @apply bg-gray-600;
+  }
 
-/* =================================================================
-   STAT CARDS - Theme-aware stat display cards
-   ================================================================= */
+  /* =================================================================
+     STAT CARDS
+     ================================================================= */
 
-/* Stat card container */
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 1.5rem;
-}
+  .stat-card {
+    @apply flex items-center p-6;
+  }
 
-/* Stat card icon wrapper */
-.stat-card-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
-}
+  .stat-card-icon {
+    @apply flex items-center justify-center w-12 h-12 rounded-lg shrink-0;
+  }
 
-/* Stat card icon color variants - light mode uses lighter backgrounds */
-.stat-card-icon-purple {
-  background-color: rgb(243 232 255);
-  color: rgb(147 51 234);
-}
+  .stat-card-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+  }
 
-.dark .stat-card-icon-purple {
-  background-color: rgb(88 28 135 / 0.5);
-  color: rgb(192 132 252);
-}
+  .dark .stat-card-icon-purple {
+    background-color: rgb(88 28 135 / 0.5);
+    @apply text-purple-400;
+  }
 
-.stat-card-icon-blue {
-  background-color: rgb(219 234 254);
-  color: rgb(37 99 235);
-}
+  .stat-card-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+  }
 
-.dark .stat-card-icon-blue {
-  background-color: rgb(30 58 138 / 0.5);
-  color: rgb(96 165 250);
-}
+  .dark .stat-card-icon-blue {
+    background-color: rgb(30 58 138 / 0.5);
+    @apply text-blue-400;
+  }
 
-.stat-card-icon-green {
-  background-color: rgb(220 252 231);
-  color: rgb(22 163 74);
-}
+  .stat-card-icon-green {
+    @apply bg-green-100 text-green-600;
+  }
 
-.dark .stat-card-icon-green {
-  background-color: rgb(22 101 52 / 0.5);
-  color: rgb(74 222 128);
-}
+  .dark .stat-card-icon-green {
+    background-color: rgb(22 101 52 / 0.5);
+    @apply text-green-400;
+  }
 
-.stat-card-icon-yellow {
-  background-color: rgb(254 249 195);
-  color: rgb(161 98 7);
-}
+  .stat-card-icon-yellow {
+    @apply bg-yellow-100 text-yellow-700;
+  }
 
-.dark .stat-card-icon-yellow {
-  background-color: rgb(113 63 18 / 0.5);
-  color: rgb(250 204 21);
-}
+  .dark .stat-card-icon-yellow {
+    background-color: rgb(113 63 18 / 0.5);
+    @apply text-yellow-400;
+  }
 
-.stat-card-icon-indigo {
-  background-color: rgb(224 231 255);
-  color: rgb(79 70 229);
-}
+  .stat-card-icon-indigo {
+    @apply bg-indigo-100 text-indigo-600;
+  }
 
-.dark .stat-card-icon-indigo {
-  background-color: rgb(49 46 129 / 0.5);
-  color: rgb(129 140 248);
-}
+  .dark .stat-card-icon-indigo {
+    background-color: rgb(49 46 129 / 0.5);
+    @apply text-indigo-400;
+  }
 
-/* Stat card content */
-.stat-card-content {
-  margin-left: 1rem;
-}
+  .stat-card-content {
+    @apply ml-4;
+  }
 
-/* Stat card label */
-.stat-card-label {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
+  .stat-card-label {
+    @apply text-sm;
+    color: var(--color-text-secondary);
+  }
 
-.dark .stat-card-label {
-  color: rgb(156 163 175);
-}
+  .dark .stat-card-label {
+    @apply text-gray-400;
+  }
 
-/* Stat card value */
-.stat-card-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
+  .stat-card-value {
+    @apply text-2xl font-semibold;
+    color: var(--color-text-primary);
+  }
 
-.dark .stat-card-value {
-  color: white;
-}
+  .dark .stat-card-value {
+    @apply text-white;
+  }
 
-/* =================================================================
-   WORKER CARDS - Legacy styles (prefer _data-display.css worker-card-*)
-   ================================================================= */
+  /* =================================================================
+     WORKER CARDS (Legacy - prefer _data-display.css)
+     ================================================================= */
 
-/* Worker card base - kept for backwards compatibility */
-.worker-card {
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
+  .worker-card {
+    @apply rounded-lg overflow-hidden;
+  }
 
-/* Worker card backgrounds - theme-aware */
-.worker-card-bg-normal {
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border-primary);
-}
+  .worker-card-bg-normal {
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+  }
 
-.dark .worker-card-bg-normal {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
+  .dark .worker-card-bg-normal {
+    @apply bg-gray-800 border-gray-700;
+  }
 
-.worker-card-bg-issue {
-  background-color: rgb(254 242 242);
-  border: 1px solid rgb(252 165 165);
-}
+  .worker-card-bg-issue {
+    @apply bg-red-50 border border-red-300;
+  }
 
-.dark .worker-card-bg-issue {
-  background-color: rgb(127 29 29 / 0.3);
-  border-color: rgb(185 28 28 / 0.5);
-}
+  .dark .worker-card-bg-issue {
+    background-color: rgb(127 29 29 / 0.3);
+    border-color: rgb(185 28 28 / 0.5);
+  }
 
-/* Status icon container - theme-aware */
-.status-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  flex-shrink: 0;
-}
+  /* Status icon container */
+  .status-icon {
+    @apply flex items-center justify-center w-10 h-10 rounded-full shrink-0;
+  }
 
-/* Status icon variants - light mode */
-.status-icon-success {
-  background-color: rgb(220 252 231);
-  color: rgb(22 163 74);
-}
+  .status-icon-success {
+    @apply bg-green-100 text-green-600;
+  }
 
-.dark .status-icon-success {
-  background-color: rgb(22 101 52);
-  color: rgb(74 222 128);
-}
+  .dark .status-icon-success {
+    @apply bg-green-800 text-green-400;
+  }
 
-.status-icon-error {
-  background-color: rgb(254 226 226);
-  color: rgb(220 38 38);
-}
+  .status-icon-error {
+    @apply bg-red-100 text-red-600;
+  }
 
-.dark .status-icon-error {
-  background-color: rgb(127 29 29);
-  color: rgb(248 113 113);
-}
+  .dark .status-icon-error {
+    @apply bg-red-900 text-red-400;
+  }
 
-/* =================================================================
-   DIALOGS / MODALS - Theme-aware modal components
-   ================================================================= */
+  /* =================================================================
+     DIALOGS / MODALS
+     ================================================================= */
 
-/* Modal overlay container */
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  overflow-y: auto;
-}
+  .modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto;
+  }
 
-/* 
-   Worker Modal - Uses higher z-index and explicit containment to 
-   escape transform-based stacking contexts (e.g., sidebar with will-change)
-   Note: This modal must be rendered outside of elements with 'contain: layout'
-   to properly use position: fixed relative to the viewport.
-*/
-.worker-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  overflow-y: auto;
-}
+  .worker-modal-overlay {
+    @apply fixed inset-0 flex items-center justify-center p-4 overflow-y-auto;
+    z-index: 9999;
+  }
 
-.worker-modal-panel {
-  position: relative;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  max-width: 36rem;
-  width: 100%;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  z-index: 10000;
-  margin: auto;
-}
+  .worker-modal-panel {
+    @apply relative rounded-lg p-6 max-w-xl w-full flex flex-col;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-primary);
+    max-height: 80vh;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    z-index: 10000;
+    margin: auto;
+  }
 
-.dark .worker-modal-panel {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-  color: white;
-}
+  .dark .worker-modal-panel {
+    @apply bg-gray-800 border-gray-700 text-white;
+  }
 
-/* Larger modal variant for models list */
-.worker-modal-panel-large {
-  max-width: 48rem;
-  max-height: 85vh;
-}
-
-@media (min-width: 1024px) {
   .worker-modal-panel-large {
-    max-width: 56rem;
+    @apply max-w-3xl;
+    max-height: 85vh;
   }
-}
 
-.worker-modal-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-  min-height: 0;
-  max-height: 60vh;
-}
+  @media (min-width: 1024px) {
+    .worker-modal-panel-large {
+      @apply max-w-4xl;
+    }
+  }
 
-/* Models list styling - theme-aware */
-.worker-models-list {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 0.25rem;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+  .worker-modal-scroll {
+    @apply flex-1 overflow-y-auto pr-2 min-h-0;
+    max-height: 60vh;
+  }
 
-@media (min-width: 640px) {
+  /* Models list styling */
   .worker-models-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-1 list-none p-0 m-0;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-@media (min-width: 1024px) {
-  .worker-models-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  @media (min-width: 640px) {
+    .worker-models-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
-}
 
-.worker-models-list-item {
-  padding: 0.5rem 0.75rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: background-color 150ms ease;
-}
-
-.worker-models-list-item:hover {
-  background-color: var(--color-border-primary);
-}
-
-.dark .worker-models-list-item {
-  background-color: rgb(55 65 81);
-  color: rgb(229 231 235);
-}
-
-.dark .worker-models-list-item:hover {
-  background-color: rgb(75 85 99);
-}
-
-/* Modal backdrop - shared by both .modal and .worker-modal-overlay */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgb(0 0 0 / 0.5);
-  z-index: -1;
-}
-
-/* Worker modal backdrop needs higher z-index */
-.worker-modal-overlay .modal-backdrop {
-  z-index: 9998;
-}
-
-/* Dialog panel - theme-aware */
-.dialog-panel {
-  position: relative;
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  max-width: 36rem;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  z-index: 51;
-  margin: auto;
-}
-
-.dark .dialog-panel {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
-
-/* =================================================================
-   TOASTS - Theme-aware notification toasts
-   ================================================================= */
-
-/* Toast base */
-.toast {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  animation: toast-slide-in 300ms ease;
-}
-
-@keyframes toast-slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+  @media (min-width: 1024px) {
+    .worker-models-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+
+  .worker-models-list-item {
+    @apply py-2 px-3 rounded-md text-sm truncate transition-colors duration-150;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
   }
-}
 
-/* Toast variants - work well in both modes */
-.toast-success {
-  background-color: rgb(22 163 74);
-  color: white;
-}
+  .worker-models-list-item:hover {
+    background-color: var(--color-border-primary);
+  }
 
-.toast-error {
-  background-color: rgb(220 38 38);
-  color: white;
-}
+  .dark .worker-models-list-item {
+    @apply bg-gray-700 text-gray-200;
+  }
 
-/* =================================================================
-   UNSAVED CHANGES WARNING - Theme-aware warning banner
-   ================================================================= */
+  .dark .worker-models-list-item:hover {
+    @apply bg-gray-600;
+  }
 
-/* Unsaved changes warning banner */
-.unsaved-changes-warning {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: rgb(254 243 199);
-  border-bottom: 1px solid rgb(234 179 8 / 0.5);
-  color: rgb(146 64 14);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+  /* Modal backdrop */
+  .modal-backdrop {
+    @apply fixed inset-0 -z-10;
+    background-color: rgb(0 0 0 / 0.5);
+  }
 
-.dark .unsaved-changes-warning {
-  background-color: rgb(113 63 18 / 0.3);
-  color: rgb(250 204 21);
-}
+  .worker-modal-overlay .modal-backdrop {
+    z-index: 9998;
+  }
 
-/* Hidden state - maintains layout space */
-.unsaved-changes-warning-hidden {
-  visibility: hidden;
-}
+  /* Dialog panel */
+  .dialog-panel {
+    @apply relative rounded-lg p-6 max-w-xl w-full overflow-y-auto;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+    max-height: 80vh;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    z-index: 51;
+    margin: auto;
+  }
 
-/* =================================================================
-   EXPANDABLE SECTIONS - Theme-aware expandable headers
-   ================================================================= */
+  .dark .dialog-panel {
+    @apply bg-gray-800 border-gray-700;
+  }
 
-/* Expandable header button */
-.expandable-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 1rem 1.5rem;
-  text-align: left;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-}
+  /* =================================================================
+     TOASTS
+     ================================================================= */
 
-.expandable-header:hover {
-  background-color: var(--color-bg-secondary);
-}
+  .toast {
+    @apply fixed top-4 right-4 z-50 flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
+    animation: toast-slide-in 300ms ease;
+  }
 
-.dark .expandable-header:hover {
-  background-color: rgb(55 65 81 / 0.5);
-}
+  @keyframes toast-slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
 
-/* Expandable icon (chevron) */
-.expandable-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--color-text-secondary);
-  transition: transform 200ms ease;
-}
+  .toast-success {
+    @apply bg-green-600 text-white;
+  }
 
-.dark .expandable-icon {
-  color: rgb(156 163 175);
-}
+  .toast-error {
+    @apply bg-red-600 text-white;
+  }
 
-.expandable-icon.expanded {
-  transform: rotate(180deg);
-}
+  /* =================================================================
+     UNSAVED CHANGES WARNING
+     ================================================================= */
 
-/* =================================================================
-   TOGGLE SWITCHES - Theme-aware toggle switches
-   ================================================================= */
+  .unsaved-changes-warning {
+    @apply flex items-center gap-2 py-3 px-4 text-sm font-medium;
+    background-color: rgb(254 243 199);
+    border-bottom: 1px solid rgb(234 179 8 / 0.5);
+    color: rgb(146 64 14);
+  }
 
-/* Toggle switch container */
-.toggle-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-}
+  .dark .unsaved-changes-warning {
+    background-color: rgb(113 63 18 / 0.3);
+    @apply text-yellow-400;
+  }
 
-.toggle-switch input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+  .unsaved-changes-warning-hidden {
+    @apply invisible;
+  }
 
-/* Toggle switch track - theme-aware */
-.toggle-switch-track {
-  width: 2.75rem;
-  height: 1.5rem;
-  background-color: var(--color-border-primary);
-  border-radius: 9999px;
-  transition: background-color 200ms ease;
-}
+  /* =================================================================
+     EXPANDABLE SECTIONS
+     ================================================================= */
 
-.dark .toggle-switch-track {
-  background-color: rgb(75 85 99);
-}
+  .expandable-header {
+    @apply flex items-center justify-between w-full py-4 px-6 text-left bg-transparent border-none cursor-pointer transition-colors duration-200;
+  }
 
-.toggle-switch input:checked + .toggle-switch-track {
-  background-color: rgb(37 99 235);
-}
+  .expandable-header:hover {
+    background-color: var(--color-bg-secondary);
+  }
 
-/* Toggle switch thumb */
-.toggle-switch-thumb {
-  position: absolute;
-  top: 0.125rem;
-  left: 0.125rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  background-color: white;
-  border-radius: 9999px;
-  transition: transform 200ms ease;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-}
+  .dark .expandable-header:hover {
+    background-color: rgb(55 65 81 / 0.5);
+  }
 
-.toggle-switch input:checked ~ .toggle-switch-thumb {
-  transform: translateX(1.25rem);
-}
+  .expandable-icon {
+    @apply w-5 h-5 transition-transform duration-200;
+    color: var(--color-text-secondary);
+  }
 
-/* =================================================================
-   FIELD LAYOUTS - Theme-aware form field layouts
-   ================================================================= */
+  .dark .expandable-icon {
+    @apply text-gray-400;
+  }
 
-/* Field row compact - inline label and input */
-.field-row-compact {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  transition: opacity 200ms ease;
-}
+  .expandable-icon.expanded {
+    @apply rotate-180;
+  }
 
-.dark .field-row-compact {
-  background-color: rgb(55 65 81 / 0.3);
-}
+  /* =================================================================
+     TOGGLE SWITCHES
+     ================================================================= */
 
-/* Field row dimmed state - for "off" toggles */
-.field-row-dimmed {
-  opacity: 0.5;
-}
+  .toggle-switch {
+    @apply relative inline-flex items-center cursor-pointer;
+  }
 
-/* Field row changed state - for unsaved changes */
-.field-row-changed {
-  outline: 2px solid rgb(234 179 8);
-  outline-offset: 0;
-}
+  .toggle-switch input {
+    @apply absolute opacity-0 w-0 h-0;
+  }
 
-/* Field row stacked - label above input */
-.field-row-stacked {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+  .toggle-switch-track {
+    @apply w-11 h-6 rounded-full transition-colors duration-200;
+    background-color: var(--color-border-primary);
+  }
 
-@media (min-width: 640px) {
+  .dark .toggle-switch-track {
+    @apply bg-gray-600;
+  }
+
+  .toggle-switch input:checked + .toggle-switch-track {
+    @apply bg-blue-600;
+  }
+
+  .toggle-switch-thumb {
+    @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200;
+  }
+
+  .toggle-switch input:checked ~ .toggle-switch-thumb {
+    @apply translate-x-5;
+  }
+
+  /* =================================================================
+     FIELD LAYOUTS
+     ================================================================= */
+
+  .field-row-compact {
+    @apply flex items-center justify-between p-3 rounded-lg transition-opacity duration-200;
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .field-row-compact {
+    background-color: rgb(55 65 81 / 0.3);
+  }
+
+  .field-row-dimmed {
+    @apply opacity-50;
+  }
+
+  .field-row-changed {
+    @apply outline-2 outline-yellow-500 outline-offset-0;
+  }
+
   .field-row-stacked {
-    flex-direction: row;
-    align-items: flex-start;
+    @apply flex flex-col gap-2;
+    @apply sm:flex-row sm:items-start;
   }
-}
 
-/* Field label container */
-.field-label {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  flex: 1;
-}
+  .field-label {
+    @apply flex flex-col min-w-0 flex-1;
+  }
 
-/* Field label text - theme-aware */
-.field-label-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
+  .field-label-text {
+    @apply text-sm font-medium;
+    color: var(--color-text-primary);
+  }
 
-.dark .field-label-text {
-  color: rgb(209 213 219);
-}
+  .dark .field-label-text {
+    @apply text-gray-300;
+  }
 
-/* Field label description */
-.field-label-desc {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  margin-top: 0.125rem;
-}
+  .field-label-desc {
+    @apply text-xs mt-0.5;
+    color: var(--color-text-secondary);
+  }
 
-.dark .field-label-desc {
-  color: rgb(107 114 128);
-}
+  .dark .field-label-desc {
+    @apply text-gray-500;
+  }
 
-/* =================================================================
-   BUTTONS - Theme-aware admin buttons
-   Extends _buttons.css with admin-specific variants
-   ================================================================= */
+  /* =================================================================
+     BUTTONS
+     ================================================================= */
 
-/* Muted button - theme-aware */
-.btn-muted {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease;
-}
+  .btn-muted {
+    @apply py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
+  }
 
-.btn-muted:hover {
-  background-color: var(--color-border-primary);
-  color: var(--color-text-primary);
-}
+  .btn-muted:hover {
+    background-color: var(--color-border-primary);
+    color: var(--color-text-primary);
+  }
 
-.dark .btn-muted {
-  color: rgb(209 213 219);
-  background-color: rgb(55 65 81);
-}
+  .dark .btn-muted {
+    @apply text-gray-300 bg-gray-700;
+  }
 
-.dark .btn-muted:hover {
-  background-color: rgb(75 85 99);
-  color: white;
-}
+  .dark .btn-muted:hover {
+    @apply bg-gray-600 text-white;
+  }
 
-.btn-muted:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .btn-muted:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
 
-/* Danger button - works well in both modes */
-.btn-danger {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: white;
-  background-color: rgb(220 38 38);
-  border-radius: 0.5rem;
-  transition: background-color 200ms ease;
-}
+  .btn-danger {
+    @apply py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg transition-colors duration-200;
+  }
 
-.btn-danger:hover {
-  background-color: rgb(185 28 28);
-}
+  .btn-danger:hover {
+    @apply bg-red-700;
+  }
 
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .btn-danger:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
 
-/* Fixed save button - green with yellow border, bottom right */
-.btn-save-fixed {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  z-index: 50;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: white;
-  background-color: rgb(22 163 74);
-  border-radius: 0.5rem;
-  outline: 3px solid rgb(234 179 8);
-  outline-offset: 0;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
-  transition:
-    background-color 200ms ease,
-    transform 200ms ease;
-}
+  .btn-save-fixed {
+    @apply fixed bottom-6 right-6 z-50 py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
+    outline: 3px solid rgb(234 179 8);
+    outline-offset: 0;
+  }
 
-.btn-save-fixed:hover {
-  background-color: rgb(21 128 61);
-  transform: scale(1.05);
-}
+  .btn-save-fixed:hover {
+    @apply bg-green-700 scale-105;
+  }
 
-.btn-save-fixed:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
+  .btn-save-fixed:disabled {
+    @apply opacity-60 cursor-not-allowed scale-100;
+  }
 
-/* Icon button - theme-aware */
-.btn-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  color: var(--color-text-secondary);
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease;
-}
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-2 rounded-lg transition-colors duration-200;
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-secondary);
+  }
 
-.btn-icon:hover {
-  background-color: var(--color-border-primary);
-  color: var(--color-text-primary);
-}
+  .btn-icon:hover {
+    background-color: var(--color-border-primary);
+    color: var(--color-text-primary);
+  }
 
-.dark .btn-icon {
-  color: rgb(156 163 175);
-  background-color: rgb(55 65 81);
-}
+  .dark .btn-icon {
+    @apply text-gray-400 bg-gray-700;
+  }
 
-.dark .btn-icon:hover {
-  background-color: rgb(75 85 99);
-  color: white;
-}
+  .dark .btn-icon:hover {
+    @apply bg-gray-600 text-white;
+  }
 
-.btn-icon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .btn-icon:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
 
-/* =================================================================
-   LIST ITEM BUTTON - Theme-aware clickable list items
-   ================================================================= */
+  /* =================================================================
+     LIST ITEM BUTTON
+     ================================================================= */
 
-/* List item button - clickable list items */
-.list-item-button {
-  width: 100%;
-  padding: 0.75rem;
-  text-align: left;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  transition: background-color 200ms ease;
-}
+  .list-item-button {
+    @apply w-full p-3 text-left rounded-lg transition-colors duration-200;
+    background-color: var(--color-bg-secondary);
+  }
 
-.list-item-button:hover {
-  background-color: var(--color-border-primary);
-}
+  .list-item-button:hover {
+    background-color: var(--color-border-primary);
+  }
 
-.dark .list-item-button {
-  background-color: rgb(55 65 81 / 0.5);
-}
+  .dark .list-item-button {
+    background-color: rgb(55 65 81 / 0.5);
+  }
 
-.dark .list-item-button:hover {
-  background-color: rgb(55 65 81);
-}
+  .dark .list-item-button:hover {
+    @apply bg-gray-700;
+  }
 
-/* =================================================================
-   GRID LAYOUTS (ADMIN-SPECIFIC)
-   ================================================================= */
+  /* =================================================================
+     GRID LAYOUTS
+     ================================================================= */
 
-/* 2-column grid for stats */
-.admin-grid-stats-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
+  .admin-grid-stats-2 {
+    @apply grid grid-cols-2 gap-4;
+  }
 
-/* 4-column responsive grid for stats */
-.admin-grid-stats-4 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
   .admin-grid-stats-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    @apply grid grid-cols-2 gap-4;
+    @apply md:grid-cols-4;
   }
-}
 
-/* 2-column responsive grid for workers */
-.admin-grid-workers {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: 1024px) {
   .admin-grid-workers {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-/* 3-column responsive grid for worker list */
-.admin-grid-workers-3 {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
+  @media (min-width: 1024px) {
+    .admin-grid-workers {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 
-@media (min-width: 1024px) {
   .admin-grid-workers-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-@media (min-width: 1280px) {
-  .admin-grid-workers-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  @media (min-width: 1024px) {
+    .admin-grid-workers-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
-}
 
-/* 3-column responsive grid for user history */
-.admin-grid-history {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 0.5rem;
-}
+  @media (min-width: 1280px) {
+    .admin-grid-workers-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 
-@media (min-width: 640px) {
   .admin-grid-history {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-2;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-@media (min-width: 1024px) {
-  .admin-grid-history {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  @media (min-width: 640px) {
+    .admin-grid-history {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
-}
 
-/* 2-3 column responsive grid for permissions */
-.admin-grid-permissions {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
+  @media (min-width: 1024px) {
+    .admin-grid-history {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 
-@media (min-width: 768px) {
   .admin-grid-permissions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-@media (min-width: 1024px) {
-  .admin-grid-permissions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  @media (min-width: 768px) {
+    .admin-grid-permissions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
-}
 
-/* 2-column responsive grid for limits */
-.admin-grid-limits {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
+  @media (min-width: 1024px) {
+    .admin-grid-permissions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
 
-@media (min-width: 768px) {
   .admin-grid-limits {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-/* 2-column grid for moderator tools */
-.admin-grid-tools {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1rem;
-}
+  @media (min-width: 768px) {
+    .admin-grid-limits {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 
-@media (min-width: 640px) {
   .admin-grid-tools {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid gap-4;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-}
 
-/* =================================================================
-   TEXT UTILITIES (ADMIN-SPECIFIC)
-   Theme-aware text styles for admin panel
-   Use Tailwind text-sm, text-xs, font-mono, truncate for standard sizing
-   ================================================================= */
-
-/* Admin heading - page title */
-.admin-heading-page {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 1.5rem;
-}
-
-.dark .admin-heading-page {
-  color: white;
-}
-
-/* Admin heading - large */
-.admin-heading-lg {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 0.5rem;
-}
-
-.dark .admin-heading-lg {
-  color: white;
-}
-
-/* Admin heading - section */
-.admin-heading-section {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.dark .admin-heading-section {
-  color: white;
-}
-
-/* Admin heading - card */
-.admin-heading-card {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.dark .admin-heading-card {
-  color: white;
-}
-
-/* =================================================================
-   LOADING STATES - Theme-aware loading indicators
-   ================================================================= */
-
-/* Loading container */
-.admin-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-}
-
-/* Loading spinner */
-.admin-spinner {
-  width: 2rem;
-  height: 2rem;
-  color: rgb(59 130 246);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+  @media (min-width: 640px) {
+    .admin-grid-tools {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
-  to {
-    transform: rotate(360deg);
+
+  /* =================================================================
+     TEXT UTILITIES
+     ================================================================= */
+
+  .admin-heading-page {
+    @apply text-2xl font-bold mb-6;
+    color: var(--color-text-primary);
   }
-}
 
-/* Loading text */
-.admin-loading-text {
-  margin-top: 1rem;
-  color: var(--color-text-secondary);
-}
+  .dark .admin-heading-page {
+    @apply text-white;
+  }
 
-.dark .admin-loading-text {
-  color: rgb(156 163 175);
-}
+  .admin-heading-lg {
+    @apply text-3xl font-bold mb-2;
+    color: var(--color-text-primary);
+  }
 
-/* =================================================================
-   EMPTY STATES - Theme-aware empty state displays
-   ================================================================= */
+  .dark .admin-heading-lg {
+    @apply text-white;
+  }
 
-/* Empty state container */
-.admin-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 0;
-  text-align: center;
-}
+  .admin-heading-section {
+    @apply text-xl font-semibold;
+    color: var(--color-text-primary);
+  }
 
-/* Empty state icon */
-.admin-empty-icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--color-text-secondary);
-}
+  .dark .admin-heading-section {
+    @apply text-white;
+  }
 
-.dark .admin-empty-icon {
-  color: rgb(107 114 128);
-}
+  .admin-heading-card {
+    @apply text-lg font-semibold;
+    color: var(--color-text-primary);
+  }
 
-/* Empty state text */
-.admin-empty-text {
-  margin-top: 1rem;
-  color: var(--color-text-secondary);
-}
+  .dark .admin-heading-card {
+    @apply text-white;
+  }
 
-.dark .admin-empty-text {
-  color: rgb(156 163 175);
-}
+  /* =================================================================
+     LOADING STATES
+     ================================================================= */
 
-/* =================================================================
-   MISC UTILITIES (Admin-specific)
-   Theme-aware utility classes - use Tailwind for standard utilities
-   ================================================================= */
+  .admin-loading {
+    @apply flex flex-col items-center justify-center py-12;
+  }
 
-/* Border top separator - theme-aware */
-.admin-border-t {
-  border-top: 1px solid var(--color-border-primary);
-}
+  .admin-spinner {
+    @apply w-8 h-8 text-blue-500 animate-spin;
+  }
 
-.dark .admin-border-t {
-  border-top-color: rgb(55 65 81);
-}
+  .admin-loading-text {
+    @apply mt-4;
+    color: var(--color-text-secondary);
+  }
 
-/* Background utilities - theme-aware */
-.admin-bg-dark {
-  background-color: var(--color-bg-secondary);
-}
+  .dark .admin-loading-text {
+    @apply text-gray-400;
+  }
 
-.dark .admin-bg-dark {
-  background-color: rgb(55 65 81);
-}
+  /* =================================================================
+     EMPTY STATES
+     ================================================================= */
 
-.admin-bg-darker {
-  background-color: var(--color-bg-primary);
-}
+  .admin-empty {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
 
-.dark .admin-bg-darker {
-  background-color: rgb(31 41 55);
-}
+  .admin-empty-icon {
+    @apply w-12 h-12;
+    color: var(--color-text-secondary);
+  }
 
-/* Moderator badge text */
-.admin-badge-moderator {
-  font-size: 0.875rem;
-  color: var(--color-brand-purple);
-  margin-left: 0.5rem;
-}
+  .dark .admin-empty-icon {
+    @apply text-gray-500;
+  }
 
-/* Capability badge for worker cards */
-.admin-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-radius: 9999px;
-}
+  .admin-empty-text {
+    @apply mt-4;
+    color: var(--color-text-secondary);
+  }
 
-.admin-badge-capability {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-}
+  .dark .admin-empty-text {
+    @apply text-gray-400;
+  }
 
-.dark .admin-badge-capability {
-  background-color: rgb(55 65 81);
-  color: rgb(156 163 175);
-}
+  /* =================================================================
+     MISC UTILITIES
+     ================================================================= */
 
-/* Deleted user warning */
-.admin-warning-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background-color: rgb(254 226 226);
-  border-radius: 0.5rem;
-  color: rgb(153 27 27);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
+  .admin-border-t {
+    border-top: 1px solid var(--color-border-primary);
+  }
 
-.dark .admin-warning-banner {
-  background-color: rgb(127 29 29);
-  color: rgb(254 202 202);
-}
+  .dark .admin-border-t {
+    @apply border-gray-700;
+  }
 
-/* Admin-specific color utilities - theme-aware */
-.admin-text-blue {
-  color: rgb(37 99 235);
-}
+  .admin-bg-dark {
+    background-color: var(--color-bg-secondary);
+  }
 
-.dark .admin-text-blue {
-  color: rgb(96 165 250);
-}
+  .dark .admin-bg-dark {
+    @apply bg-gray-700;
+  }
 
-.admin-text-green {
-  color: rgb(22 163 74);
-}
+  .admin-bg-darker {
+    background-color: var(--color-bg-primary);
+  }
 
-.dark .admin-text-green {
-  color: rgb(74 222 128);
-}
+  .dark .admin-bg-darker {
+    @apply bg-gray-800;
+  }
 
-.admin-text-yellow {
-  color: rgb(161 98 7);
-}
+  .admin-badge-moderator {
+    @apply text-sm ml-2;
+    color: var(--color-brand-purple);
+  }
 
-.dark .admin-text-yellow {
-  color: rgb(250 204 21);
-}
+  .admin-badge {
+    @apply inline-flex items-center py-0.5 px-2 text-xs font-medium rounded-full;
+  }
 
-.admin-text-red {
-  color: rgb(220 38 38);
-}
+  .admin-badge-capability {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+  }
 
-.dark .admin-text-red {
-  color: rgb(248 113 113);
-}
+  .dark .admin-badge-capability {
+    @apply bg-gray-700 text-gray-400;
+  }
 
-.admin-text-purple {
-  color: var(--color-brand-purple);
-}
+  .admin-warning-banner {
+    @apply flex items-center gap-2 py-3 px-4 rounded-lg text-sm font-medium;
+    @apply bg-red-100 text-red-800;
+  }
 
-.dark .admin-text-purple {
-  color: rgb(192 132 252);
-}
+  .dark .admin-warning-banner {
+    @apply bg-red-900 text-red-200;
+  }
 
-/* Admin text colors - theme-aware */
-.admin-text-muted {
-  color: var(--color-text-secondary);
-}
+  /* Admin color utilities */
+  .admin-text-blue {
+    @apply text-blue-600 dark:text-blue-400;
+  }
 
-.dark .admin-text-muted {
-  color: rgb(156 163 175);
-}
+  .admin-text-green {
+    @apply text-green-600 dark:text-green-400;
+  }
 
-.admin-text-light {
-  color: var(--color-text-secondary);
-}
+  .admin-text-yellow {
+    @apply text-yellow-700 dark:text-yellow-400;
+  }
 
-.dark .admin-text-light {
-  color: rgb(209 213 219);
-}
+  .admin-text-red {
+    @apply text-red-600 dark:text-red-400;
+  }
 
-.admin-text-white {
-  color: var(--color-text-primary);
-}
+  .admin-text-purple {
+    color: var(--color-brand-purple);
+  }
 
-.dark .admin-text-white {
-  color: white;
-}
+  .dark .admin-text-purple {
+    @apply text-purple-400;
+  }
 
-/* Admin link - styled link in admin panel */
-.admin-link {
-  color: var(--color-brand-blue);
-  text-decoration: none;
-  transition: color 200ms ease;
-}
+  .admin-text-muted {
+    color: var(--color-text-secondary);
+  }
 
-.admin-link:hover {
-  color: var(--color-brand-blue-hover);
-  text-decoration: underline;
-}
+  .dark .admin-text-muted {
+    @apply text-gray-400;
+  }
 
-.dark .admin-link {
-  color: rgb(96 165 250);
-}
+  .admin-text-light {
+    color: var(--color-text-secondary);
+  }
 
-.dark .admin-link:hover {
-  color: rgb(147 197 253);
-}
+  .dark .admin-text-light {
+    @apply text-gray-300;
+  }
 
-/* Icon color utilities - theme-aware */
-.admin-icon-muted {
-  color: var(--color-text-secondary);
-}
+  .admin-text-white {
+    color: var(--color-text-primary);
+  }
 
-.dark .admin-icon-muted {
-  color: rgb(107 114 128);
-}
+  .dark .admin-text-white {
+    @apply text-white;
+  }
 
-/* Transform utilities */
-.admin-flip-x {
-  transform: scaleX(-1);
-}
+  .admin-link {
+    @apply no-underline transition-colors duration-200;
+    color: var(--color-brand-blue);
+  }
 
-/* Dialog scroll container */
-.admin-dialog-scroll {
-  max-height: 24rem;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-}
+  .admin-link:hover {
+    color: var(--color-brand-blue-hover);
+    @apply underline;
+  }
 
-/* Max width for bridge agent text */
-.admin-max-w-bridge {
-  max-width: 200px;
-  margin-left: 0.5rem;
-}
+  .dark .admin-link {
+    @apply text-blue-400;
+  }
 
-/* Spinner styles */
-.admin-spinner-track {
-  opacity: 0.25;
-}
+  .dark .admin-link:hover {
+    @apply text-blue-300;
+  }
 
-.admin-spinner-head {
-  opacity: 0.75;
+  .admin-icon-muted {
+    color: var(--color-text-secondary);
+  }
+
+  .dark .admin-icon-muted {
+    @apply text-gray-500;
+  }
+
+  .admin-flip-x {
+    @apply -scale-x-100;
+  }
+
+  .admin-dialog-scroll {
+    @apply max-h-96 overflow-y-auto pr-2;
+  }
+
+  .admin-max-w-bridge {
+    @apply max-w-[200px] ml-2;
+  }
+
+  .admin-spinner-track {
+    @apply opacity-25;
+  }
+
+  .admin-spinner-head {
+    @apply opacity-75;
+  }
 }

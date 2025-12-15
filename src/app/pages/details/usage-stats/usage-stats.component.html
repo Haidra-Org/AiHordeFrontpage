@@ -209,7 +209,7 @@
               <span class="data-label-spaced">
                 {{ "details.usage.queued_image_requests" | transloco }}
                 @if (queuedImageWork(); as work) {
-                  <span class="text-secondary-inline">
+                  <span class="text-secondary">
                     (<app-unit-tooltip [unit]="work" />)
                   </span>
                 }
@@ -222,7 +222,7 @@
               <span class="data-label-spaced">
                 {{ "details.usage.queued_text_requests" | transloco }}
                 @if (queuedTextWork(); as work) {
-                  <span class="text-secondary-inline">
+                  <span class="text-secondary">
                     (<app-unit-tooltip [unit]="work" />)
                   </span>
                 }
@@ -268,7 +268,7 @@
                   <span class="data-value">
                     @if (totalPixelsteps(); as ps) {
                       {{ ps.primary.formatted }}
-                      <span class="text-secondary-inline">
+                      <span class="text-secondary">
                         (<app-unit-tooltip [unit]="ps" [swapDisplay]="true" />)
                       </span>
                     }
@@ -316,7 +316,7 @@
                   <span class="data-value">
                     @if (totalTokens(); as tokens) {
                       {{ tokens.primary.formatted }}
-                      <span class="text-secondary-inline">
+                      <span class="text-secondary">
                         (<app-unit-tooltip
                           [unit]="tokens"
                           [swapDisplay]="true"

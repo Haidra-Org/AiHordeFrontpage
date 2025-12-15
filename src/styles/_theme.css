@@ -1,22 +1,47 @@
 /* =================================================================
    TAILWIND V4 THEME CONFIGURATION
    
-   This file contains all @theme variables for the design system:
-   - Brand colors
-   - Semantic colors (light/dark mode)
-   - Container & spacing
-   - Custom breakpoints
-   - Navigation heights
+   This file contains all @theme variables for the design system.
+   All tokens use Tailwind v4 namespaces for automatic utility generation:
+   - --color-*    → bg-*, text-*, border-*, etc.
+   - --spacing-*  → p-*, m-*, gap-*, etc.
+   - --radius-*   → rounded-*
+   - --shadow-*   → shadow-*
+   - --text-*     → text-* (font sizes)
    ================================================================= */
 
 @theme {
-  /* Brand Colors */
+  /* =================================================================
+     BRAND COLORS
+     Usage: bg-brand-purple, text-brand-blue, etc.
+     ================================================================= */
   --color-brand-purple: #9333ea;
   --color-brand-purple-hover: #7e22ce;
   --color-brand-blue: #1d4ed8;
   --color-brand-blue-hover: #1e40af;
 
-  /* Semantic Colors - Light Mode */
+  /* =================================================================
+     SEMANTIC COLORS - Light Mode Defaults
+     These map to utilities like bg-surface-primary, text-content-primary
+     ================================================================= */
+  /* Text colors */
+  --color-content-primary: rgb(17 24 39);
+  --color-content-secondary: rgb(107 114 128);
+  --color-content-muted: rgb(156 163 175);
+  --color-content-inverted: rgb(255 255 255);
+
+  /* Background colors */
+  --color-surface-primary: rgb(255 255 255);
+  --color-surface-secondary: rgb(249 250 251);
+  --color-surface-tertiary: rgb(243 244 246);
+  --color-surface-elevated: rgb(255 255 255);
+
+  /* Border colors */
+  --color-edge-primary: rgb(229 231 235);
+  --color-edge-secondary: rgb(243 244 246);
+  --color-edge-strong: rgb(209 213 219);
+
+  /* Legacy semantic aliases (for gradual migration) */
   --color-text-primary: rgb(17 24 39);
   --color-text-secondary: rgb(107 114 128);
   --color-bg-primary: rgb(255 255 255);
@@ -24,17 +49,160 @@
   --color-border-primary: rgb(229 231 235);
   --color-border-secondary: rgb(243 244 246);
 
-  /* Container & Spacing */
+  /* =================================================================
+     STATUS COLORS
+     For badges, alerts, and state indicators
+     ================================================================= */
+  /* Success */
+  --color-success-bg: rgb(220 252 231);
+  --color-success-text: rgb(22 101 52);
+  --color-success-border: rgb(134 239 172);
+  --color-success-icon: rgb(22 163 74);
+
+  /* Warning */
+  --color-warning-bg: rgb(254 243 199);
+  --color-warning-text: rgb(133 77 14);
+  --color-warning-border: rgb(253 224 71);
+
+  /* Danger/Error */
+  --color-danger-bg: rgb(254 226 226);
+  --color-danger-text: rgb(153 27 27);
+  --color-danger-border: rgb(252 165 165);
+
+  /* Info */
+  --color-info-bg: rgb(224 242 254);
+  --color-info-text: rgb(7 89 133);
+  --color-info-border: rgb(125 211 252);
+
+  /* =================================================================
+     GRAY SCALE (Tailwind gray palette)
+     For direct reference in @apply
+     ================================================================= */
+  --color-gray-50: rgb(249 250 251);
+  --color-gray-100: rgb(243 244 246);
+  --color-gray-200: rgb(229 231 235);
+  --color-gray-300: rgb(209 213 219);
+  --color-gray-400: rgb(156 163 175);
+  --color-gray-500: rgb(107 114 128);
+  --color-gray-600: rgb(75 85 99);
+  --color-gray-700: rgb(55 65 81);
+  --color-gray-800: rgb(31 41 55);
+  --color-gray-900: rgb(17 24 39);
+  --color-gray-950: rgb(3 7 18);
+
+  /* =================================================================
+     BLUE SCALE
+     ================================================================= */
+  --color-blue-50: rgb(239 246 255);
+  --color-blue-100: rgb(219 234 254);
+  --color-blue-200: rgb(191 219 254);
+  --color-blue-300: rgb(147 197 253);
+  --color-blue-400: rgb(96 165 250);
+  --color-blue-500: rgb(59 130 246);
+  --color-blue-600: rgb(37 99 235);
+  --color-blue-700: rgb(29 78 216);
+  --color-blue-800: rgb(30 64 175);
+  --color-blue-900: rgb(30 58 138);
+
+  /* =================================================================
+     PURPLE SCALE
+     ================================================================= */
+  --color-purple-50: rgb(250 245 255);
+  --color-purple-100: rgb(243 232 255);
+  --color-purple-200: rgb(233 213 255);
+  --color-purple-300: rgb(216 180 254);
+  --color-purple-400: rgb(192 132 252);
+  --color-purple-500: rgb(168 85 247);
+  --color-purple-600: rgb(147 51 234);
+  --color-purple-700: rgb(126 34 206);
+  --color-purple-800: rgb(107 33 168);
+  --color-purple-900: rgb(88 28 135);
+
+  /* =================================================================
+     GREEN SCALE
+     ================================================================= */
+  --color-green-50: rgb(240 253 244);
+  --color-green-100: rgb(220 252 231);
+  --color-green-200: rgb(187 247 208);
+  --color-green-300: rgb(134 239 172);
+  --color-green-400: rgb(74 222 128);
+  --color-green-500: rgb(34 197 94);
+  --color-green-600: rgb(22 163 74);
+  --color-green-700: rgb(21 128 61);
+  --color-green-800: rgb(22 101 52);
+  --color-green-900: rgb(20 83 45);
+
+  /* =================================================================
+     RED SCALE
+     ================================================================= */
+  --color-red-50: rgb(254 242 242);
+  --color-red-100: rgb(254 226 226);
+  --color-red-200: rgb(254 202 202);
+  --color-red-300: rgb(252 165 165);
+  --color-red-400: rgb(248 113 113);
+  --color-red-500: rgb(239 68 68);
+  --color-red-600: rgb(220 38 38);
+  --color-red-700: rgb(185 28 28);
+  --color-red-800: rgb(153 27 27);
+  --color-red-900: rgb(127 29 29);
+
+  /* =================================================================
+     YELLOW/AMBER SCALE
+     ================================================================= */
+  --color-yellow-50: rgb(255 251 235);
+  --color-yellow-100: rgb(254 243 199);
+  --color-yellow-200: rgb(253 230 138);
+  --color-yellow-300: rgb(252 211 77);
+  --color-yellow-400: rgb(251 191 36);
+  --color-yellow-500: rgb(245 158 11);
+  --color-yellow-600: rgb(217 119 6);
+  --color-yellow-700: rgb(180 83 9);
+  --color-yellow-800: rgb(146 64 14);
+  --color-yellow-900: rgb(120 53 15);
+
+  /* =================================================================
+     CONTAINER & SPACING
+     ================================================================= */
   --spacing-container-padding: 1.5rem;
   --spacing-container-padding-mobile: 1rem;
   --max-width-container: 80rem;
 
-  /* Custom Breakpoint */
+  /* =================================================================
+     CUSTOM BREAKPOINTS
+     ================================================================= */
   --breakpoint-3xl: 120rem;
 
-  /* Navigation Bar Heights (including border and padding) */
-  /* Mobile: Updated for new responsive design */
+  /* =================================================================
+     NAVIGATION HEIGHTS
+     ================================================================= */
   --nav-height-mobile: 64px;
-  /* Desktop: Updated for new responsive design */
   --nav-height-desktop: 80px;
+
+  /* =================================================================
+     SHADOWS
+     ================================================================= */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover-dark: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --shadow-focus-blue: 0 0 0 4px rgb(147 197 253 / 0.5);
+  --shadow-focus-blue-dark: 0 0 0 4px rgb(30 58 138 / 0.5);
+  --shadow-focus-purple: 0 0 0 4px rgb(233 213 255 / 0.5);
+  --shadow-focus-purple-dark: 0 0 0 4px rgb(88 28 135 / 0.5);
+
+  /* =================================================================
+     BORDER RADIUS
+     ================================================================= */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* =================================================================
+     TRANSITIONS
+     ================================================================= */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
 }

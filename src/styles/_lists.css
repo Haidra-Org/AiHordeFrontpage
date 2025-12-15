@@ -6,23 +6,18 @@
    - Stats list
    ================================================================= */
 
-/* List with checkboxes */
-.list-checkboxes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+@layer components {
+  /* List with checkboxes */
+  .list-checkboxes {
+    @apply flex flex-col gap-2;
+  }
 
-.list-checkboxes li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
+  .list-checkboxes li {
+    @apply flex items-start gap-2;
+  }
 
-/* Stats list */
-.list-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+  /* Stats list */
+  .list-stats {
+    @apply flex flex-col gap-2 mt-3;
+  }
 }

@@ -5,287 +5,227 @@
    - Icon sizing
    - Divider section
    - Loading skeleton
+   - Spinners
+   - State containers
+   - Code blocks
+   - Stack layouts
+   - JSON syntax highlighting
    ================================================================= */
 
-/* Icon sizing */
-.icon-sm {
-  flex-shrink: 0;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.125rem;
-}
+@layer utilities {
+  /* Icon sizing */
+  .icon-sm {
+    @apply shrink-0 w-4 h-4 mt-0.5;
+  }
 
-/* Divider with padding */
-.divider-section {
-  border-top: 1px solid;
-  max-width: var(--max-width-container);
-  padding: 1rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
+  /* Dark mode fill utility */
+  .dark .dark\:fill-white {
+    fill: white;
+  }
 
-@media (min-width: theme("screens.lg")) {
-  .divider-section {
-    padding-left: var(--spacing-container-padding);
-    padding-right: var(--spacing-container-padding);
+  /* Background color utility */
+  .bg-gray-600 {
+    @apply bg-gray-600;
   }
 }
 
-/* Loading skeleton */
-.skeleton-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+@layer components {
+  /* Divider with padding */
+  .divider-section {
+    @apply mx-auto py-4 border-t;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
 
-/* =================================================================
-   LOADING SPINNER
-   ================================================================= */
+    @apply lg:px-6;
+  }
 
-/* Spinner base */
-.spinner {
-  border-radius: 50%;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  animation: spin 1s linear infinite;
-}
+  /* Loading skeleton */
+  .skeleton-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 
-.dark .spinner {
-  border-color: rgb(55 65 81);
-  border-top-color: rgb(96 165 250);
-}
+  /* =================================================================
+     LOADING SPINNER
+     ================================================================= */
 
-.spinner-sm {
-  width: 1.5rem;
-  height: 1.5rem;
-}
+  /* Spinner base */
+  .spinner {
+    @apply rounded-full;
+    border: 3px solid var(--color-edge-primary);
+    border-top-color: var(--color-brand-blue);
+    animation: spin 1s linear infinite;
+  }
 
-.spinner-md {
-  width: 2.5rem;
-  height: 2.5rem;
-}
+  .dark .spinner {
+    @apply border-gray-700;
+    border-top-color: var(--color-blue-400);
+  }
 
-.spinner-lg {
-  width: 3rem;
-  height: 3rem;
+  .spinner-sm {
+    @apply w-6 h-6;
+  }
+
+  .spinner-md {
+    @apply w-10 h-10;
+  }
+
+  .spinner-lg {
+    @apply w-12 h-12;
+  }
+
+  /* =================================================================
+     STATE CONTAINERS - Loading, Error, Empty states
+     ================================================================= */
+
+  /* Centered state container */
+  .state-container {
+    @apply flex flex-col items-center justify-center gap-4 py-16 px-8 text-center;
+  }
+
+  .state-container-sm {
+    @apply py-12 px-8;
+  }
+
+  /* State icon sizing */
+  .state-icon {
+    @apply w-12 h-12;
+  }
+
+  .state-icon-lg {
+    @apply w-16 h-16;
+  }
+
+  /* Error state color */
+  .state-error {
+    @apply text-red-500;
+    @apply dark:text-red-400;
+  }
+
+  /* Muted state color */
+  .state-muted {
+    @apply text-content-muted;
+    @apply dark:text-gray-500;
+  }
+
+  /* Ensure theme toggle host provides positioning context for dropdown */
+  theme-toggle {
+    @apply relative block;
+  }
+
+  /* =================================================================
+     CODE BLOCKS
+     ================================================================= */
+
+  /* Code block container */
+  .code-block {
+    @apply m-0 p-4 rounded-md overflow-x-auto;
+    @apply font-mono text-sm leading-relaxed;
+    @apply text-content-primary bg-surface-secondary;
+    @apply whitespace-pre-wrap break-words;
+    @apply dark:bg-gray-900 dark:text-gray-200;
+  }
+
+  /* Code block with border */
+  .code-block-bordered {
+    @apply border border-edge-primary;
+    @apply dark:border-gray-700;
+  }
+
+  /* Smaller code block text */
+  .code-block-sm {
+    @apply text-xs;
+  }
+
+  /* Code block with max height and scroll */
+  .code-block-scroll {
+    @apply max-h-[500px] overflow-y-auto;
+  }
+
+  /* Relative container for copy button positioning */
+  .code-wrapper {
+    @apply relative;
+  }
+
+  /* Copy button positioned top-right */
+  .code-copy-btn {
+    @apply absolute top-2 right-2;
+  }
+
+  /* =================================================================
+     PAGE LAYOUT UTILITIES
+     ================================================================= */
+
+  /* Vertical stack with gap */
+  .stack-sm {
+    @apply flex flex-col gap-3;
+  }
+
+  .stack-md {
+    @apply flex flex-col gap-4;
+  }
+
+  .stack-lg {
+    @apply flex flex-col gap-6;
+  }
+
+  .stack-xl {
+    @apply flex flex-col gap-8;
+  }
+
+  /* Flex row with wrap */
+  .flex-row-wrap {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  /* Action row - buttons side by side */
+  .action-row {
+    @apply flex flex-wrap gap-2 mt-2;
+  }
+
+  @media (max-width: 640px) {
+    .action-row-responsive {
+      @apply flex-col;
+    }
+  }
+
+  /* =================================================================
+     JSON SYNTAX HIGHLIGHTING
+     ================================================================= */
+
+  /* JSON key highlighting */
+  .json-key {
+    @apply text-blue-600 font-semibold;
+    @apply dark:text-blue-300;
+  }
+
+  /* JSON string value highlighting */
+  .json-string {
+    @apply text-green-600;
+    @apply dark:text-green-300;
+  }
+
+  /* JSON number value highlighting */
+  .json-number {
+    @apply text-yellow-700;
+    @apply dark:text-yellow-400;
+  }
+
+  /* JSON boolean value highlighting */
+  .json-boolean {
+    @apply text-pink-700;
+    @apply dark:text-pink-400;
+  }
+
+  /* JSON null value highlighting */
+  .json-null {
+    @apply text-content-secondary;
+    @apply dark:text-slate-200;
+  }
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* =================================================================
-   STATE CONTAINERS - Loading, Error, Empty states
-   ================================================================= */
-
-/* Centered state container */
-.state-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.state-container-sm {
-  padding: 3rem 2rem;
-}
-
-/* State icon sizing */
-.state-icon {
-  width: 3rem;
-  height: 3rem;
-}
-
-.state-icon-lg {
-  width: 4rem;
-  height: 4rem;
-}
-
-/* Error state color */
-.state-error {
-  color: rgb(239 68 68);
-}
-
-.dark .state-error {
-  color: rgb(248 113 113);
-}
-
-/* Muted state color */
-.state-muted {
-  color: var(--color-text-muted);
-}
-
-.dark .state-muted {
-  color: rgb(107 114 128);
-}
-
-/* =================================================================
-   CODE BLOCKS
-   ================================================================= */
-
-/* Code block container */
-.code-block {
-  margin: 0;
-  padding: 1rem;
-  font-family:
-    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.375rem;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.dark .code-block {
-  background-color: rgb(17 24 39);
-  color: rgb(229 231 235);
-}
-
-/* Code block with border */
-.code-block-bordered {
-  border: 1px solid var(--color-border);
-}
-
-.dark .code-block-bordered {
-  border-color: rgb(55 65 81);
-}
-
-/* Smaller code block text */
-.code-block-sm {
-  font-size: 0.8125rem;
-}
-
-/* Code block with max height and scroll */
-.code-block-scroll {
-  max-height: 500px;
-  overflow-y: auto;
-}
-
-/* Relative container for copy button positioning */
-.code-wrapper {
-  position: relative;
-}
-
-/* Copy button positioned top-right */
-.code-copy-btn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-}
-
-/* =================================================================
-   PAGE LAYOUT UTILITIES
-   ================================================================= */
-
-/* Vertical stack with gap */
-.stack-sm {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.stack-md {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.stack-lg {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.stack-xl {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-/* Flex row with wrap */
-.flex-row-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-/* Action row - buttons side by side */
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-@media (max-width: 640px) {
-  .action-row-responsive {
-    flex-direction: column;
-  }
-}
-
-/* Dark mode fill utility */
-.dark .dark\:fill-white {
-  fill: white;
-}
-
-/* Background color utility */
-.bg-gray-600 {
-  background-color: var(--bg-gray-600);
-}
-
-/* =================================================================
-   JSON SYNTAX HIGHLIGHTING
-   ================================================================= */
-
-/* JSON key highlighting */
-.json-key {
-  color: rgb(37 99 235);
-  font-weight: 600;
-}
-
-.dark .json-key {
-  color: #93c5fd;
-}
-
-/* JSON string value highlighting */
-.json-string {
-  color: rgb(22 163 74);
-}
-
-.dark .json-string {
-  color: #86efac;
-}
-
-/* JSON number value highlighting */
-.json-number {
-  color: rgb(161 98 7);
-}
-
-.dark .json-number {
-  color: #fbbf24;
-}
-
-/* JSON boolean value highlighting */
-.json-boolean {
-  color: rgb(190 24 93);
-}
-
-.dark .json-boolean {
-  color: #f472b6;
-}
-
-/* JSON null value highlighting */
-.json-null {
-  color: var(--color-text-secondary);
-}
-
-.dark .json-null {
-  color: #e2e8f0;
 }

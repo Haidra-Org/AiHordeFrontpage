@@ -1,5 +1,13 @@
-/* Breakpoint values:
-   md: 768px
-   lg: 1024px
-   xl: 1280px
-*/
+/* =================================================================
+   BREAKPOINT REFERENCE
+   
+   Tailwind v4 breakpoint values (for reference):
+   - sm: 640px
+   - md: 768px
+   - lg: 1024px
+   - xl: 1280px
+   - 2xl: 1536px
+   
+   Use responsive variants directly in @apply:
+   @apply md:mt-0 lg:pt-0 xl:grid-cols-4
+   ================================================================= */

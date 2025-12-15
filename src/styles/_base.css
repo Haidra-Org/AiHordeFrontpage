@@ -12,41 +12,35 @@
 /* Dark mode selector variant */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Ensure full viewport coverage and proper background color */
-html {
-  min-height: 100vh;
-  background-color: var(--color-bg-secondary);
+@layer base {
+  /* Ensure full viewport coverage and proper background color */
+  html {
+    @apply min-h-screen bg-surface-secondary;
+  }
+
+  .dark html,
+  html.dark {
+    @apply bg-gray-800;
+  }
+
+  body {
+    @apply min-h-screen;
+  }
 }
 
-html.dark {
-  background-color: rgb(31 41 55);
+@layer utilities {
+  /* Screen reader only text - for accessibility */
+  .sr-only {
+    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap;
+    clip: rect(0, 0, 0, 0);
+    border-width: 0;
+  }
 }
 
-body {
-  min-height: 100vh;
-}
-
-/* Screen reader only text - for accessibility */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border-width: 0;
-}
-
-/* Body scroll lock for mobile menu */
-body.overflow-hidden {
-  overflow: hidden;
-}
-
-@media (min-width: 1024px) {
+@layer components {
+  /* Body scroll lock for mobile menu */
   body.overflow-hidden {
-    overflow: auto;
+    @apply overflow-hidden lg:overflow-auto;
   }
 }
 

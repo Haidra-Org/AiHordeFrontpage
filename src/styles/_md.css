@@ -1,9 +1,17 @@
-@media screen and (min-width: 768px) {
-  .md\:mt-0 {
-    margin-top: 0;
-  }
+/* =================================================================
+   MD BREAKPOINT UTILITIES (768px+)
+   
+   Uses Tailwind CSS v4 @apply directive.
+   ================================================================= */
 
-  .md\:gap-8 {
-    gap: 2rem;
+@layer utilities {
+  @media screen and (min-width: 768px) {
+    .md\:mt-0 {
+      @apply mt-0;
+    }
+
+    .md\:gap-8 {
+      @apply gap-8;
+    }
   }
 }

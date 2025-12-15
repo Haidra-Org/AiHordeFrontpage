@@ -1,5 +1,13 @@
-@media screen and (min-width: 1024px) {
-  .lg\:pt-0 {
-    padding-top: 0;
+/* =================================================================
+   LG BREAKPOINT UTILITIES (1024px+)
+   
+   Uses Tailwind CSS v4 @apply directive.
+   ================================================================= */
+
+@layer utilities {
+  @media screen and (min-width: 1024px) {
+    .lg\:pt-0 {
+      @apply pt-0;
+    }
   }
 }

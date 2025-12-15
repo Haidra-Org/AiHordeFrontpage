@@ -9,181 +9,155 @@
    - Table cell labels
    ================================================================= */
 
-/* Table header row - desktop only */
-.table-header-row {
-  display: none;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background-color: rgb(249 250 251);
-  border-radius: 0.5rem;
-  border: 1px solid rgb(229 231 235);
-}
-
-@media (min-width: theme("screens.md")) {
+@layer components {
+  /* Table header row - desktop only */
   .table-header-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 0.75fr 1fr 200px;
-  }
-}
-
-.dark .table-header-row {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
-
-/* Table header cell label */
-.table-header-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: rgb(75 85 99);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.dark .table-header-label {
-  color: rgb(156 163 175);
-}
-
-/* Table row - base styles for item rows */
-.table-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto auto;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-  border: 1px solid rgb(229 231 235);
-  border-radius: 0.5rem;
-  background-color: white;
-}
-
-.table-row:hover {
-  background-color: rgb(249 250 251);
-}
-
-@media (min-width: theme("screens.md")) {
-  .table-row {
-    grid-template-columns: 2fr 1fr 0.75fr 1fr 200px;
-    grid-template-rows: auto;
-    gap: 1rem;
-  }
-}
-
-.dark .table-row {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
-
-.dark .table-row:hover {
-  background-color: rgb(55 65 81 / 0.5);
-}
-
-/* Table cell - name and tags column */
-.table-cell-name {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-}
-
-@media (min-width: theme("screens.md")) {
-  .table-cell-name {
-    grid-column: auto;
-    grid-row: auto;
-  }
-}
-
-/* Table cell - metadata column (function, domain, platform) */
-.table-cell-meta {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-
-/* Position metadata cells in grid on mobile */
-.table-cell-meta:nth-of-type(2) {
-  grid-column: 1 / 2;
-  grid-row: 2 / 3;
-}
-
-.table-cell-meta:nth-of-type(3) {
-  grid-column: 1 / 2;
-  grid-row: 3 / 4;
-}
-
-.table-cell-meta:nth-of-type(4) {
-  grid-column: 1 / 2;
-  grid-row: 4 / 5;
-}
-
-@media (min-width: theme("screens.md")) {
-  .table-cell-meta {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    flex-wrap: nowrap;
-  }
-
-  .table-cell-meta:nth-of-type(2),
-  .table-cell-meta:nth-of-type(3),
-  .table-cell-meta:nth-of-type(4) {
-    grid-column: auto;
-    grid-row: auto;
-  }
-}
-
-/* Mobile label for table cells */
-.table-cell-label {
-  font-size: 0.625rem;
-  font-weight: 600;
-  color: rgb(107 114 128);
-  margin-bottom: 0;
-  margin-right: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-@media (min-width: theme("screens.md")) {
-  .table-cell-label {
     display: none;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    @apply bg-gray-50 border border-gray-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
   }
-}
 
-.dark .table-cell-label {
-  color: rgb(156 163 175);
-}
+  @media (min-width: 768px) {
+    .table-header-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 0.75fr 1fr 200px;
+    }
+  }
 
-/* Table actions column */
-.table-cell-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  width: auto;
-  grid-column: 2 / 3;
-  grid-row: 1 / 5;
-}
+  /* Table header cell label */
+  .table-header-label {
+    @apply text-xs font-semibold uppercase tracking-wide;
+    @apply text-gray-600 dark:text-gray-400;
+  }
 
-@media (min-width: theme("screens.md")) {
-  .table-cell-actions {
+  /* Item list row - base styles for item rows */
+  .item-list-row {
+    display: grid;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    @apply bg-white border border-gray-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+    @apply hover:bg-gray-50 dark:hover:bg-gray-700/50;
+    @apply transition-colors duration-200;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto auto auto;
+    gap: 0.5rem 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .item-list-row {
+      gap: 1rem;
+      grid-template-columns: 2fr 1fr 0.75fr 1fr 200px;
+      grid-template-rows: auto;
+    }
+  }
+
+  /* Table cell - name and tags column */
+  .table-cell-name {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+
+  @media (min-width: 768px) {
+    .table-cell-name {
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+
+  /* Table cell - metadata column (function, domain, platform) */
+  .table-cell-meta {
+    display: flex;
     flex-direction: row;
-    justify-content: flex-end;
-    grid-column: auto;
-    grid-row: auto;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
-}
 
-/* Table item wrapper - for expanded details panel */
-.table-item-wrapper {
-  border-radius: 0.5rem;
-  overflow: hidden;
+  /* Position metadata cells in grid on mobile */
+  .table-cell-meta:nth-of-type(2) {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+
+  .table-cell-meta:nth-of-type(3) {
+    grid-column: 1 / 2;
+    grid-row: 3 / 4;
+  }
+
+  .table-cell-meta:nth-of-type(4) {
+    grid-column: 1 / 2;
+    grid-row: 4 / 5;
+  }
+
+  @media (min-width: 768px) {
+    .table-cell-meta {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+      flex-wrap: nowrap;
+    }
+
+    .table-cell-meta:nth-of-type(2),
+    .table-cell-meta:nth-of-type(3),
+    .table-cell-meta:nth-of-type(4) {
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+
+  /* Mobile label for table cells */
+  .table-cell-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+    margin-bottom: 0;
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  @media (min-width: 768px) {
+    .table-cell-label {
+      display: none;
+    }
+  }
+
+  /* Table actions column */
+  .table-cell-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: auto;
+    grid-column: 2 / 3;
+    grid-row: 1 / 5;
+  }
+
+  @media (min-width: 768px) {
+    .table-cell-actions {
+      flex-direction: row;
+      justify-content: flex-end;
+      grid-column: auto;
+      grid-row: auto;
+    }
+  }
+
+  /* Table item wrapper - for expanded details panel */
+  .table-item-wrapper {
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
 }
