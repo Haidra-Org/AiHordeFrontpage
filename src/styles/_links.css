@@ -7,53 +7,37 @@
    - Underline links for content
    ================================================================= */
 
-/* Standard link */
-.link {
-  color: rgb(37 99 235);
-}
+@layer components {
+  /* Standard link */
+  .link {
+    @apply text-blue-600;
+    @apply dark:text-blue-500;
 
-.link:hover {
-  text-decoration: underline;
-}
+    &:hover {
+      @apply underline;
+    }
+  }
 
-.dark .link {
-  color: rgb(59 130 246);
-}
+  /* Link button small - used for filter actions */
+  .link-btn-sm {
+    @apply text-xs text-blue-600;
+    @apply dark:text-blue-400;
 
-/* Link button small - used for filter actions */
-.link-btn-sm {
-  font-size: 0.75rem;
-  color: rgb(37 99 235);
-}
+    &:hover {
+      @apply text-blue-700;
+      @apply dark:text-blue-300;
+    }
+  }
 
-.link-btn-sm:hover {
-  color: rgb(29 78 216);
-}
+  /* Underline links in content areas */
+  h3 a,
+  p a,
+  .underline-links a {
+    @apply underline;
 
-.dark .link-btn-sm {
-  color: rgb(96 165 250);
-}
-
-.dark .link-btn-sm:hover {
-  color: rgb(147 197 253);
-}
-
-/* Underline links in content areas */
-h3 a,
-p a,
-.underline-links a {
-  text-decoration: underline;
-}
-
-h3 a:hover,
-p a:hover,
-.underline-links a:hover {
-  text-decoration: none;
-  color: rgb(80, 87, 101);
-}
-
-.dark h3 a:hover,
-.dark p a:hover,
-.dark .underline-links a:hover {
-  color: rgb(203, 207, 211);
+    &:hover {
+      @apply no-underline text-gray-600;
+      @apply dark:text-gray-300;
+    }
+  }
 }

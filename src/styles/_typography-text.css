@@ -8,103 +8,52 @@
    - Error/success text
    ================================================================= */
 
-/* Secondary text color */
-.text-secondary {
-  color: var(--color-text-secondary);
-}
+@layer components {
+  /* Secondary text color */
+  .text-secondary {
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
 
-.dark .text-secondary {
-  color: rgb(156 163 175);
-}
-
-/* Description text - light secondary text */
-.text-description {
-  font-weight: 300;
-  color: rgb(107 114 128);
-}
-
-@media (min-width: theme("screens.sm")) {
+  /* Description text - light secondary text */
   .text-description {
-    font-size: 1.25rem;
+    @apply font-light text-gray-500;
+    @apply sm:text-xl;
+    @apply dark:text-gray-400;
   }
-}
 
-.dark .text-description {
-  color: rgb(156 163 175);
-}
-
-/* Intro paragraph text - emphasized secondary text for homepage intro */
-.text-intro {
-  max-width: 42rem;
-  margin-bottom: 1rem;
-  font-weight: 400;
-  color: rgb(107 114 128);
-}
-
-@media (min-width: theme("screens.md")) {
+  /* Intro paragraph text - emphasized secondary text for homepage intro */
   .text-intro {
-    font-size: 1.125rem;
+    @apply max-w-2xl mb-4 font-normal text-gray-500;
+    @apply md:text-lg lg:text-xl lg:mb-5;
+    @apply dark:text-gray-400;
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .text-intro {
-    font-size: 1.25rem;
-    margin-bottom: 1.25rem;
-  }
-}
-
-.dark .text-intro {
-  color: rgb(156 163 175);
-}
-
-/* Intro lead text - large, attention-grabbing intro text */
-.text-intro-lead {
-  max-width: 48rem;
-  margin-bottom: 2rem;
-  font-size: 1.25rem;
-  font-weight: 500;
-  line-height: 1.6;
-  color: rgb(55 65 81);
-}
-
-@media (min-width: theme("screens.md")) {
+  /* Intro lead text - large, attention-grabbing intro text */
   .text-intro-lead {
-    font-size: 1.375rem;
+    @apply max-w-3xl mb-8 text-xl font-medium leading-relaxed text-gray-700;
+    @apply md:text-[1.375rem] lg:text-2xl lg:mb-10;
+    @apply dark:text-gray-300;
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .text-intro-lead {
-    font-size: 1.5rem;
-    margin-bottom: 2.5rem;
+  /* Primary text color */
+  .text-primary {
+    @apply text-content-primary;
+    @apply dark:text-white;
   }
-}
 
-.dark .text-intro-lead {
-  color: rgb(209 213 219);
-}
+  /* Error text */
+  .text-error {
+    @apply text-red-500;
+  }
 
-/* Primary text color */
-.text-primary {
-  color: var(--color-text-primary);
-}
+  /* Success text */
+  .text-success {
+    @apply text-green-500;
+  }
 
-.dark .text-primary {
-  color: white;
-}
-
-/* Error text */
-.text-error {
-  color: red;
-}
-
-/* Success text */
-.text-success {
-  color: rgb(34 197 94);
-}
-
-/* Legacy text colors */
-.text-red {
-  color: red;
+  /* Legacy text colors */
+  .text-red {
+    @apply text-red-500;
+  }
 }

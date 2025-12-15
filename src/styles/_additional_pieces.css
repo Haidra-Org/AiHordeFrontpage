@@ -1,41 +1,50 @@
+/* =================================================================
+   ADDITIONAL PIECES
+   
+   Imports breakpoint files and provides utility classes.
+   Uses Tailwind CSS v4 @apply directive.
+   ================================================================= */
+
 @import "./_md.css";
 @import "./_lg.css";
 @import "./_xl.css";
 
-.mt-12 {
-  margin-top: 3rem;
-}
+@layer utilities {
+  .mt-12 {
+    @apply mt-12;
+  }
 
-.mt-12\:not-first {
-  margin-top: 3rem;
-}
+  .mt-12\:not-first {
+    @apply mt-12;
+  }
 
-.mt-12\:not-first:first-of-type {
-  margin-top: revert;
-}
+  .mt-12\:not-first:first-of-type {
+    margin-top: revert;
+  }
 
-.pt-12 {
-  padding-top: 3rem;
-}
+  .pt-12 {
+    @apply pt-12;
+  }
 
-.mt-8 {
-  margin-top: 2rem;
-}
+  .mt-8 {
+    @apply mt-8;
+  }
 
-.mt-8\:not-first {
-  margin-top: 2rem;
-}
+  .mt-8\:not-first {
+    @apply mt-8;
+  }
 
-.mt-8\:not-first:first-of-type {
-  margin-top: revert;
-}
+  .mt-8\:not-first:first-of-type {
+    margin-top: revert;
+  }
 
-.space-y-2 > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-y-reverse: 0;
-  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
-}
+  .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+  }
 
-.w-auto {
-  width: auto;
+  .w-auto {
+    @apply w-auto;
+  }
 }

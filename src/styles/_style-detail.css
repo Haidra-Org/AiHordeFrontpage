@@ -2,447 +2,349 @@
    STYLE DETAIL PAGE STYLES
    
    Compact, full-width layout for displaying style information.
+   Uses Tailwind CSS v4 @apply directive.
    ================================================================= */
 
-/* =================================================================
-   MAIN CARD CONTAINER
-   ================================================================= */
+@layer components {
+  /* =================================================================
+     MAIN CARD CONTAINER
+     ================================================================= */
 
-.style-detail-card {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
+  .style-detail-card {
+    @apply flex flex-col gap-6;
+  }
 
-/* =================================================================
-   HEADER SECTION
-   ================================================================= */
+  /* =================================================================
+     HEADER SECTION
+     ================================================================= */
 
-.style-detail-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-border-primary);
-}
+  .style-detail-header {
+    @apply flex flex-col gap-3 pb-4;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
 
-.dark .style-detail-header {
-  border-bottom-color: rgb(55 65 81);
-}
+  .dark .style-detail-header {
+    @apply border-gray-700;
+  }
 
-.style-detail-title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-@media (min-width: 768px) {
   .style-detail-title-row {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
+    @apply flex flex-col gap-4;
+    @apply md:flex-row md:justify-between md:items-start;
   }
-}
 
-.style-detail-title-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
-}
+  .style-detail-title-section {
+    @apply flex flex-col gap-2 flex-1 min-w-0;
+  }
 
-.style-detail-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+  .style-detail-badges {
+    @apply flex flex-wrap gap-2;
+  }
 
-.style-detail-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-  line-height: 1.2;
-}
-
-@media (min-width: 768px) {
   .style-detail-title {
-    font-size: 1.75rem;
+    @apply text-2xl font-bold m-0 leading-tight;
+    color: var(--color-text-primary);
   }
-}
 
-.dark .style-detail-title {
-  color: white;
-}
+  @media (min-width: 768px) {
+    .style-detail-title {
+      @apply text-[1.75rem];
+    }
+  }
 
-.style-detail-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
+  .dark .style-detail-title {
+    @apply text-white;
+  }
 
-.dark .style-detail-meta {
-  color: rgb(156 163 175);
-}
+  .style-detail-meta {
+    @apply flex flex-wrap items-center gap-2 text-sm;
+    color: var(--color-text-secondary);
+  }
 
-.style-detail-meta-divider {
-  color: var(--color-border-primary);
-}
+  .dark .style-detail-meta {
+    @apply text-gray-400;
+  }
 
-.dark .style-detail-meta-divider {
-  color: rgb(75 85 99);
-}
+  .style-detail-meta-divider {
+    color: var(--color-border-primary);
+  }
 
-.style-detail-id {
-  font-family: monospace;
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
-  word-break: break-all;
-}
+  .dark .style-detail-meta-divider {
+    @apply text-gray-600;
+  }
 
-.dark .style-detail-id {
-  color: rgb(107 114 128);
-}
+  .style-detail-id {
+    @apply font-mono text-[0.8125rem] break-all;
+    color: var(--color-text-muted);
+  }
 
-.style-detail-description {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.5;
-}
+  .dark .style-detail-id {
+    @apply text-gray-500;
+  }
 
-.dark .style-detail-description {
-  color: rgb(156 163 175);
-}
+  .style-detail-description {
+    @apply text-[0.9375rem] m-0 leading-relaxed;
+    color: var(--color-text-secondary);
+  }
 
-/* =================================================================
-   ACTIONS ROW
-   ================================================================= */
+  .dark .style-detail-description {
+    @apply text-gray-400;
+  }
 
-.style-detail-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
+  /* =================================================================
+     ACTIONS ROW
+     ================================================================= */
 
-/* =================================================================
-   CONTENT GRID - Two Column Layout
-   ================================================================= */
+  .style-detail-actions {
+    @apply flex flex-wrap gap-2 shrink-0;
+  }
 
-.style-detail-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
+  /* =================================================================
+     CONTENT GRID - Two Column Layout
+     ================================================================= */
 
-@media (min-width: 1024px) {
   .style-detail-content {
-    grid-template-columns: 1fr 320px;
+    @apply grid gap-6;
+    grid-template-columns: 1fr;
   }
-}
 
-@media (min-width: 1280px) {
-  .style-detail-content {
-    grid-template-columns: 1fr 400px;
+  @media (min-width: 1024px) {
+    .style-detail-content {
+      grid-template-columns: 1fr 320px;
+    }
   }
-}
 
-.style-detail-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
-}
+  @media (min-width: 1280px) {
+    .style-detail-content {
+      grid-template-columns: 1fr 400px;
+    }
+  }
 
-.style-detail-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
+  .style-detail-main {
+    @apply flex flex-col gap-4 min-w-0;
+  }
 
-/* =================================================================
-   SECTIONS
-   ================================================================= */
+  .style-detail-sidebar {
+    @apply flex flex-col gap-4;
+  }
 
-.style-detail-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+  /* =================================================================
+     SECTIONS
+     ================================================================= */
 
-.style-detail-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
+  .style-detail-section {
+    @apply flex flex-col gap-2;
+  }
 
-.style-detail-section-title {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  margin: 0;
-}
+  .style-detail-section-header {
+    @apply flex items-center justify-between gap-3;
+  }
 
-.dark .style-detail-section-title {
-  color: rgb(107 114 128);
-}
+  .style-detail-section-title {
+    @apply text-[0.8125rem] font-semibold uppercase tracking-wide m-0;
+    color: var(--color-text-muted);
+  }
 
-/* =================================================================
-   PARAMETERS SECTION
-   ================================================================= */
+  .dark .style-detail-section-title {
+    @apply text-gray-500;
+  }
 
-.style-detail-params-section {
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
+  /* =================================================================
+     PARAMETERS SECTION
+     ================================================================= */
 
-.dark .style-detail-params-section {
-  background-color: rgb(17 24 39);
-}
+  .style-detail-params-section {
+    @apply rounded-lg p-4;
+    background-color: var(--color-bg-secondary);
+  }
 
-.style-detail-params {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem 1rem;
-  margin: 0;
-}
+  .dark .style-detail-params-section {
+    @apply bg-gray-900;
+  }
 
-@media (min-width: 1280px) {
   .style-detail-params {
+    @apply grid gap-3 m-0;
     grid-template-columns: repeat(2, 1fr);
   }
-}
 
-.style-detail-params-compact {
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-}
-
-.style-detail-param {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.style-detail-param dt {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  color: var(--color-text-muted);
-}
-
-.dark .style-detail-param dt {
-  color: rgb(107 114 128);
-}
-
-.style-detail-param dd {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-
-.dark .style-detail-param dd {
-  color: rgb(229 231 235);
-}
-
-.style-detail-param-full {
-  grid-column: 1 / -1;
-}
-
-.style-detail-param-flags {
-  grid-column: 1 / -1;
-}
-
-.style-detail-flags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
-
-/* =================================================================
-   LORAS AND TEXTUAL INVERSIONS
-   ================================================================= */
-
-.style-detail-loras,
-.style-detail-tis {
-  display: flex;
-  flex-direction: column;
-  gap: 0.375rem;
-}
-
-.style-detail-lora-item,
-.style-detail-ti-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  padding: 0.375rem 0.5rem;
-  background-color: var(--color-bg-primary);
-  border-radius: 0.25rem;
-  border: 1px solid var(--color-border-primary);
-}
-
-.dark .style-detail-lora-item,
-.dark .style-detail-ti-item {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-}
-
-.style-detail-lora-name,
-.style-detail-ti-name {
-  font-weight: 600;
-  font-size: 0.8125rem;
-  color: var(--color-text-primary);
-}
-
-.dark .style-detail-lora-name,
-.dark .style-detail-ti-name {
-  color: rgb(243 244 246);
-}
-
-.style-detail-lora-values,
-.style-detail-ti-values {
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  font-family: monospace;
-}
-
-.dark .style-detail-lora-values,
-.dark .style-detail-ti-values {
-  color: rgb(156 163 175);
-}
-
-/* =================================================================
-   INLINE SECTIONS (Tags, Models)
-   ================================================================= */
-
-.style-detail-tags-models {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
-  .style-detail-tags-models {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 1.5rem;
+  @media (min-width: 1280px) {
+    .style-detail-params {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
-}
 
-.style-detail-inline-section {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
+  .style-detail-params-compact {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
 
-.style-detail-inline-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
+  .style-detail-param {
+    @apply flex flex-col gap-0.5;
+  }
 
-.dark .style-detail-inline-label {
-  color: rgb(156 163 175);
-}
+  .style-detail-param dt {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-tight;
+    color: var(--color-text-muted);
+  }
 
-.style-detail-code-inline {
-  font-family: monospace;
-  font-size: 0.8125rem;
-  padding: 0.125rem 0.5rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.25rem;
-  color: var(--color-text-primary);
-}
+  .dark .style-detail-param dt {
+    @apply text-gray-500;
+  }
 
-.dark .style-detail-code-inline {
-  background-color: rgb(17 24 39);
-  color: rgb(229 231 235);
-}
+  .style-detail-param dd {
+    @apply m-0 text-sm font-medium;
+    color: var(--color-text-primary);
+  }
 
-/* =================================================================
-   BADGE CONTAINER INLINE
-   ================================================================= */
+  .dark .style-detail-param dd {
+    @apply text-gray-200;
+  }
 
-.badge-container-inline {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.375rem;
-}
+  .style-detail-param-full {
+    grid-column: 1 / -1;
+  }
 
-/* Small badge variant */
-.badge-sm {
-  padding: 0.125rem 0.5rem;
-  font-size: 0.75rem;
-}
+  .style-detail-param-flags {
+    grid-column: 1 / -1;
+  }
 
-/* =================================================================
-   CODE BLOCK COMPACT
-   ================================================================= */
+  .style-detail-flags {
+    @apply flex flex-wrap gap-1.5;
+  }
 
-.code-block-compact {
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  margin: 0;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-border-primary);
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
+  /* =================================================================
+     LORAS AND TEXTUAL INVERSIONS
+     ================================================================= */
 
-.dark .code-block-compact {
-  background-color: rgb(17 24 39);
-  border-color: rgb(55 65 81);
-  color: rgb(229 231 235);
-}
+  .style-detail-loras,
+  .style-detail-tis {
+    @apply flex flex-col gap-1.5;
+  }
 
-/* =================================================================
-   BUTTON SMALL VARIANT
-   ================================================================= */
+  .style-detail-lora-item,
+  .style-detail-ti-item {
+    @apply flex flex-col gap-0.5 py-1.5 px-2 rounded;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+  }
 
-.btn-sm {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
+  .dark .style-detail-lora-item,
+  .dark .style-detail-ti-item {
+    @apply bg-gray-800 border-gray-700;
+  }
 
-.btn-sm svg {
-  width: 0.875rem;
-  height: 0.875rem;
-}
+  .style-detail-lora-name,
+  .style-detail-ti-name {
+    @apply font-semibold text-[0.8125rem];
+    color: var(--color-text-primary);
+  }
 
-/* =================================================================
-   EXAMPLES SECTION
-   ================================================================= */
+  .dark .style-detail-lora-name,
+  .dark .style-detail-ti-name {
+    @apply text-gray-100;
+  }
 
-.style-detail-examples {
-  border-top: 1px solid var(--color-border-primary);
-  padding-top: 1rem;
-}
+  .style-detail-lora-values,
+  .style-detail-ti-values {
+    @apply text-xs font-mono;
+    color: var(--color-text-secondary);
+  }
 
-.dark .style-detail-examples {
-  border-top-color: rgb(55 65 81);
-}
+  .dark .style-detail-lora-values,
+  .dark .style-detail-ti-values {
+    @apply text-gray-400;
+  }
 
-/* Compact image grid */
-.image-grid-compact {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-}
+  /* =================================================================
+     INLINE SECTIONS (Tags, Models)
+     ================================================================= */
 
-@media (min-width: 768px) {
+  .style-detail-tags-models {
+    @apply flex flex-col gap-3;
+    @apply sm:flex-row sm:flex-wrap sm:gap-6;
+  }
+
+  .style-detail-inline-section {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .style-detail-inline-label {
+    @apply text-[0.8125rem] font-semibold;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .style-detail-inline-label {
+    @apply text-gray-400;
+  }
+
+  .style-detail-code-inline {
+    @apply font-mono text-[0.8125rem] py-0.5 px-2 rounded;
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+  }
+
+  .dark .style-detail-code-inline {
+    @apply bg-gray-900 text-gray-200;
+  }
+
+  /* =================================================================
+     BADGE CONTAINER INLINE
+     ================================================================= */
+
+  .badge-container-inline {
+    @apply inline-flex flex-wrap gap-1.5;
+  }
+
+  /* Small badge variant */
+  .badge-sm {
+    @apply py-0.5 px-2 text-xs;
+  }
+
+  /* =================================================================
+     CODE BLOCK COMPACT
+     ================================================================= */
+
+  .code-block-compact {
+    @apply py-3 px-4 text-sm leading-relaxed m-0 rounded-md overflow-x-auto whitespace-pre-wrap break-words;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-primary);
+  }
+
+  .dark .code-block-compact {
+    @apply bg-gray-900 border-gray-700 text-gray-200;
+  }
+
+  /* =================================================================
+     BUTTON SMALL VARIANT
+     ================================================================= */
+
+  .btn-sm {
+    @apply py-1 px-2 text-xs;
+  }
+
+  .btn-sm svg {
+    @apply w-3.5 h-3.5;
+  }
+
+  /* =================================================================
+     EXAMPLES SECTION
+     ================================================================= */
+
+  .style-detail-examples {
+    @apply pt-4;
+    border-top: 1px solid var(--color-border-primary);
+  }
+
+  .dark .style-detail-examples {
+    @apply border-gray-700;
+  }
+
+  /* Compact image grid */
   .image-grid-compact {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  @media (min-width: 768px) {
+    .image-grid-compact {
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
   }
 }

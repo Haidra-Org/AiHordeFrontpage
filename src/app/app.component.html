@@ -1,10 +1,8 @@
 <div class="wrapper" (click)="closeMobileMenu()">
   <!-- Main Navigation Header -->
-  <header
-    class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700"
-  >
+  <header class="nav-shell">
     <nav
-      class="w-full px-4 sm:px-6 lg:px-8"
+      class="nav-padding"
       role="navigation"
       aria-label="Main navigation"
     >
@@ -272,7 +270,7 @@
 
       <!-- Mobile Navigation Menu -->
       <div
-        class="lg:hidden"
+        class="mobile-nav-wrapper"
         [class.hidden]="!showMobileMenu"
         [attr.aria-hidden]="!showMobileMenu"
         id="mobile-navigation"
@@ -281,7 +279,7 @@
       >
         <div class="mobile-menu-backdrop" [class.show]="showMobileMenu"></div>
         <div class="mobile-menu-panel" [class.open]="showMobileMenu">
-          <div class="px-2 pt-2 pb-3 space-y-1">
+          <div class="mobile-nav-list">
             <a
               routerLink="/"
               class="mobile-nav-link"
@@ -463,12 +461,7 @@
   </header>
 
   <router-outlet></router-outlet>
-  <footer
-    class="dark:bg-gray-800 dark:has-[.footer-dark]:bg-gray-900"
-    [class.bg-gray-50]="!darkFooter()"
-    [class.bg-white]="darkFooter()"
-    [class.footer-dark]="darkFooter()"
-  >
+  <footer class="footer-shell" [class.footer-dark]="darkFooter()">
     <div class="footer-container">
       <div class="footer-grid">
         <div>

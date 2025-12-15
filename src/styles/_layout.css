@@ -8,248 +8,128 @@
    - Grid layouts
    ================================================================= */
 
-/* Main content needs top padding to account for fixed header */
-/* Ensure full viewport height coverage for proper background display */
-.wrapper {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding-top: var(--nav-height-mobile);
-}
-
-@media (min-width: 1024px) {
+@layer components {
+  /* Main content needs top padding to account for fixed header */
+  /* Ensure full viewport height coverage for proper background display */
   .wrapper {
-    padding-top: var(--nav-height-desktop);
+    @apply min-h-screen flex flex-col;
+    padding-top: var(--nav-height-mobile);
+
+    @media (min-width: 1024px) {
+      padding-top: var(--nav-height-desktop);
+    }
   }
-}
 
-/* =================================================================
-   SECTION STYLES
-   ================================================================= */
+  /* =================================================================
+     SECTION STYLES
+     ================================================================= */
 
-/* Primary section - white background */
-.section-primary {
-  background-color: var(--color-bg-primary);
-}
+  /* Primary section - white background */
+  .section-primary {
+    @apply bg-surface-primary;
+    @apply dark:bg-gray-900;
+  }
 
-.dark .section-primary {
-  background-color: rgb(17 24 39);
-}
+  /* Secondary section - gray background */
+  .section-secondary {
+    @apply bg-surface-secondary;
+    @apply dark:bg-gray-800;
+  }
 
-/* Secondary section - gray background */
-.section-secondary {
-  background-color: var(--color-bg-secondary);
-}
+  /* =================================================================
+     CONTAINER STYLES
+     ================================================================= */
 
-.dark .section-secondary {
-  background-color: rgb(31 41 55);
-}
-
-/* =================================================================
-   CONTAINER STYLES
-   ================================================================= */
-
-/* Page header container */
-.container-page-header {
-  display: grid;
-  max-width: var(--max-width-container);
-  padding-left: var(--spacing-container-padding-mobile);
-  padding-right: var(--spacing-container-padding-mobile);
-  padding-top: 1rem;
-  padding-bottom: 0.75rem;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme("screens.sm")) {
+  /* Page header container */
   .container-page-header {
-    padding-left: var(--spacing-container-padding);
-    padding-right: var(--spacing-container-padding);
+    @apply grid mx-auto py-3 lg:py-4 lg:gap-8 xl:gap-0;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+
+    @apply sm:px-6;
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .container-page-header {
-    gap: 2rem;
-    padding-top: 1.5rem;
-    padding-bottom: 1rem;
-  }
-}
-
-@media (min-width: theme("screens.xl")) {
-  .container-page-header {
-    gap: 0;
-  }
-}
-
-/* Centered content box - constrained width, centered */
-.container-centered-md {
-  max-width: 48rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 1rem;
-  text-align: center;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Centered content box - constrained width, centered */
   .container-centered-md {
-    margin-bottom: 3rem;
+    @apply max-w-3xl mx-auto p-4 text-center lg:mb-12;
   }
-}
 
-/* Content wrapper with max-width and padding */
-.container-page-content {
-  max-width: 80rem;
-  padding: 2rem 1rem;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Content wrapper with max-width and padding */
   .container-page-content {
-    padding: 4rem 1.5rem;
+    @apply max-w-7xl mx-auto py-8 px-4 lg:py-16 lg:px-6;
   }
-}
 
-/* Content container */
-.container-content {
-  max-width: var(--max-width-container);
-  padding: 1.5rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Content container */
   .container-content {
-    padding: 3rem var(--spacing-container-padding);
+    @apply mx-auto py-6 lg:py-12;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+
+    @apply lg:px-6;
   }
-}
 
-/* Reduced padding content container */
-.container-content-sm {
-  max-width: var(--max-width-container);
-  padding: 1rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Reduced padding content container */
   .container-content-sm {
-    padding: 2rem var(--spacing-container-padding);
+    @apply mx-auto py-4 lg:py-8;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+
+    @apply lg:px-6;
   }
-}
 
-/* Minimal padding content container - for tightly spaced sections */
-.container-content-minimal {
-  max-width: var(--max-width-container);
-  padding: 0.75rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Minimal padding content container - for tightly spaced sections */
   .container-content-minimal {
-    padding: 1.25rem var(--spacing-container-padding);
+    @apply mx-auto py-3 lg:py-5;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+
+    @apply lg:px-6;
   }
-}
 
-/* Spaced content container */
-.container-spaced {
-  max-width: var(--max-width-container);
-  padding: 1.5rem var(--spacing-container-padding-mobile);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.container-spaced > * + * {
-  margin-top: 2rem;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Spaced content container */
   .container-spaced {
-    padding: 3rem var(--spacing-container-padding);
+    @apply mx-auto py-6 lg:py-12;
+    max-width: var(--max-width-container);
+    padding-left: var(--spacing-container-padding-mobile);
+    padding-right: var(--spacing-container-padding-mobile);
+
+    @apply lg:px-6;
   }
+
   .container-spaced > * + * {
-    margin-top: 3rem;
+    @apply mt-8 lg:mt-12;
   }
-}
 
-/* =================================================================
-   GRID LAYOUTS
-   ================================================================= */
+  /* =================================================================
+     GRID LAYOUTS
+     ================================================================= */
 
-/* Standard grid container for items */
-.grid-items {
-  align-items: center;
-  gap: 1.5rem;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Standard grid container for items */
   .grid-items {
-    display: grid;
+    @apply items-center gap-6 lg:grid xl:gap-10;
   }
-}
 
-@media (min-width: theme("screens.xl")) {
-  .grid-items {
-    gap: 2.5rem;
-  }
-}
-
-/* 4-column responsive grid for cards */
-.grid-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-@media (min-width: theme("screens.md")) {
+  /* 4-column responsive grid for cards */
   .grid-cards {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.5rem;
+    @apply grid grid-cols-2 gap-4;
+    @apply md:grid-cols-3 md:gap-6;
+    @apply lg:grid-cols-4 lg:gap-8;
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .grid-cards {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2rem;
-  }
-}
-
-/* Stats grid (4 columns) */
-.grid-stats {
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1.5rem;
-}
-
-@media (min-width: theme("screens.md")) {
+  /* Stats grid (4 columns) */
   .grid-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    @apply grid grid-cols-1 gap-6;
+    @apply md:grid-cols-2;
+    @apply lg:grid-cols-4 lg:gap-8;
   }
-}
 
-@media (min-width: theme("screens.lg")) {
-  .grid-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 2rem;
-  }
-}
-
-/* Center placement utility */
-.place-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-}
-
-@media (min-width: theme("screens.lg")) {
+  /* Center placement utility */
   .place-center {
-    align-items: flex-start;
-    text-align: left;
-    grid-column: span 7 / span 7;
+    @apply flex flex-col items-center text-center w-full;
+    @apply lg:items-start lg:text-left lg:col-span-7;
   }
 }

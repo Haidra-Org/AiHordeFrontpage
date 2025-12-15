@@ -6,134 +6,103 @@
    - Purple button
    - Source control button
    - Disabled state
+   - Danger button
    ================================================================= */
 
-/* Primary button */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: white;
-  background-color: var(--color-brand-blue);
-  font-weight: 500;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  padding: 0.625rem 1.25rem;
-  text-align: center;
-  transition: background-color 200ms ease;
-}
+@layer components {
+  /* Primary button - Blue branded button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2;
+    @apply px-5 py-2.5;
+    @apply text-sm font-medium text-white text-center;
+    @apply bg-brand-blue rounded-lg;
+    @apply transition-colors duration-200;
+    @apply hover:bg-brand-blue-hover;
+    @apply focus:outline-none;
+    @apply dark:bg-blue-600 dark:hover:bg-brand-blue;
+  }
 
-.btn-primary svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
+  .btn-primary:focus {
+    box-shadow: var(--shadow-focus-blue);
+  }
 
-.btn-primary:hover {
-  background-color: var(--color-brand-blue-hover);
-}
+  .dark .btn-primary:focus {
+    box-shadow: var(--shadow-focus-blue-dark);
+  }
 
-.btn-primary:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgb(147 197 253 / 0.5);
-}
+  .btn-primary svg {
+    @apply w-5 h-5 shrink-0;
+  }
 
-.dark .btn-primary {
-  background-color: rgb(37 99 235);
-}
+  /* Responsive button - full width on mobile, auto on larger */
+  .btn-responsive {
+    @apply w-full sm:w-auto;
+  }
 
-.dark .btn-primary:hover {
-  background-color: var(--color-brand-blue);
-}
+  /* Disabled button state */
+  .btn-disabled {
+    @apply cursor-not-allowed bg-gray-600 text-gray-500;
+  }
 
-.dark .btn-primary:focus {
-  box-shadow: 0 0 0 4px rgb(30 58 138 / 0.5);
-}
+  /* Purple button - Purple branded button */
+  .btn-purple {
+    @apply inline-flex items-center gap-2;
+    @apply px-5 py-2.5;
+    @apply text-sm font-medium text-white text-center;
+    @apply bg-brand-purple rounded-lg;
+    @apply transition-colors duration-200;
+    @apply hover:bg-brand-purple-hover;
+    @apply focus:outline-none;
+  }
 
-/* Disabled button */
-.btn-disabled {
-  cursor: not-allowed;
-  background-color: rgb(75 85 99);
-  color: rgb(107 114 128);
-}
+  .btn-purple:focus {
+    box-shadow: var(--shadow-focus-purple);
+  }
 
-/* Purple button */
-.btn-purple {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: white;
-  background-color: var(--color-brand-purple);
-  font-weight: 500;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  padding: 0.625rem 1.25rem;
-  text-align: center;
-  transition: background-color 200ms ease;
-}
+  .dark .btn-purple:focus {
+    box-shadow: var(--shadow-focus-purple-dark);
+  }
 
-.btn-purple svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
+  .btn-purple svg {
+    @apply w-5 h-5 shrink-0;
+  }
 
-.btn-purple:hover {
-  background-color: var(--color-brand-purple-hover);
-}
+  /* Source control button - Muted/drab style for secondary actions */
+  .btn-source-control {
+    @apply inline-flex items-center gap-2;
+    @apply px-5 py-2.5;
+    @apply text-sm font-medium text-center;
+    @apply text-gray-600 bg-gray-200 rounded-lg;
+    @apply transition-colors duration-200;
+    @apply hover:bg-gray-300 hover:text-gray-700;
+    @apply focus:outline-none;
+    @apply dark:text-gray-400 dark:bg-gray-700;
+    @apply dark:hover:bg-gray-600 dark:hover:text-gray-300;
+  }
 
-.btn-purple:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgb(233 213 255 / 0.5);
-}
+  .btn-source-control:focus {
+    box-shadow: 0 0 0 4px rgb(229 231 235 / 0.5);
+  }
 
-.dark .btn-purple:focus {
-  box-shadow: 0 0 0 4px rgb(88 28 135 / 0.5);
-}
+  .dark .btn-source-control:focus {
+    box-shadow: 0 0 0 4px rgb(55 65 81 / 0.5);
+  }
 
-/* Source control button (drab/muted) */
-.btn-source-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: rgb(75 85 99);
-  background-color: rgb(229 231 235);
-  font-weight: 500;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  padding: 0.625rem 1.25rem;
-  text-align: center;
-  transition:
-    background-color 200ms ease,
-    color 200ms ease;
-}
+  .btn-source-control svg {
+    @apply w-5 h-5 shrink-0;
+  }
 
-.btn-source-control svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex-shrink: 0;
-}
+  /* Extra-small button helper */
+  .btn-xs {
+    @apply px-2 py-1 text-sm;
+  }
 
-.btn-source-control:hover {
-  background-color: rgb(209 213 219);
-  color: rgb(55 65 81);
-}
+  /* Danger button for destructive actions */
+  .btn-danger {
+    @apply bg-red-500 text-white border-none;
+  }
 
-.dark .btn-source-control {
-  color: rgb(156 163 175);
-  background-color: rgb(55 65 81);
-}
-
-.dark .btn-source-control:hover {
-  background-color: rgb(75 85 99);
-  color: rgb(209 213 219);
-}
-
-.btn-source-control:focus {
-  outline: none;
-  box-shadow: 0 0 0 4px rgb(229 231 235 / 0.5);
-}
-
-.dark .btn-source-control:focus {
-  box-shadow: 0 0 0 4px rgb(55 65 81 / 0.5);
+  .btn-danger:hover:not(:disabled) {
+    @apply bg-red-600;
+  }
 }

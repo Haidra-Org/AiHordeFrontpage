@@ -9,120 +9,81 @@
    - Mobile menu animation
    ================================================================= */
 
-/* Mobile menu toggle button */
-.mobile-menu-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 0.375rem;
-  color: rgb(75 85 99);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-}
+@layer components {
+  /* Wrapper controlling mobile visibility */
+  .mobile-nav-wrapper {
+    @apply block lg:hidden;
+  }
 
-.mobile-menu-button:hover {
-  color: rgb(17 24 39);
-  background-color: rgb(243 244 246);
-}
+  /* Mobile nav list spacing */
+  .mobile-nav-list {
+    @apply flex flex-col p-2 pb-3 gap-1;
+  }
 
-.mobile-menu-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-brand-purple) inset;
-}
-
-.dark .mobile-menu-button {
-  color: rgb(209 213 219);
-}
-
-.dark .mobile-menu-button:hover {
-  color: white;
-  background-color: rgb(55 65 81);
-}
-
-@media (min-width: 1024px) {
+  /* Mobile menu toggle button */
   .mobile-menu-button {
-    display: none;
+    @apply inline-flex items-center justify-center p-2 rounded-md;
+    @apply text-gray-600 bg-transparent border-none cursor-pointer;
+    @apply transition-all duration-200;
+    @apply lg:hidden;
+    @apply hover:text-gray-900 hover:bg-gray-100;
+    @apply focus:outline-none;
+    @apply dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700;
   }
-}
 
-/* Mobile menu icon */
-.menu-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-}
+  .mobile-menu-button:focus {
+    box-shadow: 0 0 0 2px var(--color-brand-purple) inset;
+  }
 
-/* Mobile Navigation Styles */
-.mobile-menu-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.25);
-  transition: opacity 0.3s ease-in-out;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 40;
-}
+  /* Mobile menu icon */
+  .menu-icon {
+    @apply w-6 h-6;
+  }
 
-.mobile-menu-backdrop.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.dark .mobile-menu-backdrop.show {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-@media (min-width: 1024px) {
+  /* Mobile Navigation Styles */
   .mobile-menu-backdrop {
-    display: none;
+    @apply fixed inset-0 z-40;
+    @apply bg-black/25 transition-opacity duration-300;
+    @apply opacity-0 pointer-events-none;
+    @apply lg:hidden;
   }
-}
 
-.mobile-menu-panel {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: 0 0 0.5rem 0.5rem;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  transform: translateY(-10px);
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease-in-out;
-  z-index: 50;
-}
+  .mobile-menu-backdrop.show {
+    @apply opacity-100 pointer-events-auto;
+  }
 
-.mobile-menu-panel.open {
-  transform: translateY(0);
-  opacity: 1;
-  visibility: visible;
-}
+  .dark .mobile-menu-backdrop.show {
+    @apply bg-black/50;
+  }
 
-.dark .mobile-menu-panel {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.4),
-    0 4px 6px -4px rgba(0, 0, 0, 0.3);
-}
-
-/* Mobile menu animation improvements */
-@media (max-width: 1023px) {
   .mobile-menu-panel {
-    animation-duration: 0.3s;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    @apply absolute top-full left-0 right-0 z-50;
+    @apply bg-surface-primary border border-edge-primary;
+    @apply rounded-b-lg shadow-lg;
+    @apply -translate-y-2.5 opacity-0 invisible;
+    @apply transition-all duration-300;
+    @apply dark:bg-gray-800 dark:border-gray-700;
   }
 
   .mobile-menu-panel.open {
-    animation-name: slideDown;
+    @apply translate-y-0 opacity-100 visible;
+  }
+
+  .dark .mobile-menu-panel {
+    box-shadow:
+      0 10px 15px -3px rgba(0, 0, 0, 0.4),
+      0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Mobile menu animation improvements */
+  @media (max-width: 1023px) {
+    .mobile-menu-panel {
+      animation-duration: 0.3s;
+      animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu-panel.open {
+      animation-name: slideDown;
+    }
   }
 }

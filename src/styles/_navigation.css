@@ -11,115 +11,88 @@
    - Theme toggle integration
    ================================================================= */
 
-/* Fixed navigation bar - always visible at top of viewport */
-header {
-  z-index: 50;
-  transition: all 0.3s ease-in-out;
-}
+@layer components {
+  /* Fixed navigation bar - always visible at top of viewport */
+  header {
+    @apply z-50 transition-all duration-300;
+  }
 
-/* Navigation container needs relative positioning for mobile menu dropdown */
-nav {
-  position: relative;
-}
+  /* Shared nav shell for sticky header backgrounds/borders */
+  .nav-shell {
+    @apply fixed top-0 left-0 right-0 z-50;
+    @apply bg-white border-b border-gray-200;
+    @apply dark:bg-gray-900 dark:border-gray-700;
+  }
 
-/* Logo container wrapper */
-.logo-container {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
+  /* Navigation container needs relative positioning for mobile menu dropdown */
+  nav {
+    @apply relative;
+  }
 
-/* Logo link wrapper with focus and hover states */
-.logo-link {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s ease-in-out;
-}
+  /* Shared nav horizontal padding */
+  .nav-padding {
+    @apply w-full px-4 sm:px-6 lg:px-8;
+  }
 
-.logo-link:focus {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--color-brand-purple),
-    0 0 0 4px rgba(147, 51, 234, 0.1);
-}
+  /* Logo container wrapper */
+  .logo-container {
+    @apply flex items-center shrink-0;
+  }
 
-.logo-link:hover {
-  background-color: rgb(249 250 251);
-}
+  /* Logo link wrapper with focus and hover states */
+  .logo-link {
+    @apply flex items-center gap-3 p-1 rounded-lg;
+    @apply transition-all duration-200;
+    @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+    @apply focus:outline-none;
+  }
 
-.dark .logo-link:hover {
-  background-color: rgb(31 41 55);
-}
+  .logo-link:focus {
+    box-shadow:
+      0 0 0 2px var(--color-brand-purple),
+      0 0 0 4px rgba(147, 51, 234, 0.1);
+  }
 
-/* Logo image sizing */
-.logo-image {
-  height: 2rem;
-  width: auto;
-}
-
-@media (min-width: 1024px) {
+  /* Logo image sizing */
   .logo-image {
-    height: 2.5rem;
+    @apply h-8 w-auto lg:h-10;
   }
-}
 
-/* Logo text styling */
-.logo-text {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: rgb(17 24 39);
-  white-space: nowrap;
-}
-
-@media (min-width: 1024px) {
+  /* Logo text styling */
   .logo-text {
-    font-size: 1.5rem;
+    @apply text-xl font-bold text-gray-900 whitespace-nowrap;
+    @apply lg:text-2xl;
+    @apply dark:text-white;
   }
-}
 
-.dark .logo-text {
-  color: white;
-}
+  /* Navigation actions container (theme toggle + mobile menu button) */
+  .nav-actions {
+    @apply flex items-center gap-3;
+  }
 
-/* Navigation actions container (theme toggle + mobile menu button) */
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-/* Navigation bar container */
-.nav-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 4rem;
-  width: 100%;
-  max-width: var(--max-width-container);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: 1024px) {
+  /* Navigation bar container */
   .nav-container {
-    height: 5rem;
+    @apply flex items-center justify-between h-16 w-full mx-auto;
+    max-width: var(--max-width-container);
   }
-}
 
-/* Logo hover effect */
-header a[routerLink="/"] {
-  transition: transform 0.2s ease-in-out;
-}
+  @media (min-width: 1024px) {
+    .nav-container {
+      @apply h-20;
+    }
+  }
 
-header a[routerLink="/"]:hover {
-  transform: scale(1.05);
-}
+  /* Logo hover effect */
+  header a[routerLink="/"]:hover {
+    @apply scale-105;
+  }
 
-/* Theme toggle integration */
-theme-toggle {
-  display: flex;
-  align-items: center;
+  header a[routerLink="/"] {
+    @apply transition-transform duration-200;
+  }
+
+  /* Theme toggle integration */
+  theme-toggle {
+    @apply flex items-center;
+  }
 }

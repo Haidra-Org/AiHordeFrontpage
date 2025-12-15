@@ -1,10 +1,26 @@
+/* =================================================================
+   LEGACY COLOR VARIABLES
+   
+   These variables are deprecated. Use @theme tokens from _theme.css instead.
+   Kept temporarily for backwards compatibility during migration.
+   
+   Migration mapping:
+   - --dark-text-color      → text-gray-400 / dark:text-gray-400
+   - --light-text-color     → text-gray-500 / text-content-secondary
+   - --purple-text-color-*  → text-purple-600 / text-purple-500
+   - --bg-gray-*            → bg-gray-600 / bg-gray-700
+   - --green-background     → bg-green-800
+   - --green-text           → text-green-600
+   ================================================================= */
+
 :root {
-  --dark-text-color: rgb(156, 163, 175);
-  --light-text-color: rgb(107, 114, 128);
-  --purple-text-color-600: rgb(126, 58, 242);
-  --purple-text-color-500: rgb(144, 97, 249);
-  --bg-gray-600: rgb(75, 85, 99);
-  --bg-gray-700: rgb(55, 65, 81);
-  --green-background: rgb(22, 90, 46);
-  --green-text: rgb(22, 163, 74);
+  /* @deprecated - use theme tokens instead */
+  --dark-text-color: var(--color-gray-400);
+  --light-text-color: var(--color-gray-500);
+  --purple-text-color-600: var(--color-purple-600);
+  --purple-text-color-500: var(--color-purple-500);
+  --bg-gray-600: var(--color-gray-600);
+  --bg-gray-700: var(--color-gray-700);
+  --green-background: var(--color-green-900);
+  --green-text: var(--color-green-600);
 }

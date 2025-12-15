@@ -1,72 +1,64 @@
 /* =================================================================
    LEGACY & MISCELLANEOUS STYLES
    
+   Uses Tailwind CSS v4 @apply directive.
+   
    Includes:
    - Sponsor SVG styles
    - Built-with links
    - Terms page styles
    ================================================================= */
 
-/* Sponsor SVG styles (moved from component with ::ng-deep) */
-.sponsor-svg svg {
-  filter: grayscale(1);
-  transition: filter 500ms ease;
-}
+@layer components {
+  /* Sponsor SVG styles (moved from component with ::ng-deep) */
+  .sponsor-svg svg {
+    @apply grayscale transition-all duration-500;
+  }
 
-.sponsor-svg:hover svg {
-  filter: none;
-}
+  .sponsor-svg:hover svg {
+    @apply grayscale-0;
+  }
 
-/* Built-with links */
-.built-with a {
-  color: var(--purple-text-color-600);
-}
+  /* Built-with links */
+  .built-with a {
+    color: var(--purple-text-color-600);
+  }
 
-.built-with a:hover {
-  text-decoration: underline;
-}
+  .built-with a:hover {
+    @apply underline;
+  }
 
-.dark .built-with a {
-  color: var(--purple-text-color-500);
-}
+  .dark .built-with a {
+    color: var(--purple-text-color-500);
+  }
 
-/* Terms page styles - dynamically loaded content */
-.terms ul {
-  list-style-type: disc;
-  padding-left: 40px;
-}
+  /* Terms page styles - dynamically loaded content */
+  .terms ul {
+    @apply list-disc pl-10;
+  }
 
-.terms h1 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-bottom: 20px;
-  margin-top: 40px;
-  border-bottom: 3px solid #a0a0a0;
-  display: inline-block;
-}
+  .terms h1 {
+    @apply text-2xl font-bold mb-5 mt-10 inline-block;
+    border-bottom: 3px solid #a0a0a0;
+  }
 
-.terms h2 {
-  font-size: 1.3em;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
+  .terms h2 {
+    @apply text-xl font-bold mb-5;
+  }
 
-.terms p {
-  font-size: 1em;
-  margin-bottom: 10px;
-}
+  .terms p {
+    @apply text-base mb-2.5;
+  }
 
-.terms strong {
-  font-weight: bold;
-}
+  .terms strong {
+    @apply font-bold;
+  }
 
-.terms .last_updated {
-  font-style: italic;
-}
+  .terms .last_updated {
+    @apply italic;
+  }
 
-.terms .important {
-  font-weight: bold;
-  font-size: 1.2em;
-  margin-top: 30px;
-  margin-bottom: 30px;
+  .terms .important {
+    @apply font-bold text-lg my-8;
+  }
 }

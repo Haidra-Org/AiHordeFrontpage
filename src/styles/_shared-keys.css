@@ -1,0 +1,107 @@
+/* =================================================================
+   SHARED KEY COMPONENT STYLES
+   
+   Uses Tailwind CSS v4 @apply directive.
+   ================================================================= */
+
+@layer components {
+  .shared-keys-container {
+    @apply w-full;
+  }
+
+  .shared-keys-header {
+    @apply flex justify-between items-start gap-4 flex-wrap;
+  }
+
+  .shared-key-grid {
+    @apply grid gap-4 mt-4;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  /* Alert styles */
+  .alert {
+    @apply rounded-xl py-3 px-4 border mt-4;
+  }
+
+  .alert-error {
+    background: rgba(190, 24, 93, 0.12);
+    border-color: rgba(190, 24, 93, 0.6);
+    @apply text-red-400;
+  }
+
+  .alert-success {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.6);
+    @apply text-emerald-300;
+  }
+
+  .alert-title {
+    @apply font-semibold mb-1;
+  }
+
+  .alert-body {
+    @apply m-0;
+  }
+
+  /* Form grid */
+  .shared-key-form-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .quick-fill-row {
+    @apply flex flex-wrap gap-2 mt-2;
+  }
+
+  .square-dims-text {
+    @apply italic mb-1;
+  }
+
+  .shared-key-actions {
+    @apply flex gap-2 items-center flex-wrap justify-end;
+  }
+
+  /* Card styles */
+  .shared-key-card {
+    @apply rounded-xl p-3;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .shared-key-card__header {
+    @apply mb-3;
+  }
+
+  .shared-key-name-row {
+    @apply flex items-center gap-2 flex-wrap;
+  }
+
+  .shared-key-id {
+    @apply mt-2;
+  }
+
+  .shared-key-id-value {
+    @apply block py-1.5 px-3 rounded-md font-mono text-sm font-semibold break-all select-all w-full;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: rgb(165, 180, 252);
+  }
+
+  .shared-key-card__body {
+    @apply grid gap-2 mt-3;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .shared-key-field {
+    @apply flex justify-between gap-2;
+  }
+
+  .shared-key-dim-row {
+    @apply text-right;
+  }
+
+  .shared-key-card__footer {
+    @apply mt-4 pt-4;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}

@@ -6,177 +6,113 @@
    - Badge color variants (primary, secondary, info, warning, success, danger, purple, pink, indigo, teal)
    ================================================================= */
 
-/* Badge base - for tags and labels */
-.badge-base {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.625rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
+@layer components {
+  /* Badge base - for tags and labels */
+  .badge-base {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
 
-/* Badge container - wrapping flex container for badge groups */
-.badge-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+  /* Badge container - wrapping flex container for badge groups */
+  .badge-container {
+    @apply flex flex-wrap gap-2;
+  }
 
-/* Badge outline - bordered, transparent background */
-.badge-outline {
-  background-color: transparent;
-  border: 1px solid var(--color-border-primary);
-  color: var(--color-text-secondary);
-}
+  /* Badge outline - bordered, transparent background */
+  .badge-outline {
+    @apply bg-transparent border border-edge-primary text-content-secondary;
+    @apply dark:border-gray-600 dark:text-gray-400;
+  }
 
-.dark .badge-outline {
-  border-color: rgb(75 85 99);
-  color: rgb(156 163 175);
-}
+  /* Badge online status - green with dot indicator */
+  .badge-online {
+    @apply inline-flex items-center gap-1.5;
+    @apply bg-green-100 text-green-800 border border-green-300;
+    @apply dark:bg-green-900/50 dark:text-green-300 dark:border-green-800;
+  }
 
-/* Badge online status - green with dot indicator */
-.badge-online {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  background-color: rgb(220 252 231);
-  color: rgb(22 101 52);
-  border: 1px solid rgb(134 239 172);
-}
+  .badge-online::before {
+    content: "";
+    @apply block w-1.5 h-1.5 rounded-full bg-green-600;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 
-.dark .badge-online {
-  background-color: rgb(20 83 45 / 0.5);
-  color: rgb(134 239 172);
-  border-color: rgb(22 101 52);
-}
+  .dark .badge-online::before {
+    @apply bg-green-400;
+  }
 
-.badge-online::before {
-  content: "";
-  display: block;
-  width: 0.375rem;
-  height: 0.375rem;
-  border-radius: 50%;
-  background-color: rgb(22 163 74);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+  .badge-primary {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-blue) 20%,
+      var(--color-surface-primary)
+    );
+    @apply text-brand-blue-hover;
+  }
 
-.dark .badge-online::before {
-  background-color: rgb(74 222 128);
-}
+  .dark .badge-primary {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-blue) 40%,
+      transparent
+    );
+    @apply text-brand-blue;
+  }
 
-.badge-primary {
-  background-color: color-mix(
-    in srgb,
-    var(--color-brand-blue) 20%,
-    var(--color-bg-primary)
-  );
-  color: var(--color-brand-blue-hover);
-}
+  .badge-secondary {
+    @apply bg-green-100 text-green-800;
+    @apply dark:bg-green-900 dark:text-green-300;
+  }
 
-.dark .badge-primary {
-  background-color: color-mix(
-    in srgb,
-    var(--color-brand-blue) 40%,
-    transparent
-  );
-  color: var(--color-brand-blue);
-}
+  .badge-info {
+    @apply bg-blue-100 text-blue-800;
+    @apply dark:bg-blue-900 dark:text-blue-300;
+  }
 
-.badge-secondary {
-  background-color: rgb(220 252 231);
-  color: rgb(22 101 52);
-}
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+    @apply dark:bg-yellow-900 dark:text-yellow-300;
+  }
 
-.dark .badge-secondary {
-  background-color: rgb(20 83 45);
-  color: rgb(134 239 172);
-}
+  .badge-success {
+    @apply bg-green-100 text-green-700;
+    @apply dark:bg-green-800 dark:text-green-300;
+  }
 
-.badge-info {
-  background-color: rgb(224 242 254);
-  color: rgb(7 89 133);
-}
+  .badge-danger {
+    @apply bg-red-100 text-red-800;
+    @apply dark:bg-red-900 dark:text-red-300;
+  }
 
-.dark .badge-info {
-  background-color: rgb(12 74 110);
-  color: rgb(125 211 252);
-}
+  .badge-purple {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 20%,
+      var(--color-surface-primary)
+    );
+    @apply text-brand-purple-hover;
+  }
 
-.badge-warning {
-  background-color: rgb(254 243 199);
-  color: rgb(133 77 14);
-}
+  .dark .badge-purple {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 40%,
+      transparent
+    );
+    @apply text-brand-purple;
+  }
 
-.dark .badge-warning {
-  background-color: rgb(120 53 15);
-  color: rgb(253 224 71);
-}
+  .badge-pink {
+    @apply bg-pink-100 text-pink-800;
+    @apply dark:bg-pink-900 dark:text-pink-300;
+  }
 
-.badge-success {
-  background-color: rgb(220 252 231);
-  color: rgb(21 128 61);
-}
+  .badge-indigo {
+    @apply bg-indigo-100 text-indigo-800;
+    @apply dark:bg-indigo-800 dark:text-indigo-200;
+  }
 
-.dark .badge-success {
-  background-color: rgb(22 101 52);
-  color: rgb(134 239 172);
-}
-
-.badge-danger {
-  background-color: rgb(254 226 226);
-  color: rgb(153 27 27);
-}
-
-.dark .badge-danger {
-  background-color: rgb(127 29 29);
-  color: rgb(252 165 165);
-}
-
-.badge-purple {
-  background-color: color-mix(
-    in srgb,
-    var(--color-brand-purple) 20%,
-    var(--color-bg-primary)
-  );
-  color: var(--color-brand-purple-hover);
-}
-
-.dark .badge-purple {
-  background-color: color-mix(
-    in srgb,
-    var(--color-brand-purple) 40%,
-    transparent
-  );
-  color: var(--color-brand-purple);
-}
-
-.badge-pink {
-  background-color: rgb(252 231 243);
-  color: rgb(157 23 77);
-}
-
-.dark .badge-pink {
-  background-color: rgb(131 24 67);
-  color: rgb(249 168 212);
-}
-
-.badge-indigo {
-  background-color: rgb(224 231 255);
-  color: rgb(55 48 163);
-}
-
-.dark .badge-indigo {
-  background-color: rgb(55 48 163);
-  color: rgb(199 210 254);
-}
-
-.badge-teal {
-  background-color: rgb(204 251 241);
-  color: rgb(17 94 89);
-}
-
-.dark .badge-teal {
-  background-color: rgb(19 78 74);
-  color: rgb(153 246 228);
+  .badge-teal {
+    @apply bg-teal-100 text-teal-800;
+    @apply dark:bg-teal-900 dark:text-teal-200;
+  }
 }

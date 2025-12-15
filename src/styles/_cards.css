@@ -6,496 +6,331 @@
    - Card backgrounds
    - Expandable card
    - Card row clickable
+   - Modal/Dialog
+   - Image grid
    ================================================================= */
 
-/* Card base */
-.card {
-  display: flex;
-  flex-direction: column;
-  max-width: 32rem;
-  padding: 1.5rem;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-  /* Note: Using contain: style only, not layout, to allow fixed-position 
-     modals inside cards to position relative to viewport */
-  contain: style;
-}
+@layer components {
+  /* =================================================================
+     CALLOUT COMPONENTS
+     ================================================================= */
 
-@media (min-width: theme("screens.xl")) {
+  /* Generic callout container */
+  .callout {
+    @apply p-4 border-2 border-edge-secondary rounded-lg bg-surface-primary;
+    @apply dark:border-gray-700 dark:bg-gray-800;
+  }
+
+  .callout-accent {
+    @apply border-purple-500 bg-white;
+    @apply dark:border-purple-400 dark:bg-gray-800;
+  }
+
+  .callout-info {
+    @apply border-blue-400 bg-blue-50;
+    @apply dark:border-blue-500 dark:bg-blue-900/20;
+  }
+
+  .callout-title {
+    @apply m-0 mb-2 text-lg font-semibold text-gray-900;
+    @apply dark:text-white;
+  }
+
+  .callout-body {
+    @apply m-0 mb-3 text-base text-gray-700;
+    @apply dark:text-gray-300;
+  }
+
+  .cta-actions {
+    @apply flex flex-col gap-3 sm:flex-row;
+  }
+
+  /* =================================================================
+     CARD BASE
+     ================================================================= */
+
+  /* Card base */
   .card {
-    padding: 2rem;
+    @apply flex flex-col max-w-lg p-6 mx-auto text-center;
+    @apply text-content-primary border border-edge-secondary rounded-lg;
+    @apply dark:text-white dark:border-gray-600;
+    @apply xl:p-8;
+    box-shadow: var(--shadow-card);
+    /* Note: Using contain: style only, not layout, to allow fixed-position 
+       modals inside cards to position relative to viewport */
+    contain: style;
   }
-}
-
-.dark .card {
-  color: white;
-  border-color: rgb(75 85 99);
-}
-
-/* Card full-width modifier - removes max-width constraint */
-.card-full {
-  max-width: none;
-  text-align: left;
-}
-
-/* Card with primary background */
-.card-bg-primary {
-  background-color: white;
-}
-
-.dark .card-bg-primary {
-  background-color: rgb(31 41 55);
-}
-
-/* Card with secondary background */
-.card-bg-secondary {
-  background-color: rgb(249 250 251);
-}
-
-.dark .card-bg-secondary {
-  background-color: rgb(17 24 39);
-}
-
-/* Expandable card item - used in lists */
-.card-expandable {
-  border: 1px solid rgb(229 231 235);
-  border-radius: 0.5rem;
-}
-
-.dark .card-expandable {
-  border-color: rgb(55 65 81);
-}
-
-/* Card row clickable - interactive card row */
-.card-row-clickable {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-}
-
-.card-row-clickable:hover {
-  background-color: rgb(249 250 251);
-}
-
-.dark .card-row-clickable:hover {
-  background-color: rgb(31 41 55);
-}
-
-/* Card expanded section - details section */
-.card-expanded {
-  border-top: 1px solid rgb(229 231 235);
-  padding: 1rem;
-  background-color: rgb(249 250 251);
-}
-
-.dark .card-expanded {
-  border-top-color: rgb(55 65 81);
-  background-color: rgb(31 41 55);
-}
-
-/* =================================================================
-   CARD SPACING UTILITIES
-   ================================================================= */
-
-/* Card with bottom margin - standard spacing */
-.card-spaced {
-  margin-bottom: 1.5rem;
-}
-
-/* =================================================================
-   CARD INTERACTIVE - Clickable cards with hover effects
-   ================================================================= */
-
-/* Interactive card - adds hover lift and shadow */
-.card-interactive {
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.card-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: var(--color-primary);
-}
-
-.dark .card-interactive:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border-color: rgb(96 165 250);
-}
-
-/* =================================================================
-   CARD CONTENT UTILITIES
-   ================================================================= */
-
-/* Card preview area - for images/icons at top of cards */
-.card-preview {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-bg-secondary);
-}
-
-.dark .card-preview {
-  background-color: rgb(31 41 55);
-}
-
-/* Card preview image */
-.card-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Card preview placeholder icon */
-.card-preview-icon {
-  width: 3rem;
-  height: 3rem;
-  color: var(--color-text-muted);
-}
-
-.dark .card-preview-icon {
-  color: rgb(107 114 128);
-}
-
-/* Card preview with primary color icon */
-.card-preview-icon-primary {
-  color: var(--color-primary);
-}
-
-.dark .card-preview-icon-primary {
-  color: rgb(96 165 250);
-}
-
-/* Card content section */
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  flex: 1;
-}
-
-/* Card header row */
-.card-header-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-/* Card title */
-.card-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dark .card-title {
-  color: white;
-}
-
-/* Card subtitle/creator */
-.card-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-}
-
-.dark .card-subtitle {
-  color: rgb(156 163 175);
-}
-
-/* Card description - truncated multiline */
-.card-description {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.dark .card-description {
-  color: rgb(156 163 175);
-}
-
-/* Card footer */
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: auto;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--color-border);
-}
-
-.dark .card-footer {
-  border-top-color: rgb(55 65 81);
-}
-
-/* Card footer stat with icon */
-.card-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.dark .card-stat {
-  color: rgb(156 163 175);
-}
-
-.card-stat-icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* Card title truncate - single line with ellipsis */
-.card-title-truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* =================================================================
-   CARD STATS GRID - For displaying multiple stats in cards
-   ================================================================= */
-
-/* Stats container - 2x2 grid */
-.card-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--color-bg-secondary);
-  border-radius: 0.375rem;
-}
-
-.dark .card-stats {
-  background-color: rgb(17 24 39);
-}
-
-/* Individual stat item */
-.card-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.dark .card-stat {
-  color: rgb(156 163 175);
-}
-
-/* Stat label - small, uppercase */
-.stat-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  color: var(--color-text-muted);
-}
-
-.dark .stat-label {
-  color: rgb(107 114 128);
-}
-
-/* Stat value - larger, prominent */
-.stat-value {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.dark .stat-value {
-  color: rgb(243 244 246);
-}
-
-/* Inline stat for card footer */
-.card-stat-inline {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.dark .card-stat-inline {
-  color: rgb(156 163 175);
-}
-
-/* Card actions container */
-.card-actions {
-  display: flex;
-  gap: 0.25rem;
-}
-
-/* Small action button for cards */
-.card-action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-}
-
-.card-action-btn svg {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* =================================================================
-   MODAL / DIALOG STYLES
-   ================================================================= */
-
-/* Modal overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
-
-/* Modal panel */
-.modal-panel {
-  width: 100%;
-  max-width: 400px;
-  padding: 1.5rem;
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: 0.5rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.dark .modal-panel {
-  background-color: rgb(31 41 55);
-  border-color: rgb(55 65 81);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-}
-
-.modal-panel h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.dark .modal-panel h3 {
-  color: rgb(243 244 246);
-}
-
-.modal-panel p {
-  margin: 0 0 1.5rem;
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-}
-
-.dark .modal-panel p {
-  color: rgb(156 163 175);
-}
-
-/* Modal actions row */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-/* Danger button for destructive actions */
-.btn-danger {
-  background-color: rgb(239 68 68);
-  color: white;
-  border: none;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: rgb(220 38 38);
-}
-
-/* =================================================================
-   IMAGE GRID
-   ================================================================= */
-
-/* Grid for image examples */
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-@media (max-width: 640px) {
+
+  /* Card full-width modifier - removes max-width constraint */
+  .card-full {
+    @apply max-w-none text-left;
+  }
+
+  /* Card with primary background */
+  .card-bg-primary {
+    @apply bg-white dark:bg-gray-800;
+  }
+
+  /* Card with secondary background */
+  .card-bg-secondary {
+    @apply bg-gray-50 dark:bg-gray-900;
+  }
+
+  /* Expandable card item - used in lists */
+  .card-expandable {
+    @apply border border-gray-200 rounded-lg;
+    @apply dark:border-gray-700;
+  }
+
+  /* Card row clickable - interactive card row */
+  .card-row-clickable {
+    @apply flex items-center justify-between p-4 cursor-pointer;
+    @apply transition-colors duration-200;
+    @apply hover:bg-gray-50 dark:hover:bg-gray-800;
+  }
+
+  /* Card expanded section - details section */
+  .card-expanded {
+    @apply p-4 border-t border-gray-200 bg-gray-50;
+    @apply dark:border-gray-700 dark:bg-gray-800;
+  }
+
+  /* =================================================================
+     CARD SPACING UTILITIES
+     ================================================================= */
+
+  /* Card with bottom margin - standard spacing */
+  .card-spaced {
+    @apply mb-6;
+  }
+
+  /* =================================================================
+     CARD INTERACTIVE - Clickable cards with hover effects
+     ================================================================= */
+
+  /* Interactive card - adds hover lift and shadow */
+  .card-interactive {
+    @apply cursor-pointer transition-all duration-200;
+  }
+
+  .card-interactive:hover {
+    @apply -translate-y-0.5;
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--color-brand-blue);
+  }
+
+  .dark .card-interactive:hover {
+    box-shadow: var(--shadow-card-hover-dark);
+    @apply border-blue-400;
+  }
+
+  /* =================================================================
+     CARD CONTENT UTILITIES
+     ================================================================= */
+
+  /* Card preview area - for images/icons at top of cards */
+  .card-preview {
+    @apply w-full overflow-hidden flex items-center justify-center bg-surface-secondary;
+    @apply dark:bg-gray-800;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Card preview image */
+  .card-preview img {
+    @apply w-full h-full object-cover;
+  }
+
+  /* Card preview placeholder icon */
+  .card-preview-icon {
+    @apply w-12 h-12 text-content-muted;
+    @apply dark:text-gray-500;
+  }
+
+  /* Card preview with primary color icon */
+  .card-preview-icon-primary {
+    @apply text-brand-blue;
+    @apply dark:text-blue-400;
+  }
+
+  /* Card content section */
+  .card-content {
+    @apply flex flex-col gap-2 p-4 flex-1;
+  }
+
+  /* Card header row */
+  .card-header-row {
+    @apply flex items-center gap-2 flex-wrap;
+  }
+
+  /* Card title */
+  .card-title {
+    @apply text-base font-semibold text-content-primary m-0 leading-snug;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+    @apply dark:text-white;
+  }
+
+  /* Card subtitle/creator */
+  .card-subtitle {
+    @apply text-sm text-content-secondary m-0;
+    @apply dark:text-gray-400;
+  }
+
+  /* Card description - truncated multiline */
+  .card-description {
+    @apply text-sm text-content-secondary m-0 overflow-hidden;
+    @apply dark:text-gray-400;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  /* Fixed-height description variants for consistent card sizing */
+  .card-description-md {
+    min-height: 112px;
+  }
+
+  .card-description-lg {
+    min-height: 120px;
+  }
+
+  /* Card footer */
+  .card-footer {
+    @apply flex items-center justify-between mt-auto pt-2 border-t border-edge-primary;
+    @apply dark:border-gray-700;
+  }
+
+  /* Card footer stat with icon */
+  .card-stat {
+    @apply flex items-center gap-1 text-sm text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  .card-stat-icon {
+    @apply w-4 h-4;
+  }
+
+  /* Card title truncate - single line with ellipsis */
+  .card-title-truncate {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  /* =================================================================
+     CARD STATS GRID - For displaying multiple stats in cards
+     ================================================================= */
+
+  /* Stats container - 2x2 grid */
+  .card-stats {
+    @apply grid grid-cols-2 gap-3 p-3 bg-surface-secondary rounded-md;
+    @apply dark:bg-gray-900;
+  }
+
+  /* Stat label - small, uppercase */
+  .stat-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-content-muted;
+    @apply dark:text-gray-500;
+  }
+
+  /* Stat value - larger, prominent */
+  .stat-value {
+    @apply text-base font-semibold text-content-primary;
+    @apply dark:text-gray-100;
+  }
+
+  /* Inline stat for card footer */
+  .card-stat-inline {
+    @apply text-sm font-medium text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Card actions container */
+  .card-actions {
+    @apply flex gap-1;
+  }
+
+  /* Small action button for cards */
+  .card-action-btn {
+    @apply flex items-center justify-center w-8 h-8;
+  }
+
+  .card-action-btn svg {
+    @apply w-4 h-4;
+  }
+
+  /* =================================================================
+     MODAL / DIALOG STYLES
+     ================================================================= */
+
+  /* Modal overlay */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+
+  /* Modal panel */
+  .modal-panel {
+    @apply w-full max-w-md p-6;
+    @apply bg-surface-primary border border-edge-primary rounded-lg;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+    box-shadow: var(--shadow-modal);
+  }
+
+  .dark .modal-panel {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-panel h3 {
+    @apply m-0 mb-2 text-lg font-semibold text-content-primary;
+    @apply dark:text-gray-100;
+  }
+
+  .modal-panel p {
+    @apply m-0 mb-6 text-sm text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Modal actions row */
+  .modal-actions {
+    @apply flex justify-end gap-2;
+  }
+
+  /* =================================================================
+     IMAGE GRID
+     ================================================================= */
+
+  /* Grid for image examples */
   .image-grid {
-    grid-template-columns: repeat(2, 1fr);
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
-}
 
-/* Image grid item */
-.image-grid-item {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
-  aspect-ratio: 1;
-}
+  @media (max-width: 640px) {
+    .image-grid {
+      @apply grid-cols-2;
+    }
+  }
 
-.dark .image-grid-item {
-  border-color: rgb(55 65 81);
-}
+  /* Image grid item */
+  .image-grid-item {
+    @apply relative overflow-hidden rounded-lg border border-edge-primary;
+    @apply dark:border-gray-700;
+    aspect-ratio: 1;
+  }
 
-.image-grid-item-primary {
-  border-color: var(--color-primary);
-  border-width: 2px;
-}
+  .image-grid-item-primary {
+    @apply border-brand-blue border-2;
+    @apply dark:border-blue-400;
+  }
 
-.dark .image-grid-item-primary {
-  border-color: rgb(96 165 250);
-}
+  .image-grid-item img {
+    @apply w-full h-full object-cover;
+  }
 
-.image-grid-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Image badge overlay */
-.image-badge {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-  color: white;
-  background-color: var(--color-primary);
-  border-radius: 9999px;
-}
-
-.dark .image-badge {
-  background-color: rgb(59 130 246);
+  /* Image badge overlay */
+  .image-badge {
+    @apply absolute top-2 left-2 px-2 py-0.5;
+    @apply text-xs font-semibold uppercase tracking-wide text-white;
+    @apply bg-brand-blue rounded-full;
+    @apply dark:bg-blue-500;
+  }
 }
