@@ -1,0 +1,663 @@
+<div class="admin-container-lg">
+  <!-- Header -->
+  <div class="admin-header">
+    <h1 class="admin-heading-page">{{ "admin.filters.title" | transloco }}</h1>
+    <div class="flex gap-2">
+      <button
+        (click)="loadFilters()"
+        class="btn-muted"
+        [disabled]="loading()"
+        type="button"
+      >
+        {{ "admin.filters.refresh" | transloco }}
+      </button>
+      <button (click)="openCreateDialog()" class="btn-primary" type="button">
+        {{ "admin.filters.create" | transloco }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="filter-tabs">
+    <button
+      (click)="switchTab('filters')"
+      class="filter-tab"
+      [class.active]="activeTab() === 'filters'"
+      type="button"
+    >
+      {{ "admin.filters.tabs.filters" | transloco }}
+    </button>
+    <button
+      (click)="switchTab('compiled')"
+      class="filter-tab"
+      [class.active]="activeTab() === 'compiled'"
+      type="button"
+    >
+      {{ "admin.filters.tabs.compiled_regex" | transloco }}
+    </button>
+  </div>
+
+  <!-- Filters Tab -->
+  @if (activeTab() === "filters") {
+    <!-- Prompt Tester Section -->
+    <div class="panel mb-6">
+      <button
+        (click)="toggleTester()"
+        class="expandable-header"
+        type="button"
+        [attr.aria-expanded]="testerExpanded()"
+      >
+        <span class="admin-heading-section">{{
+          "admin.filters.prompt_tester.title" | transloco
+        }}</span>
+        <svg
+          class="expandable-icon"
+          [class.expanded]="testerExpanded()"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      @if (testerExpanded()) {
+        <div class="p-6 admin-border-t">
+          <p class="admin-text-muted mb-4">
+            {{ "admin.filters.prompt_tester.description" | transloco }}
+          </p>
+          <div class="flex flex-col gap-4">
+            <textarea
+              class="form-textarea"
+              rows="3"
+              [value]="testPromptValue()"
+              (input)="onTestPromptChange($event)"
+              placeholder="{{
+                'admin.filters.prompt_tester.placeholder' | transloco
+              }}"
+            ></textarea>
+            <div class="flex gap-2">
+              <button
+                (click)="testPrompt()"
+                class="btn-primary"
+                [disabled]="testing() || !testPromptValue().trim()"
+                type="button"
+              >
+                @if (testing()) {
+                  {{ "admin.filters.prompt_tester.testing" | transloco }}
+                } @else {
+                  {{ "admin.filters.prompt_tester.test_button" | transloco }}
+                }
+              </button>
+              @if (testResult()) {
+                <button
+                  (click)="clearTestResult()"
+                  class="btn-muted"
+                  type="button"
+                >
+                  {{ "admin.filters.prompt_tester.clear" | transloco }}
+                </button>
+              }
+            </div>
+
+            @if (testResult(); as result) {
+              <div
+                class="test-result"
+                [class.test-result-blocked]="result.suspicion >= 2"
+                [class.test-result-safe]="result.suspicion < 2"
+              >
+                <div class="test-result-header">
+                  <span class="test-result-label">{{
+                    "admin.filters.prompt_tester.suspicion" | transloco
+                  }}</span>
+                  <span class="test-result-value">{{ result.suspicion }}</span>
+                  @if (result.suspicion >= 2) {
+                    <span class="badge-base badge-danger ml-2">{{
+                      "admin.filters.prompt_tester.blocked" | transloco
+                    }}</span>
+                  } @else {
+                    <span class="badge-base badge-success ml-2">{{
+                      "admin.filters.prompt_tester.allowed" | transloco
+                    }}</span>
+                  }
+                </div>
+                @if (result.matches && result.matches.length > 0) {
+                  <div class="test-result-matches">
+                    <span class="test-result-matches-label">{{
+                      "admin.filters.prompt_tester.matches" | transloco
+                    }}</span>
+                    <div class="test-result-matches-list">
+                      @for (match of result.matches; track match) {
+                        <span class="badge-base badge-warning">{{ match }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="filter-controls mb-6">
+      <div class="filter-search">
+        <input
+          type="text"
+          class="form-input"
+          [value]="searchQuery()"
+          (input)="onSearchChange($event)"
+          placeholder="{{ 'admin.filters.search_placeholder' | transloco }}"
+        />
+      </div>
+      <div class="filter-type-select">
+        <select
+          class="form-select"
+          [value]="filterTypeFilter() ?? ''"
+          (change)="onFilterTypeChange($event)"
+        >
+          <option value="">
+            {{ "admin.filters.all_types" | transloco }}
+          </option>
+          @for (opt of filterTypeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+      </div>
+      @if (searchQuery() || filterTypeFilter() !== null) {
+        <button (click)="clearFilters()" class="btn-muted" type="button">
+          {{ "admin.filters.clear_filters" | transloco }}
+        </button>
+      }
+    </div>
+
+    <!-- Filters List -->
+    @if (loading()) {
+      <div class="admin-loading">
+        <svg
+          class="admin-spinner"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            class="admin-spinner-track"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="admin-spinner-head"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <span class="admin-loading-text">{{
+          "admin.filters.loading" | transloco
+        }}</span>
+      </div>
+    } @else if (filteredFilters().length === 0) {
+      <div class="admin-empty">
+        <svg
+          class="admin-empty-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+          />
+        </svg>
+        <span class="admin-empty-text">{{
+          "admin.filters.no_filters" | transloco
+        }}</span>
+      </div>
+    } @else {
+      <!-- Filter count -->
+      <div class="filter-count mb-4">
+        {{ "admin.filters.showing" | transloco }}
+        <strong>{{ filteredFilters().length }}</strong>
+        {{ "admin.filters.of" | transloco }}
+        <strong>{{ filters().length }}</strong>
+        {{ "admin.filters.filters_label" | transloco }}
+      </div>
+
+      <!-- Filters Table -->
+      <div class="panel overflow-hidden">
+        <div class="filter-table-wrapper">
+          <table class="filter-table">
+            <thead>
+              <tr>
+                <th>{{ "admin.filters.table.regex" | transloco }}</th>
+                <th>{{ "admin.filters.table.type" | transloco }}</th>
+                <th>{{ "admin.filters.table.description" | transloco }}</th>
+                <th>{{ "admin.filters.table.replacement" | transloco }}</th>
+                <th>{{ "admin.filters.table.user" | transloco }}</th>
+                <th>{{ "admin.filters.table.actions" | transloco }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (filter of filteredFilters(); track filter.id) {
+                <tr>
+                  <td>
+                    <code class="filter-regex">{{ filter.regex }}</code>
+                  </td>
+                  <td>
+                    <span class="badge-base badge-info">
+                      {{ filter.filter_type }}: {{ getTypeLabel(filter.filter_type) }}
+                    </span>
+                  </td>
+                  <td class="filter-description">
+                    {{ filter.description || "-" }}
+                  </td>
+                  <td>
+                    @if (filter.replacement) {
+                      <code class="filter-replacement">{{
+                        filter.replacement
+                      }}</code>
+                    } @else {
+                      <span class="admin-text-muted">-</span>
+                    }
+                  </td>
+                  <td>{{ filter.user }}</td>
+                  <td>
+                    <div class="filter-actions">
+                      <button
+                        (click)="openRawJsonDialog(filter)"
+                        class="btn-icon"
+                        title="{{ 'admin.filters.view_json' | transloco }}"
+                        type="button"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        (click)="openEditDialog(filter)"
+                        class="btn-icon"
+                        title="{{ 'admin.filters.edit' | transloco }}"
+                        type="button"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        (click)="openDeleteDialog(filter)"
+                        class="btn-icon btn-icon-danger"
+                        title="{{ 'admin.filters.delete' | transloco }}"
+                        type="button"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Compiled Regex Tab -->
+  @if (activeTab() === "compiled") {
+    <div class="compiled-regex-header mb-6">
+      <p class="admin-text-muted">
+        {{ "admin.filters.compiled_regex.description" | transloco }}
+      </p>
+      <button
+        (click)="loadCompiledRegex()"
+        class="btn-muted mt-4"
+        [disabled]="loadingCompiled()"
+        type="button"
+      >
+        {{ "admin.filters.refresh" | transloco }}
+      </button>
+    </div>
+
+    @if (loadingCompiled()) {
+      <div class="admin-loading">
+        <svg
+          class="admin-spinner"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            class="admin-spinner-track"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="admin-spinner-head"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <span class="admin-loading-text">{{
+          "admin.filters.loading_compiled" | transloco
+        }}</span>
+      </div>
+    } @else if (compiledRegex().length === 0) {
+      <div class="admin-empty">
+        <svg
+          class="admin-empty-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+          />
+        </svg>
+        <span class="admin-empty-text">{{
+          "admin.filters.no_compiled_regex" | transloco
+        }}</span>
+      </div>
+    } @else {
+      <div class="compiled-regex-list">
+        @for (regex of compiledRegex(); track regex.filter_type) {
+          <div class="panel mb-4">
+            <div class="compiled-regex-header-row">
+              <div class="compiled-regex-type">
+                <span class="badge-base badge-info">
+                  {{ regex.filter_type }}: {{ getTypeLabel(regex.filter_type) }}
+                </span>
+              </div>
+              <button
+                (click)="copyToClipboard(regex.regex)"
+                class="btn-muted btn-sm"
+                title="{{ 'admin.filters.copy' | transloco }}"
+                type="button"
+              >
+                <svg
+                  class="w-4 h-4 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+                {{ "admin.filters.copy" | transloco }}
+              </button>
+            </div>
+            <div class="compiled-regex-content">
+              <pre class="code-block"><code>{{ regex.regex }}</code></pre>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Create/Edit Dialog -->
+@if (dialogOpen() && (dialogType() === "create" || dialogType() === "edit")) {
+  <div class="modal">
+    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-panel">
+      <h2 class="admin-heading-section mb-6">
+        @if (dialogType() === "create") {
+          {{ "admin.filters.dialog.create_title" | transloco }}
+        } @else {
+          {{ "admin.filters.dialog.edit_title" | transloco }}
+        }
+      </h2>
+
+      <div class="flex flex-col gap-4">
+        <!-- Regex -->
+        <div class="form-group">
+          <label for="filter-regex" class="form-label">
+            {{ "admin.filters.form.regex" | transloco }}
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="filter-regex"
+            type="text"
+            class="form-input"
+            [value]="formRegex()"
+            (input)="onFormRegexChange($event)"
+            placeholder="{{ 'admin.filters.form.regex_placeholder' | transloco }}"
+          />
+          <p class="form-hint">
+            {{ "admin.filters.form.regex_hint" | transloco }}
+          </p>
+        </div>
+
+        <!-- Filter Type -->
+        <div class="form-group">
+          <label for="filter-type" class="form-label">
+            {{ "admin.filters.form.filter_type" | transloco }}
+          </label>
+          <select
+            id="filter-type"
+            class="form-select"
+            [value]="formFilterType()"
+            (change)="onFormFilterTypeChange($event)"
+          >
+            @for (opt of filterTypeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label for="filter-description" class="form-label">
+            {{ "admin.filters.form.description" | transloco }}
+          </label>
+          <textarea
+            id="filter-description"
+            class="form-textarea"
+            rows="3"
+            [value]="formDescription()"
+            (input)="onFormDescriptionChange($event)"
+            placeholder="{{
+              'admin.filters.form.description_placeholder' | transloco
+            }}"
+          ></textarea>
+        </div>
+
+        <!-- Replacement -->
+        <div class="form-group">
+          <label for="filter-replacement" class="form-label">
+            {{ "admin.filters.form.replacement" | transloco }}
+          </label>
+          <input
+            id="filter-replacement"
+            type="text"
+            class="form-input"
+            [value]="formReplacement()"
+            (input)="onFormReplacementChange($event)"
+            placeholder="{{
+              'admin.filters.form.replacement_placeholder' | transloco
+            }}"
+          />
+          <p class="form-hint">
+            {{ "admin.filters.form.replacement_hint" | transloco }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6">
+        <button (click)="closeDialog()" class="btn-muted" type="button">
+          {{ "admin.filters.dialog.cancel" | transloco }}
+        </button>
+        <button
+          (click)="confirmDialog()"
+          class="btn-primary"
+          [disabled]="isUpdating() || !formRegex().trim()"
+          type="button"
+        >
+          @if (isUpdating()) {
+            {{ "admin.filters.dialog.saving" | transloco }}
+          } @else if (dialogType() === "create") {
+            {{ "admin.filters.dialog.create" | transloco }}
+          } @else {
+            {{ "admin.filters.dialog.save" | transloco }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirmation Dialog -->
+@if (dialogOpen() && dialogType() === "delete") {
+  <div class="modal">
+    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-panel">
+      <h2 class="admin-heading-section mb-4">
+        {{ "admin.filters.dialog.delete_title" | transloco }}
+      </h2>
+
+      <p class="admin-text-muted mb-4">
+        {{ "admin.filters.dialog.delete_confirm" | transloco }}
+      </p>
+
+      @if (selectedFilter(); as filter) {
+        <div class="panel p-4 mb-6">
+          <div class="flex flex-col gap-2">
+            <div>
+              <span class="admin-text-muted">{{
+                "admin.filters.table.regex" | transloco
+              }}:</span>
+              <code class="filter-regex ml-2">{{ filter.regex }}</code>
+            </div>
+            <div>
+              <span class="admin-text-muted">{{
+                "admin.filters.table.type" | transloco
+              }}:</span>
+              <span class="badge-base badge-info ml-2">
+                {{ filter.filter_type }}: {{ getTypeLabel(filter.filter_type) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="flex justify-end gap-3">
+        <button (click)="closeDialog()" class="btn-muted" type="button">
+          {{ "admin.filters.dialog.cancel" | transloco }}
+        </button>
+        <button
+          (click)="confirmDialog()"
+          class="btn-danger"
+          [disabled]="isUpdating()"
+          type="button"
+        >
+          @if (isUpdating()) {
+            {{ "admin.filters.dialog.deleting" | transloco }}
+          } @else {
+            {{ "admin.filters.dialog.delete" | transloco }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Raw JSON Dialog -->
+@if (dialogOpen() && dialogType() === "rawJson") {
+  <div class="modal">
+    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <div class="dialog-panel worker-modal-panel-large">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="admin-heading-section">
+          {{ "admin.filters.dialog.raw_json_title" | transloco }}
+        </h2>
+        <button
+          (click)="copyToClipboard(selectedFilterJson())"
+          class="btn-muted btn-sm"
+          type="button"
+        >
+          <svg
+            class="w-4 h-4 mr-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          {{ "admin.filters.copy" | transloco }}
+        </button>
+      </div>
+
+      <div class="worker-modal-scroll">
+        <pre
+          class="code-block"
+        ><code [innerHTML]="selectedFilterJsonHighlighted()"></code></pre>
+      </div>
+
+      <div class="flex justify-end mt-6">
+        <button (click)="closeDialog()" class="btn-muted" type="button">
+          {{ "admin.filters.dialog.close" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast Notifications -->
+<app-admin-toast-bar [toasts]="toasts()" (dismiss)="dismissToast($event)" />
