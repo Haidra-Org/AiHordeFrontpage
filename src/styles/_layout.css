@@ -34,6 +34,7 @@
   .section-secondary {
     @apply bg-surface-secondary;
     @apply dark:bg-gray-800;
+    @apply py-4;
   }
 
   /* =================================================================
@@ -57,12 +58,12 @@
 
   /* Content wrapper with max-width and padding */
   .container-page-content {
-    @apply max-w-7xl mx-auto py-8 px-4 lg:py-16 lg:px-6;
+    @apply max-w-7xl mx-auto;
   }
 
   /* Content container */
   .container-content {
-    @apply mx-auto py-6 lg:py-12;
+    @apply mx-auto;
     max-width: var(--max-width-container);
     padding-left: var(--spacing-container-padding-mobile);
     padding-right: var(--spacing-container-padding-mobile);

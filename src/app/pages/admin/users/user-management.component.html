@@ -5,16 +5,25 @@
 <app-admin-dialog
   [open]="dialogOpen()"
   [title]="
-    'admin.users.dialog.reset_suspicion_title'
-      | transloco: { username: selectedUser()?.username }
+    dialogType() === 'resetSuspicion'
+      ? ('admin.users.dialog.reset_suspicion_title' | transloco: { username: selectedUser()?.username })
+      : ('admin.users.dialog.undelete_title' | transloco: { username: selectedUser()?.username })
   "
-  [confirmLabel]="'admin.users.dialog.confirm' | transloco"
+  [confirmLabel]="
+    dialogType() === 'resetSuspicion'
+      ? ('admin.users.dialog.confirm' | transloco)
+      : ('admin.users.dialog.undelete_confirm' | transloco)
+  "
   [cancelLabel]="'admin.users.dialog.cancel' | transloco"
   [loading]="isUpdating()"
-  variant="danger"
+  [variant]="dialogType() === 'resetSuspicion' ? 'danger' : 'default'"
   (confirm)="confirmDialog()"
   (cancel)="closeDialog()"
-/>
+>
+  @if (dialogType() === 'undeleteUser') {
+    <p class="text-gray-300">{{ 'admin.users.dialog.undelete_message' | transloco }}</p>
+  }
+</app-admin-dialog>
 
 <!-- Raw JSON Modal - Deferred since it's only shown on demand -->
 @defer (when rawJsonModalOpen()) {
@@ -245,22 +254,30 @@
       <!-- Deleted User Warning -->
       @if (selectedUser()!.deleted) {
         <div
-          class="bg-red-900/50 border-b border-red-700 px-6 py-3 flex items-center gap-3"
+          class="bg-red-900/50 border-b border-red-700 px-6 py-3 flex items-center justify-between gap-3"
         >
-          <svg
-            class="w-5 h-5 text-red-400"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+          <div class="flex items-center gap-3">
+            <svg
+              class="w-5 h-5 text-red-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span class="text-red-300">{{
+              "admin.users.deleted_warning" | transloco
+            }}</span>
+          </div>
+          <button
+            (click)="openUndeleteUserDialog()"
+            class="btn-warning text-sm px-3 py-1.5"
           >
-            <path
-              fill-rule="evenodd"
-              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <span class="text-red-300">{{
-            "admin.users.deleted_warning" | transloco
-          }}</span>
+            {{ "admin.users.undelete" | transloco }}
+          </button>
         </div>
       }
 
@@ -284,6 +301,11 @@
         <div class="flex items-center justify-between mb-6">
           <h2 class="admin-heading-section flex items-center gap-2">
             {{ selectedUser()!.username }}
+            @if (selectedUser()!.deleted) {
+              <span class="text-xs font-medium px-2 py-0.5 rounded bg-red-600 text-white">{{
+                "admin.users.badge.deleted" | transloco
+              }}</span>
+            }
             @if (trustedValue()) {
               <svg
                 class="w-5 h-5 text-green-400"

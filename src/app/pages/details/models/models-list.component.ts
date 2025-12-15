@@ -15,12 +15,17 @@ import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { ActiveModel } from '../../../types/active-model';
+import {
+  SynthesizedUnit,
+  UnitConversionService,
+} from '../../../services/unit-conversion.service';
+import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 
 export type ModelsTab = 'image' | 'text';
 
 @Component({
   selector: 'app-models-list',
-  imports: [TranslocoPipe, DecimalPipe],
+  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +35,7 @@ export class ModelsListComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
+  public readonly unitConversion = inject(UnitConversionService);
 
   /** Current active tab. */
   public readonly activeTab = signal<ModelsTab>('image');
@@ -50,7 +56,7 @@ export class ModelsListComponent implements OnInit {
   public readonly searchQuery = signal('');
 
   /** Sort field. */
-  public readonly sortField = signal<'name' | 'count' | 'queued' | 'eta'>(
+  public readonly sortField = signal<'name' | 'count' | 'queued' | 'jobs' | 'eta'>(
     'count',
   );
 
@@ -86,6 +92,8 @@ export class ModelsListComponent implements OnInit {
         comparison = (a.count ?? 0) - (b.count ?? 0);
       } else if (field === 'queued') {
         comparison = (a.queued ?? 0) - (b.queued ?? 0);
+      } else if (field === 'jobs') {
+        comparison = (a.jobs ?? 0) - (b.jobs ?? 0);
       } else if (field === 'eta') {
         comparison = (a.eta ?? 0) - (b.eta ?? 0);
       }
@@ -104,6 +112,41 @@ export class ModelsListComponent implements OnInit {
   public readonly totalQueued = computed(() => {
     return this.currentModels().reduce((sum, m) => sum + (m.queued ?? 0), 0);
   });
+
+  /** Total queued formatted with units (megapixelsteps for image, tokens for text). */
+  public readonly totalQueuedUnit = computed(() => {
+    const total = this.totalQueued();
+    if (this.activeTab() === 'image') {
+      return this.unitConversion.formatModelQueuedImage(total);
+    } else {
+      return this.unitConversion.formatModelQueuedText(total);
+    }
+  });
+
+  /**
+   * Get the formatted queued value for a model.
+   */
+  public getModelQueuedUnit(model: ActiveModel): SynthesizedUnit {
+    if (this.activeTab() === 'image') {
+      return this.unitConversion.formatModelQueuedImage(model.queued ?? 0);
+    } else {
+      return this.unitConversion.formatModelQueuedText(model.queued ?? 0);
+    }
+  }
+
+  /**
+   * Get the formatted performance value for a model.
+   */
+  public getModelPerformanceUnit(model: ActiveModel): SynthesizedUnit | null {
+    if (!model.performance || model.performance <= 0) {
+      return null;
+    }
+    if (this.activeTab() === 'image') {
+      return this.unitConversion.formatModelPerformanceImage(model.performance);
+    } else {
+      return this.unitConversion.formatModelPerformanceText(model.performance);
+    }
+  }
 
   ngOnInit(): void {
     combineLatest([
@@ -171,7 +214,7 @@ export class ModelsListComponent implements OnInit {
     this.searchQuery.set(input.value);
   }
 
-  public setSortField(field: 'name' | 'count' | 'queued' | 'eta'): void {
+  public setSortField(field: 'name' | 'count' | 'queued' | 'jobs' | 'eta'): void {
     if (this.sortField() === field) {
       // Toggle direction
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');

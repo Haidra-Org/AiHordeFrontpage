@@ -18,6 +18,72 @@
   </div>
 }
 
+<!-- Account Action Success Toast -->
+@if (deleteSuccess()) {
+  <div class="toast toast-success" role="status" aria-live="polite">
+    <svg
+      class="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+    <span>{{ deleteSuccess() | transloco }}</span>
+  </div>
+}
+
+<!-- Account Action Error Toast -->
+@if (deleteError()) {
+  <div class="toast toast-error" role="alert" aria-live="assertive">
+    <svg
+      class="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+    <span>{{ "profile.delete_account_error" | transloco: { message: deleteError() } }}</span>
+  </div>
+}
+
+<!-- Delete Account Dialog -->
+<app-delete-account-dialog
+  [open]="deleteDialogOpen()"
+  [title]="'profile.delete_account_title' | transloco"
+  [expectedUsername]="usernameWithDiscriminator()"
+  [isAlreadyDeleted]="auth.currentUser()?.deleted ?? false"
+  [confirmLabel]="'profile.delete_account_confirm' | transloco"
+  [cancelLabel]="'styles.form.cancel' | transloco"
+  [loading]="deleteLoading()"
+  (confirm)="confirmDeleteAccount()"
+  (cancel)="closeDeleteDialog()"
+/>
+
+<!-- Undelete Account Dialog -->
+<app-admin-dialog
+  [open]="undeleteDialogOpen()"
+  [title]="'profile.undelete_account_title' | transloco"
+  [confirmLabel]="'profile.undelete_account_confirm' | transloco"
+  [cancelLabel]="'styles.form.cancel' | transloco"
+  [loading]="undeleteLoading()"
+  (confirm)="confirmUndeleteAccount()"
+  (cancel)="closeUndeleteDialog()"
+>
+  <p class="text-gray-300">{{ "profile.undelete_account_message" | transloco }}</p>
+</app-admin-dialog>
+
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
@@ -159,6 +225,36 @@
 
             <!-- Profile Card -->
             @if (activeTab() === "profile") {
+              <!-- Account Marked for Deletion Warning -->
+              @if (auth.currentUser()!.deleted) {
+                <div class="mb-6 p-6 bg-red-900/30 border-2 border-red-600 rounded-lg">
+                  <div class="flex items-start gap-4">
+                    <svg
+                      class="w-8 h-8 text-red-400 shrink-0 mt-0.5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <div class="flex-1">
+                      <h3 class="text-lg font-semibold text-red-300 mb-2">
+                        {{ "profile.account_marked_for_deletion_title" | transloco }}
+                      </h3>
+                      <p class="text-red-200 text-sm mb-4">
+                        {{ "profile.account_marked_for_deletion_message" | transloco }}
+                      </p>
+                      <button (click)="openUndeleteDialog()" class="btn-warning">
+                        {{ "profile.undelete_account" | transloco }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              }
+
               <div class="card card-bg-primary card-full">
                 <div class="profile-header section-divider-bottom">
                   <div class="avatar-circle avatar-lg avatar-gradient">
@@ -342,6 +438,24 @@
                       <button (click)="logout()" class="btn-source-control">
                         {{ "profile.logout" | transloco }}
                       </button>
+                    </div>
+                    <!-- Account Management Actions -->
+                    <div class="action-row mt-4">
+                      @if (auth.currentUser()!.deleted) {
+                        <button (click)="openUndeleteDialog()" class="btn-warning">
+                          {{ "profile.undelete_account" | transloco }}
+                        </button>
+                      }
+                      @if (!auth.currentUser()!.deleted) {
+                      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
+                        {{ "profile.delete_account" | transloco }}
+                      </button>
+                      }
+                      @if (auth.currentUser()!.deleted) {
+                        <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
+                        {{ "profile.permanently_delete_account" | transloco }}
+                      </button>
+                      }
                     </div>
                   </div>
                 }

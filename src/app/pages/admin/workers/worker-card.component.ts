@@ -14,11 +14,21 @@ import { HordeWorker } from '../../../types/horde-worker';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { AuthService } from '../../../services/auth.service';
+import {
+  UnitConversionService,
+  SynthesizedUnit,
+} from '../../../services/unit-conversion.service';
+import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 
 @Component({
   selector: 'app-worker-card',
-  standalone: true,
-  imports: [TranslocoPipe, TranslocoModule, FormatNumberPipe, RouterLink],
+  imports: [
+    TranslocoPipe,
+    TranslocoModule,
+    FormatNumberPipe,
+    RouterLink,
+    UnitTooltipComponent,
+  ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -26,6 +36,7 @@ export class WorkerCardComponent {
   private readonly workerService = inject(AdminWorkerService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly auth = inject(AuthService);
+  private readonly unitConversion = inject(UnitConversionService);
 
   public worker = input.required<HordeWorker>();
   public isModerator = input(false);
@@ -300,5 +311,61 @@ export class WorkerCardComponent {
           this.deleteError.set('delete_failed');
         }
       });
+  }
+
+  // ============================================================================
+  // UNIT CONVERSION METHODS
+  // ============================================================================
+
+  /**
+   * Get the performance unit for the worker based on its type.
+   * Image workers use mps/s, text workers use tokens/s.
+   */
+  public getPerformanceUnit(): SynthesizedUnit | null {
+    const worker = this.worker();
+    const performanceValue = parseFloat(worker.performance);
+
+    if (isNaN(performanceValue) || performanceValue === 0) {
+      return null;
+    }
+
+    if (worker.type === 'image') {
+      return this.unitConversion.formatWorkerPerformanceImage(performanceValue);
+    } else if (worker.type === 'text') {
+      return this.unitConversion.formatWorkerPerformanceText(performanceValue);
+    }
+
+    return null;
+  }
+
+  /**
+   * Get the megapixelsteps generated unit for image workers.
+   */
+  public getMpsGeneratedUnit(): SynthesizedUnit | null {
+    const worker = this.worker();
+    if (
+      worker.type !== 'image' ||
+      worker.megapixelsteps_generated === undefined
+    ) {
+      return null;
+    }
+
+    return this.unitConversion.formatWorkerMegapixelstepsGenerated(
+      worker.megapixelsteps_generated,
+    );
+  }
+
+  /**
+   * Get the tokens generated unit for text workers.
+   */
+  public getTokensGeneratedUnit(): SynthesizedUnit | null {
+    const worker = this.worker();
+    if (worker.type !== 'text' || worker.tokens_generated === undefined) {
+      return null;
+    }
+
+    return this.unitConversion.formatWorkerTokensGenerated(
+      worker.tokens_generated,
+    );
   }
 }

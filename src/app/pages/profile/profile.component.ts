@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   FormControl,
   FormGroup,
@@ -31,6 +31,8 @@ import { ProfileStylesListComponent } from '../../components/profile-styles-list
 import { KudosBreakdownPanelComponent } from '../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { UnitTooltipComponent } from '../../components/unit-tooltip/unit-tooltip.component';
 import { UnitConversionService } from '../../services/unit-conversion.service';
+import { DeleteAccountDialogComponent } from '../../components/delete-account-dialog/delete-account-dialog.component';
+import { AdminDialogComponent } from '../../components/admin/admin-dialog/admin-dialog.component';
 
 type WorkerListItem = {
   id: string;
@@ -52,6 +54,8 @@ type WorkerListItem = {
     ProfileStylesListComponent,
     KudosBreakdownPanelComponent,
     UnitTooltipComponent,
+    DeleteAccountDialogComponent,
+    AdminDialogComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
@@ -63,6 +67,7 @@ export class ProfileComponent implements OnInit {
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workerService = inject(AdminWorkerService);
+  private readonly router = inject(Router);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
   private readonly workerRequestConcurrency = 3;
@@ -86,6 +91,23 @@ export class ProfileComponent implements OnInit {
     'all' | 'active' | 'maintenance' | 'offline'
   >('all');
   public deletionSuccessMessage = signal<boolean>(false);
+
+  // Delete account state
+  public deleteDialogOpen = signal<boolean>(false);
+  public deleteLoading = signal<boolean>(false);
+  public deleteError = signal<string | null>(null);
+  public deleteSuccess = signal<string | null>(null);
+
+  // Undelete account state
+  public undeleteDialogOpen = signal<boolean>(false);
+  public undeleteLoading = signal<boolean>(false);
+
+  // Computed username with discriminator for delete confirmation
+  public readonly usernameWithDiscriminator = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return '';
+    return user.username;
+  });
 
   // Computed filtered workers
   public filteredAndSortedWorkers = computed(() => {
@@ -318,6 +340,83 @@ export class ProfileComponent implements OnInit {
     status: 'all' | 'active' | 'maintenance' | 'offline',
   ): void {
     this.filterMaintenance.set(status);
+  }
+
+  // Delete account methods
+  public openDeleteDialog(): void {
+    this.deleteError.set(null);
+    this.deleteDialogOpen.set(true);
+  }
+
+  public closeDeleteDialog(): void {
+    this.deleteDialogOpen.set(false);
+  }
+
+  public confirmDeleteAccount(): void {
+    const user = this.auth.currentUser();
+    if (!user) return;
+
+    const wasAlreadyDeleted = user.deleted ?? false;
+    this.deleteLoading.set(true);
+    this.deleteError.set(null);
+
+    this.auth
+      .deleteUser()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+      this.deleteLoading.set(false);
+
+      if (result.success) {
+        this.deleteDialogOpen.set(false);
+
+        if (wasAlreadyDeleted) {
+          // Permanent deletion - logout and redirect
+          this.deleteSuccess.set('profile.delete_account_permanent_success');
+          setTimeout(() => {
+            this.auth.logout();
+            this.router.navigate(['/']);
+          }, 2000);
+        } else {
+          // First deletion - refresh user data to show deleted state
+          this.deleteSuccess.set('profile.delete_account_success');
+          this.auth.refreshUser().subscribe();
+          setTimeout(() => this.deleteSuccess.set(null), 5000);
+        }
+      } else {
+        this.deleteError.set(result.error.message);
+        setTimeout(() => this.deleteError.set(null), 5000);
+      }
+      });
+  }
+
+  // Undelete account methods
+  public openUndeleteDialog(): void {
+    this.undeleteDialogOpen.set(true);
+  }
+
+  public closeUndeleteDialog(): void {
+    this.undeleteDialogOpen.set(false);
+  }
+
+  public confirmUndeleteAccount(): void {
+    this.undeleteLoading.set(true);
+
+    this.auth
+      .undeleteUser()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.undeleteLoading.set(false);
+        this.undeleteDialogOpen.set(false);
+
+        if (result.success) {
+          this.deleteSuccess.set('profile.undelete_account_success');
+          this.auth.refreshUser().subscribe();
+          setTimeout(() => this.deleteSuccess.set(null), 5000);
+        } else {
+          this.deleteError.set(result.error ?? 'Failed to restore account');
+          setTimeout(() => this.deleteError.set(null), 5000);
+        }
+      });
   }
 
   private sortWorkers(workers: WorkerListItem[]): WorkerListItem[] {

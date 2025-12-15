@@ -468,7 +468,14 @@
         <span class="worker-card-label"
           >{{ "admin.workers.card.speed" | transloco }}:</span
         >
-        <span class="worker-card-value">{{ worker().performance }}</span>
+        @if (getPerformanceUnit(); as perfUnit) {
+          <span class="worker-card-value">
+            {{ perfUnit.primary.value.toFixed(2) }}
+            <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="perfUnit.primary.unit" />
+          </span>
+        } @else {
+          <span class="worker-card-value">{{ worker().performance }}</span>
+        }
       </div>
       <div class="worker-card-row">
         <span class="worker-card-label"
@@ -492,9 +499,14 @@
           <span class="worker-card-label"
             >{{ "admin.workers.card.mps_generated" | transloco }}:</span
           >
-          <span class="worker-card-value">{{
-            worker().megapixelsteps_generated ?? 0 | formatNumber
-          }}</span>
+          @if (getMpsGeneratedUnit(); as mpsUnit) {
+            <span class="worker-card-value">
+              {{ mpsUnit.primary.value.toFixed(1) }}
+              <app-unit-tooltip [unit]="mpsUnit" [primaryOverride]="mpsUnit.primary.prefix + mpsUnit.primary.unit" />
+            </span>
+          } @else {
+            <span class="worker-card-value">{{ worker().megapixelsteps_generated ?? 0 | formatNumber }}</span>
+          }
         </div>
       }
       @if (
@@ -504,9 +516,14 @@
           <span class="worker-card-label"
             >{{ "admin.workers.card.tokens_generated" | transloco }}:</span
           >
-          <span class="worker-card-value">{{
-            worker().tokens_generated ?? 0 | formatNumber
-          }}</span>
+          @if (getTokensGeneratedUnit(); as tokensUnit) {
+            <span class="worker-card-value">
+              {{ tokensUnit.primary.value.toFixed(1) }}
+              <app-unit-tooltip [unit]="tokensUnit" [primaryOverride]="tokensUnit.primary.prefix + tokensUnit.primary.unit" />
+            </span>
+          } @else {
+            <span class="worker-card-value">{{ worker().tokens_generated ?? 0 | formatNumber }}</span>
+          }
         </div>
       }
     </div>

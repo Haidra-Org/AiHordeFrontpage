@@ -1,9 +1,20 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, catchError, map, tap, BehaviorSubject } from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { HordeUser } from '../types/horde-user';
+
+export interface DeleteUserResponse {
+  deleted_id: string;
+  deleted_name: string;
+}
+
+export interface DeleteUserError {
+  message: string;
+  rc?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +22,8 @@ import { HordeUser } from '../types/horde-user';
 export class AuthService {
   private readonly database = inject(DatabaseService);
   private readonly aiHorde = inject(AiHordeService);
+  private readonly httpClient = inject(HttpClient);
+  private readonly baseUrl = 'https://aihorde.net/api/v2';
 
   private readonly _currentUser = signal<HordeUser | null>(null);
   private readonly _isLoading = signal<boolean>(false);
@@ -116,5 +129,61 @@ export class AuthService {
       null,
       remember ? StorageType.Permanent : StorageType.Session,
     );
+  }
+
+  /**
+   * Delete the current user's account.
+   * First delete marks for deletion (30-day grace period).
+   * If already marked for deletion and 30 days passed, permanently deletes.
+   * @returns Observable with success response or error details
+   */
+  public deleteUser(): Observable<
+    { success: true; data: DeleteUserResponse } | { success: false; error: DeleteUserError }
+  > {
+    const apiKey = this.getStoredApiKey();
+    const user = this._currentUser();
+    if (!apiKey || !user) {
+      return of({ success: false, error: { message: 'Not logged in' } });
+    }
+
+    return this.httpClient
+      .delete<DeleteUserResponse>(`${this.baseUrl}/users/${user.id}`, {
+        headers: { apikey: apiKey },
+      })
+      .pipe(
+        map((data) => ({ success: true as const, data })),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            err.error?.message ?? err.error?.detail ?? 'Failed to delete account';
+          return of({ success: false as const, error: { message, rc: err.error?.rc } });
+        }),
+      );
+  }
+
+  /**
+   * Undelete the current user's account (cancel pending deletion).
+   * @returns Observable with success or error
+   */
+  public undeleteUser(): Observable<{ success: boolean; error?: string }> {
+    const apiKey = this.getStoredApiKey();
+    const user = this._currentUser();
+    if (!apiKey || !user) {
+      return of({ success: false, error: 'Not logged in' });
+    }
+
+    return this.httpClient
+      .put<unknown>(
+        `${this.baseUrl}/users/${user.id}`,
+        { undelete: true },
+        { headers: { apikey: apiKey } },
+      )
+      .pipe(
+        map(() => ({ success: true })),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            err.error?.message ?? err.error?.detail ?? 'Failed to restore account';
+          return of({ success: false, error: message });
+        }),
+      );
   }
 }
