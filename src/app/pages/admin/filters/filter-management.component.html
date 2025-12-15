@@ -18,10 +18,18 @@
   </div>
 
   <!-- Tabs -->
-  <div class="filter-tabs">
+  <div class="tab-nav">
+    <button
+      (click)="switchTab('tester')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'tester'"
+      type="button"
+    >
+      {{ "admin.filters.tabs.prompt_tester" | transloco }}
+    </button>
     <button
       (click)="switchTab('filters')"
-      class="filter-tab"
+      class="tab-btn"
       [class.active]="activeTab() === 'filters'"
       type="button"
     >
@@ -29,7 +37,7 @@
     </button>
     <button
       (click)="switchTab('compiled')"
-      class="filter-tab"
+      class="tab-btn"
       [class.active]="activeTab() === 'compiled'"
       type="button"
     >
@@ -37,114 +45,92 @@
     </button>
   </div>
 
-  <!-- Filters Tab -->
-  @if (activeTab() === "filters") {
-    <!-- Prompt Tester Section -->
-    <div class="panel mb-6">
-      <button
-        (click)="toggleTester()"
-        class="expandable-header"
-        type="button"
-        [attr.aria-expanded]="testerExpanded()"
-      >
-        <span class="admin-heading-section">{{
-          "admin.filters.prompt_tester.title" | transloco
-        }}</span>
-        <svg
-          class="expandable-icon"
-          [class.expanded]="testerExpanded()"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-
-      @if (testerExpanded()) {
-        <div class="p-6 admin-border-t">
-          <p class="admin-text-muted mb-4">
-            {{ "admin.filters.prompt_tester.description" | transloco }}
-          </p>
-          <div class="flex flex-col gap-4">
-            <textarea
-              class="form-textarea"
-              rows="3"
-              [value]="testPromptValue()"
-              (input)="onTestPromptChange($event)"
-              placeholder="{{
-                'admin.filters.prompt_tester.placeholder' | transloco
-              }}"
-            ></textarea>
-            <div class="flex gap-2">
+  <!-- Prompt Tester Tab -->
+  @if (activeTab() === "tester") {
+    <div class="panel">
+      <div class="p-6">
+        <h2 class="admin-heading-section mb-4">
+          {{ "admin.filters.prompt_tester.title" | transloco }}
+        </h2>
+        <p class="admin-text-muted mb-4">
+          {{ "admin.filters.prompt_tester.description" | transloco }}
+        </p>
+        <div class="flex flex-col gap-4">
+          <textarea
+            class="form-textarea"
+            rows="3"
+            [value]="testPromptValue()"
+            (input)="onTestPromptChange($event)"
+            placeholder="{{
+              'admin.filters.prompt_tester.placeholder' | transloco
+            }}"
+          ></textarea>
+          <div class="flex gap-2">
+            <button
+              (click)="testPrompt()"
+              class="btn-primary"
+              [disabled]="testing() || !testPromptValue().trim()"
+              type="button"
+            >
+              @if (testing()) {
+                {{ "admin.filters.prompt_tester.testing" | transloco }}
+              } @else {
+                {{ "admin.filters.prompt_tester.test_button" | transloco }}
+              }
+            </button>
+            @if (testResult()) {
               <button
-                (click)="testPrompt()"
-                class="btn-primary"
-                [disabled]="testing() || !testPromptValue().trim()"
+                (click)="clearTestResult()"
+                class="btn-muted"
                 type="button"
               >
-                @if (testing()) {
-                  {{ "admin.filters.prompt_tester.testing" | transloco }}
-                } @else {
-                  {{ "admin.filters.prompt_tester.test_button" | transloco }}
-                }
+                {{ "admin.filters.prompt_tester.clear" | transloco }}
               </button>
-              @if (testResult()) {
-                <button
-                  (click)="clearTestResult()"
-                  class="btn-muted"
-                  type="button"
-                >
-                  {{ "admin.filters.prompt_tester.clear" | transloco }}
-                </button>
-              }
-            </div>
-
-            @if (testResult(); as result) {
-              <div
-                class="test-result"
-                [class.test-result-blocked]="result.suspicion >= 2"
-                [class.test-result-safe]="result.suspicion < 2"
-              >
-                <div class="test-result-header">
-                  <span class="test-result-label">{{
-                    "admin.filters.prompt_tester.suspicion" | transloco
-                  }}</span>
-                  <span class="test-result-value">{{ result.suspicion }}</span>
-                  @if (result.suspicion >= 2) {
-                    <span class="badge-base badge-danger ml-2">{{
-                      "admin.filters.prompt_tester.blocked" | transloco
-                    }}</span>
-                  } @else {
-                    <span class="badge-base badge-success ml-2">{{
-                      "admin.filters.prompt_tester.allowed" | transloco
-                    }}</span>
-                  }
-                </div>
-                @if (result.matches && result.matches.length > 0) {
-                  <div class="test-result-matches">
-                    <span class="test-result-matches-label">{{
-                      "admin.filters.prompt_tester.matches" | transloco
-                    }}</span>
-                    <div class="test-result-matches-list">
-                      @for (match of result.matches; track match) {
-                        <span class="badge-base badge-warning">{{ match }}</span>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
             }
           </div>
-        </div>
-      }
-    </div>
 
+          @if (testResult(); as result) {
+            <div
+              class="test-result"
+              [class.test-result-blocked]="result.suspicion >= 2"
+              [class.test-result-safe]="result.suspicion < 2"
+            >
+              <div class="test-result-header">
+                <span class="test-result-label">{{
+                  "admin.filters.prompt_tester.suspicion" | transloco
+                }}</span>
+                <span class="test-result-value">{{ result.suspicion }}</span>
+                @if (result.suspicion >= 2) {
+                  <span class="badge-base badge-danger ml-2">{{
+                    "admin.filters.prompt_tester.blocked" | transloco
+                  }}</span>
+                } @else {
+                  <span class="badge-base badge-success ml-2">{{
+                    "admin.filters.prompt_tester.allowed" | transloco
+                  }}</span>
+                }
+              </div>
+              @if (result.matches && result.matches.length > 0) {
+                <div class="test-result-matches">
+                  <span class="test-result-matches-label">{{
+                    "admin.filters.prompt_tester.matches" | transloco
+                  }}</span>
+                  <div class="test-result-matches-list">
+                    @for (match of result.matches; track match) {
+                      <span class="badge-base badge-warning">{{ match }}</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Filters Tab -->
+  @if (activeTab() === "filters") {
     <!-- Search and Filter Controls -->
     <div class="filter-controls mb-6">
       <div class="filter-search">
@@ -235,8 +221,8 @@
 
       <!-- Filters Table -->
       <div class="panel overflow-hidden">
-        <div class="filter-table-wrapper">
-          <table class="filter-table">
+        <div class="data-table-wrapper">
+          <table class="data-table">
             <thead>
               <tr>
                 <th>{{ "admin.filters.table.regex" | transloco }}</th>
@@ -251,19 +237,19 @@
               @for (filter of filteredFilters(); track filter.id) {
                 <tr>
                   <td>
-                    <code class="filter-regex">{{ filter.regex }}</code>
+                    <code class="data-table-mono data-table-mono-primary">{{ filter.regex }}</code>
                   </td>
                   <td>
                     <span class="badge-base badge-info">
                       {{ filter.filter_type }}: {{ getTypeLabel(filter.filter_type) }}
                     </span>
                   </td>
-                  <td class="filter-description">
+                  <td class="data-table-mono-primary">
                     {{ filter.description || "-" }}
                   </td>
                   <td>
                     @if (filter.replacement) {
-                      <code class="filter-replacement">{{
+                      <code class="data-table-mono data-table-mono-accent">{{
                         filter.replacement
                       }}</code>
                     } @else {
@@ -272,7 +258,7 @@
                   </td>
                   <td>{{ filter.user }}</td>
                   <td>
-                    <div class="filter-actions">
+                    <div class="data-table-actions">
                       <button
                         (click)="openRawJsonDialog(filter)"
                         class="btn-icon"
@@ -578,7 +564,7 @@
               <span class="admin-text-muted">{{
                 "admin.filters.table.regex" | transloco
               }}:</span>
-              <code class="filter-regex ml-2">{{ filter.regex }}</code>
+              <code class="data-table-mono data-table-mono-primary ml-2">{{ filter.regex }}</code>
             </div>
             <div>
               <span class="admin-text-muted">{{

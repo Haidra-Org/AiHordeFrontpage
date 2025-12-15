@@ -59,7 +59,6 @@ const MAX_HISTORY_SIZE = 30;
     KudosBreakdownPanelComponent,
   ],
   templateUrl: './user-management.component.html',
-  styleUrl: './user-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserManagementComponent implements OnInit {

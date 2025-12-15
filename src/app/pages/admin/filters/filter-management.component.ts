@@ -30,7 +30,7 @@ import {
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
 type DialogType = 'create' | 'edit' | 'delete' | 'rawJson';
-type TabType = 'filters' | 'compiled';
+type TabType = 'tester' | 'filters' | 'compiled';
 
 @Component({
   selector: 'app-filter-management',
@@ -41,7 +41,6 @@ type TabType = 'filters' | 'compiled';
     AdminToastBarComponent,
   ],
   templateUrl: './filter-management.component.html',
-  styleUrl: './filter-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterManagementComponent implements OnInit {
@@ -52,7 +51,7 @@ export class FilterManagementComponent implements OnInit {
   public readonly auth = inject(AuthService);
 
   // Tab state
-  public activeTab = signal<TabType>('filters');
+  public activeTab = signal<TabType>('tester');
 
   // Filters list state
   public filters = signal<FilterDetails[]>([]);
