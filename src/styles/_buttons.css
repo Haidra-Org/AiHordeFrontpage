@@ -105,4 +105,31 @@
   .btn-danger:hover:not(:disabled) {
     @apply bg-red-600;
   }
+
+  /* Warning button for cautionary actions (e.g., undelete) */
+  .btn-warning {
+    @apply inline-flex items-center gap-2;
+    @apply px-5 py-2.5;
+    @apply text-sm font-medium text-center;
+    @apply bg-yellow-500 text-gray-900 rounded-lg;
+    @apply transition-colors duration-200;
+    @apply hover:bg-yellow-600;
+    @apply focus:outline-none;
+  }
+
+  .btn-warning:focus {
+    box-shadow: 0 0 0 4px rgb(234 179 8 / 0.5);
+  }
+
+  .dark .btn-warning:focus {
+    box-shadow: 0 0 0 4px rgb(234 179 8 / 0.3);
+  }
+
+  .btn-warning:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-warning svg {
+    @apply w-5 h-5 shrink-0;
+  }
 }

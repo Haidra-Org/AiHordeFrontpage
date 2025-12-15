@@ -33,7 +33,7 @@ import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
-type DialogType = 'resetSuspicion';
+type DialogType = 'resetSuspicion' | 'undeleteUser';
 
 interface UserHistoryItem {
   id: number;
@@ -637,6 +637,11 @@ export class UserManagementComponent implements OnInit {
     this.dialogOpen.set(true);
   }
 
+  public openUndeleteUserDialog(): void {
+    this.dialogType.set('undeleteUser');
+    this.dialogOpen.set(true);
+  }
+
   public closeDialog(): void {
     this.dialogOpen.set(false);
   }
@@ -647,7 +652,17 @@ export class UserManagementComponent implements OnInit {
 
     this.isUpdating.set(true);
 
-    const action$ = this.userService.resetSuspicion(user.id);
+    const dialogType = this.dialogType();
+    let action$;
+
+    if (dialogType === 'resetSuspicion') {
+      action$ = this.userService.resetSuspicion(user.id);
+    } else if (dialogType === 'undeleteUser') {
+      action$ = this.userService.updateUser(user.id, { undelete: true });
+    } else {
+      this.isUpdating.set(false);
+      return;
+    }
 
     action$
       .pipe(
@@ -668,11 +683,19 @@ export class UserManagementComponent implements OnInit {
                   this.setSelectedUser(updatedUser);
                 }
               });
-            this.showToast('success', 'Suspicion reset successfully.');
+            if (dialogType === 'resetSuspicion') {
+              this.showToast('success', 'Suspicion reset successfully.');
+            } else if (dialogType === 'undeleteUser') {
+              this.showToast('success', 'User restored successfully.');
+            }
           }
         },
         error: () => {
-          this.showToast('error', 'Failed to reset suspicion.');
+          if (dialogType === 'resetSuspicion') {
+            this.showToast('error', 'Failed to reset suspicion.');
+          } else if (dialogType === 'undeleteUser') {
+            this.showToast('error', 'Failed to restore user.');
+          }
         },
       });
   }

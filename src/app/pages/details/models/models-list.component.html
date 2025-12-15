@@ -89,7 +89,12 @@
         <span class="summary-label">{{
           "details.models.total_queued" | transloco
         }}</span>
-        <span class="summary-value">{{ formatNumber(totalQueued()) }}</span>
+        <span class="summary-value">
+          {{ totalQueuedUnit().primary.formatted }}
+          <span class="text-secondary">
+            (<app-unit-tooltip [unit]="totalQueuedUnit()" [swapDisplay]="true" />)
+          </span>
+        </span>
       </div>
     </div>
   }
@@ -158,6 +163,19 @@
         >
           {{ "details.models.sort.queued" | transloco }}
           @if (sortField() === "queued") {
+            <span class="sort-indicator">{{
+              sortDirection() === "asc" ? "↑" : "↓"
+            }}</span>
+          }
+        </button>
+        <button
+          type="button"
+          class="sort-button"
+          [class.sort-active]="sortField() === 'jobs'"
+          (click)="setSortField('jobs')"
+        >
+          {{ "details.models.sort.jobs" | transloco }}
+          @if (sortField() === "jobs") {
             <span class="sort-indicator">{{
               sortDirection() === "asc" ? "↑" : "↓"
             }}</span>
@@ -294,7 +312,12 @@
                 class="models-table-value"
                 [class.models-table-value-muted]="model.queued === 0"
               >
-                {{ formatNumber(model.queued) }}
+                @if (model.queued && model.queued > 0) {
+                  {{ getModelQueuedUnit(model).primary.value | number: "1.1-1" }}
+                  <app-unit-tooltip [unit]="getModelQueuedUnit(model)" [primaryOverride]="activeTab() === 'image' ? 'mps' : 'tokens'" />
+                } @else {
+                  -
+                }
               </span>
             </div>
 
@@ -335,8 +358,9 @@
                   !model.performance || model.performance <= 0
                 "
               >
-                @if (model.performance !== undefined && model.performance > 0) {
-                  {{ model.performance | number: "1.2-2" }}
+                @if (getModelPerformanceUnit(model); as perfUnit) {
+                  {{ perfUnit.primary.value | number: "1.2-2" }}
+                  <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="activeTab() === 'image' ? 'mps/sec' : 'tokens/sec'" />
                 } @else {
                   -
                 }
