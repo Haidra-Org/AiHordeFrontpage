@@ -1,0 +1,157 @@
+/* =================================================================
+   NEWS PAGE STYLES
+   
+   Includes:
+   - News timeline layout
+   - News cards (standard and featured)
+   - Date badges
+   - Read more links
+   - Empty state
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     NEWS TIMELINE LAYOUT
+     ================================================================= */
+
+  /* Timeline container - vertical stack of news cards */
+  .news-timeline {
+    @apply flex flex-col gap-6;
+    @apply max-w-4xl mx-auto;
+  }
+
+  /* =================================================================
+     NEWS CARDS
+     ================================================================= */
+
+  /* Base news card */
+  .news-card {
+    @apply relative p-6 rounded-xl;
+    @apply bg-surface-primary border border-edge-secondary;
+    @apply transition-all duration-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+    box-shadow: var(--shadow-card);
+  }
+
+  .news-card:hover {
+    @apply border-edge-strong;
+    @apply dark:border-gray-600;
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .dark .news-card:hover {
+    box-shadow: var(--shadow-card-hover-dark);
+  }
+
+  /* Featured news card (first item) - enhanced styling */
+  .news-card-featured {
+    @apply border-l-4;
+    border-left-color: var(--color-brand-purple);
+  }
+
+  .news-card-featured:hover {
+    border-left-color: var(--color-brand-purple-hover);
+  }
+
+  /* =================================================================
+     NEWS CARD HEADER
+     ================================================================= */
+
+  .news-card-header {
+    @apply flex flex-wrap items-center gap-3 mb-4;
+  }
+
+  /* Date badge */
+  .news-date-badge {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full;
+    @apply text-sm font-medium;
+    @apply bg-surface-secondary text-content-secondary;
+    @apply dark:bg-gray-700 dark:text-gray-300;
+  }
+
+  .news-date-icon {
+    @apply w-4 h-4 shrink-0;
+  }
+
+  .news-date-text {
+    @apply whitespace-nowrap;
+  }
+
+  /* =================================================================
+     NEWS CARD CONTENT
+     ================================================================= */
+
+  .news-card-title {
+    @apply mb-3 text-xl font-bold text-content-primary leading-snug;
+    @apply lg:text-2xl;
+    @apply dark:text-white;
+  }
+
+  /* Title links inherit proper styling */
+  .news-card-title a {
+    @apply text-brand-purple no-underline;
+    @apply hover:text-brand-purple-hover hover:underline;
+    @apply dark:text-purple-400 dark:hover:text-purple-300;
+  }
+
+  .news-card-excerpt {
+    @apply text-base leading-relaxed;
+    @apply lg:text-lg;
+  }
+
+  /* =================================================================
+     NEWS CARD FOOTER
+     ================================================================= */
+
+  .news-card-footer {
+    @apply mt-4 pt-4 border-t border-edge-secondary;
+    @apply dark:border-gray-700;
+  }
+
+  /* Read more link with arrow */
+  .news-read-more {
+    @apply inline-flex items-center gap-2;
+    @apply text-sm font-semibold no-underline;
+    @apply text-brand-blue;
+    @apply transition-all duration-200;
+    @apply dark:text-blue-400;
+  }
+
+  .news-read-more:hover {
+    @apply text-brand-blue-hover gap-3;
+    @apply dark:text-blue-300;
+  }
+
+  .news-arrow-icon {
+    @apply w-5 h-5 transition-transform duration-200;
+  }
+
+  .news-read-more:hover .news-arrow-icon {
+    @apply translate-x-1;
+  }
+
+  /* =================================================================
+     NEWS EMPTY STATE
+     ================================================================= */
+
+  .news-empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+    @apply max-w-md mx-auto;
+  }
+
+  .news-empty-icon-container {
+    @apply flex items-center justify-center w-20 h-20 mb-6 rounded-full;
+    @apply bg-surface-secondary;
+    @apply dark:bg-gray-700;
+  }
+
+  .news-empty-icon {
+    @apply w-10 h-10 text-content-muted;
+    @apply dark:text-gray-500;
+  }
+
+  .news-empty-text {
+    @apply text-lg font-medium text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+}
