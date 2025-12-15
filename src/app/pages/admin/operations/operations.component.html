@@ -265,7 +265,7 @@
     <div class="panel p-6 max-w-3xl overflow-visible">
       <div class="admin-form-row">
         <!-- Worker search/select -->
-        <div class="form-group flex-1 relative">
+        <div class="form-group flex-1">
           <label for="worker-search" class="form-label">
             {{ "admin.operations.worker_block.worker_label" | transloco }}
             <span class="admin-text-red">*</span>
@@ -294,34 +294,34 @@
                 </svg>
               </button>
             }
-          </div>
 
-          <!-- Worker dropdown -->
-          @if (workerDropdownOpen() && !selectedWorker() && filteredWorkers().length > 0) {
-            <div class="worker-dropdown">
-              @if (loadingWorkers()) {
-                <div class="worker-dropdown-loading">
-                  {{ "admin.operations.worker_block.loading_workers" | transloco }}
-                </div>
-              } @else {
-                @for (worker of filteredWorkers(); track worker.id) {
-                  <button
-                    (mousedown)="selectWorker(worker)"
-                    class="worker-dropdown-item"
-                    type="button"
-                  >
-                    <span class="worker-dropdown-name">{{ worker.name }}</span>
-                    <span class="worker-dropdown-id">{{ worker.id.slice(0, 8) }}...</span>
-                    @if (worker.online) {
-                      <span class="badge-base badge-success ml-auto">Online</span>
-                    } @else {
-                      <span class="badge-base badge-muted ml-auto">Offline</span>
-                    }
-                  </button>
+            <!-- Worker dropdown -->
+            @if (workerDropdownOpen() && !selectedWorker() && filteredWorkers().length > 0) {
+              <div class="worker-dropdown">
+                @if (loadingWorkers()) {
+                  <div class="worker-dropdown-loading">
+                    {{ "admin.operations.worker_block.loading_workers" | transloco }}
+                  </div>
+                } @else {
+                  @for (worker of filteredWorkers(); track worker.id) {
+                    <button
+                      (mousedown)="selectWorker(worker)"
+                      class="worker-dropdown-item"
+                      type="button"
+                    >
+                      <span class="worker-dropdown-name">{{ worker.name }}</span>
+                      <span class="worker-dropdown-id">{{ worker.id.slice(0, 8) }}...</span>
+                      @if (worker.online) {
+                        <span class="badge-base badge-success ml-auto">Online</span>
+                      } @else {
+                        <span class="badge-base badge-muted ml-auto">Offline</span>
+                      }
+                    </button>
+                  }
                 }
-              }
-            </div>
-          }
+              </div>
+            }
+          </div>
         </div>
 
         <!-- Days selector -->
