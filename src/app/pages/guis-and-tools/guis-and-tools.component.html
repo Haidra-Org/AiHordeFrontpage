@@ -1,11 +1,11 @@
-<section class="bg-white dark:bg-gray-900">
+<section class="section-primary">
   <div class="container-content-sm">
     <div class="container-page-content">
-      <div class="container-centered-md mb-8 lg:mb-12">
+      <div class="container-centered-md">
         <h1 class="heading-page-title">
           {{ "guis_and_tools_page.title" | transloco }}
         </h1>
-        <p class="mb-5 text-description">
+        <p class="text-description">
           {{ "guis_and_tools_page.description" | transloco }}
         </p>
       </div>
@@ -14,7 +14,7 @@
       <app-beginner-header [disableLinks]="true" />
 
       <!-- Filters -->
-      <div class="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="filter-grid">
         <!-- Primary Category Filter -->
         <div>
           <div class="filter-header">
@@ -29,9 +29,9 @@
               {{ "guis_and_tools_page.select_all" | transloco }}
             </button>
           </div>
-          <div class="space-y-2">
+          <div class="filter-checkbox-list">
             @for (category of primaryCategories(); track category) {
-              <div class="flex items-center">
+              <div class="filter-checkbox-item">
                 <input
                   type="checkbox"
                   [id]="'primary-' + category"
@@ -63,9 +63,9 @@
               </button>
             }
           </div>
-          <div class="filter-scroll-container space-y-2">
+          <div class="filter-scroll-container filter-checkbox-list">
             @for (category of secondaryCategories(); track category) {
-              <div class="flex items-center">
+              <div class="filter-checkbox-item">
                 <input
                   type="checkbox"
                   [id]="'secondary-' + category"
@@ -83,7 +83,7 @@
       </div>
 
       <!-- Items List using Sub-Components -->
-      <div class="space-y-8">
+      <div class="stack-xl">
         <!-- GUIs & Frontends Section -->
         <app-item-list-section
           [items]="filteredGuis()"
@@ -150,8 +150,8 @@
         />
 
         @if (filteredItems().length === 0) {
-          <div class="text-center py-8">
-            <p class="text-gray-500 dark:text-gray-400">
+          <div class="state-empty">
+            <p class="state-empty-text">
               {{ "guis_and_tools_page.no_results" | transloco }}
             </p>
           </div>
@@ -165,11 +165,10 @@
     <button
       type="button"
       (click)="scrollToTop()"
-      class="scroll-to-top-btn md:hidden"
+      class="scroll-to-top-btn scroll-to-top-btn-mobile"
       aria-label="Scroll to top"
     >
       <svg
-        class="w-6 h-6"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

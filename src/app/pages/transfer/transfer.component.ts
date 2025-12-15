@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   Component,
   computed,
   DestroyRef,
@@ -7,7 +8,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -65,8 +65,21 @@ export class TransferComponent implements OnInit {
 
     return this.currentUser()!.kudos;
   });
-  public educatorAccounts = toSignal(this.aiHorde.getEducatorAccounts());
+  public educatorAccounts = signal<HordeUser[] | undefined>(undefined);
   public fragment = signal<string | null>(null);
+
+  constructor() {
+    // Fetch educator accounts only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.aiHorde
+        .getEducatorAccounts()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((accounts) => {
+          this.educatorAccounts.set(accounts);
+        });
+    });
+  }
 
   public form = new FormGroup({
     apiKey: new FormControl<string>('', [Validators.required]),

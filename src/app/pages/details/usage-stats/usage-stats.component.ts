@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -213,6 +214,14 @@ export class UsageStatsComponent implements OnInit {
     return this.units.formatTotalTokens(stats.total.tokens);
   });
 
+  constructor() {
+    // Fetch stats only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadStats();
+    });
+  }
+
   ngOnInit(): void {
     combineLatest([
       this.translator.get('details.usage.title'),
@@ -222,8 +231,6 @@ export class UsageStatsComponent implements OnInit {
       .subscribe(([usageTitle, appTitle]) => {
         this.title.setTitle(`${usageTitle} | ${appTitle}`);
       });
-
-    this.loadStats();
   }
 
   public setActiveTab(tab: UsageTab): void {

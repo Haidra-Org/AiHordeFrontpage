@@ -207,4 +207,24 @@
   .filter-header {
     @apply flex items-center justify-between mb-3;
   }
+
+  /* =================================================================
+     FILTER GRID LAYOUTS
+     ================================================================= */
+
+  /* Filter grid - 2 column layout for filter panels */
+  .filter-grid {
+    @apply grid grid-cols-1 gap-6 mb-8;
+    @apply md:grid-cols-2;
+  }
+
+  /* Filter checkbox list - vertical list of checkbox items */
+  .filter-checkbox-list {
+    @apply flex flex-col gap-2;
+  }
+
+  /* Filter checkbox item - flex container for checkbox + label */
+  .filter-checkbox-item {
+    @apply flex items-center;
+  }
 }

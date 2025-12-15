@@ -1,5 +1,5 @@
 @if (items().length > 0) {
-  <div style="position: relative; padding-bottom: 1rem">
+  <div class="table-section-wrapper">
     <h2
       #sectionHeader
       class="heading-section mb-4 section-header-collapsible"
@@ -24,22 +24,22 @@
     </h2>
 
     @if (!isSectionCollapsed()) {
-      <div class="space-y-2">
+      <div class="table-items">
         <!-- Table Header (Desktop Only) -->
         <div class="table-header-row">
-          <div class="flex items-center">
+          <div class="table-header-cell">
             <span class="table-header-label"> Name & Categories </span>
           </div>
-          <div class="flex items-center">
+          <div class="table-header-cell">
             <span class="table-header-label"> Function </span>
           </div>
-          <div class="flex items-center">
+          <div class="table-header-cell">
             <span class="table-header-label"> Domain </span>
           </div>
-          <div class="flex items-center">
+          <div class="table-header-cell">
             <span class="table-header-label"> Platform </span>
           </div>
-          <div class="flex items-center justify-end">
+          <div class="table-header-cell-end">
             <span class="table-header-label"> Action </span>
           </div>
         </div>
@@ -56,7 +56,7 @@
                 </h3>
 
                 <!-- All Tags Together -->
-                <div class="flex flex-wrap gap-1.5">
+                <div class="badge-container-tight">
                   <!-- Item Type Badge -->
                   <span class="badge-base badge-primary">
                     {{ getItemTypeLabel(item.itemType) | transloco }}
@@ -81,7 +81,7 @@
               <div class="table-cell-meta">
                 <div class="table-cell-label">Function</div>
                 <div>
-                  <span class="badge-base badge-success text-xs">
+                  <span class="badge-base badge-success">
                     {{ getPrimaryFunction(item) }}
                   </span>
                 </div>
@@ -91,7 +91,7 @@
               <div class="table-cell-meta">
                 <div class="table-cell-label">Domain</div>
                 <div>
-                  <span class="badge-base badge-purple text-xs">
+                  <span class="badge-base badge-purple">
                     {{ getDomainDisplay(item) }}
                   </span>
                 </div>
@@ -101,7 +101,7 @@
               <div class="table-cell-meta">
                 <div class="table-cell-label">Platform</div>
                 <div>
-                  <span class="badge-base badge-info text-xs">
+                  <span class="badge-base badge-info">
                     {{ getPlatformDisplay(item) }}
                   </span>
                 </div>
@@ -113,7 +113,7 @@
                   <a
                     [href]="item.sourceControlLink"
                     target="_blank"
-                    class="btn-source-control text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
+                    class="btn-source-control btn-sm"
                     (click)="$event.stopPropagation()"
                     [title]="
                       'View source code on ' +
@@ -126,7 +126,7 @@
                 <a
                   [href]="item.link"
                   target="_blank"
-                  class="btn-purple text-xs px-3 py-1.5 whitespace-nowrap shrink-0"
+                  class="btn-purple btn-sm"
                   (click)="$event.stopPropagation()"
                   [title]="getButtonText(item)"
                 >

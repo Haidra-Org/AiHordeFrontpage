@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -150,6 +151,14 @@ export class ModelsListComponent implements OnInit {
     }
   }
 
+  constructor() {
+    // Fetch models only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadModels();
+    });
+  }
+
   ngOnInit(): void {
     combineLatest([
       this.translator.get('details.models.title'),
@@ -159,9 +168,6 @@ export class ModelsListComponent implements OnInit {
       .subscribe(([modelsTitle, appTitle]) => {
         this.title.setTitle(`${modelsTitle} | ${appTitle}`);
       });
-
-    // Load initial data
-    this.loadModels();
   }
 
   public setActiveTab(tab: ModelsTab): void {
