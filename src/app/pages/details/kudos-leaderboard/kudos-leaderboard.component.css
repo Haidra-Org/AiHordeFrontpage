@@ -1,5 +1,1 @@
-/* Kudos Leaderboard Styles - inherits from global styles */
-
-.kudos-value {
-  font-variant-numeric: tabular-nums;
-}
+/* Kudos Leaderboard Styles - uses global table styles from _details-tabs.css */

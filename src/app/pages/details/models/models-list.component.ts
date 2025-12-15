@@ -56,7 +56,7 @@ export class ModelsListComponent implements OnInit {
   public readonly searchQuery = signal('');
 
   /** Sort field. */
-  public readonly sortField = signal<'name' | 'count' | 'queued' | 'jobs' | 'eta'>(
+  public readonly sortField = signal<'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance'>(
     'count',
   );
 
@@ -96,6 +96,8 @@ export class ModelsListComponent implements OnInit {
         comparison = (a.jobs ?? 0) - (b.jobs ?? 0);
       } else if (field === 'eta') {
         comparison = (a.eta ?? 0) - (b.eta ?? 0);
+      } else if (field === 'performance') {
+        comparison = (a.performance ?? 0) - (b.performance ?? 0);
       }
       return direction === 'asc' ? comparison : -comparison;
     });
@@ -214,7 +216,7 @@ export class ModelsListComponent implements OnInit {
     this.searchQuery.set(input.value);
   }
 
-  public setSortField(field: 'name' | 'count' | 'queued' | 'jobs' | 'eta'): void {
+  public setSortField(field: 'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance'): void {
     if (this.sortField() === field) {
       // Toggle direction
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');

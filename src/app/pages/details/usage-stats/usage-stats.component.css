@@ -1,6 +1,1 @@
-/* Usage stats page styles */
-
-/* Secondary text color for synthesized units */
-.text-secondary-inline {
-  color: var(--color-text-secondary);
-}
+/* Usage stats page styles - uses global table styles from _details-tabs.css */

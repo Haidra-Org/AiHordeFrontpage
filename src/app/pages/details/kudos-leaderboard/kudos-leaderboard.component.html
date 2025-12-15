@@ -199,7 +199,7 @@
 
     <!-- Leaderboard Table -->
     <div class="models-table">
-      <div class="models-table-header usage-table-header">
+      <div class="models-table-header leaderboard-table-header">
         <span class="models-table-th">{{
           "details.leaderboard.rank" | transloco
         }}</span>
@@ -211,7 +211,7 @@
         }}</span>
       </div>
       @for (user of users(); track user.id; let i = $index) {
-        <div class="models-table-row usage-table-row">
+        <div class="models-table-row leaderboard-table-row">
           <div class="models-table-cell">
             <span
               class="model-rank-badge"
@@ -239,7 +239,7 @@
             <span class="models-table-label">{{
               "details.leaderboard.kudos" | transloco
             }}</span>
-            <span class="models-table-value text-tabular">
+            <span class="models-table-value">
               {{ user.kudos | number }}
             </span>
           </div>

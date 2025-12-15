@@ -219,14 +219,21 @@
   @media (min-width: 768px) {
     .models-table-header {
       @apply grid items-center gap-3;
-      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 5.5rem;
+      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 8.5rem;
     }
   }
 
-  /* Usage stats table - optimized columns */
+  /* Usage stats table - 4-column layout (rank, name, count, percentage) */
   @media (min-width: 768px) {
     .models-table-header.usage-table-header {
       grid-template-columns: 3rem 1fr 7rem 9rem;
+    }
+  }
+
+  /* Leaderboard table - 3-column layout (rank, name, value) */
+  @media (min-width: 768px) {
+    .models-table-header.leaderboard-table-header {
+      grid-template-columns: 3rem 1fr 8rem;
     }
   }
 
@@ -244,7 +251,36 @@
   }
 
   .models-table-th-right {
-    @apply text-right;
+    @apply text-right justify-end;
+  }
+
+  /* Sortable table headers - reusable for any sortable table column */
+  .models-table-th-sortable {
+    @apply cursor-pointer transition-colors duration-200;
+    @apply inline-flex items-center gap-1;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: inherit;
+    font-weight: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    font-family: inherit;
+  }
+
+  .models-table-th-sortable:hover {
+    color: var(--color-brand-purple);
+  }
+
+  .dark .models-table-th-sortable:hover {
+    @apply text-purple-300;
+  }
+
+
+
+  .models-table-th-sortable .sort-indicator {
+    @apply text-xs ml-0.5;
   }
 
   /* Table row */
@@ -264,15 +300,22 @@
   @media (min-width: 768px) {
     .models-table-row {
       @apply items-center gap-3;
-      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 5.5rem;
+      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 8.5rem;
       grid-template-rows: auto;
     }
   }
 
-  /* Usage stats table rows */
+  /* Usage stats table rows - 4-column layout */
   @media (min-width: 768px) {
     .models-table-row.usage-table-row {
       grid-template-columns: 3rem 1fr 7rem 9rem;
+    }
+  }
+
+  /* Leaderboard table rows - 3-column layout */
+  @media (min-width: 768px) {
+    .models-table-row.leaderboard-table-row {
+      grid-template-columns: 3rem 1fr 8rem;
     }
   }
 
@@ -465,24 +508,6 @@
   .model-rank-badge.rank-3 {
     background: linear-gradient(135deg, #fdba74, #f97316);
     color: #431407;
-  }
-
-  /* Sort header button */
-  .sort-header-button {
-    @apply inline-flex items-center gap-1 p-0 m-0 bg-transparent border-none cursor-pointer transition-colors duration-200;
-    font-size: inherit;
-    font-weight: inherit;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    color: inherit;
-  }
-
-  .sort-header-button:hover {
-    color: var(--color-brand-purple);
-  }
-
-  .dark .sort-header-button:hover {
-    @apply text-purple-300;
   }
 
   /* Percentage bar */
