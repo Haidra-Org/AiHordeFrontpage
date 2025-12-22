@@ -6,8 +6,10 @@
   [open]="dialogOpen()"
   [title]="
     dialogType() === 'resetSuspicion'
-      ? ('admin.users.dialog.reset_suspicion_title' | transloco: { username: selectedUser()?.username })
-      : ('admin.users.dialog.undelete_title' | transloco: { username: selectedUser()?.username })
+      ? ('admin.users.dialog.reset_suspicion_title'
+        | transloco: { username: selectedUser()?.username })
+      : ('admin.users.dialog.undelete_title'
+        | transloco: { username: selectedUser()?.username })
   "
   [confirmLabel]="
     dialogType() === 'resetSuspicion'
@@ -20,8 +22,10 @@
   (confirm)="confirmDialog()"
   (cancel)="closeDialog()"
 >
-  @if (dialogType() === 'undeleteUser') {
-    <p class="text-gray-300">{{ 'admin.users.dialog.undelete_message' | transloco }}</p>
+  @if (dialogType() === "undeleteUser") {
+    <p class="text-gray-300">
+      {{ "admin.users.dialog.undelete_message" | transloco }}
+    </p>
   }
 </app-admin-dialog>
 
@@ -302,9 +306,10 @@
           <h2 class="admin-heading-section flex items-center gap-2">
             {{ selectedUser()!.username }}
             @if (selectedUser()!.deleted) {
-              <span class="text-xs font-medium px-2 py-0.5 rounded bg-red-600 text-white">{{
-                "admin.users.badge.deleted" | transloco
-              }}</span>
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded bg-red-600 text-white"
+                >{{ "admin.users.badge.deleted" | transloco }}</span
+              >
             }
             @if (trustedValue()) {
               <svg

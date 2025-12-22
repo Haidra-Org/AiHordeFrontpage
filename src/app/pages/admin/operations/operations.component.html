@@ -1,7 +1,9 @@
 <div class="admin-container-lg">
   <!-- Header -->
   <div class="admin-header">
-    <h1 class="admin-heading-page">{{ "admin.operations.title" | transloco }}</h1>
+    <h1 class="admin-heading-page">
+      {{ "admin.operations.title" | transloco }}
+    </h1>
     <button
       (click)="loadIPTimeouts()"
       class="btn-muted"
@@ -29,7 +31,9 @@
           class="form-input"
           [value]="searchQuery()"
           (input)="onSearchChange($event)"
-          placeholder="{{ 'admin.operations.ip_timeouts.search_placeholder' | transloco }}"
+          placeholder="{{
+            'admin.operations.ip_timeouts.search_placeholder' | transloco
+          }}"
         />
       </div>
     </div>
@@ -37,19 +41,48 @@
     <!-- Loading state -->
     @if (loadingTimeouts()) {
       <div class="admin-loading">
-        <svg class="admin-spinner" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-          <circle class="admin-spinner-track" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="admin-spinner-head" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <svg
+          class="admin-spinner"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            class="admin-spinner-track"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="admin-spinner-head"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
-        <span class="admin-loading-text">{{ "admin.operations.ip_timeouts.loading" | transloco }}</span>
+        <span class="admin-loading-text">{{
+          "admin.operations.ip_timeouts.loading" | transloco
+        }}</span>
       </div>
     } @else if (filteredTimeouts().length === 0) {
       <div class="admin-empty">
-        <svg class="admin-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          class="admin-empty-icon"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
-        <span class="admin-empty-text">{{ "admin.operations.ip_timeouts.no_timeouts" | transloco }}</span>
+        <span class="admin-empty-text">{{
+          "admin.operations.ip_timeouts.no_timeouts" | transloco
+        }}</span>
       </div>
     } @else {
       <!-- IP Timeouts Table -->
@@ -58,42 +91,76 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>{{ "admin.operations.ip_timeouts.table.ip" | transloco }}</th>
-                <th>{{ "admin.operations.ip_timeouts.table.remaining" | transloco }}</th>
-                <th>{{ "admin.operations.ip_timeouts.table.actions" | transloco }}</th>
+                <th>
+                  {{ "admin.operations.ip_timeouts.table.ip" | transloco }}
+                </th>
+                <th>
+                  {{
+                    "admin.operations.ip_timeouts.table.remaining" | transloco
+                  }}
+                </th>
+                <th>
+                  {{ "admin.operations.ip_timeouts.table.actions" | transloco }}
+                </th>
               </tr>
             </thead>
             <tbody>
               @for (timeout of filteredTimeouts(); track timeout.ipaddr) {
                 <tr>
                   <td>
-                    <code class="data-table-mono data-table-mono-primary">{{ timeout.ipaddr }}</code>
+                    <code class="data-table-mono data-table-mono-primary">{{
+                      timeout.ipaddr
+                    }}</code>
                   </td>
                   <td>
-                    <span class="badge-base badge-warning">{{ formatDuration(timeout.seconds) }}</span>
+                    <span class="badge-base badge-warning">{{
+                      formatDuration(timeout.seconds)
+                    }}</span>
                   </td>
                   <td>
                     <div class="data-table-actions">
                       <button
                         (click)="openRefreshIPDialog(timeout)"
                         class="btn-icon"
-                        title="{{ 'admin.operations.ip_timeouts.refresh' | transloco }}"
+                        title="{{
+                          'admin.operations.ip_timeouts.refresh' | transloco
+                        }}"
                         type="button"
                       >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
                         </svg>
                       </button>
                       <button
                         (click)="openDeleteIPDialog(timeout)"
                         class="btn-icon btn-icon-danger"
-                        title="{{ 'admin.operations.ip_timeouts.remove' | transloco }}"
+                        title="{{
+                          'admin.operations.ip_timeouts.remove' | transloco
+                        }}"
                         type="button"
                       >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -131,13 +198,24 @@
               class="form-input"
               [value]="addIPAddress()"
               (input)="onAddIPAddressChange($event)"
-              placeholder="{{ 'admin.operations.add_ip.ip_placeholder' | transloco }}"
+              placeholder="{{
+                'admin.operations.add_ip.ip_placeholder' | transloco
+              }}"
             />
             @if (addIPWarning()) {
               <p class="admin-text-warning text-sm mt-1">
-                <svg class="admin-icon-inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  class="admin-icon-inline"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
                 {{ addIPWarning() }}
               </p>
@@ -154,7 +232,9 @@
               (change)="onAddIPHoursChange($event)"
             >
               @for (hours of hourOptions; track hours) {
-                <option [value]="hours">{{ hours }} {{ hours === 1 ? 'hour' : 'hours' }}</option>
+                <option [value]="hours">
+                  {{ hours }} {{ hours === 1 ? "hour" : "hours" }}
+                </option>
               }
             </select>
           </div>
@@ -195,7 +275,9 @@
               class="form-input"
               [value]="checkIPAddress()"
               (input)="onCheckIPAddressChange($event)"
-              placeholder="{{ 'admin.operations.check_ip.ip_placeholder' | transloco }}"
+              placeholder="{{
+                'admin.operations.check_ip.ip_placeholder' | transloco
+              }}"
             />
           </div>
           <div class="admin-form-actions">
@@ -212,7 +294,11 @@
               }
             </button>
             @if (checkResult() !== undefined) {
-              <button (click)="clearCheckResult()" class="btn-muted" type="button">
+              <button
+                (click)="clearCheckResult()"
+                class="btn-muted"
+                type="button"
+              >
                 {{ "admin.operations.check_ip.clear" | transloco }}
               </button>
             }
@@ -224,17 +310,28 @@
               @if (checkResult() === null) {
                 <div class="test-result test-result-safe">
                   <div class="test-result-header">
-                    <span class="badge-base badge-success">{{ "admin.operations.check_ip.not_blocked" | transloco }}</span>
-                    <span class="admin-text-muted ml-2">{{ "admin.operations.check_ip.not_blocked_message" | transloco }}</span>
+                    <span class="badge-base badge-success">{{
+                      "admin.operations.check_ip.not_blocked" | transloco
+                    }}</span>
+                    <span class="admin-text-muted ml-2">{{
+                      "admin.operations.check_ip.not_blocked_message"
+                        | transloco
+                    }}</span>
                   </div>
                 </div>
               } @else {
                 <div class="test-result test-result-blocked">
                   <div class="test-result-header">
-                    <span class="badge-base badge-danger">{{ "admin.operations.check_ip.blocked" | transloco }}</span>
+                    <span class="badge-base badge-danger">{{
+                      "admin.operations.check_ip.blocked" | transloco
+                    }}</span>
                     <span class="admin-text-muted ml-2">
-                      {{ "admin.operations.check_ip.blocked_message" | transloco }}
-                      <strong>{{ formatDuration(checkResult()!.seconds) }}</strong>
+                      {{
+                        "admin.operations.check_ip.blocked_message" | transloco
+                      }}
+                      <strong>{{
+                        formatDuration(checkResult()!.seconds)
+                      }}</strong>
                     </span>
                   </div>
                 </div>
@@ -255,9 +352,18 @@
       {{ "admin.operations.worker_block.description" | transloco }}
     </p>
     <p class="admin-text-warning mb-4">
-      <svg class="admin-icon-inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      <svg
+        class="admin-icon-inline"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
       </svg>
       {{ "admin.operations.worker_block.active_workers_note" | transloco }}
     </p>
@@ -279,7 +385,9 @@
               (input)="onWorkerSearchChange($event)"
               (focus)="onWorkerInputFocus()"
               (blur)="onWorkerDropdownBlur()"
-              placeholder="{{ 'admin.operations.worker_block.worker_placeholder' | transloco }}"
+              placeholder="{{
+                'admin.operations.worker_block.worker_placeholder' | transloco
+              }}"
               autocomplete="off"
             />
             @if (selectedWorker()) {
@@ -287,20 +395,39 @@
                 (click)="clearWorkerSelection()"
                 class="input-clear-btn"
                 type="button"
-                title="{{ 'admin.operations.worker_block.clear_selection' | transloco }}"
+                title="{{
+                  'admin.operations.worker_block.clear_selection' | transloco
+                }}"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             }
 
             <!-- Worker dropdown -->
-            @if (workerDropdownOpen() && !selectedWorker() && filteredWorkers().length > 0) {
+            @if (
+              workerDropdownOpen() &&
+              !selectedWorker() &&
+              filteredWorkers().length > 0
+            ) {
               <div class="worker-dropdown">
                 @if (loadingWorkers()) {
                   <div class="worker-dropdown-loading">
-                    {{ "admin.operations.worker_block.loading_workers" | transloco }}
+                    {{
+                      "admin.operations.worker_block.loading_workers"
+                        | transloco
+                    }}
                   </div>
                 } @else {
                   @for (worker of filteredWorkers(); track worker.id) {
@@ -309,12 +436,20 @@
                       class="worker-dropdown-item"
                       type="button"
                     >
-                      <span class="worker-dropdown-name">{{ worker.name }}</span>
-                      <span class="worker-dropdown-id">{{ worker.id.slice(0, 8) }}...</span>
+                      <span class="worker-dropdown-name">{{
+                        worker.name
+                      }}</span>
+                      <span class="worker-dropdown-id"
+                        >{{ worker.id.slice(0, 8) }}...</span
+                      >
                       @if (worker.online) {
-                        <span class="badge-base badge-success ml-auto">Online</span>
+                        <span class="badge-base badge-success ml-auto"
+                          >Online</span
+                        >
                       } @else {
-                        <span class="badge-base badge-muted ml-auto">Offline</span>
+                        <span class="badge-base badge-muted ml-auto"
+                          >Offline</span
+                        >
                       }
                     </button>
                   }
@@ -336,7 +471,9 @@
             (change)="onBlockDaysChange($event)"
           >
             @for (days of dayOptions; track days) {
-              <option [value]="days">{{ days }} {{ days === 1 ? 'day' : 'days' }}</option>
+              <option [value]="days">
+                {{ days }} {{ days === 1 ? "day" : "days" }}
+              </option>
             }
           </select>
         </div>
@@ -354,14 +491,24 @@
       <!-- Display full worker information when selected -->
       @if (selectedWorker(); as worker) {
         <div class="admin-section-divider">
-          <h4 class="admin-section-title">{{ "admin.operations.worker_block.selected_worker" | transloco }}</h4>
+          <h4 class="admin-section-title">
+            {{ "admin.operations.worker_block.selected_worker" | transloco }}
+          </h4>
           <div class="admin-info-grid">
             <div class="admin-info-item">
-              <span class="admin-info-label">{{ "admin.operations.worker_block.worker_name" | transloco }}:</span>
+              <span class="admin-info-label"
+                >{{
+                  "admin.operations.worker_block.worker_name" | transloco
+                }}:</span
+              >
               <span class="admin-info-value">{{ worker.name }}</span>
             </div>
             <div class="admin-info-item">
-              <span class="admin-info-label">{{ "admin.operations.worker_block.worker_status" | transloco }}:</span>
+              <span class="admin-info-label"
+                >{{
+                  "admin.operations.worker_block.worker_status" | transloco
+                }}:</span
+              >
               <span class="badge-container">
                 @if (worker.online) {
                   <span class="badge-base badge-success">Online</span>
@@ -378,14 +525,24 @@
             </div>
             <div class="admin-info-item admin-info-item-full">
               <span class="admin-info-label">UUID:</span>
-              <code class="data-table-mono data-table-mono-primary">{{ worker.id }}</code>
+              <code class="data-table-mono data-table-mono-primary">{{
+                worker.id
+              }}</code>
             </div>
             <div class="admin-info-item">
-              <span class="admin-info-label">{{ "admin.operations.worker_block.worker_type" | transloco }}:</span>
+              <span class="admin-info-label"
+                >{{
+                  "admin.operations.worker_block.worker_type" | transloco
+                }}:</span
+              >
               <span class="admin-info-value">{{ worker.type }}</span>
             </div>
             <div class="admin-info-item">
-              <span class="admin-info-label">{{ "admin.operations.worker_block.worker_trusted" | transloco }}:</span>
+              <span class="admin-info-label"
+                >{{
+                  "admin.operations.worker_block.worker_trusted" | transloco
+                }}:</span
+              >
               @if (worker.trusted) {
                 <span class="badge-base badge-success">Yes</span>
               } @else {
@@ -394,30 +551,55 @@
             </div>
             @if (worker.owner) {
               <div class="admin-info-item admin-info-item-full">
-                <span class="admin-info-label">{{ "admin.operations.worker_block.worker_owner" | transloco }}:</span>
+                <span class="admin-info-label"
+                  >{{
+                    "admin.operations.worker_block.worker_owner" | transloco
+                  }}:</span
+                >
                 <span class="admin-info-value">{{ worker.owner }}</span>
               </div>
             }
             @if (worker.ipaddr) {
               <div class="admin-info-item admin-info-item-full">
-                <span class="admin-info-label">{{ "admin.operations.worker_block.worker_ip" | transloco }}:</span>
-                <code class="data-table-mono data-table-mono-primary">{{ worker.ipaddr }}</code>
+                <span class="admin-info-label"
+                  >{{
+                    "admin.operations.worker_block.worker_ip" | transloco
+                  }}:</span
+                >
+                <code class="data-table-mono data-table-mono-primary">{{
+                  worker.ipaddr
+                }}</code>
               </div>
             }
             @if (worker.models && worker.models.length > 0) {
               <div class="admin-info-item admin-info-item-full">
-                <span class="admin-info-label">{{ "admin.operations.worker_block.worker_models" | transloco }}:</span>
-                <span class="admin-info-value">{{ worker.models.slice(0, 5).join(', ') }}{{ worker.models.length > 5 ? ' (+' + (worker.models.length - 5) + ' more)' : '' }}</span>
+                <span class="admin-info-label"
+                  >{{
+                    "admin.operations.worker_block.worker_models" | transloco
+                  }}:</span
+                >
+                <span class="admin-info-value"
+                  >{{ worker.models.slice(0, 5).join(", ")
+                  }}{{
+                    worker.models.length > 5
+                      ? " (+" + (worker.models.length - 5) + " more)"
+                      : ""
+                  }}</span
+                >
               </div>
             }
           </div>
         </div>
-      } @else if (!selectedWorker() && workerSearchQuery().trim() && !workerDropdownOpen()) {
+      } @else if (
+        !selectedWorker() && workerSearchQuery().trim() && !workerDropdownOpen()
+      ) {
         <!-- Show lookup button if user typed something but hasn't selected -->
         <div class="admin-section-divider">
           @if (isUUIDFormat()) {
             <div class="admin-lookup-row">
-              <span class="admin-text-muted text-sm">{{ "admin.operations.worker_block.uuid_detected" | transloco }}</span>
+              <span class="admin-text-muted text-sm">{{
+                "admin.operations.worker_block.uuid_detected" | transloco
+              }}</span>
               <button
                 (click)="lookupWorkerByUUID()"
                 class="btn-muted btn-sm"
@@ -427,16 +609,27 @@
                 @if (fetchingWorkerInfo()) {
                   {{ "admin.operations.worker_block.looking_up" | transloco }}
                 } @else {
-                  {{ "admin.operations.worker_block.lookup_worker" | transloco }}
+                  {{
+                    "admin.operations.worker_block.lookup_worker" | transloco
+                  }}
                 }
               </button>
             </div>
           }
           @if (workerFetchError()) {
             <p class="admin-text-warning text-sm mt-2">
-              <svg class="admin-icon-inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                class="admin-icon-inline"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               {{ workerFetchError() }}
             </p>
@@ -466,12 +659,22 @@
     <div class="panel p-4">
       <div class="stack-sm">
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.ip_timeouts.table.ip" | transloco }}:</span>
-          <code class="data-table-mono data-table-mono-primary">{{ ip.ipaddr }}</code>
+          <span class="admin-info-label"
+            >{{ "admin.operations.ip_timeouts.table.ip" | transloco }}:</span
+          >
+          <code class="data-table-mono data-table-mono-primary">{{
+            ip.ipaddr
+          }}</code>
         </div>
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.ip_timeouts.table.remaining" | transloco }}:</span>
-          <span class="badge-base badge-warning">{{ formatDuration(ip.seconds) }}</span>
+          <span class="admin-info-label"
+            >{{
+              "admin.operations.ip_timeouts.table.remaining" | transloco
+            }}:</span
+          >
+          <span class="badge-base badge-warning">{{
+            formatDuration(ip.seconds)
+          }}</span>
         </div>
       </div>
     </div>
@@ -496,12 +699,22 @@
     <div class="panel p-4 mb-4">
       <div class="stack-sm">
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.ip_timeouts.table.ip" | transloco }}:</span>
-          <code class="data-table-mono data-table-mono-primary">{{ ip.ipaddr }}</code>
+          <span class="admin-info-label"
+            >{{ "admin.operations.ip_timeouts.table.ip" | transloco }}:</span
+          >
+          <code class="data-table-mono data-table-mono-primary">{{
+            ip.ipaddr
+          }}</code>
         </div>
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.ip_timeouts.table.remaining" | transloco }}:</span>
-          <span class="badge-base badge-warning">{{ formatDuration(ip.seconds) }}</span>
+          <span class="admin-info-label"
+            >{{
+              "admin.operations.ip_timeouts.table.remaining" | transloco
+            }}:</span
+          >
+          <span class="badge-base badge-warning">{{
+            formatDuration(ip.seconds)
+          }}</span>
         </div>
       </div>
     </div>
@@ -516,7 +729,9 @@
         (change)="onRefreshIPHoursChange($event)"
       >
         @for (hours of hourOptions; track hours) {
-          <option [value]="hours">{{ hours }} {{ hours === 1 ? 'hour' : 'hours' }}</option>
+          <option [value]="hours">
+            {{ hours }} {{ hours === 1 ? "hour" : "hours" }}
+          </option>
         }
       </select>
     </div>
@@ -542,7 +757,11 @@
     <div class="panel p-4">
       <div class="stack-sm">
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.worker_block.worker_label" | transloco }}:</span>
+          <span class="admin-info-label"
+            >{{
+              "admin.operations.worker_block.worker_label" | transloco
+            }}:</span
+          >
           <span class="admin-info-value">{{ worker.name }}</span>
         </div>
         <div class="admin-info-item">
@@ -550,8 +769,12 @@
           <code class="data-table-mono">{{ worker.id }}</code>
         </div>
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.worker_block.days_label" | transloco }}:</span>
-          <span class="badge-base badge-warning">{{ blockDays() }} {{ blockDays() === 1 ? 'day' : 'days' }}</span>
+          <span class="admin-info-label"
+            >{{ "admin.operations.worker_block.days_label" | transloco }}:</span
+          >
+          <span class="badge-base badge-warning"
+            >{{ blockDays() }} {{ blockDays() === 1 ? "day" : "days" }}</span
+          >
         </div>
       </div>
     </div>
@@ -576,7 +799,11 @@
     <div class="panel p-4">
       <div class="stack-sm">
         <div class="admin-info-item">
-          <span class="admin-info-label">{{ "admin.operations.worker_block.worker_label" | transloco }}:</span>
+          <span class="admin-info-label"
+            >{{
+              "admin.operations.worker_block.worker_label" | transloco
+            }}:</span
+          >
           <span class="admin-info-value">{{ worker.name }}</span>
         </div>
         <div class="admin-info-item">

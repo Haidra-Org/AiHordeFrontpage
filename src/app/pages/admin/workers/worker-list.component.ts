@@ -110,10 +110,10 @@ export class WorkerListComponent implements OnInit {
     effect(() => {
       const workerId = this.highlightWorkerId();
       const workers = this.workers();
-      
+
       if (workerId && workers.length > 0 && !this.initialTypeApplied) {
         // Find the worker and determine its type
-        const worker = workers.find(w => w.id === workerId);
+        const worker = workers.find((w) => w.id === workerId);
         if (worker) {
           this.workerType.set(worker.type);
           this.initialTypeApplied = true;
@@ -221,7 +221,7 @@ export class WorkerListComponent implements OnInit {
     // Check if we have workers loaded but none match the owner filter across ALL types
     const allWorkers = this.workers();
     if (this.loading() || allWorkers.length === 0) return false;
-    
+
     // Check if any worker matches the owner ID (regardless of type)
     const hasAnyMatch = allWorkers.some((w) => {
       const ownerUserId = extractUserId(w.owner);
@@ -457,9 +457,7 @@ export class WorkerListComponent implements OnInit {
 
   public onWorkerDeleted(workerId: string): void {
     // Remove worker from the list immediately
-    this.workers.update((workers) =>
-      workers.filter((w) => w.id !== workerId),
-    );
+    this.workers.update((workers) => workers.filter((w) => w.id !== workerId));
     // Show success toast
     this.deletionSuccessMessage.set(true);
     setTimeout(() => this.deletionSuccessMessage.set(false), 5000);

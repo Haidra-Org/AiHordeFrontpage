@@ -5,7 +5,13 @@ import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-bann
 
 @Component({
   selector: 'app-details',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, VolunteerCtaBannerComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TranslocoPipe,
+    VolunteerCtaBannerComponent,
+  ],
   templateUrl: './details.component.html',
   styleUrl: './details.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

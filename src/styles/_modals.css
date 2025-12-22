@@ -200,7 +200,9 @@
 
   .json-block {
     @apply text-xs leading-snug p-3 rounded-lg overflow-auto flex-1 min-h-0;
-    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo,
+      monospace;
     white-space: pre-wrap;
     word-break: break-word;
     background-color: var(--color-surface-secondary);

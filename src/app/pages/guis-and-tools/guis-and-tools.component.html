@@ -36,7 +36,9 @@
             <input
               type="text"
               class="tools-search-input"
-              [placeholder]="'guis_and_tools_page.search_placeholder' | transloco"
+              [placeholder]="
+                'guis_and_tools_page.search_placeholder' | transloco
+              "
               [ngModel]="searchQuery()"
               (ngModelChange)="searchQuery.set($event)"
               aria-label="Search tools and GUIs"
@@ -48,8 +50,18 @@
                 (click)="searchQuery.set('')"
                 aria-label="Clear search"
               >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             }
@@ -63,10 +75,22 @@
             (click)="toggleFiltersPanel()"
             [attr.aria-expanded]="showFiltersPanel()"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
             </svg>
-            <span class="visible-sm-up">{{ "guis_and_tools_page.filters" | transloco }}</span>
+            <span class="visible-sm-up">{{
+              "guis_and_tools_page.filters" | transloco
+            }}</span>
             @if (activeFilterCount() > 0) {
               <span class="tools-filter-count">{{ activeFilterCount() }}</span>
             }
@@ -82,8 +106,18 @@
               aria-label="Table view"
               title="Table view"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                />
               </svg>
             </button>
             <button
@@ -94,15 +128,26 @@
               aria-label="Grid view"
               title="Grid view"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
               </svg>
             </button>
           </div>
 
           <!-- Results Count -->
           <div class="tools-results-count">
-            {{ filteredItems().length }} {{ "guis_and_tools_page.results" | transloco }}
+            {{ filteredItems().length }}
+            {{ "guis_and_tools_page.results" | transloco }}
           </div>
         </div>
 
@@ -113,8 +158,14 @@
               <!-- Primary Filters -->
               <div class="tools-filter-group">
                 <div class="tools-filter-group-header">
-                  <span class="tools-filter-group-title">{{ "guis_and_tools_page.filter_primary" | transloco }}</span>
-                  <button type="button" class="link-btn-sm" (click)="selectAllTypes()">
+                  <span class="tools-filter-group-title">{{
+                    "guis_and_tools_page.filter_primary" | transloco
+                  }}</span>
+                  <button
+                    type="button"
+                    class="link-btn-sm"
+                    (click)="selectAllTypes()"
+                  >
                     {{ "guis_and_tools_page.select_all" | transloco }}
                   </button>
                 </div>
@@ -135,9 +186,15 @@
               <!-- Secondary Filters -->
               <div class="tools-filter-group">
                 <div class="tools-filter-group-header">
-                  <span class="tools-filter-group-title">{{ "guis_and_tools_page.filter_secondary" | transloco }}</span>
+                  <span class="tools-filter-group-title">{{
+                    "guis_and_tools_page.filter_secondary" | transloco
+                  }}</span>
                   @if (selectedCategories().size > 0) {
-                    <button type="button" class="link-btn-sm" (click)="clearAllCategories()">
+                    <button
+                      type="button"
+                      class="link-btn-sm"
+                      (click)="clearAllCategories()"
+                    >
                       {{ "guis_and_tools_page.clear_all" | transloco }}
                     </button>
                   }
@@ -160,7 +217,11 @@
             <!-- Clear All Filters -->
             @if (activeFilterCount() > 0) {
               <div class="tools-filters-actions">
-                <button type="button" class="btn-muted btn-sm" (click)="clearAllFilters()">
+                <button
+                  type="button"
+                  class="btn-muted btn-sm"
+                  (click)="clearAllFilters()"
+                >
                   {{ "guis_and_tools_page.clear_all_filters" | transloco }}
                 </button>
               </div>
@@ -174,7 +235,9 @@
         <!-- Table of Contents Sidebar (Desktop) -->
         <aside class="tools-toc">
           <nav class="tools-toc-nav" aria-label="Table of contents">
-            <h2 class="tools-toc-title">{{ "guis_and_tools_page.sections" | transloco }}</h2>
+            <h2 class="tools-toc-title">
+              {{ "guis_and_tools_page.sections" | transloco }}
+            </h2>
             <ul class="tools-toc-list">
               @for (section of visibleSections(); track section.id) {
                 <li>
@@ -184,8 +247,12 @@
                     (click)="scrollToSection(section.id, $event)"
                     [href]="'#section-' + section.id"
                   >
-                    <span class="tools-toc-link-text">{{ section.titleKey | transloco }}</span>
-                    <span class="tools-toc-link-count">{{ section.items().length }}</span>
+                    <span class="tools-toc-link-text">{{
+                      section.titleKey | transloco
+                    }}</span>
+                    <span class="tools-toc-link-count">{{
+                      section.items().length
+                    }}</span>
                   </a>
                 </li>
               }
@@ -205,7 +272,9 @@
                 [href]="'#section-' + section.id"
               >
                 {{ section.titleKey | transloco }}
-                <span class="tools-section-pill-count">{{ section.items().length }}</span>
+                <span class="tools-section-pill-count">{{
+                  section.items().length
+                }}</span>
               </a>
             }
           </div>
@@ -228,14 +297,28 @@
 
             @if (filteredItems().length === 0) {
               <div class="state-empty">
-                <svg class="state-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  class="state-empty-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <p class="state-empty-text">
                   {{ "guis_and_tools_page.no_results" | transloco }}
                 </p>
                 @if (activeFilterCount() > 0 || searchQuery()) {
-                  <button type="button" class="btn-muted btn-sm spaced-top" (click)="clearAllFilters()">
+                  <button
+                    type="button"
+                    class="btn-muted btn-sm spaced-top"
+                    (click)="clearAllFilters()"
+                  >
                     {{ "guis_and_tools_page.clear_all_filters" | transloco }}
                   </button>
                 }
@@ -255,11 +338,7 @@
       class="scroll-to-top-btn"
       aria-label="Scroll to top"
     >
-      <svg
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"

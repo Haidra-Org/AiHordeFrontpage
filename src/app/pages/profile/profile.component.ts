@@ -284,7 +284,10 @@ export class ProfileComponent implements OnInit {
 
     // Load teams when switching to workers tab (for team assignment dropdown)
     // or when switching to teams tab
-    if ((tab === 'workers' || tab === 'teams') && this.allTeams().length === 0) {
+    if (
+      (tab === 'workers' || tab === 'teams') &&
+      this.allTeams().length === 0
+    ) {
       this.loadAllTeams();
     }
   }
@@ -386,28 +389,28 @@ export class ProfileComponent implements OnInit {
       .deleteUser()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
-      this.deleteLoading.set(false);
+        this.deleteLoading.set(false);
 
-      if (result.success) {
-        this.deleteDialogOpen.set(false);
+        if (result.success) {
+          this.deleteDialogOpen.set(false);
 
-        if (wasAlreadyDeleted) {
-          // Permanent deletion - logout and redirect
-          this.deleteSuccess.set('profile.delete_account_permanent_success');
-          setTimeout(() => {
-            this.auth.logout();
-            this.router.navigate(['/']);
-          }, 2000);
+          if (wasAlreadyDeleted) {
+            // Permanent deletion - logout and redirect
+            this.deleteSuccess.set('profile.delete_account_permanent_success');
+            setTimeout(() => {
+              this.auth.logout();
+              this.router.navigate(['/']);
+            }, 2000);
+          } else {
+            // First deletion - refresh user data to show deleted state
+            this.deleteSuccess.set('profile.delete_account_success');
+            this.auth.refreshUser().subscribe();
+            setTimeout(() => this.deleteSuccess.set(null), 5000);
+          }
         } else {
-          // First deletion - refresh user data to show deleted state
-          this.deleteSuccess.set('profile.delete_account_success');
-          this.auth.refreshUser().subscribe();
-          setTimeout(() => this.deleteSuccess.set(null), 5000);
+          this.deleteError.set(result.error.message);
+          setTimeout(() => this.deleteError.set(null), 5000);
         }
-      } else {
-        this.deleteError.set(result.error.message);
-        setTimeout(() => this.deleteError.set(null), 5000);
-      }
       });
   }
 
@@ -519,9 +522,7 @@ export class ProfileComponent implements OnInit {
       }
     }
 
-    const createdTeamIds = new Set(
-      this.getUserCreatedTeams().map((t) => t.id),
-    );
+    const createdTeamIds = new Set(this.getUserCreatedTeams().map((t) => t.id));
 
     return this.allTeams().filter(
       (team) =>

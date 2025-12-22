@@ -8,7 +8,9 @@
     aria-controls="beginner-content"
   >
     <div class="collapsible-header-content">
-      <div class="feature-card-icon feature-card-icon-purple collapsible-header-icon">
+      <div
+        class="feature-card-icon feature-card-icon-purple collapsible-header-icon"
+      >
         <svg
           fill="none"
           stroke="currentColor"
@@ -52,192 +54,235 @@
   @if (isExpanded()) {
     <div id="beginner-content" class="card-expandable-content">
       <div class="card-expandable-stack">
+        <!-- 3-column feature cards -->
+        <div class="feature-grid-3">
+          @if (!disableLinks()) {
+            <a routerLink="/guis/" class="feature-card">
+              <div class="feature-card-icon feature-card-icon-purple">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_guis_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
+              </p>
+            </a>
+          } @else {
+            <div class="feature-card feature-card-disabled">
+              <div class="feature-card-icon feature-card-icon-purple">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_guis_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
+              </p>
+            </div>
+          }
 
-      <!-- 3-column feature cards -->
-      <div class="feature-grid-3">
-        @if (!disableLinks()) {
-          <a routerLink="/guis/" class="feature-card">
-            <div class="feature-card-icon feature-card-icon-purple">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                ></path>
-              </svg>
+          @if (!disableLinks()) {
+            <a routerLink="/contribute/joining" class="feature-card">
+              <div class="feature-card-icon feature-card-icon-blue">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_workers_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
+              </p>
+            </a>
+          } @else {
+            <div class="feature-card feature-card-disabled">
+              <div class="feature-card-icon feature-card-icon-blue">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                  ></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_workers_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
+              </p>
             </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_guis_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
-            </p>
-          </a>
-        } @else {
-          <div class="feature-card feature-card-disabled">
-            <div class="feature-card-icon feature-card-icon-purple">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_guis_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
-            </p>
-          </div>
-        }
+          }
 
-        @if (!disableLinks()) {
-          <a routerLink="/contribute/joining" class="feature-card">
-            <div class="feature-card-icon feature-card-icon-blue">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                ></path>
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                ></path>
-              </svg>
+          @if (!disableLinks()) {
+            <a routerLink="/guis/" class="feature-card">
+              <div class="feature-card-icon feature-card-icon-green">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_tools_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
+              </p>
+            </a>
+          } @else {
+            <div class="feature-card feature-card-disabled">
+              <div class="feature-card-icon feature-card-icon-green">
+                <svg
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                  ></path>
+                </svg>
+              </div>
+              <h3 class="feature-card-title">
+                {{ "guis_and_tools_page.intro_tools_title" | transloco }}
+              </h3>
+              <p class="feature-card-description">
+                {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
+              </p>
             </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_workers_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
-            </p>
-          </a>
-        } @else {
-          <div class="feature-card feature-card-disabled">
-            <div class="feature-card-icon feature-card-icon-blue">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                ></path>
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_workers_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
-            </p>
-          </div>
-        }
-
-        @if (!disableLinks()) {
-          <a routerLink="/guis/" class="feature-card">
-            <div class="feature-card-icon feature-card-icon-green">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_tools_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
-            </p>
-          </a>
-        } @else {
-          <div class="feature-card feature-card-disabled">
-            <div class="feature-card-icon feature-card-icon-green">
-              <svg
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                ></path>
-              </svg>
-            </div>
-            <h3 class="feature-card-title">
-              {{ "guis_and_tools_page.intro_tools_title" | transloco }}
-            </h3>
-            <p class="feature-card-description">
-              {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
-            </p>
-          </div>
-        }
-      </div>
-
-      <!-- Bottom intro paragraph -->
-      <div class="feature-card">
-        <p
-          class="intro-feature-text"
-          [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
-        ></p>
-              <!-- Optional "View all Frontends" button -->
-      @if (showButton()) {
-        <div class="feature-grid-action">
-          <a routerLink="/guis/" class="btn-purple">
-            {{ "homepage_guis.view_all_guis" | transloco }}
-          </a>
+          }
         </div>
-      }
-      </div>
 
-      <!-- Worker CTA Section - always shown -->
-      <div class="beginner-cta-section">
-        <div class="beginner-cta-content">
-          <div class="beginner-cta-icon">
+        <!-- Bottom intro paragraph -->
+        <div class="feature-card">
+          <p
+            class="intro-feature-text"
+            [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
+          ></p>
+          <!-- Optional "View all Frontends" button -->
+          @if (showButton()) {
+            <div class="feature-grid-action">
+              <a routerLink="/guis/" class="btn-purple">
+                {{ "homepage_guis.view_all_guis" | transloco }}
+              </a>
+            </div>
+          }
+        </div>
+
+        <!-- Worker CTA Section - always shown -->
+        <div class="beginner-cta-section">
+          <div class="beginner-cta-content">
+            <div class="beginner-cta-icon">
+              <svg
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            </div>
+            <div class="beginner-cta-text">
+              <h3 class="card-inline-title">
+                {{ "guis_and_tools_page.worker_cta_title" | transloco }}
+              </h3>
+              <p class="card-inline-description">
+                {{ "guis_and_tools_page.worker_cta_description" | transloco }}
+              </p>
+            </div>
+          </div>
+
+          <div class="beginner-cta-actions">
+            <a routerLink="/contribute/joining" class="btn-purple">
+              {{ "guis_and_tools_page.worker_cta_button" | transloco }}
+            </a>
+            <a routerLink="/contribute/donate" class="btn-secondary">
+              {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
+            </a>
+            <a routerLink="/faq" fragment="kudos" class="link">
+              {{ "guis_and_tools_page.worker_cta_learn_more" | transloco }}
+            </a>
+          </div>
+        </div>
+
+        <!-- "Hide" button at end of content -->
+        <div class="collapse-action-footer">
+          <button
+            type="button"
+            class="btn-secondary"
+            (click)="toggleExpanded()"
+          >
             <svg
               fill="none"
               stroke="currentColor"
@@ -248,44 +293,12 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                d="M5 15l7-7 7 7"
               />
             </svg>
-          </div>
-          <div class="beginner-cta-text">
-            <h3 class="card-inline-title">
-              {{ "guis_and_tools_page.worker_cta_title" | transloco }}
-            </h3>
-            <p class="card-inline-description">
-              {{ "guis_and_tools_page.worker_cta_description" | transloco }}
-            </p>
-          </div>
+            {{ "guis_and_tools_page.hide" | transloco }}
+          </button>
         </div>
-        
-        <div class="beginner-cta-actions">
-          <a routerLink="/contribute/joining" class="btn-purple">
-            {{ "guis_and_tools_page.worker_cta_button" | transloco }}
-          </a>
-          <a routerLink="/contribute/donate" class="btn-secondary">
-            {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
-          </a>
-          <a routerLink="/faq" fragment="kudos" class="link">
-            {{ "guis_and_tools_page.worker_cta_learn_more" | transloco }}
-          </a>
-        </div>
-      </div>
-
-
-
-      <!-- "Hide" button at end of content -->
-      <div class="collapse-action-footer">
-        <button type="button" class="btn-secondary" (click)="toggleExpanded()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-          </svg>
-          {{ 'guis_and_tools_page.hide' | transloco }}
-        </button>
-      </div>
       </div>
     </div>
   }

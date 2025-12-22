@@ -44,7 +44,11 @@
                 <ul class="worker-models-list">
                   @for (model of getFilteredModels(); track model) {
                     <li class="worker-models-list-item">
-                      <a [routerLink]="getModelLink(model)" class="worker-link">{{ model }}</a>
+                      <a
+                        [routerLink]="getModelLink(model)"
+                        class="worker-link"
+                        >{{ model }}</a
+                      >
                     </li>
                   }
                 </ul>
@@ -144,7 +148,9 @@
               class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
             >
               <p class="text-sm text-red-800 dark:text-red-200 font-medium">
-                {{ "admin.workers.dialog.delete_warning_permanent" | transloco }}
+                {{
+                  "admin.workers.dialog.delete_warning_permanent" | transloco
+                }}
               </p>
             </div>
             <div
@@ -182,7 +188,10 @@
         }
         @case ("team") {
           <h3 class="heading-card mb-4">
-            {{ "admin.workers.dialog.team_title" | transloco: { name: worker().name } }}
+            {{
+              "admin.workers.dialog.team_title"
+                | transloco: { name: worker().name }
+            }}
           </h3>
           <div class="mb-4">
             <label for="team-select" class="form-label">
@@ -194,7 +203,9 @@
               (change)="onTeamSelectChange($event)"
               class="form-input"
             >
-              <option value="">{{ "admin.workers.dialog.no_team" | transloco }}</option>
+              <option value="">
+                {{ "admin.workers.dialog.no_team" | transloco }}
+              </option>
               @for (team of availableTeams(); track team.id) {
                 <option [value]="team.id">{{ team.name }}</option>
               }
@@ -297,7 +308,7 @@
                 (click)="onClearHighlight(); $event.stopPropagation()"
                 [attr.aria-label]="'details.common.clear_highlight' | transloco"
               >
-                {{ 'details.common.highlighted' | transloco }}
+                {{ "details.common.highlighted" | transloco }}
                 <span aria-hidden="true">×</span>
               </button>
             }
@@ -430,9 +441,9 @@
     <div class="space-y-1 mb-3">
       <div class="worker-card-row">
         @if (hasOwnerName() || getOwnerUserId()) {
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.owner" | transloco }}:</span
-        >
+          <span class="worker-card-label"
+            >{{ "admin.workers.card.owner" | transloco }}:</span
+          >
         }
         @if (getOwnerUserId() && isModerator()) {
           <a
@@ -464,12 +475,14 @@
               [routerLink]="['/details/teams', worker().team!.id]"
               class="worker-link truncate"
               [title]="worker().team?.name ?? worker().team?.id ?? ''"
-            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a>
+              >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a
+            >
           } @else {
             <span
               class="worker-card-value truncate"
               [title]="worker().team?.name ?? worker().team?.id ?? ''"
-            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</span>
+              >{{ worker().team?.name ?? worker().team?.id ?? "" }}</span
+            >
           }
         </div>
       }
@@ -536,7 +549,10 @@
         @if (getPerformanceUnit(); as perfUnit) {
           <span class="worker-card-value">
             {{ perfUnit.primary.value.toFixed(2) }}
-            <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="perfUnit.primary.unit" />
+            <app-unit-tooltip
+              [unit]="perfUnit"
+              [primaryOverride]="perfUnit.primary.unit"
+            />
           </span>
         } @else {
           <span class="worker-card-value">{{ worker().performance }}</span>
@@ -567,10 +583,17 @@
           @if (getMpsGeneratedUnit(); as mpsUnit) {
             <span class="worker-card-value">
               {{ mpsUnit.primary.value.toFixed(1) }}
-              <app-unit-tooltip [unit]="mpsUnit" [primaryOverride]="mpsUnit.primary.prefix + mpsUnit.primary.unit" />
+              <app-unit-tooltip
+                [unit]="mpsUnit"
+                [primaryOverride]="
+                  mpsUnit.primary.prefix + mpsUnit.primary.unit
+                "
+              />
             </span>
           } @else {
-            <span class="worker-card-value">{{ worker().megapixelsteps_generated ?? 0 | formatNumber }}</span>
+            <span class="worker-card-value">{{
+              worker().megapixelsteps_generated ?? 0 | formatNumber
+            }}</span>
           }
         </div>
       }
@@ -584,10 +607,17 @@
           @if (getTokensGeneratedUnit(); as tokensUnit) {
             <span class="worker-card-value">
               {{ tokensUnit.primary.value.toFixed(1) }}
-              <app-unit-tooltip [unit]="tokensUnit" [primaryOverride]="tokensUnit.primary.prefix + tokensUnit.primary.unit" />
+              <app-unit-tooltip
+                [unit]="tokensUnit"
+                [primaryOverride]="
+                  tokensUnit.primary.prefix + tokensUnit.primary.unit
+                "
+              />
             </span>
           } @else {
-            <span class="worker-card-value">{{ worker().tokens_generated ?? 0 | formatNumber }}</span>
+            <span class="worker-card-value">{{
+              worker().tokens_generated ?? 0 | formatNumber
+            }}</span>
           }
         </div>
       }

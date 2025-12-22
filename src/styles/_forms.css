@@ -14,7 +14,9 @@
     @apply block mb-2 text-sm font-medium;
     color: var(--color-text-primary);
   }
-  .dark .form-label { @apply text-gray-200; }
+  .dark .form-label {
+    @apply text-gray-200;
+  }
 
   /* Form group container */
   .form-group {
@@ -81,7 +83,9 @@
     @apply m-0 text-xs;
     color: var(--color-text-secondary);
   }
-  .dark .form-hint { @apply text-gray-400; }
+  .dark .form-hint {
+    @apply text-gray-400;
+  }
 
   .form-input-error {
     @apply border-red-500;

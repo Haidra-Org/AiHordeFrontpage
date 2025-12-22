@@ -53,14 +53,17 @@
     <div class="filter-notice mb-4">
       <div class="filter-notice-content">
         <span class="filter-notice-text">
-          {{ 'admin.workers.filtering_by_owner' | transloco: { ownerId: filterOwnerId() } }}
+          {{
+            "admin.workers.filtering_by_owner"
+              | transloco: { ownerId: filterOwnerId() }
+          }}
         </span>
         <button
           type="button"
           class="btn btn-secondary btn-sm"
           (click)="ownerFilterCleared.emit()"
         >
-          {{ 'admin.workers.clear_filter' | transloco }}
+          {{ "admin.workers.clear_filter" | transloco }}
         </button>
       </div>
     </div>
@@ -71,14 +74,17 @@
     <div class="card card-bg-primary card-full card-spaced mb-4">
       <div class="text-center py-6">
         <p class="text-secondary mb-4">
-          {{ 'admin.workers.owner_not_found' | transloco: { ownerId: filterOwnerId() } }}
+          {{
+            "admin.workers.owner_not_found"
+              | transloco: { ownerId: filterOwnerId() }
+          }}
         </p>
         <button
           type="button"
           class="btn btn-primary"
           (click)="ownerFilterCleared.emit()"
         >
-          {{ 'admin.workers.view_all_workers' | transloco }}
+          {{ "admin.workers.view_all_workers" | transloco }}
         </button>
       </div>
     </div>

@@ -1,12 +1,7 @@
 <!-- Deletion Success Toast -->
 @if (deletionSuccessMessage()) {
   <div class="toast toast-success" role="status" aria-live="polite">
-    <svg
-      class="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -21,12 +16,7 @@
 <!-- Account Action Success Toast -->
 @if (deleteSuccess()) {
   <div class="toast toast-success" role="status" aria-live="polite">
-    <svg
-      class="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -41,12 +31,7 @@
 <!-- Account Action Error Toast -->
 @if (deleteError()) {
   <div class="toast toast-error" role="alert" aria-live="assertive">
-    <svg
-      class="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -54,7 +39,9 @@
         d="M6 18L18 6M6 6l12 12"
       />
     </svg>
-    <span>{{ "profile.delete_account_error" | transloco: { message: deleteError() } }}</span>
+    <span>{{
+      "profile.delete_account_error" | transloco: { message: deleteError() }
+    }}</span>
   </div>
 }
 
@@ -81,7 +68,9 @@
   (confirm)="confirmUndeleteAccount()"
   (cancel)="closeUndeleteDialog()"
 >
-  <p class="text-gray-300">{{ "profile.undelete_account_message" | transloco }}</p>
+  <p class="text-gray-300">
+    {{ "profile.undelete_account_message" | transloco }}
+  </p>
 </app-admin-dialog>
 
 <section class="section-primary">
@@ -234,7 +223,9 @@
             @if (activeTab() === "profile") {
               <!-- Account Marked for Deletion Warning -->
               @if (auth.currentUser()!.deleted) {
-                <div class="mb-6 p-6 bg-red-900/30 border-2 border-red-600 rounded-lg">
+                <div
+                  class="mb-6 p-6 bg-red-900/30 border-2 border-red-600 rounded-lg"
+                >
                   <div class="flex items-start gap-4">
                     <svg
                       class="w-8 h-8 text-red-400 shrink-0 mt-0.5"
@@ -249,12 +240,21 @@
                     </svg>
                     <div class="flex-1">
                       <h3 class="text-lg font-semibold text-red-300 mb-2">
-                        {{ "profile.account_marked_for_deletion_title" | transloco }}
+                        {{
+                          "profile.account_marked_for_deletion_title"
+                            | transloco
+                        }}
                       </h3>
                       <p class="text-red-200 text-sm mb-4">
-                        {{ "profile.account_marked_for_deletion_message" | transloco }}
+                        {{
+                          "profile.account_marked_for_deletion_message"
+                            | transloco
+                        }}
                       </p>
-                      <button (click)="openUndeleteDialog()" class="btn-warning">
+                      <button
+                        (click)="openUndeleteDialog()"
+                        class="btn-warning"
+                      >
                         {{ "profile.undelete_account" | transloco }}
                       </button>
                     </div>
@@ -449,19 +449,28 @@
                     <!-- Account Management Actions -->
                     <div class="action-row mt-4">
                       @if (auth.currentUser()!.deleted) {
-                        <button (click)="openUndeleteDialog()" class="btn-warning">
+                        <button
+                          (click)="openUndeleteDialog()"
+                          class="btn-warning"
+                        >
                           {{ "profile.undelete_account" | transloco }}
                         </button>
                       }
                       @if (!auth.currentUser()!.deleted) {
-                      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
-                        {{ "profile.delete_account" | transloco }}
-                      </button>
+                        <button
+                          (click)="openDeleteDialog()"
+                          class="btn-primary btn-danger"
+                        >
+                          {{ "profile.delete_account" | transloco }}
+                        </button>
                       }
                       @if (auth.currentUser()!.deleted) {
-                        <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
-                        {{ "profile.permanently_delete_account" | transloco }}
-                      </button>
+                        <button
+                          (click)="openDeleteDialog()"
+                          class="btn-primary btn-danger"
+                        >
+                          {{ "profile.permanently_delete_account" | transloco }}
+                        </button>
                       }
                     </div>
                   </div>
@@ -888,9 +897,23 @@
             @if (activeTab() === "teams") {
               <!-- Team Success Toast -->
               @if (teamSuccess()) {
-                <div class="toast toast-success" role="status" aria-live="polite">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <div
+                  class="toast toast-success"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                   <span>{{ "teams.success" | transloco }}</span>
                 </div>
@@ -903,46 +926,69 @@
                   <div class="worker-modal-panel worker-modal-panel-large">
                     @switch (teamDialogType()) {
                       @case ("create") {
-                        <h3 class="heading-card mb-4">{{ "teams.create_team" | transloco }}</h3>
+                        <h3 class="heading-card mb-4">
+                          {{ "teams.create_team" | transloco }}
+                        </h3>
                         <div class="space-y-4">
                           <div>
-                            <label for="team-name" class="form-label">{{ "teams.name" | transloco }}</label>
+                            <label for="team-name" class="form-label">{{
+                              "teams.name" | transloco
+                            }}</label>
                             <input
                               type="text"
                               id="team-name"
                               [value]="teamFormName()"
                               (input)="onTeamNameChange($event)"
-                              [placeholder]="'teams.name_placeholder' | transloco"
+                              [placeholder]="
+                                'teams.name_placeholder' | transloco
+                              "
                               class="form-input"
                               maxlength="100"
                             />
-                            <p class="text-xs text-secondary mt-1">{{ "teams.name_hint" | transloco }}</p>
+                            <p class="text-xs text-secondary mt-1">
+                              {{ "teams.name_hint" | transloco }}
+                            </p>
                           </div>
                           <div>
-                            <label for="team-info" class="form-label">{{ "teams.info" | transloco }}</label>
+                            <label for="team-info" class="form-label">{{
+                              "teams.info" | transloco
+                            }}</label>
                             <textarea
                               id="team-info"
                               [value]="teamFormInfo()"
                               (input)="onTeamInfoChange($event)"
-                              [placeholder]="'teams.info_placeholder' | transloco"
+                              [placeholder]="
+                                'teams.info_placeholder' | transloco
+                              "
                               class="form-input"
                               rows="3"
                               maxlength="1000"
                             ></textarea>
                           </div>
                           @if (teamError()) {
-                            <div class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-                              <p class="text-sm text-red-800 dark:text-red-200">{{ teamError() }}</p>
+                            <div
+                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+                            >
+                              <p class="text-sm text-red-800 dark:text-red-200">
+                                {{ teamError() }}
+                              </p>
                             </div>
                           }
                         </div>
                         <div class="flex justify-end gap-3 mt-6">
-                          <button (click)="closeTeamDialog()" class="worker-btn">{{ "teams.cancel" | transloco }}</button>
+                          <button
+                            (click)="closeTeamDialog()"
+                            class="worker-btn"
+                          >
+                            {{ "teams.cancel" | transloco }}
+                          </button>
                           <button
                             (click)="confirmTeamSave()"
                             [disabled]="teamSaving() || !isTeamFormValid()"
                             class="btn-primary"
-                            [class.btn-disabled]="teamSaving() || !isTeamFormValid()"
+                            [class.btn-disabled]="
+                              teamSaving() || !isTeamFormValid()
+                            "
                           >
                             @if (teamSaving()) {
                               {{ "teams.creating" | transloco }}
@@ -953,46 +999,72 @@
                         </div>
                       }
                       @case ("edit") {
-                        <h3 class="heading-card mb-4">{{ "teams.edit_team" | transloco: { name: editingTeam()?.name } }}</h3>
+                        <h3 class="heading-card mb-4">
+                          {{
+                            "teams.edit_team"
+                              | transloco: { name: editingTeam()?.name }
+                          }}
+                        </h3>
                         <div class="space-y-4">
                           <div>
-                            <label for="team-name" class="form-label">{{ "teams.name" | transloco }}</label>
+                            <label for="team-name" class="form-label">{{
+                              "teams.name" | transloco
+                            }}</label>
                             <input
                               type="text"
                               id="team-name"
                               [value]="teamFormName()"
                               (input)="onTeamNameChange($event)"
-                              [placeholder]="'teams.name_placeholder' | transloco"
+                              [placeholder]="
+                                'teams.name_placeholder' | transloco
+                              "
                               class="form-input"
                               maxlength="100"
                             />
-                            <p class="text-xs text-secondary mt-1">{{ "teams.name_hint" | transloco }}</p>
+                            <p class="text-xs text-secondary mt-1">
+                              {{ "teams.name_hint" | transloco }}
+                            </p>
                           </div>
                           <div>
-                            <label for="team-info" class="form-label">{{ "teams.info" | transloco }}</label>
+                            <label for="team-info" class="form-label">{{
+                              "teams.info" | transloco
+                            }}</label>
                             <textarea
                               id="team-info"
                               [value]="teamFormInfo()"
                               (input)="onTeamInfoChange($event)"
-                              [placeholder]="'teams.info_placeholder' | transloco"
+                              [placeholder]="
+                                'teams.info_placeholder' | transloco
+                              "
                               class="form-input"
                               rows="3"
                               maxlength="1000"
                             ></textarea>
                           </div>
                           @if (teamError()) {
-                            <div class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-                              <p class="text-sm text-red-800 dark:text-red-200">{{ teamError() }}</p>
+                            <div
+                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+                            >
+                              <p class="text-sm text-red-800 dark:text-red-200">
+                                {{ teamError() }}
+                              </p>
                             </div>
                           }
                         </div>
                         <div class="flex justify-end gap-3 mt-6">
-                          <button (click)="closeTeamDialog()" class="worker-btn">{{ "teams.cancel" | transloco }}</button>
+                          <button
+                            (click)="closeTeamDialog()"
+                            class="worker-btn"
+                          >
+                            {{ "teams.cancel" | transloco }}
+                          </button>
                           <button
                             (click)="confirmTeamSave()"
                             [disabled]="teamSaving() || !isTeamFormValid()"
                             class="btn-primary"
-                            [class.btn-disabled]="teamSaving() || !isTeamFormValid()"
+                            [class.btn-disabled]="
+                              teamSaving() || !isTeamFormValid()
+                            "
                           >
                             @if (teamSaving()) {
                               {{ "teams.saving" | transloco }}
@@ -1003,20 +1075,44 @@
                         </div>
                       }
                       @case ("delete") {
-                        <h3 class="heading-card mb-4">{{ "teams.delete_team" | transloco: { name: editingTeam()?.name } }}</h3>
+                        <h3 class="heading-card mb-4">
+                          {{
+                            "teams.delete_team"
+                              | transloco: { name: editingTeam()?.name }
+                          }}
+                        </h3>
                         <div class="mb-4 space-y-3">
-                          <div class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-                            <p class="text-sm text-red-800 dark:text-red-200 font-medium">{{ "teams.delete_warning" | transloco }}</p>
+                          <div
+                            class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+                          >
+                            <p
+                              class="text-sm text-red-800 dark:text-red-200 font-medium"
+                            >
+                              {{ "teams.delete_warning" | transloco }}
+                            </p>
                           </div>
                           @if (teamError()) {
-                            <div class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-                              <p class="text-sm text-red-800 dark:text-red-200">{{ teamError() }}</p>
+                            <div
+                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
+                            >
+                              <p class="text-sm text-red-800 dark:text-red-200">
+                                {{ teamError() }}
+                              </p>
                             </div>
                           }
                         </div>
                         <div class="flex justify-end gap-3">
-                          <button (click)="closeTeamDialog()" class="worker-btn">{{ "teams.cancel" | transloco }}</button>
-                          <button (click)="confirmTeamDelete()" [disabled]="teamSaving()" class="btn-danger">
+                          <button
+                            (click)="closeTeamDialog()"
+                            class="worker-btn"
+                          >
+                            {{ "teams.cancel" | transloco }}
+                          </button>
+                          <button
+                            (click)="confirmTeamDelete()"
+                            [disabled]="teamSaving()"
+                            class="btn-danger"
+                          >
                             @if (teamSaving()) {
                               {{ "teams.deleting" | transloco }}
                             } @else {
@@ -1032,9 +1128,15 @@
 
               <div class="card card-bg-primary card-full card-spaced">
                 <div class="flex justify-between items-center mb-4">
-                  <h3 class="heading-card">{{ "profile.tabs.your_teams" | transloco }}</h3>
+                  <h3 class="heading-card">
+                    {{ "profile.tabs.your_teams" | transloco }}
+                  </h3>
                   <div class="flex gap-2">
-                    <button (click)="refreshTeams()" class="worker-btn text-sm" [disabled]="loadingTeams()">
+                    <button
+                      (click)="refreshTeams()"
+                      class="worker-btn text-sm"
+                      [disabled]="loadingTeams()"
+                    >
                       {{ "teams.refresh" | transloco }}
                     </button>
                     <button
@@ -1043,7 +1145,11 @@
                       [class.btn-disabled]="!canCreateTeam()"
                       [class.btn-primary]="canCreateTeam()"
                       class="text-sm"
-                      [title]="canCreateTeam() ? '' : ('teams.create_requires_trusted' | transloco)"
+                      [title]="
+                        canCreateTeam()
+                          ? ''
+                          : ('teams.create_requires_trusted' | transloco)
+                      "
                     >
                       {{ "teams.create_team" | transloco }}
                     </button>
@@ -1051,15 +1157,21 @@
                 </div>
 
                 @if (loadingTeams()) {
-                  <p class="text-secondary text-sm mb-2">{{ "teams.loading" | transloco }}</p>
+                  <p class="text-secondary text-sm mb-2">
+                    {{ "teams.loading" | transloco }}
+                  </p>
                 } @else {
                   <!-- Teams You Created -->
                   @if (getUserCreatedTeams().length > 0) {
                     <div class="mb-6">
-                      <h4 class="section-title-sm mb-3">{{ "teams.created_by_you" | transloco }}</h4>
+                      <h4 class="section-title-sm mb-3">
+                        {{ "teams.created_by_you" | transloco }}
+                      </h4>
                       <div class="space-y-3">
                         @for (team of getUserCreatedTeams(); track team.id) {
-                          <div class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                          <div
+                            class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                          >
                             <div class="flex justify-between items-start">
                               <div class="flex-1 min-w-0">
                                 <a
@@ -1069,18 +1181,41 @@
                                   {{ team.name }}
                                 </a>
                                 @if (team.info) {
-                                  <p class="text-secondary text-sm mt-1 line-clamp-2">{{ team.info }}</p>
+                                  <p
+                                    class="text-secondary text-sm mt-1 line-clamp-2"
+                                  >
+                                    {{ team.info }}
+                                  </p>
                                 }
-                                <div class="flex flex-wrap gap-4 mt-2 text-xs text-secondary">
-                                  <span>{{ "teams.workers_count" | transloco: { count: team.worker_count ?? 0 } }}</span>
-                                  <span>{{ "teams.kudos_earned" | transloco: { amount: (team.kudos ?? 0) | formatNumber } }}</span>
+                                <div
+                                  class="flex flex-wrap gap-4 mt-2 text-xs text-secondary"
+                                >
+                                  <span>{{
+                                    "teams.workers_count"
+                                      | transloco
+                                        : { count: team.worker_count ?? 0 }
+                                  }}</span>
+                                  <span>{{
+                                    "teams.kudos_earned"
+                                      | transloco
+                                        : {
+                                            amount:
+                                              team.kudos ?? 0 | formatNumber,
+                                          }
+                                  }}</span>
                                 </div>
                               </div>
                               <div class="flex gap-2 ml-4">
-                                <button (click)="openEditTeamDialog(team)" class="worker-btn text-sm">
+                                <button
+                                  (click)="openEditTeamDialog(team)"
+                                  class="worker-btn text-sm"
+                                >
                                   {{ "teams.edit" | transloco }}
                                 </button>
-                                <button (click)="openDeleteTeamDialog(team)" class="btn-danger text-sm">
+                                <button
+                                  (click)="openDeleteTeamDialog(team)"
+                                  class="btn-danger text-sm"
+                                >
                                   {{ "teams.delete" | transloco }}
                                 </button>
                               </div>
@@ -1094,10 +1229,14 @@
                   <!-- Teams Your Workers Belong To -->
                   @if (getUserWorkerTeams().length > 0) {
                     <div class="mb-6">
-                      <h4 class="section-title-sm mb-3">{{ "teams.worker_teams" | transloco }}</h4>
+                      <h4 class="section-title-sm mb-3">
+                        {{ "teams.worker_teams" | transloco }}
+                      </h4>
                       <div class="space-y-3">
                         @for (team of getUserWorkerTeams(); track team.id) {
-                          <div class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                          <div
+                            class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                          >
                             <div class="flex-1 min-w-0">
                               <a
                                 [routerLink]="['/details/teams', team.id]"
@@ -1106,11 +1245,25 @@
                                 {{ team.name }}
                               </a>
                               @if (team.info) {
-                                <p class="text-secondary text-sm mt-1 line-clamp-2">{{ team.info }}</p>
+                                <p
+                                  class="text-secondary text-sm mt-1 line-clamp-2"
+                                >
+                                  {{ team.info }}
+                                </p>
                               }
-                              <div class="flex flex-wrap gap-4 mt-2 text-xs text-secondary">
-                                <span>{{ "teams.workers_count" | transloco: { count: team.worker_count ?? 0 } }}</span>
-                                <span>{{ "teams.creator" | transloco: { name: team.creator ?? 'Unknown' } }}</span>
+                              <div
+                                class="flex flex-wrap gap-4 mt-2 text-xs text-secondary"
+                              >
+                                <span>{{
+                                  "teams.workers_count"
+                                    | transloco
+                                      : { count: team.worker_count ?? 0 }
+                                }}</span>
+                                <span>{{
+                                  "teams.creator"
+                                    | transloco
+                                      : { name: team.creator ?? "Unknown" }
+                                }}</span>
                               </div>
                             </div>
                           </div>
@@ -1119,13 +1272,22 @@
                     </div>
                   }
 
-                  @if (getUserCreatedTeams().length === 0 && getUserWorkerTeams().length === 0) {
-                    <p class="text-secondary text-center py-4">{{ "teams.no_teams" | transloco }}</p>
+                  @if (
+                    getUserCreatedTeams().length === 0 &&
+                    getUserWorkerTeams().length === 0
+                  ) {
+                    <p class="text-secondary text-center py-4">
+                      {{ "teams.no_teams" | transloco }}
+                    </p>
                   }
 
                   <!-- Link to browse all teams -->
-                  <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 text-center">
-                    <a routerLink="/details/teams" class="link">{{ "teams.browse_all" | transloco }} →</a>
+                  <div
+                    class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 text-center"
+                  >
+                    <a routerLink="/details/teams" class="link"
+                      >{{ "teams.browse_all" | transloco }} →</a
+                    >
                   </div>
                 }
               </div>

@@ -133,7 +133,10 @@ export class AdminWorkerService {
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
     return this.httpClient
-      .get<HordeWorker>(`${this.baseUrl}/workers/name/${encodeURIComponent(name)}`, options)
+      .get<HordeWorker>(
+        `${this.baseUrl}/workers/name/${encodeURIComponent(name)}`,
+        options,
+      )
       .pipe(catchError(() => of(null)));
   }
 }

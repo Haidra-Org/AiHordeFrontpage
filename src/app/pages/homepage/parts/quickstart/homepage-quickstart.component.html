@@ -46,57 +46,54 @@
           <br />
           <!--Frontend Call-to-Action -->
           <div class="callout-2-grid">
-          <div class="callout callout-accent mb-6">
-            <h3 class="callout-title">
-              {{ "quickstart.try_frontend_title" | transloco }}
-            </h3>
-            <p
-              class="callout-body"
-              [innerHTML]="'quickstart.try_frontend_description' | transloco"
-            ></p>
-            <div class="cta-actions">
+            <div class="callout callout-accent mb-6">
+              <h3 class="callout-title">
+                {{ "quickstart.try_frontend_title" | transloco }}
+              </h3>
+              <p
+                class="callout-body"
+                [innerHTML]="'quickstart.try_frontend_description' | transloco"
+              ></p>
+              <div class="cta-actions">
+                <a
+                  href="https://artbot.site"
+                  target="_blank"
+                  class="btn-purple"
+                >
+                  {{ "quickstart.try_artbot_button" | transloco }}
+                </a>
+                <a routerLink="/guis/" class="btn-primary">
+                  {{ "quickstart.explore_all_frontends" | transloco }}
+                </a>
+              </div>
+            </div>
+
+            <!-- Discord Call-to-Action -->
+            <div class="callout callout-info mb-6">
+              <h3 class="callout-title">
+                {{ "quickstart.discord_cta_title" | transloco }}
+              </h3>
+              <p
+                class="callout-body"
+                [innerHTML]="
+                  'quickstart.discord_cta_description'
+                    | transloco
+                      : {
+                          discordLink:
+                            '<a href=&quot;https://discord.gg/3DxrhksKzn&quot; target=&quot;_blank&quot; class=&quot;font-semibold text-blue-600 dark:text-blue-400 hover:underline&quot;>' +
+                            ('quickstart.discord_cta.discordLink' | transloco) +
+                            '</a>',
+                        }
+                "
+              ></p>
               <a
-                href="https://artbot.site"
+                href="https://discord.gg/3DxrhksKzn"
                 target="_blank"
-                class="btn-purple"
-              >
-                {{ "quickstart.try_artbot_button" | transloco }}
-              </a>
-              <a
-                routerLink="/guis/"
                 class="btn-primary"
               >
-                {{ "quickstart.explore_all_frontends" | transloco }}
+                {{ "quickstart.join_discord_button" | transloco }}
               </a>
             </div>
-          </div>
-
-          <!-- Discord Call-to-Action -->
-          <div class="callout callout-info mb-6">
-            <h3 class="callout-title">
-              {{ "quickstart.discord_cta_title" | transloco }}
-            </h3>
-            <p
-              class="callout-body"
-              [innerHTML]="
-                'quickstart.discord_cta_description'
-                  | transloco
-                    : {
-                        discordLink:
-                          '<a href=&quot;https://discord.gg/3DxrhksKzn&quot; target=&quot;_blank&quot; class=&quot;font-semibold text-blue-600 dark:text-blue-400 hover:underline&quot;>' +
-                          ('quickstart.discord_cta.discordLink' | transloco) +
-                          '</a>',
-                      }
-              "
-            ></p>
-            <a
-              href="https://discord.gg/3DxrhksKzn"
-              target="_blank"
-              class="btn-primary"
-            >
-              {{ "quickstart.join_discord_button" | transloco }}
-            </a>
-          </div>
           </div>
         </ul>
       </div>

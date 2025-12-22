@@ -138,7 +138,8 @@ export class AuthService {
    * @returns Observable with success response or error details
    */
   public deleteUser(): Observable<
-    { success: true; data: DeleteUserResponse } | { success: false; error: DeleteUserError }
+    | { success: true; data: DeleteUserResponse }
+    | { success: false; error: DeleteUserError }
   > {
     const apiKey = this.getStoredApiKey();
     const user = this._currentUser();
@@ -154,8 +155,13 @@ export class AuthService {
         map((data) => ({ success: true as const, data })),
         catchError((err: HttpErrorResponse) => {
           const message =
-            err.error?.message ?? err.error?.detail ?? 'Failed to delete account';
-          return of({ success: false as const, error: { message, rc: err.error?.rc } });
+            err.error?.message ??
+            err.error?.detail ??
+            'Failed to delete account';
+          return of({
+            success: false as const,
+            error: { message, rc: err.error?.rc },
+          });
         }),
       );
   }
@@ -181,7 +187,9 @@ export class AuthService {
         map(() => ({ success: true })),
         catchError((err: HttpErrorResponse) => {
           const message =
-            err.error?.message ?? err.error?.detail ?? 'Failed to restore account';
+            err.error?.message ??
+            err.error?.detail ??
+            'Failed to restore account';
           return of({ success: false, error: message });
         }),
       );

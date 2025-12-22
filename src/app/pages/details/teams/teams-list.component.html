@@ -9,14 +9,17 @@
   <div class="filter-notice mb-4">
     <div class="filter-notice-content">
       <span class="filter-notice-text">
-        {{ 'details.teams.filtering_by_owner' | transloco: { ownerId: filterOwnerId() } }}
+        {{
+          "details.teams.filtering_by_owner"
+            | transloco: { ownerId: filterOwnerId() }
+        }}
       </span>
       <button
         type="button"
         class="btn btn-secondary btn-sm"
         (click)="clearOwnerFilter()"
       >
-        {{ 'details.teams.clear_filter' | transloco }}
+        {{ "details.teams.clear_filter" | transloco }}
       </button>
     </div>
   </div>
@@ -26,14 +29,17 @@
   <div class="card card-bg-primary card-full card-spaced mb-4">
     <div class="text-center py-6">
       <p class="text-secondary mb-4">
-        {{ 'details.teams.owner_not_found' | transloco: { ownerId: filterOwnerId() } }}
+        {{
+          "details.teams.owner_not_found"
+            | transloco: { ownerId: filterOwnerId() }
+        }}
       </p>
       <button
         type="button"
         class="btn btn-primary"
         (click)="clearOwnerFilter()"
       >
-        {{ 'details.teams.view_all_teams' | transloco }}
+        {{ "details.teams.view_all_teams" | transloco }}
       </button>
     </div>
   </div>
@@ -70,7 +76,9 @@
 
     <!-- Sort By -->
     <div>
-      <label class="form-label text-sm">{{ "details.teams.sort_by" | transloco }}</label>
+      <label class="form-label text-sm">{{
+        "details.teams.sort_by" | transloco
+      }}</label>
       <div class="btn-group">
         <button
           (click)="onSortChange('name')"
@@ -78,8 +86,8 @@
           [class.worker-btn-active]="sortBy() === 'name'"
         >
           {{ "details.teams.sort.name" | transloco }}
-          @if (sortBy() === 'name') {
-            <span>{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortBy() === "name") {
+            <span>{{ sortOrder() === "asc" ? "↑" : "↓" }}</span>
           }
         </button>
         <button
@@ -88,8 +96,8 @@
           [class.worker-btn-active]="sortBy() === 'workers'"
         >
           {{ "details.teams.sort.workers" | transloco }}
-          @if (sortBy() === 'workers') {
-            <span>{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortBy() === "workers") {
+            <span>{{ sortOrder() === "asc" ? "↑" : "↓" }}</span>
           }
         </button>
         <button
@@ -98,8 +106,8 @@
           [class.worker-btn-active]="sortBy() === 'kudos'"
         >
           {{ "details.teams.sort.kudos" | transloco }}
-          @if (sortBy() === 'kudos') {
-            <span>{{ sortOrder() === 'asc' ? '↑' : '↓' }}</span>
+          @if (sortBy() === "kudos") {
+            <span>{{ sortOrder() === "asc" ? "↑" : "↓" }}</span>
           }
         </button>
       </div>
@@ -107,17 +115,25 @@
   </div>
 
   @if (loading()) {
-    <p class="text-secondary text-center py-8">{{ "details.teams.loading" | transloco }}</p>
+    <p class="text-secondary text-center py-8">
+      {{ "details.teams.loading" | transloco }}
+    </p>
   } @else if (error()) {
     <div class="text-center py-8">
       <p class="text-red-500 mb-4">{{ error() }}</p>
-      <button (click)="refresh()" class="btn-primary">{{ "details.teams.retry" | transloco }}</button>
+      <button (click)="refresh()" class="btn-primary">
+        {{ "details.teams.retry" | transloco }}
+      </button>
     </div>
   } @else if (filteredTeams().length === 0) {
     @if (searchText()) {
-      <p class="text-secondary text-center py-8">{{ "details.teams.no_results" | transloco }}</p>
+      <p class="text-secondary text-center py-8">
+        {{ "details.teams.no_results" | transloco }}
+      </p>
     } @else {
-      <p class="text-secondary text-center py-8">{{ "details.teams.no_teams" | transloco }}</p>
+      <p class="text-secondary text-center py-8">
+        {{ "details.teams.no_teams" | transloco }}
+      </p>
     }
   } @else {
     <!-- Teams Grid -->
@@ -137,31 +153,52 @@
               <button
                 type="button"
                 class="badge-base badge-warning badge-dismissible shrink-0"
-                (click)="clearHighlight(); $event.preventDefault(); $event.stopPropagation()"
+                (click)="
+                  clearHighlight();
+                  $event.preventDefault();
+                  $event.stopPropagation()
+                "
                 [attr.aria-label]="'details.common.clear_highlight' | transloco"
               >
-                {{ 'details.common.highlighted' | transloco }}
+                {{ "details.common.highlighted" | transloco }}
                 <span aria-hidden="true">×</span>
               </button>
             }
           </div>
           @if (team.info) {
-            <p class="text-secondary text-sm line-clamp-2 mb-3">{{ team.info }}</p>
+            <p class="text-secondary text-sm line-clamp-2 mb-3">
+              {{ team.info }}
+            </p>
           }
           <div class="entity-card-stats">
             <span class="entity-card-stat">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
-              {{ "details.teams.workers_count" | transloco: { count: team.worker_count ?? 0 } }}
+              {{
+                "details.teams.workers_count"
+                  | transloco: { count: team.worker_count ?? 0 }
+              }}
             </span>
             <span class="entity-card-stat">
-              {{ (team.kudos ?? 0) | formatNumber }} generated kudos
+              {{ team.kudos ?? 0 | formatNumber }} generated kudos
             </span>
           </div>
           @if (team.creator) {
             <p class="text-xs text-secondary mt-2">
-              {{ "details.teams.created_by" | transloco: { name: team.creator } }}
+              {{
+                "details.teams.created_by" | transloco: { name: team.creator }
+              }}
             </p>
           }
         </a>

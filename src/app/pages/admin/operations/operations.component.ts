@@ -58,17 +58,17 @@ export class OperationsComponent implements OnInit {
   public addIPWarning = computed(() => {
     const ip = this.addIPAddress().trim();
     if (!ip || ip.includes('/')) return null;
-    
+
     // Check for IPv4 ending in .0
     if (ip.match(/\.0$/)) {
       return 'This IP ends in .0 - did you forget to add a CIDR mask (e.g., /24)?';
     }
-    
+
     // Check for IPv6 ending in ::
     if (ip.match(/::$/)) {
       return 'This IP ends in :: - did you forget to add a CIDR mask (e.g., /64)?';
     }
-    
+
     return null;
   });
 
@@ -102,7 +102,6 @@ export class OperationsComponent implements OnInit {
 
   // Hour options for the add IP form
   public readonly hourOptions = [720, 336, 168, 72, 48, 24, 12, 8, 4, 2, 1];
-
 
   // Day options for worker block
   public readonly dayOptions = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -324,7 +323,7 @@ export class OperationsComponent implements OnInit {
     this.workerSearchQuery.set(value);
     this.workerDropdownOpen.set(true);
     this.workerFetchError.set(null);
-    
+
     // If user clears input, clear selection
     if (!value.trim()) {
       this.selectedWorker.set(null);
@@ -349,16 +348,21 @@ export class OperationsComponent implements OnInit {
    */
   public lookupWorkerByUUID(): void {
     const query = this.workerSearchQuery().trim();
-    
+
     // UUID format: 8-4-4-4-12 hex characters
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(query)) {
-      this.workerFetchError.set('Invalid UUID format. Expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx');
+      this.workerFetchError.set(
+        'Invalid UUID format. Expected format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+      );
       return;
     }
 
     // First check if it's in the loaded workers list
-    const cachedWorker = this.workers().find(w => w.id.toLowerCase() === query.toLowerCase());
+    const cachedWorker = this.workers().find(
+      (w) => w.id.toLowerCase() === query.toLowerCase(),
+    );
     if (cachedWorker) {
       this.selectWorker(cachedWorker);
       return;
@@ -392,7 +396,8 @@ export class OperationsComponent implements OnInit {
    */
   public isUUIDFormat(): boolean {
     const query = this.workerSearchQuery().trim();
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(query);
   }
 

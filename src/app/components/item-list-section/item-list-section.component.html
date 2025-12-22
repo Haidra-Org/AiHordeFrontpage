@@ -28,16 +28,25 @@
 
     @if (!isSectionCollapsed()) {
       <!-- Grid View -->
-      @if (viewMode() === 'grid') {
+      @if (viewMode() === "grid") {
         <div class="tools-grid">
           @for (item of items(); track item.uniqueId) {
-            <div class="tools-grid-card" [class.expanded]="isExpanded(item.name)">
-              <div class="tools-grid-card-header" (click)="toggleRow(item.name)">
+            <div
+              class="tools-grid-card"
+              [class.expanded]="isExpanded(item.name)"
+            >
+              <div
+                class="tools-grid-card-header"
+                (click)="toggleRow(item.name)"
+              >
                 @if (item.image) {
                   <div class="tools-grid-card-image">
                     <img
                       [src]="item.image"
-                      [alt]="'guis_and_tools.item_image_alt' | transloco: { name: item.name }"
+                      [alt]="
+                        'guis_and_tools.item_image_alt'
+                          | transloco: { name: item.name }
+                      "
                       loading="lazy"
                     />
                   </div>
@@ -84,19 +93,29 @@
           <!-- Table Header (Desktop Only) -->
           <div class="table-header-row">
             <div class="table-header-cell">
-              <span class="table-header-label">{{ "guis_and_tools.col_name" | transloco }}</span>
+              <span class="table-header-label">{{
+                "guis_and_tools.col_name" | transloco
+              }}</span>
             </div>
             <div class="table-header-cell">
-              <span class="table-header-label">{{ "guis_and_tools.col_function" | transloco }}</span>
+              <span class="table-header-label">{{
+                "guis_and_tools.col_function" | transloco
+              }}</span>
             </div>
             <div class="table-header-cell">
-              <span class="table-header-label">{{ "guis_and_tools.col_domain" | transloco }}</span>
+              <span class="table-header-label">{{
+                "guis_and_tools.col_domain" | transloco
+              }}</span>
             </div>
             <div class="table-header-cell">
-              <span class="table-header-label">{{ "guis_and_tools.col_platform" | transloco }}</span>
+              <span class="table-header-label">{{
+                "guis_and_tools.col_platform" | transloco
+              }}</span>
             </div>
             <div class="table-header-cell-end">
-              <span class="table-header-label">{{ "guis_and_tools.col_action" | transloco }}</span>
+              <span class="table-header-label">{{
+                "guis_and_tools.col_action" | transloco
+              }}</span>
             </div>
           </div>
 
@@ -116,7 +135,10 @@
                     <span class="badge-base badge-primary">
                       {{ getItemTypeLabel(item.itemType) | transloco }}
                     </span>
-                    @for (category of getFilteredCategories(item).slice(0, 2); track category) {
+                    @for (
+                      category of getFilteredCategories(item).slice(0, 2);
+                      track category
+                    ) {
                       <span
                         class="badge-base"
                         [class]="category | enumDisplay: 'category' : 'badge'"
@@ -134,7 +156,9 @@
 
                 <!-- Function Column -->
                 <div class="table-cell-meta">
-                  <div class="table-cell-label">{{ "guis_and_tools.col_function" | transloco }}</div>
+                  <div class="table-cell-label">
+                    {{ "guis_and_tools.col_function" | transloco }}
+                  </div>
                   <div>
                     <span class="badge-base badge-success">
                       {{ getPrimaryFunction(item) }}
@@ -144,7 +168,9 @@
 
                 <!-- Domain Column -->
                 <div class="table-cell-meta">
-                  <div class="table-cell-label">{{ "guis_and_tools.col_domain" | transloco }}</div>
+                  <div class="table-cell-label">
+                    {{ "guis_and_tools.col_domain" | transloco }}
+                  </div>
                   <div>
                     <span class="badge-base badge-purple">
                       {{ getDomainDisplay(item) }}
@@ -154,7 +180,9 @@
 
                 <!-- Platform Column -->
                 <div class="table-cell-meta">
-                  <div class="table-cell-label">{{ "guis_and_tools.col_platform" | transloco }}</div>
+                  <div class="table-cell-label">
+                    {{ "guis_and_tools.col_platform" | transloco }}
+                  </div>
                   <div>
                     <span class="badge-base badge-info">
                       {{ getPlatformDisplay(item) }}
@@ -170,7 +198,10 @@
                       target="_blank"
                       class="btn-source-control btn-sm"
                       (click)="$event.stopPropagation()"
-                      [title]="'View source code on ' + getSourceControlDomain(item.sourceControlLink)"
+                      [title]="
+                        'View source code on ' +
+                        getSourceControlDomain(item.sourceControlLink)
+                      "
                     >
                       {{ getSourceControlDomain(item.sourceControlLink) }}
                     </a>
@@ -213,10 +244,15 @@
                       <!-- Show all badges in expanded view -->
                       @if (getFilteredCategories(item).length > 2) {
                         <div class="badge-container-spaced">
-                          @for (category of getFilteredCategories(item); track category) {
+                          @for (
+                            category of getFilteredCategories(item);
+                            track category
+                          ) {
                             <span
                               class="badge-base"
-                              [class]="category | enumDisplay: 'category' : 'badge'"
+                              [class]="
+                                category | enumDisplay: 'category' : 'badge'
+                              "
                             >
                               {{ category }}
                             </span>
@@ -228,7 +264,10 @@
                       <div class="detail-image">
                         <img
                           [src]="item.image"
-                          [alt]="'guis_and_tools.item_image_alt' | transloco: { name: item.name }"
+                          [alt]="
+                            'guis_and_tools.item_image_alt'
+                              | transloco: { name: item.name }
+                          "
                         />
                       </div>
                     }

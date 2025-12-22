@@ -13,7 +13,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { combineLatest, switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
-import { BreadcrumbComponent, BreadcrumbItem } from '../../../components/breadcrumb/breadcrumb.component';
+import {
+  BreadcrumbComponent,
+  BreadcrumbItem,
+} from '../../../components/breadcrumb/breadcrumb.component';
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -22,7 +25,13 @@ import { extractUserAlias } from '../../../helper/user-parser';
 
 @Component({
   selector: 'app-user-profile',
-  imports: [TranslocoPipe, FormatNumberPipe, BreadcrumbComponent, RouterLink, KudosBreakdownPanelComponent],
+  imports: [
+    TranslocoPipe,
+    FormatNumberPipe,
+    BreadcrumbComponent,
+    RouterLink,
+    KudosBreakdownPanelComponent,
+  ],
   templateUrl: './user-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,7 +42,9 @@ export class UserProfileComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly aiHordeService = inject(AiHordeService);
 
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   public readonly user = signal<HordeUser | null>(null);
   public readonly loading = signal(true);

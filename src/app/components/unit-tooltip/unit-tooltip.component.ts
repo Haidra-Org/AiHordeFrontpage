@@ -104,9 +104,9 @@ const TOOLTIP_OFFSET = 8;
         (focusout)="hideTooltip()"
       >
         <span class="dotted-underline">{{ primaryDisplay() }}</span>
-        <span 
-          class="tooltip-text tooltip-text-fixed" 
-          role="tooltip" 
+        <span
+          class="tooltip-text tooltip-text-fixed"
+          role="tooltip"
           id="tooltip-content"
           [ngStyle]="tooltipStyles()"
         >
@@ -213,7 +213,10 @@ export class UnitTooltipComponent {
     const viewportHeight = window.innerHeight;
 
     // Use responsive tooltip width based on viewport
-    const tooltipWidth = Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2);
+    const tooltipWidth = Math.min(
+      TOOLTIP_WIDTH,
+      viewportWidth - VIEWPORT_MARGIN * 2,
+    );
 
     // === HORIZONTAL POSITIONING ===
     const triggerCenter = rect.left + rect.width / 2;

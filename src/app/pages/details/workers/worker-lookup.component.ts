@@ -12,7 +12,10 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { combineLatest, switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { BreadcrumbComponent, BreadcrumbItem } from '../../../components/breadcrumb/breadcrumb.component';
+import {
+  BreadcrumbComponent,
+  BreadcrumbItem,
+} from '../../../components/breadcrumb/breadcrumb.component';
 import { WorkerCardComponent } from '../../admin/workers/worker-card.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
@@ -20,7 +23,12 @@ import { HordeWorker } from '../../../types/horde-worker';
 
 @Component({
   selector: 'app-worker-lookup',
-  imports: [TranslocoPipe, BreadcrumbComponent, WorkerCardComponent, RouterLink],
+  imports: [
+    TranslocoPipe,
+    BreadcrumbComponent,
+    WorkerCardComponent,
+    RouterLink,
+  ],
   template: `
     <app-breadcrumb [items]="breadcrumbs()" />
 
@@ -44,10 +52,7 @@ import { HordeWorker } from '../../../types/horde-worker';
       </div>
     } @else if (worker()) {
       <div class="worker-lookup-result">
-        <app-worker-card
-          [worker]="worker()!"
-          viewMode="public"
-        />
+        <app-worker-card [worker]="worker()!" viewMode="public" />
       </div>
     }
   `,
@@ -60,7 +65,9 @@ export class WorkerLookupComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly workerService = inject(AdminWorkerService);
 
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   public readonly worker = signal<HordeWorker | null>(null);
   public readonly loading = signal(true);

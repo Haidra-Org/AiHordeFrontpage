@@ -92,7 +92,10 @@
         <span class="summary-value">
           {{ totalQueuedUnit().primary.formatted }}
           <span class="text-secondary">
-            (<app-unit-tooltip [unit]="totalQueuedUnit()" [swapDisplay]="true" />)
+            (<app-unit-tooltip
+              [unit]="totalQueuedUnit()"
+              [swapDisplay]="true"
+            />)
           </span>
         </span>
       </div>
@@ -123,7 +126,9 @@
           class="filter-input"
           role="combobox"
           aria-autocomplete="list"
-          [attr.aria-expanded]="autocompleteOpen() && autocompleteSuggestions().length > 0"
+          [attr.aria-expanded]="
+            autocompleteOpen() && autocompleteSuggestions().length > 0
+          "
           aria-controls="model-autocomplete-list"
           [placeholder]="'details.models.search_placeholder' | transloco"
           [value]="searchQuery()"
@@ -140,21 +145,32 @@
             class="filter-autocomplete-dropdown"
             role="listbox"
           >
-            @for (suggestion of autocompleteSuggestions(); track suggestion.name + suggestion.type; let i = $index) {
+            @for (
+              suggestion of autocompleteSuggestions();
+              track suggestion.name + suggestion.type;
+              let i = $index
+            ) {
               <button
                 type="button"
                 role="option"
                 class="filter-autocomplete-item"
-                [class.filter-autocomplete-item-active]="activeSuggestionIndex() === i"
+                [class.filter-autocomplete-item-active]="
+                  activeSuggestionIndex() === i
+                "
                 [attr.aria-selected]="activeSuggestionIndex() === i"
                 (mousedown)="selectSuggestion(suggestion)"
               >
-                <span class="filter-autocomplete-name">{{ suggestion.name }}</span>
+                <span class="filter-autocomplete-name">{{
+                  suggestion.name
+                }}</span>
                 <span class="filter-autocomplete-meta">
                   <span class="filter-autocomplete-badge">
-                    {{ suggestion.type === 'image' ? 'Image' : 'Text' }}
+                    {{ suggestion.type === "image" ? "Image" : "Text" }}
                   </span>
-                  <span>{{ suggestion.count }} {{ suggestion.count === 1 ? 'worker' : 'workers' }}</span>
+                  <span
+                    >{{ suggestion.count }}
+                    {{ suggestion.count === 1 ? "worker" : "workers" }}</span
+                  >
                 </span>
               </button>
             }
@@ -232,8 +248,10 @@
             (click)="setSortField('name')"
           >
             {{ "details.models.sort.name" | transloco }}
-            @if (sortField() === 'name') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "name") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
           <button
@@ -243,8 +261,10 @@
             (click)="setSortField('count')"
           >
             {{ "details.models.workers" | transloco }}
-            @if (sortField() === 'count') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "count") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
           <button
@@ -254,8 +274,10 @@
             (click)="setSortField('queued')"
           >
             {{ "details.models.queued" | transloco }}
-            @if (sortField() === 'queued') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "queued") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
           <button
@@ -265,8 +287,10 @@
             (click)="setSortField('jobs')"
           >
             {{ "details.models.jobs" | transloco }}
-            @if (sortField() === 'jobs') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "jobs") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
           <button
@@ -276,8 +300,10 @@
             (click)="setSortField('eta')"
           >
             {{ "details.models.eta" | transloco }}
-            @if (sortField() === 'eta') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "eta") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
           <button
@@ -287,17 +313,21 @@
             (click)="setSortField('performance')"
           >
             {{ "details.models.performance" | transloco }}
-            @if (sortField() === 'performance') {
-              <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+            @if (sortField() === "performance") {
+              <span class="sort-indicator">{{
+                sortDirection() === "asc" ? "↑" : "↓"
+              }}</span>
             }
           </button>
         </div>
 
         <!-- Table Rows -->
         @for (model of filteredModels(); track model.name) {
-          <div 
+          <div
             class="models-table-row"
-            [class.models-table-row-highlighted]="isModelHighlighted(model.name)"
+            [class.models-table-row-highlighted]="
+              isModelHighlighted(model.name)
+            "
             [attr.#highlightedRow]="isModelHighlighted(model.name) ? '' : null"
             #highlightedRow
           >
@@ -311,9 +341,11 @@
                   type="button"
                   class="badge-base badge-warning badge-dismissible"
                   (click)="clearHighlight(); $event.stopPropagation()"
-                  [attr.aria-label]="'details.common.clear_highlight' | transloco"
+                  [attr.aria-label]="
+                    'details.common.clear_highlight' | transloco
+                  "
                 >
-                  {{ 'details.common.highlighted' | transloco }}
+                  {{ "details.common.highlighted" | transloco }}
                   <span aria-hidden="true">×</span>
                 </button>
               }
@@ -345,7 +377,12 @@
                 @if (model.queued && model.queued > 0) {
                   @let queuedUnit = getModelQueuedUnit(model);
                   {{ queuedUnit.primary.value | number: "1.1-1" }}
-                  <app-unit-tooltip [unit]="queuedUnit" [primaryOverride]="queuedUnit.primary.prefix + queuedUnit.primary.unit" />
+                  <app-unit-tooltip
+                    [unit]="queuedUnit"
+                    [primaryOverride]="
+                      queuedUnit.primary.prefix + queuedUnit.primary.unit
+                    "
+                  />
                 } @else {
                   -
                 }
@@ -391,7 +428,12 @@
               >
                 @if (getModelPerformanceUnit(model); as perfUnit) {
                   {{ perfUnit.primary.value | number: "1.2-2" }}
-                  <app-unit-tooltip [unit]="perfUnit" [primaryOverride]="perfUnit.primary.prefix + perfUnit.primary.unit" />
+                  <app-unit-tooltip
+                    [unit]="perfUnit"
+                    [primaryOverride]="
+                      perfUnit.primary.prefix + perfUnit.primary.unit
+                    "
+                  />
                 } @else {
                   -
                 }
