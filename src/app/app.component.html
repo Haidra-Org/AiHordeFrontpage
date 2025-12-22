@@ -55,6 +55,14 @@
           >
             {{ "guis_and_tools" | transloco }}
           </a>
+          <a
+            routerLink="/contribute"
+            class="nav-link"
+            role="menuitem"
+            routerLinkActive="nav-link-active"
+          >
+            {{ "joining" | transloco }}
+          </a>
 
           <a
             routerLink="/faq/"
@@ -130,6 +138,15 @@
                   (click)="closeDetailsDropdown()"
                 >
                   {{ "nav.active_details.styles" | transloco }}
+                </a>
+                <a
+                  routerLink="/details/teams/"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.teams" | transloco }}
                 </a>
                 <a
                   routerLink="/details/leaderboard/"
@@ -372,6 +389,24 @@
                   >
                     {{ "nav.active_details.styles" | transloco }}
                   </a>
+                  <a
+                    routerLink="/details/teams/"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.teams" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/details/leaderboard/"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.leaderboard" | transloco }}
+                  </a>
                 </div>
               }
             </div>
@@ -571,9 +606,8 @@
             </li>
             <li class="mb-3">
               <a
-                href="https://github.com/Haidra-Org/AI-Horde/blob/main/README_StableHorde.md#joining-the-horde"
+                routerLink="/contribute/joining"
                 class="hover:underline"
-                target="_blank"
                 >{{ "join_horde" | transloco }}</a
               >
             </li>

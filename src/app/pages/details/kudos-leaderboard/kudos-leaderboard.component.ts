@@ -73,6 +73,14 @@ export class KudosLeaderboardComponent implements OnInit {
   /** Whether to show thank you message after rank search. */
   public readonly showThankYou = signal(false);
 
+  /** Whether the kudos explanation is expanded on mobile. */
+  public readonly kudosExplanationExpanded = signal(false);
+
+  /** Toggle kudos explanation expansion. */
+  public toggleKudosExplanation(): void {
+    this.kudosExplanationExpanded.update((v) => !v);
+  }
+
   constructor() {
     // Fetch leaderboard only in the browser after rendering completes.
     // This prevents stale prerendered data from appearing during static builds.

@@ -4,6 +4,7 @@
    Includes:
    - List with checkboxes
    - Stats list
+   - Checkmark list (green checkmarks)
    ================================================================= */
 
 @layer components {
@@ -19,5 +20,24 @@
   /* Stats list */
   .list-stats {
     @apply flex flex-col gap-2 mt-3;
+  }
+
+  /* =================================================================
+     CHECKMARK LIST - Inline checkmarks with text
+     Used for transparency badges, mission statements, etc.
+     ================================================================= */
+
+  .checkmark-list {
+    @apply flex flex-wrap gap-4;
+  }
+
+  .checkmark-item {
+    @apply flex items-center gap-2;
+    @apply text-green-700 font-medium;
+    @apply dark:text-green-400;
+  }
+
+  .checkmark-item .icon-sm {
+    @apply shrink-0;
   }
 }

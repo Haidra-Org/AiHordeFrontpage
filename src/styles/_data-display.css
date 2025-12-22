@@ -96,6 +96,11 @@
     @apply grid grid-cols-2 gap-3 md:grid-cols-4;
   }
 
+  /* 2-4 column responsive grid with larger gap */
+  .data-grid-2-4-spaced {
+    @apply grid grid-cols-2 gap-4 md:grid-cols-4;
+  }
+
   /* =================================================================
      HIGHLIGHT BOXES - Gradient backgrounds for emphasis
      ================================================================= */
@@ -158,6 +163,20 @@
   /* Avatar text */
   .avatar-text {
     @apply text-3xl font-bold text-white;
+  }
+
+  /* =================================================================
+     PROFILE HEADER
+     ================================================================= */
+
+  /* Profile header with avatar and info */
+  .profile-header {
+    @apply flex items-center gap-6;
+  }
+
+  /* Profile header content */
+  .profile-header-content {
+    @apply flex flex-col;
   }
 
   /* =================================================================
@@ -228,8 +247,20 @@
      ================================================================= */
 
   /* 1-2-3 column responsive grid for workers */
-  .worker-grid {
-    @apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+.worker-grid {
+  @apply grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3;
+  @apply max-w-lg mx-auto sm:max-w-none;
+}
+
+  /* =================================================================
+     ENTITY HIGHLIGHTING - Unified highlighting for linked/selected items
+     ================================================================= */
+
+  /* Base entity highlighting - orange ring for linked items from URL */
+  .entity-highlighted {
+    @apply ring-4 ring-orange-400 ring-offset-2;
+    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
+    scroll-margin-top: 1rem;
   }
 
   /* =================================================================
@@ -240,12 +271,20 @@
   .worker-card-normal {
     @apply rounded-xl overflow-hidden bg-surface-primary border-2 border-edge-secondary;
     @apply dark:bg-transparent dark:border dark:border-edge-primary;
+    @apply max-w-lg;
   }
 
   /* Worker card with issue state */
   .worker-card-issue {
     @apply rounded-xl overflow-hidden bg-red-50 border border-red-300;
     @apply dark:bg-red-900/30 dark:border-red-800/50;
+  }
+
+  /* Worker card highlighted state (linked from URL) */
+  .worker-card-highlighted {
+    @apply ring-4 ring-orange-400 ring-offset-2;
+    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
+    scroll-margin-top: 1rem;
   }
 
   /* Worker card section dividers */
@@ -307,11 +346,92 @@
 
   /* Worker card link style */
   .worker-link {
-    @apply text-brand-blue no-underline transition-colors duration-200;
+    @apply no-underline transition-colors duration-200;
   }
 
   .worker-link:hover {
-    @apply text-brand-blue-hover underline;
+     @apply underline; 
+  }
+
+  /* Worker item link - clickable worker/team member card in grid lists */
+  .worker-item-link {
+    @apply block p-3 rounded-lg no-underline;
+    @apply bg-gray-100 border border-gray-200;
+    @apply transition-colors duration-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .worker-item-link:hover {
+    @apply bg-gray-50;
+    border-color: var(--color-primary-light);
+  }
+
+  .dark .worker-item-link:hover {
+    @apply bg-gray-700;
+  }
+
+  /* Worker item header - row with name and status badge */
+  .worker-item-header {
+    @apply flex items-center justify-between;
+  }
+
+  /* Worker item name - truncated medium weight text */
+  .worker-item-name {
+    @apply font-medium truncate;
+  }
+
+  /* Worker item ID/subtitle - small muted text */
+  .worker-item-subtitle {
+    @apply text-xs text-content-secondary mt-1 truncate;
+  }
+
+  /* Team/entity card link - larger clickable card for grid lists */
+  .entity-card-link {
+    @apply block p-4 rounded-lg no-underline;
+    @apply bg-gray-100 border border-gray-200;
+    @apply transition-colors duration-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .entity-card-link:hover {
+    @apply border-blue-500;
+  }
+
+  .dark .entity-card-link:hover {
+    @apply border-blue-400;
+  }
+
+  /* Entity card title - blue link-style heading */
+  .entity-card-title {
+    @apply text-blue-600 mb-2;
+    @apply dark:text-blue-400;
+  }
+
+  /* Entity card stats row - compact stats with icons */
+  .entity-card-stats {
+    @apply flex flex-wrap gap-3 text-xs text-content-secondary;
+  }
+
+  /* Entity card stat item - icon + text */
+  .entity-card-stat {
+    @apply flex items-center gap-1;
+  }
+
+  /* Entity card highlighted state (linked from URL) */
+  .entity-card-highlighted {
+    @apply ring-4 ring-orange-400 ring-offset-2;
+    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
+    scroll-margin-top: 1rem;
+  }
+
+  /* Worker badge interactive - clickable badge with hover ring effect */
+  .worker-badge-interactive {
+    @apply cursor-pointer transition-shadow duration-200;
+  }
+
+  .worker-badge-interactive:hover {
+    @apply ring-2;
+    --tw-ring-color: var(--color-primary-light);
   }
 
   /* Worker card button styles */
@@ -432,6 +552,115 @@
   .param-value {
     @apply m-0 text-base font-medium text-content-primary;
     @apply dark:text-gray-200;
+  }
+
+  /* =================================================================
+     STEP INDICATORS - Numbered steps for guides/tutorials
+     ================================================================= */
+
+  /* Step list container */
+  .step-list {
+    @apply space-y-6;
+  }
+
+  /* Step item row */
+  .step-item {
+    @apply flex gap-4;
+  }
+
+  /* Numbered step circle */
+  .step-number {
+    @apply shrink-0 w-10 h-10 rounded-full flex items-center justify-center;
+    @apply bg-purple-600 text-white font-bold;
+    @apply dark:bg-purple-500;
+  }
+
+  /* Step content area */
+  .step-content {
+    @apply flex-1;
+  }
+
+  .step-title {
+    @apply text-lg font-semibold mb-1;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  .step-description {
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* =================================================================
+     SOFTWARE LINK CARDS - GitHub repo/download links
+     ================================================================= */
+
+  /* Software link container */
+  .software-link {
+    @apply flex items-center gap-3 p-3 rounded-lg no-underline;
+    @apply bg-surface-primary border border-edge-primary;
+    @apply transition-colors duration-200;
+    @apply dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .software-link:hover {
+    @apply border-purple-500;
+    @apply dark:border-purple-400;
+  }
+
+  .software-link--blue:hover {
+    @apply border-blue-500;
+    @apply dark:border-blue-400;
+  }
+
+  /* Software icon container (small) */
+  .software-icon {
+    @apply shrink-0 w-10 h-10 rounded-lg flex items-center justify-center;
+  }
+
+  .software-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+    @apply dark:bg-purple-900 dark:text-purple-300;
+  }
+
+  .software-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+    @apply dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .software-icon svg {
+    @apply w-5 h-5;
+  }
+
+  /* Software link content */
+  .software-link-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .software-link-title {
+    @apply font-semibold;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  .software-link-description {
+    @apply text-sm;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* External link icon */
+  .software-link-arrow {
+    @apply w-5 h-5;
+    @apply text-content-muted;
+    @apply dark:text-gray-500;
+  }
+
+  /* Transparency box - bordered container with checkmarks */
+  .transparency-box {
+    @apply p-6 rounded-lg;
+    @apply bg-surface-secondary border border-edge-primary;
+    @apply dark:bg-gray-800 dark:border-gray-700;
   }
 }
 

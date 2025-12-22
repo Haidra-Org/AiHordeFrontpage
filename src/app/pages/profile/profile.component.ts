@@ -23,9 +23,11 @@ import { FooterColorService } from '../../services/footer-color.service';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
 import { AuthService } from '../../services/auth.service';
 import { AdminWorkerService } from '../../services/admin-worker.service';
+import { TeamService } from '../../services/team.service';
 import { FormatNumberPipe } from '../../pipes/format-number.pipe';
 import { WorkerCardComponent } from '../admin/workers/worker-card.component';
 import { HordeWorker, WorkerType } from '../../types/horde-worker';
+import { Team, CreateTeamRequest, UpdateTeamRequest } from '../../types/team';
 import { SharedKeyListComponent } from '../../components/shared-key/shared-key-list/shared-key-list.component';
 import { ProfileStylesListComponent } from '../../components/profile-styles-list/profile-styles-list.component';
 import { KudosBreakdownPanelComponent } from '../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
@@ -67,6 +69,7 @@ export class ProfileComponent implements OnInit {
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workerService = inject(AdminWorkerService);
+  private readonly teamService = inject(TeamService);
   private readonly router = inject(Router);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
@@ -76,7 +79,7 @@ export class ProfileComponent implements OnInit {
 
   // Tab state
   public activeTab = signal<
-    'profile' | 'records' | 'workers' | 'styles' | 'shared-keys'
+    'profile' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys'
   >('profile');
 
   // Workers state
@@ -97,6 +100,18 @@ export class ProfileComponent implements OnInit {
   public deleteLoading = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
   public deleteSuccess = signal<string | null>(null);
+
+  // Teams state
+  public allTeams = signal<Team[]>([]);
+  public loadingTeams = signal<boolean>(false);
+  public teamDialogOpen = signal<boolean>(false);
+  public teamDialogType = signal<'create' | 'edit' | 'delete'>('create');
+  public editingTeam = signal<Team | null>(null);
+  public teamFormName = signal<string>('');
+  public teamFormInfo = signal<string>('');
+  public teamSaving = signal<boolean>(false);
+  public teamError = signal<string | null>(null);
+  public teamSuccess = signal<boolean>(false);
 
   // Undelete account state
   public undeleteDialogOpen = signal<boolean>(false);
@@ -129,13 +144,14 @@ export class ProfileComponent implements OnInit {
       result = result.filter((item) => !item.worker!.online);
     }
 
-    // Filter by name (partial matching)
+    // Filter by name or team (partial matching)
     const searchText = this.filterText().toLowerCase();
     if (searchText) {
       result = result.filter(
         (item) =>
           item.worker!.name.toLowerCase().includes(searchText) ||
-          (item.worker!.id ?? '').toLowerCase().includes(searchText),
+          (item.worker!.id ?? '').toLowerCase().includes(searchText) ||
+          (item.worker!.team?.name ?? '').toLowerCase().includes(searchText),
       );
     }
 
@@ -257,13 +273,19 @@ export class ProfileComponent implements OnInit {
   }
 
   public setActiveTab(
-    tab: 'profile' | 'records' | 'workers' | 'styles' | 'shared-keys',
+    tab: 'profile' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys',
   ): void {
     this.activeTab.set(tab);
 
     // Load workers when switching to workers tab
     if (tab === 'workers' && this.userWorkers().length === 0) {
       this.loadUserWorkers();
+    }
+
+    // Load teams when switching to workers tab (for team assignment dropdown)
+    // or when switching to teams tab
+    if ((tab === 'workers' || tab === 'teams') && this.allTeams().length === 0) {
+      this.loadAllTeams();
     }
   }
 
@@ -439,5 +461,245 @@ export class ProfileComponent implements OnInit {
   private isActiveWorker(worker: HordeWorker | null): boolean {
     if (!worker) return false;
     return worker.online && !worker.paused && !worker.maintenance_mode;
+  }
+
+  // ============================================================================
+  // TEAMS MANAGEMENT METHODS
+  // ============================================================================
+
+  /**
+   * Load all teams from the API
+   */
+  private loadAllTeams(): void {
+    this.loadingTeams.set(true);
+    this.teamService
+      .getTeams()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (teams) => {
+          this.allTeams.set(teams);
+          this.loadingTeams.set(false);
+        },
+        error: () => {
+          this.loadingTeams.set(false);
+        },
+      });
+  }
+
+  /**
+   * Refresh teams list (public method for manual refresh)
+   */
+  public refreshTeams(): void {
+    this.loadAllTeams();
+  }
+
+  /**
+   * Get teams created by the current user
+   */
+  public getUserCreatedTeams(): Team[] {
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) return [];
+
+    return this.allTeams().filter(
+      (team) => team.creator === currentUser.username,
+    );
+  }
+
+  /**
+   * Get teams that the user's workers belong to (but not created by user)
+   */
+  public getUserWorkerTeams(): Team[] {
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) return [];
+
+    const workerTeamIds = new Set<string>();
+    for (const workerItem of this.userWorkers()) {
+      if (workerItem.worker?.team?.id) {
+        workerTeamIds.add(workerItem.worker.team.id);
+      }
+    }
+
+    const createdTeamIds = new Set(
+      this.getUserCreatedTeams().map((t) => t.id),
+    );
+
+    return this.allTeams().filter(
+      (team) =>
+        team.id && workerTeamIds.has(team.id) && !createdTeamIds.has(team.id),
+    );
+  }
+
+  /**
+   * Check if the current user can create teams (must be trusted)
+   */
+  public canCreateTeam(): boolean {
+    return this.auth.currentUser()?.trusted === true;
+  }
+
+  /**
+   * Check if the current user can edit a specific team
+   */
+  public canEditTeam(team: Team): boolean {
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) return false;
+
+    // Moderators can edit any team
+    if (currentUser.moderator) return true;
+
+    // Team creator can edit
+    return team.creator === currentUser.username;
+  }
+
+  /**
+   * Open the create team dialog
+   */
+  public openCreateTeamDialog(): void {
+    if (!this.canCreateTeam()) return;
+
+    this.teamDialogType.set('create');
+    this.editingTeam.set(null);
+    this.teamFormName.set('');
+    this.teamFormInfo.set('');
+    this.teamError.set(null);
+    this.teamDialogOpen.set(true);
+  }
+
+  /**
+   * Open the edit team dialog
+   */
+  public openEditTeamDialog(team: Team): void {
+    if (!this.canEditTeam(team)) return;
+
+    this.teamDialogType.set('edit');
+    this.editingTeam.set(team);
+    this.teamFormName.set(team.name ?? '');
+    this.teamFormInfo.set(team.info ?? '');
+    this.teamError.set(null);
+    this.teamDialogOpen.set(true);
+  }
+
+  /**
+   * Open the delete team dialog
+   */
+  public openDeleteTeamDialog(team: Team): void {
+    if (!this.canEditTeam(team)) return;
+
+    this.teamDialogType.set('delete');
+    this.editingTeam.set(team);
+    this.teamError.set(null);
+    this.teamDialogOpen.set(true);
+  }
+
+  /**
+   * Close the team dialog
+   */
+  public closeTeamDialog(): void {
+    this.teamDialogOpen.set(false);
+  }
+
+  /**
+   * Handle team form name change
+   */
+  public onTeamNameChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.teamFormName.set(target.value);
+  }
+
+  /**
+   * Handle team form info change
+   */
+  public onTeamInfoChange(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.teamFormInfo.set(target.value);
+  }
+
+  /**
+   * Check if the team form is valid
+   */
+  public isTeamFormValid(): boolean {
+    const name = this.teamFormName().trim();
+    return name.length >= 3 && name.length <= 100;
+  }
+
+  /**
+   * Confirm create or edit team
+   */
+  public confirmTeamSave(): void {
+    if (!this.isTeamFormValid()) return;
+
+    this.teamSaving.set(true);
+    this.teamError.set(null);
+
+    const name = this.teamFormName().trim();
+    const info = this.teamFormInfo().trim() || undefined;
+
+    if (this.teamDialogType() === 'create') {
+      const payload: CreateTeamRequest = { name, info };
+      this.teamService
+        .createTeam(payload)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.teamSaving.set(false);
+            this.teamDialogOpen.set(false);
+            this.teamSuccess.set(true);
+            setTimeout(() => this.teamSuccess.set(false), 3000);
+            this.loadAllTeams();
+          },
+          error: (err) => {
+            this.teamSaving.set(false);
+            this.teamError.set(err.message ?? 'Failed to create team');
+          },
+        });
+    } else if (this.teamDialogType() === 'edit') {
+      const teamId = this.editingTeam()?.id;
+      if (!teamId) return;
+
+      const payload: UpdateTeamRequest = { name, info };
+      this.teamService
+        .updateTeam(teamId, payload)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.teamSaving.set(false);
+            this.teamDialogOpen.set(false);
+            this.teamSuccess.set(true);
+            setTimeout(() => this.teamSuccess.set(false), 3000);
+            this.loadAllTeams();
+          },
+          error: (err) => {
+            this.teamSaving.set(false);
+            this.teamError.set(err.message ?? 'Failed to update team');
+          },
+        });
+    }
+  }
+
+  /**
+   * Confirm delete team
+   */
+  public confirmTeamDelete(): void {
+    const teamId = this.editingTeam()?.id;
+    if (!teamId) return;
+
+    this.teamSaving.set(true);
+    this.teamError.set(null);
+
+    this.teamService
+      .deleteTeam(teamId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.teamSaving.set(false);
+          this.teamDialogOpen.set(false);
+          this.teamSuccess.set(true);
+          setTimeout(() => this.teamSuccess.set(false), 3000);
+          this.loadAllTeams();
+        },
+        error: (err) => {
+          this.teamSaving.set(false);
+          this.teamError.set(err.message ?? 'Failed to delete team');
+        },
+      });
   }
 }

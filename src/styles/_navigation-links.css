@@ -141,4 +141,37 @@
   .mobile-nav-submenu-item {
     @apply text-base;
   }
+
+  /* =================================================================
+     BREADCRUMB NAVIGATION
+     ================================================================= */
+
+  .breadcrumb {
+    @apply mb-4;
+  }
+
+  .breadcrumb-list {
+    @apply flex items-center flex-wrap gap-1 list-none m-0 p-0;
+  }
+
+  .breadcrumb-item {
+    @apply flex items-center gap-1;
+  }
+
+  .breadcrumb-link {
+    @apply text-sm font-medium text-brand-purple no-underline;
+    @apply hover:text-purple-700 hover:underline;
+    @apply dark:text-purple-400 dark:hover:text-purple-300;
+    @apply focus:outline-none focus:underline;
+  }
+
+  .breadcrumb-current {
+    @apply text-sm font-medium text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  .breadcrumb-separator {
+    @apply text-content-muted mx-1;
+    @apply dark:text-gray-500;
+  }
 }

@@ -4,9 +4,11 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   input,
   OnInit,
+  output,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,10 +19,13 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
+import { TeamService } from '../../../services/team.service';
 import { HordeWorker, WorkerType } from '../../../types/horde-worker';
+import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { extractUserId } from '../../../helper/user-parser';
 
 type SortKey =
   | 'name'
@@ -48,13 +53,33 @@ export class WorkerListComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workerService = inject(AdminWorkerService);
+  private readonly teamService = inject(TeamService);
   public readonly auth = inject(AuthService);
   public viewMode = input<'admin' | 'public'>('admin');
   public titleKey = input<string>('admin.workers.title');
   public setPageTitle = input<boolean>(true);
 
+  /** Initial worker type to display (from route). */
+  public initialWorkerType = input<WorkerType | null>(null);
+
+  /** Worker ID to highlight and scroll to (from route). */
+  public highlightWorkerId = input<string | null>(null);
+
+  /** Owner ID to filter by (from route). */
+  public filterOwnerId = input<string | null>(null);
+
+  /** Emits when the worker type tab changes. */
+  public workerTypeChanged = output<WorkerType>();
+
+  /** Emits when the user wants to clear the owner filter. */
+  public ownerFilterCleared = output<void>();
+
+  /** Emits when the user wants to clear the highlighted worker. */
+  public highlightCleared = output<void>();
+
   // State
   public workers = signal<HordeWorker[]>([]);
+  public teams = signal<Team[]>([]);
   public loading = signal<boolean>(true);
   public errorMessage = signal<string | null>(null);
   public filterText = signal<string>('');
@@ -65,6 +90,46 @@ export class WorkerListComponent implements OnInit {
   public statisticsCollapsed = signal<boolean>(true);
   public deletionSuccessMessage = signal<boolean>(false);
 
+  /** Track whether initial type has been applied. */
+  private initialTypeApplied = false;
+
+  /** Track whether we need to scroll to highlighted worker. */
+  private pendingScrollToWorker = false;
+
+  constructor() {
+    // Effect to apply initial worker type from route
+    effect(() => {
+      const initialType = this.initialWorkerType();
+      if (initialType && !this.initialTypeApplied) {
+        this.workerType.set(initialType);
+        this.initialTypeApplied = true;
+      }
+    });
+
+    // Effect to detect worker type and scroll to highlighted worker
+    effect(() => {
+      const workerId = this.highlightWorkerId();
+      const workers = this.workers();
+      
+      if (workerId && workers.length > 0 && !this.initialTypeApplied) {
+        // Find the worker and determine its type
+        const worker = workers.find(w => w.id === workerId);
+        if (worker) {
+          this.workerType.set(worker.type);
+          this.initialTypeApplied = true;
+          this.pendingScrollToWorker = true;
+        }
+      }
+    });
+
+    // Fetch workers only in the browser after rendering completes.
+    // This prevents stale prerendered data from appearing during static builds.
+    afterNextRender(() => {
+      this.loadWorkers();
+      this.loadTeams();
+    });
+  }
+
   public setWorkerType(type: WorkerType): void {
     if (this.workerType() === type) return;
     this.workerType.set(type);
@@ -73,13 +138,25 @@ export class WorkerListComponent implements OnInit {
     if (type !== 'image' && this.sortKey() === 'megapixelsteps_generated') {
       this.sortKey.set('name');
     }
+    // Emit the change
+    this.workerTypeChanged.emit(type);
   }
 
   // Computed filtered and sorted workers
   public filteredWorkers = computed(() => {
     let result = this.workers().filter((w) => w.type === this.workerType());
 
-    // Apply text filter
+    // Filter by owner ID if specified
+    const ownerId = this.filterOwnerId();
+    if (ownerId) {
+      result = result.filter((w) => {
+        // Extract the numeric ID from the owner's username (format: "alias#id")
+        const ownerUserId = extractUserId(w.owner);
+        return ownerUserId !== null && ownerUserId.toString() === ownerId;
+      });
+    }
+
+    // Apply text filter (includes team name)
     const filter = this.filterText().toLowerCase();
     if (filter) {
       result = result.filter(
@@ -87,15 +164,23 @@ export class WorkerListComponent implements OnInit {
           w.name.toLowerCase().includes(filter) ||
           (w.owner ?? '').toLowerCase().includes(filter) ||
           w.id.toLowerCase().includes(filter) ||
-          (w.bridge_agent ?? '').toLowerCase().includes(filter),
+          (w.bridge_agent ?? '').toLowerCase().includes(filter) ||
+          (w.team?.name ?? '').toLowerCase().includes(filter),
       );
     }
 
-    // Sort
+    // Sort - if there's a highlighted worker, put it first
+    const highlightId = this.highlightWorkerId();
     const key = this.sortKey();
     const order = this.sortOrder();
 
     result = [...result].sort((a, b) => {
+      // Always put highlighted worker first
+      if (highlightId) {
+        if (a.id === highlightId) return -1;
+        if (b.id === highlightId) return 1;
+      }
+
       let aVal: string | number = a[key] as string | number;
       let bVal: string | number = b[key] as string | number;
 
@@ -128,6 +213,27 @@ export class WorkerListComponent implements OnInit {
 
     return result;
   });
+
+  /** Computed: whether the owner filter returned no results across all worker types */
+  public readonly ownerNotFound = computed(() => {
+    const ownerId = this.filterOwnerId();
+    if (!ownerId) return false;
+    // Check if we have workers loaded but none match the owner filter across ALL types
+    const allWorkers = this.workers();
+    if (this.loading() || allWorkers.length === 0) return false;
+    
+    // Check if any worker matches the owner ID (regardless of type)
+    const hasAnyMatch = allWorkers.some((w) => {
+      const ownerUserId = extractUserId(w.owner);
+      return ownerUserId !== null && ownerUserId.toString() === ownerId;
+    });
+    return !hasAnyMatch;
+  });
+
+  /** Check if a worker is highlighted (for styling). */
+  public isWorkerHighlighted(workerId: string): boolean {
+    return this.highlightWorkerId() === workerId;
+  }
 
   // Statistics computed signals
   public totalWorkers = computed(() => this.filteredWorkers().length);
@@ -280,14 +386,6 @@ export class WorkerListComponent implements OnInit {
     return capabilities;
   });
 
-  constructor() {
-    // Fetch workers only in the browser after rendering completes.
-    // This prevents stale prerendered data from appearing during static builds.
-    afterNextRender(() => {
-      this.loadWorkers();
-    });
-  }
-
   ngOnInit(): void {
     if (this.setPageTitle()) {
       combineLatest([
@@ -321,6 +419,21 @@ export class WorkerListComponent implements OnInit {
       });
   }
 
+  private loadTeams(): void {
+    this.teamService
+      .getTeams()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (teams) => {
+          this.teams.set(teams);
+        },
+        error: () => {
+          // Silently fail - teams are optional for display
+          this.teams.set([]);
+        },
+      });
+  }
+
   public refreshWorkers(): void {
     this.loadWorkers();
   }
@@ -350,6 +463,15 @@ export class WorkerListComponent implements OnInit {
     // Show success toast
     this.deletionSuccessMessage.set(true);
     setTimeout(() => this.deletionSuccessMessage.set(false), 5000);
+  }
+
+  /**
+   * Handle clearing the highlighted worker.
+   * Scrolls to top and emits event for parent to handle navigation.
+   */
+  public onHighlightCleared(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.highlightCleared.emit();
   }
 
   public toggleWorkerVersions(): void {

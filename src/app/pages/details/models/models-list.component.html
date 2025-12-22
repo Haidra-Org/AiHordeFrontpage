@@ -102,7 +102,7 @@
   <!-- Search -->
   @if (!loading() && !error() && currentModels().length > 0) {
     <div class="details-filters">
-      <div class="filter-search">
+      <div class="filter-search-autocomplete">
         <svg
           class="icon-sm filter-search-icon"
           fill="none"
@@ -118,12 +118,48 @@
           />
         </svg>
         <input
+          #searchInput
           type="text"
           class="filter-input"
+          role="combobox"
+          aria-autocomplete="list"
+          [attr.aria-expanded]="autocompleteOpen() && autocompleteSuggestions().length > 0"
+          aria-controls="model-autocomplete-list"
           [placeholder]="'details.models.search_placeholder' | transloco"
           [value]="searchQuery()"
           (input)="onSearchChange($event)"
+          (focus)="onSearchFocus()"
+          (keydown)="onSearchKeydown($event)"
+          autocomplete="off"
         />
+
+        <!-- Autocomplete dropdown -->
+        @if (autocompleteOpen() && autocompleteSuggestions().length > 0) {
+          <div
+            id="model-autocomplete-list"
+            class="filter-autocomplete-dropdown"
+            role="listbox"
+          >
+            @for (suggestion of autocompleteSuggestions(); track suggestion.name + suggestion.type; let i = $index) {
+              <button
+                type="button"
+                role="option"
+                class="filter-autocomplete-item"
+                [class.filter-autocomplete-item-active]="activeSuggestionIndex() === i"
+                [attr.aria-selected]="activeSuggestionIndex() === i"
+                (mousedown)="selectSuggestion(suggestion)"
+              >
+                <span class="filter-autocomplete-name">{{ suggestion.name }}</span>
+                <span class="filter-autocomplete-meta">
+                  <span class="filter-autocomplete-badge">
+                    {{ suggestion.type === 'image' ? 'Image' : 'Text' }}
+                  </span>
+                  <span>{{ suggestion.count }} {{ suggestion.count === 1 ? 'worker' : 'workers' }}</span>
+                </span>
+              </button>
+            }
+          </div>
+        }
       </div>
     </div>
   }
@@ -259,12 +295,28 @@
 
         <!-- Table Rows -->
         @for (model of filteredModels(); track model.name) {
-          <div class="models-table-row">
+          <div 
+            class="models-table-row"
+            [class.models-table-row-highlighted]="isModelHighlighted(model.name)"
+            [attr.#highlightedRow]="isModelHighlighted(model.name) ? '' : null"
+            #highlightedRow
+          >
             <!-- Name + Badges -->
             <div class="models-table-cell-name">
               <span class="models-table-name" [title]="model.name">{{
                 model.name
               }}</span>
+              @if (isModelHighlighted(model.name)) {
+                <button
+                  type="button"
+                  class="badge-base badge-warning badge-dismissible"
+                  (click)="clearHighlight(); $event.stopPropagation()"
+                  [attr.aria-label]="'details.common.clear_highlight' | transloco"
+                >
+                  {{ 'details.common.highlighted' | transloco }}
+                  <span aria-hidden="true">×</span>
+                </button>
+              }
             </div>
 
             <!-- Workers -->

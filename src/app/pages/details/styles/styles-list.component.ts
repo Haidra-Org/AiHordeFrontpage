@@ -4,11 +4,14 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute } from '@angular/router';
 import {
@@ -44,6 +47,7 @@ import {
   StyleFormComponent,
   StyleFormSubmitEvent,
 } from '../../../components/style/style-form/style-form.component';
+import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 
 export type StylesTab = 'image' | 'text' | 'collections';
 
@@ -56,6 +60,7 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     StyleCardComponent,
     StyleFiltersComponent,
     StyleFormComponent,
+    EntityLookupComponent,
   ],
   templateUrl: './styles-list.component.html',
   styleUrl: './styles-list.component.css',
@@ -71,6 +76,26 @@ export class StylesListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly initialPageBatchCount = 2;
   private readonly pageSize = 25;
+
+  /** Route parameters as signals. */
+  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+
+  /** Style ID to highlight from route. */
+  public readonly highlightStyleId = computed<string | null>(() => {
+    return this.params()['highlightStyleId'] ?? null;
+  });
+
+  /** Style type from route for highlighting. */
+  public readonly highlightStyleType = computed<StylesTab | null>(() => {
+    const type = this.params()['type'];
+    if (type === 'image' || type === 'text') {
+      return type;
+    }
+    return null;
+  });
+
+  /** Reference to highlighted style element for scrolling. */
+  private readonly highlightedStyle = viewChild<ElementRef<HTMLElement>>('highlightedStyle');
 
   /** Current active tab. */
   public readonly activeTab = signal<StylesTab>('image');
@@ -141,6 +166,7 @@ export class StylesListComponent implements OnInit {
   public readonly filteredStyles = computed(() => {
     const tab = this.activeTab();
     const filters = this.clientFilters();
+    const highlightId = this.highlightStyleId();
     let styles: Style[];
 
     if (tab === 'image') {
@@ -167,8 +193,22 @@ export class StylesListComponent implements OnInit {
       });
     }
 
+    // Sort highlighted style first
+    if (highlightId) {
+      styles = [...styles].sort((a, b) => {
+        if (a.id === highlightId) return -1;
+        if (b.id === highlightId) return 1;
+        return 0;
+      });
+    }
+
     return styles;
   });
+
+  /** Check if a style is highlighted (for styling). */
+  public isStyleHighlighted(styleId: string): boolean {
+    return this.highlightStyleId() === styleId;
+  }
 
   /** Filtered collections. */
   public readonly filteredCollections = computed(() => {
@@ -188,6 +228,28 @@ export class StylesListComponent implements OnInit {
   });
 
   constructor() {
+    // Effect to switch to correct tab when highlighting
+    effect(() => {
+      const highlightType = this.highlightStyleType();
+      if (highlightType && this.activeTab() !== highlightType) {
+        this.activeTab.set(highlightType);
+      }
+    });
+
+    // Effect to scroll highlighted style into view after data loads
+    effect(() => {
+      const highlightId = this.highlightStyleId();
+      const styles = this.filteredStyles();
+      const styleEl = this.highlightedStyle();
+      
+      if (highlightId && styles.length > 0 && styleEl) {
+        // Use setTimeout to ensure DOM has updated
+        setTimeout(() => {
+          styleEl.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    });
+
     // Fetch styles only in the browser after rendering completes.
     // This prevents stale prerendered data from appearing during static builds.
     afterNextRender(() => {
@@ -449,5 +511,35 @@ export class StylesListComponent implements OnInit {
     }
 
     return 'Failed to load collections';
+  }
+
+  /**
+   * Handle style lookup search.
+   * Supports both ID (UUID format) and name lookup.
+   */
+  public onStyleSearch(value: string): void {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    const type = this.activeTab() === 'text' ? 'text' : 'image';
+
+    // Check if it looks like a UUID
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidPattern.test(trimmed)) {
+      this.router.navigate(['/details/styles', type, trimmed]);
+    } else {
+      // Treat as style name - navigate to detail page
+      // The style detail component will handle name lookup
+      this.router.navigate(['/details/styles', type, trimmed]);
+    }
+  }
+
+  /**
+   * Clear the highlighted style and return to the styles list.
+   * Uses replaceUrl so back button goes to previous page instead of re-highlighting.
+   */
+  public clearHighlight(): void {
+    this.router.navigate(['/details/styles'], { replaceUrl: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

@@ -5,6 +5,7 @@
    - Feature card base
    - Feature card disabled state
    - Feature card icons (purple, blue, green variants)
+   - Feature box (centered icon with title/description)
    ================================================================= */
 
 @layer components {
@@ -60,5 +61,74 @@
   .feature-card-icon-green {
     @apply bg-green-100 text-green-700;
     @apply dark:bg-green-800 dark:text-green-300;
+  }
+
+  /* Orange icon variant */
+  .feature-card-icon-orange {
+    @apply bg-orange-100 text-orange-600;
+    @apply dark:bg-orange-900 dark:text-orange-300;
+  }
+
+  /* Pink icon variant */
+  .feature-card-icon-pink {
+    @apply bg-pink-100 text-pink-600;
+    @apply dark:bg-pink-900 dark:text-pink-300;
+  }
+
+  /* =================================================================
+     FEATURE BOX - Centered icon with title/description
+     Used for feature grids like "What Donations Support" and "Benefits"
+     ================================================================= */
+
+  .feature-box {
+    @apply flex flex-col items-center text-center p-6 rounded-lg;
+    @apply bg-surface-secondary;
+    @apply dark:bg-gray-800;
+  }
+
+  /* Circular icon for feature boxes (larger than card icons) */
+  .feature-box-icon {
+    @apply w-14 h-14 rounded-full flex items-center justify-center mb-4;
+  }
+
+  .feature-box-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+    @apply dark:bg-blue-900 dark:text-blue-400;
+  }
+
+  .feature-box-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+    @apply dark:bg-purple-900 dark:text-purple-400;
+  }
+
+  .feature-box-icon-green {
+    @apply bg-green-100 text-green-600;
+    @apply dark:bg-green-900 dark:text-green-400;
+  }
+
+  .feature-box-icon svg {
+    @apply w-7 h-7;
+  }
+
+  .feature-box-title {
+    @apply text-lg font-semibold mb-2;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  .feature-box-description {
+    @apply text-sm;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* =================================================================
+     FEATURE GRID LAYOUTS
+     ================================================================= */
+
+  /* 2-3 column responsive feature grid */
+  .feature-grid {
+    @apply grid gap-6;
+    @apply sm:grid-cols-2 lg:grid-cols-3;
   }
 }

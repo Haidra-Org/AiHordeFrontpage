@@ -113,7 +113,9 @@
 
             <!-- Meta Info -->
             <div class="style-detail-meta">
-              <span>{{ "styles.by" | transloco }} {{ style()?.creator }}</span>
+              <span>{{ "styles.by" | transloco }}
+                <a [routerLink]="getCreatorLink()" class="link">{{ style()?.creator }}</a>
+              </span>
               <span class="style-detail-meta-divider">•</span>
               <span
                 >{{ style()?.use_count }} {{ "styles.uses" | transloco }}</span

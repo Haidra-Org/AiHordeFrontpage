@@ -1,0 +1,305 @@
+/* =================================================================
+   ALERT & NOTIFICATION STYLES
+   
+   Unified alert system for all notifications, warnings, and feedback.
+   Replaces scattered inline Tailwind patterns.
+   
+   Includes:
+   - Alert base and variants (danger, warning, info, success)
+   - Toast notifications
+   - Warning banners
+   - Unsaved changes indicator
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     ALERT BASE
+     ================================================================= */
+
+  .alert {
+    @apply flex items-start gap-3 p-3 rounded-lg text-sm;
+    border: 1px solid transparent;
+  }
+
+  .alert-icon {
+    @apply w-5 h-5 shrink-0 mt-0.5;
+  }
+
+  .alert-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .alert-title {
+    @apply font-semibold mb-1;
+  }
+
+  .alert-actions {
+    @apply flex gap-2 mt-2;
+  }
+
+  /* =================================================================
+     ALERT VARIANTS
+     ================================================================= */
+
+  /* Danger/Error Alert */
+  .alert--danger {
+    @apply bg-red-100 border-red-300 text-red-800;
+  }
+
+  .dark .alert--danger {
+    background-color: rgb(127 29 29 / 0.3);
+    border-color: rgb(185 28 28 / 0.5);
+    @apply text-red-200;
+  }
+
+  .alert--danger .alert-icon {
+    @apply text-red-600;
+  }
+
+  .dark .alert--danger .alert-icon {
+    @apply text-red-400;
+  }
+
+  /* Warning Alert */
+  .alert--warning {
+    @apply bg-amber-100 border-amber-300 text-amber-800;
+  }
+
+  .dark .alert--warning {
+    background-color: rgb(146 64 14 / 0.3);
+    border-color: rgb(217 119 6 / 0.5);
+    @apply text-amber-200;
+  }
+
+  .alert--warning .alert-icon {
+    @apply text-amber-600;
+  }
+
+  .dark .alert--warning .alert-icon {
+    @apply text-amber-400;
+  }
+
+  /* Info Alert */
+  .alert--info {
+    @apply bg-blue-50 border-blue-200 text-blue-800;
+  }
+
+  .dark .alert--info {
+    background-color: rgb(30 58 138 / 0.2);
+    border-color: rgb(59 130 246 / 0.5);
+    @apply text-blue-200;
+  }
+
+  .alert--info .alert-icon {
+    @apply text-blue-600;
+  }
+
+  .dark .alert--info .alert-icon {
+    @apply text-blue-400;
+  }
+
+  /* Success Alert */
+  .alert--success {
+    @apply bg-green-100 border-green-300 text-green-800;
+  }
+
+  .dark .alert--success {
+    background-color: rgb(22 101 52 / 0.3);
+    border-color: rgb(34 197 94 / 0.5);
+    @apply text-green-200;
+  }
+
+  .alert--success .alert-icon {
+    @apply text-green-600;
+  }
+
+  .dark .alert--success .alert-icon {
+    @apply text-green-400;
+  }
+
+  /* =================================================================
+     ALERT SIZE VARIANTS
+     ================================================================= */
+
+  .alert--sm {
+    @apply p-2 text-xs;
+  }
+
+  .alert--sm .alert-icon {
+    @apply w-4 h-4;
+  }
+
+  .alert--lg {
+    @apply p-4 text-base;
+  }
+
+  .alert--lg .alert-icon {
+    @apply w-6 h-6;
+  }
+
+  /* =================================================================
+     INLINE ALERT (no background, text only)
+     ================================================================= */
+
+  .alert--inline {
+    @apply bg-transparent border-none p-0;
+  }
+
+  .alert--inline.alert--danger {
+    @apply text-red-600;
+  }
+
+  .dark .alert--inline.alert--danger {
+    @apply text-red-400;
+  }
+
+  .alert--inline.alert--warning {
+    @apply text-amber-600;
+  }
+
+  .dark .alert--inline.alert--warning {
+    @apply text-amber-400;
+  }
+
+  /* =================================================================
+     TOAST NOTIFICATIONS
+     ================================================================= */
+
+  .toast {
+    @apply fixed top-4 right-4 z-50 flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
+    animation: toast-slide-in 300ms ease;
+  }
+
+  @keyframes toast-slide-in {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .toast--success {
+    @apply bg-green-600 text-white;
+  }
+
+  .toast--error {
+    @apply bg-red-600 text-white;
+  }
+
+  .toast--warning {
+    @apply bg-amber-500 text-white;
+  }
+
+  .toast--info {
+    @apply bg-blue-600 text-white;
+  }
+
+  .toast-icon {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  .toast-close {
+    @apply ml-2 p-1 rounded hover:bg-white/20 transition-colors;
+  }
+
+  /* =================================================================
+     WARNING BANNERS
+     ================================================================= */
+
+  .warning-banner {
+    @apply flex items-center gap-2 py-3 px-4 rounded-lg text-sm font-medium;
+    @apply bg-red-100 text-red-800;
+  }
+
+  .dark .warning-banner {
+    @apply bg-red-900 text-red-200;
+  }
+
+  .warning-banner-icon {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  /* =================================================================
+     UNSAVED CHANGES WARNING
+     ================================================================= */
+
+  .unsaved-warning {
+    @apply flex items-center gap-2 py-3 px-4 text-sm font-medium;
+    background-color: rgb(254 243 199);
+    border-bottom: 1px solid rgb(234 179 8 / 0.5);
+    color: rgb(146 64 14);
+  }
+
+  .dark .unsaved-warning {
+    background-color: rgb(113 63 18 / 0.3);
+    @apply text-yellow-400;
+  }
+
+  .unsaved-warning-hidden {
+    @apply invisible;
+  }
+
+  /* =================================================================
+     BORDER DIVIDERS (replaces inline border-t patterns)
+     ================================================================= */
+
+  .border-divider {
+    border-top: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .border-divider {
+    @apply border-gray-700;
+  }
+
+  .border-divider-b {
+    border-bottom: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .border-divider-b {
+    @apply border-gray-700;
+  }
+
+  /* =================================================================
+     INFO NOTES - Highlighted info boxes for contextual notes
+     Used for "Patrons receive kudos" type callouts
+     ================================================================= */
+
+  .info-note {
+    @apply p-3 rounded-lg text-sm m-0;
+    border: 1px solid transparent;
+  }
+
+  .info-note strong {
+    @apply font-semibold;
+  }
+
+  /* Blue info note */
+  .info-note--blue {
+    @apply bg-blue-50 border-blue-200 text-blue-800;
+  }
+
+  .dark .info-note--blue {
+    background-color: rgb(30 58 138 / 0.3);
+    border-color: rgb(30 64 175 / 0.5);
+    @apply text-blue-200;
+  }
+
+  /* Orange info note */
+  .info-note--orange {
+    @apply bg-orange-50 border-orange-200 text-orange-800;
+  }
+
+  .dark .info-note--orange {
+    background-color: rgb(154 52 18 / 0.3);
+    border-color: rgb(194 65 12 / 0.5);
+    @apply text-orange-200;
+  }
+
+  /* Info note with padding variant */
+  .info-note--padded {
+    @apply p-4;
+  }
+}

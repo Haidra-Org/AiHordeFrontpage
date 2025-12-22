@@ -2,14 +2,21 @@
    BUTTON STYLES
    
    Includes:
-   - Primary button
+   - Primary button (blue)
    - Purple button
-   - Source control button
-   - Disabled state
-   - Danger button
+   - Source control button (muted)
+   - Danger button (red)
+   - Warning button (yellow)
+   - Muted button (gray)
+   - Icon buttons
+   - Size variants
    ================================================================= */
 
 @layer components {
+  /* =================================================================
+     PRIMARY BUTTONS
+     ================================================================= */
+
   /* Primary button - Blue branded button */
   .btn-primary {
     @apply inline-flex items-center gap-2;
@@ -34,16 +41,6 @@
     @apply w-5 h-5 shrink-0;
   }
 
-  /* Responsive button - full width on mobile, auto on larger */
-  .btn-responsive {
-    @apply w-full sm:w-auto;
-  }
-
-  /* Disabled button state */
-  .btn-disabled {
-    @apply cursor-not-allowed bg-gray-600 text-gray-500;
-  }
-
   /* Purple button - Purple branded button */
   .btn-purple {
     @apply inline-flex items-center gap-2;
@@ -66,6 +63,10 @@
   .btn-purple svg {
     @apply w-5 h-5 shrink-0;
   }
+
+  /* =================================================================
+     SECONDARY / MUTED BUTTONS
+     ================================================================= */
 
   /* Source control button - Muted/drab style for secondary actions */
   .btn-source-control {
@@ -92,23 +93,45 @@
     @apply w-5 h-5 shrink-0;
   }
 
-  /* Extra-small button helper */
-  .btn-xs {
-    @apply px-2 py-1 text-sm;
+  /* Muted button - Gray secondary button */
+  .btn-muted {
+    @apply py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200;
+    color: var(--color-content-secondary);
+    background-color: var(--color-surface-secondary);
   }
 
-  /* Small button helper - for compact action buttons */
-  .btn-sm {
-    @apply px-3 py-1.5 text-xs whitespace-nowrap shrink-0;
+  .btn-muted:hover {
+    background-color: var(--color-edge-primary);
+    color: var(--color-content-primary);
   }
+
+  .dark .btn-muted {
+    @apply text-gray-300 bg-gray-700;
+  }
+
+  .dark .btn-muted:hover {
+    @apply bg-gray-600 text-white;
+  }
+
+  .btn-muted:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* =================================================================
+     DANGER / WARNING BUTTONS
+     ================================================================= */
 
   /* Danger button for destructive actions */
   .btn-danger {
-    @apply bg-red-500 text-white border-none;
+    @apply py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg transition-colors duration-200;
   }
 
   .btn-danger:hover:not(:disabled) {
-    @apply bg-red-600;
+    @apply bg-red-700;
+  }
+
+  .btn-danger:disabled {
+    @apply opacity-50 cursor-not-allowed;
   }
 
   /* Warning button for cautionary actions (e.g., undelete) */
@@ -135,6 +158,199 @@
   }
 
   .btn-warning svg {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  /* =================================================================
+     ICON BUTTONS
+     ================================================================= */
+
+  /* Icon button - square button with icon only */
+  .btn-icon {
+    @apply inline-flex items-center justify-center p-2 rounded-lg transition-colors duration-200;
+    color: var(--color-content-secondary);
+    background-color: var(--color-surface-secondary);
+  }
+
+  .btn-icon:hover {
+    background-color: var(--color-edge-primary);
+    color: var(--color-content-primary);
+  }
+
+  .dark .btn-icon {
+    @apply text-gray-400 bg-gray-700;
+  }
+
+  .dark .btn-icon:hover {
+    @apply bg-gray-600 text-white;
+  }
+
+  .btn-icon:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-icon svg {
+    @apply w-5 h-5;
+  }
+
+  /* Icon button with danger hover */
+  .btn-icon--danger {
+    color: var(--color-content-secondary);
+  }
+
+  .btn-icon--danger:hover {
+    @apply text-red-600;
+    background-color: rgb(254 226 226);
+  }
+
+  .dark .btn-icon--danger:hover {
+    @apply text-red-400;
+    background-color: rgb(127 29 29 / 0.3);
+  }
+
+  /* =================================================================
+     CONTEXTUAL BUTTONS (for specific actions)
+     ================================================================= */
+
+  /* Blue contextual - for models/info actions */
+  .btn-contextual--blue {
+    @apply text-blue-600 hover:bg-blue-100;
+  }
+
+  .dark .btn-contextual--blue {
+    @apply text-blue-400 hover:bg-blue-900/30;
+  }
+
+  /* Yellow contextual - for maintenance/warning actions */
+  .btn-contextual--yellow {
+    @apply text-yellow-700 hover:bg-yellow-100;
+  }
+
+  .dark .btn-contextual--yellow {
+    @apply text-yellow-400 hover:bg-yellow-900/30;
+  }
+
+  /* Red contextual - for pause/stop actions */
+  .btn-contextual--red {
+    @apply text-red-600 hover:bg-red-100;
+  }
+
+  .dark .btn-contextual--red {
+    @apply text-red-400 hover:bg-red-900/30;
+  }
+
+  /* Green contextual - for resume/start actions */
+  .btn-contextual--green {
+    @apply text-green-600 hover:bg-green-100;
+  }
+
+  .dark .btn-contextual--green {
+    @apply text-green-400 hover:bg-green-900/30;
+  }
+
+  /* =================================================================
+     SIZE VARIANTS
+     ================================================================= */
+
+  .btn-xs {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs whitespace-nowrap shrink-0;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* =================================================================
+     SPECIAL BUTTONS
+     ================================================================= */
+
+  /* Responsive button - full width on mobile, auto on larger */
+  .btn-responsive {
+    @apply w-full sm:w-auto;
+  }
+
+  /* Disabled button state */
+  .btn-disabled {
+    @apply cursor-not-allowed bg-gray-600 text-gray-500;
+  }
+
+  /* Fixed save button - floating action button */
+  .btn-save-fixed {
+    @apply fixed bottom-6 right-6 z-50 py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
+    outline: 3px solid rgb(234 179 8);
+    outline-offset: 0;
+  }
+
+  .btn-save-fixed:hover {
+    @apply bg-green-700 scale-105;
+  }
+
+  .btn-save-fixed:disabled {
+    @apply opacity-60 cursor-not-allowed scale-100;
+  }
+
+  /* List item as button - clickable list row */
+  .btn-list-item {
+    @apply w-full p-3 text-left rounded-lg transition-colors duration-200;
+    background-color: var(--color-surface-secondary);
+  }
+
+  .btn-list-item:hover {
+    background-color: var(--color-edge-primary);
+  }
+
+  .dark .btn-list-item {
+    background-color: rgb(55 65 81 / 0.5);
+  }
+
+  .dark .btn-list-item:hover {
+    @apply bg-gray-700;
+  }
+
+  /* =================================================================
+     BUTTON GROUPS - Responsive button layouts
+     ================================================================= */
+
+  /* Horizontal button group - stacks on mobile, row on larger */
+  .btn-group {
+    @apply flex flex-col gap-4;
+    @apply sm:flex-row;
+  }
+
+  /* Centered button group */
+  .btn-group--center {
+    @apply justify-center;
+  }
+
+  /* =================================================================
+     SECONDARY BUTTON (outline/soft style)
+     ================================================================= */
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2;
+    @apply px-5 py-2.5;
+    @apply text-sm font-medium text-center;
+    @apply text-gray-700 bg-gray-100 rounded-lg;
+    @apply transition-colors duration-200;
+    @apply hover:bg-gray-200 hover:text-gray-900;
+    @apply focus:outline-none;
+    @apply dark:text-gray-300 dark:bg-gray-700;
+    @apply dark:hover:bg-gray-600 dark:hover:text-white;
+  }
+
+  .btn-secondary:focus {
+    box-shadow: 0 0 0 4px rgb(156 163 175 / 0.5);
+  }
+
+  .dark .btn-secondary:focus {
+    box-shadow: 0 0 0 4px rgb(75 85 99 / 0.5);
+  }
+
+  .btn-secondary svg {
     @apply w-5 h-5 shrink-0;
   }
 }

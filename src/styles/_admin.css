@@ -329,173 +329,52 @@
   }
 
   /* =================================================================
-     PANELS
+     LEGACY CARD/PANEL ALIASES
+     These are kept for backward compatibility.
+     Prefer using classes from _cards.css:
+     - .panel → use .panel from _cards.css
+     - .stat-card → use .stat-card from _cards.css
+     - .worker-card → use .worker-card--normal/--issue from _cards.css
      ================================================================= */
 
-  .panel {
-    @apply rounded-lg overflow-hidden;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-primary);
-  }
-
-  .dark .panel {
-    @apply bg-gray-800 border-gray-700;
-  }
-
+  /* Legacy panel-unsaved (prefer .panel--unsaved) */
   .panel-unsaved {
     @apply outline-2 outline-yellow-500 outline-offset-0;
   }
 
-  .panel-link {
-    @apply flex items-center p-4 rounded-lg transition-colors duration-200;
-    background-color: var(--color-bg-secondary);
-  }
+  /* Legacy stat-card-icon variants without BEM dashes */
+  .stat-card-icon-purple { @apply bg-purple-100 text-purple-600; }
+  .dark .stat-card-icon-purple { background-color: rgb(88 28 135 / 0.5); @apply text-purple-400; }
+  .stat-card-icon-blue { @apply bg-blue-100 text-blue-600; }
+  .dark .stat-card-icon-blue { background-color: rgb(30 58 138 / 0.5); @apply text-blue-400; }
+  .stat-card-icon-green { @apply bg-green-100 text-green-600; }
+  .dark .stat-card-icon-green { background-color: rgb(22 101 52 / 0.5); @apply text-green-400; }
+  .stat-card-icon-yellow { @apply bg-yellow-100 text-yellow-700; }
+  .dark .stat-card-icon-yellow { background-color: rgb(113 63 18 / 0.5); @apply text-yellow-400; }
+  .stat-card-icon-indigo { @apply bg-indigo-100 text-indigo-600; }
+  .dark .stat-card-icon-indigo { background-color: rgb(49 46 129 / 0.5); @apply text-indigo-400; }
 
-  .panel-link:hover {
-    background-color: var(--color-border-primary);
-  }
-
-  .dark .panel-link {
-    @apply bg-gray-700;
-  }
-
-  .dark .panel-link:hover {
-    @apply bg-gray-600;
-  }
-
-  /* =================================================================
-     STAT CARDS
-     ================================================================= */
-
-  .stat-card {
-    @apply flex items-center p-6;
-  }
-
-  .stat-card-icon {
-    @apply flex items-center justify-center w-12 h-12 rounded-lg shrink-0;
-  }
-
-  .stat-card-icon-purple {
-    @apply bg-purple-100 text-purple-600;
-  }
-
-  .dark .stat-card-icon-purple {
-    background-color: rgb(88 28 135 / 0.5);
-    @apply text-purple-400;
-  }
-
-  .stat-card-icon-blue {
-    @apply bg-blue-100 text-blue-600;
-  }
-
-  .dark .stat-card-icon-blue {
-    background-color: rgb(30 58 138 / 0.5);
-    @apply text-blue-400;
-  }
-
-  .stat-card-icon-green {
-    @apply bg-green-100 text-green-600;
-  }
-
-  .dark .stat-card-icon-green {
-    background-color: rgb(22 101 52 / 0.5);
-    @apply text-green-400;
-  }
-
-  .stat-card-icon-yellow {
-    @apply bg-yellow-100 text-yellow-700;
-  }
-
-  .dark .stat-card-icon-yellow {
-    background-color: rgb(113 63 18 / 0.5);
-    @apply text-yellow-400;
-  }
-
-  .stat-card-icon-indigo {
-    @apply bg-indigo-100 text-indigo-600;
-  }
-
-  .dark .stat-card-icon-indigo {
-    background-color: rgb(49 46 129 / 0.5);
-    @apply text-indigo-400;
-  }
-
-  .stat-card-content {
-    @apply ml-4;
-  }
-
-  .stat-card-label {
-    @apply text-sm;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .stat-card-label {
-    @apply text-gray-400;
-  }
-
-  .stat-card-value {
-    @apply text-2xl font-semibold;
-    color: var(--color-text-primary);
-  }
-
-  .dark .stat-card-value {
-    @apply text-white;
-  }
-
-  /* =================================================================
-     WORKER CARDS (Legacy - prefer _data-display.css)
-     ================================================================= */
-
-  .worker-card {
-    @apply rounded-lg overflow-hidden;
-  }
-
+  /* Legacy worker-card-bg variants (prefer worker-card--normal/--issue) */
   .worker-card-bg-normal {
     background-color: var(--color-bg-primary);
     border: 1px solid var(--color-border-primary);
   }
-
-  .dark .worker-card-bg-normal {
-    @apply bg-gray-800 border-gray-700;
-  }
-
-  .worker-card-bg-issue {
-    @apply bg-red-50 border border-red-300;
-  }
-
+  .dark .worker-card-bg-normal { @apply bg-gray-800 border-gray-700; }
+  .worker-card-bg-issue { @apply bg-red-50 border border-red-300; }
   .dark .worker-card-bg-issue {
     background-color: rgb(127 29 29 / 0.3);
     border-color: rgb(185 28 28 / 0.5);
   }
 
-  /* Status icon container */
-  .status-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-full shrink-0;
-  }
-
-  .status-icon-success {
-    @apply bg-green-100 text-green-600;
-  }
-
-  .dark .status-icon-success {
-    @apply bg-green-800 text-green-400;
-  }
-
-  .status-icon-error {
-    @apply bg-red-100 text-red-600;
-  }
-
-  .dark .status-icon-error {
-    @apply bg-red-900 text-red-400;
-  }
+  /* Legacy status-icon variants without BEM dashes */
+  .status-icon-success { @apply bg-green-100 text-green-600; }
+  .dark .status-icon-success { @apply bg-green-800 text-green-400; }
+  .status-icon-error { @apply bg-red-100 text-red-600; }
+  .dark .status-icon-error { @apply bg-red-900 text-red-400; }
 
   /* =================================================================
-     DIALOGS / MODALS
+     LEGACY MODAL ALIASES (prefer classes from _modals.css)
      ================================================================= */
-
-  .modal {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto;
-  }
 
   .worker-modal-overlay {
     @apply fixed inset-0 flex items-center justify-center p-4 overflow-y-auto;
@@ -533,7 +412,7 @@
     max-height: 60vh;
   }
 
-  /* Models list styling */
+  /* Models list styling (legacy - prefer models-list from _modals.css) */
   .worker-models-list {
     @apply grid gap-1 list-none p-0 m-0;
     grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -569,77 +448,8 @@
     @apply bg-gray-600;
   }
 
-  /* Modal backdrop */
-  .modal-backdrop {
-    @apply fixed inset-0 -z-10;
-    background-color: rgb(0 0 0 / 0.5);
-  }
-
   .worker-modal-overlay .modal-backdrop {
     z-index: 9998;
-  }
-
-  /* Dialog panel */
-  .dialog-panel {
-    @apply relative rounded-lg p-6 max-w-xl w-full overflow-y-auto;
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border-primary);
-    max-height: 80vh;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-    z-index: 51;
-    margin: auto;
-  }
-
-  .dark .dialog-panel {
-    @apply bg-gray-800 border-gray-700;
-  }
-
-  /* =================================================================
-     TOASTS
-     ================================================================= */
-
-  .toast {
-    @apply fixed top-4 right-4 z-50 flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
-    animation: toast-slide-in 300ms ease;
-  }
-
-  @keyframes toast-slide-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  .toast-success {
-    @apply bg-green-600 text-white;
-  }
-
-  .toast-error {
-    @apply bg-red-600 text-white;
-  }
-
-  /* =================================================================
-     UNSAVED CHANGES WARNING
-     ================================================================= */
-
-  .unsaved-changes-warning {
-    @apply flex items-center gap-2 py-3 px-4 text-sm font-medium;
-    background-color: rgb(254 243 199);
-    border-bottom: 1px solid rgb(234 179 8 / 0.5);
-    color: rgb(146 64 14);
-  }
-
-  .dark .unsaved-changes-warning {
-    background-color: rgb(113 63 18 / 0.3);
-    @apply text-yellow-400;
-  }
-
-  .unsaved-changes-warning-hidden {
-    @apply invisible;
   }
 
   /* =================================================================
@@ -753,83 +563,7 @@
   }
 
   /* =================================================================
-     BUTTONS
-     ================================================================= */
-
-  .btn-muted {
-    @apply py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200;
-    color: var(--color-text-secondary);
-    background-color: var(--color-bg-secondary);
-  }
-
-  .btn-muted:hover {
-    background-color: var(--color-border-primary);
-    color: var(--color-text-primary);
-  }
-
-  .dark .btn-muted {
-    @apply text-gray-300 bg-gray-700;
-  }
-
-  .dark .btn-muted:hover {
-    @apply bg-gray-600 text-white;
-  }
-
-  .btn-muted:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  .btn-danger {
-    @apply py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg transition-colors duration-200;
-  }
-
-  .btn-danger:hover {
-    @apply bg-red-700;
-  }
-
-  .btn-danger:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  .btn-save-fixed {
-    @apply fixed bottom-6 right-6 z-50 py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
-    outline: 3px solid rgb(234 179 8);
-    outline-offset: 0;
-  }
-
-  .btn-save-fixed:hover {
-    @apply bg-green-700 scale-105;
-  }
-
-  .btn-save-fixed:disabled {
-    @apply opacity-60 cursor-not-allowed scale-100;
-  }
-
-  .btn-icon {
-    @apply inline-flex items-center justify-center p-2 rounded-lg transition-colors duration-200;
-    color: var(--color-text-secondary);
-    background-color: var(--color-bg-secondary);
-  }
-
-  .btn-icon:hover {
-    background-color: var(--color-border-primary);
-    color: var(--color-text-primary);
-  }
-
-  .dark .btn-icon {
-    @apply text-gray-400 bg-gray-700;
-  }
-
-  .dark .btn-icon:hover {
-    @apply bg-gray-600 text-white;
-  }
-
-  .btn-icon:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  /* =================================================================
-     LIST ITEM BUTTON
+     LIST ITEM BUTTON (legacy alias - prefer btn-list-item from _buttons.css)
      ================================================================= */
 
   .list-item-button {
@@ -948,43 +682,8 @@
 
   /* =================================================================
      TEXT UTILITIES
+     (Headings moved to _typography-headings.css - use heading-admin-* classes)
      ================================================================= */
-
-  .admin-heading-page {
-    @apply text-2xl font-bold mb-6;
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-heading-page {
-    @apply text-white;
-  }
-
-  .admin-heading-lg {
-    @apply text-3xl font-bold mb-2;
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-heading-lg {
-    @apply text-white;
-  }
-
-  .admin-heading-section {
-    @apply text-xl font-semibold;
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-heading-section {
-    @apply text-white;
-  }
-
-  .admin-heading-card {
-    @apply text-lg font-semibold;
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-heading-card {
-    @apply text-white;
-  }
 
   /* =================================================================
      LOADING STATES
@@ -1189,59 +888,9 @@
 
   /* =================================================================
      FORM ELEMENTS
+     (Consolidated in _forms.css - form-group, form-label, form-hint,
+      form-input, form-select, form-textarea are defined there)
      ================================================================= */
-
-  .form-group {
-    @apply flex flex-col gap-1.5;
-  }
-
-  .form-label {
-    @apply font-medium text-sm;
-    color: var(--color-text-primary);
-  }
-
-  .dark .form-label {
-    @apply text-gray-200;
-  }
-
-  .form-hint {
-    @apply text-xs;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .form-hint {
-    @apply text-gray-400;
-  }
-
-  .form-input,
-  .form-select,
-  .form-textarea {
-    @apply py-2.5 px-3.5 text-sm rounded-lg transition-all duration-150;
-    border: 1px solid var(--color-border-primary);
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
-  }
-
-  .form-input:focus,
-  .form-select:focus,
-  .form-textarea:focus {
-    @apply outline-none;
-    border-color: var(--color-brand-blue);
-    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
-  }
-
-  .dark .form-input,
-  .dark .form-select,
-  .dark .form-textarea {
-    @apply bg-gray-800 border-gray-600 text-gray-200;
-  }
-
-  .dark .form-input:focus,
-  .dark .form-select:focus,
-  .dark .form-textarea:focus {
-    @apply border-blue-400;
-    box-shadow: 0 0 0 3px rgb(96 165 250 / 0.1);
-  }
 
   /* =================================================================
      ADMIN TABLES
@@ -1312,28 +961,6 @@
   }
 
   /* =================================================================
-     BUTTON SIZES
-     ================================================================= */
-
-  .btn-sm {
-    @apply py-1.5 px-3 text-sm;
-  }
-
-  .btn-icon-danger {
-    color: var(--color-text-secondary);
-  }
-
-  .btn-icon-danger:hover {
-    @apply text-red-600;
-    background-color: rgb(254 226 226);
-  }
-
-  .dark .btn-icon-danger:hover {
-    @apply text-red-400;
-    background-color: rgb(127 29 29 / 0.3);
-  }
-
-  /* =================================================================
      SIDEBAR BACK LINK
      ================================================================= */
 
@@ -1365,51 +992,6 @@
 
   .admin-back-icon {
     @apply w-5 h-5 shrink-0;
-  }
-
-  /* =================================================================
-     JSON DIALOG / CODE VIEWER
-     ================================================================= */
-
-  .json-dialog {
-    @apply flex flex-col p-4;
-    max-width: none;
-    width: calc(100vw - 2rem);
-    height: calc(100vh - 2rem);
-  }
-
-  .json-grid {
-    @apply grid gap-3 flex-1 overflow-auto items-stretch;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-
-  .json-section {
-    @apply flex flex-col gap-1.5 min-h-0 h-full;
-  }
-
-  .json-section-title {
-    @apply text-sm font-semibold;
-    color: var(--color-text-primary);
-  }
-
-  .dark .json-section-title {
-    @apply text-white;
-  }
-
-  .json-block {
-    @apply text-xs leading-snug p-3 rounded-lg overflow-auto flex-1 min-h-0;
-    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-    white-space: pre-wrap;
-    word-break: break-word;
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-primary);
-  }
-
-  .dark .json-block {
-    background-color: #0f172a;
-    color: #e2e8f0;
-    border-color: rgba(255, 255, 255, 0.08);
   }
 
   /* =================================================================

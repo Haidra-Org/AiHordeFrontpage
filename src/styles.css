@@ -54,6 +54,12 @@
 @import "./styles/_cards.css";
 @import "./styles/_feature-cards.css";
 
+/* Alerts & Notifications */
+@import "./styles/_alerts.css";
+
+/* Modals & Dialogs */
+@import "./styles/_modals.css";
+
 /* Data Display */
 @import "./styles/_data-display.css";
 
@@ -105,6 +111,11 @@
    STYLE DETAIL PAGE STYLES
    ================================================================= */
 @import "./styles/_style-detail.css";
+
+/* =================================================================
+   LEADERBOARD STYLES
+   ================================================================= */
+@import "./styles/_leaderboard.css";
 
 /* =================================================================
    LEGACY & ADDITIONAL STYLES
