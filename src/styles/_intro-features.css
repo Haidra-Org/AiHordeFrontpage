@@ -80,6 +80,31 @@
     @apply dark:text-gray-400;
   }
 
+  /* Intro feature card as link */
+  .intro-feature-card-link {
+    @apply no-underline block cursor-pointer;
+  }
+
+  .intro-feature-card-link:focus-visible {
+    @apply outline-none ring-2 ring-purple-500 ring-offset-2;
+  }
+
+  .dark .intro-feature-card-link:focus-visible {
+    @apply ring-purple-400 ring-offset-gray-900;
+  }
+
+  .intro-feature-card-link .intro-feature-title {
+    @apply transition-colors;
+  }
+
+  .intro-feature-card-link:hover .intro-feature-title {
+    @apply text-purple-700;
+  }
+
+  .dark .intro-feature-card-link:hover .intro-feature-title {
+    @apply text-purple-400;
+  }
+
   /* Intro links section */
   .intro-links {
     @apply flex flex-wrap justify-center gap-3 max-w-3xl mt-8 mx-auto;
@@ -111,5 +136,44 @@
   .dark .intro-link-badge:hover {
     @apply bg-gray-700 border-purple-500 text-purple-500;
     box-shadow: 0 4px 12px -2px rgb(168 85 247 / 0.2);
+  }
+
+  /* =================================================================
+     BEGINNER CTA SECTION
+     Call-to-action section within beginner header for worker recruitment
+     ================================================================= */
+
+  .beginner-cta-section {
+    @apply flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4;
+    @apply mt-6 p-5 rounded-xl;
+    @apply border border-purple-200;
+    background: linear-gradient(135deg, rgb(250 245 255) 0%, rgb(239 246 255) 100%);
+  }
+
+  .dark .beginner-cta-section {
+    @apply border-purple-800;
+    background: linear-gradient(135deg, rgb(88 28 135 / 0.2) 0%, rgb(30 58 138 / 0.2) 100%);
+  }
+
+  .beginner-cta-content {
+    @apply flex items-start gap-4;
+  }
+
+  .beginner-cta-icon {
+    @apply flex items-center justify-center shrink-0;
+    @apply w-12 h-12 rounded-full;
+    @apply text-purple-600 bg-purple-100;
+  }
+
+  .dark .beginner-cta-icon {
+    @apply text-purple-400 bg-purple-900/50;
+  }
+
+  .beginner-cta-text {
+    @apply flex-1 min-w-0;
+  }
+
+  .beginner-cta-actions {
+    @apply flex items-center gap-4 shrink-0;
   }
 }
