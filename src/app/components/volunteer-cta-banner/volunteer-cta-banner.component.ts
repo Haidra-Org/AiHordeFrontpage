@@ -6,7 +6,10 @@ import { TranslocoModule } from '@jsverse/transloco';
   selector: 'app-volunteer-cta-banner',
   imports: [RouterLink, TranslocoModule],
   template: `
-    <div class="volunteer-cta-banner" [class.volunteer-cta-banner-compact]="compact()">
+    <div
+      class="volunteer-cta-banner"
+      [class.volunteer-cta-banner-compact]="compact()"
+    >
       <div class="volunteer-cta-banner-content">
         <svg
           class="volunteer-cta-banner-icon"
@@ -23,16 +26,19 @@ import { TranslocoModule } from '@jsverse/transloco';
           />
         </svg>
         <p class="volunteer-cta-banner-text">
-          {{ "volunteer_cta.message" | transloco }}
+          {{ 'volunteer_cta.message' | transloco }}
         </p>
       </div>
       <div class="volunteer-cta-banner-actions">
-        <a routerLink="/contribute/joining" class="volunteer-cta-banner-link volunteer-cta-banner-link-primary">
-          {{ "volunteer_cta.become_worker" | transloco }}
+        <a
+          routerLink="/contribute/joining"
+          class="volunteer-cta-banner-link volunteer-cta-banner-link-primary"
+        >
+          {{ 'volunteer_cta.become_worker' | transloco }}
         </a>
         <span class="volunteer-cta-banner-separator" aria-hidden="true">|</span>
         <a routerLink="/contribute/donate" class="volunteer-cta-banner-link">
-          {{ "volunteer_cta.donate" | transloco }}
+          {{ 'volunteer_cta.donate' | transloco }}
         </a>
       </div>
     </div>

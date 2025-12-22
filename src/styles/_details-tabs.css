@@ -102,12 +102,20 @@
   .summary-period-badge {
     @apply text-[0.6875rem] font-semibold uppercase tracking-tight py-0.5 px-1.5 rounded whitespace-nowrap;
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 12%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 12%,
+      transparent
+    );
   }
 
   .dark .summary-period-badge {
     @apply text-purple-300;
-    background-color: color-mix(in srgb, var(--color-brand-purple) 25%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 25%,
+      transparent
+    );
   }
 
   /* =================================================================
@@ -142,7 +150,8 @@
   .filter-input:focus {
     @apply outline-none;
     border-color: var(--color-brand-blue);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-blue) 20%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--color-brand-blue) 20%, transparent);
   }
 
   .filter-input::placeholder {
@@ -232,13 +241,21 @@
   /* Type badge (Image/Text) in autocomplete */
   .filter-autocomplete-badge {
     @apply py-0.5 px-1.5 rounded text-[0.625rem] font-semibold uppercase tracking-tight;
-    background-color: color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      transparent
+    );
     color: var(--color-brand-purple);
   }
 
   .dark .filter-autocomplete-badge {
     @apply text-purple-300;
-    background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
   }
 
   /* No results message */
@@ -288,13 +305,21 @@
   .sort-button.sort-active {
     border-color: var(--color-brand-purple);
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 15%, var(--color-bg-primary));
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      var(--color-bg-primary)
+    );
   }
 
   .dark .sort-button.sort-active {
     @apply text-purple-300;
     border-color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
   }
 
   .sort-indicator {
@@ -376,8 +401,6 @@
   .dark .models-table-th-sortable:hover {
     @apply text-purple-300;
   }
-
-
 
   .models-table-th-sortable .sort-indicator {
     @apply text-xs ml-0.5;
@@ -565,11 +588,19 @@
   .model-rank {
     @apply flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full shrink-0;
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      transparent
+    );
   }
 
   .dark .model-rank {
-    background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
   }
 
   .model-name {
@@ -624,7 +655,11 @@
 
   .percentage-bar {
     @apply h-1.5 rounded-full transition-all duration-300;
-    background: linear-gradient(to right, var(--color-brand-purple), var(--color-brand-blue));
+    background: linear-gradient(
+      to right,
+      var(--color-brand-purple),
+      var(--color-brand-blue)
+    );
     min-width: 2px;
     max-width: 5rem;
   }

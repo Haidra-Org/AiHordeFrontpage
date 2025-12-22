@@ -117,7 +117,9 @@
     @apply shrink-0 text-right;
   }
 
-  .models-table-row.leaderboard-table-row .models-table-cell:last-child .models-table-label {
+  .models-table-row.leaderboard-table-row
+    .models-table-cell:last-child
+    .models-table-label {
     @apply hidden;
   }
 }

@@ -709,7 +709,10 @@ export class UserManagementComponent implements OnInit {
       workers.filter((w) => w.id !== workerId),
     );
     // Show success toast
-    this.showToast('success', 'Worker deleted successfully! Note: It may take up to a minute for the API to reflect this change.');
+    this.showToast(
+      'success',
+      'Worker deleted successfully! Note: It may take up to a minute for the API to reflect this change.',
+    );
   }
 
   public regenerateProxyPasskey(): void {

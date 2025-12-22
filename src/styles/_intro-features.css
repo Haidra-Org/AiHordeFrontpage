@@ -38,7 +38,11 @@
     content: "";
     @apply absolute top-0 left-0 w-1 h-full;
     @apply scale-y-0 origin-bottom transition-transform duration-250;
-    background: linear-gradient(180deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(147 51 234) 0%,
+      rgb(59 130 246) 100%
+    );
   }
 
   .intro-feature-card:hover {
@@ -61,7 +65,11 @@
   }
 
   .dark .intro-feature-card::before {
-    background: linear-gradient(180deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(168 85 247) 0%,
+      rgb(96 165 250) 100%
+    );
   }
 
   /* Intro feature icon */
@@ -72,11 +80,19 @@
     @apply w-9 h-9 text-lg;
     /* sm+: larger icon with bottom margin */
     @apply sm:w-10 sm:h-10 sm:text-xl sm:mb-3;
-    background: linear-gradient(135deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(147 51 234) 0%,
+      rgb(59 130 246) 100%
+    );
   }
 
   .dark .intro-feature-icon {
-    background: linear-gradient(135deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(168 85 247) 0%,
+      rgb(96 165 250) 100%
+    );
   }
 
   /* Intro feature content wrapper (groups title + text on mobile) */
@@ -171,12 +187,20 @@
     @apply flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4;
     @apply mt-6 p-5 rounded-xl;
     @apply border border-purple-200;
-    background: linear-gradient(135deg, rgb(250 245 255) 0%, rgb(239 246 255) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(250 245 255) 0%,
+      rgb(239 246 255) 100%
+    );
   }
 
   .dark .beginner-cta-section {
     @apply border-purple-800;
-    background: linear-gradient(135deg, rgb(88 28 135 / 0.2) 0%, rgb(30 58 138 / 0.2) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(88 28 135 / 0.2) 0%,
+      rgb(30 58 138 / 0.2) 100%
+    );
   }
 
   .beginner-cta-content {

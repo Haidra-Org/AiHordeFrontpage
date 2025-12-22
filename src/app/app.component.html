@@ -1,11 +1,7 @@
 <div class="wrapper" (click)="closeMobileMenu()">
   <!-- Main Navigation Header -->
   <header class="nav-shell">
-    <nav
-      class="nav-padding"
-      role="navigation"
-      aria-label="Main navigation"
-    >
+    <nav class="nav-padding" role="navigation" aria-label="Main navigation">
       <div class="nav-container">
         <!-- Logo and Site Title -->
         <div class="logo-container">
@@ -294,7 +290,11 @@
         role="menu"
         (click)="$event.stopPropagation()"
       >
-        <div class="mobile-menu-backdrop" [class.show]="showMobileMenu" (click)="closeMobileMenu()"></div>
+        <div
+          class="mobile-menu-backdrop"
+          [class.show]="showMobileMenu"
+          (click)="closeMobileMenu()"
+        ></div>
         <div class="mobile-menu-panel" [class.open]="showMobileMenu">
           <div class="mobile-nav-list">
             <a
@@ -605,11 +605,9 @@
               >
             </li>
             <li class="mb-3">
-              <a
-                routerLink="/contribute/joining"
-                class="hover:underline"
-                >{{ "join_horde" | transloco }}</a
-              >
+              <a routerLink="/contribute/joining" class="hover:underline">{{
+                "join_horde" | transloco
+              }}</a>
             </li>
             <li class="mb-3">
               <a routerLink="/faq/" class="hover:underline">{{

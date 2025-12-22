@@ -90,17 +90,41 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Sections configuration for TOC and rendering */
   public readonly sections: SectionInfo[] = [
-    { id: 'guis', titleKey: 'guis_and_tools_page.guis_section_title', items: () => this.filteredGuis() },
-    { id: 'workers', titleKey: 'guis_and_tools_page.workers_section_title', items: () => this.filteredWorkers() },
-    { id: 'resources', titleKey: 'guis_and_tools_page.resources_section_title', items: () => this.filteredResources() },
-    { id: 'utilities', titleKey: 'guis_and_tools_page.utilities_section_title', items: () => this.filteredUtilities() },
-    { id: 'bots', titleKey: 'guis_and_tools_page.bots_section_title', items: () => this.filteredBots() },
-    { id: 'developer_tools', titleKey: 'guis_and_tools_page.developer_tools_section_title', items: () => this.filteredDeveloperTools() },
+    {
+      id: 'guis',
+      titleKey: 'guis_and_tools_page.guis_section_title',
+      items: () => this.filteredGuis(),
+    },
+    {
+      id: 'workers',
+      titleKey: 'guis_and_tools_page.workers_section_title',
+      items: () => this.filteredWorkers(),
+    },
+    {
+      id: 'resources',
+      titleKey: 'guis_and_tools_page.resources_section_title',
+      items: () => this.filteredResources(),
+    },
+    {
+      id: 'utilities',
+      titleKey: 'guis_and_tools_page.utilities_section_title',
+      items: () => this.filteredUtilities(),
+    },
+    {
+      id: 'bots',
+      titleKey: 'guis_and_tools_page.bots_section_title',
+      items: () => this.filteredBots(),
+    },
+    {
+      id: 'developer_tools',
+      titleKey: 'guis_and_tools_page.developer_tools_section_title',
+      items: () => this.filteredDeveloperTools(),
+    },
   ];
 
   /** Get visible sections (those with items after filtering) */
   public visibleSections = computed(() => {
-    return this.sections.filter(section => section.items().length > 0);
+    return this.sections.filter((section) => section.items().length > 0);
   });
 
   // Combined items (GUIs, Tools, and Resources)
@@ -210,8 +234,11 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       // Filter by search query (name or description)
       if (query) {
         const nameMatch = item.name.toLowerCase().includes(query);
-        const descMatch = item.description?.toLowerCase().includes(query) ?? false;
-        const categoryMatch = item.categories.some(cat => cat.toLowerCase().includes(query));
+        const descMatch =
+          item.description?.toLowerCase().includes(query) ?? false;
+        const categoryMatch = item.categories.some((cat) =>
+          cat.toLowerCase().includes(query),
+        );
         if (!nameMatch && !descMatch && !categoryMatch) {
           return false;
         }
@@ -437,7 +464,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   public toggleFiltersPanel(): void {
-    this.showFiltersPanel.update(v => !v);
+    this.showFiltersPanel.update((v) => !v);
   }
 
   public setViewMode(mode: ViewMode): void {

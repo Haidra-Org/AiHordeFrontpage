@@ -70,7 +70,9 @@ export class AdminOperationsService {
    * @param data The IP and duration to add
    * @returns Observable of SimpleResponse on success, or null on error
    */
-  public addIPTimeout(data: AddTimeoutIPInput): Observable<SimpleResponse | null> {
+  public addIPTimeout(
+    data: AddTimeoutIPInput,
+  ): Observable<SimpleResponse | null> {
     const apiKey = this.auth.getStoredApiKey();
     if (!apiKey) {
       return of(null);

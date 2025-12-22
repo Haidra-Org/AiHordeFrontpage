@@ -52,9 +52,7 @@ export class TeamService {
       .get<Team[]>(this.baseUrl, {
         headers: this.buildHeaders(),
       })
-      .pipe(
-        catchError(() => of([])),
-      );
+      .pipe(catchError(() => of([])));
   }
 
   /**
@@ -71,7 +69,9 @@ export class TeamService {
   /**
    * Create a new team (requires trusted user)
    */
-  public createTeam(payload: CreateTeamRequest): Observable<TeamModifyResponse> {
+  public createTeam(
+    payload: CreateTeamRequest,
+  ): Observable<TeamModifyResponse> {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(

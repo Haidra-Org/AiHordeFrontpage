@@ -50,9 +50,9 @@ export class WorkerCardComponent {
 
   // Dialog state
   public dialogOpen = signal<boolean>(false);
-  public dialogType = signal<'models' | 'maintenance' | 'pause' | 'delete' | 'team'>(
-    'models',
-  );
+  public dialogType = signal<
+    'models' | 'maintenance' | 'pause' | 'delete' | 'team'
+  >('models');
   public maintenanceReason = signal<string>('');
   public modelSearch = signal<string>('');
   public isUpdating = signal<boolean>(false);
@@ -190,17 +190,17 @@ export class WorkerCardComponent {
   public getCardBackground(): string {
     const worker = this.worker();
     let classes = '';
-    
+
     if (worker.maintenance_mode || worker.paused || worker.flagged) {
       classes = 'worker-card-issue';
     } else {
       classes = 'worker-card-normal';
     }
-    
+
     if (this.highlighted()) {
       classes += ' worker-card-highlighted';
     }
-    
+
     return classes;
   }
 

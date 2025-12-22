@@ -45,7 +45,14 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
           <div class="dialog-content mb-6">
             <!-- Warning message -->
-            <div class="mb-4 p-4 rounded-lg" [class]="isAlreadyDeleted() ? 'bg-red-900/30 border border-red-700' : 'bg-yellow-900/30 border border-yellow-700'">
+            <div
+              class="mb-4 p-4 rounded-lg"
+              [class]="
+                isAlreadyDeleted()
+                  ? 'bg-red-900/30 border border-red-700'
+                  : 'bg-yellow-900/30 border border-yellow-700'
+              "
+            >
               @if (isAlreadyDeleted()) {
                 <p class="text-red-300 text-sm">
                   {{ 'profile.delete_account_warning_permanent' | transloco }}
@@ -63,7 +70,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
                 {{ 'profile.delete_account_enter_username' | transloco }}
               </label>
               <p class="text-sm text-gray-400 mb-2">
-                {{ 'profile.delete_account_username_hint' | transloco: { username: expectedUsername() } }}
+                {{
+                  'profile.delete_account_username_hint'
+                    | transloco: { username: expectedUsername() }
+                }}
               </p>
               <input
                 #usernameInput
@@ -228,7 +238,8 @@ export class DeleteAccountDialogComponent implements OnDestroy {
   public onInputChange(): void {
     // Case-insensitive comparison
     const matches =
-      this.inputUsername.toLowerCase() === this.expectedUsername().toLowerCase();
+      this.inputUsername.toLowerCase() ===
+      this.expectedUsername().toLowerCase();
     this.canConfirm.set(matches);
   }
 

@@ -55,7 +55,9 @@ export class ModelsListComponent implements OnInit {
   public readonly unitConversion = inject(UnitConversionService);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   /** Model type from route (image or text). */
   private readonly routeModelType = computed<ModelsTab | null>(() => {
@@ -91,9 +93,9 @@ export class ModelsListComponent implements OnInit {
   public readonly searchQuery = signal('');
 
   /** Sort field. */
-  public readonly sortField = signal<'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance'>(
-    'count',
-  );
+  public readonly sortField = signal<
+    'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance'
+  >('count');
 
   /** Sort direction. */
   public readonly sortDirection = signal<'asc' | 'desc'>('desc');
@@ -252,7 +254,8 @@ export class ModelsListComponent implements OnInit {
   }
 
   /** Reference to highlighted row element for scrolling. */
-  private readonly highlightedRow = viewChild<ElementRef<HTMLElement>>('highlightedRow');
+  private readonly highlightedRow =
+    viewChild<ElementRef<HTMLElement>>('highlightedRow');
 
   /**
    * Clear the highlighted model and navigate to the base models route.
@@ -260,7 +263,9 @@ export class ModelsListComponent implements OnInit {
    */
   public clearHighlight(): void {
     const currentType = this.activeTab();
-    this.router.navigate(['/details/models', currentType], { replaceUrl: true });
+    this.router.navigate(['/details/models', currentType], {
+      replaceUrl: true,
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -284,7 +289,7 @@ export class ModelsListComponent implements OnInit {
       // Only search if we have a model name but no type in the route
       if (modelName && !routeType && !this.searchingForModel) {
         // Check if model is in image models
-        const foundInImage = imageModels.some(m => m.name === modelName);
+        const foundInImage = imageModels.some((m) => m.name === modelName);
         if (foundInImage) {
           this.activeTab.set('image');
           this.initialTypeApplied = true;
@@ -292,7 +297,7 @@ export class ModelsListComponent implements OnInit {
         }
 
         // Check if model is in text models
-        const foundInText = textModels.some(m => m.name === modelName);
+        const foundInText = textModels.some((m) => m.name === modelName);
         if (foundInText) {
           this.activeTab.set('text');
           this.initialTypeApplied = true;
@@ -311,11 +316,14 @@ export class ModelsListComponent implements OnInit {
       const highlightName = this.highlightModelName();
       const models = this.filteredModels();
       const rowEl = this.highlightedRow();
-      
+
       if (highlightName && models.length > 0 && rowEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          rowEl.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          rowEl.nativeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
         }, 100);
       }
     });
@@ -403,10 +411,7 @@ export class ModelsListComponent implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    combineLatest([
-      this.aiHorde.getImageModels(),
-      this.aiHorde.getTextModels(),
-    ])
+    combineLatest([this.aiHorde.getImageModels(), this.aiHorde.getTextModels()])
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
@@ -420,8 +425,8 @@ export class ModelsListComponent implements OnInit {
           this.textModels.set(textModels);
 
           // Determine which tab to activate based on where we find the model
-          const foundInImage = imageModels.some(m => m.name === modelName);
-          const foundInText = textModels.some(m => m.name === modelName);
+          const foundInImage = imageModels.some((m) => m.name === modelName);
+          const foundInText = textModels.some((m) => m.name === modelName);
 
           if (foundInImage) {
             this.activeTab.set('image');
@@ -472,15 +477,15 @@ export class ModelsListComponent implements OnInit {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this.activeSuggestionIndex.update(idx =>
-          idx < suggestions.length - 1 ? idx + 1 : 0
+        this.activeSuggestionIndex.update((idx) =>
+          idx < suggestions.length - 1 ? idx + 1 : 0,
         );
         break;
 
       case 'ArrowUp':
         event.preventDefault();
-        this.activeSuggestionIndex.update(idx =>
-          idx > 0 ? idx - 1 : suggestions.length - 1
+        this.activeSuggestionIndex.update((idx) =>
+          idx > 0 ? idx - 1 : suggestions.length - 1,
         );
         break;
 
@@ -534,7 +539,9 @@ export class ModelsListComponent implements OnInit {
     }
   }
 
-  public setSortField(field: 'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance'): void {
+  public setSortField(
+    field: 'name' | 'count' | 'queued' | 'jobs' | 'eta' | 'performance',
+  ): void {
     if (this.sortField() === field) {
       // Toggle direction
       this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');

@@ -539,7 +539,9 @@ export class UnitConversionService {
    * @param megapixelstepsPerSecond - Performance rate from the worker API (mps/s)
    * @returns SynthesizedUnit with mps/s as primary and standard images/s as technical
    */
-  formatWorkerPerformanceImage(megapixelstepsPerSecond: number): SynthesizedUnit {
+  formatWorkerPerformanceImage(
+    megapixelstepsPerSecond: number,
+  ): SynthesizedUnit {
     // Convert to standard images per second (1 standard image = 20 megapixelsteps)
     const standardImagesPerSecond = megapixelstepsPerSecond / 20;
 

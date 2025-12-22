@@ -311,12 +311,20 @@
   .volunteer-cta-banner {
     @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4;
     @apply py-3 px-4 rounded-lg text-sm;
-    background: linear-gradient(135deg, rgb(88 28 135 / 0.08) 0%, rgb(30 58 138 / 0.08) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(88 28 135 / 0.08) 0%,
+      rgb(30 58 138 / 0.08) 100%
+    );
     border: 1px solid rgb(147 51 234 / 0.2);
   }
 
   .dark .volunteer-cta-banner {
-    background: linear-gradient(135deg, rgb(88 28 135 / 0.15) 0%, rgb(30 58 138 / 0.15) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(88 28 135 / 0.15) 0%,
+      rgb(30 58 138 / 0.15) 100%
+    );
     border-color: rgb(147 51 234 / 0.3);
   }
 

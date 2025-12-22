@@ -85,7 +85,8 @@
     box-shadow: var(--shadow-lg);
 
     /* Animation */
-    transition: opacity var(--tooltip-transition-duration) ease-out,
+    transition:
+      opacity var(--tooltip-transition-duration) ease-out,
       visibility var(--tooltip-transition-duration) ease-out;
 
     /* Default positioning: centered above trigger */
@@ -363,7 +364,7 @@
   .tooltip-content,
   .tooltip-text {
     --tooltip-width: 240px;
-    
+
     /* Default to left-aligned on mobile for better viewport fit */
     left: 0;
     right: auto;

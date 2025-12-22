@@ -33,7 +33,9 @@ import { extractUserId } from '../../../helper/user-parser';
       <div class="container-spaced">
         <div class="container-page-content">
           <div class="card card-bg-primary card-full">
-            <h2 class="heading-card">{{ 'details.users.lookup.label' | transloco }}</h2>
+            <h2 class="heading-card">
+              {{ 'details.users.lookup.label' | transloco }}
+            </h2>
             <app-entity-lookup
               label="details.users.lookup.label"
               placeholder="details.users.lookup.placeholder"
@@ -43,15 +45,14 @@ import { extractUserId } from '../../../helper/user-parser';
           </div>
 
           <div class="card card-bg-primary card-full mt-6">
-            <h2 class="heading-card">{{ 'details.users.browse_title' | transloco }}</h2>
+            <h2 class="heading-card">
+              {{ 'details.users.browse_title' | transloco }}
+            </h2>
             <p class="text-body text-content-secondary mb-4">
               {{ 'details.users.browse_info' | transloco }}
             </p>
             <div class="data-grid-1-2">
-              <a
-                routerLink="/details/leaderboard"
-                class="entity-card-link"
-              >
+              <a routerLink="/details/leaderboard" class="entity-card-link">
                 <h3 class="entity-card-title">
                   {{ 'details.users.leaderboard_link' | transloco }}
                 </h3>

@@ -38,7 +38,9 @@ export class TeamsListComponent implements OnInit {
   private readonly router = inject(Router);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   /** Owner ID to filter by from route. */
   public readonly filterOwnerId = computed<string | null>(() => {
@@ -51,7 +53,8 @@ export class TeamsListComponent implements OnInit {
   });
 
   /** Reference to highlighted team element for scrolling. */
-  private readonly highlightedTeam = viewChild<ElementRef<HTMLElement>>('highlightedTeam');
+  private readonly highlightedTeam =
+    viewChild<ElementRef<HTMLElement>>('highlightedTeam');
 
   // State
   public teams = signal<Team[]>([]);
@@ -122,7 +125,11 @@ export class TeamsListComponent implements OnInit {
     const ownerId = this.filterOwnerId();
     if (!ownerId) return false;
     // Check if we have teams loaded but none match the owner filter
-    return !this.loading() && this.teams().length > 0 && this.filteredTeams().length === 0;
+    return (
+      !this.loading() &&
+      this.teams().length > 0 &&
+      this.filteredTeams().length === 0
+    );
   });
 
   constructor() {
@@ -131,11 +138,14 @@ export class TeamsListComponent implements OnInit {
       const highlightId = this.highlightTeamId();
       const teams = this.filteredTeams();
       const teamEl = this.highlightedTeam();
-      
+
       if (highlightId && teams.length > 0 && teamEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          teamEl.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          teamEl.nativeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
         }, 100);
       }
     });

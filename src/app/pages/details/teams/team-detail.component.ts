@@ -60,11 +60,11 @@ export class TeamDetailComponent implements OnInit {
 
           if (team) {
             // Set title
-            combineLatest([
-              this.translator.get('app_title'),
-            ]).subscribe(([appTitle]) => {
-              this.title.setTitle(`${team.name} | ${appTitle}`);
-            });
+            combineLatest([this.translator.get('app_title')]).subscribe(
+              ([appTitle]) => {
+                this.title.setTitle(`${team.name} | ${appTitle}`);
+              },
+            );
           }
         },
         error: () => {

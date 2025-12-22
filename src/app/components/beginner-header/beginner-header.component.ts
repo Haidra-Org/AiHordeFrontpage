@@ -1,4 +1,12 @@
-import { Component, input, signal, computed, ChangeDetectionStrategy, ElementRef, inject } from '@angular/core';
+import {
+  Component,
+  input,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+  ElementRef,
+  inject,
+} from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -56,11 +64,16 @@ export class BeginnerHeaderComponent {
       // Use setTimeout to allow the DOM to update first
       setTimeout(() => {
         const element = this.elementRef.nativeElement as HTMLElement;
-        const navHeight = parseInt(getComputedStyle(this.document.documentElement).getPropertyValue('--nav-height-mobile') || '64', 10);
+        const navHeight = parseInt(
+          getComputedStyle(this.document.documentElement).getPropertyValue(
+            '--nav-height-mobile',
+          ) || '64',
+          10,
+        );
         const elementTop = element.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({
           top: elementTop - navHeight - 16,
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
       }, 50);
     }

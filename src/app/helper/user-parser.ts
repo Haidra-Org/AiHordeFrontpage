@@ -13,7 +13,9 @@
  * @param usernameOrOwner - A string in "alias#id" format (e.g., "MyUser#12345")
  * @returns The numeric user ID, or null if parsing fails
  */
-export function extractUserId(usernameOrOwner: string | undefined | null): number | null {
+export function extractUserId(
+  usernameOrOwner: string | undefined | null,
+): number | null {
   if (!usernameOrOwner) {
     return null;
   }

@@ -6,13 +6,19 @@
 
 @if (loading()) {
   <div class="card card-bg-primary card-full card-spaced">
-    <p class="text-secondary text-center py-8">{{ "details.teams.loading" | transloco }}</p>
+    <p class="text-secondary text-center py-8">
+      {{ "details.teams.loading" | transloco }}
+    </p>
   </div>
 } @else if (error() || !team()) {
   <div class="card card-bg-primary card-full card-spaced">
     <div class="text-center py-8">
-      <p class="text-red-500 mb-4">{{ error() ?? ("details.teams.not_found" | transloco) }}</p>
-      <a routerLink="/details/teams" class="btn-primary">{{ "details.teams.back_to_list" | transloco }}</a>
+      <p class="text-red-500 mb-4">
+        {{ error() ?? ("details.teams.not_found" | transloco) }}
+      </p>
+      <a routerLink="/details/teams" class="btn-primary">{{
+        "details.teams.back_to_list" | transloco
+      }}</a>
     </div>
   </div>
 } @else {
@@ -23,7 +29,10 @@
       @if (team()!.creator) {
         <p class="text-secondary">
           {{ "details.teams.created_by_label" | transloco }}
-          <a [routerLink]="getCreatorLink()" class="link">{{ team()!.creator }}</a> - team id:<code class="code-block">{{ team()!.id }}</code>
+          <a [routerLink]="getCreatorLink()" class="link">{{
+            team()!.creator
+          }}</a>
+          - team id:<code class="code-block">{{ team()!.id }}</code>
         </p>
       }
       @if (team()!.info) {
@@ -34,22 +43,33 @@
     <!-- Stats -->
     <div class="data-grid-2-4-spaced mb-6">
       <div class="data-item-box data-item-centered">
-        <span class="data-label">{{ "details.teams.stats.workers" | transloco }}</span>
+        <span class="data-label">{{
+          "details.teams.stats.workers" | transloco
+        }}</span>
         <span class="data-value">{{ team()!.worker_count ?? 0 }}</span>
         <span class="text-xs text-secondary">
-          ({{ onlineWorkerCount() }} {{ "details.teams.stats.online" | transloco }})
+          ({{ onlineWorkerCount() }}
+          {{ "details.teams.stats.online" | transloco }})
         </span>
       </div>
       <div class="data-item-box data-item-centered">
-        <span class="data-label">{{ "details.teams.stats.kudos" | transloco }}</span>
-        <span class="data-value">{{ (team()!.kudos ?? 0) | formatNumber }}</span>
+        <span class="data-label">{{
+          "details.teams.stats.kudos" | transloco
+        }}</span>
+        <span class="data-value">{{ team()!.kudos ?? 0 | formatNumber }}</span>
       </div>
       <div class="data-item-box data-item-centered">
-        <span class="data-label">{{ "details.teams.stats.requests" | transloco }}</span>
-        <span class="data-value">{{ (team()!.requests_fulfilled ?? 0) | formatNumber }}</span>
+        <span class="data-label">{{
+          "details.teams.stats.requests" | transloco
+        }}</span>
+        <span class="data-value">{{
+          team()!.requests_fulfilled ?? 0 | formatNumber
+        }}</span>
       </div>
       <div class="data-item-box data-item-centered">
-        <span class="data-label">{{ "details.teams.stats.uptime" | transloco }}</span>
+        <span class="data-label">{{
+          "details.teams.stats.uptime" | transloco
+        }}</span>
         <span class="data-value">{{ formatUptime(team()!.uptime ?? 0) }}</span>
       </div>
     </div>
@@ -57,7 +77,9 @@
     <!-- Workers -->
     @if ((team()!.workers?.length ?? 0) > 0) {
       <div class="mb-6">
-        <h3 class="heading-card mb-4">{{ "details.teams.workers_section" | transloco }}</h3>
+        <h3 class="heading-card mb-4">
+          {{ "details.teams.workers_section" | transloco }}
+        </h3>
         <div class="data-grid-1-2-3">
           @for (worker of team()!.workers; track worker.id) {
             <a
@@ -65,11 +87,17 @@
               class="worker-item-link"
             >
               <div class="worker-item-header">
-                <span class="worker-item-name" [title]="worker.name">{{ worker.name }}</span>
+                <span class="worker-item-name" [title]="worker.name">{{
+                  worker.name
+                }}</span>
                 @if (worker.online) {
-                  <span class="badge-base badge-success text-xs">{{ "details.teams.worker_online" | transloco }}</span>
+                  <span class="badge-base badge-success text-xs">{{
+                    "details.teams.worker_online" | transloco
+                  }}</span>
                 } @else {
-                  <span class="badge-base badge-secondary text-xs">{{ "details.teams.worker_offline" | transloco }}</span>
+                  <span class="badge-base badge-secondary text-xs">{{
+                    "details.teams.worker_offline" | transloco
+                  }}</span>
                 }
               </div>
               <p class="worker-item-subtitle">{{ worker.id }}</p>
@@ -82,7 +110,9 @@
     <!-- Models -->
     @if ((team()!.models?.length ?? 0) > 0) {
       <div>
-        <h3 class="heading-card mb-4">{{ "details.teams.models_section" | transloco }}</h3>
+        <h3 class="heading-card mb-4">
+          {{ "details.teams.models_section" | transloco }}
+        </h3>
         <div class="badge-container">
           @for (model of team()!.models; track model.name) {
             <a
@@ -91,7 +121,9 @@
             >
               {{ model.name }}
               @if ((model.count ?? 0) > 1) {
-                <span class="text-content-secondary ml-1">({{ model.count }})</span>
+                <span class="text-content-secondary ml-1"
+                  >({{ model.count }})</span
+                >
               }
             </a>
           }

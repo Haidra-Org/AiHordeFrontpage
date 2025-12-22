@@ -58,9 +58,7 @@ export const detailsRoutes: Routes = [
   {
     path: 'users',
     loadComponent: () =>
-      import('./users/users-list.component').then(
-        (c) => c.UsersListComponent,
-      ),
+      import('./users/users-list.component').then((c) => c.UsersListComponent),
   },
   {
     path: 'users/:userId',
@@ -134,25 +132,19 @@ export const detailsRoutes: Routes = [
   {
     path: 'teams',
     loadComponent: () =>
-      import('./teams/teams-list.component').then(
-        (c) => c.TeamsListComponent,
-      ),
+      import('./teams/teams-list.component').then((c) => c.TeamsListComponent),
   },
   // Teams filtered by owner (must come before :teamId)
   {
     path: 'teams/owner/:ownerId',
     loadComponent: () =>
-      import('./teams/teams-list.component').then(
-        (c) => c.TeamsListComponent,
-      ),
+      import('./teams/teams-list.component').then((c) => c.TeamsListComponent),
   },
   // Teams with highlight (must come before :teamId)
   {
     path: 'teams/highlight/:highlightTeamId',
     loadComponent: () =>
-      import('./teams/teams-list.component').then(
-        (c) => c.TeamsListComponent,
-      ),
+      import('./teams/teams-list.component').then((c) => c.TeamsListComponent),
   },
   {
     path: 'teams/:teamId',

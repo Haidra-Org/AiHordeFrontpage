@@ -31,7 +31,9 @@ export class PublicWorkersComponent implements OnInit {
   private readonly router = inject(Router);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   /** Initial worker type from route (image, text, interrogation). */
   public readonly initialWorkerType = computed<WorkerType | null>(() => {
@@ -79,7 +81,8 @@ export class PublicWorkersComponent implements OnInit {
   public onWorkerSearch(value: string): void {
     const trimmed = value.trim();
     // Check if it looks like a UUID (worker ID)
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
       this.router.navigate(['/details/workers/id', trimmed]);
     } else {
@@ -102,7 +105,9 @@ export class PublicWorkersComponent implements OnInit {
   public clearHighlight(): void {
     const currentType = this.initialWorkerType();
     if (currentType) {
-      this.router.navigate(['/details/workers', currentType], { replaceUrl: true });
+      this.router.navigate(['/details/workers', currentType], {
+        replaceUrl: true,
+      });
     } else {
       this.router.navigate(['/details/workers'], { replaceUrl: true });
     }

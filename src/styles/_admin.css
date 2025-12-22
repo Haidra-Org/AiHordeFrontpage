@@ -189,8 +189,12 @@
   }
 
   @keyframes admin-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* =================================================================
@@ -343,34 +347,71 @@
   }
 
   /* Legacy stat-card-icon variants without BEM dashes */
-  .stat-card-icon-purple { @apply bg-purple-100 text-purple-600; }
-  .dark .stat-card-icon-purple { background-color: rgb(88 28 135 / 0.5); @apply text-purple-400; }
-  .stat-card-icon-blue { @apply bg-blue-100 text-blue-600; }
-  .dark .stat-card-icon-blue { background-color: rgb(30 58 138 / 0.5); @apply text-blue-400; }
-  .stat-card-icon-green { @apply bg-green-100 text-green-600; }
-  .dark .stat-card-icon-green { background-color: rgb(22 101 52 / 0.5); @apply text-green-400; }
-  .stat-card-icon-yellow { @apply bg-yellow-100 text-yellow-700; }
-  .dark .stat-card-icon-yellow { background-color: rgb(113 63 18 / 0.5); @apply text-yellow-400; }
-  .stat-card-icon-indigo { @apply bg-indigo-100 text-indigo-600; }
-  .dark .stat-card-icon-indigo { background-color: rgb(49 46 129 / 0.5); @apply text-indigo-400; }
+  .stat-card-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+  }
+  .dark .stat-card-icon-purple {
+    background-color: rgb(88 28 135 / 0.5);
+    @apply text-purple-400;
+  }
+  .stat-card-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+  }
+  .dark .stat-card-icon-blue {
+    background-color: rgb(30 58 138 / 0.5);
+    @apply text-blue-400;
+  }
+  .stat-card-icon-green {
+    @apply bg-green-100 text-green-600;
+  }
+  .dark .stat-card-icon-green {
+    background-color: rgb(22 101 52 / 0.5);
+    @apply text-green-400;
+  }
+  .stat-card-icon-yellow {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+  .dark .stat-card-icon-yellow {
+    background-color: rgb(113 63 18 / 0.5);
+    @apply text-yellow-400;
+  }
+  .stat-card-icon-indigo {
+    @apply bg-indigo-100 text-indigo-600;
+  }
+  .dark .stat-card-icon-indigo {
+    background-color: rgb(49 46 129 / 0.5);
+    @apply text-indigo-400;
+  }
 
   /* Legacy worker-card-bg variants (prefer worker-card--normal/--issue) */
   .worker-card-bg-normal {
     background-color: var(--color-bg-primary);
     border: 1px solid var(--color-border-primary);
   }
-  .dark .worker-card-bg-normal { @apply bg-gray-800 border-gray-700; }
-  .worker-card-bg-issue { @apply bg-red-50 border border-red-300; }
+  .dark .worker-card-bg-normal {
+    @apply bg-gray-800 border-gray-700;
+  }
+  .worker-card-bg-issue {
+    @apply bg-red-50 border border-red-300;
+  }
   .dark .worker-card-bg-issue {
     background-color: rgb(127 29 29 / 0.3);
     border-color: rgb(185 28 28 / 0.5);
   }
 
   /* Legacy status-icon variants without BEM dashes */
-  .status-icon-success { @apply bg-green-100 text-green-600; }
-  .dark .status-icon-success { @apply bg-green-800 text-green-400; }
-  .status-icon-error { @apply bg-red-100 text-red-600; }
-  .dark .status-icon-error { @apply bg-red-900 text-red-400; }
+  .status-icon-success {
+    @apply bg-green-100 text-green-600;
+  }
+  .dark .status-icon-success {
+    @apply bg-green-800 text-green-400;
+  }
+  .status-icon-error {
+    @apply bg-red-100 text-red-600;
+  }
+  .dark .status-icon-error {
+    @apply bg-red-900 text-red-400;
+  }
 
   /* =================================================================
      LEGACY MODAL ALIASES (prefer classes from _modals.css)
@@ -942,7 +983,9 @@
 
   .code-block {
     @apply text-sm leading-relaxed p-4 rounded-lg overflow-x-auto whitespace-pre m-0;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+      monospace;
     background-color: var(--color-bg-secondary);
   }
 
@@ -952,7 +995,9 @@
 
   .code-inline {
     @apply text-sm py-0.5 px-1.5 rounded;
-    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas,
+      monospace;
     background-color: var(--color-bg-secondary);
   }
 

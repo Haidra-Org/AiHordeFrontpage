@@ -78,7 +78,9 @@ export class StylesListComponent implements OnInit {
   private readonly pageSize = 25;
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, { initialValue: {} as Record<string, string> });
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
 
   /** Style ID to highlight from route. */
   public readonly highlightStyleId = computed<string | null>(() => {
@@ -95,7 +97,8 @@ export class StylesListComponent implements OnInit {
   });
 
   /** Reference to highlighted style element for scrolling. */
-  private readonly highlightedStyle = viewChild<ElementRef<HTMLElement>>('highlightedStyle');
+  private readonly highlightedStyle =
+    viewChild<ElementRef<HTMLElement>>('highlightedStyle');
 
   /** Current active tab. */
   public readonly activeTab = signal<StylesTab>('image');
@@ -241,11 +244,14 @@ export class StylesListComponent implements OnInit {
       const highlightId = this.highlightStyleId();
       const styles = this.filteredStyles();
       const styleEl = this.highlightedStyle();
-      
+
       if (highlightId && styles.length > 0 && styleEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          styleEl.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          styleEl.nativeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
         }, 100);
       }
     });
@@ -524,7 +530,8 @@ export class StylesListComponent implements OnInit {
     const type = this.activeTab() === 'text' ? 'text' : 'image';
 
     // Check if it looks like a UUID
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
       this.router.navigate(['/details/styles', type, trimmed]);
     } else {

@@ -50,7 +50,8 @@
   .tools-search-input:focus {
     @apply outline-none;
     border-color: var(--color-brand-purple);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
   }
 
   .tools-search-input::placeholder {
@@ -81,7 +82,11 @@
   .tools-filter-toggle.active {
     @apply border-purple-500 text-purple-600;
     @apply dark:border-purple-400 dark:text-purple-400;
-    background-color: color-mix(in srgb, var(--color-brand-purple) 10%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 10%,
+      transparent
+    );
   }
 
   .tools-filter-count {
