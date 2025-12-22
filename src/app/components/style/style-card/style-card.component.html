@@ -3,6 +3,7 @@
   class="card card-full card-bg-primary card-interactive"
   [class.style-card-image]="isImage()"
   [class.style-card-text]="!isImage()"
+  [class.entity-highlighted]="highlighted()"
   (click)="onCardClick()"
 >
   <!-- Image Preview (for image styles) -->
@@ -51,6 +52,17 @@
         <span class="badge-base badge-danger">
           {{ "styles.nsfw" | transloco }}
         </span>
+      }
+      @if (highlighted()) {
+        <button
+          type="button"
+          class="badge-base badge-warning badge-dismissible"
+          (click)="onClearHighlight($event)"
+          [attr.aria-label]="'details.common.clear_highlight' | transloco"
+        >
+          {{ 'details.common.highlighted' | transloco }}
+          <span aria-hidden="true">×</span>
+        </button>
       }
     </div>
 

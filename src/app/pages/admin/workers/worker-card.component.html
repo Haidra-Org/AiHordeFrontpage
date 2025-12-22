@@ -43,7 +43,9 @@
               @if (getFilteredModels().length > 0) {
                 <ul class="worker-models-list">
                   @for (model of getFilteredModels(); track model) {
-                    <li class="worker-models-list-item">{{ model }}</li>
+                    <li class="worker-models-list-item">
+                      <a [routerLink]="getModelLink(model)" class="worker-link">{{ model }}</a>
+                    </li>
                   }
                 </ul>
               } @else {
@@ -178,6 +180,42 @@
             </button>
           </div>
         }
+        @case ("team") {
+          <h3 class="heading-card mb-4">
+            {{ "admin.workers.dialog.team_title" | transloco: { name: worker().name } }}
+          </h3>
+          <div class="mb-4">
+            <label for="team-select" class="form-label">
+              {{ "admin.workers.dialog.team_select" | transloco }}
+            </label>
+            <select
+              id="team-select"
+              [value]="selectedTeamId()"
+              (change)="onTeamSelectChange($event)"
+              class="form-input"
+            >
+              <option value="">{{ "admin.workers.dialog.no_team" | transloco }}</option>
+              @for (team of availableTeams(); track team.id) {
+                <option [value]="team.id">{{ team.name }}</option>
+              }
+            </select>
+            <p class="text-xs text-secondary mt-2">
+              {{ "admin.workers.dialog.team_hint" | transloco }}
+            </p>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button (click)="closeDialog()" class="worker-btn">
+              {{ "admin.workers.dialog.cancel" | transloco }}
+            </button>
+            <button
+              (click)="confirmTeamChange()"
+              [disabled]="isUpdating()"
+              class="btn-primary"
+            >
+              {{ "admin.workers.dialog.confirm" | transloco }}
+            </button>
+          </div>
+        }
       }
     </div>
   </div>
@@ -251,6 +289,17 @@
                   "admin.workers.type.interrogation" | transloco
                 }}</span>
               }
+            }
+            @if (highlighted()) {
+              <button
+                type="button"
+                class="badge-base badge-warning badge-dismissible"
+                (click)="onClearHighlight(); $event.stopPropagation()"
+                [attr.aria-label]="'details.common.clear_highlight' | transloco"
+              >
+                {{ 'details.common.highlighted' | transloco }}
+                <span aria-hidden="true">×</span>
+              </button>
             }
           </div>
           <p class="text-xs text-secondary truncate">{{ worker().id }}</p>
@@ -380,9 +429,11 @@
     <!-- Basic Information -->
     <div class="space-y-1 mb-3">
       <div class="worker-card-row">
+        @if (hasOwnerName() || getOwnerUserId()) {
         <span class="worker-card-label"
           >{{ "admin.workers.card.owner" | transloco }}:</span
         >
+        }
         @if (getOwnerUserId() && isModerator()) {
           <a
             [routerLink]="['/admin/users', getOwnerUserId()]"
@@ -390,22 +441,36 @@
             [title]="worker().owner"
             >{{ getOwnerDisplayName() }}</a
           >
-        } @else {
+        } @else if (hasOwnerName() && getOwnerUserId()) {
+          <a
+            [routerLink]="['/details/workers/owner', getOwnerUserId()]"
+            class="worker-link truncate"
+            [title]="worker().owner"
+            >{{ getOwnerDisplayName() }}</a
+          >
+        } @else if (hasOwnerName()) {
           <span class="worker-card-value" [title]="worker().owner ?? ''">{{
             getOwnerDisplayName()
           }}</span>
         }
       </div>
-      @if (worker().team) {
+      @if (worker().team?.name || worker().team?.id) {
         <div class="worker-card-row">
           <span class="worker-card-label"
             >{{ "admin.workers.card.team" | transloco }}:</span
           >
-          <span
-            class="worker-card-value truncate"
-            [title]="worker().team?.name ?? worker().team?.id ?? ''"
-            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</span
-          >
+          @if (worker().team?.id) {
+            <a
+              [routerLink]="['/details/teams', worker().team!.id]"
+              class="worker-link truncate"
+              [title]="worker().team?.name ?? worker().team?.id ?? ''"
+            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a>
+          } @else {
+            <span
+              class="worker-card-value truncate"
+              [title]="worker().team?.name ?? worker().team?.id ?? ''"
+            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</span>
+          }
         </div>
       }
       <div class="flex flex-col">
@@ -627,7 +692,7 @@
   </div>
 
   <!-- Actions -->
-  <div class="px-4 py-3 worker-card-section flex gap-2">
+  <div class="px-4 py-3 worker-card-section flex gap-2 flex-wrap">
     <!-- Show Models -->
     <button
       (click)="openModelsDialog()"
@@ -636,6 +701,17 @@
     >
       {{ "admin.workers.button.models" | transloco }}
     </button>
+
+    @if (canChangeTeam()) {
+      <!-- Change Team -->
+      <button
+        (click)="openTeamDialog()"
+        class="worker-btn text-sm"
+        [title]="'admin.workers.action.change_team' | transloco"
+      >
+        {{ "admin.workers.button.team" | transloco }}
+      </button>
+    }
 
     @if (canToggleMaintenance()) {
       <!-- Maintenance Toggle -->

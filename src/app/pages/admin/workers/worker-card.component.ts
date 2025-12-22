@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { HordeWorker } from '../../../types/horde-worker';
+import { Team } from '../../../types/team';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { AuthService } from '../../../services/auth.service';
@@ -41,12 +42,15 @@ export class WorkerCardComponent {
   public worker = input.required<HordeWorker>();
   public isModerator = input(false);
   public viewMode = input<'admin' | 'public'>('admin');
+  public availableTeams = input<Team[]>([]);
+  public highlighted = input(false);
   public workerUpdated = output<void>();
   public workerDeleted = output<string>();
+  public clearHighlight = output<void>();
 
   // Dialog state
   public dialogOpen = signal<boolean>(false);
-  public dialogType = signal<'models' | 'maintenance' | 'pause' | 'delete'>(
+  public dialogType = signal<'models' | 'maintenance' | 'pause' | 'delete' | 'team'>(
     'models',
   );
   public maintenanceReason = signal<string>('');
@@ -54,6 +58,7 @@ export class WorkerCardComponent {
   public isUpdating = signal<boolean>(false);
   public showSuccess = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
+  public selectedTeamId = signal<string>('');
 
   /**
    * Check if the current user is a moderator
@@ -74,12 +79,23 @@ export class WorkerCardComponent {
 
   /**
    * Check if the current authenticated user owns this worker.
+   * First checks if the worker ID is in the current user's worker_ids array,
+   * then falls back to parsing the owner field (for admin/moderator views).
    */
   public isOwnedByCurrentUser(): boolean {
-    const ownerId = this.getOwnerUserId();
-    const currentUserId = this.auth.currentUser()?.id;
+    const currentUser = this.auth.currentUser();
+    if (!currentUser) return false;
 
-    return !!ownerId && !!currentUserId && ownerId === `${currentUserId}`;
+    const workerId = this.worker().id;
+
+    // Primary check: Is this worker in the current user's worker_ids list?
+    if (currentUser.worker_ids?.includes(workerId)) {
+      return true;
+    }
+
+    // Fallback: Parse the owner field (for cases where worker_ids isn't available)
+    const ownerId = this.getOwnerUserId();
+    return !!ownerId && ownerId === `${currentUser.id}`;
   }
 
   /**
@@ -102,10 +118,37 @@ export class WorkerCardComponent {
   }
 
   /**
+   * Check if the current user can change this worker's team assignment
+   * Only moderators or the worker owner can change team
+   */
+  public canChangeTeam(): boolean {
+    return this.isOwnedByCurrentUser() || this.isModerator();
+  }
+
+  public hasOwnerName(): boolean {
+    return !!this.worker().owner;
+  }
+
+  /**
    * Get the display name for the owner (including the ID discriminator)
    */
   public getOwnerDisplayName(): string {
     return this.worker().owner ?? 'Unknown';
+  }
+
+  /**
+   * Get the model type for routing based on worker type
+   * Image and interrogation workers use image models, text workers use text models
+   */
+  public getModelType(): 'image' | 'text' {
+    return this.worker().type === 'text' ? 'text' : 'image';
+  }
+
+  /**
+   * Generate the router link path for a model
+   */
+  public getModelLink(modelName: string): string[] {
+    return ['/details/models', this.getModelType(), modelName];
   }
 
   public isHighSpeed(): boolean {
@@ -146,10 +189,26 @@ export class WorkerCardComponent {
 
   public getCardBackground(): string {
     const worker = this.worker();
+    let classes = '';
+    
     if (worker.maintenance_mode || worker.paused || worker.flagged) {
-      return 'worker-card-issue';
+      classes = 'worker-card-issue';
+    } else {
+      classes = 'worker-card-normal';
     }
-    return 'worker-card-normal';
+    
+    if (this.highlighted()) {
+      classes += ' worker-card-highlighted';
+    }
+    
+    return classes;
+  }
+
+  /**
+   * Emit event to clear the highlight (parent will handle navigation)
+   */
+  public onClearHighlight(): void {
+    this.clearHighlight.emit();
   }
 
   public formatUptime(seconds: number): string {
@@ -367,5 +426,51 @@ export class WorkerCardComponent {
     return this.unitConversion.formatWorkerTokensGenerated(
       worker.tokens_generated,
     );
+  }
+
+  // ============================================================================
+  // TEAM ASSIGNMENT METHODS
+  // ============================================================================
+
+  /**
+   * Open the team assignment dialog
+   */
+  public openTeamDialog(): void {
+    if (!this.canChangeTeam()) return;
+
+    this.dialogType.set('team');
+    this.selectedTeamId.set(this.worker().team?.id ?? '');
+    this.dialogOpen.set(true);
+  }
+
+  /**
+   * Handle team selection change
+   */
+  public onTeamSelectChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.selectedTeamId.set(target.value);
+  }
+
+  /**
+   * Confirm team assignment change
+   */
+  public confirmTeamChange(): void {
+    this.isUpdating.set(true);
+
+    // Empty string removes from team, otherwise assign to selected team
+    const teamId = this.selectedTeamId();
+
+    this.workerService
+      .updateWorker(this.worker().id, { team: teamId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.isUpdating.set(false);
+        if (result) {
+          this.showSuccess.set(true);
+          setTimeout(() => this.showSuccess.set(false), 3000);
+          this.workerUpdated.emit();
+        }
+        this.closeDialog();
+      });
   }
 }

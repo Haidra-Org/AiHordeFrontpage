@@ -1,5 +1,18 @@
+<app-entity-lookup
+  label="details.workers.lookup.label"
+  placeholder="details.workers.lookup.placeholder"
+  hintText="details.workers.lookup.hint"
+  (search)="onWorkerSearch($event)"
+/>
+
 <app-worker-list
   viewMode="public"
   titleKey="details.workers.title"
   [setPageTitle]="false"
+  [initialWorkerType]="initialWorkerType()"
+  [highlightWorkerId]="highlightWorkerId()"
+  [filterOwnerId]="filterOwnerId()"
+  (workerTypeChanged)="onWorkerTypeChange($event)"
+  (ownerFilterCleared)="clearOwnerFilter()"
+  (highlightCleared)="clearHighlight()"
 />

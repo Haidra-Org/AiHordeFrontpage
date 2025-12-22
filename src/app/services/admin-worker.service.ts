@@ -124,4 +124,16 @@ export class AdminWorkerService {
       )
       .pipe(catchError(() => of(null)));
   }
+
+  /**
+   * Get a specific worker by name (case insensitive)
+   */
+  public getWorkerByName(name: string): Observable<HordeWorker | null> {
+    const apiKey = this.auth.getStoredApiKey();
+    const options = apiKey ? { headers: { apikey: apiKey } } : {};
+
+    return this.httpClient
+      .get<HordeWorker>(`${this.baseUrl}/workers/name/${encodeURIComponent(name)}`, options)
+      .pipe(catchError(() => of(null)));
+  }
 }

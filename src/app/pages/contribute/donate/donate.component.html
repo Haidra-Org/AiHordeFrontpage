@@ -1,0 +1,169 @@
+<!-- Donate Introduction -->
+<div class="max-w-4xl mx-auto">
+  <div class="callout callout-accent mb-8">
+    <h2 class="callout-title text-xl">
+      {{ "donate.intro.title" | transloco }}
+    </h2>
+    <p class="callout-body text-lg leading-relaxed">
+      {{ "donate.intro.description" | transloco }}
+    </p>
+  </div>
+
+  <!-- What Donations Support -->
+  <div class="prose-content mb-12">
+    <h2 class="heading-section">{{ "donate.what_supports.title" | transloco }}</h2>
+    <p class="text-lead mb-6">
+      {{ "donate.what_supports.description" | transloco }}
+    </p>
+
+    <div class="feature-grid mb-8">
+      <div class="feature-box">
+        <div class="feature-box-icon feature-box-icon-blue">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+          </svg>
+        </div>
+        <h3 class="feature-box-title">
+          {{ "donate.what_supports.servers.title" | transloco }}
+        </h3>
+        <p class="feature-box-description">
+          {{ "donate.what_supports.servers.description" | transloco }}
+        </p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-box-icon feature-box-icon-purple">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+        </div>
+        <h3 class="feature-box-title">
+          {{ "donate.what_supports.development.title" | transloco }}
+        </h3>
+        <p class="feature-box-description">
+          {{ "donate.what_supports.development.description" | transloco }}
+        </p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-box-icon feature-box-icon-green">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="feature-box-title">
+          {{ "donate.what_supports.community.title" | transloco }}
+        </h3>
+        <p class="feature-box-description">
+          {{ "donate.what_supports.community.description" | transloco }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ways to Donate -->
+  <div class="prose-content mb-12">
+    <h2 class="heading-section">{{ "donate.ways_to_donate.title" | transloco }}</h2>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      <!-- Patreon -->
+      <div class="card card-full card-bg-secondary">
+        <a
+          href="https://www.patreon.com/db0"
+          target="_blank"
+          class="flex items-center gap-4 mb-4 no-underline"
+        >
+          <div class="feature-card-icon feature-card-icon-orange">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14.82 2.41c3.96 0 7.18 3.22 7.18 7.18 0 3.97-3.22 7.18-7.18 7.18-3.97 0-7.19-3.21-7.19-7.18 0-3.96 3.22-7.18 7.19-7.18zM2 21.6h3.5V2.41H2V21.6z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="card-inline-title">
+              {{ "donate.ways_to_donate.patreon.title" | transloco }}
+            </h3>
+            <p class="card-inline-description">
+              {{ "donate.ways_to_donate.patreon.description" | transloco }}
+            </p>
+          </div>
+        </a>
+        <div class="info-note info-note--orange">
+          <p class="m-0">
+            <strong>{{ "donate.ways_to_donate.patreon.kudos_note" | transloco }}</strong>
+            <a routerLink="/faq" fragment="kudos" class="font-semibold underline hover:no-underline">{{ "donate.ways_to_donate.patreon.kudos_link" | transloco }}</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- Ko-fi -->
+      <a
+        href="https://ko-fi.com/db0"
+        target="_blank"
+        class="card card-full card-bg-secondary card-interactive"
+      >
+        <div class="flex items-center gap-4 mb-4">
+          <div class="feature-card-icon feature-card-icon-pink">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.352.24 7.422-2.831 6.649-6.916zm-11.062 3.511c-1.246 1.453-4.011 3.976-4.011 3.976s-.121.119-.31.023c-.076-.057-.108-.09-.108-.09-.443-.441-3.368-3.049-4.034-3.954-.709-.965-1.041-2.7-.091-3.71.951-1.01 3.005-1.086 4.363.407 0 0 1.565-1.782 3.468-.963 1.904.82 1.832 3.011.723 4.311zm6.173.478c-.928.116-1.682.028-1.682.028V7.284h1.77s1.971.551 1.971 2.638c0 1.913-.985 2.667-2.059 3.015z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="card-inline-title">
+              {{ "donate.ways_to_donate.kofi.title" | transloco }}
+            </h3>
+            <p class="card-inline-description">
+              {{ "donate.ways_to_donate.kofi.description" | transloco }}
+            </p>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Transparency Section -->
+  <div class="prose-content mb-12">
+    <h2 class="heading-section">{{ "donate.transparency.title" | transloco }}</h2>
+    <div class="transparency-box">
+      <div class="checkmark-list mb-4">
+        <div class="checkmark-item">
+          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+          <span>{{ "donate.transparency.non_profit" | transloco }}</span>
+        </div>
+        <div class="checkmark-item">
+          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+          <span>{{ "donate.transparency.volunteer_run" | transloco }}</span>
+        </div>
+        <div class="checkmark-item">
+          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+          <span>{{ "donate.transparency.open_source" | transloco }}</span>
+        </div>
+      </div>
+      <p class="text-secondary m-0">
+        {{ "donate.transparency.description" | transloco }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Alternative Ways to Help -->
+  <div class="prose-content mb-8">
+    <h2 class="heading-section">{{ "donate.alternatives.title" | transloco }}</h2>
+    <p class="text-lead mb-6">
+      {{ "donate.alternatives.description" | transloco }}
+    </p>
+    <div class="btn-group">
+      <a
+        routerLink="/contribute/joining"
+        class="btn-primary"
+      >
+        {{ "donate.alternatives.become_worker" | transloco }}
+      </a>
+      <a
+        href="https://discord.gg/3DxrhksKzn"
+        target="_blank"
+        class="btn-secondary"
+      >
+        {{ "donate.alternatives.join_community" | transloco }}
+      </a>
+    </div>
+  </div>
+</div>

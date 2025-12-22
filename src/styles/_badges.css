@@ -27,6 +27,19 @@
     @apply flex flex-wrap gap-1.5;
   }
 
+  /* Badge dismissible - interactive badge with close action */
+  .badge-dismissible {
+    @apply cursor-pointer transition-opacity gap-1;
+  }
+
+  .badge-dismissible:hover {
+    @apply opacity-80;
+  }
+
+  .badge-dismissible:focus-visible {
+    @apply outline-none ring-2 ring-offset-1 ring-orange-500;
+  }
+
   /* Badge outline - bordered, transparent background */
   .badge-outline {
     @apply bg-transparent border border-edge-primary text-content-secondary;

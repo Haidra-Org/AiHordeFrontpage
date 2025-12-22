@@ -2,78 +2,402 @@
    TOOLTIP STYLES
    
    Reusable tooltip component with hover trigger.
+   Includes responsive positioning variants for edge-aware display.
+   
+   Modern CSS approach using:
+   - CSS custom properties for maintainability
+   - Logical positioning with min() for viewport bounds
+   - Clean cascade without !important overrides
+   - Proper @layer organization for Tailwind v4 compatibility
    
    Usage:
-   <span class="tooltip-trigger">
-     <span class="tooltip-underline">hover text</span>
-     <span class="tooltip-content">
-       Tooltip content here
-     </span>
+   <span class="tooltip-wrapper" tabindex="0">
+     <span class="dotted-underline">hover text</span>
+     <span class="tooltip-text">Tooltip content here</span>
    </span>
+   
+   Position variants (add to tooltip-wrapper):
+   - .tooltip-pos-left   → Aligns tooltip to left edge (for right-side elements)
+   - .tooltip-pos-right  → Aligns tooltip to right edge (for left-side elements)
+   - .tooltip-pos-bottom → Shows tooltip below (when at top of viewport)
    ================================================================= */
 
+/* CSS Custom Properties for tooltip configuration */
+@layer base {
+  :root {
+    --tooltip-width: 300px;
+    --tooltip-max-width: calc(100vw - 2rem);
+    --tooltip-offset: 125%;
+    --tooltip-arrow-size: 5px;
+    --tooltip-border-radius: var(--radius-md, 0.375rem);
+    --tooltip-padding-x: 0.875rem;
+    --tooltip-padding-y: 0.625rem;
+    --tooltip-z-index: 1000;
+    --tooltip-transition-duration: 200ms;
+  }
+}
+
 @layer components {
+  /* =================================================================
+     BASE TOOLTIP STYLES
+     ================================================================= */
+
   /* Tooltip trigger wrapper */
   .tooltip-trigger,
   .tooltip-wrapper {
-    @apply relative inline ml-0.5;
+    position: relative;
+    display: inline;
+    margin-left: 0.125rem;
   }
 
   /* Dotted underline style for hover hint */
   .tooltip-underline,
   .dotted-underline {
-    @apply border-b border-dotted border-current cursor-help;
+    border-bottom-width: 1px;
+    border-style: dotted;
+    border-color: currentColor;
+    cursor: help;
   }
 
-  /* Tooltip content bubble */
+  /* Tooltip content bubble - base styles */
   .tooltip-content,
   .tooltip-text {
-    @apply invisible absolute z-[1000] w-[300px] max-w-[calc(100vw-2rem)];
-    @apply bottom-[125%] left-1/2 -translate-x-1/2;
-    @apply bg-surface-secondary text-content-primary text-left;
-    @apply rounded-md px-3.5 py-2.5;
-    @apply text-xs leading-relaxed;
-    @apply opacity-0 transition-opacity duration-300;
-    @apply pointer-events-none whitespace-normal;
-    @apply border border-edge-primary shadow-lg;
+    /* Visibility and layering */
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    z-index: var(--tooltip-z-index);
+    pointer-events: none;
 
-    /* Tooltip arrow */
-    &::after {
-      content: "";
-      @apply absolute top-full left-1/2 -ml-1.5;
-      @apply border-[5px] border-solid;
-      border-color: var(--color-surface-secondary) transparent transparent transparent;
+    /* Sizing - use min() for responsive width */
+    width: min(var(--tooltip-width), var(--tooltip-max-width));
+
+    /* Appearance */
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    text-align: left;
+    border-radius: var(--tooltip-border-radius);
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    font-size: var(--text-xs, 0.75rem);
+    line-height: 1.625;
+    white-space: normal;
+    border: 1px solid var(--color-edge-primary);
+    box-shadow: var(--shadow-lg);
+
+    /* Animation */
+    transition: opacity var(--tooltip-transition-duration) ease-out,
+      visibility var(--tooltip-transition-duration) ease-out;
+
+    /* Default positioning: centered above trigger */
+    bottom: var(--tooltip-offset);
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Tooltip arrow - points down by default (tooltip above) */
+  .tooltip-content::after,
+  .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: calc(-1 * var(--tooltip-arrow-size));
+    border-width: var(--tooltip-arrow-size);
+    border-style: solid;
+    border-color: var(--color-surface-secondary) transparent transparent
+      transparent;
+  }
+
+  /* =================================================================
+     VISIBILITY TRIGGERS
+     ================================================================= */
+
+  /* Show tooltip on hover (desktop with hover capability) */
+  @media (hover: hover) {
+    .tooltip-trigger:hover .tooltip-content,
+    .tooltip-trigger:hover .tooltip-text,
+    .tooltip-wrapper:hover .tooltip-content,
+    .tooltip-wrapper:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
     }
   }
 
-  /* Show tooltip on hover */
-  .tooltip-trigger:hover .tooltip-content,
-  .tooltip-wrapper:hover .tooltip-text {
-    @apply visible opacity-100;
+  /* Show tooltip on focus (keyboard navigation and touch tap) */
+  .tooltip-trigger:focus-within .tooltip-content,
+  .tooltip-trigger:focus-within .tooltip-text,
+  .tooltip-wrapper:focus-within .tooltip-content,
+  .tooltip-wrapper:focus-within .tooltip-text {
+    visibility: visible;
+    opacity: 1;
   }
 
-  /* Mobile positioning - align right to stay in viewport */
-  @media (max-width: 640px) {
-    .tooltip-content,
-    .tooltip-text {
-      @apply left-auto right-0 translate-x-0 max-w-[calc(100vw-1rem)];
-
-      &::after {
-        @apply left-auto right-4;
-      }
-    }
+  /* Focus ring on trigger for accessibility */
+  .tooltip-trigger:focus,
+  .tooltip-wrapper:focus {
+    outline: 2px solid var(--color-brand-blue);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
-  /* Tooltip text utilities */
+  /* =================================================================
+     POSITION VARIANTS
+     Applied via JavaScript for dynamic edge detection
+     ================================================================= */
+
+  /* Position: LEFT - Align tooltip's left edge with trigger */
+  .tooltip-pos-left .tooltip-content,
+  .tooltip-pos-left .tooltip-text {
+    left: 0;
+    right: auto;
+    transform: none;
+  }
+
+  .tooltip-pos-left .tooltip-content::after,
+  .tooltip-pos-left .tooltip-text::after {
+    left: 1rem;
+    right: auto;
+    margin-left: 0;
+  }
+
+  /* Position: RIGHT - Align tooltip's right edge with trigger */
+  .tooltip-pos-right .tooltip-content,
+  .tooltip-pos-right .tooltip-text {
+    left: auto;
+    right: 0;
+    transform: none;
+  }
+
+  .tooltip-pos-right .tooltip-content::after,
+  .tooltip-pos-right .tooltip-text::after {
+    left: auto;
+    right: 1rem;
+    margin-left: 0;
+  }
+
+  /* Position: BOTTOM - Show tooltip below trigger */
+  .tooltip-pos-bottom .tooltip-content,
+  .tooltip-pos-bottom .tooltip-text {
+    bottom: auto;
+    top: var(--tooltip-offset);
+  }
+
+  /* Arrow points up when tooltip is below */
+  .tooltip-pos-bottom .tooltip-content::after,
+  .tooltip-pos-bottom .tooltip-text::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent var(--color-surface-secondary)
+      transparent;
+  }
+
+  /* Combined: BOTTOM + LEFT */
+  .tooltip-pos-bottom.tooltip-pos-left .tooltip-content,
+  .tooltip-pos-bottom.tooltip-pos-left .tooltip-text {
+    left: 0;
+    right: auto;
+    transform: none;
+    bottom: auto;
+    top: var(--tooltip-offset);
+  }
+
+  .tooltip-pos-bottom.tooltip-pos-left .tooltip-content::after,
+  .tooltip-pos-bottom.tooltip-pos-left .tooltip-text::after {
+    left: 1rem;
+    right: auto;
+    top: auto;
+    bottom: 100%;
+    margin-left: 0;
+    border-color: transparent transparent var(--color-surface-secondary)
+      transparent;
+  }
+
+  /* Combined: BOTTOM + RIGHT */
+  .tooltip-pos-bottom.tooltip-pos-right .tooltip-content,
+  .tooltip-pos-bottom.tooltip-pos-right .tooltip-text {
+    left: auto;
+    right: 0;
+    transform: none;
+    bottom: auto;
+    top: var(--tooltip-offset);
+  }
+
+  .tooltip-pos-bottom.tooltip-pos-right .tooltip-content::after,
+  .tooltip-pos-bottom.tooltip-pos-right .tooltip-text::after {
+    left: auto;
+    right: 1rem;
+    top: auto;
+    bottom: 100%;
+    margin-left: 0;
+    border-color: transparent transparent var(--color-surface-secondary)
+      transparent;
+  }
+
+  /* =================================================================
+     TOOLTIP TEXT UTILITIES
+     ================================================================= */
+
   .tooltip-highlight {
-    @apply text-brand-blue text-sm font-semibold;
+    color: var(--color-brand-blue);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 600;
   }
 
   .tooltip-code {
-    @apply text-brand-purple font-mono text-xs font-medium;
+    color: var(--color-brand-purple);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 500;
   }
 
   .tooltip-muted {
-    @apply text-content-secondary text-xs italic;
+    color: var(--color-content-secondary);
+    font-size: var(--text-xs, 0.75rem);
+    font-style: italic;
+  }
+
+  /* Equation/math styling for unit explanations */
+  .tooltip-math {
+    color: var(--color-brand-purple);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs, 0.75rem);
+    font-weight: 500;
+  }
+
+  /* =================================================================
+     FIXED POSITIONING MODE
+     
+     Used when tooltips need to escape parent overflow boundaries.
+     Position is calculated via JavaScript and applied via inline styles.
+     These styles handle appearance while JS handles positioning.
+     ================================================================= */
+
+  .tooltip-fixed-mode .tooltip-text-fixed {
+    /* Override base absolute positioning - let inline styles control */
+    position: fixed;
+    z-index: calc(var(--tooltip-z-index) + 100);
+
+    /* Sizing - use min() for responsive width */
+    width: min(var(--tooltip-width), var(--tooltip-max-width));
+
+    /* Appearance */
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    text-align: left;
+    border-radius: var(--tooltip-border-radius);
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    font-size: var(--text-xs, 0.75rem);
+    line-height: 1.625;
+    white-space: normal;
+    border: 1px solid var(--color-edge-primary);
+    box-shadow: var(--shadow-lg);
+
+    /* Animation handled by inline styles for visibility/opacity */
+    transition: opacity var(--tooltip-transition-duration) ease-out;
+  }
+
+  /* Arrow styling for fixed tooltips - default: above (arrow points down) */
+  .tooltip-fixed-mode .tooltip-text-fixed::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: calc(-1 * var(--tooltip-arrow-size));
+    border-width: var(--tooltip-arrow-size);
+    border-style: solid;
+    border-color: var(--color-surface-secondary) transparent transparent
+      transparent;
+  }
+
+  /* Arrow for bottom-positioned fixed tooltip (points up) */
+  .tooltip-fixed-mode.tooltip-pos-bottom .tooltip-text-fixed::after {
+    top: auto;
+    bottom: 100%;
+    border-color: transparent transparent var(--color-surface-secondary)
+      transparent;
+  }
+
+  /* Arrow alignment for left-aligned fixed tooltip */
+  .tooltip-fixed-mode.tooltip-pos-left .tooltip-text-fixed::after {
+    left: 1rem;
+    margin-left: 0;
+  }
+
+  /* Arrow alignment for right-aligned fixed tooltip */
+  .tooltip-fixed-mode.tooltip-pos-right .tooltip-text-fixed::after {
+    left: auto;
+    right: 1rem;
+    margin-left: 0;
+  }
+
+  /* Disable default hover/focus visibility for fixed mode (JS controls it) */
+  .tooltip-fixed-mode:hover .tooltip-text-fixed,
+  .tooltip-fixed-mode:focus-within .tooltip-text-fixed {
+    /* Visibility is controlled by inline styles, not hover state */
+  }
+}
+
+/* =================================================================
+   RESPONSIVE BEHAVIOR
+   
+   These rules are outside @layer to ensure higher specificity
+   and proper override of base component styles.
+   ================================================================= */
+
+/* 
+ * Small viewports (mobile/tablet): Reduce tooltip width 
+ * and ensure it stays within viewport bounds
+ */
+@media (width < 48rem) {
+  .tooltip-content,
+  .tooltip-text {
+    --tooltip-width: 260px;
+  }
+}
+
+/* 
+ * Very small viewports: Further reduce and left-align by default
+ * to maximize readable content area
+ */
+@media (width < 40rem) {
+  .tooltip-content,
+  .tooltip-text {
+    --tooltip-width: 240px;
+    
+    /* Default to left-aligned on mobile for better viewport fit */
+    left: 0;
+    right: auto;
+    transform: none;
+  }
+
+  .tooltip-content::after,
+  .tooltip-text::after {
+    left: 0.75rem;
+    right: auto;
+    margin-left: 0;
+  }
+
+  /* Override for right-positioned tooltips on mobile */
+  .tooltip-pos-right .tooltip-content,
+  .tooltip-pos-right .tooltip-text {
+    left: auto;
+    right: 0;
+  }
+
+  .tooltip-pos-right .tooltip-content::after,
+  .tooltip-pos-right .tooltip-text::after {
+    left: auto;
+    right: 0.75rem;
+  }
+}
+
+/* =================================================================
+   ACCESSIBILITY: Reduced Motion
+   ================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip-content,
+  .tooltip-text {
+    transition: none;
   }
 }

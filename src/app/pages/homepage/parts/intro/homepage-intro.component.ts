@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-homepage-intro',
-  standalone: true,
-  imports: [NgOptimizedImage, TranslocoPipe, TranslocoModule],
+  imports: [NgOptimizedImage, TranslocoPipe, TranslocoModule, RouterLink],
   templateUrl: './homepage-intro.component.html',
   styleUrl: './homepage-intro.component.css',
 })

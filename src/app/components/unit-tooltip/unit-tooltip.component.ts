@@ -1,11 +1,62 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
+  inject,
   input,
+  signal,
+  PLATFORM_ID,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser, NgStyle } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { SynthesizedUnit } from '../../services/unit-conversion.service';
+
+/**
+ * Interface for fixed tooltip positioning styles.
+ * Used when the tooltip needs to escape parent overflow boundaries.
+ */
+interface TooltipStyles {
+  position: 'fixed';
+  top: string | null;
+  bottom: string | null;
+  left: string | null;
+  right: string | null;
+  transform: string;
+  visibility: 'visible' | 'hidden';
+  opacity: string;
+  pointerEvents: 'auto' | 'none';
+}
+
+/**
+ * Position hints for tooltip placement.
+ * Used to handle edge cases where the tooltip would overflow the viewport.
+ *
+ * - 'auto': Default responsive behavior with dynamic edge detection
+ * - 'left': Aligns tooltip's left edge with trigger (for elements near right viewport edge)
+ * - 'right': Aligns tooltip's right edge with trigger (for elements near left viewport edge)
+ * - 'bottom': Shows tooltip below trigger (for elements near top of viewport)
+ * - 'bottom-left': Combines bottom and left positioning
+ * - 'bottom-right': Combines bottom and right positioning
+ */
+export type TooltipPosition =
+  | 'auto'
+  | 'left'
+  | 'right'
+  | 'bottom'
+  | 'bottom-left'
+  | 'bottom-right';
+
+/**
+ * Tooltip dimension constants for edge detection.
+ * These values are used to calculate whether the tooltip would overflow
+ * the viewport when centered on the trigger element.
+ */
+const TOOLTIP_WIDTH = 300;
+const TOOLTIP_HEIGHT_ESTIMATE = 280;
+const VIEWPORT_MARGIN = 16;
+const TOOLTIP_OFFSET = 8;
 
 /**
  * A reusable component for displaying synthesized units with tooltips.
@@ -14,26 +65,58 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
  * a "human friendly" synthesized unit (like "standard images") and a technical
  * underlying unit (like "megapixelsteps").
  *
- * Usage:
+ * The tooltip uses fixed positioning to escape parent overflow boundaries,
+ * ensuring it's never clipped by cards or other containers.
+ *
+ * The tooltip automatically adapts to different viewport sizes and positions:
+ * - Dynamically detects viewport edges and adjusts positioning
+ * - Supports both mouse hover (desktop) and focus (keyboard/touch)
+ * - Re-calculates position on each interaction to handle scrolling
+ *
+ * Use the `position` input to override automatic positioning for edge cases.
+ *
+ * @example
  * ```html
  * <app-unit-tooltip [unit]="unitConversion.formatImagePerformanceRate(value)" />
+ *
+ * <!-- For elements near right edge -->
+ * <app-unit-tooltip [unit]="value" position="left" />
+ *
+ * <!-- For elements near top of page -->
+ * <app-unit-tooltip [unit]="value" position="bottom" />
  * ```
  */
 @Component({
   selector: 'app-unit-tooltip',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, NgStyle],
   template: `
     @if (unit()) {
-      <span class="tooltip-wrapper">
+      <span
+        class="tooltip-wrapper tooltip-fixed-mode"
+        [class]="positionClasses()"
+        [attr.data-tooltip-position]="position()"
+        tabindex="0"
+        role="button"
+        aria-describedby="tooltip-content"
+        (mouseenter)="showTooltip()"
+        (mouseleave)="hideTooltip()"
+        (focusin)="showTooltip()"
+        (focusout)="hideTooltip()"
+      >
         <span class="dotted-underline">{{ primaryDisplay() }}</span>
-        <span class="tooltip-text">
-          <strong>{{ tooltipBoldDisplay() }}</strong
+        <span 
+          class="tooltip-text tooltip-text-fixed" 
+          role="tooltip" 
+          id="tooltip-content"
+          [ngStyle]="tooltipStyles()"
+        >
+          <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong
           ><br />
           <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span
           ><br /><br />
           @for (key of unit()!.explanationKeys; track key; let i = $index) {
             @if (i === 0 || i === 2) {
-              <span class="math-equation">{{ key | transloco }}</span>
+              <span class="tooltip-math">{{ key | transloco }}</span>
             } @else {
               {{ key | transloco }}
             }
@@ -48,101 +131,13 @@ import { SynthesizedUnit } from '../../services/unit-conversion.service';
       </span>
     }
   `,
-  styles: `
-    .tooltip-wrapper {
-      position: relative;
-      display: inline;
-      margin-left: 0.125rem;
-    }
-
-    .dotted-underline {
-      border-bottom: 1px dotted currentColor;
-      cursor: help;
-    }
-
-    .tooltip-text {
-      visibility: hidden;
-      width: 300px;
-      max-width: calc(100vw - 2rem);
-      background-color: #1f2937;
-      color: #fff;
-      text-align: left;
-      border-radius: 6px;
-      padding: 10px 14px;
-      position: absolute;
-      z-index: 1000;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      font-size: 0.75rem;
-      line-height: 1.5;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      pointer-events: none;
-      white-space: normal;
-    }
-
-    @media (max-width: 640px) {
-      .tooltip-text {
-        left: auto;
-        right: 0;
-        transform: none;
-        max-width: calc(100vw - 1rem);
-      }
-
-      .tooltip-text::after {
-        left: auto;
-        right: 1rem;
-      }
-    }
-
-    .tooltip-text strong {
-      color: #60a5fa;
-      font-size: 0.8125rem;
-    }
-
-    .tooltip-text .math-equation {
-      color: #a78bfa;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-
-    .tooltip-text .tooltip-muted {
-      color: #9ca3af;
-      font-size: 0.6875rem;
-      font-style: italic;
-    }
-
-    .tooltip-text::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: #1f2937 transparent transparent transparent;
-    }
-
-    .tooltip-wrapper:hover .tooltip-text {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    :host-context(.dark) .tooltip-text {
-      background-color: #374151;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    :host-context(.dark) .tooltip-text::after {
-      border-color: #374151 transparent transparent transparent;
-    }
-  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnitTooltipComponent {
+  private readonly elementRef = inject(ElementRef);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
+
   /** The synthesized unit data to display */
   public readonly unit = input.required<SynthesizedUnit | null>();
 
@@ -155,6 +150,189 @@ export class UnitTooltipComponent {
    * - Tooltip shows primary (e.g., "pixelsteps")
    */
   public readonly swapDisplay = input(false);
+
+  /**
+   * Position hint for tooltip placement.
+   * Use this to override automatic positioning for edge cases.
+   * - 'auto': Default responsive behavior with dynamic edge detection
+   * - 'left': For elements near right viewport edge
+   * - 'right': For elements near left viewport edge
+   * - 'bottom': For elements near top of viewport
+   * - 'bottom-left', 'bottom-right': Combined positioning
+   */
+  public readonly position = input<TooltipPosition>('auto');
+
+  /** Whether the tooltip is currently visible */
+  private readonly isVisible = signal(false);
+
+  /** Automatically detected position based on viewport location */
+  private readonly autoDetectedPosition = signal<string>('');
+
+  /** Fixed positioning styles for the tooltip */
+  private readonly fixedStyles = signal<Partial<TooltipStyles>>({});
+
+  constructor() {
+    // Detect position after render for SSR compatibility
+    afterNextRender(() => {
+      this.calculateFixedPosition();
+    });
+  }
+
+  /**
+   * Shows the tooltip and calculates its fixed position.
+   */
+  public showTooltip(): void {
+    this.isVisible.set(true);
+    this.calculateFixedPosition();
+  }
+
+  /**
+   * Hides the tooltip.
+   */
+  public hideTooltip(): void {
+    this.isVisible.set(false);
+  }
+
+  /**
+   * Calculates the fixed position for the tooltip based on the trigger's
+   * location relative to the viewport. Uses position: fixed to escape
+   * parent overflow boundaries.
+   */
+  private calculateFixedPosition(): void {
+    // Guard against SSR - only run in browser
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const element = this.elementRef.nativeElement as HTMLElement;
+    const wrapper = element.querySelector('.tooltip-wrapper');
+    if (!wrapper) return;
+
+    const rect = wrapper.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Use responsive tooltip width based on viewport
+    const tooltipWidth = Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2);
+
+    // === HORIZONTAL POSITIONING ===
+    const triggerCenter = rect.left + rect.width / 2;
+    const tooltipLeft = triggerCenter - tooltipWidth / 2;
+    const tooltipRight = triggerCenter + tooltipWidth / 2;
+
+    // Detect horizontal overflow with margin
+    const overflowsLeft = tooltipLeft < VIEWPORT_MARGIN;
+    const overflowsRight = tooltipRight > viewportWidth - VIEWPORT_MARGIN;
+
+    // === VERTICAL POSITIONING ===
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+
+    // Prefer bottom positioning when not enough space above
+    const needsBottom =
+      spaceAbove < TOOLTIP_HEIGHT_ESTIMATE + VIEWPORT_MARGIN &&
+      spaceBelow > spaceAbove;
+
+    // === BUILD POSITION CLASSES ===
+    const classes: string[] = [];
+    if (needsBottom) {
+      classes.push('tooltip-pos-bottom');
+    }
+    if (overflowsLeft && !overflowsRight) {
+      classes.push('tooltip-pos-left');
+    } else if (overflowsRight && !overflowsLeft) {
+      classes.push('tooltip-pos-right');
+    } else if (overflowsLeft && overflowsRight) {
+      classes.push('tooltip-pos-left');
+    }
+    this.autoDetectedPosition.set(classes.join(' '));
+
+    // === CALCULATE FIXED STYLES ===
+    const styles: Partial<TooltipStyles> = {
+      position: 'fixed',
+    };
+
+    // Vertical position
+    if (needsBottom) {
+      // Position below trigger
+      styles.top = `${rect.bottom + TOOLTIP_OFFSET}px`;
+      styles.bottom = null;
+    } else {
+      // Position above trigger
+      styles.bottom = `${viewportHeight - rect.top + TOOLTIP_OFFSET}px`;
+      styles.top = null;
+    }
+
+    // Horizontal position
+    if (overflowsLeft && !overflowsRight) {
+      // Align left edge with trigger left
+      styles.left = `${Math.max(VIEWPORT_MARGIN, rect.left)}px`;
+      styles.right = null;
+      styles.transform = 'none';
+    } else if (overflowsRight && !overflowsLeft) {
+      // Align right edge with trigger right
+      styles.right = `${Math.max(VIEWPORT_MARGIN, viewportWidth - rect.right)}px`;
+      styles.left = null;
+      styles.transform = 'none';
+    } else if (overflowsLeft && overflowsRight) {
+      // Very narrow viewport - center and let it fill
+      styles.left = `${VIEWPORT_MARGIN}px`;
+      styles.right = `${VIEWPORT_MARGIN}px`;
+      styles.transform = 'none';
+    } else {
+      // Center on trigger
+      styles.left = `${triggerCenter}px`;
+      styles.right = null;
+      styles.transform = 'translateX(-50%)';
+    }
+
+    this.fixedStyles.set(styles);
+  }
+
+  /**
+   * Computed CSS classes for position variants (arrow positioning).
+   */
+  public readonly positionClasses = computed(() => {
+    const pos = this.position();
+
+    // If explicit position is set (not 'auto'), use it
+    if (pos !== 'auto') {
+      const classes: string[] = [];
+      if (pos.includes('bottom')) {
+        classes.push('tooltip-pos-bottom');
+      }
+      if (pos.includes('left') || pos === 'left') {
+        classes.push('tooltip-pos-left');
+      }
+      if (pos.includes('right') || pos === 'right') {
+        classes.push('tooltip-pos-right');
+      }
+      return classes.join(' ');
+    }
+
+    // Use auto-detected position for 'auto' mode
+    return this.autoDetectedPosition();
+  });
+
+  /**
+   * Computed inline styles for the fixed-position tooltip.
+   */
+  public readonly tooltipStyles = computed(() => {
+    const visible = this.isVisible();
+    const styles = this.fixedStyles();
+
+    return {
+      position: 'fixed' as const,
+      top: styles.top ?? 'auto',
+      bottom: styles.bottom ?? 'auto',
+      left: styles.left ?? 'auto',
+      right: styles.right ?? 'auto',
+      transform: styles.transform ?? 'none',
+      visibility: visible ? 'visible' : 'hidden',
+      opacity: visible ? '1' : '0',
+      pointerEvents: visible ? 'auto' : 'none',
+    };
+  });
 
   /** Computed primary display text (shown with dotted underline) */
   public readonly primaryDisplay = computed(() => {

@@ -1,0 +1,123 @@
+/* =================================================================
+   LEADERBOARD STYLES
+   
+   Layout styles specific to the kudos leaderboard page.
+   
+   Includes:
+   - Main content with sidebar layout
+   - Top cards row (appreciation + find rank)
+   - Compact mobile row styles
+   - Collapsible kudos explanation
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     LEADERBOARD MAIN LAYOUT
+     Main content area with sidebar for kudos explanation
+     ================================================================= */
+
+  /* Container for leaderboard with sidebar */
+  .leaderboard-layout {
+    @apply flex flex-col gap-6;
+    @apply lg:flex-row lg:items-start;
+  }
+
+  /* Main content area (leaderboard table and top cards) */
+  .leaderboard-main {
+    @apply flex flex-col gap-6 flex-1 min-w-0;
+    @apply order-2 lg:order-1;
+  }
+
+  /* Sidebar for kudos explanation card */
+  .leaderboard-sidebar {
+    @apply w-full;
+    @apply order-1 lg:order-2;
+    @apply lg:w-80 lg:shrink-0 lg:sticky lg:top-24;
+  }
+
+  .leaderboard-sidebar > .card {
+    @apply max-w-none text-left;
+  }
+
+  /* =================================================================
+     LEADERBOARD TOP CARDS ROW
+     Side-by-side layout for appreciation and find rank cards
+     ================================================================= */
+
+  /* Row container for top info cards */
+  .leaderboard-top-cards {
+    @apply grid grid-cols-1 gap-6;
+    @apply md:grid-cols-2;
+  }
+
+  .leaderboard-top-cards > .card {
+    @apply max-w-none text-left;
+  }
+
+  /* =================================================================
+     KUDOS EXPLANATION COLLAPSIBLE
+     Shows first paragraph with "Read more" on mobile
+     ================================================================= */
+
+  /* Second paragraph - hidden on mobile until expanded */
+  .kudos-explanation-more {
+    @apply hidden;
+    @apply lg:block;
+  }
+
+  .kudos-explanation-more.is-expanded {
+    @apply block;
+  }
+
+  /* Read more button - only visible on mobile */
+  .kudos-read-more-btn {
+    @apply inline-flex items-center gap-1 mt-2 text-sm font-medium;
+    @apply text-brand-blue cursor-pointer;
+    @apply hover:underline;
+    @apply lg:hidden;
+  }
+
+  .dark .kudos-read-more-btn {
+    @apply text-blue-400;
+  }
+
+  /* =================================================================
+     COMPACT LEADERBOARD ROWS (Mobile)
+     Single-row layout for mobile to minimize height
+     ================================================================= */
+
+  /* Override the default mobile grid to be a single row */
+  .models-table-row.leaderboard-table-row {
+    @apply flex items-center gap-3 py-2.5 px-3;
+    grid-template-columns: unset;
+    grid-template-rows: unset;
+  }
+
+  @media (min-width: 768px) {
+    .models-table-row.leaderboard-table-row {
+      @apply grid p-3.5;
+      grid-template-columns: 3rem 1fr 8rem;
+    }
+  }
+
+  /* Rank cell - fixed width */
+  .models-table-row.leaderboard-table-row .models-table-cell:first-child {
+    @apply shrink-0;
+    flex-basis: 2.5rem;
+  }
+
+  /* Name cell - take remaining space, don't span full width on mobile */
+  .models-table-row.leaderboard-table-row .models-table-cell-name {
+    @apply flex-1 min-w-0;
+    grid-column: unset;
+  }
+
+  /* Kudos cell - align right, hide mobile label */
+  .models-table-row.leaderboard-table-row .models-table-cell:last-child {
+    @apply shrink-0 text-right;
+  }
+
+  .models-table-row.leaderboard-table-row .models-table-cell:last-child .models-table-label {
+    @apply hidden;
+  }
+}

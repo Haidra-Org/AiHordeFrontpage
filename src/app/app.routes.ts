@@ -82,6 +82,22 @@ export const routes: Routes = [
       import('./pages/terms/terms.component').then((c) => c.TermsComponent),
   },
   {
+    path: 'contribute',
+    loadComponent: () =>
+      import('./pages/contribute/contribute.component').then(
+        (c) => c.ContributeComponent,
+      ),
+    loadChildren: () =>
+      import('./pages/contribute/contribute.routes').then(
+        (m) => m.contributeRoutes,
+      ),
+  },
+  {
+    path: 'joining',
+    redirectTo: 'contribute/joining',
+    pathMatch: 'full',
+  },
+  {
     path: 'v2-transfer',
     loadComponent: () =>
       import('./pages/transfer/transfer.component').then(

@@ -1,0 +1,298 @@
+/* =================================================================
+   MODAL & DIALOG STYLES
+   
+   Unified modal system for all dialogs and overlays.
+   Consolidates patterns from _admin.css and _cards.css.
+   
+   Includes:
+   - Modal overlay and backdrop
+   - Modal panel variants
+   - Modal content structure
+   - JSON/Code viewer dialogs
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     MODAL OVERLAY
+     ================================================================= */
+
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto;
+  }
+
+  .modal-backdrop {
+    @apply fixed inset-0 -z-10;
+    background-color: rgb(0 0 0 / 0.5);
+  }
+
+  .modal-backdrop--blur {
+    @apply backdrop-blur-sm;
+  }
+
+  /* Higher z-index variant for nested modals */
+  .modal-overlay--high {
+    z-index: 9999;
+  }
+
+  .modal-overlay--high .modal-backdrop {
+    z-index: 9998;
+  }
+
+  /* =================================================================
+     MODAL PANEL BASE
+     ================================================================= */
+
+  .modal-panel {
+    @apply relative rounded-lg p-6 w-full overflow-y-auto;
+    background-color: var(--color-surface-primary);
+    border: 1px solid var(--color-edge-primary);
+    max-height: 80vh;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    z-index: 51;
+    margin: auto;
+  }
+
+  .dark .modal-panel {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  /* =================================================================
+     MODAL PANEL SIZE VARIANTS
+     ================================================================= */
+
+  .modal-panel--sm {
+    @apply max-w-sm;
+  }
+
+  .modal-panel--md {
+    @apply max-w-md;
+  }
+
+  .modal-panel--lg {
+    @apply max-w-xl;
+  }
+
+  .modal-panel--xl {
+    @apply max-w-3xl;
+    max-height: 85vh;
+  }
+
+  @media (min-width: 1024px) {
+    .modal-panel--xl {
+      @apply max-w-4xl;
+    }
+  }
+
+  .modal-panel--full {
+    max-width: calc(100vw - 2rem);
+    height: calc(100vh - 2rem);
+    max-height: none;
+  }
+
+  /* =================================================================
+     MODAL CONTENT STRUCTURE
+     ================================================================= */
+
+  .modal-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .modal-title {
+    @apply m-0 text-lg font-semibold;
+    color: var(--color-content-primary);
+  }
+
+  .dark .modal-title {
+    @apply text-white;
+  }
+
+  .modal-close {
+    @apply p-2 rounded-lg transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .modal-close:hover {
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+  }
+
+  .dark .modal-close {
+    @apply text-gray-400;
+  }
+
+  .dark .modal-close:hover {
+    @apply bg-gray-700 text-white;
+  }
+
+  .modal-body {
+    @apply text-sm;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .modal-body {
+    @apply text-gray-400;
+  }
+
+  .modal-body p {
+    @apply m-0 mb-4;
+  }
+
+  .modal-scroll {
+    @apply flex-1 overflow-y-auto pr-2 min-h-0;
+    max-height: 60vh;
+  }
+
+  .modal-actions {
+    @apply flex justify-end gap-2 mt-6 pt-4;
+    border-top: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .modal-actions {
+    @apply border-gray-700;
+  }
+
+  /* =================================================================
+     DIALOG PANEL (legacy alias - prefer modal-panel)
+     ================================================================= */
+
+  .dialog-panel {
+    @apply relative rounded-lg p-6 max-w-xl w-full overflow-y-auto;
+    background-color: var(--color-surface-primary);
+    border: 1px solid var(--color-edge-primary);
+    max-height: 80vh;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    z-index: 51;
+    margin: auto;
+  }
+
+  .dark .dialog-panel {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  /* =================================================================
+     JSON/CODE VIEWER DIALOG
+     ================================================================= */
+
+  .json-dialog {
+    @apply flex flex-col p-4;
+    max-width: none;
+    width: calc(100vw - 2rem);
+    height: calc(100vh - 2rem);
+  }
+
+  .json-grid {
+    @apply grid gap-3 flex-1 overflow-auto items-stretch;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .json-section {
+    @apply flex flex-col gap-1.5 min-h-0 h-full;
+  }
+
+  .json-section-title {
+    @apply text-sm font-semibold;
+    color: var(--color-content-primary);
+  }
+
+  .dark .json-section-title {
+    @apply text-white;
+  }
+
+  .json-block {
+    @apply text-xs leading-snug p-3 rounded-lg overflow-auto flex-1 min-h-0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .json-block {
+    background-color: #0f172a;
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* =================================================================
+     MODELS LIST (for worker modals)
+     ================================================================= */
+
+  .models-list {
+    @apply grid gap-1 list-none p-0 m-0;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  @media (min-width: 640px) {
+    .models-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .models-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .models-list-item {
+    @apply py-2 px-3 rounded-md text-sm truncate transition-colors duration-150;
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+  }
+
+  .models-list-item:hover {
+    background-color: var(--color-edge-primary);
+  }
+
+  .dark .models-list-item {
+    @apply bg-gray-700 text-gray-200;
+  }
+
+  .dark .models-list-item:hover {
+    @apply bg-gray-600;
+  }
+
+  /* =================================================================
+     CONFIRM DIALOG STYLES
+     ================================================================= */
+
+  .confirm-dialog {
+    @apply text-center;
+  }
+
+  .confirm-dialog-icon {
+    @apply w-12 h-12 mx-auto mb-4;
+    color: var(--color-content-secondary);
+  }
+
+  .confirm-dialog-icon--danger {
+    @apply text-red-500;
+  }
+
+  .confirm-dialog-icon--warning {
+    @apply text-amber-500;
+  }
+
+  .confirm-dialog-title {
+    @apply text-lg font-semibold mb-2;
+    color: var(--color-content-primary);
+  }
+
+  .dark .confirm-dialog-title {
+    @apply text-white;
+  }
+
+  .confirm-dialog-message {
+    @apply text-sm mb-6;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .confirm-dialog-message {
+    @apply text-gray-400;
+  }
+
+  .confirm-dialog-actions {
+    @apply flex justify-center gap-3;
+  }
+}

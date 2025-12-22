@@ -48,6 +48,42 @@
     </div>
   }
 
+  <!-- Owner Filter Notice -->
+  @if (filterOwnerId()) {
+    <div class="filter-notice mb-4">
+      <div class="filter-notice-content">
+        <span class="filter-notice-text">
+          {{ 'admin.workers.filtering_by_owner' | transloco: { ownerId: filterOwnerId() } }}
+        </span>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="ownerFilterCleared.emit()"
+        >
+          {{ 'admin.workers.clear_filter' | transloco }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Owner Not Found Message -->
+  @if (ownerNotFound()) {
+    <div class="card card-bg-primary card-full card-spaced mb-4">
+      <div class="text-center py-6">
+        <p class="text-secondary mb-4">
+          {{ 'admin.workers.owner_not_found' | transloco: { ownerId: filterOwnerId() } }}
+        </p>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="ownerFilterCleared.emit()"
+        >
+          {{ 'admin.workers.view_all_workers' | transloco }}
+        </button>
+      </div>
+    </div>
+  }
+
   <!-- Sub-Tab Navigation -->
   <div class="details-tabs mb-6">
     <button
@@ -492,14 +528,17 @@
     </div>
   } @else {
     <!-- Worker Grid -->
-    <div class="admin-grid-workers-3">
+    <div class="worker-grid">
       @for (worker of filteredWorkers(); track worker.id) {
         <app-worker-card
           [worker]="worker"
           [isModerator]="auth.currentUser()?.moderator ?? false"
           [viewMode]="viewMode()"
+          [availableTeams]="teams()"
+          [highlighted]="isWorkerHighlighted(worker.id)"
           (workerUpdated)="onWorkerUpdated()"
           (workerDeleted)="onWorkerDeleted($event)"
+          (clearHighlight)="onHighlightCleared()"
         />
       }
     </div>
