@@ -18,6 +18,25 @@
     @apply shrink-0 w-4 h-4 mt-0.5;
   }
 
+  /* Icon sizing - medium (for buttons, toggles) */
+  .icon-md {
+    @apply shrink-0 w-5 h-5;
+  }
+
+  /* Responsive visibility - hidden on mobile, visible on sm+ */
+  .visible-sm-up {
+    @apply hidden;
+
+    @media (min-width: 640px) {
+      @apply inline;
+    }
+  }
+
+  /* Margin top helper - for spaced actions */
+  .spaced-top {
+    @apply mt-4;
+  }
+
   /* NOTE: Tailwind v4 handles dark:fill-white natively
      NOTE: bg-gray-600 is a built-in Tailwind utility */
 }

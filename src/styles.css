@@ -87,6 +87,9 @@
 /* Details page tabs */
 @import "./styles/_details-tabs.css";
 
+/* Tools/GUIs page */
+@import "./styles/_tools-page.css";
+
 /* Prose/Rich text content */
 @import "./styles/_prose.css";
 

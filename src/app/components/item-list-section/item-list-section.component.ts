@@ -9,6 +9,7 @@ import {
   effect,
   PLATFORM_ID,
   inject,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -20,6 +21,8 @@ import {
   Platform,
   FunctionKind,
 } from '../../types/item-types';
+
+export type ViewMode = 'table' | 'grid';
 
 export interface DisplayItem {
   name: string;
@@ -38,10 +41,10 @@ export interface DisplayItem {
 
 @Component({
   selector: 'app-item-list-section',
-  standalone: true,
   imports: [CommonModule, TranslocoModule, EnumDisplayPipe],
   templateUrl: './item-list-section.component.html',
   styleUrl: './item-list-section.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItemListSectionComponent {
   private readonly platformId = inject(PLATFORM_ID);
@@ -70,6 +73,7 @@ export class ItemListSectionComponent {
   readonly title = input.required<string>();
   readonly expandedRows = input.required<WritableSignal<Set<string>>>();
   readonly collapsedSections = input.required<WritableSignal<Set<string>>>();
+  readonly viewMode = input<ViewMode>('table');
 
   // Outputs
   readonly rowToggle = output<string>();

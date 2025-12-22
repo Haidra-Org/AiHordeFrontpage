@@ -4,6 +4,11 @@
    Includes:
    - Badge base
    - Badge color variants (primary, secondary, info, warning, success, danger, purple, pink, indigo, teal)
+   
+   WCAG AA Contrast Requirements:
+   - Normal text: 4.5:1 ratio
+   - Large text (18pt+): 3:1 ratio
+   - All badge variants meet or exceed 4.5:1 contrast in both light and dark modes
    ================================================================= */
 
 @layer components {
@@ -14,12 +19,17 @@
 
   /* Badge small - for compact badge displays */
   .badge-sm {
-    @apply text-xs;
+    @apply text-xs px-2 py-0.5;
   }
 
   /* Badge container - wrapping flex container for badge groups */
   .badge-container {
     @apply flex flex-wrap gap-2;
+  }
+
+  /* Badge container with top margin - for expanded badge sections */
+  .badge-container-spaced {
+    @apply flex flex-wrap gap-2 mt-3;
   }
 
   /* Badge container tight - narrower gap for compact layouts */
@@ -42,15 +52,15 @@
 
   /* Badge outline - bordered, transparent background */
   .badge-outline {
-    @apply bg-transparent border border-edge-primary text-content-secondary;
-    @apply dark:border-gray-600 dark:text-gray-400;
+    @apply bg-transparent border border-gray-400 text-gray-600;
+    @apply dark:border-gray-500 dark:text-gray-300;
   }
 
   /* Badge online status - green with dot indicator */
   .badge-online {
     @apply inline-flex items-center gap-1.5;
     @apply bg-green-100 text-green-800 border border-green-300;
-    @apply dark:bg-green-900/50 dark:text-green-300 dark:border-green-800;
+    @apply dark:bg-green-950 dark:text-green-200 dark:border-green-700;
   }
 
   .badge-online::before {
@@ -63,79 +73,72 @@
     @apply bg-green-400;
   }
 
+  /* Primary badge - Blue brand color */
   .badge-primary {
-    background-color: color-mix(
-      in srgb,
-      var(--color-brand-blue) 20%,
-      var(--color-surface-primary)
-    );
-    @apply text-brand-blue-hover;
+    @apply bg-blue-100 text-blue-800;
   }
 
   .dark .badge-primary {
-    background-color: color-mix(
-      in srgb,
-      var(--color-brand-blue) 40%,
-      transparent
-    );
-    @apply text-brand-blue;
+    @apply bg-blue-950 text-blue-200 border border-blue-800;
   }
 
+  /* Secondary badge - Neutral/gray */
   .badge-secondary {
-    @apply bg-green-100 text-green-800;
-    @apply dark:bg-green-900 dark:text-green-300;
+    @apply bg-gray-100 text-gray-700;
+    @apply dark:bg-gray-800 dark:text-gray-200 dark:border dark:border-gray-600;
   }
 
+  /* Info badge - Light blue, informational */
   .badge-info {
-    @apply bg-blue-100 text-blue-800;
-    @apply dark:bg-blue-900 dark:text-blue-300;
+    @apply bg-sky-100 text-sky-800;
+    @apply dark:bg-sky-950 dark:text-sky-200 dark:border dark:border-sky-800;
   }
 
+  /* Warning badge - Yellow/amber, caution */
   .badge-warning {
-    @apply bg-yellow-100 text-yellow-800;
-    @apply dark:bg-yellow-900 dark:text-yellow-300;
+    @apply bg-amber-100 text-amber-800;
+    @apply dark:bg-amber-950 dark:text-amber-200 dark:border dark:border-amber-800;
   }
 
+  /* Success badge - Green, positive */
   .badge-success {
-    @apply bg-green-100 text-green-700;
-    @apply dark:bg-green-800 dark:text-green-300;
+    @apply bg-emerald-100 text-emerald-800;
+    @apply dark:bg-emerald-950 dark:text-emerald-200 dark:border dark:border-emerald-800;
   }
 
+  /* Danger badge - Red, error/destructive */
   .badge-danger {
     @apply bg-red-100 text-red-800;
-    @apply dark:bg-red-900 dark:text-red-300;
+    @apply dark:bg-red-950 dark:text-red-200 dark:border dark:border-red-800;
   }
 
+  /* Purple badge - Brand purple */
   .badge-purple {
-    background-color: color-mix(
-      in srgb,
-      var(--color-brand-purple) 20%,
-      var(--color-surface-primary)
-    );
-    @apply text-brand-purple-hover;
+    @apply bg-purple-100 text-purple-800;
+    @apply dark:bg-purple-950 dark:text-purple-200 dark:border dark:border-purple-800;
   }
 
-  .dark .badge-purple {
-    background-color: color-mix(
-      in srgb,
-      var(--color-brand-purple) 40%,
-      transparent
-    );
-    @apply text-brand-purple;
-  }
-
+  /* Pink badge */
   .badge-pink {
     @apply bg-pink-100 text-pink-800;
-    @apply dark:bg-pink-900 dark:text-pink-300;
+    @apply dark:bg-pink-950 dark:text-pink-200 dark:border dark:border-pink-800;
   }
 
+  /* Indigo badge */
   .badge-indigo {
     @apply bg-indigo-100 text-indigo-800;
-    @apply dark:bg-indigo-800 dark:text-indigo-200;
+    @apply dark:bg-indigo-950 dark:text-indigo-200 dark:border dark:border-indigo-800;
   }
 
+  /* Teal badge */
   .badge-teal {
     @apply bg-teal-100 text-teal-800;
-    @apply dark:bg-teal-900 dark:text-teal-200;
+    @apply dark:bg-teal-950 dark:text-teal-200 dark:border dark:border-teal-800;
+  }
+
+  /* Orange badge */
+  .badge-orange {
+    @apply bg-orange-100 text-orange-800;
+    @apply dark:bg-orange-950 dark:text-orange-200 dark:border dark:border-orange-800;
   }
 }

@@ -41,6 +41,12 @@
     @apply dark:text-white;
   }
 
+  /* Section heading with bottom margin */
+  .heading-section-spaced {
+    @apply text-3xl font-extrabold tracking-tight text-content-primary mb-4;
+    @apply dark:text-white;
+  }
+
   /* Large section heading (h2) */
   .heading-section-lg {
     @apply mb-4 text-2xl font-extrabold tracking-tight text-content-primary;
