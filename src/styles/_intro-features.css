@@ -11,15 +11,22 @@
 @layer components {
   /* Intro feature cards container */
   .intro-features {
-    @apply grid grid-cols-1 gap-4 max-w-2xl mx-auto mb-8;
-    @apply sm:grid-cols-2 md:gap-5 lg:gap-6 lg:mx-0;
+    @apply grid grid-cols-1 max-w-2xl mx-auto mb-8;
+    /* Mobile: tighter gap for horizontal cards */
+    @apply gap-2;
+    /* sm+: 2-column grid with larger gaps */
+    @apply sm:grid-cols-2 sm:gap-4 md:gap-5 lg:gap-6 lg:mx-0;
   }
 
   /* Intro feature card */
   .intro-feature-card {
-    @apply relative p-5 rounded-xl overflow-hidden;
+    @apply relative rounded-xl overflow-hidden;
     @apply border border-gray-200;
     @apply transition-all duration-250;
+    /* Mobile: horizontal layout with icon on left */
+    @apply flex flex-row items-center gap-3 p-3;
+    /* sm+: vertical layout */
+    @apply sm:flex-col sm:items-start sm:gap-0 sm:p-5;
     background: linear-gradient(
       135deg,
       rgb(249 250 251) 0%,
@@ -59,8 +66,12 @@
 
   /* Intro feature icon */
   .intro-feature-icon {
-    @apply inline-flex items-center justify-center w-10 h-10 mb-3;
-    @apply rounded-lg text-white text-xl font-semibold shrink-0;
+    @apply inline-flex items-center justify-center shrink-0;
+    @apply rounded-lg text-white text-xl font-semibold;
+    /* Mobile: smaller icon */
+    @apply w-9 h-9 text-lg;
+    /* sm+: larger icon with bottom margin */
+    @apply sm:w-10 sm:h-10 sm:text-xl sm:mb-3;
     background: linear-gradient(135deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
   }
 
@@ -68,16 +79,29 @@
     background: linear-gradient(135deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
   }
 
+  /* Intro feature content wrapper (groups title + text on mobile) */
+  .intro-feature-content {
+    @apply flex-1 min-w-0;
+  }
+
   /* Intro feature title */
   .intro-feature-title {
-    @apply text-base font-semibold text-gray-900 mb-2;
+    @apply font-semibold text-gray-900;
     @apply dark:text-gray-100;
+    /* Mobile: smaller title, tighter spacing */
+    @apply text-sm mb-0.5;
+    /* sm+: restore original sizing */
+    @apply sm:text-base sm:mb-2;
   }
 
   /* Intro feature text */
   .intro-feature-text {
-    @apply text-sm leading-relaxed text-gray-500;
+    @apply leading-relaxed text-gray-500;
     @apply dark:text-gray-400;
+    /* Mobile: smaller text, single line ellipsis */
+    @apply text-xs;
+    /* sm+: restore original sizing */
+    @apply sm:text-sm;
   }
 
   /* Intro feature card as link */
@@ -163,6 +187,11 @@
     @apply flex items-center justify-center shrink-0;
     @apply w-12 h-12 rounded-full;
     @apply text-purple-600 bg-purple-100;
+  }
+
+  /* Size SVG inside CTA icon */
+  .beginner-cta-icon svg {
+    @apply w-8 h-8;
   }
 
   .dark .beginner-cta-icon {

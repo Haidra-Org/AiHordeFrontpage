@@ -45,6 +45,11 @@
     @apply w-12 h-12 mb-3 flex items-center justify-center rounded-full text-white;
   }
 
+  /* Size SVGs inside feature card icons */
+  .feature-card-icon svg {
+    @apply w-6 h-6;
+  }
+
   /* Purple icon variant */
   .feature-card-icon-purple {
     @apply bg-purple-100 text-purple-600;
@@ -73,6 +78,40 @@
   .feature-card-icon-pink {
     @apply bg-pink-100 text-pink-600;
     @apply dark:bg-pink-900 dark:text-pink-300;
+  }
+
+  /* =================================================================
+     FEATURE CARD TEXT PATTERNS
+     ================================================================= */
+
+  /* Feature card title - heading style for feature cards */
+  .feature-card-title {
+    @apply text-base font-semibold mb-2 m-0;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  /* Feature card description - secondary text for feature cards */
+  .feature-card-description {
+    @apply text-sm text-left m-0;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Feature card subtitle - smaller secondary text shown in collapsed header */
+  .feature-card-subtitle {
+    @apply text-sm m-0;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Hidden on mobile, shown on larger screens */
+  .feature-card-subtitle-desktop {
+    @apply hidden;
+
+    @media (min-width: 640px) {
+      @apply block;
+    }
   }
 
   /* =================================================================
@@ -130,5 +169,19 @@
   .feature-grid {
     @apply grid gap-6;
     @apply sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  /* 3-column feature grid - for intro feature cards */
+  .feature-grid-3 {
+    @apply grid grid-cols-1 gap-6;
+
+    @media (min-width: 768px) {
+      @apply grid-cols-3;
+    }
+  }
+
+  /* Optional action container */
+  .feature-grid-action {
+    @apply mt-4;
   }
 }

@@ -1,23 +1,65 @@
-<div class="mb-8 lg:mb-12 card-bg-secondary p-6 rounded-lg border">
-  <div>
-    <h2 class="heading-card text-primary mb-4">
-      {{ "guis_and_tools_page.intro_title" | transloco }}
-    </h2>
+<div class="collapsible-card card-bg-secondary">
+  <!-- Collapsible Header Bar -->
+  <button
+    type="button"
+    class="collapsible-header-button"
+    (click)="toggleExpanded()"
+    [attr.aria-expanded]="isExpanded()"
+    aria-controls="beginner-content"
+  >
+    <div class="collapsible-header-content">
+      <div class="feature-card-icon feature-card-icon-purple collapsible-header-icon">
+        <svg
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+      </div>
+      <div class="collapsible-header-text">
+        <h2 class="collapsible-header-title">
+          {{ "guis_and_tools_page.intro_title" | transloco }}
+        </h2>
+        <p class="feature-card-subtitle feature-card-subtitle-desktop">
+          {{ "guis_and_tools_page.intro_paragraph_1" | transloco }}
+        </p>
+      </div>
+    </div>
+    <svg
+      class="chevron-icon"
+      [class.expanded]="isExpanded()"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  </button>
 
-    <div class="space-y-6">
-      <!-- Top intro paragraph -->
-      <p
-        class="text-base text-secondary"
-        [innerHTML]="'guis_and_tools_page.intro_paragraph_1' | transloco"
-      ></p>
+  <!-- Expandable Content -->
+  @if (isExpanded()) {
+    <div id="beginner-content" class="card-expandable-content">
+      <div class="card-expandable-stack">
 
       <!-- 3-column feature cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="feature-grid-3">
         @if (!disableLinks()) {
           <a routerLink="/guis/" class="feature-card">
             <div class="feature-card-icon feature-card-icon-purple">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -30,10 +72,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_guis_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
             </p>
           </a>
@@ -41,7 +83,7 @@
           <div class="feature-card feature-card-disabled">
             <div class="feature-card-icon feature-card-icon-purple">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -54,10 +96,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_guis_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_guis_desc" | transloco }}
             </p>
           </div>
@@ -67,7 +109,7 @@
           <a routerLink="/contribute/joining" class="feature-card">
             <div class="feature-card-icon feature-card-icon-blue">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -86,10 +128,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_workers_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
             </p>
           </a>
@@ -97,7 +139,7 @@
           <div class="feature-card feature-card-disabled">
             <div class="feature-card-icon feature-card-icon-blue">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -116,10 +158,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_workers_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_workers_desc" | transloco }}
             </p>
           </div>
@@ -129,7 +171,7 @@
           <a routerLink="/guis/" class="feature-card">
             <div class="feature-card-icon feature-card-icon-green">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -142,10 +184,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_tools_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
             </p>
           </a>
@@ -153,7 +195,7 @@
           <div class="feature-card feature-card-disabled">
             <div class="feature-card-icon feature-card-icon-green">
               <svg
-                class="w-6 h-6"
+                aria-hidden="true"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -166,10 +208,10 @@
                 ></path>
               </svg>
             </div>
-            <h3 class="heading-item mb-2">
+            <h3 class="feature-card-title">
               {{ "guis_and_tools_page.intro_tools_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary text-left">
+            <p class="feature-card-description">
               {{ "guis_and_tools_page.intro_tools_desc" | transloco }}
             </p>
           </div>
@@ -182,6 +224,14 @@
           class="intro-feature-text"
           [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
         ></p>
+              <!-- Optional "View all Frontends" button -->
+      @if (showButton()) {
+        <div class="feature-grid-action">
+          <a routerLink="/guis/" class="btn-purple">
+            {{ "homepage_guis.view_all_guis" | transloco }}
+          </a>
+        </div>
+      }
       </div>
 
       <!-- Worker CTA Section - always shown -->
@@ -189,10 +239,10 @@
         <div class="beginner-cta-content">
           <div class="beginner-cta-icon">
             <svg
-              class="w-8 h-8"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 stroke-linecap="round"
@@ -203,14 +253,15 @@
             </svg>
           </div>
           <div class="beginner-cta-text">
-            <h3 class="heading-item mb-1">
+            <h3 class="card-inline-title">
               {{ "guis_and_tools_page.worker_cta_title" | transloco }}
             </h3>
-            <p class="text-sm text-secondary m-0">
+            <p class="card-inline-description">
               {{ "guis_and_tools_page.worker_cta_description" | transloco }}
             </p>
           </div>
         </div>
+        
         <div class="beginner-cta-actions">
           <a routerLink="/contribute/joining" class="btn-purple">
             {{ "guis_and_tools_page.worker_cta_button" | transloco }}
@@ -224,14 +275,18 @@
         </div>
       </div>
 
-      <!-- Optional "View all Frontends" button -->
-      @if (showButton()) {
-        <div class="mt-4">
-          <a routerLink="/guis/" class="btn-purple inline-block">
-            {{ "homepage_guis.view_all_guis" | transloco }}
-          </a>
-        </div>
-      }
+
+
+      <!-- "Hide" button at end of content -->
+      <div class="collapse-action-footer">
+        <button type="button" class="btn-secondary" (click)="toggleExpanded()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+          </svg>
+          {{ 'guis_and_tools_page.hide' | transloco }}
+        </button>
+      </div>
+      </div>
     </div>
-  </div>
+  }
 </div>

@@ -5,11 +5,17 @@ import {
   HostListener,
   inject,
   OnInit,
+  AfterViewInit,
+  OnDestroy,
   signal,
+  ChangeDetectionStrategy,
+  PLATFORM_ID,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -32,19 +38,30 @@ interface ExtendedItem extends GuiItem {
   hasFrontend?: boolean;
 }
 
+export type ViewMode = 'table' | 'grid';
+
+/** Section definition for TOC and rendering */
+export interface SectionInfo {
+  id: string;
+  titleKey: string;
+  items: () => DisplayItem[];
+}
+
 @Component({
   selector: 'app-guis-and-tools',
-  standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TranslocoModule,
     ItemListSectionComponent,
     BeginnerHeaderComponent,
   ],
   templateUrl: './guis-and-tools.component.html',
   styleUrl: './guis-and-tools.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GuisAndToolsComponent implements OnInit {
+export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
@@ -53,17 +70,38 @@ export class GuisAndToolsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly enumDisplayService = inject(EnumDisplayService);
 
+  private sectionObserver: IntersectionObserver | null = null;
+
   private imageGuis = toSignal(this.dataService.imageGuis);
   private textGuis = toSignal(this.dataService.textGuis);
   private tools = toSignal(this.dataService.tools);
   private resources = toSignal(this.dataService.resources);
 
-  // Filter signals - multi-select
+  // Search and filter signals
+  public searchQuery = signal<string>('');
   public selectedTypes = signal<Set<string>>(new Set());
   public selectedCategories = signal<Set<string>>(new Set());
   public expandedRows = signal<Set<string>>(new Set());
   public collapsedSections = signal<Set<string>>(new Set());
   public showScrollToTop = signal<boolean>(false);
+  public showFiltersPanel = signal<boolean>(false);
+  public viewMode = signal<ViewMode>('table');
+  public activeSection = signal<string>('guis');
+
+  /** Sections configuration for TOC and rendering */
+  public readonly sections: SectionInfo[] = [
+    { id: 'guis', titleKey: 'guis_and_tools_page.guis_section_title', items: () => this.filteredGuis() },
+    { id: 'workers', titleKey: 'guis_and_tools_page.workers_section_title', items: () => this.filteredWorkers() },
+    { id: 'resources', titleKey: 'guis_and_tools_page.resources_section_title', items: () => this.filteredResources() },
+    { id: 'utilities', titleKey: 'guis_and_tools_page.utilities_section_title', items: () => this.filteredUtilities() },
+    { id: 'bots', titleKey: 'guis_and_tools_page.bots_section_title', items: () => this.filteredBots() },
+    { id: 'developer_tools', titleKey: 'guis_and_tools_page.developer_tools_section_title', items: () => this.filteredDeveloperTools() },
+  ];
+
+  /** Get visible sections (those with items after filtering) */
+  public visibleSections = computed(() => {
+    return this.sections.filter(section => section.items().length > 0);
+  });
 
   // Combined items (GUIs, Tools, and Resources)
   public allItems = computed(() => {
@@ -166,8 +204,19 @@ export class GuisAndToolsComponent implements OnInit {
     const items = this.allItems();
     const types = this.selectedTypes();
     const categories = this.selectedCategories();
+    const query = this.searchQuery().toLowerCase().trim();
 
     return items.filter((item) => {
+      // Filter by search query (name or description)
+      if (query) {
+        const nameMatch = item.name.toLowerCase().includes(query);
+        const descMatch = item.description?.toLowerCase().includes(query) ?? false;
+        const categoryMatch = item.categories.some(cat => cat.toLowerCase().includes(query));
+        if (!nameMatch && !descMatch && !categoryMatch) {
+          return false;
+        }
+      }
+
       // Filter by type categories (check if item has any of the selected type categories)
       if (types.size > 0) {
         const hasTypeMatch = item.categories.some((cat) => types.has(cat));
@@ -186,6 +235,11 @@ export class GuisAndToolsComponent implements OnInit {
 
       return true;
     });
+  });
+
+  /** Count of active filters */
+  public activeFilterCount = computed(() => {
+    return this.selectedTypes().size + this.selectedCategories().size;
   });
 
   // Separate items by category for grouped display
@@ -287,6 +341,44 @@ export class GuisAndToolsComponent implements OnInit {
       .subscribe((title) => this.title.setTitle(title));
   }
 
+  ngAfterViewInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.setupScrollSpy();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.sectionObserver) {
+      this.sectionObserver.disconnect();
+    }
+  }
+
+  private setupScrollSpy(): void {
+    // Set up IntersectionObserver to track which section is in view
+    const options: IntersectionObserverInit = {
+      root: null,
+      rootMargin: '-20% 0px -60% 0px', // Trigger when section is in upper portion of viewport
+      threshold: 0,
+    };
+
+    this.sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id.replace('section-', '');
+          this.activeSection.set(sectionId);
+        }
+      });
+    }, options);
+
+    // Observe all section elements
+    this.sections.forEach((section) => {
+      const element = document.getElementById(`section-${section.id}`);
+      if (element) {
+        this.sectionObserver?.observe(element);
+      }
+    });
+  }
+
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
     // Show button after scrolling down 300px
@@ -336,6 +428,31 @@ export class GuisAndToolsComponent implements OnInit {
 
   public selectAllTypes(): void {
     this.selectedTypes.set(new Set(this.availableCategories()));
+  }
+
+  public clearAllFilters(): void {
+    this.selectedTypes.set(new Set());
+    this.selectedCategories.set(new Set());
+    this.searchQuery.set('');
+  }
+
+  public toggleFiltersPanel(): void {
+    this.showFiltersPanel.update(v => !v);
+  }
+
+  public setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+  }
+
+  public scrollToSection(sectionId: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    const element = document.getElementById(`section-${sectionId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      this.activeSection.set(sectionId);
+    }
   }
 
   public toggleRow(itemName: string): void {

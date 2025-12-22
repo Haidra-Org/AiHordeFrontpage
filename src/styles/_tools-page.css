@@ -1,0 +1,429 @@
+/* =================================================================
+   TOOLS PAGE STYLES
+   
+   Includes:
+   - Filter bar and search
+   - Table of contents sidebar
+   - Grid/card view
+   - Section pills for mobile
+   - View mode toggle
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     FILTER BAR
+     ================================================================= */
+
+  .tools-filter-bar {
+    @apply sticky z-40 -mx-4 px-4 py-3 mb-6;
+    @apply bg-white/95 backdrop-blur-sm border-b border-gray-200;
+    @apply dark:bg-gray-900/95 dark:border-gray-700;
+    top: var(--nav-height-mobile);
+
+    @media (min-width: 768px) {
+      top: var(--nav-height-desktop);
+      @apply rounded-lg border mx-0 px-4;
+    }
+  }
+
+  .tools-filter-bar-content {
+    @apply flex items-center gap-3 flex-wrap;
+  }
+
+  /* Search Input */
+  .tools-search-wrapper {
+    @apply relative flex-1 min-w-48 max-w-md;
+  }
+
+  .tools-search-icon {
+    @apply absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none;
+    color: var(--color-text-muted);
+  }
+
+  .tools-search-input {
+    @apply w-full py-2 pl-10 pr-9 text-sm rounded-lg transition-all duration-200;
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-edge-primary);
+    color: var(--color-content-primary);
+  }
+
+  .tools-search-input:focus {
+    @apply outline-none;
+    border-color: var(--color-brand-purple);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+  }
+
+  .tools-search-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .dark .tools-search-input {
+    @apply bg-gray-800 border-gray-600 text-gray-200;
+  }
+
+  .tools-search-clear {
+    @apply absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded;
+    @apply text-gray-400 hover:text-gray-600 hover:bg-gray-100;
+    @apply dark:hover:text-gray-200 dark:hover:bg-gray-700;
+    @apply transition-colors duration-150;
+  }
+
+  /* Filter Toggle Button */
+  .tools-filter-toggle {
+    @apply inline-flex items-center gap-2 py-2 px-3 text-sm font-medium rounded-lg;
+    @apply border border-gray-300 bg-white cursor-pointer;
+    @apply hover:bg-gray-50 hover:border-gray-400;
+    @apply dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700;
+    @apply transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .tools-filter-toggle.active {
+    @apply border-purple-500 text-purple-600;
+    @apply dark:border-purple-400 dark:text-purple-400;
+    background-color: color-mix(in srgb, var(--color-brand-purple) 10%, transparent);
+  }
+
+  .tools-filter-count {
+    @apply inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-bold rounded-full;
+    @apply bg-purple-600 text-white;
+    @apply dark:bg-purple-500;
+  }
+
+  /* View Mode Toggle */
+  .tools-view-toggle {
+    @apply hidden items-center border border-gray-300 rounded-lg overflow-hidden;
+    @apply dark:border-gray-600;
+
+    @media (min-width: 768px) {
+      @apply inline-flex;
+    }
+  }
+
+  .tools-view-btn {
+    @apply p-2 bg-white border-0 cursor-pointer;
+    @apply hover:bg-gray-100;
+    @apply dark:bg-gray-800 dark:hover:bg-gray-700;
+    @apply transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .tools-view-btn.active {
+    @apply bg-purple-100 text-purple-600;
+    @apply dark:bg-purple-900/50 dark:text-purple-400;
+  }
+
+  .tools-view-btn + .tools-view-btn {
+    @apply border-l border-gray-300 dark:border-gray-600;
+  }
+
+  /* Results Count */
+  .tools-results-count {
+    @apply text-sm font-medium ml-auto;
+    color: var(--color-content-secondary);
+  }
+
+  /* =================================================================
+     FILTERS PANEL
+     ================================================================= */
+
+  .tools-filters-panel {
+    @apply mt-4 pt-4 border-t border-gray-200;
+    @apply dark:border-gray-700;
+  }
+
+  .tools-filters-grid {
+    @apply grid grid-cols-1 gap-6;
+
+    @media (min-width: 768px) {
+      @apply grid-cols-2;
+    }
+  }
+
+  .tools-filter-group {
+    @apply flex flex-col gap-2;
+  }
+
+  .tools-filter-group-header {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .tools-filter-group-title {
+    @apply text-sm font-semibold;
+    color: var(--color-content-primary);
+  }
+
+  .dark .tools-filter-group-title {
+    @apply text-gray-200;
+  }
+
+  /* Filter Chips */
+  .tools-filter-chips {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .tools-filter-chip {
+    @apply inline-flex items-center py-1.5 px-3 text-sm font-medium rounded-full cursor-pointer;
+    @apply border border-gray-300 bg-white;
+    @apply hover:border-purple-400 hover:bg-purple-50;
+    @apply dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-purple-500;
+    @apply transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .tools-filter-chip.active {
+    @apply bg-purple-600 text-white border-purple-600;
+    @apply hover:bg-purple-700 hover:border-purple-700;
+    @apply dark:bg-purple-600 dark:border-purple-600;
+  }
+
+  .tools-filters-actions {
+    @apply flex justify-end mt-4 pt-4 border-t border-gray-200;
+    @apply dark:border-gray-700;
+  }
+
+  /* =================================================================
+     LAYOUT WITH TOC SIDEBAR
+     ================================================================= */
+
+  .tools-layout {
+    @apply flex gap-8;
+  }
+
+  /* Table of Contents Sidebar */
+  .tools-toc {
+    @apply hidden shrink-0 w-56;
+
+    @media (min-width: 1024px) {
+      @apply block;
+    }
+  }
+
+  .tools-toc-nav {
+    @apply sticky;
+    top: calc(var(--nav-height-desktop) + 5rem);
+  }
+
+  .tools-toc-title {
+    @apply text-xs font-bold uppercase tracking-wide mb-3;
+    color: var(--color-content-muted);
+  }
+
+  .tools-toc-list {
+    @apply flex flex-col gap-1 list-none p-0 m-0;
+  }
+
+  .tools-toc-link {
+    @apply flex items-center justify-between gap-2 py-2 px-3 rounded-lg no-underline;
+    @apply text-sm font-medium;
+    @apply hover:bg-gray-100;
+    @apply dark:hover:bg-gray-800;
+    @apply transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .tools-toc-link.active {
+    @apply bg-purple-100 text-purple-700;
+    @apply dark:bg-purple-900/40 dark:text-purple-300;
+  }
+
+  .tools-toc-link-text {
+    @apply truncate;
+  }
+
+  .tools-toc-link-count {
+    @apply text-xs font-semibold px-1.5 py-0.5 rounded;
+    @apply bg-gray-200 text-gray-600;
+    @apply dark:bg-gray-700 dark:text-gray-400;
+  }
+
+  .tools-toc-link.active .tools-toc-link-count {
+    @apply bg-purple-200 text-purple-700;
+    @apply dark:bg-purple-800 dark:text-purple-300;
+  }
+
+  /* Main Content Area */
+  .tools-content {
+    @apply flex-1 min-w-0;
+    /* Ensure content doesn't touch screen edges on mobile */
+    @media (max-width: 1023px) {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  /* Mobile Section Pills */
+  .tools-section-pills {
+    @apply flex gap-2 overflow-x-auto pb-4 mb-4;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    /* Ensure pills don't touch screen edges on mobile */
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    margin-left: -1rem;
+    margin-right: -1rem;
+
+    @media (min-width: 1024px) {
+      @apply hidden;
+    }
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .tools-section-pills::-webkit-scrollbar {
+    height: 0;
+    display: none;
+  }
+
+  .tools-section-pills {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tools-section-pill {
+    @apply inline-flex items-center gap-1.5 py-2 px-3 text-sm font-medium rounded-full whitespace-nowrap no-underline;
+    @apply border border-gray-300 bg-white;
+    @apply dark:bg-gray-800 dark:border-gray-600;
+    @apply transition-colors duration-150;
+    scroll-snap-align: start;
+    color: var(--color-content-secondary);
+  }
+
+  .tools-section-pill:hover {
+    @apply border-purple-400 bg-purple-50;
+    @apply dark:bg-gray-700 dark:border-purple-500;
+  }
+
+  .tools-section-pill.active {
+    @apply bg-purple-600 text-white border-purple-600;
+    @apply dark:bg-purple-600 dark:border-purple-600;
+  }
+
+  .tools-section-pill-count {
+    @apply text-xs font-semibold px-1.5 py-0.5 rounded-full;
+    @apply bg-gray-200 text-gray-600;
+    @apply dark:bg-gray-600 dark:text-gray-300;
+  }
+
+  .tools-section-pill.active .tools-section-pill-count {
+    @apply bg-purple-500 text-white;
+    @apply dark:bg-purple-500;
+  }
+
+  /* Section Count Badge in Headers */
+  .tools-section-count {
+    @apply text-sm font-semibold px-2 py-0.5 rounded-full;
+    @apply bg-gray-200 text-gray-600;
+    @apply dark:bg-gray-700 dark:text-gray-400;
+  }
+
+  /* =================================================================
+     GRID VIEW CARDS
+     ================================================================= */
+
+  .tools-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .tools-grid-card {
+    @apply flex flex-col rounded-lg overflow-hidden;
+    @apply bg-white border border-gray-200;
+    @apply hover:shadow-md hover:border-gray-300;
+    @apply dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600;
+    @apply transition-all duration-200;
+  }
+
+  .tools-grid-card-header {
+    @apply flex-1 p-4 cursor-pointer;
+  }
+
+  .tools-grid-card-image {
+    @apply w-full h-32 mb-3 rounded-md overflow-hidden bg-gray-100;
+    @apply dark:bg-gray-700;
+  }
+
+  .tools-grid-card-image img {
+    @apply w-full h-full object-cover;
+  }
+
+  .tools-grid-card-content {
+    @apply flex flex-col gap-2;
+  }
+
+  .tools-grid-card-title {
+    @apply text-base font-semibold m-0;
+    color: var(--color-content-primary);
+  }
+
+  .dark .tools-grid-card-title {
+    @apply text-gray-100;
+  }
+
+  .tools-grid-card-badges {
+    @apply flex flex-wrap gap-1.5;
+  }
+
+  .tools-grid-card-desc {
+    @apply text-sm line-clamp-2 m-0;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .tools-grid-card-desc {
+    @apply text-gray-400;
+  }
+
+  .tools-grid-card-actions {
+    @apply flex items-center gap-2 p-4 pt-0;
+  }
+
+  /* =================================================================
+     TABLE ROW ALTERNATING COLORS
+     ================================================================= */
+
+  .table-row-alt .item-list-row {
+    @apply bg-gray-50;
+    @apply dark:bg-gray-800/50;
+  }
+
+  .table-row-alt .item-list-row:hover {
+    @apply bg-gray-100;
+    @apply dark:bg-gray-700/50;
+  }
+
+  /* =================================================================
+     EMPTY STATE
+     ================================================================= */
+
+  .state-empty {
+    @apply flex flex-col items-center justify-center py-16 text-center;
+  }
+
+  .state-empty-icon {
+    @apply w-16 h-16 mb-4;
+    color: var(--color-content-muted);
+  }
+
+  .state-empty-text {
+    @apply text-lg font-medium m-0;
+    color: var(--color-content-secondary);
+  }
+
+  /* =================================================================
+     UTILITIES
+     ================================================================= */
+
+  .stack-lg {
+    @apply flex flex-col gap-6;
+  }
+
+  /* Small link button for filter actions */
+  .link-btn-sm {
+    @apply text-sm font-medium cursor-pointer bg-transparent border-none p-0;
+    color: var(--color-brand-purple);
+  }
+
+  .link-btn-sm:hover {
+    @apply underline;
+    color: var(--color-brand-purple-hover);
+  }
+}

@@ -2,11 +2,14 @@
   <div class="table-section-wrapper">
     <h2
       #sectionHeader
-      class="heading-section mb-4 section-header-collapsible"
+      class="heading-section-spaced section-header-collapsible"
       [class.is-stuck]="isStuck()"
       (click)="toggleSection()"
     >
-      <span>{{ title() | transloco }}</span>
+      <span class="section-header-title-wrapper">
+        {{ title() | transloco }}
+        <span class="tools-section-count">{{ items().length }}</span>
+      </span>
       <svg
         class="chevron-icon"
         [class.expanded]="!isSectionCollapsed()"
@@ -24,101 +27,41 @@
     </h2>
 
     @if (!isSectionCollapsed()) {
-      <div class="table-items">
-        <!-- Table Header (Desktop Only) -->
-        <div class="table-header-row">
-          <div class="table-header-cell">
-            <span class="table-header-label"> Name & Categories </span>
-          </div>
-          <div class="table-header-cell">
-            <span class="table-header-label"> Function </span>
-          </div>
-          <div class="table-header-cell">
-            <span class="table-header-label"> Domain </span>
-          </div>
-          <div class="table-header-cell">
-            <span class="table-header-label"> Platform </span>
-          </div>
-          <div class="table-header-cell-end">
-            <span class="table-header-label"> Action </span>
-          </div>
-        </div>
-
-        <!-- Table Rows -->
-        @for (item of items(); track item.uniqueId) {
-          <div class="table-item-wrapper">
-            <!-- Collapsed Row -->
-            <div class="item-list-row" (click)="toggleRow(item.name)">
-              <!-- Name and Tags Column -->
-              <div class="table-cell-name">
-                <h3 class="heading-item mb-2 truncate">
-                  {{ item.name }}
-                </h3>
-
-                <!-- All Tags Together -->
-                <div class="badge-container-tight">
-                  <!-- Item Type Badge -->
-                  <span class="badge-base badge-primary">
-                    {{ getItemTypeLabel(item.itemType) | transloco }}
-                  </span>
-
-                  <!-- Additional Category Tags (filtered to remove duplicates) -->
-                  @for (
-                    category of getFilteredCategories(item);
-                    track category
-                  ) {
-                    <span
-                      class="badge-base"
-                      [class]="category | enumDisplay: 'category' : 'badge'"
-                    >
-                      {{ category }}
+      <!-- Grid View -->
+      @if (viewMode() === 'grid') {
+        <div class="tools-grid">
+          @for (item of items(); track item.uniqueId) {
+            <div class="tools-grid-card" [class.expanded]="isExpanded(item.name)">
+              <div class="tools-grid-card-header" (click)="toggleRow(item.name)">
+                @if (item.image) {
+                  <div class="tools-grid-card-image">
+                    <img
+                      [src]="item.image"
+                      [alt]="'guis_and_tools.item_image_alt' | transloco: { name: item.name }"
+                      loading="lazy"
+                    />
+                  </div>
+                }
+                <div class="tools-grid-card-content">
+                  <h3 class="tools-grid-card-title">{{ item.name }}</h3>
+                  <div class="tools-grid-card-badges">
+                    <span class="badge-base badge-primary badge-sm">
+                      {{ getItemTypeLabel(item.itemType) | transloco }}
                     </span>
-                  }
+                    <span class="badge-base badge-purple badge-sm">
+                      {{ getDomainDisplay(item) }}
+                    </span>
+                  </div>
+                  <p class="tools-grid-card-desc">{{ item.description }}</p>
                 </div>
               </div>
-
-              <!-- Function Column -->
-              <div class="table-cell-meta">
-                <div class="table-cell-label">Function</div>
-                <div>
-                  <span class="badge-base badge-success">
-                    {{ getPrimaryFunction(item) }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Domain Column -->
-              <div class="table-cell-meta">
-                <div class="table-cell-label">Domain</div>
-                <div>
-                  <span class="badge-base badge-purple">
-                    {{ getDomainDisplay(item) }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Platform Column -->
-              <div class="table-cell-meta">
-                <div class="table-cell-label">Platform</div>
-                <div>
-                  <span class="badge-base badge-info">
-                    {{ getPlatformDisplay(item) }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Actions Column -->
-              <div class="table-cell-actions">
+              <div class="tools-grid-card-actions">
                 @if (item.sourceControlLink) {
                   <a
                     [href]="item.sourceControlLink"
                     target="_blank"
                     class="btn-source-control btn-sm"
                     (click)="$event.stopPropagation()"
-                    [title]="
-                      'View source code on ' +
-                      getSourceControlDomain(item.sourceControlLink)
-                    "
                   >
                     {{ getSourceControlDomain(item.sourceControlLink) }}
                   </a>
@@ -128,54 +71,174 @@
                   target="_blank"
                   class="btn-purple btn-sm"
                   (click)="$event.stopPropagation()"
-                  [title]="getButtonText(item)"
                 >
-                  Visit
+                  {{ "guis_and_tools.visit" | transloco }}
                 </a>
-                <svg
-                  class="chevron-icon-sm"
-                  [class.expanded]="isExpanded(item.name)"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
               </div>
             </div>
+          }
+        </div>
+      } @else {
+        <!-- Table View -->
+        <div class="table-items">
+          <!-- Table Header (Desktop Only) -->
+          <div class="table-header-row">
+            <div class="table-header-cell">
+              <span class="table-header-label">{{ "guis_and_tools.col_name" | transloco }}</span>
+            </div>
+            <div class="table-header-cell">
+              <span class="table-header-label">{{ "guis_and_tools.col_function" | transloco }}</span>
+            </div>
+            <div class="table-header-cell">
+              <span class="table-header-label">{{ "guis_and_tools.col_domain" | transloco }}</span>
+            </div>
+            <div class="table-header-cell">
+              <span class="table-header-label">{{ "guis_and_tools.col_platform" | transloco }}</span>
+            </div>
+            <div class="table-header-cell-end">
+              <span class="table-header-label">{{ "guis_and_tools.col_action" | transloco }}</span>
+            </div>
+          </div>
 
-            <!-- Expanded Details -->
-            @if (isExpanded(item.name)) {
-              <div class="expanded-detail-panel">
-                <div class="detail-grid">
-                  <div>
-                    <p class="detail-text">
-                      {{ item.description }}
-                    </p>
+          <!-- Table Rows -->
+          @for (item of items(); track item.uniqueId; let odd = $odd) {
+            <div class="table-item-wrapper" [class.table-row-alt]="odd">
+              <!-- Collapsed Row -->
+              <div class="item-list-row" (click)="toggleRow(item.name)">
+                <!-- Name and Tags Column -->
+                <div class="table-cell-name">
+                  <h3 class="table-cell-title">
+                    {{ item.name }}
+                  </h3>
+
+                  <!-- Badges - Limited Display -->
+                  <div class="badge-container-tight">
+                    <span class="badge-base badge-primary">
+                      {{ getItemTypeLabel(item.itemType) | transloco }}
+                    </span>
+                    @for (category of getFilteredCategories(item).slice(0, 2); track category) {
+                      <span
+                        class="badge-base"
+                        [class]="category | enumDisplay: 'category' : 'badge'"
+                      >
+                        {{ category }}
+                      </span>
+                    }
+                    @if (getFilteredCategories(item).length > 2) {
+                      <span class="badge-base badge-outline">
+                        +{{ getFilteredCategories(item).length - 2 }}
+                      </span>
+                    }
                   </div>
-                  @if (item.image) {
-                    <div class="detail-image">
-                      <img
-                        [src]="item.image"
-                        [alt]="
-                          'guis_and_tools.item_image_alt'
-                            | transloco: { name: item.name }
-                        "
-                      />
-                    </div>
+                </div>
+
+                <!-- Function Column -->
+                <div class="table-cell-meta">
+                  <div class="table-cell-label">{{ "guis_and_tools.col_function" | transloco }}</div>
+                  <div>
+                    <span class="badge-base badge-success">
+                      {{ getPrimaryFunction(item) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Domain Column -->
+                <div class="table-cell-meta">
+                  <div class="table-cell-label">{{ "guis_and_tools.col_domain" | transloco }}</div>
+                  <div>
+                    <span class="badge-base badge-purple">
+                      {{ getDomainDisplay(item) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Platform Column -->
+                <div class="table-cell-meta">
+                  <div class="table-cell-label">{{ "guis_and_tools.col_platform" | transloco }}</div>
+                  <div>
+                    <span class="badge-base badge-info">
+                      {{ getPlatformDisplay(item) }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Actions Column -->
+                <div class="table-cell-actions">
+                  @if (item.sourceControlLink) {
+                    <a
+                      [href]="item.sourceControlLink"
+                      target="_blank"
+                      class="btn-source-control btn-sm"
+                      (click)="$event.stopPropagation()"
+                      [title]="'View source code on ' + getSourceControlDomain(item.sourceControlLink)"
+                    >
+                      {{ getSourceControlDomain(item.sourceControlLink) }}
+                    </a>
                   }
+                  <a
+                    [href]="item.link"
+                    target="_blank"
+                    class="btn-purple btn-sm"
+                    (click)="$event.stopPropagation()"
+                    [title]="getButtonText(item)"
+                  >
+                    {{ "guis_and_tools.visit" | transloco }}
+                  </a>
+                  <svg
+                    class="chevron-icon-sm"
+                    [class.expanded]="isExpanded(item.name)"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
                 </div>
               </div>
-            }
-          </div>
-        }
-      </div>
+
+              <!-- Expanded Details -->
+              @if (isExpanded(item.name)) {
+                <div class="expanded-detail-panel">
+                  <div class="detail-grid">
+                    <div>
+                      <p class="detail-text">
+                        {{ item.description }}
+                      </p>
+                      <!-- Show all badges in expanded view -->
+                      @if (getFilteredCategories(item).length > 2) {
+                        <div class="badge-container-spaced">
+                          @for (category of getFilteredCategories(item); track category) {
+                            <span
+                              class="badge-base"
+                              [class]="category | enumDisplay: 'category' : 'badge'"
+                            >
+                              {{ category }}
+                            </span>
+                          }
+                        </div>
+                      }
+                    </div>
+                    @if (item.image) {
+                      <div class="detail-image">
+                        <img
+                          [src]="item.image"
+                          [alt]="'guis_and_tools.item_image_alt' | transloco: { name: item.name }"
+                        />
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
     }
   </div>
 }
