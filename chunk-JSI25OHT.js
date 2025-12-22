@@ -1,0 +1,1 @@
+function c(t){if(!t)return null;let r=t.match(/#(\d+)$/);if(r&&r[1]){let n=parseInt(r[1],10);return isNaN(n)?null:n}let i=parseInt(t,10);return!isNaN(i)&&t.trim()===i.toString()?i:null}function e(t){if(!t)return"";let r=t.match(/^(.+?)#\d+$/);return r?r[1]:t}export{c as a,e as b};

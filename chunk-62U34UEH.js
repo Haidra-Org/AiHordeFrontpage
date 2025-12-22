@@ -1,1 +1,0 @@
-import{S as e,ja as i}from"./chunk-QF4LG6ZD.js";var f=(()=>{let t=class t{constructor(){this.dark=i(!0)}setDarkMode(a){this.dark.set(a)}};t.\u0275fac=function(s){return new(s||t)},t.\u0275prov=e({token:t,factory:t.\u0275fac,providedIn:"root"});let r=t;return r})();export{f as a};
