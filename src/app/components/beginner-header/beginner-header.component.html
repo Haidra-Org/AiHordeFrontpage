@@ -177,10 +177,52 @@
       </div>
 
       <!-- Bottom intro paragraph -->
-      <p
-        class="text-base text-secondary"
-        [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
-      ></p>
+      <div class="feature-card">
+        <p
+          class="intro-feature-text"
+          [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
+        ></p>
+      </div>
+
+      <!-- Worker CTA Section - always shown -->
+      <div class="beginner-cta-section">
+        <div class="beginner-cta-content">
+          <div class="beginner-cta-icon">
+            <svg
+              class="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+          </div>
+          <div class="beginner-cta-text">
+            <h3 class="heading-item mb-1">
+              {{ "guis_and_tools_page.worker_cta_title" | transloco }}
+            </h3>
+            <p class="text-sm text-secondary m-0">
+              {{ "guis_and_tools_page.worker_cta_description" | transloco }}
+            </p>
+          </div>
+        </div>
+        <div class="beginner-cta-actions">
+          <a routerLink="/contribute/joining" class="btn-purple">
+            {{ "guis_and_tools_page.worker_cta_button" | transloco }}
+          </a>
+          <a routerLink="/contribute/donate" class="btn-secondary">
+            {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
+          </a>
+          <a routerLink="/faq" fragment="kudos" class="link">
+            {{ "guis_and_tools_page.worker_cta_learn_more" | transloco }}
+          </a>
+        </div>
+      </div>
 
       <!-- Optional "View all Frontends" button -->
       @if (showButton()) {

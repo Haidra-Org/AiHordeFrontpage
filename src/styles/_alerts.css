@@ -302,4 +302,70 @@
   .info-note--padded {
     @apply p-4;
   }
+
+  /* =================================================================
+     VOLUNTEER CTA BANNER
+     Slim call-to-action banner for encouraging worker participation
+     ================================================================= */
+
+  .volunteer-cta-banner {
+    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4;
+    @apply py-3 px-4 rounded-lg text-sm;
+    background: linear-gradient(135deg, rgb(88 28 135 / 0.08) 0%, rgb(30 58 138 / 0.08) 100%);
+    border: 1px solid rgb(147 51 234 / 0.2);
+  }
+
+  .dark .volunteer-cta-banner {
+    background: linear-gradient(135deg, rgb(88 28 135 / 0.15) 0%, rgb(30 58 138 / 0.15) 100%);
+    border-color: rgb(147 51 234 / 0.3);
+  }
+
+  .volunteer-cta-banner-compact {
+    @apply py-2 px-3;
+  }
+
+  .volunteer-cta-banner-content {
+    @apply flex items-center gap-2.5 min-w-0;
+  }
+
+  .volunteer-cta-banner-icon {
+    @apply w-5 h-5 shrink-0 text-purple-600;
+  }
+
+  .dark .volunteer-cta-banner-icon {
+    @apply text-purple-400;
+  }
+
+  .volunteer-cta-banner-text {
+    @apply m-0 text-gray-700 leading-snug;
+  }
+
+  .dark .volunteer-cta-banner-text {
+    @apply text-gray-300;
+  }
+
+  .volunteer-cta-banner-actions {
+    @apply flex items-center gap-2 shrink-0;
+  }
+
+  .volunteer-cta-banner-link {
+    @apply text-sm font-medium no-underline whitespace-nowrap transition-colors;
+    @apply text-purple-700 hover:text-purple-800;
+  }
+
+  .dark .volunteer-cta-banner-link {
+    @apply text-purple-400 hover:text-purple-300;
+  }
+
+  .volunteer-cta-banner-link-primary {
+    @apply font-semibold;
+  }
+
+  .volunteer-cta-banner-separator {
+    @apply text-gray-400;
+  }
+
+  .dark .volunteer-cta-banner-separator {
+    @apply text-gray-600;
+  }
 }
