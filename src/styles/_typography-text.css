@@ -6,6 +6,7 @@
    - Description text
    - Intro text variants
    - Error/success text
+   - Body text variants
    ================================================================= */
 
 @layer components {
@@ -36,6 +37,13 @@
     @apply dark:text-gray-300;
   }
 
+  /* Lead text - larger body text for emphasis */
+  .text-lead {
+    @apply text-lg leading-relaxed;
+    @apply text-content-secondary;
+    @apply dark:text-gray-300;
+  }
+
   /* Primary text color */
   .text-primary {
     @apply text-content-primary;
@@ -55,5 +63,23 @@
   /* Legacy text colors */
   .text-red {
     @apply text-red-500;
+  }
+
+  /* =================================================================
+     CARD TEXT PATTERNS
+     ================================================================= */
+
+  /* Card title (inline with icon) */
+  .card-inline-title {
+    @apply text-lg font-semibold m-0;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  /* Card subtitle/description */
+  .card-inline-description {
+    @apply text-sm m-0;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
   }
 }

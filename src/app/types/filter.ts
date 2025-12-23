@@ -90,7 +90,7 @@ export interface TestPromptRequest {
 export const FILTER_TYPE_LABELS: Record<number, string> = {
   10: 'CSAM',
   11: 'Specific Person',
-  20: 'NSFW'
+  20: 'NSFW',
 };
 
 /**

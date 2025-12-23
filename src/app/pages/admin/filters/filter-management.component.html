@@ -237,11 +237,14 @@
               @for (filter of filteredFilters(); track filter.id) {
                 <tr>
                   <td>
-                    <code class="data-table-mono data-table-mono-primary">{{ filter.regex }}</code>
+                    <code class="data-table-mono data-table-mono-primary">{{
+                      filter.regex
+                    }}</code>
                   </td>
                   <td>
                     <span class="badge-base badge-info">
-                      {{ filter.filter_type }}: {{ getTypeLabel(filter.filter_type) }}
+                      {{ filter.filter_type }}:
+                      {{ getTypeLabel(filter.filter_type) }}
                     </span>
                   </td>
                   <td class="data-table-mono-primary">
@@ -459,7 +462,9 @@
             class="form-input"
             [value]="formRegex()"
             (input)="onFormRegexChange($event)"
-            placeholder="{{ 'admin.filters.form.regex_placeholder' | transloco }}"
+            placeholder="{{
+              'admin.filters.form.regex_placeholder' | transloco
+            }}"
           />
           <p class="form-hint">
             {{ "admin.filters.form.regex_hint" | transloco }}
@@ -561,15 +566,17 @@
         <div class="panel p-4 mb-6">
           <div class="flex flex-col gap-2">
             <div>
-              <span class="admin-text-muted">{{
-                "admin.filters.table.regex" | transloco
-              }}:</span>
-              <code class="data-table-mono data-table-mono-primary ml-2">{{ filter.regex }}</code>
+              <span class="admin-text-muted"
+                >{{ "admin.filters.table.regex" | transloco }}:</span
+              >
+              <code class="data-table-mono data-table-mono-primary ml-2">{{
+                filter.regex
+              }}</code>
             </div>
             <div>
-              <span class="admin-text-muted">{{
-                "admin.filters.table.type" | transloco
-              }}:</span>
+              <span class="admin-text-muted"
+                >{{ "admin.filters.table.type" | transloco }}:</span
+              >
               <span class="badge-base badge-info ml-2">
                 {{ filter.filter_type }}: {{ getTypeLabel(filter.filter_type) }}
               </span>

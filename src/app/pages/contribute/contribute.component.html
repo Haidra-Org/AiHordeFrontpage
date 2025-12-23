@@ -1,0 +1,39 @@
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-hero">
+        {{ "contribute.title" | transloco }}
+      </h1>
+      <p class="text-description mt-4 max-w-3xl">
+        {{ "contribute.subtitle" | transloco }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
+  <div class="container-page-content">
+    <!-- Tab Navigation -->
+    <div class="details-tabs max-w-4xl mx-auto">
+      <a
+        routerLink="joining"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "contribute.tabs.joining" | transloco }}
+      </a>
+      <a
+        routerLink="donate"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "contribute.tabs.donate" | transloco }}
+      </a>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="details-content">
+      <router-outlet />
+    </div>
+  </div>
+</section>

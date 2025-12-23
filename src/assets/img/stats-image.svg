@@ -1,0 +1,7 @@
+<svg class="flex-shrink-0 w-5 h-5 text-purple-500 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20"
+     xmlns="http://www.w3.org/2000/svg">
+  <path fill-rule="evenodd"
+        d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+        clip-rule="evenodd"></path>
+  <path d="M8 7a1 1 0 11-2 0 1 1 0 012 0z"></path>
+</svg>

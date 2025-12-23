@@ -264,4 +264,20 @@ export class StyleDetailComponent implements OnInit {
       console.error('Failed to copy:', err);
     });
   }
+
+  /**
+   * Get the link to the creator's user profile.
+   * Extracts the user ID from the "username#id" format.
+   */
+  public getCreatorLink(): string[] {
+    const style = this.style();
+    if (!style?.creator) return ['/details/users'];
+
+    const creatorParts = style.creator.split('#');
+    if (creatorParts.length >= 2) {
+      const creatorId = creatorParts[creatorParts.length - 1];
+      return ['/details/users', creatorId];
+    }
+    return ['/details/users'];
+  }
 }

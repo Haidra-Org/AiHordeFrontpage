@@ -1,12 +1,15 @@
 /* =================================================================
    CARD STYLES
    
+   Unified card system for all card-like components.
+   
    Includes:
-   - Base card
-   - Card backgrounds
-   - Expandable card
-   - Card row clickable
-   - Modal/Dialog
+   - Base card and variants
+   - Panels (admin-style cards)
+   - Stat cards
+   - Worker cards
+   - Callouts
+   - Interactive cards
    - Image grid
    ================================================================= */
 
@@ -15,6 +18,10 @@
      CALLOUT COMPONENTS
      ================================================================= */
 
+  .callout-2-grid {
+    @apply grid grid-cols-1 gap-6;
+    @apply md:grid-cols-2;
+  }
   /* Generic callout container */
   .callout {
     @apply p-4 border-2 border-edge-secondary rounded-lg bg-surface-primary;
@@ -76,7 +83,171 @@
     @apply bg-gray-50 dark:bg-gray-900;
   }
 
-  /* Expandable card item - used in lists */
+  /* =================================================================
+     PANEL VARIANT - Admin-style cards with simpler styling
+     ================================================================= */
+
+  .panel {
+    @apply rounded-lg overflow-hidden;
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .panel {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .panel--unsaved {
+    @apply outline-2 outline-yellow-500 outline-offset-0;
+  }
+
+  .panel-link {
+    @apply flex items-center p-4 rounded-lg transition-colors duration-200;
+    background-color: var(--color-surface-secondary);
+  }
+
+  .panel-link:hover {
+    background-color: var(--color-edge-primary);
+  }
+
+  .dark .panel-link {
+    @apply bg-gray-700;
+  }
+
+  .dark .panel-link:hover {
+    @apply bg-gray-600;
+  }
+
+  /* =================================================================
+     STAT CARD VARIANT - Cards with icon and stat display
+     ================================================================= */
+
+  .stat-card {
+    @apply flex items-center p-6;
+  }
+
+  .stat-card-icon {
+    @apply flex items-center justify-center w-12 h-12 rounded-lg shrink-0;
+  }
+
+  .stat-card-icon--purple {
+    @apply bg-purple-100 text-purple-600;
+  }
+
+  .dark .stat-card-icon--purple {
+    background-color: rgb(88 28 135 / 0.5);
+    @apply text-purple-400;
+  }
+
+  .stat-card-icon--blue {
+    @apply bg-blue-100 text-blue-600;
+  }
+
+  .dark .stat-card-icon--blue {
+    background-color: rgb(30 58 138 / 0.5);
+    @apply text-blue-400;
+  }
+
+  .stat-card-icon--green {
+    @apply bg-green-100 text-green-600;
+  }
+
+  .dark .stat-card-icon--green {
+    background-color: rgb(22 101 52 / 0.5);
+    @apply text-green-400;
+  }
+
+  .stat-card-icon--yellow {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .dark .stat-card-icon--yellow {
+    background-color: rgb(113 63 18 / 0.5);
+    @apply text-yellow-400;
+  }
+
+  .stat-card-icon--indigo {
+    @apply bg-indigo-100 text-indigo-600;
+  }
+
+  .dark .stat-card-icon--indigo {
+    background-color: rgb(49 46 129 / 0.5);
+    @apply text-indigo-400;
+  }
+
+  .stat-card-content {
+    @apply ml-4;
+  }
+
+  .stat-card-label {
+    @apply text-sm;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .stat-card-label {
+    @apply text-gray-400;
+  }
+
+  .stat-card-value {
+    @apply text-2xl font-semibold;
+    color: var(--color-content-primary);
+  }
+
+  .dark .stat-card-value {
+    @apply text-white;
+  }
+
+  /* =================================================================
+     WORKER CARD VARIANT - Cards with status indication
+     ================================================================= */
+
+  .worker-card {
+    @apply rounded-lg overflow-hidden;
+  }
+
+  .worker-card--normal {
+    background-color: var(--color-surface-primary);
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .worker-card--normal {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .worker-card--issue {
+    @apply bg-red-50 border border-red-300;
+  }
+
+  .dark .worker-card--issue {
+    background-color: rgb(127 29 29 / 0.3);
+    border-color: rgb(185 28 28 / 0.5);
+  }
+
+  /* Status icon for worker cards */
+  .status-icon {
+    @apply flex items-center justify-center w-10 h-10 rounded-full shrink-0;
+  }
+
+  .status-icon--success {
+    @apply bg-green-100 text-green-600;
+  }
+
+  .dark .status-icon--success {
+    @apply bg-green-800 text-green-400;
+  }
+
+  .status-icon--error {
+    @apply bg-red-100 text-red-600;
+  }
+
+  .dark .status-icon--error {
+    @apply bg-red-900 text-red-400;
+  }
+
+  /* =================================================================
+     EXPANDABLE CARD - Used in lists
+     ================================================================= */
+
   .card-expandable {
     @apply border border-gray-200 rounded-lg;
     @apply dark:border-gray-700;

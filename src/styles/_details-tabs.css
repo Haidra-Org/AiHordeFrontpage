@@ -21,7 +21,8 @@
 
   .details-tab {
     @apply py-3 px-5 text-[0.9375rem] font-medium no-underline transition-all duration-200;
-    @apply border border-transparent rounded-t-lg cursor-pointer bg-transparent;
+    @apply border rounded-t-lg cursor-pointer bg-transparent;
+    @apply dark:border-gray-600 border-gray-300;
     color: var(--color-text-secondary);
     font-family: inherit;
     border-bottom: none;
@@ -101,12 +102,20 @@
   .summary-period-badge {
     @apply text-[0.6875rem] font-semibold uppercase tracking-tight py-0.5 px-1.5 rounded whitespace-nowrap;
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 12%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 12%,
+      transparent
+    );
   }
 
   .dark .summary-period-badge {
     @apply text-purple-300;
-    background-color: color-mix(in srgb, var(--color-brand-purple) 25%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 25%,
+      transparent
+    );
   }
 
   /* =================================================================
@@ -141,7 +150,8 @@
   .filter-input:focus {
     @apply outline-none;
     border-color: var(--color-brand-blue);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-blue) 20%, transparent);
+    box-shadow: 0 0 0 3px
+      color-mix(in srgb, var(--color-brand-blue) 20%, transparent);
   }
 
   .filter-input::placeholder {
@@ -159,6 +169,113 @@
 
   .dark .filter-input::placeholder {
     @apply text-gray-500;
+  }
+
+  /* =================================================================
+     FILTER AUTOCOMPLETE - Dropdown suggestions for filter search
+     ================================================================= */
+
+  /* Container for filter search with autocomplete */
+  .filter-search-autocomplete {
+    @apply relative flex-1 max-w-96;
+  }
+
+  /* Autocomplete dropdown panel */
+  .filter-autocomplete-dropdown {
+    @apply absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-lg shadow-lg;
+    /* Use inset: auto to avoid viewport clipping issues */
+    top: 100%;
+    z-index: 50;
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+  }
+
+  .dark .filter-autocomplete-dropdown {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  /* Individual autocomplete suggestion item */
+  .filter-autocomplete-item {
+    @apply flex items-center justify-between gap-2 w-full py-2.5 px-3 text-left text-sm transition-colors duration-150;
+    color: var(--color-text-primary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .filter-autocomplete-item:hover,
+  .filter-autocomplete-item:focus {
+    background-color: var(--color-bg-secondary);
+    outline: none;
+  }
+
+  .filter-autocomplete-item.filter-autocomplete-item-active {
+    background-color: var(--color-bg-secondary);
+  }
+
+  .dark .filter-autocomplete-item {
+    @apply text-gray-200;
+  }
+
+  .dark .filter-autocomplete-item:hover,
+  .dark .filter-autocomplete-item:focus,
+  .dark .filter-autocomplete-item.filter-autocomplete-item-active {
+    @apply bg-gray-700;
+  }
+
+  /* Model name in autocomplete */
+  .filter-autocomplete-name {
+    @apply font-medium truncate flex-1;
+  }
+
+  /* Metadata (worker count, type badge) in autocomplete */
+  .filter-autocomplete-meta {
+    @apply flex items-center gap-2 shrink-0 text-xs;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .filter-autocomplete-meta {
+    @apply text-gray-400;
+  }
+
+  /* Type badge (Image/Text) in autocomplete */
+  .filter-autocomplete-badge {
+    @apply py-0.5 px-1.5 rounded text-[0.625rem] font-semibold uppercase tracking-tight;
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      transparent
+    );
+    color: var(--color-brand-purple);
+  }
+
+  .dark .filter-autocomplete-badge {
+    @apply text-purple-300;
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
+  }
+
+  /* No results message */
+  .filter-autocomplete-empty {
+    @apply py-3 px-3 text-center text-sm;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .filter-autocomplete-empty {
+    @apply text-gray-400;
+  }
+
+  /* Loading state in autocomplete */
+  .filter-autocomplete-loading {
+    @apply py-3 text-center text-sm;
+    color: var(--color-text-secondary);
+  }
+
+  .dark .filter-autocomplete-loading {
+    @apply text-gray-400;
   }
 
   .filter-sort {
@@ -188,13 +305,21 @@
   .sort-button.sort-active {
     border-color: var(--color-brand-purple);
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 15%, var(--color-bg-primary));
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      var(--color-bg-primary)
+    );
   }
 
   .dark .sort-button.sort-active {
     @apply text-purple-300;
     border-color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
   }
 
   .sort-indicator {
@@ -277,8 +402,6 @@
     @apply text-purple-300;
   }
 
-
-
   .models-table-th-sortable .sort-indicator {
     @apply text-xs ml-0.5;
   }
@@ -326,6 +449,13 @@
   .dark .models-table-row:hover {
     background-color: rgb(55 65 81 / 0.5);
     @apply border-gray-600;
+  }
+
+  /* Highlighted model row (linked from URL) */
+  .models-table-row-highlighted {
+    @apply ring-4 ring-orange-400 ring-offset-2;
+    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
+    scroll-margin-top: 1rem;
   }
 
   /* Name cell - spans full width on mobile */
@@ -458,11 +588,19 @@
   .model-rank {
     @apply flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full shrink-0;
     color: var(--color-brand-purple);
-    background-color: color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 15%,
+      transparent
+    );
   }
 
   .dark .model-rank {
-    background-color: color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-purple) 30%,
+      transparent
+    );
   }
 
   .model-name {
@@ -517,7 +655,11 @@
 
   .percentage-bar {
     @apply h-1.5 rounded-full transition-all duration-300;
-    background: linear-gradient(to right, var(--color-brand-purple), var(--color-brand-blue));
+    background: linear-gradient(
+      to right,
+      var(--color-brand-purple),
+      var(--color-brand-blue)
+    );
     min-width: 2px;
     max-width: 5rem;
   }

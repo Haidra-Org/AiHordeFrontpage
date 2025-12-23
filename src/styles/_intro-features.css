@@ -11,15 +11,22 @@
 @layer components {
   /* Intro feature cards container */
   .intro-features {
-    @apply grid grid-cols-1 gap-4 max-w-2xl mx-auto mb-8;
-    @apply sm:grid-cols-2 md:gap-5 lg:gap-6 lg:mx-0;
+    @apply grid grid-cols-1 max-w-2xl mx-auto mb-8;
+    /* Mobile: tighter gap for horizontal cards */
+    @apply gap-2;
+    /* sm+: 2-column grid with larger gaps */
+    @apply sm:grid-cols-2 sm:gap-4 md:gap-5 lg:gap-6 lg:mx-0;
   }
 
   /* Intro feature card */
   .intro-feature-card {
-    @apply relative p-5 rounded-xl overflow-hidden;
+    @apply relative rounded-xl overflow-hidden;
     @apply border border-gray-200;
     @apply transition-all duration-250;
+    /* Mobile: column layout with compact padding */
+    @apply flex flex-col gap-1 p-3;
+    /* sm+: larger padding */
+    @apply sm:p-5 sm:gap-0;
     background: linear-gradient(
       135deg,
       rgb(249 250 251) 0%,
@@ -27,11 +34,22 @@
     );
   }
 
+  /* Intro feature header (icon + title row) */
+  .intro-feature-header {
+    @apply flex items-center gap-2;
+    /* sm+: stack vertically */
+    @apply sm:flex-col sm:items-start sm:gap-0;
+  }
+
   .intro-feature-card::before {
     content: "";
     @apply absolute top-0 left-0 w-1 h-full;
     @apply scale-y-0 origin-bottom transition-transform duration-250;
-    background: linear-gradient(180deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(147 51 234) 0%,
+      rgb(59 130 246) 100%
+    );
   }
 
   .intro-feature-card:hover {
@@ -54,30 +72,79 @@
   }
 
   .dark .intro-feature-card::before {
-    background: linear-gradient(180deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+    background: linear-gradient(
+      180deg,
+      rgb(168 85 247) 0%,
+      rgb(96 165 250) 100%
+    );
   }
 
   /* Intro feature icon */
   .intro-feature-icon {
-    @apply inline-flex items-center justify-center w-10 h-10 mb-3;
-    @apply rounded-lg text-white text-xl font-semibold shrink-0;
-    background: linear-gradient(135deg, rgb(147 51 234) 0%, rgb(59 130 246) 100%);
+    @apply inline-flex items-center justify-center shrink-0;
+    @apply rounded-lg text-white font-semibold;
+    /* Mobile: smaller icon */
+    @apply w-7 h-7 text-base;
+    /* sm+: larger icon with bottom margin */
+    @apply sm:w-10 sm:h-10 sm:text-xl sm:mb-3;
+    background: linear-gradient(
+      135deg,
+      rgb(147 51 234) 0%,
+      rgb(59 130 246) 100%
+    );
   }
 
   .dark .intro-feature-icon {
-    background: linear-gradient(135deg, rgb(168 85 247) 0%, rgb(96 165 250) 100%);
+    background: linear-gradient(
+      135deg,
+      rgb(168 85 247) 0%,
+      rgb(96 165 250) 100%
+    );
   }
 
   /* Intro feature title */
   .intro-feature-title {
-    @apply text-base font-semibold text-gray-900 mb-2;
+    @apply font-semibold text-gray-900;
     @apply dark:text-gray-100;
+    /* Mobile: smaller title, no bottom margin (inline with icon) */
+    @apply text-sm;
+    /* sm+: restore original sizing */
+    @apply sm:text-base sm:mb-2;
   }
 
   /* Intro feature text */
   .intro-feature-text {
-    @apply text-sm leading-relaxed text-gray-500;
+    @apply leading-relaxed text-gray-500;
     @apply dark:text-gray-400;
+    /* Mobile: smaller text, single line ellipsis */
+    @apply text-xs;
+    /* sm+: restore original sizing */
+    @apply sm:text-sm;
+  }
+
+  /* Intro feature card as link */
+  .intro-feature-card-link {
+    @apply no-underline block cursor-pointer;
+  }
+
+  .intro-feature-card-link:focus-visible {
+    @apply outline-none ring-2 ring-purple-500 ring-offset-2;
+  }
+
+  .dark .intro-feature-card-link:focus-visible {
+    @apply ring-purple-400 ring-offset-gray-900;
+  }
+
+  .intro-feature-card-link .intro-feature-title {
+    @apply transition-colors;
+  }
+
+  .intro-feature-card-link:hover .intro-feature-title {
+    @apply text-purple-700;
+  }
+
+  .dark .intro-feature-card-link:hover .intro-feature-title {
+    @apply text-purple-400;
   }
 
   /* Intro links section */
@@ -111,5 +178,57 @@
   .dark .intro-link-badge:hover {
     @apply bg-gray-700 border-purple-500 text-purple-500;
     box-shadow: 0 4px 12px -2px rgb(168 85 247 / 0.2);
+  }
+
+  /* =================================================================
+     BEGINNER CTA SECTION
+     Call-to-action section within beginner header for worker recruitment
+     ================================================================= */
+
+  .beginner-cta-section {
+    @apply flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4;
+    @apply mt-6 p-5 rounded-xl;
+    @apply border border-purple-200;
+    background: linear-gradient(
+      135deg,
+      rgb(250 245 255) 0%,
+      rgb(239 246 255) 100%
+    );
+  }
+
+  .dark .beginner-cta-section {
+    @apply border-purple-800;
+    background: linear-gradient(
+      135deg,
+      rgb(88 28 135 / 0.2) 0%,
+      rgb(30 58 138 / 0.2) 100%
+    );
+  }
+
+  .beginner-cta-content {
+    @apply flex items-start gap-4;
+  }
+
+  .beginner-cta-icon {
+    @apply flex items-center justify-center shrink-0;
+    @apply w-12 h-12 rounded-full;
+    @apply text-purple-600 bg-purple-100;
+  }
+
+  /* Size SVG inside CTA icon */
+  .beginner-cta-icon svg {
+    @apply w-8 h-8;
+  }
+
+  .dark .beginner-cta-icon {
+    @apply text-purple-400 bg-purple-900/50;
+  }
+
+  .beginner-cta-text {
+    @apply flex-1 min-w-0;
+  }
+
+  .beginner-cta-actions {
+    @apply flex items-center gap-4 shrink-0;
   }
 }

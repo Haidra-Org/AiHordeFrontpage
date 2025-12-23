@@ -13,6 +13,11 @@
 
 <section class="section-secondary">
   <div class="container-page-content">
+    <!-- Volunteer CTA Banner -->
+    <div class="mb-6">
+      <app-volunteer-cta-banner />
+    </div>
+
     <!-- Tab Navigation -->
     <div class="details-tabs">
       <a
@@ -21,6 +26,13 @@
         routerLinkActive="details-tab-active"
       >
         {{ "details.tabs.workers" | transloco }}
+      </a>
+      <a
+        routerLink="users"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.users" | transloco }}
       </a>
       <a
         routerLink="models"
@@ -42,6 +54,13 @@
         routerLinkActive="details-tab-active"
       >
         {{ "details.tabs.styles" | transloco }}
+      </a>
+      <a
+        routerLink="teams"
+        class="details-tab"
+        routerLinkActive="details-tab-active"
+      >
+        {{ "details.tabs.teams" | transloco }}
       </a>
       <a
         routerLink="leaderboard"

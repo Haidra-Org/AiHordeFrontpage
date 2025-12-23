@@ -182,4 +182,20 @@
     border-radius: 0.5rem;
     overflow: hidden;
   }
+
+  /* =================================================================
+     TABLE CELL CONTENT PATTERNS
+     ================================================================= */
+
+  /* Table cell title - row title with truncation */
+  .table-cell-title {
+    @apply text-base font-semibold mb-1 truncate;
+    @apply text-content-primary;
+    @apply dark:text-white;
+  }
+
+  /* Section header title wrapper - flex container for section title and count */
+  .section-header-title-wrapper {
+    @apply flex items-center gap-2;
+  }
 }

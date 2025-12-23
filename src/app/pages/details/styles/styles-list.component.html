@@ -1,4 +1,12 @@
 <div class="stack-lg">
+  <!-- Style Lookup -->
+  <app-entity-lookup
+    label="details.styles.lookup.label"
+    placeholder="details.styles.lookup.placeholder"
+    hintText="details.styles.lookup.hint"
+    (search)="onStyleSearch($event)"
+  />
+
   <!-- Sub-Tab Navigation -->
   <div class="details-tabs">
     <button
@@ -180,9 +188,12 @@
           <app-style-card
             [style]="style"
             [styleType]="activeTab() === 'image' ? 'image' : 'text'"
+            [highlighted]="isStyleHighlighted(style.id)"
             (navigate)="
               navigateToStyle(style, activeTab() === 'image' ? 'image' : 'text')
             "
+            (clearHighlight)="clearHighlight()"
+            #highlightedStyle
           />
         }
       </div>

@@ -41,6 +41,12 @@
     @apply dark:text-white;
   }
 
+  /* Section heading with bottom margin */
+  .heading-section-spaced {
+    @apply text-3xl font-extrabold tracking-tight text-content-primary mb-4;
+    @apply dark:text-white;
+  }
+
   /* Large section heading (h2) */
   .heading-section-lg {
     @apply mb-4 text-2xl font-extrabold tracking-tight text-content-primary;
@@ -58,5 +64,79 @@
     @apply text-lg font-bold tracking-tight text-content-primary;
     @apply pb-3 border-b border-edge-primary;
     @apply dark:text-white dark:border-gray-700;
+  }
+
+  /* =================================================================
+     ADMIN PAGE HEADINGS
+     Semantic headings for admin/dashboard pages
+     ================================================================= */
+
+  /* Page heading - main title for admin pages */
+  .heading-admin-page {
+    @apply text-2xl font-bold mb-6;
+    color: var(--color-text-primary);
+  }
+  .dark .heading-admin-page {
+    @apply text-white;
+  }
+
+  /* Large heading - hero-style for dashboards */
+  .heading-admin-lg {
+    @apply text-3xl font-bold mb-2;
+    color: var(--color-text-primary);
+  }
+  .dark .heading-admin-lg {
+    @apply text-white;
+  }
+
+  /* Section heading - divides content areas */
+  .heading-admin-section {
+    @apply text-xl font-semibold;
+    color: var(--color-text-primary);
+  }
+  .dark .heading-admin-section {
+    @apply text-white;
+  }
+
+  /* Card/panel heading - titles within cards */
+  .heading-admin-card {
+    @apply text-lg font-semibold;
+    color: var(--color-text-primary);
+  }
+  .dark .heading-admin-card {
+    @apply text-white;
+  }
+
+  /* =================================================================
+     LEGACY ALIASES (prefer heading-admin-* above)
+     TODO: Migrate templates then remove these
+     ================================================================= */
+  .admin-heading-page {
+    @apply text-2xl font-bold mb-6;
+    color: var(--color-text-primary);
+  }
+  .dark .admin-heading-page {
+    @apply text-white;
+  }
+  .admin-heading-lg {
+    @apply text-3xl font-bold mb-2;
+    color: var(--color-text-primary);
+  }
+  .dark .admin-heading-lg {
+    @apply text-white;
+  }
+  .admin-heading-section {
+    @apply text-xl font-semibold;
+    color: var(--color-text-primary);
+  }
+  .dark .admin-heading-section {
+    @apply text-white;
+  }
+  .admin-heading-card {
+    @apply text-lg font-semibold;
+    color: var(--color-text-primary);
+  }
+  .dark .admin-heading-card {
+    @apply text-white;
   }
 }

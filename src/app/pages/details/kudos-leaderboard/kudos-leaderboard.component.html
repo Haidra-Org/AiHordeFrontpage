@@ -67,13 +67,13 @@
 
   <!-- Content -->
   @if (!loading() && !error() && users().length > 0) {
-    <!-- Info Cards Side by Side -->
-    <div class="usage-totals-grid">
+    <!-- Top Cards Row: Appreciation + Find My Rank -->
+    <div class="leaderboard-top-cards">
       <!-- Appreciation Message -->
       <div class="card card-bg-secondary">
         <div class="flex items-start gap-3">
           <svg
-            class="icon-sm text-brand-purple flex-shrink-0 mt-0.5"
+            class="icon-sm text-brand-purple shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -97,161 +97,187 @@
         </div>
       </div>
 
-      <!-- Kudos Explanation -->
-      <div class="card card-bg-primary">
-        <h3 class="heading-card">
-          {{ "details.leaderboard.what_kudos_represent" | transloco }}
-        </h3>
-        <div class="prose-content text-sm">
-          <p>{{ "details.leaderboard.kudos_explanation_1" | transloco }}</p>
-          <p class="mt-2">
-            {{ "details.leaderboard.kudos_explanation_2" | transloco }}
-          </p>
-          <p class="mt-2">
-            <a routerLink="/faq" class="link">
-              {{ "details.leaderboard.learn_more_faq" | transloco }}
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
+      <!-- Find My Rank Section -->
+      <div class="card card-bg-secondary">
+        <div class="stack-sm">
+          <div class="text-center">
+            <h3 class="heading-card">
+              {{ "details.leaderboard.find_my_rank" | transloco }}
+            </h3>
+            <p class="text-secondary text-sm">
+              {{ "details.leaderboard.find_my_rank_description" | transloco }}
+            </p>
+          </div>
 
-    <!-- Find My Rank Section -->
-    <div class="card card-bg-secondary card-full">
-      <div class="stack-sm">
-        <div class="text-center">
-          <h3 class="heading-card">
-            {{ "details.leaderboard.find_my_rank" | transloco }}
-          </h3>
-          <p class="text-secondary text-sm">
-            {{ "details.leaderboard.find_my_rank_description" | transloco }}
-          </p>
-        </div>
-
-        <!-- Rank Result Display -->
-        @if (rankSearched() && userRank() !== null) {
-          <div class="card card-bg-primary">
-            <div class="flex flex-col items-center gap-3">
-              <div class="flex flex-col items-center gap-1">
-                <span class="text-secondary text-sm font-medium">{{
-                  "details.leaderboard.your_rank" | transloco
-                }}</span>
-                <span
-                  class="text-5xl font-bold text-primary"
-                  style="font-variant-numeric: tabular-nums"
-                  >#{{ userRank() | number }}</span
-                >
-              </div>
-
-              @if (showThankYou()) {
-                <div
-                  class="flex items-center gap-2 text-brand-purple text-sm font-medium"
-                >
-                  <svg
-                    class="icon-sm flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                    />
-                  </svg>
-                  <span>{{
-                    "details.leaderboard.thank_you_message" | transloco
+          <!-- Rank Result Display -->
+          @if (rankSearched() && userRank() !== null) {
+            <div class="card card-bg-primary">
+              <div class="flex flex-col items-center gap-3">
+                <div class="flex flex-col items-center gap-1">
+                  <span class="text-secondary text-sm font-medium">{{
+                    "details.leaderboard.your_rank" | transloco
                   }}</span>
+                  <span
+                    class="text-5xl font-bold text-primary"
+                    style="font-variant-numeric: tabular-nums"
+                    >#{{ userRank() | number }}</span
+                  >
                 </div>
-              }
-            </div>
-          </div>
-        }
 
-        <!-- Action Button -->
-        <div class="flex justify-center">
-          <button
-            type="button"
-            class="btn-primary"
-            [class.btn-disabled]="!isLoggedIn()"
-            [disabled]="!isLoggedIn() || searchingRank()"
-            (click)="findMyRank()"
-            [title]="
-              isLoggedIn()
-                ? ''
-                : ('details.leaderboard.login_to_rate' | transloco)
-            "
-          >
-            @if (searchingRank()) {
-              <div class="spinner spinner-sm" aria-hidden="true"></div>
-              {{ "details.leaderboard.searching" | transloco }}
-            } @else if (!isLoggedIn()) {
-              {{ "details.leaderboard.login_to_rate" | transloco }}
-            } @else {
-              {{ "details.leaderboard.find_my_rank_button" | transloco }}
-            }
-          </button>
+                @if (showThankYou()) {
+                  <div
+                    class="flex items-center gap-2 text-brand-purple text-sm font-medium"
+                  >
+                    <svg
+                      class="icon-sm shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
+                      />
+                    </svg>
+                    <span>{{
+                      "details.leaderboard.thank_you_message" | transloco
+                    }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Action Button -->
+          <div class="flex justify-center">
+            <button
+              type="button"
+              class="btn-primary"
+              [class.btn-disabled]="!isLoggedIn()"
+              [disabled]="!isLoggedIn() || searchingRank()"
+              (click)="findMyRank()"
+              [title]="
+                isLoggedIn()
+                  ? ''
+                  : ('details.leaderboard.login_to_rate' | transloco)
+              "
+            >
+              @if (searchingRank()) {
+                <div class="spinner spinner-sm" aria-hidden="true"></div>
+                {{ "details.leaderboard.searching" | transloco }}
+              } @else if (!isLoggedIn()) {
+                {{ "details.leaderboard.login_to_rate" | transloco }}
+              } @else {
+                {{ "details.leaderboard.find_my_rank_button" | transloco }}
+              }
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Leaderboard Table -->
-    <div class="models-table">
-      <div class="models-table-header leaderboard-table-header">
-        <span class="models-table-th">{{
-          "details.leaderboard.rank" | transloco
-        }}</span>
-        <span class="models-table-th">{{
-          "details.leaderboard.username" | transloco
-        }}</span>
-        <span class="models-table-th models-table-th-right">{{
-          "details.leaderboard.kudos" | transloco
-        }}</span>
-      </div>
-      @for (user of users(); track user.id; let i = $index) {
-        <div class="models-table-row leaderboard-table-row">
-          <div class="models-table-cell">
-            <span
-              class="model-rank-badge"
-              [class.rank-1]="i === 0"
-              [class.rank-2]="i === 1"
-              [class.rank-3]="i === 2"
-            >
-              @if (i === 0) {
-                🥇
-              } @else if (i === 1) {
-                🥈
-              } @else if (i === 2) {
-                🥉
-              } @else {
-                {{ i + 1 }}
-              }
-            </span>
-          </div>
-          <div class="models-table-cell-name">
-            <span class="models-table-name" [title]="user.username">
-              {{ user.username }}
-            </span>
-          </div>
-          <div class="models-table-cell">
-            <span class="models-table-label">{{
+    <!-- Main Layout: Leaderboard Table + Kudos Sidebar -->
+    <div class="leaderboard-layout">
+      <!-- Main Content: Leaderboard Table -->
+      <div class="leaderboard-main">
+        <!-- Leaderboard Table -->
+        <div class="models-table">
+          <div class="models-table-header leaderboard-table-header">
+            <span class="models-table-th">{{
+              "details.leaderboard.rank" | transloco
+            }}</span>
+            <span class="models-table-th">{{
+              "details.leaderboard.username" | transloco
+            }}</span>
+            <span class="models-table-th models-table-th-right">{{
               "details.leaderboard.kudos" | transloco
             }}</span>
-            <span class="models-table-value">
-              {{ user.kudos | number }}
-            </span>
+          </div>
+          @for (user of users(); track user.id; let i = $index) {
+            <div class="models-table-row leaderboard-table-row">
+              <div class="models-table-cell">
+                <span
+                  class="model-rank-badge"
+                  [class.rank-1]="i === 0"
+                  [class.rank-2]="i === 1"
+                  [class.rank-3]="i === 2"
+                >
+                  @if (i === 0) {
+                    🥇
+                  } @else if (i === 1) {
+                    🥈
+                  } @else if (i === 2) {
+                    🥉
+                  } @else {
+                    {{ i + 1 }}
+                  }
+                </span>
+              </div>
+              <div class="models-table-cell-name">
+                <a
+                  [routerLink]="['/details/users', user.id]"
+                  class="models-table-name link"
+                  [title]="user.username"
+                >
+                  {{ user.username }}
+                </a>
+              </div>
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.leaderboard.kudos" | transloco
+                }}</span>
+                <span class="models-table-value">
+                  {{ user.kudos | number }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Footer Note -->
+        <div class="card card-bg-secondary">
+          <p class="text-secondary text-sm text-center">
+            {{ "details.leaderboard.footer_note" | transloco }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Sidebar: Kudos Explanation -->
+      <aside class="leaderboard-sidebar">
+        <div class="card card-bg-primary">
+          <h3 class="heading-card">
+            {{ "details.leaderboard.what_kudos_represent" | transloco }}
+          </h3>
+          <div class="prose-content text-sm">
+            <p>{{ "details.leaderboard.kudos_explanation_1" | transloco }}</p>
+            <p
+              class="kudos-explanation-more mt-2"
+              [class.is-expanded]="kudosExplanationExpanded()"
+            >
+              {{ "details.leaderboard.kudos_explanation_2" | transloco }}
+            </p>
+            <button
+              type="button"
+              class="kudos-read-more-btn"
+              (click)="toggleKudosExplanation()"
+            >
+              @if (kudosExplanationExpanded()) {
+                {{ "details.leaderboard.read_less" | transloco }}
+              } @else {
+                {{ "details.leaderboard.read_more" | transloco }}
+              }
+            </button>
+            <p class="mt-2">
+              <a routerLink="/faq" fragment="kudos" class="link">
+                {{ "details.leaderboard.learn_more_faq" | transloco }}
+              </a>
+            </p>
           </div>
         </div>
-      }
-    </div>
-
-    <!-- Footer Note -->
-    <div class="card card-bg-secondary">
-      <p class="text-secondary text-sm text-center">
-        {{ "details.leaderboard.footer_note" | transloco }}
-      </p>
+      </aside>
     </div>
   }
 

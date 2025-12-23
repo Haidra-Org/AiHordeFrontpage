@@ -29,6 +29,9 @@ export class StyleCardComponent {
   /** The type of style (image or text). */
   public readonly styleType = input.required<StyleType>();
 
+  /** Whether this card is highlighted. */
+  public readonly highlighted = input<boolean>(false);
+
   /** Whether to show edit/delete actions (for owner). */
   public readonly showActions = input<boolean>(false);
 
@@ -40,6 +43,9 @@ export class StyleCardComponent {
 
   /** Emits when the card is clicked for navigation. */
   public readonly navigate = output<void>();
+
+  /** Emits when highlight should be cleared. */
+  public readonly clearHighlight = output<void>();
 
   /** Check if this is an image style. */
   public readonly isImage = computed(() => this.styleType() === 'image');
@@ -101,5 +107,11 @@ export class StyleCardComponent {
 
   public onCardClick(): void {
     this.navigate.emit();
+  }
+
+  public onClearHighlight(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.clearHighlight.emit();
   }
 }
