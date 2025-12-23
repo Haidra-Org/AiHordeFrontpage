@@ -242,6 +242,32 @@
     @apply invisible;
   }
 
+  /* Unsaved changes warning banner (admin panels) */
+  .unsaved-changes-warning {
+    @apply flex items-center gap-3 py-3 px-6 text-sm font-medium;
+    background-color: rgb(254 243 199);
+    border-bottom: 1px solid rgb(234 179 8 / 0.5);
+    color: rgb(146 64 14);
+  }
+
+  .dark .unsaved-changes-warning {
+    background-color: rgb(113 63 18 / 0.4);
+    border-bottom-color: rgb(234 179 8 / 0.3);
+    @apply text-yellow-300;
+  }
+
+  .unsaved-changes-warning svg {
+    @apply text-amber-600 shrink-0;
+  }
+
+  .dark .unsaved-changes-warning svg {
+    @apply text-yellow-400;
+  }
+
+  .unsaved-changes-warning-hidden {
+    @apply hidden;
+  }
+
   /* =================================================================
      BORDER DIVIDERS (replaces inline border-t patterns)
      ================================================================= */
