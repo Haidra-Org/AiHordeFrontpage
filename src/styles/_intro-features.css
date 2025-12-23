@@ -23,15 +23,22 @@
     @apply relative rounded-xl overflow-hidden;
     @apply border border-gray-200;
     @apply transition-all duration-250;
-    /* Mobile: horizontal layout with icon on left */
-    @apply flex flex-row items-center gap-3 p-3;
-    /* sm+: vertical layout */
-    @apply sm:flex-col sm:items-start sm:gap-0 sm:p-5;
+    /* Mobile: column layout with compact padding */
+    @apply flex flex-col gap-1 p-3;
+    /* sm+: larger padding */
+    @apply sm:p-5 sm:gap-0;
     background: linear-gradient(
       135deg,
       rgb(249 250 251) 0%,
       rgb(255 255 255) 100%
     );
+  }
+
+  /* Intro feature header (icon + title row) */
+  .intro-feature-header {
+    @apply flex items-center gap-2;
+    /* sm+: stack vertically */
+    @apply sm:flex-col sm:items-start sm:gap-0;
   }
 
   .intro-feature-card::before {
@@ -75,9 +82,9 @@
   /* Intro feature icon */
   .intro-feature-icon {
     @apply inline-flex items-center justify-center shrink-0;
-    @apply rounded-lg text-white text-xl font-semibold;
+    @apply rounded-lg text-white font-semibold;
     /* Mobile: smaller icon */
-    @apply w-9 h-9 text-lg;
+    @apply w-7 h-7 text-base;
     /* sm+: larger icon with bottom margin */
     @apply sm:w-10 sm:h-10 sm:text-xl sm:mb-3;
     background: linear-gradient(
@@ -95,17 +102,12 @@
     );
   }
 
-  /* Intro feature content wrapper (groups title + text on mobile) */
-  .intro-feature-content {
-    @apply flex-1 min-w-0;
-  }
-
   /* Intro feature title */
   .intro-feature-title {
     @apply font-semibold text-gray-900;
     @apply dark:text-gray-100;
-    /* Mobile: smaller title, tighter spacing */
-    @apply text-sm mb-0.5;
+    /* Mobile: smaller title, no bottom margin (inline with icon) */
+    @apply text-sm;
     /* sm+: restore original sizing */
     @apply sm:text-base sm:mb-2;
   }

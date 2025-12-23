@@ -36,7 +36,7 @@
                 [value]="modelSearch()"
                 (input)="onModelSearchChange($event)"
                 [placeholder]="'admin.workers.dialog.search_models' | transloco"
-                class="form-input"
+                class="form-input w-full"
               />
             </div>
             <div class="worker-modal-scroll">
@@ -63,7 +63,7 @@
               {{ "admin.common.none" | transloco }}
             </p>
           }
-          <div class="flex justify-end mt-6">
+          <div class="modal-actions">
             <button (click)="closeDialog()" class="worker-btn-models">
               {{ "admin.workers.dialog.close" | transloco }}
             </button>
@@ -84,19 +84,19 @@
             }
           </h3>
           @if (!worker().maintenance_mode) {
-            <div class="mb-4">
-              <label class="text-sm text-secondary mb-2 block">
+            <div class="form-field mb-4">
+              <label class="form-label">
                 {{ "admin.workers.dialog.maintenance_reason" | transloco }}
               </label>
               <textarea
                 [value]="maintenanceReason()"
                 (input)="onMaintenanceReasonChange($event)"
                 rows="3"
-                class="form-input"
+                class="form-input w-full"
               ></textarea>
             </div>
           }
-          <div class="flex justify-end gap-3">
+          <div class="modal-actions">
             <button (click)="closeDialog()" class="worker-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
@@ -123,7 +123,7 @@
               }}
             }
           </h3>
-          <div class="flex justify-end gap-3">
+          <div class="modal-actions">
             <button (click)="closeDialog()" class="worker-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
@@ -144,36 +144,30 @@
             }}
           </h3>
           <div class="mb-4 space-y-3">
-            <div
-              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-            >
-              <p class="text-sm text-red-800 dark:text-red-200 font-medium">
+            <div class="alert alert--danger">
+              <span class="alert-content font-medium">
                 {{
                   "admin.workers.dialog.delete_warning_permanent" | transloco
                 }}
-              </p>
+              </span>
             </div>
-            <div
-              class="p-3 rounded-lg bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700"
-            >
-              <p class="text-sm text-amber-800 dark:text-amber-200">
+            <div class="alert alert--warning">
+              <span class="alert-content">
                 {{
                   "admin.workers.dialog.delete_warning_offline_requirement"
                     | transloco
                 }}
-              </p>
+              </span>
             </div>
             @if (deleteError()) {
-              <div
-                class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-              >
-                <p class="text-sm text-red-800 dark:text-red-200">
+              <div class="alert alert--danger">
+                <span class="alert-content">
                   {{ "admin.workers.dialog.delete_error" | transloco }}
-                </p>
+                </span>
               </div>
             }
           </div>
-          <div class="flex justify-end gap-3">
+          <div class="modal-actions">
             <button (click)="closeDialog()" class="worker-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
@@ -193,7 +187,7 @@
                 | transloco: { name: worker().name }
             }}
           </h3>
-          <div class="mb-4">
+          <div class="form-field mb-4">
             <label for="team-select" class="form-label">
               {{ "admin.workers.dialog.team_select" | transloco }}
             </label>
@@ -201,7 +195,7 @@
               id="team-select"
               [value]="selectedTeamId()"
               (change)="onTeamSelectChange($event)"
-              class="form-input"
+              class="form-input w-full"
             >
               <option value="">
                 {{ "admin.workers.dialog.no_team" | transloco }}
@@ -210,11 +204,11 @@
                 <option [value]="team.id">{{ team.name }}</option>
               }
             </select>
-            <p class="text-xs text-secondary mt-2">
+            <p class="form-hint">
               {{ "admin.workers.dialog.team_hint" | transloco }}
             </p>
           </div>
-          <div class="flex justify-end gap-3">
+          <div class="modal-actions">
             <button (click)="closeDialog()" class="worker-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>

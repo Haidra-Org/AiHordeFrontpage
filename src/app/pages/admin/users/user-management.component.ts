@@ -142,15 +142,15 @@ export class UserManagementComponent implements OnInit {
   // Computed signals for tracking individual field changes
   public trustedChanged = computed(() => {
     const user = this.selectedUser();
-    return user ? this.trustedValue() !== user.trusted : false;
+    return user ? this.trustedValue() !== (user.trusted ?? false) : false;
   });
   public flaggedChanged = computed(() => {
     const user = this.selectedUser();
-    return user ? this.flaggedValue() !== user.flagged : false;
+    return user ? this.flaggedValue() !== (user.flagged ?? false) : false;
   });
   public moderatorChanged = computed(() => {
     const user = this.selectedUser();
-    return user ? this.moderatorValue() !== user.moderator : false;
+    return user ? this.moderatorValue() !== (user.moderator ?? false) : false;
   });
   public publicWorkersChanged = computed(() => {
     const user = this.selectedUser();
@@ -184,7 +184,7 @@ export class UserManagementComponent implements OnInit {
   });
   public workerInvitesChanged = computed(() => {
     const user = this.selectedUser();
-    return user ? this.workerInvitesValue() !== user.worker_invited : false;
+    return user ? this.workerInvitesValue() !== (user.worker_invited ?? 0) : false;
   });
   public usageMultiplierChanged = computed(() => {
     const user = this.selectedUser();
@@ -318,9 +318,9 @@ export class UserManagementComponent implements OnInit {
 
   private setSelectedUser(user: AdminUserDetails): void {
     this.selectedUser.set(user);
-    this.trustedValue.set(user.trusted);
-    this.flaggedValue.set(user.flagged);
-    this.workerInvitesValue.set(user.worker_invited);
+    this.trustedValue.set(user.trusted ?? false);
+    this.flaggedValue.set(user.flagged ?? false);
+    this.workerInvitesValue.set(user.worker_invited ?? 0);
     this.moderatorValue.set(user.moderator ?? false);
     this.publicWorkersValue.set(user.public_workers ?? false);
     this.customizerValue.set(user.customizer ?? false);
@@ -397,9 +397,9 @@ export class UserManagementComponent implements OnInit {
     if (!user) return;
 
     this.isDirty.set(
-      this.trustedValue() !== user.trusted ||
-        this.flaggedValue() !== user.flagged ||
-        this.moderatorValue() !== user.moderator ||
+      this.trustedValue() !== (user.trusted ?? false) ||
+        this.flaggedValue() !== (user.flagged ?? false) ||
+        this.moderatorValue() !== (user.moderator ?? false) ||
         this.publicWorkersValue() !== (user.public_workers ?? false) ||
         this.customizerValue() !== (user.customizer ?? false) ||
         this.serviceValue() !== (user.service ?? false) ||
@@ -407,7 +407,7 @@ export class UserManagementComponent implements OnInit {
         this.specialValue() !== (user.special ?? false) ||
         this.filteredValue() !== (user.filtered ?? false) ||
         this.vpnValue() !== (user.vpn ?? false) ||
-        this.workerInvitesValue() !== user.worker_invited ||
+        this.workerInvitesValue() !== (user.worker_invited ?? 0) ||
         this.usageMultiplierValue() !== (user.usage_multiplier ?? 1) ||
         this.concurrencyValue() !== (user.concurrency ?? 0) ||
         this.monthlyKudosValue() !== (user.monthly_kudos?.amount ?? 0) ||
