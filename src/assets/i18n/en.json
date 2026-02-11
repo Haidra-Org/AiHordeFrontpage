@@ -843,6 +843,17 @@
   "admin.operations.dialog.block_worker_confirm": "Are you sure you want to block this worker's IP address? This will prevent the worker from connecting to the horde.",
   "admin.operations.dialog.unblock_worker_title": "Unblock Worker IP",
   "admin.operations.dialog.unblock_worker_confirm": "Are you sure you want to remove the IP block for this worker?",
+  "admin.operations.dialog.batch_refresh_title": "Batch Refresh IP Timeouts",
+  "admin.operations.dialog.batch_refresh_confirm": "This will refresh the timeout duration for all selected IP addresses.",
+
+  "admin.operations.batch.select_all": "Select all",
+  "admin.operations.batch.selected_singular": "selected",
+  "admin.operations.batch.selected_plural": "selected",
+  "admin.operations.batch.edit_button": "Batch Refresh",
+  "admin.operations.batch.clear_selection": "Clear",
+  "admin.operations.batch.ips_selected": "IPs Selected",
+  "admin.operations.batch.ips_list": "Selected IPs",
+  "admin.operations.batch.and_more": "and {{count}} more...",
 
   "nav.active_details.styles": "Styles",
   "nav.active_details.leaderboard": "Kudos Leaderboard",

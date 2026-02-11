@@ -32,7 +32,7 @@
 <!-- Raw JSON Modal - Deferred since it's only shown on demand -->
 @defer (when rawJsonModalOpen()) {
   @if (rawJsonModalOpen()) {
-    <div class="modal">
+    <div class="modal-overlay">
       <div class="modal-backdrop" (click)="closeRawJsonModal()"></div>
       <div
         class="dialog-panel json-dialog"

@@ -347,6 +347,8 @@
   /* Worker card link style */
   .worker-link {
     @apply no-underline transition-colors duration-200;
+    @apply text-blue-600;
+    @apply dark:text-blue-400;
   }
 
   .worker-link:hover {

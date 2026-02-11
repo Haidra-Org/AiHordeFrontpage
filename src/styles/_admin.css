@@ -1144,7 +1144,8 @@
   }
 
   .data-table-mono-primary {
-    @apply bg-blue-900 text-gray-200;
+    @apply bg-gray-300;
+    @apply dark:bg-blue-900 dark:text-white;
   }
 
   .data-table-mono-accent {

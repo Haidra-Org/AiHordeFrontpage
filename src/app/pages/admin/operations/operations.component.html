@@ -36,6 +36,32 @@
           }}"
         />
       </div>
+      @if (selectedCount() > 0) {
+        <div class="flex items-center gap-3">
+          <span class="admin-text-muted text-sm">
+            {{ selectedCount() }}
+            {{
+              selectedCount() === 1
+                ? ("admin.operations.batch.selected_singular" | transloco)
+                : ("admin.operations.batch.selected_plural" | transloco)
+            }}
+          </span>
+          <button
+            (click)="openBatchRefreshDialog()"
+            class="btn-primary btn-sm"
+            type="button"
+          >
+            {{ "admin.operations.batch.edit_button" | transloco }}
+          </button>
+          <button
+            (click)="clearSelection()"
+            class="btn-muted btn-sm"
+            type="button"
+          >
+            {{ "admin.operations.batch.clear_selection" | transloco }}
+          </button>
+        </div>
+      }
     </div>
 
     <!-- Loading state -->
@@ -91,6 +117,18 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th class="w-10">
+                  <input
+                    type="checkbox"
+                    class="checkbox-input"
+                    [checked]="allSelected()"
+                    [indeterminate]="someSelected()"
+                    (change)="toggleSelectAll()"
+                    title="{{
+                      'admin.operations.batch.select_all' | transloco
+                    }}"
+                  />
+                </th>
                 <th>
                   {{ "admin.operations.ip_timeouts.table.ip" | transloco }}
                 </th>
@@ -107,6 +145,14 @@
             <tbody>
               @for (timeout of filteredTimeouts(); track timeout.ipaddr) {
                 <tr>
+                  <td>
+                    <input
+                      type="checkbox"
+                      class="checkbox-input"
+                      [checked]="isIPSelected(timeout.ipaddr)"
+                      (change)="toggleSelectIP(timeout.ipaddr)"
+                    />
+                  </td>
                   <td>
                     <code class="data-table-mono data-table-mono-primary">{{
                       timeout.ipaddr
@@ -813,6 +859,79 @@
       </div>
     </div>
   }
+</app-admin-dialog>
+
+<!-- Batch Refresh IP Timeout Dialog -->
+<app-admin-dialog
+  [open]="dialogOpen() && dialogType() === 'batchRefreshIP'"
+  [title]="'admin.operations.dialog.batch_refresh_title' | transloco"
+  [confirmLabel]="'admin.operations.dialog.refresh' | transloco"
+  [cancelLabel]="'admin.operations.dialog.cancel' | transloco"
+  [loading]="isDialogLoading()"
+  [loadingLabel]="batchRefreshProgress().completed + '/' + batchRefreshProgress().total"
+  (confirm)="confirmDialog()"
+  (cancel)="closeDialog()"
+>
+  <p class="admin-text-muted mb-4">
+    {{ "admin.operations.dialog.batch_refresh_confirm" | transloco }}
+  </p>
+
+  <!-- Selected IPs summary -->
+  <div class="panel p-4 mb-4">
+    <div class="stack-sm">
+      <div class="admin-info-item">
+        <span class="admin-info-label"
+          >{{ "admin.operations.batch.ips_selected" | transloco }}:</span
+        >
+        <span class="badge-base badge-info">{{ selectedCount() }}</span>
+      </div>
+      @if (selectedCount() <= 5) {
+        <div class="admin-info-item admin-info-item-full">
+          <span class="admin-info-label"
+            >{{ "admin.operations.batch.ips_list" | transloco }}:</span
+          >
+          <div class="flex flex-wrap gap-1 mt-1">
+            @for (ip of selectedIPsList(); track ip.ipaddr) {
+              <code class="data-table-mono data-table-mono-primary text-xs">{{ ip.ipaddr }}</code>
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="admin-info-item admin-info-item-full">
+          <span class="admin-info-label"
+            >{{ "admin.operations.batch.ips_list" | transloco }}:</span
+          >
+          <div class="flex flex-wrap gap-1 mt-1">
+            @for (ip of selectedIPsList().slice(0, 3); track ip.ipaddr) {
+              <code class="data-table-mono data-table-mono-primary text-xs">{{ ip.ipaddr }}</code>
+            }
+            <span class="admin-text-muted text-xs"
+              >{{ "admin.operations.batch.and_more" | transloco: { count: selectedCount() - 3 } }}</span
+            >
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Duration selector -->
+  <div class="form-group">
+    <label for="batch-refresh-hours" class="form-label">
+      {{ "admin.operations.dialog.refresh_duration" | transloco }}
+    </label>
+    <select
+      id="batch-refresh-hours"
+      class="form-select"
+      [value]="batchRefreshHours()"
+      (change)="onBatchRefreshHoursChange($event)"
+    >
+      @for (hours of hourOptions; track hours) {
+        <option [value]="hours">
+          {{ hours }} {{ hours === 1 ? "hour" : "hours" }}
+        </option>
+      }
+    </select>
+  </div>
 </app-admin-dialog>
 
 <!-- Toast Notifications -->

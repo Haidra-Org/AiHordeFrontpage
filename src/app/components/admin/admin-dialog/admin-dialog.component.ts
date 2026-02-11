@@ -22,7 +22,7 @@ import { isPlatformBrowser } from '@angular/common';
   imports: [],
   template: `
     @if (open()) {
-      <div class="modal">
+      <div class="modal-overlay">
         <div
           class="modal-backdrop"
           (click)="onBackdropClick()"
