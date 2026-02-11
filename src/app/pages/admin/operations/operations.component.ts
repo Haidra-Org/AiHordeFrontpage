@@ -24,7 +24,7 @@ import {
 } from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
 
-type DialogType = 'deleteIP' | 'blockWorker' | 'unblockWorker' | 'refreshIP';
+type DialogType = 'deleteIP' | 'blockWorker' | 'unblockWorker' | 'refreshIP' | 'batchRefreshIP';
 
 @Component({
   selector: 'app-operations',
@@ -51,9 +51,15 @@ export class OperationsComponent implements OnInit {
   public loadingTimeouts = signal<boolean>(false);
   public searchQuery = signal<string>('');
 
+  // Batch selection state
+  public selectedIPs = signal<Set<string>>(new Set());
+  public batchRefreshHours = signal<number>(720);
+  public batchRefreshing = signal<boolean>(false);
+  public batchRefreshProgress = signal<{ completed: number; total: number }>({ completed: 0, total: 0 });
+
   // Add IP Timeout form state
   public addIPAddress = signal<string>('');
-  public addIPHours = signal<number>(24);
+  public addIPHours = signal<number>(720);
   public addingIP = signal<boolean>(false);
   public addIPWarning = computed(() => {
     const ip = this.addIPAddress().trim();
@@ -93,7 +99,7 @@ export class OperationsComponent implements OnInit {
   public dialogType = signal<DialogType>('deleteIP');
   public selectedIPForDelete = signal<IPTimeout | null>(null);
   public selectedIPForRefresh = signal<IPTimeout | null>(null);
-  public refreshIPHours = signal<number>(24);
+  public refreshIPHours = signal<number>(720);
   public selectedWorkerForUnblock = signal<HordeWorker | null>(null);
   public isDialogLoading = signal<boolean>(false);
 
@@ -126,6 +132,24 @@ export class OperationsComponent implements OnInit {
           w.id.toLowerCase().includes(query),
       )
       .slice(0, 50);
+  });
+
+  // Computed: selection state for batch operations
+  public selectedCount = computed(() => this.selectedIPs().size);
+  public allSelected = computed(() => {
+    const filtered = this.filteredTimeouts();
+    if (filtered.length === 0) return false;
+    const selected = this.selectedIPs();
+    return filtered.every((t) => selected.has(t.ipaddr));
+  });
+  public someSelected = computed(() => {
+    const selected = this.selectedIPs();
+    const filtered = this.filteredTimeouts();
+    return filtered.some((t) => selected.has(t.ipaddr)) && !this.allSelected();
+  });
+  public selectedIPsList = computed(() => {
+    const selected = this.selectedIPs();
+    return this.ipTimeouts().filter((t) => selected.has(t.ipaddr));
   });
 
   ngOnInit(): void {
@@ -188,7 +212,7 @@ export class OperationsComponent implements OnInit {
 
   public openRefreshIPDialog(timeout: IPTimeout): void {
     this.selectedIPForRefresh.set(timeout);
-    this.refreshIPHours.set(24);
+    this.refreshIPHours.set(720);
     this.dialogType.set('refreshIP');
     this.dialogOpen.set(true);
   }
@@ -196,6 +220,61 @@ export class OperationsComponent implements OnInit {
   public onRefreshIPHoursChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     this.refreshIPHours.set(parseInt(target.value, 10));
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BATCH SELECTION
+  // ─────────────────────────────────────────────────────────────────────────
+
+  public toggleSelectIP(ipaddr: string): void {
+    this.selectedIPs.update((current) => {
+      const newSet = new Set(current);
+      if (newSet.has(ipaddr)) {
+        newSet.delete(ipaddr);
+      } else {
+        newSet.add(ipaddr);
+      }
+      return newSet;
+    });
+  }
+
+  public toggleSelectAll(): void {
+    const filtered = this.filteredTimeouts();
+    if (this.allSelected()) {
+      // Deselect all filtered
+      this.selectedIPs.update((current) => {
+        const newSet = new Set(current);
+        filtered.forEach((t) => newSet.delete(t.ipaddr));
+        return newSet;
+      });
+    } else {
+      // Select all filtered
+      this.selectedIPs.update((current) => {
+        const newSet = new Set(current);
+        filtered.forEach((t) => newSet.add(t.ipaddr));
+        return newSet;
+      });
+    }
+  }
+
+  public clearSelection(): void {
+    this.selectedIPs.set(new Set());
+  }
+
+  public isIPSelected(ipaddr: string): boolean {
+    return this.selectedIPs().has(ipaddr);
+  }
+
+  public openBatchRefreshDialog(): void {
+    if (this.selectedCount() === 0) return;
+    this.batchRefreshHours.set(720);
+    this.dialogType.set('batchRefreshIP');
+    this.dialogOpen.set(true);
+  }
+
+  public onBatchRefreshHoursChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.batchRefreshHours.set(parseInt(target.value, 10));
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -438,6 +517,8 @@ export class OperationsComponent implements OnInit {
       this.confirmDeleteIP();
     } else if (type === 'refreshIP') {
       this.confirmRefreshIP();
+    } else if (type === 'batchRefreshIP') {
+      this.confirmBatchRefreshIP();
     } else if (type === 'blockWorker') {
       this.confirmBlockWorker();
     } else if (type === 'unblockWorker') {
@@ -497,6 +578,64 @@ export class OperationsComponent implements OnInit {
           this.showToast('error', 'Failed to refresh IP timeout.');
         },
       });
+  }
+
+  private confirmBatchRefreshIP(): void {
+    const selected = this.selectedIPsList();
+    if (selected.length === 0) return;
+
+    this.isDialogLoading.set(true);
+    this.batchRefreshing.set(true);
+    this.batchRefreshProgress.set({ completed: 0, total: selected.length });
+
+    const hours = this.batchRefreshHours();
+    let completed = 0;
+    let successCount = 0;
+    let failCount = 0;
+
+    // Process each IP sequentially to avoid overwhelming the API
+    const processNext = (index: number): void => {
+      if (index >= selected.length) {
+        // All done
+        this.isDialogLoading.set(false);
+        this.batchRefreshing.set(false);
+        this.closeDialog();
+        this.clearSelection();
+        this.loadIPTimeouts();
+
+        if (failCount === 0) {
+          this.showToast('success', `Successfully refreshed ${successCount} IP timeout(s).`);
+        } else {
+          this.showToast('warning', `Refreshed ${successCount} IP(s), ${failCount} failed.`);
+        }
+        return;
+      }
+
+      const ip = selected[index];
+      this.operationsService
+        .addIPTimeout({ ipaddr: ip.ipaddr, hours })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (result) => {
+            completed++;
+            if (result) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+            this.batchRefreshProgress.set({ completed, total: selected.length });
+            processNext(index + 1);
+          },
+          error: () => {
+            completed++;
+            failCount++;
+            this.batchRefreshProgress.set({ completed, total: selected.length });
+            processNext(index + 1);
+          },
+        });
+    };
+
+    processNext(0);
   }
 
   private confirmBlockWorker(): void {

@@ -438,7 +438,7 @@
 
 <!-- Create/Edit Dialog -->
 @if (dialogOpen() && (dialogType() === "create" || dialogType() === "edit")) {
-  <div class="modal">
+  <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel">
       <h2 class="admin-heading-section mb-6">
@@ -551,7 +551,7 @@
 
 <!-- Delete Confirmation Dialog -->
 @if (dialogOpen() && dialogType() === "delete") {
-  <div class="modal">
+  <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel">
       <h2 class="admin-heading-section mb-4">
@@ -608,7 +608,7 @@
 
 <!-- Raw JSON Dialog -->
 @if (dialogOpen() && dialogType() === "rawJson") {
-  <div class="modal">
+  <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel worker-modal-panel-large">
       <div class="flex justify-between items-center mb-4">

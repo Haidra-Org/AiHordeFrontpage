@@ -194,16 +194,16 @@
   }
 
   /* Icon button with danger hover */
-  .btn-icon--danger {
+  .btn-icon-danger {
     color: var(--color-content-secondary);
   }
 
-  .btn-icon--danger:hover {
+  .btn-icon-danger:hover {
     @apply text-red-600;
     background-color: rgb(254 226 226);
   }
 
-  .dark .btn-icon--danger:hover {
+  .dark .btn-icon-danger:hover {
     @apply text-red-400;
     background-color: rgb(127 29 29 / 0.3);
   }

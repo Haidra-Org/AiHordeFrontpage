@@ -165,8 +165,15 @@
      TOAST NOTIFICATIONS
      ================================================================= */
 
+  /* Toast container - fixed positioned wrapper for toast stack */
+  .toast-container {
+    @apply fixed top-4 right-4 z-50 flex flex-col gap-2;
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Individual toast - relative within container */
   .toast {
-    @apply fixed top-4 right-4 z-50 flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
+    @apply flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
     animation: toast-slide-in 300ms ease;
   }
 
@@ -181,19 +188,19 @@
     }
   }
 
-  .toast--success {
+  .toast-success {
     @apply bg-green-600 text-white;
   }
 
-  .toast--error {
+  .toast-error {
     @apply bg-red-600 text-white;
   }
 
-  .toast--warning {
+  .toast-warning {
     @apply bg-amber-500 text-white;
   }
 
-  .toast--info {
+  .toast-info {
     @apply bg-blue-600 text-white;
   }
 
@@ -201,8 +208,12 @@
     @apply w-5 h-5 shrink-0;
   }
 
+  .toast-message {
+    @apply flex-1 text-sm font-medium;
+  }
+
   .toast-close {
-    @apply ml-2 p-1 rounded hover:bg-white/20 transition-colors;
+    @apply ml-auto p-1 rounded text-xs font-medium hover:bg-white/20 transition-colors;
   }
 
   /* =================================================================
