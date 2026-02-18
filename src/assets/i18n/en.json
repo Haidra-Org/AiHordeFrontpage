@@ -699,6 +699,8 @@
   "admin.common.no": "No",
   "admin.common.true": "True",
   "admin.common.false": "False",
+  "admin.common.enabled": "Enabled",
+  "admin.common.disabled": "Disabled",
   "admin.common.none": "None",
   "admin.common.error": "An error occurred. Please try again.",
   "admin.common.access_denied": "Access Denied",
