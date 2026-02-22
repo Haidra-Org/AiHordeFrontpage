@@ -78,11 +78,14 @@
     text-align: left;
     border-radius: var(--tooltip-border-radius);
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    font-size: var(--text-xs, 0.75rem);
+    font-size: 0.8125rem;
+    font-weight: 600;
     line-height: 1.625;
     white-space: normal;
     border: 1px solid var(--color-edge-primary);
     box-shadow: var(--shadow-lg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
     /* Animation */
     transition:
@@ -266,6 +269,73 @@
   }
 
   /* =================================================================
+     DARK MODE OVERRIDES
+     ================================================================= */
+
+  /* Base tooltip dark mode */
+  .dark .tooltip-content,
+  .dark .tooltip-text {
+    background-color: var(--color-gray-700);
+    color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
+    box-shadow:
+      0 10px 25px -5px rgb(0 0 0 / 0.4),
+      0 4px 6px -2px rgb(0 0 0 / 0.3);
+  }
+
+  .dark .tooltip-content::after,
+  .dark .tooltip-text::after {
+    border-color: var(--color-gray-700) transparent transparent transparent;
+  }
+
+  .dark .tooltip-pos-bottom .tooltip-content::after,
+  .dark .tooltip-pos-bottom .tooltip-text::after {
+    border-color: transparent transparent var(--color-gray-700) transparent;
+  }
+
+  /* Fixed tooltip dark mode */
+  .dark .tooltip-fixed-mode .tooltip-text-fixed {
+    background-color: var(--color-gray-700);
+    color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
+    box-shadow:
+      0 10px 25px -5px rgb(0 0 0 / 0.4),
+      0 4px 6px -2px rgb(0 0 0 / 0.3);
+  }
+
+  .dark .tooltip-text-fixed[popover] {
+    background-color: var(--color-gray-700);
+    color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
+  }
+
+  /* Fixed tooltip arrow dark mode */
+  .dark .tooltip-fixed-mode .tooltip-text-fixed::after {
+    border-color: var(--color-gray-700) transparent transparent transparent;
+  }
+
+  .dark .tooltip-fixed-mode.tooltip-pos-bottom .tooltip-text-fixed::after {
+    border-color: transparent transparent var(--color-gray-700) transparent;
+  }
+
+  /* Text utilities dark mode */
+  .dark .tooltip-highlight {
+    color: var(--color-blue-400);
+  }
+
+  .dark .tooltip-code {
+    color: var(--color-purple-400);
+  }
+
+  .dark .tooltip-muted {
+    color: var(--color-gray-400);
+  }
+
+  .dark .tooltip-math {
+    color: var(--color-purple-400);
+  }
+
+  /* =================================================================
      FIXED POSITIONING MODE
      
      Used when tooltips need to escape parent overflow boundaries.
@@ -287,14 +357,28 @@
     text-align: left;
     border-radius: var(--tooltip-border-radius);
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    font-size: var(--text-xs, 0.75rem);
+    font-size: 0.8125rem;
+    font-weight: 400;
     line-height: 1.625;
     white-space: normal;
     border: 1px solid var(--color-edge-primary);
     box-shadow: var(--shadow-lg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 
     /* Animation handled by inline styles for visibility/opacity */
     transition: opacity var(--tooltip-transition-duration) ease-out;
+  }
+
+  /* Reset browser Popover API UA styles that conflict with tooltip appearance */
+  .tooltip-text-fixed[popover] {
+    inset: auto;
+    margin: 0;
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    border: 1px solid var(--color-edge-primary);
+    overflow: visible;
   }
 
   /* Arrow styling for fixed tooltips - default: above (arrow points down) */

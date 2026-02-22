@@ -192,7 +192,7 @@
      ================================================================= */
 
   .tools-layout {
-    @apply flex gap-8;
+    @apply flex gap-8 isolate;
   }
 
   /* Table of Contents Sidebar */

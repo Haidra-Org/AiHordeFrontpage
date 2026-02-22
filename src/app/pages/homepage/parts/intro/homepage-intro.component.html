@@ -5,25 +5,29 @@
         {{ "app_title" | transloco }}
       </h1>
 
-      <!-- Lead paragraph with key message -->
       <p class="text-intro-lead">
-        A crowdsourced distributed cluster of
+        {{ "homepage.intro.tagline" | transloco }}
+      </p>
+
+      <p class="hero-description underline-links">
+        {{ "homepage.intro.powered_by_prefix" | transloco }}
         <a
           href="https://github.com/Haidra-Org/horde-worker-reGen"
           target="_blank"
+          rel="noreferrer noopener"
           >{{ "service_description.imageWorkerLink" | transloco }}</a
         >
-        and
+        {{ "homepage.intro.powered_by_and" | transloco }}
         <a
           href="https://github.com/Haidra-Org/AI-Horde-Worker"
           target="_blank"
+          rel="noreferrer noopener"
           >{{ "service_description.textWorkerLink" | transloco }}</a
-        >
-        for generating AI media.
+        >.
       </p>
 
       <!-- Feature cards grid -->
-      <div class="intro-features max-w-2xl">
+      <div class="intro-features">
         <a
           routerLink="/guis"
           class="intro-feature-card intro-feature-card-link"
@@ -72,6 +76,7 @@
         <a
           href="https://aihorde.net/api"
           target="_blank"
+          rel="noreferrer noopener"
           class="intro-feature-card intro-feature-card-link"
         >
           <div class="intro-feature-header">
@@ -88,6 +93,14 @@
 
       <!-- Links section -->
       <div class="intro-links">
+        <a [routerLink]="[]" fragment="quickstart" class="intro-link-badge">
+          <span>🧭</span>
+          <span>{{ "homepage.intro.jump_quickstart" | transloco }}</span>
+        </a>
+        <a [routerLink]="[]" fragment="stats" class="intro-link-badge">
+          <span>📈</span>
+          <span>{{ "homepage.intro.jump_stats" | transloco }}</span>
+        </a>
         <a [href]="faqLink" class="intro-link-badge">
           <span>📚</span>
           <span>{{ "more_information.faqLink" | transloco }}</span>
@@ -103,12 +116,36 @@
         <a
           href="https://discord.gg/3DxrhksKzn"
           target="_blank"
+          rel="noreferrer noopener"
           class="intro-link-badge"
         >
           <span>💬</span>
           <span>{{ "more_information.discordLink" | transloco }}</span>
         </a>
-        <a href="https://dbzer0.com/" target="_blank" class="intro-link-badge">
+        <a
+          href="https://github.com/Haidra-Org/AI-Horde"
+          target="_blank"
+          rel="noreferrer noopener"
+          class="intro-link-badge"
+        >
+          <span>🧩</span>
+          <span>{{ "homepage.intro.github_repo" | transloco }}</span>
+        </a>
+        <a
+          href="https://haidra.net"
+          target="_blank"
+          rel="noreferrer noopener"
+          class="intro-link-badge"
+        >
+          <span>🏛️</span>
+          <span>{{ "homepage.intro.haidra_site" | transloco }}</span>
+        </a>
+        <a
+          href="https://dbzer0.com/"
+          target="_blank"
+          rel="noreferrer noopener"
+          class="intro-link-badge"
+        >
           <span>✍️</span>
           <span>{{ "more_information.developerBlogLink" | transloco }}</span>
         </a>

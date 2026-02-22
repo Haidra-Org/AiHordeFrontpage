@@ -23,6 +23,7 @@ import { TeamService } from '../../../services/team.service';
 import { HordeWorker, WorkerType } from '../../../types/horde-worker';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
+import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
@@ -44,6 +45,7 @@ type SortOrder = 'asc' | 'desc';
     FormsModule,
     WorkerCardComponent,
     DecimalPipe,
+    InfoTooltipComponent,
   ],
   templateUrl: './worker-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

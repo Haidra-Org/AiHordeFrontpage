@@ -681,3 +681,16 @@
     </div>
   </footer>
 </div>
+
+<!-- Glossary FAB -->
+<button
+  type="button"
+  class="glossary-fab"
+  (click)="glossary.open()"
+  [attr.aria-label]="'help.open_glossary' | transloco"
+>
+  ?
+</button>
+
+<!-- Glossary Modal -->
+<app-glossary-modal />

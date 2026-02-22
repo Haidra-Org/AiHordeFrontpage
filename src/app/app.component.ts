@@ -7,13 +7,14 @@ import {
   Renderer2,
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { NgOptimizedImage } from '@angular/common';
+import { ViewportScroller, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { DOCUMENT } from '@angular/common';
 import { FooterColorService } from './services/footer-color.service';
 import { ThemeService } from './services/theme.service';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
 import { AuthService } from './services/auth.service';
+import { GlossaryModalComponent } from './components/glossary-modal/glossary-modal.component';
+import { GlossaryService } from './services/glossary.service';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ import { AuthService } from './services/auth.service';
     RouterLink,
     RouterLinkActive,
     ThemeToggleComponent,
+    GlossaryModalComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -33,8 +35,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly footerColor = inject(FooterColorService);
   private readonly document = inject(DOCUMENT);
   private readonly renderer = inject(Renderer2);
+  private readonly viewportScroller = inject(ViewportScroller);
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
+  public readonly glossary = inject(GlossaryService);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;
@@ -45,7 +49,12 @@ export class AppComponent implements OnInit, OnDestroy {
   public showMobileAccountSubmenu = false;
 
   ngOnInit(): void {
-    // Optional: Detect user's color scheme preference
+    // Offset anchor scrolling by the fixed nav bar height
+    this.viewportScroller.setOffset(() => {
+      const nav = this.document.querySelector('.nav-shell');
+      return [0, nav ? nav.getBoundingClientRect().height : 0];
+    });
+
     if (typeof window !== 'undefined') {
       const prefersDark = window.matchMedia(
         '(prefers-color-scheme: dark)',

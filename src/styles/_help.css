@@ -1,0 +1,272 @@
+/* =================================================================
+   HELP SYSTEM STYLES
+   
+   Styles for the contextual help system:
+   - Info tooltip trigger icon
+   - Page intro sections
+   - Glossary modal
+   - Glossary floating button
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     INFO TOOLTIP TRIGGER
+     Small ⓘ icon that triggers informational tooltips.
+     Follows _tooltips.css patterns for consistency.
+     ================================================================= */
+
+  .info-tooltip-trigger {
+    @apply inline-flex items-center;
+    cursor: help;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+  }
+
+  .info-tooltip-icon {
+    @apply w-4 h-4 text-gray-400 transition-all duration-150;
+    opacity: 0.6;
+  }
+
+  .dark .info-tooltip-icon {
+    @apply text-gray-500;
+  }
+
+  .info-tooltip-trigger:hover .info-tooltip-icon,
+  .info-tooltip-trigger:focus-within .info-tooltip-icon {
+    @apply text-brand-blue;
+    opacity: 1;
+  }
+
+  .dark .info-tooltip-trigger:hover .info-tooltip-icon,
+  .dark .info-tooltip-trigger:focus-within .info-tooltip-icon {
+    @apply text-blue-400;
+  }
+
+  .info-tooltip-glossary-link {
+    @apply inline-block mt-1.5 p-0 text-xs font-medium underline;
+    @apply text-brand-purple;
+    text-underline-offset: 2px;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  .info-tooltip-glossary-link:hover {
+    @apply text-brand-blue;
+  }
+
+  .dark .info-tooltip-glossary-link {
+    @apply text-purple-400;
+  }
+
+  .dark .info-tooltip-glossary-link:hover {
+    @apply text-blue-400;
+  }
+
+  /* =================================================================
+     PAGE INTRO
+     Collapsible intro sections for data-heavy pages.
+     Builds on .collapsible-card from _collapsibles.css.
+     ================================================================= */
+
+  .page-intro {
+    @apply mb-6;
+  }
+
+  .page-intro-body {
+    @apply text-sm leading-relaxed text-gray-600;
+    @apply dark:text-gray-300;
+  }
+
+  .page-intro-body p {
+    @apply mb-3;
+  }
+
+  .page-intro-body p:last-child {
+    @apply mb-0;
+  }
+
+  .page-intro-body strong {
+    @apply font-semibold text-gray-900;
+    @apply dark:text-white;
+  }
+
+  .page-intro-actions {
+    @apply flex flex-wrap items-center gap-3 pt-4;
+    @apply border-t border-edge-primary;
+  }
+
+  .dark .page-intro-actions {
+    @apply border-gray-700;
+  }
+
+  .page-intro-actions .btn-secondary svg {
+    @apply w-4 h-4 mr-1 inline-block;
+  }
+
+  .page-intro-dismiss {
+    @apply text-sm px-3 py-1.5 rounded-md transition-colors duration-200;
+    @apply text-gray-500 hover:text-gray-700 hover:bg-gray-100;
+    @apply dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* Restore button — shown when the intro is dismissed */
+  .page-intro-restore {
+    @apply mb-4;
+  }
+
+  .page-intro-restore-btn {
+    @apply inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md transition-colors duration-200;
+    @apply text-gray-500 hover:text-purple-600 hover:bg-purple-50;
+    @apply dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-purple-900/20;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+
+  .page-intro-restore-btn svg {
+    @apply w-3.5 h-3.5;
+  }
+
+  /* =================================================================
+     GLOSSARY MODAL
+     Follows _modals.css patterns for .dark overrides.
+     ================================================================= */
+
+  .glossary-modal-panel {
+    @apply flex flex-col;
+    max-height: 85vh;
+  }
+
+  .glossary-search {
+    @apply mb-4;
+  }
+
+  .glossary-categories {
+    @apply flex flex-wrap gap-1.5 mb-4 pb-3;
+    border-bottom: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .glossary-categories {
+    @apply border-gray-700;
+  }
+
+  .glossary-category-btn {
+    @apply text-xs px-2.5 py-1 rounded-full transition-colors duration-200;
+    @apply text-gray-600 bg-gray-100;
+    @apply hover:bg-gray-200 hover:text-gray-800;
+    border: none;
+    cursor: pointer;
+  }
+
+  .dark .glossary-category-btn {
+    @apply text-gray-300 bg-gray-700;
+  }
+
+  .dark .glossary-category-btn:hover {
+    @apply bg-gray-600 text-white;
+  }
+
+  .glossary-category-active {
+    @apply bg-purple-100 text-purple-700;
+    @apply hover:bg-purple-200 hover:text-purple-800;
+  }
+
+  .dark .glossary-category-active {
+    @apply bg-purple-900/40 text-purple-300;
+  }
+
+  .dark .glossary-category-active:hover {
+    @apply bg-purple-800/40 text-purple-200;
+  }
+
+  .glossary-terms-list {
+    @apply flex flex-col gap-2;
+  }
+
+  .glossary-term {
+    @apply p-3 rounded-lg transition-colors duration-200;
+    @apply bg-gray-50 border border-transparent;
+  }
+
+  .dark .glossary-term {
+    @apply bg-gray-800/50;
+  }
+
+  .glossary-term-active {
+    @apply border-purple-300 bg-purple-50;
+  }
+
+  .dark .glossary-term-active {
+    @apply border-purple-600 bg-purple-900/20;
+  }
+
+  .glossary-term-title {
+    @apply text-sm font-semibold mb-1 text-gray-900;
+  }
+
+  .dark .glossary-term-title {
+    @apply text-white;
+  }
+
+  .glossary-term-body {
+    @apply text-xs leading-relaxed m-0 text-gray-600;
+  }
+
+  .dark .glossary-term-body {
+    @apply text-gray-400;
+  }
+
+  /* =================================================================
+     GLOSSARY FLOATING BUTTON
+     ================================================================= */
+
+  .glossary-fab {
+    @apply fixed z-40 flex items-center justify-center;
+    @apply w-10 h-10 rounded-full;
+    @apply transition-all duration-200;
+    @apply bg-brand-purple text-white;
+    @apply hover:bg-brand-purple-hover;
+    box-shadow: var(--shadow-card-hover);
+    /* Position above scroll-to-top button */
+    bottom: 5.5rem;
+    right: 1.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
+
+  .glossary-fab:hover {
+    @apply scale-105;
+    box-shadow: var(--shadow-modal);
+  }
+
+  .dark .glossary-fab {
+    @apply bg-purple-500;
+    box-shadow: var(--shadow-card-hover-dark);
+  }
+
+  .dark .glossary-fab:hover {
+    @apply bg-purple-400;
+  }
+
+  .glossary-fab:focus {
+    @apply outline-none;
+    box-shadow: var(--shadow-focus-purple);
+  }
+
+  .dark .glossary-fab:focus {
+    box-shadow: var(--shadow-focus-purple-dark);
+  }
+
+  @media (min-width: 640px) {
+    .glossary-fab {
+      bottom: 6rem;
+      right: 2rem;
+    }
+  }
+}

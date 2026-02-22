@@ -1,9 +1,10 @@
-<section class="section-secondary">
+<section class="section-secondary" id="quickstart">
   <div class="container-content-minimal">
     <div class="grid-items">
       <div class="text-secondary sm:text-lg">
         <h2 class="mb-3 heading-section-lg">
           {{ "quickstart" | transloco }}
+          <app-info-tooltip termKey="help.home.tooltip.quickstart" glossaryId="api_key" />
         </h2>
 
         <p
@@ -49,6 +50,7 @@
             <div class="callout callout-accent mb-6">
               <h3 class="callout-title">
                 {{ "quickstart.try_frontend_title" | transloco }}
+                <app-info-tooltip termKey="help.home.tooltip.try_frontend" glossaryId="gui" />
               </h3>
               <p
                 class="callout-body"
@@ -58,6 +60,7 @@
                 <a
                   href="https://artbot.site"
                   target="_blank"
+                  rel="noreferrer noopener"
                   class="btn-purple"
                 >
                   {{ "quickstart.try_artbot_button" | transloco }}

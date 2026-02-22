@@ -279,6 +279,12 @@
      CARD INTERACTIVE - Clickable cards with hover effects
      ================================================================= */
 
+  /* Deprecated/retired card - visually muted to indicate a non-preferred option */
+  .card--deprecated {
+    @apply bg-gray-100 border-gray-300;
+    @apply dark:bg-gray-900 dark:border-gray-700;
+  }
+
   /* Interactive card - adds hover lift and shadow */
   .card-interactive {
     @apply cursor-pointer transition-all duration-200;

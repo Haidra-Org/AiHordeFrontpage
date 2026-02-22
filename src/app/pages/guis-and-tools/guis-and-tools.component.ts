@@ -2,7 +2,6 @@ import {
   Component,
   computed,
   DestroyRef,
-  HostListener,
   inject,
   OnInit,
   AfterViewInit,
@@ -14,7 +13,6 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
@@ -45,12 +43,13 @@ export interface SectionInfo {
   id: string;
   titleKey: string;
   items: () => DisplayItem[];
+  tooltipKey?: string;
+  tooltipGlossaryId?: string;
 }
 
 @Component({
   selector: 'app-guis-and-tools',
   imports: [
-    CommonModule,
     FormsModule,
     TranslocoModule,
     ItemListSectionComponent,
@@ -59,6 +58,9 @@ export interface SectionInfo {
   templateUrl: './guis-and-tools.component.html',
   styleUrl: './guis-and-tools.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:scroll)': 'onWindowScroll()',
+  },
 })
 export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
@@ -94,31 +96,42 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       id: 'guis',
       titleKey: 'guis_and_tools_page.guis_section_title',
       items: () => this.filteredGuis(),
+      tooltipKey: 'help.tools.tooltip.guis',
+      tooltipGlossaryId: 'gui',
     },
     {
       id: 'workers',
       titleKey: 'guis_and_tools_page.workers_section_title',
       items: () => this.filteredWorkers(),
+      tooltipKey: 'help.tools.tooltip.workers',
+      tooltipGlossaryId: 'worker',
     },
     {
       id: 'resources',
       titleKey: 'guis_and_tools_page.resources_section_title',
       items: () => this.filteredResources(),
+      tooltipKey: 'help.tools.tooltip.resources',
     },
     {
       id: 'utilities',
       titleKey: 'guis_and_tools_page.utilities_section_title',
       items: () => this.filteredUtilities(),
+      tooltipKey: 'help.tools.tooltip.utilities',
+      tooltipGlossaryId: 'utility',
     },
     {
       id: 'bots',
       titleKey: 'guis_and_tools_page.bots_section_title',
       items: () => this.filteredBots(),
+      tooltipKey: 'help.tools.tooltip.bots',
+      tooltipGlossaryId: 'bot',
     },
     {
       id: 'developer_tools',
       titleKey: 'guis_and_tools_page.developer_tools_section_title',
       items: () => this.filteredDeveloperTools(),
+      tooltipKey: 'help.tools.tooltip.developer_tools',
+      tooltipGlossaryId: 'sdk',
     },
   ];
 
@@ -406,7 +419,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  @HostListener('window:scroll', [])
   onWindowScroll(): void {
     // Show button after scrolling down 300px
     const scrollPosition =

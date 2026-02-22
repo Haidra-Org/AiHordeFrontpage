@@ -1,4 +1,6 @@
 <div class="stack-lg">
+  <app-page-intro pageKey="models" />
+
   <!-- Sub-Tab Navigation -->
   <div class="details-tabs">
     <button
@@ -261,6 +263,10 @@
             (click)="setSortField('count')"
           >
             {{ "details.models.workers" | transloco }}
+            <app-info-tooltip
+              termKey="help.models.tooltip.workers"
+              glossaryId="worker"
+            />
             @if (sortField() === "count") {
               <span class="sort-indicator">{{
                 sortDirection() === "asc" ? "↑" : "↓"
@@ -274,6 +280,10 @@
             (click)="setSortField('queued')"
           >
             {{ "details.models.queued" | transloco }}
+            <app-info-tooltip
+              termKey="help.models.tooltip.queued"
+              glossaryId="megapixelsteps"
+            />
             @if (sortField() === "queued") {
               <span class="sort-indicator">{{
                 sortDirection() === "asc" ? "↑" : "↓"
@@ -287,6 +297,10 @@
             (click)="setSortField('jobs')"
           >
             {{ "details.models.jobs" | transloco }}
+            <app-info-tooltip
+              termKey="help.models.tooltip.jobs"
+              glossaryId="job"
+            />
             @if (sortField() === "jobs") {
               <span class="sort-indicator">{{
                 sortDirection() === "asc" ? "↑" : "↓"
@@ -300,6 +314,10 @@
             (click)="setSortField('eta')"
           >
             {{ "details.models.eta" | transloco }}
+            <app-info-tooltip
+              termKey="help.models.tooltip.eta"
+              glossaryId="eta"
+            />
             @if (sortField() === "eta") {
               <span class="sort-indicator">{{
                 sortDirection() === "asc" ? "↑" : "↓"
@@ -313,6 +331,10 @@
             (click)="setSortField('performance')"
           >
             {{ "details.models.performance" | transloco }}
+            <app-info-tooltip
+              termKey="help.models.tooltip.performance"
+              glossaryId="megapixelsteps"
+            />
             @if (sortField() === "performance") {
               <span class="sort-indicator">{{
                 sortDirection() === "asc" ? "↑" : "↓"

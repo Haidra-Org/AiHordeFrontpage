@@ -290,6 +290,8 @@
                 [expandedRows]="expandedRows"
                 [collapsedSections]="collapsedSections"
                 [viewMode]="viewMode()"
+                [tooltipKey]="section.tooltipKey"
+                [tooltipGlossaryId]="section.tooltipGlossaryId"
                 (rowToggle)="toggleRow($event)"
                 (sectionToggle)="toggleSection($event)"
               />

@@ -1,5 +1,5 @@
 @if (stats() && imageStats() && textStats() && interrogationStats()) {
-  <section class="section-primary">
+  <section class="section-primary" id="stats">
     <div class="container-content-minimal">
       <div class="max-w-screen-md mx-auto mb-3 text-center">
         <h2
@@ -15,6 +15,7 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "image_stats" | transloco }}
+            <app-info-tooltip termKey="help.home.tooltip.image_stats" glossaryId="dreamer" />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -105,6 +106,7 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "text_stats" | transloco }}
+            <app-info-tooltip termKey="help.home.tooltip.text_stats" glossaryId="scribe" />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -195,6 +197,7 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "image_alchemy" | transloco }}
+            <app-info-tooltip termKey="help.home.tooltip.alchemy" glossaryId="alchemist" />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -251,6 +254,7 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "realtime_stats" | transloco }}
+            <app-info-tooltip termKey="help.home.tooltip.realtime_stats" />
           </h3>
           <ul role="list" class="space-y-2 underline-links mt-3">
             <li class="flex items-start space-x-2">
