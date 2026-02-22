@@ -11,10 +11,11 @@ import {
   inject,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { TranslocoModule } from '@jsverse/transloco';
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { EnumDisplayPipe } from '../../pipes/enum-display.pipe';
+import { InfoTooltipComponent } from '../info-tooltip/info-tooltip.component';
 import {
   ItemType,
   Domain,
@@ -41,7 +42,7 @@ export interface DisplayItem {
 
 @Component({
   selector: 'app-item-list-section',
-  imports: [CommonModule, TranslocoModule, EnumDisplayPipe],
+  imports: [TranslocoModule, EnumDisplayPipe, InfoTooltipComponent],
   templateUrl: './item-list-section.component.html',
   styleUrl: './item-list-section.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,7 +50,9 @@ export interface DisplayItem {
 export class ItemListSectionComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
-  constructor(private enumDisplayService: EnumDisplayService) {
+  private readonly enumDisplayService = inject(EnumDisplayService);
+
+  constructor() {
     // Set up IntersectionObserver when header element is available (browser only)
     effect(() => {
       if (isPlatformBrowser(this.platformId)) {
@@ -74,6 +77,12 @@ export class ItemListSectionComponent {
   readonly expandedRows = input.required<WritableSignal<Set<string>>>();
   readonly collapsedSections = input.required<WritableSignal<Set<string>>>();
   readonly viewMode = input<ViewMode>('table');
+
+  /** Optional i18n key for an info-tooltip shown next to the section heading. */
+  readonly tooltipKey = input<string | undefined>(undefined);
+
+  /** Optional glossary term ID for the section tooltip's "Learn more" link. */
+  readonly tooltipGlossaryId = input<string | undefined>(undefined);
 
   // Outputs
   readonly rowToggle = output<string>();

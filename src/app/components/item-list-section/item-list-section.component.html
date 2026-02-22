@@ -9,6 +9,9 @@
       <span class="section-header-title-wrapper">
         {{ title() | transloco }}
         <span class="tools-section-count">{{ items().length }}</span>
+        @if (tooltipKey()) {
+          <app-info-tooltip [termKey]="tooltipKey()!" [glossaryId]="tooltipGlossaryId()" />
+        }
       </span>
       <svg
         class="chevron-icon"

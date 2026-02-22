@@ -9,6 +9,19 @@
    ================================================================= */
 
 @layer components {
+  /* Hero CTA button group — spaced away from surrounding copy and cards */
+  .hero-cta-group {
+    @apply flex flex-col gap-4 mt-6 mb-8;
+    @apply sm:flex-row;
+  }
+
+  /* Hero description paragraph — secondary copy below the tagline */
+  .hero-description {
+    @apply mb-3 leading-relaxed;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
   /* Intro feature cards container */
   .intro-features {
     @apply grid grid-cols-1 max-w-2xl mx-auto mb-8;
@@ -230,5 +243,12 @@
 
   .beginner-cta-actions {
     @apply flex items-center gap-4 shrink-0;
+  }
+
+  /* Sponsor description text — below sponsor heading */
+  .sponsor-description {
+    @apply mb-6;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
   }
 }

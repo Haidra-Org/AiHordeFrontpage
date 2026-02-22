@@ -22,6 +22,8 @@ import { TextTotalStats } from '../../../types/text-total-stats';
 import { ImageModelStats } from '../../../types/image-model-stats';
 import { TextModelStats } from '../../../types/text-model-stats';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
+import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 
 export type UsageTab = 'overview' | 'image' | 'text';
 export type TimePeriod = 'day' | 'month' | 'total';
@@ -33,7 +35,7 @@ interface ModelUsageEntry {
 
 @Component({
   selector: 'app-usage-stats',
-  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent],
+  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent, PageIntroComponent, InfoTooltipComponent],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

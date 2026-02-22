@@ -25,6 +25,8 @@ import {
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
+import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 
 export type ModelsTab = 'image' | 'text';
 
@@ -37,7 +39,7 @@ interface ModelSuggestion {
 
 @Component({
   selector: 'app-models-list',
-  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent],
+  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent, PageIntroComponent, InfoTooltipComponent],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

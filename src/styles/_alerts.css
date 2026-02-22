@@ -335,6 +335,15 @@
     @apply text-orange-200;
   }
 
+  /* Gray info note - for deprecated/legacy notices */
+  .info-note--gray {
+    @apply bg-gray-100 border-gray-300 text-gray-700;
+  }
+
+  .dark .info-note--gray {
+    @apply bg-gray-800 border-gray-600 text-gray-300;
+  }
+
   /* Info note with padding variant */
   .info-note--padded {
     @apply p-4;

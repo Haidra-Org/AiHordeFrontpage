@@ -58,10 +58,9 @@
     @apply dark:text-purple-300 dark:bg-purple-900/30;
   }
 
-  /* Smooth hover transitions for all interactive elements */
+  /* Smooth hover transitions for navigation elements */
   .nav-link,
-  .mobile-nav-link,
-  button {
+  .mobile-nav-link {
     will-change: transform;
   }
 

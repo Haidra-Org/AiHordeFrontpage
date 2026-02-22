@@ -80,6 +80,12 @@
     @apply dark:bg-pink-900 dark:text-pink-300;
   }
 
+  /* Gray icon variant - for deprecated/muted cards */
+  .feature-card-icon-gray {
+    @apply bg-gray-100 text-gray-400;
+    @apply dark:bg-gray-700 dark:text-gray-500;
+  }
+
   /* =================================================================
      FEATURE CARD TEXT PATTERNS
      ================================================================= */

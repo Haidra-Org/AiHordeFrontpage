@@ -1,4 +1,6 @@
 <div class="stack-lg">
+  <app-page-intro pageKey="stats" />
+
   <!-- Sub-Tab Navigation -->
   <div class="details-tabs">
     <button
@@ -137,6 +139,9 @@
         <div class="card card-bg-primary">
           <h3 class="heading-card">
             {{ "details.usage.realtime_performance" | transloco }}
+            <app-info-tooltip
+              termKey="help.stats.tooltip.realtime_performance"
+            />
           </h3>
           <div class="space-y-4">
             <!-- Performance Rates -->
@@ -200,6 +205,9 @@
         <div class="card card-bg-primary">
           <h3 class="heading-card">
             {{ "details.usage.queue_status" | transloco }}
+            <app-info-tooltip
+              termKey="help.stats.tooltip.queued_requests"
+            />
           </h3>
           <div class="data-grid-1-2-3">
             <div class="data-item-box">

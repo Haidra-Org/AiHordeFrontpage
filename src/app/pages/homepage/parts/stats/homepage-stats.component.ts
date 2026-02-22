@@ -11,6 +11,7 @@ import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg.component';
 import { UnitTooltipComponent } from '../../../../components/unit-tooltip/unit-tooltip.component';
+import { InfoTooltipComponent } from '../../../../components/info-tooltip/info-tooltip.component';
 import { HordePerformance } from '../../../../types/horde-performance';
 import { SingleImageStatPoint } from '../../../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../../../types/single-text-stat-point';
@@ -27,6 +28,7 @@ import { forkJoin } from 'rxjs';
     TranslocoPipe,
     TranslocoModule,
     UnitTooltipComponent,
+    InfoTooltipComponent,
   ],
   templateUrl: './homepage-stats.component.html',
   styleUrl: './homepage-stats.component.css',
