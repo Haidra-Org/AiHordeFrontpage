@@ -356,7 +356,7 @@
                         [href]="version.parsed.url"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="admin-link text-xs truncate"
+                        class="admin-link text-xs truncate external-link"
                       >
                         {{ version.parsed.url }}
                       </a>
@@ -387,9 +387,7 @@
             <div class="admin-border-t pt-6">
               <h3 class="admin-heading-card mb-3">
                 {{ "admin.workers.stats.capabilities" | transloco }}
-                <app-info-tooltip
-                  termKey="help.workers.tooltip.capabilities"
-                />
+                <app-info-tooltip termKey="help.workers.tooltip.capabilities" />
               </h3>
               <div class="data-grid-1-2-3">
                 @for (capability of capabilityStats(); track capability.name) {

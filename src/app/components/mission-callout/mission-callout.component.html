@@ -1,0 +1,27 @@
+<div class="callout callout-accent">
+  <h2 class="callout-title text-xl">
+    {{ "mission_callout.title" | transloco }}
+  </h2>
+  <p class="callout-body text-lg leading-relaxed">
+    {{ "mission_callout.description" | transloco }}
+  </p>
+  <div class="checkmark-list mt-4">
+    <div class="checkmark-item">
+      <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+      <span>{{ "mission_callout.always_free" | transloco }}</span>
+    </div>
+    <div class="checkmark-item">
+      <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+      <span>{{ "mission_callout.non_profit" | transloco }}</span>
+    </div>
+    <div class="checkmark-item">
+      <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
+      <span>{{ "mission_callout.open_source" | transloco }}</span>
+    </div>
+  </div>
+  <div class="mt-4">
+    <a routerLink="/mission" class="link font-semibold">{{
+      "mission_callout.read_more" | transloco
+    }}</a>
+  </div>
+</div>

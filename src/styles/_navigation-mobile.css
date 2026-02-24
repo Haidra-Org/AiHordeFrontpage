@@ -12,7 +12,7 @@
 @layer components {
   /* Wrapper controlling mobile visibility */
   .mobile-nav-wrapper {
-    @apply block lg:hidden;
+    @apply block nav:hidden;
   }
 
   /* Mobile nav list spacing */
@@ -25,7 +25,7 @@
     @apply inline-flex items-center justify-center p-2 rounded-md;
     @apply text-gray-600 bg-transparent border-none cursor-pointer;
     @apply transition-all duration-200;
-    @apply lg:hidden relative z-50;
+    @apply nav:hidden relative z-50;
     @apply hover:text-gray-900 hover:bg-gray-100;
     @apply focus:outline-none;
     @apply dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700;
@@ -45,7 +45,7 @@
     @apply fixed inset-0 z-40;
     @apply bg-black/25 transition-opacity duration-300;
     @apply opacity-0 pointer-events-none;
-    @apply lg:hidden;
+    @apply nav:hidden;
   }
 
   .mobile-menu-backdrop.show {
@@ -76,7 +76,7 @@
   }
 
   /* Mobile menu animation improvements */
-  @media (max-width: 1023px) {
+  @media (max-width: 1164px) {
     .mobile-menu-panel {
       animation-duration: 0.3s;
       animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

@@ -1,5 +1,9 @@
 <!-- Donate Introduction -->
 <div class="max-w-4xl mx-auto">
+  <div class="mb-8">
+    <app-mission-callout />
+  </div>
+
   <div class="callout callout-accent mb-8">
     <h2 class="callout-title text-xl">
       {{ "donate.intro.title" | transloco }}
@@ -151,6 +155,7 @@
       <a
         href="https://ko-fi.com/db0"
         target="_blank"
+        rel="noopener noreferrer"
         class="card card-full card-bg-secondary card-interactive"
       >
         <div class="flex items-center gap-4 mb-4">
@@ -180,11 +185,6 @@
 
       <!-- Patreon (no longer preferred) -->
       <div class="card card-full card-bg-secondary card--deprecated">
-        <div class="info-note info-note--gray mb-4">
-          <p class="m-0">
-            {{ "donate.ways_to_donate.patreon.deprecated_note" | transloco }}
-          </p>
-        </div>
         <a
           href="https://www.patreon.com/db0"
           target="_blank"
@@ -213,17 +213,19 @@
             </p>
           </div>
         </a>
+        <div class="info-note info-note--gray mb-4">
+          <p class="m-0">
+            {{ "donate.ways_to_donate.patreon.deprecated_note" | transloco }}
+          </p>
+        </div>
         <div class="info-note info-note--orange">
           <p class="m-0">
             <strong>{{
               "donate.ways_to_donate.patreon.kudos_note" | transloco
             }}</strong>
-            <a
-              routerLink="/faq"
-              fragment="kudos"
-              class="font-semibold underline hover:no-underline"
-              >{{ "donate.ways_to_donate.patreon.kudos_link" | transloco }}</a
-            >
+            <a routerLink="/faq" fragment="kudos">{{
+              "donate.ways_to_donate.patreon.kudos_link" | transloco
+            }}</a>
           </p>
         </div>
       </div>
@@ -236,20 +238,6 @@
       {{ "donate.transparency.title" | transloco }}
     </h2>
     <div class="transparency-box">
-      <div class="checkmark-list mb-4">
-        <div class="checkmark-item">
-          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-          <span>{{ "donate.transparency.non_profit" | transloco }}</span>
-        </div>
-        <div class="checkmark-item">
-          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-          <span>{{ "donate.transparency.volunteer_run" | transloco }}</span>
-        </div>
-        <div class="checkmark-item">
-          <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-          <span>{{ "donate.transparency.open_source" | transloco }}</span>
-        </div>
-      </div>
       <p class="text-secondary m-0">
         {{ "donate.transparency.description" | transloco }}
       </p>
@@ -271,7 +259,7 @@
       <a
         href="https://discord.gg/3DxrhksKzn"
         target="_blank"
-        class="btn-secondary"
+        class="btn-secondary external-link"
       >
         {{ "donate.alternatives.join_community" | transloco }}
       </a>

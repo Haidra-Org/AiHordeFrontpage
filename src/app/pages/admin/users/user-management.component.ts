@@ -184,7 +184,9 @@ export class UserManagementComponent implements OnInit {
   });
   public workerInvitesChanged = computed(() => {
     const user = this.selectedUser();
-    return user ? this.workerInvitesValue() !== (user.worker_invited ?? 0) : false;
+    return user
+      ? this.workerInvitesValue() !== (user.worker_invited ?? 0)
+      : false;
   });
   public usageMultiplierChanged = computed(() => {
     const user = this.selectedUser();

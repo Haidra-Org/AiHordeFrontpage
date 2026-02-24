@@ -259,29 +259,30 @@
 
   /* Mobile Section Pills */
   .tools-section-pills {
-    @apply flex gap-2 overflow-x-auto pb-4 mb-4;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    /* Ensure pills don't touch screen edges on mobile */
-    padding-left: max(1rem, env(safe-area-inset-left));
-    padding-right: max(1rem, env(safe-area-inset-right));
-    margin-left: -1rem;
-    margin-right: -1rem;
+    @apply flex items-center gap-2 mb-4 overflow-hidden;
 
     @media (min-width: 1024px) {
       @apply hidden;
     }
   }
 
-  /* Hide scrollbar but allow scrolling */
-  .tools-section-pills::-webkit-scrollbar {
-    height: 0;
-    display: none;
+  .tools-section-pills-label {
+    @apply text-xs font-semibold uppercase tracking-wide whitespace-nowrap shrink-0;
+    color: var(--color-content-muted);
   }
 
-  .tools-section-pills {
+  .tools-section-pills-scroll {
+    @apply flex gap-2 overflow-x-auto pb-2 items-center;
+    flex: 1;
+    min-width: 0;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  .tools-section-pills-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   .tools-section-pill {

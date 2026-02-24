@@ -40,4 +40,12 @@
       @apply dark:text-gray-300;
     }
   }
+
+  /* External link indicator — shows ↗ after links that open in a new tab */
+  .footer-links a[target="_blank"]::after,
+  .external-link::after {
+    content: " \2197";
+    font-size: 0.75em;
+    vertical-align: super;
+  }
 }

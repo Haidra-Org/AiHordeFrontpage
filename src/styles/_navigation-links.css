@@ -13,7 +13,7 @@
 @layer components {
   /* Desktop navigation menu bar */
   .nav-menu-desktop {
-    @apply hidden lg:flex lg:items-center lg:gap-8;
+    @apply hidden nav:flex nav:items-center nav:gap-8;
   }
 
   /* Desktop Navigation Links */

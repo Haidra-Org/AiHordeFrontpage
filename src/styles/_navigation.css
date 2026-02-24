@@ -31,20 +31,39 @@
 
   /* Shared nav horizontal padding */
   .nav-padding {
-    @apply w-full px-4 sm:px-6 lg:px-8;
+    @apply w-full px-4 sm:px-6 nav:px-8;
   }
 
   /* Logo container wrapper */
   .logo-container {
-    @apply flex items-center shrink-0;
+    @apply flex items-stretch shrink-0 gap-3 py-1;
   }
 
   /* Logo link wrapper with focus and hover states */
   .logo-link {
-    @apply flex items-center gap-3 p-1 rounded-lg;
+    @apply flex items-center p-1 rounded-lg;
     @apply transition-all duration-200;
     @apply hover:bg-gray-50 dark:hover:bg-gray-800;
     @apply focus:outline-none;
+  }
+
+  /* Column grouping logo text and github widget */
+  .logo-text-group {
+    @apply flex flex-row items-center gap-3;
+    @apply nav:flex-col nav:items-start nav:justify-between nav:gap-2;
+  }
+
+  .logo-text-link {
+    @apply rounded;
+    @apply transition-all duration-200;
+    @apply hover:opacity-75;
+    @apply focus:outline-none;
+  }
+
+  .logo-text-link:focus {
+    box-shadow:
+      0 0 0 2px var(--color-brand-purple),
+      0 0 0 4px rgba(147, 51, 234, 0.1);
   }
 
   .logo-link:focus {
@@ -55,13 +74,13 @@
 
   /* Logo image sizing */
   .logo-image {
-    @apply h-8 w-auto lg:h-10;
+    @apply h-8 w-auto nav:h-10;
   }
 
   /* Logo text styling */
   .logo-text {
     @apply text-xl font-bold text-gray-900 whitespace-nowrap;
-    @apply lg:text-2xl;
+    @apply nav:text-2xl;
     @apply dark:text-white;
   }
 
@@ -76,7 +95,7 @@
     max-width: var(--max-width-container);
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 1165px) {
     .nav-container {
       @apply h-20;
     }
@@ -94,5 +113,25 @@
   /* Theme toggle integration */
   theme-toggle {
     @apply flex items-center;
+  }
+
+  /* GitHub logo + stars widget */
+  .github-widget {
+    @apply flex flex-row items-center gap-2;
+  }
+
+  .github-widget a:first-child {
+    @apply flex items-center rounded;
+    @apply transition-opacity duration-200 hover:opacity-75;
+    @apply focus:outline-none;
+  }
+
+  .github-widget a:first-child:focus {
+    box-shadow:
+      0 0 0 2px var(--color-brand-purple),
+      0 0 0 4px rgba(147, 51, 234, 0.1);
+  }
+  .github-widget span {
+    height: 20px; /* Match the height of the GitHub logo for vertical balance */
   }
 }

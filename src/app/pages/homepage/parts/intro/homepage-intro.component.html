@@ -11,18 +11,13 @@
 
       <p class="hero-description underline-links">
         {{ "homepage.intro.powered_by_prefix" | transloco }}
-        <a
-          href="https://github.com/Haidra-Org/horde-worker-reGen"
-          target="_blank"
-          rel="noreferrer noopener"
-          >{{ "service_description.imageWorkerLink" | transloco }}</a
-        >
+        <a routerLink="/contribute/workers" fragment="image">{{
+          "service_description.imageWorkerLink" | transloco
+        }}</a>
         {{ "homepage.intro.powered_by_and" | transloco }}
-        <a
-          href="https://github.com/Haidra-Org/AI-Horde-Worker"
-          target="_blank"
-          rel="noreferrer noopener"
-          >{{ "service_description.textWorkerLink" | transloco }}</a
+        <a routerLink="/contribute/workers" fragment="text">{{
+          "service_description.textWorkerLink" | transloco
+        }}</a
         >.
       </p>
 
@@ -44,7 +39,7 @@
         </a>
 
         <a
-          routerLink="/contribute/joining"
+          routerLink="/contribute/workers"
           class="intro-feature-card intro-feature-card-link"
         >
           <div class="intro-feature-header">
@@ -93,19 +88,24 @@
 
       <!-- Links section -->
       <div class="intro-links">
-        <a [routerLink]="[]" fragment="quickstart" class="intro-link-badge">
+        <a
+          href="#quickstart"
+          (click)="scrollToFragment('quickstart', $event)"
+          class="intro-link-badge"
+        >
           <span>🧭</span>
           <span>{{ "homepage.intro.jump_quickstart" | transloco }}</span>
         </a>
-        <a [routerLink]="[]" fragment="stats" class="intro-link-badge">
-          <span>📈</span>
-          <span>{{ "homepage.intro.jump_stats" | transloco }}</span>
-        </a>
+
         <a [href]="faqLink" class="intro-link-badge">
           <span>📚</span>
           <span>{{ "more_information.faqLink" | transloco }}</span>
         </a>
-        <a routerLink="/contribute/joining" class="intro-link-badge">
+        <a routerLink="/mission" class="intro-link-badge">
+          <span>🌍</span>
+          <span>{{ "mission.nav_link" | transloco }}</span>
+        </a>
+        <a routerLink="/contribute/workers" class="intro-link-badge">
           <span>🚀</span>
           <span>{{ "service_description.joinHordeLink" | transloco }}</span>
         </a>
@@ -114,40 +114,12 @@
           <span>{{ "donate.nav_link" | transloco }}</span>
         </a>
         <a
-          href="https://discord.gg/3DxrhksKzn"
-          target="_blank"
-          rel="noreferrer noopener"
+          href="#stats"
+          (click)="scrollToFragment('stats', $event)"
           class="intro-link-badge"
         >
-          <span>💬</span>
-          <span>{{ "more_information.discordLink" | transloco }}</span>
-        </a>
-        <a
-          href="https://github.com/Haidra-Org/AI-Horde"
-          target="_blank"
-          rel="noreferrer noopener"
-          class="intro-link-badge"
-        >
-          <span>🧩</span>
-          <span>{{ "homepage.intro.github_repo" | transloco }}</span>
-        </a>
-        <a
-          href="https://haidra.net"
-          target="_blank"
-          rel="noreferrer noopener"
-          class="intro-link-badge"
-        >
-          <span>🏛️</span>
-          <span>{{ "homepage.intro.haidra_site" | transloco }}</span>
-        </a>
-        <a
-          href="https://dbzer0.com/"
-          target="_blank"
-          rel="noreferrer noopener"
-          class="intro-link-badge"
-        >
-          <span>✍️</span>
-          <span>{{ "more_information.developerBlogLink" | transloco }}</span>
+          <span>📈</span>
+          <span>{{ "homepage.intro.jump_stats" | transloco }}</span>
         </a>
       </div>
     </div>

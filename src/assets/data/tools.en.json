@@ -7,7 +7,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["server"],
-    "functionKind": "worker"
+    "functionKind": "worker",
+    "recommended": true
   },
   {
     "name": "AI-Horde-Worker",
@@ -27,7 +28,8 @@
     "itemType": "tool",
     "domain": ["text"],
     "platform": ["server"],
-    "functionKind": "worker"
+    "functionKind": "worker",
+    "recommended": true
   },
   {
     "name": "Godot Engine plugin",
@@ -78,7 +80,8 @@
     "itemType": "tool",
     "domain": ["image", "text"],
     "platform": ["programming"],
-    "functionKind": "sdk"
+    "functionKind": "sdk",
+    "recommended": true
   },
   {
     "name": "AI Horde CLI",

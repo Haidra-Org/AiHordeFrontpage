@@ -106,6 +106,12 @@
     @apply dark:bg-emerald-950 dark:text-emerald-200 dark:border dark:border-emerald-800;
   }
 
+  /* Recommended badge - Gold star treatment */
+  .badge-recommended {
+    @apply bg-yellow-100 text-yellow-800 border border-yellow-300;
+    @apply dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-700;
+  }
+
   /* Danger badge - Red, error/destructive */
   .badge-danger {
     @apply bg-red-100 text-red-800;

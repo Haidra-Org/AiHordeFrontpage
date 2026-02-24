@@ -1,10 +1,18 @@
 import { Injectable, signal } from '@angular/core';
 
+export interface GlossaryLink {
+  labelKey: string;
+  routerLink: string;
+  fragment?: string;
+}
+
 export interface GlossaryTerm {
   id: string;
   titleKey: string;
   bodyKey: string;
   category: GlossaryCategory;
+  faqFragment?: string;
+  links?: GlossaryLink[];
 }
 
 export type GlossaryCategory =
@@ -40,6 +48,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.kudos.title',
     bodyKey: 'help.glossary.terms.kudos.body',
     category: 'core',
+    faqFragment: 'kudos',
   },
   {
     id: 'request',
@@ -76,6 +85,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.nsfw.title',
     bodyKey: 'help.glossary.terms.nsfw.body',
     category: 'core',
+    faqFragment: 'not-safe-for-work',
   },
   {
     id: 'api_key',
@@ -128,30 +138,80 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.worker.title',
     bodyKey: 'help.glossary.terms.worker.body',
     category: 'worker_types',
+    faqFragment: 'workers',
+    links: [
+      {
+        labelKey: 'help.glossary.link.become_worker',
+        routerLink: '/contribute/workers',
+      },
+      {
+        labelKey: 'help.glossary.link.view_workers',
+        routerLink: '/details/workers',
+      },
+    ],
   },
   {
     id: 'dreamer',
     titleKey: 'help.glossary.terms.dreamer.title',
     bodyKey: 'help.glossary.terms.dreamer.body',
     category: 'worker_types',
+    faqFragment: 'what-is-a-worker',
+    links: [
+      {
+        labelKey: 'help.glossary.link.become_worker',
+        routerLink: '/contribute/workers',
+      },
+      {
+        labelKey: 'help.glossary.link.view_image_workers',
+        routerLink: '/details/workers/image',
+      },
+    ],
   },
   {
     id: 'scribe',
     titleKey: 'help.glossary.terms.scribe.title',
     bodyKey: 'help.glossary.terms.scribe.body',
     category: 'worker_types',
+    faqFragment: 'what-is-a-worker',
+    links: [
+      {
+        labelKey: 'help.glossary.link.become_worker',
+        routerLink: '/contribute/workers',
+      },
+      {
+        labelKey: 'help.glossary.link.view_text_workers',
+        routerLink: '/details/workers/text',
+      },
+    ],
   },
   {
     id: 'alchemist',
     titleKey: 'help.glossary.terms.alchemist.title',
     bodyKey: 'help.glossary.terms.alchemist.body',
     category: 'worker_types',
+    faqFragment: 'what-is-a-worker',
+    links: [
+      {
+        labelKey: 'help.glossary.link.become_worker',
+        routerLink: '/contribute/workers',
+      },
+      {
+        labelKey: 'help.glossary.link.view_alchemy_workers',
+        routerLink: '/details/workers/interrogation',
+      },
+    ],
   },
   {
     id: 'bridge_agent',
     titleKey: 'help.glossary.terms.bridge_agent.title',
     bodyKey: 'help.glossary.terms.bridge_agent.body',
     category: 'worker_types',
+    links: [
+      {
+        labelKey: 'help.glossary.link.become_worker',
+        routerLink: '/contribute/workers',
+      },
+    ],
   },
 
   // Generation

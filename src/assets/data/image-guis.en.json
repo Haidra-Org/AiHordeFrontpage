@@ -10,7 +10,8 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos", "web"],
-    "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations"
+    "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations",
+    "recommended": true
   },
   {
     "name": "Artbot",
@@ -21,7 +22,8 @@
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["web"]
+    "platform": ["web"],
+    "recommended": true
   },
   {
     "name": "HordeNG",
@@ -33,7 +35,8 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/RikudouSage/HordeNG"
+    "sourceControlLink": "https://github.com/RikudouSage/HordeNG",
+    "recommended": true
   },
   {
     "name": "AI Scribbles",
@@ -44,7 +47,8 @@
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["web"]
+    "platform": ["web"],
+    "recommended": true
   },
   {
     "name": "AI Painter",

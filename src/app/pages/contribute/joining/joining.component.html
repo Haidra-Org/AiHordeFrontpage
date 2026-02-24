@@ -1,26 +1,7 @@
 <!-- Mission Statement -->
 <div class="max-w-4xl mx-auto">
-  <div class="callout callout-accent mb-8">
-    <h2 class="callout-title text-xl">
-      {{ "joining.mission.title" | transloco }}
-    </h2>
-    <p class="callout-body text-lg leading-relaxed">
-      {{ "joining.mission.description" | transloco }}
-    </p>
-    <div class="checkmark-list mt-4">
-      <div class="checkmark-item">
-        <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-        <span>{{ "joining.mission.always_free" | transloco }}</span>
-      </div>
-      <div class="checkmark-item">
-        <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-        <span>{{ "joining.mission.non_profit" | transloco }}</span>
-      </div>
-      <div class="checkmark-item">
-        <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-        <span>{{ "joining.mission.open_source" | transloco }}</span>
-      </div>
-    </div>
+  <div class="mb-8">
+    <app-mission-callout />
   </div>
 
   <!-- Why We Need Workers -->
@@ -251,7 +232,7 @@
               <a
                 href="https://github.com/Haidra-Org/AI-Horde-Worker"
                 target="_blank"
-                class="font-semibold underline hover:no-underline"
+                class="font-semibold underline hover:no-underline external-link"
                 >AI-Horde-Worker</a
               >.
             </p>
@@ -418,14 +399,14 @@
         <a
           href="https://discord.gg/3DxrhksKzn"
           target="_blank"
-          class="btn-primary"
+          class="btn-primary external-link"
         >
           {{ "joining.cta.join_discord" | transloco }}
         </a>
         <a
           href="https://github.com/Haidra-Org"
           target="_blank"
-          class="btn-secondary"
+          class="btn-secondary external-link"
         >
           {{ "joining.cta.view_github" | transloco }}
         </a>

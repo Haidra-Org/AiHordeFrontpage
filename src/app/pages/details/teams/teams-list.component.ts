@@ -21,11 +21,18 @@ import { TeamService } from '../../../services/team.service';
 import { Team } from '../../../types/team';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { extractUserId } from '../../../helper/user-parser';
 
 @Component({
   selector: 'app-teams-list',
-  imports: [TranslocoPipe, RouterLink, FormatNumberPipe, EntityLookupComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    FormatNumberPipe,
+    EntityLookupComponent,
+    PageIntroComponent,
+  ],
   templateUrl: './teams-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

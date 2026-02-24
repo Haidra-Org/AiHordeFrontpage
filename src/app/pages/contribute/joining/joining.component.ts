@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { InlineSvgComponent } from '../../../components/inline-svg/inline-svg.component';
+import { MissionCalloutComponent } from '../../../components/mission-callout/mission-callout.component';
 
 @Component({
   selector: 'app-joining',
-  imports: [TranslocoPipe, InlineSvgComponent, RouterLink],
+  imports: [TranslocoPipe, RouterLink, MissionCalloutComponent],
   templateUrl: './joining.component.html',
   styleUrl: './joining.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

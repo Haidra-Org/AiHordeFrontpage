@@ -13,4 +13,5 @@ export interface ToolItem {
   functionKind: FunctionKind;
   sourceControlLink?: string;
   downloadButtonText?: string | null;
+  recommended?: boolean;
 }

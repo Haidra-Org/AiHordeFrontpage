@@ -6,7 +6,13 @@ import {
   HostListener,
   Renderer2,
 } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
 import { ViewportScroller, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FooterColorService } from './services/footer-color.service';
@@ -15,6 +21,7 @@ import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.com
 import { AuthService } from './services/auth.service';
 import { GlossaryModalComponent } from './components/glossary-modal/glossary-modal.component';
 import { GlossaryService } from './services/glossary.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -36,6 +43,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly renderer = inject(Renderer2);
   private readonly viewportScroller = inject(ViewportScroller);
+  private readonly router = inject(Router);
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
   public readonly glossary = inject(GlossaryService);
@@ -45,8 +53,12 @@ export class AppComponent implements OnInit, OnDestroy {
   public showMobileMenu = false;
   public showDetailsDropdown = false;
   public showMobileDetailsSubmenu = false;
+  public showContributeDropdown = false;
+  public showMobileContributeSubmenu = false;
   public showAccountDropdown = false;
   public showMobileAccountSubmenu = false;
+  public isContributeRouteActive = false;
+  public isDetailsRouteActive = false;
 
   ngOnInit(): void {
     // Offset anchor scrolling by the fixed nav bar height
@@ -54,6 +66,15 @@ export class AppComponent implements OnInit, OnDestroy {
       const nav = this.document.querySelector('.nav-shell');
       return [0, nav ? nav.getBoundingClientRect().height : 0];
     });
+
+    // Track route changes to highlight dropdown triggers
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        this.isContributeRouteActive =
+          e.urlAfterRedirects.startsWith('/contribute');
+        this.isDetailsRouteActive = e.urlAfterRedirects.startsWith('/details');
+      });
 
     if (typeof window !== 'undefined') {
       const prefersDark = window.matchMedia(
@@ -87,6 +108,9 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.showDetailsDropdown) {
       this.closeDetailsDropdown();
     }
+    if (this.showContributeDropdown) {
+      this.closeContributeDropdown();
+    }
     if (this.showAccountDropdown) {
       this.closeAccountDropdown();
     }
@@ -103,6 +127,15 @@ export class AppComponent implements OnInit, OnDestroy {
       );
       if (!detailsContainer) {
         this.closeDetailsDropdown();
+      }
+    }
+
+    if (this.showContributeDropdown) {
+      const contributeContainer = target.closest(
+        '.nav-dropdown-container[data-dropdown="contribute"]',
+      );
+      if (!contributeContainer) {
+        this.closeContributeDropdown();
       }
     }
 
@@ -135,9 +168,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public toggleDetailsDropdown(): void {
     this.showDetailsDropdown = !this.showDetailsDropdown;
-    // Close account dropdown when opening details dropdown
     if (this.showDetailsDropdown) {
       this.showAccountDropdown = false;
+      this.showContributeDropdown = false;
     }
   }
 
@@ -151,9 +184,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public toggleAccountDropdown(): void {
     this.showAccountDropdown = !this.showAccountDropdown;
-    // Close details dropdown when opening account dropdown
     if (this.showAccountDropdown) {
       this.showDetailsDropdown = false;
+      this.showContributeDropdown = false;
     }
   }
 
@@ -163,6 +196,22 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public toggleMobileAccountSubmenu(): void {
     this.showMobileAccountSubmenu = !this.showMobileAccountSubmenu;
+  }
+
+  public toggleContributeDropdown(): void {
+    this.showContributeDropdown = !this.showContributeDropdown;
+    if (this.showContributeDropdown) {
+      this.showDetailsDropdown = false;
+      this.showAccountDropdown = false;
+    }
+  }
+
+  public closeContributeDropdown(): void {
+    this.showContributeDropdown = false;
+  }
+
+  public toggleMobileContributeSubmenu(): void {
+    this.showMobileContributeSubmenu = !this.showMobileContributeSubmenu;
   }
 
   private disableBodyScroll(): void {

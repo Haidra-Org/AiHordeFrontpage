@@ -10,11 +10,12 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { RouterLink } from '@angular/router';
 import { GlossaryService } from '../../services/glossary.service';
 
 @Component({
   selector: 'app-page-intro',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   template: `
     @if (!isDismissed()) {
       <div class="collapsible-card card-bg-secondary page-intro">
@@ -74,6 +75,7 @@ import { GlossaryService } from '../../services/glossary.service';
               <div
                 class="page-intro-body"
                 [innerHTML]="bodyKey() | transloco"
+                (click)="onBodyClick($event)"
               ></div>
 
               <div class="page-intro-actions">
@@ -95,23 +97,28 @@ import { GlossaryService } from '../../services/glossary.service';
                       d="M5 15l7-7 7 7"
                     />
                   </svg>
-                  {{ "help.collapse" | transloco }}
+                  {{ 'help.collapse' | transloco }}
                 </button>
-                @if (glossaryLink()) {
+                @if (glossaryLink() && !readMoreLink()) {
                   <button
                     type="button"
                     class="btn-secondary"
                     (click)="openGlossary()"
                   >
-                    {{ "help.open_glossary" | transloco }}
+                    {{ 'help.open_glossary' | transloco }}
                   </button>
+                }
+                @if (readMoreLink(); as link) {
+                  <a [routerLink]="link" class="btn-secondary">
+                    {{ 'help.learn_more' | transloco }}
+                  </a>
                 }
                 <button
                   type="button"
                   class="page-intro-dismiss"
                   (click)="dismiss()"
                 >
-                  {{ "help.dismiss" | transloco }}
+                  {{ 'help.dismiss' | transloco }}
                 </button>
               </div>
             </div>
@@ -138,7 +145,7 @@ import { GlossaryService } from '../../services/glossary.service';
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          {{ "help.show_intro" | transloco }}
+          {{ 'help.show_intro' | transloco }}
         </button>
       </div>
     }
@@ -157,18 +164,15 @@ export class PageIntroComponent {
   /** Whether to show the "Open Glossary" link */
   public readonly glossaryLink = input(true);
 
-  public readonly titleKey = computed(
-    () => `help.${this.pageKey()}.title`,
-  );
+  /** Optional routerLink to show a "Read more" link instead of glossary */
+  public readonly readMoreLink = input<string>();
+
+  public readonly titleKey = computed(() => `help.${this.pageKey()}.title`);
   public readonly subtitleKey = computed(
     () => `help.${this.pageKey()}.subtitle`,
   );
-  public readonly bodyKey = computed(
-    () => `help.${this.pageKey()}.body`,
-  );
-  public readonly contentId = computed(
-    () => `page-intro-${this.pageKey()}`,
-  );
+  public readonly bodyKey = computed(() => `help.${this.pageKey()}.body`);
+  public readonly contentId = computed(() => `page-intro-${this.pageKey()}`);
 
   private readonly _isExpanded = signal(true);
   private readonly _isDismissed = signal(false);
@@ -202,8 +206,7 @@ export class PageIntroComponent {
           ) || '64',
           10,
         );
-        const elementTop =
-          element.getBoundingClientRect().top + window.scrollY;
+        const elementTop = element.getBoundingClientRect().top + window.scrollY;
         window.scrollTo({
           top: elementTop - navHeight - 16,
           behavior: 'smooth',
@@ -235,6 +238,20 @@ export class PageIntroComponent {
 
   public openGlossary(): void {
     this.glossary.open();
+  }
+
+  /** Intercept clicks on glossary links rendered via innerHTML */
+  public onBodyClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'A' && target.classList.contains('glossary-link')) {
+      event.preventDefault();
+      const termClass = Array.from(target.classList).find((c) =>
+        c.startsWith('gl-'),
+      );
+      if (termClass) {
+        this.glossary.open(termClass.substring(3));
+      }
+    }
   }
 
   private storageKey(): string {

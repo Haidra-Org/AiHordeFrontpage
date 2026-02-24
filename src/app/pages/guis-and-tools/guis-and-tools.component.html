@@ -245,7 +245,8 @@
                     class="tools-toc-link"
                     [class.active]="activeSection() === section.id"
                     (click)="scrollToSection(section.id, $event)"
-                    [href]="'#section-' + section.id"
+                    routerLink="/guis"
+                    [fragment]="'section-' + section.id"
                   >
                     <span class="tools-toc-link-text">{{
                       section.titleKey | transloco
@@ -262,22 +263,28 @@
 
         <!-- Main Content -->
         <div class="tools-content">
-          <!-- Mobile Section Pills -->
-          <div class="tools-section-pills">
-            @for (section of visibleSections(); track section.id) {
-              <a
-                class="tools-section-pill"
-                [class.active]="activeSection() === section.id"
-                (click)="scrollToSection(section.id, $event)"
-                [href]="'#section-' + section.id"
-              >
-                {{ section.titleKey | transloco }}
-                <span class="tools-section-pill-count">{{
-                  section.items().length
-                }}</span>
-              </a>
-            }
-          </div>
+          <!-- Mobile Section Navigation Pills -->
+          <nav class="tools-section-pills" aria-label="Jump to section">
+            <span class="tools-section-pills-label">{{
+              "guis_and_tools_page.jump_to" | transloco
+            }}</span>
+            <div class="tools-section-pills-scroll">
+              @for (section of visibleSections(); track section.id) {
+                <a
+                  class="tools-section-pill"
+                  [class.active]="activeSection() === section.id"
+                  (click)="scrollToSection(section.id, $event)"
+                  routerLink="/guis"
+                  [fragment]="'section-' + section.id"
+                >
+                  {{ section.titleKey | transloco }}
+                  <span class="tools-section-pill-count">{{
+                    section.items().length
+                  }}</span>
+                </a>
+              }
+            </div>
+          </nav>
 
           <!-- Items List -->
           <div class="stack-lg">
@@ -295,6 +302,19 @@
                 (rowToggle)="toggleRow($event)"
                 (sectionToggle)="toggleSection($event)"
               />
+              @if (section.id === "workers") {
+                <div class="callout callout-accent mt-4">
+                  <p class="callout-body m-0">
+                    {{ "workers.tools_cta.message" | transloco }}
+                    <a
+                      routerLink="/contribute/workers"
+                      class="link font-semibold"
+                    >
+                      {{ "workers.tools_cta.link" | transloco }}
+                    </a>
+                  </p>
+                </div>
+              }
             }
 
             @if (filteredItems().length === 0) {

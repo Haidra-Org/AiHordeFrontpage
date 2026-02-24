@@ -39,7 +39,13 @@ interface ModelSuggestion {
 
 @Component({
   selector: 'app-models-list',
-  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent, PageIntroComponent, InfoTooltipComponent],
+  imports: [
+    TranslocoPipe,
+    DecimalPipe,
+    UnitTooltipComponent,
+    PageIntroComponent,
+    InfoTooltipComponent,
+  ],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

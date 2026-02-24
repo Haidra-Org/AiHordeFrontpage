@@ -14,6 +14,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -51,6 +52,7 @@ export interface SectionInfo {
   selector: 'app-guis-and-tools',
   imports: [
     FormsModule,
+    RouterLink,
     TranslocoModule,
     ItemListSectionComponent,
     BeginnerHeaderComponent,
@@ -284,11 +286,13 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Separate items by category for grouped display
   public filteredGuis = computed(() => {
-    return this.filteredItems().filter(
-      (item) =>
-        item.itemType === ItemType.GUI_IMAGE ||
-        item.itemType === ItemType.GUI_TEXT,
-    );
+    return this.filteredItems()
+      .filter(
+        (item) =>
+          item.itemType === ItemType.GUI_IMAGE ||
+          item.itemType === ItemType.GUI_TEXT,
+      )
+      .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
   });
 
   public filteredBots = computed(() => {
@@ -489,7 +493,27 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const element = document.getElementById(`section-${sectionId}`);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const filterBar = document.querySelector('.tools-filter-bar');
+      const navHeight =
+        window.innerWidth >= 768
+          ? parseInt(
+              getComputedStyle(document.documentElement).getPropertyValue(
+                '--nav-height-desktop',
+              ),
+              10,
+            )
+          : parseInt(
+              getComputedStyle(document.documentElement).getPropertyValue(
+                '--nav-height-mobile',
+              ),
+              10,
+            );
+      const filterBarHeight = filterBar
+        ? filterBar.getBoundingClientRect().height
+        : 0;
+      const offset = navHeight + filterBarHeight + 16;
+      const top = element.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top, behavior: 'smooth' });
       this.activeSection.set(sectionId);
     }
   }
@@ -552,6 +576,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       functionKind: item.functionKind,
       downloadButtonText: item.downloadButtonText,
       sourceControlLink: item.sourceControlLink,
+      recommended: item.recommended,
     };
   }
 }

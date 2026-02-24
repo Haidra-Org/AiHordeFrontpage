@@ -105,7 +105,6 @@ export class AdminWorkerService {
 
   /**
    * Delete a worker (requires moderator or owner permissions)
-   * Note: The worker must have been offline for more than 30 days
    */
   public deleteWorker(
     id: string,

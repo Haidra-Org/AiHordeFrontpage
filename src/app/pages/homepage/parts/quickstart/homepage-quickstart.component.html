@@ -4,7 +4,10 @@
       <div class="text-secondary sm:text-lg">
         <h2 class="mb-3 heading-section-lg">
           {{ "quickstart" | transloco }}
-          <app-info-tooltip termKey="help.home.tooltip.quickstart" glossaryId="api_key" />
+          <app-info-tooltip
+            termKey="help.home.tooltip.quickstart"
+            glossaryId="api_key"
+          />
         </h2>
 
         <p
@@ -28,20 +31,9 @@
           </li>
           <li class="flex space-x-3">
             <inline-svg href="assets/img/li-checkbox.svg" class="icon-sm" />
-            <span
-              class="text-base"
-              [innerHTML]="
-                'quickstart.explanation_api_key'
-                  | transloco
-                    : {
-                        kudosExplanationLink:
-                          '<a href=&quot;/faq#kudos&quot;>' +
-                          ('quickstart.explanation_api_key.kudosExplanationLink'
-                            | transloco) +
-                          '</a>',
-                      }
-              "
-            >
+            <span class="text-base">
+              {{ "quickstart.explanation_api_key" | transloco }}
+              <app-kudos-term />.
             </span>
           </li>
           <br />
@@ -50,7 +42,10 @@
             <div class="callout callout-accent mb-6">
               <h3 class="callout-title">
                 {{ "quickstart.try_frontend_title" | transloco }}
-                <app-info-tooltip termKey="help.home.tooltip.try_frontend" glossaryId="gui" />
+                <app-info-tooltip
+                  termKey="help.home.tooltip.try_frontend"
+                  glossaryId="gui"
+                />
               </h3>
               <p
                 class="callout-body"
@@ -61,7 +56,7 @@
                   href="https://artbot.site"
                   target="_blank"
                   rel="noreferrer noopener"
-                  class="btn-purple"
+                  class="btn-purple external-link"
                 >
                   {{ "quickstart.try_artbot_button" | transloco }}
                 </a>
@@ -83,7 +78,7 @@
                     | transloco
                       : {
                           discordLink:
-                            '<a href=&quot;https://discord.gg/3DxrhksKzn&quot; target=&quot;_blank&quot; class=&quot;font-semibold text-blue-600 dark:text-blue-400 hover:underline&quot;>' +
+                            '<a href=&quot;https://discord.gg/3DxrhksKzn&quot; target=&quot;_blank&quot; class=&quot;font-semibold text-blue-600 dark:text-blue-400 hover:underline external-link&quot;>' +
                             ('quickstart.discord_cta.discordLink' | transloco) +
                             '</a>',
                         }
@@ -92,7 +87,7 @@
               <a
                 href="https://discord.gg/3DxrhksKzn"
                 target="_blank"
-                class="btn-primary"
+                class="btn-primary external-link"
               >
                 {{ "quickstart.join_discord_button" | transloco }}
               </a>

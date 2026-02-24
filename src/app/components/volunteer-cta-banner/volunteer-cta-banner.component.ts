@@ -31,7 +31,7 @@ import { TranslocoModule } from '@jsverse/transloco';
       </div>
       <div class="volunteer-cta-banner-actions">
         <a
-          routerLink="/contribute/joining"
+          routerLink="/contribute/workers"
           class="volunteer-cta-banner-link volunteer-cta-banner-link-primary"
         >
           {{ 'volunteer_cta.become_worker' | transloco }}

@@ -12,4 +12,5 @@ export interface GuiItem {
   domain?: Domain[];
   functionKind: FunctionKind;
   platform?: Platform[];
+  recommended?: boolean;
 }

@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
@@ -10,10 +11,18 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
   styleUrl: './homepage-intro.component.css',
 })
 export class HomepageIntroComponent {
-  faqLink: string;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly document = inject(DOCUMENT);
+  private readonly router = inject(Router);
 
-  constructor(private router: Router) {
-    // Generate the URL for the FAQ page
-    this.faqLink = this.router.createUrlTree(['/faq']).toString();
+  faqLink = this.router.createUrlTree(['/faq']).toString();
+
+  scrollToFragment(fragmentId: string, event: Event): void {
+    event.preventDefault();
+    if (!isPlatformBrowser(this.platformId)) return;
+    const element = this.document.getElementById(fragmentId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 }

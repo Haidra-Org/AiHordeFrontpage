@@ -11,12 +11,18 @@ import { Router, RouterLink } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { extractUserId } from '../../../helper/user-parser';
 
 @Component({
   selector: 'app-users-list',
-  imports: [TranslocoPipe, EntityLookupComponent, RouterLink],
+  imports: [
+    TranslocoPipe,
+    EntityLookupComponent,
+    RouterLink,
+    PageIntroComponent,
+  ],
   template: `
     <section class="section-primary">
       <div class="container-page-header">
@@ -32,6 +38,8 @@ import { extractUserId } from '../../../helper/user-parser';
     <section class="section-secondary">
       <div class="container-spaced">
         <div class="container-page-content">
+          <app-page-intro pageKey="users" />
+
           <div class="card card-bg-primary card-full">
             <h2 class="heading-card">
               {{ 'details.users.lookup.label' | transloco }}

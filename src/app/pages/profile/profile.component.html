@@ -95,12 +95,10 @@
     <div class="grid-items">
       <div class="text-secondary sm:text-lg">
         @if (!auth.isLoggedIn()) {
+          <app-page-intro pageKey="profile_guest" />
           <!-- Login Form -->
           <div class="container-centered-md">
             <div class="card card-bg-primary">
-              <h2 class="heading-card">
-                {{ "profile.login_title" | transloco }}
-              </h2>
               <p class="text-intro">
                 {{ "profile.login_description" | transloco }}
               </p>
@@ -153,7 +151,7 @@
                 {{ "profile.no_account" | transloco }}
                 <a
                   href="https://aihorde.net/register"
-                  class="link"
+                  class="link external-link"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -358,7 +356,7 @@
                 </div>
 
                 <!-- Kudos Section -->
-                <h3 class="heading-card">{{ "profile.kudos" | transloco }}</h3>
+                <h3 class="heading-card"><app-kudos-term /></h3>
                 <div class="highlight-box">
                   <span class="data-value-xl">{{
                     auth.currentUser()!.kudos | formatNumber

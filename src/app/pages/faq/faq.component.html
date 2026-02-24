@@ -22,88 +22,206 @@
 </section>
 
 @if (faq()) {
+  <!-- Shared ToC body template for mobile and desktop -->
+  <ng-template #tocBody>
+    @for (
+      sectionItemPair of faq()! | keyvalue: NoSorterKeyValue;
+      track sectionItemPair
+    ) {
+      <div class="faq-toc-section-group">
+        <button
+          type="button"
+          class="faq-toc-section-btn"
+          [class.faq-toc-active]="activeSectionKey() === sectionItemPair.key"
+          (click)="toggleTocSection(sectionItemPair.key)"
+        >
+          <span>{{
+            sectionItemPair.key === ""
+              ? ("faq.section_general" | transloco)
+              : sectionItemPair.key
+          }}</span>
+          <svg
+            class="faq-toc-section-chevron"
+            [class.expanded]="isTocSectionExpanded(sectionItemPair.key)"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+        @if (isTocSectionExpanded(sectionItemPair.key)) {
+          <ul class="faq-toc-question-list">
+            @for (faqItem of sectionItemPair.value; track faqItem.question) {
+              <li>
+                <button
+                  type="button"
+                  class="faq-toc-question-link"
+                  [class.faq-toc-active]="
+                    questionDistance(faqItem.question) === 0
+                  "
+                  [class.faq-toc-near-1]="
+                    questionDistance(faqItem.question) === 1
+                  "
+                  [class.faq-toc-near-2]="
+                    questionDistance(faqItem.question) === 2
+                  "
+                  (click)="
+                    scrollToQuestion(sectionItemPair.key, faqItem.question)
+                  "
+                >
+                  {{ faqItem.question }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  </ng-template>
+
   <section class="section-secondary">
     <div class="container-content">
-      <div class="max-w-4xl mx-auto">
-        @for (
-          sectionItemPair of faq()! | keyvalue: NoSorterKeyValue;
-          track sectionItemPair
-        ) {
-          <div style="position: relative; padding-bottom: 1rem">
-            @if (sectionItemPair.key !== "") {
-              <h2
-                class="heading-section section-header-collapsible"
-                (click)="toggleSection(sectionItemPair.key)"
-              >
-                <span>{{ sectionItemPair.key }}</span>
-                <svg
-                  class="chevron-icon"
-                  [class.expanded]="!isSectionCollapsed(sectionItemPair.key)"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </h2>
-            }
-
-            @if (!isSectionCollapsed(sectionItemPair.key)) {
-              <div class="space-y-0">
-                @for (
-                  faqItem of sectionItemPair.value;
-                  track faqItem.question
-                ) {
-                  <div>
-                    <h3>
-                      <button
-                        type="button"
-                        [class.is-active]="selectedFaq() === faqItem.question"
-                        class="faq-question"
-                        [attr.aria-expanded]="
-                          selectedFaq() === faqItem.question
-                        "
-                        [attr.aria-controls]="'faq-answer-' + faqItem.question"
-                        (click)="
-                          selectedFaq.set(
-                            selectedFaq() === faqItem.question
-                              ? null
-                              : faqItem.question
-                          )
-                        "
-                      >
-                        <span class="text-left pr-4">{{
-                          faqItem.question
-                        }}</span>
-                        <inline-svg
-                          href="assets/img/faq-closed.svg"
-                          class="faq-chevron"
-                        />
-                      </button>
-                    </h3>
-                    @if (selectedFaq() === faqItem.question) {
-                      <div
-                        class="faq-answer"
-                        [id]="'faq-answer-' + faqItem.question"
-                        role="region"
-                      >
-                        <div
-                          class="prose-content"
-                          [innerHTML]="faqItem.answer"
-                        ></div>
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            }
+      <!-- Mobile ToC (sticky below nav) -->
+      <nav
+        class="faq-toc-mobile"
+        [attr.aria-label]="'faq.toc_label' | transloco"
+      >
+        <button
+          type="button"
+          class="faq-toc-mobile-toggle"
+          [attr.aria-expanded]="tocOpen()"
+          (click)="tocOpen.set(!tocOpen())"
+        >
+          <span>{{ "faq.table_of_contents" | transloco }}</span>
+          <svg
+            class="faq-toc-mobile-chevron"
+            [class.expanded]="tocOpen()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+        @if (tocOpen()) {
+          <div class="faq-toc-mobile-body">
+            <ng-container *ngTemplateOutlet="tocBody" />
           </div>
         }
+      </nav>
+
+      <!-- Layout: sidebar + content -->
+      <div class="faq-layout">
+        <!-- Desktop sidebar ToC -->
+        <nav
+          class="faq-toc-sidebar"
+          [attr.aria-label]="'faq.toc_label' | transloco"
+        >
+          <h2 class="faq-toc-sidebar-title">
+            {{ "faq.table_of_contents" | transloco }}
+          </h2>
+          <div class="faq-toc-sidebar-body">
+            <ng-container *ngTemplateOutlet="tocBody" />
+          </div>
+        </nav>
+
+        <!-- FAQ content -->
+        <div class="faq-content">
+          @for (
+            sectionItemPair of faq()! | keyvalue: NoSorterKeyValue;
+            track sectionItemPair
+          ) {
+            <div
+              style="position: relative; padding-bottom: 1rem"
+              [id]="
+                sectionItemPair.key !== ''
+                  ? 'faq-section-' + sectionSlug(sectionItemPair.key)
+                  : 'faq-section-general'
+              "
+            >
+              @if (sectionItemPair.key !== "") {
+                <h2
+                  class="heading-section section-header-collapsible"
+                  (click)="toggleSection(sectionItemPair.key)"
+                >
+                  <span>{{ sectionItemPair.key }}</span>
+                  <svg
+                    class="chevron-icon"
+                    [class.expanded]="!isSectionCollapsed(sectionItemPair.key)"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </h2>
+              }
+
+              @if (!isSectionCollapsed(sectionItemPair.key)) {
+                <div class="space-y-0">
+                  @for (
+                    faqItem of sectionItemPair.value;
+                    track faqItem.question
+                  ) {
+                    <div [id]="'faq-item-' + questionSlug(faqItem.question)">
+                      <h3>
+                        <button
+                          type="button"
+                          [class.is-active]="isFaqExpanded(faqItem.question)"
+                          class="faq-question"
+                          [attr.aria-expanded]="isFaqExpanded(faqItem.question)"
+                          [attr.aria-controls]="
+                            'faq-answer-' + questionSlug(faqItem.question)
+                          "
+                          (click)="toggleFaq(faqItem.question)"
+                        >
+                          <span class="text-left pr-4">{{
+                            faqItem.question
+                          }}</span>
+                          <inline-svg
+                            href="assets/img/faq-closed.svg"
+                            class="faq-chevron"
+                          />
+                        </button>
+                      </h3>
+                      @if (isFaqExpanded(faqItem.question)) {
+                        <div
+                          class="faq-answer"
+                          [class.faq-answer-highlight]="
+                            highlightedQuestions().has(faqItem.question)
+                          "
+                          [id]="'faq-answer-' + questionSlug(faqItem.question)"
+                          role="region"
+                        >
+                          <div
+                            class="prose-content"
+                            [innerHTML]="faqItem.answer"
+                          ></div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
       </div>
     </div>
   </section>
