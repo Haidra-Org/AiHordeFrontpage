@@ -13,6 +13,11 @@
    ================================================================= */
 
 @layer utilities {
+  /* Inline term with tooltip — keeps "Kudos ⓘ" on one line */
+  .kudos-term {
+    @apply inline-flex items-baseline gap-0.5 whitespace-nowrap;
+  }
+
   /* Icon sizing */
   .icon-sm {
     @apply shrink-0 w-4 h-4 mt-0.5;

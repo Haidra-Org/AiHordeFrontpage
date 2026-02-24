@@ -58,6 +58,8 @@ const TOOLTIP_HEIGHT_ESTIMATE = 280;
 const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 
+let nextTooltipId = 0;
+
 /**
  * A reusable component for displaying synthesized units with tooltips.
  *
@@ -97,7 +99,7 @@ const TOOLTIP_OFFSET = 8;
         [attr.data-tooltip-position]="position()"
         tabindex="0"
         role="button"
-        aria-describedby="tooltip-content"
+        [attr.aria-describedby]="tooltipId"
         (mouseenter)="showTooltip()"
         (mouseleave)="hideTooltip()"
         (focusin)="showTooltip()"
@@ -107,7 +109,7 @@ const TOOLTIP_OFFSET = 8;
         <span
           class="tooltip-text tooltip-text-fixed"
           role="tooltip"
-          id="tooltip-content"
+          [id]="tooltipId"
           [ngStyle]="tooltipStyles()"
         >
           <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong
@@ -137,6 +139,9 @@ export class UnitTooltipComponent {
   private readonly elementRef = inject(ElementRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
+
+  /** Unique ID for this tooltip instance (deterministic for SSR hydration) */
+  public readonly tooltipId = `tooltip-${nextTooltipId++}`;
 
   /** The synthesized unit data to display */
   public readonly unit = input.required<SynthesizedUnit | null>();

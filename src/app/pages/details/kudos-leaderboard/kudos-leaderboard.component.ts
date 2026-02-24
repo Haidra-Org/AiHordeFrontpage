@@ -18,10 +18,18 @@ import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { AuthService } from '../../../services/auth.service';
 import { LeaderboardUser } from '../../../types/leaderboard-user';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
+import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.component';
 
 @Component({
   selector: 'app-kudos-leaderboard',
-  imports: [TranslocoPipe, DecimalPipe, RouterLink],
+  imports: [
+    TranslocoPipe,
+    DecimalPipe,
+    RouterLink,
+    PageIntroComponent,
+    KudosTermComponent,
+  ],
   templateUrl: './kudos-leaderboard.component.html',
   styleUrl: './kudos-leaderboard.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

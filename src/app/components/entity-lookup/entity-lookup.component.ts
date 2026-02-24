@@ -16,7 +16,9 @@ import { TranslocoPipe } from '@jsverse/transloco';
     <div class="entity-lookup">
       <form (submit)="onSubmit($event)" class="entity-lookup-form">
         <div class="entity-lookup-input-wrapper">
-          <label [for]="inputId" class="sr-only">{{ label() }}</label>
+          <label [for]="inputId" class="sr-only">{{
+            label() | transloco
+          }}</label>
           <input
             [id]="inputId"
             type="text"

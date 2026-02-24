@@ -35,7 +35,13 @@ interface ModelUsageEntry {
 
 @Component({
   selector: 'app-usage-stats',
-  imports: [TranslocoPipe, DecimalPipe, UnitTooltipComponent, PageIntroComponent, InfoTooltipComponent],
+  imports: [
+    TranslocoPipe,
+    DecimalPipe,
+    UnitTooltipComponent,
+    PageIntroComponent,
+    InfoTooltipComponent,
+  ],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

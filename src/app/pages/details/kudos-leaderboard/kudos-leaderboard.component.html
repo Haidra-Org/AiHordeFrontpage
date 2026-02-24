@@ -1,4 +1,6 @@
 <div class="stack-lg">
+  <app-page-intro pageKey="leaderboard" />
+
   <!-- Header with Refresh -->
   <div class="details-tabs">
     <button
@@ -192,9 +194,9 @@
             <span class="models-table-th">{{
               "details.leaderboard.username" | transloco
             }}</span>
-            <span class="models-table-th models-table-th-right">{{
-              "details.leaderboard.kudos" | transloco
-            }}</span>
+            <span class="models-table-th models-table-th-right"
+              ><app-kudos-term
+            /></span>
           </div>
           @for (user of users(); track user.id; let i = $index) {
             <div class="models-table-row leaderboard-table-row">

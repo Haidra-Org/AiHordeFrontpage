@@ -205,9 +205,7 @@
         <div class="card card-bg-primary">
           <h3 class="heading-card">
             {{ "details.usage.queue_status" | transloco }}
-            <app-info-tooltip
-              termKey="help.stats.tooltip.queued_requests"
-            />
+            <app-info-tooltip termKey="help.stats.tooltip.queued_requests" />
           </h3>
           <div class="data-grid-1-2-3">
             <div class="data-item-box">
@@ -461,7 +459,7 @@
               href="https://grafana.aihorde.net/"
               target="_blank"
               rel="noopener noreferrer"
-              class="btn-primary"
+              class="btn-primary external-link"
             >
               {{ "details.usage.open_grafana" | transloco }}
             </a>

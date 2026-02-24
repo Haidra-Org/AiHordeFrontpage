@@ -18,10 +18,43 @@
               width="393"
               priority
             />
-            <span class="logo-text">
-              {{ "app_title" | transloco }}
-            </span>
           </a>
+          <div class="logo-text-group">
+            <a routerLink="/" class="logo-text-link">
+              <span class="logo-text">
+                {{ "app_title" | transloco }}
+              </span>
+            </a>
+
+            <div class="github-widget">
+              <a
+                href="https://github.com/Haidra-Org/AI-Horde"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View AI-Horde on GitHub"
+              >
+                <img
+                  [ngSrc]="
+                    themeService.isDark()
+                      ? './assets/img/GitHub_Invertocat_White_Clearspace.svg'
+                      : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'
+                  "
+                  alt=""
+                  height="20"
+                  width="20"
+                />
+              </a>
+              <a
+                class="github-button"
+                href="https://github.com/Haidra-org/AI-Horde"
+                data-color-scheme="no-preference: light; light: light; dark: dark;"
+                data-icon="octicon-star"
+                data-show-count="true"
+                aria-label="Star Haidra-org/AI-Horde on GitHub"
+                >Star</a
+              >
+            </div>
+          </div>
         </div>
 
         <!-- Desktop Navigation Menu -->
@@ -34,6 +67,14 @@
             [routerLinkActiveOptions]="{ exact: true }"
           >
             {{ "home" | transloco }}
+          </a>
+          <a
+            routerLink="/mission/"
+            class="nav-link"
+            role="menuitem"
+            routerLinkActive="nav-link-active"
+          >
+            {{ "mission.nav_link" | transloco }}
           </a>
           <a
             routerLink="/news/"
@@ -51,14 +92,57 @@
           >
             {{ "guis_and_tools" | transloco }}
           </a>
-          <a
-            routerLink="/contribute"
-            class="nav-link"
-            role="menuitem"
-            routerLinkActive="nav-link-active"
-          >
-            {{ "joining" | transloco }}
-          </a>
+          <!-- Contribute Dropdown -->
+          <div class="nav-dropdown-container" data-dropdown="contribute">
+            <button
+              type="button"
+              class="nav-link nav-dropdown-trigger"
+              [class.nav-link-active]="
+                showContributeDropdown || isContributeRouteActive
+              "
+              (click)="toggleContributeDropdown(); $event.stopPropagation()"
+              aria-haspopup="true"
+              [attr.aria-expanded]="showContributeDropdown"
+            >
+              {{ "joining" | transloco }}
+              <svg
+                class="nav-dropdown-chevron"
+                [class.nav-dropdown-chevron-open]="showContributeDropdown"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            @if (showContributeDropdown) {
+              <div class="nav-dropdown-menu" role="menu">
+                <a
+                  routerLink="/contribute/workers"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeContributeDropdown()"
+                >
+                  {{ "nav.contribute.become_worker" | transloco }}
+                </a>
+                <a
+                  routerLink="/contribute/donate"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeContributeDropdown()"
+                >
+                  {{ "nav.contribute.donate" | transloco }}
+                </a>
+              </div>
+            }
+          </div>
 
           <a
             routerLink="/faq/"
@@ -76,7 +160,9 @@
             <button
               type="button"
               class="nav-link nav-dropdown-trigger"
-              [class.nav-link-active]="showDetailsDropdown"
+              [class.nav-link-active]="
+                showDetailsDropdown || isDetailsRouteActive
+              "
               (click)="toggleDetailsDropdown(); $event.stopPropagation()"
               aria-haspopup="true"
               [attr.aria-expanded]="showDetailsDropdown"
@@ -199,7 +285,7 @@
                 </a>
                 <a
                   href="https://aihorde.net/register"
-                  class="nav-dropdown-item"
+                  class="nav-dropdown-item external-link"
                   role="menuitem"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -309,6 +395,15 @@
               {{ "home" | transloco }}
             </a>
             <a
+              routerLink="/mission/"
+              class="mobile-nav-link"
+              role="menuitem"
+              routerLinkActive="mobile-nav-link-active"
+              (click)="closeMobileMenu()"
+            >
+              {{ "mission.nav_link" | transloco }}
+            </a>
+            <a
               routerLink="/news/"
               class="mobile-nav-link"
               role="menuitem"
@@ -326,6 +421,56 @@
             >
               {{ "guis_and_tools" | transloco }}
             </a>
+            <!-- Contribute Submenu -->
+            <div class="mobile-nav-submenu">
+              <button
+                type="button"
+                class="mobile-nav-link mobile-nav-submenu-trigger"
+                (click)="
+                  toggleMobileContributeSubmenu(); $event.stopPropagation()
+                "
+                aria-haspopup="true"
+                [attr.aria-expanded]="showMobileContributeSubmenu"
+              >
+                {{ "joining" | transloco }}
+                <svg
+                  class="mobile-nav-chevron"
+                  [class.mobile-nav-chevron-open]="showMobileContributeSubmenu"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              @if (showMobileContributeSubmenu) {
+                <div class="mobile-nav-submenu-items">
+                  <a
+                    routerLink="/contribute/workers"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.contribute.become_worker" | transloco }}
+                  </a>
+                  <a
+                    routerLink="/contribute/donate"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.contribute.donate" | transloco }}
+                  </a>
+                </div>
+              }
+            </div>
             <!-- Active Details Submenu -->
             <div class="mobile-nav-submenu">
               <button
@@ -469,7 +614,7 @@
                   </a>
                   <a
                     href="https://aihorde.net/register"
-                    class="mobile-nav-link mobile-nav-submenu-item"
+                    class="mobile-nav-link mobile-nav-submenu-item external-link"
                     role="menuitem"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -509,6 +654,7 @@
                 href="https://discord.gg/3DxrhksKzn"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "discord" | transloco }}</a
               >
             </li>
@@ -517,6 +663,7 @@
                 href="https://www.patreon.com/db0"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "patreon" | transloco }}</a
               >
             </li>
@@ -525,6 +672,7 @@
                 href="https://github.com/Haidra-Org"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "github" | transloco }}</a
               >
             </li>
@@ -533,6 +681,7 @@
                 href="https://sigmoid.social/@stablehorde"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "mastodon" | transloco }}</a
               >
             </li>
@@ -541,6 +690,7 @@
                 href="https://lemmy.dbzer0.com/c/aihorde"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "lemmy" | transloco }}</a
               >
             </li>
@@ -556,6 +706,7 @@
                 href="https://dbzer0.com/"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >db0</a
               >
             </li>
@@ -564,6 +715,7 @@
                 href="https://github.com/haidra-org"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >Haidra</a
               >
             </li>
@@ -597,15 +749,21 @@
           </h3>
           <ul class="footer-links">
             <li class="mb-3">
+              <a routerLink="/mission" class="hover:underline">{{
+                "mission.nav_link" | transloco
+              }}</a>
+            </li>
+            <li class="mb-3">
               <a
                 href="https://aihorde.net/api/"
                 class="hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
                 >{{ "rest_api" | transloco }}</a
               >
             </li>
             <li class="mb-3">
-              <a routerLink="/contribute/joining" class="hover:underline">{{
+              <a routerLink="/contribute/workers" class="hover:underline">{{
                 "join_horde" | transloco
               }}</a>
             </li>
@@ -622,9 +780,13 @@
           </h3>
           <ul class="footer-links">
             <li class="mb-3">
-              <a href="https://aihorde.net/register" class="hover:underline">{{
-                "register_account" | transloco
-              }}</a>
+              <a
+                href="https://aihorde.net/register"
+                class="hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                >{{ "register_account" | transloco }}</a
+              >
             </li>
             <li class="mb-3">
               <a routerLink="/profile/" class="hover:underline">{{

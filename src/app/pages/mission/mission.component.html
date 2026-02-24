@@ -1,0 +1,416 @@
+<!-- Page Header -->
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-hero">
+        {{ "mission.title" | transloco }}
+      </h1>
+      <p class="text-intro-lead">
+        {{ "mission.subtitle" | transloco }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Mission Statement -->
+<section class="section-secondary">
+  <div class="max-w-4xl mx-auto px-4 py-12">
+    <div class="callout callout-accent mb-12">
+      <h2 class="callout-title text-xl">
+        {{ "mission.statement.title" | transloco }}
+      </h2>
+      <p class="callout-body text-lg leading-relaxed">
+        {{ "mission.statement.body" | transloco }}
+      </p>
+    </div>
+
+    <!-- Why We Exist -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg">
+        {{ "mission.why.title" | transloco }}
+      </h2>
+      <p class="text-lead mb-6">
+        {{ "mission.why.paragraph1" | transloco }}
+      </p>
+      <p class="text-secondary mb-6">
+        {{ "mission.why.paragraph2" | transloco }}
+      </p>
+      <p class="text-secondary">
+        {{ "mission.why.paragraph3" | transloco }}
+      </p>
+    </div>
+
+    <!-- Core Values -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg text-center mb-8">
+        {{ "mission.values.title" | transloco }}
+      </h2>
+
+      <div class="feature-grid">
+        <div class="feature-box">
+          <div class="feature-box-icon feature-box-icon-green">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h3 class="feature-box-title">
+            {{ "mission.values.access.title" | transloco }}
+          </h3>
+          <p class="feature-box-description">
+            {{ "mission.values.access.description" | transloco }}
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-box-icon feature-box-icon-purple">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+          </div>
+          <h3 class="feature-box-title">
+            {{ "mission.values.solidarity.title" | transloco }}
+          </h3>
+          <p class="feature-box-description">
+            {{ "mission.values.solidarity.description" | transloco }}
+          </p>
+        </div>
+
+        <div class="feature-box">
+          <div class="feature-box-icon feature-box-icon-blue">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+              />
+            </svg>
+          </div>
+          <h3 class="feature-box-title">
+            {{ "mission.values.openness.title" | transloco }}
+          </h3>
+          <p class="feature-box-description">
+            {{ "mission.values.openness.description" | transloco }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- The Record So Far -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg text-center mb-4">
+        {{ "mission.track_record.title" | transloco }}
+      </h2>
+      <p class="text-lead text-center mb-8">
+        {{ "mission.track_record.intro" | transloco }}
+      </p>
+
+      <!-- Group 1: Throughput (float left) -->
+      <div class="track-record-group">
+        <aside
+          class="track-record-stats track-record-stats-left"
+          [attr.aria-label]="
+            'mission.track_record.stats.throughput_title' | transloco
+          "
+        >
+          <h3 class="track-record-stats-title">
+            {{ "mission.track_record.stats.throughput_title" | transloco }}
+          </h3>
+          <dl class="track-record-stats-list">
+            @if (imageStats()) {
+              <div class="track-record-stat">
+                <dt class="track-record-stat-label">
+                  {{
+                    "mission.track_record.stats.images_generated" | transloco
+                  }}
+                </dt>
+                <dd class="track-record-stat-value">
+                  {{ units.formatLargeNumber(imageStats()!.images, "") }}
+                </dd>
+              </div>
+            }
+            @if (textStats()) {
+              <div class="track-record-stat">
+                <dt class="track-record-stat-label">
+                  {{ "mission.track_record.stats.text_requests" | transloco }}
+                </dt>
+                <dd class="track-record-stat-value">
+                  {{ units.formatLargeNumber(textStats()!.requests, "") }}
+                </dd>
+              </div>
+              <div class="track-record-stat">
+                <dt class="track-record-stat-label">
+                  {{
+                    "mission.track_record.stats.tokens_generated" | transloco
+                  }}
+                </dt>
+                <dd class="track-record-stat-value">
+                  {{ units.formatLargeNumber(textStats()!.tokens, "") }}
+                </dd>
+              </div>
+            }
+          </dl>
+        </aside>
+
+        <p class="text-secondary">
+          {{ "mission.track_record.scale.paragraph1" | transloco }}
+        </p>
+      </div>
+
+      <!-- Group 2: Open Source (float right) -->
+      <div class="track-record-group">
+        <aside
+          class="track-record-stats track-record-stats-right"
+          [attr.aria-label]="
+            'mission.track_record.stats.open_source_title' | transloco
+          "
+        >
+          <h3 class="track-record-stats-title">
+            {{ "mission.track_record.stats.open_source_title" | transloco }}
+          </h3>
+          <dl class="track-record-stats-list">
+            <div class="track-record-stat">
+              <dt class="track-record-stat-label">
+                {{ "mission.track_record.stats.repos" | transloco }}
+              </dt>
+              <dd class="track-record-stat-value">30+</dd>
+            </div>
+            <div class="track-record-stat">
+              <dt class="track-record-stat-label">
+                {{ "mission.track_record.stats.github_stars" | transloco }}
+              </dt>
+              <dd class="track-record-stat-value">1,900+</dd>
+            </div>
+            <div class="track-record-stat">
+              <dt class="track-record-stat-label">
+                {{ "mission.track_record.stats.releases" | transloco }}
+              </dt>
+              <dd class="track-record-stat-value">300+</dd>
+            </div>
+          </dl>
+        </aside>
+
+        <p class="text-secondary">
+          {{ "mission.track_record.engineering.paragraph1" | transloco }}
+        </p>
+      </div>
+
+      <!-- Group 3: Community (float left) -->
+      <div class="track-record-group">
+        <aside
+          class="track-record-stats track-record-stats-left"
+          [attr.aria-label]="
+            'mission.track_record.stats.community_title' | transloco
+          "
+        >
+          <h3 class="track-record-stats-title">
+            {{ "mission.track_record.stats.community_title" | transloco }}
+          </h3>
+          <dl class="track-record-stats-list">
+            <div class="track-record-stat">
+              <dt class="track-record-stat-label">
+                {{ "mission.track_record.stats.contributors" | transloco }}
+              </dt>
+              <dd class="track-record-stat-value">100+</dd>
+            </div>
+            @if (performance()) {
+              <div class="track-record-stat">
+                <dt class="track-record-stat-label">
+                  {{ "mission.track_record.stats.active_workers" | transloco }}
+                </dt>
+                <dd class="track-record-stat-value">
+                  {{
+                    performance()!.worker_count +
+                      performance()!.text_worker_count | number
+                  }}
+                </dd>
+              </div>
+            }
+            <div class="track-record-stat">
+              <dt class="track-record-stat-label">
+                {{ "mission.track_record.stats.integrations" | transloco }}
+              </dt>
+              <!-- Make "Dozens" a link to the guis & tools page-->
+              <!-- <dd class="track-record-stat-value">Dozens</dd> -->
+              <dd class="track-record-stat-value">
+                <a routerLink="/guis" class="text-link">Dozens</a>
+              </dd>
+            </div>
+          </dl>
+        </aside>
+
+        <p class="text-secondary">
+          {{ "mission.track_record.community.paragraph1" | transloco }}
+        </p>
+      </div>
+    </div>
+
+    <!-- The Power of Crowdsourcing -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg">
+        {{ "mission.crowdsourcing.title" | transloco }}
+      </h2>
+      <p class="text-lead mb-6">
+        {{ "mission.crowdsourcing.paragraph1" | transloco }}
+      </p>
+      <p class="text-secondary mb-6">
+        {{ "mission.crowdsourcing.paragraph2" | transloco }}
+      </p>
+      <p class="text-secondary">
+        {{ "mission.crowdsourcing.paragraph3" | transloco }}
+      </p>
+    </div>
+
+    <!-- Why Free Access Matters -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg">
+        {{ "mission.free_access.title" | transloco }}
+      </h2>
+      <p class="text-lead mb-6">
+        {{ "mission.free_access.paragraph1" | transloco }}
+      </p>
+      <p class="text-secondary mb-6">
+        {{ "mission.free_access.paragraph2" | transloco }}
+      </p>
+      <p class="text-secondary">
+        {{ "mission.free_access.paragraph3" | transloco }}
+      </p>
+    </div>
+
+    <!-- What We Stand Against -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg">
+        {{ "mission.hedge.title" | transloco }}
+      </h2>
+      <p class="text-lead mb-6">
+        {{ "mission.hedge.paragraph1" | transloco }}
+      </p>
+      <p class="text-secondary mb-6">
+        {{ "mission.hedge.paragraph2" | transloco }}
+      </p>
+      <p class="text-secondary">
+        {{ "mission.hedge.paragraph3" | transloco }}
+      </p>
+    </div>
+
+    <!-- Our Commitments -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg text-center mb-8">
+        {{ "mission.commitments.title" | transloco }}
+      </h2>
+
+      <div class="step-list">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3 class="step-title">
+              {{ "mission.commitments.nonprofit.title" | transloco }}
+            </h3>
+            <p class="step-description">
+              {{ "mission.commitments.nonprofit.description" | transloco }}
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3 class="step-title">
+              {{ "mission.commitments.opensource.title" | transloco }}
+            </h3>
+            <p class="step-description">
+              {{ "mission.commitments.opensource.description" | transloco }}
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3 class="step-title">
+              {{ "mission.commitments.nocommodification.title" | transloco }}
+            </h3>
+            <p class="step-description">
+              {{
+                "mission.commitments.nocommodification.description" | transloco
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3 class="step-title">
+              {{ "mission.commitments.community.title" | transloco }}
+            </h3>
+            <p class="step-description">
+              {{ "mission.commitments.community.description" | transloco }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Haidra Organization -->
+    <div class="prose-content mb-12">
+      <h2 class="heading-section-lg">
+        {{ "mission.haidra.title" | transloco }}
+      </h2>
+      <p class="text-lead mb-6">
+        {{ "mission.haidra.paragraph1" | transloco }}
+      </p>
+      <p class="text-secondary">
+        {{ "mission.haidra.paragraph2" | transloco }}
+      </p>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="prose-content mb-8">
+      <div class="text-center">
+        <h2 class="heading-section-lg mb-4">
+          {{ "mission.cta.title" | transloco }}
+        </h2>
+        <p class="text-lead mb-8">
+          {{ "mission.cta.description" | transloco }}
+        </p>
+        <div class="btn-group btn-group--center">
+          <a routerLink="/contribute/joining" class="btn-primary">
+            {{ "mission.cta.join" | transloco }}
+          </a>
+          <a routerLink="/contribute/donate" class="btn-secondary">
+            {{ "mission.cta.donate" | transloco }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

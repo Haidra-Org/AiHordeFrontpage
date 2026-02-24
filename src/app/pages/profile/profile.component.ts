@@ -35,6 +35,8 @@ import { UnitTooltipComponent } from '../../components/unit-tooltip/unit-tooltip
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { DeleteAccountDialogComponent } from '../../components/delete-account-dialog/delete-account-dialog.component';
 import { AdminDialogComponent } from '../../components/admin/admin-dialog/admin-dialog.component';
+import { PageIntroComponent } from '../../components/page-intro/page-intro.component';
+import { KudosTermComponent } from '../../components/kudos-term/kudos-term.component';
 
 type WorkerListItem = {
   id: string;
@@ -58,6 +60,8 @@ type WorkerListItem = {
     UnitTooltipComponent,
     DeleteAccountDialogComponent,
     AdminDialogComponent,
+    PageIntroComponent,
+    KudosTermComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',

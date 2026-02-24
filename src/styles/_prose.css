@@ -129,4 +129,11 @@
   .prose-content em {
     @apply italic;
   }
+
+  /* Prose abbreviations – visual hint that hovering reveals more info */
+  .prose-content abbr[title] {
+    @apply cursor-help no-underline;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+  }
 }

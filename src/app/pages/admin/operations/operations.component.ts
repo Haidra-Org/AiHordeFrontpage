@@ -24,7 +24,12 @@ import {
 } from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
 
-type DialogType = 'deleteIP' | 'blockWorker' | 'unblockWorker' | 'refreshIP' | 'batchRefreshIP';
+type DialogType =
+  | 'deleteIP'
+  | 'blockWorker'
+  | 'unblockWorker'
+  | 'refreshIP'
+  | 'batchRefreshIP';
 
 @Component({
   selector: 'app-operations',
@@ -55,7 +60,10 @@ export class OperationsComponent implements OnInit {
   public selectedIPs = signal<Set<string>>(new Set());
   public batchRefreshHours = signal<number>(720);
   public batchRefreshing = signal<boolean>(false);
-  public batchRefreshProgress = signal<{ completed: number; total: number }>({ completed: 0, total: 0 });
+  public batchRefreshProgress = signal<{ completed: number; total: number }>({
+    completed: 0,
+    total: 0,
+  });
 
   // Add IP Timeout form state
   public addIPAddress = signal<string>('');
@@ -604,9 +612,15 @@ export class OperationsComponent implements OnInit {
         this.loadIPTimeouts();
 
         if (failCount === 0) {
-          this.showToast('success', `Successfully refreshed ${successCount} IP timeout(s).`);
+          this.showToast(
+            'success',
+            `Successfully refreshed ${successCount} IP timeout(s).`,
+          );
         } else {
-          this.showToast('warning', `Refreshed ${successCount} IP(s), ${failCount} failed.`);
+          this.showToast(
+            'warning',
+            `Refreshed ${successCount} IP(s), ${failCount} failed.`,
+          );
         }
         return;
       }
@@ -623,13 +637,19 @@ export class OperationsComponent implements OnInit {
             } else {
               failCount++;
             }
-            this.batchRefreshProgress.set({ completed, total: selected.length });
+            this.batchRefreshProgress.set({
+              completed,
+              total: selected.length,
+            });
             processNext(index + 1);
           },
           error: () => {
             completed++;
             failCount++;
-            this.batchRefreshProgress.set({ completed, total: selected.length });
+            this.batchRefreshProgress.set({
+              completed,
+              total: selected.length,
+            });
             processNext(index + 1);
           },
         });

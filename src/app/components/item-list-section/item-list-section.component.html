@@ -10,7 +10,10 @@
         {{ title() | transloco }}
         <span class="tools-section-count">{{ items().length }}</span>
         @if (tooltipKey()) {
-          <app-info-tooltip [termKey]="tooltipKey()!" [glossaryId]="tooltipGlossaryId()" />
+          <app-info-tooltip
+            [termKey]="tooltipKey()!"
+            [glossaryId]="tooltipGlossaryId()"
+          />
         }
       </span>
       <svg
@@ -57,6 +60,11 @@
                 <div class="tools-grid-card-content">
                   <h3 class="tools-grid-card-title">{{ item.name }}</h3>
                   <div class="tools-grid-card-badges">
+                    @if (item.recommended) {
+                      <span class="badge-base badge-recommended badge-sm">
+                        {{ "guis_and_tools.recommended" | transloco }}
+                      </span>
+                    }
                     <span class="badge-base badge-primary badge-sm">
                       {{ getItemTypeLabel(item.itemType) | transloco }}
                     </span>
@@ -72,7 +80,7 @@
                   <a
                     [href]="item.sourceControlLink"
                     target="_blank"
-                    class="btn-source-control btn-sm"
+                    class="btn-source-control btn-sm external-link"
                     (click)="$event.stopPropagation()"
                   >
                     {{ getSourceControlDomain(item.sourceControlLink) }}
@@ -81,7 +89,7 @@
                 <a
                   [href]="item.link"
                   target="_blank"
-                  class="btn-purple btn-sm"
+                  class="btn-purple btn-sm external-link"
                   (click)="$event.stopPropagation()"
                 >
                   {{ "guis_and_tools.visit" | transloco }}
@@ -135,6 +143,11 @@
 
                   <!-- Badges - Limited Display -->
                   <div class="badge-container-tight">
+                    @if (item.recommended) {
+                      <span class="badge-base badge-recommended">
+                        {{ "guis_and_tools.recommended" | transloco }}
+                      </span>
+                    }
                     <span class="badge-base badge-primary">
                       {{ getItemTypeLabel(item.itemType) | transloco }}
                     </span>
@@ -199,7 +212,7 @@
                     <a
                       [href]="item.sourceControlLink"
                       target="_blank"
-                      class="btn-source-control btn-sm"
+                      class="btn-source-control btn-sm external-link"
                       (click)="$event.stopPropagation()"
                       [title]="
                         'View source code on ' +
@@ -212,7 +225,7 @@
                   <a
                     [href]="item.link"
                     target="_blank"
-                    class="btn-purple btn-sm"
+                    class="btn-purple btn-sm external-link"
                     (click)="$event.stopPropagation()"
                     [title]="getButtonText(item)"
                   >

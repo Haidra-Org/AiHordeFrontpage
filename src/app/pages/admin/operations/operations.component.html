@@ -868,7 +868,9 @@
   [confirmLabel]="'admin.operations.dialog.refresh' | transloco"
   [cancelLabel]="'admin.operations.dialog.cancel' | transloco"
   [loading]="isDialogLoading()"
-  [loadingLabel]="batchRefreshProgress().completed + '/' + batchRefreshProgress().total"
+  [loadingLabel]="
+    batchRefreshProgress().completed + '/' + batchRefreshProgress().total
+  "
   (confirm)="confirmDialog()"
   (cancel)="closeDialog()"
 >
@@ -892,7 +894,9 @@
           >
           <div class="flex flex-wrap gap-1 mt-1">
             @for (ip of selectedIPsList(); track ip.ipaddr) {
-              <code class="data-table-mono data-table-mono-primary text-xs">{{ ip.ipaddr }}</code>
+              <code class="data-table-mono data-table-mono-primary text-xs">{{
+                ip.ipaddr
+              }}</code>
             }
           </div>
         </div>
@@ -903,11 +907,14 @@
           >
           <div class="flex flex-wrap gap-1 mt-1">
             @for (ip of selectedIPsList().slice(0, 3); track ip.ipaddr) {
-              <code class="data-table-mono data-table-mono-primary text-xs">{{ ip.ipaddr }}</code>
+              <code class="data-table-mono data-table-mono-primary text-xs">{{
+                ip.ipaddr
+              }}</code>
             }
-            <span class="admin-text-muted text-xs"
-              >{{ "admin.operations.batch.and_more" | transloco: { count: selectedCount() - 3 } }}</span
-            >
+            <span class="admin-text-muted text-xs">{{
+              "admin.operations.batch.and_more"
+                | transloco: { count: selectedCount() - 3 }
+            }}</span>
           </div>
         </div>
       }

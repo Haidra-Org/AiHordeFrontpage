@@ -15,7 +15,10 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "image_stats" | transloco }}
-            <app-info-tooltip termKey="help.home.tooltip.image_stats" glossaryId="dreamer" />
+            <app-info-tooltip
+              termKey="help.home.tooltip.image_stats"
+              glossaryId="dreamer"
+            />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -106,7 +109,10 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "text_stats" | transloco }}
-            <app-info-tooltip termKey="help.home.tooltip.text_stats" glossaryId="scribe" />
+            <app-info-tooltip
+              termKey="help.home.tooltip.text_stats"
+              glossaryId="scribe"
+            />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -197,7 +203,10 @@
         <div class="space-y-3">
           <h3 class="heading-stats">
             {{ "image_alchemy" | transloco }}
-            <app-info-tooltip termKey="help.home.tooltip.alchemy" glossaryId="alchemist" />
+            <app-info-tooltip
+              termKey="help.home.tooltip.alchemy"
+              glossaryId="alchemist"
+            />
           </h3>
           <ul role="list" class="list-stats">
             <li class="flex items-start space-x-2">
@@ -258,20 +267,28 @@
           </h3>
           <ul role="list" class="space-y-2 underline-links mt-3">
             <li class="flex items-start space-x-2">
-                <inline-svg href="assets/img/stats-realtime.svg" class="icon-sm" />
-                <!-- Links to the /details/usage and /details/models pages -->
-                <span class="text-sm leading-relaxed text-gray-900 dark:text-white">
-                  <a href="/details/usage" class="underline">
-                    {{ "stats.realtime.usage_link" | transloco }}
-                  </a>
-                  <span class="mx-1">|</span>
-                  <a href="/details/models" class="underline">
-                    {{ "stats.realtime.models_link" | transloco }}
-                  </a>
-                </span>
+              <inline-svg
+                href="assets/img/stats-realtime.svg"
+                class="icon-sm"
+              />
+              <!-- Links to the /details/usage and /details/models pages -->
+              <span
+                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+              >
+                <a href="/details/usage" class="underline">
+                  {{ "stats.realtime.usage_link" | transloco }}
+                </a>
+                <span class="mx-1">|</span>
+                <a href="/details/models" class="underline">
+                  {{ "stats.realtime.models_link" | transloco }}
+                </a>
+              </span>
             </li>
             <li class="flex items-start space-x-2">
-              <inline-svg href="assets/img/stats-realtime.svg" class="icon-sm" />
+              <inline-svg
+                href="assets/img/stats-realtime.svg"
+                class="icon-sm"
+              />
               <span
                 class="text-sm leading-relaxed text-gray-900 dark:text-white"
                 [innerHTML]="
@@ -279,7 +296,7 @@
                     | transloco
                       : {
                           grafanaLink:
-                            '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot;>' +
+                            '<a href=&quot;https://grafana.aihorde.net/&quot; target=&quot;_blank&quot; class=&quot;external-link&quot;>' +
                             ('stats.realtime.grafanaLink' | transloco) +
                             '</a>',
                         }

@@ -557,6 +557,73 @@
   }
 
   /* =================================================================
+     TRACK RECORD - Floating stats boxes with prose content
+     Used on the mission page to display live stats alongside narrative.
+     Three alternating float boxes: left, right, left.
+     ================================================================= */
+
+  /* Each group contains one float box + prose; overflow:hidden clears the float */
+  .track-record-group {
+    @apply overflow-hidden mb-8;
+
+    &:last-child {
+      @apply mb-0;
+    }
+  }
+
+  /* Shared stats box styling */
+  .track-record-stats {
+    @apply w-full mb-6 p-5 rounded-xl;
+    @apply bg-purple-50 border border-purple-200;
+    @apply dark:bg-purple-950/40 dark:border-purple-800/50;
+  }
+
+  .track-record-stats-left {
+    @media (min-width: 768px) {
+      float: left;
+      width: 16rem;
+      margin-right: 1.5rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .track-record-stats-right {
+    @media (min-width: 768px) {
+      float: right;
+      width: 16rem;
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .track-record-stats-title {
+    @apply text-sm font-bold uppercase tracking-wide mb-3 text-center;
+    @apply text-purple-700;
+    @apply dark:text-purple-300;
+  }
+
+  .track-record-stats-list {
+    @apply space-y-3 m-0;
+  }
+
+  .track-record-stat {
+    @apply flex flex-col text-center;
+  }
+
+  .track-record-stat-value {
+    @apply text-xl font-extrabold m-0;
+    @apply text-purple-900;
+    @apply dark:text-purple-100;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .track-record-stat-label {
+    @apply text-xs font-medium;
+    @apply text-purple-600;
+    @apply dark:text-purple-400;
+  }
+
+  /* =================================================================
      STEP INDICATORS - Numbered steps for guides/tutorials
      ================================================================= */
 
@@ -615,6 +682,11 @@
     @apply dark:border-blue-400;
   }
 
+  .software-link--green:hover {
+    @apply border-green-500;
+    @apply dark:border-green-400;
+  }
+
   /* Software icon container (small) */
   .software-icon {
     @apply shrink-0 w-10 h-10 rounded-lg flex items-center justify-center;
@@ -628,6 +700,11 @@
   .software-icon-blue {
     @apply bg-blue-100 text-blue-600;
     @apply dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  .software-icon-green {
+    @apply bg-green-100 text-green-600;
+    @apply dark:bg-green-900 dark:text-green-300;
   }
 
   .software-icon svg {

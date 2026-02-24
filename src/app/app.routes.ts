@@ -63,6 +63,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'mission',
+    loadComponent: () =>
+      import('./pages/mission/mission.component').then(
+        (c) => c.MissionComponent,
+      ),
+  },
+  {
     path: 'sponsors',
     loadComponent: () =>
       import('./pages/sponsors/sponsors.component').then(
@@ -94,7 +101,7 @@ export const routes: Routes = [
   },
   {
     path: 'joining',
-    redirectTo: 'contribute/joining',
+    redirectTo: 'contribute/workers',
     pathMatch: 'full',
   },
   {

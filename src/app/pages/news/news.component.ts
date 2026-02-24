@@ -3,12 +3,16 @@ import {
   Component,
   DestroyRef,
   inject,
+  OnInit,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { combineLatest, map } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { NewsItem } from '../../types/news.types';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { TranslatorService } from '../../services/translator.service';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
 import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
 
@@ -19,9 +23,11 @@ import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
   templateUrl: './news.component.html',
   styleUrl: './news.component.css',
 })
-export class NewsComponent {
+export class NewsComponent implements OnInit {
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly title = inject(Title);
+  private readonly translator = inject(TranslatorService);
 
   public readonly news = signal<NewsItem[]>([]);
   public readonly loading = signal(true);
@@ -43,5 +49,17 @@ export class NewsComponent {
           },
         });
     });
+  }
+
+  ngOnInit(): void {
+    combineLatest([
+      this.translator.get('latest_news.title'),
+      this.translator.get('app_title'),
+    ])
+      .pipe(
+        map(([newsTitle, appTitle]) => `${newsTitle} | ${appTitle}`),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((title) => this.title.setTitle(title));
   }
 }

@@ -3,13 +3,18 @@ import { Routes } from '@angular/router';
 export const contributeRoutes: Routes = [
   {
     path: '',
-    redirectTo: 'joining',
+    redirectTo: 'workers',
     pathMatch: 'full',
   },
   {
-    path: 'joining',
+    path: 'workers',
     loadComponent: () =>
-      import('./joining/joining.component').then((c) => c.JoiningComponent),
+      import('./workers/workers.component').then((c) => c.WorkersComponent),
+  },
+  {
+    path: 'joining',
+    redirectTo: 'workers',
+    pathMatch: 'full',
   },
   {
     path: 'donate',

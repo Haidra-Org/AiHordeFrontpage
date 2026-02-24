@@ -357,14 +357,12 @@
     text-align: left;
     border-radius: var(--tooltip-border-radius);
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    font-size: 0.8125rem;
+    font-size: 1rem;
     font-weight: 400;
     line-height: 1.625;
     white-space: normal;
     border: 1px solid var(--color-edge-primary);
     box-shadow: var(--shadow-lg);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 
     /* Animation handled by inline styles for visibility/opacity */
     transition: opacity var(--tooltip-transition-duration) ease-out;
@@ -415,10 +413,11 @@
     margin-left: 0;
   }
 
-  /* Disable default hover/focus visibility for fixed mode (JS controls it) */
+  /* Intentionally empty: overrides default hover/focus visibility rules.
+     Fixed-mode tooltip visibility is controlled entirely by JS inline styles,
+     so CSS must not compete with it (avoids flicker on hover/focus). */
   .tooltip-fixed-mode:hover .tooltip-text-fixed,
   .tooltip-fixed-mode:focus-within .tooltip-text-fixed {
-    /* Visibility is controlled by inline styles, not hover state */
   }
 }
 

@@ -24,9 +24,12 @@
               }
               @if (newsItem.moreLink) {
                 <p class="mb-2 font-light lg:text-lg">
-                  <a [href]="newsItem.moreLink" target="_blank">{{
-                    "read_more" | transloco
-                  }}</a>
+                  <a
+                    [href]="newsItem.moreLink"
+                    target="_blank"
+                    class="external-link"
+                    >{{ "read_more" | transloco }}</a
+                  >
                 </p>
               }
             </div>

@@ -22,6 +22,7 @@ const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 const HIDE_DELAY_MS = 150;
 const POPOVER_CLOSE_DELAY_MS = 200;
+const CLICK_CLOSE_GUARD_MS = 600;
 
 interface TooltipStyles {
   position: 'fixed';
@@ -41,10 +42,11 @@ interface TooltipStyles {
       [class]="positionClasses()"
       tabindex="0"
       [attr.aria-describedby]="tooltipId()"
+      (pointerdown)="handlePointerDown()"
       (click)="handleClick($event)"
       (mouseenter)="showTooltip()"
       (mouseleave)="scheduleHide()"
-      (focusin)="showTooltip()"
+      (focusin)="handleFocusIn()"
       (focusout)="scheduleHide()"
     >
       <svg
@@ -72,7 +74,9 @@ interface TooltipStyles {
         (mouseleave)="scheduleHide()"
       >
         @if (labelKey()) {
-          <strong class="tooltip-highlight">{{ labelKey()! | transloco }}</strong
+          <strong class="tooltip-highlight">{{
+            labelKey()! | transloco
+          }}</strong
           ><br />
         }
         <span>{{ termKey() | transloco }}</span>
@@ -82,7 +86,7 @@ interface TooltipStyles {
             class="info-tooltip-glossary-link"
             (mousedown)="openGlossary($event)"
           >
-            {{ "help.learn_more" | transloco }}
+            {{ 'help.learn_more' | transloco }}
           </button>
         }
       </span>
@@ -110,17 +114,18 @@ export class InfoTooltipComponent implements OnDestroy {
   private static nextId = 0;
   private readonly instanceId = InfoTooltipComponent.nextId++;
 
-  public readonly tooltipId = computed(
-    () => `info-tooltip-${this.instanceId}`,
-  );
+  public readonly tooltipId = computed(() => `info-tooltip-${this.instanceId}`);
 
-  readonly tooltipContent = viewChild<ElementRef<HTMLElement>>('tooltipContent');
+  readonly tooltipContent =
+    viewChild<ElementRef<HTMLElement>>('tooltipContent');
 
   private readonly isVisible = signal(false);
   private readonly autoDetectedPosition = signal('');
   private readonly fixedStyles = signal<Partial<TooltipStyles>>({});
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
   private popoverTimer: ReturnType<typeof setTimeout> | null = null;
+  private pointerTriggered = false;
+  private shownAt = 0;
 
   constructor() {
     afterNextRender(() => {
@@ -138,6 +143,7 @@ export class InfoTooltipComponent implements OnDestroy {
     this.clearHideTimer();
     this.clearPopoverTimer();
     this.isVisible.set(true);
+    this.shownAt = Date.now();
     this.calculateFixedPosition();
     this.openPopover();
   }
@@ -175,7 +181,11 @@ export class InfoTooltipComponent implements OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
     const el = this.tooltipContent()?.nativeElement;
     if (el && 'showPopover' in el) {
-      try { el.showPopover(); } catch { /* already open */ }
+      try {
+        el.showPopover();
+      } catch {
+        /* already open */
+      }
     }
   }
 
@@ -190,13 +200,35 @@ export class InfoTooltipComponent implements OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
     const el = this.tooltipContent()?.nativeElement;
     if (el && 'hidePopover' in el) {
-      try { el.hidePopover(); } catch { /* already closed */ }
+      try {
+        el.hidePopover();
+      } catch {
+        /* already closed */
+      }
     }
   }
 
-  /** Stops click from bubbling to parent (e.g. sortable column headers). */
+  /** Flags that the next focusin was caused by a pointer so handleFocusIn can skip it. */
+  public handlePointerDown(): void {
+    this.pointerTriggered = true;
+  }
+
+  /** Shows tooltip on keyboard focus only; pointer-triggered focus is handled by handleClick. */
+  public handleFocusIn(): void {
+    if (this.pointerTriggered) return;
+    this.showTooltip();
+  }
+
+  /** Toggles tooltip on click and stops event from bubbling to parent (e.g. sortable column headers). */
   public handleClick(event: MouseEvent): void {
     event.stopPropagation();
+    this.pointerTriggered = false;
+    if (this.isVisible() && Date.now() - this.shownAt >= CLICK_CLOSE_GUARD_MS) {
+      this.isVisible.set(false);
+      this.schedulePopoverClose();
+    } else if (!this.isVisible()) {
+      this.showTooltip();
+    }
   }
 
   public openGlossary(event: MouseEvent): void {
@@ -243,7 +275,8 @@ export class InfoTooltipComponent implements OnDestroy {
     const classes: string[] = [];
     if (needsBottom) classes.push('tooltip-pos-bottom');
     if (overflowsLeft && !overflowsRight) classes.push('tooltip-pos-left');
-    else if (overflowsRight && !overflowsLeft) classes.push('tooltip-pos-right');
+    else if (overflowsRight && !overflowsLeft)
+      classes.push('tooltip-pos-right');
     else if (overflowsLeft && overflowsRight) classes.push('tooltip-pos-left');
     this.autoDetectedPosition.set(classes.join(' '));
 

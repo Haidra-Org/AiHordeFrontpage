@@ -38,6 +38,7 @@ export interface DisplayItem {
   functionKind: FunctionKind;
   downloadButtonText?: string | null;
   sourceControlLink?: string;
+  recommended?: boolean;
 }
 
 @Component({

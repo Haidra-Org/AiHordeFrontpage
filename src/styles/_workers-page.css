@@ -1,0 +1,395 @@
+@layer components {
+  /* =================================================================
+     WORKERS PAGE - Layout & Sidebar
+     ================================================================= */
+
+  .workers-layout {
+    @apply flex gap-4;
+  }
+
+  /* Sidebar: hidden on mobile, sticky on desktop */
+  .workers-sidebar {
+    @apply hidden shrink-0 w-60;
+
+    @media (min-width: 1024px) {
+      @apply block;
+    }
+  }
+
+  .workers-sidebar-inner {
+    @apply sticky space-y-6;
+    top: calc(var(--nav-height-desktop) + 3rem);
+    @apply gap-2;
+  }
+
+  /* Main content area */
+  .workers-main {
+    @apply flex-1 min-w-0;
+  }
+
+  /* Mobile mission callout: visible below lg, hidden on desktop */
+  .workers-mobile-mission {
+    @apply mb-8;
+
+    @media (min-width: 1024px) {
+      @apply hidden;
+    }
+  }
+
+  /* Mobile stats: visible below lg, hidden on desktop */
+  .workers-mobile-stats {
+    @apply mb-8;
+
+    @media (min-width: 1024px) {
+      @apply hidden;
+    }
+  }
+
+  /* Compact mobile layout: domains side-by-side in a row */
+  .workers-mobile-stats .workers-stats-panel {
+    @apply p-3;
+  }
+
+  .workers-mobile-stats .workers-stats-title {
+    @apply mb-2 text-xs;
+  }
+
+  .workers-mobile-stats .workers-stats-domains-row {
+    @apply flex gap-2;
+  }
+
+  .workers-mobile-stats .workers-stats-domain {
+    @apply flex-1 py-1.5 px-2 rounded-lg;
+    @apply bg-surface-primary dark:bg-gray-900;
+    @apply border border-edge-primary dark:border-gray-700;
+  }
+
+  .workers-mobile-stats .workers-stats-domain-header {
+    @apply mb-1.5 text-[10px];
+  }
+
+  .workers-mobile-stats .workers-stats-grid {
+    @apply gap-1 grid-cols-2;
+  }
+
+  .workers-mobile-stats .workers-stat-value {
+    @apply text-base leading-tight;
+  }
+
+  .workers-mobile-stats .workers-stat-label {
+    @apply mt-0 text-[10px] leading-tight;
+  }
+
+  .workers-mobile-stats .workers-stats-needs-help {
+    @apply hidden;
+  }
+
+  .workers-mobile-stats .workers-stats-cta {
+    @apply mt-3 pt-2;
+  }
+
+  /* Cancel the -mx-2 bleed trick used in sidebar; cards already have explicit borders */
+  .workers-mobile-stats .workers-stats-domain--needs-help {
+    @apply mx-0;
+  }
+
+  /* =================================================================
+     WORKERS STATS PANEL
+     ================================================================= */
+
+  .workers-stats-panel {
+    @apply rounded-xl p-5;
+    @apply bg-surface-secondary border border-edge-primary;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .workers-stats-title {
+    @apply text-sm font-bold uppercase tracking-wide mb-4;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .workers-stats-grid {
+    @apply grid grid-cols-3 gap-3;
+  }
+
+  .workers-stat {
+    @apply flex flex-col;
+  }
+
+  .workers-stat-value {
+    @apply text-xl font-bold;
+    @apply text-content-primary dark:text-white;
+  }
+
+  .workers-stat-label {
+    @apply text-xs mt-1;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  /* Domain sections within the stats panel */
+  .workers-stats-domain {
+    @apply py-3;
+  }
+
+  .workers-stats-domain + .workers-stats-domain {
+    @apply border-t border-edge-primary;
+    @apply dark:border-gray-700;
+  }
+
+  .workers-stats-domain-header {
+    @apply flex items-center justify-between mb-2 text-xs font-semibold uppercase tracking-wide no-underline;
+    @apply transition-colors duration-200;
+  }
+
+  .workers-stats-domain-header--purple {
+    @apply text-purple-600 dark:text-purple-400;
+  }
+
+  .workers-stats-domain-header--purple:hover {
+    @apply text-purple-800 dark:text-purple-300;
+  }
+
+  .workers-stats-domain-header--blue {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+
+  .workers-stats-domain-header--blue:hover {
+    @apply text-blue-800 dark:text-blue-300;
+  }
+
+  .workers-stats-domain-header--green {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .workers-stats-domain-header--green:hover {
+    @apply text-green-800 dark:text-green-300;
+  }
+
+  /* =================================================================
+     WORKERS STATS - "NEEDS HELP" INDICATORS
+     ================================================================= */
+
+  .workers-stats-domain--needs-help {
+    @apply rounded-lg px-2 -mx-2;
+    background: rgb(245 158 11 / 0.06);
+  }
+
+  .dark .workers-stats-domain--needs-help {
+    background: rgb(245 158 11 / 0.08);
+  }
+
+  .workers-stats-needs-help {
+    @apply flex items-center gap-1.5 mt-2 text-xs font-medium;
+    @apply text-amber-700 dark:text-amber-400;
+  }
+
+  .workers-stats-needs-help--purple {
+    @apply text-purple-700 dark:text-purple-400;
+  }
+
+  .workers-stats-needs-help--blue {
+    @apply text-blue-700 dark:text-blue-400;
+  }
+
+  .workers-stats-needs-help--green {
+    @apply text-green-700 dark:text-green-400;
+  }
+
+  .workers-stats-needs-help-dot {
+    @apply block w-1.5 h-1.5 rounded-full shrink-0;
+    @apply bg-amber-500 dark:bg-amber-400;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .workers-stats-needs-help--purple .workers-stats-needs-help-dot {
+    @apply bg-purple-500 dark:bg-purple-400;
+  }
+
+  .workers-stats-needs-help--blue .workers-stats-needs-help-dot {
+    @apply bg-blue-500 dark:bg-blue-400;
+  }
+
+  .workers-stats-needs-help--green .workers-stats-needs-help-dot {
+    @apply bg-green-500 dark:bg-green-400;
+  }
+
+  /* CTA banner at bottom of stats panel */
+  .workers-stats-cta {
+    @apply mt-4 pt-3 text-center;
+    @apply border-t border-dashed border-edge-primary dark:border-gray-700;
+  }
+
+  .workers-stats-cta-text {
+    @apply text-xs m-0 mb-1.5;
+    @apply text-content-secondary dark:text-gray-400;
+  }
+
+  .workers-stats-cta-link {
+    @apply text-xs font-semibold no-underline transition-colors;
+    @apply text-purple-600 hover:text-purple-800;
+    @apply dark:text-purple-400 dark:hover:text-purple-300;
+  }
+
+  /* =================================================================
+     WORKERS STATS - HOVER LINK IMPROVEMENTS
+     ================================================================= */
+
+  .workers-stats-domain-header:hover .workers-stats-domain-label {
+    @apply underline;
+  }
+
+  /* =================================================================
+     WORKER TYPE CARDS - "NEEDS HELP" STYLING
+     ================================================================= */
+
+  .card--needs-help {
+    @apply ring-2 ring-amber-400/40 dark:ring-amber-500/30;
+  }
+
+  .card-needs-help-banner {
+    @apply flex items-center gap-2 -mx-5 -mt-5 mb-4 px-5 py-2 text-xs font-semibold uppercase tracking-wide rounded-t-xl;
+  }
+
+  .card-needs-help-banner--purple {
+    @apply bg-purple-100 text-purple-800;
+    @apply dark:bg-purple-950 dark:text-purple-200;
+  }
+
+  .card-needs-help-banner--blue {
+    @apply bg-blue-100 text-blue-800;
+    @apply dark:bg-blue-950 dark:text-blue-200;
+  }
+
+  .card-needs-help-banner--green {
+    @apply bg-green-100 text-green-800;
+    @apply dark:bg-green-950 dark:text-green-200;
+  }
+
+  /* =================================================================
+     NETWORK DIAGRAM
+     ================================================================= */
+
+  .network-diagram {
+    @apply rounded-xl p-6;
+    @apply bg-surface-secondary border border-edge-primary;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .network-diagram-intro {
+    @apply text-sm mb-5;
+    @apply text-content-secondary dark:text-gray-300;
+  }
+
+  .network-diagram-flow {
+    @apply flex flex-col items-stretch gap-4;
+
+    @media (min-width: 768px) {
+      @apply flex-row justify-center items-stretch gap-2;
+    }
+  }
+
+  .network-node {
+    @apply flex flex-col text-center p-4 rounded-xl;
+    @apply min-w-0;
+    @apply bg-white border-2 border-edge-primary;
+    @apply dark:bg-gray-900 dark:border-gray-600;
+    transition: border-color 0.2s ease;
+
+    @media (min-width: 768px) {
+      @apply w-[220px];
+    }
+  }
+
+  .network-node--user {
+    @apply border-purple-400 dark:border-purple-400;
+  }
+
+  .network-node--api {
+    @apply border-blue-400 dark:border-blue-400;
+  }
+
+  .network-node--workers {
+    @apply border-green-400 dark:border-green-400;
+  }
+
+  .network-node-icon {
+    @apply w-10 h-10 mb-2 mx-auto;
+    @apply text-content-secondary dark:text-gray-400;
+  }
+
+  .network-node--user .network-node-icon {
+    @apply text-purple-400 dark:text-purple-400;
+  }
+
+  .network-node--api .network-node-icon {
+    @apply text-blue-400 dark:text-blue-400;
+  }
+
+  .network-node--workers .network-node-icon {
+    @apply text-green-400 dark:text-green-400;
+  }
+
+  .network-node-label {
+    @apply text-sm font-bold;
+    @apply text-content-primary dark:text-white;
+  }
+
+  .network-node-sublabel {
+    @apply text-xs mt-1;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .network-link {
+    @apply flex flex-col gap-2 rounded-lg;
+    @apply px-3 py-2;
+    @apply bg-surface-primary border border-edge-primary;
+    @apply dark:bg-gray-900 dark:border-gray-700;
+
+    @media (min-width: 768px) {
+      @apply justify-center self-center;
+      @apply px-2;
+      min-width: 150px;
+    }
+  }
+
+  .network-link-item {
+    @apply flex items-center justify-center gap-2;
+  }
+
+  .network-link-item--forward {
+    @apply text-content-primary dark:text-white;
+  }
+
+  .network-link-item--backward {
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .network-link-arrow {
+    @apply font-bold text-sm;
+  }
+
+  .network-link-label {
+    @apply text-xs text-center;
+  }
+
+  .network-worker-steps {
+    @apply mt-3 text-left text-xs space-y-1 list-none p-0;
+    @apply text-content-secondary dark:text-gray-300;
+  }
+
+  .network-worker-steps li {
+    @apply relative pl-4;
+  }
+
+  .network-worker-steps li::before {
+    content: "";
+    @apply absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full;
+    @apply bg-green-500 dark:bg-green-400;
+  }
+
+  .network-loop-note {
+    @apply mt-5 pt-4 text-xs text-center;
+    @apply border-t border-dashed border-edge-primary;
+    @apply text-content-muted dark:border-gray-600 dark:text-gray-400;
+  }
+}

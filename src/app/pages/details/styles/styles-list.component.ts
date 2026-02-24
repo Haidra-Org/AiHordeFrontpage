@@ -48,6 +48,7 @@ import {
   StyleFormSubmitEvent,
 } from '../../../components/style/style-form/style-form.component';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
+import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 
 export type StylesTab = 'image' | 'text' | 'collections';
 
@@ -61,6 +62,7 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     StyleFiltersComponent,
     StyleFormComponent,
     EntityLookupComponent,
+    PageIntroComponent,
   ],
   templateUrl: './styles-list.component.html',
   styleUrl: './styles-list.component.css',

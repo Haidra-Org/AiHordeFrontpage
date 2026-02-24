@@ -9,7 +9,8 @@
     "itemType": "gui-text",
     "domain": ["text"],
     "functionKind": "frontend",
-    "platform": ["windows", "linux", "macos"]
+    "platform": ["windows", "linux", "macos"],
+    "recommended": true
   },
   {
     "name": "SillyTavern",
@@ -21,7 +22,8 @@
     "itemType": "gui-text",
     "domain": ["text"],
     "functionKind": "frontend",
-    "platform": ["windows", "linux", "macos"]
+    "platform": ["windows", "linux", "macos"],
+    "recommended": true
   },
   {
     "name": "KoboldAI Lite",
@@ -33,7 +35,8 @@
     "domain": ["text"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net"
+    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net",
+    "recommended": true
   },
   {
     "name": "AgnAIstic",

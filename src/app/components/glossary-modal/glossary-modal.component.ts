@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { RouterLink } from '@angular/router';
 import {
   GlossaryService,
   GlossaryCategory,
@@ -22,7 +23,7 @@ import {
 
 @Component({
   selector: 'app-glossary-modal',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink],
   template: `
     @if (glossary.isOpen()) {
       <div
@@ -32,11 +33,14 @@ import {
         [attr.aria-label]="'help.glossary.title' | transloco"
         (keydown.escape)="close()"
       >
-        <div class="modal-backdrop modal-backdrop--blur" (click)="close()"></div>
+        <div
+          class="modal-backdrop modal-backdrop--blur"
+          (click)="close()"
+        ></div>
         <div class="modal-panel modal-panel--xl glossary-modal-panel">
           <!-- Header -->
           <div class="modal-header">
-            <h2 class="modal-title">{{ "help.glossary.title" | transloco }}</h2>
+            <h2 class="modal-title">{{ 'help.glossary.title' | transloco }}</h2>
             <button
               type="button"
               class="modal-close"
@@ -79,7 +83,7 @@ import {
               [class.glossary-category-active]="activeCategory() === null"
               (click)="setCategory(null)"
             >
-              {{ "help.glossary.category.all" | transloco }}
+              {{ 'help.glossary.category.all' | transloco }}
             </button>
             @for (cat of categories; track cat.id) {
               <button
@@ -107,10 +111,34 @@ import {
                   {{ term.titleKey | transloco }}
                 </h3>
                 <p class="glossary-term-body">{{ term.bodyKey | transloco }}</p>
+                @if (term.faqFragment || term.links?.length) {
+                  <div class="glossary-term-links">
+                    @if (term.faqFragment) {
+                      <a
+                        class="glossary-faq-link"
+                        routerLink="/faq"
+                        [fragment]="term.faqFragment"
+                        (click)="close()"
+                      >
+                        {{ 'help.glossary.read_more_faq' | transloco }}
+                      </a>
+                    }
+                    @for (link of term.links; track link.routerLink) {
+                      <a
+                        class="glossary-faq-link"
+                        [routerLink]="link.routerLink"
+                        [fragment]="link.fragment"
+                        (click)="close()"
+                      >
+                        {{ link.labelKey | transloco }}
+                      </a>
+                    }
+                  </div>
+                }
               </div>
             } @empty {
               <p class="text-secondary text-sm">
-                {{ "help.glossary.no_results" | transloco }}
+                {{ 'help.glossary.no_results' | transloco }}
               </p>
             }
           </div>

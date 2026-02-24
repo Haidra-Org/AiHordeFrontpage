@@ -135,6 +135,12 @@
     @apply sm:text-sm;
   }
 
+  /* Strong text within intro feature text - high contrast for emphasis */
+  .intro-feature-text strong {
+    @apply font-semibold text-gray-900;
+    @apply dark:text-white;
+  }
+
   /* Intro feature card as link */
   .intro-feature-card-link {
     @apply no-underline block cursor-pointer;
@@ -191,6 +197,116 @@
   .dark .intro-link-badge:hover {
     @apply bg-gray-700 border-purple-500 text-purple-500;
     box-shadow: 0 4px 12px -2px rgb(168 85 247 / 0.2);
+  }
+
+  /* =================================================================
+     BEGINNER BANNER
+     Compact orientation callout replacing the old collapsible intro
+     ================================================================= */
+
+  .beginner-banner {
+    @apply relative rounded-lg border overflow-hidden;
+    @apply p-4 sm:p-5;
+    @apply bg-gray-50 border-gray-200;
+    @apply dark:bg-gray-900 dark:border-gray-700;
+    border-left: 3px solid rgb(147 51 234);
+  }
+
+  .dark .beginner-banner {
+    border-left-color: rgb(168 85 247);
+  }
+
+  .beginner-banner-main {
+    @apply flex items-start gap-3;
+  }
+
+  .beginner-banner-icon {
+    @apply shrink-0 w-9 h-9 sm:w-10 sm:h-10;
+  }
+
+  .beginner-banner-text {
+    @apply flex-1 min-w-0;
+  }
+
+  .beginner-banner-title {
+    @apply text-base sm:text-lg font-semibold m-0 mb-1;
+    @apply text-gray-900;
+    @apply dark:text-white;
+  }
+
+  .beginner-banner-description {
+    @apply text-sm m-0 leading-relaxed;
+    @apply text-gray-600;
+    @apply dark:text-gray-400;
+  }
+
+  .beginner-banner-recommendation {
+    @apply text-sm m-0 mt-3 leading-relaxed;
+    @apply text-gray-600;
+    @apply dark:text-gray-400;
+  }
+
+  .beginner-banner-recommendation strong {
+    @apply font-semibold text-gray-900;
+    @apply dark:text-white;
+  }
+
+  .beginner-banner-actions {
+    @apply flex flex-wrap items-center gap-3 mt-4;
+  }
+
+  .beginner-banner-link {
+    @apply text-sm;
+  }
+
+  /* Compact category definition list for GUIs page orientation */
+  .beginner-banner-categories {
+    @apply grid grid-cols-1 gap-2 mt-3 m-0 p-0;
+
+    @media (min-width: 768px) {
+      @apply grid-cols-3 gap-4;
+    }
+  }
+
+  .beginner-banner-category {
+    @apply flex flex-col gap-0.5;
+    @apply p-2.5 rounded-lg;
+    @apply bg-white border border-gray-200;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .beginner-banner-dt {
+    @apply flex items-center gap-1.5 text-sm font-semibold;
+    @apply text-gray-900;
+    @apply dark:text-white;
+  }
+
+  .beginner-banner-dd {
+    @apply text-xs m-0 pl-5;
+    @apply text-gray-500;
+    @apply dark:text-gray-400;
+  }
+
+  .beginner-banner-dot {
+    @apply inline-block w-2.5 h-2.5 rounded-full shrink-0;
+  }
+
+  .beginner-banner-dot-purple {
+    @apply bg-purple-500;
+  }
+
+  .beginner-banner-dot-blue {
+    @apply bg-blue-500;
+  }
+
+  .beginner-banner-dot-green {
+    @apply bg-green-500;
+  }
+
+  .beginner-banner-kudos-hint {
+    @apply inline-flex items-center gap-1 text-sm;
+    @apply text-gray-500;
+    @apply dark:text-gray-400;
   }
 
   /* =================================================================
