@@ -2,11 +2,15 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
+  NgZone,
   OnInit,
   AfterViewInit,
   OnDestroy,
   signal,
+  viewChild,
   ChangeDetectionStrategy,
   PLATFORM_ID,
 } from '@angular/core';
@@ -46,6 +50,8 @@ export interface SectionInfo {
   items: () => DisplayItem[];
   tooltipKey?: string;
   tooltipGlossaryId?: string;
+  /** When set, this section is a child of the named parent in the TOC. */
+  parentId?: string;
 }
 
 @Component({
@@ -74,7 +80,18 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly enumDisplayService = inject(EnumDisplayService);
 
+  private readonly zone = inject(NgZone);
+
   private sectionObserver: IntersectionObserver | null = null;
+  private filterBarResizeObserver: ResizeObserver | null = null;
+
+  /** Tracks whether the user manually scrolled the pills container. */
+  private userOverriddenAt = 0;
+  /** The vertical scroll position when auto-centering last engaged. */
+  private lastAutoEngageScrollY = 0;
+  private static readonly REENGAGE_THRESHOLD = 100;
+
+  readonly pillsScroll = viewChild<ElementRef<HTMLElement>>('pillsScroll');
 
   private imageGuis = toSignal(this.dataService.imageGuis);
   private textGuis = toSignal(this.dataService.textGuis);
@@ -89,17 +106,28 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   public collapsedSections = signal<Set<string>>(new Set());
   public showScrollToTop = signal<boolean>(false);
   public showFiltersPanel = signal<boolean>(false);
-  public viewMode = signal<ViewMode>('table');
-  public activeSection = signal<string>('guis');
+  public viewMode = signal<ViewMode>('grid');
+  public activeSection = signal<string>('guis-image');
+  /** 0–100 scroll progress through the currently active section. */
+  public activeSectionProgress = signal<number>(0);
 
   /** Sections configuration for TOC and rendering */
   public readonly sections: SectionInfo[] = [
     {
-      id: 'guis',
-      titleKey: 'guis_and_tools_page.guis_section_title',
-      items: () => this.filteredGuis(),
+      id: 'guis-image',
+      titleKey: 'guis_and_tools_page.guis_image_section_title',
+      items: () => this.filteredImageGuis(),
       tooltipKey: 'help.tools.tooltip.guis',
       tooltipGlossaryId: 'gui',
+      parentId: 'guis',
+    },
+    {
+      id: 'guis-text',
+      titleKey: 'guis_and_tools_page.guis_text_section_title',
+      items: () => this.filteredTextGuis(),
+      tooltipKey: 'help.tools.tooltip.guis',
+      tooltipGlossaryId: 'gui',
+      parentId: 'guis',
     },
     {
       id: 'workers',
@@ -285,14 +313,21 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   // Separate items by category for grouped display
-  public filteredGuis = computed(() => {
+  public filteredImageGuis = computed(() => {
     return this.filteredItems()
-      .filter(
-        (item) =>
-          item.itemType === ItemType.GUI_IMAGE ||
-          item.itemType === ItemType.GUI_TEXT,
-      )
+      .filter((item) => item.itemType === ItemType.GUI_IMAGE)
       .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+  });
+
+  public filteredTextGuis = computed(() => {
+    return this.filteredItems()
+      .filter((item) => item.itemType === ItemType.GUI_TEXT)
+      .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+  });
+
+  /** Combined GUIs (kept for total filteredItems counting). */
+  public filteredGuis = computed(() => {
+    return [...this.filteredImageGuis(), ...this.filteredTextGuis()];
   });
 
   public filteredBots = computed(() => {
@@ -375,6 +410,38 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.availableCategories().filter((cat) => !primary.includes(cat));
   });
 
+  /** Set of section ids that the user has scrolled past. */
+  public passedSections = computed(() => {
+    const active = this.activeSection();
+    const visible = this.visibleSections();
+    const activeIdx = visible.findIndex((s) => s.id === active);
+    const passed = new Set<string>();
+    for (let i = 0; i < activeIdx; i++) {
+      passed.add(visible[i].id);
+    }
+    return passed;
+  });
+
+  /** Unique parent ids that have visible children. */
+  public visibleParents = computed(() => {
+    const parents = new Set<string>();
+    for (const s of this.visibleSections()) {
+      if (s.parentId) parents.add(s.parentId);
+    }
+    return parents;
+  });
+
+  constructor() {
+    // Auto-center the active pill when the active section changes
+    effect(() => {
+      const active = this.activeSection();
+      // Read inside effect so it re-runs; actual centering is deferred
+      if (!isPlatformBrowser(this.platformId)) return;
+      // Small delay to let the DOM update
+      setTimeout(() => this.autoCenterActivePill(active), 60);
+    });
+  }
+
   ngOnInit(): void {
     this.footerColor.setDarkMode(false);
 
@@ -388,12 +455,16 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.setupScrollSpy();
+      this.setupFilterBarResizeObserver();
     }
   }
 
   ngOnDestroy(): void {
     if (this.sectionObserver) {
       this.sectionObserver.disconnect();
+    }
+    if (this.filterBarResizeObserver) {
+      this.filterBarResizeObserver.disconnect();
     }
   }
 
@@ -424,13 +495,43 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onWindowScroll(): void {
-    // Show button after scrolling down 300px
     const scrollPosition =
       window.pageYOffset ||
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
     this.showScrollToTop.set(scrollPosition > 300);
+
+    // Re-engage auto-centering after enough vertical scroll
+    if (
+      this.userOverriddenAt > 0 &&
+      Math.abs(scrollPosition - this.lastAutoEngageScrollY) >
+        GuisAndToolsComponent.REENGAGE_THRESHOLD
+    ) {
+      this.userOverriddenAt = 0;
+    }
+
+    // Calculate scroll progress through the active section
+    const activeSectionEl = document.getElementById(
+      `section-${this.activeSection()}`,
+    );
+    if (activeSectionEl) {
+      const rect = activeSectionEl.getBoundingClientRect();
+      const sectionHeight = rect.height;
+      if (sectionHeight > 0) {
+        const scrolled = -rect.top;
+        const progress = Math.min(
+          100,
+          Math.max(0, (scrolled / sectionHeight) * 100),
+        );
+        this.activeSectionProgress.set(Math.round(progress));
+      }
+    }
+  }
+
+  /** Called by the pills scroll container on horizontal scroll. */
+  public onPillsManualScroll(): void {
+    this.userOverriddenAt = Date.now();
   }
 
   public scrollToTop(): void {
@@ -487,13 +588,20 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.viewMode.set(mode);
   }
 
+  /** Scroll to a section, or to the first child if it's a parent id. */
   public scrollToSection(sectionId: string, event?: Event): void {
     if (event) {
       event.preventDefault();
     }
-    const element = document.getElementById(`section-${sectionId}`);
+
+    // If sectionId is a parent (e.g. 'guis'), resolve to first visible child
+    const firstChild = this.sections.find((s) => s.parentId === sectionId);
+    const resolvedId = firstChild ? firstChild.id : sectionId;
+
+    const element = document.getElementById(`section-${resolvedId}`);
     if (element) {
       const filterBar = document.querySelector('.tools-filter-bar');
+      const pillsBar = document.querySelector('.tools-section-pills');
       const navHeight =
         window.innerWidth >= 768
           ? parseInt(
@@ -511,11 +619,26 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       const filterBarHeight = filterBar
         ? filterBar.getBoundingClientRect().height
         : 0;
-      const offset = navHeight + filterBarHeight + 16;
+      const pillsHeight = pillsBar
+        ? pillsBar.getBoundingClientRect().height
+        : 0;
+      const offset = navHeight + filterBarHeight + pillsHeight + 16;
       const top = element.getBoundingClientRect().top + window.scrollY - offset;
       window.scrollTo({ top, behavior: 'smooth' });
-      this.activeSection.set(sectionId);
+      this.activeSection.set(resolvedId);
     }
+  }
+
+  /** Whether a section has been scrolled past. */
+  public isSectionPassed(sectionId: string): boolean {
+    return this.passedSections().has(sectionId);
+  }
+
+  /** Returns an inline background style for the active pill's progressive fill. */
+  public pillBackground(sectionId: string): string | null {
+    if (this.activeSection() !== sectionId) return null;
+    const p = this.activeSectionProgress();
+    return `linear-gradient(to right, var(--pill-fill) ${p}%, var(--pill-empty) ${p}%)`;
   }
 
   public toggleRow(itemName: string): void {
@@ -559,6 +682,52 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.translocoService.translate('guis_and_tools.go_to', {
       name: item.name,
     });
+  }
+
+  /** Keep the filter bar height CSS variable in sync. */
+  private setupFilterBarResizeObserver(): void {
+    const filterBar = document.querySelector('.tools-filter-bar');
+    if (!filterBar) return;
+
+    const update = () => {
+      const height = filterBar.getBoundingClientRect().height;
+      document.documentElement.style.setProperty(
+        '--filter-bar-height',
+        `${height}px`,
+      );
+    };
+
+    update();
+
+    this.filterBarResizeObserver = new ResizeObserver(() => {
+      this.zone.runOutsideAngular(() => update());
+    });
+    this.filterBarResizeObserver.observe(filterBar);
+  }
+
+  /** Programmatically center the active pill unless the user recently swiped. */
+  private autoCenterActivePill(activeSectionId: string): void {
+    if (this.userOverriddenAt > 0) return;
+
+    const container = this.pillsScroll()?.nativeElement;
+    if (!container) return;
+
+    const pill = container.querySelector(
+      `[data-section-id="${activeSectionId}"]`,
+    ) as HTMLElement | null;
+    if (!pill) return;
+
+    pill.scrollIntoView({
+      inline: 'center',
+      block: 'nearest',
+      behavior: 'smooth',
+    });
+
+    this.lastAutoEngageScrollY =
+      window.pageYOffset ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0;
   }
 
   // Convert ExtendedItem to DisplayItem for the sub-component

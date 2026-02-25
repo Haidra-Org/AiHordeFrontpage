@@ -1,15 +1,15 @@
 [
   {
-    "name": "KoboldAI Client",
-    "description": "This is a browser-based front-end for AI-assisted writing with multiple local & remote AI models, including through the AI Horde.",
-    "image": "assets/img/guis/koboldai.png",
-    "link": "https://koboldai.org/",
-    "downloadButtonText": "Get {name}",
-    "categories": ["Desktop"],
+    "name": "KoboldAI Lite",
+    "description": "A simple web-based client for AI chat and roleplay with multiple AI models, including through the AI Horde.",
+    "image": "assets/img/guis/koboldai-lite.png",
+    "link": "https://lite.koboldai.net",
+    "categories": ["Web"],
     "itemType": "gui-text",
     "domain": ["text"],
     "functionKind": "frontend",
-    "platform": ["windows", "linux", "macos"],
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net",
     "recommended": true
   },
   {
@@ -25,17 +25,19 @@
     "platform": ["windows", "linux", "macos"],
     "recommended": true
   },
+
   {
-    "name": "KoboldAI Lite",
-    "description": "A simple web-based client for AI chat and roleplay with multiple AI models, including through the AI Horde.",
-    "image": "assets/img/guis/koboldai-lite.png",
-    "link": "https://lite.koboldai.net",
-    "categories": ["Web"],
+    "name": "Inneal",
+    "description": "An iOS app for LLM chat through the AI Horde. Has support for multi-character chat, personas and more.",
+    "image": "assets/img/guis/inneal.png",
+    "link": "https://apps.apple.com/us/app/inneal-ai-character-tavern/id6482289560",
+    "downloadButtonText": "Get {name}",
+    "categories": ["iOS"],
     "itemType": "gui-text",
     "domain": ["text"],
     "functionKind": "frontend",
-    "platform": ["web"],
-    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net",
+    "platform": ["ios"],
+    "sourceControlLink": "https://github.com/amiantos/inneal",
     "recommended": true
   },
   {
@@ -51,23 +53,9 @@
     "sourceControlLink": "https://github.com/agnaistic/agnai"
   },
   {
-    "name": "Inneal",
-    "description": "An iOS app for LLM chat through the AI Horde. Has support for multi-character chat, personas and more.",
-    "image": "assets/img/guis/inneal.png",
-    "link": "https://github.com/amiantos/inneal",
-    "downloadButtonText": "Get {name}",
-    "categories": ["iOS"],
-    "itemType": "gui-text",
-    "domain": ["text"],
-    "functionKind": "frontend",
-    "platform": ["ios"],
-    "sourceControlLink": "https://github.com/amiantos/inneal"
-  },
-
-  {
     "name": "TavernAI",
     "description": "A downloadable client for local and remote LLM/chat interaction (TavernAI).",
-    "link": "https://github.com/TavernAI/TavernAI",
+    "link": "https://tavernai.net/",
     "categories": ["Desktop"],
     "itemType": "gui-text",
     "domain": ["text"],

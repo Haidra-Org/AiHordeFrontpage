@@ -121,6 +121,19 @@ export class ProfileComponent implements OnInit {
   public undeleteDialogOpen = signal<boolean>(false);
   public undeleteLoading = signal<boolean>(false);
 
+  // Profile editing state
+  public usernameDialogOpen = signal<boolean>(false);
+  public usernameInput = signal<string>('');
+  public usernameSaving = signal<boolean>(false);
+  public contactDialogOpen = signal<boolean>(false);
+  public contactInput = signal<string>('');
+  public contactSaving = signal<boolean>(false);
+  public publicWorkersDialogOpen = signal<boolean>(false);
+  public publicWorkersNewValue = signal<boolean>(false);
+  public publicWorkersSaving = signal<boolean>(false);
+  public profileUpdateError = signal<string | null>(null);
+  public profileUpdateSuccess = signal<string | null>(null);
+
   // Computed username with discriminator for delete confirmation
   public readonly usernameWithDiscriminator = computed(() => {
     const user = this.auth.currentUser();
@@ -444,6 +457,117 @@ export class ProfileComponent implements OnInit {
         } else {
           this.deleteError.set(result.error ?? 'Failed to restore account');
           setTimeout(() => this.deleteError.set(null), 5000);
+        }
+      });
+  }
+
+  // ============================================================================
+  // PROFILE EDITING METHODS
+  // ============================================================================
+
+  public openUsernameDialog(): void {
+    const user = this.auth.currentUser();
+    if (!user) return;
+    // Strip the discriminator (#12345) to show just the display name
+    const name = user.username.includes('#')
+      ? user.username.substring(0, user.username.lastIndexOf('#'))
+      : user.username;
+    this.usernameInput.set(name);
+    this.profileUpdateError.set(null);
+    this.usernameDialogOpen.set(true);
+  }
+
+  public closeUsernameDialog(): void {
+    this.usernameDialogOpen.set(false);
+  }
+
+  public onUsernameInputChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.usernameInput.set(target.value);
+  }
+
+  public confirmUsernameChange(): void {
+    const name = this.usernameInput().trim();
+    if (!name) return;
+
+    this.usernameSaving.set(true);
+    this.profileUpdateError.set(null);
+
+    this.auth
+      .updateProfile({ username: name })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.usernameSaving.set(false);
+        if (result.success) {
+          this.usernameDialogOpen.set(false);
+          this.profileUpdateSuccess.set('profile.change_username_success');
+          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+        } else {
+          this.profileUpdateError.set(result.error ?? 'Failed to update username');
+        }
+      });
+  }
+
+  public openContactDialog(): void {
+    const user = this.auth.currentUser();
+    this.contactInput.set(user?.contact ?? '');
+    this.profileUpdateError.set(null);
+    this.contactDialogOpen.set(true);
+  }
+
+  public closeContactDialog(): void {
+    this.contactDialogOpen.set(false);
+  }
+
+  public onContactInputChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.contactInput.set(target.value);
+  }
+
+  public confirmContactChange(): void {
+    const contact = this.contactInput().trim();
+    this.contactSaving.set(true);
+    this.profileUpdateError.set(null);
+
+    this.auth
+      .updateProfile({ contact })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.contactSaving.set(false);
+        if (result.success) {
+          this.contactDialogOpen.set(false);
+          this.profileUpdateSuccess.set('profile.edit_contact_success');
+          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+        } else {
+          this.profileUpdateError.set(result.error ?? 'Failed to update contact');
+        }
+      });
+  }
+
+  public onPublicWorkersToggle(newValue: boolean): void {
+    this.publicWorkersNewValue.set(newValue);
+    this.publicWorkersDialogOpen.set(true);
+  }
+
+  public closePublicWorkersDialog(): void {
+    this.publicWorkersDialogOpen.set(false);
+  }
+
+  public confirmPublicWorkersChange(): void {
+    this.publicWorkersSaving.set(true);
+    this.profileUpdateError.set(null);
+
+    this.auth
+      .updateProfile({ public_workers: this.publicWorkersNewValue() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.publicWorkersSaving.set(false);
+        if (result.success) {
+          this.publicWorkersDialogOpen.set(false);
+          this.profileUpdateSuccess.set('profile.public_workers_success');
+          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+        } else {
+          this.profileUpdateError.set(result.error ?? 'Failed to update setting');
         }
       });
   }

@@ -247,6 +247,25 @@
     @apply dark:bg-purple-800 dark:text-purple-300;
   }
 
+  /* TOC parent heading — non-counting label above child sections */
+  .tools-toc-parent {
+    @apply mt-1;
+  }
+
+  .tools-toc-link-parent {
+    @apply text-xs font-bold uppercase tracking-wide py-1.5 px-3;
+    color: var(--color-content-muted);
+  }
+
+  .tools-toc-link-parent:hover {
+    color: var(--color-content-primary);
+  }
+
+  /* Indent child sections under a parent */
+  .tools-toc-child {
+    @apply pl-3;
+  }
+
   /* Main Content Area */
   .tools-content {
     @apply flex-1 min-w-0;
@@ -259,7 +278,19 @@
 
   /* Mobile Section Pills */
   .tools-section-pills {
-    @apply flex items-center gap-2 mb-4 overflow-hidden;
+    @apply flex items-center gap-2 mb-4;
+    @apply sticky z-35;
+    @apply bg-white/95 backdrop-blur-sm border-b border-gray-200;
+    @apply dark:bg-gray-900/95 dark:border-gray-700;
+    top: calc(var(--nav-height-mobile) + var(--filter-bar-height, 52px));
+    /* Offset the parent padding so the bar spans full width */
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding: 0.5rem 1rem;
+
+    @media (min-width: 768px) {
+      top: calc(var(--nav-height-desktop) + var(--filter-bar-height, 52px));
+    }
 
     @media (min-width: 1024px) {
       @apply hidden;
@@ -300,8 +331,25 @@
   }
 
   .tools-section-pill.active {
-    @apply bg-purple-600 text-white border-purple-600;
-    @apply dark:bg-purple-600 dark:border-purple-600;
+    --pill-fill: var(--color-purple-600);
+    --pill-empty: var(--color-purple-300);
+    @apply text-white border-purple-600;
+    @apply dark:border-purple-600;
+  }
+
+  .dark .tools-section-pill.active {
+    --pill-fill: var(--color-purple-600);
+    --pill-empty: var(--color-purple-950, var(--color-purple-900));
+  }
+
+  .tools-section-pill.passed {
+    @apply bg-purple-200 border-purple-200;
+    @apply dark:bg-purple-900 dark:border-purple-800;
+    color: var(--color-purple-700);
+  }
+
+  .dark .tools-section-pill.passed {
+    color: var(--color-purple-300);
   }
 
   .tools-section-pill-count {
@@ -313,6 +361,11 @@
   .tools-section-pill.active .tools-section-pill-count {
     @apply bg-purple-500 text-white;
     @apply dark:bg-purple-500;
+  }
+
+  .tools-section-pill.passed .tools-section-pill-count {
+    @apply bg-purple-300 text-purple-700;
+    @apply dark:bg-purple-800 dark:text-purple-300;
   }
 
   /* Section Count Badge in Headers */
@@ -339,6 +392,13 @@
     @apply transition-all duration-200;
   }
 
+  .tools-grid-card-recommended {
+    border-left: 3px solid;
+    @apply border-l-yellow-400;
+    @apply bg-yellow-50/40;
+    @apply dark:border-l-yellow-500 dark:bg-yellow-950/20;
+  }
+
   .tools-grid-card-header {
     @apply flex-1 p-4 cursor-pointer;
   }
@@ -357,7 +417,7 @@
   }
 
   .tools-grid-card-title {
-    @apply text-base font-semibold m-0;
+    @apply text-base font-semibold m-0 flex items-center gap-2;
     color: var(--color-content-primary);
   }
 
@@ -370,7 +430,7 @@
   }
 
   .tools-grid-card-desc {
-    @apply text-sm line-clamp-2 m-0;
+    @apply text-sm line-clamp-3 m-0;
     color: var(--color-content-secondary);
   }
 

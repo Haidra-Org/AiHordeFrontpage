@@ -106,19 +106,22 @@
               aria-label="Table view"
               title="Table view"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                />
-              </svg>
+              <div class="flex gap-2">
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                  />
+                </svg>
+                {{ "guis_and_tools_page.table_view" | transloco }}
+              </div>
             </button>
             <button
               type="button"
@@ -128,19 +131,22 @@
               aria-label="Grid view"
               title="Grid view"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
-              </svg>
+              <div class="flex gap-2">
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  />
+                </svg>
+                {{ "guis_and_tools_page.card_view" | transloco }}
+              </div>
             </button>
           </div>
 
@@ -240,7 +246,22 @@
             </h2>
             <ul class="tools-toc-list">
               @for (section of visibleSections(); track section.id) {
-                <li>
+                <!-- Parent heading (rendered once before the first child of a group) -->
+                @if (section.parentId && ($index === 0 || visibleSections()[$index - 1].parentId !== section.parentId)) {
+                  <li class="tools-toc-parent">
+                    <a
+                      class="tools-toc-link tools-toc-link-parent"
+                      (click)="scrollToSection(section.parentId, $event)"
+                      routerLink="/guis"
+                      [fragment]="'section-' + section.id"
+                    >
+                      <span class="tools-toc-link-text">{{
+                        'guis_and_tools_page.guis_parent_title' | transloco
+                      }}</span>
+                    </a>
+                  </li>
+                }
+                <li [class.tools-toc-child]="section.parentId">
                   <a
                     class="tools-toc-link"
                     [class.active]="activeSection() === section.id"
@@ -268,11 +289,18 @@
             <span class="tools-section-pills-label">{{
               "guis_and_tools_page.jump_to" | transloco
             }}</span>
-            <div class="tools-section-pills-scroll">
+            <div
+              #pillsScroll
+              class="tools-section-pills-scroll"
+              (scroll)="onPillsManualScroll()"
+            >
               @for (section of visibleSections(); track section.id) {
                 <a
                   class="tools-section-pill"
                   [class.active]="activeSection() === section.id"
+                  [class.passed]="isSectionPassed(section.id)"
+                  [style.background]="pillBackground(section.id)"
+                  [attr.data-section-id]="section.id"
                   (click)="scrollToSection(section.id, $event)"
                   routerLink="/guis"
                   [fragment]="'section-' + section.id"
