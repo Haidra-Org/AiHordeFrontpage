@@ -12,7 +12,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { TranslocoModule } from '@jsverse/transloco';
+import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { EnumDisplayPipe } from '../../pipes/enum-display.pipe';
 import { InfoTooltipComponent } from '../info-tooltip/info-tooltip.component';
@@ -52,6 +52,8 @@ export class ItemListSectionComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly enumDisplayService = inject(EnumDisplayService);
+
+  private readonly translocoService = inject(TranslocoService);
 
   constructor() {
     // Set up IntersectionObserver when header element is available (browser only)
@@ -140,8 +142,7 @@ export class ItemListSectionComponent {
     if (item.downloadButtonText) {
       return item.downloadButtonText;
     }
-    // Default translation key can be handled by parent or transloco pipe
-    return 'Visit';
+    return this.translocoService.translate('guis_and_tools.visit');
   }
 
   public getSourceControlDomain(url: string): string {

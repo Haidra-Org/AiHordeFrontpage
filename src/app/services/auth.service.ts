@@ -1,10 +1,11 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, catchError, map, tap, BehaviorSubject } from 'rxjs';
+import { Observable, of, catchError, map, tap, switchMap, BehaviorSubject } from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { HordeUser } from '../types/horde-user';
+import { PutUserRequest } from '../types/horde-user-admin';
 
 export interface DeleteUserResponse {
   deleted_id: string;
@@ -190,6 +191,39 @@ export class AuthService {
             err.error?.message ??
             err.error?.detail ??
             'Failed to restore account';
+          return of({ success: false, error: message });
+        }),
+      );
+  }
+
+  /**
+   * Update the current user's profile fields.
+   * Uses PUT /users/{id} with the user's own API key.
+   * Refreshes user data on success so signals stay in sync.
+   */
+  public updateProfile(
+    data: Partial<Pick<PutUserRequest, 'username' | 'contact' | 'public_workers'>>,
+  ): Observable<{ success: boolean; error?: string }> {
+    const apiKey = this.getStoredApiKey();
+    const user = this._currentUser();
+    if (!apiKey || !user) {
+      return of({ success: false, error: 'Not logged in' });
+    }
+
+    return this.httpClient
+      .put<unknown>(
+        `${this.baseUrl}/users/${user.id}`,
+        data,
+        { headers: { apikey: apiKey } },
+      )
+      .pipe(
+        switchMap(() => this.refreshUser()),
+        map(() => ({ success: true })),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            err.error?.message ??
+            err.error?.detail ??
+            'Failed to update profile';
           return of({ success: false, error: message });
         }),
       );

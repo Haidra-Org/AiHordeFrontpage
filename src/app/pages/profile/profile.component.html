@@ -45,6 +45,36 @@
   </div>
 }
 
+<!-- Profile Update Success Toast -->
+@if (profileUpdateSuccess()) {
+  <div class="toast toast-success" role="status" aria-live="polite">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M5 13l4 4L19 7"
+      />
+    </svg>
+    <span>{{ profileUpdateSuccess() | transloco }}</span>
+  </div>
+}
+
+<!-- Profile Update Error Toast -->
+@if (profileUpdateError()) {
+  <div class="toast toast-error" role="alert" aria-live="assertive">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
+    <span>{{ profileUpdateError() }}</span>
+  </div>
+}
+
 <!-- Delete Account Dialog -->
 <app-delete-account-dialog
   [open]="deleteDialogOpen()"
@@ -70,6 +100,81 @@
 >
   <p class="text-gray-300">
     {{ "profile.undelete_account_message" | transloco }}
+  </p>
+</app-admin-dialog>
+
+<!-- Change Username Dialog -->
+<app-admin-dialog
+  [open]="usernameDialogOpen()"
+  [title]="'profile.change_username_title' | transloco"
+  [confirmLabel]="'profile.change_username_confirm' | transloco"
+  [cancelLabel]="'styles.form.cancel' | transloco"
+  [loading]="usernameSaving()"
+  (confirm)="confirmUsernameChange()"
+  (cancel)="closeUsernameDialog()"
+>
+  <p class="text-gray-300 mb-4">
+    {{ "profile.change_username_desc" | transloco }}
+  </p>
+  <label class="form-label" for="username-input">{{
+    "profile.change_username_label" | transloco
+  }}</label>
+  <input
+    type="text"
+    id="username-input"
+    class="form-input form-input-wide"
+    [value]="usernameInput()"
+    (input)="onUsernameInputChange($event)"
+    maxlength="100"
+  />
+</app-admin-dialog>
+
+<!-- Edit Contact Dialog -->
+<app-admin-dialog
+  [open]="contactDialogOpen()"
+  [title]="'profile.edit_contact_title' | transloco"
+  [confirmLabel]="'profile.edit_contact_confirm' | transloco"
+  [cancelLabel]="'styles.form.cancel' | transloco"
+  [loading]="contactSaving()"
+  (confirm)="confirmContactChange()"
+  (cancel)="closeContactDialog()"
+>
+  <p class="text-gray-300 mb-4">
+    {{ "profile.edit_contact_desc" | transloco }}
+  </p>
+  <label class="form-label" for="contact-input">{{
+    "profile.edit_contact_label" | transloco
+  }}</label>
+  <input
+    type="text"
+    id="contact-input"
+    class="form-input"
+    [value]="contactInput()"
+    (input)="onContactInputChange($event)"
+    maxlength="256"
+  />
+</app-admin-dialog>
+
+<!-- Public Workers Confirmation Dialog -->
+<app-admin-dialog
+  [open]="publicWorkersDialogOpen()"
+  [title]="
+    publicWorkersNewValue()
+      ? ('profile.public_workers_confirm_enable_title' | transloco)
+      : ('profile.public_workers_confirm_disable_title' | transloco)
+  "
+  [confirmLabel]="'profile.public_workers_confirm' | transloco"
+  [cancelLabel]="'styles.form.cancel' | transloco"
+  [loading]="publicWorkersSaving()"
+  (confirm)="confirmPublicWorkersChange()"
+  (cancel)="closePublicWorkersDialog()"
+>
+  <p class="text-gray-300">
+    @if (publicWorkersNewValue()) {
+      {{ "profile.public_workers_confirm_enable_desc" | transloco }}
+    } @else {
+      {{ "profile.public_workers_confirm_disable_desc" | transloco }}
+    }
   </p>
 </app-admin-dialog>
 
@@ -270,7 +375,14 @@
                   <div class="profile-header-content">
                     <h2 class="heading-subsection">
                       {{ auth.currentUser()!.username }}
+                                          <button
+                      (click)="openUsernameDialog()"
+                      class="link-btn-sm mt-1"
+                    >
+                      {{ "profile.change_username" | transloco }}
+                    </button>
                     </h2>
+                    
                     <p class="text-secondary text-sm">
                       ID: {{ auth.currentUser()!.id }}
                     </p>
@@ -353,6 +465,56 @@
                       >{{ "profile.badge.flagged" | transloco }}</span
                     >
                   }
+                </div>
+
+                <!-- Account Settings -->
+                <div class="section-divider-top">
+                  <h4 class="section-title-sm">
+                    {{ "profile.account_settings_heading" | transloco }}
+                  </h4>
+                  <div class="data-grid-1-2">
+                    <div class="data-item-box">
+                      <span class="data-label">{{
+                        "profile.public_workers_label" | transloco
+                      }}</span>
+                      <span class="data-value">
+                        <label class="toggle-switch">
+                          <input
+                            type="checkbox"
+                            [checked]="auth.currentUser()!.public_workers ?? false"
+                            (change)="onPublicWorkersToggle($any($event.target).checked)"
+                          />
+                          <div class="toggle-switch-track"></div>
+                          <div class="toggle-switch-thumb"></div>
+                        </label>
+                      </span>
+                      <span class="text-secondary text-xs">{{
+                        "profile.public_workers_desc" | transloco
+                      }}</span>
+                    </div>
+                    <div class="data-item-box">
+                      <span class="data-label">{{
+                        "profile.contact_label" | transloco
+                      }}
+                                          <button
+                        (click)="openContactDialog()"
+                        class="link-btn-sm mt-1 pl-2"
+                      >
+                        {{ "profile.edit_contact" | transloco }}
+                      </button>  
+                    </span>
+
+                      <span class="data-value">
+                        @if (auth.currentUser()!.contact) {
+                          {{ auth.currentUser()!.contact }}
+                        } @else {
+                          <span class="text-secondary italic">{{
+                            "profile.contact_not_set" | transloco
+                          }}</span>
+                        }
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Kudos Section -->
@@ -734,6 +896,26 @@
                     >
                   }
                 </h3>
+
+                <div class="mb-4 flex items-center gap-3">
+                  <label class="toggle-switch">
+                    <input
+                      type="checkbox"
+                      [checked]="auth.currentUser()!.public_workers ?? false"
+                      (change)="onPublicWorkersToggle($any($event.target).checked)"
+                    />
+                    <div class="toggle-switch-track"></div>
+                    <div class="toggle-switch-thumb"></div>
+                  </label>
+                  <div>
+                    <span class="text-sm font-medium">{{
+                      "profile.public_workers_label" | transloco
+                    }}</span>
+                    <p class="text-secondary text-xs">{{
+                      "profile.public_workers_desc" | transloco
+                    }}</p>
+                  </div>
+                </div>
 
                 @if (
                   !auth.currentUser()!.worker_ids ||

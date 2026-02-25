@@ -136,7 +136,45 @@
     @apply dark:border-gray-700 dark:bg-gray-700/30;
   }
 
-  /* Detail grid - 2 column layout for expanded details */
+  /* Detail layout - content + optional image side by side */
+  .detail-layout {
+    @apply grid grid-cols-1 gap-4;
+
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr auto;
+    }
+  }
+
+  /* Detail main content area */
+  .detail-main {
+    @apply flex flex-col gap-3 min-w-0;
+  }
+
+  /* Structured metadata as definition list */
+  .detail-meta-list {
+    @apply grid gap-x-6 gap-y-2 m-0;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  }
+
+  .detail-meta-item {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .detail-meta-item dt {
+    @apply text-xs font-semibold uppercase tracking-wide;
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .detail-meta-item dd {
+    @apply m-0;
+  }
+
+  /* Action links inside expanded panel */
+  .detail-actions {
+    @apply flex flex-wrap items-center gap-2 pt-2;
+  }
+
+  /* Detail grid - 2 column layout for expanded details (legacy compat) */
   .detail-grid {
     @apply grid grid-cols-1 gap-4 md:grid-cols-2;
   }
