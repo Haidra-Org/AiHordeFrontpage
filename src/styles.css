@@ -96,6 +96,9 @@
 /* Workers/Contribute page */
 @import "./styles/_workers-page.css";
 
+/* Network Status component (sidebar, compact, tiny bar) */
+@import "./styles/_network-status.css";
+
 /* Prose/Rich text content */
 @import "./styles/_prose.css";
 
@@ -109,6 +112,7 @@
    UTILITY LAYERS
    ================================================================= */
 @import "./styles/_utilities.css";
+@import "./styles/_floating-controls.css";
 @import "./styles/_scroll-to-top.css";
 
 /* =================================================================

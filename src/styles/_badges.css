@@ -112,6 +112,12 @@
     @apply dark:bg-yellow-950 dark:text-yellow-200 dark:border-yellow-700;
   }
 
+  /* Easy to use badge - Green, beginner-friendly */
+  .badge-easy-to-use {
+    @apply bg-green-100 text-green-800 border border-green-300;
+    @apply dark:bg-green-950 dark:text-green-200 dark:border-green-700;
+  }
+
   /* Danger badge - Red, error/destructive */
   .badge-danger {
     @apply bg-red-100 text-red-800;

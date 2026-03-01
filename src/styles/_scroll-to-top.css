@@ -6,7 +6,7 @@
 
 @layer components {
   .scroll-to-top-btn {
-    @apply fixed bottom-8 right-6 z-50 w-12 h-12 flex items-center justify-center;
+    @apply w-12 h-12 flex items-center justify-center;
     @apply bg-purple-600 text-white rounded-full shadow-lg;
     @apply transition-all duration-200 border-none cursor-pointer;
     animation: fadeIn 200ms ease-in;

@@ -8,12 +8,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { combineLatest, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 
 @Component({
   selector: 'app-contribute',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, ScrollFadeDirective],
   templateUrl: './contribute.component.html',
   styleUrl: './contribute.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

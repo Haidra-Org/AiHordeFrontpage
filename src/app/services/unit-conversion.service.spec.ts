@@ -397,7 +397,7 @@ describe('UnitConversionService', () => {
       // 1200 mps/min = 20 mps/sec = 1 std img/sec
       const result = service.formatImagePerformanceRate(1200);
       expect(result.primary.value).toBe(1);
-      expect(result.primary.unit).toBe('standard images');
+      expect(result.primary.unit).toBe('standard images/sec');
     });
 
     it('should provide technical mps/sec value', () => {
@@ -494,6 +494,220 @@ describe('UnitConversionService', () => {
 
     it('should respect decimal places', () => {
       expect(service.formatWithCommas(1234.567, 2)).toBe('1,234.57');
+    });
+  });
+
+  // ============================================================================
+  // parseWorkerPerformance Tests
+  // ============================================================================
+
+  describe('parseWorkerPerformance', () => {
+    it('should parse a valid numeric string', () => {
+      expect(service.parseWorkerPerformance('1.5')).toBe(1.5);
+    });
+
+    it('should parse an integer string', () => {
+      expect(service.parseWorkerPerformance('42')).toBe(42);
+    });
+
+    it('should parse a string with trailing text', () => {
+      // parseFloat handles "1.5 megapixelsteps per second" → 1.5
+      expect(service.parseWorkerPerformance('1.5 megapixelsteps per second')).toBe(1.5);
+    });
+
+    it('should return 0 for an empty string', () => {
+      expect(service.parseWorkerPerformance('')).toBe(0);
+    });
+
+    it('should return 0 for non-numeric text', () => {
+      expect(service.parseWorkerPerformance('not a number')).toBe(0);
+    });
+
+    it('should return 0 for "NaN"', () => {
+      expect(service.parseWorkerPerformance('NaN')).toBe(0);
+    });
+
+    it('should handle zero', () => {
+      expect(service.parseWorkerPerformance('0')).toBe(0);
+    });
+
+    it('should handle negative values', () => {
+      expect(service.parseWorkerPerformance('-1.5')).toBe(-1.5);
+    });
+
+    it('should handle very small decimal values', () => {
+      expect(service.parseWorkerPerformance('0.001')).toBe(0.001);
+    });
+  });
+
+  // ============================================================================
+  // formatAggregateWorkerPerformance Tests
+  // ============================================================================
+
+  describe('formatAggregateWorkerPerformance', () => {
+    it('should return null for zero performance', () => {
+      expect(service.formatAggregateWorkerPerformance(0, 'image')).toBeNull();
+      expect(service.formatAggregateWorkerPerformance(0, 'text')).toBeNull();
+      expect(service.formatAggregateWorkerPerformance(0, 'interrogation')).toBeNull();
+    });
+
+    it('should format image aggregate as mps/s', () => {
+      const result = service.formatAggregateWorkerPerformance(25.5, 'image')!;
+      expect(result).not.toBeNull();
+      expect(result.primary.value).toBe(25.5);
+      expect(result.primary.unit).toBe('mps/s');
+      expect(result.primary.formatted).toBe('25.50 mps/s');
+    });
+
+    it('should calculate standard images/s for image aggregate', () => {
+      // 20 mps/s = 1 std img/s
+      const result = service.formatAggregateWorkerPerformance(20, 'image')!;
+      expect(result.technical.value).toBe(1);
+      expect(result.technical.unit).toBe('std img/s');
+    });
+
+    it('should format text aggregate with SI prefix', () => {
+      const result = service.formatAggregateWorkerPerformance(1500, 'text')!;
+      expect(result).not.toBeNull();
+      expect(result.primary.value).toBe(1.5);
+      expect(result.primary.prefix).toBe('kilo');
+      expect(result.primary.unit).toBe('tokens/s');
+    });
+
+    it('should calculate pages/s for text aggregate', () => {
+      // 1000 tokens/s * 0.75 / 500 = 1.5 pages/s
+      const result = service.formatAggregateWorkerPerformance(1000, 'text')!;
+      expect(result.technical.value).toBeCloseTo(1.5, 1);
+      expect(result.technical.unit).toBe('pages/s');
+    });
+
+    it('should format interrogation aggregate as seconds/form', () => {
+      const result = service.formatAggregateWorkerPerformance(3.75, 'interrogation')!;
+      expect(result).not.toBeNull();
+      expect(result.primary.value).toBe(3.75);
+      expect(result.primary.unit).toBe('seconds/form');
+      expect(result.primary.formatted).toBe('3.75 seconds/form');
+    });
+
+    // Verify aggregate uses the same formatting as individual workers
+    it('should produce identical result to formatWorkerPerformanceImage for image type', () => {
+      const totalMps = 15.7;
+      const aggregate = service.formatAggregateWorkerPerformance(totalMps, 'image')!;
+      const direct = service.formatWorkerPerformanceImage(totalMps);
+
+      expect(aggregate.primary.value).toBe(direct.primary.value);
+      expect(aggregate.primary.unit).toBe(direct.primary.unit);
+      expect(aggregate.primary.formatted).toBe(direct.primary.formatted);
+      expect(aggregate.technical.value).toBe(direct.technical.value);
+      expect(aggregate.rawValue).toBe(direct.rawValue);
+    });
+
+    it('should produce identical result to formatWorkerPerformanceText for text type', () => {
+      const totalTokens = 850;
+      const aggregate = service.formatAggregateWorkerPerformance(totalTokens, 'text')!;
+      const direct = service.formatWorkerPerformanceText(totalTokens);
+
+      expect(aggregate.primary.value).toBe(direct.primary.value);
+      expect(aggregate.primary.unit).toBe(direct.primary.unit);
+      expect(aggregate.technical.value).toBe(direct.technical.value);
+      expect(aggregate.rawValue).toBe(direct.rawValue);
+    });
+  });
+
+  // ============================================================================
+  // Cross-Format Consistency Tests
+  // ============================================================================
+
+  describe('Cross-format consistency', () => {
+    it('should produce consistent mps/s between homepage and worker aggregate', () => {
+      // Scenario: network has total capacity of 25 mps/s
+      // Homepage API returns past_minute_megapixelsteps = 25 * 60 = 1500 mps/min
+      // Worker list sums individual worker.performance values to 25 mps/s
+      const totalMpsPerSecond = 25;
+      const apiMpsPerMinute = totalMpsPerSecond * 60;
+
+      const homepageResult = service.formatImagePerformanceRate(apiMpsPerMinute);
+      const workerAggregate = service.formatAggregateWorkerPerformance(totalMpsPerSecond, 'image')!;
+
+      // Homepage technical value should be mps/sec
+      expect(homepageResult.technical.value).toBeCloseTo(totalMpsPerSecond, 5);
+
+      // Worker aggregate primary value should also be mps/sec
+      expect(workerAggregate.primary.value).toBeCloseTo(totalMpsPerSecond, 5);
+
+      // Both should yield the same standard images/sec
+      const expectedStdImgPerSec = totalMpsPerSecond / 20;
+      expect(homepageResult.primary.value).toBeCloseTo(expectedStdImgPerSec, 5);
+      expect(workerAggregate.technical.value).toBeCloseTo(expectedStdImgPerSec, 5);
+    });
+
+    it('should produce consistent tokens/s between homepage and worker aggregate', () => {
+      // Scenario: network has total capacity of 5000 tokens/s
+      // Homepage API returns past_minute_tokens = 5000 * 60 = 300000 tokens/min
+      // Worker list sums individual worker.performance values to 5000 tokens/s
+      const totalTokensPerSecond = 5000;
+      const apiTokensPerMinute = totalTokensPerSecond * 60;
+
+      const homepageResult = service.formatTextPerformanceRate(apiTokensPerMinute);
+      const workerAggregate = service.formatAggregateWorkerPerformance(totalTokensPerSecond, 'text')!;
+
+      // Both raw values should trace back to tokens/sec (homepage stores tokens/min as raw)
+      expect(homepageResult.rawValue / 60).toBeCloseTo(totalTokensPerSecond, 5);
+      expect(workerAggregate.rawValue).toBeCloseTo(totalTokensPerSecond, 5);
+
+      // Both should yield the same pages/sec
+      const expectedPagesPerSec = (totalTokensPerSecond * 0.75) / 500;
+      expect(homepageResult.primary.value).toBeCloseTo(expectedPagesPerSec, 3);
+      expect(workerAggregate.technical.value).toBeCloseTo(expectedPagesPerSec, 3);
+    });
+
+    it('should use consistent standard image conversion factor (÷ 20) everywhere', () => {
+      const mps = 100;
+
+      // Worker performance (mps/s → std img/s)
+      const workerResult = service.formatWorkerPerformanceImage(mps);
+      expect(workerResult.technical.value).toBeCloseTo(mps / 20, 5);
+
+      // Homepage performance (mps/min → mps/s → std img/s)
+      const homepageResult = service.formatImagePerformanceRate(mps * 60);
+      expect(homepageResult.primary.value).toBeCloseTo(mps / 20, 5);
+
+      // Model performance (ps/s → mps/s → std img/s)
+      const modelResult = service.formatModelPerformanceImage(mps * 1e6);
+      expect(modelResult.technical.value).toBeCloseTo(mps / 20, 5);
+
+      // Queued work (mps → std img)
+      const queuedResult = service.formatQueuedImageWork(mps);
+      expect(queuedResult.primary.value).toBeCloseTo(mps / 20, 5);
+
+      // Total pixelsteps (ps → mps → std img)
+      const totalResult = service.formatTotalPixelsteps(mps * 1e6);
+      expect(totalResult.technical.value).toBeCloseTo(mps / 20, 5);
+    });
+
+    it('should use consistent pages of text conversion factor everywhere', () => {
+      const tokens = 10000;
+      const expectedPages = (tokens * 0.75) / 500; // = 15
+
+      // Worker text performance
+      const workerResult = service.formatWorkerPerformanceText(tokens);
+      expect(workerResult.technical.value).toBeCloseTo(expectedPages, 3);
+
+      // Homepage text performance (tokens/min → tokens/s → pages/s)
+      const homepageResult = service.formatTextPerformanceRate(tokens * 60);
+      expect(homepageResult.primary.value).toBeCloseTo(expectedPages, 3);
+
+      // Model text performance
+      const modelResult = service.formatModelPerformanceText(tokens);
+      expect(modelResult.technical.value).toBeCloseTo(expectedPages, 3);
+
+      // Total tokens
+      const totalResult = service.formatTotalTokens(tokens);
+      expect(totalResult.technical.value).toBeCloseTo(expectedPages, 3);
+
+      // Queued tokens
+      const queuedResult = service.formatQueuedTokens(tokens);
+      expect(queuedResult.technical.value).toBeCloseTo(expectedPages, 3);
     });
   });
 });

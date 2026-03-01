@@ -18,11 +18,13 @@ import { combineLatest } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
+import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import { Team } from '../../../types/team';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { extractUserId } from '../../../helper/user-parser';
+import { scrollToElementCentered } from '../../../helper/scroll-utils';
 
 @Component({
   selector: 'app-teams-list',
@@ -43,6 +45,7 @@ export class TeamsListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   /** Route parameters as signals. */
   private readonly params = toSignal(this.route.params, {
@@ -149,10 +152,10 @@ export class TeamsListComponent implements OnInit {
       if (highlightId && teams.length > 0 && teamEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          teamEl.nativeElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
+          scrollToElementCentered(
+            teamEl.nativeElement,
+            this.stickyRegistry.totalOffset(),
+          );
         }, 100);
       }
     });

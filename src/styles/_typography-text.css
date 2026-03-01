@@ -25,7 +25,7 @@
 
   /* Intro paragraph text - emphasized secondary text for homepage intro */
   .text-intro {
-    @apply max-w-2xl mb-4 font-normal text-gray-500;
+    @apply max-w-2xl mb-2 sm:mb-4 font-normal text-gray-500 text-sm sm:text-base;
     @apply md:text-lg lg:text-xl lg:mb-5;
     @apply dark:text-gray-400;
   }

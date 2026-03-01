@@ -16,9 +16,11 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, finalize } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
+import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import { ActiveModel } from '../../../types/active-model';
 import {
   SynthesizedUnit,
@@ -27,6 +29,7 @@ import {
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
+import { scrollToElementCentered } from '../../../helper/scroll-utils';
 
 export type ModelsTab = 'image' | 'text';
 
@@ -45,6 +48,7 @@ interface ModelSuggestion {
     UnitTooltipComponent,
     PageIntroComponent,
     InfoTooltipComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
@@ -60,6 +64,7 @@ export class ModelsListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly stickyRegistry = inject(StickyRegistryService);
   public readonly unitConversion = inject(UnitConversionService);
 
   /** Route parameters as signals. */
@@ -328,10 +333,10 @@ export class ModelsListComponent implements OnInit {
       if (highlightName && models.length > 0 && rowEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          rowEl.nativeElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
+          scrollToElementCentered(
+            rowEl.nativeElement,
+            this.stickyRegistry.totalOffset(),
+          );
         }, 100);
       }
     });

@@ -27,12 +27,15 @@ import { ToolItem } from '../../types/tool-item';
 import { Domain, Platform, FunctionKind } from '../../types/item-types';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
 import {
   ItemListSectionComponent,
   DisplayItem,
 } from '../../components/item-list-section/item-list-section.component';
 import { EnumDisplayService } from '../../services/enum-display.service';
+import { scrollToElement } from '../../helper/scroll-utils';
 import { BeginnerHeaderComponent } from '../../components/beginner-header/beginner-header.component';
+import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { ItemType } from '../../types/item-types';
 
 interface ExtendedItem extends GuiItem {
@@ -62,6 +65,7 @@ export interface SectionInfo {
     TranslocoModule,
     ItemListSectionComponent,
     BeginnerHeaderComponent,
+    StickyHeaderDirective,
   ],
   templateUrl: './guis-and-tools.component.html',
   styleUrl: './guis-and-tools.component.css',
@@ -79,6 +83,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly translocoService = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly enumDisplayService = inject(EnumDisplayService);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   private readonly zone = inject(NgZone);
 
@@ -104,7 +109,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   public selectedCategories = signal<Set<string>>(new Set());
   public expandedRows = signal<Set<string>>(new Set());
   public collapsedSections = signal<Set<string>>(new Set());
-  public showScrollToTop = signal<boolean>(false);
   public showFiltersPanel = signal<boolean>(false);
   public viewMode = signal<ViewMode>('grid');
   public activeSection = signal<string>('guis-image');
@@ -431,14 +435,21 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return parents;
   });
 
+  private scrollSpyReady = false;
+
   constructor() {
     // Auto-center the active pill when the active section changes
     effect(() => {
       const active = this.activeSection();
-      // Read inside effect so it re-runs; actual centering is deferred
       if (!isPlatformBrowser(this.platformId)) return;
-      // Small delay to let the DOM update
       setTimeout(() => this.autoCenterActivePill(active), 60);
+    });
+
+    // Rebuild IntersectionObserver when sticky offset changes
+    effect(() => {
+      const offset = this.stickyRegistry.totalOffset();
+      if (!this.scrollSpyReady) return;
+      this.rebuildScrollSpy(offset);
     });
   }
 
@@ -454,7 +465,8 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (isPlatformBrowser(this.platformId)) {
-      this.setupScrollSpy();
+      this.scrollSpyReady = true;
+      this.rebuildScrollSpy(this.stickyRegistry.totalOffset());
       this.setupFilterBarResizeObserver();
     }
   }
@@ -468,13 +480,8 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private setupScrollSpy(): void {
-    // Set up IntersectionObserver to track which section is in view
-    const options: IntersectionObserverInit = {
-      root: null,
-      rootMargin: '-20% 0px -60% 0px', // Trigger when section is in upper portion of viewport
-      threshold: 0,
-    };
+  private rebuildScrollSpy(offset: number): void {
+    this.sectionObserver?.disconnect();
 
     this.sectionObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -483,9 +490,12 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
           this.activeSection.set(sectionId);
         }
       });
-    }, options);
+    }, {
+      root: null,
+      rootMargin: `${-offset}px 0px -60% 0px`,
+      threshold: 0,
+    });
 
-    // Observe all section elements
     this.sections.forEach((section) => {
       const element = document.getElementById(`section-${section.id}`);
       if (element) {
@@ -500,8 +510,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       document.documentElement.scrollTop ||
       document.body.scrollTop ||
       0;
-    this.showScrollToTop.set(scrollPosition > 300);
-
     // Re-engage auto-centering after enough vertical scroll
     if (
       this.userOverriddenAt > 0 &&
@@ -532,10 +540,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Called by the pills scroll container on horizontal scroll. */
   public onPillsManualScroll(): void {
     this.userOverriddenAt = Date.now();
-  }
-
-  public scrollToTop(): void {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   public toggleType(type: string): void {
@@ -589,43 +593,18 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /** Scroll to a section, or to the first child if it's a parent id. */
-  public scrollToSection(sectionId: string, event?: Event): void {
-    if (event) {
-      event.preventDefault();
-    }
-
+  public scrollToSection(sectionId: string): void {
     // If sectionId is a parent (e.g. 'guis'), resolve to first visible child
     const firstChild = this.sections.find((s) => s.parentId === sectionId);
     const resolvedId = firstChild ? firstChild.id : sectionId;
 
     const element = document.getElementById(`section-${resolvedId}`);
     if (element) {
-      const filterBar = document.querySelector('.tools-filter-bar');
-      const pillsBar = document.querySelector('.tools-section-pills');
-      const navHeight =
-        window.innerWidth >= 768
-          ? parseInt(
-              getComputedStyle(document.documentElement).getPropertyValue(
-                '--nav-height-desktop',
-              ),
-              10,
-            )
-          : parseInt(
-              getComputedStyle(document.documentElement).getPropertyValue(
-                '--nav-height-mobile',
-              ),
-              10,
-            );
-      const filterBarHeight = filterBar
-        ? filterBar.getBoundingClientRect().height
-        : 0;
-      const pillsHeight = pillsBar
-        ? pillsBar.getBoundingClientRect().height
-        : 0;
-      const offset = navHeight + filterBarHeight + pillsHeight + 16;
-      const top = element.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top, behavior: 'smooth' });
+      scrollToElement(element, this.stickyRegistry.totalOffset());
       this.activeSection.set(resolvedId);
+      if (isPlatformBrowser(this.platformId)) {
+        history.replaceState(null, '', `/guis#section-${resolvedId}`);
+      }
     }
   }
 
@@ -717,9 +696,20 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     ) as HTMLElement | null;
     if (!pill) return;
 
-    pill.scrollIntoView({
-      inline: 'center',
-      block: 'nearest',
+    // Use horizontal-only scrolling to avoid browser vertical adjustments that
+    // can happen with scrollIntoView on mobile when sticky elements are present.
+    const containerRect = container.getBoundingClientRect();
+    const pillRect = pill.getBoundingClientRect();
+    const currentLeft = container.scrollLeft;
+    const deltaLeft =
+      pillRect.left -
+      containerRect.left -
+      (container.clientWidth / 2 - pill.clientWidth / 2);
+    const maxLeft = container.scrollWidth - container.clientWidth;
+    const targetLeft = Math.max(0, Math.min(maxLeft, currentLeft + deltaLeft));
+
+    container.scrollTo({
+      left: targetLeft,
       behavior: 'smooth',
     });
 
@@ -746,6 +736,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       downloadButtonText: item.downloadButtonText,
       sourceControlLink: item.sourceControlLink,
       recommended: item.recommended,
+      easyToUse: item.easyToUse,
     };
   }
 }

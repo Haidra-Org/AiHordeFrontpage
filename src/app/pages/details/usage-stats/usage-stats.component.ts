@@ -12,6 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { combineLatest, finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -41,6 +42,7 @@ interface ModelUsageEntry {
     UnitTooltipComponent,
     PageIntroComponent,
     InfoTooltipComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',

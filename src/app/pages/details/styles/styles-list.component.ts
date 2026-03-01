@@ -24,9 +24,11 @@ import {
   Observable,
 } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
 import { AuthService } from '../../../services/auth.service';
+import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import {
   ImageStyle,
   TextStyle,
@@ -49,6 +51,7 @@ import {
 } from '../../../components/style/style-form/style-form.component';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
+import { scrollToElementCentered } from '../../../helper/scroll-utils';
 
 export type StylesTab = 'image' | 'text' | 'collections';
 
@@ -63,6 +66,7 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     StyleFormComponent,
     EntityLookupComponent,
     PageIntroComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './styles-list.component.html',
   styleUrl: './styles-list.component.css',
@@ -76,6 +80,7 @@ export class StylesListComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly stickyRegistry = inject(StickyRegistryService);
   private readonly initialPageBatchCount = 2;
   private readonly pageSize = 25;
 
@@ -250,10 +255,10 @@ export class StylesListComponent implements OnInit {
       if (highlightId && styles.length > 0 && styleEl) {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          styleEl.nativeElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
+          scrollToElementCentered(
+            styleEl.nativeElement,
+            this.stickyRegistry.totalOffset(),
+          );
         }, 100);
       }
     });

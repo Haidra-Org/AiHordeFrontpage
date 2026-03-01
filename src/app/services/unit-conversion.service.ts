@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { WorkerType } from '../types/horde-worker';
 
 /**
  * Represents a formatted value with SI prefix
@@ -187,7 +188,7 @@ export class UnitConversionService {
     return {
       primary: this.formatWithSiPrefix(
         standardImagesPerSecond,
-        'standard images',
+        'standard images/sec',
         1,
       ),
       technical: {
@@ -636,6 +637,72 @@ export class UnitConversionService {
         'pages_of_text.tooltip.line2',
         'pages_of_text.tooltip.line3',
       ],
+    };
+  }
+
+  // ============================================================================
+  // WORKER PERFORMANCE PARSING & AGGREGATION
+  // ============================================================================
+
+  /**
+   * Parses the worker `performance` string field into a numeric value.
+   *
+   * The AI Horde API returns worker performance as a string. For image workers
+   * this is megapixelsteps/second; for text workers it's tokens/second;
+   * for interrogation workers it's seconds per form.
+   *
+   * @param performance - The raw performance string from the worker API
+   * @returns The numeric value, or 0 if unparseable
+   */
+  parseWorkerPerformance(performance: string): number {
+    const value = parseFloat(performance);
+    return isNaN(value) ? 0 : value;
+  }
+
+  /**
+   * Formats an aggregate (summed or averaged) worker performance value
+   * as a SynthesizedUnit, using the same conversion logic as individual workers.
+   *
+   * This is the total capacity of all active workers, not actual throughput.
+   *
+   * @param totalPerformance - Sum (image/text) or mean (interrogation)
+   * @param workerType - The worker type determines units and conversion
+   * @returns SynthesizedUnit with appropriate formatting, or null if zero
+   */
+  formatAggregateWorkerPerformance(
+    totalPerformance: number,
+    workerType: WorkerType,
+  ): SynthesizedUnit | null {
+    if (totalPerformance === 0) return null;
+
+    if (workerType === 'image') {
+      return this.formatWorkerPerformanceImage(totalPerformance);
+    }
+
+    if (workerType === 'text') {
+      return this.formatWorkerPerformanceText(totalPerformance);
+    }
+
+    // Interrogation: average seconds per form
+    return {
+      primary: {
+        value: totalPerformance,
+        prefix: '',
+        prefixShort: '',
+        unit: 'seconds/form',
+        formatted: `${totalPerformance.toFixed(2)} seconds/form`,
+        formattedShort: `${totalPerformance.toFixed(2)} seconds/form`,
+      },
+      technical: {
+        value: totalPerformance,
+        prefix: '',
+        prefixShort: '',
+        unit: 'seconds/form',
+        formatted: `${totalPerformance.toFixed(2)} seconds/form`,
+        formattedShort: `${totalPerformance.toFixed(2)} seconds/form`,
+      },
+      rawValue: totalPerformance,
+      explanationKeys: [],
     };
   }
 }

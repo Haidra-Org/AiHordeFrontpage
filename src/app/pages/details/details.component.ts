@@ -15,6 +15,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-banner/volunteer-cta-banner.component';
 
 @Component({
@@ -25,6 +26,7 @@ import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-bann
     RouterLinkActive,
     TranslocoPipe,
     VolunteerCtaBannerComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './details.component.html',
   styleUrl: './details.component.css',

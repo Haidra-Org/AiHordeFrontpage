@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { combineLatest, finalize } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
@@ -39,6 +40,7 @@ type TabType = 'tester' | 'filters' | 'compiled';
     TranslocoModule,
     FormsModule,
     AdminToastBarComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './filter-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

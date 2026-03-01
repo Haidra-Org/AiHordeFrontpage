@@ -36,7 +36,7 @@
   .section-secondary {
     @apply bg-surface-secondary;
     @apply dark:bg-gray-800;
-    @apply py-4;
+    @apply py-2 sm:py-4;
     @apply px-2;
     @apply xl:px-0;
   }
@@ -47,7 +47,7 @@
 
   /* Page header container */
   .container-page-header {
-    @apply grid mx-auto py-3 lg:py-4 lg:gap-8 xl:gap-0;
+    @apply grid mx-auto py-2 sm:py-3 lg:py-4 lg:gap-8 xl:gap-0;
     max-width: var(--max-width-container);
     padding-left: var(--spacing-container-padding-mobile);
     padding-right: var(--spacing-container-padding-mobile);
