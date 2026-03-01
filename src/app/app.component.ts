@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   inject,
   OnInit,
   OnDestroy,
@@ -24,6 +25,8 @@ import { FloatingControlsComponent } from './components/floating-controls/floati
 import { NetworkStatusComponent } from './components/network-status/network-status.component';
 import { StickyHeaderDirective } from './helper/sticky-header.directive';
 import { StickyRegistryService } from './services/sticky-registry.service';
+import { NavNotificationService } from './services/nav-notification.service';
+import { NeedWorkersNotifierService } from './services/need-workers-notifier.service';
 import { scrollToAnchorWhenReady } from './helper/scroll-utils';
 import { filter } from 'rxjs/operators';
 
@@ -53,9 +56,21 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly stickyRegistry = inject(StickyRegistryService);
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
+  public readonly navNotifications = inject(NavNotificationService);
+  // Inject to trigger initialization (watches network status)
+  private readonly _needWorkersNotifier = inject(NeedWorkersNotifierService);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;
+
+  // ── Nav notification computed signals ──
+  public readonly contributeNotifications = this.navNotifications.notificationsForNavItem('contribute');
+  public readonly hasContributeNotification = computed(() => this.contributeNotifications().length > 0);
+  public readonly contributeTooltip = computed(() => {
+    const items = this.contributeNotifications();
+    return items.length > 0 ? items[0].tooltipParams?.['types'] as string ?? '' : '';
+  });
+  public readonly hasMobileIndicator = computed(() => this.navNotifications.hasPendingMobileIndicator());
   public showMobileMenu = false;
   public showDetailsDropdown = false;
   public showMobileDetailsSubmenu = false;
@@ -192,6 +207,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.showMobileMenu = !this.showMobileMenu;
 
     if (this.showMobileMenu) {
+      this.navNotifications.acknowledgeMobile();
       this.disableBodyScroll();
     } else {
       this.enableBodyScroll();

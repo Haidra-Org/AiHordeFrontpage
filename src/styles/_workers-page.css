@@ -57,6 +57,7 @@
 
   /* =================================================================
      WORKER TYPE CARDS - "NEEDS HELP" STYLING
+     (flat material look: no heavy card chrome, emphasis on banners)
      ================================================================= */
 
   .card--needs-help {
@@ -64,7 +65,7 @@
   }
 
   .card-needs-help-banner {
-    @apply flex items-center gap-2 -mx-5 -mt-5 mb-4 px-5 py-2 text-xs font-semibold uppercase tracking-wide rounded-t-xl;
+    @apply flex items-center gap-2 px-5 py-2.5 text-sm font-semibold tracking-wide;
   }
 
   .card-needs-help-banner--purple {
@@ -80,6 +81,38 @@
   .card-needs-help-banner--green {
     @apply bg-green-100 text-green-800;
     @apply dark:bg-green-950 dark:text-green-200;
+  }
+
+  /* ── Worker-type section: flat list layout ───────────────────── */
+
+  .worker-type-list {
+    @apply space-y-6;
+  }
+
+  .worker-type-section {
+    @apply rounded-xl border;
+    @apply border-edge-primary dark:border-gray-700;
+    @apply bg-surface-primary dark:bg-gray-800/50;
+    @apply overflow-hidden;
+  }
+
+  .worker-type-section--needs-help {
+    @apply ring-2 ring-amber-400/40 dark:ring-amber-500/30;
+  }
+
+  .worker-type-header {
+    @apply flex items-center gap-4 px-5 py-4;
+    @apply bg-surface-secondary dark:bg-gray-800;
+    @apply border-b border-edge-primary dark:border-gray-700;
+  }
+
+  .worker-type-body {
+    @apply px-5 py-4;
+  }
+
+  .worker-type-software-heading {
+    @apply text-xs font-semibold uppercase tracking-wide mt-4 mb-2;
+    @apply text-content-muted dark:text-gray-400;
   }
 
   /* =================================================================
