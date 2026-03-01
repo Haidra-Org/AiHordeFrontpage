@@ -18,6 +18,7 @@ import {
 } from '@angular/forms';
 import { combineLatest, from, map, mergeMap } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
@@ -62,6 +63,7 @@ type WorkerListItem = {
     AdminDialogComponent,
     PageIntroComponent,
     KudosTermComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',

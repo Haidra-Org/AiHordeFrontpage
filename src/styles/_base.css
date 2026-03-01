@@ -16,6 +16,7 @@
   /* Ensure full viewport coverage and proper background color */
   html {
     @apply min-h-screen bg-surface-secondary;
+    scroll-padding-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
   .dark html,

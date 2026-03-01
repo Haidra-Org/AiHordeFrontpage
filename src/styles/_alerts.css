@@ -355,8 +355,8 @@
      ================================================================= */
 
   .volunteer-cta-banner {
-    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4;
-    @apply py-3 px-4 rounded-lg text-sm;
+    @apply flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4;
+    @apply py-2 px-3 sm:py-3 sm:px-4 rounded-lg text-xs sm:text-sm;
     background: linear-gradient(
       135deg,
       rgb(88 28 135 / 0.08) 0%,

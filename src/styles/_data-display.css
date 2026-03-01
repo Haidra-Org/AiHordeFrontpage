@@ -260,7 +260,7 @@
   .entity-highlighted {
     @apply ring-4 ring-orange-400 ring-offset-2;
     @apply dark:ring-orange-500 dark:ring-offset-gray-900;
-    scroll-margin-top: 1rem;
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
   /* =================================================================
@@ -284,7 +284,7 @@
   .worker-card-highlighted {
     @apply ring-4 ring-orange-400 ring-offset-2;
     @apply dark:ring-orange-500 dark:ring-offset-gray-900;
-    scroll-margin-top: 1rem;
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
   /* Worker card section dividers */
@@ -423,7 +423,7 @@
   .entity-card-highlighted {
     @apply ring-4 ring-orange-400 ring-offset-2;
     @apply dark:ring-orange-500 dark:ring-offset-gray-900;
-    scroll-margin-top: 1rem;
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
   /* Worker badge interactive - clickable badge with hover ring effect */

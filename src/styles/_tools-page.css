@@ -225,6 +225,11 @@
     @apply dark:hover:bg-gray-800;
     @apply transition-colors duration-150;
     color: var(--color-content-secondary);
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
   }
 
   .tools-toc-link.active {
@@ -323,6 +328,7 @@
     @apply transition-colors duration-150;
     scroll-snap-align: start;
     color: var(--color-content-secondary);
+    cursor: pointer;
   }
 
   .tools-section-pill:hover {
@@ -436,6 +442,14 @@
 
   .dark .tools-grid-card-desc {
     @apply text-gray-400;
+  }
+
+  /* Remove line clamp when card is expanded */
+  .tools-grid-card.expanded .tools-grid-card-desc {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
   }
 
   .tools-grid-card-actions {

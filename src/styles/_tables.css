@@ -60,6 +60,14 @@
     color: var(--color-content-secondary);
   }
 
+  /* Remove line clamp when row is expanded */
+  .table-item-wrapper:has(.item-list-row + .expanded-detail-panel) .table-cell-description {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+  }
+
   .dark .table-cell-description {
     @apply text-gray-400;
   }

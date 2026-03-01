@@ -13,6 +13,7 @@ import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { combineLatest, firstValueFrom, map, merge, scan } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -29,6 +30,7 @@ import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.co
     RouterLink,
     PageIntroComponent,
     KudosTermComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './kudos-leaderboard.component.html',
   styleUrl: './kudos-leaderboard.component.css',

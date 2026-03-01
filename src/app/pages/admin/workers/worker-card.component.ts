@@ -153,14 +153,14 @@ export class WorkerCardComponent {
 
   public isHighSpeed(): boolean {
     if (this.worker().type === 'image') {
-      return parseFloat(this.worker().performance) > 3.0;
+      return this.unitConversion.parseWorkerPerformance(this.worker().performance) > 3.0;
     }
     return false;
   }
 
   public isLowSpeed(): boolean {
     if (this.worker().type === 'image') {
-      return parseFloat(this.worker().performance) < 0.4;
+      return this.unitConversion.parseWorkerPerformance(this.worker().performance) < 0.4;
     }
     return false;
   }
@@ -382,9 +382,9 @@ export class WorkerCardComponent {
    */
   public getPerformanceUnit(): SynthesizedUnit | null {
     const worker = this.worker();
-    const performanceValue = parseFloat(worker.performance);
+    const performanceValue = this.unitConversion.parseWorkerPerformance(worker.performance);
 
-    if (isNaN(performanceValue) || performanceValue === 0) {
+    if (performanceValue === 0) {
       return null;
     }
 

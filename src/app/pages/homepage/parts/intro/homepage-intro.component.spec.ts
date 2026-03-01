@@ -4,6 +4,7 @@ import { DOCUMENT } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { HomepageIntroComponent } from './homepage-intro.component';
+import { StickyRegistryService } from '../../../../services/sticky-registry.service';
 
 describe('HomepageIntroComponent', () => {
   let component: HomepageIntroComponent;
@@ -20,7 +21,10 @@ describe('HomepageIntroComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
-      providers: [{ provide: PLATFORM_ID, useValue: platformId }],
+      providers: [
+        { provide: PLATFORM_ID, useValue: platformId },
+        { provide: StickyRegistryService, useValue: { totalOffset: () => 64 } },
+      ],
     }).compileComponents();
 
     injectedDoc = TestBed.inject(DOCUMENT);
@@ -37,11 +41,13 @@ describe('HomepageIntroComponent', () => {
 
     it('should use injected DOCUMENT for getElementById', () => {
       const mockElement = {
-        scrollIntoView: jasmine.createSpy('scrollIntoView'),
+        getBoundingClientRect: () => ({ top: 200, height: 20 }),
       };
       spyOn(injectedDoc, 'getElementById').and.returnValue(
         mockElement as unknown as HTMLElement,
       );
+      const scrollSpy = spyOn(window, 'scrollTo');
+      spyOnProperty(window, 'scrollY', 'get').and.returnValue(100);
 
       const event = new Event('click');
       spyOn(event, 'preventDefault');
@@ -50,10 +56,10 @@ describe('HomepageIntroComponent', () => {
 
       expect(event.preventDefault).toHaveBeenCalled();
       expect(injectedDoc.getElementById).toHaveBeenCalledWith('quickstart');
-      expect(mockElement.scrollIntoView).toHaveBeenCalledWith({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      expect(scrollSpy).toHaveBeenCalled();
+      const options = scrollSpy.calls.mostRecent().args[0] as ScrollToOptions;
+      expect(options.top).toBe(220);
+      expect(options.behavior).toBe('smooth');
     });
 
     it('should not scroll if element is not found', () => {

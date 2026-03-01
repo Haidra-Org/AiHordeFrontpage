@@ -1,6 +1,6 @@
 <div class="wrapper" (click)="closeMobileMenu()">
   <!-- Main Navigation Header -->
-  <header class="nav-shell">
+  <header class="nav-shell" [appStickyHeader]="0">
     <nav class="nav-padding" role="navigation" aria-label="Main navigation">
       <div class="nav-container">
         <!-- Logo and Site Title -->
@@ -801,6 +801,7 @@
           </ul>
         </div>
       </div>
+      <app-network-status variant="footer" />
       <hr class="footer-divider" />
       <div class="footer-bottom">
         <a href="#" class="footer-logo-wrapper">
@@ -844,15 +845,4 @@
   </footer>
 </div>
 
-<!-- Glossary FAB -->
-<button
-  type="button"
-  class="glossary-fab"
-  (click)="glossary.open()"
-  [attr.aria-label]="'help.open_glossary' | transloco"
->
-  ?
-</button>
-
-<!-- Glossary Modal -->
-<app-glossary-modal />
+<app-floating-controls />

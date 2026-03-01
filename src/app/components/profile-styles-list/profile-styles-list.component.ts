@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { forkJoin, of, finalize, catchError, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StyleService } from '../../services/style.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -40,7 +41,7 @@ export interface LoadedStyle {
 
 @Component({
   selector: 'app-profile-styles-list',
-  imports: [TranslocoPipe, StyleCardComponent, StyleFormComponent, RouterLink],
+  imports: [TranslocoPipe, StyleCardComponent, StyleFormComponent, RouterLink, ScrollFadeDirective],
   templateUrl: './profile-styles-list.component.html',
   styleUrl: './profile-styles-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

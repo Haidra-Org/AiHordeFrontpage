@@ -1,4 +1,4 @@
-@if (!isDismissed()) {
+@if (!dismissable() || !isDismissed()) {
 <aside class="beginner-banner">
   <div class="beginner-banner-main">
     <div
@@ -83,13 +83,15 @@
       <app-kudos-term />
       — {{ "guis_and_tools_page.kudos_hint" | transloco }}
     </span>
-    <button
-      type="button"
-      class="page-intro-dismiss"
-      (click)="dismiss()"
-    >
-      {{ "help.dismiss" | transloco }}
-    </button>
+    @if (dismissable()) {
+      <button
+        type="button"
+        class="page-intro-dismiss"
+        (click)="dismiss()"
+      >
+        {{ "help.dismiss" | transloco }}
+      </button>
+    }
   </div>
 </aside>
 } @else {

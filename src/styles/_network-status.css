@@ -1,0 +1,249 @@
+/* =================================================================
+   NETWORK STATUS COMPONENT
+   
+   Shared styling for the network-status component across all three
+   variants: sidebar (desktop), compact (mobile), and tiny (nav bar).
+   ================================================================= */
+
+@layer components {
+  /* =================================================================
+     PANEL — shared container
+     ================================================================= */
+
+  .network-status-panel {
+    @apply rounded-xl p-5;
+    @apply bg-surface-secondary border border-edge-primary;
+    @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .network-status-title {
+    @apply text-sm font-bold uppercase tracking-wide mb-4;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .network-status-grid {
+    @apply grid grid-cols-3 gap-3;
+  }
+
+  .network-status-stat {
+    @apply flex flex-col;
+  }
+
+  .network-status-stat-value {
+    @apply text-xl font-bold;
+    @apply text-content-primary dark:text-white;
+  }
+
+  .network-status-stat-label {
+    @apply text-xs mt-1;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  /* =================================================================
+     DOMAINS — individual stat groups
+     ================================================================= */
+
+  .network-status-domain {
+    @apply py-3;
+  }
+
+  .network-status-domain + .network-status-domain {
+    @apply border-t border-edge-primary;
+    @apply dark:border-gray-700;
+  }
+
+  .network-status-domain-header {
+    @apply flex items-center justify-between mb-2 text-xs font-semibold uppercase tracking-wide no-underline;
+    @apply transition-colors duration-200;
+  }
+
+  .network-status-domain-header--purple {
+    @apply text-purple-600 dark:text-purple-400;
+  }
+
+  .network-status-domain-header--purple:hover {
+    @apply text-purple-800 dark:text-purple-300;
+  }
+
+  .network-status-domain-header--blue {
+    @apply text-blue-600 dark:text-blue-400;
+  }
+
+  .network-status-domain-header--blue:hover {
+    @apply text-blue-800 dark:text-blue-300;
+  }
+
+  .network-status-domain-header--green {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .network-status-domain-header--green:hover {
+    @apply text-green-800 dark:text-green-300;
+  }
+
+  .network-status-domain-header:hover .network-status-domain-label {
+    @apply underline;
+  }
+
+  /* =================================================================
+     NEEDS-HELP INDICATORS
+     ================================================================= */
+
+  .network-status-domain--needs-help {
+    @apply rounded-lg px-2 -mx-2;
+    background: rgb(245 158 11 / 0.06);
+  }
+
+  .dark .network-status-domain--needs-help {
+    background: rgb(245 158 11 / 0.08);
+  }
+
+  .network-status-needs-help {
+    @apply flex items-center gap-1.5 mt-2 text-xs font-medium;
+    @apply text-amber-700 dark:text-amber-400;
+  }
+
+  .network-status-needs-help--purple {
+    @apply text-purple-700 dark:text-purple-400;
+  }
+
+  .network-status-needs-help--blue {
+    @apply text-blue-700 dark:text-blue-400;
+  }
+
+  .network-status-needs-help--green {
+    @apply text-green-700 dark:text-green-400;
+  }
+
+  .network-status-needs-help-dot {
+    @apply block w-1.5 h-1.5 rounded-full shrink-0;
+    @apply bg-amber-500 dark:bg-amber-400;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .network-status-needs-help--purple .network-status-needs-help-dot {
+    @apply bg-purple-500 dark:bg-purple-400;
+  }
+
+  .network-status-needs-help--blue .network-status-needs-help-dot {
+    @apply bg-blue-500 dark:bg-blue-400;
+  }
+
+  .network-status-needs-help--green .network-status-needs-help-dot {
+    @apply bg-green-500 dark:bg-green-400;
+  }
+
+  /* =================================================================
+     CTA BANNER
+     ================================================================= */
+
+  .network-status-cta {
+    @apply mt-4 pt-3 text-center;
+    @apply border-t border-dashed border-edge-primary dark:border-gray-700;
+  }
+
+  .network-status-cta-text {
+    @apply text-xs m-0 mb-1.5;
+    @apply text-content-secondary dark:text-gray-400;
+  }
+
+  /* =================================================================
+     COMPACT variant overrides (mobile workers page)
+     ================================================================= */
+
+  .network-status-panel--compact {
+    @apply p-3;
+  }
+
+  .network-status-panel--compact .network-status-title {
+    @apply mb-2 text-xs;
+  }
+
+  .network-status-panel--compact .network-status-domains-row {
+    @apply flex gap-2;
+  }
+
+  .network-status-panel--compact .network-status-domain {
+    @apply flex-1 py-1.5 px-2 rounded-lg;
+    @apply bg-surface-primary dark:bg-gray-900;
+    @apply border border-edge-primary dark:border-gray-700;
+  }
+
+  .network-status-panel--compact .network-status-domain + .network-status-domain {
+    @apply border-t-0;
+  }
+
+  .network-status-panel--compact .network-status-domain-header {
+    @apply mb-1.5 text-[10px];
+  }
+
+  .network-status-panel--compact .network-status-grid {
+    @apply gap-1 grid-cols-2;
+  }
+
+  .network-status-panel--compact .network-status-stat-value {
+    @apply text-base leading-tight;
+  }
+
+  .network-status-panel--compact .network-status-stat-label {
+    @apply mt-0 text-[10px] leading-tight;
+  }
+
+  .network-status-panel--compact .network-status-needs-help {
+    @apply hidden;
+  }
+
+  .network-status-panel--compact .network-status-cta {
+    @apply mt-3 pt-2;
+  }
+
+  .network-status-panel--compact .network-status-domain--needs-help {
+    @apply mx-0;
+  }
+
+  /* =================================================================
+     FOOTER variant — subtle row in the site footer
+     ================================================================= */
+
+  .network-status-footer {
+    @apply flex flex-wrap items-center justify-center gap-x-3 gap-y-1;
+    @apply text-xs text-gray-500 dark:text-gray-400;
+    @apply py-2;
+  }
+
+  .network-status-footer-label {
+    @apply font-medium text-gray-600 dark:text-gray-300;
+  }
+
+  .network-status-footer-domains {
+    @apply flex items-center gap-x-2;
+  }
+
+  .network-status-footer-segment {
+    @apply flex items-center gap-1 no-underline;
+    @apply text-gray-500 dark:text-gray-400;
+    @apply transition-colors duration-150;
+    @apply rounded px-1 py-0.5;
+
+    &:hover {
+      @apply text-gray-900 dark:text-white;
+      @apply bg-gray-200/40 dark:bg-gray-700/40;
+    }
+
+    &:focus-visible {
+      @apply outline-none ring-2 ring-brand-purple ring-offset-1;
+    }
+  }
+
+  .network-status-footer-domain-name {
+    @apply font-medium;
+  }
+
+  .network-status-footer-counts {
+    @apply tabular-nums;
+  }
+
+  .network-status-footer-sep {
+    @apply text-gray-300 dark:text-gray-600 select-none;
+  }
+}

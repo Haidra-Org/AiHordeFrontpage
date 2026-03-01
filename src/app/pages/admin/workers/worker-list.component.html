@@ -91,12 +91,14 @@
   }
 
   <!-- Sub-Tab Navigation -->
-  <div class="details-tabs mb-6">
+  <div class="details-tabs mb-6" role="tablist" appScrollFade>
     <button
       type="button"
       class="details-tab"
       [class.details-tab-active]="workerType() === 'image'"
       (click)="setWorkerType('image')"
+      role="tab"
+      [attr.aria-selected]="workerType() === 'image'"
     >
       <svg
         class="icon-sm"
@@ -119,6 +121,8 @@
       class="details-tab"
       [class.details-tab-active]="workerType() === 'text'"
       (click)="setWorkerType('text')"
+      role="tab"
+      [attr.aria-selected]="workerType() === 'text'"
     >
       <svg
         class="icon-sm"
@@ -141,6 +145,8 @@
       class="details-tab"
       [class.details-tab-active]="workerType() === 'interrogation'"
       (click)="setWorkerType('interrogation')"
+      role="tab"
+      [attr.aria-selected]="workerType() === 'interrogation'"
     >
       <svg
         class="icon-sm"
@@ -219,11 +225,34 @@
                   {{ "admin.workers.stats.mean_interrogation" | transloco }}:
                 }
               </span>
-              <span class="data-value text-lg"
-                >{{ totalPerformance() | number: "1.2-2" }}
-                {{ performanceLabel() }}</span
-              >
+              <span class="data-value text-lg">
+                @if (totalPerformanceUnit(); as perfUnit) {
+                  {{ perfUnit.primary.value | number: "1.2-2" }}
+                  <app-unit-tooltip
+                    [unit]="perfUnit"
+                    [primaryOverride]="perfUnit.primary.unit"
+                  />
+                } @else {
+                  0
+                }
+              </span>
             </div>
+            @if (recentThroughputUnit(); as throughput) {
+              <div class="flex items-center gap-2">
+                <span class="admin-text-muted text-sm"
+                  >{{
+                    "admin.workers.stats.recent_throughput" | transloco
+                  }}:</span
+                >
+                <span class="data-value text-lg">
+                  {{ throughput.primary.value | number: "1.2-2" }}
+                  <app-unit-tooltip
+                    [unit]="throughput"
+                    [primaryOverride]="throughput.primary.unit"
+                  />
+                </span>
+              </div>
+            }
           </div>
           <div class="flex items-center gap-2">
             <span class="admin-text-muted text-sm">{{
@@ -323,12 +352,36 @@
                 />
               </div>
               <div class="data-value-lg">
-                {{ totalPerformance() | number: "1.2-2" }}
-                <span class="text-sm admin-text-muted">{{
-                  performanceLabel()
-                }}</span>
+                @if (totalPerformanceUnit(); as perfUnit) {
+                  {{ perfUnit.primary.value | number: "1.2-2" }}
+                  <app-unit-tooltip
+                    [unit]="perfUnit"
+                    [primaryOverride]="perfUnit.primary.unit"
+                  />
+                } @else {
+                  0
+                }
               </div>
             </div>
+
+            <!-- Recent Throughput (from performance API) -->
+            @if (recentThroughputUnit(); as throughput) {
+              <div class="data-item-box admin-bg-dark">
+                <div class="data-label">
+                  {{ "admin.workers.stats.recent_throughput" | transloco }}
+                  <app-info-tooltip
+                    termKey="help.workers.tooltip.recent_throughput"
+                  />
+                </div>
+                <div class="data-value-lg">
+                  {{ throughput.primary.value | number: "1.2-2" }}
+                  <app-unit-tooltip
+                    [unit]="throughput"
+                    [primaryOverride]="throughput.primary.unit"
+                  />
+                </div>
+              </div>
+            }
 
             <!-- Worker Versions -->
             <div class="data-item-box admin-bg-dark">

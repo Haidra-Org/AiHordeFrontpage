@@ -25,6 +25,8 @@ import { DatabaseService, StorageType } from '../../services/database.service';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { HordeUser } from '../../types/horde-user';
 import { FormatNumberPipe } from '../../pipes/format-number.pipe';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
+import { scrollToElement } from '../../helper/scroll-utils';
 
 @Component({
   selector: 'app-transfer',
@@ -48,6 +50,7 @@ export class TransferComponent implements OnInit {
   private readonly aiHorde = inject(AiHordeService);
   public readonly activatedRoute = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   private exampleUsers = signal(['db0#1', 'Tazlin#6572', 'Rikudou#185676']);
 
@@ -237,7 +240,10 @@ export class TransferComponent implements OnInit {
         this.fragment.set(fragment);
         // Only scroll in browser environment (not during SSR)
         if (fragment && typeof document !== 'undefined') {
-          document.querySelector(`#${fragment}`)?.scrollIntoView();
+          const el = document.querySelector(`#${CSS.escape(fragment)}`);
+          if (el instanceof HTMLElement) {
+            scrollToElement(el, this.stickyRegistry.totalOffset());
+          }
         }
       });
   }

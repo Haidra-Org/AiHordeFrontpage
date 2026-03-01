@@ -51,6 +51,11 @@ export const detailsRoutes: Routes = [
         (c) => c.PublicWorkersComponent,
       ),
   },
+  // Alias: "alchemy" redirects to "interrogation"
+  {
+    path: 'workers/alchemy',
+    redirectTo: '/details/workers/interrogation',
+  },
   // Workers filtered by type (image, text, interrogation)
   {
     path: 'workers/:workerType',

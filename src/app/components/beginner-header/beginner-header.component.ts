@@ -24,6 +24,7 @@ export class BeginnerHeaderComponent {
 
   showButton = input(false);
   disableLinks = input(false);
+  dismissable = input(true);
 
   private readonly _isDismissed = signal(false);
   public readonly isDismissed = this._isDismissed.asReadonly();

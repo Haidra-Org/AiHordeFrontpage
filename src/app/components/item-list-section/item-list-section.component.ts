@@ -39,6 +39,7 @@ export interface DisplayItem {
   downloadButtonText?: string | null;
   sourceControlLink?: string;
   recommended?: boolean;
+  easyToUse?: boolean;
 }
 
 @Component({

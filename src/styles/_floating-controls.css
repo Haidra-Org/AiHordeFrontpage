@@ -1,0 +1,27 @@
+/* =================================================================
+   FLOATING CONTROLS CONTAINER
+   
+   Fixed-position container for accessibility controls (glossary FAB,
+   scroll-to-top, and any future projected controls). Children stack
+   bottom-to-top with the scroll-to-top button at the lowest position.
+   ================================================================= */
+
+@layer components {
+  .floating-controls {
+    @apply fixed z-50 flex flex-col-reverse items-end gap-3;
+    bottom: 2rem;
+    right: 1.5rem;
+    pointer-events: none;
+  }
+
+  .floating-controls > * {
+    pointer-events: auto;
+  }
+
+  @media (min-width: 640px) {
+    .floating-controls {
+      bottom: 2.5rem;
+      right: 2rem;
+    }
+  }
+}

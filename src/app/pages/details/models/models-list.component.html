@@ -2,12 +2,14 @@
   <app-page-intro pageKey="models" />
 
   <!-- Sub-Tab Navigation -->
-  <div class="details-tabs">
+  <div class="details-tabs" role="tablist" appScrollFade>
     <button
       type="button"
       class="details-tab"
       [class.details-tab-active]="activeTab() === 'image'"
       (click)="setActiveTab('image')"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'image'"
     >
       <svg
         class="icon-sm"
@@ -30,6 +32,8 @@
       class="details-tab"
       [class.details-tab-active]="activeTab() === 'text'"
       (click)="setActiveTab('text')"
+      role="tab"
+      [attr.aria-selected]="activeTab() === 'text'"
     >
       <svg
         class="icon-sm"

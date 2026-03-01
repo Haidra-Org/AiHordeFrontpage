@@ -25,8 +25,11 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { FaqItem } from '../../types/faq-item';
 import { InlineSvgComponent } from '../../components/inline-svg/inline-svg.component';
+import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
+import { scrollToElement as scrollToEl } from '../../helper/scroll-utils';
 import { SortedItems } from '../../types/sorted-items';
 import { NoSorterKeyValue } from '../../types/no-sorter-key-value';
 
@@ -47,6 +50,7 @@ function slugify(text: string): string {
     TranslocoPipe,
     TranslocoModule,
     InlineSvgComponent,
+    StickyHeaderDirective,
   ],
   templateUrl: './faq.component.html',
   styleUrl: './faq.component.css',
@@ -63,6 +67,7 @@ export class FaqComponent implements OnInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   private observer?: IntersectionObserver;
 
@@ -81,6 +86,8 @@ export class FaqComponent implements OnInit, OnDestroy {
   /** The ID of the currently visible FAQ item or section (e.g. 'faq-item-what-are-kudos') */
   public activeItemId = signal<string | null>(null);
 
+  private scrollObserverReady = false;
+
   constructor() {
     // Re-observe DOM elements when FAQ items are expanded/collapsed,
     // so the IntersectionObserver tracks newly rendered elements.
@@ -93,6 +100,13 @@ export class FaqComponent implements OnInit, OnDestroy {
 
       // Wait for the DOM to update after signal changes
       setTimeout(() => this.refreshObservedElements(), 0);
+    });
+
+    // Rebuild IntersectionObserver when sticky offset changes
+    effect(() => {
+      const offset = this.stickyRegistry.totalOffset();
+      if (!this.scrollObserverReady) return;
+      this.rebuildScrollObserver(offset);
     });
   }
 
@@ -283,17 +297,7 @@ export class FaqComponent implements OnInit, OnDestroy {
   private scrollToElement(id: string): void {
     const el = this.document.getElementById(id);
     if (!el) return;
-    const win = this.document.defaultView;
-    if (!win) return;
-    const navHeight = win.innerWidth >= 1024 ? 80 : 64;
-    // On mobile the sticky ToC toggle adds ~44px
-    const tocHeight = win.innerWidth >= 1024 ? 0 : 44;
-    // Sticky section headers (py-3 + text-3xl) are ~60px tall and sit directly below
-    // the nav, so questions would otherwise appear hidden beneath them
-    const sectionHeaderHeight = 60;
-    const offset = navHeight + tocHeight + sectionHeaderHeight + 16;
-    const top = el.getBoundingClientRect().top + win.scrollY - offset;
-    win.scrollTo({ top, behavior: 'smooth' });
+    scrollToEl(el, this.stickyRegistry.totalOffset());
   }
 
   public scrollToQuestion(sectionKey: string, question: string): void {
@@ -319,12 +323,15 @@ export class FaqComponent implements OnInit, OnDestroy {
 
   private setupScrollObserver(): void {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.scrollObserverReady = true;
+    this.rebuildScrollObserver(this.stickyRegistry.totalOffset());
+  }
+
+  private rebuildScrollObserver(offset: number): void {
     this.observer?.disconnect();
 
-    // rootMargin: negative top to account for sticky nav, trigger when near top
     this.observer = new IntersectionObserver(
       (entries) => {
-        // Pick the topmost visible entry
         let best: IntersectionObserverEntry | null = null;
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
@@ -344,12 +351,11 @@ export class FaqComponent implements OnInit, OnDestroy {
         }
       },
       {
-        rootMargin: '-80px 0px -60% 0px',
+        rootMargin: `${-offset}px 0px -60% 0px`,
         threshold: 0,
       },
     );
 
-    // Observe all section and question elements
     this.refreshObservedElements();
   }
 

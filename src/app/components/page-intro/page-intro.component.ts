@@ -12,6 +12,8 @@ import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { GlossaryService } from '../../services/glossary.service';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
+import { scrollToElement } from '../../helper/scroll-utils';
 
 @Component({
   selector: 'app-page-intro',
@@ -157,6 +159,7 @@ export class PageIntroComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly glossary = inject(GlossaryService);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   /** Page key — drives localStorage key and i18n key prefix */
   public readonly pageKey = input.required<string>();
@@ -200,17 +203,7 @@ export class PageIntroComponent {
     if (wasExpanded) {
       setTimeout(() => {
         const element = this.elementRef.nativeElement as HTMLElement;
-        const navHeight = parseInt(
-          getComputedStyle(this.document.documentElement).getPropertyValue(
-            '--nav-height-mobile',
-          ) || '64',
-          10,
-        );
-        const elementTop = element.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({
-          top: elementTop - navHeight - 16,
-          behavior: 'smooth',
-        });
+        scrollToElement(element, this.stickyRegistry.totalOffset());
       }, 50);
     }
   }

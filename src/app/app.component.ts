@@ -12,6 +12,7 @@ import {
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
+  Scroll,
 } from '@angular/router';
 import { ViewportScroller, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -19,8 +20,11 @@ import { FooterColorService } from './services/footer-color.service';
 import { ThemeService } from './services/theme.service';
 import { ThemeToggleComponent } from './components/theme-toggle/theme-toggle.component';
 import { AuthService } from './services/auth.service';
-import { GlossaryModalComponent } from './components/glossary-modal/glossary-modal.component';
-import { GlossaryService } from './services/glossary.service';
+import { FloatingControlsComponent } from './components/floating-controls/floating-controls.component';
+import { NetworkStatusComponent } from './components/network-status/network-status.component';
+import { StickyHeaderDirective } from './helper/sticky-header.directive';
+import { StickyRegistryService } from './services/sticky-registry.service';
+import { scrollToAnchorWhenReady } from './helper/scroll-utils';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -33,7 +37,9 @@ import { filter } from 'rxjs/operators';
     RouterLink,
     RouterLinkActive,
     ThemeToggleComponent,
-    GlossaryModalComponent,
+    FloatingControlsComponent,
+    NetworkStatusComponent,
+    StickyHeaderDirective,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -44,9 +50,9 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly renderer = inject(Renderer2);
   private readonly viewportScroller = inject(ViewportScroller);
   private readonly router = inject(Router);
+  private readonly stickyRegistry = inject(StickyRegistryService);
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
-  public readonly glossary = inject(GlossaryService);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;
@@ -61,11 +67,23 @@ export class AppComponent implements OnInit, OnDestroy {
   public isDetailsRouteActive = false;
 
   ngOnInit(): void {
-    // Offset anchor scrolling by the fixed nav bar height
+    // Offset anchor scrolling by the total sticky header height + padding
     this.viewportScroller.setOffset(() => {
-      const nav = this.document.querySelector('.nav-shell');
-      return [0, nav ? nav.getBoundingClientRect().height : 0];
+      return [0, this.stickyRegistry.totalOffset() + 16];
     });
+
+    // Safety-net: re-scroll with correct offset after Angular's built-in
+    // anchor scrolling fires. Uses MutationObserver so it works even when
+    // the target is inside a lazily-loaded route component.
+    // Relies on CSS scroll-padding-top (on <html>) and scroll-margin-top
+    // (on anchor targets) instead of manual offset math.
+    this.router.events
+      .pipe(filter((e): e is Scroll => e instanceof Scroll))
+      .subscribe((e) => {
+        if (e.anchor) {
+          scrollToAnchorWhenReady(e.anchor, this.document);
+        }
+      });
 
     // Track route changes to highlight dropdown triggers
     this.router.events
@@ -77,12 +95,33 @@ export class AppComponent implements OnInit, OnDestroy {
       });
 
     if (typeof window !== 'undefined') {
+      this.loadGitHubButtonsScript();
       const prefersDark = window.matchMedia(
         '(prefers-color-scheme: dark)',
       ).matches;
       // Note: This doesn't change footer, just demonstrates detection
       // Footer dark mode is controlled by individual pages
     }
+  }
+
+  private loadGitHubButtonsScript(): void {
+    const scriptId = 'github-buttons-script';
+    if (this.document.getElementById(scriptId)) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (this.document.getElementById(scriptId)) {
+        return;
+      }
+
+      const script = this.renderer.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://buttons.github.io/buttons.js';
+      script.async = true;
+      script.defer = true;
+      this.renderer.appendChild(this.document.head, script);
+    }, 0);
   }
 
   ngOnDestroy(): void {

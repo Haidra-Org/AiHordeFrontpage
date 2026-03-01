@@ -15,7 +15,7 @@
       <app-beginner-header [disableLinks]="true" />
 
       <!-- Sticky Filter Bar -->
-      <div class="tools-filter-bar">
+      <div class="tools-filter-bar" [appStickyHeader]="10">
         <div class="tools-filter-bar-content">
           <!-- Search Input -->
           <div class="tools-search-wrapper">
@@ -249,25 +249,23 @@
                 <!-- Parent heading (rendered once before the first child of a group) -->
                 @if (section.parentId && ($index === 0 || visibleSections()[$index - 1].parentId !== section.parentId)) {
                   <li class="tools-toc-parent">
-                    <a
+                    <button
+                      type="button"
                       class="tools-toc-link tools-toc-link-parent"
-                      (click)="scrollToSection(section.parentId, $event)"
-                      routerLink="/guis"
-                      [fragment]="'section-' + section.id"
+                      (click)="scrollToSection(section.parentId)"
                     >
                       <span class="tools-toc-link-text">{{
                         'guis_and_tools_page.guis_parent_title' | transloco
                       }}</span>
-                    </a>
+                    </button>
                   </li>
                 }
                 <li [class.tools-toc-child]="section.parentId">
-                  <a
+                  <button
+                    type="button"
                     class="tools-toc-link"
                     [class.active]="activeSection() === section.id"
-                    (click)="scrollToSection(section.id, $event)"
-                    routerLink="/guis"
-                    [fragment]="'section-' + section.id"
+                    (click)="scrollToSection(section.id)"
                   >
                     <span class="tools-toc-link-text">{{
                       section.titleKey | transloco
@@ -275,7 +273,7 @@
                     <span class="tools-toc-link-count">{{
                       section.items().length
                     }}</span>
-                  </a>
+                  </button>
                 </li>
               }
             </ul>
@@ -285,7 +283,7 @@
         <!-- Main Content -->
         <div class="tools-content">
           <!-- Mobile Section Navigation Pills -->
-          <nav class="tools-section-pills" aria-label="Jump to section">
+          <nav class="tools-section-pills" [appStickyHeader]="20" aria-label="Jump to section">
             <span class="tools-section-pills-label">{{
               "guis_and_tools_page.jump_to" | transloco
             }}</span>
@@ -295,21 +293,20 @@
               (scroll)="onPillsManualScroll()"
             >
               @for (section of visibleSections(); track section.id) {
-                <a
+                <button
+                  type="button"
                   class="tools-section-pill"
                   [class.active]="activeSection() === section.id"
                   [class.passed]="isSectionPassed(section.id)"
                   [style.background]="pillBackground(section.id)"
                   [attr.data-section-id]="section.id"
-                  (click)="scrollToSection(section.id, $event)"
-                  routerLink="/guis"
-                  [fragment]="'section-' + section.id"
+                  (click)="scrollToSection(section.id)"
                 >
                   {{ section.titleKey | transloco }}
                   <span class="tools-section-pill-count">{{
                     section.items().length
                   }}</span>
-                </a>
+                </button>
               }
             </div>
           </nav>
@@ -380,22 +377,4 @@
     </div>
   </div>
 
-  <!-- Scroll to Top Button -->
-  @if (showScrollToTop()) {
-    <button
-      type="button"
-      (click)="scrollToTop()"
-      class="scroll-to-top-btn"
-      aria-label="Scroll to top"
-    >
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M5 10l7-7m0 0l7 7m-7-7v18"
-        />
-      </svg>
-    </button>
-  }
 </section>

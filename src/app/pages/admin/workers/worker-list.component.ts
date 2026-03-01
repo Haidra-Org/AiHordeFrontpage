@@ -16,14 +16,22 @@ import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
+import { AiHordeService } from '../../../services/ai-horde.service';
 import { TeamService } from '../../../services/team.service';
 import { HordeWorker, WorkerType } from '../../../types/horde-worker';
+import { HordePerformance } from '../../../types/horde-performance';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
+import {
+  UnitConversionService,
+  SynthesizedUnit,
+} from '../../../services/unit-conversion.service';
+import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
@@ -46,6 +54,8 @@ type SortOrder = 'asc' | 'desc';
     WorkerCardComponent,
     DecimalPipe,
     InfoTooltipComponent,
+    UnitTooltipComponent,
+    ScrollFadeDirective,
   ],
   templateUrl: './worker-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,8 +65,10 @@ export class WorkerListComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workerService = inject(AdminWorkerService);
+  private readonly aiHordeService = inject(AiHordeService);
   private readonly teamService = inject(TeamService);
   public readonly auth = inject(AuthService);
+  public readonly units = inject(UnitConversionService);
   public viewMode = input<'admin' | 'public'>('admin');
   public titleKey = input<string>('admin.workers.title');
   public setPageTitle = input<boolean>(true);
@@ -91,6 +103,7 @@ export class WorkerListComponent implements OnInit {
   public workerVersionsExpanded = signal<boolean>(false);
   public statisticsCollapsed = signal<boolean>(true);
   public deletionSuccessMessage = signal<boolean>(false);
+  public performanceStats = signal<HordePerformance | null>(null);
 
   /** Track whether initial type has been applied. */
   private initialTypeApplied = false;
@@ -129,6 +142,7 @@ export class WorkerListComponent implements OnInit {
     afterNextRender(() => {
       this.loadWorkers();
       this.loadTeams();
+      this.loadPerformanceStats();
     });
   }
 
@@ -188,8 +202,8 @@ export class WorkerListComponent implements OnInit {
 
       // Handle performance as number
       if (key === 'performance') {
-        aVal = parseFloat(a.performance) || 0;
-        bVal = parseFloat(b.performance) || 0;
+        aVal = this.units.parseWorkerPerformance(a.performance);
+        bVal = this.units.parseWorkerPerformance(b.performance);
       }
 
       // Handle optional fields
@@ -249,7 +263,7 @@ export class WorkerListComponent implements OnInit {
     if (workers.length === 0) return 0;
 
     const total = workers.reduce(
-      (sum, w) => sum + (parseFloat(w.performance) || 0),
+      (sum, w) => sum + this.units.parseWorkerPerformance(w.performance),
       0,
     );
 
@@ -260,6 +274,28 @@ export class WorkerListComponent implements OnInit {
 
     // For image and text workers, return total
     return total;
+  });
+
+  public totalPerformanceUnit = computed(() => {
+    return this.units.formatAggregateWorkerPerformance(
+      this.totalPerformance(),
+      this.workerType(),
+    );
+  });
+
+  public recentThroughputUnit = computed((): SynthesizedUnit | null => {
+    const stats = this.performanceStats();
+    if (!stats) return null;
+    const type = this.workerType();
+    if (type === 'image') {
+      return this.units.formatImagePerformanceRate(
+        stats.past_minute_megapixelsteps,
+      );
+    }
+    if (type === 'text') {
+      return this.units.formatTextPerformanceRate(stats.past_minute_tokens);
+    }
+    return null;
   });
 
   public performanceLabel = computed(() => {
@@ -348,7 +384,7 @@ export class WorkerListComponent implements OnInit {
       };
 
       workers.forEach((w) => {
-        const performance = parseFloat(w.performance) || 0;
+        const performance = this.units.parseWorkerPerformance(w.performance);
         if (w.img2img) {
           img2img.totalPerformance += performance;
           img2img.workerCount++;
@@ -432,6 +468,17 @@ export class WorkerListComponent implements OnInit {
         error: () => {
           // Silently fail - teams are optional for display
           this.teams.set([]);
+        },
+      });
+  }
+
+  private loadPerformanceStats(): void {
+    this.aiHordeService.performance
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (stats) => this.performanceStats.set(stats),
+        error: () => {
+          // Silently fail - throughput stat is supplementary
         },
       });
   }

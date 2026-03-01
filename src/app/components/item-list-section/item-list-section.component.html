@@ -51,7 +51,12 @@
                     {{ item.name }}
                     @if (item.recommended) {
                       <span class="badge-base badge-recommended badge-sm">
-                        {{ "guis_and_tools.recommended" | transloco }}
+                        {{ (item.easyToUse ? "guis_and_tools.recommended_short" : "guis_and_tools.recommended") | transloco }}
+                      </span>
+                    }
+                    @if (item.easyToUse) {
+                      <span class="badge-base badge-easy-to-use badge-sm">
+                        {{ "guis_and_tools.easy_to_use" | transloco }}
                       </span>
                     }
                   </h3>
@@ -87,7 +92,7 @@
                 <a
                   [href]="item.link"
                   target="_blank"
-                  class="btn-purple btn-sm external-link"
+                  class="btn-purple btn-md external-link"
                   (click)="$event.stopPropagation()"
                 >
                   {{ getButtonText(item) }}
@@ -96,7 +101,7 @@
                   <a
                     [href]="item.sourceControlLink"
                     target="_blank"
-                    class="btn-source-control btn-sm external-link"
+                    class="btn-source-control btn-md external-link"
                     (click)="$event.stopPropagation()"
                   >
                     {{ getSourceControlDomain(item.sourceControlLink) }}
@@ -125,7 +130,12 @@
                     </h3>
                     @if (item.recommended) {
                       <span class="badge-base badge-recommended">
-                        {{ "guis_and_tools.recommended" | transloco }}
+                        {{ (item.easyToUse ? "guis_and_tools.recommended_short" : "guis_and_tools.recommended") | transloco }}
+                      </span>
+                    }
+                    @if (item.easyToUse) {
+                      <span class="badge-base badge-easy-to-use">
+                        {{ "guis_and_tools.easy_to_use" | transloco }}
                       </span>
                     }
                   </div>
@@ -169,7 +179,7 @@
                   <a
                     [href]="item.link"
                     target="_blank"
-                    class="btn-purple btn-sm external-link"
+                    class="btn-purple btn-md external-link"
                     (click)="$event.stopPropagation()"
                     [title]="getButtonText(item)"
                   >
@@ -258,7 +268,7 @@
                         <a
                           [href]="item.link"
                           target="_blank"
-                          class="btn-purple btn-sm external-link"
+                          class="btn-purple btn-md external-link"
                         >
                           {{ getButtonText(item) }}
                         </a>
@@ -266,7 +276,7 @@
                           <a
                             [href]="item.sourceControlLink"
                             target="_blank"
-                            class="btn-source-control btn-sm external-link"
+                            class="btn-source-control btn-md external-link"
                           >
                             {{ "guis_and_tools.source_code" | transloco }}
                             ({{

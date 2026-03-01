@@ -13,7 +13,7 @@
 @layer components {
   /* Hero heading (h1) - Responsive sizing */
   .heading-hero {
-    @apply mb-2 text-4xl font-extrabold leading-none tracking-tight;
+    @apply mb-1 sm:mb-2 text-2xl sm:text-4xl font-extrabold leading-none tracking-tight;
     @apply md:text-5xl xl:text-6xl;
     @apply dark:text-white;
   }

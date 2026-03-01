@@ -13,4 +13,5 @@ export interface GuiItem {
   functionKind: FunctionKind;
   platform?: Platform[];
   recommended?: boolean;
+  easyToUse?: boolean;
 }

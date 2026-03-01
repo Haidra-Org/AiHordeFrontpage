@@ -2,414 +2,16 @@
   <!-- Sidebar (desktop only) -->
   <aside class="workers-sidebar">
     <div class="workers-sidebar-inner">
-      <!-- Live Network Stats -->
-      @if (stats(); as s) {
-        <div class="workers-stats-panel">
-          <h3 class="workers-stats-title">
-            {{ "workers.stats.title" | transloco }}
-          </h3>
-
-          <!-- Image Domain -->
-          <div
-            class="workers-stats-domain"
-            [class.workers-stats-domain--needs-help]="imageNeedsHelp()"
-          >
-            <a
-              routerLink="/details/workers/image"
-              class="workers-stats-domain-header workers-stats-domain-header--purple"
-              [attr.title]="'workers.stats.view_details' | transloco"
-            >
-              <span class="workers-stats-domain-label">{{
-                "workers.stats.image.label" | transloco
-              }}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </a>
-            <div class="workers-stats-grid">
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.worker_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.workers" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.thread_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.threads" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.queued_requests | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.queued" | transloco
-                }}</span>
-              </div>
-            </div>
-            @if (imageNeedsHelp()) {
-              <div
-                class="workers-stats-needs-help workers-stats-needs-help--purple"
-              >
-                <span class="workers-stats-needs-help-dot"></span>
-                <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
-              </div>
-            }
-          </div>
-
-          <!-- Text Domain -->
-          <div
-            class="workers-stats-domain"
-            [class.workers-stats-domain--needs-help]="textNeedsHelp()"
-          >
-            <a
-              routerLink="/details/workers/text"
-              class="workers-stats-domain-header workers-stats-domain-header--blue"
-              [attr.title]="'workers.stats.view_details' | transloco"
-            >
-              <span class="workers-stats-domain-label">{{
-                "workers.stats.text.label" | transloco
-              }}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </a>
-            <div class="workers-stats-grid">
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.text_worker_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.workers" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.text_thread_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.threads" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.queued_text_requests | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.queued" | transloco
-                }}</span>
-              </div>
-            </div>
-            @if (textNeedsHelp()) {
-              <div
-                class="workers-stats-needs-help workers-stats-needs-help--blue"
-              >
-                <span class="workers-stats-needs-help-dot"></span>
-                <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
-              </div>
-            }
-          </div>
-
-          <!-- Alchemy Domain -->
-          <div
-            class="workers-stats-domain"
-            [class.workers-stats-domain--needs-help]="alchemyNeedsHelp()"
-          >
-            <a
-              routerLink="/details/workers/interrogation"
-              class="workers-stats-domain-header workers-stats-domain-header--green"
-              [attr.title]="'workers.stats.view_details' | transloco"
-            >
-              <span class="workers-stats-domain-label">{{
-                "workers.stats.alchemy.label" | transloco
-              }}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </a>
-            <div class="workers-stats-grid">
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.interrogator_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.workers" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.interrogator_thread_count | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.threads" | transloco
-                }}</span>
-              </div>
-              <div class="workers-stat">
-                <span class="workers-stat-value">{{
-                  s.queued_forms | number
-                }}</span>
-                <span class="workers-stat-label">{{
-                  "workers.stats.queued" | transloco
-                }}</span>
-              </div>
-            </div>
-            @if (alchemyNeedsHelp()) {
-              <div
-                class="workers-stats-needs-help workers-stats-needs-help--green"
-              >
-                <span class="workers-stats-needs-help-dot"></span>
-                <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
-              </div>
-            }
-          </div>
-
-          @if (anyNeedsHelp()) {
-            <div class="workers-stats-cta">
-              <p class="workers-stats-cta-text">
-                {{ "workers.stats.cta_message" | transloco }}
-              </p>
-              <p class="workers-stats-cta-text">
-                {{ "workers.stats.read_more_to_help_link" | transloco }}
-              </p>
-            </div>
-          }
-        </div>
-      }
+      <app-network-status variant="sidebar" />
     </div>
   </aside>
 
   <!-- Main Content -->
   <div class="workers-main">
     <!-- Mobile: Live Stats (shown only below lg) -->
-    @if (stats(); as s) {
-      <div class="workers-mobile-stats">
-        <div class="workers-stats-panel">
-          <h3 class="workers-stats-title">
-            {{ "workers.stats.title" | transloco }}
-          </h3>
-
-          <div class="workers-stats-domains-row">
-            <!-- Image Domain -->
-            <div
-              class="workers-stats-domain"
-              [class.workers-stats-domain--needs-help]="imageNeedsHelp()"
-            >
-              <a
-                routerLink="/details/workers/image"
-                class="workers-stats-domain-header workers-stats-domain-header--purple"
-                [attr.title]="'workers.stats.view_details' | transloco"
-              >
-                <span class="workers-stats-domain-label">{{
-                  "workers.stats.image.label" | transloco
-                }}</span>
-                @if (imageNeedsHelp()) {
-                  <span
-                    class="workers-stats-needs-help-dot workers-stats-needs-help--purple"
-                    aria-hidden="true"
-                  ></span>
-                }
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </a>
-              <div class="workers-stats-grid">
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.worker_count | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.workers" | transloco
-                  }}</span>
-                </div>
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.queued_requests | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.queued" | transloco
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Text Domain -->
-            <div
-              class="workers-stats-domain"
-              [class.workers-stats-domain--needs-help]="textNeedsHelp()"
-            >
-              <a
-                routerLink="/details/workers/text"
-                class="workers-stats-domain-header workers-stats-domain-header--blue"
-                [attr.title]="'workers.stats.view_details' | transloco"
-              >
-                <span class="workers-stats-domain-label">{{
-                  "workers.stats.text.label" | transloco
-                }}</span>
-                @if (textNeedsHelp()) {
-                  <span
-                    class="workers-stats-needs-help-dot workers-stats-needs-help--blue"
-                    aria-hidden="true"
-                  ></span>
-                }
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </a>
-              <div class="workers-stats-grid">
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.text_worker_count | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.workers" | transloco
-                  }}</span>
-                </div>
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.queued_text_requests | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.queued" | transloco
-                  }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Alchemy Domain -->
-            <div
-              class="workers-stats-domain"
-              [class.workers-stats-domain--needs-help]="alchemyNeedsHelp()"
-            >
-              <a
-                routerLink="/details/workers/interrogation"
-                class="workers-stats-domain-header workers-stats-domain-header--green"
-                [attr.title]="'workers.stats.view_details' | transloco"
-              >
-                <span class="workers-stats-domain-label">{{
-                  "workers.stats.alchemy.label" | transloco
-                }}</span>
-                @if (alchemyNeedsHelp()) {
-                  <span
-                    class="workers-stats-needs-help-dot workers-stats-needs-help--green"
-                    aria-hidden="true"
-                  ></span>
-                }
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </a>
-              <div class="workers-stats-grid">
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.interrogator_count | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.workers" | transloco
-                  }}</span>
-                </div>
-                <div class="workers-stat">
-                  <span class="workers-stat-value">{{
-                    s.queued_forms | number
-                  }}</span>
-                  <span class="workers-stat-label">{{
-                    "workers.stats.queued" | transloco
-                  }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- end workers-stats-domains-row -->
-
-          @if (anyNeedsHelp()) {
-            <div class="workers-stats-cta">
-              <p class="workers-stats-cta-text">
-                {{ "workers.stats.cta_message" | transloco }}
-              </p>
-              <p class="workers-stats-cta-text">
-                {{ "workers.stats.read_more_to_help_link" | transloco }}
-              </p>
-            </div>
-          }
-        </div>
-      </div>
-    }
+    <div class="workers-mobile-stats">
+      <app-network-status variant="compact" />
+    </div>
 
     <!-- What Are Workers? -->
     <div class="prose-content mb-8">
@@ -437,11 +39,11 @@
         <div
           id="image"
           class="card card-full card-bg-secondary"
-          [class.card--needs-help]="imageNeedsHelp()"
+          [class.card--needs-help]="ns.imageNeedsHelp()"
         >
-          @if (imageNeedsHelp()) {
+          @if (ns.imageNeedsHelp()) {
             <div class="card-needs-help-banner card-needs-help-banner--purple">
-              <span class="workers-stats-needs-help-dot"></span>
+              <span class="network-status-needs-help-dot"></span>
               {{ "workers.types.volunteers_needed" | transloco }}
             </div>
           }
@@ -520,11 +122,11 @@
         <div
           id="text"
           class="card card-full card-bg-secondary"
-          [class.card--needs-help]="textNeedsHelp()"
+          [class.card--needs-help]="ns.textNeedsHelp()"
         >
-          @if (textNeedsHelp()) {
+          @if (ns.textNeedsHelp()) {
             <div class="card-needs-help-banner card-needs-help-banner--blue">
-              <span class="workers-stats-needs-help-dot"></span>
+              <span class="network-status-needs-help-dot"></span>
               {{ "workers.types.volunteers_needed" | transloco }}
             </div>
           }
@@ -656,11 +258,11 @@
         <div
           id="alchemy"
           class="card card-full card-bg-secondary"
-          [class.card--needs-help]="alchemyNeedsHelp()"
+          [class.card--needs-help]="ns.alchemyNeedsHelp()"
         >
-          @if (alchemyNeedsHelp()) {
+          @if (ns.alchemyNeedsHelp()) {
             <div class="card-needs-help-banner card-needs-help-banner--green">
-              <span class="workers-stats-needs-help-dot"></span>
+              <span class="network-status-needs-help-dot"></span>
               {{ "workers.types.volunteers_needed" | transloco }}
             </div>
           }

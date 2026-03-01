@@ -1,0 +1,465 @@
+@switch (variant()) {
+  <!-- ═══════════════════════════════════════════════════════
+       SIDEBAR variant — desktop workers page
+       ═══════════════════════════════════════════════════════ -->
+  @case ('sidebar') {
+    @if (ns.performance(); as s) {
+      <div class="network-status-panel">
+        <h3 class="network-status-title">
+          {{ "workers.stats.title" | transloco }}
+        </h3>
+
+        <!-- Image Domain -->
+        <div
+          class="network-status-domain"
+          [class.network-status-domain--needs-help]="ns.imageNeedsHelp()"
+        >
+          <a
+            routerLink="/details/workers/image"
+            class="network-status-domain-header network-status-domain-header--purple"
+            [attr.title]="'workers.stats.view_details' | transloco"
+          >
+            <span class="network-status-domain-label">{{
+              "workers.stats.image.label" | transloco
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </a>
+          <div class="network-status-grid">
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.worker_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.workers" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.thread_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.threads" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.queued_requests | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.queued" | transloco
+              }}</span>
+            </div>
+          </div>
+          @if (ns.imageNeedsHelp()) {
+            <div
+              class="network-status-needs-help network-status-needs-help--purple"
+            >
+              <span class="network-status-needs-help-dot"></span>
+              <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Text Domain -->
+        <div
+          class="network-status-domain"
+          [class.network-status-domain--needs-help]="ns.textNeedsHelp()"
+        >
+          <a
+            routerLink="/details/workers/text"
+            class="network-status-domain-header network-status-domain-header--blue"
+            [attr.title]="'workers.stats.view_details' | transloco"
+          >
+            <span class="network-status-domain-label">{{
+              "workers.stats.text.label" | transloco
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </a>
+          <div class="network-status-grid">
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.text_worker_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.workers" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.text_thread_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.threads" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.queued_text_requests | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.queued" | transloco
+              }}</span>
+            </div>
+          </div>
+          @if (ns.textNeedsHelp()) {
+            <div
+              class="network-status-needs-help network-status-needs-help--blue"
+            >
+              <span class="network-status-needs-help-dot"></span>
+              <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
+            </div>
+          }
+        </div>
+
+        <!-- Alchemy Domain -->
+        <div
+          class="network-status-domain"
+          [class.network-status-domain--needs-help]="ns.alchemyNeedsHelp()"
+        >
+          <a
+            routerLink="/details/workers/interrogation"
+            class="network-status-domain-header network-status-domain-header--green"
+            [attr.title]="'workers.stats.view_details' | transloco"
+          >
+            <span class="network-status-domain-label">{{
+              "workers.stats.alchemy.label" | transloco
+            }}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </a>
+          <div class="network-status-grid">
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.interrogator_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.workers" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.interrogator_thread_count | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.threads" | transloco
+              }}</span>
+            </div>
+            <div class="network-status-stat">
+              <span class="network-status-stat-value">{{
+                s.queued_forms | number
+              }}</span>
+              <span class="network-status-stat-label">{{
+                "workers.stats.queued" | transloco
+              }}</span>
+            </div>
+          </div>
+          @if (ns.alchemyNeedsHelp()) {
+            <div
+              class="network-status-needs-help network-status-needs-help--green"
+            >
+              <span class="network-status-needs-help-dot"></span>
+              <span>{{ "workers.stats.needs_volunteers" | transloco }}</span>
+            </div>
+          }
+        </div>
+
+        @if (ns.anyNeedsHelp()) {
+          <div class="network-status-cta">
+            <p class="network-status-cta-text">
+              {{ "workers.stats.cta_message" | transloco }}
+            </p>
+            <p class="network-status-cta-text">
+              {{ "workers.stats.read_more_to_help_link" | transloco }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════
+       COMPACT variant — mobile workers page
+       ═══════════════════════════════════════════════════════ -->
+  @case ('compact') {
+    @if (ns.performance(); as s) {
+      <div class="network-status-panel network-status-panel--compact">
+        <h3 class="network-status-title">
+          {{ "workers.stats.title" | transloco }}
+        </h3>
+
+        <div class="network-status-domains-row">
+          <!-- Image Domain -->
+          <div
+            class="network-status-domain"
+            [class.network-status-domain--needs-help]="ns.imageNeedsHelp()"
+          >
+            <a
+              routerLink="/details/workers/image"
+              class="network-status-domain-header network-status-domain-header--purple"
+              [attr.title]="'workers.stats.view_details' | transloco"
+            >
+              <span class="network-status-domain-label">{{
+                "workers.stats.image.label" | transloco
+              }}</span>
+              @if (ns.imageNeedsHelp()) {
+                <span
+                  class="network-status-needs-help-dot network-status-needs-help--purple"
+                  aria-hidden="true"
+                ></span>
+              }
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+            <div class="network-status-grid">
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.worker_count | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.workers" | transloco
+                }}</span>
+              </div>
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.queued_requests | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.queued" | transloco
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Text Domain -->
+          <div
+            class="network-status-domain"
+            [class.network-status-domain--needs-help]="ns.textNeedsHelp()"
+          >
+            <a
+              routerLink="/details/workers/text"
+              class="network-status-domain-header network-status-domain-header--blue"
+              [attr.title]="'workers.stats.view_details' | transloco"
+            >
+              <span class="network-status-domain-label">{{
+                "workers.stats.text.label" | transloco
+              }}</span>
+              @if (ns.textNeedsHelp()) {
+                <span
+                  class="network-status-needs-help-dot network-status-needs-help--blue"
+                  aria-hidden="true"
+                ></span>
+              }
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+            <div class="network-status-grid">
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.text_worker_count | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.workers" | transloco
+                }}</span>
+              </div>
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.queued_text_requests | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.queued" | transloco
+                }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alchemy Domain -->
+          <div
+            class="network-status-domain"
+            [class.network-status-domain--needs-help]="ns.alchemyNeedsHelp()"
+          >
+            <a
+              routerLink="/details/workers/interrogation"
+              class="network-status-domain-header network-status-domain-header--green"
+              [attr.title]="'workers.stats.view_details' | transloco"
+            >
+              <span class="network-status-domain-label">{{
+                "workers.stats.alchemy.label" | transloco
+              }}</span>
+              @if (ns.alchemyNeedsHelp()) {
+                <span
+                  class="network-status-needs-help-dot network-status-needs-help--green"
+                  aria-hidden="true"
+                ></span>
+              }
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+            <div class="network-status-grid">
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.interrogator_count | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.workers" | transloco
+                }}</span>
+              </div>
+              <div class="network-status-stat">
+                <span class="network-status-stat-value">{{
+                  s.queued_forms | number
+                }}</span>
+                <span class="network-status-stat-label">{{
+                  "workers.stats.queued" | transloco
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- end network-status-domains-row -->
+
+        @if (ns.anyNeedsHelp()) {
+          <div class="network-status-cta">
+            <p class="network-status-cta-text">
+              {{ "workers.stats.cta_message" | transloco }}
+            </p>
+            <p class="network-status-cta-text">
+              {{ "workers.stats.read_more_to_help_link" | transloco }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER variant — subtle row in the site footer
+       ═══════════════════════════════════════════════════════ -->
+  @case ('footer') {
+    @if (ns.performance(); as s) {
+      <div class="network-status-footer" aria-label="Network status">
+        <span class="network-status-footer-label">{{ "network_status.footer_label" | transloco }}</span>
+
+        <div class="network-status-footer-domains">
+          <!-- Image -->
+          <a
+            routerLink="/details/workers/image"
+            class="network-status-footer-segment"
+          >
+            @if (ns.imageNeedsHelp()) {
+              <span class="network-status-needs-help-dot network-status-needs-help--purple" aria-hidden="true"></span>
+            }
+            <span class="network-status-footer-domain-name">{{ "network_status.image_short" | transloco }}</span>
+            <span class="network-status-footer-counts">{{ fmtCount(s.worker_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_requests) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+          </a>
+
+          <span class="network-status-footer-sep" aria-hidden="true">&middot;</span>
+
+          <!-- Text -->
+          <a
+            routerLink="/details/workers/text"
+            class="network-status-footer-segment"
+          >
+            @if (ns.textNeedsHelp()) {
+              <span class="network-status-needs-help-dot network-status-needs-help--blue" aria-hidden="true"></span>
+            }
+            <span class="network-status-footer-domain-name">{{ "network_status.text_short" | transloco }}</span>
+            <span class="network-status-footer-counts">{{ fmtCount(s.text_worker_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_text_requests) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+          </a>
+
+          <span class="network-status-footer-sep" aria-hidden="true">&middot;</span>
+
+          <!-- Alchemy -->
+          <a
+            routerLink="/details/workers/interrogation"
+            class="network-status-footer-segment"
+          >
+            @if (ns.alchemyNeedsHelp()) {
+              <span class="network-status-needs-help-dot network-status-needs-help--green" aria-hidden="true"></span>
+            }
+            <span class="network-status-footer-domain-name">{{ "network_status.alchemy_short" | transloco }}</span>
+            <span class="network-status-footer-counts">{{ fmtCount(s.interrogator_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_forms) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+          </a>
+        </div>
+      </div>
+    }
+  }
+}
