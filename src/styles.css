@@ -56,6 +56,7 @@
 
 /* Alerts & Notifications */
 @import "./styles/_alerts.css";
+@import "./styles/_notifications.css";
 
 /* Modals & Dialogs */
 @import "./styles/_modals.css";

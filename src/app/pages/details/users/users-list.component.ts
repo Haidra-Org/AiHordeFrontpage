@@ -24,19 +24,8 @@ import { extractUserId } from '../../../helper/user-parser';
     PageIntroComponent,
   ],
   template: `
-    <section class="section-primary">
-      <div class="container-page-header">
-        <div class="place-center">
-          <h1 class="heading-hero">{{ 'details.users.title' | transloco }}</h1>
-          <p class="text-intro text-secondary mt-2">
-            {{ 'details.users.description' | transloco }}
-          </p>
-        </div>
-      </div>
-    </section>
-
     <section class="section-secondary">
-      <div class="container-spaced">
+      <div class="">
         <div class="container-page-content">
           <app-page-intro pageKey="users" />
 

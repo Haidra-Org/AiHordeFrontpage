@@ -1732,5 +1732,8 @@
   "mission.cta.title": "Join Us",
   "mission.cta.description": "AI Horde is made possible by people who believe technology should serve everyone. Whether you have a spare GPU, a few dollars, or simply want to use what the community has built, you are welcome here.",
   "mission.cta.join": "Become a Worker",
-  "mission.cta.donate": "Support Us"
+  "mission.cta.donate": "Support Us",
+
+  "notification.need_workers.message": "We need {{types}} workers",
+  "notification.need_workers.tooltip": "The network needs volunteer {{types}} workers. Consider contributing!"
 }
