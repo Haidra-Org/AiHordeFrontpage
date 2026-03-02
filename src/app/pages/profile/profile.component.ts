@@ -38,6 +38,7 @@ import { DeleteAccountDialogComponent } from '../../components/delete-account-di
 import { AdminDialogComponent } from '../../components/admin/admin-dialog/admin-dialog.component';
 import { PageIntroComponent } from '../../components/page-intro/page-intro.component';
 import { KudosTermComponent } from '../../components/kudos-term/kudos-term.component';
+import { GenerationsTabComponent } from '../../components/generations-tab/generations-tab.component';
 
 type WorkerListItem = {
   id: string;
@@ -64,6 +65,7 @@ type WorkerListItem = {
     PageIntroComponent,
     KudosTermComponent,
     ScrollFadeDirective,
+    GenerationsTabComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
@@ -85,7 +87,7 @@ export class ProfileComponent implements OnInit {
 
   // Tab state
   public activeTab = signal<
-    'profile' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys'
+    'profile' | 'generations' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys'
   >('profile');
 
   // Workers state
@@ -292,7 +294,7 @@ export class ProfileComponent implements OnInit {
   }
 
   public setActiveTab(
-    tab: 'profile' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys',
+    tab: 'profile' | 'generations' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys',
   ): void {
     this.activeTab.set(tab);
 

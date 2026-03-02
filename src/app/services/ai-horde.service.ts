@@ -13,6 +13,14 @@ import { ActiveModel, ModelType } from '../types/active-model';
 import { ImageModelStats } from '../types/image-model-stats';
 import { TextModelStats } from '../types/text-model-stats';
 import { LeaderboardUser } from '../types/leaderboard-user';
+import {
+  ImageGenerationRequest,
+  ImageGenerationResponse,
+  GenerationCheckResponse,
+  GenerationStatusResponse,
+  TextGenerationStatusResponse,
+  AlchemyStatusResponse,
+} from '../types/generation';
 
 @Injectable({
   providedIn: 'root',
@@ -247,5 +255,67 @@ export class AiHordeService {
         ),
         catchError(() => of([])),
       );
+  }
+
+  private readonly clientAgent = 'AiHordeFrontpage:generate';
+
+  private buildGenerateHeaders(apiKey: string): Record<string, string> {
+    return {
+      apikey: apiKey,
+      'Client-Agent': this.clientAgent,
+    };
+  }
+
+  public submitImageGeneration(
+    apiKey: string,
+    request: ImageGenerationRequest,
+  ): Observable<ImageGenerationResponse | null> {
+    return this.httpClient
+      .post<ImageGenerationResponse>(
+        'https://aihorde.net/api/v2/generate/async',
+        request,
+        { headers: this.buildGenerateHeaders(apiKey) },
+      )
+      .pipe(catchError(() => of(null)));
+  }
+
+  public checkImageGeneration(
+    id: string,
+  ): Observable<GenerationCheckResponse | null> {
+    return this.httpClient
+      .get<GenerationCheckResponse>(
+        `https://aihorde.net/api/v2/generate/check/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError(() => of(null)));
+  }
+
+  public getImageGenerationStatus(
+    id: string,
+  ): Observable<GenerationStatusResponse | null> {
+    return this.httpClient
+      .get<GenerationStatusResponse>(
+        `https://aihorde.net/api/v2/generate/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError(() => of(null)));
+  }
+
+  public getTextGenerationStatus(
+    id: string,
+  ): Observable<TextGenerationStatusResponse | null> {
+    return this.httpClient
+      .get<TextGenerationStatusResponse>(
+        `https://aihorde.net/api/v2/generate/text/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError(() => of(null)));
+  }
+
+  public getAlchemyStatus(
+    id: string,
+  ): Observable<AlchemyStatusResponse | null> {
+    return this.httpClient
+      .get<AlchemyStatusResponse>(
+        `https://aihorde.net/api/v2/interrogate/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError(() => of(null)));
   }
 }

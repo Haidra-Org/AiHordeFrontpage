@@ -283,6 +283,18 @@
                 {{ "profile.tabs.profile" | transloco }}
               </button>
               <button
+                (click)="setActiveTab('generations')"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'generations'"
+                role="tab"
+                [attr.aria-selected]="activeTab() === 'generations'"
+              >
+                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+                {{ "profile.tabs.your_generations" | transloco }}
+              </button>
+              <button
                 (click)="setActiveTab('records')"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'records'"
@@ -351,6 +363,11 @@
                 {{ "profile.tabs.shared_keys" | transloco }}
               </button>
             </div>
+
+            <!-- Generations Tab -->
+            @if (activeTab() === "generations") {
+              <app-generations-tab />
+            }
 
             <!-- Profile Card -->
             @if (activeTab() === "profile") {
