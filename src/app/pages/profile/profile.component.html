@@ -681,11 +681,31 @@
                       }
                     </div>
                   </div>
+
+                  <!-- Page Guides -->
+                  <div class="section-divider-top">
+                    <div class="action-row">
+                      @if (!guideService.allDismissed()) {
+                        <button
+                          (click)="guideService.dismissAll()"
+                          class="btn-secondary"
+                        >
+                          {{ "profile.hide_all_guides" | transloco }}
+                        </button>
+                      }
+                      @if (guideService.anyDismissed()) {
+                        <button
+                          (click)="guideService.restoreAll()"
+                          class="btn-secondary"
+                        >
+                          {{ "profile.restore_all_guides" | transloco }}
+                        </button>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
             }
-
-            <!-- Detailed Records -->
             @if (
               activeTab() === "records" &&
               (auth.currentUser()!.records ||

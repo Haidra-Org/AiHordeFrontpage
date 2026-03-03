@@ -39,6 +39,7 @@ import { AdminDialogComponent } from '../../components/admin/admin-dialog/admin-
 import { PageIntroComponent } from '../../components/page-intro/page-intro.component';
 import { KudosTermComponent } from '../../components/kudos-term/kudos-term.component';
 import { GenerationsTabComponent } from '../../components/generations-tab/generations-tab.component';
+import { PageGuideService } from '../../services/page-guide.service';
 
 type WorkerListItem = {
   id: string;
@@ -81,6 +82,7 @@ export class ProfileComponent implements OnInit {
   private readonly router = inject(Router);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
+  public readonly guideService = inject(PageGuideService);
   private readonly workerRequestConcurrency = 3;
 
   public loginError = signal<boolean>(false);
