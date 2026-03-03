@@ -314,7 +314,7 @@
                   }
                 </button>
               }
-              @if (gen.check || gen.result) {
+              @if (gen.result || (gen.check && !gen.done)) {
                 <button
                   type="button"
                   class="btn-muted text-xs"
@@ -476,7 +476,7 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-              @if (gen.check || gen.result) {
+              @if (gen.result || (gen.check && !gen.done)) {
                 <button
                   type="button"
                   class="btn-muted text-xs"

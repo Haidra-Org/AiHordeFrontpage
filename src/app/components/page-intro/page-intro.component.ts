@@ -5,14 +5,14 @@ import {
   ElementRef,
   inject,
   input,
-  PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { GlossaryService } from '../../services/glossary.service';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
+import { PageGuideService } from '../../services/page-guide.service';
 import { scrollToElement } from '../../helper/scroll-utils';
 
 @Component({
@@ -156,10 +156,10 @@ import { scrollToElement } from '../../helper/scroll-utils';
 })
 export class PageIntroComponent {
   private readonly elementRef = inject(ElementRef);
-  private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly glossary = inject(GlossaryService);
   private readonly stickyRegistry = inject(StickyRegistryService);
+  private readonly guideService = inject(PageGuideService);
 
   /** Page key — drives localStorage key and i18n key prefix */
   public readonly pageKey = input.required<string>();
@@ -178,23 +178,11 @@ export class PageIntroComponent {
   public readonly contentId = computed(() => `page-intro-${this.pageKey()}`);
 
   private readonly _isExpanded = signal(true);
-  private readonly _isDismissed = signal(false);
 
   public readonly isExpanded = this._isExpanded.asReadonly();
-  public readonly isDismissed = this._isDismissed.asReadonly();
-
-  constructor() {
-    if (isPlatformBrowser(this.platformId)) {
-      // Defer reading localStorage until after construction with pageKey available
-      // Using afterNextRender would be cleaner but we need it synchronously to avoid flash
-      queueMicrotask(() => {
-        const key = this.storageKey();
-        if (key && localStorage.getItem(key) === 'dismissed') {
-          this._isDismissed.set(true);
-        }
-      });
-    }
-  }
+  public readonly isDismissed = computed(() =>
+    this.guideService.isDismissed(this.storageKey())(),
+  );
 
   public toggleExpanded(): void {
     const wasExpanded = this._isExpanded();
@@ -209,24 +197,12 @@ export class PageIntroComponent {
   }
 
   public dismiss(): void {
-    this._isDismissed.set(true);
-    if (isPlatformBrowser(this.platformId)) {
-      const key = this.storageKey();
-      if (key) {
-        localStorage.setItem(key, 'dismissed');
-      }
-    }
+    this.guideService.dismiss(this.storageKey());
   }
 
   public restore(): void {
-    this._isDismissed.set(false);
+    this.guideService.restore(this.storageKey());
     this._isExpanded.set(true);
-    if (isPlatformBrowser(this.platformId)) {
-      const key = this.storageKey();
-      if (key) {
-        localStorage.removeItem(key);
-      }
-    }
   }
 
   public openGlossary(): void {

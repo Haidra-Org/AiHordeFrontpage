@@ -440,6 +440,8 @@
 
   "profile.delete_account": "Delete Account",
   "profile.permanently_delete_account": "Permanently Delete Account",
+  "profile.hide_all_guides": "Hide all page guides",
+  "profile.restore_all_guides": "Restore all page guides",
   "profile.delete_account_title": "Delete Account",
   "profile.delete_account_warning_30_days": "Deleting your account begins a 30-day grace period during which you can undo the deletion. After 30 days, you must confirm the deletion again to make it permanent.",
   "profile.delete_account_warning_permanent": "Warning: Your account has already been marked for deletion. If 30 days have passed since you initiated deletion, confirming now will permanently delete your account. This action cannot be undone.",
