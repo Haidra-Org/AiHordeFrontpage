@@ -24,6 +24,7 @@
     @apply hover:text-brand-purple hover:bg-surface-secondary;
     @apply focus:outline-none;
     @apply dark:text-gray-400 dark:hover:text-purple-300 dark:hover:bg-gray-700;
+    padding-inline: calc(var(--spacing) * 2);
   }
 
   .nav-link:focus {
