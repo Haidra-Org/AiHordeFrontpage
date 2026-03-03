@@ -96,17 +96,17 @@ export class GenerationsTabComponent {
 
   public readonly filteredModels = computed(() => {
     const search = (this.modelSearch() ?? '').toLowerCase().trim();
-    if (!search) return [];
-    return this.availableModels().filter((m) => m.name.toLowerCase().includes(search));
+    const all = this.availableModels();
+    if (!search) return all;
+    return all.filter((m) => m.name.toLowerCase().includes(search));
   });
 
   public readonly hiddenModelCount = computed(() => {
-    const search = (this.modelSearch() ?? '').toLowerCase().trim();
-    if (!search) return 0;
     return this.availableModels().length - this.filteredModels().length;
   });
 
   public readonly modelDropdownOpen = signal(false);
+  private modelDropdownPinned = false;
 
   constructor() {
     afterNextRender(() => {
@@ -121,11 +121,20 @@ export class GenerationsTabComponent {
   }
 
   public onModelBlur(): void {
-    this.modelDropdownOpen.set(false);
+    if (!this.modelDropdownPinned) {
+      this.modelDropdownOpen.set(false);
+    }
+  }
+
+  public toggleModelDropdown(): void {
+    const next = !this.modelDropdownOpen();
+    this.modelDropdownPinned = next;
+    this.modelDropdownOpen.set(next);
   }
 
   public selectModel(name: string): void {
     this.form.controls.model.setValue(name);
+    this.modelDropdownPinned = false;
     this.modelDropdownOpen.set(false);
   }
 

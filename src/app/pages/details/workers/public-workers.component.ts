@@ -13,13 +13,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, map } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { WorkerListComponent } from '../../admin/workers/worker-list.component';
-import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { WorkerType } from '../../../types/horde-worker';
 
 @Component({
   selector: 'app-public-workers',
-  imports: [WorkerListComponent, EntityLookupComponent, PageIntroComponent],
+  imports: [WorkerListComponent, PageIntroComponent],
   templateUrl: './public-workers.component.html',
   styleUrl: './public-workers.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

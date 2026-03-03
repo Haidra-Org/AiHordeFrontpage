@@ -309,11 +309,135 @@
 
   /* Entity lookup submit button */
   .entity-lookup-button {
-    @apply flex-shrink-0;
+    @apply shrink-0;
   }
 
   /* Entity lookup hint text */
   .entity-lookup-hint {
     @apply mt-1;
+  }
+
+  /* =================================================================
+     AUTOCOMPLETE INPUT WIDGET
+     Combobox-style text input with custom dropdown and toggle button
+     ================================================================= */
+
+  /* Outer wrapper: positions the dropdown relative to the input row */
+  .autocomplete-wrapper {
+    @apply relative;
+  }
+
+  /* Row containing the text input + toggle button */
+  .autocomplete-input-row {
+    @apply flex;
+  }
+
+  /* Text input inside the autocomplete widget — inherits form-input styles */
+  .autocomplete-input {
+    @apply min-w-0 flex-1 rounded-r-none;
+  }
+
+  /* Toggle button that opens/closes the dropdown without focusing the input */
+  .autocomplete-toggle {
+    @apply inline-flex items-center justify-center px-2.5 shrink-0;
+    @apply border rounded-r-lg transition-colors duration-150;
+    border-color: var(--color-border-primary);
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-secondary);
+    border-left: none;
+  }
+
+  .autocomplete-toggle:hover {
+    background-color: var(--color-surface-tertiary);
+  }
+
+  .dark .autocomplete-toggle {
+    @apply border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600;
+    border-left: none;
+  }
+
+  /* Chevron icon inside the toggle — rotated when open */
+  .autocomplete-chevron {
+    @apply text-base transition-transform duration-150;
+  }
+
+  .autocomplete-chevron--open {
+    @apply rotate-180;
+  }
+
+  /* Dropdown panel */
+  .autocomplete-dropdown {
+    @apply absolute z-10 top-full left-0 right-0 mt-1;
+    @apply max-h-48 sm:max-h-64 md:max-h-80 overflow-y-auto;
+    @apply rounded-lg border shadow-lg;
+    border-color: var(--color-border-primary);
+    background-color: var(--color-surface-primary);
+  }
+
+  .dark .autocomplete-dropdown {
+    @apply border-gray-600 bg-gray-900 shadow-none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Sticky header shown when some results are hidden due to filtering */
+  .autocomplete-hidden-notice {
+    @apply sticky top-0 z-1 px-3 py-1.5 text-xs font-medium;
+    @apply border-b;
+    background-color: var(--color-warning-bg);
+    color: var(--color-warning-text);
+    border-color: var(--color-warning-border);
+  }
+
+  .dark .autocomplete-hidden-notice {
+    background-color: rgb(120 53 15);
+    color: rgb(253 230 138);
+    border-color: rgb(180 83 9 / 0.6);
+  }
+
+  /* A single option row in the dropdown */
+  .autocomplete-option {
+    @apply px-3 py-2 text-sm cursor-pointer;
+    color: var(--color-text-primary);
+  }
+
+  .autocomplete-option:hover {
+    background-color: var(--color-surface-secondary);
+  }
+
+  .dark .autocomplete-option {
+    @apply text-gray-200;
+  }
+
+  .dark .autocomplete-option:hover {
+    @apply bg-gray-800;
+  }
+
+  /* Empty-state message when no options match */
+  .autocomplete-empty {
+    @apply px-3 py-2 text-xs;
+    color: var(--color-text-secondary);
+  }
+
+  /* =================================================================
+     FORM STATUS MESSAGES
+     Inline success/error text beneath form actions
+     ================================================================= */
+
+  .form-status-error {
+    @apply text-sm;
+    color: var(--color-danger-text);
+  }
+
+  .dark .form-status-error {
+    @apply text-red-400;
+  }
+
+  .form-status-success {
+    @apply text-sm;
+    color: var(--color-success-text);
+  }
+
+  .dark .form-status-success {
+    @apply text-green-400;
   }
 }

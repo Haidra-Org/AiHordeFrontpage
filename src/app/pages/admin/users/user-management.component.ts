@@ -29,6 +29,7 @@ import {
   AdminToast,
 } from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
+import { FloatingActionService } from '../../../services/floating-action.service';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
@@ -70,6 +71,7 @@ export class UserManagementComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly route = inject(ActivatedRoute);
   public readonly auth = inject(AuthService);
+  private readonly floatingActions = inject(FloatingActionService);
 
   // Search state
   public searchQuery = signal<string>('');
@@ -239,6 +241,18 @@ export class UserManagementComponent implements OnInit {
 
     // Load user history from local storage
     this.loadUserHistory();
+
+    this.floatingActions.register({
+      id: 'admin-user-save',
+      labelKey: 'admin.users.save',
+      cssClass: 'btn-save-fixed',
+      disabled: this.isSaving,
+      visible: this.isDirty,
+      action: () => this.saveChanges(),
+    });
+    this.destroyRef.onDestroy(() => {
+      this.floatingActions.unregister('admin-user-save');
+    });
 
     // Check for route param first (e.g., /admin/users/304597)
     const userIdParam = this.route.snapshot.paramMap.get('userId');

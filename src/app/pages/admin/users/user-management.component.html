@@ -1605,14 +1605,3 @@
     </div>
   }
 </div>
-
-<!-- Fixed Save Button -->
-@if (isDirty()) {
-  <button
-    (click)="saveChanges()"
-    [disabled]="isSaving()"
-    class="btn-save-fixed"
-  >
-    {{ "admin.users.save" | transloco }}
-  </button>
-}
