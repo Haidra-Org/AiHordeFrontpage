@@ -297,7 +297,18 @@ export class FaqComponent implements OnInit, OnDestroy {
   private scrollToElement(id: string): void {
     const el = this.document.getElementById(id);
     if (!el) return;
-    scrollToEl(el, this.stickyRegistry.totalOffset());
+
+    // Account for the sticky section heading that sits below the global sticky stack
+    let extra = 0;
+    const section = el.closest('[id^="faq-section-"]');
+    if (section) {
+      const heading = section.querySelector<HTMLElement>('.section-header-collapsible');
+      if (heading) {
+        extra = heading.getBoundingClientRect().height;
+      }
+    }
+
+    scrollToEl(el, this.stickyRegistry.totalOffset() + extra);
   }
 
   public scrollToQuestion(sectionKey: string, question: string): void {

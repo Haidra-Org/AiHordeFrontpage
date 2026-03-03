@@ -262,6 +262,15 @@
     border-left-color: rgb(55 65 81);
   }
 
+  /* Anchor targets: clear sticky headers + section heading when scrolled to */
+  [id^="faq-item-"] {
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 4rem);
+  }
+
+  [id^="faq-section-"] {
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
+  }
+
   /* FAQ answer highlight (deep-link target) */
   .faq-answer-highlight {
     animation: faq-highlight-fade 2.5s ease-out;

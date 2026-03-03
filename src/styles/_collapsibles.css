@@ -69,12 +69,7 @@
     @apply transition-all duration-200;
     @apply hover:text-purple-600;
     @apply dark:bg-gray-900 dark:hover:text-purple-500;
-    top: var(--nav-height-mobile);
-
-    /* Desktop - use desktop navbar height */
-    @media (min-width: 768px) {
-      top: var(--nav-height-desktop);
-    }
+    top: var(--sticky-offset, 80px);
 
     /* Mobile-specific margin adjustments for full-width appearance */
     @media (max-width: 767px) {
