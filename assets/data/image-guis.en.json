@@ -1,7 +1,20 @@
 [
   {
+    "name": "Artbot",
+    "description": "One of the most popular web-based clients. No registration required. Features include an image gallery, pending image tracking, model details browser, worker management, and a JSON payload tool. Has been used to generate over 39 million images.",
+    "image": "assets/img/guis/artbot.png",
+    "link": "https://artbot.site",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/Haidra-Org/artbot",
+    "recommended": true
+  },
+  {
     "name": "Lucid Creations",
-    "description": "A client that works both in your browser and can be downloaded by the founder of the AI Horde project.",
+    "description": "A cross-platform client by the founder of the AI Horde project. Supports all available features of the API, including advanced options like LoRAs, ControlNet, and upscalers. Runs natively on Windows, Linux, and macOS with no GPU required, and also has a web version.",
     "image": "assets/img/guis/lucid-creations.png",
     "link": "https://dbzer0.itch.io/lucid-creations",
     "downloadButtonText": "Get {name}",
@@ -10,22 +23,39 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos", "web"],
-    "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations"
+    "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations",
+    "recommended": true
   },
   {
-    "name": "Artbot",
-    "description": "One of the most popular web-based clients.",
-    "image": "assets/img/guis/artbot.png",
-    "link": "https://artbot.site",
+    "name": "AI Scribbles",
+    "description": "A beginner-friendly web image generator powered by AI Horde, featuring handmade custom styles, prompt enhancement, and optional Discord Webhook integration to post generated images directly to a channel.",
+    "image": "assets/img/guis/ai-scribbles.png",
+    "link": "https://www.aiscribbles.com/generate/",
     "categories": ["Web"],
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["web"]
+    "platform": ["web"],
+    "recommended": true,
+    "easyToUse": true
+  },
+  {
+    "name": "Aislingeach",
+    "description": "A native iOS client for the AI Horde. Available on TestFlight or the App Store.",
+    "image": "assets/img/guis/aislingeach.png",
+    "link": "https://github.com/amiantos/aislingeach",
+    "downloadButtonText": "Get {name}",
+    "categories": ["iOS"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["ios"],
+    "sourceControlLink": "https://github.com/amiantos/aislingeach",
+    "recommended": true
   },
   {
     "name": "HordeNG",
-    "description": "HordeNG aims to be very simple to use for beginners, while allowing the full set of options for advanced users.",
+    "description": "A progressive web app for AI Horde image generation, designed to be approachable for beginners while exposing the full feature set for advanced users. Supports LoRAs, textual inversions, ControlNet, face-fixers, upscalers, HiRes Fix, and QR code generation.",
     "image": "assets/img/guis/horde-ng.png",
     "link": "https://horde-ng.org/generate",
     "categories": ["Web"],
@@ -33,18 +63,8 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/RikudouSage/HordeNG"
-  },
-  {
-    "name": "AI Scribbles",
-    "description": "A simplified web image generator with handmade custom styles",
-    "image": "assets/img/guis/ai-scribbles.png",
-    "link": "https://www.aiscribbles.com/generate/",
-    "categories": ["Web"],
-    "itemType": "gui-image",
-    "domain": ["image"],
-    "functionKind": "frontend",
-    "platform": ["web"]
+    "sourceControlLink": "https://github.com/RikudouSage/HordeNG",
+    "recommended": true
   },
   {
     "name": "AI Painter",
@@ -59,31 +79,8 @@
     "platform": ["ios"]
   },
   {
-    "name": "Aislingeach",
-    "description": "An iOS app that allows you to generate images using AI, as well as rate images.",
-    "image": "assets/img/guis/aislingeach.png",
-    "link": "https://github.com/amiantos/aislingeach",
-    "downloadButtonText": "Get {name}",
-    "categories": ["iOS"],
-    "itemType": "gui-image",
-    "domain": ["image"],
-    "functionKind": "frontend",
-    "platform": ["ios"],
-    "sourceControlLink": "https://github.com/amiantos/aislingeach"
-  },
-  {
-    "name": "AIBrush",
-    "description": "Web-based image generation client.",
-    "link": "https://www.aibrush.art/",
-    "categories": ["Web"],
-    "itemType": "gui-image",
-    "domain": ["image"],
-    "functionKind": "frontend",
-    "platform": ["web"]
-  },
-  {
     "name": "BreadImagine",
-    "description": "Web client for image generation (BreadImagine).",
+    "description": "A lightweight, open-source web UI for generating images with Stable Diffusion via AI Horde. Supports style presets and generating multiple images at once.",
     "link": "https://imagine.breadtm.xyz/",
     "categories": ["Web"],
     "itemType": "gui-image",
@@ -93,18 +90,8 @@
     "sourceControlLink": "https://github.com/ItsBreadTime/BreadImagine"
   },
   {
-    "name": "ComicsMaker",
-    "description": "Web-based comics/illustration generator.",
-    "link": "https://comicsmaker.ai/",
-    "categories": ["Web"],
-    "itemType": "gui-image",
-    "domain": ["image"],
-    "functionKind": "frontend",
-    "platform": ["web"]
-  },
-  {
     "name": "HordeQT",
-    "description": "Desktop client (Qt) for interacting with Horde backends.",
+    "description": "A cross-platform desktop client for AI Horde, written in Python with PySide6 (Qt). Runs natively on Windows, Linux, and macOS with no GPU required.",
     "link": "https://github.com/Unit1208/HordeQT",
     "categories": ["Desktop"],
     "itemType": "gui-image",
@@ -115,7 +102,7 @@
   },
   {
     "name": "Justaaa",
-    "description": "A web-based image UI instance.",
+    "description": "A web-based AI image generation UI powered by AI Horde. Offers a choice of style presets, custom blueprint uploads, and both Express and Advanced generation modes.",
     "link": "https://justaaa.fyrean.com/",
     "categories": ["Web"],
     "itemType": "gui-image",
@@ -124,24 +111,15 @@
     "platform": ["web"]
   },
   {
-    "name": "Aeionic Diffusion Deluxe",
-    "description": "Desktop app available for Windows and Linux.",
-    "link": "https://aeionic.com/",
-    "categories": ["Desktop"],
-    "itemType": "gui-image",
-    "domain": ["image"],
-    "functionKind": "frontend",
-    "platform": ["windows", "linux"]
-  },
-  {
     "name": "Stable UI",
-    "description": "Stable UI forks (improved fork + original); quick-access UIs for model-driven generation.",
+    "description": "A web UI for AI Horde image generation, focused on quick model-driven generation. An improved fork is hosted at efreak.github.io; the original lives at aqualxx.github.io.",
     "link": "https://efreak.github.io/stableui",
     "notes": "Improved fork at efreak.github.io; original at https://aqualxx.github.io/stableui",
     "categories": ["Web"],
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["web"]
+    "platform": ["web"],
+    "deprecated": true
   }
 ]

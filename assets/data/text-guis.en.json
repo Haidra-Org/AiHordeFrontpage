@@ -1,31 +1,7 @@
 [
   {
-    "name": "KoboldAI Client",
-    "description": "This is a browser-based front-end for AI-assisted writing with multiple local & remote AI models, including through the AI Horde.",
-    "image": "assets/img/guis/koboldai.png",
-    "link": "https://koboldai.org/",
-    "downloadButtonText": "Get {name}",
-    "categories": ["Desktop"],
-    "itemType": "gui-text",
-    "domain": ["text"],
-    "functionKind": "frontend",
-    "platform": ["windows", "linux", "macos"]
-  },
-  {
-    "name": "SillyTavern",
-    "description": "A downloadable client that allows you to interact with text generation AIs, including the AI Horde.",
-    "image": "assets/img/guis/sillytavern.png",
-    "link": "https://sillytavernai.com/",
-    "downloadButtonText": "Get {name}",
-    "categories": ["Desktop"],
-    "itemType": "gui-text",
-    "domain": ["text"],
-    "functionKind": "frontend",
-    "platform": ["windows", "linux", "macos"]
-  },
-  {
     "name": "KoboldAI Lite",
-    "description": "A simple web-based client for AI chat and roleplay with multiple AI models, including through the AI Horde.",
+    "description": "A web-based frontend for LLM APIs, including AI Horde. Offers multiple UI themes (Classic, Aesthetic, Corpo), instruct mode, quick-start scenarios, save/load support, and simultaneous access to many AI Horde models.",
     "image": "assets/img/guis/koboldai-lite.png",
     "link": "https://lite.koboldai.net",
     "categories": ["Web"],
@@ -33,11 +9,41 @@
     "domain": ["text"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net"
+    "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net",
+    "recommended": true
+  },
+  {
+    "name": "SillyTavern",
+    "description": "A powerful locally-installed LLM frontend supporting AI Horde, KoboldAI/CPP, NovelAI, OpenAI, Claude, and many more APIs. Features include Visual Novel Mode, image generation via Automatic1111/ComfyUI, TTS, WorldInfo (lorebooks), mobile-friendly layout, auto-translate, and a rich extension ecosystem. Over 300 contributors and 3+ years of active development.",
+    "image": "assets/img/guis/sillytavern.png",
+    "link": "https://sillytavern.app/",
+    "downloadButtonText": "Get {name}",
+    "categories": ["Desktop"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux", "macos"],
+    "sourceControlLink": "https://github.com/SillyTavern/SillyTavern",
+    "recommended": true
+  },
+
+  {
+    "name": "Inneal",
+    "description": "A native iOS and iPadOS LLM roleplay chatbot client for the AI Horde. Import Tavern character cards, enjoy multi-character chat, personas, message swiping, and an 'Auto Mode' for easy setup. Syncs chats and characters across devices via CloudKit.",
+    "image": "assets/img/guis/inneal.png",
+    "link": "https://apps.apple.com/us/app/inneal-ai-character-tavern/id6482289560",
+    "downloadButtonText": "Get {name}",
+    "categories": ["iOS"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["ios"],
+    "sourceControlLink": "https://github.com/amiantos/inneal",
+    "recommended": true
   },
   {
     "name": "AgnAIstic",
-    "description": "AI chat with characters. Open source, self-hostable, and publicly hosted, including through the AI Horde.",
+    "description": "Open source AI character chat platform, publicly hosted at agnai.chat or self-hostable. Supports AI Horde and many other AI services, with features including image generation, long-term memory/embeddings, character expressions, memory books, stop generation, and chat graphs.",
     "image": "assets/img/guis/agnaistic.png",
     "link": "https://agnai.chat",
     "categories": ["Web"],
@@ -48,23 +54,9 @@
     "sourceControlLink": "https://github.com/agnaistic/agnai"
   },
   {
-    "name": "Inneal",
-    "description": "An iOS app for LLM chat through the AI Horde. Has support for multi-character chat, personas and more.",
-    "image": "assets/img/guis/inneal.png",
-    "link": "https://github.com/amiantos/inneal",
-    "downloadButtonText": "Get {name}",
-    "categories": ["iOS"],
-    "itemType": "gui-text",
-    "domain": ["text"],
-    "functionKind": "frontend",
-    "platform": ["ios"],
-    "sourceControlLink": "https://github.com/amiantos/inneal"
-  },
-
-  {
     "name": "TavernAI",
-    "description": "A downloadable client for local and remote LLM/chat interaction (TavernAI).",
-    "link": "https://github.com/TavernAI/TavernAI",
+    "description": "An adventure atmospheric chat client supporting multiple AI backends including KoboldAI, NovelAI, Pygmalion, and OpenAI ChatGPT. Can be downloaded locally or tried online via Google Colab. The predecessor project that inspired SillyTavern.",
+    "link": "https://tavernai.net/",
     "categories": ["Desktop"],
     "itemType": "gui-text",
     "domain": ["text"],
