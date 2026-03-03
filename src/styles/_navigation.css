@@ -95,7 +95,7 @@
     max-width: var(--max-width-container);
   }
 
-  @media (min-width: 1165px) {
+  @media (min-width: var(--breakpoint-nav)) {
     .nav-container {
       @apply h-20;
     }
