@@ -282,9 +282,9 @@
     @apply cursor-not-allowed bg-gray-600 text-gray-500;
   }
 
-  /* Fixed save button - floating action button */
+  /* Fixed save button - rendered inside the floating-controls container. */
   .btn-save-fixed {
-    @apply fixed bottom-6 right-6 z-50 py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
+    @apply py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
     outline: 3px solid rgb(234 179 8);
     outline-offset: 0;
   }

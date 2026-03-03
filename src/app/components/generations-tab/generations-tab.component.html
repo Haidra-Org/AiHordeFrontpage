@@ -71,7 +71,7 @@
             spellcheck="false"
           ></textarea>
           @if (jsonError()) {
-            <span class="text-red-400 text-xs mt-1">{{ jsonError() }}</span>
+            <span class="form-status-error text-xs mt-1">{{ jsonError() }}</span>
           }
         </div>
         <div class="flex items-center gap-4">
@@ -88,10 +88,10 @@
             }
           </button>
           @if (submitError()) {
-            <span class="text-red-400 text-sm">{{ submitError() }}</span>
+            <span class="form-status-error">{{ submitError() }}</span>
           }
           @if (submitSuccess()) {
-            <span class="text-green-400 text-sm">{{ submitSuccess() }}</span>
+            <span class="form-status-success">{{ submitSuccess() }}</span>
           }
         </div>
       </div>
@@ -114,31 +114,43 @@
         <div class="form-row">
           <div class="form-field-third">
             <label class="form-label" for="gen-model">{{ "profile.generations.field.model" | transloco }}</label>
-            <div class="relative">
-              <input
-                id="gen-model"
-                type="text"
-                class="form-input form-input-wide"
-                formControlName="model"
-                autocomplete="off"
-                (focus)="onModelFocus()"
-                (blur)="onModelBlur()"
-              />
-              @if (modelDropdownOpen() && modelSearch()) {
+            <div class="autocomplete-wrapper">
+              <div class="autocomplete-input-row">
+                <input
+                  id="gen-model"
+                  type="text"
+                  class="form-input form-input-wide autocomplete-input"
+                  formControlName="model"
+                  autocomplete="off"
+                  (focus)="onModelFocus()"
+                  (blur)="onModelBlur()"
+                />
+                <button
+                  type="button"
+                  class="autocomplete-toggle"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="toggleModelDropdown()"
+                  [attr.aria-expanded]="modelDropdownOpen()"
+                  [attr.aria-label]="'profile.generations.field.model_toggle' | transloco"
+                >
+                  <span class="autocomplete-chevron" [class.autocomplete-chevron--open]="modelDropdownOpen()">&#9662;</span>
+                </button>
+              </div>
+              @if (modelDropdownOpen()) {
                 <div
-                  class="absolute z-10 top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg"
+                  class="autocomplete-dropdown"
                   role="listbox"
                   [attr.aria-label]="'profile.generations.field.model' | transloco"
                   (mousedown)="$event.preventDefault()"
                 >
                   @if (hiddenModelCount() > 0) {
-                    <div class="sticky top-0 px-3 py-1 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 border-b border-gray-200 dark:border-gray-700">
+                    <div class="autocomplete-hidden-notice">
                       {{ "profile.generations.field.models_hidden" | transloco: { count: hiddenModelCount() } }}
                     </div>
                   }
                   @for (m of filteredModels(); track m.name) {
                     <div
-                      class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                      class="autocomplete-option"
                       role="option"
                       (click)="selectModel(m.name)"
                     >
@@ -146,7 +158,7 @@
                     </div>
                   }
                   @if (filteredModels().length === 0) {
-                    <div class="px-3 py-2 text-xs text-secondary">{{ "profile.generations.field.no_model_matches" | transloco }}</div>
+                    <div class="autocomplete-empty">{{ "profile.generations.field.no_model_matches" | transloco }}</div>
                   }
                 </div>
               }
@@ -242,10 +254,10 @@
           </button>
 
           @if (submitError()) {
-            <span class="text-red-400 text-sm">{{ submitError() }}</span>
+            <span class="form-status-error">{{ submitError() }}</span>
           }
           @if (submitSuccess()) {
-            <span class="text-green-400 text-sm">{{ submitSuccess() }}</span>
+            <span class="form-status-success">{{ submitSuccess() }}</span>
           }
         </div>
       </form>

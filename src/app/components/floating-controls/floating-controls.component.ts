@@ -12,6 +12,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GlossaryModalComponent } from '../glossary-modal/glossary-modal.component';
 import { GlossaryService } from '../../services/glossary.service';
+import { FloatingActionService } from '../../services/floating-action.service';
 
 @Component({
   selector: 'app-floating-controls',
@@ -49,6 +50,20 @@ import { GlossaryService } from '../../services/glossary.service';
           </svg>
         </button>
       }
+
+      <!-- Registered floating actions -->
+      @for (action of floatingActions.actions(); track action.id) {
+        @if (action.visible()) {
+          <button
+            type="button"
+            [class]="action.cssClass"
+            [disabled]="action.disabled()"
+            (click)="action.action()"
+          >
+            {{ action.labelKey | transloco }}
+          </button>
+        }
+      }
     </div>
 
     <!-- Glossary Modal -->
@@ -59,6 +74,7 @@ export class FloatingControlsComponent implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly zone = inject(NgZone);
   public readonly glossary = inject(GlossaryService);
+  public readonly floatingActions = inject(FloatingActionService);
   public readonly showScrollToTop = signal(false);
 
   private rafId = 0;
