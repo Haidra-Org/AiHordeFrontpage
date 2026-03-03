@@ -13,18 +13,17 @@
 @layer components {
   /* Desktop navigation menu bar */
   .nav-menu-desktop {
-    @apply hidden nav:flex nav:items-center nav:gap-8;
+    @apply hidden nav:flex nav:flex-nowrap nav:items-center nav:gap-4 xl:gap-6 nav:min-w-0;
   }
 
   /* Desktop Navigation Links */
   .nav-link {
-    @apply px-3 py-2 text-sm font-medium rounded-md;
+    @apply px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap shrink-0;
     @apply text-content-secondary no-underline;
     @apply transition-all duration-200;
     @apply hover:text-brand-purple hover:bg-surface-secondary;
     @apply focus:outline-none;
     @apply dark:text-gray-400 dark:hover:text-purple-300 dark:hover:bg-gray-700;
-    padding-inline: calc(var(--spacing) * 2);
   }
 
   .nav-link:focus {
