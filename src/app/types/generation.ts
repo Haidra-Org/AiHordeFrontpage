@@ -170,7 +170,14 @@ export interface TrackedGeneration {
   result: GenerationStatusResponse | TextGenerationStatusResponse | AlchemyStatusResponse | null;
   done: boolean;
   faulted: boolean;
+  notFound?: boolean;
   firstSeenAt: number;
   /** The original request payload, stored when submitted via the Quick Image Generator. */
   sentRequest?: ImageGenerationRequest;
 }
+
+/**
+ * Sentinel returned by AiHordeService check/status methods when the API
+ * responds with 404 (generation no longer exists).
+ */
+export const GENERATION_NOT_FOUND = Symbol('GENERATION_NOT_FOUND');

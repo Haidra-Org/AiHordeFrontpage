@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, zip } from 'rxjs';
 import { ImageTotalStats } from '../types/image-total-stats';
 import { HordePerformance } from '../types/horde-performance';
@@ -20,6 +20,7 @@ import {
   GenerationStatusResponse,
   TextGenerationStatusResponse,
   AlchemyStatusResponse,
+  GENERATION_NOT_FOUND,
 } from '../types/generation';
 
 @Injectable({
@@ -281,41 +282,48 @@ export class AiHordeService {
 
   public checkImageGeneration(
     id: string,
-  ): Observable<GenerationCheckResponse | null> {
+  ): Observable<GenerationCheckResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationCheckResponse>(
         `https://aihorde.net/api/v2/generate/check/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(catchError((err) => this.catchNotFound(err)));
   }
 
   public getImageGenerationStatus(
     id: string,
-  ): Observable<GenerationStatusResponse | null> {
+  ): Observable<GenerationStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationStatusResponse>(
         `https://aihorde.net/api/v2/generate/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(catchError((err) => this.catchNotFound(err)));
   }
 
   public getTextGenerationStatus(
     id: string,
-  ): Observable<TextGenerationStatusResponse | null> {
+  ): Observable<TextGenerationStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<TextGenerationStatusResponse>(
         `https://aihorde.net/api/v2/generate/text/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(catchError((err) => this.catchNotFound(err)));
   }
 
   public getAlchemyStatus(
     id: string,
-  ): Observable<AlchemyStatusResponse | null> {
+  ): Observable<AlchemyStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<AlchemyStatusResponse>(
         `https://aihorde.net/api/v2/interrogate/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(catchError((err) => this.catchNotFound(err)));
+  }
+
+  private catchNotFound(err: unknown): Observable<typeof GENERATION_NOT_FOUND | null> {
+    if (err instanceof HttpErrorResponse && err.status === 404) {
+      return of(GENERATION_NOT_FOUND);
+    }
+    return of(null);
   }
 }

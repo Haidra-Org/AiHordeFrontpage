@@ -30,6 +30,7 @@ import {
   GenerationStatusResponse,
   TextGenerationStatusResponse,
   AlchemyStatusResponse,
+  GENERATION_NOT_FOUND,
 } from '../../types/generation';
 import { ActiveModel } from '../../types/active-model';
 
@@ -65,6 +66,9 @@ export class GenerationsTabComponent {
   public readonly alchemyGenerations = computed(() =>
     this.trackedGenerations().filter((g) => g.type === 'alchemy'),
   );
+
+  public readonly userAutoRefresh = signal(true);
+  public readonly refreshingGenerations = signal(false);
 
   public readonly isSubmitting = signal(false);
   public readonly submitError = signal<string | null>(null);
@@ -110,10 +114,26 @@ export class GenerationsTabComponent {
 
   constructor() {
     afterNextRender(() => {
-      this.pollUserGenerations();
+      this.refreshUserGenerations();
       this.startPolling();
       this.fetchModels();
     });
+  }
+
+  public refreshUserGenerations(): void {
+    this.refreshingGenerations.set(true);
+    this.pollUserGenerations(() => this.refreshingGenerations.set(false));
+  }
+
+  public toggleUserAutoRefresh(): void {
+    const next = !this.userAutoRefresh();
+    this.userAutoRefresh.set(next);
+
+    if (next) {
+      this.startUserPollTimer();
+    } else {
+      this.stopUserPollTimer();
+    }
   }
 
   public onModelFocus(): void {
@@ -282,6 +302,10 @@ export class GenerationsTabComponent {
         l.delete(gen.id);
         this.loadingResults.set(l);
 
+        if (status === GENERATION_NOT_FOUND) {
+          this.updateGeneration(gen.id, { notFound: true });
+          return;
+        }
         if (!status) return;
         this.updateGeneration(gen.id, {
           result: status,
@@ -406,33 +430,42 @@ export class GenerationsTabComponent {
       });
   }
 
-  private pollUserGenerations(): void {
+  private pollUserGenerations(onComplete?: () => void): void {
     const user = this.auth.currentUser();
-    if (!user) return;
+    if (!user) {
+      onComplete?.();
+      return;
+    }
 
     this.aiHorde
       .getUserById(user.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((refreshedUser) => {
-        if (!refreshedUser?.active_generations) return;
-        const ag = refreshedUser.active_generations;
-        const now = Date.now();
+      .subscribe({
+        next: (refreshedUser) => {
+          if (!refreshedUser?.active_generations) return;
+          const ag = refreshedUser.active_generations;
 
-        for (const id of ag.image ?? []) {
-          this.addTrackedGeneration(id, 'image');
-        }
-        for (const id of ag.text ?? []) {
-          this.addTrackedGeneration(id, 'text');
-        }
-        for (const id of ag.alchemy ?? []) {
-          this.addTrackedGeneration(id, 'alchemy');
-        }
+          for (const id of ag.image ?? []) {
+            this.addTrackedGeneration(id, 'image');
+          }
+          for (const id of ag.text ?? []) {
+            this.addTrackedGeneration(id, 'text');
+          }
+          for (const id of ag.alchemy ?? []) {
+            this.addTrackedGeneration(id, 'alchemy');
+          }
+        },
+        complete: () => onComplete?.(),
       });
+  }
+
+  public retryGeneration(id: string): void {
+    this.updateGeneration(id, { notFound: false });
   }
 
   private pollGenerationChecks(): void {
     const pending = this.trackedGenerations().filter(
-      (g) => !g.done && !g.faulted,
+      (g) => !g.done && !g.faulted && !g.notFound,
     );
 
     for (const gen of pending) {
@@ -441,6 +474,10 @@ export class GenerationsTabComponent {
           .checkImageGeneration(gen.id)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((check) => {
+            if (check === GENERATION_NOT_FOUND) {
+              this.updateGeneration(gen.id, { notFound: true });
+              return;
+            }
             if (!check) return;
             this.updateGeneration(gen.id, {
               check,
@@ -452,6 +489,10 @@ export class GenerationsTabComponent {
                 .getImageGenerationStatus(gen.id)
                 .pipe(takeUntilDestroyed(this.destroyRef))
                 .subscribe((status) => {
+                  if (status === GENERATION_NOT_FOUND) {
+                    this.updateGeneration(gen.id, { notFound: true });
+                    return;
+                  }
                   if (!status) return;
                   this.updateGeneration(gen.id, {
                     result: status,
@@ -466,6 +507,10 @@ export class GenerationsTabComponent {
           .getTextGenerationStatus(gen.id)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((status) => {
+            if (status === GENERATION_NOT_FOUND) {
+              this.updateGeneration(gen.id, { notFound: true });
+              return;
+            }
             if (!status) return;
             this.updateGeneration(gen.id, {
               check: {
@@ -490,6 +535,10 @@ export class GenerationsTabComponent {
           .getAlchemyStatus(gen.id)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe((status) => {
+            if (status === GENERATION_NOT_FOUND) {
+              this.updateGeneration(gen.id, { notFound: true });
+              return;
+            }
             if (!status) return;
             const isDone = status.state === 'done';
             const isFaulted = status.state === 'faulted';
@@ -503,23 +552,39 @@ export class GenerationsTabComponent {
     }
   }
 
-  private startPolling(): void {
+  private startUserPollTimer(): void {
+    this.stopUserPollTimer();
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.ngZone.runOutsideAngular(() => {
       this.userPollTimer = setInterval(() => {
         this.ngZone.run(() => this.pollUserGenerations());
       }, GenerationsTabComponent.USER_POLL_MS);
+    });
+  }
 
+  private stopUserPollTimer(): void {
+    if (this.userPollTimer != null) {
+      clearInterval(this.userPollTimer);
+      this.userPollTimer = null;
+    }
+  }
+
+  private startPolling(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    if (this.userAutoRefresh()) {
+      this.startUserPollTimer();
+    }
+
+    this.ngZone.runOutsideAngular(() => {
       this.checkPollTimer = setInterval(() => {
         this.ngZone.run(() => this.pollGenerationChecks());
       }, GenerationsTabComponent.CHECK_POLL_MS);
     });
 
     this.destroyRef.onDestroy(() => {
-      if (this.userPollTimer != null) {
-        clearInterval(this.userPollTimer);
-      }
+      this.stopUserPollTimer();
       if (this.checkPollTimer != null) {
         clearInterval(this.checkPollTimer);
       }

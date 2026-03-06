@@ -22,6 +22,31 @@
   </div>
 </div>
 
+<!-- Refresh Controls -->
+<div class="flex items-center gap-4 mb-4">
+  <button
+    type="button"
+    class="btn-muted"
+    (click)="refreshUserGenerations()"
+    [disabled]="refreshingGenerations()"
+  >
+    @if (refreshingGenerations()) {
+      {{ "profile.generations.refreshing" | transloco }}
+    } @else {
+      {{ "profile.generations.refresh" | transloco }}
+    }
+  </button>
+  <label class="form-checkbox cursor-pointer">
+    <input
+      type="checkbox"
+      class="checkbox-input"
+      [checked]="userAutoRefresh()"
+      (change)="toggleUserAutoRefresh()"
+    />
+    <span class="checkbox-label">{{ "profile.generations.auto_refresh" | transloco }}</span>
+  </label>
+</div>
+
 <!-- Collapsible Image Requestor -->
 <div class="card card-bg-primary card-full card-spaced">
   <div class="flex items-center justify-between gap-2">
@@ -287,6 +312,8 @@
                 <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
               } @else if (gen.faulted) {
                 <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+              } @else if (gen.notFound) {
+                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
               } @else if (gen.check) {
                 <span class="text-sm text-secondary">
                   {{ "profile.generations.status.processing" | transloco }}
@@ -301,6 +328,15 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              @if (gen.notFound) {
+                <button
+                  type="button"
+                  class="btn-muted btn-xs"
+                  (click)="retryGeneration(gen.id)"
+                >
+                  {{ "profile.generations.retry" | transloco }}
+                </button>
+              }
               @if (gen.sentRequest) {
                 <button
                   type="button"
@@ -345,7 +381,13 @@
           </div>
 
           <!-- Check progress details -->
-          @if (gen.check) {
+          @if (gen.notFound) {
+            <div class="alert alert--warning alert--sm mt-3" role="alert">
+              <div class="alert-content">
+                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+              </div>
+            </div>
+          } @else if (gen.check) {
             @if (gen.check.is_possible === false) {
               <div class="alert alert--danger alert--sm mt-3" role="alert">
                 <div class="alert-content">
@@ -464,6 +506,8 @@
                 <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
               } @else if (gen.faulted) {
                 <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+              } @else if (gen.notFound) {
+                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
               } @else if (gen.check) {
                 <span class="text-sm text-secondary">
                   {{ "profile.generations.status.processing" | transloco }}
@@ -476,6 +520,15 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              @if (gen.notFound) {
+                <button
+                  type="button"
+                  class="btn-muted btn-xs"
+                  (click)="retryGeneration(gen.id)"
+                >
+                  {{ "profile.generations.retry" | transloco }}
+                </button>
+              }
               @if (gen.result || (gen.check && !gen.done)) {
                 <button
                   type="button"
@@ -493,7 +546,13 @@
           </div>
 
           <!-- Check progress details -->
-          @if (gen.check) {
+          @if (gen.notFound) {
+            <div class="alert alert--warning alert--sm mt-3" role="alert">
+              <div class="alert-content">
+                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+              </div>
+            </div>
+          } @else if (gen.check) {
             @if (gen.check.is_possible === false) {
               <div class="alert alert--danger alert--sm mt-3" role="alert">
                 <div class="alert-content">
@@ -561,12 +620,23 @@
                 <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
               } @else if (gen.faulted) {
                 <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+              } @else if (gen.notFound) {
+                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
               } @else {
                 <span class="text-sm text-secondary">{{ "profile.generations.status.waiting" | transloco }}</span>
               }
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              @if (gen.notFound) {
+                <button
+                  type="button"
+                  class="btn-muted btn-xs"
+                  (click)="retryGeneration(gen.id)"
+                >
+                  {{ "profile.generations.retry" | transloco }}
+                </button>
+              }
               @if (gen.result) {
                 <button
                   type="button"
@@ -582,6 +652,15 @@
               }
             </div>
           </div>
+
+          <!-- Not found explanation -->
+          @if (gen.notFound) {
+            <div class="alert alert--warning alert--sm mt-3" role="alert">
+              <div class="alert-content">
+                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+              </div>
+            </div>
+          }
 
           <!-- Alchemy form results -->
           @if (gen.done && gen.result) {

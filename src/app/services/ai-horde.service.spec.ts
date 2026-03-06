@@ -5,7 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { AiHordeService } from './ai-horde.service';
-import { ImageGenerationRequest } from '../types/generation';
+import { GENERATION_NOT_FOUND, ImageGenerationRequest } from '../types/generation';
 
 describe('AiHordeService', () => {
   let service: AiHordeService;
@@ -103,15 +103,26 @@ describe('AiHordeService', () => {
       });
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
+    it('should return GENERATION_NOT_FOUND on 404', (done: DoneFn) => {
       service.checkImageGeneration('gen-404').subscribe((res) => {
-        expect(res).toBeNull();
+        expect(res).toBe(GENERATION_NOT_FOUND);
         done();
       });
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/check/gen-404')
         .flush('Not found', { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should return null on non-404 HTTP error', (done: DoneFn) => {
+      service.checkImageGeneration('gen-500').subscribe((res) => {
+        expect(res).toBeNull();
+        done();
+      });
+
+      http
+        .expectOne('https://aihorde.net/api/v2/generate/check/gen-500')
+        .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
@@ -173,15 +184,26 @@ describe('AiHordeService', () => {
         .flush(mockStatus);
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
+    it('should return GENERATION_NOT_FOUND on 404', (done: DoneFn) => {
       service.getTextGenerationStatus('txt-bad').subscribe((res) => {
-        expect(res).toBeNull();
+        expect(res).toBe(GENERATION_NOT_FOUND);
         done();
       });
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-bad')
         .flush('Error', { status: 404, statusText: 'Not Found' });
+    });
+
+    it('should return null on non-404 HTTP error', (done: DoneFn) => {
+      service.getTextGenerationStatus('txt-err').subscribe((res) => {
+        expect(res).toBeNull();
+        done();
+      });
+
+      http
+        .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-err')
+        .flush('Error', { status: 500, statusText: 'Internal Server Error' });
     });
   });
 
