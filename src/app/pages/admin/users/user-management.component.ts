@@ -4,9 +4,11 @@ import {
   computed,
   DestroyRef,
   inject,
+  NgZone,
   OnInit,
   PLATFORM_ID,
   signal,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser, DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -33,6 +35,8 @@ import { FloatingActionService } from '../../../services/floating-action.service
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
+import { AdminGenerationTrackerComponent } from '../../../components/admin/admin-generation-tracker/admin-generation-tracker.component';
+import { GenerationType } from '../../../types/generation';
 
 type DialogType = 'resetSuspicion' | 'undeleteUser';
 
@@ -58,6 +62,7 @@ const MAX_HISTORY_SIZE = 30;
     AdminDialogComponent,
     AdminToastBarComponent,
     KudosBreakdownPanelComponent,
+    AdminGenerationTrackerComponent,
   ],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,9 +74,13 @@ export class UserManagementComponent implements OnInit {
   private readonly userService = inject(AdminUserService);
   private readonly workerService = inject(AdminWorkerService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly ngZone = inject(NgZone);
   private readonly route = inject(ActivatedRoute);
   public readonly auth = inject(AuthService);
   private readonly floatingActions = inject(FloatingActionService);
+
+  public readonly generationTracker =
+    viewChild<AdminGenerationTrackerComponent>('generationTracker');
 
   // Search state
   public searchQuery = signal<string>('');
@@ -96,6 +105,9 @@ export class UserManagementComponent implements OnInit {
   public kudosDetailsExpanded = signal<boolean>(false);
   public recordsExpanded = signal<boolean>(false);
   public activeGenerationsExpanded = signal<boolean>(false);
+  public trackedGenerationsExpanded = signal<boolean>(false);
+  public generationsAutoRefresh = signal<boolean>(false);
+  public refreshingGenerations = signal<boolean>(false);
   public stylesExpanded = signal<boolean>(false);
   public sharedKeysExpanded = signal<boolean>(false);
   public rawJsonModalOpen = signal<boolean>(false);
@@ -252,6 +264,7 @@ export class UserManagementComponent implements OnInit {
     });
     this.destroyRef.onDestroy(() => {
       this.floatingActions.unregister('admin-user-save');
+      this.stopGenerationsRefreshTimer();
     });
 
     // Check for route param first (e.g., /admin/users/304597)
@@ -288,6 +301,8 @@ export class UserManagementComponent implements OnInit {
     this.userSharedKeys.set([]);
     this.sharedKeysFetched.set(false);
     this.sharedKeysExpanded.set(false);
+    this.generationsAutoRefresh.set(false);
+    this.stopGenerationsRefreshTimer();
 
     // Extract user ID from the query
     // Supports: numeric ID, "username#id", or "#id"
@@ -547,6 +562,80 @@ export class UserManagementComponent implements OnInit {
 
   public toggleActiveGenerationsSection(): void {
     this.activeGenerationsExpanded.set(!this.activeGenerationsExpanded());
+  }
+
+  public toggleTrackedGenerationsSection(): void {
+    this.trackedGenerationsExpanded.set(!this.trackedGenerationsExpanded());
+  }
+
+  private static readonly GENERATIONS_REFRESH_MS = 60_000;
+  private generationsRefreshTimer: ReturnType<typeof setInterval> | null =
+    null;
+
+  public refreshActiveGenerations(): void {
+    const user = this.selectedUser();
+    if (!user) return;
+
+    this.refreshingGenerations.set(true);
+
+    this.userService
+      .getUser(user.id)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.refreshingGenerations.set(false)),
+      )
+      .subscribe((refreshedUser) => {
+        if (!refreshedUser?.active_generations) return;
+
+        this.selectedUser.update((current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            active_generations: refreshedUser.active_generations,
+          };
+        });
+      });
+  }
+
+  public toggleGenerationsAutoRefresh(): void {
+    const next = !this.generationsAutoRefresh();
+    this.generationsAutoRefresh.set(next);
+
+    if (next) {
+      this.startGenerationsRefreshTimer();
+    } else {
+      this.stopGenerationsRefreshTimer();
+    }
+  }
+
+  private startGenerationsRefreshTimer(): void {
+    this.stopGenerationsRefreshTimer();
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    this.ngZone.runOutsideAngular(() => {
+      this.generationsRefreshTimer = setInterval(() => {
+        this.ngZone.run(() => this.refreshActiveGenerations());
+      }, UserManagementComponent.GENERATIONS_REFRESH_MS);
+    });
+  }
+
+  private stopGenerationsRefreshTimer(): void {
+    if (this.generationsRefreshTimer != null) {
+      clearInterval(this.generationsRefreshTimer);
+      this.generationsRefreshTimer = null;
+    }
+  }
+
+  public trackGeneration(id: string, type: GenerationType): void {
+    const tracker = this.generationTracker();
+    if (!tracker) return;
+    tracker.trackGeneration(id, type);
+    this.trackedGenerationsExpanded.set(true);
+  }
+
+  public isGenerationTracked(id: string): boolean {
+    const tracker = this.generationTracker();
+    return tracker ? tracker.isTracked(id) : false;
   }
 
   public toggleStylesSection(): void {

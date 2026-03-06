@@ -1232,6 +1232,31 @@
 
           @if (activeGenerationsExpanded()) {
             <div class="p-6 pt-4">
+              <!-- Refresh Controls -->
+              <div class="flex items-center gap-4 mb-4">
+                <button
+                  type="button"
+                  class="btn-muted btn-sm"
+                  (click)="refreshActiveGenerations()"
+                  [disabled]="refreshingGenerations()"
+                >
+                  @if (refreshingGenerations()) {
+                    {{ "admin.users.active_generations.refreshing" | transloco }}
+                  } @else {
+                    {{ "admin.users.active_generations.refresh" | transloco }}
+                  }
+                </button>
+                <label class="form-checkbox cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="checkbox-input"
+                    [checked]="generationsAutoRefresh()"
+                    (change)="toggleGenerationsAutoRefresh()"
+                  />
+                  <span class="checkbox-label">{{ "admin.users.active_generations.auto_refresh" | transloco }}</span>
+                </label>
+              </div>
+
               <div class="space-y-4">
                 @if (selectedUser()!.active_generations?.image?.length) {
                   <div>
@@ -1248,9 +1273,25 @@
                         track id
                       ) {
                         <span
-                          class="text-xs font-mono admin-bg-dark px-2 py-1 rounded"
-                          >{{ id }}</span
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
                         >
+                          {{ id }}
+                          <button
+                            type="button"
+                            class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
+                            [class.text-blue-400]="!isGenerationTracked(id)"
+                            [class.hover:text-blue-300]="!isGenerationTracked(id)"
+                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [disabled]="isGenerationTracked(id)"
+                            (click)="trackGeneration(id, 'image')"
+                          >
+                            @if (isGenerationTracked(id)) {
+                              {{ "admin.users.active_generations.already_tracked" | transloco }}
+                            } @else {
+                              {{ "admin.users.active_generations.track" | transloco }}
+                            }
+                          </button>
+                        </span>
                       }
                       @if (
                         selectedUser()!.active_generations!.image!.length > 10
@@ -1281,9 +1322,25 @@
                         track id
                       ) {
                         <span
-                          class="text-xs font-mono admin-bg-dark px-2 py-1 rounded"
-                          >{{ id }}</span
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
                         >
+                          {{ id }}
+                          <button
+                            type="button"
+                            class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
+                            [class.text-blue-400]="!isGenerationTracked(id)"
+                            [class.hover:text-blue-300]="!isGenerationTracked(id)"
+                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [disabled]="isGenerationTracked(id)"
+                            (click)="trackGeneration(id, 'text')"
+                          >
+                            @if (isGenerationTracked(id)) {
+                              {{ "admin.users.active_generations.already_tracked" | transloco }}
+                            } @else {
+                              {{ "admin.users.active_generations.track" | transloco }}
+                            }
+                          </button>
+                        </span>
                       }
                       @if (
                         selectedUser()!.active_generations!.text!.length > 10
@@ -1316,9 +1373,25 @@
                         track id
                       ) {
                         <span
-                          class="text-xs font-mono admin-bg-dark px-2 py-1 rounded"
-                          >{{ id }}</span
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
                         >
+                          {{ id }}
+                          <button
+                            type="button"
+                            class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
+                            [class.text-blue-400]="!isGenerationTracked(id)"
+                            [class.hover:text-blue-300]="!isGenerationTracked(id)"
+                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [disabled]="isGenerationTracked(id)"
+                            (click)="trackGeneration(id, 'alchemy')"
+                          >
+                            @if (isGenerationTracked(id)) {
+                              {{ "admin.users.active_generations.already_tracked" | transloco }}
+                            } @else {
+                              {{ "admin.users.active_generations.track" | transloco }}
+                            }
+                          </button>
+                        </span>
                       }
                       @if (
                         selectedUser()!.active_generations!.alchemy!.length > 10
@@ -1339,6 +1412,48 @@
           }
         </div>
       }
+
+      <!-- Tracked Generations Section -->
+      <div class="admin-border-t">
+        <button
+          (click)="toggleTrackedGenerationsSection()"
+          class="expandable-header"
+          type="button"
+        >
+          <span class="admin-text-light">{{
+            "admin.users.section.tracked_generations" | transloco
+          }}</span>
+          <svg
+            class="expandable-icon"
+            [class.expanded]="trackedGenerationsExpanded()"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+
+        @if (trackedGenerationsExpanded()) {
+          <div class="p-6 pt-4">
+            <app-admin-generation-tracker
+              #generationTracker
+            />
+          </div>
+        } @else {
+          <!-- Keep tracker alive so viewChild resolves when Track is clicked before expanding -->
+          <app-admin-generation-tracker
+            #generationTracker
+            class="hidden"
+          />
+        }
+      </div>
 
       <!-- Styles Section -->
       @if (selectedUser()!.styles && selectedUser()!.styles!.length > 0) {
