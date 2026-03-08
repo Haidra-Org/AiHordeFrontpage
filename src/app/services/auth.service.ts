@@ -49,7 +49,7 @@ export class AuthService {
 
     if (apiKey) {
       this._isLoading.set(true);
-      this.aiHorde.getUserByApiKey(apiKey).subscribe({
+      this.fetchAndEnrichUser(apiKey).subscribe({
         next: (user) => {
           this._currentUser.set(user);
           this._isLoading.set(false);
@@ -71,7 +71,7 @@ export class AuthService {
   ): Observable<HordeUser | null> {
     this._isLoading.set(true);
 
-    return this.aiHorde.getUserByApiKey(apiKey).pipe(
+    return this.fetchAndEnrichUser(apiKey).pipe(
       tap((user) => {
         if (user) {
           this.database.store('remember_api_key', remember);
@@ -111,7 +111,7 @@ export class AuthService {
 
     this._isLoading.set(true);
 
-    return this.aiHorde.getUserByApiKey(apiKey).pipe(
+    return this.fetchAndEnrichUser(apiKey).pipe(
       tap((user) => {
         this._currentUser.set(user);
         this._isLoading.set(false);
@@ -129,6 +129,20 @@ export class AuthService {
       'api_key',
       null,
       remember ? StorageType.Permanent : StorageType.Session,
+    );
+  }
+
+  private fetchAndEnrichUser(apiKey: string): Observable<HordeUser | null> {
+    return this.aiHorde.getUserByApiKey(apiKey).pipe(
+      switchMap((user) => {
+        if (!user || !user.worker_count) {
+          if (user) user.public_workers = false;
+          return of(user);
+        }
+        return this.aiHorde.inferPublicWorkers(user.id).pipe(
+          map((isPublic) => ({ ...user, public_workers: isPublic })),
+        );
+      }),
     );
   }
 

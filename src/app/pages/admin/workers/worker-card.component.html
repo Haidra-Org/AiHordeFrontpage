@@ -228,40 +228,18 @@
         @if (!hasIssue()) {
           <div
             class="worker-status-icon worker-status-icon-success"
-            [title]="'admin.workers.card.online' | transloco"
+            [appTouchTooltip]="'admin.workers.card.online'"
+            [appTouchTooltipDesc]="iconDesc('online')"
           >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <app-worker-status-icon type="online" />
           </div>
         } @else {
           <div
             class="worker-status-icon worker-status-icon-error"
-            [title]="'admin.workers.card.issue' | transloco"
+            [appTouchTooltip]="'admin.workers.card.issue'"
+            [appTouchTooltipDesc]="iconDesc('issue')"
           >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+            <app-worker-status-icon type="issue" />
           </div>
         }
 
@@ -308,113 +286,55 @@
         @if (isLowSpeed()) {
           <div
             class="p-1"
-            [title]="'admin.workers.card.low_speed_warning' | transloco"
+            [appTouchTooltip]="'admin.workers.card.low_speed_warning'"
+            [appTouchTooltipDesc]="iconDesc('low_speed')"
           >
-            <svg
-              class="w-5 h-5 worker-indicator-yellow"
-              style="transform: scaleX(-1)"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+            <app-worker-status-icon type="low_speed" />
           </div>
         }
         @if (isHighSpeed()) {
           <div
             class="p-1"
-            [title]="'admin.workers.card.high_speed_warning' | transloco"
+            [appTouchTooltip]="'admin.workers.card.high_speed_warning'"
+            [appTouchTooltipDesc]="iconDesc('high_speed')"
           >
-            <svg
-              class="w-5 h-5 worker-indicator-yellow"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+            <app-worker-status-icon type="high_speed" />
           </div>
         }
         @if (worker().paused) {
-          <div class="p-1" [title]="'admin.workers.card.paused' | transloco">
-            <svg
-              class="w-5 h-5 worker-indicator-red"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-              />
-            </svg>
+          <div
+            class="p-1"
+            [appTouchTooltip]="'admin.workers.card.paused'"
+            [appTouchTooltipDesc]="iconDesc('paused')"
+          >
+            <app-worker-status-icon type="paused" />
           </div>
         }
         @if (worker().maintenance_mode) {
           <div
             class="p-1"
-            [title]="'admin.workers.card.maintenance' | transloco"
+            [appTouchTooltip]="'admin.workers.card.maintenance'"
+            [appTouchTooltipDesc]="iconDesc('maintenance')"
           >
-            <svg
-              class="w-5 h-5 worker-indicator-red"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <app-worker-status-icon type="maintenance" />
           </div>
         }
         @if (worker().flagged) {
-          <div class="p-1" [title]="'admin.workers.card.flagged' | transloco">
-            <svg
-              class="w-5 h-5 worker-indicator-red"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
-              />
-            </svg>
+          <div
+            class="p-1"
+            [appTouchTooltip]="'admin.workers.card.flagged'"
+            [appTouchTooltipDesc]="iconDesc('flagged')"
+          >
+            <app-worker-status-icon type="flagged" />
           </div>
         }
         @if (worker().trusted) {
-          <div class="p-1" [title]="'admin.workers.card.trusted' | transloco">
-            <svg
-              class="w-5 h-5 worker-indicator-green"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-              />
-            </svg>
+          <div
+            class="p-1"
+            [appTouchTooltip]="'admin.workers.card.trusted'"
+            [appTouchTooltipDesc]="iconDesc('trusted')"
+          >
+            <app-worker-status-icon type="trusted" />
           </div>
         }
       </div>
@@ -528,7 +448,11 @@
           formatUptime(worker().uptime)
         }}</span>
       </div>
-      <div class="worker-card-row">
+      <div
+        class="worker-card-row"
+        [class.worker-speed-highlight-low]="isLowSpeed()"
+        [class.worker-speed-highlight-high]="isHighSpeed()"
+      >
         <span class="worker-card-label"
           >{{ "admin.workers.card.speed" | transloco }}:</span
         >

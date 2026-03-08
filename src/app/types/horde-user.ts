@@ -56,6 +56,12 @@ export interface ActiveGenerations {
   alchemy?: string[];
 }
 
+export interface UserStyleReference {
+  id: string;
+  name: string;
+  type: 'image' | 'text';
+}
+
 export interface HordeUser {
   username: string;
   id: number;
@@ -69,7 +75,7 @@ export interface HordeUser {
   worker_count?: number;
   worker_ids?: string[];
   sharedkey_ids?: string[];
-  styles?: string[];
+  styles?: UserStyleReference[];
   active_generations?: ActiveGenerations;
   trusted?: boolean;
   flagged?: boolean;

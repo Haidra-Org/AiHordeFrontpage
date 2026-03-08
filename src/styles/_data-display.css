@@ -327,6 +327,11 @@
     @apply dark:text-yellow-400;
   }
 
+  .worker-indicator-orange {
+    @apply text-orange-600;
+    @apply dark:text-orange-400;
+  }
+
   .worker-indicator-red {
     @apply text-red-600;
     @apply dark:text-red-400;
@@ -335,6 +340,25 @@
   .worker-indicator-green {
     @apply text-green-600;
     @apply dark:text-green-400;
+  }
+
+  /* Speed row highlight when worker has a speed anomaly */
+  .worker-speed-highlight-low {
+    @apply rounded px-1 -mx-1;
+    background-color: color-mix(in srgb, var(--color-orange-100, #ffedd5) 60%, transparent);
+  }
+
+  .dark .worker-speed-highlight-low {
+    background-color: color-mix(in srgb, var(--color-orange-900, #7c2d12) 30%, transparent);
+  }
+
+  .worker-speed-highlight-high {
+    @apply rounded px-1 -mx-1;
+    background-color: color-mix(in srgb, var(--color-yellow-100, #fef9c3) 60%, transparent);
+  }
+
+  .dark .worker-speed-highlight-high {
+    background-color: color-mix(in srgb, var(--color-yellow-900, #713f12) 30%, transparent);
   }
 
   /* Worker capability badges */

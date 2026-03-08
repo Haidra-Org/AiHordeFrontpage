@@ -35,6 +35,8 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
+import { GlossaryService } from '../../../services/glossary.service';
+import { getWorkerIconSvg, WORKER_STATUS_ICONS } from './worker-icons';
 
 type SortKey =
   | 'name'
@@ -69,6 +71,7 @@ export class WorkerListComponent implements OnInit {
   private readonly teamService = inject(TeamService);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
+  private readonly glossary = inject(GlossaryService);
   public viewMode = input<'admin' | 'public'>('admin');
   public titleKey = input<string>('admin.workers.title');
   public setPageTitle = input<boolean>(true);
@@ -144,6 +147,72 @@ export class WorkerListComponent implements OnInit {
       this.loadTeams();
       this.loadPerformanceStats();
     });
+
+    this.glossary.registerPageContext({
+      pageId: 'workers',
+      pageTitleKey: 'help.glossary.tab.this_page',
+      relevantTermIds: [
+        'worker',
+        'dreamer',
+        'scribe',
+        'alchemist',
+        'trusted',
+        'maintenance_mode',
+        'paused',
+        'flagged',
+        'megapixelsteps',
+        'tokens',
+        'kudos',
+        'threads',
+        'bridge_agent',
+        'model',
+        'team',
+        'nsfw',
+      ],
+      entries: [
+        ...WORKER_STATUS_ICONS.map((icon) => ({
+          id: `icon-${icon.type.replace('_', '-')}`,
+          titleKey: `help.glossary.page.workers.icon_${icon.type}.title`,
+          descriptionKey: icon.descriptionKey,
+          iconSvg: getWorkerIconSvg(icon.type),
+          iconColorClass: icon.colorClass,
+        })),
+        {
+          id: 'badge-img2img',
+          titleKey: 'help.glossary.page.workers.badge_img2img.title',
+          descriptionKey:
+            'help.glossary.page.workers.badge_img2img.description',
+        },
+        {
+          id: 'badge-inpainting',
+          titleKey: 'help.glossary.page.workers.badge_inpainting.title',
+          descriptionKey:
+            'help.glossary.page.workers.badge_inpainting.description',
+        },
+        {
+          id: 'badge-post-processing',
+          titleKey: 'help.glossary.page.workers.badge_post_processing.title',
+          descriptionKey:
+            'help.glossary.page.workers.badge_post_processing.description',
+        },
+        {
+          id: 'badge-lora',
+          titleKey: 'help.glossary.page.workers.badge_lora.title',
+          descriptionKey:
+            'help.glossary.page.workers.badge_lora.description',
+        },
+        {
+          id: 'badge-controlnet',
+          titleKey: 'help.glossary.page.workers.badge_controlnet.title',
+          descriptionKey:
+            'help.glossary.page.workers.badge_controlnet.description',
+        },
+      ],
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.glossary.clearPageContext();
+    });
   }
 
   public setWorkerType(type: WorkerType): void {
@@ -156,6 +225,10 @@ export class WorkerListComponent implements OnInit {
     }
     // Emit the change
     this.workerTypeChanged.emit(type);
+  }
+
+  public openGlossary(): void {
+    this.glossary.open();
   }
 
   // Computed filtered and sorted workers

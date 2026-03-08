@@ -128,6 +128,24 @@ export class AiHordeService {
       .pipe(catchError(() => of(null)));
   }
 
+  /**
+   * The API doesn't return public_workers in GET responses, so we infer it
+   * by making an anonymous call and checking if worker_ids is visible.
+   */
+  public inferPublicWorkers(userId: number): Observable<boolean> {
+    return this.httpClient
+      .get<HordeUser>(`https://aihorde.net/api/v2/users/${userId}`, {
+        headers: { apikey: '0000000000' },
+      })
+      .pipe(
+        map(
+          (user) =>
+            Array.isArray(user.worker_ids) && user.worker_ids.length > 0,
+        ),
+        catchError(() => of(false)),
+      );
+  }
+
   public transferKudos(
     apiKey: string,
     targetUser: string,

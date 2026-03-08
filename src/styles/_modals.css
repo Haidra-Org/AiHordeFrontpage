@@ -297,4 +297,124 @@
   .confirm-dialog-actions {
     @apply flex justify-center gap-3;
   }
+
+  /* Glossary tab bar */
+  .glossary-tab-bar {
+    @apply flex gap-1 px-6 py-2 border-b border-gray-200;
+  }
+
+  .dark .glossary-tab-bar {
+    @apply border-gray-700;
+  }
+
+  .glossary-tab {
+    @apply px-4 py-2 text-sm font-medium rounded-t-md cursor-pointer
+      text-gray-600 hover:text-gray-900 hover:bg-gray-100
+      transition-colors;
+  }
+
+  .dark .glossary-tab {
+    @apply text-gray-400 hover:text-gray-100 hover:bg-gray-800;
+  }
+
+  .glossary-tab-active {
+    @apply text-blue-600 border-b-2 border-blue-600 bg-blue-50/50;
+  }
+
+  .dark .glossary-tab-active {
+    @apply text-blue-400 border-blue-400 bg-blue-900/20;
+  }
+
+  /* Relevant-only toggle */
+  .glossary-relevant-toggle {
+    @apply ml-auto px-3 py-1 text-xs font-medium rounded-full cursor-pointer
+      text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors;
+  }
+
+  .dark .glossary-relevant-toggle {
+    @apply text-gray-400 bg-gray-800 hover:bg-gray-700;
+  }
+
+  .glossary-relevant-toggle-active {
+    @apply text-blue-700 bg-blue-100 hover:bg-blue-200;
+  }
+
+  .dark .glossary-relevant-toggle-active {
+    @apply text-blue-300 bg-blue-900/40 hover:bg-blue-900/60;
+  }
+
+  /* Page-specific entries */
+  .glossary-page-entry {
+    @apply flex items-start gap-3 p-4 rounded-lg border border-gray-200;
+  }
+
+  .dark .glossary-page-entry {
+    @apply border-gray-700;
+  }
+
+  .glossary-page-entry-icon {
+    @apply flex-shrink-0 w-6 h-6;
+  }
+
+  .glossary-page-entry-icon svg {
+    @apply w-full h-full;
+  }
+
+  .glossary-page-entry-swatch {
+    @apply flex-shrink-0 w-5 h-5 rounded-full border border-gray-300;
+  }
+
+  .dark .glossary-page-entry-swatch {
+    @apply border-gray-600;
+  }
+
+  .glossary-page-entry-content {
+    @apply flex-1 min-w-0;
+  }
+
+  .glossary-page-entry-title {
+    @apply text-sm font-semibold text-gray-900;
+  }
+
+  .dark .glossary-page-entry-title {
+    @apply text-gray-100;
+  }
+
+  .glossary-page-entry-desc {
+    @apply text-sm text-gray-600 mt-1;
+  }
+
+  .dark .glossary-page-entry-desc {
+    @apply text-gray-400;
+  }
+
+  /* Related terms section */
+  .glossary-related-section {
+    @apply mt-6 pt-4 border-t border-gray-200;
+  }
+
+  .dark .glossary-related-section {
+    @apply border-gray-700;
+  }
+
+  .glossary-related-heading {
+    @apply text-sm font-semibold text-gray-700 mb-3;
+  }
+
+  .dark .glossary-related-heading {
+    @apply text-gray-300;
+  }
+
+  .glossary-related-list {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .glossary-related-item {
+    @apply px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer
+      text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors;
+  }
+
+  .dark .glossary-related-item {
+    @apply text-blue-300 bg-blue-900/30 hover:bg-blue-900/50;
+  }
 }
