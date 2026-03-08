@@ -12,7 +12,6 @@ import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { TranslocoService } from '@jsverse/transloco';
 import { StickyRegistryService } from '../services/sticky-registry.service';
 
-const TOOLTIP_HEIGHT_ESTIMATE = 60;
 const VIEWPORT_MARGIN = 12;
 const TOOLTIP_OFFSET = 8;
 const HIDE_DELAY_MS = 150;
@@ -113,14 +112,19 @@ export class TouchTooltipDirective implements OnDestroy {
     this.shownAt = Date.now();
     this.ensureTooltip();
     this.updateContent();
-    this.positionTooltip();
 
     const el = this.tooltipEl!;
+
+    // Open the popover *before* measuring so the element is in the
+    // top-layer and has a proper layout box.
     if ('showPopover' in el) {
       try {
         (el as HTMLElement & { showPopover: () => void }).showPopover();
       } catch { /* already open */ }
     }
+
+    this.positionTooltip();
+
     el.style.visibility = 'visible';
     el.style.opacity = '1';
     el.style.pointerEvents = 'auto';
@@ -200,31 +204,58 @@ export class TouchTooltipDirective implements OnDestroy {
   private positionTooltip(): void {
     if (!this.tooltipEl || !isPlatformBrowser(this.platformId)) return;
 
-    const host = this.el.nativeElement;
-    const rect = host.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-
-    const topObstruction = this.stickyRegistry.totalOffset();
-    const spaceAbove = rect.top - topObstruction;
-    const spaceBelow = viewportHeight - rect.bottom;
-
-    const placeBelow =
-      spaceAbove < TOOLTIP_HEIGHT_ESTIMATE + VIEWPORT_MARGIN && spaceBelow > spaceAbove;
-
     const el = this.tooltipEl;
+    const host = this.el.nativeElement;
+    const triggerRect = host.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-    if (placeBelow) {
-      el.style.top = `${rect.bottom + TOOLTIP_OFFSET}px`;
-      el.style.bottom = 'auto';
-    } else {
-      el.style.bottom = `${viewportHeight - rect.top + TOOLTIP_OFFSET}px`;
-      el.style.top = 'auto';
-    }
-
-    const triggerCenter = rect.left + rect.width / 2;
-    el.style.left = `${triggerCenter}px`;
+    // ── Pass 1: place at origin so the browser can lay out the
+    //    tooltip at its natural max-content width and we can measure it.
+    el.style.top = '0';
+    el.style.left = '0';
     el.style.right = 'auto';
-    el.style.transform = 'translateX(-50%)';
+    el.style.bottom = 'auto';
+    el.style.transform = 'none';
+    // Cap width so it can never exceed the viewport minus margins
+    el.style.maxWidth = `${vw - VIEWPORT_MARGIN * 2}px`;
+
+    // Force synchronous layout so getBoundingClientRect is accurate
+    const tooltipRect = el.getBoundingClientRect();
+    const tw = tooltipRect.width;
+    const th = tooltipRect.height;
+
+    // ── Pass 2: compute final clamped position ──
+
+    // Vertical: prefer above the trigger; fall below if not enough room
+    const topObstruction = this.stickyRegistry.totalOffset();
+    const spaceAbove = triggerRect.top - topObstruction;
+    const spaceBelow = vh - triggerRect.bottom;
+    const placeBelow =
+      spaceAbove < th + VIEWPORT_MARGIN && spaceBelow > spaceAbove;
+
+    let top: number;
+    if (placeBelow) {
+      top = triggerRect.bottom + TOOLTIP_OFFSET;
+    } else {
+      top = triggerRect.top - th - TOOLTIP_OFFSET;
+    }
+    // Clamp vertically so the tooltip doesn't overflow above/below viewport
+    top = Math.max(
+      topObstruction + VIEWPORT_MARGIN,
+      Math.min(top, vh - th - VIEWPORT_MARGIN),
+    );
+
+    // Horizontal: center on the trigger, then clamp to viewport edges
+    const triggerCenter = triggerRect.left + triggerRect.width / 2;
+    let left = triggerCenter - tw / 2;
+    left = Math.max(
+      VIEWPORT_MARGIN,
+      Math.min(left, vw - tw - VIEWPORT_MARGIN),
+    );
+
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
   }
 
   private destroyTooltip(): void {
