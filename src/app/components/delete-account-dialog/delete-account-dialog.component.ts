@@ -25,7 +25,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
   imports: [FormsModule, TranslocoPipe],
   template: `
     @if (open()) {
-      <div class="modal">
+      <div class="modal-overlay">
         <div
           class="modal-backdrop"
           (click)="onBackdropClick()"
@@ -33,7 +33,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
         ></div>
         <div
           #dialogPanel
-          class="dialog-panel dialog-panel-md"
+          class="dialog-panel"
           role="dialog"
           aria-modal="true"
           [attr.aria-labelledby]="titleId()"
