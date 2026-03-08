@@ -133,7 +133,7 @@ export class ProfileStylesListComponent implements OnInit {
   /** User's style IDs from their profile. */
   private readonly userStyleIds = computed(() => {
     const user = this.currentUser();
-    return user?.styles ?? [];
+    return (user?.styles ?? []).map((s) => s.id);
   });
 
   /** Image styles (filtered by type). */

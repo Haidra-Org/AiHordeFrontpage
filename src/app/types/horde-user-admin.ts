@@ -7,14 +7,8 @@ export interface UserActiveGenerations {
   alchemy?: string[];
 }
 
-/**
- * User's style reference
- */
-export interface UserStyleReference {
-  id: string;
-  name: string;
-  type: 'image' | 'text';
-}
+export { UserStyleReference } from './horde-user';
+import { UserStyleReference } from './horde-user';
 
 /**
  * User thing records (megapixelsteps/tokens)

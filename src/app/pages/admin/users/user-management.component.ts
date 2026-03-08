@@ -20,6 +20,7 @@ import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminUserService } from '../../../services/admin-user.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
+import { AiHordeService } from '../../../services/ai-horde.service';
 import { AdminUserDetails } from '../../../types/horde-user-admin';
 import { HordeWorker } from '../../../types/horde-worker';
 import { SharedKeyDetails } from '../../../types/shared-key';
@@ -73,6 +74,7 @@ export class UserManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly userService = inject(AdminUserService);
   private readonly workerService = inject(AdminWorkerService);
+  private readonly aiHorde = inject(AiHordeService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly ngZone = inject(NgZone);
   private readonly route = inject(ActivatedRoute);
@@ -332,6 +334,7 @@ export class UserManagementComponent implements OnInit {
             if (user) {
               this.setSelectedUser(user);
               this.addToUserHistory(user);
+              this.inferAndSetPublicWorkers(user.id);
             } else {
               this.userNotFound.set(true);
             }
@@ -366,6 +369,19 @@ export class UserManagementComponent implements OnInit {
     this.contactValue.set(user.contact ?? '');
     this.adminCommentValue.set(user.admin_comment ?? '');
     this.isDirty.set(false);
+  }
+
+  private inferAndSetPublicWorkers(userId: number): void {
+    this.aiHorde
+      .inferPublicWorkers(userId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((isPublic) => {
+        this.publicWorkersValue.set(isPublic);
+        this.selectedUser.update((user) =>
+          user ? { ...user, public_workers: isPublic } : null,
+        );
+        this.isDirty.set(false);
+      });
   }
 
   /**
@@ -520,6 +536,7 @@ export class UserManagementComponent implements OnInit {
               .subscribe((updatedUser) => {
                 if (updatedUser) {
                   this.setSelectedUser(updatedUser);
+                  this.inferAndSetPublicWorkers(updatedUser.id);
                 }
               });
             this.showToast('success', 'Changes saved successfully.');

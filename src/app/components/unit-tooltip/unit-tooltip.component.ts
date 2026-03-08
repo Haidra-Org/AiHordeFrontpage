@@ -6,12 +6,15 @@ import {
   ElementRef,
   inject,
   input,
+  OnDestroy,
   signal,
+  viewChild,
   PLATFORM_ID,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser, NgStyle } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { SynthesizedUnit } from '../../services/unit-conversion.service';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
 
 /**
  * Interface for fixed tooltip positioning styles.
@@ -58,6 +61,10 @@ const TOOLTIP_HEIGHT_ESTIMATE = 280;
 const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 
+const HIDE_DELAY_MS = 150;
+const POPOVER_CLOSE_DELAY_MS = 200;
+const CLICK_CLOSE_GUARD_MS = 600;
+
 let nextTooltipId = 0;
 
 /**
@@ -100,17 +107,23 @@ let nextTooltipId = 0;
         tabindex="0"
         role="button"
         [attr.aria-describedby]="tooltipId"
+        (pointerdown)="handlePointerDown()"
+        (click)="handleClick($event)"
         (mouseenter)="showTooltip()"
-        (mouseleave)="hideTooltip()"
-        (focusin)="showTooltip()"
-        (focusout)="hideTooltip()"
+        (mouseleave)="scheduleHide()"
+        (focusin)="handleFocusIn()"
+        (focusout)="scheduleHide()"
       >
         <span class="dotted-underline">{{ primaryDisplay() }}</span>
         <span
+          #tooltipContent
           class="tooltip-text tooltip-text-fixed"
           role="tooltip"
+          popover="manual"
           [id]="tooltipId"
           [ngStyle]="tooltipStyles()"
+          (mouseenter)="cancelHide()"
+          (mouseleave)="scheduleHide()"
         >
           <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong
           ><br />
@@ -135,10 +148,11 @@ let nextTooltipId = 0;
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UnitTooltipComponent {
+export class UnitTooltipComponent implements OnDestroy {
   private readonly elementRef = inject(ElementRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   /** Unique ID for this tooltip instance (deterministic for SSR hydration) */
   public readonly tooltipId = `tooltip-${nextTooltipId++}`;
@@ -167,6 +181,8 @@ export class UnitTooltipComponent {
    */
   public readonly position = input<TooltipPosition>('auto');
 
+  readonly tooltipContent = viewChild<ElementRef<HTMLElement>>('tooltipContent');
+
   /** Whether the tooltip is currently visible */
   private readonly isVisible = signal(false);
 
@@ -176,6 +192,11 @@ export class UnitTooltipComponent {
   /** Fixed positioning styles for the tooltip */
   private readonly fixedStyles = signal<Partial<TooltipStyles>>({});
 
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private popoverTimer: ReturnType<typeof setTimeout> | null = null;
+  private pointerTriggered = false;
+  private shownAt = 0;
+
   constructor() {
     // Detect position after render for SSR compatibility
     afterNextRender(() => {
@@ -183,19 +204,94 @@ export class UnitTooltipComponent {
     });
   }
 
+  ngOnDestroy(): void {
+    this.clearHideTimer();
+    this.clearPopoverTimer();
+    this.closePopover();
+  }
+
   /**
    * Shows the tooltip and calculates its fixed position.
    */
   public showTooltip(): void {
+    this.clearHideTimer();
+    this.clearPopoverTimer();
     this.isVisible.set(true);
+    this.shownAt = Date.now();
     this.calculateFixedPosition();
+    this.openPopover();
   }
 
-  /**
-   * Hides the tooltip.
-   */
-  public hideTooltip(): void {
-    this.isVisible.set(false);
+  public scheduleHide(): void {
+    this.clearHideTimer();
+    this.hideTimer = setTimeout(() => {
+      this.isVisible.set(false);
+      this.schedulePopoverClose();
+    }, HIDE_DELAY_MS);
+  }
+
+  public cancelHide(): void {
+    this.clearHideTimer();
+    this.clearPopoverTimer();
+  }
+
+  public handlePointerDown(): void {
+    this.pointerTriggered = true;
+  }
+
+  public handleFocusIn(): void {
+    if (this.pointerTriggered) return;
+    this.showTooltip();
+  }
+
+  public handleClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.pointerTriggered = false;
+    if (this.isVisible() && Date.now() - this.shownAt >= CLICK_CLOSE_GUARD_MS) {
+      this.isVisible.set(false);
+      this.schedulePopoverClose();
+    } else if (!this.isVisible()) {
+      this.showTooltip();
+    }
+  }
+
+  private clearHideTimer(): void {
+    if (this.hideTimer !== null) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
+  }
+
+  private clearPopoverTimer(): void {
+    if (this.popoverTimer !== null) {
+      clearTimeout(this.popoverTimer);
+      this.popoverTimer = null;
+    }
+  }
+
+  private openPopover(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const el = this.tooltipContent()?.nativeElement;
+    if (el && 'showPopover' in el) {
+      try {
+        el.showPopover();
+      } catch { /* already open */ }
+    }
+  }
+
+  private schedulePopoverClose(): void {
+    this.clearPopoverTimer();
+    this.popoverTimer = setTimeout(() => this.closePopover(), POPOVER_CLOSE_DELAY_MS);
+  }
+
+  private closePopover(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const el = this.tooltipContent()?.nativeElement;
+    if (el && 'hidePopover' in el) {
+      try {
+        el.hidePopover();
+      } catch { /* already closed */ }
+    }
   }
 
   /**
@@ -233,7 +329,8 @@ export class UnitTooltipComponent {
     const overflowsRight = tooltipRight > viewportWidth - VIEWPORT_MARGIN;
 
     // === VERTICAL POSITIONING ===
-    const spaceAbove = rect.top;
+    const topObstruction = this.stickyRegistry.totalOffset();
+    const spaceAbove = rect.top - topObstruction;
     const spaceBelow = viewportHeight - rect.bottom;
 
     // Prefer bottom positioning when not enough space above

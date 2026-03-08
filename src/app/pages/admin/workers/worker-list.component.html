@@ -186,6 +186,15 @@
     </button>
   </div>
 
+  <!-- Glossary hint -->
+  <div class="info-note info-note--blue mb-6">
+    <strong>{{ 'admin.workers.glossary_hint.title' | transloco }}</strong>
+    {{ 'admin.workers.glossary_hint.body' | transloco }}
+    <button type="button" class="link" (click)="openGlossary()">
+      {{ 'admin.workers.glossary_hint.link' | transloco }}
+    </button>
+  </div>
+
   <!-- Statistics Section -->
   @if (!loading() && filteredWorkers().length > 0) {
     @if (statisticsCollapsed()) {

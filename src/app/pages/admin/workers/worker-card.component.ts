@@ -20,6 +20,9 @@ import {
   SynthesizedUnit,
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
+import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
+import { WorkerStatusIconComponent } from './worker-status-icon.component';
+import { WORKER_ICON_MAP } from './worker-icons';
 
 @Component({
   selector: 'app-worker-card',
@@ -29,6 +32,8 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
     FormatNumberPipe,
     RouterLink,
     UnitTooltipComponent,
+    TouchTooltipDirective,
+    WorkerStatusIconComponent,
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -185,6 +190,10 @@ export class WorkerCardComponent {
       worker.controlnet ||
       worker.sdxl_controlnet
     );
+  }
+
+  public iconDesc(type: string): string {
+    return WORKER_ICON_MAP.get(type)?.descriptionKey ?? '';
   }
 
   public getCardBackground(): string {

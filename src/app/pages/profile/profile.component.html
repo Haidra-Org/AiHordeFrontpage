@@ -529,7 +529,7 @@
                           <input
                             type="checkbox"
                             [checked]="auth.currentUser()!.public_workers ?? false"
-                            (change)="onPublicWorkersToggle($any($event.target).checked)"
+                            (click)="$event.preventDefault(); onPublicWorkersToggle(!auth.currentUser()!.public_workers)"
                           />
                           <div class="toggle-switch-track"></div>
                           <div class="toggle-switch-thumb"></div>
@@ -969,7 +969,7 @@
                     <input
                       type="checkbox"
                       [checked]="auth.currentUser()!.public_workers ?? false"
-                      (change)="onPublicWorkersToggle($any($event.target).checked)"
+                      (click)="$event.preventDefault(); onPublicWorkersToggle(!auth.currentUser()!.public_workers)"
                     />
                     <div class="toggle-switch-track"></div>
                     <div class="toggle-switch-thumb"></div>

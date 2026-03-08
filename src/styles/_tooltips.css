@@ -419,6 +419,74 @@
   .tooltip-fixed-mode:hover .tooltip-text-fixed,
   .tooltip-fixed-mode:focus-within .tooltip-text-fixed {
   }
+
+  /* =================================================================
+     TOUCH TOOLTIP
+     
+     Body-appended tooltip controlled by the [appTouchTooltip] directive.
+     Uses the Popover API for layering; JS handles fixed positioning.
+     Width adapts to content with a max-width constraint.
+     ================================================================= */
+
+  .touch-tooltip {
+    position: fixed;
+    z-index: 1100;
+    margin: 0;
+
+    width: max-content;
+    max-width: min(var(--tooltip-width), var(--tooltip-max-width));
+
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    text-align: left;
+    border-radius: var(--tooltip-border-radius);
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    white-space: normal;
+    border: 1px solid var(--color-edge-primary);
+    box-shadow: var(--shadow-lg);
+    transition: opacity var(--tooltip-transition-duration) ease-out;
+  }
+
+  /* Reset Popover API UA styles */
+  .touch-tooltip[popover] {
+    inset: auto;
+    margin: 0;
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-primary);
+    border: 1px solid var(--color-edge-primary);
+    overflow: visible;
+  }
+
+  .touch-tooltip-title {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+  }
+
+  .touch-tooltip-desc {
+    display: block;
+    color: var(--color-content-secondary);
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  /* Dark mode */
+  .dark .touch-tooltip,
+  .dark .touch-tooltip[popover] {
+    background-color: var(--color-gray-700);
+    color: var(--color-gray-100);
+    border-color: var(--color-gray-600);
+    box-shadow:
+      0 10px 25px -5px rgb(0 0 0 / 0.4),
+      0 4px 6px -2px rgb(0 0 0 / 0.3);
+  }
+
+  .dark .touch-tooltip-desc {
+    color: var(--color-gray-400);
+  }
 }
 
 /* =================================================================

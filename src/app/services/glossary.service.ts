@@ -15,6 +15,24 @@ export interface GlossaryTerm {
   links?: GlossaryLink[];
 }
 
+export interface PageGlossaryEntry {
+  id: string;
+  titleKey: string;
+  descriptionKey: string;
+  iconSvg?: string;
+  iconColorClass?: string;
+  colorSwatch?: string;
+}
+
+export interface PageGlossaryContext {
+  pageId: string;
+  pageTitleKey: string;
+  relevantTermIds: string[];
+  entries: PageGlossaryEntry[];
+}
+
+export type GlossaryTab = 'dictionary' | 'this-page';
+
 export type GlossaryCategory =
   | 'core'
   | 'worker_types'
@@ -309,14 +327,31 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
 export class GlossaryService {
   public readonly isOpen = signal(false);
   public readonly activeTermId = signal<string | null>(null);
+  public readonly activeTab = signal<GlossaryTab>('dictionary');
+  public readonly pageContext = signal<PageGlossaryContext | null>(null);
 
   public open(termId?: string): void {
     this.activeTermId.set(termId ?? null);
+    if (termId) {
+      this.activeTab.set('dictionary');
+    } else if (this.pageContext()) {
+      this.activeTab.set('this-page');
+    } else {
+      this.activeTab.set('dictionary');
+    }
     this.isOpen.set(true);
   }
 
   public close(): void {
     this.isOpen.set(false);
     this.activeTermId.set(null);
+  }
+
+  public registerPageContext(ctx: PageGlossaryContext): void {
+    this.pageContext.set(ctx);
+  }
+
+  public clearPageContext(): void {
+    this.pageContext.set(null);
   }
 }
