@@ -24,28 +24,77 @@
   }
   /* Generic callout container */
   .callout {
-    @apply p-4 border-2 border-edge-secondary rounded-lg bg-surface-primary;
-    @apply dark:border-gray-700 dark:bg-gray-800;
+    @apply p-4 rounded-lg;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 2px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .callout {
+    background: rgb(31 41 55 / 0.6);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 rgb(255 255 255 / 0.06);
   }
 
   .callout-accent {
-    @apply border-purple-500 bg-white;
-    @apply dark:border-purple-400 dark:bg-gray-800;
+    border-color: rgb(147 51 234 / 0.5);
+    background: rgb(250 245 255 / 0.6);
+  }
+
+  .dark .callout-accent {
+    border-color: rgb(168 85 247 / 0.5);
+    background: rgb(88 28 135 / 0.25);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.3),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 rgb(168 85 247 / 0.12);
   }
 
   .callout-info {
-    @apply border-blue-400 bg-blue-50;
-    @apply dark:border-blue-500 dark:bg-blue-900/20;
+    border-color: rgb(96 165 250 / 0.5);
+    background: rgb(239 246 255 / 0.6);
+  }
+
+  .dark .callout-info {
+    border-color: rgb(59 130 246 / 0.5);
+    background: rgb(30 58 138 / 0.25);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.3),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 rgb(59 130 246 / 0.12);
   }
 
   .callout-title {
-    @apply m-0 mb-2 text-lg font-semibold text-gray-900;
-    @apply dark:text-white;
+    @apply m-0 mb-2 text-lg font-semibold;
+    color: var(--color-content-primary);
+  }
+
+  .dark .callout-title {
+    @apply text-white;
+  }
+
+  /* Prominent callout title — for mission statements, key quotes */
+  .callout-title-lg {
+    @apply text-xl;
   }
 
   .callout-body {
-    @apply m-0 mb-3 text-base text-gray-700;
-    @apply dark:text-gray-300;
+    @apply m-0 mb-3 text-base;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .callout-body {
+    color: var(--color-content-muted);
+  }
+
+  /* Prominent callout body — larger text with relaxed leading */
+  .callout-body-lg {
+    @apply text-lg leading-relaxed;
   }
 
   .cta-actions {
@@ -59,13 +108,26 @@
   /* Card base */
   .card {
     @apply flex flex-col max-w-lg p-6 mx-auto text-center;
-    @apply text-content-primary border border-edge-secondary rounded-lg;
-    @apply dark:text-white dark:border-gray-600;
+    @apply text-content-primary rounded-xl;
+    @apply dark:text-white;
     @apply xl:p-8;
-    box-shadow: var(--shadow-card);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    transition:
+      box-shadow var(--transition-normal) ease,
+      transform var(--transition-normal) ease;
     /* Note: Using contain: style only, not layout, to allow fixed-position 
        modals inside cards to position relative to viewport */
     contain: style;
+  }
+
+  .dark .card {
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.2),
+      0 1px 2px rgb(0 0 0 / 0.12);
   }
 
   /* Card full-width modifier - removes max-width constraint */
@@ -73,9 +135,13 @@
     @apply max-w-none text-left;
   }
 
-  /* Card with primary background */
+  /* Card with primary background - translucent for glass depth */
   .card-bg-primary {
-    @apply bg-white dark:bg-gray-800;
+    background: rgb(255 255 255 / 0.82);
+  }
+
+  .dark .card-bg-primary {
+    background: rgb(31 41 55 / 0.65);
   }
 
   /* Card with secondary background */
@@ -88,13 +154,19 @@
      ================================================================= */
 
   .panel {
-    @apply rounded-lg overflow-hidden;
-    background-color: var(--color-surface-secondary);
-    border: 1px solid var(--color-edge-primary);
+    @apply rounded-xl overflow-hidden;
+    background: rgb(255 255 255 / 0.7);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+    transition: box-shadow var(--transition-normal) ease;
   }
 
   .dark .panel {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .panel--unsaved {
@@ -206,21 +278,29 @@
   }
 
   .worker-card--normal {
-    background-color: var(--color-surface-primary);
-    border: 1px solid var(--color-edge-primary);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
   }
 
   .dark .worker-card--normal {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .worker-card--issue {
-    @apply bg-red-50 border border-red-300;
+    background: rgb(254 226 226 / 0.6);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid rgb(252 165 165 / 0.5);
   }
 
   .dark .worker-card--issue {
-    background-color: rgb(127 29 29 / 0.3);
-    border-color: rgb(185 28 28 / 0.5);
+    background: rgb(127 29 29 / 0.25);
+    border-color: rgb(185 28 28 / 0.4);
   }
 
   /* Status icon for worker cards */
@@ -446,14 +526,20 @@
 
   /* Modal panel */
   .modal-panel {
-    @apply w-full max-w-md p-6;
-    @apply bg-surface-primary border border-edge-primary rounded-lg;
-    @apply dark:bg-gray-800 dark:border-gray-700;
-    box-shadow: var(--shadow-modal);
+    @apply w-full max-w-md p-6 rounded-lg;
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated);
   }
 
   .dark .modal-panel {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+    background: rgb(31 41 55 / 0.75);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      0 4px 8px rgb(0 0 0 / 0.2);
   }
 
   .modal-panel h3 {
@@ -509,5 +595,262 @@
     @apply text-xs font-semibold uppercase tracking-wide text-white;
     @apply bg-brand-blue rounded-full;
     @apply dark:bg-blue-500;
+  }
+
+  /* =================================================================
+     DELETION WARNING - Red-toned alert card for destructive states
+     ================================================================= */
+
+  .deletion-warning {
+    @apply mb-6 p-6 rounded-xl;
+    background: rgb(127 29 29 / 0.25);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 2px solid rgb(239 68 68 / 0.5);
+    box-shadow: 0 4px 16px rgb(220 38 38 / 0.1);
+  }
+
+  .deletion-warning-layout {
+    @apply flex items-start gap-4;
+  }
+
+  .deletion-warning-icon {
+    @apply w-8 h-8 shrink-0 mt-0.5;
+    color: var(--color-red-400);
+  }
+
+  .deletion-warning-content {
+    @apply flex-1;
+  }
+
+  .deletion-warning-title {
+    @apply text-lg font-semibold mb-2;
+    color: var(--color-red-300);
+  }
+
+  .deletion-warning-message {
+    @apply text-sm mb-4;
+    color: var(--color-red-200);
+  }
+
+  /* =================================================================
+     TEAM CARD - Team listing item in profile teams tab
+     ================================================================= */
+
+  .team-card {
+    @apply p-4 rounded-lg;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+    transition: box-shadow var(--transition-normal) ease;
+  }
+
+  .team-card:hover {
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+  }
+
+  .dark .team-card {
+    background: rgb(55 65 81 / 0.35);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  }
+
+  .dark .team-card:hover {
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  }
+
+  .team-card-layout {
+    @apply flex justify-between items-start;
+  }
+
+  .team-card-body {
+    @apply flex-1 min-w-0;
+  }
+
+  .team-card-link {
+    @apply no-underline font-semibold text-base;
+    color: var(--color-brand-blue);
+  }
+
+  .team-card-link:hover {
+    @apply underline;
+  }
+
+  .dark .team-card-link {
+    @apply text-blue-400;
+  }
+
+  .team-card-description {
+    @apply text-sm mt-1 line-clamp-2;
+    color: var(--color-content-secondary);
+  }
+
+  .team-card-meta {
+    @apply flex flex-wrap gap-4 mt-2 text-xs;
+    color: var(--color-content-secondary);
+  }
+
+  .team-card-actions {
+    @apply flex gap-2 ml-4;
+  }
+
+  /* =================================================================
+     CARD HEADER ROW - flex header with title + actions
+     ================================================================= */
+
+  .card-header-with-actions {
+    @apply flex justify-between items-center mb-4;
+  }
+
+  .card-header-with-actions__buttons {
+    @apply flex gap-2;
+  }
+
+  /* =================================================================
+     CARD FOOTER DIVIDER - bottom link area with top border
+     ================================================================= */
+
+  .card-footer-divider {
+    @apply pt-4 mt-4 text-center;
+    border-top: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .card-footer-divider {
+    border-color: var(--color-gray-700);
+  }
+
+  /* =================================================================
+     GLASSMORPHISM CARD SYSTEM
+     Translucent, blurred cards with layered depth.
+     ================================================================= */
+
+  .glass-card {
+    @apply rounded-xl overflow-hidden;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
+    transition:
+      box-shadow var(--transition-normal) ease,
+      transform var(--transition-normal) ease;
+  }
+
+  .glass-card:hover {
+    box-shadow: var(--shadow-glass-hover), var(--shadow-glass-inset);
+  }
+
+  .dark .glass-card {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 1px rgb(255 255 255 / 0.05);
+  }
+
+  .dark .glass-card:hover {
+    box-shadow:
+      0 8px 32px rgb(0 0 0 / 0.35),
+      0 2px 4px rgb(0 0 0 / 0.2),
+      inset 0 1px 1px rgb(255 255 255 / 0.06);
+  }
+
+  /* Heavy variant - less transparent, for primary content */
+  .glass-card--heavy {
+    background: var(--color-glass-surface-heavy);
+  }
+
+  .dark .glass-card--heavy {
+    background: rgb(31 41 55 / 0.7);
+  }
+
+  /* Elevated variant - more prominent shadow */
+  .glass-card--elevated {
+    background: var(--color-glass-surface-elevated);
+    box-shadow: var(--shadow-glass-elevated), var(--shadow-glass-inset);
+  }
+
+  .dark .glass-card--elevated {
+    background: rgb(31 41 55 / 0.6);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      0 4px 8px rgb(0 0 0 / 0.2),
+      inset 0 1px 1px rgb(255 255 255 / 0.06);
+  }
+
+  /* Glass panel - full-width, no rounded corners on mobile */
+  .glass-panel {
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+    transition: box-shadow var(--transition-normal) ease;
+  }
+
+  .dark .glass-panel {
+    background: rgb(31 41 55 / 0.4);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+  }
+
+  /* Glass stat card - for data display items */
+  .glass-stat {
+    @apply rounded-lg p-4;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+  }
+
+  .dark .glass-stat {
+    background: rgb(55 65 81 / 0.4);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  }
+
+  /* Glass badge - small translucent tag */
+  .glass-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .glass-badge {
+    background: rgb(55 65 81 / 0.5);
+    border-color: rgb(255 255 255 / 0.08);
+  }
+
+  /* Glass inner highlight - top edge shimmer effect.
+     Requires position: relative on the element. */
+  .glass-shimmer {
+    @apply relative;
+  }
+
+  .glass-shimmer::before {
+    content: "";
+    @apply absolute top-0 left-0 right-0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-glass-highlight),
+      transparent
+    );
+  }
+
+  .dark .glass-shimmer::before {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.1),
+      transparent
+    );
   }
 }

@@ -16,14 +16,22 @@
 
   .tools-filter-bar {
     @apply sticky z-40 -mx-4 px-4 py-3 mb-6;
-    @apply bg-white/95 backdrop-blur-sm border-b border-gray-200;
-    @apply dark:bg-gray-900/95 dark:border-gray-700;
-    top: var(--nav-height-mobile);
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border-bottom: 1px solid var(--color-edge-primary);
+    /* top is set dynamically by StickyRegistryService */
 
     @media (min-width: 768px) {
-      top: var(--nav-height-desktop);
-      @apply rounded-lg border mx-0 px-4;
+      @apply rounded-lg mx-0 px-4;
+      border: 1px solid var(--color-glass-border-subtle);
+      box-shadow: var(--shadow-glass);
     }
+  }
+
+  .dark .tools-filter-bar {
+    background: rgb(31 41 55 / 0.85);
+    border-color: rgb(255 255 255 / 0.06);
   }
 
   .tools-filter-bar-content {
@@ -59,24 +67,48 @@
   }
 
   .dark .tools-search-input {
-    @apply bg-gray-800 border-gray-600 text-gray-200;
+    background: rgb(31 41 55 / 0.6);
+    border-color: rgb(255 255 255 / 0.1);
+    color: rgb(229 231 235);
   }
 
   .tools-search-clear {
     @apply absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded;
-    @apply text-gray-400 hover:text-gray-600 hover:bg-gray-100;
-    @apply dark:hover:text-gray-200 dark:hover:bg-gray-700;
     @apply transition-colors duration-150;
+    color: var(--color-content-muted);
+  }
+
+  .tools-search-clear:hover {
+    color: var(--color-content-secondary);
+    background: var(--color-glass-surface-elevated);
+  }
+
+  .dark .tools-search-clear:hover {
+    color: rgb(229 231 235);
+    background: rgb(55 65 81 / 0.5);
   }
 
   /* Filter Toggle Button */
   .tools-filter-toggle {
     @apply inline-flex items-center gap-2 py-2 px-3 text-sm font-medium rounded-lg;
-    @apply border border-gray-300 bg-white cursor-pointer;
-    @apply hover:bg-gray-50 hover:border-gray-400;
-    @apply dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700;
-    @apply transition-colors duration-150;
+    @apply cursor-pointer transition-colors duration-150;
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-edge-primary);
     color: var(--color-content-secondary);
+  }
+
+  .tools-filter-toggle:hover {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-edge-strong);
+  }
+
+  .dark .tools-filter-toggle {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  .dark .tools-filter-toggle:hover {
+    background: rgb(55 65 81 / 0.5);
   }
 
   .tools-filter-toggle.active {
@@ -97,20 +129,35 @@
 
   /* View Mode Toggle */
   .tools-view-toggle {
-    @apply hidden items-center border border-gray-300 rounded-lg overflow-hidden;
-    @apply dark:border-gray-600;
+    @apply hidden items-center rounded-lg overflow-hidden;
+    border: 1px solid var(--color-edge-primary);
 
     @media (min-width: 768px) {
       @apply inline-flex;
     }
   }
 
+  .dark .tools-view-toggle {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
   .tools-view-btn {
-    @apply p-2 bg-white border-0 cursor-pointer;
-    @apply hover:bg-gray-100;
-    @apply dark:bg-gray-800 dark:hover:bg-gray-700;
+    @apply p-2 border-0 cursor-pointer;
     @apply transition-colors duration-150;
+    background: var(--color-glass-surface);
     color: var(--color-content-secondary);
+  }
+
+  .tools-view-btn:hover {
+    background: var(--color-glass-surface-elevated);
+  }
+
+  .dark .tools-view-btn {
+    background: rgb(31 41 55 / 0.5);
+  }
+
+  .dark .tools-view-btn:hover {
+    background: rgb(55 65 81 / 0.5);
   }
 
   .tools-view-btn.active {
@@ -119,7 +166,11 @@
   }
 
   .tools-view-btn + .tools-view-btn {
-    @apply border-l border-gray-300 dark:border-gray-600;
+    border-left: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .tools-view-btn + .tools-view-btn {
+    border-color: rgb(255 255 255 / 0.1);
   }
 
   /* Results Count */
@@ -133,8 +184,12 @@
      ================================================================= */
 
   .tools-filters-panel {
-    @apply mt-4 pt-4 border-t border-gray-200;
-    @apply dark:border-gray-700;
+    @apply mt-4 pt-4;
+    border-top: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .tools-filters-panel {
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   .tools-filters-grid {
@@ -159,7 +214,7 @@
   }
 
   .dark .tools-filter-group-title {
-    @apply text-gray-200;
+    color: rgb(229 231 235);
   }
 
   /* Filter Chips */
@@ -169,11 +224,24 @@
 
   .tools-filter-chip {
     @apply inline-flex items-center py-1.5 px-3 text-sm font-medium rounded-full cursor-pointer;
-    @apply border border-gray-300 bg-white;
-    @apply hover:border-purple-400 hover:bg-purple-50;
-    @apply dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-purple-500;
     @apply transition-colors duration-150;
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-edge-primary);
     color: var(--color-content-secondary);
+  }
+
+  .tools-filter-chip:hover {
+    @apply border-purple-400 bg-purple-50;
+  }
+
+  .dark .tools-filter-chip {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  .dark .tools-filter-chip:hover {
+    background: rgb(55 65 81 / 0.5);
+    @apply border-purple-500;
   }
 
   .tools-filter-chip.active {
@@ -183,8 +251,12 @@
   }
 
   .tools-filters-actions {
-    @apply flex justify-end mt-4 pt-4 border-t border-gray-200;
-    @apply dark:border-gray-700;
+    @apply flex justify-end mt-4 pt-4;
+    border-top: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .tools-filters-actions {
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   /* =================================================================
@@ -205,8 +277,18 @@
   }
 
   .tools-toc-nav {
-    @apply sticky;
-    top: calc(var(--nav-height-desktop) + 5rem);
+    @apply sticky rounded-xl p-3;
+    top: calc(var(--sticky-offset, 80px) + 1rem);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .tools-toc-nav {
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.06);
   }
 
   .tools-toc-title {
@@ -221,8 +303,6 @@
   .tools-toc-link {
     @apply flex items-center justify-between gap-2 py-2 px-3 rounded-lg no-underline;
     @apply text-sm font-medium;
-    @apply hover:bg-gray-100;
-    @apply dark:hover:bg-gray-800;
     @apply transition-colors duration-150;
     color: var(--color-content-secondary);
     cursor: pointer;
@@ -230,6 +310,14 @@
     background: none;
     width: 100%;
     text-align: left;
+  }
+
+  .tools-toc-link:hover {
+    background: var(--color-glass-surface-elevated);
+  }
+
+  .dark .tools-toc-link:hover {
+    background: rgb(55 65 81 / 0.4);
   }
 
   .tools-toc-link.active {
@@ -243,8 +331,13 @@
 
   .tools-toc-link-count {
     @apply text-xs font-semibold px-1.5 py-0.5 rounded;
-    @apply bg-gray-200 text-gray-600;
-    @apply dark:bg-gray-700 dark:text-gray-400;
+    background: var(--color-surface-tertiary);
+    color: var(--color-content-secondary);
+  }
+
+  .dark .tools-toc-link-count {
+    background: rgb(55 65 81 / 0.5);
+    color: var(--color-content-muted);
   }
 
   .tools-toc-link.active .tools-toc-link-count {
@@ -285,21 +378,24 @@
   .tools-section-pills {
     @apply flex items-center gap-2 mb-4;
     @apply sticky z-35;
-    @apply bg-white/95 backdrop-blur-sm border-b border-gray-200;
-    @apply dark:bg-gray-900/95 dark:border-gray-700;
-    top: calc(var(--nav-height-mobile) + var(--filter-bar-height, 52px));
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border-bottom: 1px solid var(--color-edge-primary);
+    /* top is set dynamically by StickyRegistryService */
     /* Offset the parent padding so the bar spans full width */
     margin-left: -1rem;
     margin-right: -1rem;
     padding: 0.5rem 1rem;
 
-    @media (min-width: 768px) {
-      top: calc(var(--nav-height-desktop) + var(--filter-bar-height, 52px));
-    }
-
     @media (min-width: 1024px) {
       @apply hidden;
     }
+  }
+
+  .dark .tools-section-pills {
+    background: rgb(17 24 39 / 0.85);
+    border-color: rgb(255 255 255 / 0.06);
   }
 
   .tools-section-pills-label {
@@ -323,17 +419,26 @@
 
   .tools-section-pill {
     @apply inline-flex items-center gap-1.5 py-2 px-3 text-sm font-medium rounded-full whitespace-nowrap no-underline;
-    @apply border border-gray-300 bg-white;
-    @apply dark:bg-gray-800 dark:border-gray-600;
     @apply transition-colors duration-150;
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-edge-primary);
     scroll-snap-align: start;
     color: var(--color-content-secondary);
     cursor: pointer;
   }
 
+  .dark .tools-section-pill {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
   .tools-section-pill:hover {
     @apply border-purple-400 bg-purple-50;
-    @apply dark:bg-gray-700 dark:border-purple-500;
+  }
+
+  .dark .tools-section-pill:hover {
+    background: rgb(55 65 81 / 0.5);
+    @apply border-purple-500;
   }
 
   .tools-section-pill.active {
@@ -360,8 +465,13 @@
 
   .tools-section-pill-count {
     @apply text-xs font-semibold px-1.5 py-0.5 rounded-full;
-    @apply bg-gray-200 text-gray-600;
-    @apply dark:bg-gray-600 dark:text-gray-300;
+    background: var(--color-surface-tertiary);
+    color: var(--color-content-secondary);
+  }
+
+  .dark .tools-section-pill-count {
+    background: rgb(75 85 99 / 0.5);
+    color: rgb(209 213 219);
   }
 
   .tools-section-pill.active .tools-section-pill-count {
@@ -377,8 +487,13 @@
   /* Section Count Badge in Headers */
   .tools-section-count {
     @apply text-sm font-semibold px-2 py-0.5 rounded-full;
-    @apply bg-gray-200 text-gray-600;
-    @apply dark:bg-gray-700 dark:text-gray-400;
+    background: var(--color-surface-tertiary);
+    color: var(--color-content-secondary);
+  }
+
+  .dark .tools-section-count {
+    background: rgb(55 65 81 / 0.5);
+    color: var(--color-content-muted);
   }
 
   /* =================================================================
@@ -391,18 +506,96 @@
   }
 
   .tools-grid-card {
-    @apply flex flex-col rounded-lg overflow-hidden;
-    @apply bg-white border border-gray-200;
-    @apply hover:shadow-md hover:border-gray-300;
-    @apply dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-600;
-    @apply transition-all duration-200;
+    @apply flex flex-col rounded-xl overflow-hidden;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    transition:
+      box-shadow var(--transition-normal) ease,
+      border-color var(--transition-normal) ease,
+      transform var(--transition-normal) ease,
+      background var(--transition-normal) ease,
+      backdrop-filter var(--transition-normal) ease;
+  }
+
+  .tools-grid-card:hover {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    box-shadow:
+      var(--shadow-glass-hover),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    transform: translateY(-2px);
+  }
+
+  .dark .tools-grid-card {
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.1),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  }
+
+  .dark .tools-grid-card:hover {
+    background: rgb(31 41 55 / 0.65);
+    border-color: rgb(255 255 255 / 0.15);
+    box-shadow:
+      0 8px 32px rgb(0 0 0 / 0.4),
+      0 2px 4px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+  }
+
+  /* Expanded card - elevated glass tier */
+  .tools-grid-card.expanded {
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border-color: var(--color-glass-border);
+    box-shadow:
+      var(--shadow-glass-elevated),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+  }
+
+  .dark .tools-grid-card.expanded {
+    background: rgb(31 41 55 / 0.65);
+    border-color: rgb(255 255 255 / 0.14);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      0 4px 8px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
   }
 
   .tools-grid-card-recommended {
     border-left: 3px solid;
     @apply border-l-yellow-400;
-    @apply bg-yellow-50/40;
-    @apply dark:border-l-yellow-500 dark:bg-yellow-950/20;
+    background: color-mix(
+      in srgb,
+      rgb(254 252 232) 40%,
+      var(--color-glass-surface)
+    );
+    @apply dark:border-l-yellow-500;
+  }
+
+  .dark .tools-grid-card-recommended {
+    background: color-mix(in srgb, rgb(120 53 15) 12%, rgb(31 41 55 / 0.55));
+  }
+
+  .tools-grid-card-recommended:hover {
+    background: color-mix(
+      in srgb,
+      rgb(254 252 232) 50%,
+      var(--color-glass-surface-elevated)
+    );
+  }
+
+  .dark .tools-grid-card-recommended:hover {
+    background: color-mix(in srgb, rgb(120 53 15) 18%, rgb(31 41 55 / 0.65));
   }
 
   .tools-grid-card-header {
@@ -410,8 +603,12 @@
   }
 
   .tools-grid-card-image {
-    @apply w-full h-32 mb-3 rounded-md overflow-hidden bg-gray-100;
-    @apply dark:bg-gray-700;
+    @apply w-full h-32 mb-3 rounded-md overflow-hidden;
+    background: var(--color-surface-tertiary);
+  }
+
+  .dark .tools-grid-card-image {
+    background: rgb(55 65 81 / 0.5);
   }
 
   .tools-grid-card-image img {
@@ -428,7 +625,7 @@
   }
 
   .dark .tools-grid-card-title {
-    @apply text-gray-100;
+    color: rgb(243 244 246);
   }
 
   .tools-grid-card-badges {
@@ -441,7 +638,7 @@
   }
 
   .dark .tools-grid-card-desc {
-    @apply text-gray-400;
+    color: var(--color-content-muted);
   }
 
   /* Remove line clamp when card is expanded */
@@ -453,7 +650,14 @@
   }
 
   .tools-grid-card-actions {
-    @apply flex items-center gap-2 p-4 pt-0;
+    @apply flex items-center gap-2 p-4;
+    border-top: 1px solid var(--color-glass-border-subtle);
+    background: rgb(249 250 251 / 0.3);
+  }
+
+  .dark .tools-grid-card-actions {
+    border-top-color: rgb(255 255 255 / 0.06);
+    background: rgb(17 24 39 / 0.15);
   }
 
   /* =================================================================
@@ -461,13 +665,19 @@
      ================================================================= */
 
   .table-row-alt .item-list-row {
-    @apply bg-gray-50;
-    @apply dark:bg-gray-800/50;
+    background: var(--color-glass-surface-elevated);
+  }
+
+  .dark .table-row-alt .item-list-row {
+    background: rgb(31 41 55 / 0.45);
   }
 
   .table-row-alt .item-list-row:hover {
-    @apply bg-gray-100;
-    @apply dark:bg-gray-700/50;
+    background: var(--color-glass-surface-heavy);
+  }
+
+  .dark .table-row-alt .item-list-row:hover {
+    background: rgb(31 41 55 / 0.6);
   }
 
   /* =================================================================
@@ -505,5 +715,19 @@
   .link-btn-sm:hover {
     @apply underline;
     color: var(--color-brand-purple-hover);
+  }
+
+  /* Icon sizing for toolbar controls */
+  .tools-icon {
+    @apply w-5 h-5;
+  }
+
+  .tools-icon-sm {
+    @apply w-4 h-4;
+  }
+
+  /* View toggle button content layout */
+  .tools-view-btn-content {
+    @apply flex gap-2 items-center;
   }
 }

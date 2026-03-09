@@ -222,11 +222,17 @@
 
   .warning-banner {
     @apply flex items-center gap-2 py-3 px-4 rounded-lg text-sm font-medium;
-    @apply bg-red-100 text-red-800;
+    background: rgb(254 226 226 / 0.7);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    color: rgb(153 27 27);
+    border: 1px solid rgb(252 165 165 / 0.4);
   }
 
   .dark .warning-banner {
-    @apply bg-red-900 text-red-200;
+    background: rgb(127 29 29 / 0.35);
+    color: rgb(254 202 202);
+    border-color: rgb(185 28 28 / 0.3);
   }
 
   .warning-banner-icon {
@@ -307,6 +313,8 @@
   .info-note {
     @apply p-3 rounded-lg text-sm m-0;
     border: 1px solid transparent;
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
   }
 
   .info-note strong {
@@ -315,24 +323,34 @@
 
   /* Blue info note */
   .info-note--blue {
-    @apply bg-blue-50 border-blue-200 text-blue-800;
+    background: rgb(239 246 255 / 0.7);
+    border-color: rgb(96 165 250 / 0.4);
+    @apply text-blue-800;
   }
 
   .dark .info-note--blue {
-    background-color: rgb(30 58 138 / 0.3);
+    background: rgb(30 58 138 / 0.3);
     border-color: rgb(30 64 175 / 0.5);
     @apply text-blue-200;
+    box-shadow:
+      0 2px 12px rgb(0 0 0 / 0.2),
+      inset 0 1px 0 rgb(59 130 246 / 0.08);
   }
 
   /* Orange info note */
   .info-note--orange {
-    @apply bg-orange-50 border-orange-200 text-orange-800;
+    background: rgb(255 247 237 / 0.7);
+    border-color: rgb(251 146 60 / 0.4);
+    @apply text-orange-800;
   }
 
   .dark .info-note--orange {
-    background-color: rgb(154 52 18 / 0.3);
+    background: rgb(154 52 18 / 0.3);
     border-color: rgb(194 65 12 / 0.5);
     @apply text-orange-200;
+    box-shadow:
+      0 2px 12px rgb(0 0 0 / 0.2),
+      inset 0 1px 0 rgb(251 146 60 / 0.08);
   }
 
   /* Gray info note - for deprecated/legacy notices */
@@ -421,5 +439,69 @@
 
   .dark .volunteer-cta-banner-separator {
     @apply text-gray-600;
+  }
+
+  /* =================================================================
+     INFO BOX - Colored information containers
+     ================================================================= */
+
+  .info-box {
+    @apply p-4 rounded-xl;
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid transparent;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+  }
+
+  .info-box--blue {
+    background: rgb(239 246 255 / 0.8);
+    border-color: var(--color-blue-200);
+  }
+
+  .dark .info-box--blue {
+    background: rgb(30 58 138 / 0.25);
+    border-color: var(--color-blue-800);
+  }
+
+  .info-box-title {
+    @apply text-sm font-semibold mb-2;
+    @apply text-blue-900;
+    @apply dark:text-blue-100;
+  }
+
+  .info-box-text {
+    @apply text-sm mb-3;
+    @apply text-blue-800;
+    @apply dark:text-blue-200;
+  }
+
+  .info-box-link {
+    @apply text-sm font-medium;
+    @apply text-blue-600 hover:underline;
+    @apply dark:text-blue-400;
+  }
+
+  /* =================================================================
+     DIALOG ERROR - Inline error display inside modal dialogs
+     ================================================================= */
+
+  .dialog-error {
+    @apply p-3 rounded-lg;
+    @apply bg-red-100 border border-red-300;
+  }
+
+  .dark .dialog-error {
+    background-color: rgb(127 29 29 / 0.3);
+    @apply border-red-700;
+  }
+
+  .dialog-error-text {
+    @apply text-sm;
+    @apply text-red-800;
+    @apply dark:text-red-200;
+  }
+
+  .dialog-error-text--bold {
+    @apply font-medium;
   }
 }

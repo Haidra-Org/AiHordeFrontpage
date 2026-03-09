@@ -13,6 +13,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { combineLatest, switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import {
   BreadcrumbComponent,
@@ -33,6 +34,7 @@ import { extractUserAlias } from '../../../helper/user-parser';
     RouterLink,
     KudosBreakdownPanelComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './user-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

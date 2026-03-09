@@ -11,23 +11,57 @@
      ================================================================= */
 
   .details-tabs {
-    @apply flex gap-1 mb-4 sm:mb-6;
+    @apply flex mb-4 sm:mb-6;
+    @apply sticky z-30;
+    /* top is set dynamically by StickyRegistryService */
+    @apply bg-surface-primary;
     border-bottom: 2px solid var(--color-border-secondary);
-    /* Horizontal scroll on mobile instead of wrapping into multiple rows */
+    /* Always horizontal-scroll — never wrap to a second row */
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none; /* Firefox */
     touch-action: pan-x;
+    /* sticky already establishes a containing block for the arrow buttons */
+    gap: clamp(0.125rem, 0.4vw, 0.25rem);
+  }
 
-    @media (min-width: 640px) {
-      flex-wrap: wrap;
-      overflow-x: visible;
-    }
+  /* ---- Overflow fade masks (toggled by ScrollFadeDirective) ---- */
+  .details-tabs.has-overflow-right:not(.has-overflow-left) {
+    -webkit-mask-image: linear-gradient(to right, black 75%, transparent 100%);
+    mask-image: linear-gradient(to right, black 75%, transparent 100%);
+  }
 
-    /* Right-edge fade when more tabs are scrollable to the right */
-    &.has-overflow-right {
-      -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
-      mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  .details-tabs.has-overflow-left:not(.has-overflow-right) {
+    -webkit-mask-image: linear-gradient(to left, black 75%, transparent 100%);
+    mask-image: linear-gradient(to left, black 75%, transparent 100%);
+  }
+
+  .details-tabs.has-overflow-left.has-overflow-right {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 12%,
+      black 88%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      black 12%,
+      black 88%,
+      transparent 100%
+    );
+  }
+
+  /* On non-touch devices the sticky arrow buttons provide the fade;
+     disable mask-image so it doesn't clip them. Selectors must match
+     or exceed the specificity of the mask-setting rules above. */
+  @media (pointer: fine) {
+    .details-tabs.has-overflow-right:not(.has-overflow-left),
+    .details-tabs.has-overflow-left:not(.has-overflow-right),
+    .details-tabs.has-overflow-left.has-overflow-right {
+      -webkit-mask-image: none;
+      mask-image: none;
     }
   }
 
@@ -36,14 +70,35 @@
   }
 
   .dark .details-tabs {
-    @apply border-gray-700;
+    @apply border-gray-700 bg-gray-900;
+  }
+
+  /* ---- Sub-tab modifier ------------------------------------------------
+     Applied to second-level tab rows ([appStickyHeader]="20") so they
+     read as subordinate to the primary navigation row above them.
+     ---------------------------------------------------------------------- */
+  .details-tabs--sub {
+    border-bottom-width: 1px;
+  }
+
+  .details-tabs--sub .details-tab {
+    font-size: clamp(0.6875rem, 1.2vw, 0.875rem);
+    padding: clamp(0.25rem, 0.6vw, 0.5rem) clamp(0.375rem, 1vw, 1rem);
+    border-bottom-width: 2px;
+  }
+
+  .details-tabs--sub .btn-source-control {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
   }
 
   .details-tab {
-    @apply inline-flex items-center gap-1.5 sm:gap-2;
-    @apply py-2 px-3 sm:py-3 sm:px-5 text-[0.8125rem] sm:text-[0.9375rem] font-medium no-underline cursor-pointer;
+    @apply inline-flex items-center font-medium no-underline cursor-pointer;
     @apply transition-all duration-200;
     @apply whitespace-nowrap;
+    gap: clamp(0.25rem, 0.5vw, 0.5rem);
+    padding: clamp(0.375rem, 0.8vw, 0.75rem) clamp(0.5rem, 1.2vw, 1.25rem);
+    font-size: clamp(0.75rem, 1.4vw, 0.9375rem);
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
@@ -51,6 +106,13 @@
     margin-bottom: -2px;
     color: var(--color-text-secondary);
     font-family: inherit;
+  }
+
+  /* Hide tab icons at narrow widths to reclaim space */
+  @media (max-width: 767px) {
+    .details-tab .icon-sm {
+      display: none;
+    }
   }
 
   .details-tab:hover {
@@ -88,17 +150,147 @@
   }
 
   /* =================================================================
+     SCROLL ARROW BUTTONS
+     Injected by ScrollFadeDirective for non-touch hover navigation.
+     Sticky-positioned so they stay at the visible edges of the
+     horizontal-scroll container. Negative margins cancel their
+     width contribution so tab layout is unaffected.
+     ================================================================= */
+
+  .details-tabs-arrow {
+    position: sticky;
+    flex-shrink: 0;
+    align-self: stretch;
+    width: 2rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    color: var(--color-text-secondary);
+    font-size: 1.125rem;
+    padding: 0;
+  }
+
+  .details-tabs-arrow--left {
+    left: 0;
+    margin-right: calc(-2rem - clamp(0.125rem, 0.4vw, 0.25rem));
+    background: linear-gradient(
+      to right,
+      var(--color-surface-primary) 60%,
+      transparent 100%
+    );
+  }
+
+  .details-tabs-arrow--right {
+    right: 0;
+    margin-left: calc(-2rem - clamp(0.125rem, 0.4vw, 0.25rem));
+    background: linear-gradient(
+      to left,
+      var(--color-surface-primary) 60%,
+      transparent 100%
+    );
+  }
+
+  .details-tabs-arrow.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    text-shadow: 0 0 6px currentColor;
+  }
+
+  .details-tabs-arrow:hover {
+    color: var(--color-brand-purple);
+  }
+
+  .details-tabs-arrow:focus-visible {
+    @apply outline-2 outline-offset-[-2px] outline-purple-500;
+  }
+
+  /* Hide arrow buttons on touch-primary devices — swipe is native */
+  @media (pointer: coarse) {
+    .details-tabs-arrow {
+      display: none;
+    }
+  }
+
+  .dark .details-tabs-arrow {
+    color: var(--color-gray-400);
+  }
+
+  .dark .details-tabs-arrow--left {
+    background: linear-gradient(
+      to right,
+      var(--color-gray-900) 60%,
+      transparent 100%
+    );
+  }
+
+  .dark .details-tabs-arrow--right {
+    background: linear-gradient(
+      to left,
+      var(--color-gray-900) 60%,
+      transparent 100%
+    );
+  }
+
+  .dark .details-tabs-arrow:hover {
+    color: var(--color-purple-300);
+  }
+
+  /* Glass variant arrow backgrounds */
+  .details-tabs--glass .details-tabs-arrow--left {
+    background: linear-gradient(
+      to right,
+      var(--color-glass-surface) 60%,
+      transparent 100%
+    );
+  }
+
+  .details-tabs--glass .details-tabs-arrow--right {
+    background: linear-gradient(
+      to left,
+      var(--color-glass-surface) 60%,
+      transparent 100%
+    );
+  }
+
+  .dark .details-tabs--glass .details-tabs-arrow--left {
+    background: linear-gradient(
+      to right,
+      rgb(31 41 55 / 0.92) 60%,
+      transparent 100%
+    );
+  }
+
+  .dark .details-tabs--glass .details-tabs-arrow--right {
+    background: linear-gradient(
+      to left,
+      rgb(31 41 55 / 0.92) 60%,
+      transparent 100%
+    );
+  }
+
+  /* =================================================================
      SUMMARY STATS
      ================================================================= */
 
   .details-summary {
-    @apply flex flex-wrap gap-4 p-4 rounded-lg;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-primary);
+    @apply flex flex-wrap gap-4 p-4 rounded-xl;
+    background: rgb(249 250 251 / 0.7);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
   }
 
   .dark .details-summary {
-    @apply bg-gray-900 border-gray-700;
+    background: rgb(17 24 39 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
   }
 
   .summary-stat {
@@ -207,16 +399,21 @@
 
   /* Autocomplete dropdown panel */
   .filter-autocomplete-dropdown {
-    @apply absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-lg shadow-lg;
+    @apply absolute left-0 right-0 mt-1 max-h-64 overflow-y-auto rounded-lg;
     /* Use inset: auto to avoid viewport clipping issues */
     top: 100%;
     z-index: 50;
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border-primary);
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated);
   }
 
   .dark .filter-autocomplete-dropdown {
-    @apply bg-gray-800 border-gray-600;
+    background: rgb(31 41 55 / 0.85);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
   }
 
   /* Individual autocomplete suggestion item */
@@ -729,5 +926,91 @@
 
   .dark .btn-link-sm:hover {
     @apply text-blue-300;
+  }
+
+  /* =================================================================
+     TABS CONTAINER CENTERED - Constrained-width tab bar
+     ================================================================= */
+
+  .tabs-container--centered {
+    @apply max-w-4xl mx-auto;
+  }
+
+  /* =================================================================
+     GLASS TAB BAR - Frosted glass variant of details-tabs
+     Apply .details-tabs--glass alongside .details-tabs
+     ================================================================= */
+
+  .details-tabs--glass {
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    border-bottom: 2px solid var(--color-glass-border);
+    @apply rounded-t-xl;
+    /* No horizontal padding — first/last tabs sit flush with container edges */
+    padding-left: 0;
+    padding-right: 0;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
+  }
+
+  /* First tab rounds to match container corner */
+  .details-tabs--glass .details-tab:first-of-type,
+  .details-tabs--glass .details-tab:first-of-type:hover {
+    border-top-left-radius: 0.75rem;
+  }
+
+  /* Last tab rounds to match container corner */
+  .details-tabs--glass .details-tab:last-of-type,
+  .details-tabs--glass .details-tab:last-of-type:hover {
+    border-top-right-radius: 0.75rem;
+  }
+
+  .dark .details-tabs--glass {
+    background: rgb(31 41 55 / 0.4);
+    border-color: rgb(255 255 255 / 0.06);
+    border-bottom-color: rgb(255 255 255 / 0.1);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+  }
+
+  /* Glass active tab gets a subtle fill instead of just a bottom border */
+  .details-tabs--glass .details-tab-active {
+    background: var(--color-glass-surface-elevated);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.2);
+  }
+
+  .dark .details-tabs--glass .details-tab-active {
+    background: rgb(55 65 81 / 0.4);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.05);
+  }
+
+  /* Glass tab hover - inherit per-tab border-radius from base/first/last rules */
+  .details-tabs--glass .details-tab:hover {
+    background: rgb(255 255 255 / 0.4);
+  }
+
+  .dark .details-tabs--glass .details-tab:hover {
+    background: rgb(55 65 81 / 0.3);
+  }
+
+  /* =================================================================
+     GLASS SUMMARY - Frosted glass variant of details-summary
+     ================================================================= */
+
+  .details-summary--glass {
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
+    @apply rounded-xl;
+  }
+
+  .dark .details-summary--glass {
+    background: rgb(31 41 55 / 0.4);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.2),
+      inset 0 1px 1px rgb(255 255 255 / 0.04);
   }
 }

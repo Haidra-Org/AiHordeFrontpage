@@ -23,10 +23,58 @@
     @apply flex flex-col;
   }
 
-  /* Data item with background - for stat boxes */
+  /* Data item with background - glass stat box */
   .data-item-box {
-    @apply flex flex-col p-3 rounded;
-    @apply dark:border-edge-primary;
+    @apply flex flex-col p-3 rounded-lg;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+    transition: box-shadow var(--transition-normal) ease;
+  }
+
+  .dark .data-item-box {
+    background: rgb(55 65 81 / 0.35);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  }
+
+  /* =================================================================
+     STAT COLUMN - Glass card for homepage stat groupings
+     ================================================================= */
+
+  .stat-column {
+    @apply p-4 rounded-xl space-y-3;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .stat-column {
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.2),
+      0 1px 2px rgb(0 0 0 / 0.1);
+  }
+
+  /* Stat list item - icon + text row */
+  .stat-item {
+    @apply flex items-start gap-2;
+  }
+
+  /* Stat text block */
+  .stat-text {
+    @apply text-sm leading-relaxed text-gray-900;
+    @apply dark:text-white;
+  }
+
+  /* Bold label inside stat text */
+  .stat-text-label {
+    @apply font-medium;
   }
 
   /* Centered variant */
@@ -248,8 +296,19 @@
 
   /* 1-2-3 column responsive grid for workers */
   .worker-grid {
-    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-3;
-    @apply max-w-lg mx-auto sm:max-w-none;
+    @apply grid grid-cols-1 gap-6;
+    @apply max-w-lg mx-auto;
+    @apply pb-4;
+
+    /* Two columns only when cards have enough room (~450px each) */
+    @media (min-width: 900px) {
+      @apply grid-cols-2 gap-4 max-w-none;
+    }
+
+    /* Three columns on large desktops */
+    @media (min-width: 1280px) {
+      @apply grid-cols-3;
+    }
   }
 
   /* =================================================================
@@ -269,15 +328,71 @@
 
   /* Worker card base */
   .worker-card-normal {
-    @apply rounded-xl overflow-hidden bg-surface-primary border-2 border-edge-secondary;
-    @apply dark:bg-transparent dark:border dark:border-edge-primary;
-    @apply max-w-lg;
+    @apply rounded-xl;
+    overflow: clip;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  /* Stronger relief at single-column so tall cards are easy to distinguish */
+  @media (max-width: 899px) {
+    .worker-card-normal {
+      border-top: 3px solid var(--color-brand-purple);
+      box-shadow:
+        0 4px 16px rgb(0 0 0 / 0.07),
+        0 1px 3px rgb(0 0 0 / 0.06);
+    }
+  }
+
+  .dark .worker-card-normal {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
+  }
+
+  @media (max-width: 899px) {
+    .dark .worker-card-normal {
+      border-top: 3px solid var(--color-purple-400);
+      box-shadow:
+        0 4px 20px rgb(0 0 0 / 0.3),
+        0 1px 4px rgb(0 0 0 / 0.15);
+    }
   }
 
   /* Worker card with issue state */
   .worker-card-issue {
-    @apply rounded-xl overflow-hidden bg-red-50 border border-red-300;
-    @apply dark:bg-red-900/30 dark:border-red-800/50;
+    @apply rounded-xl;
+    overflow: clip;
+    background: rgb(254 226 226 / 0.6);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid rgb(252 165 165 / 0.5);
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-issue {
+      border-top: 3px solid rgb(239 68 68);
+      box-shadow:
+        0 4px 16px rgb(0 0 0 / 0.07),
+        0 1px 3px rgb(0 0 0 / 0.06);
+    }
+  }
+
+  .dark .worker-card-issue {
+    background: rgb(127 29 29 / 0.25);
+    border-color: rgb(185 28 28 / 0.4);
+  }
+
+  @media (max-width: 899px) {
+    .dark .worker-card-issue {
+      border-top: 3px solid rgb(248 113 113);
+      box-shadow:
+        0 4px 20px rgb(0 0 0 / 0.3),
+        0 1px 4px rgb(0 0 0 / 0.15);
+    }
   }
 
   /* Worker card highlighted state (linked from URL) */
@@ -294,16 +409,49 @@
 
   /* Worker card info rows */
   .worker-card-row {
-    @apply flex justify-between;
+    @apply flex justify-between gap-2;
+  }
+
+  /* On single-column, give rows padding and alternating shading so
+     the eye can track across label→value on tall cards */
+  @media (max-width: 899px) {
+    .worker-card-row {
+      @apply py-1.5 px-2 -mx-2 rounded;
+    }
+
+    .worker-card-row:nth-child(even) {
+      background-color: var(--color-bg-secondary);
+    }
+
+    .dark .worker-card-row:nth-child(even) {
+      background-color: rgb(55 65 81 / 0.25);
+    }
   }
 
   .worker-card-label {
-    @apply text-content-secondary;
+    @apply text-content-secondary shrink-0;
+    font-size: 0.8125rem;
   }
 
   .worker-card-value {
-    @apply text-content-primary;
+    @apply text-content-primary font-medium;
     @apply dark:text-gray-200;
+  }
+
+  /* Software Contact: always occupies 2 lines to prevent card height mismatch */
+  .worker-card-contact {
+    @apply line-clamp-2 break-all;
+    min-height: 2lh;
+  }
+
+  /* Muted placeholder for unset/empty fields */
+  .worker-card-value-muted {
+    @apply text-content-muted italic;
+  }
+
+  /* Worker card header: always horizontal — name on left, badges on right */
+  .worker-card-header {
+    @apply flex flex-row items-center justify-between gap-2;
   }
 
   /* Worker status icon containers */
@@ -342,23 +490,49 @@
     @apply dark:text-green-400;
   }
 
+  .worker-indicator-gray {
+    @apply text-gray-500;
+    @apply dark:text-gray-400;
+  }
+
+  /* Muted status icon for inactive states */
+  .worker-status-icon-muted {
+    @apply opacity-20;
+  }
+
   /* Speed row highlight when worker has a speed anomaly */
   .worker-speed-highlight-low {
     @apply rounded px-1 -mx-1;
-    background-color: color-mix(in srgb, var(--color-orange-100, #ffedd5) 60%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-orange-100, #ffedd5) 60%,
+      transparent
+    );
   }
 
   .dark .worker-speed-highlight-low {
-    background-color: color-mix(in srgb, var(--color-orange-900, #7c2d12) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-orange-900, #7c2d12) 30%,
+      transparent
+    );
   }
 
   .worker-speed-highlight-high {
     @apply rounded px-1 -mx-1;
-    background-color: color-mix(in srgb, var(--color-yellow-100, #fef9c3) 60%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-yellow-100, #fef9c3) 60%,
+      transparent
+    );
   }
 
   .dark .worker-speed-highlight-high {
-    background-color: color-mix(in srgb, var(--color-yellow-900, #713f12) 30%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--color-yellow-900, #713f12) 30%,
+      transparent
+    );
   }
 
   /* Worker capability badges */
@@ -366,6 +540,11 @@
     @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full;
     @apply bg-edge-secondary text-content-secondary;
     @apply dark:bg-green-900 dark:text-gray-200;
+  }
+
+  /* Muted badge for unsupported capabilities */
+  .worker-badge-muted {
+    @apply opacity-30;
   }
 
   /* Worker card link style */
@@ -530,6 +709,437 @@
     @apply dark:bg-gray-700;
   }
 
+  /* Worker card body padding (header + content blocks) */
+  .worker-card-body {
+    @apply p-4;
+  }
+
+  /* On single-column, pin the worker header (status + name + ID) so the
+     user always knows which card they are scrolling through.
+     Uses --sticky-offset (set by StickyRegistryService) to clear the
+     page-level sticky headers above. */
+  @media (max-width: 899px) {
+    .worker-card-body--sticky-mobile {
+      position: sticky;
+      top: var(--sticky-offset, 80px);
+      z-index: 20;
+      @apply py-2 px-3;
+      background: var(--color-glass-surface-heavy);
+      backdrop-filter: blur(var(--blur-glass-md));
+      -webkit-backdrop-filter: blur(var(--blur-glass-md));
+      border-bottom: 1px solid var(--color-glass-border-subtle);
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+      border-radius: 0.75rem 0.75rem 0 0;
+    }
+
+    .dark .worker-card-body--sticky-mobile {
+      background: rgb(31 41 55 / 0.92);
+      border-bottom-color: rgb(255 255 255 / 0.08);
+      box-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+    }
+  }
+
+  /* Worker card content — padded text-sm block below the header */
+  .worker-card-content {
+    @apply p-4 text-sm;
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-content {
+      @apply px-5 py-5;
+    }
+  }
+
+  /* Row containing worker name + status icon — takes remaining space */
+  .worker-card-name-row {
+    @apply flex items-center gap-2 min-w-0 flex-1;
+  }
+
+  /* Wrapper for the leading status icon in the header */
+  .worker-card-status-icon-wrap {
+    @apply p-1 shrink-0;
+  }
+
+  /* Block containing name + ID (needs min-w-0 for truncation) */
+  .worker-card-name-block {
+    @apply min-w-0;
+  }
+
+  /* Small worker ID line below the name */
+  .worker-card-id {
+    @apply text-xs text-content-secondary truncate mt-0.5;
+  }
+
+  /* Badge row: type badge, trusted icon, highlighted badge — never wrap */
+  .worker-card-badge-row {
+    @apply flex items-center gap-1.5 shrink-0;
+  }
+
+  /* Row of status indicator icons — sits between sticky header and content */
+  .worker-card-status-bar {
+    @apply flex items-center gap-1 px-4 pt-2;
+  }
+
+  /* Padding wrapper for small status-indicator icons */
+  .worker-card-icon-pad {
+    @apply p-1;
+  }
+
+  /* Grouped info rows (basic info, performance, features) */
+  .worker-card-info-group {
+    @apply space-y-1 mb-3;
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-info-group {
+      @apply space-y-0.5 mb-4;
+    }
+  }
+
+  /* Vertical key/value pair (bridge agent, contact) */
+  .worker-card-col {
+    @apply flex flex-col;
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-col {
+      @apply py-1.5 px-2 -mx-2 rounded;
+    }
+  }
+
+  /* Info group that sits below a section divider (Performance, Features) */
+  .worker-card-info-group-bordered {
+    @apply space-y-1 mb-3 pt-3 border-t border-edge-primary;
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-info-group-bordered {
+      @apply space-y-0.5 mb-4 pt-4 mt-1;
+      border-top-width: 2px;
+    }
+  }
+
+  /* Final info group (no bottom margin) */
+  .worker-card-info-group-bordered-last {
+    @apply space-y-1 pt-3 border-t border-edge-primary;
+  }
+
+  @media (max-width: 899px) {
+    .worker-card-info-group-bordered-last {
+      @apply space-y-0.5 pt-4 mt-1;
+      border-top-width: 2px;
+    }
+  }
+
+  /* Section sub-label (e.g. "Capabilities:", "Messages:") */
+  .worker-card-section-label {
+    @apply text-xs block mb-2;
+  }
+
+  /* Flex container for capability badges */
+  .worker-card-badges-wrap {
+    @apply flex flex-wrap gap-1;
+  }
+
+  /* Scrollable messages area */
+  .worker-card-messages-scroll {
+    @apply space-y-2 max-h-24 overflow-y-auto;
+  }
+
+  /* Action button bar at card bottom */
+  .worker-card-actions {
+    @apply px-4 py-3 flex gap-2 flex-wrap;
+  }
+
+  /* Monospace small value (IP addresses, hashes) */
+  .worker-card-value-mono {
+    @apply font-mono text-xs;
+  }
+
+  /* =================================================================
+     WORKER TYPE INDICATOR - Icon + label row below header
+     ================================================================= */
+
+  .worker-card-type-row {
+    @apply flex items-center gap-1.5 mt-2;
+  }
+
+  /* Icon color overrides for worker types */
+  .worker-type-image {
+    @apply text-blue-500;
+    @apply dark:text-blue-400;
+  }
+
+  .worker-type-text {
+    @apply text-emerald-500;
+    @apply dark:text-emerald-400;
+  }
+
+  .worker-type-interrogation {
+    @apply text-purple-500;
+    @apply dark:text-purple-400;
+  }
+
+  /* Type label - small glass-tinted pill */
+  .worker-type-label {
+    @apply text-xs font-medium px-2 py-0.5 rounded-full;
+    border: 1px solid var(--color-glass-border-subtle);
+    transition: background-color var(--transition-normal, 150ms) ease;
+  }
+
+  .worker-type-label--image {
+    background: rgb(59 130 246 / 0.12);
+    @apply text-blue-700;
+    border-color: rgb(59 130 246 / 0.25);
+  }
+  .dark .worker-type-label--image {
+    background: rgb(59 130 246 / 0.15);
+    @apply text-blue-300;
+    border-color: rgb(59 130 246 / 0.3);
+  }
+
+  .worker-type-label--text {
+    background: rgb(16 185 129 / 0.12);
+    @apply text-emerald-700;
+    border-color: rgb(16 185 129 / 0.25);
+  }
+  .dark .worker-type-label--text {
+    background: rgb(16 185 129 / 0.15);
+    @apply text-emerald-300;
+    border-color: rgb(16 185 129 / 0.3);
+  }
+
+  .worker-type-label--interrogation {
+    background: rgb(147 51 234 / 0.12);
+    @apply text-purple-700;
+    border-color: rgb(147 51 234 / 0.25);
+  }
+  .dark .worker-type-label--interrogation {
+    background: rgb(147 51 234 / 0.15);
+    @apply text-purple-300;
+    border-color: rgb(147 51 234 / 0.3);
+  }
+
+  /* =================================================================
+     GLASS CAPABILITY PILLS - Translucent tinted badges per capability
+     ================================================================= */
+
+  .worker-cap {
+    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
+    border: 1px solid var(--color-glass-border-subtle);
+    transition:
+      background-color var(--transition-normal, 150ms) ease,
+      box-shadow var(--transition-normal, 150ms) ease;
+  }
+
+  /* Blue - img2img */
+  .worker-cap--blue {
+    background: rgb(59 130 246 / 0.15);
+    @apply text-blue-700;
+    border-color: rgb(59 130 246 / 0.3);
+    box-shadow: 0 1px 4px rgb(59 130 246 / 0.1);
+  }
+  .dark .worker-cap--blue {
+    background: rgb(59 130 246 / 0.2);
+    @apply text-blue-300;
+    border-color: rgb(59 130 246 / 0.35);
+    box-shadow: 0 1px 4px rgb(59 130 246 / 0.15);
+  }
+
+  /* Purple - inpainting */
+  .worker-cap--purple {
+    background: rgb(147 51 234 / 0.15);
+    @apply text-purple-700;
+    border-color: rgb(147 51 234 / 0.3);
+    box-shadow: 0 1px 4px rgb(147 51 234 / 0.1);
+  }
+  .dark .worker-cap--purple {
+    background: rgb(147 51 234 / 0.2);
+    @apply text-purple-300;
+    border-color: rgb(147 51 234 / 0.35);
+    box-shadow: 0 1px 4px rgb(147 51 234 / 0.15);
+  }
+
+  /* Teal - post-processing */
+  .worker-cap--teal {
+    background: rgb(20 184 166 / 0.15);
+    @apply text-teal-700;
+    border-color: rgb(20 184 166 / 0.3);
+    box-shadow: 0 1px 4px rgb(20 184 166 / 0.1);
+  }
+  .dark .worker-cap--teal {
+    background: rgb(20 184 166 / 0.2);
+    @apply text-teal-300;
+    border-color: rgb(20 184 166 / 0.35);
+    box-shadow: 0 1px 4px rgb(20 184 166 / 0.15);
+  }
+
+  /* Amber - LoRA */
+  .worker-cap--amber {
+    background: rgb(245 158 11 / 0.15);
+    @apply text-amber-700;
+    border-color: rgb(245 158 11 / 0.3);
+    box-shadow: 0 1px 4px rgb(245 158 11 / 0.1);
+  }
+  .dark .worker-cap--amber {
+    background: rgb(245 158 11 / 0.2);
+    @apply text-amber-300;
+    border-color: rgb(245 158 11 / 0.35);
+    box-shadow: 0 1px 4px rgb(245 158 11 / 0.15);
+  }
+
+  /* Rose - ControlNet */
+  .worker-cap--rose {
+    background: rgb(244 63 94 / 0.12);
+    @apply text-rose-700;
+    border-color: rgb(244 63 94 / 0.25);
+    box-shadow: 0 1px 4px rgb(244 63 94 / 0.1);
+  }
+  .dark .worker-cap--rose {
+    background: rgb(244 63 94 / 0.18);
+    @apply text-rose-300;
+    border-color: rgb(244 63 94 / 0.3);
+    box-shadow: 0 1px 4px rgb(244 63 94 / 0.15);
+  }
+
+  /* Indigo - SDXL ControlNet */
+  .worker-cap--indigo {
+    background: rgb(99 102 241 / 0.15);
+    @apply text-indigo-700;
+    border-color: rgb(99 102 241 / 0.3);
+    box-shadow: 0 1px 4px rgb(99 102 241 / 0.1);
+  }
+  .dark .worker-cap--indigo {
+    background: rgb(99 102 241 / 0.2);
+    @apply text-indigo-300;
+    border-color: rgb(99 102 241 / 0.35);
+    box-shadow: 0 1px 4px rgb(99 102 241 / 0.15);
+  }
+
+  /* Muted - disabled/unsupported capability */
+  .worker-cap--muted {
+    @apply opacity-30;
+    background: var(--color-glass-surface);
+    @apply text-content-secondary;
+    border-color: var(--color-glass-border-subtle);
+    box-shadow: none;
+  }
+
+  /* =================================================================
+     GLASS BUTTONS - Translucent action buttons for worker cards
+     ================================================================= */
+
+  .worker-glass-btn {
+    @apply px-4 py-2 text-sm font-medium rounded-lg;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-glass-border-subtle);
+    @apply text-content-primary;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
+    transition:
+      background-color var(--transition-normal, 150ms) ease,
+      border-color var(--transition-normal, 150ms) ease,
+      box-shadow var(--transition-normal, 150ms) ease;
+  }
+  .worker-glass-btn:hover:not(:disabled) {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    box-shadow: var(--shadow-glass-hover);
+  }
+  .dark .worker-glass-btn {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.08);
+    @apply text-gray-200;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  }
+  .dark .worker-glass-btn:hover:not(:disabled) {
+    background: rgb(31 41 55 / 0.7);
+    border-color: rgb(255 255 255 / 0.15);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+  }
+
+  /* Blue tint - Models */
+  .worker-glass-btn--blue {
+    background: rgb(59 130 246 / 0.1);
+    @apply text-blue-700;
+    border-color: rgb(59 130 246 / 0.25);
+  }
+  .worker-glass-btn--blue:hover:not(:disabled) {
+    background: rgb(59 130 246 / 0.2);
+    border-color: rgb(59 130 246 / 0.4);
+  }
+  .dark .worker-glass-btn--blue {
+    background: rgb(59 130 246 / 0.15);
+    @apply text-blue-300;
+    border-color: rgb(59 130 246 / 0.3);
+  }
+  .dark .worker-glass-btn--blue:hover:not(:disabled) {
+    background: rgb(59 130 246 / 0.25);
+    border-color: rgb(59 130 246 / 0.45);
+  }
+
+  /* Amber tint - Maintenance */
+  .worker-glass-btn--amber {
+    background: rgb(245 158 11 / 0.1);
+    @apply text-amber-700;
+    border-color: rgb(245 158 11 / 0.25);
+  }
+  .worker-glass-btn--amber:hover:not(:disabled) {
+    background: rgb(245 158 11 / 0.2);
+    border-color: rgb(245 158 11 / 0.4);
+  }
+  .dark .worker-glass-btn--amber {
+    background: rgb(245 158 11 / 0.15);
+    @apply text-amber-300;
+    border-color: rgb(245 158 11 / 0.3);
+  }
+  .dark .worker-glass-btn--amber:hover:not(:disabled) {
+    background: rgb(245 158 11 / 0.25);
+    border-color: rgb(245 158 11 / 0.45);
+  }
+
+  /* Red tint - Pause */
+  .worker-glass-btn--red {
+    background: rgb(239 68 68 / 0.1);
+    @apply text-red-700;
+    border-color: rgb(239 68 68 / 0.25);
+  }
+  .worker-glass-btn--red:hover:not(:disabled) {
+    background: rgb(239 68 68 / 0.2);
+    border-color: rgb(239 68 68 / 0.4);
+  }
+  .dark .worker-glass-btn--red {
+    background: rgb(239 68 68 / 0.15);
+    @apply text-red-300;
+    border-color: rgb(239 68 68 / 0.3);
+  }
+  .dark .worker-glass-btn--red:hover:not(:disabled) {
+    background: rgb(239 68 68 / 0.25);
+    border-color: rgb(239 68 68 / 0.45);
+  }
+
+  /* Danger - Delete (stronger red) */
+  .worker-glass-btn--danger {
+    background: rgb(220 38 38 / 0.12);
+    @apply text-red-700 font-semibold;
+    border-color: rgb(220 38 38 / 0.35);
+  }
+  .worker-glass-btn--danger:hover:not(:disabled) {
+    background: rgb(220 38 38 / 0.22);
+    border-color: rgb(220 38 38 / 0.5);
+    box-shadow: 0 2px 8px rgb(220 38 38 / 0.15);
+  }
+  .dark .worker-glass-btn--danger {
+    background: rgb(220 38 38 / 0.18);
+    @apply text-red-300;
+    border-color: rgb(220 38 38 / 0.4);
+  }
+  .dark .worker-glass-btn--danger:hover:not(:disabled) {
+    background: rgb(220 38 38 / 0.3);
+    border-color: rgb(220 38 38 / 0.55);
+    box-shadow: 0 2px 8px rgb(220 38 38 / 0.25);
+  }
+
   /* =================================================================
      RECORDS SECTION - Data record containers
      ================================================================= */
@@ -595,11 +1205,33 @@
     }
   }
 
-  /* Shared stats box styling */
+  /* Shared stats box styling — glass + purple tint */
   .track-record-stats {
     @apply w-full mb-6 p-5 rounded-xl;
-    @apply bg-purple-50 border border-purple-200;
-    @apply dark:bg-purple-950/40 dark:border-purple-800/50;
+    background: color-mix(
+      in srgb,
+      rgb(250 245 255) 40%,
+      var(--color-glass-surface)
+    );
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid rgb(147 51 234 / 0.25);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+  }
+
+  .dark .track-record-stats {
+    background: color-mix(
+      in srgb,
+      rgb(88 28 135 / 0.3) 50%,
+      rgb(31 41 55 / 0.55)
+    );
+    border-color: rgb(168 85 247 / 0.2);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 rgb(168 85 247 / 0.1);
   }
 
   .track-record-stats-left {
@@ -656,9 +1288,40 @@
     @apply space-y-6;
   }
 
-  /* Step item row */
+  /* Step item row — glass card with inner highlight */
   .step-item {
-    @apply flex gap-4;
+    @apply flex gap-4 p-5 rounded-xl;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .step-item:hover {
+    box-shadow: var(--shadow-glass-hover);
+    transform: translateY(-1px);
+  }
+
+  .dark .step-item {
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.2),
+      0 1px 2px rgb(0 0 0 / 0.15),
+      inset 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+
+  .dark .step-item:hover {
+    box-shadow:
+      0 8px 32px rgb(0 0 0 / 0.3),
+      0 2px 4px rgb(0 0 0 / 0.2),
+      inset 0 1px 0 rgb(255 255 255 / 0.06);
   }
 
   /* Numbered step circle */
@@ -680,8 +1343,11 @@
   }
 
   .step-description {
-    @apply text-content-secondary;
-    @apply dark:text-gray-400;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .step-description {
+    color: var(--color-content-muted);
   }
 
   /* =================================================================
@@ -691,9 +1357,14 @@
   /* Software link container */
   .software-link {
     @apply flex items-center gap-3 p-3 rounded-lg no-underline;
-    @apply bg-surface-primary border border-edge-primary;
-    @apply transition-colors duration-200;
-    @apply dark:bg-gray-700 dark:border-gray-600;
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-glass-border-subtle);
+    @apply transition-all duration-200;
+  }
+
+  .dark .software-link {
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   .software-link:hover {
@@ -764,6 +1435,43 @@
     @apply p-6 rounded-lg;
     @apply bg-surface-secondary border border-edge-primary;
     @apply dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  /* =================================================================
+     TEXT COLOR UTILITIES - Semantic text color overrides
+     ================================================================= */
+
+  /* Error/danger text color - replaces inline text-red-600 dark:text-red-400 */
+  .text-danger {
+    color: var(--color-red-600);
+  }
+
+  .dark .text-danger {
+    color: var(--color-red-400);
+  }
+
+  /* =================================================================
+     DIALOG TEXT - Text styling inside modal dialogs
+     ================================================================= */
+
+  .dialog-body-text {
+    @apply text-gray-300;
+  }
+
+  .dialog-body-text--spaced {
+    @apply mb-4;
+  }
+
+  /* =================================================================
+     TEAM LIST - Vertical list of team cards
+     ================================================================= */
+
+  .team-list-section {
+    @apply mb-6;
+  }
+
+  .team-list {
+    @apply flex flex-col gap-3;
   }
 }
 

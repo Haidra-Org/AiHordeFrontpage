@@ -23,7 +23,10 @@ describe('HomepageIntroComponent', () => {
       ],
       providers: [
         { provide: PLATFORM_ID, useValue: platformId },
-        { provide: StickyRegistryService, useValue: { totalOffset: () => 64 } },
+        {
+          provide: StickyRegistryService,
+          useValue: { totalOffset: () => 64, offsetFor: () => 0 },
+        },
       ],
     }).compileComponents();
 

@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { combineLatest, firstValueFrom, map, merge, scan } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -31,6 +32,7 @@ import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.co
     PageIntroComponent,
     KudosTermComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './kudos-leaderboard.component.html',
   styleUrl: './kudos-leaderboard.component.css',

@@ -44,16 +44,22 @@
 
   .modal-panel {
     @apply relative rounded-lg p-6 w-full overflow-y-auto;
-    background-color: var(--color-surface-primary);
-    border: 1px solid var(--color-edge-primary);
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
     max-height: 80vh;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    box-shadow: var(--shadow-glass-elevated);
     z-index: 51;
     margin: auto;
   }
 
   .dark .modal-panel {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.75);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      0 4px 8px rgb(0 0 0 / 0.2);
   }
 
   /* =================================================================
@@ -157,16 +163,22 @@
 
   .dialog-panel {
     @apply relative rounded-lg p-6 max-w-xl w-full overflow-y-auto;
-    background-color: var(--color-surface-primary);
-    border: 1px solid var(--color-edge-primary);
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
     max-height: 80vh;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    box-shadow: var(--shadow-glass-elevated);
     z-index: 51;
     margin: auto;
   }
 
   .dark .dialog-panel {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.75);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 12px 40px rgb(0 0 0 / 0.4),
+      0 4px 8px rgb(0 0 0 / 0.2);
   }
 
   /* =================================================================

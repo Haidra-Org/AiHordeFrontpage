@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -28,6 +33,8 @@ export class NetworkStatusComponent {
   /** Formats a valued unit (e.g. mps, tokens, forms) with K/M scaling and unit label. */
   fmtUnit(n: number, unit: string): string {
     const decimals = n >= 1000 ? 1 : 0;
-    return this.units.formatWithSiPrefix(n, unit, decimals).formattedShort.trim();
+    return this.units
+      .formatWithSiPrefix(n, unit, decimals)
+      .formattedShort.trim();
   }
 }

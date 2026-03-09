@@ -1,4 +1,10 @@
-import { Injectable, inject, PLATFORM_ID, signal, computed } from '@angular/core';
+import {
+  Injectable,
+  inject,
+  PLATFORM_ID,
+  signal,
+  computed,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Signal } from '@angular/core';
 
@@ -19,7 +25,10 @@ export class PageGuideService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly signals = new Map<string, ReturnType<typeof signal<boolean>>>();
+  private readonly signals = new Map<
+    string,
+    ReturnType<typeof signal<boolean>>
+  >();
 
   public readonly anyDismissed = computed(() =>
     PAGE_GUIDE_KEYS.some((key) => this.getSignal(key)()),

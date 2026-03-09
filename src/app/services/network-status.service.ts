@@ -49,8 +49,7 @@ export class NetworkStatusService {
     const updated = this._lastUpdated();
     if (updated == null) return false;
     return (
-      this._now() - updated.getTime() >
-      NetworkStatusService.STALE_THRESHOLD_MS
+      this._now() - updated.getTime() > NetworkStatusService.STALE_THRESHOLD_MS
     );
   });
 

@@ -9,21 +9,19 @@
         </h2>
         @if (news().length > 0) {
           @for (newsItem of news(); track newsItem.title) {
-            <div class="mb-3">
-              <h3 class="mb-2 text-xl text-primary">
-                <span class="text-secondary dark:text-gray-200">{{
-                  newsItem.datePublished
-                }}</span>
+            <div class="news-home-item">
+              <h3 class="news-home-heading">
+                <span class="news-home-date">{{ newsItem.datePublished }}</span>
                 - <span [innerHTML]="newsItem.title"></span>
               </h3>
               @if (newsItem.excerpt) {
                 <p
-                  class="mb-2 font-light lg:text-lg"
+                  class="news-home-text"
                   [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"
                 ></p>
               }
               @if (newsItem.moreLink) {
-                <p class="mb-2 font-light lg:text-lg">
+                <p class="news-home-text">
                   <a
                     [href]="newsItem.moreLink"
                     target="_blank"
@@ -36,19 +34,17 @@
           }
         } @else {
           <!-- Loading skeleton for news -->
-          <div class="animate-pulse space-y-4">
+          <div class="skeleton-pulse space-y-4">
             @for (i of [1, 2, 3]; track i) {
               <div class="mb-4">
-                <div
-                  class="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"
-                ></div>
+                <div class="news-skeleton-bar news-skeleton-bar--title"></div>
                 <div class="space-y-2">
-                  <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div class="news-skeleton-bar news-skeleton-bar--line"></div>
                   <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"
+                    class="news-skeleton-bar news-skeleton-bar--line-short"
                   ></div>
                   <div
-                    class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"
+                    class="news-skeleton-bar news-skeleton-bar--line-shorter"
                   ></div>
                 </div>
               </div>

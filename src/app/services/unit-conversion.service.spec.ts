@@ -512,7 +512,9 @@ describe('UnitConversionService', () => {
 
     it('should parse a string with trailing text', () => {
       // parseFloat handles "1.5 megapixelsteps per second" → 1.5
-      expect(service.parseWorkerPerformance('1.5 megapixelsteps per second')).toBe(1.5);
+      expect(
+        service.parseWorkerPerformance('1.5 megapixelsteps per second'),
+      ).toBe(1.5);
     });
 
     it('should return 0 for an empty string', () => {
@@ -548,7 +550,9 @@ describe('UnitConversionService', () => {
     it('should return null for zero performance', () => {
       expect(service.formatAggregateWorkerPerformance(0, 'image')).toBeNull();
       expect(service.formatAggregateWorkerPerformance(0, 'text')).toBeNull();
-      expect(service.formatAggregateWorkerPerformance(0, 'interrogation')).toBeNull();
+      expect(
+        service.formatAggregateWorkerPerformance(0, 'interrogation'),
+      ).toBeNull();
     });
 
     it('should format image aggregate as mps/s', () => {
@@ -582,7 +586,10 @@ describe('UnitConversionService', () => {
     });
 
     it('should format interrogation aggregate as seconds/form', () => {
-      const result = service.formatAggregateWorkerPerformance(3.75, 'interrogation')!;
+      const result = service.formatAggregateWorkerPerformance(
+        3.75,
+        'interrogation',
+      )!;
       expect(result).not.toBeNull();
       expect(result.primary.value).toBe(3.75);
       expect(result.primary.unit).toBe('seconds/form');
@@ -592,7 +599,10 @@ describe('UnitConversionService', () => {
     // Verify aggregate uses the same formatting as individual workers
     it('should produce identical result to formatWorkerPerformanceImage for image type', () => {
       const totalMps = 15.7;
-      const aggregate = service.formatAggregateWorkerPerformance(totalMps, 'image')!;
+      const aggregate = service.formatAggregateWorkerPerformance(
+        totalMps,
+        'image',
+      )!;
       const direct = service.formatWorkerPerformanceImage(totalMps);
 
       expect(aggregate.primary.value).toBe(direct.primary.value);
@@ -604,7 +614,10 @@ describe('UnitConversionService', () => {
 
     it('should produce identical result to formatWorkerPerformanceText for text type', () => {
       const totalTokens = 850;
-      const aggregate = service.formatAggregateWorkerPerformance(totalTokens, 'text')!;
+      const aggregate = service.formatAggregateWorkerPerformance(
+        totalTokens,
+        'text',
+      )!;
       const direct = service.formatWorkerPerformanceText(totalTokens);
 
       expect(aggregate.primary.value).toBe(direct.primary.value);
@@ -626,8 +639,12 @@ describe('UnitConversionService', () => {
       const totalMpsPerSecond = 25;
       const apiMpsPerMinute = totalMpsPerSecond * 60;
 
-      const homepageResult = service.formatImagePerformanceRate(apiMpsPerMinute);
-      const workerAggregate = service.formatAggregateWorkerPerformance(totalMpsPerSecond, 'image')!;
+      const homepageResult =
+        service.formatImagePerformanceRate(apiMpsPerMinute);
+      const workerAggregate = service.formatAggregateWorkerPerformance(
+        totalMpsPerSecond,
+        'image',
+      )!;
 
       // Homepage technical value should be mps/sec
       expect(homepageResult.technical.value).toBeCloseTo(totalMpsPerSecond, 5);
@@ -638,7 +655,10 @@ describe('UnitConversionService', () => {
       // Both should yield the same standard images/sec
       const expectedStdImgPerSec = totalMpsPerSecond / 20;
       expect(homepageResult.primary.value).toBeCloseTo(expectedStdImgPerSec, 5);
-      expect(workerAggregate.technical.value).toBeCloseTo(expectedStdImgPerSec, 5);
+      expect(workerAggregate.technical.value).toBeCloseTo(
+        expectedStdImgPerSec,
+        5,
+      );
     });
 
     it('should produce consistent tokens/s between homepage and worker aggregate', () => {
@@ -648,8 +668,12 @@ describe('UnitConversionService', () => {
       const totalTokensPerSecond = 5000;
       const apiTokensPerMinute = totalTokensPerSecond * 60;
 
-      const homepageResult = service.formatTextPerformanceRate(apiTokensPerMinute);
-      const workerAggregate = service.formatAggregateWorkerPerformance(totalTokensPerSecond, 'text')!;
+      const homepageResult =
+        service.formatTextPerformanceRate(apiTokensPerMinute);
+      const workerAggregate = service.formatAggregateWorkerPerformance(
+        totalTokensPerSecond,
+        'text',
+      )!;
 
       // Both raw values should trace back to tokens/sec (homepage stores tokens/min as raw)
       expect(homepageResult.rawValue / 60).toBeCloseTo(totalTokensPerSecond, 5);
@@ -658,7 +682,10 @@ describe('UnitConversionService', () => {
       // Both should yield the same pages/sec
       const expectedPagesPerSec = (totalTokensPerSecond * 0.75) / 500;
       expect(homepageResult.primary.value).toBeCloseTo(expectedPagesPerSec, 3);
-      expect(workerAggregate.technical.value).toBeCloseTo(expectedPagesPerSec, 3);
+      expect(workerAggregate.technical.value).toBeCloseTo(
+        expectedPagesPerSec,
+        3,
+      );
     });
 
     it('should use consistent standard image conversion factor (÷ 20) everywhere', () => {

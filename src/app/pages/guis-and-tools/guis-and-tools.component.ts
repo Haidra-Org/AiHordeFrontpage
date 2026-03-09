@@ -5,7 +5,6 @@ import {
   effect,
   ElementRef,
   inject,
-  NgZone,
   OnInit,
   AfterViewInit,
   OnDestroy,
@@ -85,10 +84,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly enumDisplayService = inject(EnumDisplayService);
   private readonly stickyRegistry = inject(StickyRegistryService);
 
-  private readonly zone = inject(NgZone);
-
   private sectionObserver: IntersectionObserver | null = null;
-  private filterBarResizeObserver: ResizeObserver | null = null;
 
   /** Tracks whether the user manually scrolled the pills container. */
   private userOverriddenAt = 0;
@@ -467,7 +463,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       this.scrollSpyReady = true;
       this.rebuildScrollSpy(this.stickyRegistry.totalOffset());
-      this.setupFilterBarResizeObserver();
     }
   }
 
@@ -475,26 +470,26 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.sectionObserver) {
       this.sectionObserver.disconnect();
     }
-    if (this.filterBarResizeObserver) {
-      this.filterBarResizeObserver.disconnect();
-    }
   }
 
   private rebuildScrollSpy(offset: number): void {
     this.sectionObserver?.disconnect();
 
-    this.sectionObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const sectionId = entry.target.id.replace('section-', '');
-          this.activeSection.set(sectionId);
-        }
-      });
-    }, {
-      root: null,
-      rootMargin: `${-offset}px 0px -60% 0px`,
-      threshold: 0,
-    });
+    this.sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const sectionId = entry.target.id.replace('section-', '');
+            this.activeSection.set(sectionId);
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: `${-offset}px 0px -60% 0px`,
+        threshold: 0,
+      },
+    );
 
     this.sections.forEach((section) => {
       const element = document.getElementById(`section-${section.id}`);
@@ -661,27 +656,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.translocoService.translate('guis_and_tools.go_to', {
       name: item.name,
     });
-  }
-
-  /** Keep the filter bar height CSS variable in sync. */
-  private setupFilterBarResizeObserver(): void {
-    const filterBar = document.querySelector('.tools-filter-bar');
-    if (!filterBar) return;
-
-    const update = () => {
-      const height = filterBar.getBoundingClientRect().height;
-      document.documentElement.style.setProperty(
-        '--filter-bar-height',
-        `${height}px`,
-      );
-    };
-
-    update();
-
-    this.filterBarResizeObserver = new ResizeObserver(() => {
-      this.zone.runOutsideAngular(() => update());
-    });
-    this.filterBarResizeObserver.observe(filterBar);
   }
 
   /** Programmatically center the active pill unless the user recently swiped. */

@@ -71,7 +71,9 @@ import {
               type="button"
               role="tab"
               class="glossary-tab"
-              [class.glossary-tab-active]="glossary.activeTab() === 'dictionary'"
+              [class.glossary-tab-active]="
+                glossary.activeTab() === 'dictionary'
+              "
               [attr.aria-selected]="glossary.activeTab() === 'dictionary'"
               aria-controls="glossary-panel-dictionary"
               (click)="switchTab('dictionary')"
@@ -83,7 +85,9 @@ import {
                 type="button"
                 role="tab"
                 class="glossary-tab"
-                [class.glossary-tab-active]="glossary.activeTab() === 'this-page'"
+                [class.glossary-tab-active]="
+                  glossary.activeTab() === 'this-page'
+                "
                 [attr.aria-selected]="glossary.activeTab() === 'this-page'"
                 aria-controls="glossary-panel-this-page"
                 (click)="switchTab('this-page')"
@@ -122,7 +126,9 @@ import {
                   <button
                     type="button"
                     class="glossary-category-btn"
-                    [class.glossary-category-active]="activeCategory() === cat.id"
+                    [class.glossary-category-active]="
+                      activeCategory() === cat.id
+                    "
                     (click)="setCategory(cat.id)"
                   >
                     {{ cat.labelKey | transloco }}
@@ -195,7 +201,10 @@ import {
             <div id="glossary-panel-this-page" role="tabpanel">
               <div class="modal-scroll glossary-terms-list">
                 <!-- Page-specific entries -->
-                @for (entry of glossary.pageContext()!.entries; track entry.id) {
+                @for (
+                  entry of glossary.pageContext()!.entries;
+                  track entry.id
+                ) {
                   <div class="glossary-page-entry">
                     @if (entry.iconSvg) {
                       <span
@@ -318,7 +327,10 @@ export class GlossaryModalComponent {
 
     // Focus search input when modal opens on dictionary tab
     effect(() => {
-      if (this.glossary.isOpen() && this.glossary.activeTab() === 'dictionary') {
+      if (
+        this.glossary.isOpen() &&
+        this.glossary.activeTab() === 'dictionary'
+      ) {
         setTimeout(() => {
           this.searchInput()?.nativeElement.focus();
         }, 100);

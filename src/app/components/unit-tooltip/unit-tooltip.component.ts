@@ -181,7 +181,8 @@ export class UnitTooltipComponent implements OnDestroy {
    */
   public readonly position = input<TooltipPosition>('auto');
 
-  readonly tooltipContent = viewChild<ElementRef<HTMLElement>>('tooltipContent');
+  readonly tooltipContent =
+    viewChild<ElementRef<HTMLElement>>('tooltipContent');
 
   /** Whether the tooltip is currently visible */
   private readonly isVisible = signal(false);
@@ -275,13 +276,18 @@ export class UnitTooltipComponent implements OnDestroy {
     if (el && 'showPopover' in el) {
       try {
         el.showPopover();
-      } catch { /* already open */ }
+      } catch {
+        /* already open */
+      }
     }
   }
 
   private schedulePopoverClose(): void {
     this.clearPopoverTimer();
-    this.popoverTimer = setTimeout(() => this.closePopover(), POPOVER_CLOSE_DELAY_MS);
+    this.popoverTimer = setTimeout(
+      () => this.closePopover(),
+      POPOVER_CLOSE_DELAY_MS,
+    );
   }
 
   private closePopover(): void {
@@ -290,7 +296,9 @@ export class UnitTooltipComponent implements OnDestroy {
     if (el && 'hidePopover' in el) {
       try {
         el.hidePopover();
-      } catch { /* already closed */ }
+      } catch {
+        /* already closed */
+      }
     }
   }
 

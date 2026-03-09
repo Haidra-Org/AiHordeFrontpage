@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, finalize } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -49,6 +50,7 @@ interface ModelSuggestion {
     PageIntroComponent,
     InfoTooltipComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',

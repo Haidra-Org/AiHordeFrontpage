@@ -2,7 +2,7 @@
   <!-- ═══════════════════════════════════════════════════════
        SIDEBAR variant — desktop workers page
        ═══════════════════════════════════════════════════════ -->
-  @case ('sidebar') {
+  @case ("sidebar") {
     @if (ns.performance(); as s) {
       <div class="network-status-panel">
         <h3 class="network-status-title">
@@ -221,7 +221,7 @@
   <!-- ═══════════════════════════════════════════════════════
        COMPACT variant — mobile workers page
        ═══════════════════════════════════════════════════════ -->
-  @case ('compact') {
+  @case ("compact") {
     @if (ns.performance(); as s) {
       <div class="network-status-panel network-status-panel--compact">
         <h3 class="network-status-title">
@@ -413,10 +413,12 @@
   <!-- ═══════════════════════════════════════════════════════
        FOOTER variant — subtle row in the site footer
        ═══════════════════════════════════════════════════════ -->
-  @case ('footer') {
+  @case ("footer") {
     @if (ns.performance(); as s) {
       <div class="network-status-footer" aria-label="Network status">
-        <span class="network-status-footer-label">{{ "network_status.footer_label" | transloco }}</span>
+        <span class="network-status-footer-label">{{
+          "network_status.footer_label" | transloco
+        }}</span>
 
         <div class="network-status-footer-domains">
           <!-- Image -->
@@ -425,13 +427,25 @@
             class="network-status-footer-segment"
           >
             @if (ns.imageNeedsHelp()) {
-              <span class="network-status-needs-help-dot network-status-needs-help--purple" aria-hidden="true"></span>
+              <span
+                class="network-status-needs-help-dot network-status-needs-help--purple"
+                aria-hidden="true"
+              ></span>
             }
-            <span class="network-status-footer-domain-name">{{ "network_status.image_short" | transloco }}</span>
-            <span class="network-status-footer-counts">{{ fmtCount(s.worker_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_requests) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+            <span class="network-status-footer-domain-name">{{
+              "network_status.image_short" | transloco
+            }}</span>
+            <span class="network-status-footer-counts"
+              >{{ fmtCount(s.worker_count)
+              }}{{ "network_status.workers_abbr" | transloco }} /
+              {{ fmtCount(s.queued_requests)
+              }}{{ "network_status.jobs_abbr" | transloco }}</span
+            >
           </a>
 
-          <span class="network-status-footer-sep" aria-hidden="true">&middot;</span>
+          <span class="network-status-footer-sep" aria-hidden="true"
+            >&middot;</span
+          >
 
           <!-- Text -->
           <a
@@ -439,13 +453,25 @@
             class="network-status-footer-segment"
           >
             @if (ns.textNeedsHelp()) {
-              <span class="network-status-needs-help-dot network-status-needs-help--blue" aria-hidden="true"></span>
+              <span
+                class="network-status-needs-help-dot network-status-needs-help--blue"
+                aria-hidden="true"
+              ></span>
             }
-            <span class="network-status-footer-domain-name">{{ "network_status.text_short" | transloco }}</span>
-            <span class="network-status-footer-counts">{{ fmtCount(s.text_worker_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_text_requests) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+            <span class="network-status-footer-domain-name">{{
+              "network_status.text_short" | transloco
+            }}</span>
+            <span class="network-status-footer-counts"
+              >{{ fmtCount(s.text_worker_count)
+              }}{{ "network_status.workers_abbr" | transloco }} /
+              {{ fmtCount(s.queued_text_requests)
+              }}{{ "network_status.jobs_abbr" | transloco }}</span
+            >
           </a>
 
-          <span class="network-status-footer-sep" aria-hidden="true">&middot;</span>
+          <span class="network-status-footer-sep" aria-hidden="true"
+            >&middot;</span
+          >
 
           <!-- Alchemy -->
           <a
@@ -453,10 +479,20 @@
             class="network-status-footer-segment"
           >
             @if (ns.alchemyNeedsHelp()) {
-              <span class="network-status-needs-help-dot network-status-needs-help--green" aria-hidden="true"></span>
+              <span
+                class="network-status-needs-help-dot network-status-needs-help--green"
+                aria-hidden="true"
+              ></span>
             }
-            <span class="network-status-footer-domain-name">{{ "network_status.alchemy_short" | transloco }}</span>
-            <span class="network-status-footer-counts">{{ fmtCount(s.interrogator_count) }}{{ "network_status.workers_abbr" | transloco }} / {{ fmtCount(s.queued_forms) }}{{ "network_status.jobs_abbr" | transloco }}</span>
+            <span class="network-status-footer-domain-name">{{
+              "network_status.alchemy_short" | transloco
+            }}</span>
+            <span class="network-status-footer-counts"
+              >{{ fmtCount(s.interrogator_count)
+              }}{{ "network_status.workers_abbr" | transloco }} /
+              {{ fmtCount(s.queued_forms)
+              }}{{ "network_status.jobs_abbr" | transloco }}</span
+            >
           </a>
         </div>
       </div>

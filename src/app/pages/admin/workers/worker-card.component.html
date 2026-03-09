@@ -64,7 +64,10 @@
             </p>
           }
           <div class="modal-actions">
-            <button (click)="closeDialog()" class="worker-btn-models">
+            <button
+              (click)="closeDialog()"
+              class="worker-glass-btn worker-glass-btn--blue"
+            >
               {{ "admin.workers.dialog.close" | transloco }}
             </button>
           </div>
@@ -97,13 +100,13 @@
             </div>
           }
           <div class="modal-actions">
-            <button (click)="closeDialog()" class="worker-btn">
+            <button (click)="closeDialog()" class="worker-glass-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
             <button
               (click)="confirmMaintenance()"
               [disabled]="isUpdating()"
-              class="worker-btn-maintenance"
+              class="worker-glass-btn worker-glass-btn--amber"
             >
               {{ "admin.workers.dialog.confirm" | transloco }}
             </button>
@@ -124,13 +127,13 @@
             }
           </h3>
           <div class="modal-actions">
-            <button (click)="closeDialog()" class="worker-btn">
+            <button (click)="closeDialog()" class="worker-glass-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
             <button
               (click)="confirmPause()"
               [disabled]="isUpdating()"
-              class="worker-btn-pause"
+              class="worker-glass-btn worker-glass-btn--red"
             >
               {{ "admin.workers.dialog.confirm" | transloco }}
             </button>
@@ -160,13 +163,13 @@
             }
           </div>
           <div class="modal-actions">
-            <button (click)="closeDialog()" class="worker-btn">
+            <button (click)="closeDialog()" class="worker-glass-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
             <button
               (click)="confirmDelete()"
               [disabled]="isUpdating()"
-              class="btn-danger"
+              class="worker-glass-btn worker-glass-btn--danger"
             >
               {{ "admin.workers.dialog.delete_confirm" | transloco }}
             </button>
@@ -201,13 +204,13 @@
             </p>
           </div>
           <div class="modal-actions">
-            <button (click)="closeDialog()" class="worker-btn">
+            <button (click)="closeDialog()" class="worker-glass-btn">
               {{ "admin.workers.dialog.cancel" | transloco }}
             </button>
             <button
               (click)="confirmTeamChange()"
               [disabled]="isUpdating()"
-              class="btn-primary"
+              class="worker-glass-btn worker-glass-btn--blue"
             >
               {{ "admin.workers.dialog.confirm" | transloco }}
             </button>
@@ -221,136 +224,191 @@
 <!-- Card -->
 <div [class]="getCardBackground()">
   <!-- Header -->
-  <div class="p-4">
-    <div class="flex items-start justify-between">
-      <div class="flex items-center gap-3">
-        <!-- Status Icon -->
-        @if (!hasIssue()) {
-          <div
-            class="worker-status-icon worker-status-icon-success"
-            [appTouchTooltip]="'admin.workers.card.online'"
-            [appTouchTooltipDesc]="iconDesc('online')"
-          >
-            <app-worker-status-icon type="online" />
-          </div>
-        } @else {
-          <div
-            class="worker-status-icon worker-status-icon-error"
-            [appTouchTooltip]="'admin.workers.card.issue'"
-            [appTouchTooltipDesc]="iconDesc('issue')"
-          >
-            <app-worker-status-icon type="issue" />
-          </div>
-        }
+  <div
+    class="worker-card-body"
+    [class.worker-card-body--sticky-mobile]="pinHeaderOnMobile()"
+  >
+    <div class="worker-card-header">
+      <!-- Row 1: status icon + name + trusted icon -->
+      <div class="worker-card-name-row">
+        <div
+          class="worker-card-status-icon-wrap"
+          [appTouchTooltip]="getStatusTooltipKey()"
+          [appTouchTooltipDesc]="getStatusDescKey()"
+        >
+          <app-worker-status-icon
+            [type]="getStatusType()"
+            sizeClass="w-6 h-6"
+          />
+          
+        </div>
 
-        <div class="min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <h3 class="heading-item truncate" [title]="worker().name">
-              {{ truncateName(worker().name) }}
-            </h3>
-            @switch (worker().type) {
-              @case ("image") {
-                <span class="badge-base badge-info">{{
-                  "admin.workers.type.image" | transloco
-                }}</span>
-              }
-              @case ("text") {
-                <span class="badge-base badge-success">{{
-                  "admin.workers.type.text" | transloco
-                }}</span>
-              }
-              @case ("interrogation") {
-                <span class="badge-base badge-purple">{{
-                  "admin.workers.type.interrogation" | transloco
-                }}</span>
-              }
-            }
-            @if (highlighted()) {
-              <button
-                type="button"
-                class="badge-base badge-warning badge-dismissible"
-                (click)="onClearHighlight(); $event.stopPropagation()"
-                [attr.aria-label]="'details.common.clear_highlight' | transloco"
-              >
-                {{ "details.common.highlighted" | transloco }}
-                <span aria-hidden="true">×</span>
-              </button>
-            }
-          </div>
-          <p class="text-xs text-secondary truncate">{{ worker().id }}</p>
+        <div class="worker-card-name-block">
+            
+          <h3 class="heading-item truncate" [title]="worker().name">
+            {{ truncateName(worker().name) }}
+            
+          </h3>
+          <p class="worker-card-id">{{ worker().id }}</p>
         </div>
       </div>
 
-      <!-- Status Badges -->
-      <div class="flex items-center gap-1 shrink-0">
-        @if (isLowSpeed()) {
-          <div
-            class="p-1"
-            [appTouchTooltip]="'admin.workers.card.low_speed_warning'"
-            [appTouchTooltipDesc]="iconDesc('low_speed')"
+      <!-- Trusted icon + highlight badge (right-aligned) -->
+      <div class="worker-card-badge-row">
+        @if (highlighted()) {
+          <button
+            type="button"
+            class="badge-base badge-warning badge-dismissible"
+            (click)="onClearHighlight(); $event.stopPropagation()"
+            [attr.aria-label]="'details.common.clear_highlight' | transloco"
           >
-            <app-worker-status-icon type="low_speed" />
-          </div>
-        }
-        @if (isHighSpeed()) {
-          <div
-            class="p-1"
-            [appTouchTooltip]="'admin.workers.card.high_speed_warning'"
-            [appTouchTooltipDesc]="iconDesc('high_speed')"
-          >
-            <app-worker-status-icon type="high_speed" />
-          </div>
-        }
-        @if (worker().paused) {
-          <div
-            class="p-1"
-            [appTouchTooltip]="'admin.workers.card.paused'"
-            [appTouchTooltipDesc]="iconDesc('paused')"
-          >
-            <app-worker-status-icon type="paused" />
-          </div>
-        }
-        @if (worker().maintenance_mode) {
-          <div
-            class="p-1"
-            [appTouchTooltip]="'admin.workers.card.maintenance'"
-            [appTouchTooltipDesc]="iconDesc('maintenance')"
-          >
-            <app-worker-status-icon type="maintenance" />
-          </div>
-        }
-        @if (worker().flagged) {
-          <div
-            class="p-1"
-            [appTouchTooltip]="'admin.workers.card.flagged'"
-            [appTouchTooltipDesc]="iconDesc('flagged')"
-          >
-            <app-worker-status-icon type="flagged" />
-          </div>
+            {{ "details.common.highlighted" | transloco }}
+            <span aria-hidden="true">×</span>
+          </button>
         }
         @if (worker().trusted) {
           <div
-            class="p-1"
+            class="worker-card-icon-pad"
             [appTouchTooltip]="'admin.workers.card.trusted'"
             [appTouchTooltipDesc]="iconDesc('trusted')"
           >
             <app-worker-status-icon type="trusted" />
           </div>
+        } @else {
+          <div
+            class="worker-card-icon-pad worker-status-icon-muted"
+            aria-hidden="true"
+          >
+            <app-worker-status-icon type="trusted" />
+          </div>
         }
+            <!-- Worker type indicator -->
+      <app-worker-status-icon
+        [type]="getWorkerTypeIcon()"
+        sizeClass="w-4 h-4"
+      />
+
       </div>
     </div>
+
+  </div>
+
+  <!-- Status indicator bar (outside sticky header to minimize its height) -->
+  <div class="worker-card-status-bar">
+    @if (isLowSpeed()) {
+      <div
+        class="worker-card-icon-pad"
+        [appTouchTooltip]="'admin.workers.card.low_speed_warning'"
+        [appTouchTooltipDesc]="iconDesc('low_speed')"
+      >
+        <app-worker-status-icon type="low_speed" />
+      </div>
+    } @else {
+      <div
+        class="worker-card-icon-pad worker-status-icon-muted"
+        aria-hidden="true"
+      >
+        <app-worker-status-icon type="low_speed" />
+      </div>
+    }
+    @if (isHighSpeed()) {
+      <div
+        class="worker-card-icon-pad"
+        [appTouchTooltip]="'admin.workers.card.high_speed_warning'"
+        [appTouchTooltipDesc]="iconDesc('high_speed')"
+      >
+        <app-worker-status-icon type="high_speed" />
+      </div>
+    } @else {
+      <div
+        class="worker-card-icon-pad worker-status-icon-muted"
+        aria-hidden="true"
+      >
+        <app-worker-status-icon type="high_speed" />
+      </div>
+    }
+    @if (worker().maintenance_mode) {
+      <div
+        class="worker-card-icon-pad"
+        [appTouchTooltip]="'admin.workers.card.maintenance'"
+        [appTouchTooltipDesc]="iconDesc('maintenance')"
+      >
+        <app-worker-status-icon type="maintenance" />
+      </div>
+    } @else {
+      <div
+        class="worker-card-icon-pad worker-status-icon-muted"
+        aria-hidden="true"
+      >
+        <app-worker-status-icon type="maintenance" />
+      </div>
+    }
+    @if (isModerator()) {
+      @if (worker().paused) {
+        <div
+          class="worker-card-icon-pad"
+          [appTouchTooltip]="'admin.workers.card.paused'"
+          [appTouchTooltipDesc]="iconDesc('paused')"
+        >
+          <app-worker-status-icon type="paused" />
+        </div>
+      } @else {
+        <div
+          class="worker-card-icon-pad worker-status-icon-muted"
+          aria-hidden="true"
+        >
+          <app-worker-status-icon type="paused" />
+        </div>
+      }
+      @if (worker().flagged) {
+        <div
+          class="worker-card-icon-pad"
+          [appTouchTooltip]="'admin.workers.card.flagged'"
+          [appTouchTooltipDesc]="iconDesc('flagged')"
+        >
+          <app-worker-status-icon type="flagged" />
+        </div>
+      } @else {
+        <div
+          class="worker-card-icon-pad worker-status-icon-muted"
+          aria-hidden="true"
+        >
+          <app-worker-status-icon type="flagged" />
+        </div>
+      }
+    }
   </div>
 
   <!-- Content -->
-  <div class="p-4 text-sm worker-card-section">
+  <div class="worker-card-content worker-card-section">
     <!-- Basic Information -->
-    <div class="space-y-1 mb-3">
+    <div class="worker-card-info-group">
       <div class="worker-card-row">
-        @if (hasOwnerName() || getOwnerUserId()) {
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.owner" | transloco }}:</span
-          >
+        <span class="worker-card-label"
+          >{{ "admin.workers.card.type" | transloco }}:</span>
+        @switch (worker().type) {
+          @case ("image") {
+            <span class="worker-type-label worker-type-label--image">{{
+              "admin.workers.type.image" | transloco
+            }}</span>
+          }
+          @case ("text") {
+            <span class="worker-type-label worker-type-label--text">{{
+              "admin.workers.type.text" | transloco
+            }}</span>
+          }
+          @case ("interrogation") {
+            <span class="worker-type-label worker-type-label--interrogation">{{
+              "admin.workers.type.interrogation" | transloco
+            }}</span>
+          }
         }
+      </div>
+
+      <div class="worker-card-row">
+        <span class="worker-card-label"
+          >{{ "admin.workers.card.owner" | transloco }}:</span
+        >
         @if (getOwnerUserId() && isModerator()) {
           <a
             [routerLink]="['/admin/users', getOwnerUserId()]"
@@ -369,30 +427,36 @@
           <span class="worker-card-value" [title]="worker().owner ?? ''">{{
             getOwnerDisplayName()
           }}</span>
+        } @else {
+          <span class="worker-card-value worker-card-value-muted">{{
+            "admin.common.none" | transloco
+          }}</span>
         }
       </div>
-      @if (worker().team?.name || worker().team?.id) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.team" | transloco }}:</span
+      <div class="worker-card-row">
+        <span class="worker-card-label"
+          >{{ "admin.workers.card.team" | transloco }}:</span
+        >
+        @if (worker().team?.id) {
+          <a
+            [routerLink]="['/details/teams', worker().team!.id]"
+            class="worker-link truncate"
+            [title]="worker().team?.name ?? worker().team?.id ?? ''"
+            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a
           >
-          @if (worker().team?.id) {
-            <a
-              [routerLink]="['/details/teams', worker().team!.id]"
-              class="worker-link truncate"
-              [title]="worker().team?.name ?? worker().team?.id ?? ''"
-              >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a
-            >
-          } @else {
-            <span
-              class="worker-card-value truncate"
-              [title]="worker().team?.name ?? worker().team?.id ?? ''"
-              >{{ worker().team?.name ?? worker().team?.id ?? "" }}</span
-            >
-          }
-        </div>
-      }
-      <div class="flex flex-col">
+        } @else if (worker().team?.name) {
+          <span
+            class="worker-card-value truncate"
+            [title]="worker().team?.name ?? ''"
+            >{{ worker().team?.name ?? "" }}</span
+          >
+        } @else {
+          <span class="worker-card-value worker-card-value-muted">{{
+            "admin.common.none" | transloco
+          }}</span>
+        }
+      </div>
+      <div class="worker-card-col">
         <span class="worker-card-label"
           >{{ "admin.workers.card.bridge_agent" | transloco }}:</span
         >
@@ -407,39 +471,58 @@
         }
       </div>
       @if (getParsedBridgeAgent(); as parsed) {
-        <div class="flex flex-col">
+        <div class="worker-card-col">
           <span class="worker-card-label"
             >{{ "admin.workers.card.software_contact" | transloco }}:</span
           >
-          <span class="worker-card-value break-all">{{ parsed.contact }}</span>
+          @if (parsed.contact) {
+            <span
+              class="worker-card-value worker-card-contact"
+              [title]="parsed.contact"
+              >{{ parsed.contact }}</span
+            >
+          } @else {
+            <span
+              class="worker-card-value worker-card-value-muted worker-card-contact"
+              >{{ "admin.common.none" | transloco }}</span
+            >
+          }
         </div>
       }
-      @if (worker().contact && isModerator()) {
-        <div class="flex flex-col">
+      @if (isModerator()) {
+        <div class="worker-card-col">
           <span class="worker-card-label"
             >{{ "admin.workers.card.contact" | transloco }}:</span
           >
-          <span class="worker-card-value break-all">{{
-            worker().contact
-          }}</span>
+          @if (worker().contact) {
+            <span class="worker-card-value break-all">{{
+              worker().contact
+            }}</span>
+          } @else {
+            <span class="worker-card-value worker-card-value-muted">{{
+              "admin.common.none" | transloco
+            }}</span>
+          }
         </div>
-      }
-      @if (worker().ipaddr && isModerator()) {
         <div class="worker-card-row">
           <span class="worker-card-label"
             >{{ "admin.workers.card.ipaddr" | transloco }}:</span
           >
-          <span class="worker-card-value font-mono text-xs">{{
-            worker().ipaddr
-          }}</span>
+          @if (worker().ipaddr) {
+            <span class="worker-card-value worker-card-value-mono">{{
+              worker().ipaddr
+            }}</span>
+          } @else {
+            <span class="worker-card-value worker-card-value-muted">{{
+              "admin.common.none" | transloco
+            }}</span>
+          }
         </div>
       }
     </div>
 
     <!-- Performance Metrics -->
-    <div
-      class="space-y-1 mb-3 pt-3 border-t border-gray-200 dark:border-gray-700"
-    >
+    <div class="worker-card-info-group-bordered">
       <div class="worker-card-row">
         <span class="worker-card-label"
           >{{ "admin.workers.card.uptime" | transloco }}:</span
@@ -534,27 +617,16 @@
     </div>
 
     <!-- Capabilities & Features -->
-    <div class="space-y-1 pt-3 border-t border-gray-200 dark:border-gray-700">
+    <div class="worker-card-info-group-bordered-last">
       @if (worker().type !== "interrogation") {
-        @if ((worker().models?.length ?? 0) === 1) {
-          <div class="flex flex-col">
-            <span class="worker-card-label"
-              >{{ "admin.workers.card.model_loaded" | transloco }}:</span
-            >
-            <span class="worker-card-value break-words">{{
-              worker().models![0]
-            }}</span>
-          </div>
-        } @else {
-          <div class="worker-card-row">
-            <span class="worker-card-label"
-              >{{ "admin.workers.card.models_loaded" | transloco }}:</span
-            >
-            <span class="worker-card-value">{{
-              worker().models?.length ?? 0
-            }}</span>
-          </div>
-        }
+        <div class="worker-card-row">
+          <span class="worker-card-label"
+            >{{ "admin.workers.card.models_loaded" | transloco }}:</span
+          >
+          <span class="worker-card-value">{{
+            worker().models?.length ?? 0
+          }}</span>
+        </div>
       }
       @if (
         worker().type === "interrogation" && (worker().forms?.length ?? 0) > 0
@@ -581,30 +653,60 @@
     </div>
 
     <!-- Capabilities (Image workers) -->
-    @if (worker().type === "image" && hasImageCapabilities()) {
+    @if (worker().type === "image") {
       <div class="mt-3 pt-3 worker-card-section">
-        <span class="worker-card-label text-xs block mb-2"
+        <span class="worker-card-label worker-card-section-label"
           >{{ "admin.workers.card.capabilities" | transloco }}:</span
         >
-        <div class="flex flex-wrap gap-1">
-          @if (worker().img2img) {
-            <span class="worker-badge">img2img</span>
-          }
-          @if (worker().painting) {
-            <span class="worker-badge">inpainting</span>
-          }
-          @if (worker()["post-processing"]) {
-            <span class="worker-badge">post-processing</span>
-          }
-          @if (worker().lora) {
-            <span class="worker-badge">LoRA</span>
-          }
-          @if (worker().controlnet) {
-            <span class="worker-badge">ControlNet</span>
-          }
-          @if (worker().sdxl_controlnet) {
-            <span class="worker-badge">SDXL ControlNet</span>
-          }
+        <div class="worker-card-badges-wrap">
+          <span
+            [class]="
+              worker().img2img
+                ? 'worker-cap worker-cap--blue'
+                : 'worker-cap worker-cap--muted'
+            "
+            >img2img</span
+          >
+          <span
+            [class]="
+              worker().painting
+                ? 'worker-cap worker-cap--purple'
+                : 'worker-cap worker-cap--muted'
+            "
+            >inpainting</span
+          >
+          <span
+            [class]="
+              worker()['post-processing']
+                ? 'worker-cap worker-cap--teal'
+                : 'worker-cap worker-cap--muted'
+            "
+            >post-processing</span
+          >
+          <span
+            [class]="
+              worker().lora
+                ? 'worker-cap worker-cap--amber'
+                : 'worker-cap worker-cap--muted'
+            "
+            >LoRA</span
+          >
+          <span
+            [class]="
+              worker().controlnet
+                ? 'worker-cap worker-cap--rose'
+                : 'worker-cap worker-cap--muted'
+            "
+            >ControlNet</span
+          >
+          <span
+            [class]="
+              worker().sdxl_controlnet
+                ? 'worker-cap worker-cap--indigo'
+                : 'worker-cap worker-cap--muted'
+            "
+            >SDXL ControlNet</span
+          >
         </div>
       </div>
     }
@@ -612,12 +714,12 @@
     <!-- Messages (Moderator only) -->
     @if ((worker().messages?.length ?? 0) > 0 && isModerator()) {
       <div class="mt-3 pt-3 worker-card-section">
-        <span class="worker-card-label text-xs block mb-2"
+        <span class="worker-card-label worker-card-section-label"
           >{{ "admin.workers.card.messages" | transloco }} ({{
             worker().messages?.length ?? 0
           }}):</span
         >
-        <div class="space-y-2 max-h-24 overflow-y-auto">
+        <div class="worker-card-messages-scroll">
           @for (msg of worker().messages ?? []; track msg.message) {
             <div class="worker-message">
               <span class="worker-card-value">{{ msg.message }}</span>
@@ -632,11 +734,11 @@
   </div>
 
   <!-- Actions -->
-  <div class="px-4 py-3 worker-card-section flex gap-2 flex-wrap">
+  <div class="worker-card-actions worker-card-section">
     <!-- Show Models -->
     <button
       (click)="openModelsDialog()"
-      class="worker-btn-models text-sm"
+      class="worker-glass-btn worker-glass-btn--blue"
       [title]="'admin.workers.action.show_models' | transloco"
     >
       {{ "admin.workers.button.models" | transloco }}
@@ -646,7 +748,7 @@
       <!-- Change Team -->
       <button
         (click)="openTeamDialog()"
-        class="worker-btn text-sm"
+        class="worker-glass-btn"
         [title]="'admin.workers.action.change_team' | transloco"
       >
         {{ "admin.workers.button.team" | transloco }}
@@ -657,7 +759,7 @@
       <!-- Maintenance Toggle -->
       <button
         (click)="openMaintenanceDialog()"
-        class="worker-btn-maintenance text-sm"
+        class="worker-glass-btn worker-glass-btn--amber"
         [title]="'admin.workers.button.maintenance_tooltip' | transloco"
       >
         @if (worker().maintenance_mode) {
@@ -672,7 +774,7 @@
       <!-- Pause Toggle -->
       <button
         (click)="openPauseDialog()"
-        class="worker-btn-pause text-sm"
+        class="worker-glass-btn worker-glass-btn--red"
         [title]="
           worker().paused
             ? ('admin.workers.action.unset_paused' | transloco)
@@ -691,7 +793,7 @@
       <!-- Delete Worker -->
       <button
         (click)="openDeleteDialog()"
-        class="btn-danger text-sm"
+        class="worker-glass-btn worker-glass-btn--danger"
         [title]="'admin.workers.action.delete' | transloco"
       >
         {{ "admin.workers.button.delete" | transloco }}

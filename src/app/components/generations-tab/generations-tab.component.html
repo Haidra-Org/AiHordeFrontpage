@@ -1,23 +1,45 @@
 <!-- Purpose / Info Banner -->
 <div class="alert alert--info mb-4" role="note">
-  <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd" />
+  <svg
+    class="alert-icon"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+    aria-hidden="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
+      clip-rule="evenodd"
+    />
   </svg>
   <div class="alert-content">
     <p>{{ "profile.generations.purpose" | transloco }}</p>
     <p class="mt-2">
-      <a routerLink="/guis" class="link">{{ "profile.generations.purpose_link" | transloco }}</a>
+      <a routerLink="/guis" class="link">{{
+        "profile.generations.purpose_link" | transloco
+      }}</a>
     </p>
   </div>
 </div>
 
 <!-- Expiry Warning Banner -->
 <div class="alert alert--warning mb-6" role="alert">
-  <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+  <svg
+    class="alert-icon"
+    fill="currentColor"
+    viewBox="0 0 20 20"
+    aria-hidden="true"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+      clip-rule="evenodd"
+    />
   </svg>
   <div class="alert-content">
-    <p class="alert-title">{{ "profile.generations.warning_title" | transloco }}</p>
+    <p class="alert-title">
+      {{ "profile.generations.warning_title" | transloco }}
+    </p>
     <p>{{ "profile.generations.warning_body" | transloco }}</p>
   </div>
 </div>
@@ -43,7 +65,9 @@
       [checked]="userAutoRefresh()"
       (change)="toggleUserAutoRefresh()"
     />
-    <span class="checkbox-label">{{ "profile.generations.auto_refresh" | transloco }}</span>
+    <span class="checkbox-label">{{
+      "profile.generations.auto_refresh" | transloco
+    }}</span>
   </label>
 </div>
 
@@ -59,11 +83,21 @@
       <svg
         class="icon-sm transition-transform duration-200"
         [class.rotate-90]="requestorExpanded()"
-        fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
       >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="m8.25 4.5 7.5 7.5-7.5 7.5"
+        />
       </svg>
-      <h3 class="heading-card">{{ "profile.generations.requestor_title" | transloco }}</h3>
+      <h3 class="heading-card">
+        {{ "profile.generations.requestor_title" | transloco }}
+      </h3>
     </button>
 
     @if (requestorExpanded()) {
@@ -86,7 +120,9 @@
       <!-- Raw JSON mode -->
       <div class="form-stack mt-4">
         <div class="form-field">
-          <label class="form-label" for="gen-json">{{ "profile.generations.json_label" | transloco }}</label>
+          <label class="form-label" for="gen-json">{{
+            "profile.generations.json_label" | transloco
+          }}</label>
           <textarea
             id="gen-json"
             class="form-input form-input-wide font-mono text-sm"
@@ -96,7 +132,9 @@
             spellcheck="false"
           ></textarea>
           @if (jsonError()) {
-            <span class="form-status-error text-xs mt-1">{{ jsonError() }}</span>
+            <span class="form-status-error text-xs mt-1">{{
+              jsonError()
+            }}</span>
           }
         </div>
         <div class="flex items-center gap-4">
@@ -122,23 +160,33 @@
       </div>
     } @else {
       <!-- Form mode -->
-      <form [formGroup]="form" (ngSubmit)="submitGeneration()" class="form-stack mt-4">
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submitGeneration()"
+        class="form-stack mt-4"
+      >
         <!-- Prompt (full width) -->
         <div class="form-field">
-          <label class="form-label" for="gen-prompt">{{ "profile.generations.field.prompt" | transloco }}</label>
+          <label class="form-label" for="gen-prompt">{{
+            "profile.generations.field.prompt" | transloco
+          }}</label>
           <input
             id="gen-prompt"
             type="text"
             class="form-input form-input-wide"
             formControlName="prompt"
-            [placeholder]="'profile.generations.field.prompt_placeholder' | transloco"
+            [placeholder]="
+              'profile.generations.field.prompt_placeholder' | transloco
+            "
           />
         </div>
 
         <!-- Row: Model, Steps, CFG -->
         <div class="form-row">
           <div class="form-field-third">
-            <label class="form-label" for="gen-model">{{ "profile.generations.field.model" | transloco }}</label>
+            <label class="form-label" for="gen-model">{{
+              "profile.generations.field.model" | transloco
+            }}</label>
             <div class="autocomplete-wrapper">
               <div class="autocomplete-input-row">
                 <input
@@ -156,21 +204,32 @@
                   (mousedown)="$event.preventDefault()"
                   (click)="toggleModelDropdown()"
                   [attr.aria-expanded]="modelDropdownOpen()"
-                  [attr.aria-label]="'profile.generations.field.model_toggle' | transloco"
+                  [attr.aria-label]="
+                    'profile.generations.field.model_toggle' | transloco
+                  "
                 >
-                  <span class="autocomplete-chevron" [class.autocomplete-chevron--open]="modelDropdownOpen()">&#9662;</span>
+                  <span
+                    class="autocomplete-chevron"
+                    [class.autocomplete-chevron--open]="modelDropdownOpen()"
+                    >&#9662;</span
+                  >
                 </button>
               </div>
               @if (modelDropdownOpen()) {
                 <div
                   class="autocomplete-dropdown"
                   role="listbox"
-                  [attr.aria-label]="'profile.generations.field.model' | transloco"
+                  [attr.aria-label]="
+                    'profile.generations.field.model' | transloco
+                  "
                   (mousedown)="$event.preventDefault()"
                 >
                   @if (hiddenModelCount() > 0) {
                     <div class="autocomplete-hidden-notice">
-                      {{ "profile.generations.field.models_hidden" | transloco: { count: hiddenModelCount() } }}
+                      {{
+                        "profile.generations.field.models_hidden"
+                          | transloco: { count: hiddenModelCount() }
+                      }}
                     </div>
                   }
                   @for (m of filteredModels(); track m.name) {
@@ -179,18 +238,27 @@
                       role="option"
                       (click)="selectModel(m.name)"
                     >
-                      {{ m.name }} <span class="text-secondary">({{ m.count }} workers)</span>
+                      {{ m.name }}
+                      <span class="text-secondary"
+                        >({{ m.count }} workers)</span
+                      >
                     </div>
                   }
                   @if (filteredModels().length === 0) {
-                    <div class="autocomplete-empty">{{ "profile.generations.field.no_model_matches" | transloco }}</div>
+                    <div class="autocomplete-empty">
+                      {{
+                        "profile.generations.field.no_model_matches" | transloco
+                      }}
+                    </div>
                   }
                 </div>
               }
             </div>
           </div>
           <div class="form-field-third">
-            <label class="form-label" for="gen-steps">{{ "profile.generations.field.steps" | transloco }}</label>
+            <label class="form-label" for="gen-steps">{{
+              "profile.generations.field.steps" | transloco
+            }}</label>
             <input
               id="gen-steps"
               type="number"
@@ -201,7 +269,9 @@
             />
           </div>
           <div class="form-field-third">
-            <label class="form-label" for="gen-cfg">{{ "profile.generations.field.cfg_scale" | transloco }}</label>
+            <label class="form-label" for="gen-cfg">{{
+              "profile.generations.field.cfg_scale" | transloco
+            }}</label>
             <input
               id="gen-cfg"
               type="number"
@@ -217,7 +287,9 @@
         <!-- Row: Width, Height, Clip Skip -->
         <div class="form-row">
           <div class="form-field-third">
-            <label class="form-label" for="gen-width">{{ "profile.generations.field.width" | transloco }}</label>
+            <label class="form-label" for="gen-width">{{
+              "profile.generations.field.width" | transloco
+            }}</label>
             <input
               id="gen-width"
               type="number"
@@ -229,7 +301,9 @@
             />
           </div>
           <div class="form-field-third">
-            <label class="form-label" for="gen-height">{{ "profile.generations.field.height" | transloco }}</label>
+            <label class="form-label" for="gen-height">{{
+              "profile.generations.field.height" | transloco
+            }}</label>
             <input
               id="gen-height"
               type="number"
@@ -241,7 +315,9 @@
             />
           </div>
           <div class="form-field-third">
-            <label class="form-label" for="gen-clip-skip">{{ "profile.generations.field.clip_skip" | transloco }}</label>
+            <label class="form-label" for="gen-clip-skip">{{
+              "profile.generations.field.clip_skip" | transloco
+            }}</label>
             <input
               id="gen-clip-skip"
               type="number"
@@ -261,7 +337,9 @@
             class="checkbox-input"
             formControlName="nsfw"
           />
-          <label class="form-label mb-0" for="gen-nsfw">{{ "profile.generations.field.nsfw" | transloco }}</label>
+          <label class="form-label mb-0" for="gen-nsfw">{{
+            "profile.generations.field.nsfw" | transloco
+          }}</label>
         </div>
 
         <!-- Submit -->
@@ -295,35 +373,57 @@
   <h3 class="heading-card">
     {{ "profile.generations.image_section" | transloco }}
     @if (imageGenerations().length > 0) {
-      <span class="text-secondary text-sm">({{ imageGenerations().length }})</span>
+      <span class="text-secondary text-sm"
+        >({{ imageGenerations().length }})</span
+      >
     }
   </h3>
 
   @if (imageGenerations().length === 0) {
-    <p class="text-secondary text-sm">{{ "profile.generations.no_image" | transloco }}</p>
+    <p class="text-secondary text-sm">
+      {{ "profile.generations.no_image" | transloco }}
+    </p>
   } @else {
     <div class="flex flex-col gap-4">
       @for (gen of imageGenerations(); track gen.id) {
-        <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div
+          class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        >
           <div class="flex items-center justify-between gap-4 flex-wrap">
             <div class="flex flex-col gap-1 min-w-0">
-              <span class="text-xs font-mono text-secondary truncate">{{ gen.id }}</span>
+              <span class="text-xs font-mono text-secondary truncate">{{
+                gen.id
+              }}</span>
               @if (gen.done) {
-                <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                <span class="text-green-500 text-sm font-medium">{{
+                  "profile.generations.status.done" | transloco
+                }}</span>
               } @else if (gen.faulted) {
-                <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                <span class="text-red-400 text-sm font-medium">{{
+                  "profile.generations.status.faulted" | transloco
+                }}</span>
               } @else if (gen.notFound) {
-                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                <span class="text-orange-500 text-sm font-medium">{{
+                  "profile.generations.status.not_found" | transloco
+                }}</span>
               } @else if (gen.check) {
                 <span class="text-sm text-secondary">
                   {{ "profile.generations.status.processing" | transloco }}
                   &mdash;
-                  {{ "profile.generations.wait_time" | transloco: { time: formatWaitTime(gen.check.wait_time) } }}
+                  {{
+                    "profile.generations.wait_time"
+                      | transloco: { time: formatWaitTime(gen.check.wait_time) }
+                  }}
                   &middot;
-                  {{ "profile.generations.queue_position" | transloco: { position: gen.check.queue_position } }}
+                  {{
+                    "profile.generations.queue_position"
+                      | transloco: { position: gen.check.queue_position }
+                  }}
                 </span>
               } @else {
-                <span class="text-sm text-secondary">{{ "profile.generations.status.waiting" | transloco }}</span>
+                <span class="text-sm text-secondary">{{
+                  "profile.generations.status.waiting" | transloco
+                }}</span>
               }
             </div>
 
@@ -384,32 +484,76 @@
           @if (gen.notFound) {
             <div class="alert alert--warning alert--sm mt-3" role="alert">
               <div class="alert-content">
-                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <p class="text-sm">
+                  {{ "profile.generations.not_found_explanation" | transloco }}
+                </p>
               </div>
             </div>
           } @else if (gen.check) {
             @if (gen.check.is_possible === false) {
               <div class="alert alert--danger alert--sm mt-3" role="alert">
                 <div class="alert-content">
-                  <p class="text-sm font-medium">{{ "profile.generations.not_possible" | transloco }}</p>
+                  <p class="text-sm font-medium">
+                    {{ "profile.generations.not_possible" | transloco }}
+                  </p>
                 </div>
               </div>
             }
-            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-secondary">
-              <div>{{ "profile.generations.detail.finished" | transloco }}: <span class="font-medium text-primary">{{ gen.check.finished }}</span></div>
-              <div>{{ "profile.generations.detail.processing" | transloco }}: <span class="font-medium text-primary">{{ gen.check.processing }}</span></div>
-              <div>{{ "profile.generations.detail.waiting_count" | transloco }}: <span class="font-medium text-primary">{{ gen.check.waiting }}</span></div>
-              <div>{{ "profile.generations.detail.restarted" | transloco }}: <span class="font-medium text-primary">{{ gen.check.restarted }}</span></div>
-              <div>{{ "profile.generations.detail.kudos" | transloco }}: <span class="font-medium text-primary">{{ gen.check.kudos }}</span></div>
-              <div>{{ "profile.generations.detail.is_possible" | transloco }}: <span class="font-medium" [class.text-green-500]="gen.check.is_possible" [class.text-red-400]="!gen.check.is_possible">{{ gen.check.is_possible ? "Yes" : "No" }}</span></div>
+            <div
+              class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-secondary"
+            >
+              <div>
+                {{ "profile.generations.detail.finished" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.finished
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.processing" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.processing
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.waiting_count" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.waiting
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.restarted" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.restarted
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.kudos" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.kudos
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.is_possible" | transloco }}:
+                <span
+                  class="font-medium"
+                  [class.text-green-500]="gen.check.is_possible"
+                  [class.text-red-400]="!gen.check.is_possible"
+                  >{{ gen.check.is_possible ? "Yes" : "No" }}</span
+                >
+              </div>
             </div>
           }
 
           <!-- Sent request JSON -->
           @if (gen.sentRequest && isSentRequestExpanded(gen.id)) {
             <details class="mt-3" open>
-              <summary class="text-xs text-secondary cursor-pointer">{{ "profile.generations.sent_request_label" | transloco }}</summary>
-              <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto">{{ getSentRequestJson(gen) }}</pre>
+              <summary class="text-xs text-secondary cursor-pointer">
+                {{ "profile.generations.sent_request_label" | transloco }}
+              </summary>
+              <pre
+                class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto"
+                >{{ getSentRequestJson(gen) }}</pre
+              >
             </details>
           }
 
@@ -418,8 +562,12 @@
             <div class="mt-4 flex flex-col gap-4">
               @for (output of getGenerationOutputs(gen); track output.id) {
                 <div class="flex flex-col gap-2">
-                  @if (output.state === 'ok' && output.img) {
-                    <a [href]="output.img" target="_blank" rel="noopener noreferrer">
+                  @if (output.state === "ok" && output.img) {
+                    <a
+                      [href]="output.img"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <img
                         [src]="output.img"
                         alt="Generated image"
@@ -428,33 +576,69 @@
                       />
                     </a>
                   }
-                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs text-secondary">
-                    <div>{{ "profile.generations.output.model" | transloco }}: <span class="font-medium text-primary">{{ output.model }}</span></div>
-                    <div>{{ "profile.generations.output.worker" | transloco }}: <span class="font-medium text-primary">{{ output.worker_name }}</span></div>
-                    <div>{{ "profile.generations.output.seed" | transloco }}: <span class="font-mono font-medium text-primary">{{ output.seed }}</span></div>
-                    <div>{{ "profile.generations.output.state" | transloco }}: <span class="font-medium" [class.text-green-500]="output.state === 'ok'" [class.text-red-400]="output.state !== 'ok'">{{ output.state }}</span></div>
+                  <div
+                    class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs text-secondary"
+                  >
+                    <div>
+                      {{ "profile.generations.output.model" | transloco }}:
+                      <span class="font-medium text-primary">{{
+                        output.model
+                      }}</span>
+                    </div>
+                    <div>
+                      {{ "profile.generations.output.worker" | transloco }}:
+                      <span class="font-medium text-primary">{{
+                        output.worker_name
+                      }}</span>
+                    </div>
+                    <div>
+                      {{ "profile.generations.output.seed" | transloco }}:
+                      <span class="font-mono font-medium text-primary">{{
+                        output.seed
+                      }}</span>
+                    </div>
+                    <div>
+                      {{ "profile.generations.output.state" | transloco }}:
+                      <span
+                        class="font-medium"
+                        [class.text-green-500]="output.state === 'ok'"
+                        [class.text-red-400]="output.state !== 'ok'"
+                        >{{ output.state }}</span
+                      >
+                    </div>
                     @if (output.censored) {
-                      <div class="text-yellow-500 font-medium">{{ "profile.generations.output.censored" | transloco }}</div>
+                      <div class="text-yellow-500 font-medium">
+                        {{ "profile.generations.output.censored" | transloco }}
+                      </div>
                     }
                   </div>
 
                   <!-- Gen metadata (diagnostic info) -->
                   @if (output.gen_metadata && output.gen_metadata.length > 0) {
                     <div class="mt-2 flex flex-col gap-1">
-                      <span class="text-xs font-medium text-secondary">{{ "profile.generations.metadata_heading" | transloco }}</span>
+                      <span class="text-xs font-medium text-secondary">{{
+                        "profile.generations.metadata_heading" | transloco
+                      }}</span>
                       @for (meta of output.gen_metadata; track $index) {
-                        <div class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-secondary"
+                        <div
+                          class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-secondary"
                           [class.border-yellow-500]="isMetadataWarning(meta)"
                           [class.text-yellow-600]="isMetadataWarning(meta)"
                           [class.border-red-500]="isMetadataDanger(meta)"
                           [class.text-red-600]="isMetadataDanger(meta)"
                         >
-                          <span class="font-medium uppercase">{{ meta.type }}</span>
+                          <span class="font-medium uppercase">{{
+                            meta.type
+                          }}</span>
                           <span>&middot;</span>
                           <span>{{ getMetadataLabel(meta) }}</span>
                           @if (meta.ref) {
                             <span>&middot;</span>
-                            <span class="font-mono text-xs truncate max-w-[200px]" [title]="meta.ref">{{ meta.ref }}</span>
+                            <span
+                              class="font-mono text-xs truncate max-w-[200px]"
+                              [title]="meta.ref"
+                              >{{ meta.ref }}</span
+                            >
                           }
                         </div>
                       }
@@ -475,7 +659,10 @@
                   {{ "profile.generations.check_json_label" | transloco }}
                 }
               </summary>
-              <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto">{{ getResponseJson(gen) }}</pre>
+              <pre
+                class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto"
+                >{{ getResponseJson(gen) }}</pre
+              >
             </details>
           }
         </div>
@@ -489,33 +676,52 @@
   <h3 class="heading-card">
     {{ "profile.generations.text_section" | transloco }}
     @if (textGenerations().length > 0) {
-      <span class="text-secondary text-sm">({{ textGenerations().length }})</span>
+      <span class="text-secondary text-sm"
+        >({{ textGenerations().length }})</span
+      >
     }
   </h3>
 
   @if (textGenerations().length === 0) {
-    <p class="text-secondary text-sm">{{ "profile.generations.no_text" | transloco }}</p>
+    <p class="text-secondary text-sm">
+      {{ "profile.generations.no_text" | transloco }}
+    </p>
   } @else {
     <div class="flex flex-col gap-4">
       @for (gen of textGenerations(); track gen.id) {
-        <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div
+          class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        >
           <div class="flex items-center justify-between gap-4 flex-wrap">
             <div class="flex flex-col gap-1 min-w-0">
-              <span class="text-xs font-mono text-secondary truncate">{{ gen.id }}</span>
+              <span class="text-xs font-mono text-secondary truncate">{{
+                gen.id
+              }}</span>
               @if (gen.done) {
-                <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                <span class="text-green-500 text-sm font-medium">{{
+                  "profile.generations.status.done" | transloco
+                }}</span>
               } @else if (gen.faulted) {
-                <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                <span class="text-red-400 text-sm font-medium">{{
+                  "profile.generations.status.faulted" | transloco
+                }}</span>
               } @else if (gen.notFound) {
-                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                <span class="text-orange-500 text-sm font-medium">{{
+                  "profile.generations.status.not_found" | transloco
+                }}</span>
               } @else if (gen.check) {
                 <span class="text-sm text-secondary">
                   {{ "profile.generations.status.processing" | transloco }}
                   &mdash;
-                  {{ "profile.generations.wait_time" | transloco: { time: formatWaitTime(gen.check.wait_time) } }}
+                  {{
+                    "profile.generations.wait_time"
+                      | transloco: { time: formatWaitTime(gen.check.wait_time) }
+                  }}
                 </span>
               } @else {
-                <span class="text-sm text-secondary">{{ "profile.generations.status.waiting" | transloco }}</span>
+                <span class="text-sm text-secondary">{{
+                  "profile.generations.status.waiting" | transloco
+                }}</span>
               }
             </div>
 
@@ -549,24 +755,63 @@
           @if (gen.notFound) {
             <div class="alert alert--warning alert--sm mt-3" role="alert">
               <div class="alert-content">
-                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <p class="text-sm">
+                  {{ "profile.generations.not_found_explanation" | transloco }}
+                </p>
               </div>
             </div>
           } @else if (gen.check) {
             @if (gen.check.is_possible === false) {
               <div class="alert alert--danger alert--sm mt-3" role="alert">
                 <div class="alert-content">
-                  <p class="text-sm font-medium">{{ "profile.generations.not_possible" | transloco }}</p>
+                  <p class="text-sm font-medium">
+                    {{ "profile.generations.not_possible" | transloco }}
+                  </p>
                 </div>
               </div>
             }
-            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-secondary">
-              <div>{{ "profile.generations.detail.finished" | transloco }}: <span class="font-medium text-primary">{{ gen.check.finished }}</span></div>
-              <div>{{ "profile.generations.detail.processing" | transloco }}: <span class="font-medium text-primary">{{ gen.check.processing }}</span></div>
-              <div>{{ "profile.generations.detail.waiting_count" | transloco }}: <span class="font-medium text-primary">{{ gen.check.waiting }}</span></div>
-              <div>{{ "profile.generations.detail.restarted" | transloco }}: <span class="font-medium text-primary">{{ gen.check.restarted }}</span></div>
-              <div>{{ "profile.generations.detail.kudos" | transloco }}: <span class="font-medium text-primary">{{ gen.check.kudos }}</span></div>
-              <div>{{ "profile.generations.detail.is_possible" | transloco }}: <span class="font-medium" [class.text-green-500]="gen.check.is_possible" [class.text-red-400]="!gen.check.is_possible">{{ gen.check.is_possible ? "Yes" : "No" }}</span></div>
+            <div
+              class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-secondary"
+            >
+              <div>
+                {{ "profile.generations.detail.finished" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.finished
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.processing" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.processing
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.waiting_count" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.waiting
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.restarted" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.restarted
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.kudos" | transloco }}:
+                <span class="font-medium text-primary">{{
+                  gen.check.kudos
+                }}</span>
+              </div>
+              <div>
+                {{ "profile.generations.detail.is_possible" | transloco }}:
+                <span
+                  class="font-medium"
+                  [class.text-green-500]="gen.check.is_possible"
+                  [class.text-red-400]="!gen.check.is_possible"
+                  >{{ gen.check.is_possible ? "Yes" : "No" }}</span
+                >
+              </div>
             </div>
           }
 
@@ -574,7 +819,10 @@
           @if (gen.done && gen.result) {
             <div class="mt-3 flex flex-col gap-3">
               @for (text of getTextOutputs(gen); track $index) {
-                <pre class="whitespace-pre-wrap text-sm p-3 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">{{ text }}</pre>
+                <pre
+                  class="whitespace-pre-wrap text-sm p-3 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+                  >{{ text }}</pre
+                >
               }
             </div>
           }
@@ -589,7 +837,10 @@
                   {{ "profile.generations.check_json_label" | transloco }}
                 }
               </summary>
-              <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto">{{ getResponseJson(gen) }}</pre>
+              <pre
+                class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto"
+                >{{ getResponseJson(gen) }}</pre
+              >
             </details>
           }
         </div>
@@ -603,27 +854,43 @@
   <h3 class="heading-card">
     {{ "profile.generations.alchemy_section" | transloco }}
     @if (alchemyGenerations().length > 0) {
-      <span class="text-secondary text-sm">({{ alchemyGenerations().length }})</span>
+      <span class="text-secondary text-sm"
+        >({{ alchemyGenerations().length }})</span
+      >
     }
   </h3>
 
   @if (alchemyGenerations().length === 0) {
-    <p class="text-secondary text-sm">{{ "profile.generations.no_alchemy" | transloco }}</p>
+    <p class="text-secondary text-sm">
+      {{ "profile.generations.no_alchemy" | transloco }}
+    </p>
   } @else {
     <div class="flex flex-col gap-4">
       @for (gen of alchemyGenerations(); track gen.id) {
-        <div class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div
+          class="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+        >
           <div class="flex items-center justify-between gap-4 flex-wrap">
             <div class="flex flex-col gap-1 min-w-0">
-              <span class="text-xs font-mono text-secondary truncate">{{ gen.id }}</span>
+              <span class="text-xs font-mono text-secondary truncate">{{
+                gen.id
+              }}</span>
               @if (gen.done) {
-                <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                <span class="text-green-500 text-sm font-medium">{{
+                  "profile.generations.status.done" | transloco
+                }}</span>
               } @else if (gen.faulted) {
-                <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                <span class="text-red-400 text-sm font-medium">{{
+                  "profile.generations.status.faulted" | transloco
+                }}</span>
               } @else if (gen.notFound) {
-                <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                <span class="text-orange-500 text-sm font-medium">{{
+                  "profile.generations.status.not_found" | transloco
+                }}</span>
               } @else {
-                <span class="text-sm text-secondary">{{ "profile.generations.status.waiting" | transloco }}</span>
+                <span class="text-sm text-secondary">{{
+                  "profile.generations.status.waiting" | transloco
+                }}</span>
               }
             </div>
 
@@ -657,7 +924,9 @@
           @if (gen.notFound) {
             <div class="alert alert--warning alert--sm mt-3" role="alert">
               <div class="alert-content">
-                <p class="text-sm">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <p class="text-sm">
+                  {{ "profile.generations.not_found_explanation" | transloco }}
+                </p>
               </div>
             </div>
           }
@@ -667,7 +936,8 @@
             <div class="mt-3 flex flex-col gap-2">
               @for (form of getAlchemyForms(gen); track form.form) {
                 <div class="text-sm">
-                  <span class="font-medium">{{ form.form }}</span>:
+                  <span class="font-medium">{{ form.form }}</span
+                  >:
                   <span class="text-secondary">{{ form.state }}</span>
                 </div>
               }
@@ -677,8 +947,13 @@
           <!-- Response JSON -->
           @if (gen.result && isResponseExpanded(gen.id)) {
             <details class="mt-3" open>
-              <summary class="text-xs text-secondary cursor-pointer">{{ "profile.generations.response_json_label" | transloco }}</summary>
-              <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto">{{ getResponseJson(gen) }}</pre>
+              <summary class="text-xs text-secondary cursor-pointer">
+                {{ "profile.generations.response_json_label" | transloco }}
+              </summary>
+              <pre
+                class="whitespace-pre-wrap text-xs p-3 mt-1 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto"
+                >{{ getResponseJson(gen) }}</pre
+              >
             </details>
           }
         </div>

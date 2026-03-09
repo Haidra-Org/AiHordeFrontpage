@@ -3,7 +3,7 @@
   @if (deletionSuccessMessage()) {
     <div class="toast toast-success" role="status" aria-live="polite">
       <svg
-        class="w-5 h-5"
+        class="icon-md"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -22,7 +22,7 @@
   @if (errorMessage()) {
     <div class="toast toast-error" role="alert" aria-live="assertive">
       <svg
-        class="w-5 h-5"
+        class="icon-md"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -84,7 +84,12 @@
   }
 
   <!-- Sub-Tab Navigation -->
-  <div class="details-tabs mb-6" role="tablist" appScrollFade>
+  <div
+    class="details-tabs details-tabs--glass details-tabs--sub mb-6"
+    role="tablist"
+    appScrollFade
+    [appStickyHeader]="20"
+  >
     <button
       type="button"
       class="details-tab"
@@ -188,10 +193,10 @@
 
   <!-- Glossary hint -->
   <div class="info-note info-note--blue mb-6">
-    <strong>{{ 'admin.workers.glossary_hint.title' | transloco }}</strong>
-    {{ 'admin.workers.glossary_hint.body' | transloco }}
+    <strong>{{ "admin.workers.glossary_hint.title" | transloco }}</strong>
+    {{ "admin.workers.glossary_hint.body" | transloco }}
     <button type="button" class="link" (click)="openGlossary()">
-      {{ 'admin.workers.glossary_hint.link' | transloco }}
+      {{ "admin.workers.glossary_hint.link" | transloco }}
     </button>
   </div>
 
@@ -199,25 +204,22 @@
   @if (!loading() && filteredWorkers().length > 0) {
     @if (statisticsCollapsed()) {
       <!-- Compact Summary -->
-      <div
-        class="panel dark:bg-gray-800 mb-6 cursor-pointer hover:bg-opacity-90 transition-colors"
-        (click)="toggleStatistics()"
-      >
-        <div class="p-4 flex items-center justify-between gap-4">
-          <div class="flex items-center gap-6 flex-wrap">
-            <div class="flex items-center gap-2">
+      <div class="panel admin-stats-bar mb-6" (click)="toggleStatistics()">
+        <div class="admin-stats-bar__inner">
+          <div class="admin-stats-bar__metrics">
+            <div class="admin-stats-bar__metric">
               <span class="admin-text-muted text-sm"
                 >{{ "admin.workers.stats.total_workers" | transloco }}:</span
               >
               <span class="data-value text-lg">{{ totalWorkers() }}</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="admin-stats-bar__metric">
               <span class="admin-text-muted text-sm"
                 >{{ "admin.workers.stats.total_threads" | transloco }}:</span
               >
               <span class="data-value text-lg">{{ totalThreads() }}</span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="admin-stats-bar__metric">
               <span class="admin-text-muted text-sm">
                 @if (workerType() === "image") {
                   {{ "admin.workers.stats.total_mps" | transloco }}:
@@ -240,7 +242,7 @@
               </span>
             </div>
             @if (recentThroughputUnit(); as throughput) {
-              <div class="flex items-center gap-2">
+              <div class="admin-stats-bar__metric">
                 <span class="admin-text-muted text-sm"
                   >{{
                     "admin.workers.stats.recent_throughput" | transloco
@@ -256,17 +258,17 @@
               </div>
             }
           </div>
-          <div class="flex items-center gap-2">
+          <div class="admin-stats-bar__expand">
             <span class="admin-text-muted text-sm">{{
               "admin.workers.stats.more_stats" | transloco
             }}</span>
             <button
               type="button"
-              class="btn-icon shrink-0"
+              class="btn-icon"
               [title]="'admin.workers.stats.expand' | transloco"
             >
               <svg
-                class="w-5 h-5"
+                class="icon-md"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -284,9 +286,9 @@
       </div>
     } @else {
       <!-- Full Statistics Panel -->
-      <div class="panel dark:bg-gray-800 mb-6">
-        <div class="p-6">
-          <div class="flex items-center justify-between mb-4">
+      <div class="panel mb-6">
+        <div class="admin-stats-panel__body">
+          <div class="admin-stats-panel__header">
             <h2 class="admin-heading-section">
               {{ "admin.workers.statistics" | transloco }}
             </h2>
@@ -297,7 +299,7 @@
               [title]="'admin.workers.stats.collapse' | transloco"
             >
               <svg
-                class="w-5 h-5"
+                class="icon-md"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -397,8 +399,8 @@
                     : workerVersions().slice(0, 3);
                   track version.version
                 ) {
-                  <div class="flex flex-col gap-1">
-                    <div class="flex justify-between items-center">
+                  <div class="admin-version-item">
+                    <div class="admin-version-name">
                       <span class="admin-text-white text-sm font-medium">{{
                         version.parsed.displayName
                       }}</span>
@@ -448,7 +450,7 @@
                 @for (capability of capabilityStats(); track capability.name) {
                   <div class="data-item-box admin-bg-dark">
                     <div class="data-label mb-1">{{ capability.name }}</div>
-                    <div class="flex justify-between items-baseline gap-2">
+                    <div class="admin-capability-values">
                       <div class="data-value text-lg">
                         {{ capability.totalPerformance | number: "1.2-2" }}
                         <span class="text-sm admin-text-muted">{{
@@ -475,9 +477,9 @@
   }
 
   <!-- Filters and Controls -->
-  <div class="flex flex-wrap items-center gap-3 mb-6">
+  <div class="admin-filter-bar">
     <!-- Filter Input -->
-    <div class="flex-1 min-w-64">
+    <div class="admin-filter-search">
       <input
         type="text"
         [value]="filterText()"
@@ -488,7 +490,7 @@
     </div>
 
     <!-- Sort Key Select -->
-    <div class="flex items-center gap-2">
+    <div class="admin-filter-sort">
       <label class="text-sm admin-text-muted"
         >{{ "admin.workers.sort_by" | transloco }}:</label
       >
@@ -529,7 +531,7 @@
     >
       @if (sortOrder() === "asc") {
         <svg
-          class="w-5 h-5"
+          class="icon-md"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -543,7 +545,7 @@
         </svg>
       } @else {
         <svg
-          class="w-5 h-5"
+          class="icon-md"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

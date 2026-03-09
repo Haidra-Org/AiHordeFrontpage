@@ -1,7 +1,15 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, of, catchError, map, tap, switchMap, BehaviorSubject } from 'rxjs';
+import {
+  Observable,
+  of,
+  catchError,
+  map,
+  tap,
+  switchMap,
+  BehaviorSubject,
+} from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { HordeUser } from '../types/horde-user';
@@ -139,9 +147,9 @@ export class AuthService {
           if (user) user.public_workers = false;
           return of(user);
         }
-        return this.aiHorde.inferPublicWorkers(user.id).pipe(
-          map((isPublic) => ({ ...user, public_workers: isPublic })),
-        );
+        return this.aiHorde
+          .inferPublicWorkers(user.id)
+          .pipe(map((isPublic) => ({ ...user, public_workers: isPublic })));
       }),
     );
   }
@@ -216,7 +224,9 @@ export class AuthService {
    * Refreshes user data on success so signals stay in sync.
    */
   public updateProfile(
-    data: Partial<Pick<PutUserRequest, 'username' | 'contact' | 'public_workers'>>,
+    data: Partial<
+      Pick<PutUserRequest, 'username' | 'contact' | 'public_workers'>
+    >,
   ): Observable<{ success: boolean; error?: string }> {
     const apiKey = this.getStoredApiKey();
     const user = this._currentUser();
@@ -225,11 +235,9 @@ export class AuthService {
     }
 
     return this.httpClient
-      .put<unknown>(
-        `${this.baseUrl}/users/${user.id}`,
-        data,
-        { headers: { apikey: apiKey } },
-      )
+      .put<unknown>(`${this.baseUrl}/users/${user.id}`, data, {
+        headers: { apikey: apiKey },
+      })
       .pipe(
         switchMap(() => this.refreshUser()),
         map(() => ({ success: true })),

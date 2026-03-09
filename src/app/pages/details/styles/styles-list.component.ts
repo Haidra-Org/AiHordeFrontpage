@@ -25,6 +25,7 @@ import {
 } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
 import { AuthService } from '../../../services/auth.service';
@@ -67,6 +68,7 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     EntityLookupComponent,
     PageIntroComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './styles-list.component.html',
   styleUrl: './styles-list.component.css',

@@ -98,7 +98,7 @@
   (confirm)="confirmUndeleteAccount()"
   (cancel)="closeUndeleteDialog()"
 >
-  <p class="text-gray-300">
+  <p class="dialog-body-text">
     {{ "profile.undelete_account_message" | transloco }}
   </p>
 </app-admin-dialog>
@@ -113,7 +113,7 @@
   (confirm)="confirmUsernameChange()"
   (cancel)="closeUsernameDialog()"
 >
-  <p class="text-gray-300 mb-4">
+  <p class="dialog-body-text dialog-body-text--spaced">
     {{ "profile.change_username_desc" | transloco }}
   </p>
   <label class="form-label" for="username-input">{{
@@ -139,7 +139,7 @@
   (confirm)="confirmContactChange()"
   (cancel)="closeContactDialog()"
 >
-  <p class="text-gray-300 mb-4">
+  <p class="dialog-body-text dialog-body-text--spaced">
     {{ "profile.edit_contact_desc" | transloco }}
   </p>
   <label class="form-label" for="contact-input">{{
@@ -169,7 +169,7 @@
   (confirm)="confirmPublicWorkersChange()"
   (cancel)="closePublicWorkersDialog()"
 >
-  <p class="text-gray-300">
+  <p class="dialog-body-text">
     @if (publicWorkersNewValue()) {
       {{ "profile.public_workers_confirm_enable_desc" | transloco }}
     } @else {
@@ -196,7 +196,7 @@
 </section>
 
 <section class="section-secondary">
-  <div class="container-spaced">
+  <div class="">
     <div class="grid-items">
       <div class="text-secondary sm:text-lg">
         @if (!auth.isLoggedIn()) {
@@ -269,52 +269,101 @@
           <!-- User Profile -->
           <div class="container-page-content">
             <!-- Tab Navigation -->
-            <div class="details-tabs" role="tablist" appScrollFade>
-              <button
-                (click)="setActiveTab('profile')"
+            <div
+              class="details-tabs details-tabs--glass"
+              role="tablist"
+              appScrollFade
+              [appStickyHeader]="10"
+            >
+              <a
+                routerLink="/profile/overview"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'profile'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'profile'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                  />
                 </svg>
                 {{ "profile.tabs.profile" | transloco }}
-              </button>
-              <button
-                (click)="setActiveTab('generations')"
+              </a>
+              <a
+                routerLink="/profile/generations"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'generations'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'generations'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+                  />
                 </svg>
                 {{ "profile.tabs.your_generations" | transloco }}
-              </button>
-              <button
-                (click)="setActiveTab('records')"
+              </a>
+              <a
+                routerLink="/profile/records"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'records'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'records'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15a2.25 2.25 0 0 1 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
+                  />
                 </svg>
                 {{ "profile.tabs.detailed_records" | transloco }}
-              </button>
-              <button
-                (click)="setActiveTab('workers')"
+              </a>
+              <a
+                routerLink="/profile/workers"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'workers'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'workers'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 1 0 0-6H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008V5.25Zm0 8.25h.008v.008h-.008v-.008ZM5.25 6h.008v.008H5.25V6Z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 1 0 0-6H5.25a3 3 0 0 0-3 3m16.5 0h.008v.008h-.008V5.25Zm0 8.25h.008v.008h-.008v-.008ZM5.25 6h.008v.008H5.25V6Z"
+                  />
                 </svg>
                 {{ "profile.tabs.your_workers" | transloco }}
                 @if (
@@ -325,43 +374,76 @@
                     >({{ auth.currentUser()!.worker_ids!.length }})</span
                   >
                 }
-              </button>
-              <button
-                (click)="setActiveTab('teams')"
+              </a>
+              <a
+                routerLink="/profile/teams"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'teams'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'teams'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+                  />
                 </svg>
                 {{ "profile.tabs.your_teams" | transloco }}
-              </button>
-              <button
-                (click)="setActiveTab('styles')"
+              </a>
+              <a
+                routerLink="/profile/styles"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'styles'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'styles'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
+                  />
                 </svg>
                 {{ "profile.tabs.styles" | transloco }}
-              </button>
-              <button
-                (click)="setActiveTab('shared-keys')"
+              </a>
+              <a
+                routerLink="/profile/shared-keys"
                 class="details-tab"
                 [class.details-tab-active]="activeTab() === 'shared-keys'"
                 role="tab"
                 [attr.aria-selected]="activeTab() === 'shared-keys'"
               >
-                <svg class="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
+                  />
                 </svg>
                 {{ "profile.tabs.shared_keys" | transloco }}
-              </button>
+              </a>
             </div>
 
             <!-- Generations Tab -->
@@ -373,12 +455,10 @@
             @if (activeTab() === "profile") {
               <!-- Account Marked for Deletion Warning -->
               @if (auth.currentUser()!.deleted) {
-                <div
-                  class="mb-6 p-6 bg-red-900/30 border-2 border-red-600 rounded-lg"
-                >
-                  <div class="flex items-start gap-4">
+                <div class="deletion-warning">
+                  <div class="deletion-warning-layout">
                     <svg
-                      class="w-8 h-8 text-red-400 shrink-0 mt-0.5"
+                      class="deletion-warning-icon"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -388,14 +468,14 @@
                         clip-rule="evenodd"
                       />
                     </svg>
-                    <div class="flex-1">
-                      <h3 class="text-lg font-semibold text-red-300 mb-2">
+                    <div class="deletion-warning-content">
+                      <h3 class="deletion-warning-title">
                         {{
                           "profile.account_marked_for_deletion_title"
                             | transloco
                         }}
                       </h3>
-                      <p class="text-red-200 text-sm mb-4">
+                      <p class="deletion-warning-message">
                         {{
                           "profile.account_marked_for_deletion_message"
                             | transloco
@@ -422,14 +502,14 @@
                   <div class="profile-header-content">
                     <h2 class="heading-subsection">
                       {{ auth.currentUser()!.username }}
-                                          <button
-                      (click)="openUsernameDialog()"
-                      class="link-btn-sm mt-1"
-                    >
-                      {{ "profile.change_username" | transloco }}
-                    </button>
+                      <button
+                        (click)="openUsernameDialog()"
+                        class="link-btn-sm mt-1"
+                      >
+                        {{ "profile.change_username" | transloco }}
+                      </button>
                     </h2>
-                    
+
                     <p class="text-secondary text-sm">
                       ID: {{ auth.currentUser()!.id }}
                     </p>
@@ -528,8 +608,15 @@
                         <label class="toggle-switch">
                           <input
                             type="checkbox"
-                            [checked]="auth.currentUser()!.public_workers ?? false"
-                            (click)="$event.preventDefault(); onPublicWorkersToggle(!auth.currentUser()!.public_workers)"
+                            [checked]="
+                              auth.currentUser()!.public_workers ?? false
+                            "
+                            (click)="
+                              $event.preventDefault();
+                              onPublicWorkersToggle(
+                                !auth.currentUser()!.public_workers
+                              )
+                            "
                           />
                           <div class="toggle-switch-track"></div>
                           <div class="toggle-switch-thumb"></div>
@@ -540,16 +627,15 @@
                       }}</span>
                     </div>
                     <div class="data-item-box">
-                      <span class="data-label">{{
-                        "profile.contact_label" | transloco
-                      }}
-                                          <button
-                        (click)="openContactDialog()"
-                        class="link-btn-sm mt-1 pl-2"
-                      >
-                        {{ "profile.edit_contact" | transloco }}
-                      </button>  
-                    </span>
+                      <span class="data-label"
+                        >{{ "profile.contact_label" | transloco }}
+                        <button
+                          (click)="openContactDialog()"
+                          class="link-btn-sm mt-1 pl-2"
+                        >
+                          {{ "profile.edit_contact" | transloco }}
+                        </button>
+                      </span>
 
                       <span class="data-value">
                         @if (auth.currentUser()!.contact) {
@@ -606,21 +692,17 @@
                 }
 
                 @if (auth.currentUser()!.kudos < 100) {
-                  <div
-                    class="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg"
-                  >
-                    <h4
-                      class="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2"
-                    >
+                  <div class="info-box info-box--blue mt-4">
+                    <h4 class="info-box-title">
                       {{ "profile.low_kudos_info_title" | transloco }}
                     </h4>
-                    <p class="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                    <p class="info-box-text">
                       {{ "profile.low_kudos_info_message" | transloco }}
                     </p>
                     <a
                       routerLink="/faq/"
                       fragment="kudos"
-                      class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      class="info-box-link"
                     >
                       {{ "profile.low_kudos_info_link" | transloco }} →
                     </a>
@@ -964,23 +1046,32 @@
                   }
                 </h3>
 
-                <div class="mb-4 flex items-center gap-3">
-                  <label class="toggle-switch">
-                    <input
-                      type="checkbox"
-                      [checked]="auth.currentUser()!.public_workers ?? false"
-                      (click)="$event.preventDefault(); onPublicWorkersToggle(!auth.currentUser()!.public_workers)"
-                    />
-                    <div class="toggle-switch-track"></div>
-                    <div class="toggle-switch-thumb"></div>
-                  </label>
-                  <div>
-                    <span class="text-sm font-medium">{{
+                <div class="data-grid-1-2">
+                  <div class="data-item-box">
+                    <span class="data-label">{{
                       "profile.public_workers_label" | transloco
                     }}</span>
-                    <p class="text-secondary text-xs">{{
+                    <span class="data-value">
+                      <label class="toggle-switch">
+                        <input
+                          type="checkbox"
+                          [checked]="
+                            auth.currentUser()!.public_workers ?? false
+                          "
+                          (click)="
+                            $event.preventDefault();
+                            onPublicWorkersToggle(
+                              !auth.currentUser()!.public_workers
+                            )
+                          "
+                        />
+                        <div class="toggle-switch-track"></div>
+                        <div class="toggle-switch-thumb"></div>
+                      </label>
+                    </span>
+                    <span class="text-secondary text-xs">{{
                       "profile.public_workers_desc" | transloco
-                    }}</p>
+                    }}</span>
                   </div>
                 </div>
 
@@ -993,10 +1084,10 @@
                   </p>
                 } @else {
                   <!-- Filter Controls -->
-                  <div class="mb-4 flex flex-wrap gap-3 items-end">
+                  <div class="filter-bar">
                     <!-- Search Filter -->
-                    <div class="flex-1 min-w-[200px]">
-                      <label for="worker-search" class="form-label text-sm">{{
+                    <div class="filter-field filter-field--grow">
+                      <label for="worker-search" class="form-label">{{
                         "profile.workers.search" | transloco
                       }}</label>
                       <input
@@ -1012,8 +1103,8 @@
                     </div>
 
                     <!-- Worker Type Filter -->
-                    <div>
-                      <label for="worker-type" class="form-label text-sm">{{
+                    <div class="filter-field">
+                      <label for="worker-type" class="form-label">{{
                         "profile.workers.type" | transloco
                       }}</label>
                       <select
@@ -1038,8 +1129,8 @@
                     </div>
 
                     <!-- Maintenance Status Filter -->
-                    <div>
-                      <label for="worker-status" class="form-label text-sm">{{
+                    <div class="filter-field">
+                      <label for="worker-status" class="form-label">{{
                         "profile.workers.status" | transloco
                       }}</label>
                       <select
@@ -1072,18 +1163,10 @@
                     </p>
                   }
 
-                  @if (
-                    !loadingWorkers() &&
-                    filteredAndSortedWorkers().length === 0 &&
-                    userWorkers().length > 0
-                  ) {
-                    <p class="text-secondary text-center py-4">
-                      {{ "profile.no_workers_match_filters" | transloco }}
-                    </p>
-                  } @else {
-                    <div class="worker-grid">
+                  @if (unresolvedWorkers().length > 0) {
+                    <div class="worker-grid mb-4">
                       @for (
-                        workerEntry of filteredAndSortedWorkers();
+                        workerEntry of unresolvedWorkers();
                         track workerEntry.id
                       ) {
                         @if (workerEntry.loading) {
@@ -1097,34 +1180,8 @@
                               {{ "profile.loading_workers" | transloco }}
                             </p>
                           </div>
-                        } @else if (workerEntry.worker) {
-                          @if (!loadingTeams()) {
-                            <app-worker-card
-                              [worker]="workerEntry.worker"
-                              [isModerator]="
-                                auth.currentUser()?.moderator ?? false
-                              "
-                              [availableTeams]="allTeams()"
-                              (workerUpdated)="onWorkerUpdated()"
-                              (workerDeleted)="onWorkerDeleted($event)"
-                            />
-                          } @else {
-                            <div class="skeleton-box" aria-busy="true">
-                              <p class="data-value text-sm break-all">
-                                {{ workerEntry.worker.name }}
-                              </p>
-                              <div class="skeleton-bar skeleton-bar-sm"></div>
-                              <div class="skeleton-bar skeleton-bar-lg"></div>
-                              <p class="text-secondary text-sm">
-                                {{ "profile.loading_workers" | transloco }}
-                              </p>
-                            </div>
-                          }
                         } @else {
-                          <div
-                            class="skeleton-box skeleton-box-dashed"
-                            role="status"
-                          >
+                          <div class="skeleton-box skeleton-box-dashed" role="status">
                             <p class="data-value text-sm break-all">
                               {{ workerEntry.id }}
                             </p>
@@ -1135,6 +1192,107 @@
                         }
                       }
                     </div>
+                  }
+
+                  @if (
+                    !loadingWorkers() &&
+                    filteredAndSortedWorkers().length === 0 &&
+                    unresolvedWorkers().length === 0 &&
+                    userWorkers().length > 0
+                  ) {
+                    <p class="text-secondary text-center py-4">
+                      {{ "profile.no_workers_match_filters" | transloco }}
+                    </p>
+                  } @else {
+                    @for (group of groupedWorkers(); track group.type) {
+                      <h4
+                        class="heading-subsection section-header-collapsible section-header-collapsible--light"
+                        (click)="toggleWorkerTypeSection(group.type)"
+                      >
+                        <span class="section-header-title-wrapper">
+                          {{ "profile.workers.type." + group.type | transloco }}
+                          <span class="text-secondary text-sm"
+                            >({{ group.workers.length }})</span
+                          >
+                        </span>
+                        <svg
+                          class="chevron-icon"
+                          [class.expanded]="!isWorkerTypeCollapsed(group.type)"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </h4>
+                      @if (!isWorkerTypeCollapsed(group.type)) {
+                        <div class="worker-grid">
+                          @for (
+                            workerEntry of group.workers;
+                            track workerEntry.id
+                          ) {
+                            @if (workerEntry.loading) {
+                              <div class="skeleton-box" aria-busy="true">
+                                <p class="data-value text-sm break-all">
+                                  {{ workerEntry.id }}
+                                </p>
+                                <div class="skeleton-bar skeleton-bar-sm"></div>
+                                <div class="skeleton-bar skeleton-bar-lg"></div>
+                                <p class="text-secondary text-sm">
+                                  {{ "profile.loading_workers" | transloco }}
+                                </p>
+                              </div>
+                            } @else if (workerEntry.worker) {
+                              @if (!loadingTeams()) {
+                                <app-worker-card
+                                  [worker]="workerEntry.worker"
+                                  [isModerator]="
+                                    auth.currentUser()?.moderator ?? false
+                                  "
+                                  [pinHeaderOnMobile]="true"
+                                  [availableTeams]="allTeams()"
+                                  (workerUpdated)="onWorkerUpdated()"
+                                  (workerDeleted)="onWorkerDeleted($event)"
+                                />
+                              } @else {
+                                <div class="skeleton-box" aria-busy="true">
+                                  <p class="data-value text-sm break-all">
+                                    {{ workerEntry.worker.name }}
+                                  </p>
+                                  <div
+                                    class="skeleton-bar skeleton-bar-sm"
+                                  ></div>
+                                  <div
+                                    class="skeleton-bar skeleton-bar-lg"
+                                  ></div>
+                                  <p class="text-secondary text-sm">
+                                    {{ "profile.loading_workers" | transloco }}
+                                  </p>
+                                </div>
+                              }
+                            } @else {
+                              <div
+                                class="skeleton-box skeleton-box-dashed"
+                                role="status"
+                              >
+                                <p class="data-value text-sm break-all">
+                                  {{ workerEntry.id }}
+                                </p>
+                                <p class="text-secondary text-sm">
+                                  {{ "profile.no_workers_found" | transloco }}
+                                </p>
+                              </div>
+                            }
+                          }
+                        </div>
+                      }
+                    }
                   }
                 }
               </div>
@@ -1213,16 +1371,14 @@
                             ></textarea>
                           </div>
                           @if (teamError()) {
-                            <div
-                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-                            >
-                              <p class="text-sm text-red-800 dark:text-red-200">
+                            <div class="dialog-error">
+                              <p class="dialog-error-text">
                                 {{ teamError() }}
                               </p>
                             </div>
                           }
                         </div>
-                        <div class="flex justify-end gap-3 mt-6">
+                        <div class="modal-actions-right">
                           <button
                             (click)="closeTeamDialog()"
                             class="worker-btn"
@@ -1289,16 +1445,14 @@
                             ></textarea>
                           </div>
                           @if (teamError()) {
-                            <div
-                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-                            >
-                              <p class="text-sm text-red-800 dark:text-red-200">
+                            <div class="dialog-error">
+                              <p class="dialog-error-text">
                                 {{ teamError() }}
                               </p>
                             </div>
                           }
                         </div>
-                        <div class="flex justify-end gap-3 mt-6">
+                        <div class="modal-actions-right">
                           <button
                             (click)="closeTeamDialog()"
                             class="worker-btn"
@@ -1329,26 +1483,22 @@
                           }}
                         </h3>
                         <div class="mb-4 space-y-3">
-                          <div
-                            class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-                          >
+                          <div class="dialog-error">
                             <p
-                              class="text-sm text-red-800 dark:text-red-200 font-medium"
+                              class="dialog-error-text dialog-error-text--bold"
                             >
                               {{ "teams.delete_warning" | transloco }}
                             </p>
                           </div>
                           @if (teamError()) {
-                            <div
-                              class="p-3 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700"
-                            >
-                              <p class="text-sm text-red-800 dark:text-red-200">
+                            <div class="dialog-error">
+                              <p class="dialog-error-text">
                                 {{ teamError() }}
                               </p>
                             </div>
                           }
                         </div>
-                        <div class="flex justify-end gap-3">
+                        <div class="modal-actions-right">
                           <button
                             (click)="closeTeamDialog()"
                             class="worker-btn"
@@ -1374,11 +1524,11 @@
               }
 
               <div class="card card-bg-primary card-full card-spaced">
-                <div class="flex justify-between items-center mb-4">
+                <div class="card-header-with-actions">
                   <h3 class="heading-card">
                     {{ "profile.tabs.your_teams" | transloco }}
                   </h3>
-                  <div class="flex gap-2">
+                  <div class="card-header-with-actions__buttons">
                     <button
                       (click)="refreshTeams()"
                       class="worker-btn text-sm"
@@ -1410,33 +1560,27 @@
                 } @else {
                   <!-- Teams You Created -->
                   @if (getUserCreatedTeams().length > 0) {
-                    <div class="mb-6">
+                    <div class="team-list-section">
                       <h4 class="section-title-sm mb-3">
                         {{ "teams.created_by_you" | transloco }}
                       </h4>
-                      <div class="space-y-3">
+                      <div class="team-list">
                         @for (team of getUserCreatedTeams(); track team.id) {
-                          <div
-                            class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                          >
-                            <div class="flex justify-between items-start">
-                              <div class="flex-1 min-w-0">
+                          <div class="team-card">
+                            <div class="team-card-layout">
+                              <div class="team-card-body">
                                 <a
                                   [routerLink]="['/details/teams', team.id]"
-                                  class="heading-item text-blue-600 dark:text-blue-400 hover:underline"
+                                  class="team-card-link"
                                 >
                                   {{ team.name }}
                                 </a>
                                 @if (team.info) {
-                                  <p
-                                    class="text-secondary text-sm mt-1 line-clamp-2"
-                                  >
+                                  <p class="team-card-description">
                                     {{ team.info }}
                                   </p>
                                 }
-                                <div
-                                  class="flex flex-wrap gap-4 mt-2 text-xs text-secondary"
-                                >
+                                <div class="team-card-meta">
                                   <span>{{
                                     "teams.workers_count"
                                       | transloco
@@ -1452,7 +1596,7 @@
                                   }}</span>
                                 </div>
                               </div>
-                              <div class="flex gap-2 ml-4">
+                              <div class="team-card-actions">
                                 <button
                                   (click)="openEditTeamDialog(team)"
                                   class="worker-btn text-sm"
@@ -1475,32 +1619,26 @@
 
                   <!-- Teams Your Workers Belong To -->
                   @if (getUserWorkerTeams().length > 0) {
-                    <div class="mb-6">
+                    <div class="team-list-section">
                       <h4 class="section-title-sm mb-3">
                         {{ "teams.worker_teams" | transloco }}
                       </h4>
-                      <div class="space-y-3">
+                      <div class="team-list">
                         @for (team of getUserWorkerTeams(); track team.id) {
-                          <div
-                            class="p-4 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-                          >
-                            <div class="flex-1 min-w-0">
+                          <div class="team-card">
+                            <div class="team-card-body">
                               <a
                                 [routerLink]="['/details/teams', team.id]"
-                                class="heading-item text-blue-600 dark:text-blue-400 hover:underline"
+                                class="team-card-link"
                               >
                                 {{ team.name }}
                               </a>
                               @if (team.info) {
-                                <p
-                                  class="text-secondary text-sm mt-1 line-clamp-2"
-                                >
+                                <p class="team-card-description">
                                   {{ team.info }}
                                 </p>
                               }
-                              <div
-                                class="flex flex-wrap gap-4 mt-2 text-xs text-secondary"
-                              >
+                              <div class="team-card-meta">
                                 <span>{{
                                   "teams.workers_count"
                                     | transloco
@@ -1529,9 +1667,7 @@
                   }
 
                   <!-- Link to browse all teams -->
-                  <div
-                    class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 text-center"
-                  >
+                  <div class="card-footer-divider">
                     <a routerLink="/details/teams" class="link"
                       >{{ "teams.browse_all" | transloco }} →</a
                     >

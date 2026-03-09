@@ -41,7 +41,13 @@ export interface LoadedStyle {
 
 @Component({
   selector: 'app-profile-styles-list',
-  imports: [TranslocoPipe, StyleCardComponent, StyleFormComponent, RouterLink, ScrollFadeDirective],
+  imports: [
+    TranslocoPipe,
+    StyleCardComponent,
+    StyleFormComponent,
+    RouterLink,
+    ScrollFadeDirective,
+  ],
   templateUrl: './profile-styles-list.component.html',
   styleUrl: './profile-styles-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

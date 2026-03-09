@@ -440,4 +440,46 @@
   .dark .form-status-success {
     @apply text-green-400;
   }
+
+  /* =================================================================
+     FILTER BAR - Horizontal filter controls container
+     ================================================================= */
+
+  .filter-bar {
+    @apply mb-4 flex flex-wrap gap-3 items-end;
+  }
+
+  .filter-field {
+    @apply flex flex-col gap-1;
+  }
+
+  .filter-field--grow {
+    @apply flex-1 min-w-[200px];
+  }
+
+  /* =================================================================
+     MODAL FOOTER - Action buttons at bottom of modal dialogs
+     ================================================================= */
+
+  .modal-actions-right {
+    @apply flex justify-end gap-3 mt-6;
+  }
+
+  /* =================================================================
+     TOGGLE ROW - Inline toggle switch with label and description
+     ================================================================= */
+
+  .toggle-row {
+    @apply mb-4 flex items-center gap-3;
+  }
+
+  .toggle-row-label {
+    @apply text-sm font-medium;
+    color: var(--color-content-primary);
+  }
+
+  .toggle-row-hint {
+    @apply text-xs;
+    color: var(--color-content-secondary);
+  }
 }

@@ -51,7 +51,12 @@
                     {{ item.name }}
                     @if (item.recommended) {
                       <span class="badge-base badge-recommended badge-sm">
-                        {{ (item.easyToUse ? "guis_and_tools.recommended_short" : "guis_and_tools.recommended") | transloco }}
+                        {{
+                          (item.easyToUse
+                            ? "guis_and_tools.recommended_short"
+                            : "guis_and_tools.recommended"
+                          ) | transloco
+                        }}
                       </span>
                     }
                     @if (item.easyToUse) {
@@ -130,7 +135,12 @@
                     </h3>
                     @if (item.recommended) {
                       <span class="badge-base badge-recommended">
-                        {{ (item.easyToUse ? "guis_and_tools.recommended_short" : "guis_and_tools.recommended") | transloco }}
+                        {{
+                          (item.easyToUse
+                            ? "guis_and_tools.recommended_short"
+                            : "guis_and_tools.recommended"
+                          ) | transloco
+                        }}
                       </span>
                     }
                     @if (item.easyToUse) {

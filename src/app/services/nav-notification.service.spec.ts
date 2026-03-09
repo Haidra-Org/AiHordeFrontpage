@@ -108,10 +108,7 @@ describe('NavNotificationService', () => {
         localStorage.getItem('nav_notification_dismissed')!,
       );
       all['x'].timestamp = Date.now() - 25 * 60 * 60 * 1000;
-      localStorage.setItem(
-        'nav_notification_dismissed',
-        JSON.stringify(all),
-      );
+      localStorage.setItem('nav_notification_dismissed', JSON.stringify(all));
 
       // Re-add triggers recomputation
       service.add(makeNotification({ id: 'x' }));

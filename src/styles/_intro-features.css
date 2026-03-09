@@ -22,6 +22,39 @@
     @apply dark:text-gray-400;
   }
 
+  /* Hero glass stage — translucent panel behind hero text block */
+  .hero-glass-stage {
+    @apply relative p-6 rounded-2xl mb-6;
+    @apply sm:p-8;
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.55) 0%,
+      rgb(249 250 251 / 0.4) 100%
+    );
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
+  }
+
+  .dark .hero-glass-stage {
+    background: linear-gradient(
+      135deg,
+      rgb(31 41 55 / 0.5) 0%,
+      rgb(17 24 39 / 0.4) 100%
+    );
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.2),
+      0 1px 2px rgb(0 0 0 / 0.1),
+      inset 0 1px 1px rgb(255 255 255 / 0.06);
+  }
+
+  /* Remove trailing margin on last child inside stage */
+  .hero-glass-stage > :last-child {
+    @apply mb-0;
+  }
+
   /* Intro feature cards container */
   .intro-features {
     @apply grid grid-cols-1 max-w-2xl mx-auto mb-8;
@@ -34,7 +67,6 @@
   /* Intro feature card */
   .intro-feature-card {
     @apply relative rounded-xl overflow-hidden;
-    @apply border border-gray-200;
     @apply transition-all duration-250;
     /* Mobile: column layout with compact padding */
     @apply flex flex-col gap-1 p-3;
@@ -42,9 +74,13 @@
     @apply sm:p-5 sm:gap-0;
     background: linear-gradient(
       135deg,
-      rgb(249 250 251) 0%,
-      rgb(255 255 255) 100%
+      rgb(249 250 251 / 0.7) 0%,
+      rgb(255 255 255 / 0.6) 100%
     );
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
   }
 
   /* Intro feature header (icon + title row) */
@@ -66,8 +102,9 @@
   }
 
   .intro-feature-card:hover {
-    @apply -translate-y-0.5 border-gray-300;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+    @apply -translate-y-0.5;
+    border-color: var(--color-glass-border);
+    box-shadow: var(--shadow-glass-hover);
   }
 
   .intro-feature-card:hover::before {
@@ -75,13 +112,18 @@
   }
 
   .dark .intro-feature-card {
-    background: linear-gradient(135deg, rgb(31 41 55) 0%, rgb(55 65 81) 100%);
-    @apply border-gray-700;
+    background: linear-gradient(
+      135deg,
+      rgb(31 41 55 / 0.6) 0%,
+      rgb(55 65 81 / 0.5) 100%
+    );
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .dark .intro-feature-card:hover {
-    @apply border-gray-600;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4);
+    border-color: rgb(255 255 255 / 0.12);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
   }
 
   .dark .intro-feature-card::before {
@@ -179,23 +221,38 @@
     }
   }
 
-  /* Intro link badge */
+  /* Intro link badge - glass pill */
   .intro-link-badge {
     @apply inline-flex items-center gap-2 px-4 py-2;
-    @apply bg-gray-50 border border-gray-200 rounded-full;
+    @apply rounded-full;
     @apply text-sm font-medium text-gray-700 no-underline;
     @apply transition-all duration-200;
-    @apply dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .intro-link-badge {
+    @apply text-gray-300;
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.15),
+      0 1px 2px rgb(0 0 0 / 0.1);
   }
 
   .intro-link-badge:hover {
-    @apply bg-white -translate-y-0.5;
+    @apply -translate-y-0.5;
     @apply border-purple-600 text-purple-600;
+    background: var(--color-glass-surface-elevated);
     box-shadow: 0 4px 12px -2px rgb(147 51 234 / 0.2);
   }
 
   .dark .intro-link-badge:hover {
-    @apply bg-gray-700 border-purple-500 text-purple-500;
+    @apply border-purple-500 text-purple-500;
+    background: rgb(31 41 55 / 0.6);
     box-shadow: 0 4px 12px -2px rgb(168 85 247 / 0.2);
   }
 
@@ -205,15 +262,21 @@
      ================================================================= */
 
   .beginner-banner {
-    @apply relative rounded-lg border overflow-hidden;
+    @apply relative rounded-lg overflow-hidden;
     @apply p-4 sm:p-5;
-    @apply bg-gray-50 border-gray-200;
-    @apply dark:bg-gray-900 dark:border-gray-700;
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
     border-left: 3px solid rgb(147 51 234);
   }
 
   .dark .beginner-banner {
+    background: rgb(17 24 39 / 0.6);
+    border-color: rgb(255 255 255 / 0.06);
     border-left-color: rgb(168 85 247);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .beginner-banner-main {
@@ -365,6 +428,14 @@
   .sponsor-description {
     @apply mb-6;
     @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Sponsor logo grid */
+  .sponsor-grid {
+    @apply grid grid-cols-2 gap-8 text-gray-500;
+    @apply sm:gap-12 sm:grid-cols-3;
+    @apply lg:grid-cols-6;
     @apply dark:text-gray-400;
   }
 }

@@ -320,7 +320,9 @@ export class AiHordeService {
 
   public getTextGenerationStatus(
     id: string,
-  ): Observable<TextGenerationStatusResponse | typeof GENERATION_NOT_FOUND | null> {
+  ): Observable<
+    TextGenerationStatusResponse | typeof GENERATION_NOT_FOUND | null
+  > {
     return this.httpClient
       .get<TextGenerationStatusResponse>(
         `https://aihorde.net/api/v2/generate/text/status/${encodeURIComponent(id)}`,
@@ -338,7 +340,9 @@ export class AiHordeService {
       .pipe(catchError((err) => this.catchNotFound(err)));
   }
 
-  private catchNotFound(err: unknown): Observable<typeof GENERATION_NOT_FOUND | null> {
+  private catchNotFound(
+    err: unknown,
+  ): Observable<typeof GENERATION_NOT_FOUND | null> {
     if (err instanceof HttpErrorResponse && err.status === 404) {
       return of(GENERATION_NOT_FOUND);
     }

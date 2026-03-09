@@ -15,11 +15,7 @@ import { GlossaryService } from '../../../services/glossary.service';
 
 @Component({
   selector: 'app-workers',
-  imports: [
-    TranslocoPipe,
-    RouterLink,
-    NetworkStatusComponent,
-  ],
+  imports: [TranslocoPipe, RouterLink, NetworkStatusComponent],
   templateUrl: './workers.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -38,7 +34,9 @@ export class WorkersComponent {
     afterNextRender(() => {
       if (!isPlatformBrowser(this.platformId)) return;
       // Show arrival highlight if the navigation came from the notification system
-      const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      const nav = performance.getEntriesByType('navigation')[0] as
+        | PerformanceNavigationTiming
+        | undefined;
       const isSpaNav = nav?.type === 'navigate' || nav?.type === 'reload';
       if (isSpaNav || document.referrer === '') {
         this.arrivalHighlight.set(true);

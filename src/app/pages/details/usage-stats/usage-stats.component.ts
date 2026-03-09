@@ -13,6 +13,7 @@ import { Title } from '@angular/platform-browser';
 import { combineLatest, finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -43,6 +44,7 @@ interface ModelUsageEntry {
     PageIntroComponent,
     InfoTooltipComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',

@@ -15,7 +15,7 @@
     @apply min-h-screen flex flex-col;
     padding-top: var(--nav-height-mobile);
 
-    @media (min-width: 1024px) {
+    @media (min-width: 76.8125rem) {
       padding-top: var(--nav-height-desktop);
     }
   }
@@ -32,13 +32,25 @@
     @apply xl:px-0;
   }
 
-  /* Secondary section - gray background */
+  /* Secondary section - gray background with layered edge */
   .section-secondary {
     @apply bg-surface-secondary;
     @apply dark:bg-gray-800;
     @apply py-2 sm:py-4;
     @apply px-2;
     @apply xl:px-0;
+    @apply relative;
+    box-shadow:
+      inset 0 1px 0 rgb(0 0 0 / 0.04),
+      inset 0 -1px 0 rgb(0 0 0 / 0.03);
+  }
+
+  .dark .section-secondary {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      inset 0 -1px 0 rgb(255 255 255 / 0.05),
+      0 -1px 12px rgb(0 0 0 / 0.35),
+      0 1px 12px rgb(0 0 0 / 0.35);
   }
 
   /* =================================================================
@@ -87,6 +99,11 @@
     max-width: var(--max-width-container);
 
     @apply lg:px-6;
+  }
+
+  /* Narrow prose-focused container (max-w-4xl) for text-heavy pages */
+  .container-prose-page {
+    @apply max-w-4xl mx-auto px-4 py-12;
   }
 
   /* Spaced content container */

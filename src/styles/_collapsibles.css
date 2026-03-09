@@ -17,13 +17,22 @@
 
   /* Collapsible card wrapper - main container for collapsible sections */
   .collapsible-card {
-    @apply mb-6 rounded-lg border overflow-hidden;
-    @apply bg-gray-50;
-    @apply dark:bg-gray-900;
+    @apply mb-6 rounded-lg overflow-hidden;
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass);
 
     @media (min-width: 1024px) {
       @apply mb-8;
     }
+  }
+
+  .dark .collapsible-card {
+    background: rgb(17 24 39 / 0.6);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   /* Collapsible header content wrapper - flex row for icon + text */
@@ -64,12 +73,15 @@
   /* Sticky collapsible section header (for table sections) */
   .section-header-collapsible {
     @apply flex items-center justify-between cursor-pointer;
-    @apply sticky z-30 bg-white rounded-lg;
+    @apply z-30 rounded-lg;
     @apply px-4 py-3 -mx-4 mb-3;
     @apply transition-all duration-200;
     @apply hover:text-purple-600;
-    @apply dark:bg-gray-900 dark:hover:text-purple-500;
-    top: var(--sticky-offset, 80px);
+    background: rgb(255 255 255 / 0.85);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid transparent;
+    border-left: 3px solid var(--color-brand-purple);
 
     /* Mobile-specific margin adjustments for full-width appearance */
     @media (max-width: 767px) {
@@ -77,7 +89,42 @@
       margin-right: calc(-1 * var(--spacing-container-padding-mobile));
       padding-left: var(--spacing-container-padding-mobile);
       padding-right: var(--spacing-container-padding-mobile);
+      border-radius: 0;
+      border-left-width: 3px;
     }
+
+    /* Only sticky on desktop where the jump-to pills are hidden */
+    @media (min-width: 1024px) {
+      @apply sticky;
+      top: var(--sticky-offset, 80px);
+    }
+  }
+
+  .section-header-collapsible:hover {
+    border-color: var(--color-glass-border-subtle);
+    border-left-color: var(--color-brand-purple);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .section-header-collapsible {
+    background: rgb(17 24 39 / 0.85);
+    @apply hover:text-purple-400;
+    border-left-color: var(--color-brand-purple);
+  }
+
+  .dark .section-header-collapsible:hover {
+    border-color: rgb(255 255 255 / 0.08);
+    border-left-color: var(--color-brand-purple);
+  }
+
+  /* Lighter dark-mode variant — blends with section-secondary (gray-800) backgrounds */
+  .dark .section-header-collapsible--light {
+    background: rgb(31 41 55 / 0.75);
+  }
+
+  .dark .section-header-collapsible--light:hover {
+    border-color: rgb(255 255 255 / 0.1);
+    border-left-color: var(--color-brand-purple);
   }
 
   /* Add shadow when sticky (appears after scrolling) */
@@ -88,7 +135,7 @@
     background: linear-gradient(
       to right,
       transparent,
-      rgb(229 231 235),
+      var(--color-border-primary),
       transparent
     );
   }
@@ -127,8 +174,16 @@
 
   /* Expanded detail panel */
   .expanded-detail-panel {
-    @apply p-4 border-t border-gray-200 bg-gray-50;
-    @apply dark:border-gray-700 dark:bg-gray-700/30;
+    @apply p-4;
+    background: rgb(249 250 251 / 0.7);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border-top: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .expanded-detail-panel {
+    background: rgb(55 65 81 / 0.25);
+    border-top-color: rgb(255 255 255 / 0.06);
   }
 
   /* Detail layout - content + optional image side by side */
