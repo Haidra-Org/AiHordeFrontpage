@@ -49,12 +49,15 @@
 
   .admin-sidebar-content {
     @apply h-full py-4 px-3 overflow-y-auto w-full;
-    background-color: var(--color-bg-primary);
-    border-right: 1px solid var(--color-border-primary);
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border-right: 1px solid var(--color-glass-border-subtle);
   }
 
   .dark .admin-sidebar-content {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.7);
+    border-right-color: rgb(255 255 255 / 0.06);
   }
 
   .admin-sidebar-header {
@@ -385,18 +388,24 @@
 
   /* Legacy worker-card-bg variants (prefer worker-card--normal/--issue) */
   .worker-card-bg-normal {
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border-primary);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
   }
   .dark .worker-card-bg-normal {
-    @apply bg-gray-800 border-gray-700;
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
   }
   .worker-card-bg-issue {
-    @apply bg-red-50 border border-red-300;
+    background: rgb(254 226 226 / 0.6);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid rgb(252 165 165 / 0.5);
   }
   .dark .worker-card-bg-issue {
-    background-color: rgb(127 29 29 / 0.3);
-    border-color: rgb(185 28 28 / 0.5);
+    background: rgb(127 29 29 / 0.25);
+    border-color: rgb(185 28 28 / 0.4);
   }
 
   /* Legacy status-icon variants without BEM dashes */
@@ -786,11 +795,11 @@
   }
 
   .admin-bg-dark {
-    background-color: var(--color-bg-secondary);
+    background: rgb(249 250 251 / 0.6);
   }
 
   .dark .admin-bg-dark {
-    @apply bg-gray-700;
+    background: rgb(55 65 81 / 0.4);
   }
 
   .admin-bg-darker {
@@ -1038,8 +1047,6 @@
   .admin-back-icon {
     @apply w-5 h-5 shrink-0;
   }
-
-
 
   /* =================================================================
      FILTER CONTROLS - Search & filter bar
@@ -1396,5 +1403,74 @@
 
   .admin-lookup-row {
     @apply flex items-center gap-3;
+  }
+
+  /* =================================================================
+     ADMIN STATS COLLAPSED BAR - compact summary row
+     ================================================================= */
+
+  .admin-stats-bar {
+    @apply cursor-pointer;
+    transition: background-opacity 0.2s;
+  }
+
+  .admin-stats-bar:hover {
+    opacity: 0.92;
+  }
+
+  .admin-stats-bar__inner {
+    @apply p-4 flex items-center justify-between gap-4;
+  }
+
+  .admin-stats-bar__metrics {
+    @apply flex items-center gap-6 flex-wrap;
+  }
+
+  .admin-stats-bar__metric {
+    @apply flex items-center gap-2;
+  }
+
+  .admin-stats-bar__expand {
+    @apply flex items-center gap-2;
+  }
+
+  /* =================================================================
+     ADMIN STATS PANEL - full expanded statistics
+     ================================================================= */
+
+  .admin-stats-panel__body {
+    @apply p-6;
+  }
+
+  .admin-stats-panel__header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .admin-version-item {
+    @apply flex flex-col gap-1;
+  }
+
+  .admin-version-name {
+    @apply flex justify-between items-center;
+  }
+
+  .admin-capability-values {
+    @apply flex justify-between items-baseline gap-2;
+  }
+
+  /* =================================================================
+     ADMIN FILTER BAR - search + sort controls
+     ================================================================= */
+
+  .admin-filter-bar {
+    @apply flex flex-wrap items-center gap-3 mb-6;
+  }
+
+  .admin-filter-search {
+    @apply flex-1 min-w-64;
+  }
+
+  .admin-filter-sort {
+    @apply flex items-center gap-2;
   }
 }

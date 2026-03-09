@@ -15,10 +15,10 @@ export class FloatingActionService {
   public readonly actions = this._actions.asReadonly();
 
   register(action: FloatingAction): void {
-    this._actions.update(list => [...list, action]);
+    this._actions.update((list) => [...list, action]);
   }
 
   unregister(id: string): void {
-    this._actions.update(list => list.filter(a => a.id !== id));
+    this._actions.update((list) => list.filter((a) => a.id !== id));
   }
 }

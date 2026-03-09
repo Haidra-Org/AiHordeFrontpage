@@ -5,7 +5,7 @@
         {{ "frequently_asked_questions" | transloco }}
       </h1>
       <p
-        class="text-description mt-4 max-w-2xl"
+        class="text-description faq-subtitle"
         [innerHTML]="
           'faq_subtitle'
             | transloco
@@ -144,7 +144,7 @@
             track sectionItemPair
           ) {
             <div
-              style="position: relative; padding-bottom: 1rem"
+              class="faq-section-wrapper"
               [id]="
                 sectionItemPair.key !== ''
                   ? 'faq-section-' + sectionSlug(sectionItemPair.key)
@@ -175,12 +175,18 @@
               }
 
               @if (!isSectionCollapsed(sectionItemPair.key)) {
-                <div class="space-y-0">
+                <div class="faq-question-list">
                   @for (
                     faqItem of sectionItemPair.value;
                     track faqItem.question
                   ) {
-                    <div [id]="'faq-item-' + questionSlug(faqItem.question)">
+                    <div
+                      class="faq-item"
+                      [class.faq-item-expanded]="
+                        isFaqExpanded(faqItem.question)
+                      "
+                      [id]="'faq-item-' + questionSlug(faqItem.question)"
+                    >
                       <h3>
                         <button
                           type="button"
@@ -192,7 +198,7 @@
                           "
                           (click)="toggleFaq(faqItem.question)"
                         >
-                          <span class="text-left pr-4">{{
+                          <span class="faq-question-text">{{
                             faqItem.question
                           }}</span>
                           <inline-svg

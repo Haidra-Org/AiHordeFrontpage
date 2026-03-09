@@ -35,38 +35,41 @@ export class NeedWorkersNotifierService {
     if (this.started || !isPlatformBrowser(this.platformId)) return;
     this.started = true;
 
-    effect(() => {
-      const image = this.networkStatus.imageNeedsHelp();
-      const text = this.networkStatus.textNeedsHelp();
-      const alchemy = this.networkStatus.alchemyNeedsHelp();
-      const any = image || text || alchemy;
+    effect(
+      () => {
+        const image = this.networkStatus.imageNeedsHelp();
+        const text = this.networkStatus.textNeedsHelp();
+        const alchemy = this.networkStatus.alchemyNeedsHelp();
+        const any = image || text || alchemy;
 
-      if (!any) {
-        this.navNotifications.remove(NOTIFICATION_ID);
-        return;
-      }
+        if (!any) {
+          this.navNotifications.remove(NOTIFICATION_ID);
+          return;
+        }
 
-      const types: string[] = [];
-      if (image) types.push('image');
-      if (text) types.push('text');
-      if (alchemy) types.push('alchemy');
+        const types: string[] = [];
+        if (image) types.push('image');
+        if (text) types.push('text');
+        if (alchemy) types.push('alchemy');
 
-      const stateHash = types.join(',');
+        const stateHash = types.join(',');
 
-      this.navNotifications.add({
-        id: NOTIFICATION_ID,
-        type: 'network',
-        message: 'notification.need_workers.message',
-        messageParams: { types: this.formatTypeList(types) },
-        tooltip: 'notification.need_workers.tooltip',
-        tooltipParams: { types: this.formatTypeList(types) },
-        navItem: 'contribute',
-        navSubItem: 'become-worker',
-        routerLink: '/contribute/workers',
-        priority: 50,
-        stateHash,
-      });
-    }, { injector: this.injector });
+        this.navNotifications.add({
+          id: NOTIFICATION_ID,
+          type: 'network',
+          message: 'notification.need_workers.message',
+          messageParams: { types: this.formatTypeList(types) },
+          tooltip: 'notification.need_workers.tooltip',
+          tooltipParams: { types: this.formatTypeList(types) },
+          navItem: 'contribute',
+          navSubItem: 'become-worker',
+          routerLink: '/contribute/workers',
+          priority: 50,
+          stateHash,
+        });
+      },
+      { injector: this.injector },
+    );
   }
 
   /**

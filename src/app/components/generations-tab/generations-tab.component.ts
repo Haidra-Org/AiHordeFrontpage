@@ -227,12 +227,20 @@ export class GenerationsTabComponent {
   public getResponseJson(gen: TrackedGeneration): string {
     const data = gen.result ?? gen.check;
     if (!data) return '';
-    return JSON.stringify(data, (_key, value) => {
-      if (typeof value === 'string' && value.length > 256 && /^[A-Za-z0-9+/=]/.test(value)) {
-        return '[base64 data omitted]';
-      }
-      return value;
-    }, 2);
+    return JSON.stringify(
+      data,
+      (_key, value) => {
+        if (
+          typeof value === 'string' &&
+          value.length > 256 &&
+          /^[A-Za-z0-9+/=]/.test(value)
+        ) {
+          return '[base64 data omitted]';
+        }
+        return value;
+      },
+      2,
+    );
   }
 
   public getMetadataLabel(meta: GenerationMetadataStable): string {
@@ -248,7 +256,9 @@ export class GenerationsTabComponent {
   }
 
   public isMetadataWarning(meta: GenerationMetadataStable): boolean {
-    return ['download_failed', 'parse_failed', 'baseline_mismatch'].includes(meta.value);
+    return ['download_failed', 'parse_failed', 'baseline_mismatch'].includes(
+      meta.value,
+    );
   }
 
   public isMetadataDanger(meta: GenerationMetadataStable): boolean {
@@ -318,9 +328,11 @@ export class GenerationsTabComponent {
   public getImageUrls(gen: TrackedGeneration): string[] {
     if (!gen.result || gen.type !== 'image') return [];
     const status = gen.result as GenerationStatusResponse;
-    return status.generations
-      ?.filter((g) => g.state === 'ok' && g.img)
-      .map((g) => g.img) ?? [];
+    return (
+      status.generations
+        ?.filter((g) => g.state === 'ok' && g.img)
+        .map((g) => g.img) ?? []
+    );
   }
 
   public getTextOutputs(gen: TrackedGeneration): string[] {
@@ -329,7 +341,9 @@ export class GenerationsTabComponent {
     return status.generations?.map((g) => g.text) ?? [];
   }
 
-  public getAlchemyForms(gen: TrackedGeneration): { form: string; state: string }[] {
+  public getAlchemyForms(
+    gen: TrackedGeneration,
+  ): { form: string; state: string }[] {
     if (!gen.result || gen.type !== 'alchemy') return [];
     const status = gen.result as AlchemyStatusResponse;
     return status.forms ?? [];
@@ -400,7 +414,9 @@ export class GenerationsTabComponent {
     try {
       const parsed = JSON.parse(this.jsonText());
       if (typeof parsed !== 'object' || parsed === null || !parsed.prompt) {
-        this.jsonError.set('JSON must be an object with at least a "prompt" field');
+        this.jsonError.set(
+          'JSON must be an object with at least a "prompt" field',
+        );
         return;
       }
       this.jsonError.set(null);

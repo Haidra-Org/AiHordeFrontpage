@@ -2,9 +2,7 @@
   <section class="section-primary" id="stats">
     <div class="container-content-minimal">
       <div class="max-w-screen-md mx-auto mb-3 text-center">
-        <h2
-          class="mb-3 text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white"
-        >
+        <h2 class="mb-3 heading-section-lg">
           {{ "stats" | transloco }}
         </h2>
       </div>
@@ -12,7 +10,7 @@
       <!-- Main stats grid - 4 columns on large screens, 2 on medium, 1 on small -->
       <div class="grid-stats">
         <!-- Image stats -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <h3 class="heading-stats">
             {{ "image_stats" | transloco }}
             <app-info-tooltip
@@ -21,12 +19,10 @@
             />
           </h3>
           <ul role="list" class="list-stats">
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-image.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{
                     "stats.average_recent_performance_images.label" | transloco
                   }}:</span
@@ -41,12 +37,10 @@
                 }
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-image.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.total_pixelsteps.label" | transloco }}:</span
                 >
                 @if (totalPixelsteps(); as ps) {
@@ -57,23 +51,19 @@
                 }
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-image.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.total_images.label" | transloco }}:</span
                 >
                 {{ units.formatLargeNumber(imageStats()!.images, "images") }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-image.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.active_workers.label" | transloco }}:</span
                 >
                 {{
@@ -86,12 +76,10 @@
                 }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-image.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.image_queue.label" | transloco }}:</span
                 >
                 {{ stats()!.queued_requests | number }} requests
@@ -106,7 +94,7 @@
         </div>
 
         <!-- Text stats -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <h3 class="heading-stats">
             {{ "text_stats" | transloco }}
             <app-info-tooltip
@@ -115,12 +103,10 @@
             />
           </h3>
           <ul role="list" class="list-stats">
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-text.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{
                     "stats.average_recent_performance_text.label" | transloco
                   }}:</span
@@ -135,12 +121,10 @@
                 }
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-text.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.total_tokens.label" | transloco }}:</span
                 >
                 @if (totalTokens(); as tokens) {
@@ -151,23 +135,19 @@
                 }
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-text.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.total_texts.label" | transloco }}:</span
                 >
                 {{ units.formatLargeNumber(textStats()!.requests, "requests") }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-text.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.active_workers.label" | transloco }}:</span
                 >
                 {{
@@ -180,12 +160,10 @@
                 }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-text.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.text_queue.label" | transloco }}:</span
                 >
                 {{ stats()!.queued_text_requests | number }} requests
@@ -200,7 +178,7 @@
         </div>
 
         <!-- Interrogation stats -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <h3 class="heading-stats">
             {{ "image_alchemy" | transloco }}
             <app-info-tooltip
@@ -209,12 +187,10 @@
             />
           </h3>
           <ul role="list" class="list-stats">
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-alchemy.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{
                     "stats.total_alchemy_processed.label" | transloco
                   }}:</span
@@ -227,12 +203,10 @@
                 }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-alchemy.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.active_workers.label" | transloco }}:</span
                 >
                 {{
@@ -245,12 +219,10 @@
                 }}
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg href="assets/img/stats-alchemy.svg" class="icon-sm" />
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
-                <span class="font-medium"
+              <span class="stat-text">
+                <span class="stat-text-label"
                   >{{ "stats.interrogation_queue.label" | transloco }}:</span
                 >
                 {{ stats()!.queued_forms | number }} forms
@@ -260,21 +232,19 @@
         </div>
 
         <!-- Realtime stats -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <h3 class="heading-stats">
             {{ "realtime_stats" | transloco }}
             <app-info-tooltip termKey="help.home.tooltip.realtime_stats" />
           </h3>
-          <ul role="list" class="space-y-2 underline-links mt-3">
-            <li class="flex items-start space-x-2">
+          <ul role="list" class="list-stats underline-links">
+            <li class="stat-item">
               <inline-svg
                 href="assets/img/stats-realtime.svg"
                 class="icon-sm"
               />
               <!-- Links to the /details/usage and /details/models pages -->
-              <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
-              >
+              <span class="stat-text">
                 <a href="/details/usage" class="underline">
                   {{ "stats.realtime.usage_link" | transloco }}
                 </a>
@@ -284,13 +254,13 @@
                 </a>
               </span>
             </li>
-            <li class="flex items-start space-x-2">
+            <li class="stat-item">
               <inline-svg
                 href="assets/img/stats-realtime.svg"
                 class="icon-sm"
               />
               <span
-                class="text-sm leading-relaxed text-gray-900 dark:text-white"
+                class="stat-text"
                 [innerHTML]="
                   'stats.realtime'
                     | transloco
@@ -322,7 +292,7 @@
       <!-- Loading grid matching the real stats layout -->
       <div class="grid-stats skeleton-pulse">
         <!-- Image stats skeleton -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <div
             class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
           ></div>
@@ -381,7 +351,7 @@
         </div>
 
         <!-- Text stats skeleton -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <div
             class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
           ></div>
@@ -440,7 +410,7 @@
         </div>
 
         <!-- Interrogation stats skeleton -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <div
             class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
           ></div>
@@ -479,7 +449,7 @@
         </div>
 
         <!-- Realtime stats skeleton -->
-        <div class="space-y-3">
+        <div class="stat-column">
           <div
             class="h-7 bg-gray-200 dark:bg-gray-700 rounded w-2/3 border-b border-gray-200 dark:border-gray-700 pb-3"
           ></div>

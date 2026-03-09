@@ -1,25 +1,27 @@
 <section class="section-primary">
   <div class="container-page-header lg:grid-cols-12">
     <div class="place-center">
-      <h1 class="heading-hero">
-        {{ "app_title" | transloco }}
-      </h1>
+      <div class="hero-glass-stage">
+        <h1 class="heading-hero">
+          {{ "app_title" | transloco }}
+        </h1>
 
-      <p class="text-intro-lead">
-        {{ "homepage.intro.tagline" | transloco }}
-      </p>
+        <p class="text-intro-lead">
+          {{ "homepage.intro.tagline" | transloco }}
+        </p>
 
-      <p class="hero-description underline-links">
-        {{ "homepage.intro.powered_by_prefix" | transloco }}
-        <a routerLink="/contribute/workers">{{
-          "service_description.imageWorkerLink" | transloco
-        }}</a>
-        {{ "homepage.intro.powered_by_and" | transloco }}
-        <a routerLink="/contribute/workers">{{
-          "service_description.textWorkerLink" | transloco
-        }}</a
-        >.
-      </p>
+        <p class="hero-description underline-links">
+          {{ "homepage.intro.powered_by_prefix" | transloco }}
+          <a routerLink="/contribute/workers">{{
+            "service_description.imageWorkerLink" | transloco
+          }}</a>
+          {{ "homepage.intro.powered_by_and" | transloco }}
+          <a routerLink="/contribute/workers">{{
+            "service_description.textWorkerLink" | transloco
+          }}</a
+          >.
+        </p>
+      </div>
 
       <!-- Feature cards grid -->
       <div class="intro-features">

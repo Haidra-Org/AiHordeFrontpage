@@ -33,8 +33,8 @@ export class WorkerStatusIconComponent {
   public readonly type = input.required<string>();
   public readonly sizeClass = input('w-5 h-5');
 
-  public readonly iconDef = computed(() =>
-    WORKER_ICON_MAP.get(this.type()) ?? null,
+  public readonly iconDef = computed(
+    () => WORKER_ICON_MAP.get(this.type()) ?? null,
   );
 
   public readonly svgClass = computed(() => {

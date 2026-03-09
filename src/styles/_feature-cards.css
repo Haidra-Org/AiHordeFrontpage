@@ -11,20 +11,33 @@
 @layer components {
   /* Feature card base - clickable card with hover effects */
   .feature-card {
-    @apply flex flex-col items-start p-4;
-    @apply bg-white border border-gray-200 rounded-lg no-underline;
-    @apply transition-all duration-200;
-    @apply dark:bg-gray-800 dark:border-gray-700;
+    @apply flex flex-col items-start p-4 rounded-lg no-underline;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+    transition:
+      box-shadow var(--transition-normal) ease,
+      transform var(--transition-normal) ease,
+      border-color var(--transition-normal) ease;
+  }
+
+  .dark .feature-card {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .feature-card:hover {
-    @apply -translate-y-0.5 border-purple-600;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1);
+    @apply -translate-y-0.5;
+    border-color: var(--color-brand-purple);
+    box-shadow: var(--shadow-glass-hover);
   }
 
   .dark .feature-card:hover {
-    @apply border-purple-500;
-    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4);
+    border-color: rgb(168 85 247 / 0.6);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
   }
 
   /* Feature card disabled state - no hover effects */
@@ -127,8 +140,17 @@
 
   .feature-box {
     @apply flex flex-col items-center text-center p-6 rounded-lg;
-    @apply bg-surface-secondary;
-    @apply dark:bg-gray-800;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .feature-box {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   /* Circular icon for feature boxes (larger than card icons) */

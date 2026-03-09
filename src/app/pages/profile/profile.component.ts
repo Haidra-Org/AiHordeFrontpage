@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  effect,
   inject,
   OnInit,
   signal,
@@ -9,16 +10,17 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { combineLatest, from, map, mergeMap } from 'rxjs';
+import { catchError, combineLatest, from, map, mergeMap, of } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
@@ -41,9 +43,19 @@ import { KudosTermComponent } from '../../components/kudos-term/kudos-term.compo
 import { GenerationsTabComponent } from '../../components/generations-tab/generations-tab.component';
 import { PageGuideService } from '../../services/page-guide.service';
 
+type ProfileTab =
+  | 'profile'
+  | 'generations'
+  | 'records'
+  | 'workers'
+  | 'teams'
+  | 'styles'
+  | 'shared-keys';
+
 type WorkerListItem = {
   id: string;
   loading: boolean;
+  failed: boolean;
   worker: HordeWorker | null;
 };
 
@@ -66,6 +78,7 @@ type WorkerListItem = {
     PageIntroComponent,
     KudosTermComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
     GenerationsTabComponent,
   ],
   templateUrl: './profile.component.html',
@@ -77,6 +90,7 @@ export class ProfileComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
   private readonly workerService = inject(AdminWorkerService);
   private readonly teamService = inject(TeamService);
   private readonly router = inject(Router);
@@ -87,10 +101,38 @@ export class ProfileComponent implements OnInit {
 
   public loginError = signal<boolean>(false);
 
+  constructor() {
+    // When user data arrives after the route param already set the tab,
+    // trigger data loading for tabs that need it.
+    effect(() => {
+      const user = this.auth.currentUser();
+      const tab = this.activeTab();
+      if (!user) return;
+
+      if (tab === 'workers' && this.userWorkers().length === 0) {
+        this.loadUserWorkers();
+      }
+      if (
+        (tab === 'workers' || tab === 'teams') &&
+        this.allTeams().length === 0
+      ) {
+        this.loadAllTeams();
+      }
+    });
+  }
+
   // Tab state
-  public activeTab = signal<
-    'profile' | 'generations' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys'
-  >('profile');
+  private static readonly TAB_SLUGS: Record<string, ProfileTab> = {
+    overview: 'profile',
+    generations: 'generations',
+    records: 'records',
+    workers: 'workers',
+    teams: 'teams',
+    styles: 'styles',
+    'shared-keys': 'shared-keys',
+  };
+
+  public activeTab = signal<ProfileTab>('profile');
 
   // Workers state
   public userWorkers = signal<WorkerListItem[]>([]);
@@ -191,6 +233,45 @@ export class ProfileComponent implements OnInit {
     });
   });
 
+  public unresolvedWorkers = computed(() =>
+    this.userWorkers().filter((item) => item.loading || item.failed),
+  );
+
+  public readonly workerTypeGroups: readonly WorkerType[] = [
+    'image',
+    'text',
+    'interrogation',
+  ];
+  public collapsedWorkerTypes = signal<Set<WorkerType>>(new Set());
+
+  public groupedWorkers = computed(() => {
+    const all = this.filteredAndSortedWorkers();
+    const groups: { type: WorkerType; workers: WorkerListItem[] }[] = [];
+    for (const type of this.workerTypeGroups) {
+      const workers = all.filter((w) => w.worker?.type === type);
+      if (workers.length > 0) {
+        groups.push({ type, workers });
+      }
+    }
+    return groups;
+  });
+
+  public isWorkerTypeCollapsed(type: WorkerType): boolean {
+    return this.collapsedWorkerTypes().has(type);
+  }
+
+  public toggleWorkerTypeSection(type: WorkerType): void {
+    this.collapsedWorkerTypes.update((set) => {
+      const next = new Set(set);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }
+
   // Records expanded state
   public recordsExpanded = signal<boolean>(false);
 
@@ -241,6 +322,19 @@ export class ProfileComponent implements OnInit {
       });
 
     this.footerColor.setDarkMode(true);
+
+    // Sync active tab from route param
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => {
+        const slug = params.get('tab') ?? 'overview';
+        const tab = ProfileComponent.TAB_SLUGS[slug];
+        if (tab) {
+          this.setActiveTab(tab);
+        } else {
+          this.router.navigate(['/profile/overview'], { replaceUrl: true });
+        }
+      });
 
     // Reset error when typing
     this.form.controls.apiKey.valueChanges
@@ -295,9 +389,7 @@ export class ProfileComponent implements OnInit {
     this.recordsExpanded.set(!this.recordsExpanded());
   }
 
-  public setActiveTab(
-    tab: 'profile' | 'generations' | 'records' | 'workers' | 'teams' | 'styles' | 'shared-keys',
-  ): void {
+  public setActiveTab(tab: ProfileTab): void {
     this.activeTab.set(tab);
 
     // Load workers when switching to workers tab
@@ -325,6 +417,7 @@ export class ProfileComponent implements OnInit {
       workerIds.map((id) => ({
         id,
         loading: true,
+        failed: false,
         worker: null,
       })),
     );
@@ -335,16 +428,21 @@ export class ProfileComponent implements OnInit {
           (id) =>
             this.workerService
               .getWorker(id)
-              .pipe(map((worker) => ({ id, worker }))),
+              .pipe(
+                map((worker) => ({ id, worker, failed: false })),
+                catchError(() => of({ id, worker: null, failed: true })),
+              ),
           this.workerRequestConcurrency,
         ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ id, worker }) => {
+        next: ({ id, worker, failed }) => {
           this.userWorkers.update((items) =>
             items.map((item) =>
-              item.id === id ? { ...item, worker, loading: false } : item,
+              item.id === id
+                ? { ...item, worker, failed, loading: false }
+                : item,
             ),
           );
         },
@@ -509,7 +607,9 @@ export class ProfileComponent implements OnInit {
           this.profileUpdateSuccess.set('profile.change_username_success');
           setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
         } else {
-          this.profileUpdateError.set(result.error ?? 'Failed to update username');
+          this.profileUpdateError.set(
+            result.error ?? 'Failed to update username',
+          );
         }
       });
   }
@@ -545,7 +645,9 @@ export class ProfileComponent implements OnInit {
           this.profileUpdateSuccess.set('profile.edit_contact_success');
           setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
         } else {
-          this.profileUpdateError.set(result.error ?? 'Failed to update contact');
+          this.profileUpdateError.set(
+            result.error ?? 'Failed to update contact',
+          );
         }
       });
   }
@@ -573,7 +675,9 @@ export class ProfileComponent implements OnInit {
           this.profileUpdateSuccess.set('profile.public_workers_success');
           setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
         } else {
-          this.profileUpdateError.set(result.error ?? 'Failed to update setting');
+          this.profileUpdateError.set(
+            result.error ?? 'Failed to update setting',
+          );
         }
       });
   }

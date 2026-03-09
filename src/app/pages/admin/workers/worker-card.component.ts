@@ -47,6 +47,7 @@ export class WorkerCardComponent {
   public worker = input.required<HordeWorker>();
   public isModerator = input(false);
   public viewMode = input<'admin' | 'public'>('admin');
+  public pinHeaderOnMobile = input(false);
   public availableTeams = input<Team[]>([]);
   public highlighted = input(false);
   public workerUpdated = output<void>();
@@ -158,26 +159,84 @@ export class WorkerCardComponent {
 
   public isHighSpeed(): boolean {
     if (this.worker().type === 'image') {
-      return this.unitConversion.parseWorkerPerformance(this.worker().performance) > 3.0;
+      return (
+        this.unitConversion.parseWorkerPerformance(this.worker().performance) >
+        3.0
+      );
     }
     return false;
   }
 
   public isLowSpeed(): boolean {
     if (this.worker().type === 'image') {
-      return this.unitConversion.parseWorkerPerformance(this.worker().performance) < 0.4;
+      return (
+        this.unitConversion.parseWorkerPerformance(this.worker().performance) <
+        0.4
+      );
     }
     return false;
   }
 
   public hasIssue(): boolean {
     const worker = this.worker();
+    const showModeratorStates = this.isModerator();
     return (
       !worker.online ||
-      worker.paused ||
       worker.maintenance_mode ||
-      worker.flagged
+      (showModeratorStates && (worker.paused || worker.flagged))
     );
+  }
+
+  public getStatusType(): 'online' | 'offline' | 'issue' {
+    const worker = this.worker();
+    const showModeratorStates = this.isModerator();
+    const hasActiveIssues =
+      worker.maintenance_mode ||
+      (showModeratorStates && (worker.paused || worker.flagged));
+
+    if (hasActiveIssues) return 'issue';
+    if (!worker.online) return 'offline';
+    return 'online';
+  }
+
+  public getStatusTooltipKey(): string {
+    switch (this.getStatusType()) {
+      case 'online':
+        return 'admin.workers.card.online';
+      case 'offline':
+        return 'admin.workers.card.offline';
+      case 'issue':
+        return 'admin.workers.card.issue';
+    }
+  }
+
+  public getStatusDescKey(): string {
+    const statusType = this.getStatusType();
+    if (statusType === 'online')
+      return 'help.glossary.page.workers.icon_online.description';
+    if (statusType === 'offline')
+      return 'help.glossary.page.workers.icon_offline.description';
+
+    const worker = this.worker();
+    const showModeratorStates = this.isModerator();
+    const issues: string[] = [];
+    if (!worker.online) issues.push('offline');
+    if (worker.maintenance_mode) issues.push('maintenance');
+    if (showModeratorStates && worker.paused) issues.push('paused');
+    if (showModeratorStates && worker.flagged) issues.push('flagged');
+
+    if (issues.length > 1)
+      return 'help.glossary.page.workers.icon_issue_multiple.description';
+    switch (issues[0]) {
+      case 'maintenance':
+        return 'help.glossary.page.workers.icon_issue_maintenance.description';
+      case 'paused':
+        return 'help.glossary.page.workers.icon_issue_paused.description';
+      case 'flagged':
+        return 'help.glossary.page.workers.icon_issue_flagged.description';
+      default:
+        return 'help.glossary.page.workers.icon_issue.description';
+    }
   }
 
   public hasImageCapabilities(): boolean {
@@ -194,6 +253,19 @@ export class WorkerCardComponent {
 
   public iconDesc(type: string): string {
     return WORKER_ICON_MAP.get(type)?.descriptionKey ?? '';
+  }
+
+  public getWorkerTypeIcon(): string {
+    switch (this.worker().type) {
+      case 'image':
+        return 'type_image';
+      case 'text':
+        return 'type_text';
+      case 'interrogation':
+        return 'type_interrogation';
+      default:
+        return 'type_image';
+    }
   }
 
   public getCardBackground(): string {
@@ -391,7 +463,9 @@ export class WorkerCardComponent {
    */
   public getPerformanceUnit(): SynthesizedUnit | null {
     const worker = this.worker();
-    const performanceValue = this.unitConversion.parseWorkerPerformance(worker.performance);
+    const performanceValue = this.unitConversion.parseWorkerPerformance(
+      worker.performance,
+    );
 
     if (performanceValue === 0) {
       return null;

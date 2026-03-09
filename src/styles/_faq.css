@@ -28,10 +28,60 @@
     @apply lg:mt-16 lg:mb-10;
   }
 
-  /* FAQ question button */
+  /* =================================================================
+     FAQ ITEM — every item is always a glass card.
+     Collapsed: compact glass row.
+     Expanded: card grows to include the answer area below the question.
+     No bottom-border dividers — spacing between cards provides separation.
+     ================================================================= */
+
+  /* Base card — always present on every FAQ item */
+  .faq-item {
+    @apply rounded-xl mb-2;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+    transition:
+      box-shadow 0.2s,
+      border-color 0.2s;
+  }
+
+  .faq-item:hover {
+    box-shadow: var(--shadow-glass-hover);
+  }
+
+  .dark .faq-item {
+    background: rgb(31 41 55 / 0.35);
+    border-color: rgb(255 255 255 / 0.06);
+  }
+
+  .dark .faq-item:hover {
+    border-color: rgb(255 255 255 / 0.12);
+  }
+
+  /* Expanded state — slightly stronger glass */
+  .faq-item-expanded {
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border-color: var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated), var(--shadow-glass-inset);
+    @apply mb-3;
+  }
+
+  .dark .faq-item-expanded {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  /* FAQ question button — lives inside the card, no border needed */
   .faq-question {
-    @apply flex items-center justify-between w-full py-5 text-lg font-medium text-left text-gray-500 transition-all duration-200;
-    border-bottom: 1px solid rgb(229 231 235);
+    @apply flex items-center justify-between w-full;
+    @apply py-4 px-5 text-lg font-medium text-left;
+    @apply text-gray-600 rounded-xl;
+    @apply transition-colors duration-200;
   }
 
   .faq-question:hover {
@@ -40,10 +90,12 @@
 
   .faq-question.is-active {
     @apply text-gray-900 font-semibold;
+    @apply rounded-t-xl rounded-b-none;
+    border-bottom: 1px solid var(--color-glass-border-subtle);
   }
 
   .dark .faq-question {
-    @apply border-gray-700 text-gray-400;
+    @apply text-gray-400;
   }
 
   .dark .faq-question:hover {
@@ -52,39 +104,35 @@
 
   .dark .faq-question.is-active {
     @apply text-white;
+    border-bottom-color: rgb(255 255 255 / 0.06);
   }
 
   @media (min-width: 1024px) {
     .faq-question {
-      @apply text-xl py-6;
+      @apply text-xl py-5 px-8;
     }
   }
 
-  /* FAQ answer container */
+  /* FAQ answer — content area inside the card */
   .faq-answer {
-    @apply py-6 px-3 pb-8;
-    border-bottom: 1px solid rgb(229 231 235);
-  }
-
-  .dark .faq-answer {
-    @apply border-gray-700;
+    @apply py-6 px-5;
   }
 
   @media (min-width: 768px) {
     .faq-answer {
-      @apply py-8 px-6 pb-10;
+      @apply py-8 px-8;
     }
   }
 
   @media (min-width: 1024px) {
     .faq-answer {
-      @apply py-10 px-8 pb-12;
+      @apply py-8 px-10;
     }
   }
 
   /* FAQ chevron icon */
   .faq-chevron {
-    @apply w-6 h-6 shrink-0 ml-4 text-gray-400 transition-all duration-200;
+    @apply w-5 h-5 shrink-0 ml-4 text-gray-400 transition-all duration-200;
   }
 
   .faq-question:hover .faq-chevron {
@@ -92,7 +140,7 @@
   }
 
   .faq-question.is-active .faq-chevron {
-    @apply rotate-180 text-blue-500;
+    @apply rotate-180 text-purple-500;
   }
 
   .dark .faq-chevron {
@@ -104,7 +152,7 @@
   }
 
   .dark .faq-question.is-active .faq-chevron {
-    @apply text-blue-400;
+    @apply text-purple-400;
   }
 
   /* =================================================================
@@ -118,6 +166,11 @@
 
   .faq-content {
     @apply flex-1 min-w-0;
+  }
+
+  /* Question list within a section */
+  .faq-question-list {
+    @apply flex flex-col gap-2;
   }
 
   /* --- Shared ToC elements --- */
@@ -201,15 +254,19 @@
 
   /* --- Mobile ToC (visible below lg, sticky below nav) --- */
   .faq-toc-mobile {
-    @apply border-b border-gray-200 bg-white;
     @apply lg:hidden;
+    background: rgb(255 255 255 / 0.8);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border-bottom: 1px solid var(--color-glass-border-subtle);
     position: sticky;
     top: var(--nav-height-mobile, 64px);
     z-index: 30;
   }
 
   .dark .faq-toc-mobile {
-    @apply border-gray-700 bg-gray-800;
+    background: rgb(17 24 39 / 0.8);
+    border-bottom-color: rgb(255 255 255 / 0.08);
   }
 
   .faq-toc-mobile-toggle {
@@ -238,11 +295,22 @@
   .faq-toc-sidebar {
     @apply hidden;
     @apply lg:block lg:w-56 lg:shrink-0;
+    @apply rounded-xl p-3;
     position: sticky;
     top: calc(var(--nav-height-desktop, 4rem) + 1.5rem);
     align-self: start;
     max-height: calc(100vh - var(--nav-height-desktop, 4rem) - 3rem);
     overflow-y: auto;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .faq-toc-sidebar {
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   .faq-toc-sidebar-title {
@@ -255,11 +323,29 @@
 
   .faq-toc-sidebar-body {
     @apply p-0;
-    border-left: 2px solid rgb(229 231 235);
+    border-left: 2px solid var(--color-glass-border-subtle);
   }
 
   .dark .faq-toc-sidebar-body {
-    border-left-color: rgb(55 65 81);
+    border-left-color: rgb(255 255 255 / 0.1);
+  }
+
+  /* --- FAQ template helper classes --- */
+
+  /* Hero subtitle constraint */
+  .faq-subtitle {
+    @apply mt-4 max-w-2xl;
+  }
+
+  /* Section wrapper */
+  .faq-section-wrapper {
+    position: relative;
+    padding-bottom: 1rem;
+  }
+
+  /* Question text alignment */
+  .faq-question-text {
+    @apply text-left pr-4;
   }
 
   /* Anchor targets: clear sticky headers + section heading when scrolled to */

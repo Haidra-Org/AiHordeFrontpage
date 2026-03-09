@@ -302,7 +302,9 @@ export class FaqComponent implements OnInit, OnDestroy {
     let extra = 0;
     const section = el.closest('[id^="faq-section-"]');
     if (section) {
-      const heading = section.querySelector<HTMLElement>('.section-header-collapsible');
+      const heading = section.querySelector<HTMLElement>(
+        '.section-header-collapsible',
+      );
       if (heading) {
         extra = heading.getBoundingClientRect().height;
       }

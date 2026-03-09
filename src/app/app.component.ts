@@ -64,13 +64,20 @@ export class AppComponent implements OnInit, OnDestroy {
   public darkFooter = this.footerColor.dark;
 
   // ── Nav notification computed signals ──
-  public readonly contributeNotifications = this.navNotifications.notificationsForNavItem('contribute');
-  public readonly hasContributeNotification = computed(() => this.contributeNotifications().length > 0);
+  public readonly contributeNotifications =
+    this.navNotifications.notificationsForNavItem('contribute');
+  public readonly hasContributeNotification = computed(
+    () => this.contributeNotifications().length > 0,
+  );
   public readonly contributeTooltip = computed(() => {
     const items = this.contributeNotifications();
-    return items.length > 0 ? items[0].tooltipParams?.['types'] as string ?? '' : '';
+    return items.length > 0
+      ? ((items[0].tooltipParams?.['types'] as string) ?? '')
+      : '';
   });
-  public readonly hasMobileIndicator = computed(() => this.navNotifications.hasPendingMobileIndicator());
+  public readonly hasMobileIndicator = computed(() =>
+    this.navNotifications.hasPendingMobileIndicator(),
+  );
   public showMobileMenu = false;
   public showDetailsDropdown = false;
   public showMobileDetailsSubmenu = false;

@@ -153,7 +153,7 @@ describe('NeedWorkersNotifierService', () => {
     expect(active.length)
       .withContext(
         'effect() must fire inside afterNextRender — if this fails, ' +
-        'the Injector is likely not being passed to effect()',
+          'the Injector is likely not being passed to effect()',
       )
       .toBe(1);
     expect(active[0].stateHash).toBe('image,text,alchemy');

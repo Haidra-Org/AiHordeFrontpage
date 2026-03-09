@@ -27,20 +27,28 @@
   /* Base news card */
   .news-card {
     @apply relative p-6 rounded-xl;
-    @apply bg-surface-primary border border-edge-secondary;
     @apply transition-all duration-200;
-    @apply dark:bg-gray-800 dark:border-gray-700;
-    box-shadow: var(--shadow-card);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .news-card {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
   .news-card:hover {
-    @apply border-edge-strong;
-    @apply dark:border-gray-600;
-    box-shadow: var(--shadow-card-hover);
+    border-color: var(--color-glass-border);
+    box-shadow: var(--shadow-glass-hover);
   }
 
   .dark .news-card:hover {
-    box-shadow: var(--shadow-card-hover-dark);
+    border-color: rgb(255 255 255 / 0.12);
+    box-shadow: 0 8px 32px rgb(0 0 0 / 0.35);
   }
 
   /* Featured news card (first item) - enhanced styling */
@@ -153,5 +161,58 @@
   .news-empty-text {
     @apply text-lg font-medium text-content-secondary;
     @apply dark:text-gray-400;
+  }
+
+  /* =================================================================
+     NEWS HOMEPAGE ITEMS - Compact news display for homepage section
+     ================================================================= */
+
+  /* News item wrapper */
+  .news-home-item {
+    @apply mb-3;
+  }
+
+  /* News item heading - title with date */
+  .news-home-heading {
+    @apply mb-2 text-xl text-content-primary;
+    @apply dark:text-white;
+  }
+
+  /* Date portion within heading */
+  .news-home-date {
+    @apply text-content-secondary;
+    @apply dark:text-gray-200;
+  }
+
+  /* News excerpt / body text */
+  .news-home-text {
+    @apply mb-2 font-light;
+    @apply lg:text-lg;
+  }
+
+  /* =================================================================
+     NEWS SKELETON - Loading placeholder for homepage news
+     ================================================================= */
+
+  .news-skeleton-bar {
+    @apply rounded;
+    @apply bg-gray-200;
+    @apply dark:bg-gray-700;
+  }
+
+  .news-skeleton-bar--title {
+    @apply h-6 w-3/4 mb-2;
+  }
+
+  .news-skeleton-bar--line {
+    @apply h-4;
+  }
+
+  .news-skeleton-bar--line-short {
+    @apply h-4 w-5/6;
+  }
+
+  .news-skeleton-bar--line-shorter {
+    @apply h-4 w-4/5;
   }
 }

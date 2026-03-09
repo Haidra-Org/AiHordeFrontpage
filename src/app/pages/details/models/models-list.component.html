@@ -2,7 +2,12 @@
   <app-page-intro pageKey="models" />
 
   <!-- Sub-Tab Navigation -->
-  <div class="details-tabs" role="tablist" appScrollFade>
+  <div
+    class="details-tabs details-tabs--glass details-tabs--sub"
+    role="tablist"
+    appScrollFade
+    [appStickyHeader]="20"
+  >
     <button
       type="button"
       class="details-tab"
@@ -82,7 +87,7 @@
 
   <!-- Summary Stats -->
   @if (!loading() && !error() && currentModels().length > 0) {
-    <div class="details-summary">
+    <div class="details-summary details-summary--glass">
       <div class="summary-stat">
         <span class="summary-label">{{
           "details.models.total_models" | transloco

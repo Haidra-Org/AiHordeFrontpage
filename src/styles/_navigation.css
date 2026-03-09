@@ -20,8 +20,17 @@
   /* Shared nav shell for sticky header backgrounds/borders */
   .nav-shell {
     @apply fixed top-0 left-0 right-0 z-50;
-    @apply bg-white border-b border-gray-200;
-    @apply dark:bg-gray-900 dark:border-gray-700;
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border-bottom: 1px solid var(--color-glass-border-subtle);
+    box-shadow: 0 1px 8px rgb(0 0 0 / 0.04);
+  }
+
+  .dark .nav-shell {
+    background: rgb(17 24 39 / 0.82);
+    border-bottom-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 1px 8px rgb(0 0 0 / 0.2);
   }
 
   /* Navigation container needs relative positioning for mobile menu dropdown */
@@ -60,13 +69,13 @@
     @apply focus:outline-none;
   }
 
-  .logo-text-link:focus {
+  .logo-text-link:focus-visible {
     box-shadow:
       0 0 0 2px var(--color-brand-purple),
       0 0 0 4px rgba(147, 51, 234, 0.1);
   }
 
-  .logo-link:focus {
+  .logo-link:focus-visible {
     box-shadow:
       0 0 0 2px var(--color-brand-purple),
       0 0 0 4px rgba(147, 51, 234, 0.1);
@@ -126,7 +135,7 @@
     @apply focus:outline-none;
   }
 
-  .github-widget a:first-child:focus {
+  .github-widget a:first-child:focus-visible {
     box-shadow:
       0 0 0 2px var(--color-brand-purple),
       0 0 0 4px rgba(147, 51, 234, 0.1);

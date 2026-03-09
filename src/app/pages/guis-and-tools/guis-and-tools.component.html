@@ -1,16 +1,19 @@
 <section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-page-title">
+        {{ "guis_and_tools_page.title" | transloco }}
+      </h1>
+      <p class="text-description">
+        {{ "guis_and_tools_page.description" | transloco }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
   <div class="container-content-sm">
     <div class="container-page-content">
-      <!-- Page Header -->
-      <div class="container-centered-md">
-        <h1 class="heading-page-title">
-          {{ "guis_and_tools_page.title" | transloco }}
-        </h1>
-        <p class="text-description">
-          {{ "guis_and_tools_page.description" | transloco }}
-        </p>
-      </div>
-
       <!-- Collapsible Beginner Introduction -->
       <app-beginner-header [disableLinks]="true" />
 
@@ -51,7 +54,7 @@
                 aria-label="Clear search"
               >
                 <svg
-                  class="w-4 h-4"
+                  class="tools-icon-sm"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -76,7 +79,7 @@
             [attr.aria-expanded]="showFiltersPanel()"
           >
             <svg
-              class="w-5 h-5"
+              class="tools-icon"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -106,9 +109,9 @@
               aria-label="Table view"
               title="Table view"
             >
-              <div class="flex gap-2">
+              <div class="tools-view-btn-content">
                 <svg
-                  class="w-5 h-5"
+                  class="tools-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -131,9 +134,9 @@
               aria-label="Grid view"
               title="Grid view"
             >
-              <div class="flex gap-2">
+              <div class="tools-view-btn-content">
                 <svg
-                  class="w-5 h-5"
+                  class="tools-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -247,7 +250,11 @@
             <ul class="tools-toc-list">
               @for (section of visibleSections(); track section.id) {
                 <!-- Parent heading (rendered once before the first child of a group) -->
-                @if (section.parentId && ($index === 0 || visibleSections()[$index - 1].parentId !== section.parentId)) {
+                @if (
+                  section.parentId &&
+                  ($index === 0 ||
+                    visibleSections()[$index - 1].parentId !== section.parentId)
+                ) {
                   <li class="tools-toc-parent">
                     <button
                       type="button"
@@ -255,7 +262,7 @@
                       (click)="scrollToSection(section.parentId)"
                     >
                       <span class="tools-toc-link-text">{{
-                        'guis_and_tools_page.guis_parent_title' | transloco
+                        "guis_and_tools_page.guis_parent_title" | transloco
                       }}</span>
                     </button>
                   </li>
@@ -283,7 +290,11 @@
         <!-- Main Content -->
         <div class="tools-content">
           <!-- Mobile Section Navigation Pills -->
-          <nav class="tools-section-pills" [appStickyHeader]="20" aria-label="Jump to section">
+          <nav
+            class="tools-section-pills"
+            [appStickyHeader]="20"
+            aria-label="Jump to section"
+          >
             <span class="tools-section-pills-label">{{
               "guis_and_tools_page.jump_to" | transloco
             }}</span>
@@ -329,12 +340,9 @@
               />
               @if (section.id === "workers") {
                 <div class="callout callout-accent mt-4">
-                  <p class="callout-body m-0">
+                  <p class="callout-body">
                     {{ "workers.tools_cta.message" | transloco }}
-                    <a
-                      routerLink="/contribute/workers"
-                      class="link font-semibold"
-                    >
+                    <a routerLink="/contribute/workers" class="link-bold">
                       {{ "workers.tools_cta.link" | transloco }}
                     </a>
                   </p>
@@ -376,5 +384,4 @@
       </div>
     </div>
   </div>
-
 </section>

@@ -88,9 +88,7 @@ export class AdminGenerationTrackerComponent {
   }
 
   public removeTrackedGeneration(id: string): void {
-    this.trackedGenerations.update((gens) =>
-      gens.filter((g) => g.id !== id),
-    );
+    this.trackedGenerations.update((gens) => gens.filter((g) => g.id !== id));
   }
 
   public clearAll(): void {

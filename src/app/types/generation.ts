@@ -167,7 +167,11 @@ export interface TrackedGeneration {
   id: string;
   type: GenerationType;
   check: GenerationCheckResponse | null;
-  result: GenerationStatusResponse | TextGenerationStatusResponse | AlchemyStatusResponse | null;
+  result:
+    | GenerationStatusResponse
+    | TextGenerationStatusResponse
+    | AlchemyStatusResponse
+    | null;
   done: boolean;
   faulted: boolean;
   notFound?: boolean;

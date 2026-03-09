@@ -26,11 +26,46 @@
     gap: 0.75rem;
     padding: 0.875rem 1rem;
     cursor: pointer;
-    border-radius: 0.5rem;
-    @apply bg-white border border-gray-200;
-    @apply dark:bg-gray-800 dark:border-gray-700;
-    @apply hover:bg-gray-50 dark:hover:bg-gray-700/50;
-    @apply transition-colors duration-200;
+    border-radius: 0.75rem;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    transition:
+      background var(--transition-normal) ease,
+      border-color var(--transition-normal) ease,
+      box-shadow var(--transition-normal) ease,
+      transform var(--transition-normal) ease;
+  }
+
+  .item-list-row:hover {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    box-shadow:
+      var(--shadow-glass-hover),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    transform: translateY(-1px);
+  }
+
+  .dark .item-list-row {
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.1),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  }
+
+  .dark .item-list-row:hover {
+    background: rgb(31 41 55 / 0.65);
+    border-color: rgb(255 255 255 / 0.15);
+    box-shadow:
+      0 8px 32px rgb(0 0 0 / 0.35),
+      0 2px 4px rgb(0 0 0 / 0.12),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
   }
 
   /* Content zone: name + description + badges */
@@ -61,7 +96,8 @@
   }
 
   /* Remove line clamp when row is expanded */
-  .table-item-wrapper:has(.item-list-row + .expanded-detail-panel) .table-cell-description {
+  .table-item-wrapper:has(.item-list-row + .expanded-detail-panel)
+    .table-cell-description {
     display: block;
     -webkit-line-clamp: unset;
     line-clamp: unset;
@@ -69,7 +105,7 @@
   }
 
   .dark .table-cell-description {
-    @apply text-gray-400;
+    color: var(--color-content-muted);
   }
 
   /* Actions zone: buttons + chevron */
@@ -79,7 +115,7 @@
 
   /* Table item wrapper - for expanded details panel */
   .table-item-wrapper {
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     overflow: hidden;
   }
 
@@ -94,13 +130,28 @@
   .table-item-recommended .item-list-row {
     border-left: 3px solid;
     @apply border-l-yellow-400;
-    @apply bg-yellow-50/40;
-    @apply dark:border-l-yellow-500 dark:bg-yellow-950/20;
+    background: color-mix(
+      in srgb,
+      rgb(254 252 232) 35%,
+      var(--color-glass-surface)
+    );
+    @apply dark:border-l-yellow-500;
+  }
+
+  .dark .table-item-recommended .item-list-row {
+    background: color-mix(in srgb, rgb(120 53 15) 12%, rgb(31 41 55 / 0.55));
   }
 
   .table-item-recommended .item-list-row:hover {
-    @apply bg-yellow-50/70;
-    @apply dark:bg-yellow-950/30;
+    background: color-mix(
+      in srgb,
+      rgb(254 252 232) 45%,
+      var(--color-glass-surface-elevated)
+    );
+  }
+
+  .dark .table-item-recommended .item-list-row:hover {
+    background: color-mix(in srgb, rgb(120 53 15) 18%, rgb(31 41 55 / 0.65));
   }
 
   /* Section header title wrapper - flex container for section title and count */

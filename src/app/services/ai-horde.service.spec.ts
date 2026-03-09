@@ -5,7 +5,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { AiHordeService } from './ai-horde.service';
-import { GENERATION_NOT_FOUND, ImageGenerationRequest } from '../types/generation';
+import {
+  GENERATION_NOT_FOUND,
+  ImageGenerationRequest,
+} from '../types/generation';
 
 describe('AiHordeService', () => {
   let service: AiHordeService;
@@ -43,7 +46,9 @@ describe('AiHordeService', () => {
       const req = http.expectOne('https://aihorde.net/api/v2/generate/async');
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('apikey')).toBe(apiKey);
-      expect(req.request.headers.get('Client-Agent')).toBe('AiHordeFrontpage:generate');
+      expect(req.request.headers.get('Client-Agent')).toBe(
+        'AiHordeFrontpage:generate',
+      );
       expect(req.request.body).toEqual(request);
       req.flush({ id: 'gen-abc', kudos: 10 });
     });
@@ -67,7 +72,10 @@ describe('AiHordeService', () => {
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/async')
-        .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        .flush('Server error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        });
     });
   });
 
@@ -83,9 +91,16 @@ describe('AiHordeService', () => {
       );
       expect(req.request.method).toBe('GET');
       req.flush({
-        finished: 0, processing: 1, restarted: 0, waiting: 0,
-        done: false, faulted: false, wait_time: 15, queue_position: 3,
-        kudos: 10, is_possible: true,
+        finished: 0,
+        processing: 1,
+        restarted: 0,
+        waiting: 0,
+        done: false,
+        faulted: false,
+        wait_time: 15,
+        queue_position: 3,
+        kudos: 10,
+        is_possible: true,
       });
     });
 
@@ -97,9 +112,16 @@ describe('AiHordeService', () => {
       );
       expect(req.request.method).toBe('GET');
       req.flush({
-        finished: 0, processing: 0, restarted: 0, waiting: 1,
-        done: false, faulted: false, wait_time: 30, queue_position: 5,
-        kudos: 10, is_possible: true,
+        finished: 0,
+        processing: 0,
+        restarted: 0,
+        waiting: 1,
+        done: false,
+        faulted: false,
+        wait_time: 30,
+        queue_position: 5,
+        kudos: 10,
+        is_possible: true,
       });
     });
 
@@ -122,7 +144,10 @@ describe('AiHordeService', () => {
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/check/gen-500')
-        .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        .flush('Server error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        });
     });
   });
 
@@ -132,11 +157,27 @@ describe('AiHordeService', () => {
   describe('getImageGenerationStatus', () => {
     it('should GET the status endpoint', (done: DoneFn) => {
       const mockStatus = {
-        finished: 1, processing: 0, restarted: 0, waiting: 0,
-        done: true, faulted: false, wait_time: 0, queue_position: 0,
-        kudos: 10, is_possible: true,
+        finished: 1,
+        processing: 0,
+        restarted: 0,
+        waiting: 0,
+        done: true,
+        faulted: false,
+        wait_time: 0,
+        queue_position: 0,
+        kudos: 10,
+        is_possible: true,
         generations: [
-          { img: 'https://example.com/img.webp', seed: '42', id: 'out-1', censored: false, model: 'sd', state: 'ok' as const, worker_id: 'w1', worker_name: 'W1' },
+          {
+            img: 'https://example.com/img.webp',
+            seed: '42',
+            id: 'out-1',
+            censored: false,
+            model: 'sd',
+            state: 'ok' as const,
+            worker_id: 'w1',
+            worker_name: 'W1',
+          },
         ],
       };
 
@@ -168,10 +209,26 @@ describe('AiHordeService', () => {
   describe('getTextGenerationStatus', () => {
     it('should GET the text status endpoint', (done: DoneFn) => {
       const mockStatus = {
-        finished: 1, processing: 0, restarted: 0, waiting: 0,
-        done: true, faulted: false, wait_time: 0, queue_position: 0,
-        kudos: 5, is_possible: true,
-        generations: [{ text: 'Hello world', model: 'koboldcpp', seed: 1, state: 'ok', worker_id: 'w2', worker_name: 'W2' }],
+        finished: 1,
+        processing: 0,
+        restarted: 0,
+        waiting: 0,
+        done: true,
+        faulted: false,
+        wait_time: 0,
+        queue_position: 0,
+        kudos: 5,
+        is_possible: true,
+        generations: [
+          {
+            text: 'Hello world',
+            model: 'koboldcpp',
+            seed: 1,
+            state: 'ok',
+            worker_id: 'w2',
+            worker_name: 'W2',
+          },
+        ],
       };
 
       service.getTextGenerationStatus('txt-1').subscribe((res) => {
@@ -270,7 +327,9 @@ describe('AiHordeService', () => {
   describe('getUserById', () => {
     it('should GET the user endpoint with numeric ID', (done: DoneFn) => {
       service.getUserById(42).subscribe((res) => {
-        expect(res).toEqual(jasmine.objectContaining({ id: 42, username: 'User42' }));
+        expect(res).toEqual(
+          jasmine.objectContaining({ id: 42, username: 'User42' }),
+        );
         done();
       });
 
@@ -396,7 +455,9 @@ describe('AiHordeService', () => {
   describe('textStats', () => {
     it('should GET text totals', () => {
       service.textStats.subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/stats/text/totals');
+      const req = http.expectOne(
+        'https://aihorde.net/api/v2/stats/text/totals',
+      );
       expect(req.request.method).toBe('GET');
     });
   });
@@ -404,7 +465,9 @@ describe('AiHordeService', () => {
   describe('performance', () => {
     it('should GET performance stats', () => {
       service.performance.subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/status/performance');
+      const req = http.expectOne(
+        'https://aihorde.net/api/v2/status/performance',
+      );
       expect(req.request.method).toBe('GET');
     });
   });
@@ -414,9 +477,24 @@ describe('AiHordeService', () => {
   // -----------------------------------------------------------------------
   describe('getNews', () => {
     const mockItems = [
-      { title: 'Update 1', date_published: '2024-01-01', newspiece: 'Content 1', more_info_urls: ['https://example.com'] },
-      { title: 'Update 2', date_published: '2024-01-02', newspiece: 'Content 2', more_info_urls: [] },
-      { title: 'Update 3', date_published: '2024-01-03', newspiece: 'Content 3', more_info_urls: [] },
+      {
+        title: 'Update 1',
+        date_published: '2024-01-01',
+        newspiece: 'Content 1',
+        more_info_urls: ['https://example.com'],
+      },
+      {
+        title: 'Update 2',
+        date_published: '2024-01-02',
+        newspiece: 'Content 2',
+        more_info_urls: [],
+      },
+      {
+        title: 'Update 3',
+        date_published: '2024-01-03',
+        newspiece: 'Content 3',
+        more_info_urls: [],
+      },
     ];
 
     it('should GET news from the status endpoint', () => {
@@ -458,8 +536,18 @@ describe('AiHordeService', () => {
 
     it('should deduplicate titles with numeric suffix', (done: DoneFn) => {
       const dupes = [
-        { title: 'Same', date_published: '2024-01-01', newspiece: 'A', more_info_urls: [] },
-        { title: 'Same', date_published: '2024-01-02', newspiece: 'B', more_info_urls: [] },
+        {
+          title: 'Same',
+          date_published: '2024-01-01',
+          newspiece: 'A',
+          more_info_urls: [],
+        },
+        {
+          title: 'Same',
+          date_published: '2024-01-02',
+          newspiece: 'B',
+          more_info_urls: [],
+        },
       ];
 
       service.getNews().subscribe((news) => {
@@ -507,7 +595,9 @@ describe('AiHordeService', () => {
   describe('getKudosLeaderboard', () => {
     it('should GET users sorted by kudos with page parameter', () => {
       service.getKudosLeaderboard(2).subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/users?page=2&sort=kudos');
+      const req = http.expectOne(
+        'https://aihorde.net/api/v2/users?page=2&sort=kudos',
+      );
       expect(req.request.method).toBe('GET');
     });
 
@@ -565,7 +655,9 @@ describe('AiHordeService', () => {
   describe('getTextModelStats', () => {
     it('should GET text model stats', () => {
       service.getTextModelStats().subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/stats/text/models');
+      const req = http.expectOne(
+        'https://aihorde.net/api/v2/stats/text/models',
+      );
       expect(req.request.method).toBe('GET');
     });
   });

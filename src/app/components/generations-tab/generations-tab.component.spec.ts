@@ -20,7 +20,9 @@ import {
 // Factories for test data
 // ---------------------------------------------------------------------------
 
-function makeCheck(overrides: Partial<GenerationCheckResponse> = {}): GenerationCheckResponse {
+function makeCheck(
+  overrides: Partial<GenerationCheckResponse> = {},
+): GenerationCheckResponse {
   return {
     finished: 0,
     processing: 0,
@@ -36,7 +38,9 @@ function makeCheck(overrides: Partial<GenerationCheckResponse> = {}): Generation
   };
 }
 
-function makeOutput(overrides: Partial<GenerationOutput> = {}): GenerationOutput {
+function makeOutput(
+  overrides: Partial<GenerationOutput> = {},
+): GenerationOutput {
   return {
     img: 'https://example.com/img1.webp',
     seed: '12345',
@@ -55,12 +59,19 @@ function makeImageResult(
   checkOverrides: Partial<GenerationCheckResponse> = {},
 ): GenerationStatusResponse {
   return {
-    ...makeCheck({ done: true, finished: outputs.length, waiting: 0, ...checkOverrides }),
+    ...makeCheck({
+      done: true,
+      finished: outputs.length,
+      waiting: 0,
+      ...checkOverrides,
+    }),
     generations: outputs,
   };
 }
 
-function makeTracked(overrides: Partial<TrackedGeneration> = {}): TrackedGeneration {
+function makeTracked(
+  overrides: Partial<TrackedGeneration> = {},
+): TrackedGeneration {
   return {
     id: 'gen-1',
     type: 'image',
@@ -162,7 +173,11 @@ const scenarios: Scenario[] = [
             gen_metadata: [
               { type: 'lora', value: 'download_failed', ref: 'civitai:999' },
               { type: 'ti', value: 'parse_failed' },
-              { type: 'information', value: 'see_ref', ref: 'Some helpful info' },
+              {
+                type: 'information',
+                value: 'see_ref',
+                ref: 'Some helpful info',
+              },
             ],
           }),
         ]),
@@ -175,7 +190,9 @@ const scenarios: Scenario[] = [
       makeTracked({
         id: 'img-no-meta',
         done: true,
-        result: makeImageResult([makeOutput({ id: 'out-g', gen_metadata: undefined })]),
+        result: makeImageResult([
+          makeOutput({ id: 'out-g', gen_metadata: undefined }),
+        ]),
       }),
     ],
   },
@@ -195,7 +212,13 @@ const scenarios: Scenario[] = [
       makeTracked({
         id: 'img-waiting',
         done: false,
-        check: makeCheck({ finished: 0, processing: 0, waiting: 2, wait_time: 120, queue_position: 15 }),
+        check: makeCheck({
+          finished: 0,
+          processing: 0,
+          waiting: 2,
+          wait_time: 120,
+          queue_position: 15,
+        }),
       }),
     ],
   },
@@ -249,17 +272,36 @@ const scenarios: Scenario[] = [
         type: 'text',
         done: true,
         result: {
-          finished: 1, processing: 0, restarted: 0, waiting: 0,
-          done: true, faulted: false, wait_time: 0, queue_position: 0,
-          kudos: 5, is_possible: true,
-          generations: [{ text: 'Hello world', model: 'koboldcpp', seed: 42, state: 'ok', worker_id: 'w-2', worker_name: 'TextWorker' }],
+          finished: 1,
+          processing: 0,
+          restarted: 0,
+          waiting: 0,
+          done: true,
+          faulted: false,
+          wait_time: 0,
+          queue_position: 0,
+          kudos: 5,
+          is_possible: true,
+          generations: [
+            {
+              text: 'Hello world',
+              model: 'koboldcpp',
+              seed: 42,
+              state: 'ok',
+              worker_id: 'w-2',
+              worker_name: 'TextWorker',
+            },
+          ],
         } as TextGenerationStatusResponse,
       }),
       makeTracked({
         id: 'alch-mix',
         type: 'alchemy',
         done: true,
-        result: { state: 'done', forms: [{ form: 'caption', state: 'done' }] } as AlchemyStatusResponse,
+        result: {
+          state: 'done',
+          forms: [{ form: 'caption', state: 'done' }],
+        } as AlchemyStatusResponse,
       }),
     ],
   },
@@ -347,7 +389,9 @@ describe('GenerationsTabComponent', () => {
   it('should display the expiry warning banner', () => {
     fixture.detectChanges();
     const banners = el.querySelectorAll('[role="alert"]');
-    const warning = Array.from(banners).find((b) => b.classList.contains('alert--warning'));
+    const warning = Array.from(banners).find((b) =>
+      b.classList.contains('alert--warning'),
+    );
     expect(warning).not.toBeNull();
   });
 
@@ -379,7 +423,9 @@ describe('GenerationsTabComponent', () => {
         });
 
         it('should render a generation ID span for every tracked generation', () => {
-          const idSpans = el.querySelectorAll('.font-mono.text-secondary.truncate');
+          const idSpans = el.querySelectorAll(
+            '.font-mono.text-secondary.truncate',
+          );
           expect(idSpans.length).toBe(scenario.generations.length);
         });
 
@@ -390,7 +436,9 @@ describe('GenerationsTabComponent', () => {
           }
           for (const gen of scenario.generations) {
             const found = el.textContent?.includes(gen.id);
-            expect(found).withContext(`should find generation ID ${gen.id}`).toBeTrue();
+            expect(found)
+              .withContext(`should find generation ID ${gen.id}`)
+              .toBeTrue();
           }
         });
       });
@@ -423,11 +471,15 @@ describe('GenerationsTabComponent', () => {
     });
 
     it('should not show censored label', () => {
-      expect(el.textContent).not.toContain('profile.generations.output.censored');
+      expect(el.textContent).not.toContain(
+        'profile.generations.output.censored',
+      );
     });
 
     it('should not show metadata section', () => {
-      expect(el.textContent).not.toContain('profile.generations.metadata_heading');
+      expect(el.textContent).not.toContain(
+        'profile.generations.metadata_heading',
+      );
     });
   });
 
@@ -613,13 +665,17 @@ describe('GenerationsTabComponent', () => {
     const gen = makeTracked({
       id: 'test-no-meta',
       done: true,
-      result: makeImageResult([makeOutput({ id: 'out-g', gen_metadata: undefined })]),
+      result: makeImageResult([
+        makeOutput({ id: 'out-g', gen_metadata: undefined }),
+      ]),
     });
 
     beforeEach(() => setGenerations([gen]));
 
     it('should not show diagnostics heading', () => {
-      expect(el.textContent).not.toContain('profile.generations.metadata_heading');
+      expect(el.textContent).not.toContain(
+        'profile.generations.metadata_heading',
+      );
     });
 
     it('should not render any metadata badges', () => {
@@ -668,7 +724,13 @@ describe('GenerationsTabComponent', () => {
     const gen = makeTracked({
       id: 'test-waiting',
       done: false,
-      check: makeCheck({ finished: 0, processing: 0, waiting: 2, wait_time: 120, queue_position: 15 }),
+      check: makeCheck({
+        finished: 0,
+        processing: 0,
+        waiting: 2,
+        wait_time: 120,
+        queue_position: 15,
+      }),
     });
 
     beforeEach(() => setGenerations([gen]));
@@ -754,7 +816,9 @@ describe('GenerationsTabComponent', () => {
     });
 
     it('should not show View Response JSON button (no result)', () => {
-      expect(el.textContent).not.toContain('profile.generations.show_response_json');
+      expect(el.textContent).not.toContain(
+        'profile.generations.show_response_json',
+      );
     });
   });
 
@@ -771,7 +835,9 @@ describe('GenerationsTabComponent', () => {
     beforeEach(() => setGenerations([gen]));
 
     it('should show "View Response JSON" button when result exists', () => {
-      expect(el.textContent).toContain('profile.generations.show_response_json');
+      expect(el.textContent).toContain(
+        'profile.generations.show_response_json',
+      );
     });
 
     it('should not show response JSON pre block initially', () => {
@@ -832,13 +898,17 @@ describe('GenerationsTabComponent', () => {
     });
 
     it('should not show request JSON initially', () => {
-      expect(el.textContent).not.toContain('profile.generations.sent_request_label');
+      expect(el.textContent).not.toContain(
+        'profile.generations.sent_request_label',
+      );
     });
 
     it('should show request JSON after toggle', () => {
       component.toggleSentRequest('test-sent-req');
       fixture.detectChanges();
-      expect(el.textContent).toContain('profile.generations.sent_request_label');
+      expect(el.textContent).toContain(
+        'profile.generations.sent_request_label',
+      );
       expect(el.textContent).toContain('test prompt');
     });
 
@@ -865,17 +935,36 @@ describe('GenerationsTabComponent', () => {
         type: 'text',
         done: true,
         result: {
-          finished: 1, processing: 0, restarted: 0, waiting: 0,
-          done: true, faulted: false, wait_time: 0, queue_position: 0,
-          kudos: 5, is_possible: true,
-          generations: [{ text: 'Generated text output', model: 'koboldcpp', seed: 42, state: 'ok', worker_id: 'w-2', worker_name: 'TxtWorker' }],
+          finished: 1,
+          processing: 0,
+          restarted: 0,
+          waiting: 0,
+          done: true,
+          faulted: false,
+          wait_time: 0,
+          queue_position: 0,
+          kudos: 5,
+          is_possible: true,
+          generations: [
+            {
+              text: 'Generated text output',
+              model: 'koboldcpp',
+              seed: 42,
+              state: 'ok',
+              worker_id: 'w-2',
+              worker_name: 'TxtWorker',
+            },
+          ],
         } as TextGenerationStatusResponse,
       }),
       makeTracked({
         id: 'alch-mix',
         type: 'alchemy',
         done: true,
-        result: { state: 'done', forms: [{ form: 'caption', state: 'done' }] } as AlchemyStatusResponse,
+        result: {
+          state: 'done',
+          forms: [{ form: 'caption', state: 'done' }],
+        } as AlchemyStatusResponse,
       }),
     ];
 
@@ -914,23 +1003,43 @@ describe('GenerationsTabComponent', () => {
       type: 'text',
       done: true,
       result: {
-        finished: 1, processing: 0, restarted: 0, waiting: 0,
-        done: true, faulted: false, wait_time: 0, queue_position: 0,
-        kudos: 5, is_possible: true,
-        generations: [{ text: 'Some text', model: 'm', seed: 1, state: 'ok', worker_id: 'w', worker_name: 'W' }],
+        finished: 1,
+        processing: 0,
+        restarted: 0,
+        waiting: 0,
+        done: true,
+        faulted: false,
+        wait_time: 0,
+        queue_position: 0,
+        kudos: 5,
+        is_possible: true,
+        generations: [
+          {
+            text: 'Some text',
+            model: 'm',
+            seed: 1,
+            state: 'ok',
+            worker_id: 'w',
+            worker_name: 'W',
+          },
+        ],
       } as TextGenerationStatusResponse,
     });
 
     beforeEach(() => setGenerations([gen]));
 
     it('should have response JSON button for text gen', () => {
-      expect(el.textContent).toContain('profile.generations.show_response_json');
+      expect(el.textContent).toContain(
+        'profile.generations.show_response_json',
+      );
     });
 
     it('should toggle response JSON for text generation', () => {
       component.toggleResponseJson('txt-json-test');
       fixture.detectChanges();
-      expect(el.textContent).toContain('profile.generations.response_json_label');
+      expect(el.textContent).toContain(
+        'profile.generations.response_json_label',
+      );
     });
   });
 
@@ -942,13 +1051,18 @@ describe('GenerationsTabComponent', () => {
       id: 'alch-json-test',
       type: 'alchemy',
       done: true,
-      result: { state: 'done', forms: [{ form: 'caption', state: 'done' }] } as AlchemyStatusResponse,
+      result: {
+        state: 'done',
+        forms: [{ form: 'caption', state: 'done' }],
+      } as AlchemyStatusResponse,
     });
 
     beforeEach(() => setGenerations([gen]));
 
     it('should have response JSON button for alchemy gen', () => {
-      expect(el.textContent).toContain('profile.generations.show_response_json');
+      expect(el.textContent).toContain(
+        'profile.generations.show_response_json',
+      );
     });
   });
 
@@ -974,16 +1088,33 @@ describe('GenerationsTabComponent', () => {
     });
 
     it('isMetadataWarning should identify warning-level metadata', () => {
-      expect(component.isMetadataWarning({ type: 'lora', value: 'download_failed' })).toBeTrue();
-      expect(component.isMetadataWarning({ type: 'ti', value: 'parse_failed' })).toBeTrue();
-      expect(component.isMetadataWarning({ type: 'lora', value: 'baseline_mismatch' })).toBeTrue();
-      expect(component.isMetadataWarning({ type: 'censorship', value: 'nsfw' })).toBeFalse();
+      expect(
+        component.isMetadataWarning({ type: 'lora', value: 'download_failed' }),
+      ).toBeTrue();
+      expect(
+        component.isMetadataWarning({ type: 'ti', value: 'parse_failed' }),
+      ).toBeTrue();
+      expect(
+        component.isMetadataWarning({
+          type: 'lora',
+          value: 'baseline_mismatch',
+        }),
+      ).toBeTrue();
+      expect(
+        component.isMetadataWarning({ type: 'censorship', value: 'nsfw' }),
+      ).toBeFalse();
     });
 
     it('isMetadataDanger should identify danger-level metadata', () => {
-      expect(component.isMetadataDanger({ type: 'censorship', value: 'csam' })).toBeTrue();
-      expect(component.isMetadataDanger({ type: 'censorship', value: 'nsfw' })).toBeTrue();
-      expect(component.isMetadataDanger({ type: 'lora', value: 'download_failed' })).toBeFalse();
+      expect(
+        component.isMetadataDanger({ type: 'censorship', value: 'csam' }),
+      ).toBeTrue();
+      expect(
+        component.isMetadataDanger({ type: 'censorship', value: 'nsfw' }),
+      ).toBeTrue();
+      expect(
+        component.isMetadataDanger({ type: 'lora', value: 'download_failed' }),
+      ).toBeFalse();
     });
 
     it('formatWaitTime should format seconds correctly', () => {

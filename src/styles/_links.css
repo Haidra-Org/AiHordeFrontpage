@@ -18,6 +18,16 @@
     }
   }
 
+  /* Emphasized link for CTAs */
+  .link-bold {
+    @apply text-blue-600 font-semibold;
+    @apply dark:text-blue-500;
+
+    &:hover {
+      @apply underline;
+    }
+  }
+
   /* Link button small - used for filter actions */
   .link-btn-sm {
     @apply text-xs text-blue-600;

@@ -54,10 +54,7 @@ export class NavNotificationService {
       const existing = next.get(notification.id);
 
       // If the state hash changed, clear any stale dismissal
-      if (
-        existing &&
-        notification.stateHash !== existing.stateHash
-      ) {
+      if (existing && notification.stateHash !== existing.stateHash) {
         this.clearDismissal(notification.id);
         // Reset mobile ack so the dot reappears for the new state
         this._mobileAcknowledged.set(false);

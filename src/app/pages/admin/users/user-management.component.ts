@@ -586,8 +586,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   private static readonly GENERATIONS_REFRESH_MS = 60_000;
-  private generationsRefreshTimer: ReturnType<typeof setInterval> | null =
-    null;
+  private generationsRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
   public refreshActiveGenerations(): void {
     const user = this.selectedUser();

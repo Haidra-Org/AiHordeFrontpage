@@ -85,13 +85,17 @@ export class TouchTooltipDirective implements OnDestroy {
     });
     listen('focusout', () => this.scheduleHide());
 
-    const outsideClick = this.renderer.listen(this.document, 'pointerdown', (e: Event) => {
-      if (!this.visible) return;
-      const target = e.target as Node;
-      if (host.contains(target)) return;
-      if (this.tooltipEl?.contains(target)) return;
-      this.hide();
-    });
+    const outsideClick = this.renderer.listen(
+      this.document,
+      'pointerdown',
+      (e: Event) => {
+        if (!this.visible) return;
+        const target = e.target as Node;
+        if (host.contains(target)) return;
+        if (this.tooltipEl?.contains(target)) return;
+        this.hide();
+      },
+    );
     this.removeListeners.push(outsideClick);
   }
 
@@ -120,7 +124,9 @@ export class TouchTooltipDirective implements OnDestroy {
     if ('showPopover' in el) {
       try {
         (el as HTMLElement & { showPopover: () => void }).showPopover();
-      } catch { /* already open */ }
+      } catch {
+        /* already open */
+      }
     }
 
     this.positionTooltip();
@@ -139,8 +145,12 @@ export class TouchTooltipDirective implements OnDestroy {
       this.tooltipEl.style.pointerEvents = 'none';
       if ('hidePopover' in this.tooltipEl) {
         try {
-          (this.tooltipEl as HTMLElement & { hidePopover: () => void }).hidePopover();
-        } catch { /* already closed */ }
+          (
+            this.tooltipEl as HTMLElement & { hidePopover: () => void }
+          ).hidePopover();
+        } catch {
+          /* already closed */
+        }
       }
     }
   }
@@ -217,8 +227,8 @@ export class TouchTooltipDirective implements OnDestroy {
     el.style.right = 'auto';
     el.style.bottom = 'auto';
     el.style.transform = 'none';
-    // Cap width so it can never exceed the viewport minus margins
-    el.style.maxWidth = `${vw - VIEWPORT_MARGIN * 2}px`;
+    // Cap width: respect the CSS --tooltip-width (300px) but never exceed viewport minus margins
+    el.style.maxWidth = `min(300px, ${vw - VIEWPORT_MARGIN * 2}px)`;
 
     // Force synchronous layout so getBoundingClientRect is accurate
     const tooltipRect = el.getBoundingClientRect();
@@ -249,10 +259,7 @@ export class TouchTooltipDirective implements OnDestroy {
     // Horizontal: center on the trigger, then clamp to viewport edges
     const triggerCenter = triggerRect.left + triggerRect.width / 2;
     let left = triggerCenter - tw / 2;
-    left = Math.max(
-      VIEWPORT_MARGIN,
-      Math.min(left, vw - tw - VIEWPORT_MARGIN),
-    );
+    left = Math.max(VIEWPORT_MARGIN, Math.min(left, vw - tw - VIEWPORT_MARGIN));
 
     el.style.top = `${top}px`;
     el.style.left = `${left}px`;

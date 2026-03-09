@@ -18,30 +18,49 @@
       <div>
         <h4 class="text-sm font-medium admin-text-light mb-2">
           {{ "admin.users.active_generations.image" | transloco }}
-          <span class="text-sm admin-text-muted">({{ imageGenerations().length }})</span>
+          <span class="text-sm admin-text-muted"
+            >({{ imageGenerations().length }})</span
+          >
         </h4>
         <div class="flex flex-col gap-3">
           @for (gen of imageGenerations(); track gen.id) {
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono admin-text-muted truncate">{{ gen.id }}</span>
+                  <span class="text-xs font-mono admin-text-muted truncate">{{
+                    gen.id
+                  }}</span>
                   @if (gen.done) {
-                    <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                    <span class="text-green-500 text-sm font-medium">{{
+                      "profile.generations.status.done" | transloco
+                    }}</span>
                   } @else if (gen.faulted) {
-                    <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                    <span class="text-red-400 text-sm font-medium">{{
+                      "profile.generations.status.faulted" | transloco
+                    }}</span>
                   } @else if (gen.notFound) {
-                    <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                    <span class="text-orange-500 text-sm font-medium">{{
+                      "profile.generations.status.not_found" | transloco
+                    }}</span>
                   } @else if (gen.check) {
                     <span class="text-sm admin-text-muted">
                       {{ "profile.generations.status.processing" | transloco }}
                       &mdash;
-                      {{ "profile.generations.wait_time" | transloco: { time: formatWaitTime(gen.check.wait_time) } }}
+                      {{
+                        "profile.generations.wait_time"
+                          | transloco
+                            : { time: formatWaitTime(gen.check.wait_time) }
+                      }}
                       &middot;
-                      {{ "profile.generations.queue_position" | transloco: { position: gen.check.queue_position } }}
+                      {{
+                        "profile.generations.queue_position"
+                          | transloco: { position: gen.check.queue_position }
+                      }}
                     </span>
                   } @else {
-                    <span class="text-sm admin-text-muted">{{ "profile.generations.status.waiting" | transloco }}</span>
+                    <span class="text-sm admin-text-muted">{{
+                      "profile.generations.status.waiting" | transloco
+                    }}</span>
                   }
                 </div>
 
@@ -62,9 +81,13 @@
                       (click)="toggleResponseJson(gen.id)"
                     >
                       @if (isResponseExpanded(gen.id)) {
-                        {{ "profile.generations.hide_response_json" | transloco }}
+                        {{
+                          "profile.generations.hide_response_json" | transloco
+                        }}
                       } @else {
-                        {{ "profile.generations.show_response_json" | transloco }}
+                        {{
+                          "profile.generations.show_response_json" | transloco
+                        }}
                       }
                     </button>
                   }
@@ -87,29 +110,79 @@
                     class="text-xs text-red-400 hover:text-red-300 transition-colors"
                     (click)="removeTrackedGeneration(gen.id)"
                   >
-                    {{ "admin.users.tracked_generations.stop_tracking" | transloco }}
+                    {{
+                      "admin.users.tracked_generations.stop_tracking"
+                        | transloco
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Check progress details -->
               @if (gen.notFound) {
-                <div class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30">
-                  <p class="text-sm text-orange-400">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <div
+                  class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30"
+                >
+                  <p class="text-sm text-orange-400">
+                    {{
+                      "profile.generations.not_found_explanation" | transloco
+                    }}
+                  </p>
                 </div>
               } @else if (gen.check) {
                 @if (gen.check.is_possible === false) {
-                  <div class="mt-3 p-2 rounded bg-red-900/20 border border-red-800/30">
-                    <p class="text-sm font-medium text-red-400">{{ "profile.generations.not_possible" | transloco }}</p>
+                  <div
+                    class="mt-3 p-2 rounded bg-red-900/20 border border-red-800/30"
+                  >
+                    <p class="text-sm font-medium text-red-400">
+                      {{ "profile.generations.not_possible" | transloco }}
+                    </p>
                   </div>
                 }
-                <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs admin-text-muted">
-                  <div>{{ "profile.generations.detail.finished" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.finished }}</span></div>
-                  <div>{{ "profile.generations.detail.processing" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.processing }}</span></div>
-                  <div>{{ "profile.generations.detail.waiting_count" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.waiting }}</span></div>
-                  <div>{{ "profile.generations.detail.restarted" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.restarted }}</span></div>
-                  <div>{{ "profile.generations.detail.kudos" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.kudos }}</span></div>
-                  <div>{{ "profile.generations.detail.is_possible" | transloco }}: <span class="font-medium" [class.text-green-500]="gen.check.is_possible" [class.text-red-400]="!gen.check.is_possible">{{ gen.check.is_possible ? "Yes" : "No" }}</span></div>
+                <div
+                  class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs admin-text-muted"
+                >
+                  <div>
+                    {{ "profile.generations.detail.finished" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.finished
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.processing" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.processing
+                    }}</span>
+                  </div>
+                  <div>
+                    {{
+                      "profile.generations.detail.waiting_count" | transloco
+                    }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.waiting
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.restarted" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.restarted
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.kudos" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.kudos
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.is_possible" | transloco }}:
+                    <span
+                      class="font-medium"
+                      [class.text-green-500]="gen.check.is_possible"
+                      [class.text-red-400]="!gen.check.is_possible"
+                      >{{ gen.check.is_possible ? "Yes" : "No" }}</span
+                    >
+                  </div>
                 </div>
               }
 
@@ -118,8 +191,12 @@
                 <div class="mt-4 flex flex-col gap-4">
                   @for (output of getGenerationOutputs(gen); track output.id) {
                     <div class="flex flex-col gap-2">
-                      @if (output.state === 'ok' && output.img) {
-                        <a [href]="output.img" target="_blank" rel="noopener noreferrer">
+                      @if (output.state === "ok" && output.img) {
+                        <a
+                          [href]="output.img"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           <img
                             [src]="output.img"
                             alt="Generated image"
@@ -128,32 +205,75 @@
                           />
                         </a>
                       }
-                      <div class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs admin-text-muted">
-                        <div>{{ "profile.generations.output.model" | transloco }}: <span class="font-medium admin-text-light">{{ output.model }}</span></div>
-                        <div>{{ "profile.generations.output.worker" | transloco }}: <span class="font-medium admin-text-light">{{ output.worker_name }}</span></div>
-                        <div>{{ "profile.generations.output.seed" | transloco }}: <span class="font-mono font-medium admin-text-light">{{ output.seed }}</span></div>
-                        <div>{{ "profile.generations.output.state" | transloco }}: <span class="font-medium" [class.text-green-500]="output.state === 'ok'" [class.text-red-400]="output.state !== 'ok'">{{ output.state }}</span></div>
+                      <div
+                        class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs admin-text-muted"
+                      >
+                        <div>
+                          {{ "profile.generations.output.model" | transloco }}:
+                          <span class="font-medium admin-text-light">{{
+                            output.model
+                          }}</span>
+                        </div>
+                        <div>
+                          {{ "profile.generations.output.worker" | transloco }}:
+                          <span class="font-medium admin-text-light">{{
+                            output.worker_name
+                          }}</span>
+                        </div>
+                        <div>
+                          {{ "profile.generations.output.seed" | transloco }}:
+                          <span
+                            class="font-mono font-medium admin-text-light"
+                            >{{ output.seed }}</span
+                          >
+                        </div>
+                        <div>
+                          {{ "profile.generations.output.state" | transloco }}:
+                          <span
+                            class="font-medium"
+                            [class.text-green-500]="output.state === 'ok'"
+                            [class.text-red-400]="output.state !== 'ok'"
+                            >{{ output.state }}</span
+                          >
+                        </div>
                         @if (output.censored) {
-                          <div class="text-yellow-500 font-medium">{{ "profile.generations.output.censored" | transloco }}</div>
+                          <div class="text-yellow-500 font-medium">
+                            {{
+                              "profile.generations.output.censored" | transloco
+                            }}
+                          </div>
                         }
                       </div>
 
-                      @if (output.gen_metadata && output.gen_metadata.length > 0) {
+                      @if (
+                        output.gen_metadata && output.gen_metadata.length > 0
+                      ) {
                         <div class="mt-2 flex flex-col gap-1">
-                          <span class="text-xs font-medium admin-text-muted">{{ "profile.generations.metadata_heading" | transloco }}</span>
+                          <span class="text-xs font-medium admin-text-muted">{{
+                            "profile.generations.metadata_heading" | transloco
+                          }}</span>
                           @for (meta of output.gen_metadata; track $index) {
-                            <div class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded border border-gray-600 admin-text-muted"
-                              [class.border-yellow-500]="isMetadataWarning(meta)"
+                            <div
+                              class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded border border-gray-600 admin-text-muted"
+                              [class.border-yellow-500]="
+                                isMetadataWarning(meta)
+                              "
                               [class.text-yellow-600]="isMetadataWarning(meta)"
                               [class.border-red-500]="isMetadataDanger(meta)"
                               [class.text-red-600]="isMetadataDanger(meta)"
                             >
-                              <span class="font-medium uppercase">{{ meta.type }}</span>
+                              <span class="font-medium uppercase">{{
+                                meta.type
+                              }}</span>
                               <span>&middot;</span>
                               <span>{{ getMetadataLabel(meta) }}</span>
                               @if (meta.ref) {
                                 <span>&middot;</span>
-                                <span class="font-mono text-xs truncate max-w-[200px]" [title]="meta.ref">{{ meta.ref }}</span>
+                                <span
+                                  class="font-mono text-xs truncate max-w-[200px]"
+                                  [title]="meta.ref"
+                                  >{{ meta.ref }}</span
+                                >
                               }
                             </div>
                           }
@@ -169,12 +289,17 @@
                 <details class="mt-3" open>
                   <summary class="text-xs admin-text-muted cursor-pointer">
                     @if (gen.result) {
-                      {{ "profile.generations.response_json_label" | transloco }}
+                      {{
+                        "profile.generations.response_json_label" | transloco
+                      }}
                     } @else {
                       {{ "profile.generations.check_json_label" | transloco }}
                     }
                   </summary>
-                  <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted">{{ getResponseJson(gen) }}</pre>
+                  <pre
+                    class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted"
+                    >{{ getResponseJson(gen) }}</pre
+                  >
                 </details>
               }
             </div>
@@ -188,28 +313,44 @@
       <div>
         <h4 class="text-sm font-medium admin-text-light mb-2">
           {{ "admin.users.active_generations.text" | transloco }}
-          <span class="text-sm admin-text-muted">({{ textGenerations().length }})</span>
+          <span class="text-sm admin-text-muted"
+            >({{ textGenerations().length }})</span
+          >
         </h4>
         <div class="flex flex-col gap-3">
           @for (gen of textGenerations(); track gen.id) {
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono admin-text-muted truncate">{{ gen.id }}</span>
+                  <span class="text-xs font-mono admin-text-muted truncate">{{
+                    gen.id
+                  }}</span>
                   @if (gen.done) {
-                    <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                    <span class="text-green-500 text-sm font-medium">{{
+                      "profile.generations.status.done" | transloco
+                    }}</span>
                   } @else if (gen.faulted) {
-                    <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                    <span class="text-red-400 text-sm font-medium">{{
+                      "profile.generations.status.faulted" | transloco
+                    }}</span>
                   } @else if (gen.notFound) {
-                    <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                    <span class="text-orange-500 text-sm font-medium">{{
+                      "profile.generations.status.not_found" | transloco
+                    }}</span>
                   } @else if (gen.check) {
                     <span class="text-sm admin-text-muted">
                       {{ "profile.generations.status.processing" | transloco }}
                       &mdash;
-                      {{ "profile.generations.wait_time" | transloco: { time: formatWaitTime(gen.check.wait_time) } }}
+                      {{
+                        "profile.generations.wait_time"
+                          | transloco
+                            : { time: formatWaitTime(gen.check.wait_time) }
+                      }}
                     </span>
                   } @else {
-                    <span class="text-sm admin-text-muted">{{ "profile.generations.status.waiting" | transloco }}</span>
+                    <span class="text-sm admin-text-muted">{{
+                      "profile.generations.status.waiting" | transloco
+                    }}</span>
                   }
                 </div>
 
@@ -230,9 +371,13 @@
                       (click)="toggleResponseJson(gen.id)"
                     >
                       @if (isResponseExpanded(gen.id)) {
-                        {{ "profile.generations.hide_response_json" | transloco }}
+                        {{
+                          "profile.generations.hide_response_json" | transloco
+                        }}
                       } @else {
-                        {{ "profile.generations.show_response_json" | transloco }}
+                        {{
+                          "profile.generations.show_response_json" | transloco
+                        }}
                       }
                     </button>
                   }
@@ -241,29 +386,79 @@
                     class="text-xs text-red-400 hover:text-red-300 transition-colors"
                     (click)="removeTrackedGeneration(gen.id)"
                   >
-                    {{ "admin.users.tracked_generations.stop_tracking" | transloco }}
+                    {{
+                      "admin.users.tracked_generations.stop_tracking"
+                        | transloco
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Check progress details -->
               @if (gen.notFound) {
-                <div class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30">
-                  <p class="text-sm text-orange-400">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <div
+                  class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30"
+                >
+                  <p class="text-sm text-orange-400">
+                    {{
+                      "profile.generations.not_found_explanation" | transloco
+                    }}
+                  </p>
                 </div>
               } @else if (gen.check) {
                 @if (gen.check.is_possible === false) {
-                  <div class="mt-3 p-2 rounded bg-red-900/20 border border-red-800/30">
-                    <p class="text-sm font-medium text-red-400">{{ "profile.generations.not_possible" | transloco }}</p>
+                  <div
+                    class="mt-3 p-2 rounded bg-red-900/20 border border-red-800/30"
+                  >
+                    <p class="text-sm font-medium text-red-400">
+                      {{ "profile.generations.not_possible" | transloco }}
+                    </p>
                   </div>
                 }
-                <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs admin-text-muted">
-                  <div>{{ "profile.generations.detail.finished" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.finished }}</span></div>
-                  <div>{{ "profile.generations.detail.processing" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.processing }}</span></div>
-                  <div>{{ "profile.generations.detail.waiting_count" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.waiting }}</span></div>
-                  <div>{{ "profile.generations.detail.restarted" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.restarted }}</span></div>
-                  <div>{{ "profile.generations.detail.kudos" | transloco }}: <span class="font-medium admin-text-light">{{ gen.check.kudos }}</span></div>
-                  <div>{{ "profile.generations.detail.is_possible" | transloco }}: <span class="font-medium" [class.text-green-500]="gen.check.is_possible" [class.text-red-400]="!gen.check.is_possible">{{ gen.check.is_possible ? "Yes" : "No" }}</span></div>
+                <div
+                  class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs admin-text-muted"
+                >
+                  <div>
+                    {{ "profile.generations.detail.finished" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.finished
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.processing" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.processing
+                    }}</span>
+                  </div>
+                  <div>
+                    {{
+                      "profile.generations.detail.waiting_count" | transloco
+                    }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.waiting
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.restarted" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.restarted
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.kudos" | transloco }}:
+                    <span class="font-medium admin-text-light">{{
+                      gen.check.kudos
+                    }}</span>
+                  </div>
+                  <div>
+                    {{ "profile.generations.detail.is_possible" | transloco }}:
+                    <span
+                      class="font-medium"
+                      [class.text-green-500]="gen.check.is_possible"
+                      [class.text-red-400]="!gen.check.is_possible"
+                      >{{ gen.check.is_possible ? "Yes" : "No" }}</span
+                    >
+                  </div>
                 </div>
               }
 
@@ -271,7 +466,10 @@
               @if (gen.done && gen.result) {
                 <div class="mt-3 flex flex-col gap-3">
                   @for (text of getTextOutputs(gen); track $index) {
-                    <pre class="whitespace-pre-wrap text-sm p-3 rounded admin-bg-dark border border-gray-700 admin-text-light">{{ text }}</pre>
+                    <pre
+                      class="whitespace-pre-wrap text-sm p-3 rounded admin-bg-dark border border-gray-700 admin-text-light"
+                      >{{ text }}</pre
+                    >
                   }
                 </div>
               }
@@ -281,12 +479,17 @@
                 <details class="mt-3" open>
                   <summary class="text-xs admin-text-muted cursor-pointer">
                     @if (gen.result) {
-                      {{ "profile.generations.response_json_label" | transloco }}
+                      {{
+                        "profile.generations.response_json_label" | transloco
+                      }}
                     } @else {
                       {{ "profile.generations.check_json_label" | transloco }}
                     }
                   </summary>
-                  <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted">{{ getResponseJson(gen) }}</pre>
+                  <pre
+                    class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted"
+                    >{{ getResponseJson(gen) }}</pre
+                  >
                 </details>
               }
             </div>
@@ -300,22 +503,34 @@
       <div>
         <h4 class="text-sm font-medium admin-text-light mb-2">
           {{ "admin.users.active_generations.alchemy" | transloco }}
-          <span class="text-sm admin-text-muted">({{ alchemyGenerations().length }})</span>
+          <span class="text-sm admin-text-muted"
+            >({{ alchemyGenerations().length }})</span
+          >
         </h4>
         <div class="flex flex-col gap-3">
           @for (gen of alchemyGenerations(); track gen.id) {
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono admin-text-muted truncate">{{ gen.id }}</span>
+                  <span class="text-xs font-mono admin-text-muted truncate">{{
+                    gen.id
+                  }}</span>
                   @if (gen.done) {
-                    <span class="text-green-500 text-sm font-medium">{{ "profile.generations.status.done" | transloco }}</span>
+                    <span class="text-green-500 text-sm font-medium">{{
+                      "profile.generations.status.done" | transloco
+                    }}</span>
                   } @else if (gen.faulted) {
-                    <span class="text-red-400 text-sm font-medium">{{ "profile.generations.status.faulted" | transloco }}</span>
+                    <span class="text-red-400 text-sm font-medium">{{
+                      "profile.generations.status.faulted" | transloco
+                    }}</span>
                   } @else if (gen.notFound) {
-                    <span class="text-orange-500 text-sm font-medium">{{ "profile.generations.status.not_found" | transloco }}</span>
+                    <span class="text-orange-500 text-sm font-medium">{{
+                      "profile.generations.status.not_found" | transloco
+                    }}</span>
                   } @else {
-                    <span class="text-sm admin-text-muted">{{ "profile.generations.status.waiting" | transloco }}</span>
+                    <span class="text-sm admin-text-muted">{{
+                      "profile.generations.status.waiting" | transloco
+                    }}</span>
                   }
                 </div>
 
@@ -336,9 +551,13 @@
                       (click)="toggleResponseJson(gen.id)"
                     >
                       @if (isResponseExpanded(gen.id)) {
-                        {{ "profile.generations.hide_response_json" | transloco }}
+                        {{
+                          "profile.generations.hide_response_json" | transloco
+                        }}
                       } @else {
-                        {{ "profile.generations.show_response_json" | transloco }}
+                        {{
+                          "profile.generations.show_response_json" | transloco
+                        }}
                       }
                     </button>
                   }
@@ -347,15 +566,24 @@
                     class="text-xs text-red-400 hover:text-red-300 transition-colors"
                     (click)="removeTrackedGeneration(gen.id)"
                   >
-                    {{ "admin.users.tracked_generations.stop_tracking" | transloco }}
+                    {{
+                      "admin.users.tracked_generations.stop_tracking"
+                        | transloco
+                    }}
                   </button>
                 </div>
               </div>
 
               <!-- Alchemy status explanation -->
               @if (gen.notFound) {
-                <div class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30">
-                  <p class="text-sm text-orange-400">{{ "profile.generations.not_found_explanation" | transloco }}</p>
+                <div
+                  class="mt-3 p-2 rounded bg-orange-900/20 border border-orange-700/30"
+                >
+                  <p class="text-sm text-orange-400">
+                    {{
+                      "profile.generations.not_found_explanation" | transloco
+                    }}
+                  </p>
                 </div>
               }
 
@@ -364,7 +592,8 @@
                 <div class="mt-3 flex flex-col gap-2">
                   @for (form of getAlchemyForms(gen); track form.form) {
                     <div class="text-sm admin-text-light">
-                      <span class="font-medium">{{ form.form }}</span>:
+                      <span class="font-medium">{{ form.form }}</span
+                      >:
                       <span class="admin-text-muted">{{ form.state }}</span>
                     </div>
                   }
@@ -374,8 +603,13 @@
               <!-- Response JSON -->
               @if (gen.result && isResponseExpanded(gen.id)) {
                 <details class="mt-3" open>
-                  <summary class="text-xs admin-text-muted cursor-pointer">{{ "profile.generations.response_json_label" | transloco }}</summary>
-                  <pre class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted">{{ getResponseJson(gen) }}</pre>
+                  <summary class="text-xs admin-text-muted cursor-pointer">
+                    {{ "profile.generations.response_json_label" | transloco }}
+                  </summary>
+                  <pre
+                    class="whitespace-pre-wrap text-xs p-3 mt-1 rounded admin-bg-dark border border-gray-700 font-mono overflow-x-auto max-h-96 overflow-y-auto admin-text-muted"
+                    >{{ getResponseJson(gen) }}</pre
+                  >
                 </details>
               }
             </div>

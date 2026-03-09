@@ -12,48 +12,18 @@
   }
 
   .workers-layout {
-    @apply flex gap-4;
+    @apply max-w-4xl mx-auto;
   }
 
-  /* Sidebar: hidden on mobile, sticky on desktop */
-  .workers-sidebar {
-    @apply hidden shrink-0 w-60;
-
-    @media (min-width: 1024px) {
-      @apply block;
-    }
-  }
-
-  .workers-sidebar-inner {
-    @apply sticky space-y-6;
-    top: calc(var(--sticky-offset, 80px) + 3rem);
-    @apply gap-2;
+  /* Network status shown inline at the top on all screen sizes */
+  .workers-inline-stats {
+    @apply mb-8;
   }
 
   /* Main content area */
   .workers-main {
-    @apply flex-1 min-w-0;
+    @apply min-w-0;
   }
-
-  /* Mobile mission callout: visible below lg, hidden on desktop */
-  .workers-mobile-mission {
-    @apply mb-8;
-
-    @media (min-width: 1024px) {
-      @apply hidden;
-    }
-  }
-
-  /* Mobile stats: visible below lg, hidden on desktop */
-  .workers-mobile-stats {
-    @apply mb-8;
-
-    @media (min-width: 1024px) {
-      @apply hidden;
-    }
-  }
-
-
 
   /* =================================================================
      WORKER TYPE CARDS - "NEEDS HELP" STYLING
@@ -68,19 +38,16 @@
     @apply flex items-center gap-2 px-5 py-2.5 text-sm font-semibold tracking-wide;
   }
 
-  .card-needs-help-banner--purple {
-    @apply bg-purple-100 text-purple-800;
-    @apply dark:bg-purple-950 dark:text-purple-200;
+  /* Amber is the universal urgency/CTA colour – matches the amber ring
+     around the card and the pulsing dot, regardless of section theme */
+  .card-needs-help-banner--amber {
+    @apply bg-amber-50 text-amber-800;
+    @apply dark:bg-amber-950 dark:text-amber-200;
+    border-bottom: 1px solid rgb(251 191 36 / 0.35);
   }
 
-  .card-needs-help-banner--blue {
-    @apply bg-blue-100 text-blue-800;
-    @apply dark:bg-blue-950 dark:text-blue-200;
-  }
-
-  .card-needs-help-banner--green {
-    @apply bg-green-100 text-green-800;
-    @apply dark:bg-green-950 dark:text-green-200;
+  .dark .card-needs-help-banner--amber {
+    border-bottom-color: rgb(251 191 36 / 0.18);
   }
 
   /* ── Worker-type section: flat list layout ───────────────────── */
@@ -90,20 +57,96 @@
   }
 
   .worker-type-section {
-    @apply rounded-xl border;
-    @apply border-edge-primary dark:border-gray-700;
-    @apply bg-surface-primary dark:bg-gray-800/50;
-    @apply overflow-hidden;
+    @apply rounded-xl overflow-hidden;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .worker-type-section {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      0 1px 2px rgb(0 0 0 / 0.12),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
   }
 
   .worker-type-section--needs-help {
     @apply ring-2 ring-amber-400/40 dark:ring-amber-500/30;
   }
 
+  /* ── Per-section colour identity: left accent border + header tint ── */
+
+  /* All three share the same thicker left border treatment */
+  .worker-type-section--image,
+  .worker-type-section--text,
+  .worker-type-section--alchemy {
+    border-left-width: 4px;
+  }
+
+  /* Image (Dreamers) – brand purple */
+  .worker-type-section--image {
+    border-left-color: rgb(147 51 234 / 0.65);
+  }
+
+  .dark .worker-type-section--image {
+    border-left-color: rgb(168 85 247 / 0.75);
+  }
+
+  .worker-type-section--image .worker-type-header {
+    background: rgb(250 245 255 / 0.65);
+  }
+
+  .dark .worker-type-section--image .worker-type-header {
+    background: rgb(88 28 135 / 0.18);
+  }
+
+  /* Text (Scribes) – blue */
+  .worker-type-section--text {
+    border-left-color: rgb(59 130 246 / 0.65);
+  }
+
+  .dark .worker-type-section--text {
+    border-left-color: rgb(96 165 250 / 0.75);
+  }
+
+  .worker-type-section--text .worker-type-header {
+    background: rgb(239 246 255 / 0.65);
+  }
+
+  .dark .worker-type-section--text .worker-type-header {
+    background: rgb(30 58 138 / 0.18);
+  }
+
+  /* Alchemy (Alchemists) – green */
+  .worker-type-section--alchemy {
+    border-left-color: rgb(34 197 94 / 0.65);
+  }
+
+  .dark .worker-type-section--alchemy {
+    border-left-color: rgb(74 222 128 / 0.75);
+  }
+
+  .worker-type-section--alchemy .worker-type-header {
+    background: rgb(240 253 244 / 0.65);
+  }
+
+  .dark .worker-type-section--alchemy .worker-type-header {
+    background: rgb(20 83 45 / 0.18);
+  }
+
   .worker-type-header {
     @apply flex items-center gap-4 px-5 py-4;
-    @apply bg-surface-secondary dark:bg-gray-800;
-    @apply border-b border-edge-primary dark:border-gray-700;
+    background: rgb(249 250 251 / 0.6);
+    @apply border-b border-edge-primary;
+  }
+
+  .dark .worker-type-header {
+    background: rgb(17 24 39 / 0.35);
+    @apply border-gray-700;
   }
 
   .worker-type-body {
@@ -121,8 +164,19 @@
 
   .network-diagram {
     @apply rounded-xl p-6;
-    @apply bg-surface-secondary border border-edge-primary;
-    @apply dark:bg-gray-800 dark:border-gray-700;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .network-diagram {
+    background: rgb(31 41 55 / 0.45);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow:
+      0 4px 24px rgb(0 0 0 / 0.25),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
   }
 
   .network-diagram-intro {
@@ -141,13 +195,18 @@
   .network-node {
     @apply flex flex-col text-center p-4 rounded-xl;
     @apply min-w-0;
-    @apply bg-white border-2 border-edge-primary;
-    @apply dark:bg-gray-900 dark:border-gray-600;
+    background: rgb(255 255 255 / 0.75);
+    border: 2px solid var(--color-glass-border-subtle);
     transition: border-color 0.2s ease;
 
     @media (min-width: 768px) {
       @apply w-[220px];
     }
+  }
+
+  .dark .network-node {
+    background: rgb(17 24 39 / 0.5);
+    border-color: rgb(255 255 255 / 0.1);
   }
 
   .network-node--user {

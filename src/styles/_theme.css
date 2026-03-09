@@ -207,4 +207,30 @@
   --transition-fast: 150ms;
   --transition-normal: 200ms;
   --transition-slow: 300ms;
+
+  /* =================================================================
+     GLASSMORPHISM TOKENS
+     Translucent surfaces, blur, and layered shadows for depth.
+     ================================================================= */
+
+  /* Glass surfaces - light mode */
+  --color-glass-surface: rgb(255 255 255 / 0.6);
+  --color-glass-surface-elevated: rgb(255 255 255 / 0.75);
+  --color-glass-surface-heavy: rgb(255 255 255 / 0.85);
+  --color-glass-border: rgb(255 255 255 / 0.35);
+  --color-glass-border-subtle: rgb(255 255 255 / 0.18);
+  --color-glass-highlight: rgb(255 255 255 / 0.5);
+
+  /* Glass blur radii */
+  --blur-glass-sm: 8px;
+  --blur-glass-md: 16px;
+  --blur-glass-lg: 24px;
+
+  /* Glass shadows - layered for depth */
+  --shadow-glass: 0 4px 24px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-glass-hover:
+    0 8px 32px rgb(0 0 0 / 0.1), 0 2px 4px rgb(0 0 0 / 0.06);
+  --shadow-glass-elevated:
+    0 12px 40px rgb(0 0 0 / 0.12), 0 4px 8px rgb(0 0 0 / 0.06);
+  --shadow-glass-inset: inset 0 1px 1px rgb(255 255 255 / 0.3);
 }

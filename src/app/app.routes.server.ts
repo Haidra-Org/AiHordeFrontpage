@@ -25,6 +25,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'profile',
     renderMode: RenderMode.Client,
   },
+  {
+    path: 'profile/**',
+    renderMode: RenderMode.Client,
+  },
 
   // Public static pages - prerender at build time for best performance
   {

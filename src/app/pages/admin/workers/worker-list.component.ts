@@ -17,6 +17,7 @@ import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
@@ -58,6 +59,7 @@ type SortOrder = 'asc' | 'desc';
     InfoTooltipComponent,
     UnitTooltipComponent,
     ScrollFadeDirective,
+    StickyHeaderDirective,
   ],
   templateUrl: './worker-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -198,8 +200,7 @@ export class WorkerListComponent implements OnInit {
         {
           id: 'badge-lora',
           titleKey: 'help.glossary.page.workers.badge_lora.title',
-          descriptionKey:
-            'help.glossary.page.workers.badge_lora.description',
+          descriptionKey: 'help.glossary.page.workers.badge_lora.description',
         },
         {
           id: 'badge-controlnet',
