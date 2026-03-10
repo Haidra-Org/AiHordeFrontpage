@@ -4,8 +4,8 @@ ENV NG_CLI_ANALYTICS="false"
 
 COPY . /app
 WORKDIR /app
-RUN yarn install
-RUN yarn build
+RUN npm ci
+RUN npm run build
 
 FROM node:20
 
