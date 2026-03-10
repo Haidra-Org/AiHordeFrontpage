@@ -50,7 +50,8 @@ type ProfileTab =
   | 'workers'
   | 'teams'
   | 'styles'
-  | 'shared-keys';
+  | 'shared-keys'
+  | 'settings';
 
 type WorkerListItem = {
   id: string;
@@ -130,6 +131,7 @@ export class ProfileComponent implements OnInit {
     teams: 'teams',
     styles: 'styles',
     'shared-keys': 'shared-keys',
+    settings: 'settings',
   };
 
   public activeTab = signal<ProfileTab>('profile');
@@ -188,6 +190,34 @@ export class ProfileComponent implements OnInit {
     if (!user) return '';
     return user.username;
   });
+
+  // Active generation counts
+  public readonly activeImageCount = computed(
+    () => this.auth.currentUser()?.active_generations?.image?.length ?? 0,
+  );
+  public readonly activeTextCount = computed(
+    () => this.auth.currentUser()?.active_generations?.text?.length ?? 0,
+  );
+  public readonly activeAlchemyCount = computed(
+    () => this.auth.currentUser()?.active_generations?.alchemy?.length ?? 0,
+  );
+  public readonly hasActiveGenerations = computed(
+    () =>
+      this.activeImageCount() > 0 ||
+      this.activeTextCount() > 0 ||
+      this.activeAlchemyCount() > 0,
+  );
+
+  // Asset counts for quick-nav boxes
+  public readonly workerCount = computed(
+    () => this.auth.currentUser()?.worker_ids?.length ?? 0,
+  );
+  public readonly styleCount = computed(
+    () => this.auth.currentUser()?.styles?.length ?? 0,
+  );
+  public readonly sharedKeyCount = computed(
+    () => this.auth.currentUser()?.sharedkey_ids?.length ?? 0,
+  );
 
   // Computed filtered workers
   public filteredAndSortedWorkers = computed(() => {

@@ -420,6 +420,9 @@
                   />
                 </svg>
                 {{ "profile.tabs.styles" | transloco }}
+                @if (styleCount() > 0) {
+                  <span class="text-secondary text-sm">({{ styleCount() }})</span>
+                }
               </a>
               <a
                 routerLink="/profile/shared-keys"
@@ -443,6 +446,38 @@
                   />
                 </svg>
                 {{ "profile.tabs.shared_keys" | transloco }}
+                @if (sharedKeyCount() > 0) {
+                  <span class="text-secondary text-sm">({{ sharedKeyCount() }})</span>
+                }
+              </a>
+              <a
+                routerLink="/profile/settings"
+                class="details-tab"
+                [class.details-tab-active]="activeTab() === 'settings'"
+                role="tab"
+                [attr.aria-selected]="activeTab() === 'settings'"
+              >
+                <svg
+                  class="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                  />
+                </svg>
+                {{ "profile.tabs.settings" | transloco }}
               </a>
             </div>
 
@@ -452,7 +487,7 @@
                 <app-generations-tab />
               }
 
-              <!-- Profile Card -->
+              <!-- Profile Overview -->
               @if (activeTab() === "profile") {
                 <!-- Account Marked for Deletion Warning -->
                 @if (auth.currentUser()!.deleted) {
@@ -493,8 +528,9 @@
                   </div>
                 }
 
-                <div class="card card-bg-primary card-full">
-                  <div class="profile-header section-divider-bottom">
+                <!-- Identity Hero Card -->
+                <div class="profile-glass-section">
+                  <div class="profile-header">
                     <div class="avatar-circle avatar-lg avatar-gradient">
                       <span class="avatar-text">{{
                         auth.currentUser()!.username.charAt(0).toUpperCase()
@@ -594,64 +630,81 @@
                       >
                     }
                   </div>
+                </div>
 
-                  <!-- Account Settings -->
-                  <div class="section-divider-top">
+                <!-- At-a-Glance Summary Bar -->
+                <div class="details-summary details-summary--glass mt-4">
+                  <div class="summary-stat">
+                    <span class="summary-label"><app-kudos-term /></span>
+                    <span class="summary-value text-brand-purple">{{
+                      auth.currentUser()!.kudos | formatNumber
+                    }}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-label">{{
+                      "profile.quick_nav_workers" | transloco
+                    }}</span>
+                    <span class="summary-value">{{ workerCount() }}</span>
+                  </div>
+                  @if (auth.currentUser()!.usage?.requests !== undefined) {
+                    <div class="summary-stat">
+                      <span class="summary-label">{{
+                        "profile.images_requested" | transloco
+                      }}</span>
+                      <span class="summary-value">{{
+                        auth.currentUser()!.usage!.requests! | formatNumber
+                      }}</span>
+                    </div>
+                  }
+                  @if (
+                    auth.currentUser()!.contributions?.fulfillments !==
+                    undefined
+                  ) {
+                    <div class="summary-stat">
+                      <span class="summary-label">{{
+                        "profile.fulfillments_label" | transloco
+                      }}</span>
+                      <span class="summary-value">{{
+                        auth.currentUser()!.contributions!.fulfillments!
+                          | formatNumber
+                      }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Active Generations Indicator -->
+                @if (hasActiveGenerations()) {
+                  <div class="profile-glass-section mt-4">
                     <h4 class="section-title-sm">
-                      {{ "profile.account_settings_heading" | transloco }}
+                      {{ "profile.active_generations_label" | transloco }}
                     </h4>
-                    <div class="data-grid-1-2">
-                      <div class="data-item-box">
-                        <span class="data-label">{{
-                          "profile.public_workers_label" | transloco
+                    <div class="active-gen-row">
+                      @if (activeImageCount() > 0) {
+                        <span class="badge-base badge-info">{{
+                          "profile.active_image_jobs"
+                            | transloco
+                              : { count: activeImageCount() }
                         }}</span>
-                        <span class="data-value">
-                          <label class="toggle-switch">
-                            <input
-                              type="checkbox"
-                              [checked]="
-                                auth.currentUser()!.public_workers ?? false
-                              "
-                              (click)="
-                                $event.preventDefault();
-                                onPublicWorkersToggle(
-                                  !auth.currentUser()!.public_workers
-                                )
-                              "
-                            />
-                            <div class="toggle-switch-track"></div>
-                            <div class="toggle-switch-thumb"></div>
-                          </label>
-                        </span>
-                        <span class="text-secondary text-xs">{{
-                          "profile.public_workers_desc" | transloco
+                      }
+                      @if (activeTextCount() > 0) {
+                        <span class="badge-base badge-success">{{
+                          "profile.active_text_jobs"
+                            | transloco: { count: activeTextCount() }
                         }}</span>
-                      </div>
-                      <div class="data-item-box">
-                        <span class="data-label"
-                          >{{ "profile.contact_label" | transloco }}
-                          <button
-                            (click)="openContactDialog()"
-                            class="link-btn-sm mt-1 pl-2"
-                          >
-                            {{ "profile.edit_contact" | transloco }}
-                          </button>
-                        </span>
-
-                        <span class="data-value">
-                          @if (auth.currentUser()!.contact) {
-                            {{ auth.currentUser()!.contact }}
-                          } @else {
-                            <span class="text-secondary italic">{{
-                              "profile.contact_not_set" | transloco
-                            }}</span>
-                          }
-                        </span>
-                      </div>
+                      }
+                      @if (activeAlchemyCount() > 0) {
+                        <span class="badge-base badge-purple">{{
+                          "profile.active_alchemy_jobs"
+                            | transloco
+                              : { count: activeAlchemyCount() }
+                        }}</span>
+                      }
                     </div>
                   </div>
+                }
 
-                  <!-- Kudos Section -->
+                <!-- Kudos Card -->
+                <div class="profile-glass-section mt-4">
                   <h3 class="heading-card"><app-kudos-term /></h3>
                   <div class="highlight-box">
                     <span class="data-value-xl">{{
@@ -662,33 +715,39 @@
                     }}</span>
                   </div>
 
-                  @if (auth.currentUser()!.monthly_kudos?.amount) {
-                    <p class="text-secondary text-sm text-center">
-                      {{
-                        "profile.monthly_kudos"
-                          | transloco
-                            : {
-                                amount:
-                                  auth.currentUser()!.monthly_kudos!.amount!
-                                  | formatNumber,
-                              }
-                      }}
-                    </p>
-                  }
-
-                  @if (
-                    auth.currentUser()!.evaluating_kudos !== undefined &&
-                    auth.currentUser()!.evaluating_kudos !== null &&
-                    !auth.currentUser()!.trusted
-                  ) {
-                    <p
-                      class="text-secondary text-sm text-center"
-                      [attr.title]="'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'"
-                    >
-                      <strong>Evaluating Kudos:</strong>
-                      {{ auth.currentUser()!.evaluating_kudos! | formatNumber }}
-                    </p>
-                  }
+                  <div class="data-grid-1-2">
+                    @if (auth.currentUser()!.monthly_kudos?.amount) {
+                      <div class="data-item-box">
+                        <span class="data-label">{{
+                          "profile.kudos_recurring" | transloco
+                        }}</span>
+                        <span class="data-value">{{
+                          "profile.monthly_kudos"
+                            | transloco
+                              : {
+                                  amount:
+                                    auth.currentUser()!.monthly_kudos!.amount!
+                                    | formatNumber,
+                                }
+                        }}</span>
+                      </div>
+                    }
+                    @if (
+                      auth.currentUser()!.evaluating_kudos !== undefined &&
+                      auth.currentUser()!.evaluating_kudos !== null &&
+                      !auth.currentUser()!.trusted
+                    ) {
+                      <div
+                        class="data-item-box"
+                        [attr.title]="'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'"
+                      >
+                        <span class="data-label">Evaluating Kudos</span>
+                        <span class="data-value">{{
+                          auth.currentUser()!.evaluating_kudos! | formatNumber
+                        }}</span>
+                      </div>
+                    }
+                  </div>
 
                   @if (auth.currentUser()!.kudos < 100) {
                     <div class="info-box info-box--blue mt-4">
@@ -719,83 +778,252 @@
                         [showZeroValues]="false"
                       />
                     </div>
-                    <!-- Actions -->
-                    <div class="section-divider-top">
-                      <div class="action-row">
-                        @if (auth.currentUser()!.moderator) {
-                          <a routerLink="/admin/" class="btn-primary">{{
-                            "profile.admin_panel" | transloco
-                          }}</a>
-                        }
-                        <a routerLink="/v2-transfer/" class="btn-primary">{{
-                          "profile.transfer_kudos" | transloco
-                        }}</a>
-                        <button (click)="logout()" class="btn-source-control">
-                          {{ "profile.logout" | transloco }}
-                        </button>
-                      </div>
-                      <!-- Account Management Actions -->
-                      <div class="action-row mt-4">
-                        @if (auth.currentUser()!.deleted) {
-                          <button
-                            (click)="openUndeleteDialog()"
-                            class="btn-warning"
-                          >
-                            {{ "profile.undelete_account" | transloco }}
-                          </button>
-                        }
-                        @if (!auth.currentUser()!.deleted) {
-                          <button
-                            (click)="openDeleteDialog()"
-                            class="btn-primary btn-danger"
-                          >
-                            {{ "profile.delete_account" | transloco }}
-                          </button>
-                        }
-                        @if (auth.currentUser()!.deleted) {
-                          <button
-                            (click)="openDeleteDialog()"
-                            class="btn-primary btn-danger"
-                          >
-                            {{
-                              "profile.permanently_delete_account" | transloco
-                            }}
-                          </button>
-                        }
-                      </div>
-                    </div>
-
-                    <!-- Page Guides -->
-                    <div class="section-divider-top">
-                      <div class="action-row">
-                        @if (!guideService.allDismissed()) {
-                          <button
-                            (click)="guideService.dismissAll()"
-                            class="btn-secondary"
-                          >
-                            {{ "profile.hide_all_guides" | transloco }}
-                          </button>
-                        }
-                        @if (guideService.anyDismissed()) {
-                          <button
-                            (click)="guideService.restoreAll()"
-                            class="btn-secondary"
-                          >
-                            {{ "profile.restore_all_guides" | transloco }}
-                          </button>
-                        }
-                      </div>
-                      <!-- Page guide explanation as a callout -->
-                      <div class="info-box info-box--blue mt-4 max-w-lg">
-                        <h4 class="info-box-title">
-                          {{ "profile.page_guides" | transloco }}
-                        </h4>
-                        <p class="info-box-text">
-                          {{ "profile.guides_explanation" | transloco }}
-                        </p>
-                      </div>
-                    </div>
                   }
+                </div>
+
+                <!-- Activity Snapshot -->
+                @if (
+                  auth.currentUser()!.usage ||
+                  auth.currentUser()!.contributions
+                ) {
+                  <div class="profile-glass-section mt-4">
+                    <h3 class="heading-card">
+                      {{ "profile.activity_heading" | transloco }}
+                    </h3>
+                    <div class="data-grid-1-2">
+                      @if (
+                        auth.currentUser()!.usage?.requests !== undefined
+                      ) {
+                        <div class="data-item-box">
+                          <span class="data-label">{{
+                            "profile.images_requested" | transloco
+                          }}</span>
+                          <span class="data-value">{{
+                            auth.currentUser()!.usage!.requests! | formatNumber
+                          }}</span>
+                        </div>
+                      }
+                      @if (
+                        auth.currentUser()!.usage?.megapixelsteps !== undefined
+                      ) {
+                        <div class="data-item-box">
+                          <span class="data-label">{{
+                            "profile.records.megapixelsteps" | transloco
+                          }}</span>
+                          <span class="data-value">{{
+                            auth.currentUser()!.usage!.megapixelsteps!
+                              | formatNumber
+                          }}</span>
+                        </div>
+                      }
+                      @if (
+                        auth.currentUser()!.contributions?.fulfillments !==
+                        undefined
+                      ) {
+                        <div class="data-item-box">
+                          <span class="data-label">{{
+                            "profile.fulfillments_label" | transloco
+                          }}</span>
+                          <span class="data-value">{{
+                            auth.currentUser()!.contributions!.fulfillments!
+                              | formatNumber
+                          }}</span>
+                        </div>
+                      }
+                      @if (
+                        auth.currentUser()!.contributions?.megapixelsteps !==
+                        undefined
+                      ) {
+                        <div class="data-item-box">
+                          <span class="data-label">{{
+                            "profile.contributions_label" | transloco
+                          }}</span>
+                          <span class="data-value">{{
+                            auth.currentUser()!.contributions!.megapixelsteps!
+                              | formatNumber
+                          }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Quick-Nav Asset Boxes -->
+                <div class="quick-nav-grid mt-4">
+                  <a
+                    routerLink="/profile/workers"
+                    class="data-item-box"
+                  >
+                    <span class="data-value text-2xl font-bold">{{
+                      workerCount()
+                    }}</span>
+                    <span class="data-label">{{
+                      "profile.quick_nav_workers" | transloco
+                    }}</span>
+                  </a>
+                  <a
+                    routerLink="/profile/styles"
+                    class="data-item-box"
+                  >
+                    <span class="data-value text-2xl font-bold">{{
+                      styleCount()
+                    }}</span>
+                    <span class="data-label">{{
+                      "profile.quick_nav_styles" | transloco
+                    }}</span>
+                  </a>
+                  <a
+                    routerLink="/profile/shared-keys"
+                    class="data-item-box"
+                  >
+                    <span class="data-value text-2xl font-bold">{{
+                      sharedKeyCount()
+                    }}</span>
+                    <span class="data-label">{{
+                      "profile.quick_nav_shared_keys" | transloco
+                    }}</span>
+                  </a>
+                </div>
+
+                <!-- Actions -->
+                <div class="profile-glass-section mt-4">
+                  <div class="action-row">
+                    @if (auth.currentUser()!.moderator) {
+                      <a routerLink="/admin/" class="btn-primary">{{
+                        "profile.admin_panel" | transloco
+                      }}</a>
+                    }
+                    <a routerLink="/v2-transfer/" class="btn-primary">{{
+                      "profile.transfer_kudos" | transloco
+                    }}</a>
+                    <button (click)="logout()" class="btn-source-control">
+                      {{ "profile.logout" | transloco }}
+                    </button>
+                  </div>
+                </div>
+              }
+
+              <!-- Settings Tab -->
+              @if (activeTab() === "settings") {
+                <!-- Account Settings -->
+                <div class="profile-glass-section">
+                  <h3 class="heading-card">
+                    {{ "profile.account_settings_heading" | transloco }}
+                  </h3>
+                  <div class="data-grid-1-2">
+                    <div class="data-item-box">
+                      <span class="data-label">{{
+                        "profile.public_workers_label" | transloco
+                      }}</span>
+                      <span class="data-value">
+                        <label class="toggle-switch">
+                          <input
+                            type="checkbox"
+                            [checked]="
+                              auth.currentUser()!.public_workers ?? false
+                            "
+                            (click)="
+                              $event.preventDefault();
+                              onPublicWorkersToggle(
+                                !auth.currentUser()!.public_workers
+                              )
+                            "
+                          />
+                          <div class="toggle-switch-track"></div>
+                          <div class="toggle-switch-thumb"></div>
+                        </label>
+                      </span>
+                      <span class="text-secondary text-xs">{{
+                        "profile.public_workers_desc" | transloco
+                      }}</span>
+                    </div>
+                    <div class="data-item-box">
+                      <span class="data-label"
+                        >{{ "profile.contact_label" | transloco }}
+                        <button
+                          (click)="openContactDialog()"
+                          class="link-btn-sm mt-1 pl-2"
+                        >
+                          {{ "profile.edit_contact" | transloco }}
+                        </button>
+                      </span>
+                      <span class="data-value">
+                        @if (auth.currentUser()!.contact) {
+                          {{ auth.currentUser()!.contact }}
+                        } @else {
+                          <span class="text-secondary italic">{{
+                            "profile.contact_not_set" | transloco
+                          }}</span>
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Page Guides -->
+                <div class="profile-glass-section mt-4">
+                  <h3 class="heading-card">
+                    {{ "profile.page_guides" | transloco }}
+                  </h3>
+                  <p class="text-secondary text-sm">
+                    {{ "profile.guides_explanation" | transloco }}
+                  </p>
+                  <div class="action-row">
+                    @if (!guideService.allDismissed()) {
+                      <button
+                        (click)="guideService.dismissAll()"
+                        class="btn-secondary"
+                      >
+                        {{ "profile.hide_all_guides" | transloco }}
+                      </button>
+                    }
+                    @if (guideService.anyDismissed()) {
+                      <button
+                        (click)="guideService.restoreAll()"
+                        class="btn-secondary"
+                      >
+                        {{ "profile.restore_all_guides" | transloco }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="danger-zone-card mt-4">
+                  <h3 class="heading-card">
+                    {{ "profile.danger_zone_title" | transloco }}
+                  </h3>
+                  <p class="text-secondary text-sm">
+                    {{ "profile.danger_zone_desc" | transloco }}
+                  </p>
+                  <div class="action-row">
+                    @if (auth.currentUser()!.deleted) {
+                      <button
+                        (click)="openUndeleteDialog()"
+                        class="btn-warning"
+                      >
+                        {{ "profile.undelete_account" | transloco }}
+                      </button>
+                    }
+                    @if (!auth.currentUser()!.deleted) {
+                      <button
+                        (click)="openDeleteDialog()"
+                        class="btn-primary btn-danger"
+                      >
+                        {{ "profile.delete_account" | transloco }}
+                      </button>
+                    }
+                    @if (auth.currentUser()!.deleted) {
+                      <button
+                        (click)="openDeleteDialog()"
+                        class="btn-primary btn-danger"
+                      >
+                        {{
+                          "profile.permanently_delete_account" | transloco
+                        }}
+                      </button>
+                    }
+                  </div>
                 </div>
               }
               @if (
