@@ -737,4 +737,46 @@
     @apply grid gap-6;
     @apply sm:grid-cols-2 lg:grid-cols-3;
   }
+
+  /* =================================================================
+     DANGER ZONE CARD - Red-tinted glass for destructive actions
+     ================================================================= */
+
+  .danger-zone-card {
+    @apply flex flex-col gap-4 p-6 rounded-xl;
+    background: rgb(254 242 242 / 0.6);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid rgb(252 165 165 / 0.4);
+    box-shadow: 0 2px 12px rgb(239 68 68 / 0.06);
+  }
+
+  .dark .danger-zone-card {
+    background: rgb(127 29 29 / 0.25);
+    border-color: rgb(239 68 68 / 0.2);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+  }
+
+  .danger-zone-card .heading-card {
+    @apply text-red-700 dark:text-red-400;
+  }
+
+  /* =================================================================
+     PROFILE GLASS SECTION - Standalone glass surface for profile cards
+     ================================================================= */
+
+  .profile-glass-section {
+    @apply flex flex-col gap-4 p-6 rounded-xl;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .profile-glass-section {
+    background: rgb(31 41 55 / 0.5);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+  }
 }

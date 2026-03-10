@@ -37,6 +37,7 @@ import { SharedKeyInput } from '../../../types/shared-key';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SharedKeyFormComponent implements OnInit {
+  private static nextFormId = 0;
   private readonly destroyRef = inject(DestroyRef);
 
   /** Initial values to populate the form with. */
@@ -67,6 +68,8 @@ export class SharedKeyFormComponent implements OnInit {
   public readonly form: SharedKeyFormGroup =
     this.createForm(SHARED_KEY_DEFAULTS);
   public readonly imagePixelPresets = IMAGE_PIXEL_PRESETS;
+  public readonly formIdPrefix =
+    `shared-key-form-${SharedKeyFormComponent.nextFormId++}`;
 
   private finiteCache: Record<LimitField, number> =
     this.createFiniteCache(SHARED_KEY_DEFAULTS);
@@ -134,6 +137,10 @@ export class SharedKeyFormComponent implements OnInit {
   public isUnlimited(field: LimitField): boolean {
     const control = this.form.controls[`${field}_unlimited`];
     return control?.value ?? false;
+  }
+
+  public fieldId(field: string): string {
+    return `${this.formIdPrefix}-${field}`;
   }
 
   private createForm(initial: SharedKeyFormValue): SharedKeyFormGroup {
