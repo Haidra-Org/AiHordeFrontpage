@@ -289,7 +289,7 @@
       <div class="panel mb-6">
         <div class="admin-stats-panel__body">
           <div class="admin-stats-panel__header">
-            <h2 class="admin-heading-section">
+            <h2 class="heading-admin-section">
               {{ "admin.workers.statistics" | transloco }}
             </h2>
             <button
@@ -442,7 +442,7 @@
           <!-- Capability Statistics (Image workers only) -->
           @if (workerType() === "image" && capabilityStats().length > 0) {
             <div class="admin-border-t pt-6">
-              <h3 class="admin-heading-card mb-3">
+              <h3 class="heading-admin-card mb-3">
                 {{ "admin.workers.stats.capabilities" | transloco }}
                 <app-info-tooltip termKey="help.workers.tooltip.capabilities" />
               </h3>

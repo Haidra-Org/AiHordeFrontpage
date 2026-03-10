@@ -39,7 +39,7 @@ interface KudosField {
             <div class="text-xs admin-text-muted mb-1">
               {{ field.labelKey | transloco }}
             </div>
-            <div class="admin-heading-card">
+            <div class="heading-admin-card">
               {{ field.value ?? 0 | formatNumber }}
             </div>
           </div>

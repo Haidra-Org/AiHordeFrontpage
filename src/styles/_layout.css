@@ -13,6 +13,9 @@
   /* Ensure full viewport height coverage for proper background display */
   .wrapper {
     @apply min-h-screen flex flex-col;
+    /* Use clip instead of hidden — hidden implicitly sets overflow-y:auto,
+       creating a scroll container that breaks position:sticky descendants. */
+    overflow-x: clip;
     padding-top: var(--nav-height-mobile);
 
     @media (min-width: 76.8125rem) {

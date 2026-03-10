@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   NgZone,
   PLATFORM_ID,
   afterNextRender,
@@ -46,6 +47,8 @@ export class GenerationsTabComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly elRef = inject(ElementRef);
+  private readonly onDocumentClick = this.handleDocumentClick.bind(this);
 
   private static readonly USER_POLL_MS = 60_000;
   private static readonly CHECK_POLL_MS = 10_000;
@@ -117,7 +120,28 @@ export class GenerationsTabComponent {
       this.refreshUserGenerations();
       this.startPolling();
       this.fetchModels();
+      document.addEventListener('click', this.onDocumentClick);
     });
+
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('click', this.onDocumentClick);
+    });
+
+    this.form.controls.model.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((val) => {
+        if (val && val.length > 0 && !this.modelDropdownOpen()) {
+          this.modelDropdownOpen.set(true);
+        }
+      });
+  }
+
+  private handleDocumentClick(event: MouseEvent): void {
+    const wrapper = this.elRef.nativeElement.querySelector('.autocomplete-wrapper');
+    if (wrapper && !wrapper.contains(event.target as Node)) {
+      this.modelDropdownPinned = false;
+      this.modelDropdownOpen.set(false);
+    }
   }
 
   public refreshUserGenerations(): void {

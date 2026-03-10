@@ -1,4 +1,4 @@
-<div class="card card-full card-bg-primary form-stack">
+<div class="card card-full card-bg-primary form-stack" [class.card--no-blur]="confirmModalOpen()">
   <!-- View Toggle -->
   <div class="form-header">
     <h3 class="text-primary">
@@ -92,8 +92,14 @@
             id="style-name"
             formControlName="name"
             class="form-input"
+            [class.form-input-error]="form.controls['name'].invalid && form.controls['name'].touched"
             [placeholder]="'styles.form.name_placeholder' | transloco"
           />
+          @if (form.controls['name'].invalid && form.controls['name'].touched) {
+            <p class="text-error" role="alert">
+              {{ 'styles.form.name_required' | transloco }}
+            </p>
+          }
         </div>
 
         <div class="form-field">
@@ -121,6 +127,7 @@
             id="style-prompt"
             formControlName="prompt"
             class="form-input"
+            [class.form-input-error]="form.controls['prompt'].invalid && form.controls['prompt'].touched"
             rows="4"
             [placeholder]="
               isImageStyle()
@@ -128,6 +135,20 @@
                 : ('styles.form.prompt_placeholder_text' | transloco)
             "
           ></textarea>
+          @if (form.controls['prompt'].invalid && form.controls['prompt'].touched) {
+            <p class="text-error" role="alert">
+              {{ 'styles.form.prompt_required' | transloco }}
+            </p>
+          }
+          @if (promptMissingPlaceholder()) {
+            <p class="text-warning" role="status">
+              @if (isImageStyle()) {
+                {{ 'styles.form.prompt_missing_placeholder_image' | transloco }}
+              } @else {
+                {{ 'styles.form.prompt_missing_placeholder_text' | transloco }}
+              }
+            </p>
+          }
           <p class="form-hint">
             @if (isImageStyle()) {
               {{ "styles.form.prompt_hint_image" | transloco }}
@@ -155,40 +176,79 @@
             <label for="style-models" class="form-label">
               {{ "styles.form.models" | transloco }}
             </label>
-            <input
-              type="text"
-              id="style-models"
-              formControlName="models"
-              class="form-input"
-              [placeholder]="'styles.form.models_placeholder' | transloco"
-            />
+            <div class="autocomplete-wrapper">
+              <div class="autocomplete-input-row">
+                <input
+                  id="style-models"
+                  type="text"
+                  class="form-input form-input-wide autocomplete-input"
+                  formControlName="models"
+                  autocomplete="off"
+                  [placeholder]="'styles.form.models_placeholder' | transloco"
+                  (focus)="onModelFocus()"
+                  (blur)="onModelBlur()"
+                />
+                <button
+                  type="button"
+                  class="autocomplete-toggle"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="toggleModelDropdown()"
+                  [attr.aria-expanded]="modelDropdownOpen()"
+                  [attr.aria-label]="'styles.form.models_toggle' | transloco"
+                >
+                  <span
+                    class="autocomplete-chevron"
+                    [class.autocomplete-chevron--open]="modelDropdownOpen()"
+                    >&#9662;</span
+                  >
+                </button>
+              </div>
+              @if (modelDropdownOpen()) {
+                <div
+                  class="autocomplete-dropdown"
+                  role="listbox"
+                  [attr.aria-label]="'styles.form.models' | transloco"
+                  (mousedown)="$event.preventDefault()"
+                >
+                  @if (hiddenModelCount() > 0) {
+                    <div class="autocomplete-hidden-notice">
+                      {{ 'styles.form.models_hidden' | transloco: { count: hiddenModelCount() } }}
+                    </div>
+                  }
+                  @for (m of filteredModels(); track m.name) {
+                    <div
+                      class="autocomplete-option"
+                      role="option"
+                      (click)="selectModel(m.name)"
+                    >
+                      {{ m.name }}
+                      <span class="text-secondary">({{ m.count }} workers)</span>
+                    </div>
+                  }
+                  @if (filteredModels().length === 0) {
+                    <div class="autocomplete-empty">
+                      {{ 'styles.form.no_model_matches' | transloco }}
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <p class="form-hint">
+              {{ "styles.form.models_placeholder_note" | transloco }}
+            </p>
           </div>
         </div>
 
         <div class="form-row">
-          <div class="form-checkbox">
-            <input
-              type="checkbox"
-              id="style-public"
-              formControlName="public"
-              class="checkbox-input"
-            />
-            <label for="style-public" class="checkbox-label">
-              {{ "styles.form.public" | transloco }}
-            </label>
-          </div>
+          <app-toggle-checkbox
+            formControlName="public"
+            [description]="'styles.form.public' | transloco"
+          ></app-toggle-checkbox>
 
-          <div class="form-checkbox">
-            <input
-              type="checkbox"
-              id="style-nsfw"
-              formControlName="nsfw"
-              class="checkbox-input"
-            />
-            <label for="style-nsfw" class="checkbox-label">
-              {{ "styles.form.nsfw" | transloco }}
-            </label>
-          </div>
+          <app-toggle-checkbox
+            formControlName="nsfw"
+            [description]="'styles.form.nsfw' | transloco"
+          ></app-toggle-checkbox>
         </div>
       </div>
 
@@ -198,6 +258,9 @@
           <h4 class="text-primary">
             {{ "styles.form.section.image_params" | transloco }}
           </h4>
+          <p class="form-hint">
+            {{ "styles.form.optional_hint" | transloco }}
+          </p>
 
           <div class="form-row">
             <div class="form-field form-field-third">
@@ -227,7 +290,10 @@
               </select>
             </div>
 
-            <div class="form-field form-field-third">
+            <div
+              class="form-field form-field-third"
+              [class.form-field--unset]="form.controls['cfg_scale'].value == null"
+            >
               <label for="style-cfg" class="form-label">
                 {{ "styles.form.cfg_scale" | transloco }}
               </label>
@@ -238,11 +304,14 @@
                 class="form-input"
                 min="0"
                 max="100"
-                step="0.5"
+                step="0.1"
               />
             </div>
 
-            <div class="form-field form-field-third">
+            <div
+              class="form-field form-field-third"
+              [class.form-field--unset]="form.controls['steps'].value == null"
+            >
               <label for="style-steps" class="form-label">
                 {{ "styles.form.steps" | transloco }}
               </label>
@@ -258,7 +327,10 @@
           </div>
 
           <div class="form-row">
-            <div class="form-field form-field-third">
+            <div
+              class="form-field form-field-third"
+              [class.form-field--unset]="form.controls['width'].value == null"
+            >
               <label for="style-width" class="form-label">
                 {{ "styles.form.width" | transloco }}
               </label>
@@ -267,13 +339,22 @@
                 id="style-width"
                 formControlName="width"
                 class="form-input"
+                [class.form-input-error]="form.controls['width'].errors?.['divisibleBy64']"
                 min="64"
                 max="3072"
                 step="64"
               />
+              @if (form.controls['width'].errors?.['divisibleBy64']) {
+                <p class="text-error" role="alert">
+                  {{ 'styles.form.divisible_by_64' | transloco }}
+                </p>
+              }
             </div>
 
-            <div class="form-field form-field-third">
+            <div
+              class="form-field form-field-third"
+              [class.form-field--unset]="form.controls['height'].value == null"
+            >
               <label for="style-height" class="form-label">
                 {{ "styles.form.height" | transloco }}
               </label>
@@ -282,10 +363,16 @@
                 id="style-height"
                 formControlName="height"
                 class="form-input"
+                [class.form-input-error]="form.controls['height'].errors?.['divisibleBy64']"
                 min="64"
                 max="3072"
                 step="64"
               />
+              @if (form.controls['height'].errors?.['divisibleBy64']) {
+                <p class="text-error" role="alert">
+                  {{ 'styles.form.divisible_by_64' | transloco }}
+                </p>
+              }
             </div>
 
             <div class="form-field form-field-third">
@@ -304,53 +391,29 @@
           </div>
 
           <div class="form-row">
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-karras"
-                formControlName="karras"
-                class="checkbox-input"
-              />
-              <label for="style-karras" class="checkbox-label">
-                {{ "styles.form.karras" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="karras"
+              [triState]="true"
+              [description]="'styles.form.karras' | transloco"
+            ></app-toggle-checkbox>
 
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-tiling"
-                formControlName="tiling"
-                class="checkbox-input"
-              />
-              <label for="style-tiling" class="checkbox-label">
-                {{ "styles.form.tiling" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="tiling"
+              [triState]="true"
+              [description]="'styles.form.tiling' | transloco"
+            ></app-toggle-checkbox>
 
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-hires-fix"
-                formControlName="hires_fix"
-                class="checkbox-input"
-              />
-              <label for="style-hires-fix" class="checkbox-label">
-                {{ "styles.form.hires_fix" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="hires_fix"
+              [triState]="true"
+              [description]="'styles.form.hires_fix' | transloco"
+            ></app-toggle-checkbox>
 
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-transparent"
-                formControlName="transparent"
-                class="checkbox-input"
-              />
-              <label for="style-transparent" class="checkbox-label">
-                {{ "styles.form.transparent" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="transparent"
+              [triState]="true"
+              [description]="'styles.form.transparent' | transloco"
+            ></app-toggle-checkbox>
           </div>
 
           <div class="form-field">
@@ -417,9 +480,15 @@
           <h4 class="text-primary">
             {{ "styles.form.section.text_params" | transloco }}
           </h4>
+          <p class="form-hint">
+            {{ "styles.form.optional_hint" | transloco }}
+          </p>
 
           <div class="form-row">
-            <div class="form-field form-field-quarter">
+            <div
+              class="form-field form-field-quarter"
+              [class.form-field--unset]="form.controls['temperature'].value == null"
+            >
               <label for="style-temperature" class="form-label">
                 {{ "styles.form.temperature" | transloco }}
               </label>
@@ -434,7 +503,10 @@
               />
             </div>
 
-            <div class="form-field form-field-quarter">
+            <div
+              class="form-field form-field-quarter"
+              [class.form-field--unset]="form.controls['top_p'].value == null"
+            >
               <label for="style-top-p" class="form-label">
                 {{ "styles.form.top_p" | transloco }}
               </label>
@@ -463,7 +535,10 @@
               />
             </div>
 
-            <div class="form-field form-field-quarter">
+            <div
+              class="form-field form-field-quarter"
+              [class.form-field--unset]="form.controls['rep_pen'].value == null"
+            >
               <label for="style-rep-pen" class="form-label">
                 {{ "styles.form.rep_pen" | transloco }}
               </label>
@@ -480,29 +555,17 @@
           </div>
 
           <div class="form-row">
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-singleline"
-                formControlName="singleline"
-                class="checkbox-input"
-              />
-              <label for="style-singleline" class="checkbox-label">
-                {{ "styles.form.singleline" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="singleline"
+              [triState]="true"
+              [description]="'styles.form.singleline' | transloco"
+            ></app-toggle-checkbox>
 
-            <div class="form-checkbox">
-              <input
-                type="checkbox"
-                id="style-frmttriminc"
-                formControlName="frmttriminc"
-                class="checkbox-input"
-              />
-              <label for="style-frmttriminc" class="checkbox-label">
-                {{ "styles.form.trim_incomplete" | transloco }}
-              </label>
-            </div>
+            <app-toggle-checkbox
+              formControlName="frmttriminc"
+              [triState]="true"
+              [description]="'styles.form.trim_incomplete' | transloco"
+            ></app-toggle-checkbox>
           </div>
 
           <div class="form-field">
@@ -526,31 +589,99 @@
 
   <!-- Form Actions -->
   <div class="form-actions">
-    <button
-      type="button"
-      class="btn-source-control"
-      (click)="onCancel()"
-      [disabled]="saving()"
-    >
-      {{ "styles.form.cancel" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="btn-primary"
-      (click)="onSubmit()"
-      [disabled]="
-        saving() ||
-        (!showJsonView() && !form.valid) ||
-        (showJsonView() && jsonError())
-      "
-    >
-      @if (saving()) {
-        {{ "styles.form.saving" | transloco }}
-      } @else if (mode() === "create") {
-        {{ "styles.form.create" | transloco }}
-      } @else {
-        {{ "styles.form.save" | transloco }}
-      }
-    </button>
+    @if (showSubmitError()) {
+      <p class="form-error-summary" role="alert">
+        {{ "styles.form.validation_summary" | transloco }}
+      </p>
+    }
+    <div class="form-actions__buttons">
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="onCancel()"
+        [disabled]="saving()"
+      >
+        {{ "profile.form.cancel" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        [class.btn-primary--error]="showSubmitError()"
+        (click)="onSubmit()"
+        [disabled]="
+          saving() ||
+          (showJsonView() && jsonError())
+        "
+      >
+        @if (saving()) {
+          {{ "styles.form.saving" | transloco }}
+        } @else if (mode() === "create") {
+          {{ "styles.form.create" | transloco }}
+        } @else {
+          {{ "styles.form.save" | transloco }}
+        }
+      </button>
+    </div>
   </div>
 </div>
+
+<!-- Confirm Submission Modal — rendered outside the card so position:fixed
+     is not trapped by the card's backdrop-filter containing block. -->
+@if (confirmModalOpen()) {
+  <div class="modal-overlay modal-overlay--high" role="dialog" aria-modal="true">
+    <div
+      class="modal-backdrop"
+      (click)="onConfirmCancel()"
+      aria-hidden="true"
+    ></div>
+    <div class="modal-panel modal-panel--lg">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          {{ "styles.form.confirm_title" | transloco }}
+        </h3>
+        <button
+          type="button"
+          class="modal-close"
+          (click)="onConfirmCancel()"
+          aria-label="Close"
+        >
+          &#10005;
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>{{ "styles.form.confirm_message" | transloco }}</p>
+        <div class="confirm-fields">
+          @for (entry of confirmPayloadEntries(); track entry.key) {
+            <div class="confirm-field-row">
+              <span class="confirm-field-key">{{ entry.key }}</span>
+              <span class="confirm-field-value">{{ entry.value }}</span>
+            </div>
+          }
+        </div>
+        <details class="confirm-json-details">
+          <summary>
+            {{ "styles.form.confirm_json_label" | transloco }}
+          </summary>
+          <pre><code>{{ confirmPayloadJson() }}</code></pre>
+        </details>
+      </div>
+      <div class="modal-actions">
+        <button
+          type="button"
+          class="btn-source-control"
+          (click)="onConfirmCancel()"
+        >
+          {{ "styles.form.confirm_cancel" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="onConfirmSubmit()"
+          [disabled]="saving()"
+        >
+          {{ "styles.form.confirm_submit" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

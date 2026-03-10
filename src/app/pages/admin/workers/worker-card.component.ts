@@ -268,6 +268,10 @@ export class WorkerCardComponent {
     }
   }
 
+  public getWorkerTypeTooltipKey(): string {
+    return WORKER_ICON_MAP.get(this.getWorkerTypeIcon())?.labelKey ?? '';
+  }
+
   public getCardBackground(): string {
     const worker = this.worker();
     let classes = '';

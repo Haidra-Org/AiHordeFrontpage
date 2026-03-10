@@ -17,7 +17,6 @@
    THEME LAYER - Design tokens and CSS custom properties
    ================================================================= */
 @import "./styles/_theme.css";
-@import "./styles/_colors.css";
 
 /* =================================================================
    BASE LAYER - Global resets and variants
@@ -30,8 +29,6 @@
 
 /* Navigation */
 @import "./styles/_navigation.css";
-@import "./styles/_navigation-mobile.css";
-@import "./styles/_navigation-links.css";
 
 /* Footer */
 @import "./styles/_footer.css";
@@ -52,11 +49,9 @@
 
 /* Cards */
 @import "./styles/_cards.css";
-@import "./styles/_feature-cards.css";
 
 /* Alerts & Notifications */
 @import "./styles/_alerts.css";
-@import "./styles/_notifications.css";
 
 /* Modals & Dialogs */
 @import "./styles/_modals.css";
@@ -72,12 +67,6 @@
 
 /* Help System */
 @import "./styles/_help.css";
-
-/* Links */
-@import "./styles/_links.css";
-
-/* Lists */
-@import "./styles/_lists.css";
 
 /* Badges */
 @import "./styles/_badges.css";
@@ -114,7 +103,6 @@
    ================================================================= */
 @import "./styles/_utilities.css";
 @import "./styles/_floating-controls.css";
-@import "./styles/_scroll-to-top.css";
 
 /* =================================================================
    ADMIN PANEL STYLES

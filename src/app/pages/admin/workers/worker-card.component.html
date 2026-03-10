@@ -283,10 +283,16 @@
           </div>
         }
             <!-- Worker type indicator -->
-      <app-worker-status-icon
-        [type]="getWorkerTypeIcon()"
-        sizeClass="w-4 h-4"
-      />
+      <div
+        class="worker-card-icon-pad"
+        [appTouchTooltip]="getWorkerTypeTooltipKey()"
+        [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
+      >
+        <app-worker-status-icon
+          [type]="getWorkerTypeIcon()"
+          sizeClass="w-4 h-4"
+        />
+      </div>
 
       </div>
     </div>

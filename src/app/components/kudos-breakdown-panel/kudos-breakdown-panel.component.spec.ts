@@ -79,7 +79,7 @@ describe('KudosBreakdownPanelComponent', () => {
 
     it('should display formatted numbers', () => {
       const values = fixture.nativeElement.querySelectorAll(
-        '.admin-heading-card',
+        '.heading-admin-card',
       );
       expect(values.length).toBeGreaterThan(0);
     });

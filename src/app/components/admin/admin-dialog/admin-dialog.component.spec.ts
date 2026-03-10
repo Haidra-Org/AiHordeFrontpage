@@ -86,7 +86,7 @@ describe('AdminDialogComponent', () => {
     host.open.set(true);
     fixture.detectChanges();
 
-    const title = fixture.nativeElement.querySelector('.admin-heading-card');
+    const title = fixture.nativeElement.querySelector('.heading-admin-card');
     expect(title.textContent).toContain('Test Dialog');
   });
 

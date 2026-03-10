@@ -21,7 +21,7 @@
 
   /* Built-with links */
   .built-with a {
-    color: var(--purple-text-color-600);
+    color: var(--color-purple-600);
   }
 
   .built-with a:hover {
@@ -29,7 +29,7 @@
   }
 
   .dark .built-with a {
-    color: var(--purple-text-color-500);
+    color: var(--color-purple-500);
   }
 
   /* Terms page styles - dynamically loaded content */

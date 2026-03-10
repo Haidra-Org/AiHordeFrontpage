@@ -41,7 +41,7 @@
         aria-label="Raw JSON"
       >
         <div class="flex items-center justify-between mb-4">
-          <h3 class="admin-heading-card">Raw JSON</h3>
+          <h3 class="heading-admin-card">Raw JSON</h3>
           <button class="btn-muted text-sm" (click)="closeRawJsonModal()">
             Close
           </button>
@@ -87,7 +87,7 @@
 
 <div class="admin-container">
   <!-- Header -->
-  <h1 class="admin-heading-page">{{ "admin.users.title" | transloco }}</h1>
+  <h1 class="heading-admin-page">{{ "admin.users.title" | transloco }}</h1>
 
   <!-- User History -->
   @if (userHistory().length > 0) {
@@ -303,7 +303,7 @@
       <!-- User Info Header -->
       <div class="p-6 pb-3">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="admin-heading-section flex items-center gap-2">
+          <h2 class="heading-admin-section flex items-center gap-2">
             {{ selectedUser()!.username }}
             @if (selectedUser()!.deleted) {
               <span
@@ -360,7 +360,7 @@
             <div class="text-xs admin-text-muted mb-1">
               {{ "admin.users.field.kudos" | transloco }}
             </div>
-            <div class="admin-heading-card">
+            <div class="heading-admin-card">
               {{ selectedUser()!.kudos | formatNumber }}
             </div>
           </div>
@@ -368,7 +368,7 @@
             <div class="text-xs admin-text-muted mb-1">
               {{ "admin.users.field.worker_count" | transloco }}
             </div>
-            <div class="admin-heading-card">
+            <div class="heading-admin-card">
               {{ selectedUser()!.worker_count }}
             </div>
           </div>
@@ -377,7 +377,7 @@
               <div class="text-xs admin-text-muted mb-1">
                 {{ "admin.users.field.evaluating_kudos" | transloco }}
               </div>
-              <div class="admin-heading-card">
+              <div class="heading-admin-card">
                 {{ selectedUser()!.evaluating_kudos }}
               </div>
             </div>
@@ -394,7 +394,7 @@
             <div class="text-xs admin-text-muted mb-1">
               {{ "admin.users.field.suspicious" | transloco }}
             </div>
-            <div class="admin-heading-card">
+            <div class="heading-admin-card">
               {{ selectedUser()!.suspicious }}
             </div>
             @if (selectedUser()!.suspicious > 0) {

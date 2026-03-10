@@ -1,17 +1,23 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  ElementRef,
   inject,
   input,
   OnInit,
   output,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AbstractControl,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -28,6 +34,15 @@ import {
   UpdateImageStyleInput,
   UpdateTextStyleInput,
 } from '../../../types/style-api';
+import { AiHordeService } from '../../../services/ai-horde.service';
+import { ActiveModel } from '../../../types/active-model';
+import { ToggleCheckboxComponent } from '../../toggle-checkbox/toggle-checkbox.component';
+
+function divisibleBy64(control: AbstractControl): ValidationErrors | null {
+  const v = control.value;
+  if (v === null || v === '' || v === undefined) return null;
+  return Number(v) % 64 === 0 ? null : { divisibleBy64: true };
+}
 
 export type StyleFormMode = 'create' | 'edit';
 
@@ -42,12 +57,16 @@ export interface StyleFormSubmitEvent {
 
 @Component({
   selector: 'app-style-form',
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [ReactiveFormsModule, TranslocoPipe, ToggleCheckboxComponent],
   templateUrl: './style-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StyleFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
+  private readonly aiHorde = inject(AiHordeService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly elRef = inject(ElementRef);
+  private readonly onDocumentClick = this.handleDocumentClick.bind(this);
 
   /** Form mode: create or edit. */
   public readonly mode = input<StyleFormMode>('create');
@@ -82,8 +101,139 @@ export class StyleFormComponent implements OnInit {
   /** Whether this is an image style. */
   public readonly isImageStyle = computed(() => this.styleType() === 'image');
 
+  /** All available models fetched from the API. */
+  public readonly availableModels = signal<ActiveModel[]>([]);
+
+  /** Dropdown open state. */
+  public readonly modelDropdownOpen = signal(false);
+  private modelDropdownPinned = false;
+
+  /** Live value of the models input for filtering. */
+  public readonly modelSearchText = signal<string>('');
+
+  /** Confirm modal state. */
+  public readonly confirmModalOpen = signal(false);
+  public readonly pendingPayload = signal<StyleFormSubmitEvent | null>(null);
+
+  public readonly confirmPayloadJson = computed(() => {
+    const p = this.pendingPayload();
+    return p ? JSON.stringify(p.payload, null, 2) : '';
+  });
+
+  public readonly confirmPayloadEntries = computed(() => {
+    const p = this.pendingPayload();
+    if (!p) return [];
+    const entries: Array<{ key: string; value: string }> = [];
+    for (const [key, value] of Object.entries(p.payload)) {
+      if (value === undefined) continue;
+      if (key === 'params' && typeof value === 'object' && value !== null) {
+        for (const [pKey, pValue] of Object.entries(
+          value as Record<string, unknown>,
+        )) {
+          entries.push({ key: pKey, value: JSON.stringify(pValue) });
+        }
+      } else {
+        entries.push({
+          key,
+          value:
+            typeof value === 'object' ? JSON.stringify(value) : String(value),
+        });
+      }
+    }
+    return entries;
+  });
+
+  /** Filtered models based on search text in the models input. */
+  public readonly filteredModels = computed(() => {
+    const raw = this.modelSearchText();
+    // Only match against the segment after the last comma
+    const lastSegment = raw.includes(',')
+      ? raw.substring(raw.lastIndexOf(',') + 1).trim().toLowerCase()
+      : raw.trim().toLowerCase();
+    const all = this.availableModels();
+    if (!lastSegment) return all;
+    return all.filter((m) => m.name.toLowerCase().includes(lastSegment));
+  });
+
+  public readonly hiddenModelCount = computed(() => {
+    return this.availableModels().length - this.filteredModels().length;
+  });
+
+  constructor() {
+    afterNextRender(() => {
+      document.addEventListener('click', this.onDocumentClick);
+    });
+
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('click', this.onDocumentClick);
+    });
+  }
+
   ngOnInit(): void {
     this.initializeForm();
+    this.loadModels();
+  }
+
+  private handleDocumentClick(event: MouseEvent): void {
+    const wrapper = this.elRef.nativeElement.querySelector('.autocomplete-wrapper');
+    if (wrapper && !wrapper.contains(event.target as Node)) {
+      this.modelDropdownPinned = false;
+      this.modelDropdownOpen.set(false);
+    }
+  }
+
+  private loadModels(): void {
+    this.modelSearchText.set(this.form.controls['models'].value ?? '');
+    this.form.controls['models'].valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((val: string) => {
+        this.modelSearchText.set(val ?? '');
+        if (val && val.length > 0 && !this.modelDropdownOpen()) {
+          this.modelDropdownOpen.set(true);
+        }
+      });
+
+    const models$ = this.isImageStyle()
+      ? this.aiHorde.getImageModels()
+      : this.aiHorde.getTextModels();
+
+    models$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((models) => {
+      this.availableModels.set(
+        models
+          .filter((m) => m.name)
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    });
+  }
+
+  public onModelFocus(): void {
+    this.modelDropdownOpen.set(true);
+  }
+
+  public onModelBlur(): void {
+    if (!this.modelDropdownPinned) {
+      this.modelDropdownOpen.set(false);
+    }
+  }
+
+  public toggleModelDropdown(): void {
+    const next = !this.modelDropdownOpen();
+    this.modelDropdownPinned = next;
+    this.modelDropdownOpen.set(next);
+  }
+
+  public selectModel(name: string): void {
+    const current = (this.form.controls['models'].value as string) ?? '';
+    const existing = current
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (!existing.includes(name)) {
+      existing.push(name);
+    }
+    this.form.controls['models'].setValue(existing.join(', '));
+    this.modelDropdownPinned = false;
+    this.modelDropdownOpen.set(false);
   }
 
   private initializeForm(): void {
@@ -122,18 +272,18 @@ export class StyleFormComponent implements OnInit {
         sharedkey: [(initial as ImageStyle)?.sharedkey ?? ''],
         // Image params
         sampler_name: [params.sampler_name ?? ''],
-        cfg_scale: [params.cfg_scale ?? 7.5],
+        cfg_scale: [params.cfg_scale ?? null],
         denoising_strength: [params.denoising_strength ?? ''],
-        height: [params.height ?? 512],
-        width: [params.width ?? 512],
-        steps: [params.steps ?? 30],
-        karras: [params.karras ?? false],
-        tiling: [params.tiling ?? false],
-        hires_fix: [params.hires_fix ?? false],
+        height: [params.height ?? null, [divisibleBy64]],
+        width: [params.width ?? null, [divisibleBy64]],
+        steps: [params.steps ?? null],
+        karras: [params.karras ?? null],
+        tiling: [params.tiling ?? null],
+        hires_fix: [params.hires_fix ?? null],
         clip_skip: [params.clip_skip ?? ''],
         facefixer_strength: [params.facefixer_strength ?? ''],
         post_processing: [params.post_processing?.join(', ') ?? ''],
-        transparent: [params.transparent ?? false],
+        transparent: [params.transparent ?? null],
         loras_json: [params.loras ? JSON.stringify(params.loras, null, 2) : ''],
         tis_json: [params.tis ? JSON.stringify(params.tis, null, 2) : ''],
         workflow: [params.workflow ?? ''],
@@ -144,22 +294,22 @@ export class StyleFormComponent implements OnInit {
       this.form = this.fb.group({
         ...baseFields,
         // Text params
-        temperature: [params.temperature ?? 0.7],
-        top_p: [params.top_p ?? 0.9],
+        temperature: [params.temperature ?? null],
+        top_p: [params.top_p ?? null],
         top_k: [params.top_k ?? ''],
         top_a: [params.top_a ?? ''],
         typical: [params.typical ?? ''],
         min_p: [params.min_p ?? ''],
-        rep_pen: [params.rep_pen ?? 1.1],
+        rep_pen: [params.rep_pen ?? null],
         rep_pen_range: [params.rep_pen_range ?? ''],
         rep_pen_slope: [params.rep_pen_slope ?? ''],
         tfs: [params.tfs ?? ''],
-        singleline: [params.singleline ?? false],
-        frmtadsnsp: [params.frmtadsnsp ?? false],
-        frmtrmblln: [params.frmtrmblln ?? false],
-        frmtrmspch: [params.frmtrmspch ?? false],
-        frmttriminc: [params.frmttriminc ?? false],
-        use_default_badwordsids: [params.use_default_badwordsids ?? false],
+        singleline: [params.singleline ?? null],
+        frmtadsnsp: [params.frmtadsnsp ?? null],
+        frmtrmblln: [params.frmtrmblln ?? null],
+        frmtrmspch: [params.frmtrmspch ?? null],
+        frmttriminc: [params.frmttriminc ?? null],
+        use_default_badwordsids: [params.use_default_badwordsids ?? null],
         stop_sequence: [params.stop_sequence?.join(', ') ?? ''],
         smoothing_factor: [params.smoothing_factor ?? ''],
         dynatemp_range: [params.dynatemp_range ?? ''],
@@ -169,6 +319,12 @@ export class StyleFormComponent implements OnInit {
 
     // Initialize JSON content
     this.updateJsonFromForm();
+
+    // Keep formInvalid signal in sync with the reactive form so computed signals react
+    this.formInvalid.set(this.form.invalid);
+    this.form.statusChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.formInvalid.set(this.form.invalid));
   }
 
   public toggleJsonView(): void {
@@ -214,18 +370,18 @@ export class StyleFormComponent implements OnInit {
         const p = parsed.params as ImageStyleParams;
         this.form.patchValue({
           sampler_name: p.sampler_name ?? '',
-          cfg_scale: p.cfg_scale ?? 7.5,
+          cfg_scale: p.cfg_scale ?? null,
           denoising_strength: p.denoising_strength ?? '',
-          height: p.height ?? 512,
-          width: p.width ?? 512,
-          steps: p.steps ?? 30,
-          karras: p.karras ?? false,
-          tiling: p.tiling ?? false,
-          hires_fix: p.hires_fix ?? false,
+          height: p.height ?? null,
+          width: p.width ?? null,
+          steps: p.steps ?? null,
+          karras: p.karras ?? null,
+          tiling: p.tiling ?? null,
+          hires_fix: p.hires_fix ?? null,
           clip_skip: p.clip_skip ?? '',
           facefixer_strength: p.facefixer_strength ?? '',
           post_processing: p.post_processing?.join(', ') ?? '',
-          transparent: p.transparent ?? false,
+          transparent: p.transparent ?? null,
           loras_json: p.loras ? JSON.stringify(p.loras, null, 2) : '',
           tis_json: p.tis ? JSON.stringify(p.tis, null, 2) : '',
           workflow: p.workflow ?? '',
@@ -236,22 +392,22 @@ export class StyleFormComponent implements OnInit {
       } else if (!this.isImageStyle() && parsed.params) {
         const p = parsed.params as TextStyleParams;
         this.form.patchValue({
-          temperature: p.temperature ?? 0.7,
-          top_p: p.top_p ?? 0.9,
+          temperature: p.temperature ?? null,
+          top_p: p.top_p ?? null,
           top_k: p.top_k ?? '',
           top_a: p.top_a ?? '',
           typical: p.typical ?? '',
           min_p: p.min_p ?? '',
-          rep_pen: p.rep_pen ?? 1.1,
+          rep_pen: p.rep_pen ?? null,
           rep_pen_range: p.rep_pen_range ?? '',
           rep_pen_slope: p.rep_pen_slope ?? '',
           tfs: p.tfs ?? '',
-          singleline: p.singleline ?? false,
-          frmtadsnsp: p.frmtadsnsp ?? false,
-          frmtrmblln: p.frmtrmblln ?? false,
-          frmtrmspch: p.frmtrmspch ?? false,
-          frmttriminc: p.frmttriminc ?? false,
-          use_default_badwordsids: p.use_default_badwordsids ?? false,
+          singleline: p.singleline ?? null,
+          frmtadsnsp: p.frmtadsnsp ?? null,
+          frmtrmblln: p.frmtrmblln ?? null,
+          frmtrmspch: p.frmtrmspch ?? null,
+          frmttriminc: p.frmttriminc ?? null,
+          use_default_badwordsids: p.use_default_badwordsids ?? null,
           stop_sequence: p.stop_sequence?.join(', ') ?? '',
           smoothing_factor: p.smoothing_factor ?? '',
           dynatemp_range: p.dynatemp_range ?? '',
@@ -328,9 +484,12 @@ export class StyleFormComponent implements OnInit {
       if (width !== undefined) params.width = width;
       const steps = this.parseOptionalNumber(f.steps);
       if (steps !== undefined) params.steps = steps;
-      if (f.karras) params.karras = true;
-      if (f.tiling) params.tiling = true;
-      if (f.hires_fix) params.hires_fix = true;
+      if (f.karras === true) params.karras = true;
+      else if (f.karras === false) params.karras = false;
+      if (f.tiling === true) params.tiling = true;
+      else if (f.tiling === false) params.tiling = false;
+      if (f.hires_fix === true) params.hires_fix = true;
+      else if (f.hires_fix === false) params.hires_fix = false;
       const clipSkip = this.parseOptionalNumber(f.clip_skip);
       if (clipSkip !== undefined) params.clip_skip = clipSkip;
       const facefixerStrength = this.parseOptionalNumber(f.facefixer_strength);
@@ -340,7 +499,8 @@ export class StyleFormComponent implements OnInit {
       if (postProcessing.length > 0)
         params.post_processing =
           postProcessing as ImageStyleParams['post_processing'];
-      if (f.transparent) params.transparent = true;
+      if (f.transparent === true) params.transparent = true;
+      else if (f.transparent === false) params.transparent = false;
       if (f.workflow) params.workflow = f.workflow;
 
       // Parse LoRAs and TIs from JSON
@@ -389,12 +549,18 @@ export class StyleFormComponent implements OnInit {
       if (repPenSlope !== undefined) params.rep_pen_slope = repPenSlope;
       const tfs = this.parseOptionalNumber(f.tfs);
       if (tfs !== undefined) params.tfs = tfs;
-      if (f.singleline) params.singleline = true;
-      if (f.frmtadsnsp) params.frmtadsnsp = true;
-      if (f.frmtrmblln) params.frmtrmblln = true;
-      if (f.frmtrmspch) params.frmtrmspch = true;
-      if (f.frmttriminc) params.frmttriminc = true;
-      if (f.use_default_badwordsids) params.use_default_badwordsids = true;
+      if (f.singleline === true) params.singleline = true;
+      else if (f.singleline === false) params.singleline = false;
+      if (f.frmtadsnsp === true) params.frmtadsnsp = true;
+      else if (f.frmtadsnsp === false) params.frmtadsnsp = false;
+      if (f.frmtrmblln === true) params.frmtrmblln = true;
+      else if (f.frmtrmblln === false) params.frmtrmblln = false;
+      if (f.frmtrmspch === true) params.frmtrmspch = true;
+      else if (f.frmtrmspch === false) params.frmtrmspch = false;
+      if (f.frmttriminc === true) params.frmttriminc = true;
+      else if (f.frmttriminc === false) params.frmttriminc = false;
+      if (f.use_default_badwordsids === true) params.use_default_badwordsids = true;
+      else if (f.use_default_badwordsids === false) params.use_default_badwordsids = false;
       const stopSequence = this.parseCommaSeparated(f.stop_sequence);
       if (stopSequence.length > 0) params.stop_sequence = stopSequence;
       const smoothingFactor = this.parseOptionalNumber(f.smoothing_factor);
@@ -415,26 +581,62 @@ export class StyleFormComponent implements OnInit {
     }
   }
 
+  /** Whether the prompt template is missing a {p} placeholder. */
+  public readonly promptMissingPlaceholder = computed(() => {
+    const prompt = this.form?.controls['prompt']?.value ?? '';
+    return prompt.length > 0 && !prompt.includes('{p}');
+  });
+
+  /** Set true after first failed submit attempt — drives error styling on the button. */
+  public readonly submitAttempted = signal(false);
+
+  /** Tracks form validity reactively so computed signals can respond to changes. */
+  private readonly formInvalid = signal(false);
+
+  /** True when a submit was attempted and the form is still invalid. */
+  public readonly showSubmitError = computed(
+    () => this.submitAttempted() && this.formInvalid(),
+  );
+
   public onSubmit(): void {
     if (this.showJsonView()) {
-      // Parse JSON and submit
       try {
         const parsed = JSON.parse(this.jsonContent());
-        this.formSubmit.emit({
+        this.pendingPayload.set({
           type: this.styleType(),
           payload: parsed,
         });
+        this.confirmModalOpen.set(true);
       } catch {
         this.jsonError.set('Invalid JSON format');
       }
     } else {
+      this.form.markAllAsTouched();
       if (this.form.valid) {
-        this.formSubmit.emit({
+        this.submitAttempted.set(false);
+        this.pendingPayload.set({
           type: this.styleType(),
           payload: this.buildPayload(),
         });
+        this.confirmModalOpen.set(true);
+      } else {
+        this.submitAttempted.set(true);
       }
     }
+  }
+
+  public onConfirmSubmit(): void {
+    const payload = this.pendingPayload();
+    if (payload) {
+      this.formSubmit.emit(payload);
+      this.confirmModalOpen.set(false);
+      this.pendingPayload.set(null);
+    }
+  }
+
+  public onConfirmCancel(): void {
+    this.confirmModalOpen.set(false);
+    this.pendingPayload.set(null);
   }
 
   public onCancel(): void {
