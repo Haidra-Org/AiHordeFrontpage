@@ -32,6 +32,7 @@ export class TeamDetailComponent implements OnInit {
 
   // State
   public team = signal<Team | null>(null);
+  public teamId = signal<string | null>(null);
   public loading = signal<boolean>(true);
   public error = signal<string | null>(null);
 
@@ -47,6 +48,7 @@ export class TeamDetailComponent implements OnInit {
       .pipe(
         switchMap((params) => {
           const teamId = params['teamId'];
+          this.teamId.set(teamId);
           this.loading.set(true);
           this.error.set(null);
           return this.teamService.getTeam(teamId);

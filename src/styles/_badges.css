@@ -5,6 +5,10 @@
    - Badge base
    - Badge color variants (primary, secondary, info, warning, success, danger, purple, pink, indigo, teal)
    
+   Color System (matches alert system):
+   - danger: red-*    | info: blue-*
+   - warning: amber-*  | success: green-*
+   
    WCAG AA Contrast Requirements:
    - Normal text: 4.5:1 ratio
    - Large text (18pt+): 3:1 ratio
@@ -88,10 +92,10 @@
     @apply dark:bg-gray-800 dark:text-gray-200 dark:border dark:border-gray-600;
   }
 
-  /* Info badge - Light blue, informational */
+  /* Info badge - Blue, informational */
   .badge-info {
-    @apply bg-sky-100 text-sky-800;
-    @apply dark:bg-sky-950 dark:text-sky-200 dark:border dark:border-sky-800;
+    @apply bg-blue-100 text-blue-800;
+    @apply dark:bg-blue-950 dark:text-blue-200 dark:border dark:border-blue-800;
   }
 
   /* Warning badge - Yellow/amber, caution */
@@ -102,8 +106,8 @@
 
   /* Success badge - Green, positive */
   .badge-success {
-    @apply bg-emerald-100 text-emerald-800;
-    @apply dark:bg-emerald-950 dark:text-emerald-200 dark:border dark:border-emerald-800;
+    @apply bg-green-100 text-green-800;
+    @apply dark:bg-green-950 dark:text-green-200 dark:border dark:border-green-800;
   }
 
   /* Recommended badge - Gold star treatment */
@@ -146,11 +150,5 @@
   .badge-teal {
     @apply bg-teal-100 text-teal-800;
     @apply dark:bg-teal-950 dark:text-teal-200 dark:border dark:border-teal-800;
-  }
-
-  /* Orange badge */
-  .badge-orange {
-    @apply bg-orange-100 text-orange-800;
-    @apply dark:bg-orange-950 dark:text-orange-200 dark:border dark:border-orange-800;
   }
 }

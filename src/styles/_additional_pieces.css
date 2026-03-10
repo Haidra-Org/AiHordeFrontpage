@@ -5,9 +5,6 @@
    Uses Tailwind CSS v4 @apply directive.
    ================================================================= */
 
-@import "./_md.css";
-@import "./_lg.css";
-@import "./_xl.css";
 
 @layer utilities {
   .mt-12 {
@@ -46,5 +43,28 @@
 
   .w-auto {
     @apply w-auto;
+  }
+
+  /* Breakpoint overrides */
+  @media screen and (min-width: 768px) {
+    .md\:mt-0 {
+      @apply mt-0;
+    }
+
+    .md\:gap-8 {
+      @apply gap-8;
+    }
+  }
+
+  @media screen and (min-width: 1024px) {
+    .lg\:pt-0 {
+      @apply pt-0;
+    }
+  }
+
+  @media screen and (min-width: 1280px) {
+    .xl\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
   }
 }

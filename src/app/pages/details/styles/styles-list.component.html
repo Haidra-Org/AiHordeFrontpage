@@ -1,4 +1,4 @@
-<div class="stack-lg">
+<div class="stack-lg gap-0">
   <app-page-intro pageKey="styles" />
 
   <!-- Style Lookup -->
@@ -88,8 +88,7 @@
       <button
         type="button"
         class="btn-primary"
-        (click)="openCreateForm()"
-        [disabled]="showCreateForm()"
+        (click)="goToCreateStyle()"
       >
         <svg
           class="icon-sm"
@@ -110,22 +109,8 @@
     }
   </div>
 
-  <!-- Create Form -->
-  @if (showCreateForm()) {
-    <div class="card card-bg-primary card-full">
-      <app-style-form
-        [mode]="'create'"
-        [styleType]="currentStyleType()"
-        [saving]="creating()"
-        (formSubmit)="onCreateStyle($event)"
-        (formCancel)="closeCreateForm()"
-      />
-    </div>
-  }
-
   <!-- Filters -->
-  @if (!showCreateForm()) {
-    <app-style-filters
+  <app-style-filters
       [queryParams]="queryParams()"
       [clientFilters]="clientFilters()"
       [availableTags]="availableTags()"
@@ -133,8 +118,7 @@
       [loading]="loading()"
       (queryParamsChange)="onQueryParamsChange($event)"
       (clientFiltersChange)="onClientFiltersChange($event)"
-    />
-  }
+  />
 
   <!-- Error State -->
   @if (error()) {
@@ -170,7 +154,7 @@
 
   <!-- Styles Grid (Image/Text) -->
   @if (
-    !loading() && !error() && activeTab() !== "collections" && !showCreateForm()
+    !loading() && !error() && activeTab() !== "collections"
   ) {
     @if (filteredStyles().length === 0) {
       <div class="state-container state-container-sm state-muted">
@@ -210,7 +194,7 @@
 
   <!-- Collections Grid -->
   @if (
-    !loading() && !error() && activeTab() === "collections" && !showCreateForm()
+    !loading() && !error() && activeTab() === "collections"
   ) {
     @if (filteredCollections().length === 0) {
       <div class="state-container state-container-sm state-muted">
@@ -267,7 +251,7 @@
   }
 
   <!-- Load More -->
-  @if (!loading() && !error() && !showCreateForm() && hasMore()) {
+  @if (!loading() && !error() && hasMore()) {
     <div class="action-row action-row-responsive">
       <button
         type="button"
@@ -297,7 +281,7 @@
     </div>
   }
 
-  @if (!loading() && !error() && !showCreateForm() && exhaustionNote()) {
+  @if (!loading() && !error() && exhaustionNote()) {
     <div class="action-row action-row-responsive text-secondary">
       <span>{{ exhaustionNote() | transloco }}</span>
     </div>

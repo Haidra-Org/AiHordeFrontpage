@@ -26,13 +26,15 @@
     <!-- Header -->
     <div class="section-divider-bottom">
       <h2 class="heading-hero mb-2">{{ team()!.name }}</h2>
+      <p class="text-secondary">
+        <code class="code-block">{{ team()!.id ?? teamId() }}</code>
+      </p>
       @if (team()!.creator) {
         <p class="text-secondary">
           {{ "details.teams.created_by_label" | transloco }}
           <a [routerLink]="getCreatorLink()" class="link">{{
             team()!.creator
           }}</a>
-          - team id:<code class="code-block">{{ team()!.id }}</code>
         </p>
       }
       @if (team()!.info) {

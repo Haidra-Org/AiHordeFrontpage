@@ -47,6 +47,9 @@ export class SharedKeyCardComponent {
   /** Local editing state. */
   public readonly isEditing = signal(false);
 
+  /** Whether the key ID was just copied. */
+  public readonly copied = signal(false);
+
   /** Computed status of the key. */
   public readonly status = computed<SharedKeyStatus>(() => {
     const key = this.sharedKey();
@@ -86,6 +89,13 @@ export class SharedKeyCardComponent {
 
   public startEdit(): void {
     this.isEditing.set(true);
+  }
+
+  public copyKeyId(): void {
+    navigator.clipboard.writeText(this.sharedKey().id).then(() => {
+      this.copied.set(true);
+      setTimeout(() => this.copied.set(false), 2000);
+    });
   }
 
   public cancelEdit(): void {

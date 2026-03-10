@@ -536,32 +536,104 @@
      ================================================================= */
 
   .toggle-switch {
-    @apply relative inline-flex items-center cursor-pointer;
+    @apply relative inline-flex items-center cursor-pointer gap-1;
   }
 
   .toggle-switch input {
     @apply absolute opacity-0 w-0 h-0;
   }
 
+  /* Focus ring rendered on the track when the hidden input is focused */
+  .toggle-switch input:focus-visible + .toggle-switch-track {
+    outline: 2px solid var(--color-brand-blue);
+    outline-offset: 2px;
+  }
+
   .toggle-switch-track {
-    @apply w-11 h-6 rounded-full transition-colors duration-200;
-    background-color: var(--color-border-primary);
+    @apply relative w-11 h-6 rounded-full transition-all duration-200 shrink-0;
+    background: rgb(156 163 175 / 0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-inset);
   }
 
   .dark .toggle-switch-track {
-    @apply bg-gray-600;
+    background: rgb(255 255 255 / 0.12);
+    border-color: rgb(255 255 255 / 0.08);
   }
 
   .toggle-switch input:checked + .toggle-switch-track {
-    @apply bg-blue-600;
+    background: rgb(37 99 235 / 0.85);
+    border-color: rgb(59 130 246 / 0.5);
+    box-shadow: 0 0 8px rgb(59 130 246 / 0.4), var(--shadow-glass-inset);
+  }
+
+  .dark .toggle-switch input:checked + .toggle-switch-track {
+    background: rgb(96 165 250 / 0.7);
+    border-color: rgb(147 197 253 / 0.4);
+    box-shadow: 0 0 8px rgb(96 165 250 / 0.4), var(--shadow-glass-inset);
   }
 
   .toggle-switch-thumb {
-    @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200;
+    @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-200;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25), inset 0 1px 1px rgb(255 255 255 / 0.8);
   }
 
   .toggle-switch input:checked ~ .toggle-switch-thumb {
     @apply translate-x-5;
+  }
+
+  /* Three-state: null → thumb centred, track has dashed border */
+  .toggle-switch-track--null {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--color-content-muted);
+    box-shadow: none;
+  }
+
+  .dark .toggle-switch-track--null {
+    background: transparent;
+    border-color: rgb(107 114 128 / 0.5);
+  }
+
+  .toggle-switch-thumb--null {
+    @apply translate-x-2.5;
+    opacity: 0.4;
+  }
+
+  /* Unset badge — small muted label next to toggle */
+  .toggle-unset-badge {
+    @apply text-xs px-1.5 py-0.5 rounded;
+    color: var(--color-content-muted);
+    background: var(--color-surface-tertiary);
+  }
+
+  .dark .toggle-unset-badge {
+    background: rgb(55 65 81 / 0.5);
+    color: rgb(156 163 175);
+  }
+
+  .toggle-unset-badge--hidden {
+    visibility: hidden;
+  }
+
+  /* Container pill — groups track + label + unset badge into a distinct chip */
+  .toggle-checkbox-container {
+    @apply inline-flex items-center rounded-lg px-3 py-2;
+    background: rgb(0 0 0 / 0.04);
+    border: 1px solid var(--color-glass-border-subtle);
+    transition: background 0.15s;
+  }
+
+  .dark .toggle-checkbox-container {
+    background: rgb(255 255 255 / 0.05);
+    border-color: rgb(255 255 255 / 0.08);
+  }
+
+  /* Whole row dims when unset */
+  .toggle-checkbox--unset {
+    opacity: 0.55;
   }
 
   /* =================================================================

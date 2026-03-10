@@ -1,7 +1,7 @@
 <div class="admin-container-lg">
   <!-- Header -->
   <div class="admin-header">
-    <h1 class="admin-heading-page">{{ "admin.filters.title" | transloco }}</h1>
+    <h1 class="heading-admin-page">{{ "admin.filters.title" | transloco }}</h1>
     <div class="flex gap-2">
       <button
         (click)="loadFilters()"
@@ -97,7 +97,7 @@
   @if (activeTab() === "tester") {
     <div class="panel">
       <div class="p-6">
-        <h2 class="admin-heading-section mb-4">
+        <h2 class="heading-admin-section mb-4">
           {{ "admin.filters.prompt_tester.title" | transloco }}
         </h2>
         <p class="admin-text-muted mb-4">
@@ -489,7 +489,7 @@
   <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel">
-      <h2 class="admin-heading-section mb-6">
+      <h2 class="heading-admin-section mb-6">
         @if (dialogType() === "create") {
           {{ "admin.filters.dialog.create_title" | transloco }}
         } @else {
@@ -602,7 +602,7 @@
   <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel">
-      <h2 class="admin-heading-section mb-4">
+      <h2 class="heading-admin-section mb-4">
         {{ "admin.filters.dialog.delete_title" | transloco }}
       </h2>
 
@@ -660,7 +660,7 @@
     <div class="modal-backdrop" (click)="closeDialog()"></div>
     <div class="dialog-panel worker-modal-panel-large">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="admin-heading-section">
+        <h2 class="heading-admin-section">
           {{ "admin.filters.dialog.raw_json_title" | transloco }}
         </h2>
         <button

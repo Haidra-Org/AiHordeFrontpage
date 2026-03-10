@@ -1,12 +1,14 @@
 /* =================================================================
-   TYPOGRAPHY - TEXT STYLES
+   TYPOGRAPHY - TEXT, LINK & LIST STYLES
    
    Includes:
-   - Text color utilities
-   - Description text
+   - Text color utilities and description text
    - Intro text variants
    - Error/success text
    - Body text variants
+   - Card text patterns
+   - Link styles (bold, button-like, external)
+   - List styles (checkboxes, stats, checkmarks)
    ================================================================= */
 
 @layer components {
@@ -55,6 +57,15 @@
     @apply text-red-500;
   }
 
+  /* Warning text */
+  .text-warning {
+    @apply text-amber-600 text-sm;
+  }
+
+  .dark .text-warning {
+    @apply text-amber-400;
+  }
+
   /* Success text */
   .text-success {
     @apply text-green-500;
@@ -81,5 +92,98 @@
     @apply text-sm m-0;
     @apply text-content-secondary;
     @apply dark:text-gray-400;
+  }
+}
+
+
+/* ── Link Styles ─────────────────────────────────────────────── */
+
+@layer components {
+  /* Standard link */
+  .link {
+    @apply text-blue-600;
+    @apply dark:text-blue-500;
+
+    &:hover {
+      @apply underline;
+    }
+  }
+
+  /* Emphasized link for CTAs */
+  .link-bold {
+    @apply text-blue-600 font-semibold;
+    @apply dark:text-blue-500;
+
+    &:hover {
+      @apply underline;
+    }
+  }
+
+  /* Link button small - used for filter actions */
+  .link-btn-sm {
+    @apply text-xs text-blue-600;
+    @apply dark:text-blue-400;
+
+    &:hover {
+      @apply text-blue-700;
+      @apply dark:text-blue-300;
+    }
+  }
+
+  /* Underline links in content areas */
+  h3 a,
+  p a,
+  .underline-links a {
+    @apply underline;
+
+    &:hover {
+      @apply no-underline text-gray-600;
+      @apply dark:text-gray-300;
+    }
+  }
+
+  /* External link indicator — shows ↗ after links that open in a new tab */
+  .footer-links a[target="_blank"]::after,
+  .external-link::after {
+    content: " \2197";
+    font-size: 0.75em;
+    vertical-align: super;
+  }
+}
+
+/* ── List Styles ─────────────────────────────────────────────── */
+
+@layer components {
+  /* List with checkboxes */
+  .list-checkboxes {
+    @apply flex flex-col gap-2;
+  }
+
+  .list-checkboxes li {
+    @apply flex items-start gap-2;
+  }
+
+  /* Stats list */
+  .list-stats {
+    @apply flex flex-col gap-2 mt-3;
+  }
+
+  /* =================================================================
+     CHECKMARK LIST - Inline checkmarks with text
+     Used for transparency badges, mission statements, etc.
+     ================================================================= */
+
+  .checkmark-list {
+    @apply flex flex-wrap gap-4;
+  }
+
+  .checkmark-item {
+    @apply flex items-center gap-2;
+    @apply text-green-700 font-medium;
+    @apply dark:text-green-400;
+  }
+
+  .checkmark-item .icon-sm {
+    @apply shrink-0;
   }
 }

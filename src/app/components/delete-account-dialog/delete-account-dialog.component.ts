@@ -39,7 +39,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           [attr.aria-labelledby]="titleId()"
           tabindex="-1"
         >
-          <h3 [id]="titleId()" class="admin-heading-card mb-4">
+          <h3 [id]="titleId()" class="heading-admin-card mb-4">
             {{ title() }}
           </h3>
 

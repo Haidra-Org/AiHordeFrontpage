@@ -55,20 +55,8 @@
     </div>
   }
 
-  <!-- Edit Form -->
-  @if (style() && editMode() && !loading()) {
-    <app-style-form
-      [mode]="'edit'"
-      [styleType]="styleType()"
-      [initialValues]="style()"
-      [saving]="saving()"
-      (formSubmit)="onFormSubmit($event)"
-      (formCancel)="onFormCancel()"
-    />
-  }
-
   <!-- Style Details View - Single Card -->
-  @if (style() && !editMode() && !loading()) {
+  @if (style() && !loading()) {
     <article class="card card-bg-primary card-full style-detail-card">
       <!-- Header Section -->
       <header class="style-detail-header">
@@ -161,26 +149,6 @@
             </button>
 
             @if (isOwner()) {
-              <button
-                type="button"
-                class="btn-source-control btn-sm"
-                (click)="toggleEditMode()"
-              >
-                <svg
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
-                  />
-                </svg>
-                {{ "styles.edit" | transloco }}
-              </button>
               <button
                 type="button"
                 class="btn-source-control btn-sm"

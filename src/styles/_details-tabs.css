@@ -23,6 +23,7 @@
     touch-action: pan-x;
     /* sticky already establishes a containing block for the arrow buttons */
     gap: clamp(0.125rem, 0.4vw, 0.25rem);
+    max-width: 100%;
   }
 
   /* ---- Overflow fade masks (toggled by ScrollFadeDirective) ---- */
@@ -774,6 +775,11 @@
     grid-template-columns: 1fr;
   }
 
+  .usage-totals-grid > * {
+    min-width: 0;
+    overflow: hidden;
+  }
+
   @media (min-width: 768px) {
     .usage-totals-grid {
       grid-template-columns: repeat(2, 1fr);
@@ -795,11 +801,13 @@
 
   /* Model list for overview cards */
   .model-list {
-    @apply flex flex-col gap-2;
+    @apply flex flex-col gap-2 overflow-hidden;
   }
 
   .model-list-item {
-    @apply flex items-center gap-3 p-2 rounded-md;
+    @apply grid gap-3 p-2 rounded-md min-w-0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
     background-color: var(--color-bg-secondary);
   }
 
@@ -826,7 +834,10 @@
   }
 
   .model-name {
-    @apply flex-1 text-sm font-medium truncate;
+    @apply min-w-0 text-sm font-medium;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
     color: var(--color-text-primary);
   }
 
@@ -835,7 +846,7 @@
   }
 
   .model-count {
-    @apply text-[0.8125rem] font-semibold tabular-nums;
+    @apply text-[0.8125rem] font-semibold tabular-nums shrink-0;
     color: var(--color-text-secondary);
   }
 

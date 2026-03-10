@@ -170,6 +170,15 @@ export class ItemListSectionComponent {
     }
   }
 
+  public isDiscordLink(url: string): boolean {
+    try {
+      const hostname = new URL(url).hostname.toLowerCase();
+      return hostname === 'discord.com' || hostname === 'discord.gg' || hostname.endsWith('.discord.com');
+    } catch {
+      return false;
+    }
+  }
+
   private setupStickyObserver(headerRef: ElementRef<HTMLElement>): void {
     const header = headerRef.nativeElement;
 

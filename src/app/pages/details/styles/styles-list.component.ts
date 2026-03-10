@@ -46,10 +46,6 @@ import {
 } from '../../../types/style-api';
 import { StyleCardComponent } from '../../../components/style/style-card/style-card.component';
 import { StyleFiltersComponent } from '../../../components/style/style-filters/style-filters.component';
-import {
-  StyleFormComponent,
-  StyleFormSubmitEvent,
-} from '../../../components/style/style-form/style-form.component';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { scrollToElementCentered } from '../../../helper/scroll-utils';
@@ -64,7 +60,6 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     TranslocoPipe,
     StyleCardComponent,
     StyleFiltersComponent,
-    StyleFormComponent,
     EntityLookupComponent,
     PageIntroComponent,
     ScrollFadeDirective,
@@ -135,14 +130,8 @@ export class StylesListComponent implements OnInit {
     DEFAULT_CLIENT_FILTERS,
   );
 
-  /** Whether to show create form. */
-  public readonly showCreateForm = signal(false);
-
   /** Note to show when no further pages are available (i18n key). */
   public readonly exhaustionNote = signal<string | null>(null);
-
-  /** Creating state. */
-  public readonly creating = signal(false);
 
   /** Loading additional pages. */
   public readonly loadingMore = signal(false);
@@ -301,7 +290,6 @@ export class StylesListComponent implements OnInit {
     this.activeTab.set(tab);
     this.queryParams.set(DEFAULT_QUERY_PARAMS);
     this.clientFilters.set(DEFAULT_CLIENT_FILTERS);
-    this.showCreateForm.set(false);
     this.resetPaginationState();
     this.loadStyles();
   }
@@ -395,52 +383,9 @@ export class StylesListComponent implements OnInit {
     this.router.navigate(['/details/styles', type, style.id]);
   }
 
-  public openCreateForm(): void {
-    this.showCreateForm.set(true);
+  public goToCreateStyle(): void {
+    this.router.navigate(['/profile/styles']);
   }
-
-  public closeCreateForm(): void {
-    this.showCreateForm.set(false);
-  }
-
-  public onCreateStyle(event: StyleFormSubmitEvent): void {
-    this.creating.set(true);
-
-    const observable =
-      event.type === 'image'
-        ? this.styleService.createImageStyle(
-            event.payload as Parameters<
-              typeof this.styleService.createImageStyle
-            >[0],
-          )
-        : this.styleService.createTextStyle(
-            event.payload as Parameters<
-              typeof this.styleService.createTextStyle
-            >[0],
-          );
-
-    observable
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.creating.set(false)),
-      )
-      .subscribe({
-        next: (response) => {
-          this.showCreateForm.set(false);
-          // Navigate to the new style
-          this.router.navigate(['/details/styles', event.type, response.id]);
-        },
-        error: (err) => {
-          this.error.set(err.message || 'Failed to create style');
-        },
-      });
-  }
-
-  /** Get current style type for the form. */
-  public readonly currentStyleType = computed((): StyleType => {
-    const tab = this.activeTab();
-    return tab === 'text' ? 'text' : 'image';
-  });
 
   private resetPaginationState(): void {
     this.hasMore.set(true);

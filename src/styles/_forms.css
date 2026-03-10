@@ -91,6 +91,12 @@
     @apply border-red-500;
   }
 
+  /* Dimmed state for unset/empty optional fields */
+  .form-field--unset .form-input,
+  .form-field--unset .form-label {
+    opacity: 0.55;
+  }
+
   /* Filter label - used in filter sections */
   .filter-label {
     @apply block text-sm font-medium text-gray-900;
@@ -144,9 +150,12 @@
   .form-select,
   .form-textarea {
     @apply py-2.5 px-3.5 text-sm rounded-lg transition-all duration-150;
-    border: 1px solid var(--color-border-primary);
-    background-color: var(--color-bg-primary);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border);
     color: var(--color-text-primary);
+    box-shadow: var(--shadow-glass-inset), var(--shadow-glass);
   }
 
   .form-input-wide {
@@ -158,20 +167,23 @@
   .form-textarea:focus {
     @apply outline-none;
     border-color: var(--color-brand-blue);
-    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.15), var(--shadow-glass-inset);
   }
 
   .dark .form-input,
   .dark .form-select,
   .dark .form-textarea {
-    @apply bg-gray-800 border-gray-600 text-gray-200;
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.08);
+    color: rgb(229 231 235);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.06), 0 2px 8px rgb(0 0 0 / 0.2);
   }
 
   .dark .form-input:focus,
   .dark .form-select:focus,
   .dark .form-textarea:focus {
-    @apply border-blue-400;
-    box-shadow: 0 0 0 3px rgb(96 165 250 / 0.1);
+    border-color: rgb(96 165 250 / 0.7);
+    box-shadow: 0 0 0 3px rgb(96 165 250 / 0.12), inset 0 1px 1px rgb(255 255 255 / 0.06);
   }
 
   .form-input::placeholder,
@@ -245,11 +257,20 @@
 
   /* Form actions */
   .form-actions {
-    @apply flex justify-end gap-3 pt-4 border-t border-edge-primary;
+    @apply flex flex-col gap-2 pt-4 border-t border-edge-primary;
+  }
+
+  .form-actions__buttons {
+    @apply flex justify-end gap-3;
 
     @media (max-width: 640px) {
       @apply flex-col;
     }
+  }
+
+  /* Inline validation summary shown near the save button */
+  .form-error-summary {
+    @apply text-sm text-red-600 dark:text-red-400 text-right;
   }
 
   /* Filter container with scrollable content */
@@ -327,6 +348,19 @@
     @apply relative;
   }
 
+  /* When the dropdown is visible, elevate the entire wrapper, its form-row,
+     and any ancestor card above siblings so the dropdown isn't clipped.
+     - .form-row elevation: prevents the next form-row from painting over it
+     - .card elevation: escapes the backdrop-filter stacking context that
+       would otherwise let a sibling card cover the dropdown */
+  .form-row:has(.autocomplete-dropdown) {
+    @apply relative z-20;
+  }
+
+  .card:has(.autocomplete-dropdown) {
+    @apply relative z-10;
+  }
+
   /* Row containing the text input + toggle button */
   .autocomplete-input-row {
     @apply flex;
@@ -340,20 +374,28 @@
   /* Toggle button that opens/closes the dropdown without focusing the input */
   .autocomplete-toggle {
     @apply inline-flex items-center justify-center px-2.5 shrink-0;
-    @apply border rounded-r-lg transition-colors duration-150;
-    border-color: var(--color-border-primary);
-    background-color: var(--color-surface-secondary);
+    @apply border rounded-r-lg transition-all duration-150;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border-color: var(--color-glass-border);
     color: var(--color-content-secondary);
     border-left: none;
   }
 
   .autocomplete-toggle:hover {
-    background-color: var(--color-surface-tertiary);
+    background: var(--color-glass-surface-elevated);
   }
 
   .dark .autocomplete-toggle {
-    @apply border-gray-600 bg-gray-700 text-gray-300 hover:bg-gray-600;
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.08);
+    color: rgb(209 213 219);
     border-left: none;
+  }
+
+  .dark .autocomplete-toggle:hover {
+    background: rgb(31 41 55 / 0.75);
   }
 
   /* Chevron icon inside the toggle — rotated when open */
@@ -369,14 +411,18 @@
   .autocomplete-dropdown {
     @apply absolute z-10 top-full left-0 right-0 mt-1;
     @apply max-h-48 sm:max-h-64 md:max-h-80 overflow-y-auto;
-    @apply rounded-lg border shadow-lg;
-    border-color: var(--color-border-primary);
-    background-color: var(--color-surface-primary);
+    @apply rounded-lg;
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated);
   }
 
   .dark .autocomplete-dropdown {
-    @apply border-gray-600 bg-gray-900 shadow-none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background: rgb(17 24 39 / 0.85);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.5), 0 4px 8px rgb(0 0 0 / 0.3);
   }
 
   /* Sticky header shown when some results are hidden due to filtering */

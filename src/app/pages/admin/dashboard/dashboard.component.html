@@ -1,7 +1,7 @@
 <div class="max-w-6xl flex flex-col mx-auto">
   <!-- Welcome Header -->
   <div class="mb-8">
-    <h1 class="admin-heading-lg">
+    <h1 class="heading-admin-lg">
       {{
         "admin.dashboard.welcome"
           | transloco: { username: auth.currentUser()!.username }
@@ -149,7 +149,7 @@
         <p class="stat-card-label">
           {{ "admin.dashboard.account_age" | transloco }}
         </p>
-        <p class="admin-heading-section">
+        <p class="heading-admin-section">
           {{ formatAccountAge(auth.currentUser()!.account_age!) }}
         </p>
       </div>
@@ -159,7 +159,7 @@
   <!-- Moderator Tools -->
   @if (auth.currentUser()!.moderator) {
     <div class="panel p-6">
-      <h2 class="admin-heading-section mb-2">
+      <h2 class="heading-admin-section mb-2">
         {{ "admin.dashboard.moderator_tools" | transloco }}
       </h2>
       <p class="admin-text-muted mb-6">

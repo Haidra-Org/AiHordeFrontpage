@@ -329,7 +329,6 @@
   /* Worker card base */
   .worker-card-normal {
     @apply rounded-xl;
-    overflow: clip;
     background: var(--color-glass-surface);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
@@ -365,7 +364,6 @@
   /* Worker card with issue state */
   .worker-card-issue {
     @apply rounded-xl;
-    overflow: clip;
     background: rgb(254 226 226 / 0.6);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));

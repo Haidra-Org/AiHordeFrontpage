@@ -5,12 +5,15 @@
    
    Includes:
    - Base card and variants
+   - Feature cards and feature boxes
    - Panels (admin-style cards)
    - Stat cards
    - Worker cards
    - Callouts
    - Interactive cards
    - Image grid
+   - Modals/Dialogs
+   - Team cards
    ================================================================= */
 
 @layer components {
@@ -130,6 +133,13 @@
       0 1px 2px rgb(0 0 0 / 0.12);
   }
 
+  /* Card without backdrop blur - use when card contains fixed-position modals
+     (backdrop-filter creates a containing block that traps position: fixed) */
+  .card--no-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   /* Card full-width modifier - removes max-width constraint */
   .card-full {
     @apply max-w-none text-left;
@@ -202,47 +212,47 @@
     @apply flex items-center justify-center w-12 h-12 rounded-lg shrink-0;
   }
 
-  .stat-card-icon--purple {
+  .stat-card-icon-purple {
     @apply bg-purple-100 text-purple-600;
   }
 
-  .dark .stat-card-icon--purple {
+  .dark .stat-card-icon-purple {
     background-color: rgb(88 28 135 / 0.5);
     @apply text-purple-400;
   }
 
-  .stat-card-icon--blue {
+  .stat-card-icon-blue {
     @apply bg-blue-100 text-blue-600;
   }
 
-  .dark .stat-card-icon--blue {
+  .dark .stat-card-icon-blue {
     background-color: rgb(30 58 138 / 0.5);
     @apply text-blue-400;
   }
 
-  .stat-card-icon--green {
+  .stat-card-icon-green {
     @apply bg-green-100 text-green-600;
   }
 
-  .dark .stat-card-icon--green {
+  .dark .stat-card-icon-green {
     background-color: rgb(22 101 52 / 0.5);
     @apply text-green-400;
   }
 
-  .stat-card-icon--yellow {
+  .stat-card-icon-yellow {
     @apply bg-yellow-100 text-yellow-700;
   }
 
-  .dark .stat-card-icon--yellow {
+  .dark .stat-card-icon-yellow {
     background-color: rgb(113 63 18 / 0.5);
     @apply text-yellow-400;
   }
 
-  .stat-card-icon--indigo {
+  .stat-card-icon-indigo {
     @apply bg-indigo-100 text-indigo-600;
   }
 
-  .dark .stat-card-icon--indigo {
+  .dark .stat-card-icon-indigo {
     background-color: rgb(49 46 129 / 0.5);
     @apply text-indigo-400;
   }
@@ -269,82 +279,7 @@
     @apply text-white;
   }
 
-  /* =================================================================
-     WORKER CARD VARIANT - Cards with status indication
-     ================================================================= */
 
-  .worker-card {
-    @apply rounded-lg overflow-hidden;
-  }
-
-  .worker-card--normal {
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-  }
-
-  .dark .worker-card--normal {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
-  }
-
-  .worker-card--issue {
-    background: rgb(254 226 226 / 0.6);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid rgb(252 165 165 / 0.5);
-  }
-
-  .dark .worker-card--issue {
-    background: rgb(127 29 29 / 0.25);
-    border-color: rgb(185 28 28 / 0.4);
-  }
-
-  /* Status icon for worker cards */
-  .status-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-full shrink-0;
-  }
-
-  .status-icon--success {
-    @apply bg-green-100 text-green-600;
-  }
-
-  .dark .status-icon--success {
-    @apply bg-green-800 text-green-400;
-  }
-
-  .status-icon--error {
-    @apply bg-red-100 text-red-600;
-  }
-
-  .dark .status-icon--error {
-    @apply bg-red-900 text-red-400;
-  }
-
-  /* =================================================================
-     EXPANDABLE CARD - Used in lists
-     ================================================================= */
-
-  .card-expandable {
-    @apply border border-gray-200 rounded-lg;
-    @apply dark:border-gray-700;
-  }
-
-  /* Card row clickable - interactive card row */
-  .card-row-clickable {
-    @apply flex items-center justify-between p-4 cursor-pointer;
-    @apply transition-colors duration-200;
-    @apply hover:bg-gray-50 dark:hover:bg-gray-800;
-  }
-
-  /* Card expanded section - details section */
-  .card-expanded {
-    @apply p-4 border-t border-gray-200 bg-gray-50;
-    @apply dark:border-gray-700 dark:bg-gray-800;
-  }
 
   /* =================================================================
      CARD SPACING UTILITIES
@@ -467,51 +402,9 @@
     @apply w-4 h-4;
   }
 
-  /* Card title truncate - single line with ellipsis */
-  .card-title-truncate {
-    @apply overflow-hidden text-ellipsis whitespace-nowrap;
-  }
-
-  /* =================================================================
-     CARD STATS GRID - For displaying multiple stats in cards
-     ================================================================= */
-
-  /* Stats container - 2x2 grid */
-  .card-stats {
-    @apply grid grid-cols-2 gap-3 p-3 bg-surface-secondary rounded-md;
-    @apply dark:bg-gray-900;
-  }
-
-  /* Stat label - small, uppercase */
-  .stat-label {
-    @apply text-xs font-semibold uppercase tracking-wide text-content-muted;
-    @apply dark:text-gray-500;
-  }
-
-  /* Stat value - larger, prominent */
-  .stat-value {
-    @apply text-base font-semibold text-content-primary;
-    @apply dark:text-gray-100;
-  }
-
-  /* Inline stat for card footer */
-  .card-stat-inline {
-    @apply text-sm font-medium text-content-secondary;
-    @apply dark:text-gray-400;
-  }
-
   /* Card actions container */
   .card-actions {
     @apply flex gap-1;
-  }
-
-  /* Small action button for cards */
-  .card-action-btn {
-    @apply flex items-center justify-center w-8 h-8;
-  }
-
-  .card-action-btn svg {
-    @apply w-4 h-4;
   }
 
   /* =================================================================
@@ -721,136 +614,132 @@
     border-color: var(--color-gray-700);
   }
 
+}
+
+
+/* ── Feature Cards & Feature Boxes ───────────────────────────── */
+
+@layer components {
+  /* Feature card icon base */
+  .feature-card-icon {
+    @apply w-12 h-12 mb-3 flex items-center justify-center rounded-full text-white;
+  }
+
+  /* Size SVGs inside feature card icons */
+  .feature-card-icon svg {
+    @apply w-6 h-6;
+  }
+
+  /* Purple icon variant */
+  .feature-card-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+    @apply dark:bg-purple-900 dark:text-purple-300;
+  }
+
+  /* Blue icon variant */
+  .feature-card-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+    @apply dark:bg-blue-900 dark:text-blue-300;
+  }
+
+  /* Green icon variant */
+  .feature-card-icon-green {
+    @apply bg-green-100 text-green-700;
+    @apply dark:bg-green-800 dark:text-green-300;
+  }
+
+  /* Pink icon variant */
+  .feature-card-icon-pink {
+    @apply bg-pink-100 text-pink-600;
+    @apply dark:bg-pink-900 dark:text-pink-300;
+  }
+
+  /* Gray icon variant - for deprecated/muted cards */
+  .feature-card-icon-gray {
+    @apply bg-gray-100 text-gray-400;
+    @apply dark:bg-gray-700 dark:text-gray-500;
+  }
+
+  /* Feature card subtitle - smaller secondary text shown in collapsed header */
+  .feature-card-subtitle {
+    @apply text-sm m-0;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  /* Hidden on mobile, shown on larger screens */
+  .feature-card-subtitle-desktop {
+    @apply hidden;
+
+    @media (min-width: 640px) {
+      @apply block;
+    }
+  }
+
   /* =================================================================
-     GLASSMORPHISM CARD SYSTEM
-     Translucent, blurred cards with layered depth.
+     FEATURE BOX - Centered icon with title/description
+     Used for feature grids like "What Donations Support" and "Benefits"
      ================================================================= */
 
-  .glass-card {
-    @apply rounded-xl overflow-hidden;
+  .feature-box {
+    @apply flex flex-col items-center text-center p-6 rounded-lg;
     background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    border: 1px solid var(--color-glass-border);
-    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
-    transition:
-      box-shadow var(--transition-normal) ease,
-      transform var(--transition-normal) ease;
-  }
-
-  .glass-card:hover {
-    box-shadow: var(--shadow-glass-hover), var(--shadow-glass-inset);
-  }
-
-  .dark .glass-card {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.08);
-    box-shadow:
-      0 4px 24px rgb(0 0 0 / 0.25),
-      0 1px 2px rgb(0 0 0 / 0.15),
-      inset 0 1px 1px rgb(255 255 255 / 0.05);
-  }
-
-  .dark .glass-card:hover {
-    box-shadow:
-      0 8px 32px rgb(0 0 0 / 0.35),
-      0 2px 4px rgb(0 0 0 / 0.2),
-      inset 0 1px 1px rgb(255 255 255 / 0.06);
-  }
-
-  /* Heavy variant - less transparent, for primary content */
-  .glass-card--heavy {
-    background: var(--color-glass-surface-heavy);
-  }
-
-  .dark .glass-card--heavy {
-    background: rgb(31 41 55 / 0.7);
-  }
-
-  /* Elevated variant - more prominent shadow */
-  .glass-card--elevated {
-    background: var(--color-glass-surface-elevated);
-    box-shadow: var(--shadow-glass-elevated), var(--shadow-glass-inset);
-  }
-
-  .dark .glass-card--elevated {
-    background: rgb(31 41 55 / 0.6);
-    box-shadow:
-      0 12px 40px rgb(0 0 0 / 0.4),
-      0 4px 8px rgb(0 0 0 / 0.2),
-      inset 0 1px 1px rgb(255 255 255 / 0.06);
-  }
-
-  /* Glass panel - full-width, no rounded corners on mobile */
-  .glass-panel {
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid var(--color-glass-border-subtle);
     box-shadow: var(--shadow-glass);
-    transition: box-shadow var(--transition-normal) ease;
   }
 
-  .dark .glass-panel {
-    background: rgb(31 41 55 / 0.4);
+  .dark .feature-box {
+    background: rgb(31 41 55 / 0.5);
     border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 4px 24px rgb(0 0 0 / 0.25);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
   }
 
-  /* Glass stat card - for data display items */
-  .glass-stat {
-    @apply rounded-lg p-4;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+  /* Circular icon for feature boxes (larger than card icons) */
+  .feature-box-icon {
+    @apply w-14 h-14 rounded-full flex items-center justify-center mb-4;
   }
 
-  .dark .glass-stat {
-    background: rgb(55 65 81 / 0.4);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  .feature-box-icon-blue {
+    @apply bg-blue-100 text-blue-600;
+    @apply dark:bg-blue-900 dark:text-blue-400;
   }
 
-  /* Glass badge - small translucent tag */
-  .glass-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
+  .feature-box-icon-purple {
+    @apply bg-purple-100 text-purple-600;
+    @apply dark:bg-purple-900 dark:text-purple-400;
   }
 
-  .dark .glass-badge {
-    background: rgb(55 65 81 / 0.5);
-    border-color: rgb(255 255 255 / 0.08);
+  .feature-box-icon-green {
+    @apply bg-green-100 text-green-600;
+    @apply dark:bg-green-900 dark:text-green-400;
   }
 
-  /* Glass inner highlight - top edge shimmer effect.
-     Requires position: relative on the element. */
-  .glass-shimmer {
-    @apply relative;
+  .feature-box-icon svg {
+    @apply w-7 h-7;
   }
 
-  .glass-shimmer::before {
-    content: "";
-    @apply absolute top-0 left-0 right-0;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      var(--color-glass-highlight),
-      transparent
-    );
+  .feature-box-title {
+    @apply text-lg font-semibold mb-2;
+    @apply text-content-primary;
+    @apply dark:text-white;
   }
 
-  .dark .glass-shimmer::before {
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgb(255 255 255 / 0.1),
-      transparent
-    );
+  .feature-box-description {
+    @apply text-sm;
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
   }
+
+  /* =================================================================
+     FEATURE GRID LAYOUTS
+     ================================================================= */
+
+  /* 2-3 column responsive feature grid */
+  .feature-grid {
+    @apply grid gap-6;
+    @apply sm:grid-cols-2 lg:grid-cols-3;
+  }
+
 }

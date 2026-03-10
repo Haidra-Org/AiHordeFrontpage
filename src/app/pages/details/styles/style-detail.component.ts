@@ -18,14 +18,6 @@ import {
   isTextStyle,
   TextStyle,
 } from '../../../types/style';
-import {
-  UpdateImageStyleInput,
-  UpdateTextStyleInput,
-} from '../../../types/style-api';
-import {
-  StyleFormComponent,
-  StyleFormSubmitEvent,
-} from '../../../components/style/style-form/style-form.component';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
 type StyleType = 'image' | 'text';
@@ -35,7 +27,7 @@ type StyleType = 'image' | 'text';
   templateUrl: './style-detail.component.html',
   styleUrls: ['./style-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslocoPipe, RouterLink, StyleFormComponent],
+  imports: [TranslocoPipe, RouterLink],
 })
 export class StyleDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -49,8 +41,6 @@ export class StyleDetailComponent implements OnInit {
   public error = signal<string | null>(null);
   public style = signal<ImageStyle | TextStyle | null>(null);
   public styleType = signal<StyleType>('image');
-  public editMode = signal(false);
-  public saving = signal(false);
   public deleting = signal(false);
   public showJsonView = signal(false);
   public showDeleteConfirm = signal(false);
@@ -161,62 +151,8 @@ export class StyleDetailComponent implements OnInit {
     }
   }
 
-  public toggleEditMode(): void {
-    this.editMode.update((v) => !v);
-    this.showJsonView.set(false);
-  }
-
   public toggleJsonView(): void {
     this.showJsonView.update((v) => !v);
-  }
-
-  public onFormSubmit(event: StyleFormSubmitEvent): void {
-    const style = this.style();
-    if (!style) return;
-
-    this.saving.set(true);
-    this.error.set(null);
-
-    // After updating, reload the full style to get all properties
-    if (this.styleType() === 'image') {
-      this.styleService
-        .updateImageStyle(style.id, event.payload as UpdateImageStyleInput)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            // Reload full style after update
-            this.loadStyle(style.id, 'image');
-            this.editMode.set(false);
-            this.saving.set(false);
-          },
-          error: (err: Error) => {
-            console.error('Error updating style:', err);
-            this.error.set(err.message || 'Failed to update style');
-            this.saving.set(false);
-          },
-        });
-    } else {
-      this.styleService
-        .updateTextStyle(style.id, event.payload as UpdateTextStyleInput)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: () => {
-            // Reload full style after update
-            this.loadStyle(style.id, 'text');
-            this.editMode.set(false);
-            this.saving.set(false);
-          },
-          error: (err: Error) => {
-            console.error('Error updating style:', err);
-            this.error.set(err.message || 'Failed to update style');
-            this.saving.set(false);
-          },
-        });
-    }
-  }
-
-  public onFormCancel(): void {
-    this.editMode.set(false);
   }
 
   public confirmDelete(): void {
