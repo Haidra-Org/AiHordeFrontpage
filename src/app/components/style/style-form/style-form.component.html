@@ -1,4 +1,7 @@
-<div class="card card-full card-bg-primary form-stack" [class.card--no-blur]="confirmModalOpen()">
+<div
+  class="card card-full card-bg-primary form-stack"
+  [class.card--no-blur]="confirmModalOpen()"
+>
   <!-- View Toggle -->
   <div class="form-header">
     <h3 class="text-primary">
@@ -92,12 +95,14 @@
             id="style-name"
             formControlName="name"
             class="form-input"
-            [class.form-input-error]="form.controls['name'].invalid && form.controls['name'].touched"
+            [class.form-input-error]="
+              form.controls['name'].invalid && form.controls['name'].touched
+            "
             [placeholder]="'styles.form.name_placeholder' | transloco"
           />
-          @if (form.controls['name'].invalid && form.controls['name'].touched) {
+          @if (form.controls["name"].invalid && form.controls["name"].touched) {
             <p class="text-error" role="alert">
-              {{ 'styles.form.name_required' | transloco }}
+              {{ "styles.form.name_required" | transloco }}
             </p>
           }
         </div>
@@ -127,7 +132,9 @@
             id="style-prompt"
             formControlName="prompt"
             class="form-input"
-            [class.form-input-error]="form.controls['prompt'].invalid && form.controls['prompt'].touched"
+            [class.form-input-error]="
+              form.controls['prompt'].invalid && form.controls['prompt'].touched
+            "
             rows="4"
             [placeholder]="
               isImageStyle()
@@ -135,17 +142,19 @@
                 : ('styles.form.prompt_placeholder_text' | transloco)
             "
           ></textarea>
-          @if (form.controls['prompt'].invalid && form.controls['prompt'].touched) {
+          @if (
+            form.controls["prompt"].invalid && form.controls["prompt"].touched
+          ) {
             <p class="text-error" role="alert">
-              {{ 'styles.form.prompt_required' | transloco }}
+              {{ "styles.form.prompt_required" | transloco }}
             </p>
           }
           @if (promptMissingPlaceholder()) {
             <p class="text-warning" role="status">
               @if (isImageStyle()) {
-                {{ 'styles.form.prompt_missing_placeholder_image' | transloco }}
+                {{ "styles.form.prompt_missing_placeholder_image" | transloco }}
               } @else {
-                {{ 'styles.form.prompt_missing_placeholder_text' | transloco }}
+                {{ "styles.form.prompt_missing_placeholder_text" | transloco }}
               }
             </p>
           }
@@ -212,7 +221,10 @@
                 >
                   @if (hiddenModelCount() > 0) {
                     <div class="autocomplete-hidden-notice">
-                      {{ 'styles.form.models_hidden' | transloco: { count: hiddenModelCount() } }}
+                      {{
+                        "styles.form.models_hidden"
+                          | transloco: { count: hiddenModelCount() }
+                      }}
                     </div>
                   }
                   @for (m of filteredModels(); track m.name) {
@@ -222,12 +234,14 @@
                       (click)="selectModel(m.name)"
                     >
                       {{ m.name }}
-                      <span class="text-secondary">({{ m.count }} workers)</span>
+                      <span class="text-secondary"
+                        >({{ m.count }} workers)</span
+                      >
                     </div>
                   }
                   @if (filteredModels().length === 0) {
                     <div class="autocomplete-empty">
-                      {{ 'styles.form.no_model_matches' | transloco }}
+                      {{ "styles.form.no_model_matches" | transloco }}
                     </div>
                   }
                 </div>
@@ -292,7 +306,9 @@
 
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['cfg_scale'].value == null"
+              [class.form-field--unset]="
+                form.controls['cfg_scale'].value == null
+              "
             >
               <label for="style-cfg" class="form-label">
                 {{ "styles.form.cfg_scale" | transloco }}
@@ -339,14 +355,16 @@
                 id="style-width"
                 formControlName="width"
                 class="form-input"
-                [class.form-input-error]="form.controls['width'].errors?.['divisibleBy64']"
+                [class.form-input-error]="
+                  form.controls['width'].errors?.['divisibleBy64']
+                "
                 min="64"
                 max="3072"
                 step="64"
               />
-              @if (form.controls['width'].errors?.['divisibleBy64']) {
+              @if (form.controls["width"].errors?.["divisibleBy64"]) {
                 <p class="text-error" role="alert">
-                  {{ 'styles.form.divisible_by_64' | transloco }}
+                  {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
               }
             </div>
@@ -363,14 +381,16 @@
                 id="style-height"
                 formControlName="height"
                 class="form-input"
-                [class.form-input-error]="form.controls['height'].errors?.['divisibleBy64']"
+                [class.form-input-error]="
+                  form.controls['height'].errors?.['divisibleBy64']
+                "
                 min="64"
                 max="3072"
                 step="64"
               />
-              @if (form.controls['height'].errors?.['divisibleBy64']) {
+              @if (form.controls["height"].errors?.["divisibleBy64"]) {
                 <p class="text-error" role="alert">
-                  {{ 'styles.form.divisible_by_64' | transloco }}
+                  {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
               }
             </div>
@@ -487,7 +507,9 @@
           <div class="form-row">
             <div
               class="form-field form-field-quarter"
-              [class.form-field--unset]="form.controls['temperature'].value == null"
+              [class.form-field--unset]="
+                form.controls['temperature'].value == null
+              "
             >
               <label for="style-temperature" class="form-label">
                 {{ "styles.form.temperature" | transloco }}
@@ -608,10 +630,7 @@
         class="btn-primary"
         [class.btn-primary--error]="showSubmitError()"
         (click)="onSubmit()"
-        [disabled]="
-          saving() ||
-          (showJsonView() && jsonError())
-        "
+        [disabled]="saving() || (showJsonView() && jsonError())"
       >
         @if (saving()) {
           {{ "styles.form.saving" | transloco }}
@@ -628,7 +647,11 @@
 <!-- Confirm Submission Modal — rendered outside the card so position:fixed
      is not trapped by the card's backdrop-filter containing block. -->
 @if (confirmModalOpen()) {
-  <div class="modal-overlay modal-overlay--high" role="dialog" aria-modal="true">
+  <div
+    class="modal-overlay modal-overlay--high"
+    role="dialog"
+    aria-modal="true"
+  >
     <div
       class="modal-backdrop"
       (click)="onConfirmCancel()"

@@ -173,7 +173,11 @@ export class ItemListSectionComponent {
   public isDiscordLink(url: string): boolean {
     try {
       const hostname = new URL(url).hostname.toLowerCase();
-      return hostname === 'discord.com' || hostname === 'discord.gg' || hostname.endsWith('.discord.com');
+      return (
+        hostname === 'discord.com' ||
+        hostname === 'discord.gg' ||
+        hostname.endsWith('.discord.com')
+      );
     } catch {
       return false;
     }

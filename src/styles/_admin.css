@@ -566,18 +566,24 @@
   .toggle-switch input:checked + .toggle-switch-track {
     background: rgb(37 99 235 / 0.85);
     border-color: rgb(59 130 246 / 0.5);
-    box-shadow: 0 0 8px rgb(59 130 246 / 0.4), var(--shadow-glass-inset);
+    box-shadow:
+      0 0 8px rgb(59 130 246 / 0.4),
+      var(--shadow-glass-inset);
   }
 
   .dark .toggle-switch input:checked + .toggle-switch-track {
     background: rgb(96 165 250 / 0.7);
     border-color: rgb(147 197 253 / 0.4);
-    box-shadow: 0 0 8px rgb(96 165 250 / 0.4), var(--shadow-glass-inset);
+    box-shadow:
+      0 0 8px rgb(96 165 250 / 0.4),
+      var(--shadow-glass-inset);
   }
 
   .toggle-switch-thumb {
     @apply absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform duration-200;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25), inset 0 1px 1px rgb(255 255 255 / 0.8);
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 0.25),
+      inset 0 1px 1px rgb(255 255 255 / 0.8);
   }
 
   .toggle-switch input:checked ~ .toggle-switch-thumb {

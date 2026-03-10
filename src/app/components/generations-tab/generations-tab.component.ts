@@ -137,7 +137,9 @@ export class GenerationsTabComponent {
   }
 
   private handleDocumentClick(event: MouseEvent): void {
-    const wrapper = this.elRef.nativeElement.querySelector('.autocomplete-wrapper');
+    const wrapper = this.elRef.nativeElement.querySelector(
+      '.autocomplete-wrapper',
+    );
     if (wrapper && !wrapper.contains(event.target as Node)) {
       this.modelDropdownPinned = false;
       this.modelDropdownOpen.set(false);

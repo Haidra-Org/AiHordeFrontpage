@@ -240,14 +240,11 @@
             [type]="getStatusType()"
             sizeClass="w-6 h-6"
           />
-          
         </div>
 
         <div class="worker-card-name-block">
-            
           <h3 class="heading-item truncate" [title]="worker().name">
             {{ truncateName(worker().name) }}
-            
           </h3>
           <p class="worker-card-id">{{ worker().id }}</p>
         </div>
@@ -282,21 +279,19 @@
             <app-worker-status-icon type="trusted" />
           </div>
         }
-            <!-- Worker type indicator -->
-      <div
-        class="worker-card-icon-pad"
-        [appTouchTooltip]="getWorkerTypeTooltipKey()"
-        [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
-      >
-        <app-worker-status-icon
-          [type]="getWorkerTypeIcon()"
-          sizeClass="w-4 h-4"
-        />
-      </div>
-
+        <!-- Worker type indicator -->
+        <div
+          class="worker-card-icon-pad"
+          [appTouchTooltip]="getWorkerTypeTooltipKey()"
+          [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
+        >
+          <app-worker-status-icon
+            [type]="getWorkerTypeIcon()"
+            sizeClass="w-4 h-4"
+          />
+        </div>
       </div>
     </div>
-
   </div>
 
   <!-- Status indicator bar (outside sticky header to minimize its height) -->
@@ -391,7 +386,8 @@
     <div class="worker-card-info-group">
       <div class="worker-card-row">
         <span class="worker-card-label"
-          >{{ "admin.workers.card.type" | transloco }}:</span>
+          >{{ "admin.workers.card.type" | transloco }}:</span
+        >
         @switch (worker().type) {
           @case ("image") {
             <span class="worker-type-label worker-type-label--image">{{

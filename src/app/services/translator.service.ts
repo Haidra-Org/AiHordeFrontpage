@@ -10,7 +10,10 @@ export class TranslatorService {
 
   constructor(private readonly transloco: TranslocoService) {}
 
-  public get(key: string, params?: Record<string, unknown>): Observable<string> {
+  public get(
+    key: string,
+    params?: Record<string, unknown>,
+  ): Observable<string> {
     return this.loadCurrentLanguage().pipe(
       map(() => this.transloco.translate(key, params)),
     );

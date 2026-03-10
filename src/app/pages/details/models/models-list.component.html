@@ -1,71 +1,22 @@
 <div class="stack-lg">
   <app-page-intro pageKey="models" />
 
-  <!-- Sub-Tab Navigation -->
-  <div
-    class="details-tabs details-tabs--glass details-tabs--sub"
-    role="tablist"
-    appScrollFade
-    [appStickyHeader]="20"
-  >
-    <button
-      type="button"
-      class="details-tab"
-      [class.details-tab-active]="activeTab() === 'image'"
-      (click)="setActiveTab('image')"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'image'"
+  <div class="tab-sub-panel">
+    <!-- Sub-Tab Navigation -->
+    <div
+      class="details-tabs details-tabs--glass details-tabs--sub"
+      role="tablist"
+      appScrollFade
+      [appStickyHeader]="20"
     >
-      <svg
-        class="icon-sm"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+      <button
+        type="button"
+        class="details-tab"
+        [class.details-tab-active]="activeTab() === 'image'"
+        (click)="setActiveTab('image')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'image'"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
-        />
-      </svg>
-      {{ "details.models.tabs.image" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="details-tab"
-      [class.details-tab-active]="activeTab() === 'text'"
-      (click)="setActiveTab('text')"
-      role="tab"
-      [attr.aria-selected]="activeTab() === 'text'"
-    >
-      <svg
-        class="icon-sm"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
-        />
-      </svg>
-      {{ "details.models.tabs.text" | transloco }}
-    </button>
-
-    <button
-      type="button"
-      class="btn-source-control"
-      (click)="loadModels()"
-      [disabled]="loading()"
-    >
-      @if (loading()) {
-        <div class="spinner spinner-sm" aria-hidden="true"></div>
-      } @else {
         <svg
           class="icon-sm"
           fill="none"
@@ -77,48 +28,21 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+            d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"
           />
         </svg>
-      }
-      {{ "details.models.refresh" | transloco }}
-    </button>
-  </div>
-
-  <!-- Summary Stats -->
-  @if (!loading() && !error() && currentModels().length > 0) {
-    <div class="details-summary details-summary--glass">
-      <div class="summary-stat">
-        <span class="summary-label">{{
-          "details.models.total_models" | transloco
-        }}</span>
-        <span class="summary-value">{{
-          formatNumber(currentModels().length)
-        }}</span>
-      </div>
-      <div class="summary-stat">
-        <span class="summary-label">{{
-          "details.models.total_queued" | transloco
-        }}</span>
-        <span class="summary-value">
-          {{ totalQueuedUnit().primary.formatted }}
-          <span class="text-secondary">
-            (<app-unit-tooltip
-              [unit]="totalQueuedUnit()"
-              [swapDisplay]="true"
-            />)
-          </span>
-        </span>
-      </div>
-    </div>
-  }
-
-  <!-- Search -->
-  @if (!loading() && !error() && currentModels().length > 0) {
-    <div class="details-filters">
-      <div class="filter-search-autocomplete">
+        {{ "details.models.tabs.image" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="details-tab"
+        [class.details-tab-active]="activeTab() === 'text'"
+        (click)="setActiveTab('text')"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'text'"
+      >
         <svg
-          class="icon-sm filter-search-icon"
+          class="icon-sm"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -128,107 +52,151 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+            d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
           />
         </svg>
-        <input
-          #searchInput
-          type="text"
-          class="filter-input"
-          role="combobox"
-          aria-autocomplete="list"
-          [attr.aria-expanded]="
-            autocompleteOpen() && autocompleteSuggestions().length > 0
-          "
-          aria-controls="model-autocomplete-list"
-          [placeholder]="'details.models.search_placeholder' | transloco"
-          [value]="searchQuery()"
-          (input)="onSearchChange($event)"
-          (focus)="onSearchFocus()"
-          (keydown)="onSearchKeydown($event)"
-          autocomplete="off"
-        />
+        {{ "details.models.tabs.text" | transloco }}
+      </button>
 
-        <!-- Autocomplete dropdown -->
-        @if (autocompleteOpen() && autocompleteSuggestions().length > 0) {
-          <div
-            id="model-autocomplete-list"
-            class="filter-autocomplete-dropdown"
-            role="listbox"
-          >
-            @for (
-              suggestion of autocompleteSuggestions();
-              track suggestion.name + suggestion.type;
-              let i = $index
-            ) {
-              <button
-                type="button"
-                role="option"
-                class="filter-autocomplete-item"
-                [class.filter-autocomplete-item-active]="
-                  activeSuggestionIndex() === i
-                "
-                [attr.aria-selected]="activeSuggestionIndex() === i"
-                (mousedown)="selectSuggestion(suggestion)"
-              >
-                <span class="filter-autocomplete-name">{{
-                  suggestion.name
-                }}</span>
-                <span class="filter-autocomplete-meta">
-                  <span class="filter-autocomplete-badge">
-                    {{ suggestion.type === "image" ? "Image" : "Text" }}
-                  </span>
-                  <span
-                    >{{ suggestion.count }}
-                    {{ suggestion.count === 1 ? "worker" : "workers" }}</span
-                  >
-                </span>
-              </button>
-            }
-          </div>
-        }
-      </div>
-    </div>
-  }
-
-  <!-- Error State -->
-  @if (error()) {
-    <div class="state-container state-container-sm state-error">
-      <svg
-        class="state-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="loadModels()"
+        [disabled]="loading()"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-        />
-      </svg>
-      <p>{{ error() }}</p>
-      <button type="button" class="btn-source-control" (click)="loadModels()">
-        {{ "details.models.retry" | transloco }}
+        @if (loading()) {
+          <div class="spinner spinner-sm" aria-hidden="true"></div>
+        } @else {
+          <svg
+            class="icon-sm"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+            />
+          </svg>
+        }
+        {{ "details.models.refresh" | transloco }}
       </button>
     </div>
-  }
 
-  <!-- Loading State -->
-  @if (loading() && !error()) {
-    <div class="state-container state-container-sm text-secondary">
-      <div class="spinner spinner-md"></div>
-      <p>{{ "details.models.loading" | transloco }}</p>
-    </div>
-  }
+    <!-- Summary Stats -->
+    @if (!loading() && !error() && currentModels().length > 0) {
+      <div class="details-summary details-summary--glass">
+        <div class="summary-stat">
+          <span class="summary-label">{{
+            "details.models.total_models" | transloco
+          }}</span>
+          <span class="summary-value">{{
+            formatNumber(currentModels().length)
+          }}</span>
+        </div>
+        <div class="summary-stat">
+          <span class="summary-label">{{
+            "details.models.total_queued" | transloco
+          }}</span>
+          <span class="summary-value">
+            {{ totalQueuedUnit().primary.formatted }}
+            <span class="text-secondary">
+              (<app-unit-tooltip
+                [unit]="totalQueuedUnit()"
+                [swapDisplay]="true"
+              />)
+            </span>
+          </span>
+        </div>
+      </div>
+    }
 
-  <!-- Models Grid -->
-  @if (!loading() && !error()) {
-    @if (filteredModels().length === 0) {
-      <div class="state-container state-container-sm state-muted">
+    <!-- Search -->
+    @if (!loading() && !error() && currentModels().length > 0) {
+      <div class="details-filters">
+        <div class="filter-search-autocomplete">
+          <svg
+            class="icon-sm filter-search-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+            />
+          </svg>
+          <input
+            #searchInput
+            type="text"
+            class="filter-input"
+            role="combobox"
+            aria-autocomplete="list"
+            [attr.aria-expanded]="
+              autocompleteOpen() && autocompleteSuggestions().length > 0
+            "
+            aria-controls="model-autocomplete-list"
+            [placeholder]="'details.models.search_placeholder' | transloco"
+            [value]="searchQuery()"
+            (input)="onSearchChange($event)"
+            (focus)="onSearchFocus()"
+            (keydown)="onSearchKeydown($event)"
+            autocomplete="off"
+          />
+
+          <!-- Autocomplete dropdown -->
+          @if (autocompleteOpen() && autocompleteSuggestions().length > 0) {
+            <div
+              id="model-autocomplete-list"
+              class="filter-autocomplete-dropdown"
+              role="listbox"
+            >
+              @for (
+                suggestion of autocompleteSuggestions();
+                track suggestion.name + suggestion.type;
+                let i = $index
+              ) {
+                <button
+                  type="button"
+                  role="option"
+                  class="filter-autocomplete-item"
+                  [class.filter-autocomplete-item-active]="
+                    activeSuggestionIndex() === i
+                  "
+                  [attr.aria-selected]="activeSuggestionIndex() === i"
+                  (mousedown)="selectSuggestion(suggestion)"
+                >
+                  <span class="filter-autocomplete-name">{{
+                    suggestion.name
+                  }}</span>
+                  <span class="filter-autocomplete-meta">
+                    <span class="filter-autocomplete-badge">
+                      {{ suggestion.type === "image" ? "Image" : "Text" }}
+                    </span>
+                    <span
+                      >{{ suggestion.count }}
+                      {{ suggestion.count === 1 ? "worker" : "workers" }}</span
+                    >
+                  </span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="state-container state-container-sm state-error">
         <svg
-          class="state-icon-lg"
+          class="state-icon"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -237,242 +205,280 @@
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="1.5"
-            d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23.693L5 15.3m14.8 0 .002.004A4.5 4.5 0 0 1 17.25 21h-10.5a4.5 4.5 0 0 1-2.553-5.696l.002-.004"
+            stroke-width="2"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
           />
         </svg>
-        @if (searchQuery()) {
-          <p>{{ "details.models.no_results" | transloco }}</p>
-        } @else {
-          <p>{{ "details.models.no_models" | transloco }}</p>
-        }
-      </div>
-    } @else {
-      <!-- Models Table -->
-      <div class="models-table">
-        <!-- Table Header -->
-        <div class="models-table-header">
-          <button
-            type="button"
-            class="models-table-th models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'name'"
-            (click)="setSortField('name')"
-          >
-            {{ "details.models.sort.name" | transloco }}
-            @if (sortField() === "name") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-          <button
-            type="button"
-            class="models-table-th models-table-th-right models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'count'"
-            (click)="setSortField('count')"
-          >
-            {{ "details.models.workers" | transloco }}
-            <app-info-tooltip
-              termKey="help.models.tooltip.workers"
-              glossaryId="worker"
-            />
-            @if (sortField() === "count") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-          <button
-            type="button"
-            class="models-table-th models-table-th-right models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'queued'"
-            (click)="setSortField('queued')"
-          >
-            {{ "details.models.queued" | transloco }}
-            <app-info-tooltip
-              termKey="help.models.tooltip.queued"
-              glossaryId="megapixelsteps"
-            />
-            @if (sortField() === "queued") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-          <button
-            type="button"
-            class="models-table-th models-table-th-right models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'jobs'"
-            (click)="setSortField('jobs')"
-          >
-            {{ "details.models.jobs" | transloco }}
-            <app-info-tooltip
-              termKey="help.models.tooltip.jobs"
-              glossaryId="job"
-            />
-            @if (sortField() === "jobs") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-          <button
-            type="button"
-            class="models-table-th models-table-th-right models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'eta'"
-            (click)="setSortField('eta')"
-          >
-            {{ "details.models.eta" | transloco }}
-            <app-info-tooltip
-              termKey="help.models.tooltip.eta"
-              glossaryId="eta"
-            />
-            @if (sortField() === "eta") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-          <button
-            type="button"
-            class="models-table-th models-table-th-right models-table-th-sortable"
-            [class.models-table-th-active]="sortField() === 'performance'"
-            (click)="setSortField('performance')"
-          >
-            {{ "details.models.performance" | transloco }}
-            <app-info-tooltip
-              termKey="help.models.tooltip.performance"
-              glossaryId="megapixelsteps"
-            />
-            @if (sortField() === "performance") {
-              <span class="sort-indicator">{{
-                sortDirection() === "asc" ? "↑" : "↓"
-              }}</span>
-            }
-          </button>
-        </div>
-
-        <!-- Table Rows -->
-        @for (model of filteredModels(); track model.name) {
-          <div
-            class="models-table-row"
-            [class.models-table-row-highlighted]="
-              isModelHighlighted(model.name)
-            "
-            [attr.#highlightedRow]="isModelHighlighted(model.name) ? '' : null"
-            #highlightedRow
-          >
-            <!-- Name + Badges -->
-            <div class="models-table-cell-name">
-              <span class="models-table-name" [title]="model.name">{{
-                model.name
-              }}</span>
-              @if (isModelHighlighted(model.name)) {
-                <button
-                  type="button"
-                  class="badge-base badge-warning badge-dismissible"
-                  (click)="clearHighlight(); $event.stopPropagation()"
-                  [attr.aria-label]="
-                    'details.common.clear_highlight' | transloco
-                  "
-                >
-                  {{ "details.common.highlighted" | transloco }}
-                  <span aria-hidden="true">×</span>
-                </button>
-              }
-            </div>
-
-            <!-- Workers -->
-            <div class="models-table-cell">
-              <span class="models-table-label">{{
-                "details.models.workers" | transloco
-              }}</span>
-              <span
-                class="models-table-value"
-                [class.models-table-value-highlight]="model.count > 10"
-                [class.models-table-value-muted]="model.count === 0"
-              >
-                {{ formatNumber(model.count) }}
-              </span>
-            </div>
-
-            <!-- Queued -->
-            <div class="models-table-cell">
-              <span class="models-table-label">{{
-                "details.models.queued" | transloco
-              }}</span>
-              <span
-                class="models-table-value"
-                [class.models-table-value-muted]="model.queued === 0"
-              >
-                @if (model.queued && model.queued > 0) {
-                  @let queuedUnit = getModelQueuedUnit(model);
-                  {{ queuedUnit.primary.value | number: "1.1-1" }}
-                  <app-unit-tooltip
-                    [unit]="queuedUnit"
-                    [primaryOverride]="
-                      queuedUnit.primary.prefix + queuedUnit.primary.unit
-                    "
-                  />
-                } @else {
-                  -
-                }
-              </span>
-            </div>
-
-            <!-- Jobs -->
-            <div class="models-table-cell">
-              <span class="models-table-label">{{
-                "details.models.jobs" | transloco
-              }}</span>
-              <span
-                class="models-table-value"
-                [class.models-table-value-muted]="model.jobs === 0"
-              >
-                {{ formatNumber(model.jobs) }}
-              </span>
-            </div>
-
-            <!-- ETA -->
-            <div class="models-table-cell">
-              <span class="models-table-label">{{
-                "details.models.eta" | transloco
-              }}</span>
-              <span
-                class="models-table-value"
-                [class.models-table-value-muted]="!model.eta || model.eta <= 0"
-              >
-                {{ formatEta(model.eta) }}
-              </span>
-            </div>
-
-            <!-- Performance -->
-            <div class="models-table-cell">
-              <span class="models-table-label">{{
-                "details.models.performance" | transloco
-              }}</span>
-              <span
-                class="models-table-value"
-                [class.models-table-value-muted]="
-                  !model.performance || model.performance <= 0
-                "
-              >
-                @if (getModelPerformanceUnit(model); as perfUnit) {
-                  {{ perfUnit.primary.value | number: "1.2-2" }}
-                  <app-unit-tooltip
-                    [unit]="perfUnit"
-                    [primaryOverride]="
-                      perfUnit.primary.prefix + perfUnit.primary.unit
-                    "
-                  />
-                } @else {
-                  -
-                }
-              </span>
-            </div>
-          </div>
-        }
+        <p>{{ error() }}</p>
+        <button type="button" class="btn-source-control" (click)="loadModels()">
+          {{ "details.models.retry" | transloco }}
+        </button>
       </div>
     }
-  }
+
+    <!-- Loading State -->
+    @if (loading() && !error()) {
+      <div class="state-container state-container-sm text-secondary">
+        <div class="spinner spinner-md"></div>
+        <p>{{ "details.models.loading" | transloco }}</p>
+      </div>
+    }
+
+    <!-- Models Grid -->
+    @if (!loading() && !error()) {
+      @if (filteredModels().length === 0) {
+        <div class="state-container state-container-sm state-muted">
+          <svg
+            class="state-icon-lg"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23.693L5 15.3m14.8 0 .002.004A4.5 4.5 0 0 1 17.25 21h-10.5a4.5 4.5 0 0 1-2.553-5.696l.002-.004"
+            />
+          </svg>
+          @if (searchQuery()) {
+            <p>{{ "details.models.no_results" | transloco }}</p>
+          } @else {
+            <p>{{ "details.models.no_models" | transloco }}</p>
+          }
+        </div>
+      } @else {
+        <!-- Models Table -->
+        <div class="models-table">
+          <!-- Table Header -->
+          <div class="models-table-header">
+            <button
+              type="button"
+              class="models-table-th models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'name'"
+              (click)="setSortField('name')"
+            >
+              {{ "details.models.sort.name" | transloco }}
+              @if (sortField() === "name") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-table-th models-table-th-right models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'count'"
+              (click)="setSortField('count')"
+            >
+              {{ "details.models.workers" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.workers"
+                glossaryId="worker"
+              />
+              @if (sortField() === "count") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-table-th models-table-th-right models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'queued'"
+              (click)="setSortField('queued')"
+            >
+              {{ "details.models.queued" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.queued"
+                glossaryId="megapixelsteps"
+              />
+              @if (sortField() === "queued") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-table-th models-table-th-right models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'jobs'"
+              (click)="setSortField('jobs')"
+            >
+              {{ "details.models.jobs" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.jobs"
+                glossaryId="job"
+              />
+              @if (sortField() === "jobs") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-table-th models-table-th-right models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'eta'"
+              (click)="setSortField('eta')"
+            >
+              {{ "details.models.eta" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.eta"
+                glossaryId="eta"
+              />
+              @if (sortField() === "eta") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-table-th models-table-th-right models-table-th-sortable"
+              [class.models-table-th-active]="sortField() === 'performance'"
+              (click)="setSortField('performance')"
+            >
+              {{ "details.models.performance" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.performance"
+                glossaryId="megapixelsteps"
+              />
+              @if (sortField() === "performance") {
+                <span class="sort-indicator">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+          </div>
+
+          <!-- Table Rows -->
+          @for (model of filteredModels(); track model.name) {
+            <div
+              class="models-table-row"
+              [class.models-table-row-highlighted]="
+                isModelHighlighted(model.name)
+              "
+              [attr.#highlightedRow]="
+                isModelHighlighted(model.name) ? '' : null
+              "
+              #highlightedRow
+            >
+              <!-- Name + Badges -->
+              <div class="models-table-cell-name">
+                <span class="models-table-name" [title]="model.name">{{
+                  model.name
+                }}</span>
+                @if (isModelHighlighted(model.name)) {
+                  <button
+                    type="button"
+                    class="badge-base badge-warning badge-dismissible"
+                    (click)="clearHighlight(); $event.stopPropagation()"
+                    [attr.aria-label]="
+                      'details.common.clear_highlight' | transloco
+                    "
+                  >
+                    {{ "details.common.highlighted" | transloco }}
+                    <span aria-hidden="true">×</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Workers -->
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.models.workers" | transloco
+                }}</span>
+                <span
+                  class="models-table-value"
+                  [class.models-table-value-highlight]="model.count > 10"
+                  [class.models-table-value-muted]="model.count === 0"
+                >
+                  {{ formatNumber(model.count) }}
+                </span>
+              </div>
+
+              <!-- Queued -->
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.models.queued" | transloco
+                }}</span>
+                <span
+                  class="models-table-value"
+                  [class.models-table-value-muted]="model.queued === 0"
+                >
+                  @if (model.queued && model.queued > 0) {
+                    @let queuedUnit = getModelQueuedUnit(model);
+                    {{ queuedUnit.primary.value | number: "1.1-1" }}
+                    <app-unit-tooltip
+                      [unit]="queuedUnit"
+                      [primaryOverride]="
+                        queuedUnit.primary.prefix + queuedUnit.primary.unit
+                      "
+                    />
+                  } @else {
+                    -
+                  }
+                </span>
+              </div>
+
+              <!-- Jobs -->
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.models.jobs" | transloco
+                }}</span>
+                <span
+                  class="models-table-value"
+                  [class.models-table-value-muted]="model.jobs === 0"
+                >
+                  {{ formatNumber(model.jobs) }}
+                </span>
+              </div>
+
+              <!-- ETA -->
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.models.eta" | transloco
+                }}</span>
+                <span
+                  class="models-table-value"
+                  [class.models-table-value-muted]="
+                    !model.eta || model.eta <= 0
+                  "
+                >
+                  {{ formatEta(model.eta) }}
+                </span>
+              </div>
+
+              <!-- Performance -->
+              <div class="models-table-cell">
+                <span class="models-table-label">{{
+                  "details.models.performance" | transloco
+                }}</span>
+                <span
+                  class="models-table-value"
+                  [class.models-table-value-muted]="
+                    !model.performance || model.performance <= 0
+                  "
+                >
+                  @if (getModelPerformanceUnit(model); as perfUnit) {
+                    {{ perfUnit.primary.value | number: "1.2-2" }}
+                    <app-unit-tooltip
+                      [unit]="perfUnit"
+                      [primaryOverride]="
+                        perfUnit.primary.prefix + perfUnit.primary.unit
+                      "
+                    />
+                  } @else {
+                    -
+                  }
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
 </div>

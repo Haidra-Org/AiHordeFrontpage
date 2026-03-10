@@ -148,7 +148,10 @@ export class StyleFormComponent implements OnInit {
     const raw = this.modelSearchText();
     // Only match against the segment after the last comma
     const lastSegment = raw.includes(',')
-      ? raw.substring(raw.lastIndexOf(',') + 1).trim().toLowerCase()
+      ? raw
+          .substring(raw.lastIndexOf(',') + 1)
+          .trim()
+          .toLowerCase()
       : raw.trim().toLowerCase();
     const all = this.availableModels();
     if (!lastSegment) return all;
@@ -175,7 +178,9 @@ export class StyleFormComponent implements OnInit {
   }
 
   private handleDocumentClick(event: MouseEvent): void {
-    const wrapper = this.elRef.nativeElement.querySelector('.autocomplete-wrapper');
+    const wrapper = this.elRef.nativeElement.querySelector(
+      '.autocomplete-wrapper',
+    );
     if (wrapper && !wrapper.contains(event.target as Node)) {
       this.modelDropdownPinned = false;
       this.modelDropdownOpen.set(false);
@@ -559,8 +564,10 @@ export class StyleFormComponent implements OnInit {
       else if (f.frmtrmspch === false) params.frmtrmspch = false;
       if (f.frmttriminc === true) params.frmttriminc = true;
       else if (f.frmttriminc === false) params.frmttriminc = false;
-      if (f.use_default_badwordsids === true) params.use_default_badwordsids = true;
-      else if (f.use_default_badwordsids === false) params.use_default_badwordsids = false;
+      if (f.use_default_badwordsids === true)
+        params.use_default_badwordsids = true;
+      else if (f.use_default_badwordsids === false)
+        params.use_default_badwordsids = false;
       const stopSequence = this.parseCommaSeparated(f.stop_sequence);
       if (stopSequence.length > 0) params.stop_sequence = stopSequence;
       const smoothingFactor = this.parseOptionalNumber(f.smoothing_factor);

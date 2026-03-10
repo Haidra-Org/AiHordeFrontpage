@@ -14,7 +14,9 @@
     @apply flex mb-4 sm:mb-6;
     @apply sticky z-30;
     /* top is set dynamically by StickyRegistryService */
-    @apply bg-surface-primary;
+    background: var(--color-glass-surface-heavy);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border-bottom: 2px solid var(--color-border-secondary);
     /* Always horizontal-scroll — never wrap to a second row */
     overflow-x: auto;
@@ -26,52 +28,18 @@
     max-width: 100%;
   }
 
-  /* ---- Overflow fade masks (toggled by ScrollFadeDirective) ---- */
-  .details-tabs.has-overflow-right:not(.has-overflow-left) {
-    -webkit-mask-image: linear-gradient(to right, black 75%, transparent 100%);
-    mask-image: linear-gradient(to right, black 75%, transparent 100%);
-  }
-
-  .details-tabs.has-overflow-left:not(.has-overflow-right) {
-    -webkit-mask-image: linear-gradient(to left, black 75%, transparent 100%);
-    mask-image: linear-gradient(to left, black 75%, transparent 100%);
-  }
-
-  .details-tabs.has-overflow-left.has-overflow-right {
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 12%,
-      black 88%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      black 12%,
-      black 88%,
-      transparent 100%
-    );
-  }
-
-  /* On non-touch devices the sticky arrow buttons provide the fade;
-     disable mask-image so it doesn't clip them. Selectors must match
-     or exceed the specificity of the mask-setting rules above. */
-  @media (pointer: fine) {
-    .details-tabs.has-overflow-right:not(.has-overflow-left),
-    .details-tabs.has-overflow-left:not(.has-overflow-right),
-    .details-tabs.has-overflow-left.has-overflow-right {
-      -webkit-mask-image: none;
-      mask-image: none;
-    }
-  }
+  /* Overflow fade is handled on all devices by the sticky gradient arrow
+     overlays (ScrollFadeDirective). mask-image was removed because it fades
+     the entire element — including the glass background — to 0% opacity at
+     the edges, which caused page content to bleed through. */
 
   .details-tabs::-webkit-scrollbar {
     display: none;
   }
 
   .dark .details-tabs {
-    @apply border-gray-700 bg-gray-900;
+    @apply border-gray-700;
+    background: rgb(17 24 39 / 0.82);
   }
 
   /* ---- Sub-tab modifier ------------------------------------------------
@@ -211,10 +179,65 @@
     @apply outline-2 outline-offset-[-2px] outline-purple-500;
   }
 
-  /* Hide arrow buttons on touch-primary devices — swipe is native */
+  /* On touch devices: show the gradient overlay to fade tab edges, but hide
+     the arrow icon and prevent any interaction — swipe is still native. */
   @media (pointer: coarse) {
     .details-tabs-arrow {
-      display: none;
+      /* Wider overlay so the gradient fade zone still obscures overflowing tabs */
+      width: 4rem;
+      /* Align icon to the inner (visible) edge so the tap target feels natural */
+      justify-content: flex-end;
+      padding-right: 0.5rem;
+    }
+
+    .details-tabs-arrow--left {
+      margin-right: calc(-4rem - clamp(0.125rem, 0.4vw, 0.25rem));
+      justify-content: flex-start;
+      padding-right: 0;
+      padding-left: 0.5rem;
+    }
+
+    .details-tabs-arrow--right {
+      margin-left: calc(-4rem - clamp(0.125rem, 0.4vw, 0.25rem));
+    }
+
+    .details-tabs-arrow.is-visible {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    /* Use the heavier glass surface so the overlay matches the tab bar
+       background exactly, eliminating bleed-through at the faded edges */
+    .details-tabs--glass .details-tabs-arrow--left {
+      background: linear-gradient(
+        to right,
+        var(--color-glass-surface-heavy) 40%,
+        transparent 100%
+      );
+    }
+
+    .details-tabs--glass .details-tabs-arrow--right {
+      background: linear-gradient(
+        to left,
+        var(--color-glass-surface-heavy) 40%,
+        transparent 100%
+      );
+    }
+
+    .dark .details-tabs--glass .details-tabs-arrow--left {
+      background: linear-gradient(
+        to right,
+        rgb(17 24 39 / 0.82) 40%,
+        transparent 100%
+      );
+    }
+
+    .dark .details-tabs--glass .details-tabs-arrow--right {
+      background: linear-gradient(
+        to left,
+        rgb(17 24 39 / 0.82) 40%,
+        transparent 100%
+      );
     }
   }
 
@@ -956,13 +979,25 @@
     background: var(--color-glass-surface);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    border-bottom: 2px solid var(--color-glass-border);
+    /* Dark-tinted border so the rounded shape is visible against light backgrounds;
+       dark mode overrides these explicitly in .dark .details-tabs--glass below. */
+    border: 1px solid rgb(0 0 0 / 0.09);
+    border-bottom: 2px solid rgb(0 0 0 / 0.13);
     @apply rounded-t-xl;
     /* No horizontal padding — first/last tabs sit flush with container edges */
     padding-left: 0;
     padding-right: 0;
-    box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.07);
+  }
+
+  /* Carets should be fairly light on light mode and more visible on dark mode, so use the same color as the tab text */
+  .details-tabs--glass .details-tabs-arrow {
+    color: var(--color-text-secondary);
+  }
+
+  /* In dark mode, the glass background is darker and the text is lighter, so increase arrow contrast accordingly */
+  .dark .details-tabs--glass .details-tabs-arrow {
+    color: var(--color-gray-200);
   }
 
   /* First tab rounds to match container corner */
@@ -1023,5 +1058,124 @@
     box-shadow:
       0 4px 24px rgb(0 0 0 / 0.2),
       inset 0 1px 1px rgb(255 255 255 / 0.04);
+  }
+
+  /* =================================================================
+     CONNECTED TAB BAR — Seamless join to .tab-content-panel below
+     Removes bottom margin and bottom border-radius so the tab bar
+     and panel form one continuous container.
+     ================================================================= */
+
+  .details-tabs--connected {
+    @apply mb-0 rounded-b-none;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* =================================================================
+     TAB CONTENT PANEL — Container-width elevated panel below major tabs
+     Creates the "folder tab" effect: the active tab visually owns
+     the content region below it via a subtly tinted/elevated surface.
+     ================================================================= */
+
+  .tab-content-panel {
+    @apply p-4 sm:p-6 rounded-b-xl;
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    border-top: none;
+    box-shadow:
+      0 4px 16px rgb(0 0 0 / 0.04),
+      0 1px 3px rgb(0 0 0 / 0.02);
+  }
+
+  .dark .tab-content-panel {
+    background: rgb(31 41 55 / 0.35);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow:
+      0 4px 16px rgb(0 0 0 / 0.2),
+      0 1px 3px rgb(0 0 0 / 0.15);
+  }
+
+  /* =================================================================
+     SUB-TAB PANEL — Glass-bordered nested panel for second-level tabs
+     Sits inside a .tab-content-panel, providing visual containment
+     for sub-tab navigation and its content.
+     No backdrop-filter here — the parent panel already blurs.
+     ================================================================= */
+
+  .tab-sub-panel {
+    @apply rounded-xl p-3 sm:p-4;
+    background: rgb(255 255 255 / 0.35);
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.03);
+  }
+
+  /* On small screens, break out of parent tab-content-panel padding
+     so sub-tabs align with the major tab bar above. */
+  @media (max-width: 639px) {
+    .tab-sub-panel {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+
+    .tab-sub-panel > .details-tabs {
+      margin-left: -0.75rem;
+      margin-right: -0.75rem;
+      /* max-width: 100% would cap width at the panel content edge;
+         use width + max-width: none so the element actually spans the full bleed zone. */
+      width: calc(100% + 1.5rem);
+      max-width: none;
+    }
+  }
+
+  .dark .tab-sub-panel {
+    background: rgb(17 24 39 / 0.3);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15);
+  }
+
+  /* Sub-tabs inside a sub-panel sit flush at the top — no extra margin */
+  .tab-sub-panel > .details-tabs {
+    @apply mb-3 sm:mb-4;
+    @apply sticky;
+  }
+
+  /* =================================================================
+     DETAILS TOOLBAR — Sticky glass bar for non-tab action controls
+     Same visual treatment as .details-tabs--glass, but semantically
+     a toolbar (role="toolbar") rather than a tablist.
+     ================================================================= */
+
+  .details-toolbar {
+    @apply flex items-center justify-end mb-4 sm:mb-6;
+    @apply sticky z-30;
+    gap: clamp(0.25rem, 0.5vw, 0.5rem);
+    padding: clamp(0.25rem, 0.6vw, 0.5rem) clamp(0.5rem, 1.2vw, 1.25rem);
+    background: var(--color-glass-surface);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    border-bottom: 2px solid var(--color-glass-border);
+    @apply rounded-xl;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.04);
+  }
+
+  .dark .details-toolbar {
+    background: rgb(31 41 55 / 0.4);
+    border-color: rgb(255 255 255 / 0.06);
+    border-bottom-color: rgb(255 255 255 / 0.1);
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+  }
+
+  .details-toolbar .btn-source-control {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
   }
 }

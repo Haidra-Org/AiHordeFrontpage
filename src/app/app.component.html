@@ -259,6 +259,15 @@
                   {{ "nav.active_details.styles" | transloco }}
                 </a>
                 <a
+                  routerLink="/details/users/"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  (click)="closeDetailsDropdown()"
+                >
+                  {{ "nav.active_details.users" | transloco }}
+                </a>
+                <a
                   routerLink="/details/teams/"
                   class="nav-dropdown-item"
                   role="menuitem"
@@ -608,6 +617,15 @@
                     (click)="closeMobileMenu()"
                   >
                     {{ "nav.active_details.styles" | transloco }}
+                  </a>
+                    <a
+                    routerLink="/details/users/"
+                    class="mobile-nav-link mobile-nav-submenu-item"
+                    role="menuitem"
+                    routerLinkActive="mobile-nav-link-active"
+                    (click)="closeMobileMenu()"
+                  >
+                    {{ "nav.active_details.users" | transloco }}
                   </a>
                   <a
                     routerLink="/details/teams/"

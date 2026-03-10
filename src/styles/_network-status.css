@@ -213,17 +213,23 @@
   }
 
   .network-status-panel--compact
-    .network-status-domain--needs-help:has(.network-status-domain-header--purple) {
+    .network-status-domain--needs-help:has(
+      .network-status-domain-header--purple
+    ) {
     @apply border-amber-500 dark:border-amber-400;
   }
 
   .network-status-panel--compact
-    .network-status-domain--needs-help:has(.network-status-domain-header--blue) {
+    .network-status-domain--needs-help:has(
+      .network-status-domain-header--blue
+    ) {
     @apply border-amber-500 dark:border-amber-400;
   }
 
   .network-status-panel--compact
-    .network-status-domain--needs-help:has(.network-status-domain-header--green) {
+    .network-status-domain--needs-help:has(
+      .network-status-domain-header--green
+    ) {
     @apply border-amber-500 dark:border-amber-400;
   }
 

@@ -775,7 +775,7 @@
 
   /* Row of status indicator icons — sits between sticky header and content */
   .worker-card-status-bar {
-    @apply flex items-center gap-1 px-4 pt-1;
+    @apply flex items-center gap-1 px-4 pt-1 pb-1;
   }
 
   /* Padding wrapper for small status-indicator icons */

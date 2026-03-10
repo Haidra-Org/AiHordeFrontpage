@@ -279,8 +279,6 @@
     @apply text-white;
   }
 
-
-
   /* =================================================================
      CARD SPACING UTILITIES
      ================================================================= */
@@ -613,9 +611,7 @@
   .dark .card-footer-divider {
     border-color: var(--color-gray-700);
   }
-
 }
-
 
 /* ── Feature Cards & Feature Boxes ───────────────────────────── */
 
@@ -741,5 +737,4 @@
     @apply grid gap-6;
     @apply sm:grid-cols-2 lg:grid-cols-3;
   }
-
 }

@@ -426,12 +426,10 @@ export class ProfileComponent implements OnInit {
       .pipe(
         mergeMap(
           (id) =>
-            this.workerService
-              .getWorker(id)
-              .pipe(
-                map((worker) => ({ id, worker, failed: false })),
-                catchError(() => of({ id, worker: null, failed: true })),
-              ),
+            this.workerService.getWorker(id).pipe(
+              map((worker) => ({ id, worker, failed: false })),
+              catchError(() => of({ id, worker: null, failed: true })),
+            ),
           this.workerRequestConcurrency,
         ),
         takeUntilDestroyed(this.destroyRef),
