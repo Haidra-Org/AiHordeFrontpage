@@ -711,7 +711,7 @@
 
   /* Worker card body padding (header + content blocks) */
   .worker-card-body {
-    @apply p-4;
+    @apply px-4 pt-4 pb-1;
   }
 
   /* On single-column, pin the worker header (status + name + ID) so the
@@ -777,7 +777,7 @@
 
   /* Row of status indicator icons — sits between sticky header and content */
   .worker-card-status-bar {
-    @apply flex items-center gap-1 px-4 pt-2;
+    @apply flex items-center gap-1 px-4 pt-1;
   }
 
   /* Padding wrapper for small status-indicator icons */
