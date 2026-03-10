@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HashMap, TranslocoService } from '@jsverse/transloco';
+import { TranslocoService } from '@jsverse/transloco';
 import { map, Observable, of, switchMap, tap } from 'rxjs';
 
 @Injectable({
@@ -10,7 +10,7 @@ export class TranslatorService {
 
   constructor(private readonly transloco: TranslocoService) {}
 
-  public get(key: string, params?: HashMap): Observable<string> {
+  public get(key: string, params?: Record<string, unknown>): Observable<string> {
     return this.loadCurrentLanguage().pipe(
       map(() => this.transloco.translate(key, params)),
     );
