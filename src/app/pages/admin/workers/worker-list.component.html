@@ -610,6 +610,7 @@
           [worker]="worker"
           [isModerator]="auth.currentUser()?.moderator ?? false"
           [viewMode]="viewMode()"
+          [pinHeaderOnMobile]="true"
           [availableTeams]="teams()"
           [highlighted]="isWorkerHighlighted(worker.id)"
           (workerUpdated)="onWorkerUpdated()"
