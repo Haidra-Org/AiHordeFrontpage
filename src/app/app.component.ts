@@ -153,7 +153,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('window:resize', ['$event'])
+  @HostListener('window:resize')
   onWindowResize(): void {
     // Close mobile menu on desktop breakpoint
     if (window.innerWidth >= 1024 && this.showMobileMenu) {
