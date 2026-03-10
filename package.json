@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:AiHordeWebsite": "node dist/ai-horde-website/server/server.mjs"
+    "serve:ssr:AiHordeWebsite": "node dist/ai-horde-website/server/server.mjs",
+    "deploy": "ng build && npx wrangler deploy"
   },
   "private": true,
   "dependencies": {
