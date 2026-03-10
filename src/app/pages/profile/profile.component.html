@@ -202,7 +202,7 @@
         @if (!auth.isLoggedIn()) {
           <!-- Login Form -->
           <div class="container-centered-md">
-          <app-page-intro pageKey="profile_guest" />
+            <app-page-intro pageKey="profile_guest" />
             <div class="card card-bg-primary">
               <p class="text-intro">
                 {{ "profile.login_description" | transloco }}
@@ -270,7 +270,7 @@
           <div class="container-page-content">
             <!-- Tab Navigation -->
             <div
-              class="details-tabs details-tabs--glass"
+              class="details-tabs details-tabs--glass details-tabs--connected"
               role="tablist"
               appScrollFade
               [appStickyHeader]="10"
@@ -446,159 +446,600 @@
               </a>
             </div>
 
-            <!-- Generations Tab -->
-            @if (activeTab() === "generations") {
-              <app-generations-tab />
-            }
+            <div class="tab-content-panel">
+              <!-- Generations Tab -->
+              @if (activeTab() === "generations") {
+                <app-generations-tab />
+              }
 
-            <!-- Profile Card -->
-            @if (activeTab() === "profile") {
-              <!-- Account Marked for Deletion Warning -->
-              @if (auth.currentUser()!.deleted) {
-                <div class="deletion-warning">
-                  <div class="deletion-warning-layout">
-                    <svg
-                      class="deletion-warning-icon"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    <div class="deletion-warning-content">
-                      <h3 class="deletion-warning-title">
-                        {{
-                          "profile.account_marked_for_deletion_title"
-                            | transloco
-                        }}
-                      </h3>
-                      <p class="deletion-warning-message">
-                        {{
-                          "profile.account_marked_for_deletion_message"
-                            | transloco
-                        }}
-                      </p>
-                      <button
-                        (click)="openUndeleteDialog()"
-                        class="btn-warning"
+              <!-- Profile Card -->
+              @if (activeTab() === "profile") {
+                <!-- Account Marked for Deletion Warning -->
+                @if (auth.currentUser()!.deleted) {
+                  <div class="deletion-warning">
+                    <div class="deletion-warning-layout">
+                      <svg
+                        class="deletion-warning-icon"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
                       >
-                        {{ "profile.undelete_account" | transloco }}
-                      </button>
+                        <path
+                          fill-rule="evenodd"
+                          d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                      <div class="deletion-warning-content">
+                        <h3 class="deletion-warning-title">
+                          {{
+                            "profile.account_marked_for_deletion_title"
+                              | transloco
+                          }}
+                        </h3>
+                        <p class="deletion-warning-message">
+                          {{
+                            "profile.account_marked_for_deletion_message"
+                              | transloco
+                          }}
+                        </p>
+                        <button
+                          (click)="openUndeleteDialog()"
+                          class="btn-warning"
+                        >
+                          {{ "profile.undelete_account" | transloco }}
+                        </button>
+                      </div>
                     </div>
+                  </div>
+                }
+
+                <div class="card card-bg-primary card-full">
+                  <div class="profile-header section-divider-bottom">
+                    <div class="avatar-circle avatar-lg avatar-gradient">
+                      <span class="avatar-text">{{
+                        auth.currentUser()!.username.charAt(0).toUpperCase()
+                      }}</span>
+                    </div>
+                    <div class="profile-header-content">
+                      <h2 class="heading-subsection">
+                        {{ auth.currentUser()!.username }}
+                        <button
+                          (click)="openUsernameDialog()"
+                          class="link-btn-sm mt-1"
+                        >
+                          {{ "profile.change_username" | transloco }}
+                        </button>
+                      </h2>
+
+                      <p class="text-secondary text-sm">
+                        ID: {{ auth.currentUser()!.id }}
+                      </p>
+                      @if (auth.currentUser()!.account_age) {
+                        <p class="text-secondary text-sm">
+                          {{
+                            "profile.account_age"
+                              | transloco
+                                : {
+                                    age: formatAccountAge(
+                                      auth.currentUser()!.account_age!
+                                    ),
+                                  }
+                          }}
+                        </p>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Badges -->
+                  <div class="badge-container">
+                    @if (auth.currentUser()!.trusted) {
+                      <span
+                        class="badge-base badge-success"
+                        [attr.title]="'admin.users.desc.trusted' | transloco"
+                        >{{ "profile.badge.trusted" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.moderator) {
+                      <span
+                        class="badge-base badge-purple"
+                        [attr.title]="'admin.users.desc.moderator' | transloco"
+                        >{{ "profile.badge.moderator" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.education) {
+                      <span
+                        class="badge-base badge-info"
+                        [attr.title]="'admin.users.desc.education' | transloco"
+                        >{{ "profile.badge.education" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.service) {
+                      <span
+                        class="badge-base badge-warning"
+                        [attr.title]="'admin.users.desc.service' | transloco"
+                        >{{ "profile.badge.service" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.customizer) {
+                      <span
+                        class="badge-base badge-pink"
+                        [attr.title]="'admin.users.desc.customizer' | transloco"
+                        >{{ "profile.badge.customizer" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.special) {
+                      <span
+                        class="badge-base badge-secondary"
+                        [attr.title]="'admin.users.desc.special' | transloco"
+                        >{{ "profile.badge.special" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.pseudonymous) {
+                      <span class="badge-base badge-secondary">{{
+                        "profile.badge.anonymous" | transloco
+                      }}</span>
+                    }
+                    @if (auth.currentUser()!.filtered) {
+                      <span
+                        class="badge-base badge-warning"
+                        [attr.title]="'admin.users.desc.filtered' | transloco"
+                        >{{ "profile.badge.filtered" | transloco }}</span
+                      >
+                    }
+                    @if (auth.currentUser()!.flagged) {
+                      <span
+                        class="badge-base badge-danger"
+                        [attr.title]="'admin.users.desc.flagged' | transloco"
+                        >{{ "profile.badge.flagged" | transloco }}</span
+                      >
+                    }
+                  </div>
+
+                  <!-- Account Settings -->
+                  <div class="section-divider-top">
+                    <h4 class="section-title-sm">
+                      {{ "profile.account_settings_heading" | transloco }}
+                    </h4>
+                    <div class="data-grid-1-2">
+                      <div class="data-item-box">
+                        <span class="data-label">{{
+                          "profile.public_workers_label" | transloco
+                        }}</span>
+                        <span class="data-value">
+                          <label class="toggle-switch">
+                            <input
+                              type="checkbox"
+                              [checked]="
+                                auth.currentUser()!.public_workers ?? false
+                              "
+                              (click)="
+                                $event.preventDefault();
+                                onPublicWorkersToggle(
+                                  !auth.currentUser()!.public_workers
+                                )
+                              "
+                            />
+                            <div class="toggle-switch-track"></div>
+                            <div class="toggle-switch-thumb"></div>
+                          </label>
+                        </span>
+                        <span class="text-secondary text-xs">{{
+                          "profile.public_workers_desc" | transloco
+                        }}</span>
+                      </div>
+                      <div class="data-item-box">
+                        <span class="data-label"
+                          >{{ "profile.contact_label" | transloco }}
+                          <button
+                            (click)="openContactDialog()"
+                            class="link-btn-sm mt-1 pl-2"
+                          >
+                            {{ "profile.edit_contact" | transloco }}
+                          </button>
+                        </span>
+
+                        <span class="data-value">
+                          @if (auth.currentUser()!.contact) {
+                            {{ auth.currentUser()!.contact }}
+                          } @else {
+                            <span class="text-secondary italic">{{
+                              "profile.contact_not_set" | transloco
+                            }}</span>
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Kudos Section -->
+                  <h3 class="heading-card"><app-kudos-term /></h3>
+                  <div class="highlight-box">
+                    <span class="data-value-xl">{{
+                      auth.currentUser()!.kudos | formatNumber
+                    }}</span>
+                    <span class="data-label-spaced">{{
+                      "profile.kudos_balance" | transloco
+                    }}</span>
+                  </div>
+
+                  @if (auth.currentUser()!.monthly_kudos?.amount) {
+                    <p class="text-secondary text-sm text-center">
+                      {{
+                        "profile.monthly_kudos"
+                          | transloco
+                            : {
+                                amount:
+                                  auth.currentUser()!.monthly_kudos!.amount!
+                                  | formatNumber,
+                              }
+                      }}
+                    </p>
+                  }
+
+                  @if (
+                    auth.currentUser()!.evaluating_kudos !== undefined &&
+                    auth.currentUser()!.evaluating_kudos !== null &&
+                    !auth.currentUser()!.trusted
+                  ) {
+                    <p
+                      class="text-secondary text-sm text-center"
+                      [attr.title]="'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'"
+                    >
+                      <strong>Evaluating Kudos:</strong>
+                      {{ auth.currentUser()!.evaluating_kudos! | formatNumber }}
+                    </p>
+                  }
+
+                  @if (auth.currentUser()!.kudos < 100) {
+                    <div class="info-box info-box--blue mt-4">
+                      <h4 class="info-box-title">
+                        {{ "profile.low_kudos_info_title" | transloco }}
+                      </h4>
+                      <p class="info-box-text">
+                        {{ "profile.low_kudos_info_message" | transloco }}
+                      </p>
+                      <a
+                        routerLink="/faq/"
+                        fragment="kudos"
+                        class="info-box-link"
+                      >
+                        {{ "profile.low_kudos_info_link" | transloco }} →
+                      </a>
+                    </div>
+                  }
+
+                  @if (auth.currentUser()!.kudos_details) {
+                    <div class="section-divider-top">
+                      <h4 class="section-title-sm">
+                        {{ "profile.kudos_breakdown" | transloco }}
+                      </h4>
+                      <app-kudos-breakdown-panel
+                        [kudosDetails]="auth.currentUser()!.kudos_details!"
+                        variant="profile"
+                        [showZeroValues]="false"
+                      />
+                    </div>
+                    <!-- Actions -->
+                    <div class="section-divider-top">
+                      <div class="action-row">
+                        @if (auth.currentUser()!.moderator) {
+                          <a routerLink="/admin/" class="btn-primary">{{
+                            "profile.admin_panel" | transloco
+                          }}</a>
+                        }
+                        <a routerLink="/v2-transfer/" class="btn-primary">{{
+                          "profile.transfer_kudos" | transloco
+                        }}</a>
+                        <button (click)="logout()" class="btn-source-control">
+                          {{ "profile.logout" | transloco }}
+                        </button>
+                      </div>
+                      <!-- Account Management Actions -->
+                      <div class="action-row mt-4">
+                        @if (auth.currentUser()!.deleted) {
+                          <button
+                            (click)="openUndeleteDialog()"
+                            class="btn-warning"
+                          >
+                            {{ "profile.undelete_account" | transloco }}
+                          </button>
+                        }
+                        @if (!auth.currentUser()!.deleted) {
+                          <button
+                            (click)="openDeleteDialog()"
+                            class="btn-primary btn-danger"
+                          >
+                            {{ "profile.delete_account" | transloco }}
+                          </button>
+                        }
+                        @if (auth.currentUser()!.deleted) {
+                          <button
+                            (click)="openDeleteDialog()"
+                            class="btn-primary btn-danger"
+                          >
+                            {{
+                              "profile.permanently_delete_account" | transloco
+                            }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- Page Guides -->
+                    <div class="section-divider-top">
+                      <div class="action-row">
+                        @if (!guideService.allDismissed()) {
+                          <button
+                            (click)="guideService.dismissAll()"
+                            class="btn-secondary"
+                          >
+                            {{ "profile.hide_all_guides" | transloco }}
+                          </button>
+                        }
+                        @if (guideService.anyDismissed()) {
+                          <button
+                            (click)="guideService.restoreAll()"
+                            class="btn-secondary"
+                          >
+                            {{ "profile.restore_all_guides" | transloco }}
+                          </button>
+                        }
+                      </div>
+                      <!-- Page guide explanation as a callout -->
+                      <div class="info-box info-box--blue mt-4 max-w-lg">
+                        <h4 class="info-box-title">
+                          {{ "profile.page_guides" | transloco }}
+                        </h4>
+                        <p class="info-box-text">
+                          {{ "profile.guides_explanation" | transloco }}
+                        </p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+              @if (
+                activeTab() === "records" &&
+                (auth.currentUser()!.records ||
+                  auth.currentUser()!.usage ||
+                  auth.currentUser()!.contributions)
+              ) {
+                <div class="card card-bg-primary card-full card-spaced">
+                  <h3 class="heading-card">
+                    {{ "profile.detailed_records" | transloco }}
+                  </h3>
+                  <div class="records-section-wrapper">
+                    <!-- Usage Records -->
+                    @if (auth.currentUser()!.records!.usage) {
+                      <div class="record-group">
+                        <h4 class="section-title-sm">
+                          {{ "profile.records.usage" | transloco }}
+                        </h4>
+                        <div class="data-grid-1-2">
+                          @if (usageMegapixelsteps(); as ps) {
+                            <div
+                              class="data-item-box"
+                              [attr.title]="'Total megapixelsteps you have requested for image generation'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.megapixelsteps" | transloco
+                              }}</span>
+                              <span class="data-value">
+                                {{ ps.primary.formatted }}
+                                <span class="text-secondary">
+                                  (<app-unit-tooltip
+                                    [unit]="ps"
+                                    [swapDisplay]="true"
+                                  />)
+                                </span>
+                              </span>
+                            </div>
+                          }
+                          @if (usageTokens(); as tokens) {
+                            <div
+                              class="data-item-box"
+                              [attr.title]="'Total tokens you have requested for text generation'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.tokens" | transloco
+                              }}</span>
+                              <span class="data-value">
+                                {{ tokens.primary.formatted }}
+                                <span class="text-secondary">
+                                  (<app-unit-tooltip
+                                    [unit]="tokens"
+                                    [swapDisplay]="true"
+                                  />)
+                                </span>
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Contribution Records -->
+                    @if (auth.currentUser()!.records!.contribution) {
+                      <div class="record-group">
+                        <h4 class="section-title-sm">
+                          {{ "profile.records.contribution" | transloco }}
+                        </h4>
+                        <div class="data-grid-1-2">
+                          @if (contributionMegapixelsteps(); as ps) {
+                            <div
+                              class="data-item-box"
+                              [attr.title]="'Total megapixelsteps your workers have generated'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.megapixelsteps" | transloco
+                              }}</span>
+                              <span class="data-value">
+                                {{ ps.primary.formatted }}
+                                <span class="text-secondary">
+                                  (<app-unit-tooltip
+                                    [unit]="ps"
+                                    [swapDisplay]="true"
+                                  />)
+                                </span>
+                              </span>
+                            </div>
+                          }
+                          @if (contributionTokens(); as tokens) {
+                            <div
+                              class="data-item-box"
+                              [attr.title]="'Total tokens your workers have generated'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.tokens" | transloco
+                              }}</span>
+                              <span class="data-value">
+                                {{ tokens.primary.formatted }}
+                                <span class="text-secondary">
+                                  (<app-unit-tooltip
+                                    [unit]="tokens"
+                                    [swapDisplay]="true"
+                                  />)
+                                </span>
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Request Records -->
+                    @if (auth.currentUser()!.records!.request) {
+                      <div class="record-group">
+                        <h4 class="section-title-sm">
+                          {{ "profile.records.requests" | transloco }}
+                        </h4>
+                        <div class="data-grid-1-2-3">
+                          @if (auth.currentUser()!.records!.request!.image) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total image generation requests you have made'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.image" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.request!.image ?? 0
+                                  | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                          @if (auth.currentUser()!.records!.request!.text) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total text generation requests you have made'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.text" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.request!.text ?? 0
+                                  | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                          @if (
+                            auth.currentUser()!.records!.request!.interrogation
+                          ) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total image interrogation requests you have made'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.interrogation" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.request!
+                                  .interrogation ?? 0 | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+
+                    <!-- Fulfillment Records -->
+                    @if (auth.currentUser()!.records!.fulfillment) {
+                      <div class="record-group">
+                        <h4 class="section-title-sm">
+                          {{ "profile.records.fulfillments" | transloco }}
+                        </h4>
+                        <div class="data-grid-1-2-3">
+                          @if (
+                            auth.currentUser()!.records!.fulfillment!.image
+                          ) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total image generations your workers have fulfilled'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.image" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.fulfillment!
+                                  .image ?? 0 | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                          @if (auth.currentUser()!.records!.fulfillment!.text) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total text generations your workers have fulfilled'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.text" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.fulfillment!
+                                  .text ?? 0 | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                          @if (
+                            auth.currentUser()!.records!.fulfillment!
+                              .interrogation
+                          ) {
+                            <div
+                              class="data-item-box data-item-centered"
+                              [attr.title]="'Total image interrogations your workers have fulfilled'"
+                            >
+                              <span class="data-label">{{
+                                "profile.records.interrogation" | transloco
+                              }}</span>
+                              <span class="data-value">{{
+                                auth.currentUser()!.records!.fulfillment!
+                                  .interrogation ?? 0 | formatNumber
+                              }}</span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
                   </div>
                 </div>
               }
 
-              <div class="card card-bg-primary card-full">
-                <div class="profile-header section-divider-bottom">
-                  <div class="avatar-circle avatar-lg avatar-gradient">
-                    <span class="avatar-text">{{
-                      auth.currentUser()!.username.charAt(0).toUpperCase()
-                    }}</span>
-                  </div>
-                  <div class="profile-header-content">
-                    <h2 class="heading-subsection">
-                      {{ auth.currentUser()!.username }}
-                      <button
-                        (click)="openUsernameDialog()"
-                        class="link-btn-sm mt-1"
+              <!-- Workers Section -->
+              @if (activeTab() === "workers") {
+                <div
+                  class="card card-bg-primary card-full card-spaced card--no-blur"
+                >
+                  <h3 class="heading-card">
+                    {{ "profile.your_workers" | transloco }}
+                    @if (
+                      auth.currentUser()!.worker_ids &&
+                      auth.currentUser()!.worker_ids!.length > 0
+                    ) {
+                      <span class="text-secondary text-sm"
+                        >({{ auth.currentUser()!.worker_ids!.length }})</span
                       >
-                        {{ "profile.change_username" | transloco }}
-                      </button>
-                    </h2>
-
-                    <p class="text-secondary text-sm">
-                      ID: {{ auth.currentUser()!.id }}
-                    </p>
-                    @if (auth.currentUser()!.account_age) {
-                      <p class="text-secondary text-sm">
-                        {{
-                          "profile.account_age"
-                            | transloco
-                              : {
-                                  age: formatAccountAge(
-                                    auth.currentUser()!.account_age!
-                                  ),
-                                }
-                        }}
-                      </p>
                     }
-                  </div>
-                </div>
+                  </h3>
 
-                <!-- Badges -->
-                <div class="badge-container">
-                  @if (auth.currentUser()!.trusted) {
-                    <span
-                      class="badge-base badge-success"
-                      [attr.title]="'admin.users.desc.trusted' | transloco"
-                      >{{ "profile.badge.trusted" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.moderator) {
-                    <span
-                      class="badge-base badge-purple"
-                      [attr.title]="'admin.users.desc.moderator' | transloco"
-                      >{{ "profile.badge.moderator" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.education) {
-                    <span
-                      class="badge-base badge-info"
-                      [attr.title]="'admin.users.desc.education' | transloco"
-                      >{{ "profile.badge.education" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.service) {
-                    <span
-                      class="badge-base badge-warning"
-                      [attr.title]="'admin.users.desc.service' | transloco"
-                      >{{ "profile.badge.service" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.customizer) {
-                    <span
-                      class="badge-base badge-pink"
-                      [attr.title]="'admin.users.desc.customizer' | transloco"
-                      >{{ "profile.badge.customizer" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.special) {
-                    <span
-                      class="badge-base badge-secondary"
-                      [attr.title]="'admin.users.desc.special' | transloco"
-                      >{{ "profile.badge.special" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.pseudonymous) {
-                    <span class="badge-base badge-secondary">{{
-                      "profile.badge.anonymous" | transloco
-                    }}</span>
-                  }
-                  @if (auth.currentUser()!.filtered) {
-                    <span
-                      class="badge-base badge-warning"
-                      [attr.title]="'admin.users.desc.filtered' | transloco"
-                      >{{ "profile.badge.filtered" | transloco }}</span
-                    >
-                  }
-                  @if (auth.currentUser()!.flagged) {
-                    <span
-                      class="badge-base badge-danger"
-                      [attr.title]="'admin.users.desc.flagged' | transloco"
-                      >{{ "profile.badge.flagged" | transloco }}</span
-                    >
-                  }
-                </div>
-
-                <!-- Account Settings -->
-                <div class="section-divider-top">
-                  <h4 class="section-title-sm">
-                    {{ "profile.account_settings_heading" | transloco }}
-                  </h4>
                   <div class="data-grid-1-2">
                     <div class="data-item-box">
                       <span class="data-label">{{
@@ -626,654 +1067,187 @@
                         "profile.public_workers_desc" | transloco
                       }}</span>
                     </div>
-                    <div class="data-item-box">
-                      <span class="data-label"
-                        >{{ "profile.contact_label" | transloco }}
-                        <button
-                          (click)="openContactDialog()"
-                          class="link-btn-sm mt-1 pl-2"
-                        >
-                          {{ "profile.edit_contact" | transloco }}
-                        </button>
-                      </span>
-
-                      <span class="data-value">
-                        @if (auth.currentUser()!.contact) {
-                          {{ auth.currentUser()!.contact }}
-                        } @else {
-                          <span class="text-secondary italic">{{
-                            "profile.contact_not_set" | transloco
-                          }}</span>
-                        }
-                      </span>
-                    </div>
                   </div>
-                </div>
-
-                <!-- Kudos Section -->
-                <h3 class="heading-card"><app-kudos-term /></h3>
-                <div class="highlight-box">
-                  <span class="data-value-xl">{{
-                    auth.currentUser()!.kudos | formatNumber
-                  }}</span>
-                  <span class="data-label-spaced">{{
-                    "profile.kudos_balance" | transloco
-                  }}</span>
-                </div>
-
-                @if (auth.currentUser()!.monthly_kudos?.amount) {
-                  <p class="text-secondary text-sm text-center">
-                    {{
-                      "profile.monthly_kudos"
-                        | transloco
-                          : {
-                              amount:
-                                auth.currentUser()!.monthly_kudos!.amount!
-                                | formatNumber,
-                            }
-                    }}
-                  </p>
-                }
-
-                @if (
-                  auth.currentUser()!.evaluating_kudos !== undefined &&
-                  auth.currentUser()!.evaluating_kudos !== null &&
-                  !auth.currentUser()!.trusted
-                ) {
-                  <p
-                    class="text-secondary text-sm text-center"
-                    [attr.title]="
-                      'Evaluating Kudos from generations and uptime. When this reaches the threshold, you become trusted.'
-                    "
-                  >
-                    <strong>Evaluating Kudos:</strong>
-                    {{ auth.currentUser()!.evaluating_kudos! | formatNumber }}
-                  </p>
-                }
-
-                @if (auth.currentUser()!.kudos < 100) {
-                  <div class="info-box info-box--blue mt-4">
-                    <h4 class="info-box-title">
-                      {{ "profile.low_kudos_info_title" | transloco }}
-                    </h4>
-                    <p class="info-box-text">
-                      {{ "profile.low_kudos_info_message" | transloco }}
-                    </p>
-                    <a
-                      routerLink="/faq/"
-                      fragment="kudos"
-                      class="info-box-link"
-                    >
-                      {{ "profile.low_kudos_info_link" | transloco }} →
-                    </a>
-                  </div>
-                }
-
-                @if (auth.currentUser()!.kudos_details) {
-                  <div class="section-divider-top">
-                    <h4 class="section-title-sm">
-                      {{ "profile.kudos_breakdown" | transloco }}
-                    </h4>
-                    <app-kudos-breakdown-panel
-                      [kudosDetails]="auth.currentUser()!.kudos_details!"
-                      variant="profile"
-                      [showZeroValues]="false"
-                    />
-                  </div>
-                  <!-- Actions -->
-                  <div class="section-divider-top">
-                    <div class="action-row">
-                      @if (auth.currentUser()!.moderator) {
-                        <a routerLink="/admin/" class="btn-primary">{{
-                          "profile.admin_panel" | transloco
-                        }}</a>
-                      }
-                      <a routerLink="/v2-transfer/" class="btn-primary">{{
-                        "profile.transfer_kudos" | transloco
-                      }}</a>
-                      <button (click)="logout()" class="btn-source-control">
-                        {{ "profile.logout" | transloco }}
-                      </button>
-                    </div>
-                    <!-- Account Management Actions -->
-                    <div class="action-row mt-4">
-                      @if (auth.currentUser()!.deleted) {
-                        <button
-                          (click)="openUndeleteDialog()"
-                          class="btn-warning"
-                        >
-                          {{ "profile.undelete_account" | transloco }}
-                        </button>
-                      }
-                      @if (!auth.currentUser()!.deleted) {
-                        <button
-                          (click)="openDeleteDialog()"
-                          class="btn-primary btn-danger"
-                        >
-                          {{ "profile.delete_account" | transloco }}
-                        </button>
-                      }
-                      @if (auth.currentUser()!.deleted) {
-                        <button
-                          (click)="openDeleteDialog()"
-                          class="btn-primary btn-danger"
-                        >
-                          {{ "profile.permanently_delete_account" | transloco }}
-                        </button>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- Page Guides -->
-                  <div class="section-divider-top">
-                    <div class="action-row">
-                      @if (!guideService.allDismissed()) {
-                        <button
-                          (click)="guideService.dismissAll()"
-                          class="btn-secondary"
-                        >
-                          {{ "profile.hide_all_guides" | transloco }}
-                        </button>
-                      }
-                      @if (guideService.anyDismissed()) {
-                        <button
-                          (click)="guideService.restoreAll()"
-                          class="btn-secondary"
-                        >
-                          {{ "profile.restore_all_guides" | transloco }}
-                        </button>
-                      }
-                      
-                    </div>
-                    <!-- Page guide explanation as a callout -->
-                    <div class="info-box info-box--blue mt-4 max-w-sm">
-                      <h4 class="info-box-title">
-                        {{ "profile.page_guides" | transloco }}
-                      </h4>
-                      <p class="info-box-text">
-                        {{ "profile.guides_explanation" | transloco }}
-                      </p>
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-            @if (
-              activeTab() === "records" &&
-              (auth.currentUser()!.records ||
-                auth.currentUser()!.usage ||
-                auth.currentUser()!.contributions)
-            ) {
-              <div class="card card-bg-primary card-full card-spaced">
-                <h3 class="heading-card">
-                  {{ "profile.detailed_records" | transloco }}
-                </h3>
-                <div class="records-section-wrapper">
-                  <!-- Usage Records -->
-                  @if (auth.currentUser()!.records!.usage) {
-                    <div class="record-group">
-                      <h4 class="section-title-sm">
-                        {{ "profile.records.usage" | transloco }}
-                      </h4>
-                      <div class="data-grid-1-2">
-                        @if (usageMegapixelsteps(); as ps) {
-                          <div
-                            class="data-item-box"
-                            [attr.title]="
-                              'Total megapixelsteps you have requested for image generation'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.megapixelsteps" | transloco
-                            }}</span>
-                            <span class="data-value">
-                              {{ ps.primary.formatted }}
-                              <span class="text-secondary">
-                                (<app-unit-tooltip
-                                  [unit]="ps"
-                                  [swapDisplay]="true"
-                                />)
-                              </span>
-                            </span>
-                          </div>
-                        }
-                        @if (usageTokens(); as tokens) {
-                          <div
-                            class="data-item-box"
-                            [attr.title]="
-                              'Total tokens you have requested for text generation'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.tokens" | transloco
-                            }}</span>
-                            <span class="data-value">
-                              {{ tokens.primary.formatted }}
-                              <span class="text-secondary">
-                                (<app-unit-tooltip
-                                  [unit]="tokens"
-                                  [swapDisplay]="true"
-                                />)
-                              </span>
-                            </span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                  <!-- Contribution Records -->
-                  @if (auth.currentUser()!.records!.contribution) {
-                    <div class="record-group">
-                      <h4 class="section-title-sm">
-                        {{ "profile.records.contribution" | transloco }}
-                      </h4>
-                      <div class="data-grid-1-2">
-                        @if (contributionMegapixelsteps(); as ps) {
-                          <div
-                            class="data-item-box"
-                            [attr.title]="
-                              'Total megapixelsteps your workers have generated'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.megapixelsteps" | transloco
-                            }}</span>
-                            <span class="data-value">
-                              {{ ps.primary.formatted }}
-                              <span class="text-secondary">
-                                (<app-unit-tooltip
-                                  [unit]="ps"
-                                  [swapDisplay]="true"
-                                />)
-                              </span>
-                            </span>
-                          </div>
-                        }
-                        @if (contributionTokens(); as tokens) {
-                          <div
-                            class="data-item-box"
-                            [attr.title]="
-                              'Total tokens your workers have generated'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.tokens" | transloco
-                            }}</span>
-                            <span class="data-value">
-                              {{ tokens.primary.formatted }}
-                              <span class="text-secondary">
-                                (<app-unit-tooltip
-                                  [unit]="tokens"
-                                  [swapDisplay]="true"
-                                />)
-                              </span>
-                            </span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                  <!-- Request Records -->
-                  @if (auth.currentUser()!.records!.request) {
-                    <div class="record-group">
-                      <h4 class="section-title-sm">
-                        {{ "profile.records.requests" | transloco }}
-                      </h4>
-                      <div class="data-grid-1-2-3">
-                        @if (auth.currentUser()!.records!.request!.image) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total image generation requests you have made'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.image" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.request!.image ?? 0
-                                | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                        @if (auth.currentUser()!.records!.request!.text) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total text generation requests you have made'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.text" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.request!.text ?? 0
-                                | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                        @if (
-                          auth.currentUser()!.records!.request!.interrogation
-                        ) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total image interrogation requests you have made'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.interrogation" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.request!
-                                .interrogation ?? 0 | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-
-                  <!-- Fulfillment Records -->
-                  @if (auth.currentUser()!.records!.fulfillment) {
-                    <div class="record-group">
-                      <h4 class="section-title-sm">
-                        {{ "profile.records.fulfillments" | transloco }}
-                      </h4>
-                      <div class="data-grid-1-2-3">
-                        @if (auth.currentUser()!.records!.fulfillment!.image) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total image generations your workers have fulfilled'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.image" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.fulfillment!.image ??
-                                0 | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                        @if (auth.currentUser()!.records!.fulfillment!.text) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total text generations your workers have fulfilled'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.text" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.fulfillment!.text ??
-                                0 | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                        @if (
-                          auth.currentUser()!.records!.fulfillment!
-                            .interrogation
-                        ) {
-                          <div
-                            class="data-item-box data-item-centered"
-                            [attr.title]="
-                              'Total image interrogations your workers have fulfilled'
-                            "
-                          >
-                            <span class="data-label">{{
-                              "profile.records.interrogation" | transloco
-                            }}</span>
-                            <span class="data-value">{{
-                              auth.currentUser()!.records!.fulfillment!
-                                .interrogation ?? 0 | formatNumber
-                            }}</span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-            }
-
-            <!-- Workers Section -->
-            @if (activeTab() === "workers") {
-              <div class="card card-bg-primary card-full card-spaced card--no-blur">
-                <h3 class="heading-card">
-                  {{ "profile.your_workers" | transloco }}
-                  @if (
-                    auth.currentUser()!.worker_ids &&
-                    auth.currentUser()!.worker_ids!.length > 0
-                  ) {
-                    <span class="text-secondary text-sm"
-                      >({{ auth.currentUser()!.worker_ids!.length }})</span
-                    >
-                  }
-                </h3>
-
-                <div class="data-grid-1-2">
-                  <div class="data-item-box">
-                    <span class="data-label">{{
-                      "profile.public_workers_label" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      <label class="toggle-switch">
-                        <input
-                          type="checkbox"
-                          [checked]="
-                            auth.currentUser()!.public_workers ?? false
-                          "
-                          (click)="
-                            $event.preventDefault();
-                            onPublicWorkersToggle(
-                              !auth.currentUser()!.public_workers
-                            )
-                          "
-                        />
-                        <div class="toggle-switch-track"></div>
-                        <div class="toggle-switch-thumb"></div>
-                      </label>
-                    </span>
-                    <span class="text-secondary text-xs">{{
-                      "profile.public_workers_desc" | transloco
-                    }}</span>
-                  </div>
-                </div>
-
-                @if (
-                  !auth.currentUser()!.worker_ids ||
-                  auth.currentUser()!.worker_ids!.length === 0
-                ) {
-                  <p class="text-secondary text-center py-4">
-                    {{ "profile.no_workers_registered" | transloco }}
-                  </p>
-                } @else {
-                  <!-- Filter Controls -->
-                  <div class="filter-bar">
-                    <!-- Search Filter -->
-                    <div class="filter-field filter-field--grow">
-                      <label for="worker-search" class="form-label">{{
-                        "profile.workers.search" | transloco
-                      }}</label>
-                      <input
-                        type="text"
-                        id="worker-search"
-                        [value]="filterText()"
-                        (input)="onFilterTextChange($event)"
-                        [placeholder]="
-                          'profile.workers.search_placeholder' | transloco
-                        "
-                        class="form-input"
-                      />
-                    </div>
-
-                    <!-- Worker Type Filter -->
-                    <div class="filter-field">
-                      <label for="worker-type" class="form-label">{{
-                        "profile.workers.type" | transloco
-                      }}</label>
-                      <select
-                        id="worker-type"
-                        [value]="filterWorkerType()"
-                        (change)="onFilterTypeChange($any($event.target).value)"
-                        class="form-input"
-                      >
-                        <option value="all">
-                          {{ "profile.workers.type.all" | transloco }}
-                        </option>
-                        <option value="image">
-                          {{ "profile.workers.type.image" | transloco }}
-                        </option>
-                        <option value="text">
-                          {{ "profile.workers.type.text" | transloco }}
-                        </option>
-                        <option value="interrogation">
-                          {{ "profile.workers.type.interrogation" | transloco }}
-                        </option>
-                      </select>
-                    </div>
-
-                    <!-- Maintenance Status Filter -->
-                    <div class="filter-field">
-                      <label for="worker-status" class="form-label">{{
-                        "profile.workers.status" | transloco
-                      }}</label>
-                      <select
-                        id="worker-status"
-                        [value]="filterMaintenance()"
-                        (change)="
-                          onFilterMaintenanceChange($any($event.target).value)
-                        "
-                        class="form-input"
-                      >
-                        <option value="all">
-                          {{ "profile.workers.status.all" | transloco }}
-                        </option>
-                        <option value="active">
-                          {{ "profile.workers.status.active" | transloco }}
-                        </option>
-                        <option value="maintenance">
-                          {{ "profile.workers.status.maintenance" | transloco }}
-                        </option>
-                        <option value="offline">
-                          {{ "profile.workers.status.offline" | transloco }}
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  @if (loadingWorkers()) {
-                    <p class="text-secondary text-sm mb-2">
-                      {{ "profile.loading_workers" | transloco }}
-                    </p>
-                  }
-
-                  @if (unresolvedWorkers().length > 0) {
-                    <div class="worker-grid mb-4">
-                      @for (
-                        workerEntry of unresolvedWorkers();
-                        track workerEntry.id
-                      ) {
-                        @if (workerEntry.loading) {
-                          <div class="skeleton-box" aria-busy="true">
-                            <p class="data-value text-sm break-all">
-                              {{ workerEntry.id }}
-                            </p>
-                            <div class="skeleton-bar skeleton-bar-sm"></div>
-                            <div class="skeleton-bar skeleton-bar-lg"></div>
-                            <p class="text-secondary text-sm">
-                              {{ "profile.loading_workers" | transloco }}
-                            </p>
-                          </div>
-                        } @else {
-                          <div class="skeleton-box skeleton-box-dashed" role="status">
-                            <p class="data-value text-sm break-all">
-                              {{ workerEntry.id }}
-                            </p>
-                            <p class="text-secondary text-sm">
-                              {{ "profile.no_workers_found" | transloco }}
-                            </p>
-                          </div>
-                        }
-                      }
-                    </div>
-                  }
 
                   @if (
-                    !loadingWorkers() &&
-                    filteredAndSortedWorkers().length === 0 &&
-                    unresolvedWorkers().length === 0 &&
-                    userWorkers().length > 0
+                    !auth.currentUser()!.worker_ids ||
+                    auth.currentUser()!.worker_ids!.length === 0
                   ) {
                     <p class="text-secondary text-center py-4">
-                      {{ "profile.no_workers_match_filters" | transloco }}
+                      {{ "profile.no_workers_registered" | transloco }}
                     </p>
                   } @else {
-                    @for (group of groupedWorkers(); track group.type) {
-                      <h4
-                        class="heading-subsection section-header-collapsible section-header-collapsible--light"
-                        (click)="toggleWorkerTypeSection(group.type)"
-                      >
-                        <span class="section-header-title-wrapper">
-                          {{ "profile.workers.type." + group.type | transloco }}
-                          <span class="text-secondary text-sm"
-                            >({{ group.workers.length }})</span
-                          >
-                        </span>
-                        <svg
-                          class="chevron-icon"
-                          [class.expanded]="!isWorkerTypeCollapsed(group.type)"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
+                    <!-- Filter Controls -->
+                    <div class="filter-bar">
+                      <!-- Search Filter -->
+                      <div class="filter-field filter-field--grow">
+                        <label for="worker-search" class="form-label">{{
+                          "profile.workers.search" | transloco
+                        }}</label>
+                        <input
+                          type="text"
+                          id="worker-search"
+                          [value]="filterText()"
+                          (input)="onFilterTextChange($event)"
+                          [placeholder]="
+                            'profile.workers.search_placeholder' | transloco
+                          "
+                          class="form-input"
+                        />
+                      </div>
+
+                      <!-- Worker Type Filter -->
+                      <div class="filter-field">
+                        <label for="worker-type" class="form-label">{{
+                          "profile.workers.type" | transloco
+                        }}</label>
+                        <select
+                          id="worker-type"
+                          [value]="filterWorkerType()"
+                          (change)="
+                            onFilterTypeChange($any($event.target).value)
+                          "
+                          class="form-input"
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </h4>
-                      @if (!isWorkerTypeCollapsed(group.type)) {
-                        <div class="worker-grid">
-                          @for (
-                            workerEntry of group.workers;
-                            track workerEntry.id
-                          ) {
-                            @if (workerEntry.loading) {
-                              <div class="skeleton-box" aria-busy="true">
-                                <p class="data-value text-sm break-all">
-                                  {{ workerEntry.id }}
-                                </p>
-                                <div class="skeleton-bar skeleton-bar-sm"></div>
-                                <div class="skeleton-bar skeleton-bar-lg"></div>
-                                <p class="text-secondary text-sm">
-                                  {{ "profile.loading_workers" | transloco }}
-                                </p>
-                              </div>
-                            } @else if (workerEntry.worker) {
-                              @if (!loadingTeams()) {
-                                <app-worker-card
-                                  [worker]="workerEntry.worker"
-                                  [isModerator]="
-                                    auth.currentUser()?.moderator ?? false
-                                  "
-                                  [pinHeaderOnMobile]="true"
-                                  [availableTeams]="allTeams()"
-                                  (workerUpdated)="onWorkerUpdated()"
-                                  (workerDeleted)="onWorkerDeleted($event)"
-                                />
-                              } @else {
+                          <option value="all">
+                            {{ "profile.workers.type.all" | transloco }}
+                          </option>
+                          <option value="image">
+                            {{ "profile.workers.type.image" | transloco }}
+                          </option>
+                          <option value="text">
+                            {{ "profile.workers.type.text" | transloco }}
+                          </option>
+                          <option value="interrogation">
+                            {{
+                              "profile.workers.type.interrogation" | transloco
+                            }}
+                          </option>
+                        </select>
+                      </div>
+
+                      <!-- Maintenance Status Filter -->
+                      <div class="filter-field">
+                        <label for="worker-status" class="form-label">{{
+                          "profile.workers.status" | transloco
+                        }}</label>
+                        <select
+                          id="worker-status"
+                          [value]="filterMaintenance()"
+                          (change)="
+                            onFilterMaintenanceChange($any($event.target).value)
+                          "
+                          class="form-input"
+                        >
+                          <option value="all">
+                            {{ "profile.workers.status.all" | transloco }}
+                          </option>
+                          <option value="active">
+                            {{ "profile.workers.status.active" | transloco }}
+                          </option>
+                          <option value="maintenance">
+                            {{
+                              "profile.workers.status.maintenance" | transloco
+                            }}
+                          </option>
+                          <option value="offline">
+                            {{ "profile.workers.status.offline" | transloco }}
+                          </option>
+                        </select>
+                      </div>
+                    </div>
+
+                    @if (loadingWorkers()) {
+                      <p class="text-secondary text-sm mb-2">
+                        {{ "profile.loading_workers" | transloco }}
+                      </p>
+                    }
+
+                    @if (unresolvedWorkers().length > 0) {
+                      <div class="worker-grid mb-4">
+                        @for (
+                          workerEntry of unresolvedWorkers();
+                          track workerEntry.id
+                        ) {
+                          @if (workerEntry.loading) {
+                            <div class="skeleton-box" aria-busy="true">
+                              <p class="data-value text-sm break-all">
+                                {{ workerEntry.id }}
+                              </p>
+                              <div class="skeleton-bar skeleton-bar-sm"></div>
+                              <div class="skeleton-bar skeleton-bar-lg"></div>
+                              <p class="text-secondary text-sm">
+                                {{ "profile.loading_workers" | transloco }}
+                              </p>
+                            </div>
+                          } @else {
+                            <div
+                              class="skeleton-box skeleton-box-dashed"
+                              role="status"
+                            >
+                              <p class="data-value text-sm break-all">
+                                {{ workerEntry.id }}
+                              </p>
+                              <p class="text-secondary text-sm">
+                                {{ "profile.no_workers_found" | transloco }}
+                              </p>
+                            </div>
+                          }
+                        }
+                      </div>
+                    }
+
+                    @if (
+                      !loadingWorkers() &&
+                      filteredAndSortedWorkers().length === 0 &&
+                      unresolvedWorkers().length === 0 &&
+                      userWorkers().length > 0
+                    ) {
+                      <p class="text-secondary text-center py-4">
+                        {{ "profile.no_workers_match_filters" | transloco }}
+                      </p>
+                    } @else {
+                      @for (group of groupedWorkers(); track group.type) {
+                        <h4
+                          class="heading-subsection section-header-collapsible section-header-collapsible--light"
+                          (click)="toggleWorkerTypeSection(group.type)"
+                        >
+                          <span class="section-header-title-wrapper">
+                            {{
+                              "profile.workers.type." + group.type | transloco
+                            }}
+                            <span class="text-secondary text-sm"
+                              >({{ group.workers.length }})</span
+                            >
+                          </span>
+                          <svg
+                            class="chevron-icon"
+                            [class.expanded]="
+                              !isWorkerTypeCollapsed(group.type)
+                            "
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </h4>
+                        @if (!isWorkerTypeCollapsed(group.type)) {
+                          <div class="worker-grid">
+                            @for (
+                              workerEntry of group.workers;
+                              track workerEntry.id
+                            ) {
+                              @if (workerEntry.loading) {
                                 <div class="skeleton-box" aria-busy="true">
                                   <p class="data-value text-sm break-all">
-                                    {{ workerEntry.worker.name }}
+                                    {{ workerEntry.id }}
                                   </p>
                                   <div
                                     class="skeleton-bar skeleton-bar-sm"
@@ -1285,299 +1259,389 @@
                                     {{ "profile.loading_workers" | transloco }}
                                   </p>
                                 </div>
+                              } @else if (workerEntry.worker) {
+                                @if (!loadingTeams()) {
+                                  <app-worker-card
+                                    [worker]="workerEntry.worker"
+                                    [isModerator]="
+                                      auth.currentUser()?.moderator ?? false
+                                    "
+                                    [pinHeaderOnMobile]="true"
+                                    [availableTeams]="allTeams()"
+                                    (workerUpdated)="onWorkerUpdated()"
+                                    (workerDeleted)="onWorkerDeleted($event)"
+                                  />
+                                } @else {
+                                  <div class="skeleton-box" aria-busy="true">
+                                    <p class="data-value text-sm break-all">
+                                      {{ workerEntry.worker.name }}
+                                    </p>
+                                    <div
+                                      class="skeleton-bar skeleton-bar-sm"
+                                    ></div>
+                                    <div
+                                      class="skeleton-bar skeleton-bar-lg"
+                                    ></div>
+                                    <p class="text-secondary text-sm">
+                                      {{
+                                        "profile.loading_workers" | transloco
+                                      }}
+                                    </p>
+                                  </div>
+                                }
+                              } @else {
+                                <div
+                                  class="skeleton-box skeleton-box-dashed"
+                                  role="status"
+                                >
+                                  <p class="data-value text-sm break-all">
+                                    {{ workerEntry.id }}
+                                  </p>
+                                  <p class="text-secondary text-sm">
+                                    {{ "profile.no_workers_found" | transloco }}
+                                  </p>
+                                </div>
                               }
-                            } @else {
-                              <div
-                                class="skeleton-box skeleton-box-dashed"
-                                role="status"
-                              >
-                                <p class="data-value text-sm break-all">
-                                  {{ workerEntry.id }}
-                                </p>
-                                <p class="text-secondary text-sm">
-                                  {{ "profile.no_workers_found" | transloco }}
-                                </p>
-                              </div>
                             }
-                          }
-                        </div>
+                          </div>
+                        }
                       }
                     }
                   }
-                }
-              </div>
-            }
+                </div>
+              }
 
-            <!-- Teams Section -->
-            @if (activeTab() === "teams") {
-              <!-- Team Success Toast -->
-              @if (teamSuccess()) {
-                <div
-                  class="toast toast-success"
-                  role="status"
-                  aria-live="polite"
-                >
-                  <svg
-                    class="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              <!-- Teams Section -->
+              @if (activeTab() === "teams") {
+                <!-- Team Success Toast -->
+                @if (teamSuccess()) {
+                  <div
+                    class="toast toast-success"
+                    role="status"
+                    aria-live="polite"
                   >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span>{{ "teams.success" | transloco }}</span>
-                </div>
-              }
+                    <svg
+                      class="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    <span>{{ "teams.success" | transloco }}</span>
+                  </div>
+                }
 
-              <!-- Team Dialog -->
-              @if (teamDialogOpen()) {
-                <div class="worker-modal-overlay">
-                  <div class="modal-backdrop" (click)="closeTeamDialog()"></div>
-                  <div class="worker-modal-panel worker-modal-panel-large">
-                    @switch (teamDialogType()) {
-                      @case ("create") {
-                        <h3 class="heading-card mb-4">
-                          {{ "teams.create_team" | transloco }}
-                        </h3>
-                        <div class="space-y-4">
-                          <div>
-                            <label for="team-name" class="form-label">{{
-                              "teams.name" | transloco
-                            }}</label>
-                            <input
-                              type="text"
-                              id="team-name"
-                              [value]="teamFormName()"
-                              (input)="onTeamNameChange($event)"
-                              [placeholder]="
-                                'teams.name_placeholder' | transloco
-                              "
-                              class="form-input"
-                              maxlength="100"
-                            />
-                            <p class="text-xs text-secondary mt-1">
-                              {{ "teams.name_hint" | transloco }}
-                            </p>
-                          </div>
-                          <div>
-                            <label for="team-info" class="form-label">{{
-                              "teams.info" | transloco
-                            }}</label>
-                            <textarea
-                              id="team-info"
-                              [value]="teamFormInfo()"
-                              (input)="onTeamInfoChange($event)"
-                              [placeholder]="
-                                'teams.info_placeholder' | transloco
-                              "
-                              class="form-input"
-                              rows="3"
-                              maxlength="1000"
-                            ></textarea>
-                          </div>
-                          @if (teamError()) {
-                            <div class="dialog-error">
-                              <p class="dialog-error-text">
-                                {{ teamError() }}
+                <!-- Team Dialog -->
+                @if (teamDialogOpen()) {
+                  <div class="worker-modal-overlay">
+                    <div
+                      class="modal-backdrop"
+                      (click)="closeTeamDialog()"
+                    ></div>
+                    <div class="worker-modal-panel worker-modal-panel-large">
+                      @switch (teamDialogType()) {
+                        @case ("create") {
+                          <h3 class="heading-card mb-4">
+                            {{ "teams.create_team" | transloco }}
+                          </h3>
+                          <div class="space-y-4">
+                            <div>
+                              <label for="team-name" class="form-label">{{
+                                "teams.name" | transloco
+                              }}</label>
+                              <input
+                                type="text"
+                                id="team-name"
+                                [value]="teamFormName()"
+                                (input)="onTeamNameChange($event)"
+                                [placeholder]="
+                                  'teams.name_placeholder' | transloco
+                                "
+                                class="form-input"
+                                maxlength="100"
+                              />
+                              <p class="text-xs text-secondary mt-1">
+                                {{ "teams.name_hint" | transloco }}
                               </p>
                             </div>
-                          }
-                        </div>
-                        <div class="modal-actions-right">
-                          <button
-                            (click)="closeTeamDialog()"
-                            class="worker-btn"
-                          >
-                            {{ "teams.cancel" | transloco }}
-                          </button>
-                          <button
-                            (click)="confirmTeamSave()"
-                            [disabled]="teamSaving() || !isTeamFormValid()"
-                            class="btn-primary"
-                            [class.btn-disabled]="
-                              teamSaving() || !isTeamFormValid()
-                            "
-                          >
-                            @if (teamSaving()) {
-                              {{ "teams.creating" | transloco }}
-                            } @else {
-                              {{ "teams.create" | transloco }}
-                            }
-                          </button>
-                        </div>
-                      }
-                      @case ("edit") {
-                        <h3 class="heading-card mb-4">
-                          {{
-                            "teams.edit_team"
-                              | transloco: { name: editingTeam()?.name }
-                          }}
-                        </h3>
-                        <div class="space-y-4">
-                          <div>
-                            <label for="team-name" class="form-label">{{
-                              "teams.name" | transloco
-                            }}</label>
-                            <input
-                              type="text"
-                              id="team-name"
-                              [value]="teamFormName()"
-                              (input)="onTeamNameChange($event)"
-                              [placeholder]="
-                                'teams.name_placeholder' | transloco
-                              "
-                              class="form-input"
-                              maxlength="100"
-                            />
-                            <p class="text-xs text-secondary mt-1">
-                              {{ "teams.name_hint" | transloco }}
-                            </p>
-                          </div>
-                          <div>
-                            <label for="team-info" class="form-label">{{
-                              "teams.info" | transloco
-                            }}</label>
-                            <textarea
-                              id="team-info"
-                              [value]="teamFormInfo()"
-                              (input)="onTeamInfoChange($event)"
-                              [placeholder]="
-                                'teams.info_placeholder' | transloco
-                              "
-                              class="form-input"
-                              rows="3"
-                              maxlength="1000"
-                            ></textarea>
-                          </div>
-                          @if (teamError()) {
-                            <div class="dialog-error">
-                              <p class="dialog-error-text">
-                                {{ teamError() }}
-                              </p>
+                            <div>
+                              <label for="team-info" class="form-label">{{
+                                "teams.info" | transloco
+                              }}</label>
+                              <textarea
+                                id="team-info"
+                                [value]="teamFormInfo()"
+                                (input)="onTeamInfoChange($event)"
+                                [placeholder]="
+                                  'teams.info_placeholder' | transloco
+                                "
+                                class="form-input"
+                                rows="3"
+                                maxlength="1000"
+                              ></textarea>
                             </div>
-                          }
-                        </div>
-                        <div class="modal-actions-right">
-                          <button
-                            (click)="closeTeamDialog()"
-                            class="worker-btn"
-                          >
-                            {{ "teams.cancel" | transloco }}
-                          </button>
-                          <button
-                            (click)="confirmTeamSave()"
-                            [disabled]="teamSaving() || !isTeamFormValid()"
-                            class="btn-primary"
-                            [class.btn-disabled]="
-                              teamSaving() || !isTeamFormValid()
-                            "
-                          >
-                            @if (teamSaving()) {
-                              {{ "teams.saving" | transloco }}
-                            } @else {
-                              {{ "teams.save" | transloco }}
+                            @if (teamError()) {
+                              <div class="dialog-error">
+                                <p class="dialog-error-text">
+                                  {{ teamError() }}
+                                </p>
+                              </div>
                             }
-                          </button>
-                        </div>
-                      }
-                      @case ("delete") {
-                        <h3 class="heading-card mb-4">
-                          {{
-                            "teams.delete_team"
-                              | transloco: { name: editingTeam()?.name }
-                          }}
-                        </h3>
-                        <div class="mb-4 space-y-3">
-                          <div class="dialog-error">
-                            <p
-                              class="dialog-error-text dialog-error-text--bold"
+                          </div>
+                          <div class="modal-actions-right">
+                            <button
+                              (click)="closeTeamDialog()"
+                              class="worker-btn"
                             >
-                              {{ "teams.delete_warning" | transloco }}
-                            </p>
+                              {{ "teams.cancel" | transloco }}
+                            </button>
+                            <button
+                              (click)="confirmTeamSave()"
+                              [disabled]="teamSaving() || !isTeamFormValid()"
+                              class="btn-primary"
+                              [class.btn-disabled]="
+                                teamSaving() || !isTeamFormValid()
+                              "
+                            >
+                              @if (teamSaving()) {
+                                {{ "teams.creating" | transloco }}
+                              } @else {
+                                {{ "teams.create" | transloco }}
+                              }
+                            </button>
                           </div>
-                          @if (teamError()) {
-                            <div class="dialog-error">
-                              <p class="dialog-error-text">
-                                {{ teamError() }}
+                        }
+                        @case ("edit") {
+                          <h3 class="heading-card mb-4">
+                            {{
+                              "teams.edit_team"
+                                | transloco: { name: editingTeam()?.name }
+                            }}
+                          </h3>
+                          <div class="space-y-4">
+                            <div>
+                              <label for="team-name" class="form-label">{{
+                                "teams.name" | transloco
+                              }}</label>
+                              <input
+                                type="text"
+                                id="team-name"
+                                [value]="teamFormName()"
+                                (input)="onTeamNameChange($event)"
+                                [placeholder]="
+                                  'teams.name_placeholder' | transloco
+                                "
+                                class="form-input"
+                                maxlength="100"
+                              />
+                              <p class="text-xs text-secondary mt-1">
+                                {{ "teams.name_hint" | transloco }}
                               </p>
+                            </div>
+                            <div>
+                              <label for="team-info" class="form-label">{{
+                                "teams.info" | transloco
+                              }}</label>
+                              <textarea
+                                id="team-info"
+                                [value]="teamFormInfo()"
+                                (input)="onTeamInfoChange($event)"
+                                [placeholder]="
+                                  'teams.info_placeholder' | transloco
+                                "
+                                class="form-input"
+                                rows="3"
+                                maxlength="1000"
+                              ></textarea>
+                            </div>
+                            @if (teamError()) {
+                              <div class="dialog-error">
+                                <p class="dialog-error-text">
+                                  {{ teamError() }}
+                                </p>
+                              </div>
+                            }
+                          </div>
+                          <div class="modal-actions-right">
+                            <button
+                              (click)="closeTeamDialog()"
+                              class="worker-btn"
+                            >
+                              {{ "teams.cancel" | transloco }}
+                            </button>
+                            <button
+                              (click)="confirmTeamSave()"
+                              [disabled]="teamSaving() || !isTeamFormValid()"
+                              class="btn-primary"
+                              [class.btn-disabled]="
+                                teamSaving() || !isTeamFormValid()
+                              "
+                            >
+                              @if (teamSaving()) {
+                                {{ "teams.saving" | transloco }}
+                              } @else {
+                                {{ "teams.save" | transloco }}
+                              }
+                            </button>
+                          </div>
+                        }
+                        @case ("delete") {
+                          <h3 class="heading-card mb-4">
+                            {{
+                              "teams.delete_team"
+                                | transloco: { name: editingTeam()?.name }
+                            }}
+                          </h3>
+                          <div class="mb-4 space-y-3">
+                            <div class="dialog-error">
+                              <p
+                                class="dialog-error-text dialog-error-text--bold"
+                              >
+                                {{ "teams.delete_warning" | transloco }}
+                              </p>
+                            </div>
+                            @if (teamError()) {
+                              <div class="dialog-error">
+                                <p class="dialog-error-text">
+                                  {{ teamError() }}
+                                </p>
+                              </div>
+                            }
+                          </div>
+                          <div class="modal-actions-right">
+                            <button
+                              (click)="closeTeamDialog()"
+                              class="worker-btn"
+                            >
+                              {{ "teams.cancel" | transloco }}
+                            </button>
+                            <button
+                              (click)="confirmTeamDelete()"
+                              [disabled]="teamSaving()"
+                              class="btn-danger"
+                            >
+                              @if (teamSaving()) {
+                                {{ "teams.deleting" | transloco }}
+                              } @else {
+                                {{ "teams.delete_confirm" | transloco }}
+                              }
+                            </button>
+                          </div>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div class="card card-bg-primary card-full card-spaced">
+                  <div class="card-header-with-actions">
+                    <h3 class="heading-card">
+                      {{ "profile.tabs.your_teams" | transloco }}
+                    </h3>
+                    <div class="card-header-with-actions__buttons">
+                      <button
+                        (click)="refreshTeams()"
+                        class="worker-btn text-sm"
+                        [disabled]="loadingTeams()"
+                      >
+                        {{ "teams.refresh" | transloco }}
+                      </button>
+                      <button
+                        (click)="openCreateTeamDialog()"
+                        [disabled]="!canCreateTeam()"
+                        [class.btn-disabled]="!canCreateTeam()"
+                        [class.btn-primary]="canCreateTeam()"
+                        class="text-sm"
+                        [title]="
+                          canCreateTeam()
+                            ? ''
+                            : ('teams.create_requires_trusted' | transloco)
+                        "
+                      >
+                        {{ "teams.create_team" | transloco }}
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (loadingTeams()) {
+                    <p class="text-secondary text-sm mb-2">
+                      {{ "teams.loading" | transloco }}
+                    </p>
+                  } @else {
+                    <!-- Teams You Created -->
+                    @if (getUserCreatedTeams().length > 0) {
+                      <div class="team-list-section">
+                        <h4 class="section-title-sm mb-3">
+                          {{ "teams.created_by_you" | transloco }}
+                        </h4>
+                        <div class="team-list">
+                          @for (team of getUserCreatedTeams(); track team.id) {
+                            <div class="team-card">
+                              <div class="team-card-layout">
+                                <div class="team-card-body">
+                                  <a
+                                    [routerLink]="['/details/teams', team.id]"
+                                    class="team-card-link"
+                                  >
+                                    {{ team.name }}
+                                  </a>
+                                  @if (team.info) {
+                                    <p class="team-card-description">
+                                      {{ team.info }}
+                                    </p>
+                                  }
+                                  <div class="team-card-meta">
+                                    <span>{{
+                                      "teams.workers_count"
+                                        | transloco
+                                          : { count: team.worker_count ?? 0 }
+                                    }}</span>
+                                    <span>{{
+                                      "teams.kudos_earned"
+                                        | transloco
+                                          : {
+                                              amount:
+                                                team.kudos ?? 0 | formatNumber,
+                                            }
+                                    }}</span>
+                                  </div>
+                                </div>
+                                <div class="team-card-actions">
+                                  <button
+                                    (click)="openEditTeamDialog(team)"
+                                    class="worker-btn text-sm"
+                                  >
+                                    {{ "teams.edit" | transloco }}
+                                  </button>
+                                  <button
+                                    (click)="openDeleteTeamDialog(team)"
+                                    class="btn-danger text-sm"
+                                  >
+                                    {{ "teams.delete" | transloco }}
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           }
                         </div>
-                        <div class="modal-actions-right">
-                          <button
-                            (click)="closeTeamDialog()"
-                            class="worker-btn"
-                          >
-                            {{ "teams.cancel" | transloco }}
-                          </button>
-                          <button
-                            (click)="confirmTeamDelete()"
-                            [disabled]="teamSaving()"
-                            class="btn-danger"
-                          >
-                            @if (teamSaving()) {
-                              {{ "teams.deleting" | transloco }}
-                            } @else {
-                              {{ "teams.delete_confirm" | transloco }}
-                            }
-                          </button>
-                        </div>
-                      }
+                      </div>
                     }
-                  </div>
-                </div>
-              }
 
-              <div class="card card-bg-primary card-full card-spaced">
-                <div class="card-header-with-actions">
-                  <h3 class="heading-card">
-                    {{ "profile.tabs.your_teams" | transloco }}
-                  </h3>
-                  <div class="card-header-with-actions__buttons">
-                    <button
-                      (click)="refreshTeams()"
-                      class="worker-btn text-sm"
-                      [disabled]="loadingTeams()"
-                    >
-                      {{ "teams.refresh" | transloco }}
-                    </button>
-                    <button
-                      (click)="openCreateTeamDialog()"
-                      [disabled]="!canCreateTeam()"
-                      [class.btn-disabled]="!canCreateTeam()"
-                      [class.btn-primary]="canCreateTeam()"
-                      class="text-sm"
-                      [title]="
-                        canCreateTeam()
-                          ? ''
-                          : ('teams.create_requires_trusted' | transloco)
-                      "
-                    >
-                      {{ "teams.create_team" | transloco }}
-                    </button>
-                  </div>
-                </div>
-
-                @if (loadingTeams()) {
-                  <p class="text-secondary text-sm mb-2">
-                    {{ "teams.loading" | transloco }}
-                  </p>
-                } @else {
-                  <!-- Teams You Created -->
-                  @if (getUserCreatedTeams().length > 0) {
-                    <div class="team-list-section">
-                      <h4 class="section-title-sm mb-3">
-                        {{ "teams.created_by_you" | transloco }}
-                      </h4>
-                      <div class="team-list">
-                        @for (team of getUserCreatedTeams(); track team.id) {
-                          <div class="team-card">
-                            <div class="team-card-layout">
+                    <!-- Teams Your Workers Belong To -->
+                    @if (getUserWorkerTeams().length > 0) {
+                      <div class="team-list-section">
+                        <h4 class="section-title-sm mb-3">
+                          {{ "teams.worker_teams" | transloco }}
+                        </h4>
+                        <div class="team-list">
+                          @for (team of getUserWorkerTeams(); track team.id) {
+                            <div class="team-card">
                               <div class="team-card-body">
                                 <a
                                   [routerLink]="['/details/teams', team.id]"
@@ -1597,119 +1661,62 @@
                                         : { count: team.worker_count ?? 0 }
                                   }}</span>
                                   <span>{{
-                                    "teams.kudos_earned"
+                                    "teams.creator"
                                       | transloco
-                                        : {
-                                            amount:
-                                              team.kudos ?? 0 | formatNumber,
-                                          }
+                                        : { name: team.creator ?? "Unknown" }
                                   }}</span>
                                 </div>
                               </div>
-                              <div class="team-card-actions">
-                                <button
-                                  (click)="openEditTeamDialog(team)"
-                                  class="worker-btn text-sm"
-                                >
-                                  {{ "teams.edit" | transloco }}
-                                </button>
-                                <button
-                                  (click)="openDeleteTeamDialog(team)"
-                                  class="btn-danger text-sm"
-                                >
-                                  {{ "teams.delete" | transloco }}
-                                </button>
-                              </div>
                             </div>
-                          </div>
-                        }
+                          }
+                        </div>
                       </div>
+                    }
+
+                    @if (
+                      getUserCreatedTeams().length === 0 &&
+                      getUserWorkerTeams().length === 0
+                    ) {
+                      <p class="text-secondary text-center py-4">
+                        {{ "teams.no_teams" | transloco }}
+                      </p>
+                    }
+
+                    <!-- Link to browse all teams -->
+                    <div class="card-footer-divider">
+                      <a routerLink="/details/teams" class="link"
+                        >{{ "teams.browse_all" | transloco }} →</a
+                      >
                     </div>
                   }
+                </div>
+              }
 
-                  <!-- Teams Your Workers Belong To -->
-                  @if (getUserWorkerTeams().length > 0) {
-                    <div class="team-list-section">
-                      <h4 class="section-title-sm mb-3">
-                        {{ "teams.worker_teams" | transloco }}
-                      </h4>
-                      <div class="team-list">
-                        @for (team of getUserWorkerTeams(); track team.id) {
-                          <div class="team-card">
-                            <div class="team-card-body">
-                              <a
-                                [routerLink]="['/details/teams', team.id]"
-                                class="team-card-link"
-                              >
-                                {{ team.name }}
-                              </a>
-                              @if (team.info) {
-                                <p class="team-card-description">
-                                  {{ team.info }}
-                                </p>
-                              }
-                              <div class="team-card-meta">
-                                <span>{{
-                                  "teams.workers_count"
-                                    | transloco
-                                      : { count: team.worker_count ?? 0 }
-                                }}</span>
-                                <span>{{
-                                  "teams.creator"
-                                    | transloco
-                                      : { name: team.creator ?? "Unknown" }
-                                }}</span>
-                              </div>
-                            </div>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
+              <!-- Styles Section -->
+              @if (activeTab() === "styles") {
+                <div class="card card-bg-primary card-full card-spaced">
+                  <h3 class="heading-card">
+                    {{ "profile.tabs.styles" | transloco }}
+                    @if (
+                      auth.currentUser()!.styles &&
+                      auth.currentUser()!.styles!.length > 0
+                    ) {
+                      <span class="text-secondary text-sm"
+                        >({{ auth.currentUser()!.styles!.length }})</span
+                      >
+                    }
+                  </h3>
+                  <app-profile-styles-list />
+                </div>
+              }
 
-                  @if (
-                    getUserCreatedTeams().length === 0 &&
-                    getUserWorkerTeams().length === 0
-                  ) {
-                    <p class="text-secondary text-center py-4">
-                      {{ "teams.no_teams" | transloco }}
-                    </p>
-                  }
-
-                  <!-- Link to browse all teams -->
-                  <div class="card-footer-divider">
-                    <a routerLink="/details/teams" class="link"
-                      >{{ "teams.browse_all" | transloco }} →</a
-                    >
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Styles Section -->
-            @if (activeTab() === "styles") {
-              <div class="card card-bg-primary card-full card-spaced">
-                <h3 class="heading-card">
-                  {{ "profile.tabs.styles" | transloco }}
-                  @if (
-                    auth.currentUser()!.styles &&
-                    auth.currentUser()!.styles!.length > 0
-                  ) {
-                    <span class="text-secondary text-sm"
-                      >({{ auth.currentUser()!.styles!.length }})</span
-                    >
-                  }
-                </h3>
-                <app-profile-styles-list />
-              </div>
-            }
-
-            <!-- Shared Keys Section -->
-            @if (activeTab() === "shared-keys") {
-              <div class="card card-bg-primary card-full card-spaced">
-                <app-shared-key-list />
-              </div>
-            }
+              <!-- Shared Keys Section -->
+              @if (activeTab() === "shared-keys") {
+                <div class="card card-bg-primary card-full card-spaced">
+                  <app-shared-key-list />
+                </div>
+              }
+            </div>
           </div>
         }
       </div>

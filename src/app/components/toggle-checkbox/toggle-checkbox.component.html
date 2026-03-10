@@ -23,7 +23,11 @@
     ></div>
     <span class="checkbox-label">{{ description() }}</span>
     @if (triState()) {
-      <span class="toggle-unset-badge" [class.toggle-unset-badge--hidden]="!isNull()">{{ 'styles.form.unset' | transloco }}</span>
+      <span
+        class="toggle-unset-badge"
+        [class.toggle-unset-badge--hidden]="!isNull()"
+        >{{ "styles.form.unset" | transloco }}</span
+      >
     }
     <ng-content />
   </label>

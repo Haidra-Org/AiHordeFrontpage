@@ -4,6 +4,6 @@
   "compatibility_date": "2026-03-09",
   "assets": {
     "directory": "./dist/ai-horde-website/browser",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+  },
 }
