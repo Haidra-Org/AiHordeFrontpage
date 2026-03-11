@@ -220,19 +220,23 @@
      WARNING BANNERS
      ================================================================= */
 
-  .warning-banner {
+  .warning-banner,
+  .admin-warning-banner {
     @apply flex items-center gap-2 py-3 px-4 rounded-lg text-sm font-medium;
-    background: rgb(254 226 226 / 0.7);
+    background: var(--color-glass-danger-surface);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     color: rgb(153 27 27);
     border: 1px solid rgb(252 165 165 / 0.4);
+    box-shadow: var(--shadow-glass);
   }
 
-  .dark .warning-banner {
-    background: rgb(127 29 29 / 0.35);
+  .dark .warning-banner,
+  .dark .admin-warning-banner {
+    background: var(--color-glass-danger-surface-dark);
     color: rgb(254 202 202);
     border-color: rgb(185 28 28 / 0.3);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .warning-banner-icon {
@@ -243,32 +247,25 @@
      UNSAVED CHANGES WARNING
      ================================================================= */
 
-  .unsaved-warning {
+  .unsaved-warning,
+  .unsaved-changes-warning {
     @apply flex items-center gap-2 py-3 px-4 text-sm font-medium;
-    background-color: rgb(254 243 199);
+    background-color: var(--color-glass-warning-surface);
     border-bottom: 1px solid rgb(234 179 8 / 0.5);
     color: rgb(146 64 14);
   }
 
-  .dark .unsaved-warning {
-    background-color: rgb(113 63 18 / 0.3);
+  .dark .unsaved-warning,
+  .dark .unsaved-changes-warning {
+    background-color: var(--color-glass-warning-surface-dark);
     @apply text-yellow-400;
   }
 
-  .unsaved-warning-hidden {
-    @apply invisible;
-  }
-
-  /* Unsaved changes warning banner (admin panels) */
   .unsaved-changes-warning {
-    @apply flex items-center gap-3 py-3 px-6 text-sm font-medium;
-    background-color: rgb(254 243 199);
-    border-bottom: 1px solid rgb(234 179 8 / 0.5);
-    color: rgb(146 64 14);
+    @apply gap-3 px-6;
   }
 
   .dark .unsaved-changes-warning {
-    background-color: rgb(113 63 18 / 0.4);
     border-bottom-color: rgb(234 179 8 / 0.3);
     @apply text-yellow-300;
   }
@@ -281,6 +278,7 @@
     @apply text-yellow-400;
   }
 
+  .unsaved-warning-hidden,
   .unsaved-changes-warning-hidden {
     @apply hidden;
   }
@@ -315,6 +313,7 @@
     border: 1px solid transparent;
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    box-shadow: var(--shadow-glass);
   }
 
   .info-note strong {
@@ -333,33 +332,38 @@
     border-color: rgb(30 64 175 / 0.5);
     @apply text-blue-200;
     box-shadow:
-      0 2px 12px rgb(0 0 0 / 0.2),
+      var(--shadow-glass-dark),
       inset 0 1px 0 rgb(59 130 246 / 0.08);
   }
 
   /* Orange info note */
   .info-note--orange {
-    background: rgb(255 247 237 / 0.7);
+    background: var(--color-glass-note-orange-surface);
     border-color: rgb(251 146 60 / 0.4);
     @apply text-orange-800;
   }
 
   .dark .info-note--orange {
-    background: rgb(154 52 18 / 0.3);
+    background: var(--color-glass-note-orange-surface-dark);
     border-color: rgb(194 65 12 / 0.5);
     @apply text-orange-200;
     box-shadow:
-      0 2px 12px rgb(0 0 0 / 0.2),
+      var(--shadow-glass-dark),
       inset 0 1px 0 rgb(251 146 60 / 0.08);
   }
 
   /* Gray info note - for deprecated/legacy notices */
   .info-note--gray {
-    @apply bg-gray-100 border-gray-300 text-gray-700;
+    background: var(--color-glass-note-gray-surface);
+    border-color: var(--color-edge-primary);
+    @apply text-gray-700;
   }
 
   .dark .info-note--gray {
-    @apply bg-gray-800 border-gray-600 text-gray-300;
+    background: var(--color-glass-note-gray-surface-dark);
+    border-color: var(--color-glass-border-dark);
+    @apply text-gray-300;
+    box-shadow: var(--shadow-glass-dark);
   }
 
   /* Info note with padding variant */
@@ -377,19 +381,21 @@
     @apply py-2 px-3 sm:py-3 sm:px-4 rounded-lg text-xs sm:text-sm;
     background: linear-gradient(
       135deg,
-      rgb(88 28 135 / 0.08) 0%,
-      rgb(30 58 138 / 0.08) 100%
+      var(--color-glass-accent-purple-soft) 0%,
+      var(--color-glass-accent-blue-soft) 100%
     );
     border: 1px solid rgb(147 51 234 / 0.2);
+    box-shadow: var(--shadow-glass);
   }
 
   .dark .volunteer-cta-banner {
     background: linear-gradient(
       135deg,
-      rgb(88 28 135 / 0.15) 0%,
-      rgb(30 58 138 / 0.15) 100%
+      var(--color-glass-accent-purple-dark-soft) 0%,
+      var(--color-glass-accent-blue-dark-soft) 100%
     );
     border-color: rgb(147 51 234 / 0.3);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .volunteer-cta-banner-compact {
@@ -450,17 +456,18 @@
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid transparent;
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
+    box-shadow: var(--shadow-glass);
   }
 
   .info-box--blue {
-    background: rgb(239 246 255 / 0.8);
+    background: var(--color-glass-info-surface);
     border-color: var(--color-blue-200);
   }
 
   .dark .info-box--blue {
-    background: rgb(30 58 138 / 0.25);
+    background: var(--color-glass-info-surface-dark);
     border-color: var(--color-blue-800);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .info-box-title {
@@ -487,12 +494,17 @@
 
   .dialog-error {
     @apply p-3 rounded-lg;
-    @apply bg-red-100 border border-red-300;
+    background: var(--color-glass-danger-surface);
+    border: 1px solid rgb(252 165 165 / 0.6);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
   }
 
   .dark .dialog-error {
-    background-color: rgb(127 29 29 / 0.3);
-    @apply border-red-700;
+    background-color: var(--color-glass-danger-surface-dark);
+    border-color: rgb(185 28 28 / 0.45);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .dialog-error-text {

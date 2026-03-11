@@ -488,7 +488,7 @@
 @if (dialogOpen() && (dialogType() === "create" || dialogType() === "edit")) {
   <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
-    <div class="dialog-panel">
+    <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-6">
         @if (dialogType() === "create") {
           {{ "admin.filters.dialog.create_title" | transloco }}
@@ -601,7 +601,7 @@
 @if (dialogOpen() && dialogType() === "delete") {
   <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
-    <div class="dialog-panel">
+    <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-4">
         {{ "admin.filters.dialog.delete_title" | transloco }}
       </h2>
@@ -658,7 +658,7 @@
 @if (dialogOpen() && dialogType() === "rawJson") {
   <div class="modal-overlay">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
-    <div class="dialog-panel worker-modal-panel-large">
+    <div class="modal-panel modal-panel--xl">
       <div class="flex justify-between items-center mb-4">
         <h2 class="heading-admin-section">
           {{ "admin.filters.dialog.raw_json_title" | transloco }}

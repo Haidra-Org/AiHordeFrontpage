@@ -56,6 +56,24 @@
       0 1px 12px rgb(0 0 0 / 0.35);
   }
 
+  @media (max-width: 420px) {
+    .section-primary,
+    .section-secondary {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+
+    .container-page-header {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .container-page-content {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+  }
+
   /* =================================================================
      CONTAINER STYLES
      ================================================================= */
@@ -78,6 +96,104 @@
   /* Content wrapper with max-width and padding */
   .container-page-content {
     @apply max-w-7xl mx-auto;
+  }
+
+  .homepage-section {
+    @apply relative overflow-hidden;
+    isolation: isolate;
+  }
+
+  .homepage-section > * {
+    @apply relative;
+    z-index: 1;
+  }
+
+  .homepage-section::before,
+  .homepage-section::after {
+    content: "";
+    @apply absolute pointer-events-none rounded-full;
+    filter: blur(24px);
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .homepage-section--hero::before {
+    width: 26rem;
+    height: 26rem;
+    top: -10rem;
+    right: -8rem;
+    background: radial-gradient(
+      circle,
+      rgb(59 130 246 / 0.18) 0%,
+      rgb(59 130 246 / 0) 72%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * 0.06));
+  }
+
+  .homepage-section--hero::after {
+    width: 20rem;
+    height: 20rem;
+    bottom: -8rem;
+    left: -6rem;
+    background: radial-gradient(
+      circle,
+      rgb(168 85 247 / 0.15) 0%,
+      rgb(168 85 247 / 0) 74%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * -0.04));
+  }
+
+  .homepage-section--quickstart::before {
+    width: 18rem;
+    height: 18rem;
+    top: -5rem;
+    right: 8%;
+    background: radial-gradient(
+      circle,
+      rgb(14 165 233 / 0.12) 0%,
+      rgb(14 165 233 / 0) 70%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * 0.03));
+  }
+
+  .homepage-section--stats::before {
+    width: 24rem;
+    height: 24rem;
+    top: -8rem;
+    left: 50%;
+    margin-left: -12rem;
+    background: radial-gradient(
+      circle,
+      rgb(99 102 241 / 0.12) 0%,
+      rgb(99 102 241 / 0) 74%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * 0.02));
+  }
+
+  .homepage-section--news::before {
+    width: 22rem;
+    height: 22rem;
+    top: -6rem;
+    left: -5rem;
+    background: radial-gradient(
+      circle,
+      rgb(59 130 246 / 0.1) 0%,
+      rgb(59 130 246 / 0) 72%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * -0.025));
+  }
+
+  .homepage-section--guis::after {
+    width: 18rem;
+    height: 18rem;
+    bottom: -7rem;
+    right: -3rem;
+    background: radial-gradient(
+      circle,
+      rgb(34 197 94 / 0.1) 0%,
+      rgb(34 197 94 / 0) 74%
+    );
+    transform: translateY(calc(var(--homepage-scroll, 0px) * 0.03));
   }
 
   /* Content container */
@@ -148,5 +264,38 @@
   .place-center {
     @apply flex flex-col items-center text-center w-full;
     @apply lg:items-start lg:text-left lg:col-span-7;
+  }
+
+  /* =================================================================
+     SECTION DIVIDERS
+     Decorative gradient rule between homepage sections.
+     Subtle in light mode, more pronounced in dark mode (per STYLING.md).
+     ================================================================= */
+
+  .section-divider {
+    display: block;
+    height: 1px;
+    border: none;
+    margin: 0 auto;
+    max-width: var(--max-width-container);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(147 51 234 / 0.1) 20%,
+      rgb(59 130 246 / 0.14) 50%,
+      rgb(147 51 234 / 0.1) 80%,
+      transparent 100%
+    );
+  }
+
+  .dark .section-divider {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(168 85 247 / 0.22) 20%,
+      rgb(96 165 250 / 0.28) 50%,
+      rgb(168 85 247 / 0.22) 80%,
+      transparent 100%
+    );
   }
 }

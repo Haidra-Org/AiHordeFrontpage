@@ -1,1 +1,5 @@
 /* Sponsor SVG styles moved to global styles.css to avoid deprecated ::ng-deep */
+
+.homepage-shell {
+  --homepage-scroll: 0px;
+}

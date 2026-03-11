@@ -336,18 +336,9 @@
   }
 
   /* =================================================================
-     LEGACY CARD/PANEL ALIASES
-     These are kept for backward compatibility.
-     Prefer using classes from _cards.css:
-     - .panel → use .panel from _cards.css
-     - .stat-card → use .stat-card from _cards.css
-     - .worker-card → use .worker-card--normal/--issue from _cards.css
-     ================================================================= */
-
-  /* Legacy panel-unsaved (prefer .panel--unsaved) */
-  .panel-unsaved {
-    @apply outline-2 outline-yellow-500 outline-offset-0;
-  }
+      LEGACY VISUAL ALIASES
+      Non-surface compatibility classes remain here temporarily.
+      ================================================================= */
 
   /* Legacy stat-card-icon variants without BEM dashes */
   .stat-card-icon-purple {
@@ -386,28 +377,6 @@
     @apply text-indigo-400;
   }
 
-  /* Legacy worker-card-bg variants (prefer worker-card--normal/--issue) */
-  .worker-card-bg-normal {
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-  }
-  .dark .worker-card-bg-normal {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.06);
-  }
-  .worker-card-bg-issue {
-    background: rgb(254 226 226 / 0.6);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid rgb(252 165 165 / 0.5);
-  }
-  .dark .worker-card-bg-issue {
-    background: rgb(127 29 29 / 0.25);
-    border-color: rgb(185 28 28 / 0.4);
-  }
-
   /* Legacy status-icon variants without BEM dashes */
   .status-icon-success {
     @apply bg-green-100 text-green-600;
@@ -420,41 +389,6 @@
   }
   .dark .status-icon-error {
     @apply bg-red-900 text-red-400;
-  }
-
-  /* =================================================================
-     LEGACY MODAL ALIASES (prefer classes from _modals.css)
-     ================================================================= */
-
-  .worker-modal-overlay {
-    @apply fixed inset-0 flex items-center justify-center p-4 overflow-y-auto;
-    z-index: 9999;
-  }
-
-  .worker-modal-panel {
-    @apply relative rounded-lg p-6 max-w-xl w-full flex flex-col;
-    background-color: var(--color-bg-primary);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-primary);
-    max-height: 80vh;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-    z-index: 10000;
-    margin: auto;
-  }
-
-  .dark .worker-modal-panel {
-    @apply bg-gray-800 border-gray-700 text-white;
-  }
-
-  .worker-modal-panel-large {
-    @apply max-w-3xl;
-    max-height: 85vh;
-  }
-
-  @media (min-width: 1024px) {
-    .worker-modal-panel-large {
-      @apply max-w-4xl;
-    }
   }
 
   .worker-modal-scroll {
@@ -496,10 +430,6 @@
 
   .dark .worker-models-list-item:hover {
     @apply bg-gray-600;
-  }
-
-  .worker-modal-overlay .modal-backdrop {
-    z-index: 9998;
   }
 
   /* =================================================================
@@ -906,15 +836,6 @@
     @apply bg-gray-700 text-gray-400;
   }
 
-  .admin-warning-banner {
-    @apply flex items-center gap-2 py-3 px-4 rounded-lg text-sm font-medium;
-    @apply bg-red-100 text-red-800;
-  }
-
-  .dark .admin-warning-banner {
-    @apply bg-red-900 text-red-200;
-  }
-
   /* Admin color utilities */
   .admin-text-blue {
     @apply text-blue-600 dark:text-blue-400;
@@ -1298,12 +1219,7 @@
 
   .worker-dropdown {
     @apply absolute z-50 w-full mt-1 max-h-64 overflow-y-auto rounded-lg shadow-lg;
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border-primary);
-  }
-
-  .dark .worker-dropdown {
-    @apply bg-gray-800 border-gray-600;
+    color: var(--color-text-primary);
   }
 
   .worker-dropdown-item {

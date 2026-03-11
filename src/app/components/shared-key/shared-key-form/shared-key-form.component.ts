@@ -68,8 +68,7 @@ export class SharedKeyFormComponent implements OnInit {
   public readonly form: SharedKeyFormGroup =
     this.createForm(SHARED_KEY_DEFAULTS);
   public readonly imagePixelPresets = IMAGE_PIXEL_PRESETS;
-  public readonly formIdPrefix =
-    `shared-key-form-${SharedKeyFormComponent.nextFormId++}`;
+  public readonly formIdPrefix = `shared-key-form-${SharedKeyFormComponent.nextFormId++}`;
 
   private finiteCache: Record<LimitField, number> =
     this.createFiniteCache(SHARED_KEY_DEFAULTS);

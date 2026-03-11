@@ -18,6 +18,116 @@
 
 @layer components {
   /* =================================================================
+     SHARED GLASS SURFACES
+     Visual primitives for feature-semantic wrappers.
+     ================================================================= */
+
+  .surface-glass {
+    background: var(--color-glass-surface-panel);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass);
+    transition: box-shadow var(--transition-normal) ease;
+  }
+
+  .dark .surface-glass {
+    background: var(--color-glass-surface-dark);
+    border-color: var(--color-glass-border-dark-subtle);
+    box-shadow: var(--shadow-glass-dark);
+  }
+
+  .surface-glass--elevated {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
+  }
+
+  .dark .surface-glass--elevated {
+    background: var(--color-glass-surface-dark-elevated);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: var(--shadow-glass-dark), var(--shadow-glass-dark-inset);
+  }
+
+  .surface-glass--nested {
+    background: var(--color-glass-surface-nested);
+    border: 1px solid var(--color-glass-border-strong);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.03);
+  }
+
+  .dark .surface-glass--nested {
+    background: var(--color-glass-surface-dark-nested);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15);
+  }
+
+  .surface-glass--subtle {
+    background: var(--color-glass-surface-subtle);
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.03);
+  }
+
+  .dark .surface-glass--subtle {
+    background: var(--color-glass-surface-dark-subtle);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15);
+  }
+
+  .surface-glass--hero {
+    background: linear-gradient(
+      135deg,
+      var(--color-glass-gradient-hero-start) 0%,
+      var(--color-glass-gradient-hero-end) 100%
+    );
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
+  }
+
+  .dark .surface-glass--hero {
+    background: linear-gradient(
+      135deg,
+      var(--color-glass-gradient-hero-dark-start) 0%,
+      var(--color-glass-gradient-hero-dark-end) 100%
+    );
+    border-color: var(--color-glass-border-dark);
+    box-shadow: var(--shadow-glass-dark), var(--shadow-glass-dark-inset);
+  }
+
+  .surface-glass--accent {
+    background: linear-gradient(
+      135deg,
+      var(--color-glass-gradient-accent-start) 0%,
+      var(--color-glass-gradient-accent-end) 100%
+    );
+    border-color: var(--color-glass-border);
+  }
+
+  .dark .surface-glass--accent {
+    background: linear-gradient(
+      135deg,
+      var(--color-glass-gradient-accent-dark-start) 0%,
+      var(--color-glass-gradient-accent-dark-end) 100%
+    );
+    border-color: var(--color-glass-border-dark-strong);
+  }
+
+  .surface-floating {
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated);
+  }
+
+  .dark .surface-floating {
+    background: var(--color-glass-surface-dark-floating);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: var(--shadow-glass-dark-elevated);
+  }
+
+  /* =================================================================
      CALLOUT COMPONENTS
      ================================================================= */
 
@@ -28,7 +138,7 @@
   /* Generic callout container */
   .callout {
     @apply p-4 rounded-lg;
-    background: var(--color-glass-surface);
+    background: var(--color-glass-surface-panel);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 2px solid var(--color-glass-border-subtle);
@@ -36,12 +146,9 @@
   }
 
   .dark .callout {
-    background: rgb(31 41 55 / 0.6);
-    border-color: rgb(255 255 255 / 0.1);
-    box-shadow:
-      0 4px 24px rgb(0 0 0 / 0.25),
-      0 1px 2px rgb(0 0 0 / 0.15),
-      inset 0 1px 0 rgb(255 255 255 / 0.06);
+    background: var(--color-glass-surface-dark);
+    border-color: var(--color-glass-border-dark-strong);
+    box-shadow: var(--shadow-glass-dark), var(--shadow-glass-dark-inset);
   }
 
   .callout-accent {
@@ -147,11 +254,11 @@
 
   /* Card with primary background - translucent for glass depth */
   .card-bg-primary {
-    background: rgb(255 255 255 / 0.82);
+    background: var(--color-glass-surface-heavy);
   }
 
   .dark .card-bg-primary {
-    background: rgb(31 41 55 / 0.65);
+    background: var(--color-glass-surface-dark-elevated);
   }
 
   /* Card with secondary background */
@@ -165,7 +272,7 @@
 
   .panel {
     @apply rounded-xl overflow-hidden;
-    background: rgb(255 255 255 / 0.7);
+    background: var(--color-glass-surface-panel);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid var(--color-glass-border-subtle);
@@ -174,9 +281,9 @@
   }
 
   .dark .panel {
-    background: rgb(31 41 55 / 0.55);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
+    background: var(--color-glass-surface-dark);
+    border-color: var(--color-glass-border-dark-subtle);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .panel--unsaved {
@@ -403,6 +510,52 @@
   /* Card actions container */
   .card-actions {
     @apply flex gap-1;
+  }
+
+  .style-card-meta-row {
+    @apply flex items-center justify-between gap-2 text-xs;
+  }
+
+  .style-card-id {
+    @apply font-mono text-xs;
+    color: var(--color-text-muted);
+  }
+
+  .dark .style-card-id {
+    @apply text-gray-500;
+  }
+
+  .style-card-prompt-preview {
+    @apply italic;
+  }
+
+  .card-stat-secondary {
+    @apply text-xs;
+    color: var(--color-text-muted);
+  }
+
+  .dark .card-stat-secondary {
+    @apply text-gray-500;
+  }
+
+  @media (max-width: 420px) {
+    .card.profile-styles-shell {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .styles-entry-grid {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    .styles-entry-grid .card-content {
+      @apply p-3;
+    }
+
+    .styles-entry-grid .card-footer {
+      @apply flex-wrap gap-2;
+    }
   }
 
   /* =================================================================

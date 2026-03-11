@@ -17,7 +17,7 @@ import { GlossaryService } from '../../services/glossary.service';
 import { TooltipPosition } from '../unit-tooltip/unit-tooltip.component';
 
 const TOOLTIP_WIDTH = 280;
-const TOOLTIP_HEIGHT_ESTIMATE = 120;
+const TOOLTIP_HEIGHT_ESTIMATE = 180;
 const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 const HIDE_DELAY_MS = 150;
@@ -65,7 +65,7 @@ interface TooltipStyles {
       </svg>
       <span
         #tooltipContent
-        class="tooltip-text tooltip-text-fixed"
+        class="tooltip-text tooltip-text-fixed surface-floating"
         role="tooltip"
         popover="manual"
         [id]="tooltipId()"
@@ -144,8 +144,16 @@ export class InfoTooltipComponent implements OnDestroy {
     this.clearPopoverTimer();
     this.isVisible.set(true);
     this.shownAt = Date.now();
-    this.calculateFixedPosition();
     this.openPopover();
+    this.calculateFixedPosition();
+
+    if (isPlatformBrowser(this.platformId)) {
+      requestAnimationFrame(() => {
+        if (this.isVisible()) {
+          this.calculateFixedPosition();
+        }
+      });
+    }
   }
 
   /** Delays hiding so the user can move the cursor to the tooltip content. */
@@ -247,30 +255,105 @@ export class InfoTooltipComponent implements OnDestroy {
 
     const element = this.elementRef.nativeElement as HTMLElement;
     const wrapper = element.querySelector('.info-tooltip-trigger') ?? element;
+    const tooltipEl = this.tooltipContent()?.nativeElement;
     const rect = wrapper.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    const tooltipWidth = Math.min(
+    let tooltipWidth = Math.min(
       TOOLTIP_WIDTH,
       viewportWidth - VIEWPORT_MARGIN * 2,
     );
+    let tooltipHeight = TOOLTIP_HEIGHT_ESTIMATE;
 
-    const triggerCenter = rect.left + rect.width / 2;
-    const tooltipLeft = triggerCenter - tooltipWidth / 2;
-    const tooltipRight = triggerCenter + tooltipWidth / 2;
+    if (tooltipEl) {
+      const prev = {
+        visibility: tooltipEl.style.visibility,
+        opacity: tooltipEl.style.opacity,
+        pointerEvents: tooltipEl.style.pointerEvents,
+        top: tooltipEl.style.top,
+        left: tooltipEl.style.left,
+      };
 
-    const overflowsLeft = tooltipLeft < VIEWPORT_MARGIN;
-    const overflowsRight = tooltipRight > viewportWidth - VIEWPORT_MARGIN;
+      tooltipEl.style.visibility = 'hidden';
+      tooltipEl.style.opacity = '0';
+      tooltipEl.style.pointerEvents = 'none';
+      tooltipEl.style.top = '0';
+      tooltipEl.style.left = '0';
+      tooltipEl.style.maxWidth = `${Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2)}px`;
+
+      const measured = tooltipEl.getBoundingClientRect();
+      if (measured.width > 0) {
+        tooltipWidth = measured.width;
+      }
+      if (measured.height > 0) {
+        tooltipHeight = measured.height;
+      }
+
+      tooltipEl.style.visibility = prev.visibility;
+      tooltipEl.style.opacity = prev.opacity;
+      tooltipEl.style.pointerEvents = prev.pointerEvents;
+      tooltipEl.style.top = prev.top;
+      tooltipEl.style.left = prev.left;
+      tooltipEl.style.maxWidth = '';
+    }
+
+    const maxLeft = viewportWidth - tooltipWidth - VIEWPORT_MARGIN;
+    const canAnchorStart = rect.left <= maxLeft;
+    const canAnchorEnd = rect.right - tooltipWidth >= VIEWPORT_MARGIN;
+
+    let anchoredLeft: number;
+    let overflowsLeft = false;
+    let overflowsRight = false;
+
+    if (tooltipWidth >= viewportWidth - VIEWPORT_MARGIN * 2) {
+      anchoredLeft = VIEWPORT_MARGIN;
+      overflowsLeft = true;
+      overflowsRight = true;
+    } else if (canAnchorStart) {
+      anchoredLeft = Math.max(VIEWPORT_MARGIN, rect.left);
+      overflowsLeft = true;
+      overflowsRight = false;
+    } else if (canAnchorEnd) {
+      anchoredLeft = Math.min(maxLeft, rect.right - tooltipWidth);
+      overflowsLeft = false;
+      overflowsRight = true;
+    } else {
+      anchoredLeft = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft));
+      overflowsLeft = true;
+      overflowsRight = true;
+    }
 
     // Account for sticky/fixed elements at the top of the viewport
     // (e.g. nav bar, filter bar) that reduce usable space above the trigger
     const topObstruction = this.getTopObstructionBottom();
+    const minTop = topObstruction + VIEWPORT_MARGIN;
+    const maxTop = viewportHeight - tooltipHeight - VIEWPORT_MARGIN;
+    const preferredAboveTop = rect.top - TOOLTIP_OFFSET - tooltipHeight;
+    const preferredBelowTop = rect.bottom + TOOLTIP_OFFSET;
+    const canFitAbove = preferredAboveTop >= minTop;
+    const canFitBelow = preferredBelowTop <= maxTop;
     const spaceAbove = rect.top - topObstruction;
     const spaceBelow = viewportHeight - rect.bottom;
-    const needsBottom =
-      spaceAbove < TOOLTIP_HEIGHT_ESTIMATE + VIEWPORT_MARGIN &&
-      spaceBelow > spaceAbove;
+
+    let needsBottom: boolean;
+    if (canFitAbove && !canFitBelow) {
+      needsBottom = false;
+    } else if (!canFitAbove && canFitBelow) {
+      needsBottom = true;
+    } else if (canFitAbove && canFitBelow) {
+      needsBottom = spaceBelow > spaceAbove;
+    } else {
+      needsBottom = spaceBelow >= spaceAbove;
+    }
+
+    const clampTop = (preferredTop: number): number => {
+      // If sticky header + viewport leave no valid range, pin bottom inside viewport.
+      if (maxTop < minTop) {
+        return maxTop;
+      }
+      return Math.max(minTop, Math.min(preferredTop, maxTop));
+    };
 
     const classes: string[] = [];
     if (needsBottom) classes.push('tooltip-pos-bottom');
@@ -283,29 +366,23 @@ export class InfoTooltipComponent implements OnDestroy {
     const styles: Partial<TooltipStyles> = { position: 'fixed' };
 
     if (needsBottom) {
-      styles.top = `${rect.bottom + TOOLTIP_OFFSET}px`;
+      const top = clampTop(preferredBelowTop);
+      styles.top = `${top}px`;
       styles.bottom = null;
     } else {
-      styles.bottom = `${viewportHeight - rect.top + TOOLTIP_OFFSET}px`;
-      styles.top = null;
+      const top = clampTop(preferredAboveTop);
+      styles.top = `${top}px`;
+      styles.bottom = null;
     }
 
-    if (overflowsLeft && !overflowsRight) {
-      styles.left = `${Math.max(VIEWPORT_MARGIN, rect.left)}px`;
-      styles.right = null;
-      styles.transform = 'none';
-    } else if (overflowsRight && !overflowsLeft) {
-      styles.right = `${Math.max(VIEWPORT_MARGIN, viewportWidth - rect.right)}px`;
-      styles.left = null;
-      styles.transform = 'none';
-    } else if (overflowsLeft && overflowsRight) {
+    if (overflowsLeft && overflowsRight) {
       styles.left = `${VIEWPORT_MARGIN}px`;
       styles.right = `${VIEWPORT_MARGIN}px`;
       styles.transform = 'none';
     } else {
-      styles.left = `${triggerCenter}px`;
+      styles.left = `${anchoredLeft}px`;
       styles.right = null;
-      styles.transform = 'translateX(-50%)';
+      styles.transform = 'none';
     }
 
     this.fixedStyles.set(styles);

@@ -15,9 +15,9 @@
 
 <!-- Dialog -->
 @if (dialogOpen()) {
-  <div class="worker-modal-overlay">
+  <div class="modal-overlay modal-overlay--high">
     <div class="modal-backdrop" (click)="closeDialog()"></div>
-    <div class="worker-modal-panel worker-modal-panel-large">
+    <div class="modal-panel modal-panel--xl">
       @switch (dialogType()) {
         @case ("models") {
           <h3 class="heading-card mb-4">

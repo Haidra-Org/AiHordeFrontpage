@@ -2,7 +2,7 @@
   <div class="container-content-minimal">
     <div class="grid-items">
       <div class="text-secondary sm:text-lg">
-        <h2 class="mb-3 heading-section-lg">
+        <h2 class="mb-3 heading-section-lg" scrollReveal>
           {{ "quickstart" | transloco }}
           <app-info-tooltip
             termKey="help.home.tooltip.quickstart"
@@ -39,7 +39,11 @@
           <br />
           <!--Frontend Call-to-Action -->
           <div class="callout-2-grid">
-            <div class="callout callout-accent mb-6">
+            <div
+              class="callout callout-accent mb-6"
+              scrollReveal
+              [scrollRevealDelay]="1"
+            >
               <h3 class="callout-title">
                 {{ "quickstart.try_frontend_title" | transloco }}
                 <app-info-tooltip
@@ -67,7 +71,11 @@
             </div>
 
             <!-- Discord Call-to-Action -->
-            <div class="callout callout-info mb-6">
+            <div
+              class="callout callout-info mb-6"
+              scrollReveal
+              [scrollRevealDelay]="2"
+            >
               <h3 class="callout-title">
                 {{ "quickstart.discord_cta_title" | transloco }}
               </h3>

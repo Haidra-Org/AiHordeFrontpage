@@ -74,6 +74,22 @@ export class StyleCardComponent {
     return tags.slice(0, 3);
   });
 
+  /** Count configured generation parameters for compact card metadata. */
+  public readonly parameterCount = computed(() => {
+    const params = this.style().params as Record<string, unknown> | undefined;
+    if (!params) return 0;
+
+    return Object.values(params).filter((value) => {
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+  });
+
+  /** Short ID variant for dense card metadata rows. */
+  public readonly shortId = computed(() => this.style().id.slice(0, 8));
+
   /** Check if there are more tags than displayed. */
   public readonly hasMoreTags = computed(() => {
     const tags = this.style().tags ?? [];

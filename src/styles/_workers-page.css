@@ -57,21 +57,18 @@
   }
 
   .worker-type-section {
-    @apply rounded-xl overflow-hidden;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
+    @apply rounded-2xl overflow-hidden;
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass-elevated);
   }
 
   .dark .worker-type-section {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.08);
-    box-shadow:
-      0 4px 24px rgb(0 0 0 / 0.25),
-      0 1px 2px rgb(0 0 0 / 0.12),
-      inset 0 1px 0 rgb(255 255 255 / 0.05);
+    background: var(--color-glass-surface-dark-elevated);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .worker-type-section--needs-help {
@@ -151,10 +148,15 @@
 
   .worker-type-body {
     @apply px-5 py-4;
+    background: var(--color-glass-surface-nested);
+  }
+
+  .dark .worker-type-body {
+    background: var(--color-glass-surface-dark-nested);
   }
 
   .worker-type-software-heading {
-    @apply text-xs font-semibold uppercase tracking-wide mt-4 mb-2;
+    @apply text-xs font-semibold uppercase tracking-[0.18em] mt-4 mb-3;
     @apply text-content-muted dark:text-gray-400;
   }
 

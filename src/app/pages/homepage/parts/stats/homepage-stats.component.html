@@ -2,7 +2,7 @@
   <section class="section-primary" id="stats">
     <div class="container-content-minimal">
       <div class="max-w-screen-md mx-auto mb-3 text-center">
-        <h2 class="mb-3 heading-section-lg">
+        <h2 class="mb-3 heading-section-lg" scrollReveal>
           {{ "stats" | transloco }}
         </h2>
       </div>
@@ -10,7 +10,7 @@
       <!-- Main stats grid - 4 columns on large screens, 2 on medium, 1 on small -->
       <div class="grid-stats">
         <!-- Image stats -->
-        <div class="stat-column">
+        <div class="stat-column" scrollReveal [scrollRevealDelay]="1">
           <h3 class="heading-stats">
             {{ "image_stats" | transloco }}
             <app-info-tooltip
@@ -94,7 +94,7 @@
         </div>
 
         <!-- Text stats -->
-        <div class="stat-column">
+        <div class="stat-column" scrollReveal [scrollRevealDelay]="2">
           <h3 class="heading-stats">
             {{ "text_stats" | transloco }}
             <app-info-tooltip
@@ -178,7 +178,7 @@
         </div>
 
         <!-- Interrogation stats -->
-        <div class="stat-column">
+        <div class="stat-column" scrollReveal [scrollRevealDelay]="3">
           <h3 class="heading-stats">
             {{ "image_alchemy" | transloco }}
             <app-info-tooltip
@@ -232,7 +232,7 @@
         </div>
 
         <!-- Realtime stats -->
-        <div class="stat-column">
+        <div class="stat-column" scrollReveal [scrollRevealDelay]="4">
           <h3 class="heading-stats">
             {{ "realtime_stats" | transloco }}
             <app-info-tooltip termKey="help.home.tooltip.realtime_stats" />

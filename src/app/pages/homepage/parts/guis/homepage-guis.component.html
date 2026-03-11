@@ -1,10 +1,12 @@
-<section class="section-primary">
+<section class="section-primary homepage-section homepage-section--guis">
   <div class="container-content-minimal">
     <div class="text-secondary sm:text-lg">
-      <h2 class="mb-3 heading-section">
+      <h2 class="mb-3 heading-section" scrollReveal>
         {{ "homepage_guis.title" | transloco }}
       </h2>
-      <app-beginner-header [showButton]="true" [dismissable]="false" />
+      <div scrollReveal>
+        <app-beginner-header [showButton]="true" [dismissable]="false" />
+      </div>
     </div>
   </div>
 </section>

@@ -98,6 +98,32 @@ export class StyleDetailComponent implements OnInit {
     return stringifyAsJson(style);
   });
 
+  public parameterCount = computed(() => {
+    const style = this.style();
+    if (!style) return 0;
+    const params = style.params as Record<string, unknown> | undefined;
+    if (!params) return 0;
+
+    return Object.values(params).filter((value) => {
+      if (Array.isArray(value)) {
+        return value.length > 0;
+      }
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+  });
+
+  public tagCount = computed(() => this.style()?.tags?.length ?? 0);
+
+  public modelCount = computed(() => this.style()?.models?.length ?? 0);
+
+  public exampleCount = computed(() => {
+    const style = this.style();
+    if (style && isImageStyle(style)) {
+      return style.examples?.length ?? 0;
+    }
+    return 0;
+  });
+
   public styleJsonHighlighted = computed(() => highlightJson(this.styleJson()));
 
   public ngOnInit(): void {

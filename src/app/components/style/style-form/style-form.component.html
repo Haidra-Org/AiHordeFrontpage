@@ -1,89 +1,109 @@
 <div
-  class="card card-full card-bg-primary form-stack"
+  class="style-form-shell surface-glass form-stack"
   [class.card--no-blur]="confirmModalOpen()"
 >
   <!-- View Toggle -->
-  <div class="form-header">
-    <h3 class="text-primary">
-      @if (mode() === "create") {
-        @if (isImageStyle()) {
-          {{ "styles.form.create_image_style" | transloco }}
+  <section
+    class="style-form-panel style-form-panel--identity form-section-shell surface-glass surface-glass--accent"
+  >
+    <div class="style-form-toolbar form-section-shell__header">
+      <div>
+        <p class="shared-key-form-eyebrow m-0">
+          {{ "profile.styles" | transloco }}
+        </p>
+        <h3 class="text-primary">
+          @if (mode() === "create") {
+            @if (isImageStyle()) {
+              {{ "styles.form.create_image_style" | transloco }}
+            } @else {
+              {{ "styles.form.create_text_style" | transloco }}
+            }
+          } @else {
+            {{ "styles.form.edit_style" | transloco }}
+          }
+        </h3>
+      </div>
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="toggleJsonView()"
+        [attr.aria-pressed]="showJsonView()"
+      >
+        @if (showJsonView()) {
+          <svg
+            class="form-toggle-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
+            />
+          </svg>
+          {{ "styles.form.show_form" | transloco }}
         } @else {
-          {{ "styles.form.create_text_style" | transloco }}
+          <svg
+            class="form-toggle-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
+            />
+          </svg>
+          {{ "styles.form.show_json" | transloco }}
         }
-      } @else {
-        {{ "styles.form.edit_style" | transloco }}
-      }
-    </h3>
-    <button
-      type="button"
-      class="btn-source-control"
-      (click)="toggleJsonView()"
-      [attr.aria-pressed]="showJsonView()"
-    >
-      @if (showJsonView()) {
-        <svg
-          class="form-toggle-icon"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
-          />
-        </svg>
-        {{ "styles.form.show_form" | transloco }}
-      } @else {
-        <svg
-          class="form-toggle-icon"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
-          />
-        </svg>
-        {{ "styles.form.show_json" | transloco }}
-      }
-    </button>
-  </div>
+      </button>
+    </div>
+  </section>
 
   @if (showJsonView()) {
     <!-- JSON Editor View -->
-    <div class="form-json">
-      <label for="json-editor" class="form-label">
-        {{ "styles.form.json_content" | transloco }}
-      </label>
-      <textarea
-        id="json-editor"
-        class="form-input form-code"
-        [class.form-input-error]="jsonError()"
-        [value]="jsonContent()"
-        (input)="onJsonInput($any($event.target).value)"
-        rows="20"
-        spellcheck="false"
-      ></textarea>
-      @if (jsonError()) {
-        <p class="text-error">{{ jsonError() }}</p>
-      }
-    </div>
+    <section class="style-form-panel form-section-shell surface-glass">
+      <div class="style-form-panel__header form-section-shell__header">
+        <h4 class="text-primary">
+          {{ "styles.form.json_content" | transloco }}
+        </h4>
+      </div>
+      <div class="form-json">
+        <label for="json-editor" class="form-label">
+          {{ "styles.form.json_content" | transloco }}
+        </label>
+        <textarea
+          id="json-editor"
+          class="form-input form-code"
+          [class.form-input-error]="jsonError()"
+          [value]="jsonContent()"
+          (input)="onJsonInput($any($event.target).value)"
+          rows="20"
+          spellcheck="false"
+        ></textarea>
+        @if (jsonError()) {
+          <p class="text-error">{{ jsonError() }}</p>
+        }
+      </div>
+    </section>
   } @else {
     <!-- Form Fields View -->
     <form [formGroup]="form" class="form-stack">
       <!-- Basic Info Section -->
-      <div class="card card-bg-secondary card-full form-section">
-        <h4 class="text-primary">
-          {{ "styles.form.section.basic" | transloco }}
-        </h4>
+      <section
+        class="style-form-panel form-section-shell surface-glass surface-glass--accent"
+      >
+        <div class="style-form-panel__header form-section-shell__header">
+          <h4 class="text-primary">
+            {{ "styles.form.section.basic" | transloco }}
+          </h4>
+        </div>
 
         <div class="form-field">
           <label for="style-name" class="form-label">
@@ -214,7 +234,7 @@
               </div>
               @if (modelDropdownOpen()) {
                 <div
-                  class="autocomplete-dropdown"
+                  class="autocomplete-dropdown surface-floating"
                   role="listbox"
                   [attr.aria-label]="'styles.form.models' | transloco"
                   (mousedown)="$event.preventDefault()"
@@ -264,17 +284,19 @@
             [description]="'styles.form.nsfw' | transloco"
           ></app-toggle-checkbox>
         </div>
-      </div>
+      </section>
 
       <!-- Image Style Parameters -->
       @if (isImageStyle()) {
-        <div class="card card-bg-secondary card-full form-section">
-          <h4 class="text-primary">
-            {{ "styles.form.section.image_params" | transloco }}
-          </h4>
-          <p class="form-hint">
-            {{ "styles.form.optional_hint" | transloco }}
-          </p>
+        <section class="style-form-panel form-section-shell surface-glass">
+          <div class="style-form-panel__header form-section-shell__header">
+            <h4 class="text-primary">
+              {{ "styles.form.section.image_params" | transloco }}
+            </h4>
+            <p class="form-hint m-0">
+              {{ "styles.form.optional_hint" | transloco }}
+            </p>
+          </div>
 
           <div class="form-row">
             <div class="form-field form-field-third">
@@ -410,7 +432,7 @@
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="style-form-toggle-row">
             <app-toggle-checkbox
               formControlName="karras"
               [triState]="true"
@@ -491,18 +513,20 @@
               [placeholder]="'styles.form.shared_key_placeholder' | transloco"
             />
           </div>
-        </div>
+        </section>
       }
 
       <!-- Text Style Parameters -->
       @if (!isImageStyle()) {
-        <div class="card card-bg-secondary card-full form-section">
-          <h4 class="text-primary">
-            {{ "styles.form.section.text_params" | transloco }}
-          </h4>
-          <p class="form-hint">
-            {{ "styles.form.optional_hint" | transloco }}
-          </p>
+        <section class="style-form-panel form-section-shell surface-glass">
+          <div class="style-form-panel__header form-section-shell__header">
+            <h4 class="text-primary">
+              {{ "styles.form.section.text_params" | transloco }}
+            </h4>
+            <p class="form-hint m-0">
+              {{ "styles.form.optional_hint" | transloco }}
+            </p>
+          </div>
 
           <div class="form-row">
             <div
@@ -576,7 +600,7 @@
             </div>
           </div>
 
-          <div class="form-row">
+          <div class="style-form-toggle-row">
             <app-toggle-checkbox
               formControlName="singleline"
               [triState]="true"
@@ -604,13 +628,13 @@
               "
             />
           </div>
-        </div>
+        </section>
       }
     </form>
   }
 
   <!-- Form Actions -->
-  <div class="form-actions">
+  <div class="form-actions style-form-actions-bar surface-glass--nested">
     @if (showSubmitError()) {
       <p class="form-error-summary" role="alert">
         {{ "styles.form.validation_summary" | transloco }}

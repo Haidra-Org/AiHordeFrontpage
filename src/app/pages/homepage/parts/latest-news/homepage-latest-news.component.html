@@ -2,14 +2,14 @@
   <div class="container-content-minimal">
     <div class="grid-items">
       <div class="text-secondary sm:text-lg">
-        <h2 class="mb-3 heading-section-lg">
+        <h2 class="mb-3 heading-section-lg" scrollReveal>
           <a routerLink="/news/">
             {{ "latest_news.title" | transloco }}
           </a>
         </h2>
         @if (news().length > 0) {
           @for (newsItem of news(); track newsItem.title) {
-            <div class="news-home-item">
+            <div class="news-home-item" scrollReveal>
               <h3 class="news-home-heading">
                 <span class="news-home-date">{{ newsItem.datePublished }}</span>
                 - <span [innerHTML]="newsItem.title"></span>

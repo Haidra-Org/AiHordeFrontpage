@@ -33,7 +33,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
         ></div>
         <div
           #dialogPanel
-          class="dialog-panel"
+          class="modal-panel modal-panel--lg"
           role="dialog"
           aria-modal="true"
           [attr.aria-labelledby]="titleId()"

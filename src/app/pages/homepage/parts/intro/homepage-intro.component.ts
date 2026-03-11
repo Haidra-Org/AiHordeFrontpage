@@ -5,10 +5,17 @@ import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { StickyRegistryService } from '../../../../services/sticky-registry.service';
 import { scrollToElement } from '../../../../helper/scroll-utils';
+import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
 @Component({
   selector: 'app-homepage-intro',
-  imports: [NgOptimizedImage, TranslocoPipe, TranslocoModule, RouterLink],
+  imports: [
+    NgOptimizedImage,
+    TranslocoPipe,
+    TranslocoModule,
+    RouterLink,
+    ScrollRevealDirective,
+  ],
   templateUrl: './homepage-intro.component.html',
   styleUrl: './homepage-intro.component.css',
 })

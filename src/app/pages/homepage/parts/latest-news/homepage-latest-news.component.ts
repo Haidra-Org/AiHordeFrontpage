@@ -12,6 +12,7 @@ import { NewsItem } from '../../../../types/news.types';
 import { AiHordeService } from '../../../../services/ai-horde.service';
 import { MarkdownPipe } from '../../../../pipes/markdown.pipe';
 import { StripWrapperTagPipe } from '../../../../pipes/strip-wrapper-tag.pipe';
+import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
 @Component({
   selector: 'app-homepage-latest-news',
@@ -22,6 +23,7 @@ import { StripWrapperTagPipe } from '../../../../pipes/strip-wrapper-tag.pipe';
     TranslocoModule,
     MarkdownPipe,
     StripWrapperTagPipe,
+    ScrollRevealDirective,
   ],
   templateUrl: './homepage-latest-news.component.html',
   styleUrl: './homepage-latest-news.component.css',

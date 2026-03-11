@@ -90,6 +90,40 @@
     @apply text-gray-400;
   }
 
+  .style-detail-kpi-grid {
+    @apply grid gap-2.5 mt-2;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .style-detail-kpi-card {
+    @apply rounded-lg p-2.5 flex flex-col gap-1;
+    background: var(--color-glass-surface-subtle);
+    border: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .style-detail-kpi-card {
+    background: var(--color-glass-surface-dark-subtle);
+    border-color: var(--color-glass-border-dark-subtle);
+  }
+
+  .style-detail-kpi-label {
+    @apply text-[0.6875rem] font-semibold uppercase tracking-wide;
+    color: var(--color-text-muted);
+  }
+
+  .dark .style-detail-kpi-label {
+    @apply text-gray-500;
+  }
+
+  .style-detail-kpi-value {
+    @apply text-base leading-tight;
+    color: var(--color-text-primary);
+  }
+
+  .dark .style-detail-kpi-value {
+    @apply text-gray-100;
+  }
+
   /* =================================================================
      ACTIONS ROW
      ================================================================= */
@@ -132,7 +166,16 @@
      ================================================================= */
 
   .style-detail-section {
-    @apply flex flex-col gap-2;
+    @apply flex flex-col gap-2 rounded-xl p-4;
+    background: var(--color-glass-surface-subtle);
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.4);
+  }
+
+  .dark .style-detail-section {
+    background: var(--color-glass-surface-dark-subtle);
+    border-color: var(--color-glass-border-dark-subtle);
+    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.06);
   }
 
   .style-detail-section-header {
@@ -153,7 +196,7 @@
      ================================================================= */
 
   .style-detail-params-section {
-    @apply rounded-lg p-4;
+    @apply rounded-lg p-3;
     background-color: var(--color-bg-secondary);
   }
 

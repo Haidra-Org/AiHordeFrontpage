@@ -19,6 +19,7 @@ import { AiHordeService } from '../../../../services/ai-horde.service';
 import { UnitConversionService } from '../../../../services/unit-conversion.service';
 import { SingleInterrogationStatPoint } from '../../../../types/single-interrogation-stat-point';
 import { forkJoin } from 'rxjs';
+import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
 @Component({
   selector: 'app-homepage-stats',
@@ -29,6 +30,7 @@ import { forkJoin } from 'rxjs';
     TranslocoModule,
     UnitTooltipComponent,
     InfoTooltipComponent,
+    ScrollRevealDirective,
   ],
   templateUrl: './homepage-stats.component.html',
   styleUrl: './homepage-stats.component.css',

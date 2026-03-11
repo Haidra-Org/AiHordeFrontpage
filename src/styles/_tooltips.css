@@ -82,6 +82,9 @@
     font-weight: 600;
     line-height: 1.625;
     white-space: normal;
+    text-transform: none;
+    letter-spacing: normal;
+    font-variant-caps: normal;
     border: 1px solid var(--color-edge-primary);
     box-shadow: var(--shadow-lg);
     -webkit-font-smoothing: antialiased;
@@ -295,18 +298,11 @@
 
   /* Fixed tooltip dark mode */
   .dark .tooltip-fixed-mode .tooltip-text-fixed {
-    background-color: var(--color-gray-700);
     color: var(--color-gray-100);
-    border-color: var(--color-gray-600);
-    box-shadow:
-      0 10px 25px -5px rgb(0 0 0 / 0.4),
-      0 4px 6px -2px rgb(0 0 0 / 0.3);
   }
 
   .dark .tooltip-text-fixed[popover] {
-    background-color: var(--color-gray-700);
     color: var(--color-gray-100);
-    border-color: var(--color-gray-600);
   }
 
   /* Fixed tooltip arrow dark mode */
@@ -350,19 +346,20 @@
 
     /* Sizing - use min() for responsive width */
     width: min(var(--tooltip-width), var(--tooltip-max-width));
+    overflow: visible;
 
     /* Appearance */
-    background-color: var(--color-surface-secondary);
     color: var(--color-content-primary);
     text-align: left;
     border-radius: var(--tooltip-border-radius);
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 400;
-    line-height: 1.625;
+    line-height: 1.45;
     white-space: normal;
-    border: 1px solid var(--color-edge-primary);
-    box-shadow: var(--shadow-lg);
+    text-transform: none;
+    letter-spacing: normal;
+    font-variant-caps: normal;
 
     /* Animation handled by inline styles for visibility/opacity */
     transition: opacity var(--tooltip-transition-duration) ease-out;
@@ -373,10 +370,33 @@
     inset: auto;
     margin: 0;
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    background-color: var(--color-surface-secondary);
     color: var(--color-content-primary);
-    border: 1px solid var(--color-edge-primary);
     overflow: visible;
+  }
+
+  /* Block layout for structured tooltip content */
+  .tooltip-header {
+    display: block;
+    margin-bottom: 0.375rem;
+  }
+
+  .tooltip-header .tooltip-muted {
+    display: inline;
+  }
+
+  .tooltip-explanation {
+    display: block;
+    border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    padding-top: 0.375rem;
+  }
+
+  .tooltip-explanation-line {
+    display: block;
+    margin-top: 0.1875rem;
+  }
+
+  .tooltip-explanation-line:first-child {
+    margin-top: 0;
   }
 
   /* Arrow styling for fixed tooltips - default: above (arrow points down) */
@@ -388,7 +408,7 @@
     margin-left: calc(-1 * var(--tooltip-arrow-size));
     border-width: var(--tooltip-arrow-size);
     border-style: solid;
-    border-color: var(--color-surface-secondary) transparent transparent
+    border-color: var(--color-glass-surface-elevated) transparent transparent
       transparent;
   }
 
@@ -396,7 +416,7 @@
   .tooltip-fixed-mode.tooltip-pos-bottom .tooltip-text-fixed::after {
     top: auto;
     bottom: 100%;
-    border-color: transparent transparent var(--color-surface-secondary)
+    border-color: transparent transparent var(--color-glass-surface-elevated)
       transparent;
   }
 
@@ -444,8 +464,9 @@
     font-size: 0.8125rem;
     line-height: 1.5;
     white-space: normal;
-    border: 1px solid var(--color-edge-primary);
-    box-shadow: var(--shadow-lg);
+    text-transform: none;
+    letter-spacing: normal;
+    font-variant-caps: normal;
     transition: opacity var(--tooltip-transition-duration) ease-out;
   }
 
@@ -454,9 +475,7 @@
     inset: auto;
     margin: 0;
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
-    background-color: var(--color-surface-secondary);
     color: var(--color-content-primary);
-    border: 1px solid var(--color-edge-primary);
     overflow: visible;
   }
 
@@ -476,12 +495,7 @@
   /* Dark mode */
   .dark .touch-tooltip,
   .dark .touch-tooltip[popover] {
-    background-color: var(--color-gray-700);
     color: var(--color-gray-100);
-    border-color: var(--color-gray-600);
-    box-shadow:
-      0 10px 25px -5px rgb(0 0 0 / 0.4),
-      0 4px 6px -2px rgb(0 0 0 / 0.3);
   }
 
   .dark .touch-tooltip-desc {
@@ -504,6 +518,12 @@
   .tooltip-content,
   .tooltip-text {
     --tooltip-width: 260px;
+  }
+
+  .tooltip-fixed-mode .tooltip-text-fixed {
+    --tooltip-padding-y: 0.5rem;
+    --tooltip-padding-x: 0.75rem;
+    font-size: 0.8125rem;
   }
 }
 

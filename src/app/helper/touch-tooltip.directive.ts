@@ -171,7 +171,7 @@ export class TouchTooltipDirective implements OnDestroy {
     if (this.tooltipEl) return;
 
     const el = this.document.createElement('span');
-    el.className = 'touch-tooltip';
+    el.className = 'touch-tooltip surface-floating';
     el.setAttribute('role', 'tooltip');
     el.setAttribute('popover', 'manual');
     el.style.visibility = 'hidden';
