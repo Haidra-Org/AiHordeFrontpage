@@ -133,7 +133,7 @@
               </svg>
             </button>
             @if (showContributeDropdown) {
-              <div class="nav-dropdown-menu" role="menu">
+              <div class="nav-dropdown-menu surface-floating" role="menu">
                 @if (hasContributeNotification()) {
                   <div class="nav-dropdown-notification-banner" role="status">
                     <svg
@@ -221,7 +221,7 @@
               </svg>
             </button>
             @if (showDetailsDropdown) {
-              <div class="nav-dropdown-menu" role="menu">
+              <div class="nav-dropdown-menu surface-floating" role="menu">
                 <a
                   routerLink="/details/workers/"
                   class="nav-dropdown-item"
@@ -315,7 +315,7 @@
               </svg>
             </button>
             @if (showAccountDropdown) {
-              <div class="nav-dropdown-menu" role="menu">
+              <div class="nav-dropdown-menu surface-floating" role="menu">
                 <a
                   routerLink="/profile/"
                   class="nav-dropdown-item"
@@ -618,7 +618,7 @@
                   >
                     {{ "nav.active_details.styles" | transloco }}
                   </a>
-                    <a
+                  <a
                     routerLink="/details/users/"
                     class="mobile-nav-link mobile-nav-submenu-item"
                     role="menuitem"

@@ -44,6 +44,68 @@
     @apply flex flex-col gap-6;
   }
 
+  .style-form-shell {
+    @apply rounded-2xl p-4 md:p-5;
+  }
+
+  .style-form-toolbar {
+    @apply flex items-start justify-between gap-4 flex-wrap;
+  }
+
+  .style-form-panel {
+    min-width: 0;
+  }
+
+  .style-form-panel__header {
+    @apply flex flex-col gap-1.5 mb-4;
+  }
+
+  .style-form-panel .form-row {
+    @apply items-stretch;
+  }
+
+  .style-form-panel .form-field {
+    @apply rounded-xl p-4;
+    background: var(--color-glass-surface-nested);
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow: var(--shadow-glass-inset);
+  }
+
+  .dark .style-form-panel .form-field {
+    background: var(--color-glass-surface-dark-nested);
+    border-color: var(--color-glass-border-dark-subtle);
+  }
+
+  .style-form-toggle-row {
+    @apply rounded-xl p-4 flex flex-wrap gap-4;
+    background: var(--color-glass-surface-nested);
+    border: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .style-form-toggle-row {
+    background: var(--color-glass-surface-dark-nested);
+    border-color: var(--color-glass-border-dark-subtle);
+  }
+
+  .style-form-actions-bar {
+    @apply rounded-2xl p-4;
+    border-top: 0;
+  }
+
+  /* Shared section shell for complex, explanatory forms */
+  .form-section-shell {
+    @apply rounded-2xl p-4 md:p-5;
+  }
+
+  .form-section-shell__header {
+    @apply flex flex-col gap-1 mb-4;
+  }
+
+  .form-section-shell__grid {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
   /* Form sections */
   .form-section {
     @apply flex flex-col gap-4;
@@ -68,6 +130,38 @@
 
   .form-field-quarter {
     @apply flex-1 min-w-48;
+  }
+
+  .form-field-shell {
+    @apply rounded-xl p-4 flex flex-col gap-3;
+  }
+
+  .form-field-shell--full {
+    grid-column: 1 / -1;
+  }
+
+  .form-field-shell__header {
+    @apply flex items-start justify-between gap-3;
+  }
+
+  .form-field-shell__footer {
+    @apply flex items-start justify-between gap-3 flex-wrap;
+  }
+
+  .form-field-shell__footer--stacked {
+    @apply gap-4;
+  }
+
+  .form-field-shell__footer-row {
+    @apply flex items-start justify-between gap-3 flex-wrap w-full;
+  }
+
+  .form-state-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .form-actions-bar {
+    @apply flex items-center justify-between gap-3 flex-wrap;
   }
 
   .form-checkbox {
@@ -367,6 +461,10 @@
     @apply relative z-10;
   }
 
+  .style-form-panel:has(.autocomplete-dropdown) {
+    @apply relative z-10;
+  }
+
   /* Row containing the text input + toggle button */
   .autocomplete-input-row {
     @apply flex;
@@ -415,22 +513,10 @@
 
   /* Dropdown panel */
   .autocomplete-dropdown {
-    @apply absolute z-10 top-full left-0 right-0 mt-1;
+    @apply absolute z-30 top-full left-0 right-0 mt-1;
     @apply max-h-48 sm:max-h-64 md:max-h-80 overflow-y-auto;
     @apply rounded-lg;
-    background: var(--color-glass-surface-elevated);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    border: 1px solid var(--color-glass-border);
-    box-shadow: var(--shadow-glass-elevated);
-  }
-
-  .dark .autocomplete-dropdown {
-    background: rgb(17 24 39 / 0.85);
-    border-color: rgb(255 255 255 / 0.08);
-    box-shadow:
-      0 12px 40px rgb(0 0 0 / 0.5),
-      0 4px 8px rgb(0 0 0 / 0.3);
+    color: var(--color-text-primary);
   }
 
   /* Sticky header shown when some results are hidden due to filtering */
@@ -535,5 +621,63 @@
   .toggle-row-hint {
     @apply text-xs;
     color: var(--color-content-secondary);
+  }
+
+  @media (max-width: 420px) {
+    .profile-styles-shell {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+
+    .style-form-create-host {
+      margin-left: -1rem;
+      margin-right: -1rem;
+    }
+
+    .style-form-shell {
+      @apply rounded-xl p-1.5 gap-2;
+    }
+
+    .style-form-create-host .style-form-shell {
+      margin-left: -0.5rem;
+      margin-right: -0.5rem;
+      border-left-width: 0;
+      border-right-width: 0;
+      border-radius: 0;
+    }
+
+    .style-form-panel,
+    .form-section-shell {
+      @apply rounded-xl p-2;
+    }
+
+    .style-form-panel .form-field,
+    .style-form-toggle-row {
+      @apply rounded-lg p-2;
+    }
+
+    .style-form-panel .form-row {
+      @apply gap-2;
+    }
+
+    .style-form-panel .form-field,
+    .style-form-panel .form-field-half,
+    .style-form-panel .form-field-third,
+    .style-form-panel .form-field-quarter {
+      min-width: 0;
+      flex: 1 1 100%;
+    }
+
+    .style-form-actions-bar {
+      @apply rounded-xl p-3;
+    }
+
+    .style-form-actions-bar .form-actions__buttons {
+      @apply w-full;
+    }
+
+    .style-form-actions-bar .form-actions__buttons button {
+      @apply w-full;
+    }
   }
 }

@@ -57,7 +57,7 @@ export type TooltipPosition =
  * the viewport when centered on the trigger element.
  */
 const TOOLTIP_WIDTH = 300;
-const TOOLTIP_HEIGHT_ESTIMATE = 280;
+const TOOLTIP_HEIGHT_ESTIMATE = 200;
 const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 
@@ -117,7 +117,7 @@ let nextTooltipId = 0;
         <span class="dotted-underline">{{ primaryDisplay() }}</span>
         <span
           #tooltipContent
-          class="tooltip-text tooltip-text-fixed"
+          class="tooltip-text tooltip-text-fixed surface-floating"
           role="tooltip"
           popover="manual"
           [id]="tooltipId"
@@ -125,23 +125,17 @@ let nextTooltipId = 0;
           (mouseenter)="cancelHide()"
           (mouseleave)="scheduleHide()"
         >
-          <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong
-          ><br />
-          <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span
-          ><br /><br />
-          @for (key of unit()!.explanationKeys; track key; let i = $index) {
-            @if (i === 0 || i === 2) {
-              <span class="tooltip-math">{{ key | transloco }}</span>
-            } @else {
-              {{ key | transloco }}
+          <span class="tooltip-header">
+            <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong>
+            <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span>
+          </span>
+          <span class="tooltip-explanation">
+            @for (key of unit()!.explanationKeys; track key; let i = $index) {
+              <span [class]="i === 0 || i === 2 ? 'tooltip-math tooltip-explanation-line' : 'tooltip-explanation-line'">
+                {{ key | transloco }}
+              </span>
             }
-            @if (i < unit()!.explanationKeys.length - 1) {
-              <br />
-              @if (i === 0 || i === 1) {
-                <br />
-              }
-            }
-          }
+          </span>
         </span>
       </span>
     }
@@ -219,8 +213,16 @@ export class UnitTooltipComponent implements OnDestroy {
     this.clearPopoverTimer();
     this.isVisible.set(true);
     this.shownAt = Date.now();
-    this.calculateFixedPosition();
     this.openPopover();
+    this.calculateFixedPosition();
+
+    if (isPlatformBrowser(this.platformId)) {
+      requestAnimationFrame(() => {
+        if (this.isVisible()) {
+          this.calculateFixedPosition();
+        }
+      });
+    }
   }
 
   public scheduleHide(): void {
@@ -303,12 +305,11 @@ export class UnitTooltipComponent implements OnDestroy {
   }
 
   /**
-   * Calculates the fixed position for the tooltip based on the trigger's
-   * location relative to the viewport. Uses position: fixed to escape
-   * parent overflow boundaries.
+   * Calculates the fixed position for the tooltip using two-pass measurement.
+   * Pass 1: position off-screen to measure actual rendered dimensions.
+   * Pass 2: compute final clamped position using real measurements.
    */
   private calculateFixedPosition(): void {
-    // Guard against SSR - only run in browser
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
@@ -317,34 +318,111 @@ export class UnitTooltipComponent implements OnDestroy {
     const wrapper = element.querySelector('.tooltip-wrapper');
     if (!wrapper) return;
 
+    const tooltipEl = this.tooltipContent()?.nativeElement;
     const rect = wrapper.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    const topObstruction = this.stickyRegistry.totalOffset();
 
-    // Use responsive tooltip width based on viewport
-    const tooltipWidth = Math.min(
-      TOOLTIP_WIDTH,
-      viewportWidth - VIEWPORT_MARGIN * 2,
-    );
+    // === MEASURE TOOLTIP DIMENSIONS ===
+    // Use actual measured size when available, fall back to estimates
+    let tooltipWidth = Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2);
+    let tooltipHeight = TOOLTIP_HEIGHT_ESTIMATE;
+
+    if (tooltipEl) {
+      // Pass 1: temporarily make measurable at origin
+      const prev = {
+        visibility: tooltipEl.style.visibility,
+        opacity: tooltipEl.style.opacity,
+        pointerEvents: tooltipEl.style.pointerEvents,
+        top: tooltipEl.style.top,
+        left: tooltipEl.style.left,
+      };
+      tooltipEl.style.visibility = 'hidden';
+      tooltipEl.style.opacity = '0';
+      tooltipEl.style.pointerEvents = 'none';
+      tooltipEl.style.top = '0';
+      tooltipEl.style.left = '0';
+      tooltipEl.style.maxWidth = `${Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2)}px`;
+
+      const measured = tooltipEl.getBoundingClientRect();
+      if (measured.width > 0) {
+        tooltipWidth = measured.width;
+      }
+      if (measured.height > 0) {
+        tooltipHeight = measured.height;
+      }
+
+      // Restore previous styles
+      tooltipEl.style.visibility = prev.visibility;
+      tooltipEl.style.opacity = prev.opacity;
+      tooltipEl.style.pointerEvents = prev.pointerEvents;
+      tooltipEl.style.top = prev.top;
+      tooltipEl.style.left = prev.left;
+      tooltipEl.style.maxWidth = '';
+    }
 
     // === HORIZONTAL POSITIONING ===
-    const triggerCenter = rect.left + rect.width / 2;
-    const tooltipLeft = triggerCenter - tooltipWidth / 2;
-    const tooltipRight = triggerCenter + tooltipWidth / 2;
+    // Anchor to trigger edges instead of cursor-centered placement.
+    // Prefer start edge (left), then end edge (right), then full-width fallback.
+    const maxLeft = viewportWidth - tooltipWidth - VIEWPORT_MARGIN;
+    const canAnchorStart = rect.left <= maxLeft;
+    const canAnchorEnd = rect.right - tooltipWidth >= VIEWPORT_MARGIN;
 
-    // Detect horizontal overflow with margin
-    const overflowsLeft = tooltipLeft < VIEWPORT_MARGIN;
-    const overflowsRight = tooltipRight > viewportWidth - VIEWPORT_MARGIN;
+    let anchoredLeft: number;
+    let overflowsLeft = false;
+    let overflowsRight = false;
+
+    if (tooltipWidth >= viewportWidth - VIEWPORT_MARGIN * 2) {
+      anchoredLeft = VIEWPORT_MARGIN;
+      overflowsLeft = true;
+      overflowsRight = true;
+    } else if (canAnchorStart) {
+      anchoredLeft = Math.max(VIEWPORT_MARGIN, rect.left);
+      overflowsLeft = true;
+      overflowsRight = false;
+    } else if (canAnchorEnd) {
+      anchoredLeft = Math.min(maxLeft, rect.right - tooltipWidth);
+      overflowsLeft = false;
+      overflowsRight = true;
+    } else {
+      anchoredLeft = Math.max(
+        VIEWPORT_MARGIN,
+        Math.min(rect.left, maxLeft),
+      );
+      overflowsLeft = true;
+      overflowsRight = true;
+    }
 
     // === VERTICAL POSITIONING ===
-    const topObstruction = this.stickyRegistry.totalOffset();
+    const minTop = topObstruction + VIEWPORT_MARGIN;
+    const maxTop = viewportHeight - tooltipHeight - VIEWPORT_MARGIN;
+    const preferredAboveTop = rect.top - TOOLTIP_OFFSET - tooltipHeight;
+    const preferredBelowTop = rect.bottom + TOOLTIP_OFFSET;
+    const canFitAbove = preferredAboveTop >= minTop;
+    const canFitBelow = preferredBelowTop <= maxTop;
     const spaceAbove = rect.top - topObstruction;
     const spaceBelow = viewportHeight - rect.bottom;
 
-    // Prefer bottom positioning when not enough space above
-    const needsBottom =
-      spaceAbove < TOOLTIP_HEIGHT_ESTIMATE + VIEWPORT_MARGIN &&
-      spaceBelow > spaceAbove;
+    let needsBottom: boolean;
+    if (canFitAbove && !canFitBelow) {
+      needsBottom = false;
+    } else if (!canFitAbove && canFitBelow) {
+      needsBottom = true;
+    } else if (canFitAbove && canFitBelow) {
+      needsBottom = spaceBelow > spaceAbove;
+    } else {
+      // Neither side fully fits; choose side with more space, then clamp.
+      needsBottom = spaceBelow >= spaceAbove;
+    }
+
+    const clampTop = (preferredTop: number): number => {
+      // If sticky header + viewport leave no valid range, pin bottom inside viewport.
+      if (maxTop < minTop) {
+        return maxTop;
+      }
+      return Math.max(minTop, Math.min(preferredTop, maxTop));
+    };
 
     // === BUILD POSITION CLASSES ===
     const classes: string[] = [];
@@ -360,43 +438,31 @@ export class UnitTooltipComponent implements OnDestroy {
     }
     this.autoDetectedPosition.set(classes.join(' '));
 
-    // === CALCULATE FIXED STYLES ===
+    // === CALCULATE FIXED STYLES (Pass 2: clamped) ===
     const styles: Partial<TooltipStyles> = {
       position: 'fixed',
     };
 
-    // Vertical position
+    // Vertical position with viewport clamping
     if (needsBottom) {
-      // Position below trigger
-      styles.top = `${rect.bottom + TOOLTIP_OFFSET}px`;
+      const top = clampTop(preferredBelowTop);
+      styles.top = `${top}px`;
       styles.bottom = null;
     } else {
-      // Position above trigger
-      styles.bottom = `${viewportHeight - rect.top + TOOLTIP_OFFSET}px`;
-      styles.top = null;
+      const top = clampTop(preferredAboveTop);
+      styles.top = `${top}px`;
+      styles.bottom = null;
     }
 
     // Horizontal position
-    if (overflowsLeft && !overflowsRight) {
-      // Align left edge with trigger left
-      styles.left = `${Math.max(VIEWPORT_MARGIN, rect.left)}px`;
-      styles.right = null;
-      styles.transform = 'none';
-    } else if (overflowsRight && !overflowsLeft) {
-      // Align right edge with trigger right
-      styles.right = `${Math.max(VIEWPORT_MARGIN, viewportWidth - rect.right)}px`;
-      styles.left = null;
-      styles.transform = 'none';
-    } else if (overflowsLeft && overflowsRight) {
-      // Very narrow viewport - center and let it fill
+    if (overflowsLeft && overflowsRight) {
       styles.left = `${VIEWPORT_MARGIN}px`;
       styles.right = `${VIEWPORT_MARGIN}px`;
       styles.transform = 'none';
     } else {
-      // Center on trigger
-      styles.left = `${triggerCenter}px`;
+      styles.left = `${anchoredLeft}px`;
       styles.right = null;
-      styles.transform = 'translateX(-50%)';
+      styles.transform = 'none';
     }
 
     this.fixedStyles.set(styles);

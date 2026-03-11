@@ -119,6 +119,41 @@
             @if (style()?.info) {
               <p class="style-detail-description">{{ style()?.info }}</p>
             }
+
+            <div class="style-detail-kpi-grid" role="list">
+              <div class="style-detail-kpi-card" role="listitem">
+                <span class="style-detail-kpi-label"
+                  >{{ "styles.uses" | transloco }}</span
+                >
+                <strong class="style-detail-kpi-value">{{ style()?.use_count }}</strong>
+              </div>
+              <div class="style-detail-kpi-card" role="listitem">
+                <span class="style-detail-kpi-label"
+                  >{{ "styles.tags" | transloco }}</span
+                >
+                <strong class="style-detail-kpi-value">{{ tagCount() }}</strong>
+              </div>
+              <div class="style-detail-kpi-card" role="listitem">
+                <span class="style-detail-kpi-label"
+                  >{{ "styles.compatible_models" | transloco }}</span
+                >
+                <strong class="style-detail-kpi-value">{{ modelCount() }}</strong>
+              </div>
+              <div class="style-detail-kpi-card" role="listitem">
+                <span class="style-detail-kpi-label"
+                  >{{ "styles.generation_params" | transloco }}</span
+                >
+                <strong class="style-detail-kpi-value">{{ parameterCount() }}</strong>
+              </div>
+              @if (isImageStyle()) {
+                <div class="style-detail-kpi-card" role="listitem">
+                  <span class="style-detail-kpi-label"
+                    >{{ "styles.examples" | transloco }}</span
+                  >
+                  <strong class="style-detail-kpi-value">{{ exampleCount() }}</strong>
+                </div>
+              }
+            </div>
           </div>
 
           <!-- Actions -->

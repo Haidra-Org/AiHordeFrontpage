@@ -42,6 +42,8 @@ import { PageIntroComponent } from '../../components/page-intro/page-intro.compo
 import { KudosTermComponent } from '../../components/kudos-term/kudos-term.component';
 import { GenerationsTabComponent } from '../../components/generations-tab/generations-tab.component';
 import { PageGuideService } from '../../services/page-guide.service';
+import { InfoTooltipComponent } from '../../components/info-tooltip/info-tooltip.component';
+import { GlossaryService } from '../../services/glossary.service';
 
 type ProfileTab =
   | 'profile'
@@ -78,6 +80,7 @@ type WorkerListItem = {
     AdminDialogComponent,
     PageIntroComponent,
     KudosTermComponent,
+    InfoTooltipComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
     GenerationsTabComponent,
@@ -98,6 +101,7 @@ export class ProfileComponent implements OnInit {
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
   public readonly guideService = inject(PageGuideService);
+  private readonly glossary = inject(GlossaryService);
   private readonly workerRequestConcurrency = 3;
 
   public loginError = signal<boolean>(false);
@@ -119,6 +123,101 @@ export class ProfileComponent implements OnInit {
       ) {
         this.loadAllTeams();
       }
+    });
+
+    this.glossary.registerPageContext({
+      pageId: 'profile',
+      pageTitleKey: 'profile.title',
+      relevantTermIds: [
+        'api_key',
+        'kudos',
+        'request',
+        'worker',
+        'team',
+        'trusted',
+        'megapixelsteps',
+        'tokens',
+      ],
+      entries: [
+        {
+          id: 'profile-api-key',
+          titleKey: 'help.glossary.terms.api_key.title',
+          descriptionKey: 'help.glossary.terms.api_key.body',
+        },
+        {
+          id: 'profile-kudos',
+          titleKey: 'help.glossary.terms.kudos.title',
+          descriptionKey: 'help.glossary.terms.kudos.body',
+        },
+        {
+          id: 'profile-public-workers',
+          titleKey: 'profile.public_workers_label',
+          descriptionKey: 'profile.public_workers_desc',
+        },
+        {
+          id: 'profile-requests',
+          titleKey: 'profile.records.requests',
+          descriptionKey:
+            'help.glossary.page.profile.requests_made.description',
+        },
+        {
+          id: 'profile-fulfillments',
+          titleKey: 'profile.records.fulfillments',
+          descriptionKey:
+            'help.glossary.page.profile.requests_fulfilled.description',
+        },
+        {
+          id: 'profile-total-fulfillments',
+          titleKey: 'profile.fulfillments_label',
+          descriptionKey:
+            'help.glossary.page.profile.total_fulfillments.description',
+        },
+        {
+          id: 'profile-kudos-generated',
+          titleKey: 'profile.contributions_label',
+          descriptionKey:
+            'help.glossary.page.profile.kudos_generated.description',
+        },
+        {
+          id: 'profile-kudos-accumulated',
+          titleKey: 'profile.kudos_accumulated',
+          descriptionKey: 'help.glossary.page.profile.accumulated.description',
+        },
+        {
+          id: 'profile-kudos-gifted',
+          titleKey: 'profile.kudos_gifted',
+          descriptionKey: 'help.glossary.page.profile.gifted.description',
+        },
+        {
+          id: 'profile-kudos-received',
+          titleKey: 'profile.kudos_received',
+          descriptionKey: 'help.glossary.page.profile.received.description',
+        },
+        {
+          id: 'profile-kudos-recurring',
+          titleKey: 'profile.kudos_recurring',
+          descriptionKey: 'help.glossary.page.profile.recurring.description',
+        },
+        {
+          id: 'profile-kudos-donated',
+          titleKey: 'profile.kudos_donated',
+          descriptionKey: 'help.glossary.page.profile.donated.description',
+        },
+        {
+          id: 'profile-mps',
+          titleKey: 'help.glossary.terms.megapixelsteps.title',
+          descriptionKey: 'help.glossary.terms.megapixelsteps.body',
+        },
+        {
+          id: 'profile-tokens',
+          titleKey: 'help.glossary.terms.tokens.title',
+          descriptionKey: 'help.glossary.terms.tokens.body',
+        },
+      ],
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.glossary.clearPageContext();
     });
   }
 
@@ -206,6 +305,79 @@ export class ProfileComponent implements OnInit {
       this.activeImageCount() > 0 ||
       this.activeTextCount() > 0 ||
       this.activeAlchemyCount() > 0,
+  );
+
+  public readonly hasActivitySnapshotData = computed(() => {
+    const user = this.auth.currentUser();
+    return !!(user?.records || user?.usage || user?.contributions);
+  });
+
+  public readonly overviewFulfillments = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return null;
+
+    const fulfillment = user.records?.fulfillment;
+    const hasRecordsFulfillment =
+      fulfillment?.image !== undefined ||
+      fulfillment?.text !== undefined ||
+      fulfillment?.interrogation !== undefined;
+
+    if (hasRecordsFulfillment) {
+      return (
+        (fulfillment?.image ?? 0) +
+        (fulfillment?.text ?? 0) +
+        (fulfillment?.interrogation ?? 0)
+      );
+    }
+
+    if (user.contributions?.fulfillments !== undefined) {
+      return user.contributions.fulfillments;
+    }
+
+    return null;
+  });
+
+  public readonly overviewTextRequests = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return null;
+
+    if (user.records?.request?.text !== undefined) {
+      return user.records.request.text;
+    }
+
+    return null;
+  });
+
+  public readonly overviewGeneratedMegapixelsteps = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return null;
+
+    if (user.records?.contribution?.megapixelsteps !== undefined) {
+      return user.records.contribution.megapixelsteps;
+    }
+
+    if (user.contributions?.megapixelsteps !== undefined) {
+      return user.contributions.megapixelsteps;
+    }
+
+    return null;
+  });
+
+  public readonly overviewGeneratedTokens = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return null;
+
+    if (user.records?.contribution?.tokens !== undefined) {
+      return user.records.contribution.tokens;
+    }
+
+    return null;
+  });
+
+  public readonly hasOverviewGeneratedStats = computed(
+    () =>
+      this.overviewGeneratedMegapixelsteps() !== null ||
+      this.overviewGeneratedTokens() !== null,
   );
 
   // Asset counts for quick-nav boxes
@@ -308,7 +480,7 @@ export class ProfileComponent implements OnInit {
   // Computed units for Usage Records
   public readonly usageMegapixelsteps = computed(() => {
     const user = this.auth.currentUser();
-    if (!user?.records?.usage?.megapixelsteps) return null;
+    if (user?.records?.usage?.megapixelsteps === undefined) return null;
     // API gives megapixelsteps, convert to raw pixelsteps for the service
     const rawPixelsteps = user.records.usage.megapixelsteps * 1e6;
     return this.units.formatTotalPixelsteps(rawPixelsteps);
@@ -316,14 +488,14 @@ export class ProfileComponent implements OnInit {
 
   public readonly usageTokens = computed(() => {
     const user = this.auth.currentUser();
-    if (!user?.records?.usage?.tokens) return null;
+    if (user?.records?.usage?.tokens === undefined) return null;
     return this.units.formatTotalTokens(user.records.usage.tokens);
   });
 
   // Computed units for Contribution Records
   public readonly contributionMegapixelsteps = computed(() => {
     const user = this.auth.currentUser();
-    if (!user?.records?.contribution?.megapixelsteps) return null;
+    if (user?.records?.contribution?.megapixelsteps === undefined) return null;
     // API gives megapixelsteps, convert to raw pixelsteps for the service
     const rawPixelsteps = user.records.contribution.megapixelsteps * 1e6;
     return this.units.formatTotalPixelsteps(rawPixelsteps);
@@ -331,7 +503,7 @@ export class ProfileComponent implements OnInit {
 
   public readonly contributionTokens = computed(() => {
     const user = this.auth.currentUser();
-    if (!user?.records?.contribution?.tokens) return null;
+    if (user?.records?.contribution?.tokens === undefined) return null;
     return this.units.formatTotalTokens(user.records.contribution.tokens);
   });
 

@@ -175,7 +175,7 @@
           <p>{{ "styles.no_styles" | transloco }}</p>
         </div>
       } @else {
-        <div class="grid-cards">
+        <div class="grid-cards styles-entry-grid">
           @for (style of filteredStyles(); track style.id) {
             <app-style-card
               [style]="style"

@@ -74,9 +74,30 @@
       {{ "styles.by" | transloco }} {{ creatorDisplayName() }}
     </p>
 
+    <div class="style-card-meta-row">
+      <span
+        class="badge-base badge-sm"
+        [class.badge-success]="style().public"
+        [class.badge-secondary]="!style().public"
+      >
+        @if (style().public) {
+          {{ "styles.public" | transloco }}
+        } @else {
+          {{ "styles.private" | transloco }}
+        }
+      </span>
+      <span class="style-card-id" [attr.title]="style().id">
+        #{{ shortId() }}
+      </span>
+    </div>
+
     <!-- Description -->
     @if (style().info) {
       <p class="card-description">{{ style().info }}</p>
+    } @else {
+      <p class="card-description style-card-prompt-preview">
+        {{ style().prompt }}
+      </p>
     }
 
     <!-- Tags -->
@@ -117,6 +138,10 @@
           />
         </svg>
         {{ style().use_count | formatNumber }}
+      </span>
+
+      <span class="card-stat card-stat-secondary">
+        {{ parameterCount() }} {{ "styles.generation_params" | transloco }}
       </span>
 
       @if (showActions()) {

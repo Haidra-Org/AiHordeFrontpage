@@ -315,8 +315,15 @@
   .nav-dropdown-menu {
     @apply absolute top-full left-0 z-50;
     @apply min-w-48 mt-1 py-2;
-    @apply bg-surface-primary border border-edge-secondary rounded-lg shadow-lg;
-    @apply dark:bg-gray-800 dark:border-gray-700;
+    @apply rounded-lg;
+    background: rgb(255 255 255 / 0.94);
+    border-color: var(--color-glass-border-strong);
+    overflow: hidden;
+  }
+
+  .dark .nav-dropdown-menu {
+    background: rgb(17 24 39 / 0.94);
+    border-color: var(--color-glass-border-dark-strong);
   }
 
   .nav-dropdown-item {
@@ -453,12 +460,14 @@
   .nav-dropdown-notification-banner {
     @apply flex items-center gap-2 mx-2 mb-1 px-3 py-2 text-xs font-medium rounded-md;
     @apply text-amber-800 dark:text-amber-300;
-    background-color: rgba(217, 119, 6, 0.1);
+    background-color: var(--color-glass-warning-surface);
     border-left: 3px solid rgb(217, 119, 6);
+    box-shadow: var(--shadow-glass);
   }
 
   .dark .nav-dropdown-notification-banner {
-    background-color: rgba(217, 119, 6, 0.15);
+    background-color: var(--color-glass-warning-surface-dark);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .nav-dropdown-notification-banner-icon {

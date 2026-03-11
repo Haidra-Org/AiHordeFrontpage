@@ -131,6 +131,99 @@
     @apply dark:text-white;
   }
 
+  /* Split metric value used in compact nested stat pairs (e.g. MPS/Tokens). */
+  .data-value-split {
+    @apply block mt-1;
+  }
+
+  /* =================================================================
+     DOMAIN HIGHLIGHTING - reusable semantic accents (image/text/alchemy)
+     ================================================================= */
+
+  .domain-tint--image {
+    border-left: 3px solid rgb(168 85 247 / 0.6);
+    background: linear-gradient(
+      90deg,
+      rgb(250 245 255 / 0.7) 0%,
+      rgb(255 255 255 / 0.2) 42%
+    );
+  }
+
+  .dark .domain-tint--image {
+    border-left-color: rgb(192 132 252 / 0.75);
+    background: linear-gradient(
+      90deg,
+      rgb(88 28 135 / 0.22) 0%,
+      rgb(17 24 39 / 0.15) 42%
+    );
+  }
+
+  .domain-tint--text {
+    border-left: 3px solid rgb(59 130 246 / 0.6);
+    background: linear-gradient(
+      90deg,
+      rgb(239 246 255 / 0.72) 0%,
+      rgb(255 255 255 / 0.2) 42%
+    );
+  }
+
+  .dark .domain-tint--text {
+    border-left-color: rgb(96 165 250 / 0.75);
+    background: linear-gradient(
+      90deg,
+      rgb(30 58 138 / 0.22) 0%,
+      rgb(17 24 39 / 0.15) 42%
+    );
+  }
+
+  .domain-tint--alchemy {
+    border-left: 3px solid rgb(34 197 94 / 0.6);
+    background: linear-gradient(
+      90deg,
+      rgb(240 253 244 / 0.72) 0%,
+      rgb(255 255 255 / 0.2) 42%
+    );
+  }
+
+  .dark .domain-tint--alchemy {
+    border-left-color: rgb(74 222 128 / 0.75);
+    background: linear-gradient(
+      90deg,
+      rgb(20 83 45 / 0.24) 0%,
+      rgb(17 24 39 / 0.15) 42%
+    );
+  }
+
+  .domain-tint--combined {
+    border-left: 3px solid rgba(226, 11, 11, 0.7);
+    background: linear-gradient(
+      90deg,
+      rgb(235 246 255 / 0.78) 0%,
+      rgb(255 255 255 / 0.2) 42%
+    );
+  }
+
+  .dark .domain-tint--combined {
+    border-left-color: rgba(226, 25, 11, 0.73);
+    background: linear-gradient(
+      90deg,
+      rgba(226, 25, 11, 0.118) 0%,
+      rgba(39, 17, 17, 0.15) 42%
+    );
+  }
+
+  .domain-label--image {
+    @apply text-purple-700 dark:text-purple-300;
+  }
+
+  .domain-label--text {
+    @apply text-blue-700 dark:text-blue-300;
+  }
+
+  .domain-label--alchemy {
+    @apply text-green-700 dark:text-green-300;
+  }
+
   /* Tabular numeric text utility */
   .text-tabular {
     font-variant-numeric: tabular-nums;
@@ -159,6 +252,55 @@
   /* 2-3 column responsive grid */
   .data-grid-2-3 {
     @apply grid grid-cols-2 gap-3 lg:grid-cols-3;
+  }
+
+  .kudos-breakdown {
+    @apply grid gap-3;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .kudos-breakdown__metric {
+    @apply rounded-xl px-3 py-3;
+    background: var(--color-glass-surface-nested);
+    border: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .kudos-breakdown__metric {
+    background: var(--color-glass-surface-dark-nested);
+    border-color: var(--color-glass-border-dark-subtle);
+  }
+
+  .kudos-breakdown__metric--primary {
+    background: linear-gradient(
+      135deg,
+      rgb(255 255 255 / 0.82),
+      rgb(239 246 255 / 0.62)
+    );
+    border-color: rgb(147 197 253 / 0.35);
+    box-shadow: var(--shadow-glass-inset), var(--shadow-glass);
+  }
+
+  .dark .kudos-breakdown__metric--primary {
+    background: linear-gradient(
+      135deg,
+      rgb(30 41 59 / 0.74),
+      rgb(30 58 138 / 0.26)
+    );
+    border-color: rgb(96 165 250 / 0.24);
+  }
+
+  .kudos-breakdown__label {
+    @apply block text-[11px] font-semibold uppercase tracking-[0.18em];
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .kudos-breakdown__value {
+    @apply mt-2 block text-lg font-semibold leading-tight text-content-primary;
+    @apply dark:text-white;
+  }
+
+  .kudos-breakdown__metric--primary .kudos-breakdown__value {
+    @apply text-xl;
   }
 
   /* 1-2 column responsive grid */
@@ -256,7 +398,16 @@
 
   /* Profile header content */
   .profile-header-content {
-    @apply flex flex-col;
+    @apply flex flex-col min-w-0;
+  }
+
+  .profile-identity-username {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .profile-identity-username-action {
+    @apply mt-1 self-start;
   }
 
   /* =================================================================

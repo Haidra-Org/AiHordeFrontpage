@@ -35,7 +35,7 @@
     <div class="modal-overlay">
       <div class="modal-backdrop" (click)="closeRawJsonModal()"></div>
       <div
-        class="dialog-panel json-dialog"
+        class="modal-panel modal-panel--lg json-dialog"
         role="dialog"
         aria-modal="true"
         aria-label="Raw JSON"
@@ -254,7 +254,7 @@
     </div>
   } @else {
     <!-- User Details -->
-    <div class="panel" [class.panel-unsaved]="isDirty()">
+    <div class="panel" [class.panel--unsaved]="isDirty()">
       <!-- Deleted User Warning -->
       @if (selectedUser()!.deleted) {
         <div

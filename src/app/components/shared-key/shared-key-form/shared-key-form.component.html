@@ -1,6 +1,8 @@
 <form class="shared-key-form" [formGroup]="form" (ngSubmit)="onSubmit()">
-  <section class="shared-key-form-panel shared-key-form-panel--identity">
-    <div class="shared-key-form-panel__header">
+  <section
+    class="shared-key-form-panel shared-key-form-panel--identity form-section-shell surface-glass surface-glass--accent"
+  >
+    <div class="shared-key-form-panel__header form-section-shell__header">
       <p class="shared-key-form-eyebrow">
         {{ "profile.tabs.shared_keys" | transloco }}
       </p>
@@ -12,8 +14,10 @@
       </p>
     </div>
 
-    <div class="shared-key-field-card shared-key-field-card--full">
-      <div class="shared-key-field-card__header">
+    <div
+      class="shared-key-field-card shared-key-field-card--full form-field-shell form-field-shell--full surface-glass--nested"
+    >
+      <div class="shared-key-field-card__header form-field-shell__header">
         <label class="form-label" [for]="fieldId('name')">
           {{ "profile.shared_keys.name" | transloco }}
         </label>
@@ -29,8 +33,8 @@
   </section>
 
   <div class="shared-key-form-grid">
-    <section class="shared-key-form-panel">
-      <div class="shared-key-form-panel__header">
+    <section class="shared-key-form-panel form-section-shell surface-glass">
+      <div class="shared-key-form-panel__header form-section-shell__header">
         <h5 class="section-title-sm">
           {{ "profile.shared_keys.form_access_title" | transloco }}
         </h5>
@@ -39,14 +43,16 @@
         </p>
       </div>
 
-      <div class="shared-key-form-section-grid">
-        <div class="shared-key-field-card">
-          <div class="shared-key-field-card__header">
+      <div class="shared-key-form-section-grid form-section-shell__grid">
+        <div
+          class="shared-key-field-card form-field-shell surface-glass--nested"
+        >
+          <div class="shared-key-field-card__header form-field-shell__header">
             <label class="form-label" [for]="fieldId('kudos')">
               {{ "profile.shared_keys.kudos" | transloco }}
             </label>
             @if (isUnlimited("kudos")) {
-              <span class="shared-key-field-status-badge">
+              <span class="shared-key-field-status-badge form-state-badge">
                 {{ "profile.shared_keys.unlimited" | transloco }}
               </span>
             }
@@ -60,7 +66,7 @@
             [attr.aria-describedby]="fieldId('kudos-hint')"
           />
 
-          <div class="shared-key-field-card__footer">
+          <div class="shared-key-field-card__footer form-field-shell__footer">
             <p
               class="shared-key-field-help text-secondary text-xs"
               [id]="fieldId('kudos-hint')"
@@ -69,20 +75,24 @@
             </p>
             <div class="shared-key-field-toggle">
               <app-toggle-checkbox
-                [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+                [description]="
+                  'profile.shared_keys.unlimited_checkbox' | transloco
+                "
                 formControlName="kudos_unlimited"
               />
             </div>
           </div>
         </div>
 
-        <div class="shared-key-field-card">
-          <div class="shared-key-field-card__header">
+        <div
+          class="shared-key-field-card form-field-shell surface-glass--nested"
+        >
+          <div class="shared-key-field-card__header form-field-shell__header">
             <label class="form-label" [for]="fieldId('expiry')">
               {{ "profile.shared_keys.expiry_days" | transloco }}
             </label>
             @if (isUnlimited("expiry")) {
-              <span class="shared-key-field-status-badge">
+              <span class="shared-key-field-status-badge form-state-badge">
                 {{ "profile.shared_keys.unlimited" | transloco }}
               </span>
             }
@@ -96,7 +106,7 @@
             [attr.aria-describedby]="fieldId('expiry-hint')"
           />
 
-          <div class="shared-key-field-card__footer">
+          <div class="shared-key-field-card__footer form-field-shell__footer">
             <p
               class="shared-key-field-help text-secondary text-xs"
               [id]="fieldId('expiry-hint')"
@@ -105,7 +115,9 @@
             </p>
             <div class="shared-key-field-toggle">
               <app-toggle-checkbox
-                [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+                [description]="
+                  'profile.shared_keys.unlimited_checkbox' | transloco
+                "
                 formControlName="expiry_unlimited"
               />
             </div>
@@ -114,8 +126,8 @@
       </div>
     </section>
 
-    <section class="shared-key-form-panel">
-      <div class="shared-key-form-panel__header">
+    <section class="shared-key-form-panel form-section-shell surface-glass">
+      <div class="shared-key-form-panel__header form-section-shell__header">
         <h5 class="section-title-sm">
           {{ "profile.shared_keys.form_limits_title" | transloco }}
         </h5>
@@ -124,14 +136,16 @@
         </p>
       </div>
 
-      <div class="shared-key-form-section-grid">
-        <div class="shared-key-field-card shared-key-field-card--full">
-          <div class="shared-key-field-card__header">
+      <div class="shared-key-form-section-grid form-section-shell__grid">
+        <div
+          class="shared-key-field-card shared-key-field-card--full form-field-shell form-field-shell--full surface-glass--nested"
+        >
+          <div class="shared-key-field-card__header form-field-shell__header">
             <label class="form-label" [for]="fieldId('max-image-pixels')">
               {{ "profile.shared_keys.max_image_pixels" | transloco }}
             </label>
             @if (isUnlimited("max_image_pixels")) {
-              <span class="shared-key-field-status-badge">
+              <span class="shared-key-field-status-badge form-state-badge">
                 {{ "profile.shared_keys.unlimited" | transloco }}
               </span>
             }
@@ -151,8 +165,12 @@
             </p>
           }
 
-          <div class="shared-key-field-card__footer shared-key-field-card__footer--stacked">
-            <div class="shared-key-field-footer-row">
+          <div
+            class="shared-key-field-card__footer shared-key-field-card__footer--stacked form-field-shell__footer form-field-shell__footer--stacked"
+          >
+            <div
+              class="shared-key-field-footer-row form-field-shell__footer-row"
+            >
               <p
                 class="shared-key-field-help text-secondary text-xs"
                 [id]="fieldId('max-image-pixels-hint')"
@@ -161,7 +179,9 @@
               </p>
               <div class="shared-key-field-toggle">
                 <app-toggle-checkbox
-                  [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+                  [description]="
+                    'profile.shared_keys.unlimited_checkbox' | transloco
+                  "
                   formControlName="max_image_pixels_unlimited"
                 />
               </div>
@@ -184,13 +204,15 @@
           </div>
         </div>
 
-        <div class="shared-key-field-card">
-          <div class="shared-key-field-card__header">
+        <div
+          class="shared-key-field-card form-field-shell surface-glass--nested"
+        >
+          <div class="shared-key-field-card__header form-field-shell__header">
             <label class="form-label" [for]="fieldId('max-image-steps')">
               {{ "profile.shared_keys.max_image_steps" | transloco }}
             </label>
             @if (isUnlimited("max_image_steps")) {
-              <span class="shared-key-field-status-badge">
+              <span class="shared-key-field-status-badge form-state-badge">
                 {{ "profile.shared_keys.unlimited" | transloco }}
               </span>
             }
@@ -204,7 +226,7 @@
             [attr.aria-describedby]="fieldId('max-image-steps-hint')"
           />
 
-          <div class="shared-key-field-card__footer">
+          <div class="shared-key-field-card__footer form-field-shell__footer">
             <p
               class="shared-key-field-help text-secondary text-xs"
               [id]="fieldId('max-image-steps-hint')"
@@ -213,20 +235,24 @@
             </p>
             <div class="shared-key-field-toggle">
               <app-toggle-checkbox
-                [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+                [description]="
+                  'profile.shared_keys.unlimited_checkbox' | transloco
+                "
                 formControlName="max_image_steps_unlimited"
               />
             </div>
           </div>
         </div>
 
-        <div class="shared-key-field-card">
-          <div class="shared-key-field-card__header">
+        <div
+          class="shared-key-field-card form-field-shell surface-glass--nested"
+        >
+          <div class="shared-key-field-card__header form-field-shell__header">
             <label class="form-label" [for]="fieldId('max-text-tokens')">
               {{ "profile.shared_keys.max_text_tokens" | transloco }}
             </label>
             @if (isUnlimited("max_text_tokens")) {
-              <span class="shared-key-field-status-badge">
+              <span class="shared-key-field-status-badge form-state-badge">
                 {{ "profile.shared_keys.unlimited" | transloco }}
               </span>
             }
@@ -240,7 +266,7 @@
             [attr.aria-describedby]="fieldId('max-text-tokens-hint')"
           />
 
-          <div class="shared-key-field-card__footer">
+          <div class="shared-key-field-card__footer form-field-shell__footer">
             <p
               class="shared-key-field-help text-secondary text-xs"
               [id]="fieldId('max-text-tokens-hint')"
@@ -249,7 +275,9 @@
             </p>
             <div class="shared-key-field-toggle">
               <app-toggle-checkbox
-                [description]="'profile.shared_keys.unlimited_checkbox' | transloco"
+                [description]="
+                  'profile.shared_keys.unlimited_checkbox' | transloco
+                "
                 formControlName="max_text_tokens_unlimited"
               />
             </div>

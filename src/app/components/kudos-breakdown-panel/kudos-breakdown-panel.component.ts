@@ -7,6 +7,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../pipes/format-number.pipe';
 import { UserKudosDetails } from '../../types/horde-user';
+import { InfoTooltipComponent } from '../info-tooltip/info-tooltip.component';
 
 /**
  * Display variant for the kudos breakdown panel.
@@ -22,6 +23,8 @@ interface KudosField {
   key: keyof UserKudosDetails;
   labelKey: string;
   value: number | undefined;
+  glossaryId?: string;
+  tooltipKey?: string;
 }
 
 /**
@@ -30,7 +33,7 @@ interface KudosField {
  */
 @Component({
   selector: 'app-kudos-breakdown-panel',
-  imports: [TranslocoPipe, FormatNumberPipe],
+  imports: [TranslocoPipe, FormatNumberPipe, InfoTooltipComponent],
   template: `
     @if (variant() === 'admin') {
       <div class="admin-grid-stats-4 gap-4">
@@ -46,11 +49,24 @@ interface KudosField {
         }
       </div>
     } @else {
-      <div class="data-grid-2-3">
+      <div class="kudos-breakdown kudos-breakdown--profile">
         @for (field of visibleFields(); track field.key) {
-          <div class="data-item">
-            <span class="data-label">{{ field.labelKey | transloco }}</span>
-            <span class="data-value">{{
+          <div
+            class="kudos-breakdown__metric"
+            [class.kudos-breakdown__metric--primary]="
+              field.key === 'accumulated' || field.key === 'awarded'
+            "
+          >
+            <span class="kudos-breakdown__label"
+              >{{ field.labelKey | transloco }}
+              @if (field.tooltipKey && field.glossaryId) {
+                <app-info-tooltip
+                  [termKey]="field.tooltipKey"
+                  [glossaryId]="field.glossaryId"
+                />
+              }
+            </span>
+            <span class="kudos-breakdown__value">{{
               field.value ?? 0 | formatNumber
             }}</span>
           </div>
@@ -86,27 +102,56 @@ export class KudosBreakdownPanelComponent {
     const details = this.kudosDetails();
     const prefix = this.translationPrefix() ?? this.defaultPrefix();
     const showZero = this.showZeroValues();
+    const isProfile = this.variant() === 'profile';
 
     const allFields: KudosField[] = [
       {
         key: 'accumulated',
         labelKey: `${prefix}accumulated`,
         value: details.accumulated,
+        glossaryId: isProfile ? 'profile-kudos-accumulated' : undefined,
+        tooltipKey: isProfile
+          ? 'help.glossary.page.profile.accumulated.description'
+          : undefined,
       },
-      { key: 'gifted', labelKey: `${prefix}gifted`, value: details.gifted },
+      {
+        key: 'gifted',
+        labelKey: `${prefix}gifted`,
+        value: details.gifted,
+        glossaryId: isProfile ? 'profile-kudos-gifted' : undefined,
+        tooltipKey: isProfile
+          ? 'help.glossary.page.profile.gifted.description'
+          : undefined,
+      },
       {
         key: 'received',
         labelKey: `${prefix}received`,
         value: details.received,
+        glossaryId: isProfile ? 'profile-kudos-received' : undefined,
+        tooltipKey: isProfile
+          ? 'help.glossary.page.profile.received.description'
+          : undefined,
       },
       { key: 'admin', labelKey: `${prefix}admin`, value: details.admin },
       {
         key: 'recurring',
         labelKey: `${prefix}recurring`,
         value: details.recurring,
+        glossaryId: isProfile ? 'profile-kudos-recurring' : undefined,
+        tooltipKey: isProfile
+          ? 'help.glossary.page.profile.recurring.description'
+          : undefined,
       },
       { key: 'awarded', labelKey: `${prefix}awarded`, value: details.awarded },
-      { key: 'donated', labelKey: `${prefix}donated`, value: details.donated },
+      {
+        key: 'donated',
+        labelKey: `${prefix}donated`,
+        value: details.donated,
+        glossaryId: isProfile ? 'profile-kudos-donated' : undefined,
+        tooltipKey: isProfile
+          ? 'help.glossary.page.profile.donated.description'
+          : undefined,
+      },
       { key: 'styled', labelKey: `${prefix}styled`, value: details.styled },
     ];
 

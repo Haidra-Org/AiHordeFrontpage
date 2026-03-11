@@ -14,29 +14,12 @@
   }
 
   .shared-key-grid {
-    @apply grid gap-4 mt-4;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    @apply grid gap-3 mt-4;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 
   .shared-key-form {
     @apply grid gap-5 mt-4;
-  }
-
-  /* Alert styles */
-  .alert {
-    @apply rounded-xl py-3 px-4 border mt-4;
-  }
-
-  .alert-error {
-    background: rgba(239, 68, 68, 0.12);
-    border-color: rgba(239, 68, 68, 0.6);
-    @apply text-red-400;
-  }
-
-  .alert-success {
-    background: rgba(34, 197, 94, 0.12);
-    border-color: rgba(34, 197, 94, 0.6);
-    @apply text-green-300;
   }
 
   .alert-title {
@@ -53,38 +36,11 @@
   }
 
   .shared-key-form-panel {
-    @apply rounded-2xl p-4 md:p-5;
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-  }
-
-  .dark .shared-key-form-panel {
-    background: rgb(31 41 55 / 0.46);
-    border-color: rgb(255 255 255 / 0.08);
-    box-shadow: 0 18px 40px rgb(0 0 0 / 0.24);
+    min-width: 0;
   }
 
   .shared-key-form-panel--identity {
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.74),
-      rgb(239 246 255 / 0.62)
-    );
-    border-color: var(--color-glass-border);
-  }
-
-  .dark .shared-key-form-panel--identity {
-    background: linear-gradient(
-      135deg,
-      rgb(30 41 59 / 0.72),
-      rgb(15 23 42 / 0.66)
-    );
-    border-color: rgb(255 255 255 / 0.12);
-  }
-
-  .shared-key-form-panel__header {
-    @apply flex flex-col gap-1 mb-4;
+    min-width: 0;
   }
 
   .shared-key-form-eyebrow {
@@ -96,43 +52,22 @@
   }
 
   .shared-key-form-section-grid {
-    @apply grid gap-3;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    min-width: 0;
   }
 
   .shared-key-field-card {
-    @apply rounded-xl p-4 flex flex-col gap-3;
-    background: rgb(255 255 255 / 0.58);
-    border: 1px solid rgb(255 255 255 / 0.45);
-  }
-
-  .dark .shared-key-field-card {
-    background: rgb(15 23 42 / 0.44);
-    border-color: rgb(255 255 255 / 0.08);
+    min-width: 0;
   }
 
   .shared-key-field-card--full {
-    grid-column: 1 / -1;
-  }
-
-  .shared-key-field-card__header {
-    @apply flex items-start justify-between gap-3;
-  }
-
-  .shared-key-field-card__footer {
-    @apply flex items-start justify-between gap-3 flex-wrap;
+    min-width: 0;
   }
 
   .shared-key-field-card__footer--stacked {
-    @apply gap-4;
-  }
-
-  .shared-key-field-footer-row {
-    @apply flex items-start justify-between gap-3 flex-wrap w-full;
+    min-width: 0;
   }
 
   .shared-key-field-status-badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide;
     background: rgb(14 165 233 / 0.14);
     border: 1px solid rgb(14 165 233 / 0.28);
     color: rgb(3 105 161);
@@ -166,7 +101,7 @@
   }
 
   .shared-key-form-actions {
-    @apply flex items-center justify-between gap-3 flex-wrap;
+    min-width: 0;
   }
 
   .shared-key-form-actions__hint {
@@ -180,9 +115,18 @@
 
   /* Card styles */
   .shared-key-card {
-    @apply rounded-xl p-3;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.04);
+    @apply rounded-xl p-3 md:p-4;
+    background: var(--color-glass-surface-elevated);
+    backdrop-filter: blur(var(--blur-glass-sm));
+    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
+    border: 1px solid var(--color-glass-border);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .dark .shared-key-card {
+    background: var(--color-glass-surface-dark-elevated);
+    border-color: var(--color-glass-border-dark);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   .shared-key-card__header {
@@ -190,7 +134,7 @@
   }
 
   .shared-key-name-row {
-    @apply flex items-center gap-2 flex-wrap;
+    @apply flex items-center gap-2 flex-wrap justify-between;
   }
 
   .shared-key-id {
@@ -198,39 +142,60 @@
   }
 
   .shared-key-id-value {
-    @apply block py-1.5 px-3 rounded-md font-mono text-sm font-semibold break-all select-all w-full;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: rgb(165, 180, 252);
+    @apply block py-1.5 px-2.5 rounded-md font-mono text-xs font-semibold break-all select-all w-full;
+    background: rgb(255 255 255 / 0.36);
+    border: 1px solid rgb(99 102 241 / 0.16);
+    color: rgb(79 70 229);
+  }
+
+  .dark .shared-key-id-value {
+    background: rgb(15 23 42 / 0.3);
+    border-color: rgb(129 140 248 / 0.14);
+    color: rgb(199 210 254);
   }
 
   .shared-key-copy-btn {
     @apply flex items-center justify-center px-2 rounded-md cursor-pointer shrink-0;
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: rgb(165, 180, 252);
+    background: rgb(255 255 255 / 0.36);
+    border: 1px solid rgb(99 102 241 / 0.16);
+    color: rgb(79 70 229);
     transition: background 0.15s;
+  }
 
-    &:hover {
-      background: rgba(99, 102, 241, 0.3);
-    }
+  .dark .shared-key-copy-btn {
+    background: rgb(15 23 42 / 0.3);
+    border-color: rgb(129 140 248 / 0.14);
+    color: rgb(199 210 254);
+  }
+
+  .shared-key-copy-btn:hover {
+    background: rgb(224 231 255 / 0.65);
+  }
+
+  .dark .shared-key-copy-btn:hover {
+    background: rgb(30 41 59 / 0.55);
   }
 
   .shared-key-card__body {
-    @apply grid gap-2 mt-3;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    @apply grid gap-2 mt-2;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
   .shared-key-field {
-    @apply flex justify-between gap-2;
+    @apply flex justify-between gap-2 items-baseline;
+    min-width: 0;
   }
 
   .shared-key-dim-row {
-    @apply text-right;
+    @apply text-right px-0.5;
   }
 
   .shared-key-card__footer {
-    @apply mt-4 pt-4;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    @apply mt-3 pt-3;
+    border-top: 1px solid var(--color-glass-border-subtle);
+  }
+
+  .dark .shared-key-card__footer {
+    border-top-color: var(--color-glass-border-dark-subtle);
   }
 }

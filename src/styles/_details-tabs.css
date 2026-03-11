@@ -61,6 +61,32 @@
     font-size: 0.75rem;
   }
 
+  .details-tabs--sub .styles-create-btn {
+    margin-left: auto;
+    flex: 0 0 auto;
+    @apply rounded-md;
+    border: 1px solid rgb(255 255 255 / 0.2);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15);
+  }
+
+  @media (max-width: 639px) {
+    .details-tabs--sub .styles-create-btn {
+      @apply px-2.5 py-1.5 text-xs;
+      min-height: 2rem;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .details-tabs--sub .styles-create-btn {
+      @apply px-2;
+      min-width: 2rem;
+    }
+
+    .details-tabs--sub .styles-create-btn-label {
+      display: none;
+    }
+  }
+
   .details-tab {
     @apply inline-flex items-center font-medium no-underline cursor-pointer;
     @apply transition-all duration-200;
@@ -427,17 +453,7 @@
     /* Use inset: auto to avoid viewport clipping issues */
     top: 100%;
     z-index: 50;
-    background: var(--color-glass-surface-heavy);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    border: 1px solid var(--color-glass-border);
-    box-shadow: var(--shadow-glass-elevated);
-  }
-
-  .dark .filter-autocomplete-dropdown {
-    background: rgb(31 41 55 / 0.85);
-    border-color: rgb(255 255 255 / 0.1);
-    box-shadow: 0 12px 40px rgb(0 0 0 / 0.4);
+    color: var(--color-text-primary);
   }
 
   /* Individual autocomplete suggestion item */
@@ -976,7 +992,7 @@
      ================================================================= */
 
   .details-tabs--glass {
-    background: var(--color-glass-surface);
+    background: var(--color-glass-surface-panel);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     /* Dark-tinted border so the rounded shape is visible against light backgrounds;
@@ -1013,10 +1029,10 @@
   }
 
   .dark .details-tabs--glass {
-    background: rgb(31 41 55 / 0.4);
-    border-color: rgb(255 255 255 / 0.06);
-    border-bottom-color: rgb(255 255 255 / 0.1);
-    box-shadow: 0 2px 12px rgb(0 0 0 / 0.2);
+    background: var(--color-glass-surface-dark-soft);
+    border-color: var(--color-glass-border-dark-subtle);
+    border-bottom-color: var(--color-glass-border-dark-strong);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   /* Glass active tab gets a subtle fill instead of just a bottom border */
@@ -1026,8 +1042,8 @@
   }
 
   .dark .details-tabs--glass .details-tab-active {
-    background: rgb(55 65 81 / 0.4);
-    box-shadow: inset 0 1px 1px rgb(255 255 255 / 0.05);
+    background: var(--color-glass-surface-dark-elevated);
+    box-shadow: var(--shadow-glass-dark-inset);
   }
 
   /* Glass tab hover - inherit per-tab border-radius from base/first/last rules */
@@ -1036,7 +1052,7 @@
   }
 
   .dark .details-tabs--glass .details-tab:hover {
-    background: rgb(55 65 81 / 0.3);
+    background: var(--color-glass-surface-dark-soft);
   }
 
   /* =================================================================
@@ -1080,22 +1096,25 @@
 
   .tab-content-panel {
     @apply p-4 sm:p-6 rounded-b-xl;
-    background: var(--color-glass-surface);
+    background: var(--color-glass-surface-panel);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid var(--color-glass-border-subtle);
     border-top: none;
-    box-shadow:
-      0 4px 16px rgb(0 0 0 / 0.04),
-      0 1px 3px rgb(0 0 0 / 0.02);
+    box-shadow: var(--shadow-glass);
+  }
+
+  @media (max-width: 420px) {
+    .tab-content-panel {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
   }
 
   .dark .tab-content-panel {
-    background: rgb(31 41 55 / 0.35);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow:
-      0 4px 16px rgb(0 0 0 / 0.2),
-      0 1px 3px rgb(0 0 0 / 0.15);
+    background: var(--color-glass-surface-dark-soft);
+    border-color: var(--color-glass-border-dark-subtle);
+    box-shadow: var(--shadow-glass-dark);
   }
 
   /* =================================================================
@@ -1107,7 +1126,7 @@
 
   .tab-sub-panel {
     @apply rounded-xl p-3 sm:p-4;
-    background: rgb(255 255 255 / 0.35);
+    background: var(--color-glass-surface-subtle);
     border: 1px solid var(--color-glass-border-subtle);
     box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.03);
   }
@@ -1116,28 +1135,26 @@
      so sub-tabs align with the major tab bar above. */
   @media (max-width: 639px) {
     .tab-sub-panel {
-      margin-left: -1rem;
-      margin-right: -1rem;
-      border-radius: 0;
-      border-left: none;
-      border-right: none;
-      padding-left: 0.75rem;
-      padding-right: 0.75rem;
+      margin-left: 0;
+      margin-right: 0;
+      border-radius: 0.75rem;
+      border-left: 1px solid var(--color-glass-border-subtle);
+      border-right: 1px solid var(--color-glass-border-subtle);
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
     }
 
     .tab-sub-panel > .details-tabs {
-      margin-left: -0.75rem;
-      margin-right: -0.75rem;
-      /* max-width: 100% would cap width at the panel content edge;
-         use width + max-width: none so the element actually spans the full bleed zone. */
-      width: calc(100% + 1.5rem);
-      max-width: none;
+      margin-left: 0;
+      margin-right: 0;
+      width: 100%;
+      max-width: 100%;
     }
   }
 
   .dark .tab-sub-panel {
-    background: rgb(17 24 39 / 0.3);
-    border-color: rgb(255 255 255 / 0.08);
+    background: var(--color-glass-surface-dark-subtle);
+    border-color: var(--color-glass-border-dark);
     box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15);
   }
 

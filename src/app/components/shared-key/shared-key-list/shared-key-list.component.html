@@ -30,7 +30,7 @@
   }
 
   @if (error()) {
-    <div class="alert alert-error" role="alert">
+    <div class="alert alert--danger mt-4" role="alert">
       <p class="alert-title">
         {{ "profile.shared_keys.error_title" | transloco }}
       </p>
@@ -39,7 +39,7 @@
   }
 
   @if (success()) {
-    <div class="alert alert-success" role="status">
+    <div class="alert alert--success mt-4" role="status">
       <p class="alert-title">
         {{ "profile.shared_keys.success_title" | transloco }}
       </p>
@@ -75,11 +75,7 @@
   @if (!readonly()) {
     <div class="section-divider-top">
       @if (createFormCollapsed()) {
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="toggleCreateForm()"
-        >
+        <button type="button" class="btn-primary" (click)="toggleCreateForm()">
           {{ "profile.shared_keys.create_title" | transloco }}
         </button>
       } @else {

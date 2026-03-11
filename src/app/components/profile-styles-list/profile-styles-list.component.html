@@ -64,9 +64,10 @@
       @if (!readonly()) {
         <button
           type="button"
-          class="btn-primary"
+          class="btn-primary styles-create-btn"
           (click)="openCreateForm()"
           [disabled]="showCreateForm()"
+          [attr.aria-label]="'styles.create' | transloco"
         >
           <svg
             class="icon-sm"
@@ -82,14 +83,14 @@
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-          {{ "styles.create" | transloco }}
+            <span class="styles-create-btn-label">{{ "styles.create" | transloco }}</span>
         </button>
       }
     </div>
 
     <!-- Create Form -->
     @if (showCreateForm() && !readonly()) {
-      <div class="card card-bg-secondary card-full">
+      <div class="style-form-create-host">
         <app-style-form
           [mode]="'create'"
           [styleType]="currentStyleType()"
@@ -160,7 +161,7 @@
           </p>
         </div>
       } @else {
-        <div class="grid-cards">
+        <div class="grid-cards styles-entry-grid">
           @for (style of filteredStyles(); track style.id) {
             <app-style-card
               [style]="style"

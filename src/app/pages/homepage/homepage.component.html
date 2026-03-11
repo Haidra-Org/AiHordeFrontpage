@@ -1,6 +1,13 @@
-<app-homepage-intro />
-<app-homepage-sponsors />
-<app-homepage-quickstart />
-<app-homepage-stats />
-<app-homepage-latest-news />
-<app-homepage-guis />
+<div class="homepage-shell" [style.--homepage-scroll]="scrollOffsetCss()">
+  <app-homepage-intro />
+  <hr class="section-divider" />
+  <app-homepage-sponsors />
+  <hr class="section-divider" />
+  <app-homepage-quickstart />
+  <hr class="section-divider" />
+  <app-homepage-stats />
+  <hr class="section-divider" />
+  <app-homepage-latest-news />
+  <hr class="section-divider" />
+  <app-homepage-guis />
+</div>
