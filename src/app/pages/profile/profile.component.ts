@@ -2,12 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  PLATFORM_ID,
   effect,
   inject,
   OnInit,
   signal,
   computed,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -33,17 +35,19 @@ import { HordeWorker, WorkerType } from '../../types/horde-worker';
 import { Team, CreateTeamRequest, UpdateTeamRequest } from '../../types/team';
 import { SharedKeyListComponent } from '../../components/shared-key/shared-key-list/shared-key-list.component';
 import { ProfileStylesListComponent } from '../../components/profile-styles-list/profile-styles-list.component';
-import { KudosBreakdownPanelComponent } from '../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
-import { UnitTooltipComponent } from '../../components/unit-tooltip/unit-tooltip.component';
-import { UnitConversionService } from '../../services/unit-conversion.service';
+
 import { DeleteAccountDialogComponent } from '../../components/delete-account-dialog/delete-account-dialog.component';
 import { AdminDialogComponent } from '../../components/admin/admin-dialog/admin-dialog.component';
 import { PageIntroComponent } from '../../components/page-intro/page-intro.component';
-import { KudosTermComponent } from '../../components/kudos-term/kudos-term.component';
+
 import { GenerationsTabComponent } from '../../components/generations-tab/generations-tab.component';
 import { PageGuideService } from '../../services/page-guide.service';
 import { InfoTooltipComponent } from '../../components/info-tooltip/info-tooltip.component';
 import { GlossaryService } from '../../services/glossary.service';
+import { UserBadgesComponent } from '../../components/user-badges/user-badges.component';
+import { UserStatsSummaryComponent } from '../../components/user-stats-summary/user-stats-summary.component';
+import { UserKudosCardComponent } from '../../components/user-kudos-card/user-kudos-card.component';
+import { UserRecordsPanelComponent } from '../../components/user-records-panel/user-records-panel.component';
 
 type ProfileTab =
   | 'profile'
@@ -62,6 +66,8 @@ type WorkerListItem = {
   worker: HordeWorker | null;
 };
 
+const CONTACT_NAG_DISMISSED_STORAGE_KEY = 'profile_contact_nag_dismissed';
+
 @Component({
   selector: 'app-profile',
   imports: [
@@ -74,22 +80,25 @@ type WorkerListItem = {
     WorkerCardComponent,
     SharedKeyListComponent,
     ProfileStylesListComponent,
-    KudosBreakdownPanelComponent,
-    UnitTooltipComponent,
+
     DeleteAccountDialogComponent,
     AdminDialogComponent,
     PageIntroComponent,
-    KudosTermComponent,
     InfoTooltipComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
     GenerationsTabComponent,
+    UserBadgesComponent,
+    UserStatsSummaryComponent,
+    UserKudosCardComponent,
+    UserRecordsPanelComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
@@ -99,7 +108,7 @@ export class ProfileComponent implements OnInit {
   private readonly teamService = inject(TeamService);
   private readonly router = inject(Router);
   public readonly auth = inject(AuthService);
-  public readonly units = inject(UnitConversionService);
+
   public readonly guideService = inject(PageGuideService);
   private readonly glossary = inject(GlossaryService);
   private readonly workerRequestConcurrency = 3;
@@ -277,6 +286,7 @@ export class ProfileComponent implements OnInit {
   public contactDialogOpen = signal<boolean>(false);
   public contactInput = signal<string>('');
   public contactSaving = signal<boolean>(false);
+  public contactDialogError = signal<string | null>(null);
   public publicWorkersDialogOpen = signal<boolean>(false);
   public publicWorkersNewValue = signal<boolean>(false);
   public publicWorkersSaving = signal<boolean>(false);
@@ -307,79 +317,6 @@ export class ProfileComponent implements OnInit {
       this.activeAlchemyCount() > 0,
   );
 
-  public readonly hasActivitySnapshotData = computed(() => {
-    const user = this.auth.currentUser();
-    return !!(user?.records || user?.usage || user?.contributions);
-  });
-
-  public readonly overviewFulfillments = computed(() => {
-    const user = this.auth.currentUser();
-    if (!user) return null;
-
-    const fulfillment = user.records?.fulfillment;
-    const hasRecordsFulfillment =
-      fulfillment?.image !== undefined ||
-      fulfillment?.text !== undefined ||
-      fulfillment?.interrogation !== undefined;
-
-    if (hasRecordsFulfillment) {
-      return (
-        (fulfillment?.image ?? 0) +
-        (fulfillment?.text ?? 0) +
-        (fulfillment?.interrogation ?? 0)
-      );
-    }
-
-    if (user.contributions?.fulfillments !== undefined) {
-      return user.contributions.fulfillments;
-    }
-
-    return null;
-  });
-
-  public readonly overviewTextRequests = computed(() => {
-    const user = this.auth.currentUser();
-    if (!user) return null;
-
-    if (user.records?.request?.text !== undefined) {
-      return user.records.request.text;
-    }
-
-    return null;
-  });
-
-  public readonly overviewGeneratedMegapixelsteps = computed(() => {
-    const user = this.auth.currentUser();
-    if (!user) return null;
-
-    if (user.records?.contribution?.megapixelsteps !== undefined) {
-      return user.records.contribution.megapixelsteps;
-    }
-
-    if (user.contributions?.megapixelsteps !== undefined) {
-      return user.contributions.megapixelsteps;
-    }
-
-    return null;
-  });
-
-  public readonly overviewGeneratedTokens = computed(() => {
-    const user = this.auth.currentUser();
-    if (!user) return null;
-
-    if (user.records?.contribution?.tokens !== undefined) {
-      return user.records.contribution.tokens;
-    }
-
-    return null;
-  });
-
-  public readonly hasOverviewGeneratedStats = computed(
-    () =>
-      this.overviewGeneratedMegapixelsteps() !== null ||
-      this.overviewGeneratedTokens() !== null,
-  );
-
   // Asset counts for quick-nav boxes
   public readonly workerCount = computed(
     () => this.auth.currentUser()?.worker_ids?.length ?? 0,
@@ -389,6 +326,18 @@ export class ProfileComponent implements OnInit {
   );
   public readonly sharedKeyCount = computed(
     () => this.auth.currentUser()?.sharedkey_ids?.length ?? 0,
+  );
+  public readonly shouldSetContactNag = computed(() => {
+    const user = this.auth.currentUser();
+    if (!user) return false;
+
+    const hasWorkers = (user.worker_ids?.length ?? 0) > 0;
+    const hasContact = (user.contact?.trim().length ?? 0) > 0;
+    return hasWorkers && !hasContact;
+  });
+  public readonly contactNagDismissed = signal<boolean>(false);
+  public readonly showContactNagNotifications = computed(
+    () => this.shouldSetContactNag() && !this.contactNagDismissed(),
   );
 
   // Computed filtered workers
@@ -474,39 +423,6 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  // Records expanded state
-  public recordsExpanded = signal<boolean>(false);
-
-  // Computed units for Usage Records
-  public readonly usageMegapixelsteps = computed(() => {
-    const user = this.auth.currentUser();
-    if (user?.records?.usage?.megapixelsteps === undefined) return null;
-    // API gives megapixelsteps, convert to raw pixelsteps for the service
-    const rawPixelsteps = user.records.usage.megapixelsteps * 1e6;
-    return this.units.formatTotalPixelsteps(rawPixelsteps);
-  });
-
-  public readonly usageTokens = computed(() => {
-    const user = this.auth.currentUser();
-    if (user?.records?.usage?.tokens === undefined) return null;
-    return this.units.formatTotalTokens(user.records.usage.tokens);
-  });
-
-  // Computed units for Contribution Records
-  public readonly contributionMegapixelsteps = computed(() => {
-    const user = this.auth.currentUser();
-    if (user?.records?.contribution?.megapixelsteps === undefined) return null;
-    // API gives megapixelsteps, convert to raw pixelsteps for the service
-    const rawPixelsteps = user.records.contribution.megapixelsteps * 1e6;
-    return this.units.formatTotalPixelsteps(rawPixelsteps);
-  });
-
-  public readonly contributionTokens = computed(() => {
-    const user = this.auth.currentUser();
-    if (user?.records?.contribution?.tokens === undefined) return null;
-    return this.units.formatTotalTokens(user.records.contribution.tokens);
-  });
-
   public form = new FormGroup({
     apiKey: new FormControl<string>('', [Validators.required]),
     remember: new FormControl<boolean>(false),
@@ -524,6 +440,7 @@ export class ProfileComponent implements OnInit {
       });
 
     this.footerColor.setDarkMode(true);
+    this.contactNagDismissed.set(this.loadContactNagDismissed());
 
     // Sync active tab from route param
     this.route.paramMap
@@ -544,6 +461,33 @@ export class ProfileComponent implements OnInit {
       .subscribe(() => {
         this.loginError.set(false);
       });
+  }
+
+  public dismissContactNagNotifications(): void {
+    this.contactNagDismissed.set(true);
+    this.storeContactNagDismissed(true);
+  }
+
+  private loadContactNagDismissed(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    try {
+      return localStorage.getItem(CONTACT_NAG_DISMISSED_STORAGE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private storeContactNagDismissed(value: boolean): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      if (value) {
+        localStorage.setItem(CONTACT_NAG_DISMISSED_STORAGE_KEY, '1');
+      } else {
+        localStorage.removeItem(CONTACT_NAG_DISMISSED_STORAGE_KEY);
+      }
+    } catch {
+      // localStorage may be unavailable; ignore persistence errors.
+    }
   }
 
   public login(): void {
@@ -585,10 +529,6 @@ export class ProfileComponent implements OnInit {
     if (expanded && this.userWorkers().length === 0) {
       this.loadUserWorkers();
     }
-  }
-
-  public toggleRecordsSection(): void {
-    this.recordsExpanded.set(!this.recordsExpanded());
   }
 
   public setActiveTab(tab: ProfileTab): void {
@@ -818,22 +758,38 @@ export class ProfileComponent implements OnInit {
     const user = this.auth.currentUser();
     this.contactInput.set(user?.contact ?? '');
     this.profileUpdateError.set(null);
+    this.contactDialogError.set(null);
     this.contactDialogOpen.set(true);
   }
 
   public closeContactDialog(): void {
+    this.contactDialogError.set(null);
     this.contactDialogOpen.set(false);
   }
 
   public onContactInputChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.contactInput.set(target.value);
+    this.contactDialogError.set(null);
   }
 
   public confirmContactChange(): void {
     const contact = this.contactInput().trim();
+    if (contact.length < 5 || contact.length > 500) {
+      this.contactDialogError.set('Contact must be between 5 and 500 characters.');
+      return;
+    }
+
+    const previousDismissedState = this.contactNagDismissed();
+
+    if (contact.length > 0) {
+      this.contactNagDismissed.set(true);
+      this.storeContactNagDismissed(true);
+    }
+
     this.contactSaving.set(true);
     this.profileUpdateError.set(null);
+    this.contactDialogError.set(null);
 
     this.auth
       .updateProfile({ contact })
@@ -845,6 +801,9 @@ export class ProfileComponent implements OnInit {
           this.profileUpdateSuccess.set('profile.edit_contact_success');
           setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
         } else {
+          this.contactNagDismissed.set(previousDismissedState);
+          this.storeContactNagDismissed(previousDismissedState);
+          this.contactDialogError.set(result.error ?? 'Failed to update contact');
           this.profileUpdateError.set(
             result.error ?? 'Failed to update contact',
           );

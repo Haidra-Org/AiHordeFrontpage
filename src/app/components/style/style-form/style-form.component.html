@@ -1,5 +1,5 @@
 <div
-  class="style-form-shell surface-glass form-stack"
+  class="style-form-shell"
   [class.card--no-blur]="confirmModalOpen()"
 >
   <!-- View Toggle -->
@@ -634,7 +634,7 @@
   }
 
   <!-- Form Actions -->
-  <div class="form-actions style-form-actions-bar surface-glass--nested">
+  <div class="style-form-actions-bar">
     @if (showSubmitError()) {
       <p class="form-error-summary" role="alert">
         {{ "styles.form.validation_summary" | transloco }}
@@ -668,67 +668,59 @@
   </div>
 </div>
 
-<!-- Confirm Submission Modal — rendered outside the card so position:fixed
-     is not trapped by the card's backdrop-filter containing block. -->
-@if (confirmModalOpen()) {
-  <div
-    class="modal-overlay modal-overlay--high"
-    role="dialog"
-    aria-modal="true"
-  >
-    <div
-      class="modal-backdrop"
-      (click)="onConfirmCancel()"
-      aria-hidden="true"
-    ></div>
-    <div class="modal-panel modal-panel--lg">
-      <div class="modal-header">
-        <h3 class="modal-title">
-          {{ "styles.form.confirm_title" | transloco }}
-        </h3>
-        <button
-          type="button"
-          class="modal-close"
-          (click)="onConfirmCancel()"
-          aria-label="Close"
-        >
-          &#10005;
-        </button>
+<dialog
+  #confirmDialog
+  class="style-confirm-dialog"
+  (cancel)="$event.preventDefault(); onConfirmCancel()"
+  aria-labelledby="style-confirm-title"
+>
+  <div class="modal-panel modal-panel--lg">
+    <div class="modal-header">
+      <h3 id="style-confirm-title" class="modal-title">
+        {{ "styles.form.confirm_title" | transloco }}
+      </h3>
+      <button
+        type="button"
+        class="modal-close"
+        (click)="onConfirmCancel()"
+        aria-label="Close"
+      >
+        &#10005;
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>{{ "styles.form.confirm_message" | transloco }}</p>
+      <div class="confirm-fields">
+        @for (entry of confirmPayloadEntries(); track entry.key) {
+          <div class="confirm-field-row">
+            <span class="confirm-field-key">{{ entry.key }}</span>
+            <span class="confirm-field-value">{{ entry.value }}</span>
+          </div>
+        }
       </div>
-      <div class="modal-body">
-        <p>{{ "styles.form.confirm_message" | transloco }}</p>
-        <div class="confirm-fields">
-          @for (entry of confirmPayloadEntries(); track entry.key) {
-            <div class="confirm-field-row">
-              <span class="confirm-field-key">{{ entry.key }}</span>
-              <span class="confirm-field-value">{{ entry.value }}</span>
-            </div>
-          }
-        </div>
-        <details class="confirm-json-details">
-          <summary>
-            {{ "styles.form.confirm_json_label" | transloco }}
-          </summary>
-          <pre><code>{{ confirmPayloadJson() }}</code></pre>
-        </details>
-      </div>
-      <div class="modal-actions">
-        <button
-          type="button"
-          class="btn-source-control"
-          (click)="onConfirmCancel()"
-        >
-          {{ "styles.form.confirm_cancel" | transloco }}
-        </button>
-        <button
-          type="button"
-          class="btn-primary"
-          (click)="onConfirmSubmit()"
-          [disabled]="saving()"
-        >
-          {{ "styles.form.confirm_submit" | transloco }}
-        </button>
-      </div>
+      <details class="confirm-json-details">
+        <summary>
+          {{ "styles.form.confirm_json_label" | transloco }}
+        </summary>
+        <pre><code>{{ confirmPayloadJson() }}</code></pre>
+      </details>
+    </div>
+    <div class="modal-actions">
+      <button
+        type="button"
+        class="btn-source-control"
+        (click)="onConfirmCancel()"
+      >
+        {{ "styles.form.confirm_cancel" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="onConfirmSubmit()"
+        [disabled]="saving()"
+      >
+        {{ "styles.form.confirm_submit" | transloco }}
+      </button>
     </div>
   </div>
-}
+</dialog>

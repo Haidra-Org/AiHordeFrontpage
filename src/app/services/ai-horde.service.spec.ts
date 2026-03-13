@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
@@ -9,6 +9,7 @@ import {
   GENERATION_NOT_FOUND,
   ImageGenerationRequest,
 } from '../types/generation';
+import { clientAgentInterceptor } from './interceptors/client-agent.interceptor';
 
 describe('AiHordeService', () => {
   let service: AiHordeService;
@@ -16,7 +17,10 @@ describe('AiHordeService', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(withInterceptors([clientAgentInterceptor])),
+        provideHttpClientTesting(),
+      ],
     });
     service = TestBed.inject(AiHordeService);
     http = TestBed.inject(HttpTestingController);

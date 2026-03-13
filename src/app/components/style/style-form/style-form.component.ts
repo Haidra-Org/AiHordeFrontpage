@@ -7,9 +7,12 @@ import {
   ElementRef,
   inject,
   input,
+  OnChanges,
   OnInit,
   output,
+  SimpleChanges,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -61,7 +64,7 @@ export interface StyleFormSubmitEvent {
   templateUrl: './style-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StyleFormComponent implements OnInit {
+export class StyleFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
@@ -97,6 +100,7 @@ export class StyleFormComponent implements OnInit {
 
   /** The reactive form. */
   public form!: FormGroup;
+  private initialPayloadSnapshot = '';
 
   /** Whether this is an image style. */
   public readonly isImageStyle = computed(() => this.styleType() === 'image');
@@ -114,6 +118,8 @@ export class StyleFormComponent implements OnInit {
   /** Confirm modal state. */
   public readonly confirmModalOpen = signal(false);
   public readonly pendingPayload = signal<StyleFormSubmitEvent | null>(null);
+  private readonly confirmDialog =
+    viewChild<ElementRef<HTMLDialogElement>>('confirmDialog');
 
   public readonly confirmPayloadJson = computed(() => {
     const p = this.pendingPayload();
@@ -175,6 +181,71 @@ export class StyleFormComponent implements OnInit {
   ngOnInit(): void {
     this.initializeForm();
     this.loadModels();
+    this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.form) {
+      return;
+    }
+
+    if (changes['styleType'] || changes['initialValues']) {
+      this.initializeForm();
+      this.loadModels();
+      this.showJsonView.set(false);
+      this.jsonError.set(null);
+      this.submitAttempted.set(false);
+      this.pendingPayload.set(null);
+      this.closeConfirmDialog();
+      this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
+    }
+  }
+
+  private normalizeForSnapshot(value: unknown): unknown {
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeForSnapshot(item));
+    }
+
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      const normalized: Record<string, unknown> = {};
+
+      for (const key of Object.keys(record).sort()) {
+        const child = this.normalizeForSnapshot(record[key]);
+        if (child === undefined) continue;
+        if (Array.isArray(child) && child.length === 0) continue;
+        if (
+          child &&
+          typeof child === 'object' &&
+          !Array.isArray(child) &&
+          Object.keys(child as Record<string, unknown>).length === 0
+        ) {
+          continue;
+        }
+        normalized[key] = child;
+      }
+
+      return normalized;
+    }
+
+    return value;
+  }
+
+  private getCurrentPayloadSnapshot(): string {
+    if (this.showJsonView()) {
+      try {
+        const parsed = JSON.parse(this.jsonContent());
+        return JSON.stringify(this.normalizeForSnapshot(parsed));
+      } catch {
+        return `__invalid_json__:${this.jsonContent().trim()}`;
+      }
+    }
+
+    return JSON.stringify(this.normalizeForSnapshot(this.buildPayload()));
+  }
+
+  public hasUnsavedMeaningfulChanges(): boolean {
+    return this.getCurrentPayloadSnapshot() !== this.initialPayloadSnapshot;
   }
 
   private handleDocumentClick(event: MouseEvent): void {
@@ -613,7 +684,7 @@ export class StyleFormComponent implements OnInit {
           type: this.styleType(),
           payload: parsed,
         });
-        this.confirmModalOpen.set(true);
+        this.openConfirmDialog();
       } catch {
         this.jsonError.set('Invalid JSON format');
       }
@@ -625,24 +696,41 @@ export class StyleFormComponent implements OnInit {
           type: this.styleType(),
           payload: this.buildPayload(),
         });
-        this.confirmModalOpen.set(true);
+        this.openConfirmDialog();
       } else {
         this.submitAttempted.set(true);
       }
     }
   }
 
+  private openConfirmDialog(): void {
+    this.confirmModalOpen.set(true);
+    afterNextRender(() => {
+      const dialog = this.confirmDialog()?.nativeElement;
+      if (!dialog || dialog.open) return;
+      dialog.showModal();
+    });
+  }
+
+  private closeConfirmDialog(): void {
+    const dialog = this.confirmDialog()?.nativeElement;
+    if (dialog?.open) {
+      dialog.close();
+    }
+    this.confirmModalOpen.set(false);
+  }
+
   public onConfirmSubmit(): void {
     const payload = this.pendingPayload();
     if (payload) {
       this.formSubmit.emit(payload);
-      this.confirmModalOpen.set(false);
+      this.closeConfirmDialog();
       this.pendingPayload.set(null);
     }
   }
 
   public onConfirmCancel(): void {
-    this.confirmModalOpen.set(false);
+    this.closeConfirmDialog();
     this.pendingPayload.set(null);
   }
 

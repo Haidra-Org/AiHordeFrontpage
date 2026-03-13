@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, map } from 'rxjs';
+import { Observable, catchError, of, map, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   IPTimeout,
@@ -8,6 +8,7 @@ import {
   AddWorkerTimeout,
   SimpleResponse,
 } from '../types/ip-operations';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 
 /**
  * Service for managing IP operations (timeouts and blocks).
@@ -20,6 +21,7 @@ import {
 export class AdminOperationsService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2';
 
   /**
@@ -37,10 +39,12 @@ export class AdminOperationsService {
    * @returns Observable of IP timeout array, or empty array on error
    */
   public getIPTimeouts(): Observable<IPTimeout[]> {
-    return this.httpClient
-      .get<IPTimeout[]>(`${this.baseUrl}/operations/ipaddr`, {
-        headers: this.getHeaders(),
-      })
+    return this.cache
+      .cachedGet<IPTimeout[]>(
+        `${this.baseUrl}/operations/ipaddr`,
+        { headers: this.getHeaders() },
+        { ttl: CacheTTL.SHORT, category: 'admin-ops' },
+      )
       .pipe(catchError(() => of([])));
   }
 
@@ -53,10 +57,12 @@ export class AdminOperationsService {
    */
   public getIPTimeout(ipaddr: string): Observable<IPTimeout | null> {
     const encodedIP = encodeURIComponent(ipaddr);
-    return this.httpClient
-      .get<IPTimeout[]>(`${this.baseUrl}/operations/ipaddr/${encodedIP}`, {
-        headers: this.getHeaders(),
-      })
+    return this.cache
+      .cachedGet<IPTimeout[]>(
+        `${this.baseUrl}/operations/ipaddr/${encodedIP}`,
+        { headers: this.getHeaders() },
+        { ttl: CacheTTL.SHORT, category: 'admin-ops' },
+      )
       .pipe(
         map((result) => (result && result.length > 0 ? result[0] : null)),
         catchError(() => of(null)),
@@ -82,7 +88,10 @@ export class AdminOperationsService {
       .post<SimpleResponse>(`${this.baseUrl}/operations/ipaddr`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -104,6 +113,7 @@ export class AdminOperationsService {
         body: { ipaddr },
       })
       .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
         map(() => true),
         catchError(() => of(false)),
       );
@@ -135,7 +145,10 @@ export class AdminOperationsService {
           headers: { apikey: apiKey },
         },
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -159,6 +172,7 @@ export class AdminOperationsService {
         },
       )
       .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
         map(() => true),
         catchError(() => of(false)),
       );

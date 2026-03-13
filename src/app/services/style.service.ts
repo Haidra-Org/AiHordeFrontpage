@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import {
   HttpClient,
+  HttpContext,
   HttpErrorResponse,
   HttpParams,
 } from '@angular/common/http';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, tap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   ImageStyle,
@@ -25,6 +26,8 @@ import {
   UpdateStyleExampleInput,
   AddStyleExampleResponse,
 } from '../types/style-api';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -32,21 +35,21 @@ import {
 export class StyleService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2';
-  private readonly clientAgent = 'AiHordeFrontpage:styles';
+
+  private readonly styleContext = new HttpContext().set(
+    CLIENT_AGENT,
+    'AiHordeFrontpage:styles',
+  );
 
   // ==========================================================================
   // Private Helpers
   // ==========================================================================
 
-  private buildHeaders(apiKey?: string): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Client-Agent': this.clientAgent,
-    };
-    if (apiKey) {
-      headers['apikey'] = apiKey;
-    }
-    return headers;
+  private buildAuthHeaders(): Record<string, string> {
+    const apiKey = this.ensureApiKey();
+    return apiKey ? { apikey: apiKey } : {};
   }
 
   private ensureApiKey(): string | null {
@@ -115,11 +118,12 @@ export class StyleService {
     params: StyleQueryParams = {},
   ): Observable<ImageStyle[]> {
     const httpParams = this.buildQueryParams(params);
-    return this.httpClient
-      .get<ImageStyle[]>(`${this.baseUrl}/styles/image`, {
-        params: httpParams,
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<ImageStyle[]>(
+        `${this.baseUrl}/styles/image`,
+        { params: httpParams, context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -127,10 +131,12 @@ export class StyleService {
    * Get a single image style by ID.
    */
   public getImageStyle(styleId: string): Observable<ImageStyle> {
-    return this.httpClient
-      .get<ImageStyle>(`${this.baseUrl}/styles/image/${styleId}`, {
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<ImageStyle>(
+        `${this.baseUrl}/styles/image/${styleId}`,
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -138,12 +144,11 @@ export class StyleService {
    * Get an image style by name.
    */
   public getImageStyleByName(styleName: string): Observable<ImageStyle> {
-    return this.httpClient
-      .get<ImageStyle>(
+    return this.cache
+      .cachedGet<ImageStyle>(
         `${this.baseUrl}/styles/image_by_name/${encodeURIComponent(styleName)}`,
-        {
-          headers: this.buildHeaders(),
-        },
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
       )
       .pipe(catchError(this.handleError));
   }
@@ -162,9 +167,13 @@ export class StyleService {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .post<StyleModifyResponse>(`${this.baseUrl}/styles/image`, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.styleContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -181,10 +190,14 @@ export class StyleService {
         `${this.baseUrl}/styles/image/${styleId}`,
         payload,
         {
-          headers: this.buildHeaders(apiKey),
+          headers: { apikey: apiKey },
+          context: this.styleContext,
         },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -195,10 +208,12 @@ export class StyleService {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .delete(`${this.baseUrl}/styles/image/${styleId}`, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.styleContext,
       })
       .pipe(
         map(() => true),
+        tap(() => this.cache.invalidate({ category: 'styles' })),
         catchError(this.handleError),
       );
   }
@@ -219,9 +234,15 @@ export class StyleService {
       .post<AddStyleExampleResponse>(
         `${this.baseUrl}/styles/image/${styleId}/example`,
         payload,
-        { headers: this.buildHeaders(apiKey) },
+        {
+          headers: { apikey: apiKey },
+          context: this.styleContext,
+        },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -237,9 +258,15 @@ export class StyleService {
       .patch<StyleExample>(
         `${this.baseUrl}/styles/image/${styleId}/example/${exampleId}`,
         payload,
-        { headers: this.buildHeaders(apiKey) },
+        {
+          headers: { apikey: apiKey },
+          context: this.styleContext,
+        },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -252,10 +279,12 @@ export class StyleService {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .delete(`${this.baseUrl}/styles/image/${styleId}/example/${exampleId}`, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.styleContext,
       })
       .pipe(
         map(() => true),
+        tap(() => this.cache.invalidate({ category: 'styles' })),
         catchError(this.handleError),
       );
   }
@@ -269,11 +298,12 @@ export class StyleService {
    */
   public getTextStyles(params: StyleQueryParams = {}): Observable<TextStyle[]> {
     const httpParams = this.buildQueryParams(params);
-    return this.httpClient
-      .get<TextStyle[]>(`${this.baseUrl}/styles/text`, {
-        params: httpParams,
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<TextStyle[]>(
+        `${this.baseUrl}/styles/text`,
+        { params: httpParams, context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -281,10 +311,12 @@ export class StyleService {
    * Get a single text style by ID.
    */
   public getTextStyle(styleId: string): Observable<TextStyle> {
-    return this.httpClient
-      .get<TextStyle>(`${this.baseUrl}/styles/text/${styleId}`, {
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<TextStyle>(
+        `${this.baseUrl}/styles/text/${styleId}`,
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -292,12 +324,11 @@ export class StyleService {
    * Get a text style by name.
    */
   public getTextStyleByName(styleName: string): Observable<TextStyle> {
-    return this.httpClient
-      .get<TextStyle>(
+    return this.cache
+      .cachedGet<TextStyle>(
         `${this.baseUrl}/styles/text_by_name/${encodeURIComponent(styleName)}`,
-        {
-          headers: this.buildHeaders(),
-        },
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'styles' },
       )
       .pipe(catchError(this.handleError));
   }
@@ -316,9 +347,13 @@ export class StyleService {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .post<StyleModifyResponse>(`${this.baseUrl}/styles/text`, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.styleContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -335,10 +370,14 @@ export class StyleService {
         `${this.baseUrl}/styles/text/${styleId}`,
         payload,
         {
-          headers: this.buildHeaders(apiKey),
+          headers: { apikey: apiKey },
+          context: this.styleContext,
         },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'styles' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -349,10 +388,12 @@ export class StyleService {
     const apiKey = this.requireApiKey();
     return this.httpClient
       .delete(`${this.baseUrl}/styles/text/${styleId}`, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.styleContext,
       })
       .pipe(
         map(() => true),
+        tap(() => this.cache.invalidate({ category: 'styles' })),
         catchError(this.handleError),
       );
   }
@@ -368,11 +409,12 @@ export class StyleService {
     params: CollectionQueryParams = {},
   ): Observable<StyleCollection[]> {
     const httpParams = this.buildCollectionQueryParams(params);
-    return this.httpClient
-      .get<StyleCollection[]>(`${this.baseUrl}/collections`, {
-        params: httpParams,
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<StyleCollection[]>(
+        `${this.baseUrl}/collections`,
+        { params: httpParams, context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'collections' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -380,10 +422,12 @@ export class StyleService {
    * Get a single collection by ID.
    */
   public getCollection(collectionId: string): Observable<StyleCollection> {
-    return this.httpClient
-      .get<StyleCollection>(`${this.baseUrl}/collections/${collectionId}`, {
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<StyleCollection>(
+        `${this.baseUrl}/collections/${collectionId}`,
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'collections' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -393,10 +437,11 @@ export class StyleService {
   public getCollectionByName(
     collectionName: string,
   ): Observable<StyleCollection> {
-    return this.httpClient
-      .get<StyleCollection>(
+    return this.cache
+      .cachedGet<StyleCollection>(
         `${this.baseUrl}/collection_by_name/${encodeURIComponent(collectionName)}`,
-        { headers: this.buildHeaders() },
+        { context: this.styleContext },
+        { ttl: CacheTTL.LONG, category: 'collections' },
       )
       .pipe(catchError(this.handleError));
   }

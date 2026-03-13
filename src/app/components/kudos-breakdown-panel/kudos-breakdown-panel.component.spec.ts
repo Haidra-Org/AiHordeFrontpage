@@ -114,18 +114,26 @@ describe('KudosBreakdownPanelComponent', () => {
     });
 
     it('should render profile grid layout', () => {
-      const grid = fixture.nativeElement.querySelector('.data-grid-2-3');
+      const grid = fixture.nativeElement.querySelector(
+        '.kudos-breakdown--profile',
+      );
       expect(grid).not.toBeNull();
     });
 
     it('should render kudos fields as data items', () => {
-      const items = fixture.nativeElement.querySelectorAll('.data-item');
+      const items = fixture.nativeElement.querySelectorAll(
+        '.kudos-breakdown__metric',
+      );
       expect(items.length).toBe(6);
     });
 
-    it('should have data-label and data-value elements', () => {
-      const labels = fixture.nativeElement.querySelectorAll('.data-label');
-      const values = fixture.nativeElement.querySelectorAll('.data-value');
+    it('should have profile label and value elements', () => {
+      const labels = fixture.nativeElement.querySelectorAll(
+        '.kudos-breakdown__label',
+      );
+      const values = fixture.nativeElement.querySelectorAll(
+        '.kudos-breakdown__value',
+      );
       expect(labels.length).toBeGreaterThan(0);
       expect(values.length).toBeGreaterThan(0);
     });
@@ -145,7 +153,9 @@ describe('KudosBreakdownPanelComponent', () => {
       host.variant.set('profile');
       fixture.detectChanges();
 
-      const items = fixture.nativeElement.querySelectorAll('.data-item');
+      const items = fixture.nativeElement.querySelectorAll(
+        '.kudos-breakdown__metric',
+      );
       // Only accumulated (1000) and recurring (50) should show
       expect(items.length).toBe(2);
     });

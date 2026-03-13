@@ -1,4 +1,18 @@
 <div class="stack-lg">
+  <app-admin-dialog
+    [open]="unsavedCloseDialogOpen()"
+    [title]="'styles.unsaved_changes_title' | transloco"
+    [confirmLabel]="'styles.unsaved_changes_discard' | transloco"
+    [cancelLabel]="'styles.unsaved_changes_keep_editing' | transloco"
+    variant="danger"
+    (confirm)="onDiscardUnsavedChanges()"
+    (cancel)="onCancelDiscardUnsavedChanges()"
+  >
+    <p class="dialog-body-text">
+      {{ "styles.unsaved_changes_message" | transloco }}
+    </p>
+  </app-admin-dialog>
+
   <div class="tab-sub-panel">
     <!-- Sub-Tab Navigation -->
     <div
@@ -61,12 +75,11 @@
         }
       </button>
 
-      @if (!readonly()) {
+      @if (!readonly() && !showCreateForm()) {
         <button
           type="button"
           class="btn-primary styles-create-btn"
           (click)="openCreateForm()"
-          [disabled]="showCreateForm()"
           [attr.aria-label]="'styles.create' | transloco"
         >
           <svg
@@ -83,20 +96,36 @@
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-            <span class="styles-create-btn-label">{{ "styles.create" | transloco }}</span>
+          <span class="styles-create-btn-label">{{ "styles.create" | transloco }}</span>
         </button>
       }
+
+      @if (!readonly() && showCreateForm()) {
+        <button
+          type="button"
+          class="btn-source-control styles-create-btn"
+          (click)="requestCloseForm()"
+          [attr.aria-label]="'styles.close_editor' | transloco"
+        >
+          {{ "styles.close_editor" | transloco }}
+        </button>
+      }
+
+      <a routerLink="/details/styles" class="btn-source-control styles-create-btn">
+        {{ "styles.back_to_details" | transloco }}
+      </a>
     </div>
 
     <!-- Create Form -->
     @if (showCreateForm() && !readonly()) {
       <div class="style-form-create-host">
         <app-style-form
-          [mode]="'create'"
+          [mode]="isEditing() ? 'edit' : 'create'"
           [styleType]="currentStyleType()"
+          [initialValues]="editingStyle()"
           [saving]="creating()"
           (formSubmit)="onCreateStyle($event)"
-          (formCancel)="closeCreateForm()"
+          (formCancel)="requestCloseForm()"
         />
       </div>
     }

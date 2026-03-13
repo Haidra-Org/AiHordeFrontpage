@@ -3,15 +3,17 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   input,
   OnInit,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
-import { forkJoin, of, finalize, catchError, map } from 'rxjs';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { forkJoin, Observable, of, finalize, catchError, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StyleService } from '../../services/style.service';
@@ -23,11 +25,13 @@ import {
   StyleType,
   isImageStyle,
 } from '../../types/style';
+import { UserStyleReference } from '../../types/horde-user';
 import { StyleCardComponent } from '../style/style-card/style-card.component';
 import {
   StyleFormComponent,
   StyleFormSubmitEvent,
 } from '../style/style-form/style-form.component';
+import { AdminDialogComponent } from '../admin/admin-dialog/admin-dialog.component';
 
 type StylesTab = 'image' | 'text';
 
@@ -45,6 +49,7 @@ export interface LoadedStyle {
     TranslocoPipe,
     StyleCardComponent,
     StyleFormComponent,
+    AdminDialogComponent,
     RouterLink,
     ScrollFadeDirective,
   ],
@@ -56,7 +61,12 @@ export class ProfileStylesListComponent implements OnInit {
   private readonly styleService = inject(StyleService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly styleFormRef = viewChild(StyleFormComponent);
+
+  /** Deferred edit target from URL query string, resolved once styles are loaded. */
+  private readonly pendingEditStyleId = signal<string | null>(null);
 
   // ─────────────────────────────────────────────────────────────────────────
   // INPUTS: Allow external data injection for admin reuse
@@ -130,16 +140,28 @@ export class ProfileStylesListComponent implements OnInit {
   /** Whether to show create form. */
   public readonly showCreateForm = signal(false);
 
+  /** Unsaved-changes confirmation dialog state. */
+  public readonly unsavedCloseDialogOpen = signal(false);
+
+  /** Pending tab switch requested while the form has unsaved changes. */
+  private readonly pendingTabAfterDiscard = signal<StylesTab | null>(null);
+
   /** Creating state. */
   public readonly creating = signal(false);
+
+  /** Editing state (style selected for inline edit mode). */
+  public readonly editingStyle = signal<Style | null>(null);
+
+  /** True when form is currently in edit mode. */
+  public readonly isEditing = computed(() => this.editingStyle() !== null);
 
   /** Current user. */
   public readonly currentUser = computed(() => this.auth.currentUser());
 
-  /** User's style IDs from their profile. */
-  private readonly userStyleIds = computed(() => {
+  /** User's style references from their profile (includes type). */
+  private readonly userStyleRefs = computed((): UserStyleReference[] => {
     const user = this.currentUser();
-    return (user?.styles ?? []).map((s) => s.id);
+    return user?.styles ?? [];
   });
 
   /** Image styles (filtered by type). */
@@ -176,17 +198,106 @@ export class ProfileStylesListComponent implements OnInit {
     return this.activeTab() === 'text' ? 'text' : 'image';
   });
 
+  constructor() {
+    effect(() => {
+      const pendingId = this.pendingEditStyleId();
+      if (!pendingId || this.readonly()) {
+        return;
+      }
+
+      const match = this.userStyles().find(
+        (candidate) => candidate.id === pendingId && candidate.style,
+      );
+
+      if (!match?.style) {
+        return;
+      }
+
+      this.activeTab.set(match.type === 'text' ? 'text' : 'image');
+      this.editingStyle.set(match.style);
+      this.showCreateForm.set(true);
+      this.pendingEditStyleId.set(null);
+    });
+  }
+
   ngOnInit(): void {
     // Only auto-load if not using external data
     if (!this.isExternalData()) {
       this.loadUserStyles();
     }
+
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((query) => {
+        const type = query.get('type');
+        const create = query.get('create');
+        const editId = query.get('editId');
+
+        if (type === 'text') {
+          this.activeTab.set('text');
+        } else if (type === 'image') {
+          this.activeTab.set('image');
+        }
+
+        if (create === 'true' && !this.readonly()) {
+          this.editingStyle.set(null);
+          this.showCreateForm.set(true);
+        }
+
+        if (editId && !this.readonly()) {
+          this.pendingEditStyleId.set(editId);
+        }
+      });
   }
 
   public setActiveTab(tab: StylesTab): void {
-    if (this.activeTab() === tab) return;
+    if (this.activeTab() === tab) {
+      if (this.showCreateForm()) {
+        this.requestCloseForm();
+      }
+      return;
+    }
+
+    if (this.showCreateForm() && !this.canDismissForm()) {
+      this.pendingTabAfterDiscard.set(tab);
+      this.unsavedCloseDialogOpen.set(true);
+      return;
+    }
+
     this.activeTab.set(tab);
     this.showCreateForm.set(false);
+    this.editingStyle.set(null);
+  }
+
+  private canDismissForm(): boolean {
+    const styleForm = this.styleFormRef();
+    return !styleForm?.hasUnsavedMeaningfulChanges();
+  }
+
+  public requestCloseForm(): void {
+    if (!this.showCreateForm()) return;
+    if (!this.canDismissForm()) {
+      this.pendingTabAfterDiscard.set(null);
+      this.unsavedCloseDialogOpen.set(true);
+      return;
+    }
+    this.closeCreateForm();
+  }
+
+  public onDiscardUnsavedChanges(): void {
+    const pendingTab = this.pendingTabAfterDiscard();
+    this.unsavedCloseDialogOpen.set(false);
+    this.pendingTabAfterDiscard.set(null);
+
+    this.closeCreateForm();
+    if (pendingTab) {
+      this.activeTab.set(pendingTab);
+    }
+  }
+
+  public onCancelDiscardUnsavedChanges(): void {
+    this.unsavedCloseDialogOpen.set(false);
+    this.pendingTabAfterDiscard.set(null);
   }
 
   public loadUserStyles(): void {
@@ -195,9 +306,9 @@ export class ProfileStylesListComponent implements OnInit {
       return;
     }
 
-    const styleIds = this.userStyleIds();
+    const styleRefs = this.userStyleRefs();
 
-    if (!styleIds || styleIds.length === 0) {
+    if (styleRefs.length === 0) {
       this.internalUserStyles.set([]);
       return;
     }
@@ -207,27 +318,27 @@ export class ProfileStylesListComponent implements OnInit {
 
     // Initialize loading state for all styles
     this.internalUserStyles.set(
-      styleIds.map((id) => ({
-        id,
+      styleRefs.map((ref) => ({
+        id: ref.id,
         style: null,
-        type: null,
+        type: ref.type as StyleType,
         loading: true,
         error: false,
       })),
     );
 
-    // Since we don't know if it's image or text style, try image first then text
-    const requests = styleIds.map((id) =>
-      this.styleService.getImageStyle(id).pipe(
-        map((style) => ({ style, type: 'image' as StyleType })),
-        catchError(() =>
-          this.styleService.getTextStyle(id).pipe(
-            map((style) => ({ style, type: 'text' as StyleType })),
-            catchError(() => of(null)),
-          ),
-        ),
-      ),
-    );
+    // Use the known type from the user profile to call the correct endpoint
+    const requests = styleRefs.map((ref) => {
+      const fetch$: Observable<ImageStyle | TextStyle> =
+        ref.type === 'image'
+          ? this.styleService.getImageStyle(ref.id)
+          : this.styleService.getTextStyle(ref.id);
+
+      return fetch$.pipe(
+        map((style) => ({ style, type: ref.type as StyleType })),
+        catchError(() => of(null)),
+      );
+    });
 
     forkJoin(requests)
       .pipe(
@@ -237,11 +348,11 @@ export class ProfileStylesListComponent implements OnInit {
       .subscribe({
         next: (results) => {
           this.internalUserStyles.set(
-            styleIds.map((id, index) => {
+            styleRefs.map((ref, index) => {
               const result = results[index];
               if (result) {
                 return {
-                  id,
+                  id: ref.id,
                   style: result.style,
                   type: result.type,
                   loading: false,
@@ -249,9 +360,9 @@ export class ProfileStylesListComponent implements OnInit {
                 };
               }
               return {
-                id,
+                id: ref.id,
                 style: null,
-                type: null,
+                type: ref.type as StyleType,
                 loading: false,
                 error: true,
               };
@@ -274,17 +385,59 @@ export class ProfileStylesListComponent implements OnInit {
 
   public openCreateForm(): void {
     if (this.readonly()) return;
+    this.editingStyle.set(null);
     this.showCreateForm.set(true);
   }
 
   public closeCreateForm(): void {
     this.showCreateForm.set(false);
+    this.editingStyle.set(null);
   }
 
   public onCreateStyle(event: StyleFormSubmitEvent): void {
     if (this.readonly()) return;
 
     this.creating.set(true);
+
+    if (this.isEditing()) {
+      const current = this.editingStyle();
+      if (!current) {
+        this.creating.set(false);
+        return;
+      }
+
+      const update$ =
+        event.type === 'image'
+          ? this.styleService.updateImageStyle(
+              current.id,
+              event.payload as Parameters<
+                typeof this.styleService.updateImageStyle
+              >[1],
+            )
+          : this.styleService.updateTextStyle(
+              current.id,
+              event.payload as Parameters<
+                typeof this.styleService.updateTextStyle
+              >[1],
+            );
+
+      update$
+        .pipe(
+          takeUntilDestroyed(this.destroyRef),
+          finalize(() => this.creating.set(false)),
+        )
+        .subscribe({
+          next: () => {
+            this.editingStyle.set(null);
+            this.showCreateForm.set(false);
+            this.auth.refreshUser().subscribe(() => this.loadUserStyles());
+          },
+          error: (err) => {
+            this.error.set(err.message || 'Failed to update style');
+          },
+        });
+      return;
+    }
 
     const observable =
       event.type === 'image'
@@ -306,6 +459,7 @@ export class ProfileStylesListComponent implements OnInit {
       )
       .subscribe({
         next: (response) => {
+          this.editingStyle.set(null);
           this.showCreateForm.set(false);
           // Refresh user to get updated style list
           this.auth.refreshUser().subscribe(() => {
@@ -322,10 +476,9 @@ export class ProfileStylesListComponent implements OnInit {
   public onEditStyle(style: Style): void {
     if (this.readonly()) return;
 
-    const type = isImageStyle(style) ? 'image' : 'text';
-    this.router.navigate(['/details/styles', type, style.id], {
-      queryParams: { edit: 'true' },
-    });
+    this.activeTab.set(isImageStyle(style) ? 'image' : 'text');
+    this.editingStyle.set(style);
+    this.showCreateForm.set(true);
   }
 
   public onDeleteStyle(style: Style): void {

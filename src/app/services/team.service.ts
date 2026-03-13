@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, map, of, throwError } from 'rxjs';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import {
   Team,
   TeamApiError,
@@ -10,6 +10,8 @@ import {
   DeletedTeamResponse,
 } from '../types/team';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -17,18 +19,13 @@ import { AuthService } from './auth.service';
 export class TeamService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2/teams';
-  private readonly clientAgent = 'AiHordeFrontpage:teams';
 
-  private buildHeaders(apiKey?: string): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Client-Agent': this.clientAgent,
-    };
-    if (apiKey) {
-      headers['apikey'] = apiKey;
-    }
-    return headers;
-  }
+  private readonly teamContext = new HttpContext().set(
+    CLIENT_AGENT,
+    'AiHordeFrontpage:teams',
+  );
 
   private ensureApiKey(): string | null {
     return this.auth.getStoredApiKey();
@@ -48,10 +45,12 @@ export class TeamService {
    * Get all teams (lightweight list)
    */
   public getTeams(): Observable<Team[]> {
-    return this.httpClient
-      .get<Team[]>(this.baseUrl, {
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<Team[]>(
+        this.baseUrl,
+        { context: this.teamContext },
+        { ttl: CacheTTL.LONG, category: 'teams' },
+      )
       .pipe(catchError(() => of([])));
   }
 
@@ -59,10 +58,12 @@ export class TeamService {
    * Get a specific team by ID
    */
   public getTeam(teamId: string): Observable<Team | null> {
-    return this.httpClient
-      .get<Team>(`${this.baseUrl}/${teamId}`, {
-        headers: this.buildHeaders(),
-      })
+    return this.cache
+      .cachedGet<Team>(
+        `${this.baseUrl}/${teamId}`,
+        { context: this.teamContext },
+        { ttl: CacheTTL.LONG, category: 'teams' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -85,9 +86,13 @@ export class TeamService {
 
     return this.httpClient
       .post<TeamModifyResponse>(this.baseUrl, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.teamContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'teams' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -110,9 +115,13 @@ export class TeamService {
 
     return this.httpClient
       .patch<TeamModifyResponse>(`${this.baseUrl}/${teamId}`, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.teamContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'teams' })),
+        catchError(this.handleError),
+      );
   }
 
   /**
@@ -132,8 +141,12 @@ export class TeamService {
 
     return this.httpClient
       .delete<DeletedTeamResponse>(`${this.baseUrl}/${teamId}`, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.teamContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'teams' })),
+        catchError(this.handleError),
+      );
   }
 }

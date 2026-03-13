@@ -1,12 +1,14 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, forkJoin, map, of, throwError } from 'rxjs';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, forkJoin, map, of, tap, throwError } from 'rxjs';
 import {
   SharedKeyApiError,
   SharedKeyDetails,
   SharedKeyInput,
 } from '../types/shared-key';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 
 @Injectable({
   providedIn: 'root',
@@ -14,18 +16,13 @@ import { AuthService } from './auth.service';
 export class SharedKeyService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2/sharedkeys';
-  private readonly clientAgent = 'AiHordeFrontpage:login';
 
-  private buildHeaders(apiKey?: string): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Client-Agent': this.clientAgent,
-    };
-    if (apiKey) {
-      headers['apikey'] = apiKey;
-    }
-    return headers;
-  }
+  private readonly sharedKeyContext = new HttpContext().set(
+    CLIENT_AGENT,
+    'AiHordeFrontpage:login',
+  );
 
   private ensureApiKey(): string | null {
     return this.auth.getStoredApiKey();
@@ -43,10 +40,13 @@ export class SharedKeyService {
 
   public getSharedKey(sharedKeyId: string): Observable<SharedKeyDetails> {
     const apiKey = this.ensureApiKey();
-    return this.httpClient
-      .get<SharedKeyDetails>(`${this.baseUrl}/${sharedKeyId}`, {
-        headers: this.buildHeaders(apiKey ?? undefined),
-      })
+    const headers: Record<string, string> = apiKey ? { apikey: apiKey } : {};
+    return this.cache
+      .cachedGet<SharedKeyDetails>(
+        `${this.baseUrl}/${sharedKeyId}`,
+        { headers, context: this.sharedKeyContext },
+        { ttl: CacheTTL.MEDIUM, category: 'sharedkeys' },
+      )
       .pipe(catchError(this.handleError));
   }
 
@@ -81,9 +81,13 @@ export class SharedKeyService {
 
     return this.httpClient
       .put<SharedKeyDetails>(`${this.baseUrl}`, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.sharedKeyContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
+        catchError(this.handleError),
+      );
   }
 
   public updateSharedKey(
@@ -104,9 +108,13 @@ export class SharedKeyService {
 
     return this.httpClient
       .patch<SharedKeyDetails>(`${this.baseUrl}/${sharedKeyId}`, payload, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.sharedKeyContext,
       })
-      .pipe(catchError(this.handleError));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
+        catchError(this.handleError),
+      );
   }
 
   public deleteSharedKey(sharedKeyId: string): Observable<boolean> {
@@ -124,10 +132,12 @@ export class SharedKeyService {
 
     return this.httpClient
       .delete(`${this.baseUrl}/${sharedKeyId}`, {
-        headers: this.buildHeaders(apiKey),
+        headers: { apikey: apiKey },
+        context: this.sharedKeyContext,
       })
       .pipe(
         map(() => true),
+        tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
         catchError(this.handleError),
       );
   }

@@ -1,12 +1,14 @@
 <app-breadcrumb [items]="breadcrumbs()" />
 
 @if (loading()) {
-  <div class="card card-bg-primary card-full">
+  <div class="card card-bg-primary card-full card-spaced">
     <div class="skeleton-box" aria-busy="true">
       <div class="skeleton-bar skeleton-bar-lg"></div>
-      <div class="skeleton-bar skeleton-bar-md"></div>
       <div class="skeleton-bar skeleton-bar-sm"></div>
     </div>
+    <app-user-badges [loading]="true" />
+    <app-user-kudos-card [loading]="true" />
+    <app-user-stats-summary [loading]="true" />
   </div>
 } @else if (error()) {
   <div class="card card-bg-primary card-full text-center">
@@ -99,135 +101,34 @@
         </div>
 
         <!-- Badges -->
-        <div class="badge-container mb-6">
-          @if (user()!.trusted) {
-            <span
-              class="badge-base badge-success"
-              [attr.title]="'admin.users.desc.trusted' | transloco"
-              >{{ "profile.badge.trusted" | transloco }}</span
-            >
-          }
-          @if (user()!.moderator) {
-            <span
-              class="badge-base badge-purple"
-              [attr.title]="'admin.users.desc.moderator' | transloco"
-              >{{ "profile.badge.moderator" | transloco }}</span
-            >
-          }
-          @if (user()!.education) {
-            <span
-              class="badge-base badge-info"
-              [attr.title]="'admin.users.desc.education' | transloco"
-              >{{ "profile.badge.education" | transloco }}</span
-            >
-          }
-          @if (user()!.service) {
-            <span
-              class="badge-base badge-warning"
-              [attr.title]="'admin.users.desc.service' | transloco"
-              >{{ "profile.badge.service" | transloco }}</span
-            >
-          }
-          @if (user()!.customizer) {
-            <span
-              class="badge-base badge-pink"
-              [attr.title]="'admin.users.desc.customizer' | transloco"
-              >{{ "profile.badge.customizer" | transloco }}</span
-            >
-          }
-          @if (user()!.special) {
-            <span
-              class="badge-base badge-secondary"
-              [attr.title]="'admin.users.desc.special' | transloco"
-              >{{ "profile.badge.special" | transloco }}</span
-            >
-          }
-          @if (user()!.pseudonymous) {
-            <span class="badge-base badge-secondary">
-              {{ "profile.badge.anonymous" | transloco }}
-            </span>
-          }
-          @if (user()!.flagged) {
-            <span
-              class="badge-base badge-danger"
-              [attr.title]="'admin.users.desc.flagged' | transloco"
-              >{{ "profile.badge.flagged" | transloco }}</span
-            >
-          }
-        </div>
+        <app-user-badges
+          class="mb-6"
+          [trusted]="user()!.trusted ?? false"
+          [moderator]="user()!.moderator ?? false"
+          [education]="user()!.education ?? false"
+          [service]="user()!.service ?? false"
+          [customizer]="user()!.customizer ?? false"
+          [special]="user()!.special ?? false"
+          [pseudonymous]="user()!.pseudonymous ?? false"
+          [filtered]="user()!.filtered ?? false"
+          [flagged]="user()!.flagged ?? false"
+        />
 
         <!-- Kudos Section -->
-        <h3 class="heading-card">{{ "profile.kudos" | transloco }}</h3>
-        <div class="highlight-box">
-          <span class="data-value-xl">{{ user()!.kudos | formatNumber }}</span>
-          <span class="data-label-spaced">{{
-            "profile.kudos_balance" | transloco
-          }}</span>
-        </div>
+        <app-user-kudos-card
+          [kudos]="user()!.kudos"
+          [kudosDetails]="user()!.kudos_details"
+          [monthlyKudos]="user()!.monthly_kudos"
+          [evaluatingKudos]="user()!.evaluating_kudos"
+          [trusted]="user()!.trusted ?? false"
+        />
 
-        @if (user()!.kudos_details) {
-          <div class="section-divider-top">
-            <h4 class="section-title-sm">
-              {{ "profile.kudos_breakdown" | transloco }}
-            </h4>
-            <app-kudos-breakdown-panel
-              [kudosDetails]="user()!.kudos_details!"
-              variant="profile"
-              [showZeroValues]="false"
-            />
-          </div>
-        }
-
-        <!-- Quick Stats -->
+        <!-- Activity Snapshot -->
         <div class="section-divider-top">
           <h4 class="section-title-sm">
             {{ "details.users.quick_stats" | transloco }}
           </h4>
-          <div class="data-grid-2-4">
-            <div class="data-item-box data-item-centered">
-              <span class="data-label">{{
-                "details.users.worker_count" | transloco
-              }}</span>
-              <span class="data-value-lg">{{ user()!.worker_count ?? 0 }}</span>
-            </div>
-            @if (
-              user()!.contributions?.megapixelsteps ||
-              user()!.records?.contribution?.megapixelsteps
-            ) {
-              <div class="data-item-box data-item-centered">
-                <span class="data-label">{{
-                  "profile.records.megapixelsteps" | transloco
-                }}</span>
-                <span class="data-value">
-                  {{
-                    user()!.contributions?.megapixelsteps ??
-                      user()!.records?.contribution?.megapixelsteps ??
-                      0 | formatNumber
-                  }}
-                </span>
-              </div>
-            }
-            @if (user()!.records?.contribution?.tokens) {
-              <div class="data-item-box data-item-centered">
-                <span class="data-label">{{
-                  "profile.records.tokens" | transloco
-                }}</span>
-                <span class="data-value">{{
-                  user()!.records!.contribution!.tokens ?? 0 | formatNumber
-                }}</span>
-              </div>
-            }
-            @if (user()!.contributions?.fulfillments) {
-              <div class="data-item-box data-item-centered">
-                <span class="data-label">{{
-                  "profile.records.fulfillments" | transloco
-                }}</span>
-                <span class="data-value">{{
-                  user()!.contributions!.fulfillments ?? 0 | formatNumber
-                }}</span>
-              </div>
-            }
-          </div>
+          <app-user-stats-summary [user]="user()!" />
         </div>
 
         <!-- Related Links -->
@@ -263,132 +164,7 @@
       activeTab() === "records" && (user()!.records || user()!.contributions)
     ) {
       <div class="card card-bg-primary card-full card-spaced">
-        <h3 class="heading-card">
-          {{ "profile.detailed_records" | transloco }}
-        </h3>
-        <div class="records-section-wrapper">
-          <!-- Contribution Records -->
-          @if (user()!.records?.contribution || user()!.contributions) {
-            <div class="record-group">
-              <h4 class="section-title-sm">
-                {{ "profile.records.contribution" | transloco }}
-              </h4>
-              <div class="data-grid-1-2">
-                @if (
-                  user()!.contributions?.megapixelsteps ||
-                  user()!.records?.contribution?.megapixelsteps
-                ) {
-                  <div class="data-item-box">
-                    <span class="data-label">{{
-                      "profile.records.megapixelsteps" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      {{
-                        user()!.contributions?.megapixelsteps ??
-                          user()!.records?.contribution?.megapixelsteps ??
-                          0 | formatNumber
-                      }}
-                    </span>
-                  </div>
-                }
-                @if (user()!.records?.contribution?.tokens) {
-                  <div class="data-item-box">
-                    <span class="data-label">{{
-                      "profile.records.tokens" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.contribution!.tokens ?? 0 | formatNumber
-                    }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Request Records -->
-          @if (user()!.records?.request) {
-            <div class="record-group">
-              <h4 class="section-title-sm">
-                {{ "profile.records.requests" | transloco }}
-              </h4>
-              <div class="data-grid-1-2-3">
-                @if (user()!.records!.request!.image) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.image" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.request!.image ?? 0 | formatNumber
-                    }}</span>
-                  </div>
-                }
-                @if (user()!.records!.request!.text) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.text" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.request!.text ?? 0 | formatNumber
-                    }}</span>
-                  </div>
-                }
-                @if (user()!.records!.request!.interrogation) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.interrogation" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.request!.interrogation ?? 0
-                        | formatNumber
-                    }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Fulfillment Records -->
-          @if (user()!.records?.fulfillment) {
-            <div class="record-group">
-              <h4 class="section-title-sm">
-                {{ "profile.records.fulfillments" | transloco }}
-              </h4>
-              <div class="data-grid-1-2-3">
-                @if (user()!.records!.fulfillment!.image) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.image" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.fulfillment!.image ?? 0 | formatNumber
-                    }}</span>
-                  </div>
-                }
-                @if (user()!.records!.fulfillment!.text) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.text" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.fulfillment!.text ?? 0 | formatNumber
-                    }}</span>
-                  </div>
-                }
-                @if (user()!.records!.fulfillment!.interrogation) {
-                  <div class="data-item-box data-item-centered">
-                    <span class="data-label">{{
-                      "profile.records.interrogation" | transloco
-                    }}</span>
-                    <span class="data-value">{{
-                      user()!.records!.fulfillment!.interrogation ?? 0
-                        | formatNumber
-                    }}</span>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        </div>
+        <app-user-records-panel [data]="user()!" />
       </div>
     }
   </div>
