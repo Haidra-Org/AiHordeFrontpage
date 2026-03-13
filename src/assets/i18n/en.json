@@ -1155,6 +1155,7 @@
   "styles.form.tags": "Tags",
   "styles.form.tags_placeholder": "Enter tags separated by commas",
   "styles.form.models": "Compatible Models",
+  "styles.form.models_required": "At least one model is required",
   "styles.form.models_placeholder": "Enter model names",
   "styles.form.models_placeholder_note": "Enter model names separated by commas",
   "styles.form.models_toggle": "Toggle model list",

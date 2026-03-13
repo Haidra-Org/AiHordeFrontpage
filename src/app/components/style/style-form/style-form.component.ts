@@ -47,6 +47,18 @@ function divisibleBy64(control: AbstractControl): ValidationErrors | null {
   return Number(v) % 64 === 0 ? null : { divisibleBy64: true };
 }
 
+function requiresAtLeastOneModel(
+  control: AbstractControl,
+): ValidationErrors | null {
+  const v = control.value as string;
+  if (!v || !v.trim()) return { requiresModel: true };
+  const items = v
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return items.length > 0 ? null : { requiresModel: true };
+}
+
 export type StyleFormMode = 'create' | 'edit';
 
 export interface StyleFormSubmitEvent {
@@ -300,14 +312,13 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
   public selectModel(name: string): void {
     const current = (this.form.controls['models'].value as string) ?? '';
-    const existing = current
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (!existing.includes(name)) {
-      existing.push(name);
+    const parts = current.split(',');
+    // Replace the last segment (the partial search text) with the selected model
+    const completed = parts.slice(0, -1).map((s) => s.trim()).filter(Boolean);
+    if (!completed.includes(name)) {
+      completed.push(name);
     }
-    this.form.controls['models'].setValue(existing.join(', '));
+    this.form.controls['models'].setValue(completed.join(', '));
     this.modelDropdownPinned = false;
     this.modelDropdownOpen.set(false);
   }
@@ -337,7 +348,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
       public: [initial?.public ?? true],
       nsfw: [initial?.nsfw ?? false],
       tags: [initial?.tags?.join(', ') ?? ''],
-      models: [initial?.models?.join(', ') ?? ''],
+      models: [initial?.models?.join(', ') ?? '', [requiresAtLeastOneModel]],
     };
 
     if (isImage) {
@@ -705,11 +716,9 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
   private openConfirmDialog(): void {
     this.confirmModalOpen.set(true);
-    afterNextRender(() => {
-      const dialog = this.confirmDialog()?.nativeElement;
-      if (!dialog || dialog.open) return;
-      dialog.showModal();
-    });
+    const dialog = this.confirmDialog()?.nativeElement;
+    if (!dialog || dialog.open) return;
+    dialog.showModal();
   }
 
   private closeConfirmDialog(): void {
