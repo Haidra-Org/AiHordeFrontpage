@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, of, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   FilterDetails,
@@ -10,6 +10,7 @@ import {
   FilterPromptSuspicion,
   TestPromptRequest,
 } from '../types/filter';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 
 /**
  * Service for managing AI Horde filters.
@@ -22,6 +23,7 @@ import {
 export class AdminFilterService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2';
 
   /**
@@ -52,11 +54,12 @@ export class AdminFilterService {
       params = params.set('contains', contains);
     }
 
-    return this.httpClient
-      .get<FilterDetails[]>(`${this.baseUrl}/filters`, {
-        headers: this.getHeaders(),
-        params,
-      })
+    return this.cache
+      .cachedGet<FilterDetails[]>(
+        `${this.baseUrl}/filters`,
+        { headers: this.getHeaders(), params },
+        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+      )
       .pipe(catchError(() => of([])));
   }
 
@@ -68,10 +71,12 @@ export class AdminFilterService {
    * @returns Observable of filter details, or null on error
    */
   public getFilter(id: string): Observable<FilterDetails | null> {
-    return this.httpClient
-      .get<FilterDetails>(`${this.baseUrl}/filters/${id}`, {
-        headers: this.getHeaders(),
-      })
+    return this.cache
+      .cachedGet<FilterDetails>(
+        `${this.baseUrl}/filters/${id}`,
+        { headers: this.getHeaders() },
+        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -94,7 +99,10 @@ export class AdminFilterService {
       .put<FilterDetails>(`${this.baseUrl}/filters`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-filters' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -118,7 +126,10 @@ export class AdminFilterService {
       .patch<FilterDetails>(`${this.baseUrl}/filters/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-filters' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -140,6 +151,7 @@ export class AdminFilterService {
         observe: 'response',
       })
       .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-filters' })),
         catchError(() => of(null)),
         // Map response to boolean
         (obs) =>
@@ -193,11 +205,12 @@ export class AdminFilterService {
       params = params.set('filter_type', filterType.toString());
     }
 
-    return this.httpClient
-      .get<FilterRegex[]>(`${this.baseUrl}/filters/regex`, {
-        headers: this.getHeaders(),
-        params,
-      })
+    return this.cache
+      .cachedGet<FilterRegex[]>(
+        `${this.baseUrl}/filters/regex`,
+        { headers: this.getHeaders(), params },
+        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+      )
       .pipe(catchError(() => of([])));
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, map, forkJoin } from 'rxjs';
+import { Observable, catchError, of, map, forkJoin, tap } from 'rxjs';
 import {
   AdminUserDetails,
   PutUserRequest,
@@ -8,6 +8,7 @@ import {
 } from '../types/horde-user-admin';
 import { SharedKeyDetails } from '../types/shared-key';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +16,7 @@ import { AuthService } from './auth.service';
 export class AdminUserService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2';
 
   /**
@@ -27,8 +29,12 @@ export class AdminUserService {
       headers['apikey'] = apiKey;
     }
 
-    return this.httpClient
-      .get<AdminUserDetails>(`${this.baseUrl}/users/${id}`, { headers })
+    return this.cache
+      .cachedGet<AdminUserDetails>(
+        `${this.baseUrl}/users/${id}`,
+        { headers },
+        { ttl: CacheTTL.SHORT, category: 'admin-users' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -66,7 +72,10 @@ export class AdminUserService {
       .put<PutUserRequest>(`${this.baseUrl}/users/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-users' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -122,8 +131,12 @@ export class AdminUserService {
   public getSharedKey(
     sharedKeyId: string,
   ): Observable<SharedKeyDetails | null> {
-    return this.httpClient
-      .get<SharedKeyDetails>(`${this.baseUrl}/sharedkeys/${sharedKeyId}`)
+    return this.cache
+      .cachedGet<SharedKeyDetails>(
+        `${this.baseUrl}/sharedkeys/${sharedKeyId}`,
+        {},
+        { ttl: CacheTTL.SHORT, category: 'admin-sharedkeys' },
+      )
       .pipe(catchError(() => of(null)));
   }
 

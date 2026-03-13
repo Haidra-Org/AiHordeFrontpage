@@ -3,9 +3,11 @@ import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideClientHydration } from '@angular/platform-browser';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { TranslocoHttpLoader } from './transloco-loader';
 import { provideTransloco } from '@jsverse/transloco';
+import { clientAgentInterceptor } from './services/interceptors/client-agent.interceptor';
+import { rateLimitInterceptor } from './services/interceptors/rate-limit.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,7 +19,10 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     provideClientHydration(),
-    provideHttpClient(withFetch()),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([clientAgentInterceptor, rateLimitInterceptor]),
+    ),
     provideTransloco({
       config: {
         availableLangs: ['en'],

@@ -62,7 +62,7 @@
   }
 
   .details-tabs--sub .styles-create-btn {
-    margin-left: auto;
+    margin-left: 1rem;
     flex: 0 0 auto;
     @apply rounded-md;
     border: 1px solid rgb(255 255 255 / 0.2);
@@ -1104,10 +1104,17 @@
     box-shadow: var(--shadow-glass);
   }
 
-  @media (max-width: 420px) {
+  @media (max-width: 639px) {
     .tab-content-panel {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  @media (max-width: 419px) {
+    .tab-content-panel {
+      padding-left: 0;
+      padding-right: 0;
     }
   }
 
@@ -1140,8 +1147,8 @@
       border-radius: 0.75rem;
       border-left: 1px solid var(--color-glass-border-subtle);
       border-right: 1px solid var(--color-glass-border-subtle);
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding-left: 0;
+      padding-right: 0;
     }
 
     .tab-sub-panel > .details-tabs {
@@ -1149,6 +1156,13 @@
       margin-right: 0;
       width: 100%;
       max-width: 100%;
+    }
+  }
+
+  @media (max-width: 419px) {
+    .tab-sub-panel {
+      padding-left: 0;
+      padding-right: 0;
     }
   }
 

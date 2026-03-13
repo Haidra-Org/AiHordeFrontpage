@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, zip } from 'rxjs';
 import { ImageTotalStats } from '../types/image-total-stats';
 import { HordePerformance } from '../types/horde-performance';
@@ -22,42 +22,42 @@ import {
   AlchemyStatusResponse,
   GENERATION_NOT_FOUND,
 } from '../types/generation';
+import {
+  HordeApiCacheService,
+  CacheTTL,
+} from './horde-api-cache.service';
+import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
+
+const BASE = 'https://aihorde.net/api/v2';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AiHordeService {
-  constructor(private readonly httpClient: HttpClient) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly cache = inject(HordeApiCacheService);
 
   public get imageStats(): Observable<ImageTotalStats> {
-    // return of({
-    //   month: { images: 105150339, ps: 1553239485353984 },
-    //   total: { images: 105150339, ps: 1553239485353984 },
-    //   day: { images: 105150339, ps: 1553239485353984 },
-    //   hour: { images: 105150339, ps: 1553239485353984 },
-    //   minute: { images: 105150339, ps: 1553239485353984 },
-    // });
-    return this.httpClient.get<ImageTotalStats>(
-      'https://aihorde.net/api/v2/stats/img/totals',
+    return this.cache.cachedGet<ImageTotalStats>(
+      `${BASE}/stats/img/totals`,
+      undefined,
+      { ttl: CacheTTL.LONG, category: 'stats' },
     );
   }
 
   public get textStats(): Observable<TextTotalStats> {
-    // return of({
-    //   total: { requests: 111931745, tokens: 20444501084 },
-    //   day: { requests: 111931745, tokens: 20444501084 },
-    //   hour: { requests: 111931745, tokens: 20444501084 },
-    //   minute: { requests: 111931745, tokens: 20444501084 },
-    //   month: { requests: 111931745, tokens: 20444501084 },
-    // });
-    return this.httpClient.get<TextTotalStats>(
-      'https://aihorde.net/api/v2/stats/text/totals',
+    return this.cache.cachedGet<TextTotalStats>(
+      `${BASE}/stats/text/totals`,
+      undefined,
+      { ttl: CacheTTL.LONG, category: 'stats' },
     );
   }
 
   public get performance(): Observable<HordePerformance> {
-    return this.httpClient.get<HordePerformance>(
-      'https://aihorde.net/api/v2/status/performance',
+    return this.cache.cachedGet<HordePerformance>(
+      `${BASE}/status/performance`,
+      undefined,
+      { ttl: CacheTTL.MEDIUM, category: 'performance' },
     );
   }
 
@@ -68,24 +68,32 @@ export class AiHordeService {
   }
 
   public get terms(): Observable<string> {
-    return this.httpClient
-      .get<HtmlHordeDocument>(
-        'https://aihorde.net/api/v2/documents/terms?format=html',
+    return this.cache
+      .cachedGet<HtmlHordeDocument>(
+        `${BASE}/documents/terms?format=html`,
+        undefined,
+        { ttl: CacheTTL.VERY_LONG, category: 'documents' },
       )
       .pipe(map((response) => response.html));
   }
 
   public get privacyPolicy(): Observable<string> {
-    return this.httpClient
-      .get<HtmlHordeDocument>(
-        'https://aihorde.net/api/v2/documents/privacy?format=html',
+    return this.cache
+      .cachedGet<HtmlHordeDocument>(
+        `${BASE}/documents/privacy?format=html`,
+        undefined,
+        { ttl: CacheTTL.VERY_LONG, category: 'documents' },
       )
       .pipe(map((response) => response.html));
   }
 
   public getNews(count?: number): Observable<NewsItem[]> {
-    return this.httpClient
-      .get<HordeNewsItem[]>('https://aihorde.net/api/v2/status/news')
+    return this.cache
+      .cachedGet<HordeNewsItem[]>(
+        `${BASE}/status/news`,
+        undefined,
+        { ttl: CacheTTL.VERY_LONG, category: 'news' },
+      )
       .pipe(
         map((newsItems) => (count ? newsItems.slice(0, count) : newsItems)),
         map((newsItems) => {
@@ -113,18 +121,22 @@ export class AiHordeService {
       );
   }
   public getUserByApiKey(apiKey: string): Observable<HordeUser | null> {
-    return this.httpClient
-      .get<HordeUser>('https://aihorde.net/api/v2/find_user', {
-        headers: {
-          apikey: apiKey,
-        },
-      })
+    return this.cache
+      .cachedGet<HordeUser>(
+        `${BASE}/find_user`,
+        { headers: { apikey: apiKey } },
+        { ttl: CacheTTL.MEDIUM, category: 'user' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
   public getUserById(id: number): Observable<HordeUser | null> {
-    return this.httpClient
-      .get<HordeUser>(`https://aihorde.net/api/v2/users/${id}`)
+    return this.cache
+      .cachedGet<HordeUser>(
+        `${BASE}/users/${id}`,
+        undefined,
+        { ttl: CacheTTL.MEDIUM, category: 'user' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -133,10 +145,12 @@ export class AiHordeService {
    * by making an anonymous call and checking if worker_ids is visible.
    */
   public inferPublicWorkers(userId: number): Observable<boolean> {
-    return this.httpClient
-      .get<HordeUser>(`https://aihorde.net/api/v2/users/${userId}`, {
-        headers: { apikey: '0000000000' },
-      })
+    return this.cache
+      .cachedGet<HordeUser>(
+        `${BASE}/users/${userId}`,
+        { headers: { apikey: '0000000000' } },
+        { ttl: CacheTTL.MEDIUM, category: 'user' },
+      )
       .pipe(
         map(
           (user) =>
@@ -153,7 +167,7 @@ export class AiHordeService {
   ): Observable<boolean> {
     return this.httpClient
       .post<any>(
-        'https://aihorde.net/api/v2/kudos/transfer',
+        `${BASE}/kudos/transfer`,
         {
           username: targetUser,
           amount: amount,
@@ -190,8 +204,10 @@ export class AiHordeService {
     type: ModelType = 'image',
     modelState: 'known' | 'custom' | 'all' = 'all',
   ): Observable<ActiveModel[]> {
-    return this.httpClient.get<ActiveModel[]>(
-      `https://aihorde.net/api/v2/status/models?type=${type}&model_state=${modelState}`,
+    return this.cache.cachedGet<ActiveModel[]>(
+      `${BASE}/status/models?type=${type}&model_state=${modelState}`,
+      undefined,
+      { ttl: CacheTTL.LONG, category: 'models' },
     );
   }
 
@@ -216,8 +232,10 @@ export class AiHordeService {
   public getImageModelStats(
     modelState: 'known' | 'custom' | 'all' = 'known',
   ): Observable<ImageModelStats> {
-    return this.httpClient.get<ImageModelStats>(
-      `https://aihorde.net/api/v2/stats/img/models?model_state=${modelState}`,
+    return this.cache.cachedGet<ImageModelStats>(
+      `${BASE}/stats/img/models?model_state=${modelState}`,
+      undefined,
+      { ttl: CacheTTL.LONG, category: 'stats' },
     );
   }
 
@@ -225,8 +243,10 @@ export class AiHordeService {
    * Get text generation stats per model.
    */
   public getTextModelStats(): Observable<TextModelStats> {
-    return this.httpClient.get<TextModelStats>(
-      'https://aihorde.net/api/v2/stats/text/models',
+    return this.cache.cachedGet<TextModelStats>(
+      `${BASE}/stats/text/models`,
+      undefined,
+      { ttl: CacheTTL.LONG, category: 'stats' },
     );
   }
 
@@ -239,10 +259,12 @@ export class AiHordeService {
     page: number = 1,
     limit: number = 25,
   ): Observable<LeaderboardUser[]> {
-    return this.httpClient
-      .get<
-        HordeUser[]
-      >(`https://aihorde.net/api/v2/users?page=${page}&sort=kudos`)
+    return this.cache
+      .cachedGet<HordeUser[]>(
+        `${BASE}/users?page=${page}&sort=kudos`,
+        undefined,
+        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
+      )
       .pipe(
         map((users) =>
           users.slice(0, limit).map((user) => ({
@@ -260,10 +282,12 @@ export class AiHordeService {
    * @param page - Page number (1-indexed)
    */
   public getKudosLeaderboardPage(page: number): Observable<LeaderboardUser[]> {
-    return this.httpClient
-      .get<
-        HordeUser[]
-      >(`https://aihorde.net/api/v2/users?page=${page}&sort=kudos`)
+    return this.cache
+      .cachedGet<HordeUser[]>(
+        `${BASE}/users?page=${page}&sort=kudos`,
+        undefined,
+        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
+      )
       .pipe(
         map((users) =>
           users.map((user) => ({
@@ -276,14 +300,10 @@ export class AiHordeService {
       );
   }
 
-  private readonly clientAgent = 'AiHordeFrontpage:generate';
-
-  private buildGenerateHeaders(apiKey: string): Record<string, string> {
-    return {
-      apikey: apiKey,
-      'Client-Agent': this.clientAgent,
-    };
-  }
+  private readonly generateContext = new HttpContext().set(
+    CLIENT_AGENT,
+    'AiHordeFrontpage:generate',
+  );
 
   public submitImageGeneration(
     apiKey: string,
@@ -291,19 +311,23 @@ export class AiHordeService {
   ): Observable<ImageGenerationResponse | null> {
     return this.httpClient
       .post<ImageGenerationResponse>(
-        'https://aihorde.net/api/v2/generate/async',
+        `${BASE}/generate/async`,
         request,
-        { headers: this.buildGenerateHeaders(apiKey) },
+        {
+          headers: { apikey: apiKey },
+          context: this.generateContext,
+        },
       )
       .pipe(catchError(() => of(null)));
   }
 
+  // Generation status checks are never cached — they need real-time data
   public checkImageGeneration(
     id: string,
   ): Observable<GenerationCheckResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationCheckResponse>(
-        `https://aihorde.net/api/v2/generate/check/${encodeURIComponent(id)}`,
+        `${BASE}/generate/check/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err) => this.catchNotFound(err)));
   }
@@ -313,7 +337,7 @@ export class AiHordeService {
   ): Observable<GenerationStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationStatusResponse>(
-        `https://aihorde.net/api/v2/generate/status/${encodeURIComponent(id)}`,
+        `${BASE}/generate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err) => this.catchNotFound(err)));
   }
@@ -325,7 +349,7 @@ export class AiHordeService {
   > {
     return this.httpClient
       .get<TextGenerationStatusResponse>(
-        `https://aihorde.net/api/v2/generate/text/status/${encodeURIComponent(id)}`,
+        `${BASE}/generate/text/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err) => this.catchNotFound(err)));
   }
@@ -335,7 +359,7 @@ export class AiHordeService {
   ): Observable<AlchemyStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<AlchemyStatusResponse>(
-        `https://aihorde.net/api/v2/interrogate/status/${encodeURIComponent(id)}`,
+        `${BASE}/interrogate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err) => this.catchNotFound(err)));
   }

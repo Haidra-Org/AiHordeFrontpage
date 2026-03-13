@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, forkJoin } from 'rxjs';
+import { Observable, catchError, of, forkJoin, tap } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
   HordeWorker,
@@ -8,6 +8,7 @@ import {
   WorkerModifyResponse,
 } from '../types/horde-worker';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +16,7 @@ import { AuthService } from './auth.service';
 export class AdminWorkerService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = 'https://aihorde.net/api/v2';
 
   /**
@@ -24,8 +26,12 @@ export class AdminWorkerService {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
-    return this.httpClient
-      .get<HordeWorker[]>(`${this.baseUrl}/workers`, options)
+    return this.cache
+      .cachedGet<HordeWorker[]>(
+        `${this.baseUrl}/workers`,
+        options,
+        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
+      )
       .pipe(catchError(() => of([])));
   }
 
@@ -36,8 +42,12 @@ export class AdminWorkerService {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
-    return this.httpClient
-      .get<HordeWorker>(`${this.baseUrl}/workers/${id}`, options)
+    return this.cache
+      .cachedGet<HordeWorker>(
+        `${this.baseUrl}/workers/${id}`,
+        options,
+        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -75,7 +85,10 @@ export class AdminWorkerService {
       .put<WorkerModifyResponse>(`${this.baseUrl}/workers/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-workers' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -121,7 +134,10 @@ export class AdminWorkerService {
           headers: { apikey: apiKey },
         },
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        tap(() => this.cache.invalidate({ category: 'admin-workers' })),
+        catchError(() => of(null)),
+      );
   }
 
   /**
@@ -131,10 +147,11 @@ export class AdminWorkerService {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
-    return this.httpClient
-      .get<HordeWorker>(
+    return this.cache
+      .cachedGet<HordeWorker>(
         `${this.baseUrl}/workers/name/${encodeURIComponent(name)}`,
         options,
+        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
       )
       .pipe(catchError(() => of(null)));
   }

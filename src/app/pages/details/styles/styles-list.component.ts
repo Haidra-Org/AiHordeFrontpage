@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
   combineLatest,
   concatMap,
@@ -62,6 +62,7 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     StyleFiltersComponent,
     EntityLookupComponent,
     PageIntroComponent,
+    RouterLink,
     ScrollFadeDirective,
     StickyHeaderDirective,
   ],
@@ -384,7 +385,14 @@ export class StylesListComponent implements OnInit {
   }
 
   public goToCreateStyle(): void {
-    this.router.navigate(['/profile/styles']);
+    const targetType = this.activeTab() === 'text' ? 'text' : 'image';
+    this.router.navigate(['/profile/styles'], {
+      queryParams: {
+        from: 'details',
+        create: 'true',
+        type: targetType,
+      },
+    });
   }
 
   private resetPaginationState(): void {

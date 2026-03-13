@@ -54,6 +54,7 @@
 
   .style-form-panel {
     min-width: 0;
+    @apply mb-5;
   }
 
   .style-form-panel__header {
@@ -89,7 +90,7 @@
 
   .style-form-actions-bar {
     @apply rounded-2xl p-4;
-    border-top: 0;
+    border: 0;
   }
 
   /* Shared section shell for complex, explanatory forms */
@@ -623,37 +624,34 @@
     color: var(--color-content-secondary);
   }
 
-  @media (max-width: 420px) {
+  @media (max-width: 639px) {
     .profile-styles-shell {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding-left: 0;
+      padding-right: 0;
     }
 
     .style-form-create-host {
-      margin-left: -1rem;
-      margin-right: -1rem;
+      margin-left: 0;
+      margin-right: 0;
     }
 
     .style-form-shell {
-      @apply rounded-xl p-1.5 gap-2;
+      @apply rounded-xl p-1 gap-1;
     }
 
     .style-form-create-host .style-form-shell {
-      margin-left: -0.5rem;
-      margin-right: -0.5rem;
-      border-left-width: 0;
-      border-right-width: 0;
-      border-radius: 0;
+      margin-left: 0;
+      margin-right: 0;
     }
 
     .style-form-panel,
     .form-section-shell {
-      @apply rounded-xl p-2;
+      @apply rounded-xl p-1;
     }
 
     .style-form-panel .form-field,
     .style-form-toggle-row {
-      @apply rounded-lg p-2;
+      @apply rounded-lg p-1;
     }
 
     .style-form-panel .form-row {
@@ -669,7 +667,7 @@
     }
 
     .style-form-actions-bar {
-      @apply rounded-xl p-3;
+      @apply rounded-xl p-1.5;
     }
 
     .style-form-actions-bar .form-actions__buttons {
@@ -678,6 +676,35 @@
 
     .style-form-actions-bar .form-actions__buttons button {
       @apply w-full;
+    }
+  }
+
+  @media (max-width: 419px) {
+    .style-form-create-host {
+      margin-left: 0;
+      margin-right: 0;
+    }
+
+    .style-form-shell {
+      @apply p-0 gap-1;
+    }
+
+    .style-form-create-host .style-form-shell {
+      margin-left: 0;
+      margin-right: 0;
+      border-left-width: 0;
+      border-right-width: 0;
+      border-radius: 0;
+    }
+
+    .style-form-panel,
+    .form-section-shell {
+      @apply p-0;
+    }
+
+    .style-form-panel .form-field,
+    .style-form-toggle-row {
+      @apply p-0.5;
     }
   }
 }

@@ -260,6 +260,38 @@
     color: var(--color-content-secondary);
   }
 
+  .style-confirm-dialog {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    max-width: none;
+    max-height: none;
+    width: 100vw;
+    height: 100vh;
+    overflow: visible;
+  }
+
+  .style-confirm-dialog[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inset: 0;
+    position: fixed;
+    z-index: 9999;
+    padding: 1rem;
+  }
+
+  .style-confirm-dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.5);
+    backdrop-filter: blur(2px);
+  }
+
+  .style-confirm-dialog .modal-panel {
+    margin: 0;
+    max-height: calc(100vh - 2rem);
+  }
+
   .confirm-dialog-icon--danger {
     @apply text-red-500;
   }

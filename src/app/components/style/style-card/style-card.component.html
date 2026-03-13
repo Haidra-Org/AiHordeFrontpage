@@ -35,7 +35,6 @@
 
   <!-- Card Content -->
   <div class="card-content">
-    <!-- Header with Type Badge -->
     <div class="card-header-row">
       <span
         class="badge-base"
@@ -61,15 +60,13 @@
           [attr.aria-label]="'details.common.clear_highlight' | transloco"
         >
           {{ "details.common.highlighted" | transloco }}
-          <span aria-hidden="true">×</span>
+          <span aria-hidden="true">x</span>
         </button>
       }
     </div>
 
-    <!-- Title -->
     <h3 class="card-title">{{ style().name }}</h3>
 
-    <!-- Creator -->
     <p class="card-subtitle">
       {{ "styles.by" | transloco }} {{ creatorDisplayName() }}
     </p>
@@ -91,7 +88,6 @@
       </span>
     </div>
 
-    <!-- Description -->
     @if (style().info) {
       <p class="card-description">{{ style().info }}</p>
     } @else {
@@ -100,7 +96,6 @@
       </p>
     }
 
-    <!-- Tags -->
     @if (displayTags().length > 0) {
       <div class="badge-container">
         @for (tag of displayTags(); track tag) {
@@ -114,37 +109,19 @@
       </div>
     }
 
-    <!-- Footer with Usage Stats -->
-    <div class="card-footer">
-      <span class="card-stat">
-        <svg
-          class="card-stat-icon"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"
-          />
-        </svg>
-        {{ style().use_count | formatNumber }}
-      </span>
+    <div class="style-card-kpis" role="list">
+      <div class="style-card-kpi" role="listitem">
+        <span class="style-card-kpi-label">{{ "styles.uses" | transloco }}</span>
+        <strong class="style-card-kpi-value">{{ style().use_count | formatNumber }}</strong>
+      </div>
+      <div class="style-card-kpi" role="listitem">
+        <span class="style-card-kpi-label">{{ "styles.generation_params" | transloco }}</span>
+        <strong class="style-card-kpi-value">{{ parameterCount() }}</strong>
+      </div>
+    </div>
 
-      <span class="card-stat card-stat-secondary">
-        {{ parameterCount() }} {{ "styles.generation_params" | transloco }}
-      </span>
-
-      @if (showActions()) {
+    @if (showActions()) {
+      <div class="card-footer">
         <div class="card-actions">
           <button
             type="button"
@@ -187,7 +164,7 @@
             </svg>
           </button>
         </div>
-      }
-    </div>
+      </div>
+    }
   </div>
 </a>

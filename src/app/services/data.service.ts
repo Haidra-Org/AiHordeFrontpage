@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
 import { FaqItem } from '../types/faq-item';
@@ -8,6 +8,7 @@ import { SortedItems } from '../types/sorted-items';
 import { PrivacyPolicyItem } from '../types/privacy-policy-item';
 import { GuiItem } from '../types/gui-item';
 import { replaceContext } from '../helper/context-replacer';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 
 type ObjectWithMappableKey<
   TObject,
@@ -18,10 +19,9 @@ type ObjectWithMappableKey<
   providedIn: 'root',
 })
 export class DataService {
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly transloco: TranslocoService,
-  ) {}
+  private readonly httpClient = inject(HttpClient);
+  private readonly transloco = inject(TranslocoService);
+  private readonly cache = inject(HordeApiCacheService);
 
   public get faq(): Observable<SortedItems<FaqItem>> {
     return this.getData<FaqItem>('faq').pipe(
@@ -146,15 +146,25 @@ export class DataService {
   }
 
   private getData<T>(file: string): Observable<T[]> {
-    return this.httpClient
-      .get<T[]>(`/assets/data/${file}.${this.transloco.getActiveLang()}.json`)
+    const lang = this.transloco.getActiveLang();
+    const primaryUrl = `/assets/data/${file}.${lang}.json`;
+    return this.cache
+      .cachedGet<T[]>(
+        primaryUrl,
+        {},
+        { ttl: CacheTTL.VERY_LONG, category: 'local-data' },
+      )
       .pipe(
         catchError((e: HttpErrorResponse) => {
           if (e.status !== 404) {
             return throwError(() => e);
           }
 
-          return this.httpClient.get<T[]>(`/assets/data/${file}.en.json`);
+          return this.cache.cachedGet<T[]>(
+            `/assets/data/${file}.en.json`,
+            {},
+            { ttl: CacheTTL.VERY_LONG, category: 'local-data' },
+          );
         }),
       );
   }

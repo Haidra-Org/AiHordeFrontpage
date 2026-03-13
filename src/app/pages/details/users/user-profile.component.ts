@@ -14,12 +14,14 @@ import { combineLatest, switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
-import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import {
   BreadcrumbComponent,
   BreadcrumbItem,
 } from '../../../components/breadcrumb/breadcrumb.component';
-import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
+import { UserBadgesComponent } from '../../../components/user-badges/user-badges.component';
+import { UserKudosCardComponent } from '../../../components/user-kudos-card/user-kudos-card.component';
+import { UserStatsSummaryComponent } from '../../../components/user-stats-summary/user-stats-summary.component';
+import { UserRecordsPanelComponent } from '../../../components/user-records-panel/user-records-panel.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { HordeUser } from '../../../types/horde-user';
@@ -29,10 +31,12 @@ import { extractUserAlias } from '../../../helper/user-parser';
   selector: 'app-user-profile',
   imports: [
     TranslocoPipe,
-    FormatNumberPipe,
     BreadcrumbComponent,
     RouterLink,
-    KudosBreakdownPanelComponent,
+    UserBadgesComponent,
+    UserKudosCardComponent,
+    UserStatsSummaryComponent,
+    UserRecordsPanelComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
   ],
