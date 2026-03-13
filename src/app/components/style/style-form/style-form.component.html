@@ -204,6 +204,7 @@
           <div class="form-field form-field-half">
             <label for="style-models" class="form-label">
               {{ "styles.form.models" | transloco }}
+              <span class="text-error">*</span>
             </label>
             <div class="autocomplete-wrapper">
               <div class="autocomplete-input-row">
@@ -211,6 +212,10 @@
                   id="style-models"
                   type="text"
                   class="form-input form-input-wide autocomplete-input"
+                  [class.form-input-error]="
+                    form.controls['models'].invalid &&
+                    form.controls['models'].touched
+                  "
                   formControlName="models"
                   autocomplete="off"
                   [placeholder]="'styles.form.models_placeholder' | transloco"
@@ -267,6 +272,14 @@
                 </div>
               }
             </div>
+            @if (
+              form.controls["models"].errors?.["requiresModel"] &&
+              form.controls["models"].touched
+            ) {
+              <p class="text-error" role="alert">
+                {{ "styles.form.models_required" | transloco }}
+              </p>
+            }
             <p class="form-hint">
               {{ "styles.form.models_placeholder_note" | transloco }}
             </p>
