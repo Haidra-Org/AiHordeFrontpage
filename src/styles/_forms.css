@@ -624,7 +624,128 @@
     color: var(--color-content-secondary);
   }
 
+  /* =================================================================
+     TRANSFER PAGE - Structured glass transfer flow
+     ================================================================= */
+
+  .transfer-page-grid {
+    @apply grid gap-6 items-start;
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  }
+
+  .transfer-hero-card {
+    @apply rounded-2xl p-5 md:p-6 sticky;
+    top: calc(var(--sticky-offset, 0px) + 1rem);
+  }
+
+  .transfer-hero-points {
+    @apply mt-4 grid gap-2;
+  }
+
+  .transfer-hero-point {
+    @apply m-0 rounded-lg px-3 py-2 text-sm font-medium;
+    background: rgb(255 255 255 / 0.42);
+    border: 1px solid rgb(255 255 255 / 0.32);
+    color: rgb(30 41 59);
+  }
+
+  .dark .transfer-hero-point {
+    background: rgb(30 41 59 / 0.46);
+    border-color: rgb(148 163 184 / 0.24);
+    color: rgb(226 232 240);
+  }
+
+  .transfer-form-stack {
+    @apply flex flex-col gap-4;
+  }
+
+  .transfer-form-panel {
+    @apply p-4 md:p-5;
+  }
+
+  .transfer-target-grid {
+    @apply gap-3;
+  }
+
+  .transfer-educator-note {
+    @apply m-0;
+    color: var(--color-content-primary);
+  }
+
+  .dark .transfer-educator-note {
+    @apply text-gray-100;
+  }
+
+  .transfer-note-link {
+    @apply text-blue-600 dark:text-green-400 hover:underline;
+  }
+
+  .transfer-validation {
+    @apply m-0 text-sm;
+  }
+
+  .transfer-validation--error {
+    color: var(--color-danger-text);
+  }
+
+  .transfer-validation--success {
+    color: var(--color-success-text);
+  }
+
+  .transfer-validation--info {
+    color: var(--color-content-secondary);
+  }
+
+  .dark .transfer-validation--error {
+    @apply text-red-400;
+  }
+
+  .dark .transfer-validation--success {
+    @apply text-green-400;
+  }
+
+  .dark .transfer-validation--info {
+    @apply text-gray-300;
+  }
+
+  .transfer-submit-bar {
+    @apply rounded-2xl p-4 md:p-5 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .transfer-footnote {
+    @apply m-0 rounded-lg px-3 py-2 text-sm;
+    background: rgb(59 130 246 / 0.08);
+    border: 1px solid rgb(59 130 246 / 0.2);
+    color: rgb(30 64 175);
+  }
+
+  .dark .transfer-footnote {
+    background: rgb(30 58 138 / 0.22);
+    border-color: rgb(96 165 250 / 0.28);
+    color: rgb(191 219 254);
+  }
+
+  @media (max-width: 1228px) {
+    .transfer-page-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .transfer-hero-card {
+      position: static;
+      top: auto;
+    }
+  }
+
   @media (max-width: 639px) {
+    .transfer-submit-bar {
+      @apply items-stretch;
+    }
+
+    .transfer-submit-bar .btn-primary {
+      @apply w-full justify-center;
+    }
+
     .profile-styles-shell {
       padding-left: 0;
       padding-right: 0;
@@ -680,6 +801,14 @@
   }
 
   @media (max-width: 419px) {
+    .transfer-form-panel {
+      @apply p-1;
+    }
+
+    .transfer-submit-bar {
+      @apply p-1.5 rounded-xl;
+    }
+
     .style-form-create-host {
       margin-left: 0;
       margin-right: 0;

@@ -27,6 +27,7 @@ import { HordeUser } from '../../types/horde-user';
 import { FormatNumberPipe } from '../../pipes/format-number.pipe';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { scrollToElement } from '../../helper/scroll-utils';
+import { SharedKeyService } from '../../services/shared-key.service';
 
 @Component({
   selector: 'app-transfer',
@@ -48,6 +49,7 @@ export class TransferComponent implements OnInit {
   private readonly footerColor = inject(FooterColorService);
   private readonly database = inject(DatabaseService);
   private readonly aiHorde = inject(AiHordeService);
+  private readonly sharedKeyService = inject(SharedKeyService);
   public readonly activatedRoute = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly stickyRegistry = inject(StickyRegistryService);
@@ -70,6 +72,7 @@ export class TransferComponent implements OnInit {
   });
   public educatorAccounts = signal<HordeUser[] | undefined>(undefined);
   public fragment = signal<string | null>(null);
+  public validatedTargetKind = signal<'user' | 'sharedKey' | null>(null);
 
   constructor() {
     // Fetch educator accounts only in the browser after rendering completes.
@@ -130,12 +133,17 @@ export class TransferComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.currentUser.set(null);
+        this.validatedTargetKind.set(null);
         this.form.patchValue({ apiKeyValidated: null });
+        if (this.form.controls.targetUser.value?.trim()) {
+          this.form.patchValue({ targetUserValidated: null });
+        }
       });
 
     this.form.controls.targetUser.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.validatedTargetKind.set(null);
         this.form.patchValue({ targetUserValidated: null });
       });
 
@@ -196,20 +204,54 @@ export class TransferComponent implements OnInit {
           return;
         }
 
-        const parts = targetUser.split('#');
+        const normalizedTarget = targetUser.trim();
+        if (!normalizedTarget) {
+          this.validatedTargetKind.set(null);
+          this.form.patchValue({ targetUserValidated: null });
+          return;
+        }
+
+        const sourceApiKey = this.form.controls.apiKey.value?.trim();
+
+        const parts = normalizedTarget.split('#');
         if (parts.length !== 2) {
-          this.form.patchValue({ targetUserValidated: false });
+          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
           return;
         }
 
         const id = Number(parts[1]);
+        if (Number.isNaN(id)) {
+          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
+          return;
+        }
+
         this.aiHorde.getUserById(id).subscribe((user) => {
-          this.form.patchValue({
-            targetUserValidated:
-              user !== null &&
-              targetUser.toLowerCase() === user.username.toLowerCase(),
-          });
+          if (this.form.controls.targetUser.value?.trim() !== normalizedTarget) {
+            return;
+          }
+
+          const isUserMatch =
+            user !== null &&
+            normalizedTarget.toLowerCase() === user.username.toLowerCase();
+
+          if (isUserMatch) {
+            this.validatedTargetKind.set('user');
+            this.form.patchValue({ targetUserValidated: true });
+            return;
+          }
+
+          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
         });
+      });
+
+    this.form.controls.targetUser.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((targetUser) => {
+        if (targetUser?.trim()) {
+          return;
+        }
+
+        this.validatedTargetKind.set(null);
       });
 
     this.form.patchValue({
@@ -245,6 +287,34 @@ export class TransferComponent implements OnInit {
             scrollToElement(el, this.stickyRegistry.totalOffset());
           }
         }
+      });
+  }
+
+  private validateAsSharedKey(
+    sharedKeyId: string,
+    sourceApiKey?: string,
+  ): void {
+    this.sharedKeyService
+      .getSharedKey(sharedKeyId, sourceApiKey)
+      .subscribe({
+        next: () => {
+          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+            return;
+          }
+
+          this.validatedTargetKind.set('sharedKey');
+          this.form.patchValue({
+            targetUserValidated: true,
+          });
+        },
+        error: () => {
+          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+            return;
+          }
+
+          this.validatedTargetKind.set(null);
+          this.form.patchValue({ targetUserValidated: false });
+        },
       });
   }
 

@@ -145,6 +145,10 @@
     @apply dark:text-white;
   }
 
+  .kudos-balance-row {
+    @apply mt-1 flex flex-wrap items-center gap-2;
+  }
+
   /* Split metric value used in compact nested stat pairs (e.g. MPS/Tokens). */
   .data-value-split {
     @apply block mt-1;

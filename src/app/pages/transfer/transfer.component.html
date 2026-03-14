@@ -12,25 +12,34 @@
 
 <section class="section-secondary">
   <div class="container-spaced">
-    <div class="grid-items">
-      <div class="text-secondary sm:text-lg">
-        <p class="mb-6">
+    <div class="transfer-page-grid">
+      <aside class="transfer-hero-card surface-glass--hero">
+        <h2 class="heading-card">{{ "transfer.title" | transloco }}</h2>
+        <p class="text-secondary text-sm sm:text-base">
           <ng-container *transloco="let t">
-            <!-- <transloco key="transfer.visit_old" [params]="{oldUrl: '/transfer'}" /> -->
             {{ t("transfer.visit_old_pre") }}
             <a href="/transfer" class="link">{{
               t("transfer.visit_old_link_text")
-            }}</a>
-            <!-- ... and a trailing period-->
-            .
+            }}</a
+            >.
           </ng-container>
         </p>
-        <form
-          class="max-w-sm mx-auto"
-          [formGroup]="form"
-          (ngSubmit)="transfer()"
-        >
-          <div class="mb-2">
+      </aside>
+
+      <form
+        class="transfer-form-stack"
+        [formGroup]="form"
+        (ngSubmit)="transfer()"
+      >
+        <section class="transfer-form-panel form-section-shell surface-glass">
+          <div class="form-section-shell__header">
+            <h3 class="heading-card">{{ "transfer.source_api_key" | transloco }}</h3>
+            <p class="text-secondary text-sm">
+              {{ "transfer.source_api_key.description" | transloco }}
+            </p>
+          </div>
+
+          <div class="form-field-shell surface-glass--nested">
             <label for="source_api_key" class="form-label">{{
               "transfer.source_api_key" | transloco
             }}</label>
@@ -38,96 +47,120 @@
               formControlName="apiKey"
               type="text"
               id="source_api_key"
-              class="form-input"
+              class="form-input form-input-wide"
               required
               [placeholder]="'transfer.source_api_key.description' | transloco"
             />
-          </div>
-          @if (form.value.apiKeyValidated === false) {
-            <p class="mb-1 text-error">
-              <small>{{ "invalid_api_key" | transloco }}</small>
-            </p>
-          }
-          @if (currentUser()) {
-            <p class="mb-1">
-              <small>{{
-                "current_user" | transloco: { user: currentUser()!.username }
-              }}</small>
-            </p>
-          }
 
-          <div class="mb-5">
-            <app-toggle-checkbox
-              [description]="'transfer.source_api_key.remember' | transloco"
-              formControlName="remember"
-            />
-          </div>
+            <div class="form-field-shell__footer">
+              <app-toggle-checkbox
+                [description]="'transfer.source_api_key.remember' | transloco"
+                formControlName="remember"
+              />
+            </div>
 
-          <div
-            [class.mb-1]="educatorAccounts()"
-            [class.mb-5]="!educatorAccounts()"
-          >
-            <label for="target_user" class="form-label">{{
-              "transfer.target_user" | transloco
-            }}</label>
-            <input
-              formControlName="targetUser"
-              type="text"
-              id="target_user"
-              class="form-input"
-              required
-              [placeholder]="
-                'transfer.target_user.description'
-                  | transloco: { exampleUser: exampleUser() }
-              "
-            />
-          </div>
-          @if (educatorAccounts()) {
-            <div
-              class="text-primary"
-              [class.mb-5]="form.value.targetUserValidated !== false"
-              [class.mb-1]="form.value.targetUserValidated === false"
-            >
-              <p class="mb-1">
-                <small
-                  >{{ "transfer.donate" | transloco
-                  }}<sup
-                    ><a
-                      routerLink="/v2-transfer/"
-                      fragment="note1"
-                      class="text-blue-600 dark:text-green-400"
-                      >1</a
-                    ></sup
-                  ></small
-                >
+            @if (form.value.apiKeyValidated === false) {
+              <p class="transfer-validation transfer-validation--error">
+                <small>{{ "invalid_api_key" | transloco }}</small>
               </p>
+            }
+            @if (currentUser()) {
+              <p class="transfer-validation transfer-validation--info">
+                <small>{{
+                  "current_user" | transloco: { user: currentUser()!.username }
+                }}</small>
+              </p>
+            }
+          </div>
+        </section>
 
-              <select formControlName="educatorAccount" class="form-input">
-                @for (user of educatorAccounts(); track user.id) {
+        <section class="transfer-form-panel form-section-shell surface-glass">
+          <div class="form-section-shell__header">
+            <h3 class="heading-card">{{ "transfer.target_user" | transloco }}</h3>
+            <p class="text-secondary text-sm">
+              {{
+                "transfer.target_user.description"
+                  | transloco: { exampleUser: exampleUser() }
+              }}
+            </p>
+          </div>
+
+          <div class="form-section-shell__grid transfer-target-grid">
+            <div class="form-field-shell surface-glass--nested form-field-shell--full">
+              <label for="target_user" class="form-label">{{
+                "transfer.target_user" | transloco
+              }}</label>
+              <input
+                formControlName="targetUser"
+                type="text"
+                id="target_user"
+                class="form-input form-input-wide"
+                required
+                [placeholder]="
+                  'transfer.target_user.description'
+                    | transloco: { exampleUser: exampleUser() }
+                "
+              />
+
+              @if (form.value.targetUserValidated === true) {
+                <p class="transfer-validation transfer-validation--success">
+                  <small>
+                    @if (validatedTargetKind() === 'sharedKey') {
+                      {{ "transfer.target_valid_shared_key" | transloco }}
+                    } @else {
+                      {{ "transfer.target_valid_user" | transloco }}
+                    }
+                  </small>
+                </p>
+              }
+              @if (form.value.targetUserValidated === false) {
+                <p class="transfer-validation transfer-validation--error">
+                  <small>{{ "invalid_target_user" | transloco }}</small>
+                </p>
+              }
+            </div>
+
+            @if (educatorAccounts()) {
+              <div class="form-field-shell surface-glass--nested form-field-shell--full">
+                <p class="transfer-educator-note">
+                  <small
+                    >{{ "transfer.donate" | transloco
+                    }}<sup
+                      ><a
+                        routerLink="/v2-transfer/"
+                        fragment="note1"
+                        class="transfer-note-link"
+                        >1</a
+                      ></sup
+                    ></small
+                  >
+                </p>
+
+                <select formControlName="educatorAccount" class="form-input form-input-wide">
                   <option [value]="null">
                     {{ "option.empty" | transloco }}
                   </option>
-                  <option [value]="user.id">
-                    {{ user.username }} ({{
-                      "transfer.account.kudos_amount"
-                        | transloco
-                          : { amountFormatted: user.kudos | formatNumber }
-                    }})
-                  </option>
-                }
-              </select>
-            </div>
-          }
-          @if (form.value.targetUserValidated === false) {
-            <p class="mb-5 text-error">
-              <small>{{ "invalid_target_user" | transloco }}</small>
-            </p>
-          }
+                  @for (user of educatorAccounts(); track user.id) {
+                    <option [value]="user.id">
+                      {{ user.username }} ({{
+                        "transfer.account.kudos_amount"
+                          | transloco
+                            : { amountFormatted: user.kudos | formatNumber }
+                      }})
+                    </option>
+                  }
+                </select>
+              </div>
+            }
+          </div>
+        </section>
 
-          <div
-            [class.mb-5]="form.value.kudosAmountValidated !== false"
-            [class.mb-1]="form.value.kudosAmountValidated === false"
-          >
+        <section class="transfer-form-panel form-section-shell surface-glass">
+          <div class="form-section-shell__header">
+            <h3 class="heading-card">{{ "transfer.kudos_amount" | transloco }}</h3>
+          </div>
+
+          <div class="form-field-shell surface-glass--nested">
             <label for="kudos_amount" class="form-label">{{
               "transfer.kudos_amount" | transloco
             }}</label>
@@ -136,7 +169,7 @@
               type="number"
               min="1"
               id="kudos_amount"
-              class="form-input"
+              class="form-input form-input-wide"
               required
               [placeholder]="
                 'transfer.kudos_amount.description'
@@ -149,20 +182,25 @@
                       }
               "
             />
-          </div>
-          @if (form.value.kudosAmountValidated === false) {
-            <p class="mb-5 text-error">
-              <small>{{ "transfer.too_many_kudos" | transloco }}</small>
-            </p>
-          }
 
+            @if (form.value.kudosAmountValidated === false) {
+              <p class="transfer-validation transfer-validation--error">
+                <small>{{ "transfer.too_many_kudos" | transloco }}</small>
+              </p>
+            }
+          </div>
+        </section>
+
+        <section class="transfer-submit-bar surface-glass">
           @if (sentSuccessfully() !== null) {
             @if (sentSuccessfully()) {
-              <p class="mb-5 text-success">
+              <p class="transfer-validation transfer-validation--success">
                 {{ "transfer.success" | transloco }}
               </p>
             } @else {
-              <p class="mb-5 text-error">{{ "transfer.error" | transloco }}</p>
+              <p class="transfer-validation transfer-validation--error">
+                {{ "transfer.error" | transloco }}
+              </p>
             }
           }
           <button
@@ -173,13 +211,13 @@
           >
             Submit
           </button>
-        </form>
+        </section>
 
-        <p id="note1" class="mt-6" [class.active]="fragment() === 'note1'">
+        <p id="note1" class="transfer-footnote" [class.active]="fragment() === 'note1'">
           <sup>1</sup>
           {{ "educators.explanation" | transloco }}
         </p>
-      </div>
+      </form>
     </div>
   </div>
 </section>
