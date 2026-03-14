@@ -540,9 +540,93 @@
     text-wrap: balance;
   }
 
+  /* =================================================================
+     STYLE CARD GRID & UNIFIED SIZING
+     ================================================================= */
+
   .styles-entry-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+  }
+
+  /* Host elements must stretch so inner card fills the grid cell */
+  .styles-entry-grid > * {
+    display: flex;
+    min-width: 0;
+  }
+
+  .styles-entry-grid > * > .card {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* Fixed preview height keeps card structure deterministic */
+  .styles-entry-grid .card-preview {
+    aspect-ratio: auto;
+    height: 140px;
+    flex-shrink: 0;
+  }
+
+  /* Description absorbs height variance so KPIs align at the bottom.
+     min-height matches the 3-line clamp maximum so rows stay uniform. */
+  .styles-entry-grid .card-description {
+    flex: 1;
+    min-height: 3.75rem;
+  }
+
+  /* =================================================================
+     STYLE CARD TYPE ACCENTS
+     Colored top border and tinted preview distinguish card types.
+     ================================================================= */
+
+  .style-card-image {
+    border-top: 3px solid var(--color-brand-blue);
+  }
+
+  .style-card-text {
+    border-top: 3px solid var(--color-brand-purple);
+  }
+
+  /* Stronger border & shadow for card-as-item distinction */
+  .styles-entry-grid .card {
+    border-color: var(--color-glass-border-strong);
+    box-shadow:
+      0 2px 8px rgb(0 0 0 / 0.07),
+      0 1px 3px rgb(0 0 0 / 0.05);
+  }
+
+  .dark .styles-entry-grid .card {
+    border-color: var(--color-glass-border-dark-strong);
+    box-shadow:
+      0 2px 12px rgb(0 0 0 / 0.3),
+      0 1px 4px rgb(0 0 0 / 0.18);
+  }
+
+  /* Tinted preview backgrounds by type */
+  .style-card-image .card-preview {
+    background: rgb(219 234 254 / 0.5);
+  }
+
+  .dark .style-card-image .card-preview {
+    background: rgb(30 58 138 / 0.25);
+  }
+
+  .style-card-text .card-preview {
+    background: rgb(243 232 255 / 0.5);
+  }
+
+  .dark .style-card-text .card-preview {
+    background: rgb(88 28 135 / 0.2);
+  }
+
+  /* Text-style preview icon uses purple instead of default blue */
+  .style-card-text .card-preview-icon {
+    color: var(--color-brand-purple);
+  }
+
+  .dark .style-card-text .card-preview-icon {
+    color: rgb(192 132 252);
   }
 
   .style-card-kpi-value {
@@ -597,6 +681,10 @@
       gap: 0.75rem;
     }
 
+    .styles-entry-grid .card-preview {
+      height: 100px;
+    }
+
     .styles-entry-grid .style-card-meta-row {
       @apply flex-wrap gap-1.5;
     }
@@ -641,6 +729,12 @@
 
     .styles-entry-grid .card-content {
       @apply p-3;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .styles-entry-grid {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
