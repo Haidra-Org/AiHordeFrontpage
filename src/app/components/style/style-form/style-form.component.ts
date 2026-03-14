@@ -1,5 +1,4 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -40,6 +39,7 @@ import {
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ToggleCheckboxComponent } from '../../toggle-checkbox/toggle-checkbox.component';
+import { ModelAutocompleteComponent } from '../../model-autocomplete/model-autocomplete.component';
 
 function divisibleBy64(control: AbstractControl): ValidationErrors | null {
   const v = control.value;
@@ -72,7 +72,12 @@ export interface StyleFormSubmitEvent {
 
 @Component({
   selector: 'app-style-form',
-  imports: [ReactiveFormsModule, TranslocoPipe, ToggleCheckboxComponent],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    ToggleCheckboxComponent,
+    ModelAutocompleteComponent,
+  ],
   templateUrl: './style-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -80,8 +85,6 @@ export class StyleFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly elRef = inject(ElementRef);
-  private readonly onDocumentClick = this.handleDocumentClick.bind(this);
 
   /** Form mode: create or edit. */
   public readonly mode = input<StyleFormMode>('create');
@@ -120,13 +123,6 @@ export class StyleFormComponent implements OnInit, OnChanges {
   /** All available models fetched from the API. */
   public readonly availableModels = signal<ActiveModel[]>([]);
 
-  /** Dropdown open state. */
-  public readonly modelDropdownOpen = signal(false);
-  private modelDropdownPinned = false;
-
-  /** Live value of the models input for filtering. */
-  public readonly modelSearchText = signal<string>('');
-
   /** Confirm modal state. */
   public readonly confirmModalOpen = signal(false);
   public readonly pendingPayload = signal<StyleFormSubmitEvent | null>(null);
@@ -160,35 +156,6 @@ export class StyleFormComponent implements OnInit, OnChanges {
     }
     return entries;
   });
-
-  /** Filtered models based on search text in the models input. */
-  public readonly filteredModels = computed(() => {
-    const raw = this.modelSearchText();
-    // Only match against the segment after the last comma
-    const lastSegment = raw.includes(',')
-      ? raw
-          .substring(raw.lastIndexOf(',') + 1)
-          .trim()
-          .toLowerCase()
-      : raw.trim().toLowerCase();
-    const all = this.availableModels();
-    if (!lastSegment) return all;
-    return all.filter((m) => m.name.toLowerCase().includes(lastSegment));
-  });
-
-  public readonly hiddenModelCount = computed(() => {
-    return this.availableModels().length - this.filteredModels().length;
-  });
-
-  constructor() {
-    afterNextRender(() => {
-      document.addEventListener('click', this.onDocumentClick);
-    });
-
-    this.destroyRef.onDestroy(() => {
-      document.removeEventListener('click', this.onDocumentClick);
-    });
-  }
 
   ngOnInit(): void {
     this.initializeForm();
@@ -260,27 +227,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
     return this.getCurrentPayloadSnapshot() !== this.initialPayloadSnapshot;
   }
 
-  private handleDocumentClick(event: MouseEvent): void {
-    const wrapper = this.elRef.nativeElement.querySelector(
-      '.autocomplete-wrapper',
-    );
-    if (wrapper && !wrapper.contains(event.target as Node)) {
-      this.modelDropdownPinned = false;
-      this.modelDropdownOpen.set(false);
-    }
-  }
-
   private loadModels(): void {
-    this.modelSearchText.set(this.form.controls['models'].value ?? '');
-    this.form.controls['models'].valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((val: string) => {
-        this.modelSearchText.set(val ?? '');
-        if (val && val.length > 0 && !this.modelDropdownOpen()) {
-          this.modelDropdownOpen.set(true);
-        }
-      });
-
     const models$ = this.isImageStyle()
       ? this.aiHorde.getImageModels()
       : this.aiHorde.getTextModels();
@@ -292,35 +239,6 @@ export class StyleFormComponent implements OnInit, OnChanges {
           .sort((a, b) => a.name.localeCompare(b.name)),
       );
     });
-  }
-
-  public onModelFocus(): void {
-    this.modelDropdownOpen.set(true);
-  }
-
-  public onModelBlur(): void {
-    if (!this.modelDropdownPinned) {
-      this.modelDropdownOpen.set(false);
-    }
-  }
-
-  public toggleModelDropdown(): void {
-    const next = !this.modelDropdownOpen();
-    this.modelDropdownPinned = next;
-    this.modelDropdownOpen.set(next);
-  }
-
-  public selectModel(name: string): void {
-    const current = (this.form.controls['models'].value as string) ?? '';
-    const parts = current.split(',');
-    // Replace the last segment (the partial search text) with the selected model
-    const completed = parts.slice(0, -1).map((s) => s.trim()).filter(Boolean);
-    if (!completed.includes(name)) {
-      completed.push(name);
-    }
-    this.form.controls['models'].setValue(completed.join(', '));
-    this.modelDropdownPinned = false;
-    this.modelDropdownOpen.set(false);
   }
 
   private initializeForm(): void {

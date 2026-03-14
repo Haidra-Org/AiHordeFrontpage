@@ -15,7 +15,13 @@
 
   .shared-key-grid {
     @apply grid gap-3 mt-4;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Host element targeting — Angular wraps each card in <app-shared-key-card> */
+  .shared-key-grid > * {
+    display: flex;
+    min-width: 0;
   }
 
   .shared-key-form {
@@ -116,6 +122,9 @@
   /* Card styles */
   .shared-key-card {
     @apply rounded-xl p-3 md:p-4;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     background: var(--color-glass-surface-elevated);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
@@ -178,7 +187,8 @@
 
   .shared-key-card__body {
     @apply grid gap-2 mt-2;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: 1fr;
+    flex: 1;
   }
 
   .shared-key-field {
@@ -199,7 +209,17 @@
     border-top-color: var(--color-glass-border-dark-subtle);
   }
 
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .shared-key-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (max-width: 639px) {
+    .shared-key-grid {
+      grid-template-columns: 1fr;
+    }
+
     .shared-key-form {
       @apply gap-2;
       margin-left: 0;

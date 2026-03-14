@@ -12,7 +12,7 @@ import {
 } from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
-import { HordeUser } from '../types/horde-user';
+import { ActiveGenerations, HordeUser } from '../types/horde-user';
 import { PutUserRequest } from '../types/horde-user-admin';
 
 export interface DeleteUserResponse {
@@ -138,6 +138,20 @@ export class AuthService {
       null,
       remember ? StorageType.Permanent : StorageType.Session,
     );
+  }
+
+  public updateCurrentUserActiveGenerations(
+    activeGenerations: ActiveGenerations | undefined,
+  ): void {
+    const user = this._currentUser();
+    if (!user) {
+      return;
+    }
+
+    this._currentUser.set({
+      ...user,
+      active_generations: activeGenerations,
+    });
   }
 
   private fetchAndEnrichUser(apiKey: string): Observable<HordeUser | null> {

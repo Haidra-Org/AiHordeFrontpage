@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   NgZone,
   PLATFORM_ID,
   afterNextRender,
@@ -11,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -34,10 +33,16 @@ import {
   GENERATION_NOT_FOUND,
 } from '../../types/generation';
 import { ActiveModel } from '../../types/active-model';
+import { ModelAutocompleteComponent } from '../model-autocomplete/model-autocomplete.component';
 
 @Component({
   selector: 'app-generations-tab',
-  imports: [ReactiveFormsModule, TranslocoPipe, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    RouterLink,
+    ModelAutocompleteComponent,
+  ],
   templateUrl: './generations-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -47,8 +52,6 @@ export class GenerationsTabComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly elRef = inject(ElementRef);
-  private readonly onDocumentClick = this.handleDocumentClick.bind(this);
 
   private static readonly USER_POLL_MS = 60_000;
   private static readonly CHECK_POLL_MS = 10_000;
@@ -96,54 +99,12 @@ export class GenerationsTabComponent {
     height: new FormControl<number>(512),
   });
 
-  public readonly modelSearch = toSignal(
-    this.form.controls.model.valueChanges,
-    { initialValue: this.form.controls.model.value ?? '' },
-  );
-
-  public readonly filteredModels = computed(() => {
-    const search = (this.modelSearch() ?? '').toLowerCase().trim();
-    const all = this.availableModels();
-    if (!search) return all;
-    return all.filter((m) => m.name.toLowerCase().includes(search));
-  });
-
-  public readonly hiddenModelCount = computed(() => {
-    return this.availableModels().length - this.filteredModels().length;
-  });
-
-  public readonly modelDropdownOpen = signal(false);
-  private modelDropdownPinned = false;
-
   constructor() {
     afterNextRender(() => {
       this.refreshUserGenerations();
       this.startPolling();
       this.fetchModels();
-      document.addEventListener('click', this.onDocumentClick);
     });
-
-    this.destroyRef.onDestroy(() => {
-      document.removeEventListener('click', this.onDocumentClick);
-    });
-
-    this.form.controls.model.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((val) => {
-        if (val && val.length > 0 && !this.modelDropdownOpen()) {
-          this.modelDropdownOpen.set(true);
-        }
-      });
-  }
-
-  private handleDocumentClick(event: MouseEvent): void {
-    const wrapper = this.elRef.nativeElement.querySelector(
-      '.autocomplete-wrapper',
-    );
-    if (wrapper && !wrapper.contains(event.target as Node)) {
-      this.modelDropdownPinned = false;
-      this.modelDropdownOpen.set(false);
-    }
   }
 
   public refreshUserGenerations(): void {
@@ -160,28 +121,6 @@ export class GenerationsTabComponent {
     } else {
       this.stopUserPollTimer();
     }
-  }
-
-  public onModelFocus(): void {
-    this.modelDropdownOpen.set(true);
-  }
-
-  public onModelBlur(): void {
-    if (!this.modelDropdownPinned) {
-      this.modelDropdownOpen.set(false);
-    }
-  }
-
-  public toggleModelDropdown(): void {
-    const next = !this.modelDropdownOpen();
-    this.modelDropdownPinned = next;
-    this.modelDropdownOpen.set(next);
-  }
-
-  public selectModel(name: string): void {
-    this.form.controls.model.setValue(name);
-    this.modelDropdownPinned = false;
-    this.modelDropdownOpen.set(false);
   }
 
   public toggleRequestor(): void {
@@ -420,7 +359,9 @@ export class GenerationsTabComponent {
 
   private buildRequest(): ImageGenerationRequest {
     const v = this.form.value;
-    return {
+    const models = this.parseModels(v.model);
+
+    const request: ImageGenerationRequest = {
       prompt: v.prompt!,
       params: {
         steps: v.steps ?? 25,
@@ -431,9 +372,25 @@ export class GenerationsTabComponent {
       },
       nsfw: v.nsfw ?? false,
       censor_nsfw: !(v.nsfw ?? false),
-      models: [v.model ?? 'stable_diffusion'],
       r2: true,
     };
+
+    if (models.length > 0) {
+      request.models = models;
+    }
+
+    return request;
+  }
+
+  private parseModels(rawValue: string | null | undefined): string[] {
+    if (!rawValue || !rawValue.trim()) {
+      return [];
+    }
+
+    return rawValue
+      .split(',')
+      .map((model) => model.trim())
+      .filter((model) => model.length > 0);
   }
 
   private applyJsonToForm(): void {
@@ -448,7 +405,7 @@ export class GenerationsTabComponent {
       this.jsonError.set(null);
       this.form.patchValue({
         prompt: parsed.prompt ?? '',
-        model: parsed.models?.[0] ?? 'stable_diffusion',
+        model: parsed.models?.join(', ') ?? 'stable_diffusion',
         steps: parsed.params?.steps ?? 25,
         cfg_scale: parsed.params?.cfg_scale ?? 7.5,
         clip_skip: parsed.params?.clip_skip ?? 1,
@@ -479,12 +436,24 @@ export class GenerationsTabComponent {
       return;
     }
 
+    const apiKey = this.auth.getStoredApiKey();
+    if (!apiKey) {
+      onComplete?.();
+      return;
+    }
+
     this.aiHorde
-      .getUserById(user.id)
+      .getSelfUserByApiKeyUncached(apiKey)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (refreshedUser) => {
-          if (!refreshedUser?.active_generations) return;
+          this.auth.updateCurrentUserActiveGenerations(
+            refreshedUser?.active_generations,
+          );
+
+          if (!refreshedUser?.active_generations) {
+            return;
+          }
           const ag = refreshedUser.active_generations;
 
           for (const id of ag.image ?? []) {

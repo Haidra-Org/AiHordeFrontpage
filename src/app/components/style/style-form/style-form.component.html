@@ -206,72 +206,19 @@
               {{ "styles.form.models" | transloco }}
               <span class="text-error">*</span>
             </label>
-            <div class="autocomplete-wrapper">
-              <div class="autocomplete-input-row">
-                <input
-                  id="style-models"
-                  type="text"
-                  class="form-input form-input-wide autocomplete-input"
-                  [class.form-input-error]="
-                    form.controls['models'].invalid &&
-                    form.controls['models'].touched
-                  "
-                  formControlName="models"
-                  autocomplete="off"
-                  [placeholder]="'styles.form.models_placeholder' | transloco"
-                  (focus)="onModelFocus()"
-                  (blur)="onModelBlur()"
-                />
-                <button
-                  type="button"
-                  class="autocomplete-toggle"
-                  (mousedown)="$event.preventDefault()"
-                  (click)="toggleModelDropdown()"
-                  [attr.aria-expanded]="modelDropdownOpen()"
-                  [attr.aria-label]="'styles.form.models_toggle' | transloco"
-                >
-                  <span
-                    class="autocomplete-chevron"
-                    [class.autocomplete-chevron--open]="modelDropdownOpen()"
-                    >&#9662;</span
-                  >
-                </button>
-              </div>
-              @if (modelDropdownOpen()) {
-                <div
-                  class="autocomplete-dropdown surface-floating"
-                  role="listbox"
-                  [attr.aria-label]="'styles.form.models' | transloco"
-                  (mousedown)="$event.preventDefault()"
-                >
-                  @if (hiddenModelCount() > 0) {
-                    <div class="autocomplete-hidden-notice">
-                      {{
-                        "styles.form.models_hidden"
-                          | transloco: { count: hiddenModelCount() }
-                      }}
-                    </div>
-                  }
-                  @for (m of filteredModels(); track m.name) {
-                    <div
-                      class="autocomplete-option"
-                      role="option"
-                      (click)="selectModel(m.name)"
-                    >
-                      {{ m.name }}
-                      <span class="text-secondary"
-                        >({{ m.count }} workers)</span
-                      >
-                    </div>
-                  }
-                  @if (filteredModels().length === 0) {
-                    <div class="autocomplete-empty">
-                      {{ "styles.form.no_model_matches" | transloco }}
-                    </div>
-                  }
-                </div>
-              }
-            </div>
+            <app-model-autocomplete
+              inputId="style-models"
+              formControlName="models"
+              [models]="availableModels()"
+              [invalid]="
+                form.controls['models'].invalid && form.controls['models'].touched
+              "
+              placeholderKey="styles.form.models_placeholder"
+              listAriaLabelKey="styles.form.models"
+              toggleAriaLabelKey="styles.form.models_toggle"
+              hiddenCountKey="styles.form.models_hidden"
+              emptyKey="styles.form.no_model_matches"
+            />
             @if (
               form.controls["models"].errors?.["requiresModel"] &&
               form.controls["models"].touched

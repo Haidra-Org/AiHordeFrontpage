@@ -108,18 +108,16 @@
       </p>
     }
 
-    @if (displayTags().length > 0) {
-      <div class="badge-container">
-        @for (tag of displayTags(); track tag) {
-          <span class="badge-base badge-secondary">{{ tag }}</span>
-        }
-        @if (hasMoreTags()) {
-          <span class="badge-base badge-primary">
-            +{{ extraTagsCount() }}
-          </span>
-        }
-      </div>
-    }
+    <div class="badge-container">
+      @for (tag of displayTags(); track tag) {
+        <span class="badge-base badge-secondary">{{ tag }}</span>
+      }
+      @if (hasMoreTags()) {
+        <span class="badge-base badge-primary">
+          +{{ extraTagsCount() }}
+        </span>
+      }
+    </div>
 
     <div class="style-card-kpis" role="list">
       <div class="style-card-kpi" role="listitem">

@@ -1,0 +1,64 @@
+<div class="autocomplete-wrapper">
+  <div class="autocomplete-input-row">
+    <input
+      [id]="inputId()"
+      type="text"
+      class="form-input form-input-wide autocomplete-input"
+      [class.form-input-error]="invalid()"
+      [value]="value()"
+      [disabled]="isDisabled()"
+      autocomplete="off"
+      [placeholder]="placeholderKey() | transloco"
+      (input)="onInput($event)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    />
+    <button
+      type="button"
+      class="autocomplete-toggle"
+      [disabled]="isDisabled()"
+      (mousedown)="$event.preventDefault()"
+      (click)="toggleModelDropdown()"
+      [attr.aria-expanded]="dropdownOpen()"
+      [attr.aria-label]="toggleAriaLabelKey() | transloco"
+    >
+      <span
+        class="autocomplete-chevron"
+        [class.autocomplete-chevron--open]="dropdownOpen()"
+        >&#9662;</span
+      >
+    </button>
+  </div>
+
+  @if (dropdownOpen()) {
+    <div
+      class="autocomplete-dropdown surface-floating"
+      role="listbox"
+      [attr.aria-label]="listAriaLabelKey() | transloco"
+      (mousedown)="$event.preventDefault()"
+    >
+      @if (hiddenModelCount() > 0) {
+        <div class="autocomplete-hidden-notice">
+          {{ hiddenCountKey() | transloco: { count: hiddenModelCount() } }}
+        </div>
+      }
+
+      @for (model of filteredModels(); track model.name) {
+        <div
+          class="autocomplete-option"
+          role="option"
+          (click)="selectModel(model.name)"
+        >
+          {{ model.name }}
+          <span class="text-secondary">({{ model.count }} workers)</span>
+        </div>
+      }
+
+      @if (filteredModels().length === 0) {
+        <div class="autocomplete-empty">
+          {{ emptyKey() | transloco }}
+        </div>
+      }
+    </div>
+  }
+</div>

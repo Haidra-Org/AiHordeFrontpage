@@ -326,6 +326,44 @@ describe('AiHordeService', () => {
   });
 
   // -----------------------------------------------------------------------
+  // getSelfUserByApiKeyUncached
+  // -----------------------------------------------------------------------
+  describe('getSelfUserByApiKeyUncached', () => {
+    it('should GET find_user with the apikey header', () => {
+      service.getSelfUserByApiKeyUncached('my-key').subscribe();
+
+      const req = http.expectOne('https://aihorde.net/api/v2/find_user');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.headers.get('apikey')).toBe('my-key');
+      req.flush({ username: 'TestUser', id: 1, kudos: 500 });
+    });
+
+    it('should issue a new request for each call (no shared cache)', () => {
+      service.getSelfUserByApiKeyUncached('my-key').subscribe();
+      service.getSelfUserByApiKeyUncached('my-key').subscribe();
+
+      const reqs = http.match('https://aihorde.net/api/v2/find_user');
+      expect(reqs.length).toBe(2);
+      expect(reqs[0].request.headers.get('apikey')).toBe('my-key');
+      expect(reqs[1].request.headers.get('apikey')).toBe('my-key');
+
+      reqs[0].flush({ username: 'TestUser', id: 1, kudos: 500 });
+      reqs[1].flush({ username: 'TestUser', id: 1, kudos: 500 });
+    });
+
+    it('should return null on HTTP error', (done: DoneFn) => {
+      service.getSelfUserByApiKeyUncached('bad-key').subscribe((res) => {
+        expect(res).toBeNull();
+        done();
+      });
+
+      http
+        .expectOne('https://aihorde.net/api/v2/find_user')
+        .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // getUserById
   // -----------------------------------------------------------------------
   describe('getUserById', () => {

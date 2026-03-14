@@ -575,6 +575,12 @@
     min-height: 3.75rem;
   }
 
+  /* Always-rendered badge row gets a fixed height so cards without
+     tags occupy the same vertical space as cards with tags. */
+  .styles-entry-grid .badge-container {
+    min-height: 1.625rem;
+  }
+
   /* =================================================================
      STYLE CARD TYPE ACCENTS
      Colored top border and tinted preview distinguish card types.

@@ -187,73 +187,16 @@
             <label class="form-label" for="gen-model">{{
               "profile.generations.field.model" | transloco
             }}</label>
-            <div class="autocomplete-wrapper">
-              <div class="autocomplete-input-row">
-                <input
-                  id="gen-model"
-                  type="text"
-                  class="form-input form-input-wide autocomplete-input"
-                  formControlName="model"
-                  autocomplete="off"
-                  (focus)="onModelFocus()"
-                  (blur)="onModelBlur()"
-                />
-                <button
-                  type="button"
-                  class="autocomplete-toggle"
-                  (mousedown)="$event.preventDefault()"
-                  (click)="toggleModelDropdown()"
-                  [attr.aria-expanded]="modelDropdownOpen()"
-                  [attr.aria-label]="
-                    'profile.generations.field.model_toggle' | transloco
-                  "
-                >
-                  <span
-                    class="autocomplete-chevron"
-                    [class.autocomplete-chevron--open]="modelDropdownOpen()"
-                    >&#9662;</span
-                  >
-                </button>
-              </div>
-              @if (modelDropdownOpen()) {
-                <div
-                  class="autocomplete-dropdown surface-floating"
-                  role="listbox"
-                  [attr.aria-label]="
-                    'profile.generations.field.model' | transloco
-                  "
-                  (mousedown)="$event.preventDefault()"
-                >
-                  @if (hiddenModelCount() > 0) {
-                    <div class="autocomplete-hidden-notice">
-                      {{
-                        "profile.generations.field.models_hidden"
-                          | transloco: { count: hiddenModelCount() }
-                      }}
-                    </div>
-                  }
-                  @for (m of filteredModels(); track m.name) {
-                    <div
-                      class="autocomplete-option"
-                      role="option"
-                      (click)="selectModel(m.name)"
-                    >
-                      {{ m.name }}
-                      <span class="text-secondary"
-                        >({{ m.count }} workers)</span
-                      >
-                    </div>
-                  }
-                  @if (filteredModels().length === 0) {
-                    <div class="autocomplete-empty">
-                      {{
-                        "profile.generations.field.no_model_matches" | transloco
-                      }}
-                    </div>
-                  }
-                </div>
-              }
-            </div>
+            <app-model-autocomplete
+              inputId="gen-model"
+              formControlName="model"
+              [models]="availableModels()"
+              placeholderKey="profile.generations.field.model_placeholder"
+              listAriaLabelKey="profile.generations.field.model"
+              toggleAriaLabelKey="profile.generations.field.model_toggle"
+              hiddenCountKey="profile.generations.field.models_hidden"
+              emptyKey="profile.generations.field.no_model_matches"
+            />
           </div>
           <div class="form-field-third">
             <label class="form-label" for="gen-steps">{{
