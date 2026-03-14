@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of } from 'rxjs';
 import { GenerationsTabComponent } from './generations-tab.component';
 import { AuthService } from '../../services/auth.service';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { HordeUser } from '../../types/horde-user';
 import {
   TrackedGeneration,
   GenerationOutput,
@@ -14,6 +15,7 @@ import {
   GenerationMetadataStable,
   TextGenerationStatusResponse,
   AlchemyStatusResponse,
+  ImageGenerationRequest,
 } from '../../types/generation';
 
 // ---------------------------------------------------------------------------
@@ -316,12 +318,16 @@ describe('GenerationsTabComponent', () => {
   let component: GenerationsTabComponent;
   let el: HTMLElement;
 
-  const mockAuth = jasmine.createSpyObj('AuthService', ['getStoredApiKey'], {
-    currentUser: signal(null),
-    isLoading: signal(false),
-    isLoggedIn: signal(false),
-    isInitialized: signal(true),
-  });
+  const mockAuth = jasmine.createSpyObj(
+    'AuthService',
+    ['getStoredApiKey', 'updateCurrentUserActiveGenerations'],
+    {
+      currentUser: signal(null),
+      isLoading: signal(false),
+      isLoggedIn: signal(false),
+      isInitialized: signal(true),
+    },
+  );
 
   const mockHorde = jasmine.createSpyObj('AiHordeService', [
     'submitImageGeneration',
@@ -330,12 +336,14 @@ describe('GenerationsTabComponent', () => {
     'getTextGenerationStatus',
     'getAlchemyStatus',
     'getUserById',
+    'getSelfUserByApiKeyUncached',
     'getImageModels',
   ]);
 
   beforeEach(async () => {
     mockHorde.getImageModels.and.returnValue(of([]));
     mockHorde.getUserById.and.returnValue(of(null));
+    mockHorde.getSelfUserByApiKeyUncached.and.returnValue(of(null));
     mockHorde.submitImageGeneration.and.returnValue(of(null));
     mockHorde.checkImageGeneration.and.returnValue(of(null));
     mockHorde.getImageGenerationStatus.and.returnValue(of(null));
@@ -1070,6 +1078,201 @@ describe('GenerationsTabComponent', () => {
   // Component method tests (unit-style)
   // -----------------------------------------------------------------------
   describe('component methods', () => {
+    describe('refresh user generations', () => {
+      function setCurrentUser(user: HordeUser | null): void {
+        const currentUserSignal =
+          mockAuth.currentUser as WritableSignal<HordeUser | null>;
+        currentUserSignal.set(user);
+      }
+
+      function makeUser(
+        overrides: Partial<HordeUser> = {},
+      ): HordeUser {
+        return {
+          username: 'test-user',
+          id: 123,
+          kudos: 100,
+          ...overrides,
+        };
+      }
+
+      beforeEach(() => {
+        mockHorde.getSelfUserByApiKeyUncached.calls.reset();
+        mockHorde.getUserById.calls.reset();
+        mockAuth.updateCurrentUserActiveGenerations.calls.reset();
+        component.trackedGenerations.set([]);
+      });
+
+      it('should use uncached authenticated self lookup and sync auth state', () => {
+        setCurrentUser(makeUser({ id: 32582 }));
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.getSelfUserByApiKeyUncached.and.returnValue(
+          of(
+            makeUser({
+              id: 32582,
+              active_generations: {
+                image: ['img-1', 'img-1'],
+                text: ['txt-1'],
+                alchemy: ['alc-1'],
+              },
+            }),
+          ),
+        );
+
+        component.refreshUserGenerations();
+
+        expect(mockHorde.getSelfUserByApiKeyUncached).toHaveBeenCalledOnceWith(
+          'api-key',
+        );
+        expect(mockHorde.getUserById).not.toHaveBeenCalled();
+        expect(mockAuth.updateCurrentUserActiveGenerations).toHaveBeenCalledWith(
+          {
+            image: ['img-1', 'img-1'],
+            text: ['txt-1'],
+            alchemy: ['alc-1'],
+          },
+        );
+
+        const tracked = component.trackedGenerations();
+        expect(tracked.length).toBe(3);
+        expect(tracked.map((g) => g.id)).toEqual(
+          jasmine.arrayContaining(['img-1', 'txt-1', 'alc-1']),
+        );
+        expect(component.refreshingGenerations()).toBeFalse();
+      });
+
+      it('should skip polling when no current user is available', () => {
+        setCurrentUser(null);
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+
+        component.refreshUserGenerations();
+
+        expect(mockHorde.getSelfUserByApiKeyUncached).not.toHaveBeenCalled();
+        expect(mockAuth.updateCurrentUserActiveGenerations).not.toHaveBeenCalled();
+        expect(component.refreshingGenerations()).toBeFalse();
+      });
+
+      it('should skip polling when api key is missing', () => {
+        setCurrentUser(makeUser());
+        mockAuth.getStoredApiKey.and.returnValue(null);
+
+        component.refreshUserGenerations();
+
+        expect(mockHorde.getSelfUserByApiKeyUncached).not.toHaveBeenCalled();
+        expect(mockAuth.updateCurrentUserActiveGenerations).not.toHaveBeenCalled();
+        expect(component.refreshingGenerations()).toBeFalse();
+      });
+
+      it('should sync auth state even when active_generations is missing', () => {
+        setCurrentUser(makeUser({ id: 77 }));
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.getSelfUserByApiKeyUncached.and.returnValue(
+          of(makeUser({ id: 77 })),
+        );
+
+        component.refreshUserGenerations();
+
+        expect(mockAuth.updateCurrentUserActiveGenerations).toHaveBeenCalledWith(
+          undefined,
+        );
+        expect(component.trackedGenerations().length).toBe(0);
+        expect(component.refreshingGenerations()).toBeFalse();
+      });
+    });
+
+    describe('request model handling', () => {
+      it('should omit models when model is blank', () => {
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.submitImageGeneration.and.returnValue(
+          of({ id: 'gen-model-blank', kudos: 1 }),
+        );
+
+        component.form.patchValue({
+          prompt: 'test prompt',
+          model: '',
+        });
+
+        component.submitGeneration();
+
+        expect(mockHorde.submitImageGeneration).toHaveBeenCalled();
+        const request = mockHorde.submitImageGeneration.calls.mostRecent()
+          .args[1] as ImageGenerationRequest;
+        expect(request.models).toBeUndefined();
+      });
+
+      it('should omit models when model is whitespace-only', () => {
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.submitImageGeneration.and.returnValue(
+          of({ id: 'gen-model-space', kudos: 1 }),
+        );
+
+        component.form.patchValue({
+          prompt: 'test prompt',
+          model: '   ',
+        });
+
+        component.submitGeneration();
+
+        const request = mockHorde.submitImageGeneration.calls.mostRecent()
+          .args[1] as ImageGenerationRequest;
+        expect(request.models).toBeUndefined();
+      });
+
+      it('should include trimmed model when model is provided', () => {
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.submitImageGeneration.and.returnValue(
+          of({ id: 'gen-model-set', kudos: 1 }),
+        );
+
+        component.form.patchValue({
+          prompt: 'test prompt',
+          model: '  stable_diffusion  ',
+        });
+
+        component.submitGeneration();
+
+        const request = mockHorde.submitImageGeneration.calls.mostRecent()
+          .args[1] as ImageGenerationRequest;
+        expect(request.models).toEqual(['stable_diffusion']);
+      });
+
+      it('should include multiple comma-separated models', () => {
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.submitImageGeneration.and.returnValue(
+          of({ id: 'gen-model-multi', kudos: 1 }),
+        );
+
+        component.form.patchValue({
+          prompt: 'test prompt',
+          model: '  model-a, model-b  ,   model-c ',
+        });
+
+        component.submitGeneration();
+
+        const request = mockHorde.submitImageGeneration.calls.mostRecent()
+          .args[1] as ImageGenerationRequest;
+        expect(request.models).toEqual(['model-a', 'model-b', 'model-c']);
+      });
+
+      it('should ignore empty comma-separated model entries', () => {
+        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockHorde.submitImageGeneration.and.returnValue(
+          of({ id: 'gen-model-sparse', kudos: 1 }),
+        );
+
+        component.form.patchValue({
+          prompt: 'test prompt',
+          model: 'model-a, , , model-b,   ',
+        });
+
+        component.submitGeneration();
+
+        const request = mockHorde.submitImageGeneration.calls.mostRecent()
+          .args[1] as ImageGenerationRequest;
+        expect(request.models).toEqual(['model-a', 'model-b']);
+      });
+    });
+
     it('getMetadataLabel should return human-readable labels', () => {
       const cases: [GenerationMetadataStable, string][] = [
         [{ type: 'lora', value: 'download_failed' }, 'Download Failed'],

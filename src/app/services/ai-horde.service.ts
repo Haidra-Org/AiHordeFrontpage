@@ -130,6 +130,16 @@ export class AiHordeService {
       .pipe(catchError(() => of(null)));
   }
 
+  public getSelfUserByApiKeyUncached(
+    apiKey: string,
+  ): Observable<HordeUser | null> {
+    return this.httpClient
+      .get<HordeUser>(`${BASE}/find_user`, {
+        headers: { apikey: apiKey },
+      })
+      .pipe(catchError(() => of(null)));
+  }
+
   public getUserById(id: number): Observable<HordeUser | null> {
     return this.cache
       .cachedGet<HordeUser>(

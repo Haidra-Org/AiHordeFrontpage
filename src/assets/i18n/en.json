@@ -342,6 +342,7 @@
   "profile.generations.field.prompt": "Prompt",
   "profile.generations.field.prompt_placeholder": "Describe the image you want to generate...",
   "profile.generations.field.model": "Model",
+  "profile.generations.field.model_placeholder": "Enter model names",
   "profile.generations.field.steps": "Steps",
   "profile.generations.field.cfg_scale": "CFG Scale",
   "profile.generations.field.width": "Width",
