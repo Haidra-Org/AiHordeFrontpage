@@ -47,11 +47,11 @@
 
   /* Intro feature cards container */
   .intro-features {
-    @apply grid grid-cols-1 max-w-2xl mx-auto mb-8;
+    @apply grid grid-cols-1 w-full mb-8;
     /* Mobile: tighter gap for horizontal cards */
     @apply gap-2;
     /* sm+: 2-column grid with larger gaps */
-    @apply sm:grid-cols-2 sm:gap-4 md:gap-5 lg:gap-6 lg:mx-0;
+    @apply sm:grid-cols-2 sm:gap-4 md:gap-5 lg:gap-6;
   }
 
   /* Staggered entrance for feature cards on page load */
