@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, forkJoin, tap } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, catchError, of, tap, from } from 'rxjs';
+import { distinctUntilChanged, map, mergeMap, scan } from 'rxjs/operators';
 import {
   HordeWorker,
   PutWorkerRequest,
@@ -60,11 +60,29 @@ export class AdminWorkerService {
       return of([]);
     }
 
-    // Fetch each worker individually using forkJoin
-    const workerRequests = workerIds.map((id) => this.getWorker(id));
-
-    return forkJoin(workerRequests).pipe(
-      map((workers) => workers.filter((w): w is HordeWorker => w !== null)),
+    return from(workerIds).pipe(
+      mergeMap((id) =>
+        this.getWorker(id).pipe(
+          catchError(() => of(null)),
+          map((worker) => ({ id, worker })),
+        ),
+      ),
+      scan((workersById, result) => {
+        if (result.worker) {
+          workersById.set(result.id, result.worker);
+        }
+        return workersById;
+      }, new Map<string, HordeWorker>()),
+      map((workersById) =>
+        workerIds
+          .map((id) => workersById.get(id))
+          .filter((worker): worker is HordeWorker => worker !== undefined),
+      ),
+      distinctUntilChanged(
+        (prev, curr) =>
+          prev.length === curr.length &&
+          prev.every((worker, idx) => worker.id === curr[idx]?.id),
+      ),
       catchError(() => of([])),
     );
   }
