@@ -329,6 +329,7 @@
                     {{ "profile.nav_login" | transloco }}
                   }
                 </a>
+                @if (!auth.isLoggedIn()) {
                 <a
                   href="https://aihorde.net/register"
                   class="nav-dropdown-item external-link"
@@ -339,6 +340,7 @@
                 >
                   {{ "register_account" | transloco }}
                 </a>
+                }
                 <a
                   routerLink="/v2-transfer/"
                   class="nav-dropdown-item"
@@ -705,6 +707,7 @@
                       {{ "profile.nav_login" | transloco }}
                     }
                   </a>
+                  @if (!auth.isLoggedIn()) {
                   <a
                     href="https://aihorde.net/register"
                     class="mobile-nav-link mobile-nav-submenu-item external-link"
@@ -715,6 +718,7 @@
                   >
                     {{ "register_account" | transloco }}
                   </a>
+                }
                   <a
                     routerLink="/v2-transfer/"
                     class="mobile-nav-link mobile-nav-submenu-item"
