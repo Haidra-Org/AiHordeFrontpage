@@ -15,7 +15,7 @@
 
   .shared-key-grid {
     @apply grid gap-3 mt-4;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   }
 
   /* Host element targeting — Angular wraps each card in <app-shared-key-card> */
@@ -125,11 +125,24 @@
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-width: 0;
     background: var(--color-glass-surface-elevated);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid var(--color-glass-border);
     box-shadow: var(--shadow-glass);
+  }
+
+  .shared-key-card--active {
+    border-color: rgb(22 163 74 / 0.32);
+  }
+
+  .shared-key-card--expired {
+    border-color: rgb(245 158 11 / 0.38);
+  }
+
+  .shared-key-card--exhausted {
+    border-color: rgb(220 38 38 / 0.4);
   }
 
   .dark .shared-key-card {
@@ -138,20 +151,48 @@
     box-shadow: var(--shadow-glass-dark);
   }
 
+  .dark .shared-key-card--active {
+    border-color: rgb(74 222 128 / 0.32);
+  }
+
+  .dark .shared-key-card--expired {
+    border-color: rgb(251 191 36 / 0.4);
+  }
+
+  .dark .shared-key-card--exhausted {
+    border-color: rgb(248 113 113 / 0.45);
+  }
+
   .shared-key-card__header {
     @apply mb-3;
+    min-width: 0;
   }
 
   .shared-key-name-row {
     @apply flex items-center gap-2 flex-wrap justify-between;
   }
 
+  .shared-key-status-badge {
+    @apply inline-flex items-center gap-1.5;
+  }
+
+  .shared-key-status-icon {
+    @apply w-3.5 h-3.5 shrink-0;
+  }
+
   .shared-key-id {
     @apply mt-2 flex items-stretch gap-2;
+    min-width: 0;
   }
 
   .shared-key-id-value {
-    @apply block py-1.5 px-2.5 rounded-md font-mono text-xs font-semibold break-all select-all w-full;
+    @apply block py-1.5 px-2.5 rounded-md font-mono text-xs font-semibold select-all w-full;
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-overflow: clip;
+    scrollbar-width: thin;
+    font-variant-ligatures: none;
     background: rgb(255 255 255 / 0.36);
     border: 1px solid rgb(99 102 241 / 0.16);
     color: rgb(79 70 229);
@@ -209,16 +250,7 @@
     border-top-color: var(--color-glass-border-dark-subtle);
   }
 
-  @media (min-width: 640px) and (max-width: 1023px) {
-    .shared-key-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
   @media (max-width: 639px) {
-    .shared-key-grid {
-      grid-template-columns: 1fr;
-    }
 
     .shared-key-form {
       @apply gap-2;

@@ -44,6 +44,50 @@
     @apply flex flex-col gap-6;
   }
 
+  /* Profile login screen shell and form structure */
+  .profile-login-shell {
+    @apply text-left;
+  }
+
+  .profile-login-panel {
+    @apply rounded-2xl p-5 sm:p-6;
+  }
+
+  .profile-login-description {
+    @apply max-w-none mb-4;
+  }
+
+  .profile-login-warning {
+    @apply mb-5 items-start text-sm;
+  }
+
+  .profile-login-form {
+    @apply flex flex-col gap-4;
+  }
+
+  .profile-login-submit {
+    @apply justify-center;
+  }
+
+  .profile-login-submit.btn-disabled {
+    @apply bg-gray-500 text-gray-100;
+    @apply dark:bg-gray-600 dark:text-gray-200;
+  }
+
+  .profile-login-register {
+    @apply mt-5 pt-4 text-sm;
+  }
+
+  .profile-login-shell .page-intro .link,
+  .profile-login-register-link {
+    @apply dark:text-blue-300;
+  }
+
+  .profile-login-shell .page-intro .link:hover,
+  .profile-login-register-link:hover {
+    @apply dark:text-blue-200;
+  }
+
   .style-form-shell {
     @apply rounded-2xl p-4 md:p-5;
   }

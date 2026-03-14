@@ -237,6 +237,8 @@
   "transfer.source_api_key": "Your API key",
   "transfer.target_user": "The receiving user",
   "transfer.target_valid_user": "Valid user",
+  "transfer.target_checking": "Checking...",
+  "transfer.target_will_validate": "Username will be validated before transfering",
   "transfer.target_user.description": "For example: {{exampleUser}}",
   "transfer.source_api_key.description": "Type the API key that belongs to your user",
   "transfer.source_api_key.remember": "Remember the API key?",
