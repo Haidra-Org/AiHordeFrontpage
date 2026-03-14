@@ -26,7 +26,8 @@
 
   /* Card heading - h3 for card components */
   .heading-card {
-    @apply mb-4 text-2xl font-semibold;
+    @apply mb-4 text-2xl font-semibold text-content-primary;
+    @apply dark:text-white;
   }
 
   /* Card heading item - h3 for list items */

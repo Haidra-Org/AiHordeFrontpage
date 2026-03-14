@@ -42,9 +42,16 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
     <div class="data-grid-1-2-3">
       <div class="data-item-box">
         <span class="data-label"><app-kudos-term /></span>
-        <span class="data-value text-brand-purple">{{
-          kudos() | formatNumber
-        }}</span>
+        <div class="kudos-balance-row">
+          <span class="data-value text-brand-purple">{{
+            kudos() | formatNumber
+          }}</span>
+          @if (isOwnProfile()) {
+            <a routerLink="/v2-transfer/" class="btn-primary btn-sm">
+              {{ "profile.transfer_kudos" | transloco }}
+            </a>
+          }
+        </div>
       </div>
       @if (monthlyKudos()?.amount) {
         <div class="data-item-box">

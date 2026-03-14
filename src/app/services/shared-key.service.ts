@@ -38,8 +38,11 @@ export class SharedKeyService {
     return throwError(() => apiError);
   };
 
-  public getSharedKey(sharedKeyId: string): Observable<SharedKeyDetails> {
-    const apiKey = this.ensureApiKey();
+  public getSharedKey(
+    sharedKeyId: string,
+    apiKeyOverride?: string,
+  ): Observable<SharedKeyDetails> {
+    const apiKey = apiKeyOverride ?? this.ensureApiKey();
     const headers: Record<string, string> = apiKey ? { apikey: apiKey } : {};
     return this.cache
       .cachedGet<SharedKeyDetails>(
