@@ -29,6 +29,8 @@
     </div>
   }
 
+  <div #statusRegion></div>
+
   @if (error()) {
     <div class="alert alert--danger mt-4" role="alert">
       <p class="alert-title">
@@ -39,11 +41,39 @@
   }
 
   @if (success()) {
-    <div class="alert alert--success mt-4" role="status">
+    <div class="alert alert--success mt-4" role="status" aria-live="polite">
       <p class="alert-title">
         {{ "profile.shared_keys.success_title" | transloco }}
       </p>
       <p class="alert-body">{{ success() }}</p>
+    </div>
+  }
+
+  @if (!readonly()) {
+    <div class="section-divider-top" #createFormRegion>
+      @if (createFormCollapsed()) {
+        <button type="button" class="btn-primary" (click)="toggleCreateForm()">
+          {{ "profile.shared_keys.create_title" | transloco }}
+        </button>
+      } @else {
+        <h4 class="section-title-sm mb-2">
+          {{ "profile.shared_keys.create_title" | transloco }}
+        </h4>
+        <app-shared-key-form
+          [initialValues]="createFormDefaults"
+          [submitLabel]="'profile.shared_keys.create' | transloco"
+          [submittingLabel]="'profile.shared_keys.creating' | transloco"
+          [submitting]="creating()"
+          (formSubmit)="onCreateSubmit($event)"
+        />
+        <button
+          type="button"
+          class="btn-secondary mt-3"
+          (click)="toggleCreateForm()"
+        >
+          {{ "profile.shared_keys.cancel" | transloco }}
+        </button>
+      }
     </div>
   }
 
@@ -70,33 +100,5 @@
         }
       </div>
     }
-  }
-
-  @if (!readonly()) {
-    <div class="section-divider-top">
-      @if (createFormCollapsed()) {
-        <button type="button" class="btn-primary" (click)="toggleCreateForm()">
-          {{ "profile.shared_keys.create_title" | transloco }}
-        </button>
-      } @else {
-        <h4 class="section-title-sm mb-2">
-          {{ "profile.shared_keys.create_title" | transloco }}
-        </h4>
-        <app-shared-key-form
-          [initialValues]="createFormDefaults"
-          [submitLabel]="'profile.shared_keys.create' | transloco"
-          [submittingLabel]="'profile.shared_keys.creating' | transloco"
-          [submitting]="creating()"
-          (formSubmit)="onCreateSubmit($event)"
-        />
-        <button
-          type="button"
-          class="btn-secondary mt-3"
-          (click)="toggleCreateForm()"
-        >
-          {{ "profile.shared_keys.cancel" | transloco }}
-        </button>
-      }
-    </div>
   }
 </div>
