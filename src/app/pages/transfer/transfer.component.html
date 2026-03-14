@@ -102,7 +102,11 @@
                 "
               />
 
-              @if (form.value.targetUserValidated === true) {
+              @if (targetUserChecking()) {
+                <p class="transfer-validation transfer-validation--info">
+                  <small>{{ "transfer.target_checking" | transloco }}</small>
+                </p>
+              } @else if (form.value.targetUserValidated === true) {
                 <p class="transfer-validation transfer-validation--success">
                   <small>
                     @if (validatedTargetKind() === 'sharedKey') {
@@ -113,9 +117,14 @@
                   </small>
                 </p>
               }
-              @if (form.value.targetUserValidated === false) {
+              @if (!targetUserChecking() && form.value.targetUserValidated === false) {
                 <p class="transfer-validation transfer-validation--error">
                   <small>{{ "invalid_target_user" | transloco }}</small>
+                </p>
+              }
+              @if (!targetUserChecking() && form.value.targetUserValidated === null) {
+                <p class="transfer-validation transfer-validation--info">
+                  <small>{{ "transfer.target_will_validate" | transloco }}</small>
                 </p>
               }
             </div>

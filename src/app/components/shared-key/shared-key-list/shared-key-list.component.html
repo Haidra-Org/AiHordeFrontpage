@@ -77,6 +77,24 @@
     </div>
   }
 
+  @if (editingKey(); as editKey) {
+    <div class="section-divider-top" #editFormRegion>
+      <h4 class="section-title-sm mb-2">
+        {{ "profile.shared_keys.edit" | transloco }}: {{ editKey.name || ("profile.shared_keys.untitled" | transloco) }}
+      </h4>
+      <app-shared-key-form
+        [initialValues]="editFormValues()"
+        [submitLabel]="'profile.shared_keys.save_changes' | transloco"
+        [submittingLabel]="'profile.shared_keys.updating' | transloco"
+        [submitting]="isSaving(editKey.id)"
+        [showCancel]="true"
+        [cancelLabel]="'profile.shared_keys.cancel' | transloco"
+        (formSubmit)="onEditSubmit($event)"
+        (formCancel)="cancelEdit()"
+      />
+    </div>
+  }
+
   @if (loading()) {
     <p class="text-secondary text-sm py-4">
       {{ "profile.shared_keys.loading" | transloco }}
@@ -94,7 +112,7 @@
             [saving]="isSaving(sharedKey.id)"
             [deleting]="isDeleting(sharedKey.id)"
             [readonly]="readonly()"
-            (update)="onUpdate(sharedKey.id, $event)"
+            (edit)="onEdit(sharedKey.id)"
             (delete)="onDelete(sharedKey.id)"
           />
         }

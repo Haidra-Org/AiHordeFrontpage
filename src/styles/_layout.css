@@ -243,7 +243,7 @@
 
   /* Standard grid container for items */
   .grid-items {
-    @apply items-center gap-6 lg:grid xl:gap-10;
+    @apply items-center gap-6 lg:grid lg:grid-cols-1 xl:gap-10;
   }
 
   /* 4-column responsive grid for cards */

@@ -73,6 +73,7 @@ export class TransferComponent implements OnInit {
   public educatorAccounts = signal<HordeUser[] | undefined>(undefined);
   public fragment = signal<string | null>(null);
   public validatedTargetKind = signal<'user' | 'sharedKey' | null>(null);
+  public targetUserChecking = signal(false);
 
   constructor() {
     // Fetch educator accounts only in the browser after rendering completes.
@@ -143,6 +144,7 @@ export class TransferComponent implements OnInit {
     this.form.controls.targetUser.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.targetUserChecking.set(false);
         this.validatedTargetKind.set(null);
         this.form.patchValue({ targetUserValidated: null });
       });
@@ -201,15 +203,19 @@ export class TransferComponent implements OnInit {
       .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
       .subscribe(async (targetUser) => {
         if (!targetUser) {
+          this.targetUserChecking.set(false);
           return;
         }
 
         const normalizedTarget = targetUser.trim();
         if (!normalizedTarget) {
+          this.targetUserChecking.set(false);
           this.validatedTargetKind.set(null);
           this.form.patchValue({ targetUserValidated: null });
           return;
         }
+
+        this.targetUserChecking.set(true);
 
         const sourceApiKey = this.form.controls.apiKey.value?.trim();
 
@@ -229,6 +235,8 @@ export class TransferComponent implements OnInit {
           if (this.form.controls.targetUser.value?.trim() !== normalizedTarget) {
             return;
           }
+
+          this.targetUserChecking.set(false);
 
           const isUserMatch =
             user !== null &&
@@ -302,6 +310,8 @@ export class TransferComponent implements OnInit {
             return;
           }
 
+          this.targetUserChecking.set(false);
+
           this.validatedTargetKind.set('sharedKey');
           this.form.patchValue({
             targetUserValidated: true,
@@ -311,6 +321,8 @@ export class TransferComponent implements OnInit {
           if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
             return;
           }
+
+          this.targetUserChecking.set(false);
 
           this.validatedTargetKind.set(null);
           this.form.patchValue({ targetUserValidated: false });

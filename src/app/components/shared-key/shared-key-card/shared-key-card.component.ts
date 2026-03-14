@@ -8,19 +8,14 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
-import { SharedKeyDetails, SharedKeyInput } from '../../../types/shared-key';
-import {
-  FINITE_FALLBACKS,
-  SharedKeyFormValue,
-  SHARED_KEY_DEFAULTS,
-} from '../../../types/shared-key-form';
-import { SharedKeyFormComponent } from '../shared-key-form/shared-key-form.component';
+import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
+import { SharedKeyDetails } from '../../../types/shared-key';
 
 export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
 
 @Component({
   selector: 'app-shared-key-card',
-  imports: [TranslocoPipe, FormatNumberPipe, SharedKeyFormComponent],
+  imports: [TranslocoPipe, FormatNumberPipe, TouchTooltipDirective],
   templateUrl: './shared-key-card.component.html',
   styleUrl: './shared-key-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,14 +33,11 @@ export class SharedKeyCardComponent {
   /** Read-only mode hides edit/delete actions. */
   public readonly readonly = input<boolean>(false);
 
-  /** Emits when the user requests to update the shared key. */
-  public readonly update = output<SharedKeyInput>();
+  /** Emits when the user clicks Edit. */
+  public readonly edit = output<void>();
 
   /** Emits when the user requests to delete the shared key. */
   public readonly delete = output<void>();
-
-  /** Local editing state. */
-  public readonly isEditing = signal(false);
 
   /** Whether the key ID was just copied. */
   public readonly copied = signal(false);
@@ -54,12 +46,6 @@ export class SharedKeyCardComponent {
   public readonly status = computed<SharedKeyStatus>(() => {
     const key = this.sharedKey();
     return this.computeStatus(key);
-  });
-
-  /** Computed form values for the edit form. */
-  public readonly editFormValues = computed<SharedKeyFormValue>(() => {
-    const key = this.sharedKey();
-    return this.mapToFormValue(key);
   });
 
   /**
@@ -87,8 +73,8 @@ export class SharedKeyCardComponent {
     return parsed.toLocaleString();
   }
 
-  public startEdit(): void {
-    this.isEditing.set(true);
+  public requestEdit(): void {
+    this.edit.emit();
   }
 
   public async copyKeyId(): Promise<void> {
@@ -102,23 +88,8 @@ export class SharedKeyCardComponent {
     setTimeout(() => this.copied.set(false), 2000);
   }
 
-  public cancelEdit(): void {
-    this.isEditing.set(false);
-  }
-
-  public onFormSubmit(payload: SharedKeyInput): void {
-    this.update.emit(payload);
-  }
-
   public onDelete(): void {
     this.delete.emit();
-  }
-
-  /**
-   * Called by parent when save succeeds to close the edit form.
-   */
-  public closeEdit(): void {
-    this.isEditing.set(false);
   }
 
   private computeStatus(key: SharedKeyDetails): SharedKeyStatus {
@@ -140,39 +111,6 @@ export class SharedKeyCardComponent {
     }
 
     return 'active';
-  }
-
-  private mapToFormValue(key: SharedKeyDetails): SharedKeyFormValue {
-    const kudos = key.kudos ?? SHARED_KEY_DEFAULTS.kudos;
-    const expiry = this.deriveExpiryDays(key.expiry);
-    const maxImagePixels =
-      key.max_image_pixels ?? SHARED_KEY_DEFAULTS.max_image_pixels;
-    const maxImageSteps =
-      key.max_image_steps ?? SHARED_KEY_DEFAULTS.max_image_steps;
-    const maxTextTokens =
-      key.max_text_tokens ?? SHARED_KEY_DEFAULTS.max_text_tokens;
-
-    return {
-      name: key.name ?? '',
-      kudos,
-      kudos_unlimited: kudos === -1,
-      expiry,
-      expiry_unlimited: expiry === -1,
-      max_image_pixels: maxImagePixels,
-      max_image_pixels_unlimited: maxImagePixels === -1,
-      max_image_steps: maxImageSteps,
-      max_image_steps_unlimited: maxImageSteps === -1,
-      max_text_tokens: maxTextTokens,
-      max_text_tokens_unlimited: maxTextTokens === -1,
-    };
-  }
-
-  private deriveExpiryDays(expiry?: string): number {
-    if (!expiry) return -1;
-    const expiryMs = Date.parse(expiry);
-    if (Number.isNaN(expiryMs)) return -1;
-    const diffDays = Math.ceil((expiryMs - Date.now()) / (1000 * 60 * 60 * 24));
-    return diffDays < 0 ? -1 : Math.max(diffDays, 1);
   }
 
   private async copyToClipboard(text: string): Promise<boolean> {

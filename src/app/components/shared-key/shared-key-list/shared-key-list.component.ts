@@ -10,8 +10,6 @@ import {
   output,
   signal,
   ViewChild,
-  ViewChildren,
-  QueryList,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -47,8 +45,8 @@ export class SharedKeyListComponent implements OnInit {
   @ViewChild('createFormRegion')
   private createFormRegion?: ElementRef<HTMLDivElement>;
 
-  @ViewChildren(SharedKeyCardComponent)
-  private cardComponents!: QueryList<SharedKeyCardComponent>;
+  @ViewChild('editFormRegion')
+  private editFormRegion?: ElementRef<HTMLDivElement>;
 
   // ─────────────────────────────────────────────────────────────────────────
   // INPUTS: Allow external data injection for admin reuse
@@ -135,6 +133,23 @@ export class SharedKeyListComponent implements OnInit {
 
   /** Whether the create form is collapsed. */
   public readonly createFormCollapsed = signal<boolean>(true);
+
+  /** ID of the key currently being edited, or null. */
+  public readonly editingKeyId = signal<string | null>(null);
+
+  /** The key object currently being edited. */
+  public readonly editingKey = computed(() => {
+    const id = this.editingKeyId();
+    if (!id) return null;
+    return this.sharedKeys().find((k) => k.id === id) ?? null;
+  });
+
+  /** Form values for the key being edited. */
+  public readonly editFormValues = computed<SharedKeyFormValue>(() => {
+    const key = this.editingKey();
+    if (!key) return SHARED_KEY_DEFAULTS;
+    return this.mapToFormValue(key);
+  });
 
   ngOnInit(): void {
     // Only auto-load if not using external data
@@ -234,8 +249,8 @@ export class SharedKeyListComponent implements OnInit {
           this.success.set(
             'Shared key updated. Changes can take up to 5 minutes to propagate due to caching.',
           );
-          // Close the edit form on the card
-          this.closeCardEdit(sharedKeyId);
+          this.editingKeyId.set(null);
+          this.scrollToStatus();
         },
         error: (err) => {
           this.error.set(this.extractError(err));
@@ -292,22 +307,42 @@ export class SharedKeyListComponent implements OnInit {
   public toggleCreateForm(): void {
     const willExpand = this.createFormCollapsed();
     this.createFormCollapsed.update((collapsed) => !collapsed);
-
+    // Close any in-progress edit when opening create
     if (willExpand) {
+      this.editingKeyId.set(null);
       this.scrollToCreateForm();
     }
   }
 
-  private closeCardEdit(sharedKeyId: string): void {
-    const card = this.cardComponents?.find(
-      (c) => c.sharedKey().id === sharedKeyId,
-    );
-    card?.closeEdit();
+  public onEdit(sharedKeyId: string): void {
+    this.editingKeyId.set(sharedKeyId);
+    this.createFormCollapsed.set(true);
+    this.scrollToEditForm();
+  }
+
+  public cancelEdit(): void {
+    this.editingKeyId.set(null);
+  }
+
+  public onEditSubmit(payload: SharedKeyInput): void {
+    const id = this.editingKeyId();
+    if (id) {
+      this.onUpdate(id, payload);
+    }
   }
 
   private scrollToCreateForm(): void {
     queueMicrotask(() => {
       this.createFormRegion?.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+
+  private scrollToEditForm(): void {
+    queueMicrotask(() => {
+      this.editFormRegion?.nativeElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       });
@@ -333,5 +368,40 @@ export class SharedKeyListComponent implements OnInit {
       }
     }
     return 'Something went wrong while communicating with the API.';
+  }
+
+  private mapToFormValue(key: SharedKeyDetails): SharedKeyFormValue {
+    const kudos = key.kudos ?? SHARED_KEY_DEFAULTS.kudos;
+    const expiry = this.deriveExpiryDays(key.expiry);
+    const maxImagePixels =
+      key.max_image_pixels ?? SHARED_KEY_DEFAULTS.max_image_pixels;
+    const maxImageSteps =
+      key.max_image_steps ?? SHARED_KEY_DEFAULTS.max_image_steps;
+    const maxTextTokens =
+      key.max_text_tokens ?? SHARED_KEY_DEFAULTS.max_text_tokens;
+
+    return {
+      name: key.name ?? '',
+      kudos,
+      kudos_unlimited: kudos === -1,
+      expiry,
+      expiry_unlimited: expiry === -1,
+      max_image_pixels: maxImagePixels,
+      max_image_pixels_unlimited: maxImagePixels === -1,
+      max_image_steps: maxImageSteps,
+      max_image_steps_unlimited: maxImageSteps === -1,
+      max_text_tokens: maxTextTokens,
+      max_text_tokens_unlimited: maxTextTokens === -1,
+    };
+  }
+
+  private deriveExpiryDays(expiry?: string): number {
+    if (!expiry) return -1;
+    const expiryMs = Date.parse(expiry);
+    if (Number.isNaN(expiryMs)) return -1;
+    const diffDays = Math.ceil(
+      (expiryMs - Date.now()) / (1000 * 60 * 60 * 24),
+    );
+    return diffDays < 0 ? -1 : Math.max(diffDays, 1);
   }
 }

@@ -221,18 +221,19 @@
           </div>
         } @else if (!auth.isLoggedIn()) {
           <!-- Login Form -->
-          <div class="container-centered-md">
+          <div class="container-centered-md profile-login-shell">
             <app-page-intro pageKey="profile_guest" />
-            <div class="card card-bg-primary">
-              <p class="text-intro">
+            <div class="profile-login-panel surface-glass surface-glass--elevated">
+              <p class="text-intro text-primary profile-login-description">
                 {{ "profile.login_description" | transloco }}
               </p>
-              <p class="text-intro text-secondary">
+
+              <p class="warning-banner profile-login-warning" role="note">
                 {{ "profile.no_auth_warning" | transloco }}
               </p>
 
-              <form [formGroup]="form" (ngSubmit)="login()">
-                <div>
+              <form class="profile-login-form" [formGroup]="form" (ngSubmit)="login()">
+                <div class="form-group">
                   <label for="api_key" class="form-label">{{
                     "profile.api_key" | transloco
                   }}</label>
@@ -246,7 +247,7 @@
                   />
                 </div>
                 @if (loginError()) {
-                  <p class="text-error">
+                  <p class="text-error" role="alert" aria-live="assertive">
                     <small>{{ "invalid_api_key" | transloco }}</small>
                   </p>
                 }
@@ -259,9 +260,9 @@
                 </div>
 
                 <button
+                  class="btn-primary btn-responsive profile-login-submit"
                   [disabled]="!form.valid || auth.isLoading()"
                   [class.btn-disabled]="!form.valid || auth.isLoading()"
-                  [class.btn-primary]="form.valid && !auth.isLoading()"
                   type="submit"
                 >
                   @if (auth.isLoading()) {
@@ -272,11 +273,11 @@
                 </button>
               </form>
 
-              <p class="text-secondary">
+              <p class="text-secondary profile-login-register border-divider">
                 {{ "profile.no_account" | transloco }}
                 <a
                   href="https://aihorde.net/register"
-                  class="link external-link"
+                  class="link external-link profile-login-register-link"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
