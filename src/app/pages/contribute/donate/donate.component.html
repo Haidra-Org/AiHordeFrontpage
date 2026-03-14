@@ -113,7 +113,7 @@
         href="https://haidra.net/donate/"
         target="_blank"
         rel="noopener noreferrer"
-        class="card card-full card-bg-primary card-interactive"
+        class="card card-full card-bg-secondary card-interactive"
       >
         <div class="flex items-center gap-4 mb-4">
           <div class="feature-card-icon feature-card-icon-green">
@@ -193,42 +193,32 @@
         </div>
       </a>
 
-      <!-- Patreon (no longer preferred) -->
-      <div class="card card-full card-bg-secondary card--deprecated">
-        <a
-          href="https://www.patreon.com/db0"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center gap-4 mb-4 no-underline"
-        >
+      <!-- GitHub Sponsors -->
+      <a
+        href="https://github.com/sponsors/db0"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="card card-full card-bg-secondary card-interactive"
+      >
+        <div class="flex items-center gap-4 mb-4">
           <div class="feature-card-icon feature-card-icon-gray">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                d="M14.82 2.41c3.96 0 7.18 3.22 7.18 7.18 0 3.97-3.22 7.18-7.18 7.18-3.97 0-7.19-3.21-7.19-7.18 0-3.96 3.22-7.18 7.19-7.18zM2 21.6h3.5V2.41H2V21.6z"
-              />
-            </svg>
+            <img
+              [ngSrc]="themeService.isDark() ? './assets/img/GitHub_Invertocat_White_Clearspace.svg' : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'"
+              alt=""
+              width="24"
+              height="24"
+            />
           </div>
           <div>
             <h3 class="card-inline-title">
-              {{ "donate.ways_to_donate.patreon.title" | transloco }}
+              {{ "donate.ways_to_donate.github_sponsors.title" | transloco }}
             </h3>
             <p class="card-inline-description">
-              {{ "donate.ways_to_donate.patreon.description" | transloco }}
+              {{ "donate.ways_to_donate.github_sponsors.description" | transloco }}
             </p>
           </div>
-        </a>
-        <div class="info-note info-note--gray mb-4">
-          <p class="m-0">
-            {{ "donate.ways_to_donate.patreon.deprecated_note" | transloco }}
-          </p>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 
