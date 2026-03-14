@@ -421,6 +421,22 @@
     @apply border-gray-700;
   }
 
+  /* =================================================================
+     CDK DIALOG OVERLAY
+     Styles for Angular CDK Dialog backdrop and centering wrapper.
+     CDK renders dialogs into a body-level overlay container,
+     bypassing any parent overflow/transform trapping.
+     ================================================================= */
+
+  .modal-cdk-backdrop {
+    background-color: rgb(0 0 0 / 0.5);
+  }
+
+  /* CDK's global overlay wrapper needs centering + padding */
+  .cdk-global-overlay-wrapper {
+    @apply flex items-center justify-center p-4;
+  }
+
   .glossary-related-heading {
     @apply text-sm font-semibold text-gray-700 mb-3;
   }
