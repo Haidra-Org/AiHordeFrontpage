@@ -105,6 +105,7 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
       </h4>
       <app-kudos-breakdown-panel
         [kudosDetails]="kudosDetails()!"
+        [currentBalance]="kudos()"
         variant="profile"
         [showZeroValues]="false"
       />

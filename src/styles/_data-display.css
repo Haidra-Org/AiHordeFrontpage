@@ -272,53 +272,288 @@
     @apply grid grid-cols-2 gap-3 lg:grid-cols-3;
   }
 
+  /* ── Kudos breakdown: base grid (admin variant) ── */
   .kudos-breakdown {
     @apply grid gap-3;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 
-  .kudos-breakdown__metric {
-    @apply rounded-xl px-3 py-3;
-    background: var(--color-glass-surface-nested);
-    border: 1px solid var(--color-glass-border-subtle);
+  /* ── Kudos breakdown: profile variant (flat rows) ── */
+  .kudos-breakdown--profile {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
 
-  .dark .kudos-breakdown__metric {
-    background: var(--color-glass-surface-dark-nested);
-    border-color: var(--color-glass-border-dark-subtle);
+  .kudos-breakdown-profile {
+    @apply space-y-5;
+    max-width: 600px;
   }
 
-  .kudos-breakdown__metric--primary {
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.82),
-      rgb(239 246 255 / 0.62)
-    );
-    border-color: rgb(147 197 253 / 0.35);
-    box-shadow: var(--shadow-glass-inset), var(--shadow-glass);
+  .kudos-breakdown-section__header {
+    @apply flex flex-wrap items-baseline justify-between gap-2 mb-0.5 px-1;
   }
 
-  .dark .kudos-breakdown__metric--primary {
-    background: linear-gradient(
-      135deg,
-      rgb(30 41 59 / 0.74),
-      rgb(30 58 138 / 0.26)
-    );
-    border-color: rgb(96 165 250 / 0.24);
+  .kudos-breakdown-section__title {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-content-muted;
+    @apply dark:text-gray-500;
   }
 
-  .kudos-breakdown__label {
-    @apply block text-[11px] font-semibold uppercase tracking-[0.18em];
+  .kudos-breakdown-section__hint {
+    @apply text-[11px] italic;
     @apply text-content-muted dark:text-gray-400;
   }
 
-  .kudos-breakdown__value {
-    @apply mt-2 block text-lg font-semibold leading-tight text-content-primary;
-    @apply dark:text-white;
+  /* Metric: flat row, label-left value-right with dot leader */
+  .kudos-breakdown__metric {
+    @apply flex items-baseline gap-2 px-2 py-1.5;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
   }
 
+  /* Dot leader fills the gap between label and value */
+  .kudos-breakdown__metric::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dotted rgb(148 163 184 / 0.25);
+    min-width: 12px;
+    position: relative;
+    top: -3px;
+    order: 1;
+  }
+
+  .dark .kudos-breakdown__metric::after {
+    border-bottom-color: rgb(148 163 184 / 0.15);
+  }
+
+  .dark .kudos-breakdown__metric {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  /* Subtle zebra striping for scanability */
+  .kudos-breakdown__metric:nth-child(even) {
+    background: rgb(0 0 0 / 0.02);
+  }
+
+  .dark .kudos-breakdown__metric:nth-child(even) {
+    background: rgb(255 255 255 / 0.025);
+  }
+
+  /* Primary metrics: left accent + faint tint */
+  .kudos-breakdown__metric--primary {
+    background: rgb(59 130 246 / 0.045) !important;
+    border-left: 3px solid rgb(59 130 246 / 0.4);
+    padding-left: calc(0.5rem - 3px);
+  }
+
+  .dark .kudos-breakdown__metric--primary {
+    background: rgb(96 165 250 / 0.055) !important;
+    border-left-color: rgb(96 165 250 / 0.3);
+  }
+
+  /* Outgoing / context: inherit flat row style, no extra decoration */
+
+  /* Label: normal-case, readable size */
+  .kudos-breakdown__label {
+    @apply flex items-center gap-1.5 text-[13px] font-medium;
+    @apply text-content-secondary dark:text-gray-300;
+  }
+
+  /* API badge: ghost-style, discoverable on hover */
+  .kudos-api-badge {
+    @apply inline-flex items-center rounded px-1 py-0 ml-1;
+    @apply text-[9px] font-medium tracking-normal normal-case;
+    @apply cursor-help align-middle;
+    color: rgb(148 163 184 / 0.5);
+    border: 1px solid rgb(148 163 184 / 0.22);
+    background: transparent;
+    position: relative;
+    line-height: 1.2;
+  }
+
+  .dark .kudos-api-badge {
+    color: rgb(148 163 184 / 0.38);
+    border-color: rgb(148 163 184 / 0.16);
+  }
+
+  .kudos-api-badge::after {
+    content: attr(data-api-field);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    z-index: 15;
+    min-width: max-content;
+    max-width: min(280px, 80vw);
+    @apply rounded-md px-2 py-1 text-[11px] font-medium normal-case tracking-normal;
+    @apply text-slate-100 bg-slate-900 border border-slate-700;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+    font-family:
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Monaco,
+      Consolas,
+      'Liberation Mono',
+      'Courier New',
+      monospace;
+  }
+
+  .kudos-api-badge:hover::after,
+  .kudos-api-badge:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .kudos-api-badge:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-400;
+  }
+
+  /* Value: inline, right-aligned after dot leader */
+  .kudos-breakdown__value {
+    @apply text-sm font-semibold leading-tight text-content-primary;
+    @apply dark:text-white;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    order: 2;
+  }
+
+  /* Primary value stands out */
   .kudos-breakdown__metric--primary .kudos-breakdown__value {
-    @apply text-xl;
+    @apply text-base font-bold;
+    color: rgb(37 99 235);
+  }
+
+  .dark .kudos-breakdown__metric--primary .kudos-breakdown__value {
+    color: rgb(147 197 253);
+  }
+
+  /* ── Summary section ── */
+  .kudos-breakdown-summary {
+    @apply rounded-lg px-3 py-3 mt-1 space-y-1;
+    max-width: 600px;
+    border: 1px solid var(--color-glass-border-subtle);
+    background: transparent;
+  }
+
+  .dark .kudos-breakdown-summary {
+    border-color: var(--color-glass-border-dark-subtle);
+    background: transparent;
+  }
+
+  .kudos-breakdown-summary__row {
+    @apply flex items-baseline gap-2 text-[13px] py-0.5;
+  }
+
+  /* Dot leader for summary rows */
+  .kudos-breakdown-summary__row::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px dotted rgb(148 163 184 / 0.2);
+    min-width: 8px;
+    position: relative;
+    top: -3px;
+    order: 1;
+  }
+
+  .dark .kudos-breakdown-summary__row::after {
+    border-bottom-color: rgb(148 163 184 / 0.12);
+  }
+
+  /* Balance row doesn't need dot leader */
+  .kudos-breakdown-summary__row--balance::after {
+    display: none;
+  }
+
+  /* Balance row: the hero number */
+  .kudos-breakdown-summary__row--balance {
+    @apply rounded-md px-3 py-2 mb-1 justify-between;
+    background: linear-gradient(
+      135deg,
+      rgb(239 246 255 / 0.65),
+      rgb(219 234 254 / 0.4)
+    );
+    border: 1px solid rgb(59 130 246 / 0.18);
+  }
+
+  .dark .kudos-breakdown-summary__row--balance {
+    background: linear-gradient(
+      135deg,
+      rgb(30 58 138 / 0.25),
+      rgb(30 41 59 / 0.3)
+    );
+    border-color: rgb(96 165 250 / 0.2);
+  }
+
+  .kudos-breakdown-summary__row--balance .kudos-breakdown-summary__label {
+    @apply font-semibold;
+    color: rgb(30 64 175);
+  }
+
+  .dark .kudos-breakdown-summary__row--balance .kudos-breakdown-summary__label {
+    color: rgb(147 197 253);
+  }
+
+  .kudos-breakdown-summary__row--balance .kudos-breakdown-summary__value {
+    @apply text-lg font-bold;
+    color: rgb(30 64 175);
+  }
+
+  .dark .kudos-breakdown-summary__row--balance .kudos-breakdown-summary__value {
+    color: rgb(147 197 253);
+  }
+
+  .kudos-breakdown-summary__row--net {
+    @apply pt-1.5 mt-0.5;
+    border-top: 1px solid rgb(148 163 184 / 0.18);
+  }
+
+  .dark .kudos-breakdown-summary__row--net {
+    border-top-color: rgb(148 163 184 / 0.12);
+  }
+
+  /* Formula & difference rows: de-emphasized accounting detail */
+  .kudos-breakdown-summary__row--formula,
+  .kudos-breakdown-summary__row--difference {
+    @apply text-xs;
+    color: rgb(148 163 184 / 0.65);
+  }
+
+  .dark .kudos-breakdown-summary__row--formula,
+  .dark .kudos-breakdown-summary__row--difference {
+    color: rgb(148 163 184 / 0.45);
+  }
+
+  .kudos-breakdown-summary__row--formula .kudos-breakdown-summary__value,
+  .kudos-breakdown-summary__row--difference .kudos-breakdown-summary__value {
+    @apply text-xs font-medium;
+    color: rgb(148 163 184 / 0.65);
+  }
+
+  .dark .kudos-breakdown-summary__row--formula .kudos-breakdown-summary__value,
+  .dark .kudos-breakdown-summary__row--difference .kudos-breakdown-summary__value {
+    color: rgb(148 163 184 / 0.45);
+  }
+
+  .kudos-breakdown-summary__label {
+    @apply text-content-secondary;
+    @apply dark:text-gray-400;
+  }
+
+  .kudos-breakdown-summary__value {
+    @apply font-semibold text-content-primary;
+    @apply dark:text-white;
+    font-variant-numeric: tabular-nums;
+    order: 2;
+  }
+
+  .kudos-breakdown-summary__hint {
+    @apply mt-1 text-[12px] italic;
+    @apply text-content-muted dark:text-gray-400;
   }
 
   /* 1-2 column responsive grid */

@@ -643,25 +643,28 @@
                   </div>
                 }
 
-                <!-- Kudos Card -->
-                <div class="profile-glass-section mt-4">
-                  <app-user-kudos-card
-                    [loading]="auth.isLoading()"
-                    [kudos]="auth.currentUser()!.kudos"
-                    [kudosDetails]="auth.currentUser()!.kudos_details"
-                    [monthlyKudos]="auth.currentUser()!.monthly_kudos"
-                    [evaluatingKudos]="auth.currentUser()!.evaluating_kudos"
-                    [trusted]="auth.currentUser()!.trusted ?? false"
-                    [isOwnProfile]="true"
-                  />
-                </div>
+                <!-- Kudos + Activity side-by-side on wide viewports -->
+                <div class="profile-overview-columns mt-4">
+                  <!-- Kudos Card -->
+                  <div class="profile-glass-section">
+                    <app-user-kudos-card
+                      [loading]="auth.isLoading()"
+                      [kudos]="auth.currentUser()!.kudos"
+                      [kudosDetails]="auth.currentUser()!.kudos_details"
+                      [monthlyKudos]="auth.currentUser()!.monthly_kudos"
+                      [evaluatingKudos]="auth.currentUser()!.evaluating_kudos"
+                      [trusted]="auth.currentUser()!.trusted ?? false"
+                      [isOwnProfile]="true"
+                    />
+                  </div>
 
-                <!-- Activity Snapshot -->
-                <div class="profile-glass-section mt-4">
-                  <h3 class="heading-card">
-                    {{ "profile.activity_heading" | transloco }}
-                  </h3>
-                  <app-user-stats-summary [loading]="auth.isLoading()" [user]="auth.currentUser()!" />
+                  <!-- Activity Snapshot -->
+                  <div class="profile-glass-section profile-overview-columns__sidebar">
+                    <h3 class="heading-card">
+                      {{ "profile.activity_heading" | transloco }}
+                    </h3>
+                    <app-user-stats-summary [loading]="auth.isLoading()" [user]="auth.currentUser()!" />
+                  </div>
                 </div>
 
                 <!-- Quick-Nav Asset Boxes -->

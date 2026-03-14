@@ -453,6 +453,7 @@
 
   .info-box {
     @apply p-4 rounded-xl;
+    max-width: 600px;
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid transparent;
