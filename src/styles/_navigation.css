@@ -114,11 +114,11 @@
   }
 
   /* Logo hover effect */
-  header a[routerLink="/"]:hover {
+  header .logo-container a:hover {
     @apply scale-105;
   }
 
-  header a[routerLink="/"] {
+  header .logo-container a {
     @apply transition-transform duration-200;
   }
 

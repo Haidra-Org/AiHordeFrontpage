@@ -298,4 +298,40 @@
       transparent 100%
     );
   }
+
+  /* ── Profile overview: Kudos + Activity side-by-side on wide viewports ── */
+  .profile-overview-columns {
+    @apply flex flex-col gap-4;
+  }
+
+  /* Mid-width: side-by-side with single-column activity */
+  @media (min-width: 950px) {
+    .profile-overview-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 680px) minmax(250px, 1fr);
+      gap: 16px;
+    }
+
+    .profile-overview-columns__sidebar {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+    }
+
+    /* Activity data grid stays 1-col until the sidebar is wide enough */
+    .profile-overview-columns__sidebar .data-grid-1-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Wide: activity sidebar gets 2-col data grid */
+  @media (min-width: 1200px) {
+    .profile-overview-columns {
+      grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
+    }
+
+    .profile-overview-columns__sidebar .data-grid-1-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 }
