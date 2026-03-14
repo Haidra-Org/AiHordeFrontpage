@@ -6,8 +6,11 @@ import {
   input,
   output,
   signal,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Dialog, DialogRef, DialogModule } from '@angular/cdk/dialog';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { HordeWorker } from '../../../types/horde-worker';
@@ -31,6 +34,7 @@ import { WORKER_ICON_MAP } from './worker-icons';
     TranslocoModule,
     FormatNumberPipe,
     RouterLink,
+    DialogModule,
     UnitTooltipComponent,
     TouchTooltipDirective,
     WorkerStatusIconComponent,
@@ -43,6 +47,11 @@ export class WorkerCardComponent {
   private readonly destroyRef = inject(DestroyRef);
   public readonly auth = inject(AuthService);
   private readonly unitConversion = inject(UnitConversionService);
+  private readonly cdkDialog = inject(Dialog);
+
+  private readonly dialogTpl =
+    viewChild.required<TemplateRef<unknown>>('dialogTpl');
+  private cdkDialogRef: DialogRef | null = null;
 
   public worker = input.required<HordeWorker>();
   public isModerator = input(false);
@@ -365,24 +374,42 @@ export class WorkerCardComponent {
   }
 
   // Dialog actions
+  private openCdkDialog(): void {
+    this.cdkDialogRef = this.cdkDialog.open(this.dialogTpl(), {
+      hasBackdrop: true,
+      backdropClass: 'modal-cdk-backdrop',
+      panelClass: ['modal-panel', 'modal-panel--xl'],
+      ariaModal: true,
+    });
+    this.cdkDialogRef.closed
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.dialogOpen.set(false);
+        this.cdkDialogRef = null;
+      });
+    this.dialogOpen.set(true);
+  }
+
   public openModelsDialog(): void {
     this.dialogType.set('models');
     this.modelSearch.set('');
-    this.dialogOpen.set(true);
+    this.openCdkDialog();
   }
 
   public openMaintenanceDialog(): void {
     this.dialogType.set('maintenance');
     this.maintenanceReason.set('');
-    this.dialogOpen.set(true);
+    this.openCdkDialog();
   }
 
   public openPauseDialog(): void {
     this.dialogType.set('pause');
-    this.dialogOpen.set(true);
+    this.openCdkDialog();
   }
 
   public closeDialog(): void {
+    this.cdkDialogRef?.close();
+    this.cdkDialogRef = null;
     this.dialogOpen.set(false);
   }
 
@@ -436,7 +463,7 @@ export class WorkerCardComponent {
   public openDeleteDialog(): void {
     this.dialogType.set('delete');
     this.deleteError.set(null);
-    this.dialogOpen.set(true);
+    this.openCdkDialog();
   }
 
   public confirmDelete(): void {
@@ -527,7 +554,7 @@ export class WorkerCardComponent {
 
     this.dialogType.set('team');
     this.selectedTeamId.set(this.worker().team?.id ?? '');
-    this.dialogOpen.set(true);
+    this.openCdkDialog();
   }
 
   /**
