@@ -3,11 +3,13 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   input,
   OnInit,
   output,
   signal,
+  ViewChild,
   ViewChildren,
   QueryList,
 } from '@angular/core';
@@ -38,6 +40,12 @@ export class SharedKeyListComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly sharedKeyService = inject(SharedKeyService);
   private readonly auth = inject(AuthService);
+
+  @ViewChild('statusRegion')
+  private statusRegion?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('createFormRegion')
+  private createFormRegion?: ElementRef<HTMLDivElement>;
 
   @ViewChildren(SharedKeyCardComponent)
   private cardComponents!: QueryList<SharedKeyCardComponent>;
@@ -187,9 +195,11 @@ export class SharedKeyListComponent implements OnInit {
           const updated = [...this.sharedKeys(), created];
           this.internalSharedKeys.set(updated);
           this.sharedKeysChange.emit(updated);
+          this.createFormCollapsed.set(true);
           this.success.set(
-            'Shared key created. Changes can take up to 5 minutes to propagate due to caching.',
+            `Shared key "${created.name}" created. Changes can take up to 5 minutes to propagate due to caching.`,
           );
+          this.scrollToStatus();
         },
         error: (err) => {
           this.error.set(this.extractError(err));
@@ -280,7 +290,12 @@ export class SharedKeyListComponent implements OnInit {
   }
 
   public toggleCreateForm(): void {
+    const willExpand = this.createFormCollapsed();
     this.createFormCollapsed.update((collapsed) => !collapsed);
+
+    if (willExpand) {
+      this.scrollToCreateForm();
+    }
   }
 
   private closeCardEdit(sharedKeyId: string): void {
@@ -288,6 +303,24 @@ export class SharedKeyListComponent implements OnInit {
       (c) => c.sharedKey().id === sharedKeyId,
     );
     card?.closeEdit();
+  }
+
+  private scrollToCreateForm(): void {
+    queueMicrotask(() => {
+      this.createFormRegion?.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+  }
+
+  private scrollToStatus(): void {
+    queueMicrotask(() => {
+      this.statusRegion?.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
   }
 
   private extractError(error: unknown): string {

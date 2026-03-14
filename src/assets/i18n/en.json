@@ -236,6 +236,7 @@
   "transfer.visit_old_link_text": "the old version of the transfer page",
   "transfer.source_api_key": "Your API key",
   "transfer.target_user": "The receiving user",
+  "transfer.target_valid_user": "Valid user",
   "transfer.target_user.description": "For example: {{exampleUser}}",
   "transfer.source_api_key.description": "Type the API key that belongs to your user",
   "transfer.source_api_key.remember": "Remember the API key?",
