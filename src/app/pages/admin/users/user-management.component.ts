@@ -3,8 +3,6 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
-  ElementRef,
   inject,
   NgZone,
   OnInit,
@@ -34,7 +32,11 @@ import { AdminToastService } from '../../../services/admin-toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../../../components/json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { AdminGenerationTrackerComponent } from '../../../components/admin/admin-generation-tracker/admin-generation-tracker.component';
 import { GenerationType } from '../../../types/generation';
 import { extractApiError } from '../../../helper/extract-api-error';
@@ -62,6 +64,8 @@ const MAX_HISTORY_SIZE = 30;
     AdminDialogComponent,
     KudosBreakdownPanelComponent,
     AdminGenerationTrackerComponent,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
   ],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,18 +86,6 @@ export class UserManagementComponent implements OnInit {
 
   public readonly generationTracker =
     viewChild<AdminGenerationTrackerComponent>('generationTracker');
-  private readonly rawJsonDialog =
-    viewChild<ElementRef<HTMLDialogElement>>('rawJsonDialog');
-
-  constructor() {
-    // Open native dialog when it appears in the DOM (after @defer/@if)
-    effect(() => {
-      const dialogEl = this.rawJsonDialog()?.nativeElement;
-      if (dialogEl && !dialogEl.open) {
-        dialogEl.showModal();
-      }
-    });
-  }
 
   // Search state
   public searchQuery = signal<string>('');
@@ -146,25 +138,35 @@ export class UserManagementComponent implements OnInit {
   public isDirty = signal<boolean>(false);
   public isSaving = signal<boolean>(false);
 
-  // Raw JSON snapshots
-  public userJson = computed(() => stringifyAsJson(this.selectedUser()));
-  public workersJson = computed(() => stringifyAsJson(this.userWorkers()));
-  public sharedKeysJson = computed(() =>
-    stringifyAsJson(this.userSharedKeys()),
-  );
-  public stylesJson = computed(() =>
-    stringifyAsJson(this.selectedUser()?.styles ?? []),
-  );
-  public userJsonHighlighted = computed(() => highlightJson(this.userJson()));
-  public workersJsonHighlighted = computed(() =>
-    highlightJson(this.workersJson()),
-  );
-  public sharedKeysJsonHighlighted = computed(() =>
-    highlightJson(this.sharedKeysJson()),
-  );
-  public stylesJsonHighlighted = computed(() =>
-    highlightJson(this.stylesJson()),
-  );
+  public rawJsonSections = computed<readonly JsonInspectorSection[]>(() => {
+    const user = this.selectedUser();
+    if (!user) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'user',
+        label: 'User',
+        value: user,
+      },
+      {
+        id: 'workers',
+        label: 'Workers',
+        value: this.userWorkers(),
+      },
+      {
+        id: 'shared-keys',
+        label: 'Shared Keys',
+        value: this.userSharedKeys(),
+      },
+      {
+        id: 'styles',
+        label: 'Styles',
+        value: user.styles ?? [],
+      },
+    ];
+  });
 
   // Computed signals for tracking individual field changes
   public trustedChanged = computed(() => {
@@ -712,18 +714,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   public closeRawJsonModal(): void {
-    const dialog = this.rawJsonDialog()?.nativeElement;
-    if (dialog?.open) {
-      dialog.close();
-    }
     this.rawJsonModalOpen.set(false);
-  }
-
-  /** Close dialog when clicking the transparent backdrop area (not the panel) */
-  public onDialogBackdropClick(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeRawJsonModal();
-    }
   }
 
   private loadUserSharedKeys(): void {

@@ -284,6 +284,10 @@
             sizeClass="w-4 h-4"
           />
         </div>
+        <app-json-inspector-trigger
+          label="View worker raw JSON"
+          (triggered)="openRawJson()"
+        />
       </div>
     </div>
   </div>
@@ -797,3 +801,11 @@
     }
   </div>
 </div>
+
+<app-json-inspector
+  [open]="rawJsonOpen()"
+  title="Worker Raw JSON"
+  [sections]="rawJsonSections()"
+  [downloadFilePrefix]="'worker-' + worker().id"
+  (closed)="closeRawJson()"
+/>

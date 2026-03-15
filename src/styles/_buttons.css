@@ -219,6 +219,49 @@
     @apply w-5 h-5;
   }
 
+  /* JSON inspector trigger - intentionally low-prominence power-user affordance */
+  .btn-json-inspector {
+    @apply inline-flex items-center justify-center rounded-md p-1.5 transition-colors duration-150;
+    color: var(--color-content-tertiary);
+    background-color: transparent;
+    border: 1px solid transparent;
+  }
+
+  .btn-json-inspector:hover {
+    color: var(--color-content-primary);
+    border-color: var(--color-edge-primary);
+    background-color: var(--color-surface-secondary);
+  }
+
+  .btn-json-inspector:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  .btn-json-inspector:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .btn-json-inspector svg {
+    @apply h-4 w-4;
+  }
+
+  .dark .btn-json-inspector {
+    @apply text-gray-500;
+  }
+
+  .dark .btn-json-inspector:hover {
+    @apply text-gray-300 bg-gray-700 border-gray-600;
+  }
+
+  .dark .btn-json-inspector:focus-visible {
+    outline-color: var(--color-brand-primary);
+  }
+
+  .dark .btn-json-inspector:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
   /* Icon button with danger hover */
   .btn-icon-danger {
     color: var(--color-content-secondary);

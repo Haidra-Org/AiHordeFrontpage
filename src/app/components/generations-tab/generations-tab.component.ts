@@ -34,6 +34,11 @@ import {
 } from '../../types/generation';
 import { ActiveModel } from '../../types/active-model';
 import { ModelAutocompleteComponent } from '../model-autocomplete/model-autocomplete.component';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../json-inspector-trigger/json-inspector-trigger.component';
 
 @Component({
   selector: 'app-generations-tab',
@@ -42,6 +47,8 @@ import { ModelAutocompleteComponent } from '../model-autocomplete/model-autocomp
     TranslocoPipe,
     RouterLink,
     ModelAutocompleteComponent,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
   ],
   templateUrl: './generations-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -87,6 +94,58 @@ export class GenerationsTabComponent {
   public readonly jsonError = signal<string | null>(null);
   public readonly expandedRequest = signal<Set<string>>(new Set());
   public readonly expandedResponse = signal<Set<string>>(new Set());
+  public readonly rawJsonOpen = signal(false);
+  public readonly rawJsonGeneration = signal<TrackedGeneration | null>(null);
+
+  public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
+    () => {
+      const generation = this.rawJsonGeneration();
+      if (!generation) {
+        return [];
+      }
+
+      const sections: JsonInspectorSection[] = [
+        {
+          id: 'summary',
+          label: 'Summary',
+          value: {
+            id: generation.id,
+            type: generation.type,
+            done: generation.done,
+            faulted: generation.faulted,
+            notFound: generation.notFound ?? false,
+            firstSeenAt: generation.firstSeenAt,
+          },
+        },
+      ];
+
+      if (generation.sentRequest) {
+        sections.push({
+          id: 'request',
+          label: 'Request',
+          value: generation.sentRequest,
+        });
+      }
+
+      if (generation.check) {
+        sections.push({
+          id: 'check',
+          label: 'Check Response',
+          value: this.sanitizeResponsePayload(generation.check),
+        });
+      }
+
+      if (generation.result) {
+        sections.push({
+          id: 'result',
+          label: 'Final Response',
+          value: this.sanitizeResponsePayload(generation.result),
+        });
+      }
+
+      return sections;
+    },
+  );
 
   public readonly form = new FormGroup({
     prompt: new FormControl<string>('', [Validators.required]),
@@ -208,6 +267,16 @@ export class GenerationsTabComponent {
     );
   }
 
+  public openGenerationJson(gen: TrackedGeneration): void {
+    this.rawJsonGeneration.set(gen);
+    this.rawJsonOpen.set(true);
+  }
+
+  public closeGenerationJson(): void {
+    this.rawJsonOpen.set(false);
+    this.rawJsonGeneration.set(null);
+  }
+
   public getMetadataLabel(meta: GenerationMetadataStable): string {
     const labels: Record<string, string> = {
       download_failed: 'Download Failed',
@@ -262,6 +331,11 @@ export class GenerationsTabComponent {
       });
   }
 
+  public generationDownloadPrefix(): string {
+    const generation = this.rawJsonGeneration();
+    return generation ? `generation-${generation.id}` : 'generation';
+  }
+
   public viewImageResult(gen: TrackedGeneration): void {
     if (gen.type !== 'image' || gen.result) return;
 
@@ -298,6 +372,25 @@ export class GenerationsTabComponent {
         ?.filter((g) => g.state === 'ok' && g.img)
         .map((g) => g.img) ?? []
     );
+  }
+
+  private sanitizeResponsePayload(value: unknown): unknown {
+    try {
+      const sanitized = JSON.stringify(value, (_key, currentValue) => {
+        if (
+          typeof currentValue === 'string' &&
+          currentValue.length > 256 &&
+          /^[A-Za-z0-9+/=]/.test(currentValue)
+        ) {
+          return '[base64 data omitted]';
+        }
+        return currentValue;
+      });
+
+      return sanitized ? (JSON.parse(sanitized) as unknown) : value;
+    } catch {
+      return value;
+    }
   }
 
   public getTextOutputs(gen: TrackedGeneration): string[] {

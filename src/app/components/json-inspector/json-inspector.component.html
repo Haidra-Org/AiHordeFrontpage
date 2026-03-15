@@ -1,0 +1,85 @@
+@defer (when open()) {
+  @if (open()) {
+    <dialog
+      #dialogRef
+      class="admin-dialog-wrapper"
+      [attr.aria-label]="title()"
+      (close)="onDialogClosed()"
+      (mousedown)="onBackdropClick($event)"
+    >
+      <div class="modal-panel modal-panel--xl json-dialog">
+        <div class="modal-header">
+          <h3 class="heading-admin-card">{{ title() }}</h3>
+          <button class="btn-muted btn-sm" type="button" (click)="close()">
+            {{ closeLabel() }}
+          </button>
+        </div>
+
+        @if (hasMultipleSections()) {
+          <div class="json-inspector-tabs" role="tablist">
+            @for (section of preparedSections(); track section.id) {
+              <button
+                type="button"
+                class="json-inspector-tab"
+                [id]="'json-tab-' + section.id"
+                role="tab"
+                [attr.aria-selected]="activeSectionId() === section.id"
+                [attr.aria-controls]="'json-panel-' + section.id"
+                [class.json-inspector-tab--active]="
+                  activeSectionId() === section.id
+                "
+                (click)="setActiveSection(section.id)"
+              >
+                {{ section.label }}
+              </button>
+            }
+          </div>
+        }
+
+        @if (activeSection(); as section) {
+          <div class="json-inspector-actions">
+            <button
+              type="button"
+              class="btn-source-control btn-sm"
+              (click)="copyActiveSection()"
+            >
+              Copy Section
+            </button>
+            <button
+              type="button"
+              class="btn-source-control btn-sm"
+              (click)="downloadActiveSection()"
+            >
+              Download Section
+            </button>
+            @if (hasMultipleSections()) {
+              <button
+                type="button"
+                class="btn-source-control btn-sm"
+                (click)="downloadAllSections()"
+              >
+                Download All
+              </button>
+            }
+          </div>
+
+          <div
+            class="json-section"
+            [id]="'json-panel-' + section.id"
+            role="tabpanel"
+            [attr.aria-labelledby]="'json-tab-' + section.id"
+          >
+            <div class="json-section-title">{{ section.label }}</div>
+            <pre
+              class="json-block"
+              [attr.aria-label]="section.label + ' JSON'"
+              [innerHTML]="section.highlighted"
+            ></pre>
+          </div>
+        } @else {
+          <p class="text-secondary text-sm">No JSON data available.</p>
+        }
+      </div>
+    </dialog>
+  }
+}

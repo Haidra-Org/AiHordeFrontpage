@@ -10,12 +10,23 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
 import { SharedKeyDetails } from '../../../types/shared-key';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../../json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
 
 export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
 
 @Component({
   selector: 'app-shared-key-card',
-  imports: [TranslocoPipe, FormatNumberPipe, TouchTooltipDirective],
+  imports: [
+    TranslocoPipe,
+    FormatNumberPipe,
+    TouchTooltipDirective,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
+  ],
   templateUrl: './shared-key-card.component.html',
   styleUrl: './shared-key-card.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +52,17 @@ export class SharedKeyCardComponent {
 
   /** Whether the key ID was just copied. */
   public readonly copied = signal(false);
+  public readonly rawJsonOpen = signal(false);
+
+  public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
+    () => [
+      {
+        id: 'shared-key',
+        label: 'Shared Key',
+        value: this.sharedKey(),
+      },
+    ],
+  );
 
   /** Computed status of the key. */
   public readonly status = computed<SharedKeyStatus>(() => {
@@ -90,6 +112,14 @@ export class SharedKeyCardComponent {
 
   public onDelete(): void {
     this.delete.emit();
+  }
+
+  public openRawJson(): void {
+    this.rawJsonOpen.set(true);
+  }
+
+  public closeRawJson(): void {
+    this.rawJsonOpen.set(false);
   }
 
   private computeStatus(key: SharedKeyDetails): SharedKeyStatus {

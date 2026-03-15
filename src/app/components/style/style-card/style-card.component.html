@@ -75,6 +75,10 @@
           <span aria-hidden="true">x</span>
         </button>
       }
+      <app-json-inspector-trigger
+        label="View style raw JSON"
+        (triggered)="onOpenRawJson()"
+      />
     </div>
 
     <h3 class="card-title">{{ style().name }}</h3>
@@ -182,3 +186,11 @@
     }
   </div>
 </a>
+
+<app-json-inspector
+  [open]="rawJsonOpen()"
+  title="Style Raw JSON"
+  [sections]="rawJsonSections()"
+  [downloadFilePrefix]="'style-' + style().id"
+  (closed)="onCloseRawJson()"
+/>

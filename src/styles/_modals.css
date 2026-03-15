@@ -201,6 +201,31 @@
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
 
+  .json-inspector-tabs {
+    @apply mb-3 flex flex-wrap items-center gap-1 rounded-lg p-1;
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .json-inspector-tab {
+    @apply rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150;
+    color: var(--color-content-secondary);
+  }
+
+  .json-inspector-tab:hover {
+    color: var(--color-content-primary);
+    background-color: var(--color-surface-tertiary);
+  }
+
+  .json-inspector-tab--active {
+    color: var(--color-content-primary);
+    background-color: var(--color-glass-surface-heavy);
+  }
+
+  .json-inspector-actions {
+    @apply mb-3 flex flex-wrap items-center gap-2;
+  }
+
   .json-section {
     @apply flex flex-col gap-1.5 min-h-0 h-full;
   }
