@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { map, Observable, of, switchMap, tap } from 'rxjs';
 
@@ -8,7 +8,7 @@ import { map, Observable, of, switchMap, tap } from 'rxjs';
 export class TranslatorService {
   private loadedLanguages: string[] = [];
 
-  constructor(private readonly transloco: TranslocoService) {}
+  private readonly transloco = inject(TranslocoService);
 
   public get(
     key: string,
@@ -37,7 +37,7 @@ export class TranslatorService {
         this.loadedLanguages.push(language);
       }),
       switchMap(() => {
-        const language = <string>this.transloco.config.fallbackLang;
+        const language = this.transloco.config.fallbackLang as string;
         if (this.loadedLanguages.includes(language)) {
           return of(void 0);
         }
@@ -48,7 +48,7 @@ export class TranslatorService {
         if (result === null) {
           return;
         }
-        const language = <string>this.transloco.config.fallbackLang;
+        const language = this.transloco.config.fallbackLang as string;
         this.loadedLanguages.push(language);
       }),
       map(() => void 0),

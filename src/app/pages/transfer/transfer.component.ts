@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -42,6 +43,7 @@ import { SharedKeyService } from '../../services/shared-key.service';
   ],
   templateUrl: './transfer.component.html',
   styleUrl: './transfer.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TransferComponent implements OnInit {
   private readonly title = inject(Title);
@@ -127,7 +129,7 @@ export class TransferComponent implements OnInit {
     const apiKey = this.database.get(
       'api_key',
       remember ? StorageType.Permanent : StorageType.Session,
-    );
+    ) as string | null;
 
     // Setup form value change subscriptions with automatic cleanup
     this.form.controls.apiKey.valueChanges

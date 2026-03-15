@@ -75,7 +75,7 @@ export class AuthService {
 
   public login(
     apiKey: string,
-    remember: boolean = false,
+    remember = false,
   ): Observable<HordeUser | null> {
     this._isLoading.set(true);
 

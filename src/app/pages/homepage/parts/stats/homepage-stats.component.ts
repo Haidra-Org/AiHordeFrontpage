@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   afterNextRender,
@@ -34,6 +35,7 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
   ],
   templateUrl: './homepage-stats.component.html',
   styleUrl: './homepage-stats.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);

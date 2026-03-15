@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg.component';
@@ -19,5 +19,6 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
   ],
   templateUrl: './homepage-quickstart.component.html',
   styleUrl: './homepage-quickstart.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageQuickstartComponent {}

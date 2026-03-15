@@ -322,7 +322,7 @@ export class KudosBreakdownPanelComponent {
       return [];
     }
 
-    const sections: Array<Omit<ProfileKudosSection, 'fields'>> = [
+    const sections: Omit<ProfileKudosSection, 'fields'>[] = [
       {
         id: 'incoming',
         titleKey: 'profile.kudos_section_incoming',
@@ -444,7 +444,7 @@ export class KudosBreakdownPanelComponent {
 
   private sumGroup(
     group: KudosField['group'],
-    useAbsoluteValue: boolean = false,
+    useAbsoluteValue = false,
   ): number {
     return this.allFields()
       .filter((field) => field.group === group)

@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { inject, Pipe, PipeTransform } from '@angular/core';
 import { EnumDisplayService } from '../services/enum-display.service';
 import { ItemType, Domain, Platform, FunctionKind } from '../types/item-types';
 
@@ -46,7 +46,7 @@ export type EnumCategory =
   standalone: true,
 })
 export class EnumDisplayPipe implements PipeTransform {
-  constructor(private enumDisplayService: EnumDisplayService) {}
+  private readonly enumDisplayService = inject(EnumDisplayService);
 
   /**
    * Transform enum value to display information

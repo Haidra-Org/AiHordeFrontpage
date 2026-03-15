@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
@@ -19,6 +20,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
   standalone: true,
   templateUrl: './privacy.component.html',
   styleUrl: './privacy.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PrivacyComponent implements OnInit {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;

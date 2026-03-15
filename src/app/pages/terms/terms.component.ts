@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
@@ -14,6 +15,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
   imports: [],
   templateUrl: './terms.component.html',
   styleUrl: './terms.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TermsComponent {
   private readonly aiHorde = inject(AiHordeService);

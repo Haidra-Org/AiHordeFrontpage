@@ -95,7 +95,7 @@ export class UnitConversionService {
   formatWithSiPrefix(
     value: number,
     unit: string,
-    decimals: number = 1,
+    decimals = 1,
   ): FormattedValue {
     const siPrefix = this.getSiPrefix(value);
     const scaledValue = value / siPrefix.threshold;
@@ -125,7 +125,7 @@ export class UnitConversionService {
   formatWithHumanPrefix(
     value: number,
     unit: string,
-    decimals: number = 1,
+    decimals = 1,
   ): FormattedValue {
     const prefix = this.getHumanPrefix(value);
     const scaledValue = value / prefix.threshold;
@@ -352,8 +352,8 @@ export class UnitConversionService {
    */
   formatLargeNumber(
     value: number,
-    unit: string = '',
-    decimals: number = 1,
+    unit = '',
+    decimals = 1,
   ): string {
     const prefix = this.getHumanPrefix(value);
     const scaledValue = value / prefix.threshold;
@@ -375,8 +375,8 @@ export class UnitConversionService {
    */
   formatLargeNumberTechnical(
     value: number,
-    unit: string = '',
-    decimals: number = 1,
+    unit = '',
+    decimals = 1,
   ): string {
     const formatted = this.formatWithSiPrefix(value, unit, decimals);
     return formatted.formatted;
@@ -402,7 +402,7 @@ export class UnitConversionService {
   /**
    * Formats a number with commas for thousands
    */
-  formatWithCommas(value: number, decimals: number = 0): string {
+  formatWithCommas(value: number, decimals = 0): string {
     return value.toLocaleString(undefined, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,

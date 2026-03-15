@@ -176,7 +176,7 @@ export class AiHordeService {
     amount: number,
   ): Observable<boolean> {
     return this.httpClient
-      .post<any>(
+      .post<unknown>(
         `${BASE}/kudos/transfer`,
         {
           username: targetUser,
@@ -266,8 +266,8 @@ export class AiHordeService {
    * @param limit - Number of users per page (max 25)
    */
   public getKudosLeaderboard(
-    page: number = 1,
-    limit: number = 25,
+    page = 1,
+    limit = 25,
   ): Observable<LeaderboardUser[]> {
     return this.cache
       .cachedGet<HordeUser[]>(

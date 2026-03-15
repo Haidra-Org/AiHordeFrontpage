@@ -1,4 +1,4 @@
-import { Component, inject, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, PLATFORM_ID } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
@@ -18,6 +18,7 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
   ],
   templateUrl: './homepage-intro.component.html',
   styleUrl: './homepage-intro.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageIntroComponent {
   private readonly platformId = inject(PLATFORM_ID);

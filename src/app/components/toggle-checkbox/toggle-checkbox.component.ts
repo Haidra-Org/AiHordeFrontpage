@@ -1,4 +1,4 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { OnChange, OnTouched } from '../../types/value-accessor';
@@ -8,6 +8,7 @@ import { OnChange, OnTouched } from '../../types/value-accessor';
   standalone: true,
   imports: [TranslocoPipe],
   templateUrl: './toggle-checkbox.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

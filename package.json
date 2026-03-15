@@ -8,7 +8,12 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:AiHordeWebsite": "node dist/ai-horde-website/server/server.mjs",
-    "deploy": "ng build && npx wrangler deploy"
+    "deploy": "ng build && npx wrangler deploy",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix",
+    "format": "prettier --write \"src/**/*.{ts,html,css,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,json}\"",
+    "prepare": "husky"
   },
   "private": true,
   "dependencies": {
@@ -38,17 +43,37 @@
     "@angular-devkit/build-angular": "^21.2.1",
     "@angular/cli": "^21.2.1",
     "@angular/compiler-cli": "^21.2.2",
+    "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
     "@types/jasmine": "~6.0.0",
     "@types/node": "^25.4.0",
     "angular-cli-ghpages": "^3.0.2",
+    "angular-eslint": "^21.3.0",
+    "husky": "^9.1.7",
     "jasmine-core": "~6.1.0",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.1",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.2.0",
+    "lint-staged": "^16.4.0",
     "prettier": "3.8.1",
     "typescript": "~5.9.3"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.html": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.css": [
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
   }
 }

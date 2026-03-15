@@ -1,6 +1,4 @@
-export interface SinglePeriodImageModelStats {
-  [modelName: string]: number;
-}
+export type SinglePeriodImageModelStats = Record<string, number>;
 
 export interface ImageModelStats {
   day: SinglePeriodImageModelStats;
