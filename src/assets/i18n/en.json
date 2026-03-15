@@ -647,6 +647,8 @@
   "admin.dashboard.moderator_description": "As a moderator, you have access to additional tools for managing the horde.",
   "admin.dashboard.view_workers": "Manage Workers",
   "admin.dashboard.view_users": "Manage Users",
+  "admin.dashboard.view_filters": "Manage Filters",
+  "admin.dashboard.view_operations": "IP Operations",
 
   "admin.workers.title": "Worker List",
   "admin.workers.tabs.image": "Image Workers",

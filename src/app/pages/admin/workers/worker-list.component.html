@@ -89,7 +89,7 @@
       class="details-tabs details-tabs--glass details-tabs--sub mb-6"
       role="tablist"
       appScrollFade
-      [appStickyHeader]="20"
+      [appStickyHeader]="viewMode() === 'public' ? 20 : null"
     >
       <button
         type="button"
@@ -217,19 +217,19 @@
           <div class="admin-stats-bar__inner">
             <div class="admin-stats-bar__metrics">
               <div class="admin-stats-bar__metric">
-                <span class="admin-text-muted text-sm"
+                <span class="text-secondary text-sm"
                   >{{ "admin.workers.stats.total_workers" | transloco }}:</span
                 >
                 <span class="data-value text-lg">{{ totalWorkers() }}</span>
               </div>
               <div class="admin-stats-bar__metric">
-                <span class="admin-text-muted text-sm"
+                <span class="text-secondary text-sm"
                   >{{ "admin.workers.stats.total_threads" | transloco }}:</span
                 >
                 <span class="data-value text-lg">{{ totalThreads() }}</span>
               </div>
               <div class="admin-stats-bar__metric">
-                <span class="admin-text-muted text-sm">
+                <span class="text-secondary text-sm">
                   @if (workerType() === "image") {
                     {{ "admin.workers.stats.total_mps" | transloco }}:
                   } @else if (workerType() === "text") {
@@ -252,7 +252,7 @@
               </div>
               @if (recentThroughputUnit(); as throughput) {
                 <div class="admin-stats-bar__metric">
-                  <span class="admin-text-muted text-sm"
+                  <span class="text-secondary text-sm"
                     >{{
                       "admin.workers.stats.recent_throughput" | transloco
                     }}:</span
@@ -268,7 +268,7 @@
               }
             </div>
             <div class="admin-stats-bar__expand">
-              <span class="admin-text-muted text-sm">{{
+              <span class="text-secondary text-sm">{{
                 "admin.workers.stats.more_stats" | transloco
               }}</span>
               <button
@@ -410,7 +410,7 @@
                   ) {
                     <div class="admin-version-item">
                       <div class="admin-version-name">
-                        <span class="admin-text-white text-sm font-medium">{{
+                        <span class="text-primary text-sm font-medium">{{
                           version.parsed.displayName
                         }}</span>
                         <span class="admin-badge admin-badge-capability">{{
@@ -467,7 +467,7 @@
                       <div class="admin-capability-values">
                         <div class="data-value text-lg">
                           {{ capability.totalPerformance | number: "1.2-2" }}
-                          <span class="text-sm admin-text-muted">{{
+                          <span class="text-sm text-secondary">{{
                             performanceLabel()
                           }}</span>
                         </div>
@@ -505,7 +505,7 @@
 
       <!-- Sort Key Select -->
       <div class="admin-filter-sort">
-        <label for="worker-sort-key" class="text-sm admin-text-muted"
+        <label for="worker-sort-key" class="text-sm text-secondary"
           >{{ "admin.workers.sort_by" | transloco }}:</label
         >
         <select
@@ -578,33 +578,18 @@
 
     <!-- Loading State -->
     @if (loading()) {
-      <div class="admin-loading">
-        <svg class="admin-spinner" fill="none" viewBox="0 0 24 24">
-          <circle
-            class="admin-spinner-track"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="admin-spinner-head"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
-        </svg>
-        <p class="admin-loading-text">
-          {{ "admin.workers.loading" | transloco }}
-        </p>
+      <div class="state-container state-container-sm text-secondary">
+        <div class="spinner spinner-md"></div>
+        <p>{{ "admin.workers.loading" | transloco }}</p>
       </div>
     } @else if (filteredWorkers().length === 0) {
-      <div class="admin-empty">
+      <div class="state-container state-container-sm state-muted">
         <svg
-          class="admin-empty-icon"
+          class="state-icon"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -613,9 +598,7 @@
             d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
           />
         </svg>
-        <p class="admin-empty-text">
-          {{ "admin.workers.no_workers" | transloco }}
-        </p>
+        <p>{{ "admin.workers.no_workers" | transloco }}</p>
       </div>
     } @else {
       <!-- Worker Grid -->

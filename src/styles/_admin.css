@@ -36,7 +36,9 @@
      ================================================================= */
 
   .admin-sidebar {
-    @apply fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full transition-transform duration-[250ms] ease-out;
+    @apply fixed left-0 z-40 w-64 -translate-x-full transition-transform duration-[250ms] ease-out;
+    top: var(--sticky-offset, 0px);
+    height: calc(100vh - var(--sticky-offset, 0px));
   }
 
   .admin-sidebar.open {
@@ -45,6 +47,8 @@
 
   .admin-sidebar.desktop {
     @apply sticky translate-x-0;
+    top: var(--sticky-offset, 0px);
+    height: calc(100vh - var(--sticky-offset, 0px));
   }
 
   .admin-sidebar-content {
@@ -56,8 +60,8 @@
   }
 
   .dark .admin-sidebar-content {
-    background: rgb(31 41 55 / 0.7);
-    border-right-color: rgb(255 255 255 / 0.06);
+    background: var(--color-glass-surface-dark-heavy);
+    border-right-color: var(--color-glass-border-dark-subtle);
   }
 
   .admin-sidebar-header {
@@ -186,7 +190,8 @@
      ================================================================= */
 
   .admin-mobile-overlay {
-    @apply fixed inset-0 z-30 cursor-pointer;
+    @apply fixed left-0 right-0 bottom-0 z-30 cursor-pointer;
+    top: var(--sticky-offset, 0px);
     background-color: rgb(0 0 0 / 0.5);
     animation: admin-fade-in 200ms ease;
   }
@@ -213,7 +218,7 @@
      ================================================================= */
 
   .admin-mobile-header {
-    @apply sticky top-0 z-20 py-3 px-4;
+    @apply sticky z-20 py-3 px-4;
     background-color: var(--color-bg-primary);
     border-bottom: 1px solid var(--color-border-primary);
   }
@@ -274,9 +279,9 @@
      ================================================================= */
 
   .admin-content {
-    @apply p-4 flex-1;
+    @apply p-4 flex-1 relative z-[1];
     background-color: var(--color-bg-secondary);
-    min-height: calc(100vh - 57px);
+    min-height: calc(100vh - var(--sticky-offset, 0px));
   }
 
   .dark .admin-content {
@@ -291,7 +296,8 @@
 
   @media (min-width: 1024px) {
     .admin-content {
-      @apply p-8 min-h-screen;
+      @apply p-8;
+      min-height: calc(100vh - var(--sticky-offset, 0px));
     }
   }
 
@@ -327,7 +333,7 @@
   }
 
   .admin-container-lg {
-    @apply max-w-full;
+    @apply max-w-7xl;
   }
 
   .admin-header {
@@ -445,7 +451,7 @@
   }
 
   .dark .expandable-header:hover {
-    background-color: rgb(55 65 81 / 0.5);
+    background-color: var(--color-glass-surface-dark);
   }
 
   .expandable-icon {
@@ -744,53 +750,6 @@
      ================================================================= */
 
   /* =================================================================
-     LOADING STATES
-     ================================================================= */
-
-  .admin-loading {
-    @apply flex flex-col items-center justify-center py-12;
-  }
-
-  .admin-spinner {
-    @apply w-8 h-8 text-blue-500 animate-spin;
-  }
-
-  .admin-loading-text {
-    @apply mt-4;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-loading-text {
-    @apply text-gray-400;
-  }
-
-  /* =================================================================
-     EMPTY STATES
-     ================================================================= */
-
-  .admin-empty {
-    @apply flex flex-col items-center justify-center py-12 text-center;
-  }
-
-  .admin-empty-icon {
-    @apply w-12 h-12;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-empty-icon {
-    @apply text-gray-500;
-  }
-
-  .admin-empty-text {
-    @apply mt-4;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-empty-text {
-    @apply text-gray-400;
-  }
-
-  /* =================================================================
      MISC UTILITIES
      ================================================================= */
 
@@ -803,11 +762,11 @@
   }
 
   .admin-bg-dark {
-    background: rgb(249 250 251 / 0.6);
+    background: var(--color-glass-surface);
   }
 
   .dark .admin-bg-dark {
-    background: rgb(55 65 81 / 0.4);
+    background: var(--color-glass-surface-dark-soft);
   }
 
   .admin-bg-darker {
@@ -853,10 +812,6 @@
     @apply text-red-600 dark:text-red-400;
   }
 
-  .admin-text-red {
-    @apply text-red-600 dark:text-red-400;
-  }
-
   .admin-text-purple {
     color: var(--color-brand-purple);
   }
@@ -865,28 +820,12 @@
     @apply text-purple-400;
   }
 
-  .admin-text-muted {
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-text-muted {
-    @apply text-gray-400;
-  }
-
   .admin-text-light {
     color: var(--color-text-secondary);
   }
 
   .dark .admin-text-light {
     @apply text-gray-300;
-  }
-
-  .admin-text-white {
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-text-white {
-    @apply text-white;
   }
 
   .admin-link {
@@ -927,14 +866,6 @@
     @apply max-w-[200px] ml-2;
   }
 
-  .admin-spinner-track {
-    @apply opacity-25;
-  }
-
-  .admin-spinner-head {
-    @apply opacity-75;
-  }
-
   /* =================================================================
      FORM ELEMENTS
      (Consolidated in _forms.css - form-group, form-label, form-hint,
@@ -963,7 +894,7 @@
 
   .dark .admin-table th {
     @apply text-gray-400 bg-gray-700;
-    border-color: #4b5563;
+    border-color: var(--color-gray-600);
   }
 
   .admin-table td {
@@ -974,7 +905,7 @@
 
   .dark .admin-table td {
     @apply text-gray-200;
-    border-color: #374151;
+    border-color: var(--color-gray-700);
   }
 
   .admin-table tbody tr:hover {
@@ -1104,12 +1035,12 @@
 
   .dark .data-table th {
     @apply text-gray-400 bg-gray-700;
-    border-color: #4b5563;
+    border-color: var(--color-gray-600);
   }
 
   .dark .data-table td {
     @apply text-gray-200;
-    border-color: #374151;
+    border-color: var(--color-gray-700);
   }
 
   .dark .data-table tbody tr:hover {

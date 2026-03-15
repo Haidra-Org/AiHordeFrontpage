@@ -22,6 +22,9 @@ import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { AuthService } from '../../services/auth.service';
 import { HordeStatusService } from '../../services/horde-status.service';
+import { AdminToastService } from '../../services/admin-toast.service';
+import { AdminToastBarComponent } from '../../components/admin/admin-toast-bar/admin-toast-bar.component';
+import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { HordeStatusModes } from '../../types/horde-status';
 import { combineLatest } from 'rxjs';
 
@@ -30,7 +33,14 @@ const DESKTOP_BREAKPOINT = 1024;
 
 @Component({
   selector: 'app-admin',
-  imports: [TranslocoPipe, TranslocoModule, RouterLink, RouterOutlet],
+  imports: [
+    TranslocoPipe,
+    TranslocoModule,
+    RouterLink,
+    RouterOutlet,
+    AdminToastBarComponent,
+    StickyHeaderDirective,
+  ],
   templateUrl: './admin.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -46,6 +56,7 @@ export class AdminComponent implements OnInit {
   private readonly hordeStatus = inject(HordeStatusService);
   private readonly platformId = inject(PLATFORM_ID);
   public readonly auth = inject(AuthService);
+  public readonly toastService = inject(AdminToastService);
 
   public statusModes = signal<HordeStatusModes | null>(null);
   /** Sidebar visibility state - starts closed on mobile, open on desktop */

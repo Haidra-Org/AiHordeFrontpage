@@ -12,6 +12,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiHordeService } from '../../../services/ai-horde.service';
+import { highlightJson } from '../../../helper/json-formatter';
 import {
   TrackedGeneration,
   GenerationType,
@@ -160,6 +161,10 @@ export class AdminGenerationTrackerComponent {
       },
       2,
     );
+  }
+
+  public getResponseJsonHighlighted(gen: TrackedGeneration): string {
+    return highlightJson(this.getResponseJson(gen));
   }
 
   public getGenerationOutputs(gen: TrackedGeneration): GenerationOutput[] {

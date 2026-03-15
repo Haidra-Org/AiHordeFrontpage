@@ -40,12 +40,14 @@ export class AdminWorkerService {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
-    return this.cache
-      .cachedGet<HordeWorker>(`${this.baseUrl}/workers/${id}`, options, {
+    return this.cache.cachedGet<HordeWorker>(
+      `${this.baseUrl}/workers/${id}`,
+      options,
+      {
         ttl: CacheTTL.SHORT,
         category: 'admin-workers',
-      })
-      .pipe(catchError(() => of(null)));
+      },
+    );
   }
 
   /**
@@ -100,10 +102,7 @@ export class AdminWorkerService {
       .put<WorkerModifyResponse>(`${this.baseUrl}/workers/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-workers' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-workers' })));
   }
 
   /**
@@ -149,10 +148,7 @@ export class AdminWorkerService {
           headers: { apikey: apiKey },
         },
       )
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-workers' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-workers' })));
   }
 
   /**
@@ -162,15 +158,13 @@ export class AdminWorkerService {
     const apiKey = this.auth.getStoredApiKey();
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
-    return this.cache
-      .cachedGet<HordeWorker>(
-        `${this.baseUrl}/workers/name/${encodeURIComponent(name)}`,
-        options,
-        {
-          ttl: CacheTTL.SHORT,
-          category: 'admin-workers',
-        },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.cache.cachedGet<HordeWorker>(
+      `${this.baseUrl}/workers/name/${encodeURIComponent(name)}`,
+      options,
+      {
+        ttl: CacheTTL.SHORT,
+        category: 'admin-workers',
+      },
+    );
   }
 }

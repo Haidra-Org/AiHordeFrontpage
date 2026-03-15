@@ -100,7 +100,7 @@
         <h2 class="heading-admin-section mb-4">
           {{ "admin.filters.prompt_tester.title" | transloco }}
         </h2>
-        <p class="admin-text-muted mb-4">
+        <p class="text-secondary mb-4">
           {{ "admin.filters.prompt_tester.description" | transloco }}
         </p>
         <div class="flex flex-col gap-4">
@@ -213,38 +213,18 @@
 
     <!-- Filters List -->
     @if (loading()) {
-      <div class="admin-loading">
-        <svg
-          class="admin-spinner"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle
-            class="admin-spinner-track"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-          <path
-            class="admin-spinner-head"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-        <span class="admin-loading-text">{{
-          "admin.filters.loading" | transloco
-        }}</span>
+      <div class="state-container state-container-sm text-secondary">
+        <div class="spinner spinner-md"></div>
+        <p>{{ "admin.filters.loading" | transloco }}</p>
       </div>
     } @else if (filteredFilters().length === 0) {
-      <div class="admin-empty">
+      <div class="state-container state-container-sm state-muted">
         <svg
-          class="admin-empty-icon"
+          class="state-icon"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -253,9 +233,7 @@
             d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
           />
         </svg>
-        <span class="admin-empty-text">{{
-          "admin.filters.no_filters" | transloco
-        }}</span>
+        <p>{{ "admin.filters.no_filters" | transloco }}</p>
       </div>
     } @else {
       <!-- Filter count -->
@@ -304,7 +282,7 @@
                         filter.replacement
                       }}</code>
                     } @else {
-                      <span class="admin-text-muted">-</span>
+                      <span class="text-secondary">-</span>
                     }
                   </td>
                   <td>{{ filter.user }}</td>
@@ -384,7 +362,7 @@
   <!-- Compiled Regex Tab -->
   @if (activeTab() === "compiled") {
     <div class="compiled-regex-header mb-6">
-      <p class="admin-text-muted">
+      <p class="text-secondary">
         {{ "admin.filters.compiled_regex.description" | transloco }}
       </p>
       <button
@@ -398,38 +376,18 @@
     </div>
 
     @if (loadingCompiled()) {
-      <div class="admin-loading">
-        <svg
-          class="admin-spinner"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle
-            class="admin-spinner-track"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          />
-          <path
-            class="admin-spinner-head"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-        <span class="admin-loading-text">{{
-          "admin.filters.loading_compiled" | transloco
-        }}</span>
+      <div class="state-container state-container-sm text-secondary">
+        <div class="spinner spinner-md"></div>
+        <p>{{ "admin.filters.loading_compiled" | transloco }}</p>
       </div>
     } @else if (compiledRegex().length === 0) {
-      <div class="admin-empty">
+      <div class="state-container state-container-sm state-muted">
         <svg
-          class="admin-empty-icon"
+          class="state-icon"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -438,9 +396,7 @@
             d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
           />
         </svg>
-        <span class="admin-empty-text">{{
-          "admin.filters.no_compiled_regex" | transloco
-        }}</span>
+        <p>{{ "admin.filters.no_compiled_regex" | transloco }}</p>
       </div>
     } @else {
       <div class="compiled-regex-list">
@@ -486,13 +442,15 @@
 
 <!-- Create/Edit Dialog -->
 @if (dialogOpen() && (dialogType() === "create" || dialogType() === "edit")) {
-  <div class="modal-overlay">
-    <button
-      type="button"
-      class="modal-backdrop"
-      aria-label="Close dialog"
-      (click)="closeDialog()"
-    ></button>
+  <dialog
+    #filterDialog
+    class="admin-dialog-wrapper"
+    [attr.aria-label]="
+      dialogType() === 'create' ? 'Create filter' : 'Edit filter'
+    "
+    (close)="closeDialog()"
+    (mousedown)="onDialogBackdropClick($event)"
+  >
     <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-6">
         @if (dialogType() === "create") {
@@ -599,24 +557,24 @@
         </button>
       </div>
     </div>
-  </div>
+  </dialog>
 }
 
 <!-- Delete Confirmation Dialog -->
 @if (dialogOpen() && dialogType() === "delete") {
-  <div class="modal-overlay">
-    <button
-      type="button"
-      class="modal-backdrop"
-      aria-label="Close dialog"
-      (click)="closeDialog()"
-    ></button>
+  <dialog
+    #filterDialog
+    class="admin-dialog-wrapper"
+    aria-label="Delete filter"
+    (close)="closeDialog()"
+    (mousedown)="onDialogBackdropClick($event)"
+  >
     <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-4">
         {{ "admin.filters.dialog.delete_title" | transloco }}
       </h2>
 
-      <p class="admin-text-muted mb-4">
+      <p class="text-secondary mb-4">
         {{ "admin.filters.dialog.delete_confirm" | transloco }}
       </p>
 
@@ -624,7 +582,7 @@
         <div class="panel p-4 mb-6">
           <div class="flex flex-col gap-2">
             <div>
-              <span class="admin-text-muted"
+              <span class="text-secondary"
                 >{{ "admin.filters.table.regex" | transloco }}:</span
               >
               <code class="data-table-mono data-table-mono-primary ml-2">{{
@@ -632,7 +590,7 @@
               }}</code>
             </div>
             <div>
-              <span class="admin-text-muted"
+              <span class="text-secondary"
                 >{{ "admin.filters.table.type" | transloco }}:</span
               >
               <span class="badge-base badge-info ml-2">
@@ -661,18 +619,18 @@
         </button>
       </div>
     </div>
-  </div>
+  </dialog>
 }
 
 <!-- Raw JSON Dialog -->
 @if (dialogOpen() && dialogType() === "rawJson") {
-  <div class="modal-overlay">
-    <button
-      type="button"
-      class="modal-backdrop"
-      aria-label="Close dialog"
-      (click)="closeDialog()"
-    ></button>
+  <dialog
+    #filterDialog
+    class="admin-dialog-wrapper"
+    aria-label="Raw JSON"
+    (close)="closeDialog()"
+    (mousedown)="onDialogBackdropClick($event)"
+  >
     <div class="modal-panel modal-panel--xl">
       <div class="flex justify-between items-center mb-4">
         <h2 class="heading-admin-section">
@@ -712,8 +670,5 @@
         </button>
       </div>
     </div>
-  </div>
+  </dialog>
 }
-
-<!-- Toast Notifications -->
-<app-admin-toast-bar [toasts]="toasts()" (dismiss)="dismissToast($event)" />

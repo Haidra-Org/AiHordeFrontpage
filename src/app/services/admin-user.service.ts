@@ -29,13 +29,11 @@ export class AdminUserService {
       headers['apikey'] = apiKey;
     }
 
-    return this.cache
-      .cachedGet<AdminUserDetails>(
-        `${this.baseUrl}/users/${id}`,
-        { headers },
-        { ttl: CacheTTL.SHORT, category: 'admin-users' },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.cache.cachedGet<AdminUserDetails>(
+      `${this.baseUrl}/users/${id}`,
+      { headers },
+      { ttl: CacheTTL.SHORT, category: 'admin-users' },
+    );
   }
 
   /**
@@ -72,10 +70,7 @@ export class AdminUserService {
       .put<PutUserRequest>(`${this.baseUrl}/users/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-users' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-users' })));
   }
 
   /**
@@ -131,13 +126,11 @@ export class AdminUserService {
   public getSharedKey(
     sharedKeyId: string,
   ): Observable<SharedKeyDetails | null> {
-    return this.cache
-      .cachedGet<SharedKeyDetails>(
-        `${this.baseUrl}/sharedkeys/${sharedKeyId}`,
-        {},
-        { ttl: CacheTTL.SHORT, category: 'admin-sharedkeys' },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.cache.cachedGet<SharedKeyDetails>(
+      `${this.baseUrl}/sharedkeys/${sharedKeyId}`,
+      {},
+      { ttl: CacheTTL.SHORT, category: 'admin-sharedkeys' },
+    );
   }
 
   /**

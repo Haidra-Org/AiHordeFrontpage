@@ -236,7 +236,11 @@
   <!-- Main Content -->
   <main class="admin-main" [class.sidebar-open]="isDesktop()">
     <!-- Mobile Header -->
-    <header class="admin-mobile-header" [class.desktop-hidden]="isDesktop()">
+    <header
+      class="admin-mobile-header"
+      [class.desktop-hidden]="isDesktop()"
+      [appStickyHeader]="5"
+    >
       <div class="admin-mobile-header-content">
         <button
           (click)="toggleSidebar()"
@@ -281,4 +285,10 @@
       }
     </div>
   </main>
+
+  <!-- Toast bar at layout level (above sidebar z-40) -->
+  <app-admin-toast-bar
+    [toasts]="toastService.toasts()"
+    (dismiss)="toastService.dismissToast($event)"
+  />
 </div>

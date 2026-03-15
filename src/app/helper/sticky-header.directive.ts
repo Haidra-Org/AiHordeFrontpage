@@ -17,22 +17,35 @@ import { StickyRegistryService } from '../services/sticky-registry.service';
  *
  * The numeric value is the stacking order (lower = higher on screen).
  * Use intervals of 10 for future insertability.
+ *
+ * Pass `null` to opt out of registration while still positioning the
+ * element below all registered sticky headers via `--sticky-offset`.
  */
 @Directive({ selector: '[appStickyHeader]' })
 export class StickyHeaderDirective implements OnInit, OnDestroy {
   private readonly registry = inject(StickyRegistryService);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
-  public readonly appStickyHeader = input.required<number>();
+  public readonly appStickyHeader = input<number | null>(null);
+
+  private registered = false;
 
   ngOnInit(): void {
-    this.registry.register(
-      this.elementRef.nativeElement,
-      this.appStickyHeader(),
-    );
+    const order = this.appStickyHeader();
+    if (order !== null) {
+      this.registry.register(this.elementRef.nativeElement, order);
+      this.registered = true;
+    } else {
+      // Position below all registered sticky elements without contributing
+      this.elementRef.nativeElement.style.top = 'var(--sticky-offset, 0px)';
+    }
   }
 
   ngOnDestroy(): void {
-    this.registry.unregister(this.elementRef.nativeElement);
+    if (this.registered) {
+      this.registry.unregister(this.elementRef.nativeElement);
+    } else {
+      this.elementRef.nativeElement.style.removeProperty('top');
+    }
   }
 }
