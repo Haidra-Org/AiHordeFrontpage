@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   input,
@@ -27,6 +28,11 @@ import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 import { extractApiError } from '../../../helper/extract-api-error';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../../../components/json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 
 @Component({
   selector: 'app-worker-card',
@@ -39,6 +45,8 @@ import { extractApiError } from '../../../helper/extract-api-error';
     UnitTooltipComponent,
     TouchTooltipDirective,
     WorkerStatusIconComponent,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +83,30 @@ export class WorkerCardComponent {
   public showSuccess = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
   public selectedTeamId = signal<string>('');
+  public rawJsonOpen = signal(false);
+
+  public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
+    () => {
+      const worker = this.worker();
+      return [
+        {
+          id: 'worker',
+          label: 'Worker',
+          value: worker,
+        },
+        {
+          id: 'kudos-details',
+          label: 'Kudos Details',
+          value: worker.kudos_details ?? {},
+        },
+        {
+          id: 'models',
+          label: 'Models',
+          value: worker.models ?? [],
+        },
+      ];
+    },
+  );
 
   /**
    * Check if the current user is a moderator
@@ -301,6 +333,14 @@ export class WorkerCardComponent {
    */
   public onClearHighlight(): void {
     this.clearHighlight.emit();
+  }
+
+  public openRawJson(): void {
+    this.rawJsonOpen.set(true);
+  }
+
+  public closeRawJson(): void {
+    this.rawJsonOpen.set(false);
   }
 
   public formatUptime(seconds: number): string {

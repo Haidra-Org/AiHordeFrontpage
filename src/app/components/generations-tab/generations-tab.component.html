@@ -371,6 +371,10 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              <app-json-inspector-trigger
+                label="View generation raw JSON"
+                (triggered)="openGenerationJson(gen)"
+              />
               @if (gen.notFound) {
                 <button
                   type="button"
@@ -669,6 +673,10 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              <app-json-inspector-trigger
+                label="View generation raw JSON"
+                (triggered)="openGenerationJson(gen)"
+              />
               @if (gen.notFound) {
                 <button
                   type="button"
@@ -838,6 +846,10 @@
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
+              <app-json-inspector-trigger
+                label="View generation raw JSON"
+                (triggered)="openGenerationJson(gen)"
+              />
               @if (gen.notFound) {
                 <button
                   type="button"
@@ -904,3 +916,11 @@
     </div>
   }
 </div>
+
+<app-json-inspector
+  [open]="rawJsonOpen()"
+  title="Generation Raw JSON"
+  [sections]="rawJsonSections()"
+  [downloadFilePrefix]="generationDownloadPrefix()"
+  (closed)="closeGenerationJson()"
+/>

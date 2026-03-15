@@ -26,61 +26,13 @@
   }
 </app-admin-dialog>
 
-<!-- Raw JSON Modal - Native dialog escapes admin-content stacking context -->
-@defer (when rawJsonModalOpen()) {
-  @if (rawJsonModalOpen()) {
-    <dialog
-      #rawJsonDialog
-      class="admin-dialog-wrapper"
-      aria-label="Raw JSON"
-      (close)="closeRawJsonModal()"
-      (mousedown)="onDialogBackdropClick($event)"
-    >
-      <div class="modal-panel modal-panel--lg json-dialog">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="heading-admin-card">Raw JSON</h3>
-          <button class="btn-muted text-sm" (click)="closeRawJsonModal()">
-            Close
-          </button>
-        </div>
-        <div class="json-grid">
-          <div class="json-section">
-            <div class="json-section-title admin-text-light">User</div>
-            <pre
-              class="json-block"
-              aria-label="User JSON"
-              [innerHTML]="userJsonHighlighted()"
-            ></pre>
-          </div>
-          <div class="json-section">
-            <div class="json-section-title admin-text-light">Workers</div>
-            <pre
-              class="json-block"
-              aria-label="Workers JSON"
-              [innerHTML]="workersJsonHighlighted()"
-            ></pre>
-          </div>
-          <div class="json-section">
-            <div class="json-section-title admin-text-light">Shared Keys</div>
-            <pre
-              class="json-block"
-              aria-label="Shared Keys JSON"
-              [innerHTML]="sharedKeysJsonHighlighted()"
-            ></pre>
-          </div>
-          <div class="json-section">
-            <div class="json-section-title admin-text-light">Styles</div>
-            <pre
-              class="json-block"
-              aria-label="Styles JSON"
-              [innerHTML]="stylesJsonHighlighted()"
-            ></pre>
-          </div>
-        </div>
-      </div>
-    </dialog>
-  }
-}
+<app-json-inspector
+  [open]="rawJsonModalOpen()"
+  title="Raw JSON"
+  [sections]="rawJsonSections()"
+  [downloadFilePrefix]="'admin-user-' + (selectedUser()?.id ?? 'unknown')"
+  (closed)="closeRawJsonModal()"
+/>
 
 <div class="admin-container">
   <!-- Header -->
@@ -328,13 +280,10 @@
               }}</span>
             }
           </h2>
-          <button
-            class="btn-muted text-sm"
-            type="button"
-            (click)="openRawJsonModal()"
-          >
-            Raw JSON
-          </button>
+          <app-json-inspector-trigger
+            label="View raw JSON"
+            (triggered)="openRawJsonModal()"
+          />
         </div>
 
         <!-- Quick Stats Grid -->

@@ -183,19 +183,35 @@
   </p>
 </app-admin-dialog>
 
+<app-json-inspector
+  [open]="rawJsonOpen()"
+  title="Profile Raw JSON"
+  [sections]="rawJsonSections()"
+  [downloadFilePrefix]="'profile-' + (auth.currentUser()?.id ?? 'user')"
+  (closed)="closeRawJson()"
+/>
+
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
-      <h1 class="heading-hero">
+      <div class="flex items-center justify-center gap-2">
+        <h1 class="heading-hero">
+          @if (auth.isLoggedIn()) {
+            {{
+              "profile.welcome"
+                | transloco: { username: auth.currentUser()!.username }
+            }}
+          } @else {
+            {{ "profile.login_title" | transloco }}
+          }
+        </h1>
         @if (auth.isLoggedIn()) {
-          {{
-            "profile.welcome"
-              | transloco: { username: auth.currentUser()!.username }
-          }}
-        } @else {
-          {{ "profile.login_title" | transloco }}
+          <app-json-inspector-trigger
+            label="View profile raw JSON"
+            (triggered)="openRawJson()"
+          />
         }
-      </h1>
+      </div>
     </div>
   </div>
 </section>

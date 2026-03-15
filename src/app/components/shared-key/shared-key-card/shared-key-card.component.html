@@ -75,6 +75,10 @@
       <code class="shared-key-id-value" [attr.title]="sharedKey().id">{{
         sharedKey().id
       }}</code>
+      <app-json-inspector-trigger
+        label="View shared key raw JSON"
+        (triggered)="openRawJson()"
+      />
       <button
         type="button"
         class="shared-key-copy-btn"
@@ -228,4 +232,12 @@
       </div>
     }
   </div>
+
+  <app-json-inspector
+    [open]="rawJsonOpen()"
+    title="Shared Key Raw JSON"
+    [sections]="rawJsonSections()"
+    [downloadFilePrefix]="'shared-key-' + sharedKey().id"
+    (closed)="closeRawJson()"
+  />
 </div>

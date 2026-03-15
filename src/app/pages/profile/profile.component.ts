@@ -48,6 +48,11 @@ import { UserBadgesComponent } from '../../components/user-badges/user-badges.co
 import { UserStatsSummaryComponent } from '../../components/user-stats-summary/user-stats-summary.component';
 import { UserKudosCardComponent } from '../../components/user-kudos-card/user-kudos-card.component';
 import { UserRecordsPanelComponent } from '../../components/user-records-panel/user-records-panel.component';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../../components/json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../../components/json-inspector-trigger/json-inspector-trigger.component';
 
 type ProfileTab =
   | 'profile'
@@ -92,6 +97,8 @@ const CONTACT_NAG_DISMISSED_STORAGE_KEY = 'profile_contact_nag_dismissed';
     UserStatsSummaryComponent,
     UserKudosCardComponent,
     UserRecordsPanelComponent,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',
@@ -114,6 +121,37 @@ export class ProfileComponent implements OnInit {
   private readonly workerRequestConcurrency = 3;
 
   public loginError = signal<boolean>(false);
+  public rawJsonOpen = signal(false);
+
+  public rawJsonSections = computed<readonly JsonInspectorSection[]>(() => {
+    const user = this.auth.currentUser();
+    if (!user) {
+      return [];
+    }
+
+    return [
+      {
+        id: 'user',
+        label: 'User',
+        value: user,
+      },
+      {
+        id: 'kudos-details',
+        label: 'Kudos Details',
+        value: user.kudos_details ?? {},
+      },
+      {
+        id: 'records',
+        label: 'Records',
+        value: user.records ?? {},
+      },
+      {
+        id: 'active-generations',
+        label: 'Active Generations',
+        value: user.active_generations ?? {},
+      },
+    ];
+  });
 
   constructor() {
     // When user data arrives after the route param already set the tab,
@@ -547,6 +585,14 @@ export class ProfileComponent implements OnInit {
     ) {
       this.loadAllTeams();
     }
+  }
+
+  public openRawJson(): void {
+    this.rawJsonOpen.set(true);
+  }
+
+  public closeRawJson(): void {
+    this.rawJsonOpen.set(false);
   }
 
   private loadUserWorkers(): void {

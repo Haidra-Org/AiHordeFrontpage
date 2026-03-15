@@ -4,15 +4,27 @@ import {
   computed,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { Style, isImageStyle, StyleType } from '../../../types/style';
+import {
+  JsonInspectorComponent,
+  JsonInspectorSection,
+} from '../../json-inspector/json-inspector.component';
+import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
 
 @Component({
   selector: 'app-style-card',
-  imports: [RouterLink, TranslocoPipe, FormatNumberPipe],
+  imports: [
+    RouterLink,
+    TranslocoPipe,
+    FormatNumberPipe,
+    JsonInspectorComponent,
+    JsonInspectorTriggerComponent,
+  ],
   templateUrl: './style-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -40,6 +52,26 @@ export class StyleCardComponent {
 
   /** Emits when highlight should be cleared. */
   public readonly clearHighlight = output<void>();
+
+  public readonly rawJsonOpen = signal(false);
+
+  public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
+    () => {
+      const style = this.style();
+      return [
+        {
+          id: 'style',
+          label: 'Style',
+          value: style,
+        },
+        {
+          id: 'params',
+          label: 'Params',
+          value: style.params ?? {},
+        },
+      ];
+    },
+  );
 
   /** Check if this is an image style. */
   public readonly isImage = computed(() => this.styleType() === 'image');
@@ -123,5 +155,13 @@ export class StyleCardComponent {
     event.preventDefault();
     event.stopPropagation();
     this.clearHighlight.emit();
+  }
+
+  public onOpenRawJson(): void {
+    this.rawJsonOpen.set(true);
+  }
+
+  public onCloseRawJson(): void {
+    this.rawJsonOpen.set(false);
   }
 }
