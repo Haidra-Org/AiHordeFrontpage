@@ -376,7 +376,7 @@ export class GlossaryModalComponent {
     this.searchQuery.set('');
   }
 
-  /** Sanitize icon SVGs generated from our own code for innerHTML rendering */
+  /** Sanitize icon SVGs generated from our own hardcoded templates (worker-icons.ts) */
   public trustIconSvg(svg: string): SafeHtml {
     let cached = this.iconCache.get(svg);
     if (!cached) {

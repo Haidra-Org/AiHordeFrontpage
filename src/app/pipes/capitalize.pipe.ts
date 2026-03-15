@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { inject, Pipe, PipeTransform } from '@angular/core';
 import { EnumDisplayService } from '../services/enum-display.service';
 
 /**
@@ -30,7 +30,7 @@ import { EnumDisplayService } from '../services/enum-display.service';
   standalone: true,
 })
 export class CapitalizePipe implements PipeTransform {
-  constructor(private enumDisplayService: EnumDisplayService) {}
+  private readonly enumDisplayService = inject(EnumDisplayService);
 
   /**
    * Transform string by capitalizing the first letter only

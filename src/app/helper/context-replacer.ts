@@ -10,10 +10,10 @@ export function replaceContext<
       if (typeof copy[target] !== 'string') {
         continue;
       }
-      copy[target] = (<string>copy[target]).replaceAll(
+      copy[target] = (copy[target] as string).replaceAll(
         `{${key}}`,
-        context[<keyof typeof context>key] as string,
-      ) as any;
+        context[key as keyof typeof context] as string,
+      ) as TSource[TKey];
     }
   }
 

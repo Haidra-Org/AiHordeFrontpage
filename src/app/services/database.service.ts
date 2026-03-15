@@ -10,13 +10,13 @@ export enum StorageType {
   providedIn: 'root',
 })
 export class DatabaseService {
-  private values: { [key: string]: any } = {};
+  private values: Record<string, unknown> = {};
 
-  public store(key: string, value: any): void;
-  public store(key: string, value: any, storageType: StorageType): void;
+  public store(key: string, value: unknown): void;
+  public store(key: string, value: unknown, storageType: StorageType): void;
   public store(
     key: string,
-    value: any,
+    value: unknown,
     storageType: StorageType = StorageType.Permanent,
   ): void {
     if (typeof window === 'undefined') {
@@ -36,18 +36,18 @@ export class DatabaseService {
     }
   }
 
-  public get(key: string): any;
+  public get(key: string): unknown;
   public get<T>(
     key: string,
     defaultValue: T extends StorageType ? never : T,
   ): T;
-  public get(key: string, storageType: StorageType): any;
+  public get(key: string, storageType: StorageType): unknown;
   public get<T>(key: string, defaultValue: T, storageType: StorageType): T;
   public get<T>(
     key: string,
     defaultValueOrStorageType?: T | StorageType,
     storageType?: StorageType,
-  ): any {
+  ): unknown {
     const hasDefault: boolean =
       typeof defaultValueOrStorageType !== 'undefined' &&
       (typeof defaultValueOrStorageType !== 'number' ||
@@ -68,7 +68,7 @@ export class DatabaseService {
     }
 
     const defaultValue: T | null = hasDefault
-      ? <T>defaultValueOrStorageType
+      ? defaultValueOrStorageType as T
       : null;
 
     let value: T | null;
@@ -87,20 +87,20 @@ export class DatabaseService {
     return value;
   }
 
-  private storeEphemeral(key: string, value: any): void {
+  private storeEphemeral(key: string, value: unknown): void {
     this.values[key] = value;
   }
 
-  private storeSession(key: string, value: any): void {
+  private storeSession(key: string, value: unknown): void {
     sessionStorage.setItem(key, JSON.stringify(value));
   }
 
-  private storePermanent(key: string, value: any): void {
+  private storePermanent(key: string, value: unknown): void {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
   private getEphemeral<T>(key: string): T | null {
-    return this.values[key] ?? null;
+    return (this.values[key] as T) ?? null;
   }
 
   private getSession<T>(key: string): T | null {

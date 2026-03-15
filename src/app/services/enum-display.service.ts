@@ -537,7 +537,7 @@ export class EnumDisplayService {
    * @note For simple truncation without ellipsis, Angular's SlicePipe can be used: {{ value | slice:0:maxLength }}
    * This method adds ellipsis, which SlicePipe doesn't provide.
    */
-  truncate(str: string, maxLength: number, ellipsis: string = '...'): string {
+  truncate(str: string, maxLength: number, ellipsis = '...'): string {
     if (!str || str.length <= maxLength) return str;
     return str.substring(0, maxLength - ellipsis.length) + ellipsis;
   }

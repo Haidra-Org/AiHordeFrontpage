@@ -116,4 +116,11 @@ export const routes: Routes = [
         (c) => c.TransferComponent,
       ),
   },
+  {
+    path: '**',
+    loadComponent: () =>
+      import('./not-found/not-found.component').then(
+        (c) => c.NotFoundComponent,
+      ),
+  },
 ];

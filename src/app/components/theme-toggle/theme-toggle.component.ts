@@ -1,8 +1,8 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   signal,
   inject,
-  HostListener,
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
@@ -26,6 +26,10 @@ import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
   imports: [CommonModule, InlineSvgComponent],
   templateUrl: './theme-toggle.component.html',
   styleUrl: './theme-toggle.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
 export class ThemeToggleComponent {
   public readonly themeService = inject(ThemeService);
@@ -39,7 +43,6 @@ export class ThemeToggleComponent {
   /**
    * Close dropdown when clicking outside
    */
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     if (isPlatformBrowser(this.platformId) && this.isOpen()) {
       this.closeDropdown();

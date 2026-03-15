@@ -2,10 +2,8 @@ export interface PrivacyPolicyItem {
   text: string;
   section: string;
   subsection: string | null;
-  context?: {
-    [key: string]: {
+  context?: Record<string, {
       valueType: 'date';
       value: string;
-    };
-  };
+    }>;
 }

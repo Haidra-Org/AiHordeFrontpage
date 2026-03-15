@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   afterNextRender,
@@ -27,6 +28,7 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
   ],
   templateUrl: './homepage-latest-news.component.html',
   styleUrl: './homepage-latest-news.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageLatestNewsComponent {
   private readonly aiHorde = inject(AiHordeService);

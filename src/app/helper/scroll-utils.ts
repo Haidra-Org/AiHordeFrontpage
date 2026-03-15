@@ -58,7 +58,7 @@ export function scrollToElementCentered(
 export function scrollToAnchorWhenReady(
   anchorId: string,
   doc: Document,
-  maxWaitMs: number = 3000,
+  maxWaitMs = 3000,
 ): void {
   // Fast-path: element already in the DOM (same-page fragment)
   const existing = doc.getElementById(anchorId);

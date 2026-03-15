@@ -319,7 +319,7 @@ export class WorkerCardComponent {
     return `${minutes}m`;
   }
 
-  public truncateName(name: string, length: number = 30): string {
+  public truncateName(name: string, length = 30): string {
     return name.length > length ? name.substring(0, length) + '...' : name;
   }
 

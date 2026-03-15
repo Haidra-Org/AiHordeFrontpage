@@ -1,12 +1,14 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   inject,
   OnInit,
   OnDestroy,
-  HostListener,
   Renderer2,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   NavigationEnd,
   Router,
@@ -46,6 +48,12 @@ import { filter } from 'rxjs/operators';
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(window:resize)': 'onWindowResize()',
+    '(document:keydown.escape)': 'onEscapeKey()',
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
 export class AppComponent implements OnInit, OnDestroy {
   private readonly footerColor = inject(FooterColorService);
@@ -59,6 +67,7 @@ export class AppComponent implements OnInit, OnDestroy {
   public readonly navNotifications = inject(NavNotificationService);
   // Inject to trigger initialization (watches network status)
   private readonly _needWorkersNotifier = inject(NeedWorkersNotifierService);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Reactive signal for footer dark mode
   public darkFooter = this.footerColor.dark;
@@ -100,7 +109,10 @@ export class AppComponent implements OnInit, OnDestroy {
     // Relies on CSS scroll-padding-top (on <html>) and scroll-margin-top
     // (on anchor targets) instead of manual offset math.
     this.router.events
-      .pipe(filter((e): e is Scroll => e instanceof Scroll))
+      .pipe(
+        filter((e): e is Scroll => e instanceof Scroll),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((e) => {
         if (e.anchor) {
           scrollToAnchorWhenReady(e.anchor, this.document);
@@ -109,7 +121,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Track route changes to highlight dropdown triggers
     this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe((e) => {
         this.isContributeRouteActive =
           e.urlAfterRedirects.startsWith('/contribute');
@@ -118,10 +133,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     if (typeof window !== 'undefined') {
       this.loadGitHubButtonsScript();
-      const prefersDark = window.matchMedia(
-        '(prefers-color-scheme: dark)',
-      ).matches;
-      // Note: This doesn't change footer, just demonstrates detection
+      // Note: prefers-color-scheme detection available via window.matchMedia
       // Footer dark mode is controlled by individual pages
     }
   }
@@ -153,7 +165,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('window:resize')
   onWindowResize(): void {
     // Close mobile menu on desktop breakpoint
     if (window.innerWidth >= 1024 && this.showMobileMenu) {
@@ -161,7 +172,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     if (this.showMobileMenu) {
       this.closeMobileMenu();
@@ -177,7 +187,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     // Close dropdowns when clicking outside
     const target = event.target as HTMLElement;

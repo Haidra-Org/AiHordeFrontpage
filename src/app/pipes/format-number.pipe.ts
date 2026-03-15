@@ -1,4 +1,4 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { inject, Pipe, PipeTransform } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 
 @Pipe({
@@ -6,9 +6,9 @@ import { TranslocoService } from '@jsverse/transloco';
   standalone: true,
 })
 export class FormatNumberPipe implements PipeTransform {
-  constructor(private readonly transloco: TranslocoService) {}
+  private readonly transloco = inject(TranslocoService);
 
-  public transform(value: number, decimals: number = 0): string {
+  public transform(value: number, decimals = 0): string {
     return new Intl.NumberFormat(this.transloco.getActiveLang(), {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,

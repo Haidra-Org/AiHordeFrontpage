@@ -59,12 +59,12 @@ type ProfileTab =
   | 'shared-keys'
   | 'settings';
 
-type WorkerListItem = {
+interface WorkerListItem {
   id: string;
   loading: boolean;
   failed: boolean;
   worker: HordeWorker | null;
-};
+}
 
 const CONTACT_NAG_DISMISSED_STORAGE_KEY = 'profile_contact_nag_dismissed';
 

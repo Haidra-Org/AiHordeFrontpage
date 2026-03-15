@@ -1,10 +1,11 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-tool-card',
   standalone: true,
   templateUrl: './tool-card.component.html',
   styleUrl: './tool-card.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToolCardComponent {
   public name = input.required<string>();

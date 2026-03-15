@@ -1,6 +1,4 @@
-export interface SinglePeriodTextModelStats {
-  [modelName: string]: number;
-}
+export type SinglePeriodTextModelStats = Record<string, number>;
 
 export interface TextModelStats {
   day: SinglePeriodTextModelStats;

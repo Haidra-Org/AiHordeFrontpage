@@ -137,7 +137,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   public readonly confirmPayloadEntries = computed(() => {
     const p = this.pendingPayload();
     if (!p) return [];
-    const entries: Array<{ key: string; value: string }> = [];
+    const entries: { key: string; value: string }[] = [];
     for (const [key, value] of Object.entries(p.payload)) {
       if (value === undefined) continue;
       if (key === 'params' && typeof value === 'object' && value !== null) {

@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import {
   HttpErrorResponse,
+  HttpEvent,
   HttpInterceptorFn,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -56,7 +57,7 @@ export const rateLimitInterceptor: HttpInterceptorFn = (req, next) => {
 
   const state = inject(RateLimitState);
 
-  const attempt = (remaining: number): Observable<any> =>
+  const attempt = (remaining: number): Observable<HttpEvent<unknown>> =>
     next(req).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status !== 429 || remaining <= 0) {

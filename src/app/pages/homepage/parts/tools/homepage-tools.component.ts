@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { TranslocoModule } from '@jsverse/transloco';
 import { ToolCardComponent } from '../../../../components/tool-card/tool-card.component';
 import { DataService } from '../../../../services/data.service';
@@ -12,6 +12,7 @@ import { NoSorterKeyValue } from '../../../../types/no-sorter-key-value';
   imports: [TranslocoModule, ToolCardComponent, KeyValuePipe],
   templateUrl: './homepage-tools.component.html',
   styleUrl: './homepage-tools.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageToolsComponent {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;

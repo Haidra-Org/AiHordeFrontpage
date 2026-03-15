@@ -1,6 +1,6 @@
-import { Component, input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
-import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-gui-card',
@@ -9,6 +9,7 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
   templateUrl: './gui-card.component.html',
   styleUrl: './gui-card.component.css',
   encapsulation: ViewEncapsulation.Emulated,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GuiCardComponent {
   public name = input.required<string>();

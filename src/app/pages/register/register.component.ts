@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-register',
@@ -6,5 +6,6 @@ import { Component } from '@angular/core';
   imports: [],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterComponent {}

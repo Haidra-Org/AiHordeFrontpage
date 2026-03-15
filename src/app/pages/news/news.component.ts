@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
@@ -22,6 +23,7 @@ import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
   imports: [TranslocoPipe, TranslocoModule, MarkdownPipe, StripWrapperTagPipe],
   templateUrl: './news.component.html',
   styleUrl: './news.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NewsComponent implements OnInit {
   private readonly aiHorde = inject(AiHordeService);

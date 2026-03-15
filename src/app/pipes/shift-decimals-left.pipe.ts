@@ -5,7 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true,
 })
 export class ShiftDecimalsLeftPipe implements PipeTransform {
-  transform(value: number, keep: number = 1): number {
+  transform(value: number, keep = 1): number {
     while (String(value).split('.')[0].length > 3 * keep) {
       value /= 1_000;
     }
