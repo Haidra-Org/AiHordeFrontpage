@@ -12,7 +12,6 @@ import { OnChange, OnTouched } from '../../types/value-accessor';
 
 @Component({
   selector: 'app-toggle-checkbox',
-  standalone: true,
   imports: [TranslocoPipe],
   templateUrl: './toggle-checkbox.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

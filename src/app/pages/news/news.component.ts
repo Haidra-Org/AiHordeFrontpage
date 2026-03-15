@@ -19,7 +19,6 @@ import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
 
 @Component({
   selector: 'app-news',
-  standalone: true,
   imports: [TranslocoPipe, TranslocoModule, MarkdownPipe, StripWrapperTagPipe],
   templateUrl: './news.component.html',
   styleUrl: './news.component.css',

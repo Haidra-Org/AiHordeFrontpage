@@ -6,7 +6,6 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
 
 @Component({
   selector: 'app-homepage-sponsors',
-  standalone: true,
   imports: [
     InlineSvgComponent,
     RouterLink,

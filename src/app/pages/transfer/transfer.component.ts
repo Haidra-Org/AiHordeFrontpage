@@ -32,7 +32,6 @@ import { SharedKeyService } from '../../services/shared-key.service';
 
 @Component({
   selector: 'app-transfer',
-  standalone: true,
   imports: [
     TranslocoPipe,
     TranslocoModule,

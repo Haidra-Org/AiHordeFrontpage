@@ -5,7 +5,6 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
 
 @Component({
   selector: 'app-homepage-guis',
-  standalone: true,
   imports: [TranslocoModule, BeginnerHeaderComponent, ScrollRevealDirective],
   templateUrl: './homepage-guis.component.html',
   styleUrl: './homepage-guis.component.css',

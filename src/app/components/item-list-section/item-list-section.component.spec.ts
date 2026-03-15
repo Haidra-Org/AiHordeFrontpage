@@ -239,9 +239,7 @@ describe('ItemListSectionComponent - Data Structure Validation', () => {
 
       // Should use array of domains, not a "BOTH" value
       expect(Array.isArray(multiDomainItem.domain)).toBe(true);
-      expect(multiDomainItem.domain).not.toContain(
-        'both' as unknown as Domain,
-      );
+      expect(multiDomainItem.domain).not.toContain('both' as unknown as Domain);
     });
 
     it('should not use "DESKTOP" platform value (removed in refactoring)', () => {

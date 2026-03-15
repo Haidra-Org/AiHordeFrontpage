@@ -16,7 +16,6 @@ import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
-  standalone: true,
   imports: [TranslocoPipe, TranslocoModule, RouterLink, FormatNumberPipe],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

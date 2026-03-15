@@ -27,7 +27,6 @@ import { EnumDisplayService } from '../services/enum-display.service';
  */
 @Pipe({
   name: 'capitalize',
-  standalone: true,
 })
 export class CapitalizePipe implements PipeTransform {
   private readonly enumDisplayService = inject(EnumDisplayService);

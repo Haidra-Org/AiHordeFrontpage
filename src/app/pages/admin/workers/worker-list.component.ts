@@ -49,7 +49,6 @@ type SortOrder = 'asc' | 'desc';
 
 @Component({
   selector: 'app-worker-list',
-  standalone: true,
   imports: [
     TranslocoPipe,
     TranslocoModule,

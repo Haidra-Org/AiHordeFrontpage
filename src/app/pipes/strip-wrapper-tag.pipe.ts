@@ -2,7 +2,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'stripWrapperTag',
-  standalone: true,
 })
 export class StripWrapperTagPipe implements PipeTransform {
   transform(value: string): string {

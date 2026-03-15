@@ -52,7 +52,6 @@ const MAX_HISTORY_SIZE = 30;
 
 @Component({
   selector: 'app-user-management',
-  standalone: true,
   imports: [
     TranslocoPipe,
     TranslocoModule,

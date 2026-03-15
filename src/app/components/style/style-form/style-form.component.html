@@ -541,7 +541,9 @@
 
             <div
               class="form-field form-field-quarter"
-              [class.form-field--unset]="form.controls['rep_pen'].value === null"
+              [class.form-field--unset]="
+                form.controls['rep_pen'].value === null
+              "
             >
               <label for="style-rep-pen" class="form-label">
                 {{ "styles.form.rep_pen" | transloco }}

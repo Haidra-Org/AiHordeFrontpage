@@ -43,7 +43,6 @@ export type EnumCategory =
  */
 @Pipe({
   name: 'enumDisplay',
-  standalone: true,
 })
 export class EnumDisplayPipe implements PipeTransform {
   private readonly enumDisplayService = inject(EnumDisplayService);

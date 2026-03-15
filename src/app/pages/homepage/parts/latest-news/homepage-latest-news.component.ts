@@ -17,7 +17,6 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
 
 @Component({
   selector: 'app-homepage-latest-news',
-  standalone: true,
   imports: [
     RouterLink,
     TranslocoPipe,

@@ -9,7 +9,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-gui-card',
-  standalone: true,
   imports: [NgOptimizedImage, TranslocoPipe],
   templateUrl: './gui-card.component.html',
   styleUrl: './gui-card.component.css',

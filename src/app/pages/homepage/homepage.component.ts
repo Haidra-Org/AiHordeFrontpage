@@ -23,7 +23,6 @@ import { FooterColorService } from '../../services/footer-color.service';
 
 @Component({
   selector: 'app-homepage',
-  standalone: true,
   imports: [
     HomepageIntroComponent,
     HomepageSponsorsComponent,

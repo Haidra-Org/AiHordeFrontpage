@@ -11,7 +11,7 @@ import {
   viewChild,
   PLATFORM_ID,
 } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser, NgStyle } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { SynthesizedUnit } from '../../services/unit-conversion.service';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
@@ -97,7 +97,7 @@ let nextTooltipId = 0;
  */
 @Component({
   selector: 'app-unit-tooltip',
-  imports: [TranslocoPipe, NgStyle],
+  imports: [TranslocoPipe],
   template: `
     @if (unit()) {
       <span
@@ -121,7 +121,15 @@ let nextTooltipId = 0;
           role="tooltip"
           popover="manual"
           [id]="tooltipId"
-          [ngStyle]="tooltipStyles()"
+          [style.position]="tooltipStyles().position"
+          [style.top]="tooltipStyles().top"
+          [style.bottom]="tooltipStyles().bottom"
+          [style.left]="tooltipStyles().left"
+          [style.right]="tooltipStyles().right"
+          [style.transform]="tooltipStyles().transform"
+          [style.visibility]="tooltipStyles().visibility"
+          [style.opacity]="tooltipStyles().opacity"
+          [style.pointerEvents]="tooltipStyles().pointerEvents"
           (mouseenter)="cancelHide()"
           (mouseleave)="scheduleHide()"
         >

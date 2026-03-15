@@ -2,7 +2,6 @@ import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'shiftDecimalsLeft',
-  standalone: true,
 })
 export class ShiftDecimalsLeftPipe implements PipeTransform {
   transform(value: number, keep = 1): number {
