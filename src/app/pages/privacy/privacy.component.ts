@@ -17,7 +17,6 @@ import { AiHordeService } from '../../services/ai-horde.service';
 
 @Component({
   selector: 'app-privacy',
-  standalone: true,
   templateUrl: './privacy.component.html',
   styleUrl: './privacy.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -30,12 +30,7 @@ import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
 import { AuthService } from '../../../services/auth.service';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
-import {
-  ImageStyle,
-  TextStyle,
-  Style,
-  StyleType,
-} from '../../../types/style';
+import { ImageStyle, TextStyle, Style, StyleType } from '../../../types/style';
 import { StyleCollection } from '../../../types/style-collection';
 import {
   StyleQueryParams,

@@ -22,7 +22,6 @@ import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
  */
 @Component({
   selector: 'app-theme-toggle, theme-toggle',
-  standalone: true,
   imports: [CommonModule, InlineSvgComponent],
   templateUrl: './theme-toggle.component.html',
   styleUrl: './theme-toggle.component.css',

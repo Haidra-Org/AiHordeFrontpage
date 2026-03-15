@@ -3,7 +3,6 @@ import { TranslocoService } from '@jsverse/transloco';
 
 @Pipe({
   name: 'formatNumber',
-  standalone: true,
 })
 export class FormatNumberPipe implements PipeTransform {
   private readonly transloco = inject(TranslocoService);

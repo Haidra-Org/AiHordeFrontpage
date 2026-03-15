@@ -11,7 +11,6 @@ import { AiHordeService } from '../../services/ai-horde.service';
 
 @Component({
   selector: 'app-terms',
-  standalone: true,
   imports: [],
   templateUrl: './terms.component.html',
   styleUrl: './terms.component.css',

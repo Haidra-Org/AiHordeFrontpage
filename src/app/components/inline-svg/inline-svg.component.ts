@@ -12,7 +12,6 @@ import { toPromise } from '../../types/resolvable';
 
 @Component({
   selector: 'app-inline-svg, inline-svg',
-  standalone: true,
   imports: [],
   templateUrl: './inline-svg.component.html',
   styleUrl: './inline-svg.component.css',

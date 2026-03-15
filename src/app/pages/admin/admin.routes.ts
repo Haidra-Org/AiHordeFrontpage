@@ -1,8 +1,5 @@
 import { Routes } from '@angular/router';
-import {
-  moderatorGuard,
-  unsavedChangesGuard,
-} from '../../guards/admin.guard';
+import { moderatorGuard, unsavedChangesGuard } from '../../guards/admin.guard';
 
 export const adminRoutes: Routes = [
   {

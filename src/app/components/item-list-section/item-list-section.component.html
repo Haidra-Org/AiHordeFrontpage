@@ -50,11 +50,11 @@
               <div
                 class="tools-grid-card-header"
                 (click)="toggleRow(item.name)"
-                  (keydown.enter)="toggleRow(item.name)"
-                  (keydown.space)="toggleRow(item.name)"
-                  tabindex="0"
-                  role="button"
-                  [attr.aria-expanded]="isExpanded(item.name)"
+                (keydown.enter)="toggleRow(item.name)"
+                (keydown.space)="toggleRow(item.name)"
+                tabindex="0"
+                role="button"
+                [attr.aria-expanded]="isExpanded(item.name)"
               >
                 <div class="tools-grid-card-content">
                   <h3 class="tools-grid-card-title">

@@ -162,7 +162,8 @@ export class PageIntroComponent {
   private readonly glossary = inject(GlossaryService);
   private readonly stickyRegistry = inject(StickyRegistryService);
   private readonly guideService = inject(PageGuideService);
-  private readonly bodyContent = viewChild<ElementRef<HTMLElement>>('bodyContent');
+  private readonly bodyContent =
+    viewChild<ElementRef<HTMLElement>>('bodyContent');
 
   /** Page key — drives localStorage key and i18n key prefix */
   public readonly pageKey = input.required<string>();

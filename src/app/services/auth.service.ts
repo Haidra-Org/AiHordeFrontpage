@@ -1,13 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import {
-  Observable,
-  of,
-  catchError,
-  map,
-  tap,
-  switchMap,
-} from 'rxjs';
+import { Observable, of, catchError, map, tap, switchMap } from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { ActiveGenerations, HordeUser } from '../types/horde-user';

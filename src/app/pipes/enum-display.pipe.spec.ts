@@ -243,13 +243,15 @@ describe('EnumDisplayPipe', () => {
 
   describe('Edge cases', () => {
     it('should return empty string for null value', () => {
-      expect(pipe.transform(null as unknown as string, 'category', 'label')).toBe('');
+      expect(
+        pipe.transform(null as unknown as string, 'category', 'label'),
+      ).toBe('');
     });
 
     it('should return empty string for undefined value', () => {
-      expect(pipe.transform(undefined as unknown as string, 'category', 'label')).toBe(
-        '',
-      );
+      expect(
+        pipe.transform(undefined as unknown as string, 'category', 'label'),
+      ).toBe('');
     });
 
     it('should return empty string for empty string value', () => {

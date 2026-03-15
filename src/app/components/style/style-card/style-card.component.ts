@@ -8,11 +8,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
-import {
-  Style,
-  isImageStyle,
-  StyleType,
-} from '../../../types/style';
+import { Style, isImageStyle, StyleType } from '../../../types/style';
 
 @Component({
   selector: 'app-style-card',

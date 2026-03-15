@@ -3,7 +3,6 @@ import { TranslocoService } from '@jsverse/transloco';
 
 @Pipe({
   name: 'siPrefix',
-  standalone: true,
 })
 export class SiPrefixPipe implements PipeTransform {
   private readonly translator = inject(TranslocoService);

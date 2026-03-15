@@ -8,7 +8,6 @@ import { NoSorterKeyValue } from '../../../../types/no-sorter-key-value';
 
 @Component({
   selector: 'app-homepage-tools',
-  standalone: true,
   imports: [TranslocoModule, ToolCardComponent, KeyValuePipe],
   templateUrl: './homepage-tools.component.html',
   styleUrl: './homepage-tools.component.css',

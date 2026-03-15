@@ -233,11 +233,7 @@
                 {{ "profile.no_auth_warning" | transloco }}
               </p>
 
-              <form
-                class="stack-md"
-                [formGroup]="form"
-                (ngSubmit)="login()"
-              >
+              <form class="stack-md" [formGroup]="form" (ngSubmit)="login()">
                 <div class="form-field">
                   <label class="form-label" for="profile-api-key">{{
                     "profile.api_key" | transloco
@@ -1082,7 +1078,9 @@
                           (keydown.space)="toggleWorkerTypeSection(group.type)"
                           tabindex="0"
                           role="button"
-                          [attr.aria-expanded]="!isWorkerTypeCollapsed(group.type)"
+                          [attr.aria-expanded]="
+                            !isWorkerTypeCollapsed(group.type)
+                          "
                         >
                           <span class="section-header-title-wrapper">
                             {{
