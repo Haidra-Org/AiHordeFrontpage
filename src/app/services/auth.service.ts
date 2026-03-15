@@ -1,5 +1,4 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   Observable,
@@ -8,7 +7,6 @@ import {
   map,
   tap,
   switchMap,
-  BehaviorSubject,
 } from 'rxjs';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';

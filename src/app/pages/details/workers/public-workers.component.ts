@@ -5,12 +5,11 @@ import {
   DestroyRef,
   inject,
   OnInit,
-  signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { combineLatest, map } from 'rxjs';
+import { combineLatest } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { WorkerListComponent } from '../../admin/workers/worker-list.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';

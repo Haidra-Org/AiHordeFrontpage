@@ -8,7 +8,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../pipes/format-number.pipe';
 import { InfoTooltipComponent } from '../info-tooltip/info-tooltip.component';
 import {
-  HordeUser,
   UsageDetails,
   ContributionsDetails,
   UserRecords,

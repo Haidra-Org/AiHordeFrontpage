@@ -287,7 +287,7 @@
             <div
               class="form-field form-field-third"
               [class.form-field--unset]="
-                form.controls['cfg_scale'].value == null
+                form.controls['cfg_scale'].value === null
               "
             >
               <label for="style-cfg" class="form-label">
@@ -306,7 +306,7 @@
 
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['steps'].value == null"
+              [class.form-field--unset]="form.controls['steps'].value === null"
             >
               <label for="style-steps" class="form-label">
                 {{ "styles.form.steps" | transloco }}
@@ -325,7 +325,7 @@
           <div class="form-row">
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['width'].value == null"
+              [class.form-field--unset]="form.controls['width'].value === null"
             >
               <label for="style-width" class="form-label">
                 {{ "styles.form.width" | transloco }}
@@ -351,7 +351,7 @@
 
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['height'].value == null"
+              [class.form-field--unset]="form.controls['height'].value === null"
             >
               <label for="style-height" class="form-label">
                 {{ "styles.form.height" | transloco }}
@@ -490,7 +490,7 @@
             <div
               class="form-field form-field-quarter"
               [class.form-field--unset]="
-                form.controls['temperature'].value == null
+                form.controls['temperature'].value === null
               "
             >
               <label for="style-temperature" class="form-label">
@@ -509,7 +509,7 @@
 
             <div
               class="form-field form-field-quarter"
-              [class.form-field--unset]="form.controls['top_p'].value == null"
+              [class.form-field--unset]="form.controls['top_p'].value === null"
             >
               <label for="style-top-p" class="form-label">
                 {{ "styles.form.top_p" | transloco }}
@@ -541,7 +541,7 @@
 
             <div
               class="form-field form-field-quarter"
-              [class.form-field--unset]="form.controls['rep_pen'].value == null"
+              [class.form-field--unset]="form.controls['rep_pen'].value === null"
             >
               <label for="style-rep-pen" class="form-label">
                 {{ "styles.form.rep_pen" | transloco }}

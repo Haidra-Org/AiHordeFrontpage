@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   inject,
-  signal,
 } from '@angular/core';
 import {
   ActivatedRoute,

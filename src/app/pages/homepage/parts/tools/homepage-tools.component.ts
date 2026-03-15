@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslocoModule } from '@jsverse/transloco';
 import { ToolCardComponent } from '../../../../components/tool-card/tool-card.component';
 import { DataService } from '../../../../services/data.service';
@@ -15,9 +15,9 @@ import { NoSorterKeyValue } from '../../../../types/no-sorter-key-value';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageToolsComponent {
+  private readonly dataService = inject(DataService);
+
   protected readonly NoSorterKeyValue = NoSorterKeyValue;
 
   public tools = toSignal(this.dataService.tools);
-
-  constructor(private readonly dataService: DataService) {}
 }

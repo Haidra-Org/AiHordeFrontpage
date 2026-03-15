@@ -9,8 +9,6 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import {
-  ImageStyle,
-  TextStyle,
   Style,
   isImageStyle,
   StyleType,

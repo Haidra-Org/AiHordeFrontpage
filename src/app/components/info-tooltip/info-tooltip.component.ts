@@ -303,8 +303,8 @@ export class InfoTooltipComponent implements OnDestroy {
     const canAnchorEnd = rect.right - tooltipWidth >= VIEWPORT_MARGIN;
 
     let anchoredLeft: number;
-    let overflowsLeft = false;
-    let overflowsRight = false;
+    let overflowsLeft: boolean;
+    let overflowsRight: boolean;
 
     if (tooltipWidth >= viewportWidth - VIEWPORT_MARGIN * 2) {
       anchoredLeft = VIEWPORT_MARGIN;

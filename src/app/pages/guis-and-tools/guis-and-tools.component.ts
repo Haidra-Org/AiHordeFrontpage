@@ -23,7 +23,7 @@ import { DataService } from '../../services/data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { GuiItem } from '../../types/gui-item';
 import { ToolItem } from '../../types/tool-item';
-import { Domain, Platform, FunctionKind } from '../../types/item-types';
+import { Platform, FunctionKind } from '../../types/item-types';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { StickyRegistryService } from '../../services/sticky-registry.service';

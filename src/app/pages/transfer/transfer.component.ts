@@ -167,7 +167,7 @@ export class TransferComponent implements OnInit {
     this.form.controls.educatorAccount.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((accountId) => {
-        // @ts-ignore
+        // @ts-expect-error string sentinel value from select control
         if (accountId === 'null') {
           accountId = null;
         }
@@ -178,7 +178,6 @@ export class TransferComponent implements OnInit {
           return;
         }
 
-        // @ts-ignore
         accountId = Number(accountId);
         const account = this.educatorAccounts()!.filter(
           (account) => account.id === accountId,

@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { StickyRegistryService } from './sticky-registry.service';
@@ -21,7 +21,9 @@ class FakeResizeObserver {
     this.observed.push(target);
   }
 
-  unobserve(_target: Element): void {}
+  unobserve(_target: Element): void {
+    void _target;
+  }
 
   disconnect(): void {
     this.observed = [];

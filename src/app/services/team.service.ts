@@ -4,7 +4,7 @@ import {
   HttpContext,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
+import { Observable, catchError, of, tap, throwError } from 'rxjs';
 import {
   Team,
   TeamApiError,

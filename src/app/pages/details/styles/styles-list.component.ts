@@ -35,7 +35,6 @@ import {
   TextStyle,
   Style,
   StyleType,
-  isImageStyle,
 } from '../../../types/style';
 import { StyleCollection } from '../../../types/style-collection';
 import {

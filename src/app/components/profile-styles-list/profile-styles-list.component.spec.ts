@@ -1,8 +1,7 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { Component, signal, DestroyRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import {
-  HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -41,7 +40,7 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
     params: {},
     examples: [],
     uses: 10,
-  } as any;
+  } as unknown as ImageStyle;
 
   const mockTextStyle: TextStyle = {
     id: 'txt-1',
@@ -55,7 +54,7 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
     params: {},
     examples: [],
     uses: 5,
-  } as any;
+  } as unknown as TextStyle;
 
   beforeEach(() => {
     styleService = jasmine.createSpyObj('StyleService', [

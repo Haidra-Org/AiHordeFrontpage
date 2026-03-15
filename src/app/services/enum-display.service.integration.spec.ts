@@ -18,13 +18,6 @@ describe('EnumDisplayService Integration Tests', () => {
 
   describe('Desktop Platform Grouping', () => {
     it('should identify cross-platform desktop applications (Lucid Creations pattern)', () => {
-      const platforms: Platform[] = [
-        Platform.WINDOWS,
-        Platform.LINUX,
-        Platform.MACOS,
-        Platform.WEB,
-      ];
-
       // Should recognize desktop platforms within the array
       expect(service.isDesktopPlatform(Platform.WINDOWS)).toBe(true);
       expect(service.isDesktopPlatform(Platform.LINUX)).toBe(true);
@@ -263,24 +256,11 @@ describe('EnumDisplayService Integration Tests', () => {
     });
 
     it('should correctly identify a CLI tool', () => {
-      const item: Partial<ToolItem> = {
-        itemType: ItemType.TOOL,
-        platform: [Platform.CLI],
-        functionKind: FunctionKind.CLI_TOOL,
-      };
-
       expect(service.getPlatformLabel(Platform.CLI)).toBe('CLI');
       expect(service.getFunctionTypeLabel(FunctionKind.CLI_TOOL)).toBe('CLI');
     });
 
     it('should correctly identify an SDK (programming tool)', () => {
-      const item: Partial<ToolItem> = {
-        itemType: ItemType.TOOL,
-        platform: [Platform.PROGRAMMING],
-        functionKind: FunctionKind.SDK,
-        categories: ['Development'],
-      };
-
       expect(service.getPlatformLabel(Platform.PROGRAMMING)).toBe(
         'Programming',
       );
