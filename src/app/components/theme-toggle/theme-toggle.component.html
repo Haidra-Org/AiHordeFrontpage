@@ -32,7 +32,7 @@
   @if (isOpen()) {
     <div
       class="absolute right-0 z-50 mt-2 w-48 bg-white rounded-lg shadow-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-      (click)="$event.stopPropagation()"
+      (mousedown)="$event.stopPropagation()"
     >
       <ul
         class="py-1 text-sm text-gray-700 dark:text-gray-200"

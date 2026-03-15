@@ -76,16 +76,12 @@ export class ProfileStylesListComponent implements OnInit {
    * External styles data. When provided, skips internal fetch.
    * Pass undefined to trigger internal fetch from AuthService.
    */
-  public readonly externalStyles = input<LoadedStyle[] | undefined>(undefined, {
-    alias: 'styles',
-  });
+  public readonly externalStyles = input<LoadedStyle[] | undefined>(undefined);
 
   /**
    * External loading state. Only used when externalStyles is provided.
    */
-  public readonly externalLoading = input<boolean>(false, {
-    alias: 'loadingExternal',
-  });
+  public readonly externalLoading = input<boolean>(false);
 
   /**
    * Read-only mode disables create/edit/delete actions.

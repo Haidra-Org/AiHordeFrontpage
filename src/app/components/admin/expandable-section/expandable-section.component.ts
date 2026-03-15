@@ -14,7 +14,7 @@ import {
   imports: [],
   template: `
     <div class="admin-border-t">
-      <button (click)="toggle.emit()" class="expandable-header" type="button">
+      <button (click)="toggled.emit()" class="expandable-header" type="button">
         <span class="admin-text-light">
           {{ title() }}
           @if (count() !== undefined) {
@@ -61,5 +61,5 @@ export class ExpandableSectionComponent {
   public readonly noPaddingTop = input<boolean>(false);
 
   /** Emits when the header is clicked to toggle expansion. */
-  public readonly toggle = output<void>();
+  public readonly toggled = output<void>();
 }

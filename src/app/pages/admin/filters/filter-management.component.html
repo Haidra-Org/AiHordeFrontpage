@@ -487,7 +487,12 @@
 <!-- Create/Edit Dialog -->
 @if (dialogOpen() && (dialogType() === "create" || dialogType() === "edit")) {
   <div class="modal-overlay">
-    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <button
+      type="button"
+      class="modal-backdrop"
+      aria-label="Close dialog"
+      (click)="closeDialog()"
+    ></button>
     <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-6">
         @if (dialogType() === "create") {
@@ -600,7 +605,12 @@
 <!-- Delete Confirmation Dialog -->
 @if (dialogOpen() && dialogType() === "delete") {
   <div class="modal-overlay">
-    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <button
+      type="button"
+      class="modal-backdrop"
+      aria-label="Close dialog"
+      (click)="closeDialog()"
+    ></button>
     <div class="modal-panel modal-panel--lg">
       <h2 class="heading-admin-section mb-4">
         {{ "admin.filters.dialog.delete_title" | transloco }}
@@ -657,7 +667,12 @@
 <!-- Raw JSON Dialog -->
 @if (dialogOpen() && dialogType() === "rawJson") {
   <div class="modal-overlay">
-    <div class="modal-backdrop" (click)="closeDialog()"></div>
+    <button
+      type="button"
+      class="modal-backdrop"
+      aria-label="Close dialog"
+      (click)="closeDialog()"
+    ></button>
     <div class="modal-panel modal-panel--xl">
       <div class="flex justify-between items-center mb-4">
         <h2 class="heading-admin-section">

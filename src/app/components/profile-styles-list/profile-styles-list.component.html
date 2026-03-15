@@ -5,8 +5,8 @@
     [confirmLabel]="'styles.unsaved_changes_discard' | transloco"
     [cancelLabel]="'styles.unsaved_changes_keep_editing' | transloco"
     variant="danger"
-    (confirm)="onDiscardUnsavedChanges()"
-    (cancel)="onCancelDiscardUnsavedChanges()"
+    (confirmed)="onDiscardUnsavedChanges()"
+    (cancelled)="onCancelDiscardUnsavedChanges()"
   >
     <p class="dialog-body-text">
       {{ "styles.unsaved_changes_message" | transloco }}

@@ -589,11 +589,19 @@
     background-color: var(--color-surface-secondary);
   }
 
+  .autocomplete-option--active {
+    background-color: var(--color-surface-secondary);
+  }
+
   .dark .autocomplete-option {
     @apply text-gray-200;
   }
 
   .dark .autocomplete-option:hover {
+    @apply bg-gray-800;
+  }
+
+  .dark .autocomplete-option--active {
     @apply bg-gray-800;
   }
 

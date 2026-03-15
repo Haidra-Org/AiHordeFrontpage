@@ -58,15 +58,12 @@ export class SharedKeyListComponent implements OnInit {
    */
   public readonly externalSharedKeys = input<SharedKeyDetails[] | undefined>(
     undefined,
-    { alias: 'sharedKeys' },
   );
 
   /**
    * External loading state. Only used when externalSharedKeys is provided.
    */
-  public readonly externalLoading = input<boolean>(false, {
-    alias: 'loadingExternal',
-  });
+  public readonly externalLoading = input<boolean>(false);
 
   /**
    * Read-only mode disables create/edit/delete actions.

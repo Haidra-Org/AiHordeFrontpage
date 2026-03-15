@@ -13,7 +13,6 @@
   </div>
 }
 
-<!-- Account Action Success Toast -->
 @if (deleteSuccess()) {
   <div class="toast toast-success" role="status" aria-live="polite">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,8 +83,8 @@
   [confirmLabel]="'profile.delete_account_confirm' | transloco"
   [cancelLabel]="'profile.form.cancel' | transloco"
   [loading]="deleteLoading()"
-  (confirm)="confirmDeleteAccount()"
-  (cancel)="closeDeleteDialog()"
+  (confirmed)="confirmDeleteAccount()"
+  (cancelled)="closeDeleteDialog()"
 />
 
 <!-- Undelete Account Dialog -->
@@ -95,8 +94,8 @@
   [confirmLabel]="'profile.undelete_account_confirm' | transloco"
   [cancelLabel]="'profile.form.cancel' | transloco"
   [loading]="undeleteLoading()"
-  (confirm)="confirmUndeleteAccount()"
-  (cancel)="closeUndeleteDialog()"
+  (confirmed)="confirmUndeleteAccount()"
+  (cancelled)="closeUndeleteDialog()"
 >
   <p class="dialog-body-text">
     {{ "profile.undelete_account_message" | transloco }}
@@ -110,8 +109,8 @@
   [confirmLabel]="'profile.change_username_confirm' | transloco"
   [cancelLabel]="'profile.form.cancel' | transloco"
   [loading]="usernameSaving()"
-  (confirm)="confirmUsernameChange()"
-  (cancel)="closeUsernameDialog()"
+  (confirmed)="confirmUsernameChange()"
+  (cancelled)="closeUsernameDialog()"
 >
   <p class="dialog-body-text dialog-body-text--spaced">
     {{ "profile.change_username_desc" | transloco }}
@@ -136,8 +135,8 @@
   [confirmLabel]="'profile.edit_contact_confirm' | transloco"
   [cancelLabel]="'profile.form.cancel' | transloco"
   [loading]="contactSaving()"
-  (confirm)="confirmContactChange()"
-  (cancel)="closeContactDialog()"
+  (confirmed)="confirmContactChange()"
+  (cancelled)="closeContactDialog()"
 >
   <p class="dialog-body-text dialog-body-text--spaced">
     {{ "profile.edit_contact_desc" | transloco }}
@@ -172,8 +171,8 @@
   [confirmLabel]="'profile.public_workers_confirm' | transloco"
   [cancelLabel]="'profile.form.cancel' | transloco"
   [loading]="publicWorkersSaving()"
-  (confirm)="confirmPublicWorkersChange()"
-  (cancel)="closePublicWorkersDialog()"
+  (confirmed)="confirmPublicWorkersChange()"
+  (cancelled)="closePublicWorkersDialog()"
 >
   <p class="dialog-body-text">
     @if (publicWorkersNewValue()) {
@@ -235,21 +234,20 @@
               </p>
 
               <form
-                class="profile-login-form"
+                class="stack-md"
                 [formGroup]="form"
                 (ngSubmit)="login()"
               >
-                <div class="form-group">
-                  <label for="api_key" class="form-label">{{
+                <div class="form-field">
+                  <label class="form-label" for="profile-api-key">{{
                     "profile.api_key" | transloco
                   }}</label>
                   <input
-                    formControlName="apiKey"
-                    type="password"
-                    id="api_key"
+                    id="profile-api-key"
                     class="form-input"
-                    required
-                    [placeholder]="'profile.api_key_placeholder' | transloco"
+                    formControlName="apiKey"
+                    type="text"
+                    autocomplete="off"
                   />
                 </div>
                 @if (loginError()) {
@@ -1080,6 +1078,11 @@
                         <h4
                           class="heading-subsection section-header-collapsible section-header-collapsible--light"
                           (click)="toggleWorkerTypeSection(group.type)"
+                          (keydown.enter)="toggleWorkerTypeSection(group.type)"
+                          (keydown.space)="toggleWorkerTypeSection(group.type)"
+                          tabindex="0"
+                          role="button"
+                          [attr.aria-expanded]="!isWorkerTypeCollapsed(group.type)"
                         >
                           <span class="section-header-title-wrapper">
                             {{
@@ -1209,10 +1212,12 @@
                 <!-- Team Dialog -->
                 @if (teamDialogOpen()) {
                   <div class="worker-modal-overlay">
-                    <div
+                    <button
+                      type="button"
                       class="modal-backdrop"
+                      aria-label="Close team dialog"
                       (click)="closeTeamDialog()"
-                    ></div>
+                    ></button>
                     <div class="worker-modal-panel worker-modal-panel-large">
                       @switch (teamDialogType()) {
                         @case ("create") {

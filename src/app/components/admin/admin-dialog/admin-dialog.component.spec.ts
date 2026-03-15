@@ -19,8 +19,8 @@ import { AdminDialogComponent } from './admin-dialog.component';
       [loadingLabel]="loadingLabel()"
       [variant]="variant()"
       [closeOnBackdrop]="closeOnBackdrop()"
-      (confirm)="onConfirm()"
-      (cancel)="onCancel()"
+      (confirmed)="onConfirm()"
+      (cancelled)="onCancel()"
     >
       <p>Dialog content</p>
     </app-admin-dialog>

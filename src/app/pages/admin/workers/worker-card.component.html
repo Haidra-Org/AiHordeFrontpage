@@ -86,10 +86,11 @@
       </h3>
       @if (!worker().maintenance_mode) {
         <div class="form-field mb-4">
-          <label class="form-label">
+          <label class="form-label" for="maintenance-reason">
             {{ "admin.workers.dialog.maintenance_reason" | transloco }}
           </label>
           <textarea
+            id="maintenance-reason"
             [value]="maintenanceReason()"
             (input)="onMaintenanceReasonChange($event)"
             rows="3"

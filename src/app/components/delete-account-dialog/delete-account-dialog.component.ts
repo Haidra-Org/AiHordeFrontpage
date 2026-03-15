@@ -90,7 +90,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 
           <div class="flex justify-end gap-3">
             <button
-              (click)="cancel.emit()"
+              (click)="cancelled.emit()"
               class="btn-muted"
               type="button"
               [disabled]="loading()"
@@ -183,10 +183,10 @@ export class DeleteAccountDialogComponent implements OnDestroy {
   // ─────────────────────────────────────────────────────────────────────────
 
   /** Emits when the confirm button is clicked. */
-  public readonly confirm = output<void>();
+  public readonly confirmed = output<void>();
 
   /** Emits when the cancel button is clicked or backdrop is clicked. */
-  public readonly cancel = output<void>();
+  public readonly cancelled = output<void>();
 
   // ─────────────────────────────────────────────────────────────────────────
   // INTERNAL
@@ -231,7 +231,7 @@ export class DeleteAccountDialogComponent implements OnDestroy {
 
   public onBackdropClick(): void {
     if (!this.loading()) {
-      this.cancel.emit();
+      this.cancelled.emit();
     }
   }
 
@@ -245,7 +245,7 @@ export class DeleteAccountDialogComponent implements OnDestroy {
 
   public onConfirm(): void {
     if (this.canConfirm() && !this.loading()) {
-      this.confirm.emit();
+      this.confirmed.emit();
     }
   }
 
@@ -285,7 +285,7 @@ export class DeleteAccountDialogComponent implements OnDestroy {
     // Close on Escape
     if (event.key === 'Escape' && !this.loading()) {
       event.preventDefault();
-      this.cancel.emit();
+      this.cancelled.emit();
       return;
     }
 

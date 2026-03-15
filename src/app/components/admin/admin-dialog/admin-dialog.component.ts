@@ -46,7 +46,7 @@ import { isPlatformBrowser } from '@angular/common';
           <div class="flex justify-end gap-3">
             <button
               #cancelButton
-              (click)="cancel.emit()"
+              (click)="cancelled.emit()"
               class="btn-muted"
               type="button"
               [disabled]="loading()"
@@ -55,7 +55,7 @@ import { isPlatformBrowser } from '@angular/common';
             </button>
             <button
               #confirmButton
-              (click)="confirm.emit()"
+              (click)="confirmed.emit()"
               [disabled]="loading()"
               class="btn-primary"
               [class.btn-danger]="variant() === 'danger'"
@@ -138,10 +138,10 @@ export class AdminDialogComponent implements OnDestroy {
   // ─────────────────────────────────────────────────────────────────────────
 
   /** Emits when the confirm button is clicked. */
-  public readonly confirm = output<void>();
+  public readonly confirmed = output<void>();
 
   /** Emits when the cancel button is clicked or backdrop is clicked. */
-  public readonly cancel = output<void>();
+  public readonly cancelled = output<void>();
 
   // ─────────────────────────────────────────────────────────────────────────
   // INTERNAL
@@ -173,7 +173,7 @@ export class AdminDialogComponent implements OnDestroy {
 
   public onBackdropClick(): void {
     if (this.closeOnBackdrop() && !this.loading()) {
-      this.cancel.emit();
+      this.cancelled.emit();
     }
   }
 
@@ -209,7 +209,7 @@ export class AdminDialogComponent implements OnDestroy {
     // Close on Escape
     if (event.key === 'Escape' && !this.loading()) {
       event.preventDefault();
-      this.cancel.emit();
+      this.cancelled.emit();
       return;
     }
 

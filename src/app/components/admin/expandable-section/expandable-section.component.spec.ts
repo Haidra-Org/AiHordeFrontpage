@@ -10,7 +10,7 @@ import { ExpandableSectionComponent } from './expandable-section.component';
       [expanded]="expanded()"
       [count]="count()"
       [noPaddingTop]="noPaddingTop()"
-      (toggle)="onToggle()"
+      (toggled)="onToggle()"
     >
       <p>Test content</p>
     </app-expandable-section>

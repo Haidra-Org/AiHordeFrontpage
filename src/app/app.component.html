@@ -1,4 +1,4 @@
-<div class="wrapper" (click)="closeMobileMenu()">
+<div class="wrapper">
   <!-- Main Navigation Header -->
   <header class="nav-shell" [appStickyHeader]="0">
     <nav class="nav-padding" role="navigation" aria-label="Main navigation">
@@ -425,13 +425,15 @@
         [attr.aria-hidden]="!showMobileMenu"
         id="mobile-navigation"
         role="menu"
-        (click)="$event.stopPropagation()"
+        (mousedown)="$event.stopPropagation()"
       >
-        <div
+        <button
+          type="button"
+          aria-label="Close navigation menu"
           class="mobile-menu-backdrop"
           [class.show]="showMobileMenu"
           (click)="closeMobileMenu()"
-        ></div>
+        ></button>
         <div class="mobile-menu-panel" [class.open]="showMobileMenu">
           <div class="mobile-nav-list">
             <a

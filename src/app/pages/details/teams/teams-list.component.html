@@ -5,7 +5,7 @@
     label="details.teams.lookup.label"
     placeholder="details.teams.lookup.placeholder"
     hintText="details.teams.lookup.hint"
-    (search)="onTeamSearch($event)"
+    (searchSubmitted)="onTeamSearch($event)"
   />
 
   @if (filterOwnerId()) {
@@ -79,9 +79,9 @@
 
       <!-- Sort By -->
       <div>
-        <label class="form-label text-sm">{{
+        <span class="form-label text-sm">{{
           "details.teams.sort_by" | transloco
-        }}</label>
+        }}</span>
         <div class="btn-group">
           <button
             (click)="onSortChange('name')"

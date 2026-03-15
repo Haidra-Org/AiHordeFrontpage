@@ -9,7 +9,12 @@
       [disabled]="isDisabled()"
       autocomplete="off"
       [placeholder]="placeholderKey() | transloco"
+      role="combobox"
+      [attr.aria-expanded]="dropdownOpen()"
+      [attr.aria-controls]="listboxId()"
+      [attr.aria-activedescendant]="activeOptionId()"
       (input)="onInput($event)"
+      (keydown)="onInputKeydown($event)"
       (focus)="onFocus()"
       (blur)="onBlur()"
     />
@@ -33,6 +38,7 @@
   @if (dropdownOpen()) {
     <div
       class="autocomplete-dropdown surface-floating"
+      [id]="listboxId()"
       role="listbox"
       [attr.aria-label]="listAriaLabelKey() | transloco"
       (mousedown)="$event.preventDefault()"
@@ -46,9 +52,15 @@
       @for (model of filteredModels(); track model.name) {
         <div
           class="autocomplete-option"
+          [class.autocomplete-option--active]="activeOptionIndex() === $index"
+          [id]="getOptionId($index)"
           role="option"
-          [attr.aria-selected]="false"
+          tabindex="-1"
+          [attr.aria-selected]="activeOptionIndex() === $index"
+          (mouseenter)="onOptionMouseEnter($index)"
           (click)="selectModel(model.name)"
+          (keydown.enter)="onOptionKeydown($event, model.name)"
+          (keydown.space)="onOptionKeydown($event, model.name)"
         >
           {{ model.name }}
           <span class="text-secondary">({{ model.count }} workers)</span>
