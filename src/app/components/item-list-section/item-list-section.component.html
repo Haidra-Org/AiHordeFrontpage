@@ -5,6 +5,11 @@
       class="heading-section-spaced section-header-collapsible"
       [class.is-stuck]="isStuck()"
       (click)="toggleSection()"
+      (keydown.enter)="toggleSection()"
+      (keydown.space)="toggleSection()"
+      tabindex="0"
+      role="button"
+      [attr.aria-expanded]="!isSectionCollapsed()"
     >
       <span class="section-header-title-wrapper">
         {{ title() | transloco }}
@@ -45,6 +50,11 @@
               <div
                 class="tools-grid-card-header"
                 (click)="toggleRow(item.name)"
+                  (keydown.enter)="toggleRow(item.name)"
+                  (keydown.space)="toggleRow(item.name)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-expanded]="isExpanded(item.name)"
               >
                 <div class="tools-grid-card-content">
                   <h3 class="tools-grid-card-title">
@@ -141,7 +151,15 @@
               [class.table-item-recommended]="item.recommended"
             >
               <!-- Row -->
-              <div class="item-list-row" (click)="toggleRow(item.name)">
+              <div
+                class="item-list-row"
+                (click)="toggleRow(item.name)"
+                (keydown.enter)="toggleRow(item.name)"
+                (keydown.space)="toggleRow(item.name)"
+                tabindex="0"
+                role="button"
+                [attr.aria-expanded]="isExpanded(item.name)"
+              >
                 <!-- Content Zone: name, description, badges -->
                 <div class="table-cell-content">
                   <div class="table-cell-content-header">

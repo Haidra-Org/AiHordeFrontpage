@@ -44,6 +44,8 @@ interface TooltipStyles {
       [attr.aria-describedby]="tooltipId()"
       (pointerdown)="handlePointerDown()"
       (click)="handleClick($event)"
+      (keydown.enter)="handleClick($event)"
+      (keydown.space)="handleClick($event)"
       (mouseenter)="showTooltip()"
       (mouseleave)="scheduleHide()"
       (focusin)="handleFocusIn()"
@@ -228,7 +230,7 @@ export class InfoTooltipComponent implements OnDestroy {
   }
 
   /** Toggles tooltip on click and stops event from bubbling to parent (e.g. sortable column headers). */
-  public handleClick(event: MouseEvent): void {
+  public handleClick(event: Event): void {
     event.stopPropagation();
     this.pointerTriggered = false;
     if (this.isVisible() && Date.now() - this.shownAt >= CLICK_CLOSE_GUARD_MS) {

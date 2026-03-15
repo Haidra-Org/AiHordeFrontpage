@@ -43,9 +43,16 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
 
   public readonly value = signal('');
   public readonly dropdownOpen = signal(false);
+  public readonly activeOptionIndex = signal(-1);
 
   public readonly isDisabled = signal(false);
   private dropdownPinned = false;
+
+  public readonly listboxId = computed(() => `${this.inputId()}-listbox`);
+  public readonly activeOptionId = computed(() => {
+    const active = this.activeOptionIndex();
+    return active >= 0 ? this.getOptionId(active) : null;
+  });
 
   public readonly filteredModels = computed(() => {
     const search = this.getSearchSegment(this.value()).toLowerCase();
@@ -88,6 +95,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
 
     const target = event.target as HTMLInputElement;
     this.setValue(target.value, true);
+    this.resetActiveOption();
   }
 
   public onFocus(): void {
@@ -96,6 +104,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     }
 
     this.dropdownOpen.set(true);
+    this.resetActiveOption();
   }
 
   public onBlur(): void {
@@ -114,6 +123,67 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     const next = !this.dropdownOpen();
     this.dropdownPinned = next;
     this.dropdownOpen.set(next);
+    if (next) {
+      this.resetActiveOption();
+    } else {
+      this.activeOptionIndex.set(-1);
+    }
+  }
+
+  public onInputKeydown(event: KeyboardEvent): void {
+    if (this.isDisabled()) {
+      return;
+    }
+
+    const options = this.filteredModels();
+    const hasOptions = options.length > 0;
+
+    if (event.key === 'Escape') {
+      this.dropdownPinned = false;
+      this.dropdownOpen.set(false);
+      this.activeOptionIndex.set(-1);
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!this.dropdownOpen()) {
+        this.dropdownOpen.set(true);
+      }
+      if (!hasOptions) {
+        this.activeOptionIndex.set(-1);
+        return;
+      }
+      const current = this.activeOptionIndex();
+      this.activeOptionIndex.set(
+        current < options.length - 1 ? current + 1 : 0,
+      );
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!this.dropdownOpen()) {
+        this.dropdownOpen.set(true);
+      }
+      if (!hasOptions) {
+        this.activeOptionIndex.set(-1);
+        return;
+      }
+      const current = this.activeOptionIndex();
+      this.activeOptionIndex.set(
+        current > 0 ? current - 1 : options.length - 1,
+      );
+      return;
+    }
+
+    if (event.key === 'Enter' && this.dropdownOpen()) {
+      const current = this.activeOptionIndex();
+      if (current >= 0 && current < options.length) {
+        event.preventDefault();
+        this.selectModel(options[current].name);
+      }
+    }
   }
 
   public selectModel(name: string): void {
@@ -142,6 +212,19 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     this.setValue(completed.join(', '), true);
     this.dropdownPinned = false;
     this.dropdownOpen.set(false);
+    this.activeOptionIndex.set(-1);
+  }
+
+  public onOptionKeydown(event: Event, name: string): void {
+    const keyEvent = event as KeyboardEvent;
+    if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
+      keyEvent.preventDefault();
+      this.selectModel(name);
+    }
+  }
+
+  public onOptionMouseEnter(index: number): void {
+    this.activeOptionIndex.set(index);
   }
 
   public onDocumentClick(event: MouseEvent): void {
@@ -151,6 +234,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
 
     this.dropdownPinned = false;
     this.dropdownOpen.set(false);
+    this.activeOptionIndex.set(-1);
   }
 
   private setValue(nextValue: string, emit: boolean): void {
@@ -163,6 +247,14 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     if (nextValue.length > 0 && !this.dropdownOpen()) {
       this.dropdownOpen.set(true);
     }
+  }
+
+  public getOptionId(index: number): string {
+    return `${this.inputId()}-option-${index}`;
+  }
+
+  private resetActiveOption(): void {
+    this.activeOptionIndex.set(this.filteredModels().length > 0 ? 0 : -1);
   }
 
   private getSearchSegment(rawValue: string): string {

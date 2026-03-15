@@ -72,7 +72,7 @@ export class EntityLookupComponent {
   public readonly showClearButton = input<boolean>(false);
 
   /** Emits when the user submits a search. */
-  public readonly search = output<string>();
+  public readonly searchSubmitted = output<string>();
 
   /** Emits when the user clears the search. */
   public readonly cleared = output<void>();
@@ -100,7 +100,7 @@ export class EntityLookupComponent {
     event.preventDefault();
     const value = this.searchValue().trim();
     if (value) {
-      this.search.emit(value);
+      this.searchSubmitted.emit(value);
     }
   }
 

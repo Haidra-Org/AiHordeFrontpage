@@ -34,10 +34,12 @@ import {
         [attr.aria-label]="'help.glossary.title' | transloco"
         (keydown.escape)="close()"
       >
-        <div
+        <button
+          type="button"
+          aria-label="Close glossary dialog"
           class="modal-backdrop modal-backdrop--blur"
           (click)="close()"
-        ></div>
+        ></button>
         <div class="modal-panel modal-panel--xl glossary-modal-panel">
           <!-- Header -->
           <div class="modal-header">

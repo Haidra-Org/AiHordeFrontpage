@@ -695,8 +695,8 @@
   [loading]="isDialogLoading()"
   [loadingLabel]="'admin.operations.dialog.deleting' | transloco"
   variant="danger"
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   <p class="admin-text-muted mb-4">
     {{ "admin.operations.dialog.delete_ip_confirm" | transloco }}
@@ -735,8 +735,8 @@
   [cancelLabel]="'admin.operations.dialog.cancel' | transloco"
   [loading]="isDialogLoading()"
   [loadingLabel]="'admin.operations.dialog.refreshing' | transloco"
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   <p class="admin-text-muted mb-4">
     {{ "admin.operations.dialog.refresh_ip_confirm" | transloco }}
@@ -793,8 +793,8 @@
   [loading]="isDialogLoading()"
   [loadingLabel]="'admin.operations.dialog.blocking' | transloco"
   variant="danger"
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   <p class="admin-text-muted mb-4">
     {{ "admin.operations.dialog.block_worker_confirm" | transloco }}
@@ -835,8 +835,8 @@
   [cancelLabel]="'admin.operations.dialog.cancel' | transloco"
   [loading]="isDialogLoading()"
   [loadingLabel]="'admin.operations.dialog.unblocking' | transloco"
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   <p class="admin-text-muted mb-4">
     {{ "admin.operations.dialog.unblock_worker_confirm" | transloco }}
@@ -871,8 +871,8 @@
   [loadingLabel]="
     batchRefreshProgress().completed + '/' + batchRefreshProgress().total
   "
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   <p class="admin-text-muted mb-4">
     {{ "admin.operations.dialog.batch_refresh_confirm" | transloco }}

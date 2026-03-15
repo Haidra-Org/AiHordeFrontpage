@@ -34,7 +34,7 @@ import { extractUserId } from '../../../helper/user-parser';
         label="details.users.lookup.label"
         placeholder="details.users.lookup.placeholder"
         hintText="details.users.lookup.hint"
-        (search)="onUserSearch($event)"
+        (searchSubmitted)="onUserSearch($event)"
       />
       <p class="text-body text-content-secondary mb-4">
         {{ 'details.users.browse_info' | transloco }}

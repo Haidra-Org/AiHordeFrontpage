@@ -155,6 +155,11 @@
                 <h2
                   class="heading-section section-header-collapsible"
                   (click)="toggleSection(sectionItemPair.key)"
+                  (keydown.enter)="toggleSection(sectionItemPair.key)"
+                  (keydown.space)="toggleSection(sectionItemPair.key)"
+                  tabindex="0"
+                  role="button"
+                  [attr.aria-expanded]="!isSectionCollapsed(sectionItemPair.key)"
                 >
                   <span>{{ sectionItemPair.key }}</span>
                   <svg

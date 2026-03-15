@@ -19,8 +19,8 @@
   [cancelLabel]="'admin.users.dialog.cancel' | transloco"
   [loading]="isUpdating()"
   [variant]="dialogType() === 'resetSuspicion' ? 'danger' : 'default'"
-  (confirm)="confirmDialog()"
-  (cancel)="closeDialog()"
+  (confirmed)="confirmDialog()"
+  (cancelled)="closeDialog()"
 >
   @if (dialogType() === "undeleteUser") {
     <p class="text-gray-300">
@@ -33,7 +33,12 @@
 @defer (when rawJsonModalOpen()) {
   @if (rawJsonModalOpen()) {
     <div class="modal-overlay">
-      <div class="modal-backdrop" (click)="closeRawJsonModal()"></div>
+      <button
+        type="button"
+        class="modal-backdrop"
+        aria-label="Close raw JSON dialog"
+        (click)="closeRawJsonModal()"
+      ></button>
       <div
         class="modal-panel modal-panel--lg json-dialog"
         role="dialog"
@@ -725,13 +730,14 @@
             <div class="admin-grid-limits gap-4">
               <!-- Worker Invites -->
               <div [attr.title]="'admin.users.desc.worker_invites' | transloco">
-                <label class="field-label-text block mb-1">{{
+                <label for="worker-invites-input" class="field-label-text block mb-1">{{
                   "admin.users.field.worker_invites" | transloco
                 }}</label>
                 <p class="field-label-desc mb-2">
                   {{ "admin.users.desc.worker_invites" | transloco }}
                 </p>
                 <input
+                  id="worker-invites-input"
                   type="number"
                   [value]="workerInvitesValue()"
                   (input)="onFieldChange('workerInvites', $event)"
@@ -745,13 +751,14 @@
               <div
                 [attr.title]="'admin.users.desc.usage_multiplier' | transloco"
               >
-                <label class="field-label-text block mb-1">{{
+                <label for="usage-multiplier-input" class="field-label-text block mb-1">{{
                   "admin.users.field.usage_multiplier" | transloco
                 }}</label>
                 <p class="field-label-desc mb-2">
                   {{ "admin.users.desc.usage_multiplier" | transloco }}
                 </p>
                 <input
+                  id="usage-multiplier-input"
                   type="number"
                   step="0.1"
                   min="0.1"
@@ -764,13 +771,14 @@
 
               <!-- Concurrency -->
               <div [attr.title]="'admin.users.desc.concurrency' | transloco">
-                <label class="field-label-text block mb-1">{{
+                <label for="concurrency-input" class="field-label-text block mb-1">{{
                   "admin.users.field.concurrency" | transloco
                 }}</label>
                 <p class="field-label-desc mb-2">
                   {{ "admin.users.desc.concurrency" | transloco }}
                 </p>
                 <input
+                  id="concurrency-input"
                   type="number"
                   min="0"
                   [value]="concurrencyValue()"
@@ -782,13 +790,14 @@
 
               <!-- Monthly Kudos -->
               <div [attr.title]="'admin.users.desc.monthly_kudos' | transloco">
-                <label class="field-label-text block mb-1">{{
+                <label for="monthly-kudos-input" class="field-label-text block mb-1">{{
                   "admin.users.field.monthly_kudos" | transloco
                 }}</label>
                 <p class="field-label-desc mb-2">
                   {{ "admin.users.desc.monthly_kudos" | transloco }}
                 </p>
                 <input
+                  id="monthly-kudos-input"
                   type="number"
                   min="0"
                   [value]="monthlyKudosValue()"

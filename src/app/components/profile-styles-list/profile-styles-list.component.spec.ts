@@ -205,7 +205,7 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
 
     // Simulate external data input
-    fixture.componentRef.setInput('styles', [
+    fixture.componentRef.setInput('externalStyles', [
       {
         id: 'ext-1',
         style: mockImageStyle,

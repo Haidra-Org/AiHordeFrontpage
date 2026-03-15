@@ -3,9 +3,11 @@ import {
   Component,
   computed,
   ElementRef,
+  effect,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -75,9 +77,9 @@ import { scrollToElement } from '../../helper/scroll-utils';
           <div [id]="contentId()" class="card-expandable-content">
             <div class="card-expandable-stack">
               <div
+                #bodyContent
                 class="page-intro-body"
                 [innerHTML]="bodyKey() | transloco"
-                (click)="onBodyClick($event)"
               ></div>
 
               <div class="page-intro-actions">
@@ -160,6 +162,7 @@ export class PageIntroComponent {
   private readonly glossary = inject(GlossaryService);
   private readonly stickyRegistry = inject(StickyRegistryService);
   private readonly guideService = inject(PageGuideService);
+  private readonly bodyContent = viewChild<ElementRef<HTMLElement>>('bodyContent');
 
   /** Page key — drives localStorage key and i18n key prefix */
   public readonly pageKey = input.required<string>();
@@ -183,6 +186,17 @@ export class PageIntroComponent {
   public readonly isDismissed = computed(() =>
     this.guideService.isDismissed(this.storageKey())(),
   );
+
+  constructor() {
+    effect((onCleanup) => {
+      const body = this.bodyContent()?.nativeElement;
+      if (!body) return;
+
+      const handler = (event: Event) => this.onBodyClick(event);
+      body.addEventListener('click', handler);
+      onCleanup(() => body.removeEventListener('click', handler));
+    });
+  }
 
   public toggleExpanded(): void {
     const wasExpanded = this._isExpanded();
@@ -210,7 +224,7 @@ export class PageIntroComponent {
   }
 
   /** Intercept clicks on glossary links rendered via innerHTML */
-  public onBodyClick(event: MouseEvent): void {
+  public onBodyClick(event: Event): void {
     const target = event.target as HTMLElement;
     if (target.tagName === 'A' && target.classList.contains('glossary-link')) {
       event.preventDefault();

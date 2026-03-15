@@ -205,7 +205,15 @@
     @if (!loading() && filteredWorkers().length > 0) {
       @if (statisticsCollapsed()) {
         <!-- Compact Summary -->
-        <div class="panel admin-stats-bar mb-6" (click)="toggleStatistics()">
+        <div
+          class="panel admin-stats-bar mb-6"
+          (click)="toggleStatistics()"
+          (keydown.enter)="toggleStatistics()"
+          (keydown.space)="toggleStatistics()"
+          tabindex="0"
+          role="button"
+          [attr.aria-expanded]="!statisticsCollapsed()"
+        >
           <div class="admin-stats-bar__inner">
             <div class="admin-stats-bar__metrics">
               <div class="admin-stats-bar__metric">
@@ -497,10 +505,11 @@
 
       <!-- Sort Key Select -->
       <div class="admin-filter-sort">
-        <label class="text-sm admin-text-muted"
+        <label for="worker-sort-key" class="text-sm admin-text-muted"
           >{{ "admin.workers.sort_by" | transloco }}:</label
         >
         <select
+          id="worker-sort-key"
           [value]="sortKey()"
           (change)="onSortKeyChange($any($event.target).value)"
           class="form-input w-48"
