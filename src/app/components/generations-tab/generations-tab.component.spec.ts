@@ -1085,9 +1085,7 @@ describe('GenerationsTabComponent', () => {
         currentUserSignal.set(user);
       }
 
-      function makeUser(
-        overrides: Partial<HordeUser> = {},
-      ): HordeUser {
+      function makeUser(overrides: Partial<HordeUser> = {}): HordeUser {
         return {
           username: 'test-user',
           id: 123,
@@ -1125,13 +1123,13 @@ describe('GenerationsTabComponent', () => {
           'api-key',
         );
         expect(mockHorde.getUserById).not.toHaveBeenCalled();
-        expect(mockAuth.updateCurrentUserActiveGenerations).toHaveBeenCalledWith(
-          {
-            image: ['img-1', 'img-1'],
-            text: ['txt-1'],
-            alchemy: ['alc-1'],
-          },
-        );
+        expect(
+          mockAuth.updateCurrentUserActiveGenerations,
+        ).toHaveBeenCalledWith({
+          image: ['img-1', 'img-1'],
+          text: ['txt-1'],
+          alchemy: ['alc-1'],
+        });
 
         const tracked = component.trackedGenerations();
         expect(tracked.length).toBe(3);
@@ -1148,7 +1146,9 @@ describe('GenerationsTabComponent', () => {
         component.refreshUserGenerations();
 
         expect(mockHorde.getSelfUserByApiKeyUncached).not.toHaveBeenCalled();
-        expect(mockAuth.updateCurrentUserActiveGenerations).not.toHaveBeenCalled();
+        expect(
+          mockAuth.updateCurrentUserActiveGenerations,
+        ).not.toHaveBeenCalled();
         expect(component.refreshingGenerations()).toBeFalse();
       });
 
@@ -1159,7 +1159,9 @@ describe('GenerationsTabComponent', () => {
         component.refreshUserGenerations();
 
         expect(mockHorde.getSelfUserByApiKeyUncached).not.toHaveBeenCalled();
-        expect(mockAuth.updateCurrentUserActiveGenerations).not.toHaveBeenCalled();
+        expect(
+          mockAuth.updateCurrentUserActiveGenerations,
+        ).not.toHaveBeenCalled();
         expect(component.refreshingGenerations()).toBeFalse();
       });
 
@@ -1172,9 +1174,9 @@ describe('GenerationsTabComponent', () => {
 
         component.refreshUserGenerations();
 
-        expect(mockAuth.updateCurrentUserActiveGenerations).toHaveBeenCalledWith(
-          undefined,
-        );
+        expect(
+          mockAuth.updateCurrentUserActiveGenerations,
+        ).toHaveBeenCalledWith(undefined);
         expect(component.trackedGenerations().length).toBe(0);
         expect(component.refreshingGenerations()).toBeFalse();
       });

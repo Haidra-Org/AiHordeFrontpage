@@ -251,7 +251,6 @@
   }
 
   @media (max-width: 639px) {
-
     .shared-key-form {
       @apply gap-2;
       margin-left: 0;

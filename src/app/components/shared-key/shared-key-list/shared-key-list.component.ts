@@ -399,9 +399,7 @@ export class SharedKeyListComponent implements OnInit {
     if (!expiry) return -1;
     const expiryMs = Date.parse(expiry);
     if (Number.isNaN(expiryMs)) return -1;
-    const diffDays = Math.ceil(
-      (expiryMs - Date.now()) / (1000 * 60 * 60 * 24),
-    );
+    const diffDays = Math.ceil((expiryMs - Date.now()) / (1000 * 60 * 60 * 24));
     return diffDays < 0 ? -1 : Math.max(diffDays, 1);
   }
 }

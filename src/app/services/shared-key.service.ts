@@ -1,6 +1,18 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, forkJoin, map, of, tap, throwError } from 'rxjs';
+import {
+  HttpClient,
+  HttpContext,
+  HttpErrorResponse,
+} from '@angular/common/http';
+import {
+  Observable,
+  catchError,
+  forkJoin,
+  map,
+  of,
+  tap,
+  throwError,
+} from 'rxjs';
 import {
   SharedKeyApiError,
   SharedKeyDetails,

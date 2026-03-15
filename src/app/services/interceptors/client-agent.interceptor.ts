@@ -1,7 +1,4 @@
-import {
-  HttpContextToken,
-  HttpInterceptorFn,
-} from '@angular/common/http';
+import { HttpContextToken, HttpInterceptorFn } from '@angular/common/http';
 
 /**
  * Set this context token on individual requests to override the default

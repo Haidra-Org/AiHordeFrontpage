@@ -33,7 +33,9 @@
       >
         <section class="transfer-form-panel form-section-shell surface-glass">
           <div class="form-section-shell__header">
-            <h3 class="heading-card">{{ "transfer.source_api_key" | transloco }}</h3>
+            <h3 class="heading-card">
+              {{ "transfer.source_api_key" | transloco }}
+            </h3>
             <p class="text-secondary text-sm">
               {{ "transfer.source_api_key.description" | transloco }}
             </p>
@@ -76,7 +78,9 @@
 
         <section class="transfer-form-panel form-section-shell surface-glass">
           <div class="form-section-shell__header">
-            <h3 class="heading-card">{{ "transfer.target_user" | transloco }}</h3>
+            <h3 class="heading-card">
+              {{ "transfer.target_user" | transloco }}
+            </h3>
             <p class="text-secondary text-sm">
               {{
                 "transfer.target_user.description"
@@ -86,7 +90,9 @@
           </div>
 
           <div class="form-section-shell__grid transfer-target-grid">
-            <div class="form-field-shell surface-glass--nested form-field-shell--full">
+            <div
+              class="form-field-shell surface-glass--nested form-field-shell--full"
+            >
               <label for="target_user" class="form-label">{{
                 "transfer.target_user" | transloco
               }}</label>
@@ -109,7 +115,7 @@
               } @else if (form.value.targetUserValidated === true) {
                 <p class="transfer-validation transfer-validation--success">
                   <small>
-                    @if (validatedTargetKind() === 'sharedKey') {
+                    @if (validatedTargetKind() === "sharedKey") {
                       {{ "transfer.target_valid_shared_key" | transloco }}
                     } @else {
                       {{ "transfer.target_valid_user" | transloco }}
@@ -117,20 +123,29 @@
                   </small>
                 </p>
               }
-              @if (!targetUserChecking() && form.value.targetUserValidated === false) {
+              @if (
+                !targetUserChecking() &&
+                form.value.targetUserValidated === false
+              ) {
                 <p class="transfer-validation transfer-validation--error">
                   <small>{{ "invalid_target_user" | transloco }}</small>
                 </p>
               }
-              @if (!targetUserChecking() && form.value.targetUserValidated === null) {
+              @if (
+                !targetUserChecking() && form.value.targetUserValidated === null
+              ) {
                 <p class="transfer-validation transfer-validation--info">
-                  <small>{{ "transfer.target_will_validate" | transloco }}</small>
+                  <small>{{
+                    "transfer.target_will_validate" | transloco
+                  }}</small>
                 </p>
               }
             </div>
 
             @if (educatorAccounts()) {
-              <div class="form-field-shell surface-glass--nested form-field-shell--full">
+              <div
+                class="form-field-shell surface-glass--nested form-field-shell--full"
+              >
                 <p class="transfer-educator-note">
                   <small
                     >{{ "transfer.donate" | transloco
@@ -145,7 +160,10 @@
                   >
                 </p>
 
-                <select formControlName="educatorAccount" class="form-input form-input-wide">
+                <select
+                  formControlName="educatorAccount"
+                  class="form-input form-input-wide"
+                >
                   <option [value]="null">
                     {{ "option.empty" | transloco }}
                   </option>
@@ -166,7 +184,9 @@
 
         <section class="transfer-form-panel form-section-shell surface-glass">
           <div class="form-section-shell__header">
-            <h3 class="heading-card">{{ "transfer.kudos_amount" | transloco }}</h3>
+            <h3 class="heading-card">
+              {{ "transfer.kudos_amount" | transloco }}
+            </h3>
           </div>
 
           <div class="form-field-shell surface-glass--nested">
@@ -222,7 +242,11 @@
           </button>
         </section>
 
-        <p id="note1" class="transfer-footnote" [class.active]="fragment() === 'note1'">
+        <p
+          id="note1"
+          class="transfer-footnote"
+          [class.active]="fragment() === 'note1'"
+        >
           <sup>1</sup>
           {{ "educators.explanation" | transloco }}
         </p>

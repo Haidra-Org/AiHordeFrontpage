@@ -203,7 +203,11 @@
         <div class="flex items-center gap-4 mb-4">
           <div class="feature-card-icon feature-card-icon-gray">
             <img
-              [ngSrc]="themeService.isDark() ? './assets/img/GitHub_Invertocat_White_Clearspace.svg' : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'"
+              [ngSrc]="
+                themeService.isDark()
+                  ? './assets/img/GitHub_Invertocat_White_Clearspace.svg'
+                  : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'
+              "
               alt=""
               width="24"
               height="24"
@@ -214,7 +218,9 @@
               {{ "donate.ways_to_donate.github_sponsors.title" | transloco }}
             </h3>
             <p class="card-inline-description">
-              {{ "donate.ways_to_donate.github_sponsors.description" | transloco }}
+              {{
+                "donate.ways_to_donate.github_sponsors.description" | transloco
+              }}
             </p>
           </div>
         </div>

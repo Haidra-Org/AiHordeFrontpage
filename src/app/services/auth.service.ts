@@ -73,10 +73,7 @@ export class AuthService {
     }
   }
 
-  public login(
-    apiKey: string,
-    remember = false,
-  ): Observable<HordeUser | null> {
+  public login(apiKey: string, remember = false): Observable<HordeUser | null> {
     this._isLoading.set(true);
 
     return this.fetchAndEnrichUser(apiKey).pipe(

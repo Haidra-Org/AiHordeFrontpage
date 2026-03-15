@@ -1,5 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpContext,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import {
   Team,
@@ -46,11 +50,9 @@ export class TeamService {
    */
   public getTeams(): Observable<Team[]> {
     return this.cache
-      .cachedGet<Team[]>(
-        this.baseUrl,
-        { context: this.teamContext },
-        { ttl: CacheTTL.LONG, category: 'teams' },
-      )
+      .cachedGet<
+        Team[]
+      >(this.baseUrl, { context: this.teamContext }, { ttl: CacheTTL.LONG, category: 'teams' })
       .pipe(catchError(() => of([])));
   }
 

@@ -126,12 +126,20 @@ let nextTooltipId = 0;
           (mouseleave)="scheduleHide()"
         >
           <span class="tooltip-header">
-            <strong class="tooltip-highlight">{{ tooltipBoldDisplay() }}</strong>
+            <strong class="tooltip-highlight">{{
+              tooltipBoldDisplay()
+            }}</strong>
             <span class="tooltip-muted">({{ tooltipMutedDisplay() }})</span>
           </span>
           <span class="tooltip-explanation">
             @for (key of unit()!.explanationKeys; track key; let i = $index) {
-              <span [class]="i === 0 || i === 2 ? 'tooltip-math tooltip-explanation-line' : 'tooltip-explanation-line'">
+              <span
+                [class]="
+                  i === 0 || i === 2
+                    ? 'tooltip-math tooltip-explanation-line'
+                    : 'tooltip-explanation-line'
+                "
+              >
                 {{ key | transloco }}
               </span>
             }
@@ -326,7 +334,10 @@ export class UnitTooltipComponent implements OnDestroy {
 
     // === MEASURE TOOLTIP DIMENSIONS ===
     // Use actual measured size when available, fall back to estimates
-    let tooltipWidth = Math.min(TOOLTIP_WIDTH, viewportWidth - VIEWPORT_MARGIN * 2);
+    let tooltipWidth = Math.min(
+      TOOLTIP_WIDTH,
+      viewportWidth - VIEWPORT_MARGIN * 2,
+    );
     let tooltipHeight = TOOLTIP_HEIGHT_ESTIMATE;
 
     if (tooltipEl) {
@@ -386,10 +397,7 @@ export class UnitTooltipComponent implements OnDestroy {
       overflowsLeft = false;
       overflowsRight = true;
     } else {
-      anchoredLeft = Math.max(
-        VIEWPORT_MARGIN,
-        Math.min(rect.left, maxLeft),
-      );
+      anchoredLeft = Math.max(VIEWPORT_MARGIN, Math.min(rect.left, maxLeft));
       overflowsLeft = true;
       overflowsRight = true;
     }

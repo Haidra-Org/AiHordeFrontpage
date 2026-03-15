@@ -234,7 +234,9 @@ export class TransferComponent implements OnInit {
         }
 
         this.aiHorde.getUserById(id).subscribe((user) => {
-          if (this.form.controls.targetUser.value?.trim() !== normalizedTarget) {
+          if (
+            this.form.controls.targetUser.value?.trim() !== normalizedTarget
+          ) {
             return;
           }
 
@@ -304,32 +306,30 @@ export class TransferComponent implements OnInit {
     sharedKeyId: string,
     sourceApiKey?: string,
   ): void {
-    this.sharedKeyService
-      .getSharedKey(sharedKeyId, sourceApiKey)
-      .subscribe({
-        next: () => {
-          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-            return;
-          }
+    this.sharedKeyService.getSharedKey(sharedKeyId, sourceApiKey).subscribe({
+      next: () => {
+        if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+          return;
+        }
 
-          this.targetUserChecking.set(false);
+        this.targetUserChecking.set(false);
 
-          this.validatedTargetKind.set('sharedKey');
-          this.form.patchValue({
-            targetUserValidated: true,
-          });
-        },
-        error: () => {
-          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-            return;
-          }
+        this.validatedTargetKind.set('sharedKey');
+        this.form.patchValue({
+          targetUserValidated: true,
+        });
+      },
+      error: () => {
+        if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+          return;
+        }
 
-          this.targetUserChecking.set(false);
+        this.targetUserChecking.set(false);
 
-          this.validatedTargetKind.set(null);
-          this.form.patchValue({ targetUserValidated: false });
-        },
-      });
+        this.validatedTargetKind.set(null);
+        this.form.patchValue({ targetUserValidated: false });
+      },
+    });
   }
 
   public transfer(): void {

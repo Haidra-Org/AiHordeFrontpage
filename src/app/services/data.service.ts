@@ -149,11 +149,9 @@ export class DataService {
     const lang = this.transloco.getActiveLang();
     const primaryUrl = `/assets/data/${file}.${lang}.json`;
     return this.cache
-      .cachedGet<T[]>(
-        primaryUrl,
-        {},
-        { ttl: CacheTTL.VERY_LONG, category: 'local-data' },
-      )
+      .cachedGet<
+        T[]
+      >(primaryUrl, {}, { ttl: CacheTTL.VERY_LONG, category: 'local-data' })
       .pipe(
         catchError((e: HttpErrorResponse) => {
           if (e.status !== 404) {

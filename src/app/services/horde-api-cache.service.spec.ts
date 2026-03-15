@@ -6,10 +6,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { HttpContext, HttpParams } from '@angular/common/http';
-import {
-  HordeApiCacheService,
-  CacheTTL,
-} from './horde-api-cache.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 
 describe('HordeApiCacheService', () => {
@@ -60,9 +57,13 @@ describe('HordeApiCacheService', () => {
 
       // First call
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.LONG,
-        })
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.LONG,
+          },
+        )
         .subscribe((r) => (firstResult = r));
 
       httpTesting
@@ -73,15 +74,17 @@ describe('HordeApiCacheService', () => {
 
       // Second call — should be served from cache
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.LONG,
-        })
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.LONG,
+          },
+        )
         .subscribe((r) => (secondResult = r));
 
       // No new HTTP request should be made
-      httpTesting.expectNone(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
 
       expect(firstResult).toEqual({ worker_count: 42 });
       expect(secondResult).toEqual({ worker_count: 42 });
@@ -92,9 +95,13 @@ describe('HordeApiCacheService', () => {
 
       // First call
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.SHORT, // 30s
-        })
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.SHORT, // 30s
+          },
+        )
         .subscribe();
 
       httpTesting
@@ -105,9 +112,13 @@ describe('HordeApiCacheService', () => {
 
       // Second call — cache is stale, should make a new request
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.SHORT,
-        })
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.SHORT,
+          },
+        )
         .subscribe((r) => (result = r));
 
       httpTesting
@@ -123,9 +134,13 @@ describe('HordeApiCacheService', () => {
 
       // First call
       service
-        .cachedGet<{worker_count: number}>('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.NEVER,
-        })
+        .cachedGet<{ worker_count: number }>(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.NEVER,
+          },
+        )
         .subscribe((r) => (result1 = r));
 
       httpTesting
@@ -134,9 +149,13 @@ describe('HordeApiCacheService', () => {
 
       // Second call — should make a new request
       service
-        .cachedGet<{worker_count: number}>('https://aihorde.net/api/v2/status/performance', {}, {
-          ttl: CacheTTL.NEVER,
-        })
+        .cachedGet<{ worker_count: number }>(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          {
+            ttl: CacheTTL.NEVER,
+          },
+        )
         .subscribe((r) => (result2 = r));
 
       httpTesting
@@ -317,18 +336,13 @@ describe('HordeApiCacheService', () => {
         })
         .subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/find_user',
-      );
+      const req = httpTesting.expectOne('https://aihorde.net/api/v2/find_user');
       expect(req.request.headers.get('apikey')).toBe('my-key');
       req.flush({});
     });
 
     it('should forward HttpContext to the HTTP request', () => {
-      const ctx = new HttpContext().set(
-        CLIENT_AGENT,
-        'AiHordeFrontpage:test',
-      );
+      const ctx = new HttpContext().set(CLIENT_AGENT, 'AiHordeFrontpage:test');
 
       service
         .cachedGet('https://aihorde.net/api/v2/status/performance', {
@@ -476,9 +490,7 @@ describe('HordeApiCacheService', () => {
           { ttl: CacheTTL.LONG, category: 'performance' },
         )
         .subscribe((r) => (perfResult = r));
-      httpTesting.expectNone(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
 
       expect(perfResult).toEqual({ cached: true });
     }));

@@ -776,7 +776,9 @@ export class ProfileComponent implements OnInit {
   public confirmContactChange(): void {
     const contact = this.contactInput().trim();
     if (contact.length < 5 || contact.length > 500) {
-      this.contactDialogError.set('Contact must be between 5 and 500 characters.');
+      this.contactDialogError.set(
+        'Contact must be between 5 and 500 characters.',
+      );
       return;
     }
 
@@ -803,7 +805,9 @@ export class ProfileComponent implements OnInit {
         } else {
           this.contactNagDismissed.set(previousDismissedState);
           this.storeContactNagDismissed(previousDismissedState);
-          this.contactDialogError.set(result.error ?? 'Failed to update contact');
+          this.contactDialogError.set(
+            result.error ?? 'Failed to update contact',
+          );
           this.profileUpdateError.set(
             result.error ?? 'Failed to update contact',
           );

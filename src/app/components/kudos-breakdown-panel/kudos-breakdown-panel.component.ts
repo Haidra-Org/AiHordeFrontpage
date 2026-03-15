@@ -113,10 +113,12 @@ interface ProfileKudosSection {
 
         <div class="kudos-breakdown-summary">
           @if (currentBalance() !== undefined) {
-            <div class="kudos-breakdown-summary__row kudos-breakdown-summary__row--balance">
-              <span class="kudos-breakdown-summary__label"
-                >{{ 'profile.kudos_balance' | transloco }}</span
-              >
+            <div
+              class="kudos-breakdown-summary__row kudos-breakdown-summary__row--balance"
+            >
+              <span class="kudos-breakdown-summary__label">{{
+                'profile.kudos_balance' | transloco
+              }}</span>
               <span class="kudos-breakdown-summary__value">{{
                 currentBalance()! | formatNumber
               }}</span>
@@ -124,55 +126,63 @@ interface ProfileKudosSection {
           }
 
           <div class="kudos-breakdown-summary__row">
-            <span class="kudos-breakdown-summary__label"
-              >{{ 'profile.kudos_generated_total' | transloco }}</span
-            >
+            <span class="kudos-breakdown-summary__label">{{
+              'profile.kudos_generated_total' | transloco
+            }}</span>
             <span class="kudos-breakdown-summary__value">{{
               profileGeneratedKudos() | formatNumber
             }}</span>
           </div>
           <div class="kudos-breakdown-summary__row">
-            <span class="kudos-breakdown-summary__label"
-              >{{ 'profile.kudos_incoming_total' | transloco }}</span
-            >
-            <span class="kudos-breakdown-summary__value">+{{
-              profileIncomingTotal() | formatNumber
+            <span class="kudos-breakdown-summary__label">{{
+              'profile.kudos_incoming_total' | transloco
             }}</span>
+            <span class="kudos-breakdown-summary__value"
+              >+{{ profileIncomingTotal() | formatNumber }}</span
+            >
           </div>
           <div class="kudos-breakdown-summary__row">
-            <span class="kudos-breakdown-summary__label"
-              >{{ 'profile.kudos_outgoing_total' | transloco }}</span
-            >
-            <span class="kudos-breakdown-summary__value">-{{
-              profileOutgoingTotal() | formatNumber
+            <span class="kudos-breakdown-summary__label">{{
+              'profile.kudos_outgoing_total' | transloco
             }}</span>
-          </div>
-          <div class="kudos-breakdown-summary__row kudos-breakdown-summary__row--net">
-            <span class="kudos-breakdown-summary__label"
-              >{{ 'profile.kudos_net_flow' | transloco }}</span
+            <span class="kudos-breakdown-summary__value"
+              >-{{ profileOutgoingTotal() | formatNumber }}</span
             >
-            <span class="kudos-breakdown-summary__value">{{
-              profileNetFlowSign()
-            }}{{ profileNetFlow() | formatNumber }}</span>
+          </div>
+          <div
+            class="kudos-breakdown-summary__row kudos-breakdown-summary__row--net"
+          >
+            <span class="kudos-breakdown-summary__label">{{
+              'profile.kudos_net_flow' | transloco
+            }}</span>
+            <span class="kudos-breakdown-summary__value"
+              >{{ profileNetFlowSign()
+              }}{{ profileNetFlow() | formatNumber }}</span
+            >
           </div>
 
-          <div class="kudos-breakdown-summary__row kudos-breakdown-summary__row--formula">
-            <span class="kudos-breakdown-summary__label"
-              >{{ 'profile.kudos_calculated_total' | transloco }}</span
-            >
+          <div
+            class="kudos-breakdown-summary__row kudos-breakdown-summary__row--formula"
+          >
+            <span class="kudos-breakdown-summary__label">{{
+              'profile.kudos_calculated_total' | transloco
+            }}</span>
             <span class="kudos-breakdown-summary__value">{{
               profileCalculatedTotal() | formatNumber
             }}</span>
           </div>
 
           @if (currentBalance() !== undefined) {
-            <div class="kudos-breakdown-summary__row kudos-breakdown-summary__row--difference">
-              <span class="kudos-breakdown-summary__label"
-                >{{ 'profile.kudos_balance_difference' | transloco }}</span
+            <div
+              class="kudos-breakdown-summary__row kudos-breakdown-summary__row--difference"
+            >
+              <span class="kudos-breakdown-summary__label">{{
+                'profile.kudos_balance_difference' | transloco
+              }}</span>
+              <span class="kudos-breakdown-summary__value"
+                >{{ profileBalanceDifferenceSign()
+                }}{{ profileBalanceDifferenceMagnitude() | formatNumber }}</span
               >
-              <span class="kudos-breakdown-summary__value">{{
-                profileBalanceDifferenceSign()
-              }}{{ profileBalanceDifferenceMagnitude() | formatNumber }}</span>
             </div>
           }
 

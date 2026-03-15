@@ -147,9 +147,7 @@
       <div class="mb-4 space-y-3">
         <div class="alert alert--danger">
           <span class="alert-content font-medium">
-            {{
-              "admin.workers.dialog.delete_warning_permanent" | transloco
-            }}
+            {{ "admin.workers.dialog.delete_warning_permanent" | transloco }}
           </span>
         </div>
         @if (deleteError()) {
@@ -176,8 +174,7 @@
     @case ("team") {
       <h3 class="heading-card mb-4">
         {{
-          "admin.workers.dialog.team_title"
-            | transloco: { name: worker().name }
+          "admin.workers.dialog.team_title" | transloco: { name: worker().name }
         }}
       </h3>
       <div class="form-field mb-4">

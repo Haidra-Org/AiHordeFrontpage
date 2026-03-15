@@ -314,7 +314,7 @@
 
   /* Dot leader fills the gap between label and value */
   .kudos-breakdown__metric::after {
-    content: '';
+    content: "";
     flex: 1;
     border-bottom: 1px dotted rgb(148 163 184 / 0.25);
     min-width: 12px;
@@ -393,14 +393,8 @@
     pointer-events: none;
     transition: opacity 120ms ease;
     font-family:
-      ui-monospace,
-      SFMono-Regular,
-      Menlo,
-      Monaco,
-      Consolas,
-      'Liberation Mono',
-      'Courier New',
-      monospace;
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
   }
 
   .kudos-api-badge:hover::after,
@@ -451,7 +445,7 @@
 
   /* Dot leader for summary rows */
   .kudos-breakdown-summary__row::after {
-    content: '';
+    content: "";
     flex: 1;
     border-bottom: 1px dotted rgb(148 163 184 / 0.2);
     min-width: 8px;
@@ -535,7 +529,9 @@
   }
 
   .dark .kudos-breakdown-summary__row--formula .kudos-breakdown-summary__value,
-  .dark .kudos-breakdown-summary__row--difference .kudos-breakdown-summary__value {
+  .dark
+    .kudos-breakdown-summary__row--difference
+    .kudos-breakdown-summary__value {
     color: rgb(148 163 184 / 0.45);
   }
 

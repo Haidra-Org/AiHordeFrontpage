@@ -7,7 +7,12 @@ import { ThemeService } from '../../../services/theme.service';
 
 @Component({
   selector: 'app-donate',
-  imports: [TranslocoPipe, RouterLink, MissionCalloutComponent, NgOptimizedImage],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    MissionCalloutComponent,
+    NgOptimizedImage,
+  ],
   templateUrl: './donate.component.html',
   styleUrl: './donate.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
