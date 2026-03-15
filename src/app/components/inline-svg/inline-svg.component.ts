@@ -11,7 +11,7 @@ import { HttpClient } from '@angular/common/http';
 import { toPromise } from '../../types/resolvable';
 
 @Component({
-  selector: 'inline-svg',
+  selector: 'app-inline-svg, inline-svg',
   standalone: true,
   imports: [],
   templateUrl: './inline-svg.component.html',

@@ -21,7 +21,7 @@ import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
  * Uses Angular Signals for reactive UI updates
  */
 @Component({
-  selector: 'theme-toggle',
+  selector: 'app-theme-toggle, theme-toggle',
   standalone: true,
   imports: [CommonModule, InlineSvgComponent],
   templateUrl: './theme-toggle.component.html',
@@ -43,7 +43,7 @@ export class ThemeToggleComponent {
   /**
    * Close dropdown when clicking outside
    */
-  onDocumentClick(event: Event): void {
+  onDocumentClick(_event: Event): void {
     if (isPlatformBrowser(this.platformId) && this.isOpen()) {
       this.closeDropdown();
     }

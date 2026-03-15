@@ -1,5 +1,6 @@
 import {
   afterNextRender,
+  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -34,6 +35,7 @@ import { FooterColorService } from '../../services/footer-color.service';
   templateUrl: './homepage.component.html',
   styleUrl: './homepage.component.css',
   encapsulation: ViewEncapsulation.Emulated,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageComponent implements OnInit {
   private readonly title = inject(Title);

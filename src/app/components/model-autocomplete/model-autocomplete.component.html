@@ -47,6 +47,7 @@
         <div
           class="autocomplete-option"
           role="option"
+          [attr.aria-selected]="false"
           (click)="selectModel(model.name)"
         >
           {{ model.name }}

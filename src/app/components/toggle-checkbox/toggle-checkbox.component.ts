@@ -25,8 +25,8 @@ import { OnChange, OnTouched } from '../../types/value-accessor';
   ],
 })
 export class ToggleCheckboxComponent implements ControlValueAccessor {
-  private onChange: OnChange<boolean | null> = () => {};
-  private onTouched: OnTouched = () => {};
+  private onChange: OnChange<boolean | null> = () => undefined;
+  private onTouched: OnTouched = () => undefined;
 
   public value = signal<boolean | null>(null);
   public disabled = signal(false);

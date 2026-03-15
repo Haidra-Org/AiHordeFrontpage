@@ -239,7 +239,9 @@ describe('ItemListSectionComponent - Data Structure Validation', () => {
 
       // Should use array of domains, not a "BOTH" value
       expect(Array.isArray(multiDomainItem.domain)).toBe(true);
-      expect(multiDomainItem.domain).not.toContain('both' as any);
+      expect(multiDomainItem.domain).not.toContain(
+        'both' as unknown as Domain,
+      );
     });
 
     it('should not use "DESKTOP" platform value (removed in refactoring)', () => {
@@ -256,7 +258,9 @@ describe('ItemListSectionComponent - Data Structure Validation', () => {
 
       // Should use specific OS platforms, not a "DESKTOP" value
       expect(Array.isArray(desktopItem.platform)).toBe(true);
-      expect(desktopItem.platform).not.toContain('desktop' as any);
+      expect(desktopItem.platform).not.toContain(
+        'desktop' as unknown as Platform,
+      );
       expect(desktopItem.platform).toContain(Platform.WINDOWS);
       expect(desktopItem.platform).toContain(Platform.LINUX);
       expect(desktopItem.platform).toContain(Platform.MACOS);

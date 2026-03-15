@@ -114,7 +114,7 @@ describe('rateLimitInterceptor', () => {
   }));
 
   it('should retry up to MAX_RETRIES (2) times', fakeAsync(() => {
-    let error: unknown;
+    let error: HttpErrorResponse | undefined;
     http
       .get('https://aihorde.net/api/v2/status/performance')
       .subscribe({ error: (e) => (error = e) });
@@ -152,11 +152,11 @@ describe('rateLimitInterceptor', () => {
 
     // No more retries — error should propagate
     expect(error).toBeTruthy();
-    expect((error as any).status).toBe(429);
+    expect(error?.status).toBe(429);
   }));
 
   it('should NOT retry on non-429 errors', () => {
-    let error: unknown;
+    let error: HttpErrorResponse | undefined;
     http
       .get('https://aihorde.net/api/v2/status/performance')
       .subscribe({ error: (e) => (error = e) });
@@ -169,15 +169,14 @@ describe('rateLimitInterceptor', () => {
       });
 
     expect(error).toBeTruthy();
-    expect((error as any).status).toBe(500);
+    expect(error?.status).toBe(500);
     expect(state.limited()).toBe(false);
   });
 
   it('should clear rate-limit state on non-429 errors', fakeAsync(() => {
-    let error: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e) => (error = e) });
+      .subscribe({ error: () => undefined });
 
     // Return a 400 error
     httpTesting

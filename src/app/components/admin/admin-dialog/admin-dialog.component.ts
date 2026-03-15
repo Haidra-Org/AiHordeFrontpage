@@ -7,7 +7,6 @@ import {
   OnDestroy,
   output,
   PLATFORM_ID,
-  signal,
   effect,
   viewChild,
 } from '@angular/core';

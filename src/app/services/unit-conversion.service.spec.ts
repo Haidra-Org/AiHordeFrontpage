@@ -1,9 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import {
-  UnitConversionService,
-  FormattedValue,
-  SynthesizedUnit,
-} from './unit-conversion.service';
+import { UnitConversionService } from './unit-conversion.service';
 
 describe('UnitConversionService', () => {
   let service: UnitConversionService;

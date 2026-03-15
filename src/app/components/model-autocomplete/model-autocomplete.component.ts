@@ -62,8 +62,8 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     () => this.models().length - this.filteredModels().length,
   );
 
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string) => void = () => undefined;
+  private onTouched: () => void = () => undefined;
 
   public writeValue(value: string | null | undefined): void {
     this.value.set(value ?? '');

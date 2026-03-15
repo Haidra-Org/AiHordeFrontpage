@@ -11,7 +11,7 @@ describe('CapitalizePipe', () => {
       providers: [EnumDisplayService],
     });
     service = TestBed.inject(EnumDisplayService);
-    pipe = new CapitalizePipe(service);
+    pipe = TestBed.runInInjectionContext(() => new CapitalizePipe());
   });
 
   it('should create', () => {

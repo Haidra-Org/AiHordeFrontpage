@@ -19,7 +19,7 @@ import { isPlatformBrowser } from '@angular/common';
  * there is no flash-of-invisible content.
  */
 @Directive({
-  selector: '[scrollReveal]',
+  selector: '[appScrollReveal], [scrollReveal]',
 })
 export class ScrollRevealDirective {
   private readonly el = inject(ElementRef);

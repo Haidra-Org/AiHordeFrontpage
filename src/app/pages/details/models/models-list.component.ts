@@ -504,7 +504,7 @@ export class ModelsListComponent implements OnInit {
         );
         break;
 
-      case 'Enter':
+      case 'Enter': {
         event.preventDefault();
         const activeIdx = this.activeSuggestionIndex();
         if (activeIdx >= 0 && activeIdx < suggestions.length) {
@@ -514,6 +514,7 @@ export class ModelsListComponent implements OnInit {
           this.selectSuggestion(suggestions[0]);
         }
         break;
+      }
 
       case 'Escape':
         event.preventDefault();

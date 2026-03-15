@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { catchError, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, map, Observable, throwError } from 'rxjs';
 import { FaqItem } from '../types/faq-item';
 import { TranslocoService } from '@jsverse/transloco';
 import { ToolItem } from '../types/tool-item';
@@ -137,7 +137,9 @@ export class DataService {
       }
 
       for (const targetSortingValue of targetSortingValues) {
-        result.has(targetSortingValue) || result.set(targetSortingValue, []);
+        if (!result.has(targetSortingValue)) {
+          result.set(targetSortingValue, []);
+        }
         result.get(targetSortingValue)!.push(object);
       }
     }
