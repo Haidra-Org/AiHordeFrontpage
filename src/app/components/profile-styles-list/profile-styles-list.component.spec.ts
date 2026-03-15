@@ -80,7 +80,9 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
 
     const authServiceMock = {
       currentUser: mockCurrentUser,
-      getStoredApiKey: jasmine.createSpy('getStoredApiKey').and.returnValue('test-key'),
+      getStoredApiKey: jasmine
+        .createSpy('getStoredApiKey')
+        .and.returnValue('test-key'),
     };
 
     TestBed.configureTestingModule({
@@ -89,7 +91,9 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([]),
-        provideTransloco({ config: { availableLangs: ['en'], defaultLang: 'en' } }),
+        provideTransloco({
+          config: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
         { provide: StyleService, useValue: styleService },
         { provide: AuthService, useValue: authServiceMock },
       ],
@@ -203,7 +207,13 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
 
     // Simulate external data input
     fixture.componentRef.setInput('styles', [
-      { id: 'ext-1', style: mockImageStyle, type: 'image', loading: false, error: false },
+      {
+        id: 'ext-1',
+        style: mockImageStyle,
+        type: 'image',
+        loading: false,
+        error: false,
+      },
     ]);
     fixture.detectChanges();
 

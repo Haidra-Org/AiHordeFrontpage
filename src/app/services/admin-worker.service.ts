@@ -27,11 +27,9 @@ export class AdminWorkerService {
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
     return this.cache
-      .cachedGet<HordeWorker[]>(
-        `${this.baseUrl}/workers`,
-        options,
-        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
-      )
+      .cachedGet<
+        HordeWorker[]
+      >(`${this.baseUrl}/workers`, options, { ttl: CacheTTL.SHORT, category: 'admin-workers' })
       .pipe(catchError(() => of([])));
   }
 
@@ -43,11 +41,10 @@ export class AdminWorkerService {
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
     return this.cache
-      .cachedGet<HordeWorker>(
-        `${this.baseUrl}/workers/${id}`,
-        options,
-        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
-      )
+      .cachedGet<HordeWorker>(`${this.baseUrl}/workers/${id}`, options, {
+        ttl: CacheTTL.SHORT,
+        category: 'admin-workers',
+      })
       .pipe(catchError(() => of(null)));
   }
 
@@ -169,7 +166,10 @@ export class AdminWorkerService {
       .cachedGet<HordeWorker>(
         `${this.baseUrl}/workers/name/${encodeURIComponent(name)}`,
         options,
-        { ttl: CacheTTL.SHORT, category: 'admin-workers' },
+        {
+          ttl: CacheTTL.SHORT,
+          category: 'admin-workers',
+        },
       )
       .pipe(catchError(() => of(null)));
   }

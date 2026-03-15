@@ -119,11 +119,9 @@ export class StyleService {
   ): Observable<ImageStyle[]> {
     const httpParams = this.buildQueryParams(params);
     return this.cache
-      .cachedGet<ImageStyle[]>(
-        `${this.baseUrl}/styles/image`,
-        { params: httpParams, context: this.styleContext },
-        { ttl: CacheTTL.LONG, category: 'styles' },
-      )
+      .cachedGet<
+        ImageStyle[]
+      >(`${this.baseUrl}/styles/image`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'styles' })
       .pipe(catchError(this.handleError));
   }
 
@@ -299,11 +297,9 @@ export class StyleService {
   public getTextStyles(params: StyleQueryParams = {}): Observable<TextStyle[]> {
     const httpParams = this.buildQueryParams(params);
     return this.cache
-      .cachedGet<TextStyle[]>(
-        `${this.baseUrl}/styles/text`,
-        { params: httpParams, context: this.styleContext },
-        { ttl: CacheTTL.LONG, category: 'styles' },
-      )
+      .cachedGet<
+        TextStyle[]
+      >(`${this.baseUrl}/styles/text`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'styles' })
       .pipe(catchError(this.handleError));
   }
 
@@ -410,11 +406,9 @@ export class StyleService {
   ): Observable<StyleCollection[]> {
     const httpParams = this.buildCollectionQueryParams(params);
     return this.cache
-      .cachedGet<StyleCollection[]>(
-        `${this.baseUrl}/collections`,
-        { params: httpParams, context: this.styleContext },
-        { ttl: CacheTTL.LONG, category: 'collections' },
-      )
+      .cachedGet<
+        StyleCollection[]
+      >(`${this.baseUrl}/collections`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'collections' })
       .pipe(catchError(this.handleError));
   }
 

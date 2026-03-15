@@ -40,11 +40,9 @@ export class AdminOperationsService {
    */
   public getIPTimeouts(): Observable<IPTimeout[]> {
     return this.cache
-      .cachedGet<IPTimeout[]>(
-        `${this.baseUrl}/operations/ipaddr`,
-        { headers: this.getHeaders() },
-        { ttl: CacheTTL.SHORT, category: 'admin-ops' },
-      )
+      .cachedGet<
+        IPTimeout[]
+      >(`${this.baseUrl}/operations/ipaddr`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
       .pipe(catchError(() => of([])));
   }
 
@@ -58,11 +56,9 @@ export class AdminOperationsService {
   public getIPTimeout(ipaddr: string): Observable<IPTimeout | null> {
     const encodedIP = encodeURIComponent(ipaddr);
     return this.cache
-      .cachedGet<IPTimeout[]>(
-        `${this.baseUrl}/operations/ipaddr/${encodedIP}`,
-        { headers: this.getHeaders() },
-        { ttl: CacheTTL.SHORT, category: 'admin-ops' },
-      )
+      .cachedGet<
+        IPTimeout[]
+      >(`${this.baseUrl}/operations/ipaddr/${encodedIP}`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
       .pipe(
         map((result) => (result && result.length > 0 ? result[0] : null)),
         catchError(() => of(null)),

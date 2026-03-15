@@ -1,7 +1,4 @@
-<div
-  class="style-form-shell"
-  [class.card--no-blur]="confirmModalOpen()"
->
+<div class="style-form-shell" [class.card--no-blur]="confirmModalOpen()">
   <!-- View Toggle -->
   <section
     class="style-form-panel style-form-panel--identity form-section-shell surface-glass surface-glass--accent"
@@ -211,7 +208,8 @@
               formControlName="models"
               [models]="availableModels()"
               [invalid]="
-                form.controls['models'].invalid && form.controls['models'].touched
+                form.controls['models'].invalid &&
+                form.controls['models'].touched
               "
               placeholderKey="styles.form.models_placeholder"
               listAriaLabelKey="styles.form.models"

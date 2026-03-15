@@ -223,7 +223,9 @@
           <!-- Login Form -->
           <div class="container-centered-md profile-login-shell">
             <app-page-intro pageKey="profile_guest" />
-            <div class="profile-login-panel surface-glass surface-glass--elevated">
+            <div
+              class="profile-login-panel surface-glass surface-glass--elevated"
+            >
               <p class="text-intro text-primary profile-login-description">
                 {{ "profile.login_description" | transloco }}
               </p>
@@ -232,7 +234,11 @@
                 {{ "profile.no_auth_warning" | transloco }}
               </p>
 
-              <form class="profile-login-form" [formGroup]="form" (ngSubmit)="login()">
+              <form
+                class="profile-login-form"
+                [formGroup]="form"
+                (ngSubmit)="login()"
+              >
                 <div class="form-group">
                   <label for="api_key" class="form-label">{{
                     "profile.api_key" | transloco
@@ -592,7 +598,10 @@
                         </p>
                       }
                       @if (showContactNagNotifications()) {
-                        <a routerLink="/profile/settings" class="btn-secondary mt-2 max-h-7">
+                        <a
+                          routerLink="/profile/settings"
+                          class="btn-secondary mt-2 max-h-7"
+                        >
                           {{ "profile.set_contact_nag" | transloco }}
                         </a>
                       }
@@ -659,11 +668,16 @@
                   </div>
 
                   <!-- Activity Snapshot -->
-                  <div class="profile-glass-section profile-overview-columns__sidebar">
+                  <div
+                    class="profile-glass-section profile-overview-columns__sidebar"
+                  >
                     <h3 class="heading-card">
                       {{ "profile.activity_heading" | transloco }}
                     </h3>
-                    <app-user-stats-summary [loading]="auth.isLoading()" [user]="auth.currentUser()!" />
+                    <app-user-stats-summary
+                      [loading]="auth.isLoading()"
+                      [user]="auth.currentUser()!"
+                    />
                   </div>
                 </div>
 
@@ -859,7 +873,10 @@
                   auth.currentUser()!.contributions)
               ) {
                 <div class="card card-bg-primary card-full card-spaced">
-                  <app-user-records-panel [loading]="auth.isLoading()" [data]="auth.currentUser()!" />
+                  <app-user-records-panel
+                    [loading]="auth.isLoading()"
+                    [data]="auth.currentUser()!"
+                  />
                 </div>
               }
 
@@ -1546,7 +1563,9 @@
 
               <!-- Styles Section -->
               @if (activeTab() === "styles") {
-                <div class="card card-bg-primary card-full card-spaced profile-styles-shell">
+                <div
+                  class="card card-bg-primary card-full card-spaced profile-styles-shell"
+                >
                   <h3 class="heading-card">
                     {{ "profile.tabs.styles" | transloco }}
                     @if (
@@ -1564,7 +1583,9 @@
 
               <!-- Shared Keys Section -->
               @if (activeTab() === "shared-keys") {
-                <div class="card card-bg-primary card-full card-spaced profile-shared-keys-shell">
+                <div
+                  class="card card-bg-primary card-full card-spaced profile-shared-keys-shell"
+                >
                   <app-shared-key-list />
                 </div>
               }

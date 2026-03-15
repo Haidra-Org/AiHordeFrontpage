@@ -1,5 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpContext,
+  HttpErrorResponse,
+} from '@angular/common/http';
 import { catchError, map, Observable, of, zip } from 'rxjs';
 import { ImageTotalStats } from '../types/image-total-stats';
 import { HordePerformance } from '../types/horde-performance';
@@ -22,10 +26,7 @@ import {
   AlchemyStatusResponse,
   GENERATION_NOT_FOUND,
 } from '../types/generation';
-import {
-  HordeApiCacheService,
-  CacheTTL,
-} from './horde-api-cache.service';
+import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 
 const BASE = 'https://aihorde.net/api/v2';
@@ -41,7 +42,10 @@ export class AiHordeService {
     return this.cache.cachedGet<ImageTotalStats>(
       `${BASE}/stats/img/totals`,
       undefined,
-      { ttl: CacheTTL.LONG, category: 'stats' },
+      {
+        ttl: CacheTTL.LONG,
+        category: 'stats',
+      },
     );
   }
 
@@ -49,7 +53,10 @@ export class AiHordeService {
     return this.cache.cachedGet<TextTotalStats>(
       `${BASE}/stats/text/totals`,
       undefined,
-      { ttl: CacheTTL.LONG, category: 'stats' },
+      {
+        ttl: CacheTTL.LONG,
+        category: 'stats',
+      },
     );
   }
 
@@ -57,7 +64,10 @@ export class AiHordeService {
     return this.cache.cachedGet<HordePerformance>(
       `${BASE}/status/performance`,
       undefined,
-      { ttl: CacheTTL.MEDIUM, category: 'performance' },
+      {
+        ttl: CacheTTL.MEDIUM,
+        category: 'performance',
+      },
     );
   }
 
@@ -72,7 +82,10 @@ export class AiHordeService {
       .cachedGet<HtmlHordeDocument>(
         `${BASE}/documents/terms?format=html`,
         undefined,
-        { ttl: CacheTTL.VERY_LONG, category: 'documents' },
+        {
+          ttl: CacheTTL.VERY_LONG,
+          category: 'documents',
+        },
       )
       .pipe(map((response) => response.html));
   }
@@ -82,18 +95,19 @@ export class AiHordeService {
       .cachedGet<HtmlHordeDocument>(
         `${BASE}/documents/privacy?format=html`,
         undefined,
-        { ttl: CacheTTL.VERY_LONG, category: 'documents' },
+        {
+          ttl: CacheTTL.VERY_LONG,
+          category: 'documents',
+        },
       )
       .pipe(map((response) => response.html));
   }
 
   public getNews(count?: number): Observable<NewsItem[]> {
     return this.cache
-      .cachedGet<HordeNewsItem[]>(
-        `${BASE}/status/news`,
-        undefined,
-        { ttl: CacheTTL.VERY_LONG, category: 'news' },
-      )
+      .cachedGet<
+        HordeNewsItem[]
+      >(`${BASE}/status/news`, undefined, { ttl: CacheTTL.VERY_LONG, category: 'news' })
       .pipe(
         map((newsItems) => (count ? newsItems.slice(0, count) : newsItems)),
         map((newsItems) => {
@@ -142,11 +156,10 @@ export class AiHordeService {
 
   public getUserById(id: number): Observable<HordeUser | null> {
     return this.cache
-      .cachedGet<HordeUser>(
-        `${BASE}/users/${id}`,
-        undefined,
-        { ttl: CacheTTL.MEDIUM, category: 'user' },
-      )
+      .cachedGet<HordeUser>(`${BASE}/users/${id}`, undefined, {
+        ttl: CacheTTL.MEDIUM,
+        category: 'user',
+      })
       .pipe(catchError(() => of(null)));
   }
 
@@ -245,7 +258,10 @@ export class AiHordeService {
     return this.cache.cachedGet<ImageModelStats>(
       `${BASE}/stats/img/models?model_state=${modelState}`,
       undefined,
-      { ttl: CacheTTL.LONG, category: 'stats' },
+      {
+        ttl: CacheTTL.LONG,
+        category: 'stats',
+      },
     );
   }
 
@@ -256,7 +272,10 @@ export class AiHordeService {
     return this.cache.cachedGet<TextModelStats>(
       `${BASE}/stats/text/models`,
       undefined,
-      { ttl: CacheTTL.LONG, category: 'stats' },
+      {
+        ttl: CacheTTL.LONG,
+        category: 'stats',
+      },
     );
   }
 
@@ -270,11 +289,9 @@ export class AiHordeService {
     limit = 25,
   ): Observable<LeaderboardUser[]> {
     return this.cache
-      .cachedGet<HordeUser[]>(
-        `${BASE}/users?page=${page}&sort=kudos`,
-        undefined,
-        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
-      )
+      .cachedGet<
+        HordeUser[]
+      >(`${BASE}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
       .pipe(
         map((users) =>
           users.slice(0, limit).map((user) => ({
@@ -293,11 +310,9 @@ export class AiHordeService {
    */
   public getKudosLeaderboardPage(page: number): Observable<LeaderboardUser[]> {
     return this.cache
-      .cachedGet<HordeUser[]>(
-        `${BASE}/users?page=${page}&sort=kudos`,
-        undefined,
-        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
-      )
+      .cachedGet<
+        HordeUser[]
+      >(`${BASE}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
       .pipe(
         map((users) =>
           users.map((user) => ({
@@ -320,14 +335,10 @@ export class AiHordeService {
     request: ImageGenerationRequest,
   ): Observable<ImageGenerationResponse | null> {
     return this.httpClient
-      .post<ImageGenerationResponse>(
-        `${BASE}/generate/async`,
-        request,
-        {
-          headers: { apikey: apiKey },
-          context: this.generateContext,
-        },
-      )
+      .post<ImageGenerationResponse>(`${BASE}/generate/async`, request, {
+        headers: { apikey: apiKey },
+        context: this.generateContext,
+      })
       .pipe(catchError(() => of(null)));
   }
 

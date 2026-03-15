@@ -350,11 +350,7 @@ export class UnitConversionService {
    * Formats a large number with human-readable prefix (million, billion, etc.)
    * Use this for everyday units like "images", "requests"
    */
-  formatLargeNumber(
-    value: number,
-    unit = '',
-    decimals = 1,
-  ): string {
+  formatLargeNumber(value: number, unit = '', decimals = 1): string {
     const prefix = this.getHumanPrefix(value);
     const scaledValue = value / prefix.threshold;
 
@@ -373,11 +369,7 @@ export class UnitConversionService {
    * Formats a large number with SI prefix (kilo, mega, giga)
    * Use this for technical units like "pixelsteps", "tokens/sec"
    */
-  formatLargeNumberTechnical(
-    value: number,
-    unit = '',
-    decimals = 1,
-  ): string {
+  formatLargeNumberTechnical(value: number, unit = '', decimals = 1): string {
     const formatted = this.formatWithSiPrefix(value, unit, decimals);
     return formatted.formatted;
   }

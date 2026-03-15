@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, ViewEncapsulation } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  ViewEncapsulation,
+} from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 

@@ -9,10 +9,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import {
-  rateLimitInterceptor,
-  RateLimitState,
-} from './rate-limit.interceptor';
+import { rateLimitInterceptor, RateLimitState } from './rate-limit.interceptor';
 
 describe('rateLimitInterceptor', () => {
   let http: HttpClient;
@@ -51,13 +48,9 @@ describe('rateLimitInterceptor', () => {
 
   it('should pass through non-aihorde requests without rate-limit logic', () => {
     let result: unknown;
-    http
-      .get('https://example.com/api/test')
-      .subscribe((r) => (result = r));
+    http.get('https://example.com/api/test').subscribe((r) => (result = r));
 
-    httpTesting
-      .expectOne('https://example.com/api/test')
-      .flush({ ok: true });
+    httpTesting.expectOne('https://example.com/api/test').flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
   });

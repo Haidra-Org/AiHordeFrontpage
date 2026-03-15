@@ -18,70 +18,78 @@ export interface UserBadgeFlags {
   imports: [TranslocoPipe],
   template: `
     @if (loading()) {
-      <span class="skeleton-bar skeleton-bar-sm" style="width: 4.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;" aria-hidden="true"></span>
-      <span class="skeleton-bar skeleton-bar-sm" style="width: 3.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;" aria-hidden="true"></span>
+      <span
+        class="skeleton-bar skeleton-bar-sm"
+        style="width: 4.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;"
+        aria-hidden="true"
+      ></span>
+      <span
+        class="skeleton-bar skeleton-bar-sm"
+        style="width: 3.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;"
+        aria-hidden="true"
+      ></span>
     } @else {
-    @if (trusted()) {
-      <span
-        class="badge-base badge-success"
-        [attr.title]="'admin.users.desc.trusted' | transloco"
-        >{{ "profile.badge.trusted" | transloco }}</span
-      >
-    }
-    @if (moderator()) {
-      <span
-        class="badge-base badge-purple"
-        [attr.title]="'admin.users.desc.moderator' | transloco"
-        >{{ "profile.badge.moderator" | transloco }}</span
-      >
-    }
-    @if (education()) {
-      <span
-        class="badge-base badge-info"
-        [attr.title]="'admin.users.desc.education' | transloco"
-        >{{ "profile.badge.education" | transloco }}</span
-      >
-    }
-    @if (service()) {
-      <span
-        class="badge-base badge-warning"
-        [attr.title]="'admin.users.desc.service' | transloco"
-        >{{ "profile.badge.service" | transloco }}</span
-      >
-    }
-    @if (customizer()) {
-      <span
-        class="badge-base badge-pink"
-        [attr.title]="'admin.users.desc.customizer' | transloco"
-        >{{ "profile.badge.customizer" | transloco }}</span
-      >
-    }
-    @if (special()) {
-      <span
-        class="badge-base badge-secondary"
-        [attr.title]="'admin.users.desc.special' | transloco"
-        >{{ "profile.badge.special" | transloco }}</span
-      >
-    }
-    @if (pseudonymous()) {
-      <span class="badge-base badge-secondary">{{
-        "profile.badge.anonymous" | transloco
-      }}</span>
-    }
-    @if (filtered()) {
-      <span
-        class="badge-base badge-warning"
-        [attr.title]="'admin.users.desc.filtered' | transloco"
-        >{{ "profile.badge.filtered" | transloco }}</span
-      >
-    }
-    @if (flagged()) {
-      <span
-        class="badge-base badge-danger"
-        [attr.title]="'admin.users.desc.flagged' | transloco"
-        >{{ "profile.badge.flagged" | transloco }}</span
-      >
-    }
+      @if (trusted()) {
+        <span
+          class="badge-base badge-success"
+          [attr.title]="'admin.users.desc.trusted' | transloco"
+          >{{ 'profile.badge.trusted' | transloco }}</span
+        >
+      }
+      @if (moderator()) {
+        <span
+          class="badge-base badge-purple"
+          [attr.title]="'admin.users.desc.moderator' | transloco"
+          >{{ 'profile.badge.moderator' | transloco }}</span
+        >
+      }
+      @if (education()) {
+        <span
+          class="badge-base badge-info"
+          [attr.title]="'admin.users.desc.education' | transloco"
+          >{{ 'profile.badge.education' | transloco }}</span
+        >
+      }
+      @if (service()) {
+        <span
+          class="badge-base badge-warning"
+          [attr.title]="'admin.users.desc.service' | transloco"
+          >{{ 'profile.badge.service' | transloco }}</span
+        >
+      }
+      @if (customizer()) {
+        <span
+          class="badge-base badge-pink"
+          [attr.title]="'admin.users.desc.customizer' | transloco"
+          >{{ 'profile.badge.customizer' | transloco }}</span
+        >
+      }
+      @if (special()) {
+        <span
+          class="badge-base badge-secondary"
+          [attr.title]="'admin.users.desc.special' | transloco"
+          >{{ 'profile.badge.special' | transloco }}</span
+        >
+      }
+      @if (pseudonymous()) {
+        <span class="badge-base badge-secondary">{{
+          'profile.badge.anonymous' | transloco
+        }}</span>
+      }
+      @if (filtered()) {
+        <span
+          class="badge-base badge-warning"
+          [attr.title]="'admin.users.desc.filtered' | transloco"
+          >{{ 'profile.badge.filtered' | transloco }}</span
+        >
+      }
+      @if (flagged()) {
+        <span
+          class="badge-base badge-danger"
+          [attr.title]="'admin.users.desc.flagged' | transloco"
+          >{{ 'profile.badge.flagged' | transloco }}</span
+        >
+      }
     }
   `,
   host: { class: 'badge-container' },

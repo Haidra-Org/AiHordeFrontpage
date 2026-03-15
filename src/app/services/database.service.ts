@@ -68,7 +68,7 @@ export class DatabaseService {
     }
 
     const defaultValue: T | null = hasDefault
-      ? defaultValueOrStorageType as T
+      ? (defaultValueOrStorageType as T)
       : null;
 
     let value: T | null;

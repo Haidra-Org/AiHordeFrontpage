@@ -93,7 +93,10 @@
       @if (isLoggedIn() && activeTab() !== "collections") {
         <a
           routerLink="/profile/styles"
-          [queryParams]="{ from: 'details', type: activeTab() === 'text' ? 'text' : 'image' }"
+          [queryParams]="{
+            from: 'details',
+            type: activeTab() === 'text' ? 'text' : 'image',
+          }"
           class="btn-source-control styles-create-btn"
         >
           {{ "styles.manage_on_profile" | transloco }}

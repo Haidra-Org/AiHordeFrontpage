@@ -330,16 +330,16 @@
                   }
                 </a>
                 @if (!auth.isLoggedIn()) {
-                <a
-                  href="https://aihorde.net/register"
-                  class="nav-dropdown-item external-link"
-                  role="menuitem"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  (click)="closeAccountDropdown()"
-                >
-                  {{ "register_account" | transloco }}
-                </a>
+                  <a
+                    href="https://aihorde.net/register"
+                    class="nav-dropdown-item external-link"
+                    role="menuitem"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    (click)="closeAccountDropdown()"
+                  >
+                    {{ "register_account" | transloco }}
+                  </a>
                 }
                 <a
                   routerLink="/v2-transfer/"
@@ -708,17 +708,17 @@
                     }
                   </a>
                   @if (!auth.isLoggedIn()) {
-                  <a
-                    href="https://aihorde.net/register"
-                    class="mobile-nav-link mobile-nav-submenu-item external-link"
-                    role="menuitem"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    (click)="closeMobileMenu()"
-                  >
-                    {{ "register_account" | transloco }}
-                  </a>
-                }
+                    <a
+                      href="https://aihorde.net/register"
+                      class="mobile-nav-link mobile-nav-submenu-item external-link"
+                      role="menuitem"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      (click)="closeMobileMenu()"
+                    >
+                      {{ "register_account" | transloco }}
+                    </a>
+                  }
                   <a
                     routerLink="/v2-transfer/"
                     class="mobile-nav-link mobile-nav-submenu-item"

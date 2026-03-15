@@ -80,7 +80,8 @@
   @if (editingKey(); as editKey) {
     <div class="section-divider-top" #editFormRegion>
       <h4 class="section-title-sm mb-2">
-        {{ "profile.shared_keys.edit" | transloco }}: {{ editKey.name || ("profile.shared_keys.untitled" | transloco) }}
+        {{ "profile.shared_keys.edit" | transloco }}:
+        {{ editKey.name || ("profile.shared_keys.untitled" | transloco) }}
       </h4>
       <app-shared-key-form
         [initialValues]="editFormValues()"

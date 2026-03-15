@@ -55,11 +55,9 @@ export class AdminFilterService {
     }
 
     return this.cache
-      .cachedGet<FilterDetails[]>(
-        `${this.baseUrl}/filters`,
-        { headers: this.getHeaders(), params },
-        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
-      )
+      .cachedGet<
+        FilterDetails[]
+      >(`${this.baseUrl}/filters`, { headers: this.getHeaders(), params }, { ttl: CacheTTL.SHORT, category: 'admin-filters' })
       .pipe(catchError(() => of([])));
   }
 
@@ -206,11 +204,9 @@ export class AdminFilterService {
     }
 
     return this.cache
-      .cachedGet<FilterRegex[]>(
-        `${this.baseUrl}/filters/regex`,
-        { headers: this.getHeaders(), params },
-        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
-      )
+      .cachedGet<
+        FilterRegex[]
+      >(`${this.baseUrl}/filters/regex`, { headers: this.getHeaders(), params }, { ttl: CacheTTL.SHORT, category: 'admin-filters' })
       .pipe(catchError(() => of([])));
   }
 }

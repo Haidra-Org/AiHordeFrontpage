@@ -29,8 +29,14 @@ export interface UserStatsInput {
       <div [class]="gridClass()" aria-busy="true">
         @for (i of [1, 2, 3]; track i) {
           <div class="data-item-box">
-            <span class="skeleton-bar" style="width: 60%; height: 0.75rem;"></span>
-            <span class="skeleton-bar" style="width: 40%; height: 1.25rem; margin-top: 0.5rem;"></span>
+            <span
+              class="skeleton-bar"
+              style="width: 60%; height: 0.75rem;"
+            ></span>
+            <span
+              class="skeleton-bar"
+              style="width: 40%; height: 1.25rem; margin-top: 0.5rem;"
+            ></span>
           </div>
         }
       </div>
@@ -39,7 +45,7 @@ export interface UserStatsInput {
         @if (imagesRequested() !== null) {
           <div class="data-item-box domain-tint--image">
             <span class="data-label"
-              >{{ "profile.images_requested" | transloco }}
+              >{{ 'profile.images_requested' | transloco }}
               <app-info-tooltip
                 termKey="help.glossary.terms.request.body_images"
                 glossaryId="request"
@@ -53,7 +59,7 @@ export interface UserStatsInput {
         @if (textRequests() !== null) {
           <div class="data-item-box domain-tint--text">
             <span class="data-label"
-              >{{ "profile.text_requests" | transloco }}
+              >{{ 'profile.text_requests' | transloco }}
               <app-info-tooltip
                 termKey="help.glossary.terms.request.body_text"
                 glossaryId="request"
@@ -67,7 +73,7 @@ export interface UserStatsInput {
         @if (megapixelstepsGenerated() !== null) {
           <div class="data-item-box domain-tint--image">
             <span class="data-label"
-              >{{ "profile.mps_generated" | transloco }}
+              >{{ 'profile.mps_generated' | transloco }}
               <app-info-tooltip
                 termKey="help.glossary.page.profile.kudos_generated.description"
                 glossaryId="profile-kudos-generated"
@@ -81,7 +87,7 @@ export interface UserStatsInput {
         @if (tokensGenerated() !== null) {
           <div class="data-item-box domain-tint--text">
             <span class="data-label"
-              >{{ "profile.tokens_generated" | transloco }}
+              >{{ 'profile.tokens_generated' | transloco }}
               <app-info-tooltip
                 termKey="help.glossary.page.profile.kudos_generated.description"
                 glossaryId="profile-kudos-generated"
@@ -95,15 +101,13 @@ export interface UserStatsInput {
         @if (fulfillments() !== null) {
           <div class="data-item-box domain-tint--combined">
             <span class="data-label"
-              >{{ "profile.fulfillments_label" | transloco }}
+              >{{ 'profile.fulfillments_label' | transloco }}
               <app-info-tooltip
                 termKey="help.glossary.page.profile.total_fulfillments.description"
                 glossaryId="profile-total-fulfillments"
               />
             </span>
-            <span class="data-value">{{
-              fulfillments()! | formatNumber
-            }}</span>
+            <span class="data-value">{{ fulfillments()! | formatNumber }}</span>
           </div>
         }
       </div>

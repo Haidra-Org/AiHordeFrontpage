@@ -130,7 +130,10 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
 
     const current = this.value();
     const parts = current.split(',');
-    const completed = parts.slice(0, -1).map((part) => part.trim()).filter(Boolean);
+    const completed = parts
+      .slice(0, -1)
+      .map((part) => part.trim())
+      .filter(Boolean);
 
     if (!completed.includes(name)) {
       completed.push(name);
