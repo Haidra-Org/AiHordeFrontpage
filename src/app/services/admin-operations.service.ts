@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, map, tap } from 'rxjs';
+import { Observable, of, map, tap } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   IPTimeout,
@@ -39,11 +39,11 @@ export class AdminOperationsService {
    * @returns Observable of IP timeout array, or empty array on error
    */
   public getIPTimeouts(): Observable<IPTimeout[]> {
-    return this.cache
-      .cachedGet<
-        IPTimeout[]
-      >(`${this.baseUrl}/operations/ipaddr`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
-      .pipe(catchError(() => of([])));
+    return this.cache.cachedGet<IPTimeout[]>(
+      `${this.baseUrl}/operations/ipaddr`,
+      { headers: this.getHeaders() },
+      { ttl: CacheTTL.SHORT, category: 'admin-ops' },
+    );
   }
 
   /**
@@ -59,10 +59,7 @@ export class AdminOperationsService {
       .cachedGet<
         IPTimeout[]
       >(`${this.baseUrl}/operations/ipaddr/${encodedIP}`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
-      .pipe(
-        map((result) => (result && result.length > 0 ? result[0] : null)),
-        catchError(() => of(null)),
-      );
+      .pipe(map((result) => (result && result.length > 0 ? result[0] : null)));
   }
 
   /**
@@ -84,10 +81,7 @@ export class AdminOperationsService {
       .post<SimpleResponse>(`${this.baseUrl}/operations/ipaddr`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-ops' })));
   }
 
   /**
@@ -111,7 +105,6 @@ export class AdminOperationsService {
       .pipe(
         tap(() => this.cache.invalidate({ category: 'admin-ops' })),
         map(() => true),
-        catchError(() => of(false)),
       );
   }
 
@@ -141,10 +134,7 @@ export class AdminOperationsService {
           headers: { apikey: apiKey },
         },
       )
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-ops' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-ops' })));
   }
 
   /**
@@ -170,7 +160,6 @@ export class AdminOperationsService {
       .pipe(
         tap(() => this.cache.invalidate({ category: 'admin-ops' })),
         map(() => true),
-        catchError(() => of(false)),
       );
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of, tap } from 'rxjs';
+import { Observable, of, tap, map } from 'rxjs';
 import { AuthService } from './auth.service';
 import {
   FilterDetails,
@@ -54,11 +54,11 @@ export class AdminFilterService {
       params = params.set('contains', contains);
     }
 
-    return this.cache
-      .cachedGet<
-        FilterDetails[]
-      >(`${this.baseUrl}/filters`, { headers: this.getHeaders(), params }, { ttl: CacheTTL.SHORT, category: 'admin-filters' })
-      .pipe(catchError(() => of([])));
+    return this.cache.cachedGet<FilterDetails[]>(
+      `${this.baseUrl}/filters`,
+      { headers: this.getHeaders(), params },
+      { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+    );
   }
 
   /**
@@ -69,13 +69,11 @@ export class AdminFilterService {
    * @returns Observable of filter details, or null on error
    */
   public getFilter(id: string): Observable<FilterDetails | null> {
-    return this.cache
-      .cachedGet<FilterDetails>(
-        `${this.baseUrl}/filters/${id}`,
-        { headers: this.getHeaders() },
-        { ttl: CacheTTL.SHORT, category: 'admin-filters' },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.cache.cachedGet<FilterDetails>(
+      `${this.baseUrl}/filters/${id}`,
+      { headers: this.getHeaders() },
+      { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+    );
   }
 
   /**
@@ -97,10 +95,7 @@ export class AdminFilterService {
       .put<FilterDetails>(`${this.baseUrl}/filters`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-filters' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-filters' })));
   }
 
   /**
@@ -124,10 +119,7 @@ export class AdminFilterService {
       .patch<FilterDetails>(`${this.baseUrl}/filters/${id}`, data, {
         headers: { apikey: apiKey },
       })
-      .pipe(
-        tap(() => this.cache.invalidate({ category: 'admin-filters' })),
-        catchError(() => of(null)),
-      );
+      .pipe(tap(() => this.cache.invalidate({ category: 'admin-filters' })));
   }
 
   /**
@@ -150,21 +142,7 @@ export class AdminFilterService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'admin-filters' })),
-        catchError(() => of(null)),
-        // Map response to boolean
-        (obs) =>
-          new Observable<boolean>((subscriber) => {
-            obs.subscribe({
-              next: (response) => {
-                subscriber.next(response !== null);
-                subscriber.complete();
-              },
-              error: () => {
-                subscriber.next(false);
-                subscriber.complete();
-              },
-            });
-          }),
+        map(() => true),
       );
   }
 
@@ -183,11 +161,13 @@ export class AdminFilterService {
       return of(null);
     }
 
-    return this.httpClient
-      .post<FilterPromptSuspicion>(`${this.baseUrl}/filters`, data, {
+    return this.httpClient.post<FilterPromptSuspicion>(
+      `${this.baseUrl}/filters`,
+      data,
+      {
         headers: { apikey: apiKey },
-      })
-      .pipe(catchError(() => of(null)));
+      },
+    );
   }
 
   /**
@@ -203,10 +183,10 @@ export class AdminFilterService {
       params = params.set('filter_type', filterType.toString());
     }
 
-    return this.cache
-      .cachedGet<
-        FilterRegex[]
-      >(`${this.baseUrl}/filters/regex`, { headers: this.getHeaders(), params }, { ttl: CacheTTL.SHORT, category: 'admin-filters' })
-      .pipe(catchError(() => of([])));
+    return this.cache.cachedGet<FilterRegex[]>(
+      `${this.baseUrl}/filters/regex`,
+      { headers: this.getHeaders(), params },
+      { ttl: CacheTTL.SHORT, category: 'admin-filters' },
+    );
   }
 }

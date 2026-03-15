@@ -3,6 +3,8 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
   NgZone,
   OnInit,
@@ -27,17 +29,15 @@ import { SharedKeyDetails } from '../../../types/shared-key';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { WorkerCardComponent } from '../workers/worker-card.component';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
-import {
-  AdminToastBarComponent,
-  AdminToast,
-} from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
+import { AdminToastService } from '../../../services/admin-toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 import { AdminGenerationTrackerComponent } from '../../../components/admin/admin-generation-tracker/admin-generation-tracker.component';
 import { GenerationType } from '../../../types/generation';
+import { extractApiError } from '../../../helper/extract-api-error';
 
 type DialogType = 'resetSuspicion' | 'undeleteUser';
 
@@ -60,7 +60,6 @@ const MAX_HISTORY_SIZE = 30;
     WorkerCardComponent,
     DatePipe,
     AdminDialogComponent,
-    AdminToastBarComponent,
     KudosBreakdownPanelComponent,
     AdminGenerationTrackerComponent,
   ],
@@ -79,9 +78,22 @@ export class UserManagementComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   public readonly auth = inject(AuthService);
   private readonly floatingActions = inject(FloatingActionService);
+  private readonly toastService = inject(AdminToastService);
 
   public readonly generationTracker =
     viewChild<AdminGenerationTrackerComponent>('generationTracker');
+  private readonly rawJsonDialog =
+    viewChild<ElementRef<HTMLDialogElement>>('rawJsonDialog');
+
+  constructor() {
+    // Open native dialog when it appears in the DOM (after @defer/@if)
+    effect(() => {
+      const dialogEl = this.rawJsonDialog()?.nativeElement;
+      if (dialogEl && !dialogEl.open) {
+        dialogEl.showModal();
+      }
+    });
+  }
 
   // Search state
   public searchQuery = signal<string>('');
@@ -235,9 +247,6 @@ export class UserManagementComponent implements OnInit {
   public dialogType = signal<DialogType>('resetSuspicion');
   public isUpdating = signal<boolean>(false);
 
-  // Toast notifications
-  public toasts = signal<AdminToast[]>([]);
-
   // User history
   public userHistory = signal<UserHistoryItem[]>([]);
   public historyExpanded = signal<boolean>(false);
@@ -294,7 +303,7 @@ export class UserManagementComponent implements OnInit {
     if (!query) return;
 
     this.loading.set(true);
-    this.clearToasts();
+    this.toastService.clearToasts();
     this.userNotFound.set(false);
     this.selectedUser.set(null);
     this.userWorkers.set([]);
@@ -338,9 +347,14 @@ export class UserManagementComponent implements OnInit {
               this.userNotFound.set(true);
             }
           },
-          error: () => {
+          error: (err) => {
             this.userNotFound.set(true);
-            this.showToast('error', 'Failed to load user data.');
+            this.toastService.showToast(
+              'error',
+              extractApiError(err, 'Failed to load user data.'),
+              false,
+              err,
+            );
           },
         });
     } else {
@@ -538,11 +552,19 @@ export class UserManagementComponent implements OnInit {
                   this.inferAndSetPublicWorkers(updatedUser.id);
                 }
               });
-            this.showToast('success', 'Changes saved successfully.');
+            this.toastService.showToast(
+              'success',
+              'Changes saved successfully.',
+            );
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to save changes.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to save changes.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -690,7 +712,18 @@ export class UserManagementComponent implements OnInit {
   }
 
   public closeRawJsonModal(): void {
+    const dialog = this.rawJsonDialog()?.nativeElement;
+    if (dialog?.open) {
+      dialog.close();
+    }
     this.rawJsonModalOpen.set(false);
+  }
+
+  /** Close dialog when clicking the transparent backdrop area (not the panel) */
+  public onDialogBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeRawJsonModal();
+    }
   }
 
   private loadUserSharedKeys(): void {
@@ -710,9 +743,14 @@ export class UserManagementComponent implements OnInit {
           this.userSharedKeys.set(sharedKeys);
           this.sharedKeysFetched.set(true);
         },
-        error: () => {
+        error: (err) => {
           this.sharedKeysFetched.set(true);
-          this.showToast('error', 'Failed to load shared keys.');
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to load shared keys.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -744,8 +782,13 @@ export class UserManagementComponent implements OnInit {
         next: (workers) => {
           this.userWorkers.set(workers);
         },
-        error: () => {
-          this.showToast('error', 'Failed to load workers.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to load workers.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -803,17 +846,33 @@ export class UserManagementComponent implements OnInit {
                 }
               });
             if (dialogType === 'resetSuspicion') {
-              this.showToast('success', 'Suspicion reset successfully.');
+              this.toastService.showToast(
+                'success',
+                'Suspicion reset successfully.',
+              );
             } else if (dialogType === 'undeleteUser') {
-              this.showToast('success', 'User restored successfully.');
+              this.toastService.showToast(
+                'success',
+                'User restored successfully.',
+              );
             }
           }
         },
-        error: () => {
+        error: (err) => {
           if (dialogType === 'resetSuspicion') {
-            this.showToast('error', 'Failed to reset suspicion.');
+            this.toastService.showToast(
+              'error',
+              extractApiError(err, 'Failed to reset suspicion.'),
+              false,
+              err,
+            );
           } else if (dialogType === 'undeleteUser') {
-            this.showToast('error', 'Failed to restore user.');
+            this.toastService.showToast(
+              'error',
+              extractApiError(err, 'Failed to restore user.'),
+              false,
+              err,
+            );
           }
         },
       });
@@ -829,7 +888,7 @@ export class UserManagementComponent implements OnInit {
       workers.filter((w) => w.id !== workerId),
     );
     // Show success toast
-    this.showToast(
+    this.toastService.showToast(
       'success',
       'Worker deleted successfully! Note: It may take up to a minute for the API to reflect this change.',
     );
@@ -860,44 +919,15 @@ export class UserManagementComponent implements OnInit {
               });
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to regenerate passkey.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to regenerate passkey.'),
+            false,
+            err,
+          );
         },
       });
-  }
-
-  // Toast notification methods
-  /**
-   * Show a toast notification.
-   * @param type Toast type: success, error, or warning
-   * @param message The message to display
-   * @param autoDismiss Whether to auto-dismiss after 3 seconds (default: true for success)
-   */
-  public showToast(
-    type: AdminToast['type'],
-    message: string,
-    autoDismiss = type === 'success',
-  ): void {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    this.toasts.update((current) => [...current, { id, type, message }]);
-
-    if (autoDismiss) {
-      setTimeout(() => this.dismissToast(id), 3000);
-    }
-  }
-
-  /**
-   * Dismiss a toast by ID.
-   */
-  public dismissToast(id: string): void {
-    this.toasts.update((current) => current.filter((t) => t.id !== id));
-  }
-
-  /**
-   * Clear all toasts.
-   */
-  public clearToasts(): void {
-    this.toasts.set([]);
   }
 
   // User history methods

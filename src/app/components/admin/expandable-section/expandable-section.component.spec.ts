@@ -82,7 +82,7 @@ describe('ExpandableSectionComponent', () => {
     fixture.detectChanges();
 
     const countEl = fixture.nativeElement.querySelector(
-      '.admin-text-muted.text-sm',
+      '.text-secondary.text-sm',
     );
     expect(countEl.textContent).toContain('(5)');
   });
@@ -92,7 +92,7 @@ describe('ExpandableSectionComponent', () => {
     fixture.detectChanges();
 
     const countEl = fixture.nativeElement.querySelector(
-      '.admin-text-muted.text-sm',
+      '.text-secondary.text-sm',
     );
     expect(countEl).toBeNull();
   });

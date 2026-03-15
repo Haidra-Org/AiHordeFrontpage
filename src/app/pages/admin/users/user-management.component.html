@@ -1,6 +1,3 @@
-<!-- Toasts -->
-<app-admin-toast-bar [toasts]="toasts()" (dismiss)="dismissToast($event)" />
-
 <!-- Dialog -->
 <app-admin-dialog
   [open]="dialogOpen()"
@@ -29,22 +26,17 @@
   }
 </app-admin-dialog>
 
-<!-- Raw JSON Modal - Deferred since it's only shown on demand -->
+<!-- Raw JSON Modal - Native dialog escapes admin-content stacking context -->
 @defer (when rawJsonModalOpen()) {
   @if (rawJsonModalOpen()) {
-    <div class="modal-overlay">
-      <button
-        type="button"
-        class="modal-backdrop"
-        aria-label="Close raw JSON dialog"
-        (click)="closeRawJsonModal()"
-      ></button>
-      <div
-        class="modal-panel modal-panel--lg json-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Raw JSON"
-      >
+    <dialog
+      #rawJsonDialog
+      class="admin-dialog-wrapper"
+      aria-label="Raw JSON"
+      (close)="closeRawJsonModal()"
+      (mousedown)="onDialogBackdropClick($event)"
+    >
+      <div class="modal-panel modal-panel--lg json-dialog">
         <div class="flex items-center justify-between mb-4">
           <h3 class="heading-admin-card">Raw JSON</h3>
           <button class="btn-muted text-sm" (click)="closeRawJsonModal()">
@@ -86,7 +78,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   }
 }
 
@@ -100,7 +92,7 @@
       <button (click)="toggleHistorySection()" class="expandable-header">
         <div class="flex items-center gap-2">
           <svg
-            class="w-5 h-5 admin-text-muted"
+            class="w-5 h-5 text-secondary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -153,10 +145,10 @@
               >
                 <div class="flex items-center justify-between">
                   <div class="flex-1 min-w-0">
-                    <div class="admin-text-white truncate">
+                    <div class="text-primary truncate">
                       {{ item.username }}
                     </div>
-                    <div class="admin-text-muted text-sm">#{{ item.id }}</div>
+                    <div class="text-secondary text-sm">#{{ item.id }}</div>
                   </div>
                   <svg
                     class="w-4 h-4 admin-icon-muted shrink-0 ml-2"
@@ -203,31 +195,18 @@
 
   <!-- Loading State -->
   @if (loading()) {
-    <div class="admin-loading">
-      <svg class="admin-spinner" fill="none" viewBox="0 0 24 24">
-        <circle
-          class="admin-spinner-track"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="admin-spinner-head"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      <p class="admin-loading-text">{{ "admin.users.loading" | transloco }}</p>
+    <div class="state-container state-container-sm text-secondary">
+      <div class="spinner spinner-md"></div>
+      <p>{{ "admin.users.loading" | transloco }}</p>
     </div>
   } @else if (userNotFound()) {
-    <div class="admin-empty">
+    <div class="state-container state-container-sm state-muted">
       <svg
-        class="admin-empty-icon"
+        class="state-icon"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path
           stroke-linecap="round"
@@ -236,15 +215,16 @@
           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
         />
       </svg>
-      <p class="admin-empty-text">{{ "admin.users.not_found" | transloco }}</p>
+      <p>{{ "admin.users.not_found" | transloco }}</p>
     </div>
   } @else if (!selectedUser()) {
-    <div class="admin-empty">
+    <div class="state-container state-container-sm state-muted">
       <svg
-        class="admin-empty-icon"
+        class="state-icon"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path
           stroke-linecap="round"
@@ -253,9 +233,7 @@
           d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
         />
       </svg>
-      <p class="admin-empty-text">
-        {{ "admin.users.select_user" | transloco }}
-      </p>
+      <p>{{ "admin.users.select_user" | transloco }}</p>
     </div>
   } @else {
     <!-- User Details -->
@@ -362,7 +340,7 @@
         <!-- Quick Stats Grid -->
         <div class="admin-grid-stats-4 mb-6">
           <div class="admin-bg-dark rounded-lg p-3">
-            <div class="text-xs admin-text-muted mb-1">
+            <div class="text-xs text-secondary mb-1">
               {{ "admin.users.field.kudos" | transloco }}
             </div>
             <div class="heading-admin-card">
@@ -370,7 +348,7 @@
             </div>
           </div>
           <div class="admin-bg-dark rounded-lg p-3">
-            <div class="text-xs admin-text-muted mb-1">
+            <div class="text-xs text-secondary mb-1">
               {{ "admin.users.field.worker_count" | transloco }}
             </div>
             <div class="heading-admin-card">
@@ -379,7 +357,7 @@
           </div>
           @if (selectedUser()!.evaluating_kudos !== undefined) {
             <div class="admin-bg-dark rounded-lg p-3">
-              <div class="text-xs admin-text-muted mb-1">
+              <div class="text-xs text-secondary mb-1">
                 {{ "admin.users.field.evaluating_kudos" | transloco }}
               </div>
               <div class="heading-admin-card">
@@ -396,7 +374,7 @@
               selectedUser()!.suspicious > 10 && !trustedValue()
             "
           >
-            <div class="text-xs admin-text-muted mb-1">
+            <div class="text-xs text-secondary mb-1">
               {{ "admin.users.field.suspicious" | transloco }}
             </div>
             <div class="heading-admin-card">
@@ -906,7 +884,7 @@
                   <span class="text-xs admin-icon-muted">{{
                     "admin.users.hint.proxy_passkey" | transloco
                   }}</span>
-                  <span class="admin-text-white font-mono text-sm break-all">{{
+                  <span class="text-primary font-mono text-sm break-all">{{
                     selectedUser()!.proxy_passkey
                   }}</span>
                 </div>
@@ -995,7 +973,7 @@
                         undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.megapixelsteps" | transloco
                             }}:</span
@@ -1010,7 +988,7 @@
                         selectedUser()!.records!.usage!.tokens !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.tokens" | transloco
                             }}:</span
@@ -1037,7 +1015,7 @@
                           .megapixelsteps !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.megapixelsteps" | transloco
                             }}:</span
@@ -1053,7 +1031,7 @@
                         undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.tokens" | transloco
                             }}:</span
@@ -1079,7 +1057,7 @@
                         selectedUser()!.records!.request!.image !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.image" | transloco
                             }}:</span
@@ -1094,7 +1072,7 @@
                         selectedUser()!.records!.request!.text !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{ "admin.users.records.text" | transloco }}:</span
                           >
                           <span class="admin-text-light">{{
@@ -1108,7 +1086,7 @@
                         undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.interrogation" | transloco
                             }}:</span
@@ -1135,7 +1113,7 @@
                         undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.image" | transloco
                             }}:</span
@@ -1150,7 +1128,7 @@
                         selectedUser()!.records!.fulfillment!.text !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{ "admin.users.records.text" | transloco }}:</span
                           >
                           <span class="admin-text-light">{{
@@ -1164,7 +1142,7 @@
                         undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.interrogation" | transloco
                             }}:</span
@@ -1190,7 +1168,7 @@
                         selectedUser()!.records!.style!.image !== undefined
                       ) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{
                               "admin.users.records.image" | transloco
                             }}:</span
@@ -1203,7 +1181,7 @@
                       }
                       @if (selectedUser()!.records!.style!.text !== undefined) {
                         <div class="flex justify-between">
-                          <span class="admin-text-muted"
+                          <span class="text-secondary"
                             >{{ "admin.users.records.text" | transloco }}:</span
                           >
                           <span class="admin-text-light">{{
@@ -1304,7 +1282,7 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [class.text-secondary]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'image')"
                           >
@@ -1325,7 +1303,7 @@
                       @if (
                         selectedUser()!.active_generations!.image!.length > 10
                       ) {
-                        <span class="text-xs admin-text-muted"
+                        <span class="text-xs text-secondary"
                           >+{{
                             selectedUser()!.active_generations!.image!.length -
                               10
@@ -1361,7 +1339,7 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [class.text-secondary]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'text')"
                           >
@@ -1382,7 +1360,7 @@
                       @if (
                         selectedUser()!.active_generations!.text!.length > 10
                       ) {
-                        <span class="text-xs admin-text-muted"
+                        <span class="text-xs text-secondary"
                           >+{{
                             selectedUser()!.active_generations!.text!.length -
                               10
@@ -1420,7 +1398,7 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.admin-text-muted]="isGenerationTracked(id)"
+                            [class.text-secondary]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'alchemy')"
                           >
@@ -1441,7 +1419,7 @@
                       @if (
                         selectedUser()!.active_generations!.alchemy!.length > 10
                       ) {
-                        <span class="text-xs admin-text-muted"
+                        <span class="text-xs text-secondary"
                           >+{{
                             selectedUser()!.active_generations!.alchemy!
                               .length - 10
@@ -1530,11 +1508,11 @@
                         <div class="admin-text-light text-sm">
                           {{ style.name }}
                         </div>
-                        <div class="text-xs admin-text-muted">
+                        <div class="text-xs text-secondary">
                           {{ style.type }}
                         </div>
                       </div>
-                      <span class="text-xs font-mono admin-text-muted"
+                      <span class="text-xs font-mono text-secondary"
                         >{{ style.id.slice(0, 8) }}...</span
                       >
                     </div>
@@ -1577,31 +1555,13 @@
           @if (sharedKeysExpanded()) {
             <div class="p-4">
               @if (loadingSharedKeys()) {
-                <div class="admin-loading">
-                  <svg
-                    class="admin-spinner w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="admin-spinner-track"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="admin-spinner-head"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+                <div class="state-container state-container-sm text-secondary">
+                  <div class="spinner spinner-sm"></div>
                 </div>
               } @else if (
                 userSharedKeys().length === 0 && sharedKeysFetched()
               ) {
-                <div class="admin-text-muted text-center py-4">
+                <div class="text-secondary text-center py-4">
                   No shared key details available
                 </div>
               } @else {
@@ -1611,20 +1571,18 @@
                       <!-- Key Name & ID -->
                       <div class="flex items-start justify-between gap-2">
                         <div class="min-w-0 flex-1">
-                          <div class="admin-text-white font-medium truncate">
+                          <div class="text-primary font-medium truncate">
                             {{ key.name ?? "Unnamed Key" }}
                           </div>
                           <div
-                            class="text-xs font-mono admin-text-muted truncate"
+                            class="text-xs font-mono text-secondary truncate"
                             title="{{ key.id }}"
                           >
                             {{ key.id }}
                           </div>
                         </div>
                         @if (key.expiry) {
-                          <div
-                            class="text-xs admin-text-muted whitespace-nowrap"
-                          >
+                          <div class="text-xs text-secondary whitespace-nowrap">
                             Expires: {{ key.expiry | date: "mediumDate" }}
                           </div>
                         }
@@ -1633,7 +1591,7 @@
                       <!-- Kudos Info -->
                       <div class="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <span class="admin-text-muted">Kudos Limit:</span>
+                          <span class="text-secondary">Kudos Limit:</span>
                           <span class="admin-text-light ml-1">
                             @if (key.kudos === -1) {
                               Unlimited
@@ -1643,7 +1601,7 @@
                           </span>
                         </div>
                         <div>
-                          <span class="admin-text-muted">Utilized:</span>
+                          <span class="text-secondary">Utilized:</span>
                           <span class="admin-text-light ml-1">{{
                             key.utilized ?? 0 | formatNumber
                           }}</span>
@@ -1653,7 +1611,7 @@
                       <!-- Limits -->
                       <div class="grid grid-cols-3 gap-2 text-xs">
                         <div class="admin-bg-darker rounded p-2">
-                          <div class="admin-text-muted mb-1">Max Pixels</div>
+                          <div class="text-secondary mb-1">Max Pixels</div>
                           <div class="admin-text-light">
                             @if (key.max_image_pixels === -1) {
                               ∞
@@ -1663,7 +1621,7 @@
                           </div>
                         </div>
                         <div class="admin-bg-darker rounded p-2">
-                          <div class="admin-text-muted mb-1">Max Steps</div>
+                          <div class="text-secondary mb-1">Max Steps</div>
                           <div class="admin-text-light">
                             @if (key.max_image_steps === -1) {
                               ∞
@@ -1673,7 +1631,7 @@
                           </div>
                         </div>
                         <div class="admin-bg-darker rounded p-2">
-                          <div class="admin-text-muted mb-1">Max Tokens</div>
+                          <div class="text-secondary mb-1">Max Tokens</div>
                           <div class="admin-text-light">
                             @if (key.max_text_tokens === -1) {
                               ∞
@@ -1720,26 +1678,8 @@
           @if (workersExpanded()) {
             <div class="p-4">
               @if (loadingWorkers()) {
-                <div class="admin-loading">
-                  <svg
-                    class="admin-spinner w-6 h-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="admin-spinner-track"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="admin-spinner-head"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
+                <div class="state-container state-container-sm text-secondary">
+                  <div class="spinner spinner-sm"></div>
                 </div>
               } @else {
                 <div class="admin-grid-workers">

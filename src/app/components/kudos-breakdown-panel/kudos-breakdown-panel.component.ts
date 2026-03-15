@@ -48,7 +48,7 @@ interface ProfileKudosSection {
       <div class="admin-grid-stats-4 gap-4">
         @for (field of visibleFields(); track field.key) {
           <div class="admin-bg-dark rounded-lg p-3">
-            <div class="text-xs admin-text-muted mb-1">
+            <div class="text-xs text-secondary mb-1">
               {{ field.labelKey | transloco }}
             </div>
             <div class="heading-admin-card">

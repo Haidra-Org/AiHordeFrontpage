@@ -26,6 +26,7 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
 import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
+import { extractApiError } from '../../../helper/extract-api-error';
 
 @Component({
   selector: 'app-worker-card',
@@ -427,14 +428,20 @@ export class WorkerCardComponent {
         this.maintenanceReason(),
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.isUpdating.set(false);
-        if (result) {
-          this.showSuccess.set(true);
-          setTimeout(() => this.showSuccess.set(false), 3000);
-          this.workerUpdated.emit();
-        }
-        this.closeDialog();
+      .subscribe({
+        next: (result) => {
+          this.isUpdating.set(false);
+          if (result) {
+            this.showSuccess.set(true);
+            setTimeout(() => this.showSuccess.set(false), 3000);
+            this.workerUpdated.emit();
+          }
+          this.closeDialog();
+        },
+        error: () => {
+          this.isUpdating.set(false);
+          this.closeDialog();
+        },
       });
   }
 
@@ -446,14 +453,20 @@ export class WorkerCardComponent {
     this.workerService
       .setPaused(this.worker().id, setPaused)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.isUpdating.set(false);
-        if (result) {
-          this.showSuccess.set(true);
-          setTimeout(() => this.showSuccess.set(false), 3000);
-          this.workerUpdated.emit();
-        }
-        this.closeDialog();
+      .subscribe({
+        next: (result) => {
+          this.isUpdating.set(false);
+          if (result) {
+            this.showSuccess.set(true);
+            setTimeout(() => this.showSuccess.set(false), 3000);
+            this.workerUpdated.emit();
+          }
+          this.closeDialog();
+        },
+        error: () => {
+          this.isUpdating.set(false);
+          this.closeDialog();
+        },
       });
   }
 
@@ -470,14 +483,20 @@ export class WorkerCardComponent {
     this.workerService
       .deleteWorker(this.worker().id)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.isUpdating.set(false);
-        if (result) {
-          this.workerDeleted.emit(this.worker().id);
-          this.closeDialog();
-        } else {
-          this.deleteError.set('delete_failed');
-        }
+      .subscribe({
+        next: (result) => {
+          this.isUpdating.set(false);
+          if (result) {
+            this.workerDeleted.emit(this.worker().id);
+            this.closeDialog();
+          } else {
+            this.deleteError.set('delete_failed');
+          }
+        },
+        error: (err) => {
+          this.isUpdating.set(false);
+          this.deleteError.set(extractApiError(err, 'delete_failed'));
+        },
       });
   }
 

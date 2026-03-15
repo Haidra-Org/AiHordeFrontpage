@@ -3,15 +3,20 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
+  ElementRef,
   inject,
   OnInit,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { extractApiError } from '../../../helper/extract-api-error';
+import { AdminToastService } from '../../../services/admin-toast.service';
 import { combineLatest, finalize } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
@@ -24,10 +29,6 @@ import {
   getFilterTypeOptions,
   FILTER_TYPE_LABELS,
 } from '../../../types/filter';
-import {
-  AdminToastBarComponent,
-  AdminToast,
-} from '../../../components/admin/admin-toast-bar/admin-toast-bar.component';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 
 type DialogType = 'create' | 'edit' | 'delete' | 'rawJson';
@@ -35,13 +36,7 @@ type TabType = 'tester' | 'filters' | 'compiled';
 
 @Component({
   selector: 'app-filter-management',
-  imports: [
-    TranslocoPipe,
-    TranslocoModule,
-    FormsModule,
-    AdminToastBarComponent,
-    ScrollFadeDirective,
-  ],
+  imports: [TranslocoPipe, TranslocoModule, FormsModule, ScrollFadeDirective],
   templateUrl: './filter-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -51,6 +46,7 @@ export class FilterManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly filterService = inject(AdminFilterService);
   public readonly auth = inject(AuthService);
+  private readonly toastService = inject(AdminToastService);
 
   // Tab state
   public activeTab = signal<TabType>('tester');
@@ -71,6 +67,19 @@ export class FilterManagementComponent implements OnInit {
   public selectedFilter = signal<FilterDetails | null>(null);
   public isUpdating = signal<boolean>(false);
 
+  // Native dialog ref for top-layer rendering
+  private readonly filterDialog =
+    viewChild<ElementRef<HTMLDialogElement>>('filterDialog');
+
+  constructor() {
+    effect(() => {
+      const dialogEl = this.filterDialog()?.nativeElement;
+      if (dialogEl && !dialogEl.open) {
+        dialogEl.showModal();
+      }
+    });
+  }
+
   // Form state for create/edit
   public formRegex = signal<string>('');
   public formFilterType = signal<number>(10);
@@ -83,9 +92,6 @@ export class FilterManagementComponent implements OnInit {
   public testResult = signal<FilterPromptSuspicion | null>(null);
   public testing = signal<boolean>(false);
   public testerExpanded = signal<boolean>(false);
-
-  // Toast notifications
-  public toasts = signal<AdminToast[]>([]);
 
   // Filter type options for dropdowns
   public readonly filterTypeOptions = getFilterTypeOptions();
@@ -167,8 +173,13 @@ export class FilterManagementComponent implements OnInit {
         next: (filters) => {
           this.filters.set(filters);
         },
-        error: () => {
-          this.showToast('error', 'Failed to load filters.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to load filters.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -186,8 +197,13 @@ export class FilterManagementComponent implements OnInit {
         next: (regex) => {
           this.compiledRegex.set(regex);
         },
-        error: () => {
-          this.showToast('error', 'Failed to load compiled regex.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to load compiled regex.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -244,8 +260,19 @@ export class FilterManagementComponent implements OnInit {
   }
 
   public closeDialog(): void {
+    const dialog = this.filterDialog()?.nativeElement;
+    if (dialog?.open) {
+      dialog.close();
+    }
     this.dialogOpen.set(false);
     this.selectedFilter.set(null);
+  }
+
+  /** Close dialog when clicking the transparent backdrop area (not the panel) */
+  public onDialogBackdropClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeDialog();
+    }
   }
 
   // Form field handlers
@@ -295,7 +322,7 @@ export class FilterManagementComponent implements OnInit {
   private createFilter(): void {
     const regex = this.formRegex().trim();
     if (!regex) {
-      this.showToast('error', 'Regex pattern is required.');
+      this.toastService.showToast('error', 'Regex pattern is required.');
       return;
     }
 
@@ -314,15 +341,23 @@ export class FilterManagementComponent implements OnInit {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.showToast('success', 'Filter created successfully.');
+            this.toastService.showToast(
+              'success',
+              'Filter created successfully.',
+            );
             this.closeDialog();
             this.loadFilters();
           } else {
-            this.showToast('error', 'Failed to create filter.');
+            this.toastService.showToast('error', 'Failed to create filter.');
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to create filter.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to create filter.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -333,7 +368,7 @@ export class FilterManagementComponent implements OnInit {
 
     const regex = this.formRegex().trim();
     if (!regex) {
-      this.showToast('error', 'Regex pattern is required.');
+      this.toastService.showToast('error', 'Regex pattern is required.');
       return;
     }
 
@@ -352,15 +387,23 @@ export class FilterManagementComponent implements OnInit {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.showToast('success', 'Filter updated successfully.');
+            this.toastService.showToast(
+              'success',
+              'Filter updated successfully.',
+            );
             this.closeDialog();
             this.loadFilters();
           } else {
-            this.showToast('error', 'Failed to update filter.');
+            this.toastService.showToast('error', 'Failed to update filter.');
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to update filter.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to update filter.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -379,15 +422,23 @@ export class FilterManagementComponent implements OnInit {
       .subscribe({
         next: (success) => {
           if (success) {
-            this.showToast('success', 'Filter deleted successfully.');
+            this.toastService.showToast(
+              'success',
+              'Filter deleted successfully.',
+            );
             this.closeDialog();
             this.loadFilters();
           } else {
-            this.showToast('error', 'Failed to delete filter.');
+            this.toastService.showToast('error', 'Failed to delete filter.');
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to delete filter.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to delete filter.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -405,7 +456,7 @@ export class FilterManagementComponent implements OnInit {
   public testPrompt(): void {
     const prompt = this.testPromptValue().trim();
     if (!prompt) {
-      this.showToast('error', 'Please enter a prompt to test.');
+      this.toastService.showToast('error', 'Please enter a prompt to test.');
       return;
     }
 
@@ -423,11 +474,16 @@ export class FilterManagementComponent implements OnInit {
           if (result) {
             this.testResult.set(result);
           } else {
-            this.showToast('error', 'Failed to test prompt.');
+            this.toastService.showToast('error', 'Failed to test prompt.');
           }
         },
-        error: () => {
-          this.showToast('error', 'Failed to test prompt.');
+        error: (err) => {
+          this.toastService.showToast(
+            'error',
+            extractApiError(err, 'Failed to test prompt.'),
+            false,
+            err,
+          );
         },
       });
   }
@@ -440,27 +496,10 @@ export class FilterManagementComponent implements OnInit {
   // Copy to clipboard
   public copyToClipboard(text: string): void {
     navigator.clipboard.writeText(text).then(
-      () => this.showToast('success', 'Copied to clipboard.'),
-      () => this.showToast('error', 'Failed to copy to clipboard.'),
+      () => this.toastService.showToast('success', 'Copied to clipboard.'),
+      () =>
+        this.toastService.showToast('error', 'Failed to copy to clipboard.'),
     );
-  }
-
-  // Toast notification methods
-  public showToast(
-    type: AdminToast['type'],
-    message: string,
-    autoDismiss = type === 'success',
-  ): void {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    this.toasts.update((current) => [...current, { id, type, message }]);
-
-    if (autoDismiss) {
-      setTimeout(() => this.dismissToast(id), 3000);
-    }
-  }
-
-  public dismissToast(id: string): void {
-    this.toasts.update((current) => current.filter((t) => t.id !== id));
   }
 
   // Unsaved changes guard support

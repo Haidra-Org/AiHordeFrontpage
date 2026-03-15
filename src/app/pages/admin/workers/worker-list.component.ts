@@ -36,6 +36,7 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
+import { extractApiError } from '../../../helper/extract-api-error';
 import { GlossaryService } from '../../../services/glossary.service';
 import { getWorkerIconSvg, WORKER_STATUS_ICONS } from './worker-icons';
 
@@ -523,8 +524,10 @@ export class WorkerListComponent implements OnInit {
         next: (workers) => {
           this.workers.set(workers);
         },
-        error: () => {
-          this.errorMessage.set('Failed to load workers.');
+        error: (err) => {
+          this.errorMessage.set(
+            extractApiError(err, 'Failed to load workers.'),
+          );
           this.workers.set([]);
         },
       });

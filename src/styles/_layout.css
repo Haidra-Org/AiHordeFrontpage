@@ -314,7 +314,7 @@
 
     .profile-overview-columns__sidebar {
       position: sticky;
-      top: 16px;
+      top: calc(var(--sticky-offset, 80px) + 1rem);
       align-self: start;
     }
 

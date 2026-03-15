@@ -167,14 +167,42 @@
 
   /* Toast container - fixed positioned wrapper for toast stack */
   .toast-container {
-    @apply fixed top-4 right-4 z-50 flex flex-col gap-2;
+    @apply fixed right-4 z-50 flex flex-col gap-2;
+    top: calc(var(--sticky-offset, 0px) + 1rem);
     max-width: calc(100vw - 2rem);
   }
 
+  /* On desktop, prevent toasts from extending behind the admin sidebar */
+  @media (min-width: 1024px) {
+    .admin-layout .toast-container {
+      left: calc(16rem + 1rem);
+    }
+  }
+
   /* Individual toast - relative within container */
-  .toast {
-    @apply flex items-center gap-2 py-3 px-4 rounded-lg shadow-lg;
+  .toast-wrapper {
+    @apply rounded-lg shadow-lg overflow-hidden;
     animation: toast-slide-in 300ms ease;
+  }
+
+  .toast {
+    @apply flex items-center gap-2 py-3 px-4;
+  }
+
+  .toast-wrapper.toast-success {
+    @apply bg-green-600 text-white;
+  }
+
+  .toast-wrapper.toast-error {
+    @apply bg-red-600 text-white;
+  }
+
+  .toast-wrapper.toast-warning {
+    @apply bg-amber-500 text-white;
+  }
+
+  .toast-wrapper.toast-info {
+    @apply bg-blue-600 text-white;
   }
 
   @keyframes toast-slide-in {
@@ -188,22 +216,6 @@
     }
   }
 
-  .toast-success {
-    @apply bg-green-600 text-white;
-  }
-
-  .toast-error {
-    @apply bg-red-600 text-white;
-  }
-
-  .toast-warning {
-    @apply bg-amber-500 text-white;
-  }
-
-  .toast-info {
-    @apply bg-blue-600 text-white;
-  }
-
   .toast-icon {
     @apply w-5 h-5 shrink-0;
   }
@@ -214,6 +226,17 @@
 
   .toast-close {
     @apply ml-auto p-1 rounded text-xs font-medium hover:bg-white/20 transition-colors;
+  }
+
+  .toast-details-btn {
+    @apply p-1 rounded text-xs font-medium hover:bg-white/20 transition-colors underline;
+  }
+
+  .toast-details {
+    @apply text-xs px-4 py-2 overflow-x-auto whitespace-pre-wrap break-words;
+    background: rgb(0 0 0 / 0.2);
+    max-height: 12rem;
+    overflow-y: auto;
   }
 
   /* =================================================================

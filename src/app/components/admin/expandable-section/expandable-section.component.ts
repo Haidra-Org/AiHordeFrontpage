@@ -18,7 +18,7 @@ import {
         <span class="admin-text-light">
           {{ title() }}
           @if (count() !== undefined) {
-            <span class="text-sm admin-text-muted">({{ count() }})</span>
+            <span class="text-sm text-secondary">({{ count() }})</span>
           }
         </span>
         <svg
