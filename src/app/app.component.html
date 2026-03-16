@@ -98,10 +98,10 @@
               type="button"
               class="nav-link nav-dropdown-trigger"
               [class.nav-link-active]="
-                showContributeDropdown || isContributeRouteActive
+                showContributeDropdown() || isContributeRouteActive()
               "
               [class.nav-needs-attention]="
-                hasContributeNotification() && !showContributeDropdown
+                hasContributeNotification() && !showContributeDropdown()
               "
               [attr.title]="
                 hasContributeNotification()
@@ -111,19 +111,19 @@
               "
               (click)="toggleContributeDropdown(); $event.stopPropagation()"
               aria-haspopup="true"
-              [attr.aria-expanded]="showContributeDropdown"
+              [attr.aria-expanded]="showContributeDropdown()"
             >
               {{ "joining" | transloco }}
-              @if (hasContributeNotification() && !showContributeDropdown) {
+              @if (hasContributeNotification() && !showContributeDropdown()) {
                 <span class="nav-notification-dot" aria-hidden="true"></span>
               }
               <app-icon
                 name="chevron-down"
                 class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showContributeDropdown"
+                [class.nav-dropdown-chevron-open]="showContributeDropdown()"
               />
             </button>
-            @if (showContributeDropdown) {
+            @if (showContributeDropdown()) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
                 @if (hasContributeNotification()) {
                   <div class="nav-dropdown-notification-banner" role="status">
@@ -180,20 +180,20 @@
               type="button"
               class="nav-link nav-dropdown-trigger"
               [class.nav-link-active]="
-                showDetailsDropdown || isDetailsRouteActive
+                showDetailsDropdown() || isDetailsRouteActive()
               "
               (click)="toggleDetailsDropdown(); $event.stopPropagation()"
               aria-haspopup="true"
-              [attr.aria-expanded]="showDetailsDropdown"
+              [attr.aria-expanded]="showDetailsDropdown()"
             >
               {{ "nav.active_details" | transloco }}
               <app-icon
                 name="chevron-down"
                 class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showDetailsDropdown"
+                [class.nav-dropdown-chevron-open]="showDetailsDropdown()"
               />
             </button>
-            @if (showDetailsDropdown) {
+            @if (showDetailsDropdown()) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
                 <a
                   routerLink="/details/workers/"
@@ -266,19 +266,19 @@
             <button
               type="button"
               class="nav-link nav-dropdown-trigger"
-              [class.nav-link-active]="showAccountDropdown"
+              [class.nav-link-active]="showAccountDropdown()"
               (click)="toggleAccountDropdown(); $event.stopPropagation()"
               aria-haspopup="true"
-              [attr.aria-expanded]="showAccountDropdown"
+              [attr.aria-expanded]="showAccountDropdown()"
             >
               {{ "nav.account" | transloco }}
               <app-icon
                 name="chevron-down"
                 class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showAccountDropdown"
+                [class.nav-dropdown-chevron-open]="showAccountDropdown()"
               />
             </button>
-            @if (showAccountDropdown) {
+            @if (showAccountDropdown()) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
                 <a
                   routerLink="/profile/"
@@ -328,9 +328,9 @@
           <button
             type="button"
             class="mobile-menu-button"
-            [attr.aria-expanded]="showMobileMenu"
+            [attr.aria-expanded]="showMobileMenu()"
             [attr.aria-label]="
-              (showMobileMenu ? 'close_main_menu' : 'open_main_menu')
+              (showMobileMenu() ? 'close_main_menu' : 'open_main_menu')
                 | transloco
             "
             aria-controls="mobile-navigation"
@@ -341,15 +341,15 @@
               <span class="mobile-menu-badge" aria-hidden="true"></span>
             }
             <span class="sr-only">{{
-              (showMobileMenu ? "close_main_menu" : "open_main_menu")
+              (showMobileMenu() ? "close_main_menu" : "open_main_menu")
                 | transloco
             }}</span>
             <!-- Hamburger Icon -->
-            @if (!showMobileMenu) {
+            @if (!showMobileMenu()) {
               <app-icon name="hamburger" class="menu-icon" aria-hidden="true" />
             }
             <!-- Close Icon -->
-            @if (showMobileMenu) {
+            @if (showMobileMenu()) {
               <app-icon name="x-mark" class="menu-icon" aria-hidden="true" />
             }
           </button>
@@ -359,8 +359,8 @@
       <!-- Mobile Navigation Menu -->
       <div
         class="mobile-nav-wrapper"
-        [class.hidden]="!showMobileMenu"
-        [attr.aria-hidden]="!showMobileMenu"
+        [class.hidden]="!showMobileMenu()"
+        [attr.aria-hidden]="!showMobileMenu()"
         id="mobile-navigation"
         role="menu"
         (mousedown)="$event.stopPropagation()"
@@ -369,10 +369,10 @@
           type="button"
           aria-label="Close navigation menu"
           class="mobile-menu-backdrop"
-          [class.show]="showMobileMenu"
+          [class.show]="showMobileMenu()"
           (click)="closeMobileMenu()"
         ></button>
-        <div class="mobile-menu-panel" [class.open]="showMobileMenu">
+        <div class="mobile-menu-panel" [class.open]="showMobileMenu()">
           <div class="mobile-nav-list">
             <a
               routerLink="/"
@@ -418,18 +418,19 @@
                 type="button"
                 class="mobile-nav-link mobile-nav-submenu-trigger"
                 [class.nav-needs-attention]="
-                  hasContributeNotification() && !showMobileContributeSubmenu
+                  hasContributeNotification() && !showMobileContributeSubmenu()
                 "
                 (click)="
                   toggleMobileContributeSubmenu(); $event.stopPropagation()
                 "
                 aria-haspopup="true"
-                [attr.aria-expanded]="showMobileContributeSubmenu"
+                [attr.aria-expanded]="showMobileContributeSubmenu()"
               >
                 <span>
                   {{ "joining" | transloco }}
                   @if (
-                    hasContributeNotification() && !showMobileContributeSubmenu
+                    hasContributeNotification() &&
+                    !showMobileContributeSubmenu()
                   ) {
                     <span
                       class="nav-notification-dot"
@@ -440,10 +441,12 @@
                 <app-icon
                   name="chevron-down"
                   class="mobile-nav-chevron"
-                  [class.mobile-nav-chevron-open]="showMobileContributeSubmenu"
+                  [class.mobile-nav-chevron-open]="
+                    showMobileContributeSubmenu()
+                  "
                 />
               </button>
-              @if (showMobileContributeSubmenu) {
+              @if (showMobileContributeSubmenu()) {
                 <div class="mobile-nav-submenu-items">
                   @if (hasContributeNotification()) {
                     <div class="mobile-notification-banner" role="status">
@@ -486,16 +489,16 @@
                 class="mobile-nav-link mobile-nav-submenu-trigger"
                 (click)="toggleMobileDetailsSubmenu(); $event.stopPropagation()"
                 aria-haspopup="true"
-                [attr.aria-expanded]="showMobileDetailsSubmenu"
+                [attr.aria-expanded]="showMobileDetailsSubmenu()"
               >
                 {{ "nav.active_details" | transloco }}
                 <app-icon
                   name="chevron-down"
                   class="mobile-nav-chevron"
-                  [class.mobile-nav-chevron-open]="showMobileDetailsSubmenu"
+                  [class.mobile-nav-chevron-open]="showMobileDetailsSubmenu()"
                 />
               </button>
-              @if (showMobileDetailsSubmenu) {
+              @if (showMobileDetailsSubmenu()) {
                 <div class="mobile-nav-submenu-items">
                   <a
                     routerLink="/details/workers/"
@@ -587,16 +590,16 @@
                 class="mobile-nav-link mobile-nav-submenu-trigger"
                 (click)="toggleMobileAccountSubmenu(); $event.stopPropagation()"
                 aria-haspopup="true"
-                [attr.aria-expanded]="showMobileAccountSubmenu"
+                [attr.aria-expanded]="showMobileAccountSubmenu()"
               >
                 {{ "nav.account" | transloco }}
                 <app-icon
                   name="chevron-down"
                   class="mobile-nav-chevron"
-                  [class.mobile-nav-chevron-open]="showMobileAccountSubmenu"
+                  [class.mobile-nav-chevron-open]="showMobileAccountSubmenu()"
                 />
               </button>
-              @if (showMobileAccountSubmenu) {
+              @if (showMobileAccountSubmenu()) {
                 <div class="mobile-nav-submenu-items">
                   <a
                     routerLink="/profile/"
