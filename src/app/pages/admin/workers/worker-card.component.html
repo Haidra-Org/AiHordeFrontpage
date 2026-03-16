@@ -223,7 +223,7 @@
     [class.worker-card-body--sticky-mobile]="pinHeaderOnMobile()"
   >
     <div class="worker-card-header">
-      <!-- Row 1: status icon + name + trusted icon -->
+      <!-- Row 1: status icon + name -->
       <div class="worker-card-name-row">
         <div
           class="worker-card-status-icon-wrap"
@@ -244,9 +244,9 @@
         </div>
       </div>
 
-      <!-- Trusted icon + highlight badge (right-aligned) -->
-      <div class="worker-card-badge-row">
-        @if (highlighted()) {
+      <!-- Highlight badge (right-aligned) -->
+      @if (highlighted()) {
+        <div class="worker-card-badge-row">
           <button
             type="button"
             class="badge-base badge-warning badge-dismissible"
@@ -256,44 +256,29 @@
             {{ "details.common.highlighted" | transloco }}
             <span aria-hidden="true">×</span>
           </button>
-        }
-        @if (worker().trusted) {
-          <div
-            class="worker-card-icon-pad"
-            [appTouchTooltip]="'admin.workers.card.trusted'"
-            [appTouchTooltipDesc]="iconDesc('trusted')"
-          >
-            <app-worker-status-icon type="trusted" />
-          </div>
-        } @else {
-          <div
-            class="worker-card-icon-pad worker-status-icon-muted"
-            aria-hidden="true"
-          >
-            <app-worker-status-icon type="trusted" />
-          </div>
-        }
-        <!-- Worker type indicator -->
-        <div
-          class="worker-card-icon-pad"
-          [appTouchTooltip]="getWorkerTypeTooltipKey()"
-          [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
-        >
-          <app-worker-status-icon
-            [type]="getWorkerTypeIcon()"
-            sizeClass="w-4 h-4"
-          />
         </div>
-        <app-json-inspector-trigger
-          label="View worker raw JSON"
-          (triggered)="openRawJson()"
-        />
-      </div>
+      }
     </div>
   </div>
 
   <!-- Status indicator bar (outside sticky header to minimize its height) -->
   <div class="worker-card-status-bar">
+    @if (worker().trusted) {
+      <div
+        class="worker-card-icon-pad"
+        [appTouchTooltip]="'admin.workers.card.trusted'"
+        [appTouchTooltipDesc]="iconDesc('trusted')"
+      >
+        <app-worker-status-icon type="trusted" />
+      </div>
+    } @else {
+      <div
+        class="worker-card-icon-pad worker-status-icon-muted"
+        aria-hidden="true"
+      >
+        <app-worker-status-icon type="trusted" />
+      </div>
+    }
     @if (isLowSpeed()) {
       <div
         class="worker-card-icon-pad"
@@ -376,6 +361,21 @@
         </div>
       }
     }
+    <!-- Worker type indicator + JSON trigger (right-aligned) -->
+    <div
+      class="worker-card-icon-pad ml-auto"
+      [appTouchTooltip]="getWorkerTypeTooltipKey()"
+      [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
+    >
+      <app-worker-status-icon
+        [type]="getWorkerTypeIcon()"
+        sizeClass="w-4 h-4"
+      />
+    </div>
+    <app-json-inspector-trigger
+      label="View worker raw JSON"
+      (triggered)="openRawJson()"
+    />
   </div>
 
   <!-- Content -->
