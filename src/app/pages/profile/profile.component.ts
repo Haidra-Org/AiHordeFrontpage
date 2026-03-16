@@ -54,6 +54,7 @@ import {
 } from '../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ToastService } from '../../services/toast.service';
 
 type ProfileTab =
   | 'profile'
@@ -120,6 +121,7 @@ export class ProfileComponent implements OnInit {
 
   public readonly guideService = inject(PageGuideService);
   private readonly glossary = inject(GlossaryService);
+  private readonly toast = inject(ToastService);
   private readonly workerRequestConcurrency = 3;
 
   public loginError = signal<boolean>(false);
@@ -295,13 +297,9 @@ export class ProfileComponent implements OnInit {
   public filterMaintenance = signal<
     'all' | 'active' | 'maintenance' | 'offline'
   >('all');
-  public deletionSuccessMessage = signal<boolean>(false);
-
   // Delete account state
   public deleteDialogOpen = signal<boolean>(false);
   public deleteLoading = signal<boolean>(false);
-  public deleteError = signal<string | null>(null);
-  public deleteSuccess = signal<string | null>(null);
 
   // Teams state
   public allTeams = signal<Team[]>([]);
@@ -313,7 +311,6 @@ export class ProfileComponent implements OnInit {
   public teamFormInfo = signal<string>('');
   public teamSaving = signal<boolean>(false);
   public teamError = signal<string | null>(null);
-  public teamSuccess = signal<boolean>(false);
 
   // Undelete account state
   public undeleteDialogOpen = signal<boolean>(false);
@@ -330,8 +327,6 @@ export class ProfileComponent implements OnInit {
   public publicWorkersDialogOpen = signal<boolean>(false);
   public publicWorkersNewValue = signal<boolean>(false);
   public publicWorkersSaving = signal<boolean>(false);
-  public profileUpdateError = signal<string | null>(null);
-  public profileUpdateSuccess = signal<string | null>(null);
 
   // Computed username with discriminator for delete confirmation
   public readonly usernameWithDiscriminator = computed(() => {
@@ -656,9 +651,7 @@ export class ProfileComponent implements OnInit {
     this.userWorkers.update((workers) =>
       workers.filter((w) => w.id !== workerId),
     );
-    // Show success toast
-    this.deletionSuccessMessage.set(true);
-    setTimeout(() => this.deletionSuccessMessage.set(false), 5000);
+    this.toast.success('admin.workers.deletion_success', { transloco: true });
   }
 
   public onFilterTextChange(event: Event): void {
@@ -678,7 +671,6 @@ export class ProfileComponent implements OnInit {
 
   // Delete account methods
   public openDeleteDialog(): void {
-    this.deleteError.set(null);
     this.deleteDialogOpen.set(true);
   }
 
@@ -692,7 +684,6 @@ export class ProfileComponent implements OnInit {
 
     const wasAlreadyDeleted = user.deleted ?? false;
     this.deleteLoading.set(true);
-    this.deleteError.set(null);
 
     this.auth
       .deleteUser()
@@ -704,21 +695,21 @@ export class ProfileComponent implements OnInit {
           this.deleteDialogOpen.set(false);
 
           if (wasAlreadyDeleted) {
-            // Permanent deletion - logout and redirect
-            this.deleteSuccess.set('profile.delete_account_permanent_success');
+            this.toast.success('profile.delete_account_permanent_success', {
+              transloco: true,
+            });
             setTimeout(() => {
               this.auth.logout();
               this.router.navigate(['/']);
             }, 2000);
           } else {
-            // First deletion - refresh user data to show deleted state
-            this.deleteSuccess.set('profile.delete_account_success');
+            this.toast.success('profile.delete_account_success', {
+              transloco: true,
+            });
             this.auth.refreshUser().subscribe();
-            setTimeout(() => this.deleteSuccess.set(null), 5000);
           }
         } else {
-          this.deleteError.set(result.error.message);
-          setTimeout(() => this.deleteError.set(null), 5000);
+          this.toast.error(result.error.message, { autoDismissMs: 5000 });
         }
       });
   }
@@ -743,12 +734,14 @@ export class ProfileComponent implements OnInit {
         this.undeleteDialogOpen.set(false);
 
         if (result.success) {
-          this.deleteSuccess.set('profile.undelete_account_success');
+          this.toast.success('profile.undelete_account_success', {
+            transloco: true,
+          });
           this.auth.refreshUser().subscribe();
-          setTimeout(() => this.deleteSuccess.set(null), 5000);
         } else {
-          this.deleteError.set(result.error ?? 'Failed to restore account');
-          setTimeout(() => this.deleteError.set(null), 5000);
+          this.toast.error(result.error ?? 'Failed to restore account', {
+            autoDismissMs: 5000,
+          });
         }
       });
   }
@@ -765,7 +758,6 @@ export class ProfileComponent implements OnInit {
       ? user.username.substring(0, user.username.lastIndexOf('#'))
       : user.username;
     this.usernameInput.set(name);
-    this.profileUpdateError.set(null);
     this.usernameDialogOpen.set(true);
   }
 
@@ -783,7 +775,6 @@ export class ProfileComponent implements OnInit {
     if (!name) return;
 
     this.usernameSaving.set(true);
-    this.profileUpdateError.set(null);
 
     this.auth
       .updateProfile({ username: name })
@@ -792,12 +783,11 @@ export class ProfileComponent implements OnInit {
         this.usernameSaving.set(false);
         if (result.success) {
           this.usernameDialogOpen.set(false);
-          this.profileUpdateSuccess.set('profile.change_username_success');
-          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+          this.toast.success('profile.change_username_success', {
+            transloco: true,
+          });
         } else {
-          this.profileUpdateError.set(
-            result.error ?? 'Failed to update username',
-          );
+          this.toast.error(result.error ?? 'Failed to update username');
         }
       });
   }
@@ -805,7 +795,6 @@ export class ProfileComponent implements OnInit {
   public openContactDialog(): void {
     const user = this.auth.currentUser();
     this.contactInput.set(user?.contact ?? '');
-    this.profileUpdateError.set(null);
     this.contactDialogError.set(null);
     this.contactDialogOpen.set(true);
   }
@@ -838,7 +827,6 @@ export class ProfileComponent implements OnInit {
     }
 
     this.contactSaving.set(true);
-    this.profileUpdateError.set(null);
     this.contactDialogError.set(null);
 
     this.auth
@@ -848,17 +836,16 @@ export class ProfileComponent implements OnInit {
         this.contactSaving.set(false);
         if (result.success) {
           this.contactDialogOpen.set(false);
-          this.profileUpdateSuccess.set('profile.edit_contact_success');
-          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+          this.toast.success('profile.edit_contact_success', {
+            transloco: true,
+          });
         } else {
           this.contactNagDismissed.set(previousDismissedState);
           this.storeContactNagDismissed(previousDismissedState);
           this.contactDialogError.set(
             result.error ?? 'Failed to update contact',
           );
-          this.profileUpdateError.set(
-            result.error ?? 'Failed to update contact',
-          );
+          this.toast.error(result.error ?? 'Failed to update contact');
         }
       });
   }
@@ -874,7 +861,6 @@ export class ProfileComponent implements OnInit {
 
   public confirmPublicWorkersChange(): void {
     this.publicWorkersSaving.set(true);
-    this.profileUpdateError.set(null);
 
     this.auth
       .updateProfile({ public_workers: this.publicWorkersNewValue() })
@@ -883,12 +869,11 @@ export class ProfileComponent implements OnInit {
         this.publicWorkersSaving.set(false);
         if (result.success) {
           this.publicWorkersDialogOpen.set(false);
-          this.profileUpdateSuccess.set('profile.public_workers_success');
-          setTimeout(() => this.profileUpdateSuccess.set(null), 5000);
+          this.toast.success('profile.public_workers_success', {
+            transloco: true,
+          });
         } else {
-          this.profileUpdateError.set(
-            result.error ?? 'Failed to update setting',
-          );
+          this.toast.error(result.error ?? 'Failed to update setting');
         }
       });
   }
@@ -1092,8 +1077,7 @@ export class ProfileComponent implements OnInit {
           next: () => {
             this.teamSaving.set(false);
             this.teamDialogOpen.set(false);
-            this.teamSuccess.set(true);
-            setTimeout(() => this.teamSuccess.set(false), 3000);
+            this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
           error: (err) => {
@@ -1113,8 +1097,7 @@ export class ProfileComponent implements OnInit {
           next: () => {
             this.teamSaving.set(false);
             this.teamDialogOpen.set(false);
-            this.teamSuccess.set(true);
-            setTimeout(() => this.teamSuccess.set(false), 3000);
+            this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
           error: (err) => {
@@ -1142,8 +1125,7 @@ export class ProfileComponent implements OnInit {
         next: () => {
           this.teamSaving.set(false);
           this.teamDialogOpen.set(false);
-          this.teamSuccess.set(true);
-          setTimeout(() => this.teamSuccess.set(false), 3000);
+          this.toast.success('teams.success', { transloco: true });
           this.loadAllTeams();
         },
         error: (err) => {
