@@ -1,0 +1,304 @@
+<header class="nav-shell" [appStickyHeader]="0">
+  <nav class="nav-padding" role="navigation" aria-label="Main navigation">
+    <div class="nav-container">
+      <!-- Logo and Site Title -->
+      <div class="logo-container">
+        <a
+          routerLink="/"
+          class="logo-link"
+          [attr.aria-label]="'Navigate to homepage' | transloco"
+        >
+          <img
+            ngSrc="./assets/img/logo.png"
+            class="logo-image"
+            alt="{{ 'logo.alt' | transloco }}"
+            height="455"
+            width="393"
+            priority
+          />
+        </a>
+        <div class="logo-text-group">
+          <a routerLink="/" class="logo-text-link">
+            <span class="logo-text">
+              {{ "app_title" | transloco }}
+            </span>
+          </a>
+
+          <div class="github-widget">
+            <a
+              href="https://github.com/Haidra-Org/AI-Horde"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View AI-Horde on GitHub"
+            >
+              <img
+                [ngSrc]="
+                  themeService.isDark()
+                    ? './assets/img/GitHub_Invertocat_White_Clearspace.svg'
+                    : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'
+                "
+                alt=""
+                height="20"
+                width="20"
+              />
+            </a>
+            <a
+              class="github-button"
+              href="https://github.com/Haidra-org/AI-Horde"
+              data-color-scheme="no-preference: light; light: light; dark: dark;"
+              data-icon="octicon-star"
+              data-show-count="true"
+              aria-label="Star Haidra-org/AI-Horde on GitHub"
+              >Star</a
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Menu -->
+      <div class="nav-menu-desktop" role="menubar">
+        @for (item of navItems; track item.labelKey) {
+          @if (item.children && item.dropdownId) {
+            <app-nav-dropdown
+              [dropdownId]="item.dropdownId"
+              [isRouteActive]="isDropdownRouteActive(item)"
+              [needsAttention]="hasNotification(item)"
+              [triggerTitle]="
+                item.notificationNavItem && hasNotification(item)
+                  ? ('notification.need_workers.tooltip'
+                    | transloco: { types: contributeTooltip() })
+                  : null
+              "
+              (opened)="onDropdownOpened($event)"
+            >
+              <span trigger>
+                {{ item.labelKey | transloco }}
+                @if (item.notificationNavItem && hasNotification(item)) {
+                  <span class="nav-notification-dot" aria-hidden="true"></span>
+                }
+              </span>
+              <ng-container panel>
+                @if (item.notificationNavItem && hasNotification(item)) {
+                  <div class="nav-dropdown-notification-banner" role="status">
+                    <app-icon
+                      name="alert-triangle"
+                      class="nav-dropdown-notification-banner-icon"
+                      aria-hidden="true"
+                    />
+                    {{
+                      "notification.need_workers.message"
+                        | transloco: { types: contributeTooltip() }
+                    }}
+                  </div>
+                }
+                @for (child of item.children; track child.labelKey) {
+                  @if (isChildVisible(child)) {
+                    @if (child.routerLink) {
+                      <a
+                        [routerLink]="child.routerLink"
+                        class="nav-dropdown-item"
+                        [class.nav-dropdown-item-needs-attention]="
+                          item.notificationNavItem && hasNotification(item)
+                        "
+                        role="menuitem"
+                        routerLinkActive="nav-dropdown-item-active"
+                      >
+                        {{ resolveChildLabel(child) | transloco }}
+                      </a>
+                    } @else if (child.href) {
+                      <a
+                        [href]="child.href"
+                        class="nav-dropdown-item external-link"
+                        role="menuitem"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ resolveChildLabel(child) | transloco }}
+                      </a>
+                    }
+                  }
+                }
+              </ng-container>
+            </app-nav-dropdown>
+          } @else if (item.routerLink) {
+            <a
+              [routerLink]="item.routerLink"
+              class="nav-link"
+              role="menuitem"
+              routerLinkActive="nav-link-active"
+              [routerLinkActiveOptions]="{ exact: !!item.exact }"
+            >
+              {{ item.labelKey | transloco }}
+            </a>
+          } @else if (item.href) {
+            <a [href]="item.href" class="nav-link" role="menuitem">
+              {{ item.labelKey | transloco }}
+            </a>
+          }
+        }
+      </div>
+
+      <!-- Right Side Actions -->
+      <div class="nav-actions">
+        <theme-toggle />
+
+        <!-- Mobile Menu Button -->
+        <button
+          type="button"
+          class="mobile-menu-button"
+          [attr.aria-expanded]="showMobileMenu()"
+          [attr.aria-label]="
+            (showMobileMenu() ? 'close_main_menu' : 'open_main_menu')
+              | transloco
+          "
+          aria-controls="mobile-navigation"
+          (click)="toggleMobileMenu(); $event.stopPropagation()"
+          (keydown.escape)="closeMobileMenu()"
+        >
+          @if (hasMobileIndicator()) {
+            <span class="mobile-menu-badge" aria-hidden="true"></span>
+          }
+          <span class="sr-only">{{
+            (showMobileMenu() ? "close_main_menu" : "open_main_menu")
+              | transloco
+          }}</span>
+          @if (!showMobileMenu()) {
+            <app-icon name="hamburger" class="menu-icon" aria-hidden="true" />
+          }
+          @if (showMobileMenu()) {
+            <app-icon name="x-mark" class="menu-icon" aria-hidden="true" />
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Menu -->
+    <div
+      class="mobile-nav-wrapper"
+      [class.hidden]="!showMobileMenu()"
+      [attr.aria-hidden]="!showMobileMenu()"
+      id="mobile-navigation"
+      role="menu"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <button
+        type="button"
+        aria-label="Close navigation menu"
+        class="mobile-menu-backdrop"
+        [class.show]="showMobileMenu()"
+        (click)="closeMobileMenu()"
+      ></button>
+      <div class="mobile-menu-panel" [class.open]="showMobileMenu()">
+        <div class="mobile-nav-list">
+          @for (item of navItems; track item.labelKey) {
+            @if (item.children && item.dropdownId) {
+              <!-- Mobile submenu -->
+              <div class="mobile-nav-submenu">
+                <button
+                  type="button"
+                  class="mobile-nav-link mobile-nav-submenu-trigger"
+                  [class.nav-needs-attention]="
+                    item.notificationNavItem &&
+                    hasNotification(item) &&
+                    !isMobileSubmenuOpen(item.dropdownId)
+                  "
+                  (click)="
+                    toggleMobileSubmenu(item.dropdownId);
+                    $event.stopPropagation()
+                  "
+                  aria-haspopup="true"
+                  [attr.aria-expanded]="isMobileSubmenuOpen(item.dropdownId)"
+                >
+                  <span>
+                    {{ item.labelKey | transloco }}
+                    @if (
+                      item.notificationNavItem &&
+                      hasNotification(item) &&
+                      !isMobileSubmenuOpen(item.dropdownId)
+                    ) {
+                      <span
+                        class="nav-notification-dot"
+                        aria-hidden="true"
+                      ></span>
+                    }
+                  </span>
+                  <app-icon
+                    name="chevron-down"
+                    class="mobile-nav-chevron"
+                    [class.mobile-nav-chevron-open]="
+                      isMobileSubmenuOpen(item.dropdownId)
+                    "
+                  />
+                </button>
+                @if (isMobileSubmenuOpen(item.dropdownId)) {
+                  <div class="mobile-nav-submenu-items">
+                    @if (item.notificationNavItem && hasNotification(item)) {
+                      <div class="mobile-notification-banner" role="status">
+                        <app-icon
+                          name="alert-triangle"
+                          class="mobile-notification-banner-icon"
+                          aria-hidden="true"
+                        />
+                        {{
+                          "notification.need_workers.message"
+                            | transloco: { types: contributeTooltip() }
+                        }}
+                      </div>
+                    }
+                    @for (child of item.children; track child.labelKey) {
+                      @if (isChildVisible(child)) {
+                        @if (child.routerLink) {
+                          <a
+                            [routerLink]="child.routerLink"
+                            class="mobile-nav-link mobile-nav-submenu-item"
+                            role="menuitem"
+                            routerLinkActive="mobile-nav-link-active"
+                            (click)="closeMobileMenu()"
+                          >
+                            {{ resolveChildLabel(child) | transloco }}
+                          </a>
+                        } @else if (child.href) {
+                          <a
+                            [href]="child.href"
+                            class="mobile-nav-link mobile-nav-submenu-item external-link"
+                            role="menuitem"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            (click)="closeMobileMenu()"
+                          >
+                            {{ resolveChildLabel(child) | transloco }}
+                          </a>
+                        }
+                      }
+                    }
+                  </div>
+                }
+              </div>
+            } @else if (item.routerLink) {
+              <a
+                [routerLink]="item.routerLink"
+                class="mobile-nav-link"
+                role="menuitem"
+                routerLinkActive="mobile-nav-link-active"
+                [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                (click)="closeMobileMenu()"
+                (keydown.escape)="closeMobileMenu()"
+              >
+                {{ item.labelKey | transloco }}
+              </a>
+            } @else if (item.href) {
+              <a
+                [href]="item.href"
+                class="mobile-nav-link"
+                role="menuitem"
+                (click)="closeMobileMenu()"
+              >
+                {{ item.labelKey | transloco }}
+              </a>
+            }
+          }
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
