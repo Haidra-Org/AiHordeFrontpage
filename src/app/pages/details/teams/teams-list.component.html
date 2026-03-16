@@ -82,10 +82,10 @@
         <span class="form-label text-sm">{{
           "details.teams.sort_by" | transloco
         }}</span>
-        <div class="btn-group">
+        <div class="btn-group--inline">
           <button
             (click)="onSortChange('name')"
-            class="worker-btn text-sm"
+            class="worker-btn"
             [class.worker-btn-active]="sortBy() === 'name'"
           >
             {{ "details.teams.sort.name" | transloco }}
@@ -95,7 +95,7 @@
           </button>
           <button
             (click)="onSortChange('workers')"
-            class="worker-btn text-sm"
+            class="worker-btn"
             [class.worker-btn-active]="sortBy() === 'workers'"
           >
             {{ "details.teams.sort.workers" | transloco }}
@@ -105,7 +105,7 @@
           </button>
           <button
             (click)="onSortChange('kudos')"
-            class="worker-btn text-sm"
+            class="worker-btn"
             [class.worker-btn-active]="sortBy() === 'kudos'"
           >
             {{ "details.teams.sort.kudos" | transloco }}

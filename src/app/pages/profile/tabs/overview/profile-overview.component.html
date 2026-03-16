@@ -1,0 +1,220 @@
+<!-- Delete Account Dialog -->
+<app-delete-account-dialog
+  [open]="deleteDialogOpen()"
+  [title]="'profile.delete_account_title' | transloco"
+  [expectedUsername]="usernameWithDiscriminator()"
+  [isAlreadyDeleted]="auth.currentUser()?.deleted ?? false"
+  [confirmLabel]="'profile.delete_account_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="deleteLoading()"
+  (confirmed)="confirmDeleteAccount()"
+  (cancelled)="closeDeleteDialog()"
+/>
+
+<!-- Undelete Account Dialog -->
+<app-admin-dialog
+  [open]="undeleteDialogOpen()"
+  [title]="'profile.undelete_account_title' | transloco"
+  [confirmLabel]="'profile.undelete_account_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="undeleteLoading()"
+  (confirmed)="confirmUndeleteAccount()"
+  (cancelled)="closeUndeleteDialog()"
+>
+  <p class="dialog-body-text">
+    {{ "profile.undelete_account_message" | transloco }}
+  </p>
+</app-admin-dialog>
+
+<!-- Change Username Dialog -->
+<app-admin-dialog
+  [open]="usernameDialogOpen()"
+  [title]="'profile.change_username_title' | transloco"
+  [confirmLabel]="'profile.change_username_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="usernameSaving()"
+  (confirmed)="confirmUsernameChange()"
+  (cancelled)="closeUsernameDialog()"
+>
+  <p class="dialog-body-text dialog-body-text--spaced">
+    {{ "profile.change_username_desc" | transloco }}
+  </p>
+  <label class="form-label" for="username-input">{{
+    "profile.change_username_label" | transloco
+  }}</label>
+  <input
+    type="text"
+    id="username-input"
+    class="form-input form-input-wide"
+    [value]="usernameInput()"
+    (input)="onUsernameInputChange($event)"
+    maxlength="100"
+  />
+</app-admin-dialog>
+
+<!-- Account Marked for Deletion Warning -->
+@if (auth.currentUser()!.deleted) {
+  <div class="deletion-warning">
+    <div class="deletion-warning-layout">
+      <app-icon
+        name="warning-triangle-filled"
+        class="deletion-warning-icon"
+        viewBox="0 0 20 20"
+        aria-hidden="true"
+      />
+      <div class="deletion-warning-content">
+        <h3 class="deletion-warning-title">
+          {{ "profile.account_marked_for_deletion_title" | transloco }}
+        </h3>
+        <p class="deletion-warning-message">
+          {{ "profile.account_marked_for_deletion_message" | transloco }}
+        </p>
+        <button (click)="openUndeleteDialog()" class="btn-warning">
+          {{ "profile.undelete_account" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Identity Hero Card -->
+<div class="profile-glass-section">
+  <div class="profile-header">
+    <div class="avatar-circle avatar-lg avatar-gradient">
+      <span class="avatar-text">{{
+        auth.currentUser()!.username.charAt(0).toUpperCase()
+      }}</span>
+    </div>
+    <div class="profile-header-content">
+      <h2 class="heading-subsection profile-identity-username">
+        {{ auth.currentUser()!.username }}
+      </h2>
+      <button
+        (click)="openUsernameDialog()"
+        class="link-btn-sm profile-identity-username-action"
+      >
+        {{ "profile.change_username" | transloco }}
+      </button>
+
+      <p class="text-secondary text-sm">ID: {{ auth.currentUser()!.id }}</p>
+      @if (auth.currentUser()!.account_age) {
+        <p class="text-secondary text-sm">
+          {{
+            "profile.account_age"
+              | transloco
+                : {
+                    age: formatAccountAge(auth.currentUser()!.account_age!),
+                  }
+          }}
+        </p>
+      }
+      @if (shouldSetContactNag()) {
+        <a routerLink="/profile/settings" class="btn-secondary mt-2 max-h-7">
+          {{ "profile.set_contact_nag" | transloco }}
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Badges -->
+  <app-user-badges
+    [loading]="auth.isLoading()"
+    [trusted]="auth.currentUser()!.trusted ?? false"
+    [moderator]="auth.currentUser()!.moderator ?? false"
+    [education]="auth.currentUser()!.education ?? false"
+    [service]="auth.currentUser()!.service ?? false"
+    [customizer]="auth.currentUser()!.customizer ?? false"
+    [special]="auth.currentUser()!.special ?? false"
+    [pseudonymous]="auth.currentUser()!.pseudonymous ?? false"
+    [filtered]="auth.currentUser()!.filtered ?? false"
+    [flagged]="auth.currentUser()!.flagged ?? false"
+  />
+</div>
+
+<!-- Active Generations Indicator -->
+@if (hasActiveGenerations()) {
+  <div class="profile-glass-section mt-4">
+    <h4 class="section-title-sm">
+      {{ "profile.active_generations_label" | transloco }}
+    </h4>
+    <div class="active-gen-row">
+      @if (activeImageCount() > 0) {
+        <span class="badge-base badge-info">{{
+          "profile.active_image_jobs" | transloco: { count: activeImageCount() }
+        }}</span>
+      }
+      @if (activeTextCount() > 0) {
+        <span class="badge-base badge-success">{{
+          "profile.active_text_jobs" | transloco: { count: activeTextCount() }
+        }}</span>
+      }
+      @if (activeAlchemyCount() > 0) {
+        <span class="badge-base badge-purple">{{
+          "profile.active_alchemy_jobs"
+            | transloco: { count: activeAlchemyCount() }
+        }}</span>
+      }
+    </div>
+  </div>
+}
+
+<!-- Kudos + Activity side-by-side on wide viewports -->
+<div class="profile-overview-columns mt-4">
+  <!-- Kudos Card -->
+  <div class="profile-glass-section">
+    <app-user-kudos-card
+      [loading]="auth.isLoading()"
+      [kudos]="auth.currentUser()!.kudos"
+      [kudosDetails]="auth.currentUser()!.kudos_details"
+      [monthlyKudos]="auth.currentUser()!.monthly_kudos"
+      [evaluatingKudos]="auth.currentUser()!.evaluating_kudos"
+      [trusted]="auth.currentUser()!.trusted ?? false"
+      [isOwnProfile]="true"
+    />
+  </div>
+
+  <!-- Activity Snapshot -->
+  <div class="profile-glass-section profile-overview-columns__sidebar">
+    <h3 class="heading-card">
+      {{ "profile.activity_heading" | transloco }}
+    </h3>
+    <app-user-stats-summary
+      [loading]="auth.isLoading()"
+      [user]="auth.currentUser()!"
+    />
+  </div>
+</div>
+
+<!-- Quick-Nav Asset Boxes -->
+<div class="quick-nav-grid mt-4">
+  <a routerLink="/profile/workers" class="data-item-box">
+    <span class="data-value text-2xl font-bold">{{ workerCount() }}</span>
+    <span class="data-label">{{
+      "profile.quick_nav_workers" | transloco
+    }}</span>
+  </a>
+  <a routerLink="/profile/styles" class="data-item-box">
+    <span class="data-value text-2xl font-bold">{{ styleCount() }}</span>
+    <span class="data-label">{{ "profile.quick_nav_styles" | transloco }}</span>
+  </a>
+  <a routerLink="/profile/shared-keys" class="data-item-box">
+    <span class="data-value text-2xl font-bold">{{ sharedKeyCount() }}</span>
+    <span class="data-label">{{
+      "profile.quick_nav_shared_keys" | transloco
+    }}</span>
+  </a>
+</div>
+
+<!-- Actions -->
+<div class="profile-glass-section mt-4">
+  <div class="action-row">
+    @if (auth.currentUser()!.moderator) {
+      <a routerLink="/admin/" class="btn-primary">{{
+        "profile.admin_panel" | transloco
+      }}</a>
+    }
+    <button (click)="logout()" class="btn-source-control">
+      {{ "profile.logout" | transloco }}
+    </button>
+  </div>
+</div>

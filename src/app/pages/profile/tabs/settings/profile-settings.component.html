@@ -1,0 +1,198 @@
+<!-- Edit Contact Dialog -->
+<app-admin-dialog
+  [open]="contactDialogOpen()"
+  [title]="'profile.edit_contact_title' | transloco"
+  [confirmLabel]="'profile.edit_contact_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="contactSaving()"
+  (confirmed)="confirmContactChange()"
+  (cancelled)="closeContactDialog()"
+>
+  <p class="dialog-body-text dialog-body-text--spaced">
+    {{ "profile.edit_contact_desc" | transloco }}
+  </p>
+  <label class="form-label" for="contact-input">{{
+    "profile.edit_contact_label" | transloco
+  }}</label>
+  <input
+    type="text"
+    id="contact-input"
+    class="form-input"
+    [value]="contactInput()"
+    (input)="onContactInputChange($event)"
+    minlength="5"
+    maxlength="500"
+  />
+  @if (contactDialogError()) {
+    <p class="text-error" role="alert" aria-live="assertive">
+      {{ contactDialogError() }}
+    </p>
+  }
+</app-admin-dialog>
+
+<!-- Public Workers Confirmation Dialog -->
+<app-admin-dialog
+  [open]="publicWorkersDialogOpen()"
+  [title]="
+    publicWorkersNewValue()
+      ? ('profile.public_workers_confirm_enable_title' | transloco)
+      : ('profile.public_workers_confirm_disable_title' | transloco)
+  "
+  [confirmLabel]="'profile.public_workers_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="publicWorkersSaving()"
+  (confirmed)="confirmPublicWorkersChange()"
+  (cancelled)="closePublicWorkersDialog()"
+>
+  <p class="dialog-body-text">
+    @if (publicWorkersNewValue()) {
+      {{ "profile.public_workers_confirm_enable_desc" | transloco }}
+    } @else {
+      {{ "profile.public_workers_confirm_disable_desc" | transloco }}
+    }
+  </p>
+</app-admin-dialog>
+
+<!-- Delete Account Dialog -->
+<app-delete-account-dialog
+  [open]="deleteDialogOpen()"
+  [title]="'profile.delete_account_title' | transloco"
+  [expectedUsername]="usernameWithDiscriminator()"
+  [isAlreadyDeleted]="auth.currentUser()?.deleted ?? false"
+  [confirmLabel]="'profile.delete_account_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="deleteLoading()"
+  (confirmed)="confirmDeleteAccount()"
+  (cancelled)="closeDeleteDialog()"
+/>
+
+<!-- Undelete Account Dialog -->
+<app-admin-dialog
+  [open]="undeleteDialogOpen()"
+  [title]="'profile.undelete_account_title' | transloco"
+  [confirmLabel]="'profile.undelete_account_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="undeleteLoading()"
+  (confirmed)="confirmUndeleteAccount()"
+  (cancelled)="closeUndeleteDialog()"
+>
+  <p class="dialog-body-text">
+    {{ "profile.undelete_account_message" | transloco }}
+  </p>
+</app-admin-dialog>
+
+<!-- Account Settings -->
+<div class="profile-glass-section">
+  <h3 class="heading-card">
+    {{ "profile.account_settings_heading" | transloco }}
+  </h3>
+  <div class="data-grid-1-2">
+    <div class="data-item-box">
+      <span class="data-label"
+        >{{ "profile.public_workers_label" | transloco }}
+        <app-info-tooltip
+          termKey="profile.public_workers_desc"
+          glossaryId="worker"
+        />
+      </span>
+      <span class="data-value">
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="auth.currentUser()!.public_workers ?? false"
+            (click)="
+              $event.preventDefault();
+              onPublicWorkersToggle(!auth.currentUser()!.public_workers)
+            "
+          />
+          <div class="toggle-switch-track"></div>
+          <div class="toggle-switch-thumb"></div>
+        </label>
+      </span>
+      <span class="text-secondary text-xs">{{
+        "profile.public_workers_desc" | transloco
+      }}</span>
+    </div>
+    <div
+      class="data-item-box"
+      [class.profile-contact-needs-attention]="showContactNagNotifications()"
+    >
+      <span class="data-label"
+        >{{ "profile.contact_label" | transloco }}
+        <button (click)="openContactDialog()" class="link-btn-sm mt-1 pl-2">
+          {{ "profile.edit_contact" | transloco }}
+        </button>
+        @if (showContactNagNotifications()) {
+          <button
+            type="button"
+            (click)="dismissContactNagNotifications()"
+            class="link-btn-sm mt-1 pl-2"
+          >
+            {{ "profile.dismiss_contact_nag" | transloco }}
+          </button>
+        }
+      </span>
+      <span class="data-value">
+        @if (auth.currentUser()!.contact) {
+          {{ auth.currentUser()!.contact }}
+        } @else {
+          <span class="text-secondary italic">{{
+            "profile.contact_not_set" | transloco
+          }}</span>
+        }
+      </span>
+      <span class="text-secondary text-xs">{{
+        "profile.contact_help_malfunction" | transloco
+      }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Page Guides -->
+<div class="profile-glass-section mt-4">
+  <h3 class="heading-card">
+    {{ "profile.page_guides" | transloco }}
+  </h3>
+  <p class="text-secondary text-sm">
+    {{ "profile.guides_explanation" | transloco }}
+  </p>
+  <div class="action-row">
+    @if (!guideService.allDismissed()) {
+      <button (click)="guideService.dismissAll()" class="btn-secondary">
+        {{ "profile.hide_all_guides" | transloco }}
+      </button>
+    }
+    @if (guideService.anyDismissed()) {
+      <button (click)="guideService.restoreAll()" class="btn-secondary">
+        {{ "profile.restore_all_guides" | transloco }}
+      </button>
+    }
+  </div>
+</div>
+
+<!-- Danger Zone -->
+<div class="danger-zone-card mt-4">
+  <h3 class="heading-card">
+    {{ "profile.danger_zone_title" | transloco }}
+  </h3>
+  <p class="text-secondary text-sm">
+    {{ "profile.danger_zone_desc" | transloco }}
+  </p>
+  <div class="action-row">
+    @if (auth.currentUser()!.deleted) {
+      <button (click)="openUndeleteDialog()" class="btn-warning">
+        {{ "profile.undelete_account" | transloco }}
+      </button>
+    }
+    @if (!auth.currentUser()!.deleted) {
+      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
+        {{ "profile.delete_account" | transloco }}
+      </button>
+    }
+    @if (auth.currentUser()!.deleted) {
+      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
+        {{ "profile.permanently_delete_account" | transloco }}
+      </button>
+    }
+  </div>
+</div>

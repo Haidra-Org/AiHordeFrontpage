@@ -1,11 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   signal,
   inject,
-  PLATFORM_ID,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ThemeService, type Theme } from '../../services/theme.service';
 import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
@@ -33,42 +32,26 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class ThemeToggleComponent {
   public readonly themeService = inject(ThemeService);
-  private readonly platformId = inject(PLATFORM_ID);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
 
-  /**
-   * Controls dropdown visibility
-   */
   public readonly isOpen = signal(false);
 
-  /**
-   * Close dropdown when clicking outside
-   */
-  onDocumentClick(_event: Event): void {
-    if (isPlatformBrowser(this.platformId) && this.isOpen()) {
+  onDocumentClick(event: Event): void {
+    if (!this.isOpen()) return;
+    if (!this.elementRef.nativeElement.contains(event.target as Node)) {
       this.closeDropdown();
     }
   }
 
-  /**
-   * Toggle dropdown visibility
-   */
-  public toggleDropdown(event: Event): void {
-    event.stopPropagation();
+  public toggleDropdown(): void {
     this.isOpen.update((value) => !value);
   }
 
-  /**
-   * Close dropdown
-   */
   public closeDropdown(): void {
     this.isOpen.set(false);
   }
 
-  /**
-   * Set theme and close dropdown
-   */
-  public selectTheme(theme: Theme, event: Event): void {
-    event.stopPropagation();
+  public selectTheme(theme: Theme): void {
     this.themeService.setTheme(theme);
     this.closeDropdown();
   }

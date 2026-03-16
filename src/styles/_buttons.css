@@ -395,6 +395,17 @@
     @apply justify-center;
   }
 
+  /* Always-horizontal compact button group - stays in a row at all widths */
+  .btn-group--inline {
+    @apply flex flex-row flex-wrap gap-1;
+
+    @media (max-width: 400px) {
+      & .worker-btn {
+        @apply px-2.5 py-1 text-xs;
+      }
+    }
+  }
+
   /* =================================================================
      SECONDARY BUTTON (outline/soft style)
      ================================================================= */

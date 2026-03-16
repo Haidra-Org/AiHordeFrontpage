@@ -11,15 +11,12 @@ export const routes: Routes = [
   },
   {
     path: 'profile',
-    pathMatch: 'full',
-    redirectTo: 'profile/overview',
-  },
-  {
-    path: 'profile/:tab',
     loadComponent: () =>
-      import('./pages/profile/profile.component').then(
-        (c) => c.ProfileComponent,
+      import('./pages/profile/profile-shell.component').then(
+        (c) => c.ProfileShellComponent,
       ),
+    loadChildren: () =>
+      import('./pages/profile/profile.routes').then((m) => m.profileRoutes),
   },
   {
     path: 'admin',
