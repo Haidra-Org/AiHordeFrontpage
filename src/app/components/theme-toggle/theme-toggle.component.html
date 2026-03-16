@@ -5,7 +5,7 @@
     class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
     [attr.aria-expanded]="isOpen()"
     aria-label="Toggle theme menu"
-    (click)="toggleDropdown($event)"
+    (click)="toggleDropdown()"
   >
     <span class="sr-only">Toggle theme</span>
 
@@ -32,7 +32,6 @@
   @if (isOpen()) {
     <div
       class="absolute right-0 z-50 mt-2 w-48 bg-white rounded-lg shadow-lg dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
-      (mousedown)="$event.stopPropagation()"
     >
       <ul
         class="py-1 text-sm text-gray-700 dark:text-gray-200"
@@ -48,7 +47,7 @@
             [class.bg-gray-100]="isSelected('light') && !themeService.isDark()"
             [class.bg-gray-600]="isSelected('light') && themeService.isDark()"
             role="menuitem"
-            (click)="selectTheme('light', $event)"
+            (click)="selectTheme('light')"
           >
             <span class="flex items-center gap-2">
               <inline-svg
@@ -77,7 +76,7 @@
             [class.bg-gray-100]="isSelected('dark') && !themeService.isDark()"
             [class.bg-gray-600]="isSelected('dark') && themeService.isDark()"
             role="menuitem"
-            (click)="selectTheme('dark', $event)"
+            (click)="selectTheme('dark')"
           >
             <span class="flex items-center gap-2">
               <inline-svg
@@ -106,7 +105,7 @@
             [class.bg-gray-100]="isSelected('system') && !themeService.isDark()"
             [class.bg-gray-600]="isSelected('system') && themeService.isDark()"
             role="menuitem"
-            (click)="selectTheme('system', $event)"
+            (click)="selectTheme('system')"
           >
             <span class="flex items-center gap-2">
               <app-icon

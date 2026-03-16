@@ -21,7 +21,7 @@ import { IconComponent } from '../icon/icon.component';
         [attr.title]="triggerTitle()"
         [attr.aria-expanded]="isOpen()"
         aria-haspopup="true"
-        (click)="toggle(); $event.stopPropagation()"
+        (click)="toggle()"
       >
         <ng-content select="[trigger]" />
         <app-icon

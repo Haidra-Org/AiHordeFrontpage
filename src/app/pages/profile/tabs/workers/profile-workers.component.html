@@ -1,0 +1,271 @@
+<!-- Public Workers Confirmation Dialog -->
+<app-admin-dialog
+  [open]="publicWorkersDialogOpen()"
+  [title]="
+    publicWorkersNewValue()
+      ? ('profile.public_workers_confirm_enable_title' | transloco)
+      : ('profile.public_workers_confirm_disable_title' | transloco)
+  "
+  [confirmLabel]="'profile.public_workers_confirm' | transloco"
+  [cancelLabel]="'profile.form.cancel' | transloco"
+  [loading]="publicWorkersSaving()"
+  (confirmed)="confirmPublicWorkersChange()"
+  (cancelled)="closePublicWorkersDialog()"
+>
+  <p class="dialog-body-text">
+    @if (publicWorkersNewValue()) {
+      {{ "profile.public_workers_confirm_enable_desc" | transloco }}
+    } @else {
+      {{ "profile.public_workers_confirm_disable_desc" | transloco }}
+    }
+  </p>
+</app-admin-dialog>
+
+<div class="card card-bg-primary card-full card-spaced card--no-blur">
+  <h3 class="heading-card">
+    {{ "profile.your_workers" | transloco }}
+    @if (
+      auth.currentUser()!.worker_ids &&
+      auth.currentUser()!.worker_ids!.length > 0
+    ) {
+      <span class="text-secondary text-sm"
+        >({{ auth.currentUser()!.worker_ids!.length }})</span
+      >
+    }
+  </h3>
+
+  <div class="data-grid-1-2">
+    <div class="data-item-box">
+      <span class="data-label"
+        >{{ "profile.public_workers_label" | transloco }}
+        <app-info-tooltip
+          termKey="profile.public_workers_desc"
+          glossaryId="worker"
+        />
+      </span>
+      <span class="data-value">
+        <label class="toggle-switch">
+          <input
+            type="checkbox"
+            [checked]="auth.currentUser()!.public_workers ?? false"
+            (click)="
+              $event.preventDefault();
+              onPublicWorkersToggle(!auth.currentUser()!.public_workers)
+            "
+          />
+          <div class="toggle-switch-track"></div>
+          <div class="toggle-switch-thumb"></div>
+        </label>
+      </span>
+      <span class="text-secondary text-xs">{{
+        "profile.public_workers_desc" | transloco
+      }}</span>
+    </div>
+  </div>
+
+  @if (
+    !auth.currentUser()!.worker_ids ||
+    auth.currentUser()!.worker_ids!.length === 0
+  ) {
+    <p class="text-secondary text-center py-4">
+      {{ "profile.no_workers_registered" | transloco }}
+    </p>
+  } @else {
+    <!-- Filter Controls -->
+    <div class="filter-bar">
+      <!-- Search Filter -->
+      <div class="filter-field filter-field--grow">
+        <label for="worker-search" class="form-label">{{
+          "profile.workers.search" | transloco
+        }}</label>
+        <input
+          type="text"
+          id="worker-search"
+          [value]="filterText()"
+          (input)="onFilterTextChange($event)"
+          [placeholder]="'profile.workers.search_placeholder' | transloco"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Worker Type Filter -->
+      <div class="filter-field">
+        <label for="worker-type" class="form-label"
+          >{{ "profile.workers.type" | transloco }}
+          <app-info-tooltip
+            termKey="help.glossary.terms.worker.body"
+            glossaryId="worker"
+          />
+        </label>
+        <select
+          id="worker-type"
+          [value]="filterWorkerType()"
+          (change)="onFilterTypeChange($any($event.target).value)"
+          class="form-input"
+        >
+          <option value="all">
+            {{ "profile.workers.type.all" | transloco }}
+          </option>
+          <option value="image">
+            {{ "profile.workers.type.image" | transloco }}
+          </option>
+          <option value="text">
+            {{ "profile.workers.type.text" | transloco }}
+          </option>
+          <option value="interrogation">
+            {{ "profile.workers.type.interrogation" | transloco }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Maintenance Status Filter -->
+      <div class="filter-field">
+        <label for="worker-status" class="form-label"
+          >{{ "profile.workers.status" | transloco }}
+          <app-info-tooltip
+            termKey="help.workers.tooltip.maintenance"
+            glossaryId="maintenance"
+          />
+        </label>
+        <select
+          id="worker-status"
+          [value]="filterMaintenance()"
+          (change)="onFilterMaintenanceChange($any($event.target).value)"
+          class="form-input"
+        >
+          <option value="all">
+            {{ "profile.workers.status.all" | transloco }}
+          </option>
+          <option value="active">
+            {{ "profile.workers.status.active" | transloco }}
+          </option>
+          <option value="maintenance">
+            {{ "profile.workers.status.maintenance" | transloco }}
+          </option>
+          <option value="offline">
+            {{ "profile.workers.status.offline" | transloco }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    @if (loadingWorkers()) {
+      <p class="text-secondary text-sm mb-2">
+        {{ "profile.loading_workers" | transloco }}
+      </p>
+    }
+
+    @if (unresolvedWorkers().length > 0) {
+      <div class="worker-grid mb-4">
+        @for (workerEntry of unresolvedWorkers(); track workerEntry.id) {
+          @if (workerEntry.loading) {
+            <div class="skeleton-box" aria-busy="true">
+              <p class="data-value text-sm break-all">
+                {{ workerEntry.id }}
+              </p>
+              <div class="skeleton-bar skeleton-bar-sm"></div>
+              <div class="skeleton-bar skeleton-bar-lg"></div>
+              <p class="text-secondary text-sm">
+                {{ "profile.loading_workers" | transloco }}
+              </p>
+            </div>
+          } @else {
+            <div class="skeleton-box skeleton-box-dashed" role="status">
+              <p class="data-value text-sm break-all">
+                {{ workerEntry.id }}
+              </p>
+              <p class="text-secondary text-sm">
+                {{ "profile.no_workers_found" | transloco }}
+              </p>
+            </div>
+          }
+        }
+      </div>
+    }
+
+    @if (
+      !loadingWorkers() &&
+      filteredAndSortedWorkers().length === 0 &&
+      unresolvedWorkers().length === 0 &&
+      userWorkers().length > 0
+    ) {
+      <p class="text-secondary text-center py-4">
+        {{ "profile.no_workers_match_filters" | transloco }}
+      </p>
+    } @else {
+      @for (group of groupedWorkers(); track group.type) {
+        <h4
+          class="heading-subsection section-header-collapsible section-header-collapsible--light"
+          (click)="toggleWorkerTypeSection(group.type)"
+          (keydown.enter)="toggleWorkerTypeSection(group.type)"
+          (keydown.space)="toggleWorkerTypeSection(group.type)"
+          tabindex="0"
+          role="button"
+          [attr.aria-expanded]="!isWorkerTypeCollapsed(group.type)"
+        >
+          <span class="section-header-title-wrapper">
+            {{ "profile.workers.type." + group.type | transloco }}
+            <span class="text-secondary text-sm"
+              >({{ group.workers.length }})</span
+            >
+          </span>
+          <app-icon
+            name="chevron-down"
+            class="chevron-icon"
+            [class.expanded]="!isWorkerTypeCollapsed(group.type)"
+            aria-hidden="true"
+          />
+        </h4>
+        @if (!isWorkerTypeCollapsed(group.type)) {
+          <div class="worker-grid">
+            @for (workerEntry of group.workers; track workerEntry.id) {
+              @if (workerEntry.loading) {
+                <div class="skeleton-box" aria-busy="true">
+                  <p class="data-value text-sm break-all">
+                    {{ workerEntry.id }}
+                  </p>
+                  <div class="skeleton-bar skeleton-bar-sm"></div>
+                  <div class="skeleton-bar skeleton-bar-lg"></div>
+                  <p class="text-secondary text-sm">
+                    {{ "profile.loading_workers" | transloco }}
+                  </p>
+                </div>
+              } @else if (workerEntry.worker) {
+                @if (!loadingTeams()) {
+                  <app-worker-card
+                    [worker]="workerEntry.worker"
+                    [isModerator]="auth.currentUser()?.moderator ?? false"
+                    [pinHeaderOnMobile]="true"
+                    [availableTeams]="allTeams()"
+                    (workerUpdated)="onWorkerUpdated()"
+                    (workerDeleted)="onWorkerDeleted($event)"
+                  />
+                } @else {
+                  <div class="skeleton-box" aria-busy="true">
+                    <p class="data-value text-sm break-all">
+                      {{ workerEntry.worker.name }}
+                    </p>
+                    <div class="skeleton-bar skeleton-bar-sm"></div>
+                    <div class="skeleton-bar skeleton-bar-lg"></div>
+                    <p class="text-secondary text-sm">
+                      {{ "profile.loading_workers" | transloco }}
+                    </p>
+                  </div>
+                }
+              } @else {
+                <div class="skeleton-box skeleton-box-dashed" role="status">
+                  <p class="data-value text-sm break-all">
+                    {{ workerEntry.id }}
+                  </p>
+                  <p class="text-secondary text-sm">
+                    {{ "profile.no_workers_found" | transloco }}
+                  </p>
+                </div>
+              }
+            }
+          </div>
+        }
+      }
+    }
+  }
+</div>

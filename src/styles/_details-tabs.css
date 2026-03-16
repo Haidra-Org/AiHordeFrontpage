@@ -1100,6 +1100,13 @@
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
     border: 1px solid var(--color-glass-border-subtle);
+
+    /* Routed child components inherit display:flex from app.component.css
+       (::ng-deep router-outlet + *). Override to block so card mx-auto
+       stretches instead of centering at content width. */
+    > router-outlet + * {
+      display: block !important;
+    }
     border-top: none;
     box-shadow: var(--shadow-glass);
   }
