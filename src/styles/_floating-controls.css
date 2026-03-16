@@ -58,7 +58,7 @@
   }
 
   /* Icon sizing inside scroll-to-top button */
-  .scroll-to-top-btn svg {
+  .scroll-to-top-btn .icon {
     @apply w-6 h-6;
   }
 }

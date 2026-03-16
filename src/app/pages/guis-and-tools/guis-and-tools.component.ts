@@ -34,6 +34,7 @@ import {
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { scrollToElement } from '../../helper/scroll-utils';
 import { BeginnerHeaderComponent } from '../../components/beginner-header/beginner-header.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { ItemType } from '../../types/item-types';
 
@@ -64,6 +65,7 @@ export interface SectionInfo {
     TranslocoModule,
     ItemListSectionComponent,
     BeginnerHeaderComponent,
+    IconComponent,
     StickyHeaderDirective,
   ],
   templateUrl: './guis-and-tools.component.html',

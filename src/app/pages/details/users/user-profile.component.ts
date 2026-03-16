@@ -26,6 +26,7 @@ import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { HordeUser } from '../../../types/horde-user';
 import { extractUserAlias } from '../../../helper/user-parser';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 @Component({
   selector: 'app-user-profile',
@@ -39,6 +40,7 @@ import { extractUserAlias } from '../../../helper/user-parser';
     UserRecordsPanelComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
+    IconComponent,
   ],
   templateUrl: './user-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

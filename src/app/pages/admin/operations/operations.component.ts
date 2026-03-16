@@ -19,6 +19,7 @@ import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { IPTimeout } from '../../../types/ip-operations';
 import { HordeWorker } from '../../../types/horde-worker';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { AdminToastService } from '../../../services/admin-toast.service';
 
@@ -31,7 +32,13 @@ type DialogType =
 
 @Component({
   selector: 'app-operations',
-  imports: [TranslocoPipe, TranslocoModule, FormsModule, AdminDialogComponent],
+  imports: [
+    TranslocoPipe,
+    TranslocoModule,
+    FormsModule,
+    AdminDialogComponent,
+    IconComponent,
+  ],
   templateUrl: './operations.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

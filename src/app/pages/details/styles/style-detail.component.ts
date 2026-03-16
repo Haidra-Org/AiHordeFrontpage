@@ -19,6 +19,7 @@ import {
   TextStyle,
 } from '../../../types/style';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 type StyleType = 'image' | 'text';
 
@@ -27,7 +28,7 @@ type StyleType = 'image' | 'text';
   templateUrl: './style-detail.component.html',
   styleUrls: ['./style-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, RouterLink, IconComponent],
 })
 export class StyleDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);

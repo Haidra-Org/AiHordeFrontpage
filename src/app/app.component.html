@@ -117,39 +117,21 @@
               @if (hasContributeNotification() && !showContributeDropdown) {
                 <span class="nav-notification-dot" aria-hidden="true"></span>
               }
-              <svg
+              <app-icon
+                name="chevron-down"
                 class="nav-dropdown-chevron"
                 [class.nav-dropdown-chevron-open]="showContributeDropdown"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              />
             </button>
             @if (showContributeDropdown) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
                 @if (hasContributeNotification()) {
                   <div class="nav-dropdown-notification-banner" role="status">
-                    <svg
+                    <app-icon
+                      name="alert-triangle"
                       class="nav-dropdown-notification-banner-icon"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke-width="1.5"
-                      stroke="currentColor"
                       aria-hidden="true"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                      />
-                    </svg>
+                    />
                     {{
                       "notification.need_workers.message"
                         | transloco: { types: contributeTooltip() }
@@ -205,20 +187,11 @@
               [attr.aria-expanded]="showDetailsDropdown"
             >
               {{ "nav.active_details" | transloco }}
-              <svg
+              <app-icon
+                name="chevron-down"
                 class="nav-dropdown-chevron"
                 [class.nav-dropdown-chevron-open]="showDetailsDropdown"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              />
             </button>
             @if (showDetailsDropdown) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
@@ -299,20 +272,11 @@
               [attr.aria-expanded]="showAccountDropdown"
             >
               {{ "nav.account" | transloco }}
-              <svg
+              <app-icon
+                name="chevron-down"
                 class="nav-dropdown-chevron"
                 [class.nav-dropdown-chevron-open]="showAccountDropdown"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              />
             </button>
             @if (showAccountDropdown) {
               <div class="nav-dropdown-menu surface-floating" role="menu">
@@ -382,37 +346,11 @@
             }}</span>
             <!-- Hamburger Icon -->
             @if (!showMobileMenu) {
-              <svg
-                class="menu-icon"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
-              </svg>
+              <app-icon name="hamburger" class="menu-icon" aria-hidden="true" />
             }
             <!-- Close Icon -->
             @if (showMobileMenu) {
-              <svg
-                class="menu-icon"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <app-icon name="x-mark" class="menu-icon" aria-hidden="true" />
             }
           </button>
         </div>
@@ -499,39 +437,21 @@
                     ></span>
                   }
                 </span>
-                <svg
+                <app-icon
+                  name="chevron-down"
                   class="mobile-nav-chevron"
                   [class.mobile-nav-chevron-open]="showMobileContributeSubmenu"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
               @if (showMobileContributeSubmenu) {
                 <div class="mobile-nav-submenu-items">
                   @if (hasContributeNotification()) {
                     <div class="mobile-notification-banner" role="status">
-                      <svg
+                      <app-icon
+                        name="alert-triangle"
                         class="mobile-notification-banner-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke-width="1.5"
-                        stroke="currentColor"
                         aria-hidden="true"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                        />
-                      </svg>
+                      />
                       {{
                         "notification.need_workers.message"
                           | transloco: { types: contributeTooltip() }
@@ -569,20 +489,11 @@
                 [attr.aria-expanded]="showMobileDetailsSubmenu"
               >
                 {{ "nav.active_details" | transloco }}
-                <svg
+                <app-icon
+                  name="chevron-down"
                   class="mobile-nav-chevron"
                   [class.mobile-nav-chevron-open]="showMobileDetailsSubmenu"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
               @if (showMobileDetailsSubmenu) {
                 <div class="mobile-nav-submenu-items">
@@ -679,20 +590,11 @@
                 [attr.aria-expanded]="showMobileAccountSubmenu"
               >
                 {{ "nav.account" | transloco }}
-                <svg
+                <app-icon
+                  name="chevron-down"
                   class="mobile-nav-chevron"
                   [class.mobile-nav-chevron-open]="showMobileAccountSubmenu"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                />
               </button>
               @if (showMobileAccountSubmenu) {
                 <div class="mobile-nav-submenu-items">

@@ -27,36 +27,10 @@
         [attr.aria-pressed]="showJsonView()"
       >
         @if (showJsonView()) {
-          <svg
-            class="form-toggle-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z"
-            />
-          </svg>
+          <app-icon name="document" class="form-toggle-icon" />
           {{ "styles.form.show_form" | transloco }}
         } @else {
-          <svg
-            class="form-toggle-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
-            />
-          </svg>
+          <app-icon name="code-bracket" class="form-toggle-icon" />
           {{ "styles.form.show_json" | transloco }}
         }
       </button>

@@ -8,6 +8,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { combineLatest, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../components/icon/icon.component';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
@@ -19,6 +20,7 @@ import { FooterColorService } from '../../services/footer-color.service';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    IconComponent,
     TranslocoPipe,
     ScrollFadeDirective,
     StickyHeaderDirective,

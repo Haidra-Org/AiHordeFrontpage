@@ -20,6 +20,7 @@ import { AuthService } from '../../../services/auth.service';
 import { LeaderboardUser } from '../../../types/leaderboard-user';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 @Component({
   selector: 'app-kudos-leaderboard',
@@ -29,6 +30,7 @@ import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.co
     RouterLink,
     PageIntroComponent,
     KudosTermComponent,
+    IconComponent,
   ],
   templateUrl: './kudos-leaderboard.component.html',
   styleUrl: './kudos-leaderboard.component.css',

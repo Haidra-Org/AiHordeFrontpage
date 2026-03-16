@@ -33,12 +33,13 @@ import {
   SynthesizedUnit,
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { GlossaryService } from '../../../services/glossary.service';
-import { getWorkerIconSvg, WORKER_STATUS_ICONS } from './worker-icons';
+import { WORKER_STATUS_ICONS } from './worker-icons';
 
 type SortKey =
   | 'name'
@@ -58,6 +59,7 @@ type SortOrder = 'asc' | 'desc';
     DecimalPipe,
     InfoTooltipComponent,
     UnitTooltipComponent,
+    IconComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
   ],
@@ -176,7 +178,7 @@ export class WorkerListComponent implements OnInit {
           id: `icon-${icon.type.replace('_', '-')}`,
           titleKey: `help.glossary.page.workers.icon_${icon.type}.title`,
           descriptionKey: icon.descriptionKey,
-          iconSvg: getWorkerIconSvg(icon.type),
+          iconName: icon.iconName,
           iconColorClass: icon.colorClass,
         })),
         {

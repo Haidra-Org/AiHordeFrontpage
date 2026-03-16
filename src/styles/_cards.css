@@ -959,8 +959,8 @@
     @apply w-12 h-12 mb-3 flex items-center justify-center rounded-full text-white;
   }
 
-  /* Size SVGs inside feature card icons */
-  .feature-card-icon svg {
+  /* Size icons inside feature card icon containers */
+  .feature-card-icon .icon {
     @apply w-6 h-6;
   }
 
@@ -1050,7 +1050,7 @@
     @apply dark:bg-green-900 dark:text-green-400;
   }
 
-  .feature-box-icon svg {
+  .feature-box-icon .icon {
     @apply w-7 h-7;
   }
 

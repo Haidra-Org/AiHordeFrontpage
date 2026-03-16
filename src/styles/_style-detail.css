@@ -363,7 +363,7 @@
     @apply py-1 px-2 text-xs;
   }
 
-  .btn-sm svg {
+  .btn-sm .icon {
     @apply w-3.5 h-3.5;
   }
 

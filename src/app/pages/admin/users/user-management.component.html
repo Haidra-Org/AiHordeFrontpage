@@ -43,19 +43,7 @@
     <div class="panel mb-6">
       <button (click)="toggleHistorySection()" class="expandable-header">
         <div class="flex items-center gap-2">
-          <svg
-            class="w-5 h-5 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <app-icon name="clock" class="w-5 h-5 text-secondary" />
           <span class="admin-text-light"
             >Recent Users ({{ userHistory().length }})</span
           >
@@ -70,20 +58,11 @@
               Clear
             </button>
           }
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="historyExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </div>
       </button>
 
@@ -102,19 +81,10 @@
                     </div>
                     <div class="text-secondary text-sm">#{{ item.id }}</div>
                   </div>
-                  <svg
+                  <app-icon
+                    name="chevron-right"
                     class="w-4 h-4 admin-icon-muted shrink-0 ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  />
                 </div>
               </button>
             }
@@ -153,38 +123,12 @@
     </div>
   } @else if (userNotFound()) {
     <div class="state-container state-container-sm state-muted">
-      <svg
-        class="state-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
+      <app-icon name="user-simple" class="state-icon" aria-hidden="true" />
       <p>{{ "admin.users.not_found" | transloco }}</p>
     </div>
   } @else if (!selectedUser()) {
     <div class="state-container state-container-sm state-muted">
-      <svg
-        class="state-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
-      </svg>
+      <app-icon name="search" class="state-icon" aria-hidden="true" />
       <p>{{ "admin.users.select_user" | transloco }}</p>
     </div>
   } @else {
@@ -196,17 +140,11 @@
           class="bg-red-900/50 border-b border-red-700 px-6 py-3 flex items-center justify-between gap-3"
         >
           <div class="flex items-center gap-3">
-            <svg
+            <app-icon
+              name="warning-triangle-filled"
               class="w-5 h-5 text-red-400"
-              fill="currentColor"
               viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                clip-rule="evenodd"
-              />
-            </svg>
+            />
             <span class="text-red-300">{{
               "admin.users.deleted_warning" | transloco
             }}</span>
@@ -225,13 +163,11 @@
         class="unsaved-changes-warning"
         [class.unsaved-changes-warning-hidden]="!isDirty()"
       >
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path
-            fill-rule="evenodd"
-            d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-            clip-rule="evenodd"
-          />
-        </svg>
+        <app-icon
+          name="warning-triangle-filled"
+          class="w-5 h-5"
+          viewBox="0 0 20 20"
+        />
         <span>{{ "admin.users.unsaved_changes" | transloco }}</span>
       </div>
 
@@ -247,32 +183,20 @@
               >
             }
             @if (trustedValue()) {
-              <svg
+              <app-icon
+                name="check-circle-filled"
                 class="w-5 h-5 text-green-400"
-                fill="currentColor"
                 viewBox="0 0 20 20"
-                aria-label="Trusted user"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+                [ariaLabel]="'Trusted user'"
+              />
             }
             @if (flaggedValue()) {
-              <svg
+              <app-icon
+                name="x-circle-filled"
                 class="w-5 h-5 text-red-400"
-                fill="currentColor"
                 viewBox="0 0 20 20"
-                aria-label="Flagged user"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+                [ariaLabel]="'Flagged user'"
+              />
             }
             @if (selectedUser()!.moderator) {
               <span class="admin-badge-moderator">{{
@@ -347,20 +271,11 @@
           <span class="admin-text-light">{{
             "admin.users.section.permissions" | transloco
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="permissionsExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (permissionsExpanded()) {
@@ -636,20 +551,11 @@
           <span class="admin-text-light">{{
             "admin.users.section.limits" | transloco
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="limitsExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (limitsExpanded()) {
@@ -752,20 +658,11 @@
           <span class="admin-text-light">{{
             "admin.users.section.contact" | transloco
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="contactExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (contactExpanded()) {
@@ -858,20 +755,11 @@
           <span class="admin-text-light">{{
             "admin.users.section.kudos_details" | transloco
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="kudosDetailsExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (kudosDetailsExpanded()) {
@@ -891,20 +779,11 @@
             <span class="admin-text-light">{{
               "admin.users.section.records" | transloco
             }}</span>
-            <svg
+            <app-icon
+              name="chevron-down"
               class="expandable-icon"
               [class.expanded]="recordsExpanded()"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           @if (recordsExpanded()) {
@@ -1158,20 +1037,11 @@
             <span class="admin-text-light">{{
               "admin.users.section.active_generations" | transloco
             }}</span>
-            <svg
+            <app-icon
+              name="chevron-down"
               class="expandable-icon"
               [class.expanded]="activeGenerationsExpanded()"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           @if (activeGenerationsExpanded()) {
@@ -1395,21 +1265,12 @@
           <span class="admin-text-light">{{
             "admin.users.section.tracked_generations" | transloco
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="expandable-icon"
             [class.expanded]="trackedGenerationsExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
             aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (trackedGenerationsExpanded()) {
@@ -1431,20 +1292,11 @@
                 selectedUser()!.styles!.length
               }})</span
             >
-            <svg
+            <app-icon
+              name="chevron-down"
               class="expandable-icon"
               [class.expanded]="stylesExpanded()"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           @if (stylesExpanded()) {
@@ -1485,20 +1337,11 @@
                 selectedUser()!.sharedkey_ids!.length
               }})</span
             >
-            <svg
+            <app-icon
+              name="chevron-down"
               class="expandable-icon"
               [class.expanded]="sharedKeysExpanded()"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           @if (sharedKeysExpanded()) {
@@ -1608,20 +1451,11 @@
             <span class="admin-text-light">{{
               "admin.users.section.workers" | transloco
             }}</span>
-            <svg
+            <app-icon
+              name="chevron-down"
               class="expandable-icon"
               [class.expanded]="workersExpanded()"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           @if (workersExpanded()) {

@@ -121,8 +121,8 @@
     @apply border-gray-700;
   }
 
-  .page-intro-actions .btn-secondary svg {
-    @apply w-4 h-4 mr-1 inline-block;
+  .page-intro-actions .btn-secondary .icon {
+    @apply w-4 h-4 mr-1;
   }
 
   .page-intro-dismiss {
@@ -149,7 +149,7 @@
     cursor: pointer;
   }
 
-  .page-intro-restore-btn svg {
+  .page-intro-restore-btn .icon {
     @apply w-3.5 h-3.5;
   }
 

@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../icon/icon.component';
 import {
   StyleQueryParams,
   StyleSortOption,
@@ -17,7 +18,7 @@ import {
 
 @Component({
   selector: 'app-style-filters',
-  imports: [FormsModule, TranslocoPipe],
+  imports: [FormsModule, TranslocoPipe, IconComponent],
   templateUrl: './style-filters.component.html',
   styleUrl: './style-filters.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -16,6 +16,7 @@ import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { EnumDisplayPipe } from '../../pipes/enum-display.pipe';
 import { InfoTooltipComponent } from '../info-tooltip/info-tooltip.component';
+import { IconComponent } from '../icon/icon.component';
 import {
   ItemType,
   Domain,
@@ -44,7 +45,12 @@ export interface DisplayItem {
 
 @Component({
   selector: 'app-item-list-section',
-  imports: [TranslocoModule, EnumDisplayPipe, InfoTooltipComponent],
+  imports: [
+    TranslocoModule,
+    EnumDisplayPipe,
+    InfoTooltipComponent,
+    IconComponent,
+  ],
   templateUrl: './item-list-section.component.html',
   styleUrl: './item-list-section.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

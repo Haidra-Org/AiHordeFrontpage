@@ -9,12 +9,13 @@ import { RouterLink } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
 import { KudosTermComponent } from '../kudos-term/kudos-term.component';
 import { PageGuideService } from '../../services/page-guide.service';
+import { IconComponent } from '../icon/icon.component';
 
 const STORAGE_KEY = 'beginner-dismissed-tools';
 
 @Component({
   selector: 'app-beginner-header',
-  imports: [RouterLink, TranslocoModule, KudosTermComponent],
+  imports: [RouterLink, TranslocoModule, KudosTermComponent, IconComponent],
   templateUrl: './beginner-header.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

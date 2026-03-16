@@ -12,11 +12,18 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [TranslocoPipe, TranslocoModule, RouterLink, FormatNumberPipe],
+  imports: [
+    TranslocoPipe,
+    TranslocoModule,
+    RouterLink,
+    FormatNumberPipe,
+    IconComponent,
+  ],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

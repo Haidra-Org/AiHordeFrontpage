@@ -22,20 +22,7 @@
         <div class="tools-filter-bar-content">
           <!-- Search Input -->
           <div class="tools-search-wrapper">
-            <svg
-              class="tools-search-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            <app-icon name="search" class="tools-search-icon" />
             <input
               type="text"
               class="tools-search-input"
@@ -53,19 +40,7 @@
                 (click)="searchQuery.set('')"
                 aria-label="Clear search"
               >
-                <svg
-                  class="tools-icon-sm"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <app-icon name="x-mark" class="tools-icon-sm" />
               </button>
             }
           </div>
@@ -78,19 +53,7 @@
             (click)="toggleFiltersPanel()"
             [attr.aria-expanded]="showFiltersPanel()"
           >
-            <svg
-              class="tools-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
+            <app-icon name="filter-simple" class="tools-icon" />
             <span class="visible-sm-up">{{
               "guis_and_tools_page.filters" | transloco
             }}</span>
@@ -110,19 +73,7 @@
               title="Table view"
             >
               <div class="tools-view-btn-content">
-                <svg
-                  class="tools-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                  />
-                </svg>
+                <app-icon name="bars-4" class="tools-icon" />
                 {{ "guis_and_tools_page.table_view" | transloco }}
               </div>
             </button>
@@ -135,19 +86,7 @@
               title="Grid view"
             >
               <div class="tools-view-btn-content">
-                <svg
-                  class="tools-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                  />
-                </svg>
+                <app-icon name="squares-2x2" class="tools-icon" />
                 {{ "guis_and_tools_page.card_view" | transloco }}
               </div>
             </button>
@@ -352,19 +291,7 @@
 
             @if (filteredItems().length === 0) {
               <div class="state-empty">
-                <svg
-                  class="state-empty-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="1.5"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
+                <app-icon name="search" class="state-empty-icon" />
                 <p class="state-empty-text">
                   {{ "guis_and_tools_page.no_results" | transloco }}
                 </p>

@@ -22,19 +22,7 @@
           class="admin-sidebar-close-btn"
           aria-label="Close sidebar"
         >
-          <svg
-            class="admin-sidebar-close-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <app-icon name="x-mark" class="admin-sidebar-close-icon" />
         </button>
       </div>
 
@@ -50,19 +38,7 @@
           "
           (click)="closeSidebarOnMobile()"
         >
-          <svg
-            class="admin-nav-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
+          <app-icon name="home" class="admin-nav-icon" />
           <span class="admin-nav-label">{{
             "admin.nav.dashboard" | transloco
           }}</span>
@@ -74,19 +50,7 @@
           [class.active]="isActive('/admin/workers')"
           (click)="closeSidebarOnMobile()"
         >
-          <svg
-            class="admin-nav-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-            />
-          </svg>
+          <app-icon name="cpu-chip" class="admin-nav-icon" />
           <span class="admin-nav-label">{{
             "admin.nav.workers" | transloco
           }}</span>
@@ -99,19 +63,7 @@
             [class.active]="isActive('/admin/users')"
             (click)="closeSidebarOnMobile()"
           >
-            <svg
-              class="admin-nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
+            <app-icon name="users-simple" class="admin-nav-icon" />
             <span class="admin-nav-label">{{
               "admin.nav.users" | transloco
             }}</span>
@@ -122,19 +74,7 @@
             [class.active]="isActive('/admin/filters')"
             (click)="closeSidebarOnMobile()"
           >
-            <svg
-              class="admin-nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-              />
-            </svg>
+            <app-icon name="filter-simple" class="admin-nav-icon" />
             <span class="admin-nav-label">{{
               "admin.nav.filters" | transloco
             }}</span>
@@ -145,19 +85,7 @@
             [class.active]="isActive('/admin/operations')"
             (click)="closeSidebarOnMobile()"
           >
-            <svg
-              class="admin-nav-icon"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+            <app-icon name="lock-closed" class="admin-nav-icon" />
             <span class="admin-nav-label">{{
               "admin.nav.operations" | transloco
             }}</span>
@@ -247,19 +175,7 @@
           class="admin-mobile-menu-btn"
           aria-label="Open sidebar menu"
         >
-          <svg
-            class="admin-mobile-menu-icon"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
+          <app-icon name="hamburger" class="admin-mobile-menu-icon" />
         </button>
         <span class="admin-mobile-title">{{ "admin.title" | transloco }}</span>
         <div class="admin-mobile-spacer"></div>

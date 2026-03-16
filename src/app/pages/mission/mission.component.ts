@@ -13,6 +13,7 @@ import { combineLatest, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { AiHordeService } from '../../services/ai-horde.service';
@@ -24,7 +25,7 @@ import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-mission',
-  imports: [TranslocoPipe, RouterLink, DecimalPipe],
+  imports: [TranslocoPipe, RouterLink, DecimalPipe, IconComponent],
   templateUrl: './mission.component.html',
   styleUrl: './mission.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

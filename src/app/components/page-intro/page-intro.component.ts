@@ -16,10 +16,11 @@ import { GlossaryService } from '../../services/glossary.service';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { PageGuideService } from '../../services/page-guide.service';
 import { scrollToElement } from '../../helper/scroll-utils';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-page-intro',
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, RouterLink, IconComponent],
   template: `
     @if (!isDismissed()) {
       <div class="collapsible-card card-bg-secondary page-intro">
@@ -34,19 +35,7 @@ import { scrollToElement } from '../../helper/scroll-utils';
             <div
               class="feature-card-icon feature-card-icon-blue collapsible-header-icon"
             >
-              <svg
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <app-icon name="info-circle" />
             </div>
             <div class="collapsible-header-text">
               <h2 class="collapsible-header-title">
@@ -57,20 +46,11 @@ import { scrollToElement } from '../../helper/scroll-utils';
               </p>
             </div>
           </div>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="chevron-icon"
             [class.expanded]="isExpanded()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
 
         @if (isExpanded()) {
@@ -88,19 +68,7 @@ import { scrollToElement } from '../../helper/scroll-utils';
                   class="btn-secondary"
                   (click)="toggleExpanded()"
                 >
-                  <svg
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 15l7-7 7 7"
-                    />
-                  </svg>
+                  <app-icon name="chevron-up" class="intro-collapse-icon" />
                   {{ 'help.collapse' | transloco }}
                 </button>
                 @if (glossaryLink() && !readMoreLink()) {
@@ -136,19 +104,7 @@ import { scrollToElement } from '../../helper/scroll-utils';
           class="page-intro-restore-btn"
           (click)="restore()"
         >
-          <svg
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <app-icon name="info-circle" class="intro-restore-icon" />
           {{ 'help.show_intro' | transloco }}
         </button>
       </div>
