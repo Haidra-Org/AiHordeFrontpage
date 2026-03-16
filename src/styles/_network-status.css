@@ -232,6 +232,16 @@
     @apply mx-0;
   }
 
+  /* At very narrow widths (<450px) the stat boxes overflow — strip the
+     box chrome and padding so the text renders flush to its parent. */
+  @media (max-width: 450px) {
+    .network-status-panel--compact .network-status-stat {
+      background: transparent;
+      border-color: transparent;
+      @apply px-0 py-0;
+    }
+  }
+
   .network-status-panel--compact
     .network-status-domain--needs-help:has(
       .network-status-domain-header--purple
