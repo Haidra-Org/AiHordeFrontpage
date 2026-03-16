@@ -34,7 +34,7 @@ import {
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { combineLatest } from 'rxjs';
+import { setPageTitle } from '../../../helper/page-title';
 import { finalize } from 'rxjs/operators';
 import { extractUserId } from '../../../helper/user-parser';
 import { extractApiError } from '../../../helper/extract-api-error';
@@ -502,14 +502,12 @@ export class WorkerListComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.setPageTitle()) {
-      combineLatest([
-        this.translator.get(this.titleKey()),
-        this.translator.get('app_title'),
-      ])
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(([workersTitle, appTitle]) => {
-          this.title.setTitle(`${workersTitle} | ${appTitle}`);
-        });
+      setPageTitle(
+        this.translator,
+        this.title,
+        this.destroyRef,
+        this.titleKey(),
+      );
     }
   }
 

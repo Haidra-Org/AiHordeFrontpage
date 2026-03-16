@@ -14,21 +14,14 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import {
-  combineLatest,
-  concatMap,
-  EMPTY,
-  finalize,
-  from,
-  tap,
-  Observable,
-} from 'rxjs';
+import { concatMap, EMPTY, finalize, from, tap, Observable } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
 import { AuthService } from '../../../services/auth.service';
+import { setPageTitle } from '../../../helper/page-title';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import { ImageStyle, TextStyle, Style, StyleType } from '../../../types/style';
 import { StyleCollection } from '../../../types/style-collection';
@@ -260,14 +253,7 @@ export class StylesListComponent implements OnInit {
 
   ngOnInit(): void {
     // Set page title
-    combineLatest([
-      this.translator.get('styles.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([stylesTitle, appTitle]) => {
-        this.title.setTitle(`${stylesTitle} | ${appTitle}`);
-      });
+    setPageTitle(this.translator, this.title, this.destroyRef, 'styles.title');
 
     // Check for tab in query params
     this.route.queryParams

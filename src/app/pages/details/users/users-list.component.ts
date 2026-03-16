@@ -5,14 +5,13 @@ import {
   inject,
   OnInit,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
-import { combineLatest } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { TranslatorService } from '../../../services/translator.service';
+import { setPageTitle } from '../../../helper/page-title';
 import { extractUserId } from '../../../helper/user-parser';
 
 @Component({
@@ -60,14 +59,12 @@ export class UsersListComponent implements OnInit {
   private readonly router = inject(Router);
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.users.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([usersTitle, appTitle]) => {
-        this.title.setTitle(`${usersTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.users.title',
+    );
   }
 
   public onUserSearch(value: string): void {

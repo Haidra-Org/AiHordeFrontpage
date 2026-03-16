@@ -26,7 +26,7 @@ import { ToastService } from '../../services/toast.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { HordeStatusModes } from '../../types/horde-status';
-import { combineLatest } from 'rxjs';
+import { setPageTitle } from '../../helper/page-title';
 
 /** Breakpoint at which sidebar becomes permanently visible (lg breakpoint) */
 const DESKTOP_BREAKPOINT = 1024;
@@ -65,14 +65,7 @@ export class AdminComponent implements OnInit {
   public isDesktop = signal<boolean>(false);
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('admin.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([adminTitle, appTitle]) => {
-        this.title.setTitle(`${adminTitle} | ${appTitle}`);
-      });
+    setPageTitle(this.translator, this.title, this.destroyRef, 'admin.title');
 
     this.footerColor.setDarkMode(true);
 

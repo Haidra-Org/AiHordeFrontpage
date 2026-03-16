@@ -11,13 +11,14 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-import { combineLatest, firstValueFrom, map, merge, scan } from 'rxjs';
+import { firstValueFrom, map, merge, scan } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { AuthService } from '../../../services/auth.service';
 import { LeaderboardUser } from '../../../types/leaderboard-user';
+import { setPageTitle } from '../../../helper/page-title';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.component';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -100,14 +101,12 @@ export class KudosLeaderboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.leaderboard.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([leaderboardTitle, appTitle]) => {
-        this.title.setTitle(`${leaderboardTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.leaderboard.title',
+    );
   }
 
   public loadLeaderboard(): void {

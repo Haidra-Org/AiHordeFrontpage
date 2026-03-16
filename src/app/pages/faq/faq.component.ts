@@ -20,7 +20,7 @@ import {
   NgTemplateOutlet,
 } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { combineLatest, map, skip, take } from 'rxjs';
+import { skip, take } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { FaqItem } from '../../types/faq-item';
@@ -29,6 +29,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageTitle } from '../../helper/page-title';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { scrollToElement as scrollToEl } from '../../helper/scroll-utils';
 import { SortedItems } from '../../types/sorted-items';
@@ -169,16 +170,12 @@ export class FaqComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
-
-    combineLatest([
-      this.translator.get('frequently_asked_questions'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(
-        map(([faq, app]) => `${faq} | ${app}`),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((title) => this.title.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'frequently_asked_questions',
+    );
 
     // Handle initial fragment once data is loaded
     this.dataService.faq

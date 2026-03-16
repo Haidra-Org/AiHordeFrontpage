@@ -27,12 +27,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { combineLatest, filter, map, startWith } from 'rxjs';
+import { filter, map, startWith } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageTitle } from '../../helper/page-title';
 import { AuthService } from '../../services/auth.service';
 import { PageGuideService } from '../../services/page-guide.service';
 import { GlossaryService } from '../../services/glossary.service';
@@ -302,14 +303,7 @@ export class ProfileShellComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('profile.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([profileTitle, appTitle]) => {
-        this.title.setTitle(`${profileTitle} | ${appTitle}`);
-      });
+    setPageTitle(this.translator, this.title, this.destroyRef, 'profile.title');
 
     this.footerColor.setDarkMode(true);
     this.contactNagDismissed.set(this.loadContactNagDismissed());
@@ -326,6 +320,7 @@ export class ProfileShellComponent implements OnInit {
     this.loginError.set(false);
     this.auth
       .login(this.form.value.apiKey!, this.form.value.remember ?? false)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((user) => {
         if (!user) {
           this.loginError.set(true);

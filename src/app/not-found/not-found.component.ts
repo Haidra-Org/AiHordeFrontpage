@@ -7,10 +7,9 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest, map } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../services/translator.service';
+import { setPageTitle } from '../helper/page-title';
 
 @Component({
   selector: 'app-not-found',
@@ -45,14 +44,11 @@ export class NotFoundComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('not_found.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(
-        map(([notFound, appTitle]) => `${notFound} | ${appTitle}`),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((title) => this.title.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'not_found.title',
+    );
   }
 }

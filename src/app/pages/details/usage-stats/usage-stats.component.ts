@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { combineLatest, finalize, forkJoin } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
@@ -21,6 +21,7 @@ import { UnitConversionService } from '../../../services/unit-conversion.service
 import { HordePerformance } from '../../../types/horde-performance';
 import { ImageTotalStats } from '../../../types/image-total-stats';
 import { TextTotalStats } from '../../../types/text-total-stats';
+import { setPageTitle } from '../../../helper/page-title';
 import { ImageModelStats } from '../../../types/image-model-stats';
 import { TextModelStats } from '../../../types/text-model-stats';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
@@ -237,14 +238,12 @@ export class UsageStatsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.usage.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([usageTitle, appTitle]) => {
-        this.title.setTitle(`${usageTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.usage.title',
+    );
   }
 
   public setActiveTab(tab: UsageTab): void {

@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { combineLatest, switchMap, of } from 'rxjs';
+import { switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   BreadcrumbComponent,
@@ -20,6 +20,7 @@ import { WorkerCardComponent } from '../../admin/workers/worker-card.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { HordeWorker } from '../../../types/horde-worker';
+import { setPageTitle } from '../../../helper/page-title';
 
 @Component({
   selector: 'app-worker-lookup',
@@ -96,14 +97,12 @@ export class WorkerLookupComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.workers.lookup_title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([lookupTitle, appTitle]) => {
-        this.title.setTitle(`${lookupTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.workers.lookup_title',
+    );
 
     // Load worker when route changes
     this.route.params

@@ -204,7 +204,10 @@ export class ProfileSettingsComponent {
             this.toast.success('profile.delete_account_success', {
               transloco: true,
             });
-            this.auth.refreshUser().subscribe();
+            this.auth
+              .refreshUser()
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe();
           }
         } else {
           this.toast.error(result.error.message, { autoDismissMs: 5000 });
@@ -233,7 +236,10 @@ export class ProfileSettingsComponent {
           this.toast.success('profile.undelete_account_success', {
             transloco: true,
           });
-          this.auth.refreshUser().subscribe();
+          this.auth
+            .refreshUser()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe();
         } else {
           this.toast.error(result.error ?? 'Failed to restore account', {
             autoDismissMs: 5000,

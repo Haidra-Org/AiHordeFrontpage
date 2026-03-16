@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { combineLatest, switchMap } from 'rxjs';
+import { switchMap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
@@ -62,11 +62,12 @@ export class TeamDetailComponent implements OnInit {
 
           if (team) {
             // Set title
-            combineLatest([this.translator.get('app_title')]).subscribe(
-              ([appTitle]) => {
+            this.translator
+              .get('app_title')
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe((appTitle) => {
                 this.title.setTitle(`${team.name} | ${appTitle}`);
-              },
-            );
+              });
           }
         },
         error: () => {

@@ -9,13 +9,13 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { combineLatest, map } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { NewsItem } from '../../types/news.types';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { TranslatorService } from '../../services/translator.service';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
 import { StripWrapperTagPipe } from '../../pipes/strip-wrapper-tag.pipe';
+import { setPageTitle } from '../../helper/page-title';
 
 @Component({
   selector: 'app-news',
@@ -53,14 +53,11 @@ export class NewsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('latest_news.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(
-        map(([newsTitle, appTitle]) => `${newsTitle} | ${appTitle}`),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((title) => this.title.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'latest_news.title',
+    );
   }
 }

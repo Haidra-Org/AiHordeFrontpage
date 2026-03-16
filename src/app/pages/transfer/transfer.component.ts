@@ -17,10 +17,11 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { debounceTime } from 'rxjs';
+import { debounceTime, filter, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageTitle } from '../../helper/page-title';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
 import { DatabaseService, StorageType } from '../../services/database.service';
 import { AiHordeService } from '../../services/ai-horde.service';
@@ -112,15 +113,12 @@ export class TransferComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    // Set title
-    this.translator
-      .get('transfer.title')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((transferTitle) => {
-        this.translator.get('app_title').subscribe((appTitle) => {
-          this.title.setTitle(`${transferTitle} | ${appTitle}`);
-        });
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'transfer.title',
+    );
 
     this.footerColor.setDarkMode(true);
 
@@ -187,21 +185,20 @@ export class TransferComponent implements OnInit {
       });
 
     this.form.controls.apiKey.valueChanges
-      .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (apiKey) => {
-        if (!apiKey) {
-          return;
-        }
-
-        this.aiHorde.getUserByApiKey(apiKey).subscribe((user) => {
-          this.currentUser.set(user);
-          this.form.patchValue({ apiKeyValidated: user !== null });
-        });
+      .pipe(
+        debounceTime(500),
+        filter((apiKey): apiKey is string => !!apiKey),
+        switchMap((apiKey) => this.aiHorde.getUserByApiKey(apiKey)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((user) => {
+        this.currentUser.set(user);
+        this.form.patchValue({ apiKeyValidated: user !== null });
       });
 
     this.form.controls.targetUser.valueChanges
       .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (targetUser) => {
+      .subscribe((targetUser) => {
         if (!targetUser) {
           this.targetUserChecking.set(false);
           return;
@@ -231,27 +228,30 @@ export class TransferComponent implements OnInit {
           return;
         }
 
-        this.aiHorde.getUserById(id).subscribe((user) => {
-          if (
-            this.form.controls.targetUser.value?.trim() !== normalizedTarget
-          ) {
-            return;
-          }
+        this.aiHorde
+          .getUserById(id)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe((user) => {
+            if (
+              this.form.controls.targetUser.value?.trim() !== normalizedTarget
+            ) {
+              return;
+            }
 
-          this.targetUserChecking.set(false);
+            this.targetUserChecking.set(false);
 
-          const isUserMatch =
-            user !== null &&
-            normalizedTarget.toLowerCase() === user.username.toLowerCase();
+            const isUserMatch =
+              user !== null &&
+              normalizedTarget.toLowerCase() === user.username.toLowerCase();
 
-          if (isUserMatch) {
-            this.validatedTargetKind.set('user');
-            this.form.patchValue({ targetUserValidated: true });
-            return;
-          }
+            if (isUserMatch) {
+              this.validatedTargetKind.set('user');
+              this.form.patchValue({ targetUserValidated: true });
+              return;
+            }
 
-          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-        });
+            this.validateAsSharedKey(normalizedTarget, sourceApiKey);
+          });
       });
 
     this.form.controls.targetUser.valueChanges
@@ -304,30 +304,33 @@ export class TransferComponent implements OnInit {
     sharedKeyId: string,
     sourceApiKey?: string,
   ): void {
-    this.sharedKeyService.getSharedKey(sharedKeyId, sourceApiKey).subscribe({
-      next: () => {
-        if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-          return;
-        }
+    this.sharedKeyService
+      .getSharedKey(sharedKeyId, sourceApiKey)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+            return;
+          }
 
-        this.targetUserChecking.set(false);
+          this.targetUserChecking.set(false);
 
-        this.validatedTargetKind.set('sharedKey');
-        this.form.patchValue({
-          targetUserValidated: true,
-        });
-      },
-      error: () => {
-        if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-          return;
-        }
+          this.validatedTargetKind.set('sharedKey');
+          this.form.patchValue({
+            targetUserValidated: true,
+          });
+        },
+        error: () => {
+          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
+            return;
+          }
 
-        this.targetUserChecking.set(false);
+          this.targetUserChecking.set(false);
 
-        this.validatedTargetKind.set(null);
-        this.form.patchValue({ targetUserValidated: false });
-      },
-    });
+          this.validatedTargetKind.set(null);
+          this.form.patchValue({ targetUserValidated: false });
+        },
+      });
   }
 
   public transfer(): void {
@@ -342,6 +345,7 @@ export class TransferComponent implements OnInit {
         this.form.controls.targetUser.value!,
         this.form.value.kudosAmount!,
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((success) => {
         this.sentSuccessfully.set(success);
       });
