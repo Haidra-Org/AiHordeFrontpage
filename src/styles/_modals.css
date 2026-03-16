@@ -430,6 +430,7 @@
   }
 
   .glossary-page-entry-icon svg {
+    /* Redundant with .icon svg — retained as fallback for non-icon SVGs */
     @apply w-full h-full;
   }
 

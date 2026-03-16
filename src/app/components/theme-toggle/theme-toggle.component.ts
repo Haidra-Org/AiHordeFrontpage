@@ -9,6 +9,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { ThemeService, type Theme } from '../../services/theme.service';
 import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
+import { IconComponent } from '../icon/icon.component';
 
 /**
  * Theme toggle component with dropdown menu
@@ -22,7 +23,7 @@ import { InlineSvgComponent } from '../inline-svg/inline-svg.component';
  */
 @Component({
   selector: 'app-theme-toggle, theme-toggle',
-  imports: [CommonModule, InlineSvgComponent],
+  imports: [CommonModule, InlineSvgComponent, IconComponent],
   templateUrl: './theme-toggle.component.html',
   styleUrl: './theme-toggle.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

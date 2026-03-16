@@ -476,8 +476,8 @@
     @apply text-purple-600 bg-purple-100;
   }
 
-  /* Size SVG inside CTA icon */
-  .beginner-cta-icon svg {
+  /* Size icon inside CTA icon container */
+  .beginner-cta-icon .icon {
     @apply w-8 h-8;
   }
 

@@ -24,6 +24,7 @@ import { AuthService } from '../../services/auth.service';
 import { HordeStatusService } from '../../services/horde-status.service';
 import { AdminToastService } from '../../services/admin-toast.service';
 import { AdminToastBarComponent } from '../../components/admin/admin-toast-bar/admin-toast-bar.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { HordeStatusModes } from '../../types/horde-status';
 import { combineLatest } from 'rxjs';
@@ -39,6 +40,7 @@ const DESKTOP_BREAKPOINT = 1024;
     RouterLink,
     RouterOutlet,
     AdminToastBarComponent,
+    IconComponent,
     StickyHeaderDirective,
   ],
   templateUrl: './admin.component.html',

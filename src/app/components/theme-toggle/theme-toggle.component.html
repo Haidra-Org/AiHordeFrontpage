@@ -59,18 +59,12 @@
               <span>Light</span>
             </span>
             @if (isSelected("light")) {
-              <svg
+              <app-icon
+                name="check-filled"
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
-                fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              />
             }
           </button>
         </li>
@@ -94,18 +88,12 @@
               <span>Dark</span>
             </span>
             @if (isSelected("dark")) {
-              <svg
+              <app-icon
+                name="check-filled"
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
-                fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              />
             }
           </button>
         </li>
@@ -121,33 +109,21 @@
             (click)="selectTheme('system', $event)"
           >
             <span class="flex items-center gap-2">
-              <svg
+              <app-icon
+                name="monitor"
                 class="w-4 h-4"
-                fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              />
               <span>System</span>
             </span>
             @if (isSelected("system")) {
-              <svg
+              <app-icon
+                name="check-filled"
                 class="w-4 h-4 text-purple-600 dark:text-purple-400"
-                fill="currentColor"
                 viewBox="0 0 20 20"
                 aria-hidden="true"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clip-rule="evenodd"
-                />
-              </svg>
+              />
             }
           </button>
         </li>

@@ -40,20 +40,11 @@
               ? ("faq.section_general" | transloco)
               : sectionItemPair.key
           }}</span>
-          <svg
+          <app-icon
+            name="chevron-right"
             class="faq-toc-section-chevron"
             [class.expanded]="isTocSectionExpanded(sectionItemPair.key)"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
+          />
         </button>
         @if (isTocSectionExpanded(sectionItemPair.key)) {
           <ul class="faq-toc-question-list">
@@ -100,20 +91,11 @@
           (click)="tocOpen.set(!tocOpen())"
         >
           <span>{{ "faq.table_of_contents" | transloco }}</span>
-          <svg
+          <app-icon
+            name="chevron-down"
             class="faq-toc-mobile-chevron"
             [class.expanded]="tocOpen()"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
+          />
         </button>
         @if (tocOpen()) {
           <div class="faq-toc-mobile-body">
@@ -164,20 +146,11 @@
                   "
                 >
                   <span>{{ sectionItemPair.key }}</span>
-                  <svg
+                  <app-icon
+                    name="chevron-down"
                     class="chevron-icon"
                     [class.expanded]="!isSectionCollapsed(sectionItemPair.key)"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  />
                 </h2>
               }
 

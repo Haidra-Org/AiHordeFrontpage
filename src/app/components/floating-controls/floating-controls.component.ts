@@ -13,10 +13,11 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { GlossaryModalComponent } from '../glossary-modal/glossary-modal.component';
 import { GlossaryService } from '../../services/glossary.service';
 import { FloatingActionService } from '../../services/floating-action.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-floating-controls',
-  imports: [TranslocoPipe, GlossaryModalComponent],
+  imports: [TranslocoPipe, GlossaryModalComponent, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="floating-controls">
@@ -40,14 +41,7 @@ import { FloatingActionService } from '../../services/floating-action.service';
           class="scroll-to-top-btn"
           aria-label="Scroll to top"
         >
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 10l7-7m0 0l7 7m-7-7v18"
-            />
-          </svg>
+          <app-icon name="arrow-up" class="scroll-icon" />
         </button>
       }
 

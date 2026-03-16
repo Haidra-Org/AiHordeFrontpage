@@ -26,6 +26,7 @@ import { TextModelStats } from '../../../types/text-model-stats';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 export type UsageTab = 'overview' | 'image' | 'text';
 export type TimePeriod = 'day' | 'month' | 'total';
@@ -45,6 +46,7 @@ interface ModelUsageEntry {
     InfoTooltipComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
+    IconComponent,
   ],
   templateUrl: './usage-stats.component.html',
   styleUrl: './usage-stats.component.css',

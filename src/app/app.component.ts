@@ -29,6 +29,7 @@ import { StickyHeaderDirective } from './helper/sticky-header.directive';
 import { StickyRegistryService } from './services/sticky-registry.service';
 import { NavNotificationService } from './services/nav-notification.service';
 import { NeedWorkersNotifierService } from './services/need-workers-notifier.service';
+import { IconComponent } from './components/icon/icon.component';
 import { scrollToAnchorWhenReady } from './helper/scroll-utils';
 import { filter } from 'rxjs/operators';
 
@@ -44,6 +45,7 @@ import { filter } from 'rxjs/operators';
     FloatingControlsComponent,
     NetworkStatusComponent,
     StickyHeaderDirective,
+    IconComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',

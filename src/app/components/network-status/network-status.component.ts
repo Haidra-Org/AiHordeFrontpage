@@ -9,12 +9,13 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
+import { IconComponent } from '../icon/icon.component';
 
 export type NetworkStatusVariant = 'sidebar' | 'compact' | 'footer';
 
 @Component({
   selector: 'app-network-status',
-  imports: [TranslocoPipe, DecimalPipe, RouterLink],
+  imports: [TranslocoPipe, DecimalPipe, RouterLink, IconComponent],
   templateUrl: './network-status.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

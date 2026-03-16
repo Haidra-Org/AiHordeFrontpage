@@ -13,6 +13,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-banner/volunteer-cta-banner.component';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-details',
@@ -24,6 +25,7 @@ import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-bann
     VolunteerCtaBannerComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
+    IconComponent,
   ],
   templateUrl: './details.component.html',
   styleUrl: './details.component.css',

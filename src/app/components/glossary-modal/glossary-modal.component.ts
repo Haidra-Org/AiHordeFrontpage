@@ -10,9 +10,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
+import { IconComponent } from '../icon/icon.component';
 import {
   GlossaryService,
   GlossaryCategory,
@@ -24,7 +24,7 @@ import {
 
 @Component({
   selector: 'app-glossary-modal',
-  imports: [TranslocoPipe, RouterLink],
+  imports: [TranslocoPipe, RouterLink, IconComponent],
   template: `
     @if (glossary.isOpen()) {
       <div
@@ -50,19 +50,7 @@ import {
               (click)="close()"
               [attr.aria-label]="'admin.workers.dialog.close' | transloco"
             >
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <app-icon class="w-5 h-5" name="x-mark" />
             </button>
           </div>
 
@@ -207,12 +195,12 @@ import {
                   track entry.id
                 ) {
                   <div class="glossary-page-entry">
-                    @if (entry.iconSvg) {
-                      <span
+                    @if (entry.iconName) {
+                      <app-icon
+                        [name]="entry.iconName"
                         class="glossary-page-entry-icon"
                         [class]="entry.iconColorClass ?? ''"
-                        [innerHTML]="trustIconSvg(entry.iconSvg)"
-                      ></span>
+                      />
                     } @else if (entry.colorSwatch) {
                       <span
                         class="glossary-page-entry-swatch"
@@ -263,9 +251,6 @@ export class GlossaryModalComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly transloco = inject(TranslocoService);
-  private readonly sanitizer = inject(DomSanitizer);
-
-  private readonly iconCache = new Map<string, SafeHtml>();
 
   public readonly categories = GLOSSARY_CATEGORIES;
 
@@ -375,15 +360,5 @@ export class GlossaryModalComponent {
     this.showRelevantOnly.set(false);
     this.activeCategory.set(null);
     this.searchQuery.set('');
-  }
-
-  /** Sanitize icon SVGs generated from our own hardcoded templates (worker-icons.ts) */
-  public trustIconSvg(svg: string): SafeHtml {
-    let cached = this.iconCache.get(svg);
-    if (!cached) {
-      cached = this.sanitizer.bypassSecurityTrustHtml(svg);
-      this.iconCache.set(svg, cached);
-    }
-    return cached;
   }
 }

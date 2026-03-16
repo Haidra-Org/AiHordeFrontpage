@@ -53,6 +53,7 @@ import {
   JsonInspectorSection,
 } from '../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../components/json-inspector-trigger/json-inspector-trigger.component';
+import { IconComponent } from '../../components/icon/icon.component';
 
 type ProfileTab =
   | 'profile'
@@ -99,6 +100,7 @@ const CONTACT_NAG_DISMISSED_STORAGE_KEY = 'profile_contact_nag_dismissed';
     UserRecordsPanelComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.css',

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { MissionCalloutComponent } from '../../../components/mission-callout/mission-callout.component';
 import { ThemeService } from '../../../services/theme.service';
 
@@ -10,6 +11,7 @@ import { ThemeService } from '../../../services/theme.service';
   imports: [
     TranslocoPipe,
     RouterLink,
+    IconComponent,
     MissionCalloutComponent,
     NgOptimizedImage,
   ],

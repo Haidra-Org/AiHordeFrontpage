@@ -31,6 +31,7 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { scrollToElementCentered } from '../../../helper/scroll-utils';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 export type ModelsTab = 'image' | 'text';
 
@@ -51,6 +52,7 @@ interface ModelSuggestion {
     InfoTooltipComponent,
     ScrollFadeDirective,
     StickyHeaderDirective,
+    IconComponent,
   ],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',

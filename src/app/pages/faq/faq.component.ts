@@ -25,6 +25,7 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { FaqItem } from '../../types/faq-item';
 import { InlineSvgComponent } from '../../components/inline-svg/inline-svg.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -50,6 +51,7 @@ function slugify(text: string): string {
     TranslocoPipe,
     TranslocoModule,
     InlineSvgComponent,
+    IconComponent,
     StickyHeaderDirective,
   ],
   templateUrl: './faq.component.html',

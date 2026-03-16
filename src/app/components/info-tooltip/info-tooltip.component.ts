@@ -15,6 +15,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GlossaryService } from '../../services/glossary.service';
 import { TooltipPosition } from '../unit-tooltip/unit-tooltip.component';
+import { IconComponent } from '../icon/icon.component';
 
 const TOOLTIP_WIDTH = 280;
 const TOOLTIP_HEIGHT_ESTIMATE = 180;
@@ -35,7 +36,7 @@ interface TooltipStyles {
 
 @Component({
   selector: 'app-info-tooltip',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, IconComponent],
   template: `
     <span
       class="info-tooltip-trigger tooltip-wrapper tooltip-fixed-mode"
@@ -51,20 +52,7 @@ interface TooltipStyles {
       (focusin)="handleFocusIn()"
       (focusout)="scheduleHide()"
     >
-      <svg
-        class="info-tooltip-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
+      <app-icon name="info-circle" class="info-tooltip-icon" />
       <span
         #tooltipContent
         class="tooltip-text tooltip-text-fixed surface-floating"

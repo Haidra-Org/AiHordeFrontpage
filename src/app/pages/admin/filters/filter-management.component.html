@@ -27,20 +27,7 @@
       role="tab"
       [attr.aria-selected]="activeTab() === 'tester'"
     >
-      <svg
-        class="icon-sm"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"
-        />
-      </svg>
+      <app-icon name="play" class="icon-sm" />
       {{ "admin.filters.tabs.prompt_tester" | transloco }}
     </button>
     <button
@@ -51,20 +38,7 @@
       role="tab"
       [attr.aria-selected]="activeTab() === 'filters'"
     >
-      <svg
-        class="icon-sm"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"
-        />
-      </svg>
+      <app-icon name="filter" class="icon-sm" />
       {{ "admin.filters.tabs.filters" | transloco }}
     </button>
     <button
@@ -75,20 +49,7 @@
       role="tab"
       [attr.aria-selected]="activeTab() === 'compiled'"
     >
-      <svg
-        class="icon-sm"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5"
-        />
-      </svg>
+      <app-icon name="code-bracket" class="icon-sm" />
       {{ "admin.filters.tabs.compiled_regex" | transloco }}
     </button>
   </div>
@@ -219,20 +180,7 @@
       </div>
     } @else if (filteredFilters().length === 0) {
       <div class="state-container state-container-sm state-muted">
-        <svg
-          class="state-icon"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-          />
-        </svg>
+        <app-icon name="filter-simple" class="state-icon" />
         <p>{{ "admin.filters.no_filters" | transloco }}</p>
       </div>
     } @else {
@@ -294,19 +242,7 @@
                         title="{{ 'admin.filters.view_json' | transloco }}"
                         type="button"
                       >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                          />
-                        </svg>
+                        <app-icon name="code-bracket-alt" class="w-4 h-4" />
                       </button>
                       <button
                         (click)="openEditDialog(filter)"
@@ -314,19 +250,7 @@
                         title="{{ 'admin.filters.edit' | transloco }}"
                         type="button"
                       >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
+                        <app-icon name="pencil" class="w-4 h-4" />
                       </button>
                       <button
                         (click)="openDeleteDialog(filter)"
@@ -334,19 +258,7 @@
                         title="{{ 'admin.filters.delete' | transloco }}"
                         type="button"
                       >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                        <app-icon name="trash" class="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -382,20 +294,7 @@
       </div>
     } @else if (compiledRegex().length === 0) {
       <div class="state-container state-container-sm state-muted">
-        <svg
-          class="state-icon"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-          />
-        </svg>
+        <app-icon name="code-bracket-alt" class="state-icon" />
         <p>{{ "admin.filters.no_compiled_regex" | transloco }}</p>
       </div>
     } @else {
@@ -414,19 +313,7 @@
                 title="{{ 'admin.filters.copy' | transloco }}"
                 type="button"
               >
-                <svg
-                  class="w-4 h-4 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  />
-                </svg>
+                <app-icon name="copy" class="w-4 h-4 mr-1" />
                 {{ "admin.filters.copy" | transloco }}
               </button>
             </div>
@@ -641,19 +528,7 @@
           class="btn-muted btn-sm"
           type="button"
         >
-          <svg
-            class="w-4 h-4 mr-1"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
+          <app-icon name="copy" class="w-4 h-4 mr-1" />
           {{ "admin.filters.copy" | transloco }}
         </button>
       </div>

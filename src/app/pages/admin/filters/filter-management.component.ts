@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { AdminToastService } from '../../../services/admin-toast.service';
@@ -36,7 +37,13 @@ type TabType = 'tester' | 'filters' | 'compiled';
 
 @Component({
   selector: 'app-filter-management',
-  imports: [TranslocoPipe, TranslocoModule, FormsModule, ScrollFadeDirective],
+  imports: [
+    TranslocoPipe,
+    TranslocoModule,
+    FormsModule,
+    ScrollFadeDirective,
+    IconComponent,
+  ],
   templateUrl: './filter-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

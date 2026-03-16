@@ -4,27 +4,15 @@ import {
   computed,
   input,
 } from '@angular/core';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 
 @Component({
   selector: 'app-worker-status-icon',
+  imports: [IconComponent],
   template: `
     @if (iconDef(); as def) {
-      <svg
-        [class]="svgClass()"
-        [style.transform]="def.transform ?? ''"
-        fill="none"
-        stroke="currentColor"
-        [attr.viewBox]="def.viewBox"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          [attr.d]="def.pathData"
-        />
-      </svg>
+      <app-icon [name]="def.iconName" [class]="svgClass()" />
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

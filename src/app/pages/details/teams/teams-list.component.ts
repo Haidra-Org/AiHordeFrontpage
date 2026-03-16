@@ -24,6 +24,7 @@ import { EntityLookupComponent } from '../../../components/entity-lookup/entity-
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { extractUserId } from '../../../helper/user-parser';
 import { scrollToElementCentered } from '../../../helper/scroll-utils';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 @Component({
   selector: 'app-teams-list',
@@ -33,6 +34,7 @@ import { scrollToElementCentered } from '../../../helper/scroll-utils';
     FormatNumberPipe,
     EntityLookupComponent,
     PageIntroComponent,
+    IconComponent,
   ],
   templateUrl: './teams-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

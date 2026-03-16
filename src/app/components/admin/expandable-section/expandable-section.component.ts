@@ -4,6 +4,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 /**
  * Reusable expandable section component for admin panels.
@@ -11,7 +12,7 @@ import {
  */
 @Component({
   selector: 'app-expandable-section',
-  imports: [],
+  imports: [IconComponent],
   template: `
     <div class="admin-border-t">
       <button (click)="toggled.emit()" class="expandable-header" type="button">
@@ -21,21 +22,11 @@ import {
             <span class="text-sm text-secondary">({{ count() }})</span>
           }
         </span>
-        <svg
+        <app-icon
+          name="chevron-down"
           class="expandable-icon"
           [class.expanded]="expanded()"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        />
       </button>
 
       @if (expanded()) {

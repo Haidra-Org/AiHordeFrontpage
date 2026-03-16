@@ -19,7 +19,7 @@ export interface PageGlossaryEntry {
   id: string;
   titleKey: string;
   descriptionKey: string;
-  iconSvg?: string;
+  iconName?: string;
   iconColorClass?: string;
   colorSwatch?: string;
 }

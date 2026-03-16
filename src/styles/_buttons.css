@@ -63,7 +63,7 @@
     box-shadow: var(--shadow-focus-blue-dark);
   }
 
-  .btn-primary svg {
+  .btn-primary .icon {
     @apply w-5 h-5 shrink-0;
   }
 
@@ -86,7 +86,7 @@
     box-shadow: var(--shadow-focus-purple-dark);
   }
 
-  .btn-purple svg {
+  .btn-purple .icon {
     @apply w-5 h-5 shrink-0;
   }
 
@@ -115,7 +115,7 @@
     box-shadow: 0 0 0 4px rgb(55 65 81 / 0.5);
   }
 
-  .btn-source-control svg {
+  .btn-source-control .icon {
     @apply w-5 h-5 shrink-0;
   }
 
@@ -183,7 +183,7 @@
     @apply opacity-50 cursor-not-allowed;
   }
 
-  .btn-warning svg {
+  .btn-warning .icon {
     @apply w-5 h-5 shrink-0;
   }
 
@@ -215,7 +215,7 @@
     @apply opacity-50 cursor-not-allowed;
   }
 
-  .btn-icon svg {
+  .btn-icon .icon {
     @apply w-5 h-5;
   }
 
@@ -242,7 +242,7 @@
     @apply opacity-50 cursor-not-allowed;
   }
 
-  .btn-json-inspector svg {
+  .btn-json-inspector .icon {
     @apply h-4 w-4;
   }
 
@@ -419,7 +419,7 @@
     box-shadow: 0 0 0 4px rgb(75 85 99 / 0.5);
   }
 
-  .btn-secondary svg {
+  .btn-secondary .icon {
     @apply w-5 h-5 shrink-0;
   }
 }

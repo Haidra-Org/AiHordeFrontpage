@@ -15,6 +15,7 @@ import {
   JsonInspectorSection,
 } from '../../json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
+import { IconComponent } from '../../icon/icon.component';
 
 @Component({
   selector: 'app-style-card',
@@ -24,6 +25,7 @@ import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json
     FormatNumberPipe,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './style-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

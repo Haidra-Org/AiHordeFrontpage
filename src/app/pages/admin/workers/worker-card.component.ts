@@ -33,6 +33,7 @@ import {
   JsonInspectorSection,
 } from '../../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 @Component({
   selector: 'app-worker-card',
@@ -47,6 +48,7 @@ import { JsonInspectorTriggerComponent } from '../../../components/json-inspecto
     WorkerStatusIconComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

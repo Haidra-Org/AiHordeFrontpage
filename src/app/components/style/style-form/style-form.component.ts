@@ -40,6 +40,7 @@ import { AiHordeService } from '../../../services/ai-horde.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ToggleCheckboxComponent } from '../../toggle-checkbox/toggle-checkbox.component';
 import { ModelAutocompleteComponent } from '../../model-autocomplete/model-autocomplete.component';
+import { IconComponent } from '../../icon/icon.component';
 
 function divisibleBy64(control: AbstractControl): ValidationErrors | null {
   const v = control.value;
@@ -77,6 +78,7 @@ export interface StyleFormSubmitEvent {
     TranslocoPipe,
     ToggleCheckboxComponent,
     ModelAutocompleteComponent,
+    IconComponent,
   ],
   templateUrl: './style-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

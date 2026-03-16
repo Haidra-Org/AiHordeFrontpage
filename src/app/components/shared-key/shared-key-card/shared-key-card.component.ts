@@ -15,6 +15,7 @@ import {
   JsonInspectorSection,
 } from '../../json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
+import { IconComponent } from '../../icon/icon.component';
 
 export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
 
@@ -26,6 +27,7 @@ export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
     TouchTooltipDirective,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './shared-key-card.component.html',
   styleUrl: './shared-key-card.component.css',

@@ -1832,7 +1832,7 @@
     @apply dark:bg-green-900 dark:text-green-300;
   }
 
-  .software-icon svg {
+  .software-icon .icon {
     @apply w-5 h-5;
   }
 

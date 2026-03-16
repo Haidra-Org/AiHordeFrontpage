@@ -1,4 +1,9 @@
-import { ApplicationConfig, isDevMode } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  isDevMode,
+  provideAppInitializer,
+} from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { routes } from './app.routes';
@@ -12,9 +17,14 @@ import { TranslocoHttpLoader } from './transloco-loader';
 import { provideTransloco } from '@jsverse/transloco';
 import { clientAgentInterceptor } from './services/interceptors/client-agent.interceptor';
 import { rateLimitInterceptor } from './services/interceptors/rate-limit.interceptor';
+import { IconRegistryService } from './services/icon-registry.service';
+import { APP_ICONS } from './icons';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideAppInitializer(() =>
+      inject(IconRegistryService).registerAll(APP_ICONS),
+    ),
     provideRouter(
       routes,
       withInMemoryScrolling({

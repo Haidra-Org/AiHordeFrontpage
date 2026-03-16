@@ -293,11 +293,11 @@
     @apply text-yellow-300;
   }
 
-  .unsaved-changes-warning svg {
+  .unsaved-changes-warning .icon {
     @apply text-amber-600 shrink-0;
   }
 
-  .dark .unsaved-changes-warning svg {
+  .dark .unsaved-changes-warning .icon {
     @apply text-yellow-400;
   }
 

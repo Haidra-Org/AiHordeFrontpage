@@ -40,6 +40,7 @@ import { JsonInspectorTriggerComponent } from '../../../components/json-inspecto
 import { AdminGenerationTrackerComponent } from '../../../components/admin/admin-generation-tracker/admin-generation-tracker.component';
 import { GenerationType } from '../../../types/generation';
 import { extractApiError } from '../../../helper/extract-api-error';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 type DialogType = 'resetSuspicion' | 'undeleteUser';
 
@@ -66,6 +67,7 @@ const MAX_HISTORY_SIZE = 30;
     AdminGenerationTrackerComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

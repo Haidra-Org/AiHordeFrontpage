@@ -9,13 +9,14 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { NetworkStatusComponent } from '../../../components/network-status/network-status.component';
 import { NetworkStatusService } from '../../../services/network-status.service';
 import { GlossaryService } from '../../../services/glossary.service';
 
 @Component({
   selector: 'app-workers',
-  imports: [TranslocoPipe, RouterLink, NetworkStatusComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, NetworkStatusComponent],
   templateUrl: './workers.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

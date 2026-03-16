@@ -32,6 +32,7 @@ import {
   StyleFormSubmitEvent,
 } from '../style/style-form/style-form.component';
 import { AdminDialogComponent } from '../admin/admin-dialog/admin-dialog.component';
+import { IconComponent } from '../icon/icon.component';
 
 type StylesTab = 'image' | 'text';
 
@@ -52,6 +53,7 @@ export interface LoadedStyle {
     AdminDialogComponent,
     RouterLink,
     ScrollFadeDirective,
+    IconComponent,
   ],
   templateUrl: './profile-styles-list.component.html',
   styleUrl: './profile-styles-list.component.css',

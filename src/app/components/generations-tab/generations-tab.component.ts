@@ -39,6 +39,7 @@ import {
   JsonInspectorSection,
 } from '../json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../json-inspector-trigger/json-inspector-trigger.component';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-generations-tab',
@@ -49,6 +50,7 @@ import { JsonInspectorTriggerComponent } from '../json-inspector-trigger/json-in
     ModelAutocompleteComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
+    IconComponent,
   ],
   templateUrl: './generations-tab.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
