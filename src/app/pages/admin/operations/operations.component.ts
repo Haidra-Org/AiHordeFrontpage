@@ -21,7 +21,7 @@ import { HordeWorker } from '../../../types/horde-worker';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { extractApiError } from '../../../helper/extract-api-error';
-import { AdminToastService } from '../../../services/admin-toast.service';
+import { ToastService } from '../../../services/toast.service';
 
 type DialogType =
   | 'deleteIP'
@@ -49,7 +49,7 @@ export class OperationsComponent implements OnInit {
   private readonly operationsService = inject(AdminOperationsService);
   private readonly workerService = inject(AdminWorkerService);
   public readonly auth = inject(AuthService);
-  private readonly toastService = inject(AdminToastService);
+  private readonly toastService = inject(ToastService);
 
   // IP Timeout List state
   public ipTimeouts = signal<IPTimeout[]>([]);
@@ -189,11 +189,9 @@ export class OperationsComponent implements OnInit {
           this.ipTimeouts.set(timeouts);
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to load IP timeouts.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -304,7 +302,7 @@ export class OperationsComponent implements OnInit {
   public addIPTimeout(): void {
     let ipaddr = this.addIPAddress().trim();
     if (!ipaddr) {
-      this.toastService.showToast('error', 'IP address is required.');
+      this.toastService.error('IP address is required.');
       return;
     }
 
@@ -330,22 +328,17 @@ export class OperationsComponent implements OnInit {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.toastService.showToast(
-              'success',
-              'IP timeout added successfully.',
-            );
+            this.toastService.success('IP timeout added successfully.');
             this.addIPAddress.set('');
             this.loadIPTimeouts();
           } else {
-            this.toastService.showToast('error', 'Failed to add IP timeout.');
+            this.toastService.error('Failed to add IP timeout.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to add IP timeout.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -365,7 +358,7 @@ export class OperationsComponent implements OnInit {
   public checkIP(): void {
     const ipaddr = this.checkIPAddress().trim();
     if (!ipaddr) {
-      this.toastService.showToast('error', 'IP address is required.');
+      this.toastService.error('IP address is required.');
       return;
     }
 
@@ -382,12 +375,9 @@ export class OperationsComponent implements OnInit {
           this.checkResult.set(result);
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
-            extractApiError(err, 'Failed to check IP.'),
-            false,
-            err,
-          );
+          this.toastService.error(extractApiError(err, 'Failed to check IP.'), {
+            rawError: err,
+          });
         },
       });
   }
@@ -414,11 +404,9 @@ export class OperationsComponent implements OnInit {
           this.workers.set(workers);
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to load workers.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -517,7 +505,7 @@ export class OperationsComponent implements OnInit {
 
   public openBlockWorkerDialog(): void {
     if (!this.selectedWorker()) {
-      this.toastService.showToast('error', 'Please select a worker first.');
+      this.toastService.error('Please select a worker first.');
       return;
     }
     this.dialogType.set('blockWorker');
@@ -570,25 +558,17 @@ export class OperationsComponent implements OnInit {
       .subscribe({
         next: (success) => {
           if (success) {
-            this.toastService.showToast(
-              'success',
-              'IP timeout removed successfully.',
-            );
+            this.toastService.success('IP timeout removed successfully.');
             this.closeDialog();
             this.loadIPTimeouts();
           } else {
-            this.toastService.showToast(
-              'error',
-              'Failed to remove IP timeout.',
-            );
+            this.toastService.error('Failed to remove IP timeout.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to remove IP timeout.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -608,25 +588,17 @@ export class OperationsComponent implements OnInit {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.toastService.showToast(
-              'success',
-              'IP timeout refreshed successfully.',
-            );
+            this.toastService.success('IP timeout refreshed successfully.');
             this.closeDialog();
             this.loadIPTimeouts();
           } else {
-            this.toastService.showToast(
-              'error',
-              'Failed to refresh IP timeout.',
-            );
+            this.toastService.error('Failed to refresh IP timeout.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to refresh IP timeout.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -656,13 +628,11 @@ export class OperationsComponent implements OnInit {
         this.loadIPTimeouts();
 
         if (failCount === 0) {
-          this.toastService.showToast(
-            'success',
+          this.toastService.success(
             `Successfully refreshed ${successCount} IP timeout(s).`,
           );
         } else {
-          this.toastService.showToast(
-            'warning',
+          this.toastService.warning(
             `Refreshed ${successCount} IP(s), ${failCount} failed.`,
           );
         }
@@ -716,22 +686,19 @@ export class OperationsComponent implements OnInit {
       .subscribe({
         next: (result) => {
           if (result) {
-            this.toastService.showToast(
-              'success',
+            this.toastService.success(
               `Worker "${worker.name}" IP blocked for ${this.blockDays()} day(s).`,
             );
             this.closeDialog();
             this.clearWorkerSelection();
           } else {
-            this.toastService.showToast('error', 'Failed to block worker IP.');
+            this.toastService.error('Failed to block worker IP.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to block worker IP.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -751,24 +718,18 @@ export class OperationsComponent implements OnInit {
       .subscribe({
         next: (success) => {
           if (success) {
-            this.toastService.showToast(
-              'success',
+            this.toastService.success(
               `Worker "${worker.name}" IP block removed.`,
             );
             this.closeDialog();
           } else {
-            this.toastService.showToast(
-              'error',
-              'Failed to unblock worker IP.',
-            );
+            this.toastService.error('Failed to unblock worker IP.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to unblock worker IP.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });

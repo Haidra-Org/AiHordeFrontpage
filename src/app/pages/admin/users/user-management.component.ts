@@ -28,7 +28,7 @@ import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { WorkerCardComponent } from '../workers/worker-card.component';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
-import { AdminToastService } from '../../../services/admin-toast.service';
+import { ToastService } from '../../../services/toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
 import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -84,7 +84,7 @@ export class UserManagementComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   public readonly auth = inject(AuthService);
   private readonly floatingActions = inject(FloatingActionService);
-  private readonly toastService = inject(AdminToastService);
+  private readonly toastService = inject(ToastService);
 
   public readonly generationTracker =
     viewChild<AdminGenerationTrackerComponent>('generationTracker');
@@ -307,7 +307,7 @@ export class UserManagementComponent implements OnInit {
     if (!query) return;
 
     this.loading.set(true);
-    this.toastService.clearToasts();
+    this.toastService.clear();
     this.userNotFound.set(false);
     this.selectedUser.set(null);
     this.userWorkers.set([]);
@@ -353,11 +353,9 @@ export class UserManagementComponent implements OnInit {
           },
           error: (err) => {
             this.userNotFound.set(true);
-            this.toastService.showToast(
-              'error',
+            this.toastService.error(
               extractApiError(err, 'Failed to load user data.'),
-              false,
-              err,
+              { rawError: err },
             );
           },
         });
@@ -556,18 +554,13 @@ export class UserManagementComponent implements OnInit {
                   this.inferAndSetPublicWorkers(updatedUser.id);
                 }
               });
-            this.toastService.showToast(
-              'success',
-              'Changes saved successfully.',
-            );
+            this.toastService.success('Changes saved successfully.');
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to save changes.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -738,11 +731,9 @@ export class UserManagementComponent implements OnInit {
         },
         error: (err) => {
           this.sharedKeysFetched.set(true);
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to load shared keys.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -776,11 +767,9 @@ export class UserManagementComponent implements OnInit {
           this.userWorkers.set(workers);
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to load workers.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });
@@ -839,32 +828,22 @@ export class UserManagementComponent implements OnInit {
                 }
               });
             if (dialogType === 'resetSuspicion') {
-              this.toastService.showToast(
-                'success',
-                'Suspicion reset successfully.',
-              );
+              this.toastService.success('Suspicion reset successfully.');
             } else if (dialogType === 'undeleteUser') {
-              this.toastService.showToast(
-                'success',
-                'User restored successfully.',
-              );
+              this.toastService.success('User restored successfully.');
             }
           }
         },
         error: (err) => {
           if (dialogType === 'resetSuspicion') {
-            this.toastService.showToast(
-              'error',
+            this.toastService.error(
               extractApiError(err, 'Failed to reset suspicion.'),
-              false,
-              err,
+              { rawError: err },
             );
           } else if (dialogType === 'undeleteUser') {
-            this.toastService.showToast(
-              'error',
+            this.toastService.error(
               extractApiError(err, 'Failed to restore user.'),
-              false,
-              err,
+              { rawError: err },
             );
           }
         },
@@ -881,8 +860,7 @@ export class UserManagementComponent implements OnInit {
       workers.filter((w) => w.id !== workerId),
     );
     // Show success toast
-    this.toastService.showToast(
-      'success',
+    this.toastService.success(
       'Worker deleted successfully! Note: It may take up to a minute for the API to reflect this change.',
     );
   }
@@ -913,11 +891,9 @@ export class UserManagementComponent implements OnInit {
           }
         },
         error: (err) => {
-          this.toastService.showToast(
-            'error',
+          this.toastService.error(
             extractApiError(err, 'Failed to regenerate passkey.'),
-            false,
-            err,
+            { rawError: err },
           );
         },
       });

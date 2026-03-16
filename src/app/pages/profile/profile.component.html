@@ -1,44 +1,3 @@
-<!-- Deletion Success Toast -->
-@if (deletionSuccessMessage()) {
-  <div class="toast toast-success" role="status" aria-live="polite">
-    <app-icon name="check" class="w-5 h-5" aria-hidden="true" />
-    <span>{{ "admin.workers.deletion_success" | transloco }}</span>
-  </div>
-}
-
-@if (deleteSuccess()) {
-  <div class="toast toast-success" role="status" aria-live="polite">
-    <app-icon name="check" class="w-5 h-5" aria-hidden="true" />
-    <span>{{ deleteSuccess() | transloco }}</span>
-  </div>
-}
-
-<!-- Account Action Error Toast -->
-@if (deleteError()) {
-  <div class="toast toast-error" role="alert" aria-live="assertive">
-    <app-icon name="x-mark" class="w-5 h-5" aria-hidden="true" />
-    <span>{{
-      "profile.delete_account_error" | transloco: { message: deleteError() }
-    }}</span>
-  </div>
-}
-
-<!-- Profile Update Success Toast -->
-@if (profileUpdateSuccess()) {
-  <div class="toast toast-success" role="status" aria-live="polite">
-    <app-icon name="check" class="w-5 h-5" aria-hidden="true" />
-    <span>{{ profileUpdateSuccess() | transloco }}</span>
-  </div>
-}
-
-<!-- Profile Update Error Toast -->
-@if (profileUpdateError()) {
-  <div class="toast toast-error" role="alert" aria-live="assertive">
-    <app-icon name="x-mark" class="w-5 h-5" aria-hidden="true" />
-    <span>{{ profileUpdateError() }}</span>
-  </div>
-}
-
 <!-- Delete Account Dialog -->
 <app-delete-account-dialog
   [open]="deleteDialogOpen()"
@@ -1048,18 +1007,6 @@
 
               <!-- Teams Section -->
               @if (activeTab() === "teams") {
-                <!-- Team Success Toast -->
-                @if (teamSuccess()) {
-                  <div
-                    class="toast toast-success"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    <app-icon name="check" class="w-5 h-5" aria-hidden="true" />
-                    <span>{{ "teams.success" | transloco }}</span>
-                  </div>
-                }
-
                 <!-- Team Dialog -->
                 @if (teamDialogOpen()) {
                   <div class="worker-modal-overlay">

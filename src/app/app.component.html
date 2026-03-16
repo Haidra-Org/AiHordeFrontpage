@@ -1,3 +1,4 @@
+<app-toast-bar />
 <div class="wrapper">
   <!-- Main Navigation Header -->
   <header class="nav-shell" [appStickyHeader]="0">
@@ -93,75 +94,64 @@
             {{ "guis_and_tools" | transloco }}
           </a>
           <!-- Contribute Dropdown -->
-          <div class="nav-dropdown-container" data-dropdown="contribute">
-            <button
-              type="button"
-              class="nav-link nav-dropdown-trigger"
-              [class.nav-link-active]="
-                showContributeDropdown() || isContributeRouteActive()
-              "
-              [class.nav-needs-attention]="
-                hasContributeNotification() && !showContributeDropdown()
-              "
-              [attr.title]="
-                hasContributeNotification()
-                  ? ('notification.need_workers.tooltip'
-                    | transloco: { types: contributeTooltip() })
-                  : null
-              "
-              (click)="toggleContributeDropdown(); $event.stopPropagation()"
-              aria-haspopup="true"
-              [attr.aria-expanded]="showContributeDropdown()"
-            >
+          <app-nav-dropdown
+            #contributeDropdown
+            dropdownId="contribute"
+            [isRouteActive]="isContributeRouteActive()"
+            [needsAttention]="hasContributeNotification()"
+            [triggerTitle]="
+              hasContributeNotification()
+                ? ('notification.need_workers.tooltip'
+                  | transloco: { types: contributeTooltip() })
+                : null
+            "
+            (opened)="onDropdownOpened($event)"
+          >
+            <span trigger>
               {{ "joining" | transloco }}
-              @if (hasContributeNotification() && !showContributeDropdown()) {
+              @if (
+                hasContributeNotification() && !contributeDropdown.isOpen()
+              ) {
                 <span class="nav-notification-dot" aria-hidden="true"></span>
               }
-              <app-icon
-                name="chevron-down"
-                class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showContributeDropdown()"
-              />
-            </button>
-            @if (showContributeDropdown()) {
-              <div class="nav-dropdown-menu surface-floating" role="menu">
-                @if (hasContributeNotification()) {
-                  <div class="nav-dropdown-notification-banner" role="status">
-                    <app-icon
-                      name="alert-triangle"
-                      class="nav-dropdown-notification-banner-icon"
-                      aria-hidden="true"
-                    />
-                    {{
-                      "notification.need_workers.message"
-                        | transloco: { types: contributeTooltip() }
-                    }}
-                  </div>
-                }
-                <a
-                  routerLink="/contribute/workers"
-                  class="nav-dropdown-item"
-                  [class.nav-dropdown-item-needs-attention]="
-                    hasContributeNotification()
-                  "
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeContributeDropdown()"
-                >
-                  {{ "nav.contribute.become_worker" | transloco }}
-                </a>
-                <a
-                  routerLink="/contribute/donate"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeContributeDropdown()"
-                >
-                  {{ "nav.contribute.donate" | transloco }}
-                </a>
-              </div>
-            }
-          </div>
+            </span>
+            <ng-container panel>
+              @if (hasContributeNotification()) {
+                <div class="nav-dropdown-notification-banner" role="status">
+                  <app-icon
+                    name="alert-triangle"
+                    class="nav-dropdown-notification-banner-icon"
+                    aria-hidden="true"
+                  />
+                  {{
+                    "notification.need_workers.message"
+                      | transloco: { types: contributeTooltip() }
+                  }}
+                </div>
+              }
+              <a
+                routerLink="/contribute/workers"
+                class="nav-dropdown-item"
+                [class.nav-dropdown-item-needs-attention]="
+                  hasContributeNotification()
+                "
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="contributeDropdown.close()"
+              >
+                {{ "nav.contribute.become_worker" | transloco }}
+              </a>
+              <a
+                routerLink="/contribute/donate"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="contributeDropdown.close()"
+              >
+                {{ "nav.contribute.donate" | transloco }}
+              </a>
+            </ng-container>
+          </app-nav-dropdown>
 
           <a
             routerLink="/faq/"
@@ -175,148 +165,123 @@
             {{ "api" | transloco }}
           </a>
           <!-- Active Details Dropdown -->
-          <div class="nav-dropdown-container" data-dropdown="details">
-            <button
-              type="button"
-              class="nav-link nav-dropdown-trigger"
-              [class.nav-link-active]="
-                showDetailsDropdown() || isDetailsRouteActive()
-              "
-              (click)="toggleDetailsDropdown(); $event.stopPropagation()"
-              aria-haspopup="true"
-              [attr.aria-expanded]="showDetailsDropdown()"
-            >
-              {{ "nav.active_details" | transloco }}
-              <app-icon
-                name="chevron-down"
-                class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showDetailsDropdown()"
-              />
-            </button>
-            @if (showDetailsDropdown()) {
-              <div class="nav-dropdown-menu surface-floating" role="menu">
-                <a
-                  routerLink="/details/workers/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.workers" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/models/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.models" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/usage/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.usage_stats" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/styles/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.styles" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/users/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.users" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/teams/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.teams" | transloco }}
-                </a>
-                <a
-                  routerLink="/details/leaderboard/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeDetailsDropdown()"
-                >
-                  {{ "nav.active_details.leaderboard" | transloco }}
-                </a>
-              </div>
-            }
-          </div>
+          <app-nav-dropdown
+            #detailsDropdown
+            dropdownId="details"
+            [isRouteActive]="isDetailsRouteActive()"
+            (opened)="onDropdownOpened($event)"
+          >
+            <span trigger>{{ "nav.active_details" | transloco }}</span>
+            <ng-container panel>
+              <a
+                routerLink="/details/workers/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.workers" | transloco }}
+              </a>
+              <a
+                routerLink="/details/models/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.models" | transloco }}
+              </a>
+              <a
+                routerLink="/details/usage/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.usage_stats" | transloco }}
+              </a>
+              <a
+                routerLink="/details/styles/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.styles" | transloco }}
+              </a>
+              <a
+                routerLink="/details/users/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.users" | transloco }}
+              </a>
+              <a
+                routerLink="/details/teams/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.teams" | transloco }}
+              </a>
+              <a
+                routerLink="/details/leaderboard/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="detailsDropdown.close()"
+              >
+                {{ "nav.active_details.leaderboard" | transloco }}
+              </a>
+            </ng-container>
+          </app-nav-dropdown>
           <!-- Account Dropdown -->
-          <div class="nav-dropdown-container" data-dropdown="account">
-            <button
-              type="button"
-              class="nav-link nav-dropdown-trigger"
-              [class.nav-link-active]="showAccountDropdown()"
-              (click)="toggleAccountDropdown(); $event.stopPropagation()"
-              aria-haspopup="true"
-              [attr.aria-expanded]="showAccountDropdown()"
-            >
-              {{ "nav.account" | transloco }}
-              <app-icon
-                name="chevron-down"
-                class="nav-dropdown-chevron"
-                [class.nav-dropdown-chevron-open]="showAccountDropdown()"
-              />
-            </button>
-            @if (showAccountDropdown()) {
-              <div class="nav-dropdown-menu surface-floating" role="menu">
-                <a
-                  routerLink="/profile/"
-                  class="nav-dropdown-item"
-                  role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeAccountDropdown()"
-                >
-                  @if (auth.isLoggedIn()) {
-                    {{ "profile.nav_profile" | transloco }}
-                  } @else {
-                    {{ "profile.nav_login" | transloco }}
-                  }
-                </a>
-                @if (!auth.isLoggedIn()) {
-                  <a
-                    href="https://aihorde.net/register"
-                    class="nav-dropdown-item external-link"
-                    role="menuitem"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    (click)="closeAccountDropdown()"
-                  >
-                    {{ "register_account" | transloco }}
-                  </a>
+          <app-nav-dropdown
+            #accountDropdown
+            dropdownId="account"
+            (opened)="onDropdownOpened($event)"
+          >
+            <span trigger>{{ "nav.account" | transloco }}</span>
+            <ng-container panel>
+              <a
+                routerLink="/profile/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="accountDropdown.close()"
+              >
+                @if (auth.isLoggedIn()) {
+                  {{ "profile.nav_profile" | transloco }}
+                } @else {
+                  {{ "profile.nav_login" | transloco }}
                 }
+              </a>
+              @if (!auth.isLoggedIn()) {
                 <a
-                  routerLink="/v2-transfer/"
-                  class="nav-dropdown-item"
+                  href="https://aihorde.net/register"
+                  class="nav-dropdown-item external-link"
                   role="menuitem"
-                  routerLinkActive="nav-dropdown-item-active"
-                  (click)="closeAccountDropdown()"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  (click)="accountDropdown.close()"
                 >
-                  {{ "transfer.title" | transloco }}
+                  {{ "register_account" | transloco }}
                 </a>
-              </div>
-            }
-          </div>
+              }
+              <a
+                routerLink="/v2-transfer/"
+                class="nav-dropdown-item"
+                role="menuitem"
+                routerLinkActive="nav-dropdown-item-active"
+                (click)="accountDropdown.close()"
+              >
+                {{ "transfer.title" | transloco }}
+              </a>
+            </ng-container>
+          </app-nav-dropdown>
         </div>
 
         <!-- Right Side Actions -->

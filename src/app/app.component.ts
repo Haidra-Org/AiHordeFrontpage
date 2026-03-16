@@ -8,6 +8,7 @@ import {
   OnDestroy,
   Renderer2,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -32,6 +33,8 @@ import { StickyRegistryService } from './services/sticky-registry.service';
 import { NavNotificationService } from './services/nav-notification.service';
 import { NeedWorkersNotifierService } from './services/need-workers-notifier.service';
 import { IconComponent } from './components/icon/icon.component';
+import { NavDropdownComponent } from './components/nav-dropdown/nav-dropdown.component';
+import { ToastBarComponent } from './components/toast-bar/toast-bar.component';
 import { scrollToAnchorWhenReady } from './helper/scroll-utils';
 
 @Component({
@@ -47,6 +50,8 @@ import { scrollToAnchorWhenReady } from './helper/scroll-utils';
     NetworkStatusComponent,
     StickyHeaderDirective,
     IconComponent,
+    NavDropdownComponent,
+    ToastBarComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
@@ -54,7 +59,6 @@ import { scrollToAnchorWhenReady } from './helper/scroll-utils';
   host: {
     '(window:resize)': 'onWindowResize()',
     '(document:keydown.escape)': 'onEscapeKey()',
-    '(document:click)': 'onDocumentClick($event)',
   },
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -92,12 +96,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // ── Navigation UI state (signals) ──
   public readonly showMobileMenu = signal(false);
-  public readonly showDetailsDropdown = signal(false);
   public readonly showMobileDetailsSubmenu = signal(false);
-  public readonly showContributeDropdown = signal(false);
   public readonly showMobileContributeSubmenu = signal(false);
-  public readonly showAccountDropdown = signal(false);
   public readonly showMobileAccountSubmenu = signal(false);
+
+  // ── Desktop dropdown coordination ──
+  private readonly dropdowns = viewChildren(NavDropdownComponent);
 
   // ── Route-active state (toSignal + computed) ──
   private readonly currentUrl = toSignal(
@@ -114,14 +118,6 @@ export class AppComponent implements OnInit, OnDestroy {
   );
   public readonly isDetailsRouteActive = computed(() =>
     this.currentUrl().startsWith('/details'),
-  );
-
-  // ── Derived state ──
-  public readonly anyDropdownOpen = computed(
-    () =>
-      this.showDetailsDropdown() ||
-      this.showContributeDropdown() ||
-      this.showAccountDropdown(),
   );
 
   ngOnInit(): void {
@@ -190,41 +186,13 @@ export class AppComponent implements OnInit, OnDestroy {
   onEscapeKey(): void {
     if (this.showMobileMenu()) {
       this.closeMobileMenu();
-      return;
     }
-    this.showDetailsDropdown.set(false);
-    this.showContributeDropdown.set(false);
-    this.showAccountDropdown.set(false);
   }
 
-  onDocumentClick(event: Event): void {
-    // Close dropdowns when clicking outside
-    const target = event.target as HTMLElement;
-
-    if (this.showDetailsDropdown()) {
-      const detailsContainer = target.closest(
-        '.nav-dropdown-container[data-dropdown="details"]',
-      );
-      if (!detailsContainer) {
-        this.showDetailsDropdown.set(false);
-      }
-    }
-
-    if (this.showContributeDropdown()) {
-      const contributeContainer = target.closest(
-        '.nav-dropdown-container[data-dropdown="contribute"]',
-      );
-      if (!contributeContainer) {
-        this.showContributeDropdown.set(false);
-      }
-    }
-
-    if (this.showAccountDropdown()) {
-      const accountContainer = target.closest(
-        '.nav-dropdown-container[data-dropdown="account"]',
-      );
-      if (!accountContainer) {
-        this.showAccountDropdown.set(false);
+  public onDropdownOpened(openedId: string): void {
+    for (const dropdown of this.dropdowns()) {
+      if (dropdown.dropdownId() !== openedId) {
+        dropdown.close();
       }
     }
   }
@@ -247,51 +215,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  public toggleDetailsDropdown(): void {
-    const opening = !this.showDetailsDropdown();
-    this.showDetailsDropdown.set(opening);
-    if (opening) {
-      this.showAccountDropdown.set(false);
-      this.showContributeDropdown.set(false);
-    }
-  }
-
-  public closeDetailsDropdown(): void {
-    this.showDetailsDropdown.set(false);
-  }
-
   public toggleMobileDetailsSubmenu(): void {
     this.showMobileDetailsSubmenu.update((v) => !v);
   }
 
-  public toggleAccountDropdown(): void {
-    const opening = !this.showAccountDropdown();
-    this.showAccountDropdown.set(opening);
-    if (opening) {
-      this.showDetailsDropdown.set(false);
-      this.showContributeDropdown.set(false);
-    }
-  }
-
-  public closeAccountDropdown(): void {
-    this.showAccountDropdown.set(false);
-  }
-
   public toggleMobileAccountSubmenu(): void {
     this.showMobileAccountSubmenu.update((v) => !v);
-  }
-
-  public toggleContributeDropdown(): void {
-    const opening = !this.showContributeDropdown();
-    this.showContributeDropdown.set(opening);
-    if (opening) {
-      this.showDetailsDropdown.set(false);
-      this.showAccountDropdown.set(false);
-    }
-  }
-
-  public closeContributeDropdown(): void {
-    this.showContributeDropdown.set(false);
   }
 
   public toggleMobileContributeSubmenu(): void {
