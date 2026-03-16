@@ -98,7 +98,7 @@
                         [routerLink]="child.routerLink"
                         class="nav-dropdown-item"
                         [class.nav-dropdown-item-needs-attention]="
-                          item.notificationNavItem && hasNotification(item)
+                          hasNotificationForChild(item, child)
                         "
                         role="menuitem"
                         routerLinkActive="nav-dropdown-item-active"

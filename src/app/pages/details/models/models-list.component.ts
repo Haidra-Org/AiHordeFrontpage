@@ -23,6 +23,7 @@ import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import { ActiveModel } from '../../../types/active-model';
+import { setPageTitle } from '../../../helper/page-title';
 import {
   SynthesizedUnit,
   UnitConversionService,
@@ -347,14 +348,12 @@ export class ModelsListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.models.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([modelsTitle, appTitle]) => {
-        this.title.setTitle(`${modelsTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.models.title',
+    );
   }
 
   public setActiveTab(tab: ModelsTab): void {

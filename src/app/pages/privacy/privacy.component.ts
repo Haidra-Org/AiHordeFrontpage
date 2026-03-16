@@ -9,11 +9,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { combineLatest, map } from 'rxjs';
 import { FooterColorService } from '../../services/footer-color.service';
 import { NoSorterKeyValue } from '../../types/no-sorter-key-value';
 import { TranslatorService } from '../../services/translator.service';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { setPageTitle } from '../../helper/page-title';
 
 @Component({
   selector: 'app-privacy',
@@ -45,13 +45,11 @@ export class PrivacyComponent implements OnInit {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
-
-    // Set title reactively
-    combineLatest([
-      this.translator.get('privacy_policy'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(map(([privacy, app]) => `${privacy} | ${app}`))
-      .subscribe((title) => this.titleService.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.titleService,
+      this.destroyRef,
+      'privacy_policy',
+    );
   }
 }

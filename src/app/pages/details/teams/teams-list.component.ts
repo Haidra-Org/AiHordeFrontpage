@@ -13,13 +13,14 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { combineLatest } from 'rxjs';
+
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
 import { Team } from '../../../types/team';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
+import { setPageTitle } from '../../../helper/page-title';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { extractUserId } from '../../../helper/user-parser';
@@ -164,14 +165,12 @@ export class TeamsListComponent implements OnInit {
 
   ngOnInit(): void {
     // Set title
-    combineLatest([
-      this.translator.get('details.teams.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([teamsTitle, appTitle]) => {
-        this.title.setTitle(`${teamsTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.teams.title',
+    );
 
     this.loadTeams();
   }

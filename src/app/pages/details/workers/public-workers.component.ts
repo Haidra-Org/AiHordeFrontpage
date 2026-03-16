@@ -6,14 +6,14 @@ import {
   inject,
   OnInit,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { combineLatest } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { WorkerListComponent } from '../../admin/workers/worker-list.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { WorkerType } from '../../../types/horde-worker';
+import { setPageTitle } from '../../../helper/page-title';
 
 @Component({
   selector: 'app-public-workers',
@@ -54,14 +54,12 @@ export class PublicWorkersComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.workers.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([workersTitle, appTitle]) => {
-        this.title.setTitle(`${workersTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.workers.title',
+    );
   }
 
   /**

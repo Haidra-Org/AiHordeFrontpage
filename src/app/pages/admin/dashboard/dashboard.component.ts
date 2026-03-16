@@ -5,7 +5,6 @@ import {
   inject,
   OnInit,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
@@ -13,7 +12,7 @@ import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { combineLatest } from 'rxjs';
+import { setPageTitle } from '../../../helper/page-title';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -34,14 +33,12 @@ export class DashboardComponent implements OnInit {
   public readonly auth = inject(AuthService);
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('admin.dashboard.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([dashboardTitle, appTitle]) => {
-        this.title.setTitle(`${dashboardTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'admin.dashboard.title',
+    );
   }
 
   public formatAccountAge(seconds: number): string {

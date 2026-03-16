@@ -11,11 +11,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { combineLatest, finalize } from 'rxjs';
+import { finalize } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminOperationsService } from '../../../services/admin-operations.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
+import { setPageTitle } from '../../../helper/page-title';
 import { IPTimeout } from '../../../types/ip-operations';
 import { HordeWorker } from '../../../types/horde-worker';
 import { AdminDialogComponent } from '../../../components/admin/admin-dialog/admin-dialog.component';
@@ -158,14 +159,12 @@ export class OperationsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('admin.operations.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([operationsTitle, appTitle]) => {
-        this.title.setTitle(`${operationsTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'admin.operations.title',
+    );
 
     // Load data on init
     this.loadIPTimeouts();

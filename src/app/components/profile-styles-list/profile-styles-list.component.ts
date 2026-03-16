@@ -428,7 +428,10 @@ export class ProfileStylesListComponent implements OnInit {
           next: () => {
             this.editingStyle.set(null);
             this.showCreateForm.set(false);
-            this.auth.refreshUser().subscribe(() => this.loadUserStyles());
+            this.auth
+              .refreshUser()
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe(() => this.loadUserStyles());
           },
           error: (err) => {
             this.error.set(err.message || 'Failed to update style');
@@ -460,10 +463,17 @@ export class ProfileStylesListComponent implements OnInit {
           this.editingStyle.set(null);
           this.showCreateForm.set(false);
           // Refresh user to get updated style list
-          this.auth.refreshUser().subscribe(() => {
-            // Navigate to the new style
-            this.router.navigate(['/details/styles', event.type, response.id]);
-          });
+          this.auth
+            .refreshUser()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+              // Navigate to the new style
+              this.router.navigate([
+                '/details/styles',
+                event.type,
+                response.id,
+              ]);
+            });
         },
         error: (err) => {
           this.error.set(err.message || 'Failed to create style');
@@ -501,7 +511,10 @@ export class ProfileStylesListComponent implements OnInit {
         this.internalUserStyles.set(updated);
         this.stylesChange.emit(updated);
         // Trigger a user refresh to update the user's style references
-        this.auth.refreshUser().subscribe();
+        this.auth
+          .refreshUser()
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe();
       },
       error: (err) => {
         this.error.set(err.message || 'Failed to delete style');

@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { combineLatest, switchMap, of } from 'rxjs';
+import { switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
@@ -25,6 +25,7 @@ import { UserRecordsPanelComponent } from '../../../components/user-records-pane
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { HordeUser } from '../../../types/horde-user';
+import { setPageTitle } from '../../../helper/page-title';
 import { extractUserAlias } from '../../../helper/user-parser';
 import { IconComponent } from '../../../components/icon/icon.component';
 
@@ -92,14 +93,12 @@ export class UserProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('details.users.profile_title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([profileTitle, appTitle]) => {
-        this.title.setTitle(`${profileTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'details.users.profile_title',
+    );
 
     // Load user when route changes
     this.route.params

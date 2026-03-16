@@ -14,7 +14,6 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -26,6 +25,7 @@ import { ToolItem } from '../../types/tool-item';
 import { Platform, FunctionKind } from '../../types/item-types';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageTitle } from '../../helper/page-title';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import {
   ItemListSectionComponent,
@@ -453,12 +453,12 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(false);
-
-    // Set title reactively with automatic cleanup
-    this.translator
-      .get('guis_and_tools_page.title')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((title) => this.title.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'guis_and_tools_page.title',
+    );
   }
 
   ngAfterViewInit(): void {

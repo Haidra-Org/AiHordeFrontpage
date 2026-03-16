@@ -12,6 +12,7 @@ export const NAV_ITEMS: NavItem[] = [
     notificationNavItem: 'contribute',
     children: [
       {
+        id: 'become-worker',
         labelKey: 'nav.contribute.become_worker',
         routerLink: '/contribute/workers',
       },

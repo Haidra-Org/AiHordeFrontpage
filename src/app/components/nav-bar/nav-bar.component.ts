@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   inject,
   OnDestroy,
   OnInit,
   Renderer2,
   signal,
+  untracked,
   viewChildren,
 } from '@angular/core';
 import { DOCUMENT, NgOptimizedImage } from '@angular/common';
@@ -90,6 +92,16 @@ export class NavBarComponent implements OnInit, OnDestroy {
     this.navNotifications.hasPendingMobileIndicator(),
   );
 
+  // Close all desktop dropdowns whenever the route changes
+  private readonly _closeDropdownsOnNav = effect(() => {
+    this.currentUrl();
+    untracked(() => {
+      for (const dropdown of this.dropdowns()) {
+        dropdown.close();
+      }
+    });
+  });
+
   /** Check whether any child route of a dropdown matches the current URL */
   public isDropdownRouteActive(item: NavItem): boolean {
     const url = this.currentUrl();
@@ -114,6 +126,14 @@ export class NavBarComponent implements OnInit, OnDestroy {
       return child.loggedInLabelKey;
     }
     return child.labelKey;
+  }
+
+  /** True only when a notification targets this specific child via navSubItem */
+  public hasNotificationForChild(item: NavItem, child: NavItem): boolean {
+    if (!item.notificationNavItem || !child.id) return false;
+    return this.navNotifications
+      .notificationsForNavItem(item.notificationNavItem)()
+      .some((n) => n.navSubItem === child.id);
   }
 
   /** Filter children by auth state */

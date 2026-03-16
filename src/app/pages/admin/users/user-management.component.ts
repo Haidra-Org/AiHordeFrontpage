@@ -30,8 +30,8 @@ import { AdminDialogComponent } from '../../../components/admin/admin-dialog/adm
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { ToastService } from '../../../services/toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
-import { combineLatest } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { setPageTitle } from '../../../helper/page-title';
 import {
   JsonInspectorComponent,
   JsonInspectorSection,
@@ -256,14 +256,12 @@ export class UserManagementComponent implements OnInit {
   public historyExpanded = signal<boolean>(false);
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('admin.users.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([usersTitle, appTitle]) => {
-        this.title.setTitle(`${usersTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'admin.users.title',
+    );
 
     // Load user history from local storage
     this.loadUserHistory();

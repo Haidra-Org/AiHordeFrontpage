@@ -18,10 +18,11 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { ToastService } from '../../../services/toast.service';
-import { combineLatest, finalize } from 'rxjs';
+import { finalize } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminFilterService } from '../../../services/admin-filter.service';
+import { setPageTitle } from '../../../helper/page-title';
 import {
   FilterDetails,
   FilterRegex,
@@ -146,14 +147,12 @@ export class FilterManagementComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    combineLatest([
-      this.translator.get('admin.filters.title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(([filtersTitle, appTitle]) => {
-        this.title.setTitle(`${filtersTitle} | ${appTitle}`);
-      });
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'admin.filters.title',
+    );
 
     // Load filters on init
     this.loadFilters();

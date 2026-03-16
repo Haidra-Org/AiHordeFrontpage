@@ -9,10 +9,10 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-import { combineLatest, map } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { forkJoin } from 'rxjs';
 import { IconComponent } from '../../components/icon/icon.component';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -21,7 +21,7 @@ import { UnitConversionService } from '../../services/unit-conversion.service';
 import { SingleImageStatPoint } from '../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../types/single-text-stat-point';
 import { HordePerformance } from '../../types/horde-performance';
-import { forkJoin } from 'rxjs';
+import { setPageTitle } from '../../helper/page-title';
 
 @Component({
   selector: 'app-mission',
@@ -60,12 +60,12 @@ export class MissionComponent implements OnInit {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
-
-    combineLatest([
-      this.translator.get('mission.page_title'),
-      this.translator.get('app_title'),
-    ])
-      .pipe(map(([page, app]) => `${page} — ${app}`))
-      .subscribe((title) => this.title.setTitle(title));
+    setPageTitle(
+      this.translator,
+      this.title,
+      this.destroyRef,
+      'mission.page_title',
+      ' — ',
+    );
   }
 }

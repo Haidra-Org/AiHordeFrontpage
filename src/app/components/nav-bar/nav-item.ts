@@ -1,4 +1,6 @@
 export interface NavItem {
+  /** Optional identifier used to match notification sub-item targets */
+  id?: string;
   /** Translation key for display text */
   labelKey: string;
   /**

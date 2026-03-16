@@ -20,6 +20,7 @@ import { TranslatorService } from '../../services/translator.service';
 import { HomepageQuickstartComponent } from './parts/quickstart/homepage-quickstart.component';
 import { HomepageGuisComponent } from './parts/guis/homepage-guis.component';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setAppTitle } from '../../helper/page-title';
 
 @Component({
   selector: 'app-homepage',
@@ -83,10 +84,6 @@ export class HomepageComponent implements OnInit {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(false);
-
-    // Set title reactively - automatically cleans up
-    this.translator
-      .get('app_title')
-      .subscribe((title) => this.title.setTitle(title));
+    setAppTitle(this.translator, this.title, this.destroyRef);
   }
 }
