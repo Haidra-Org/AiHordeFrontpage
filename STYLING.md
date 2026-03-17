@@ -29,61 +29,61 @@ Styles in `src/styles/` are organized by concern:
 
 ### Theme Layer
 
-| File | Purpose |
-| ---- | ------- |
+| File         | Purpose                                                       |
+| ------------ | ------------------------------------------------------------- |
 | `_theme.css` | Design tokens: colors, spacing, shadows, radii (via `@theme`) |
 
 ### Base Layer
 
-| File | Purpose |
-| ---- | ------- |
+| File        | Purpose                                     |
+| ----------- | ------------------------------------------- |
 | `_base.css` | HTML element defaults, dark mode, keyframes |
 
 ### Component Layers
 
-| File | Purpose |
-| ---- | ------- |
-| `_navigation.css` | Nav system: desktop shell, mobile drawer, links, dropdowns |
-| `_footer.css` | Footer component |
-| `_layout.css` | Page layout containers (`.wrapper`, `.section-primary`) |
-| `_typography-headings.css` | Heading hierarchy (`.heading-hero`, `.heading-section`) |
-| `_typography-text.css` | Text utilities, links, list styles |
-| `_forms.css` | Form inputs, labels, checkboxes, filters |
-| `_buttons.css` | Button variants (`.btn-primary`, `.btn-danger`) |
-| `_cards.css` | Cards, callouts, feature cards, surface primitives |
-| `_alerts.css` | Alert/notification components |
-| `_modals.css` | Dialog/modal components |
-| `_badges.css` | Badge components and color variants |
-| `_tables.css` | Two-zone item list rows |
-| `_data-display.css` | Data display, worker cards, stat columns, domain tinting |
-| `_tooltips.css` | Tooltip system |
-| `_collapsibles.css` | Collapsible cards and sticky section headers |
-| `_details-tabs.css` | Tab bars, sub-tabs, glass variants, tab content panels |
-| `_floating-controls.css` | Floating controls container, scroll-to-top |
-| `_shared-keys.css` | Shared key card, form, and list components |
-| `_help.css` | Info tooltip triggers, glossary links, page intro |
-| `_utilities.css` | Spinners, state containers, code blocks |
+| File                       | Purpose                                                    |
+| -------------------------- | ---------------------------------------------------------- |
+| `_navigation.css`          | Nav system: desktop shell, mobile drawer, links, dropdowns |
+| `_footer.css`              | Footer component                                           |
+| `_layout.css`              | Page layout containers (`.wrapper`, `.section-primary`)    |
+| `_typography-headings.css` | Heading hierarchy (`.heading-hero`, `.heading-section`)    |
+| `_typography-text.css`     | Text utilities, links, list styles                         |
+| `_forms.css`               | Form inputs, labels, checkboxes, filters                   |
+| `_buttons.css`             | Button variants (`.btn-primary`, `.btn-danger`)            |
+| `_cards.css`               | Cards, callouts, feature cards, surface primitives         |
+| `_alerts.css`              | Alert/notification components                              |
+| `_modals.css`              | Dialog/modal components                                    |
+| `_badges.css`              | Badge components and color variants                        |
+| `_tables.css`              | Two-zone item list rows                                    |
+| `_data-display.css`        | Data display, worker cards, stat columns, domain tinting   |
+| `_tooltips.css`            | Tooltip system                                             |
+| `_collapsibles.css`        | Collapsible cards and sticky section headers               |
+| `_details-tabs.css`        | Tab bars, sub-tabs, glass variants, tab content panels     |
+| `_floating-controls.css`   | Floating controls container, scroll-to-top                 |
+| `_shared-keys.css`         | Shared key card, form, and list components                 |
+| `_help.css`                | Info tooltip triggers, glossary links, page intro          |
+| `_utilities.css`           | Spinners, state containers, code blocks                    |
 
 ### Page-Specific Layers
 
-| File | Purpose |
-| ---- | ------- |
-| `_network-status.css` | Network status panel and domain stat grid |
-| `_intro-features.css` | Homepage hero stage, feature cards |
-| `_news.css` | News timeline, date badges |
-| `_workers-page.css` | Worker type sections, domain-colored cards |
-| `_tools-page.css` | Tool filter bar, view mode toggle |
-| `_leaderboard.css` | Leaderboard layout, top cards |
-| `_faq.css` | FAQ accordion, TOC sidebar |
-| `_style-detail.css` | Style detail page layout |
-| `_prose.css` | Rendered markdown/prose content |
+| File                  | Purpose                                    |
+| --------------------- | ------------------------------------------ |
+| `_network-status.css` | Network status panel and domain stat grid  |
+| `_intro-features.css` | Homepage hero stage, feature cards         |
+| `_news.css`           | News timeline, date badges                 |
+| `_workers-page.css`   | Worker type sections, domain-colored cards |
+| `_tools-page.css`     | Tool filter bar, view mode toggle          |
+| `_leaderboard.css`    | Leaderboard layout, top cards              |
+| `_faq.css`            | FAQ accordion, TOC sidebar                 |
+| `_style-detail.css`   | Style detail page layout                   |
+| `_prose.css`          | Rendered markdown/prose content            |
 
 ### Other
 
-| File | Purpose |
-| ---- | ------- |
-| `_admin.css` | Admin-specific layout (sidebar, admin nav) |
-| `_legacy.css` | Deprecated aliases (migrate away from these) |
+| File                     | Purpose                                         |
+| ------------------------ | ----------------------------------------------- |
+| `_admin.css`             | Admin-specific layout (sidebar, admin nav)      |
+| `_legacy.css`            | Deprecated aliases (migrate away from these)    |
 | `_additional_pieces.css` | Third-party overrides, breakpoint media queries |
 
 ---
@@ -112,30 +112,30 @@ BEM-inspired semantic class names:
 
 ## Quick Reference
 
-| Need | Use |
-| ---- | ----- |
-| Page layout | `.wrapper`, `.section-primary` |
-| Card | `.card` or feature-semantic wrapper over surface primitives |
-| Error/warning | `.alert--danger`, `.alert--warning` |
-| Info note | `.info-note`, `.info-note--blue` |
-| Primary button | `.btn-primary` |
-| Secondary button | `.btn-secondary` |
-| Destructive action | `.btn-danger` |
-| Form input | `.form-input` |
-| Structured form | Form shell system (see [design-system.md](docs/design-system.md)) |
-| Page heading | `.heading-page-title` |
-| Section heading | `.heading-section` |
-| Loading state | `.spinner`, `.state-container` |
-| Empty state | `.state-empty` |
-| Skeleton | `.skeleton-bar`, `.skeleton-box` |
-| Modal | `.modal-overlay`, `.modal-panel` |
-| Tooltip | `.tooltip-wrapper` + `.tooltip-text` |
-| Tab bar | `.details-tabs`, `.details-tab` |
-| List row | `.item-list-row` (2-zone grid) |
-| Badge | `.badge-base` + color variant |
-| Domain tinting | `.domain-tint--image`, `.domain-tint--text`, `.domain-tint--alchemy` |
-| Data grid | `.data-grid-1-2-3` |
-| Scroll reveal | `.scroll-reveal` + `.scroll-reveal-delay-N` |
+| Need               | Use                                                                  |
+| ------------------ | -------------------------------------------------------------------- |
+| Page layout        | `.wrapper`, `.section-primary`                                       |
+| Card               | `.card` or feature-semantic wrapper over surface primitives          |
+| Error/warning      | `.alert--danger`, `.alert--warning`                                  |
+| Info note          | `.info-note`, `.info-note--blue`                                     |
+| Primary button     | `.btn-primary`                                                       |
+| Secondary button   | `.btn-secondary`                                                     |
+| Destructive action | `.btn-danger`                                                        |
+| Form input         | `.form-input`                                                        |
+| Structured form    | Form shell system (see [design-system.md](docs/design-system.md))    |
+| Page heading       | `.heading-page-title`                                                |
+| Section heading    | `.heading-section`                                                   |
+| Loading state      | `.spinner`, `.state-container`                                       |
+| Empty state        | `.state-empty`                                                       |
+| Skeleton           | `.skeleton-bar`, `.skeleton-box`                                     |
+| Modal              | `.modal-overlay`, `.modal-panel`                                     |
+| Tooltip            | `.tooltip-wrapper` + `.tooltip-text`                                 |
+| Tab bar            | `.details-tabs`, `.details-tab`                                      |
+| List row           | `.item-list-row` (2-zone grid)                                       |
+| Badge              | `.badge-base` + color variant                                        |
+| Domain tinting     | `.domain-tint--image`, `.domain-tint--text`, `.domain-tint--alchemy` |
+| Data grid          | `.data-grid-1-2-3`                                                   |
+| Scroll reveal      | `.scroll-reveal` + `.scroll-reveal-delay-N`                          |
 
 ---
 

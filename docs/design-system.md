@@ -3,27 +3,27 @@
 This document covers the visual foundation of the AI Horde frontend: design tokens, surface primitives, color system, and form structures. For the higher-level principles and file organization, see [STYLING.md](../STYLING.md). For the CSS class catalog, see [component-patterns.md](component-patterns.md).
 
 - [Design System Reference](#design-system-reference)
-    - [Design Ethic: Glassmorphism \& Depth](#design-ethic-glassmorphism--depth)
-        - [Guiding Principles](#guiding-principles)
-        - [Design Tokens (`_theme.css`)](#design-tokens-_themecss)
-    - [Surface Primitives](#surface-primitives)
-        - [Preferred Entry Points (in `_cards.css`)](#preferred-entry-points-in-_cardscss)
-        - [Glass Modifier Classes (in `_details-tabs.css`)](#glass-modifier-classes-in-_details-tabscss)
-        - [Tab Content Panels](#tab-content-panels)
-        - [Feature-Semantic Wrappers](#feature-semantic-wrappers)
-        - [Writing New Glass Components](#writing-new-glass-components)
-        - [Glass Don'ts](#glass-donts)
-        - [Surface Inheritance Model](#surface-inheritance-model)
-    - [Status Color System](#status-color-system)
-        - [Consistency Rules](#consistency-rules)
-        - [Identity Colors (Non-Status)](#identity-colors-non-status)
-        - [Domain Color Coding](#domain-color-coding)
-    - [Section Transitions](#section-transitions)
-    - [Hero Glass Stage](#hero-glass-stage)
-    - [Shared Form Shell Primitives](#shared-form-shell-primitives)
-        - [Form Principles](#form-principles)
-        - [Recommended Form Structure](#recommended-form-structure)
-    - [Tailwind v4 CSS-First Configuration](#tailwind-v4-css-first-configuration)
+  - [Design Ethic: Glassmorphism \& Depth](#design-ethic-glassmorphism--depth)
+    - [Guiding Principles](#guiding-principles)
+    - [Design Tokens (`_theme.css`)](#design-tokens-_themecss)
+  - [Surface Primitives](#surface-primitives)
+    - [Preferred Entry Points (in `_cards.css`)](#preferred-entry-points-in-_cardscss)
+    - [Glass Modifier Classes (in `_details-tabs.css`)](#glass-modifier-classes-in-_details-tabscss)
+    - [Tab Content Panels](#tab-content-panels)
+    - [Feature-Semantic Wrappers](#feature-semantic-wrappers)
+    - [Writing New Glass Components](#writing-new-glass-components)
+    - [Glass Don'ts](#glass-donts)
+    - [Surface Inheritance Model](#surface-inheritance-model)
+  - [Status Color System](#status-color-system)
+    - [Consistency Rules](#consistency-rules)
+    - [Identity Colors (Non-Status)](#identity-colors-non-status)
+    - [Domain Color Coding](#domain-color-coding)
+  - [Section Transitions](#section-transitions)
+  - [Hero Glass Stage](#hero-glass-stage)
+  - [Shared Form Shell Primitives](#shared-form-shell-primitives)
+    - [Form Principles](#form-principles)
+    - [Recommended Form Structure](#recommended-form-structure)
+  - [Tailwind v4 CSS-First Configuration](#tailwind-v4-css-first-configuration)
 
 ---
 
@@ -51,19 +51,19 @@ The site uses a glassmorphism-leaning surface system: translucent layers, restra
 --color-glass-highlight: rgb(255 255 255 / 0.5);
 
 /* Blur radii */
---blur-glass-sm: 8px;   /* Inline elements, badges, stat boxes */
---blur-glass-md: 16px;  /* Cards, panels, tab bars */
---blur-glass-lg: 24px;  /* Modals, overlays */
+--blur-glass-sm: 8px; /* Inline elements, badges, stat boxes */
+--blur-glass-md: 16px; /* Cards, panels, tab bars */
+--blur-glass-lg: 24px; /* Modals, overlays */
 
 /* Layered shadows */
---shadow-glass:          /* Base resting state */
---shadow-glass-hover:    /* Hovered / interactive state */
---shadow-glass-elevated: /* Modals, popovers, high-elevation */
---shadow-glass-inset:    /* Inner top highlight for extra depth */
-
-/* Focus rings */
---shadow-focus-blue: 0 0 0 3px color-mix(in srgb, var(--color-brand-blue) 30%, transparent);
---shadow-focus-purple: 0 0 0 3px color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
+--shadow-glass:          /* Base resting state */ --shadow-glass-hover:
+  /* Hovered / interactive state */
+  --shadow-glass-elevated: /* Modals, popovers, high-elevation */
+  --shadow-glass-inset: /* Inner top highlight for extra depth */
+  /* Focus rings */ --shadow-focus-blue: 0 0 0 3px
+  color-mix(in srgb, var(--color-brand-blue) 30%, transparent);
+--shadow-focus-purple: 0 0 0 3px
+  color-mix(in srgb, var(--color-brand-purple) 30%, transparent);
 
 /* Transition tokens */
 --transition-fast: 150ms;
@@ -79,33 +79,33 @@ All tokens are defined in `src/styles/_theme.css` using Tailwind v4's `@theme` d
 
 ### Preferred Entry Points (in `_cards.css`)
 
-| Class | Purpose | Blur |
-|-------|---------|------|
-| `.surface-glass` | Shared frosted base for section-level surfaces | `sm` |
-| `.surface-glass--elevated` | Stronger glass surface for more prominent containers | `sm` |
-| `.surface-glass--nested` | Inner field/group surface without blur | `none` |
-| `.surface-glass--subtle` | Nested panel surface for secondary containment | `none` |
-| `.surface-glass--hero` | Gradient hero-stage glass surface | `md` |
-| `.surface-glass--accent` | Gradient accent surface for intro/identity panels | `inherited` |
-| `.surface-floating` | Shared floating panel surface for menus and popovers | `md` |
+| Class                      | Purpose                                              | Blur        |
+| -------------------------- | ---------------------------------------------------- | ----------- |
+| `.surface-glass`           | Shared frosted base for section-level surfaces       | `sm`        |
+| `.surface-glass--elevated` | Stronger glass surface for more prominent containers | `sm`        |
+| `.surface-glass--nested`   | Inner field/group surface without blur               | `none`      |
+| `.surface-glass--subtle`   | Nested panel surface for secondary containment       | `none`      |
+| `.surface-glass--hero`     | Gradient hero-stage glass surface                    | `md`        |
+| `.surface-glass--accent`   | Gradient accent surface for intro/identity panels    | `inherited` |
+| `.surface-floating`        | Shared floating panel surface for menus and popovers | `md`        |
 
 Start from these when building new surfaces. Layer a feature-semantic class on top for domain meaning.
 
 ### Glass Modifier Classes (in `_details-tabs.css`)
 
-| Class | Purpose |
-|-------|---------|
-| `.details-tabs--glass` | Frosted glass tab bar |
+| Class                      | Purpose                                               |
+| -------------------------- | ----------------------------------------------------- |
+| `.details-tabs--glass`     | Frosted glass tab bar                                 |
 | `.details-tabs--connected` | Removes bottom margin & radius so tab bar joins panel |
-| `.details-summary--glass` | Frosted summary stat block |
+| `.details-summary--glass`  | Frosted summary stat block                            |
 
 ### Tab Content Panels
 
-| Class | Purpose |
-|-------|---------|
+| Class                | Purpose                                                |
+| -------------------- | ------------------------------------------------------ |
 | `.tab-content-panel` | Glass container below major tabs — "folder tab" effect |
-| `.tab-sub-panel` | Nested glass-bordered panel wrapping sub-tab content |
-| `.details-toolbar` | Sticky glass action bar for non-tab controls |
+| `.tab-sub-panel`     | Nested glass-bordered panel wrapping sub-tab content   |
+| `.details-toolbar`   | Sticky glass action bar for non-tab controls           |
 
 ### Feature-Semantic Wrappers
 
@@ -150,12 +150,12 @@ Feature classes should not invent new glass values when an existing primitive ma
 
 ## Status Color System
 
-| Status | Color Family | Usage |
-|--------|-------------|-------|
-| Danger | `red-*` | Errors, destructive actions, critical alerts |
-| Warning | `amber-*` | Caution, pending actions, maintenance states |
-| Info | `blue-*` | Informational content, neutral highlights |
-| Success | `green-*` | Completed actions, healthy states, confirmations |
+| Status  | Color Family | Usage                                            |
+| ------- | ------------ | ------------------------------------------------ |
+| Danger  | `red-*`      | Errors, destructive actions, critical alerts     |
+| Warning | `amber-*`    | Caution, pending actions, maintenance states     |
+| Info    | `blue-*`     | Informational content, neutral highlights        |
+| Success | `green-*`    | Completed actions, healthy states, confirmations |
 
 ### Consistency Rules
 
@@ -171,15 +171,16 @@ Feature classes should not invent new glass values when an existing primitive ma
 
 ### Domain Color Coding
 
-| Domain | Color | CSS Classes |
-|--------|-------|-------------|
-| Image generation (Dreamers) | Purple | `.domain-tint--image`, `.domain-label--image` |
-| Text generation (Scribes) | Blue | `.domain-tint--text`, `.domain-label--text` |
-| Alchemy (Alchemists) | Green | `.domain-tint--alchemy`, `.domain-label--alchemy` |
+| Domain                      | Color  | CSS Classes                                       |
+| --------------------------- | ------ | ------------------------------------------------- |
+| Image generation (Dreamers) | Purple | `.domain-tint--image`, `.domain-label--image`     |
+| Text generation (Scribes)   | Blue   | `.domain-tint--text`, `.domain-label--text`       |
+| Alchemy (Alchemists)        | Green  | `.domain-tint--alchemy`, `.domain-label--alchemy` |
 
 Domain tinting: subtle left-border accent plus soft gradient background, not full-surface color.
 
 Rules:
+
 1. Keep domain tinting light — preserve text contrast.
 2. Apply consistently across cards, labels, and badges.
 3. Pair color cues with text (don't rely on color alone).
@@ -199,7 +200,11 @@ The page alternates between `.section-primary` and `.section-secondary`. Keep tr
 
 ```css
 .hero-glass-stage {
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.55), rgb(249 250 251 / 0.4));
+  background: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.55),
+    rgb(249 250 251 / 0.4)
+  );
   backdrop-filter: blur(var(--blur-glass-md));
   border: 1px solid var(--color-glass-border);
   box-shadow: var(--shadow-glass), var(--shadow-glass-inset);
@@ -210,19 +215,19 @@ The page alternates between `.section-primary` and `.section-secondary`. Keep tr
 
 ## Shared Form Shell Primitives
 
-| Class | Purpose |
-|-------|---------|
-| `.form-section-shell` | Outer section container for a grouped decision area |
-| `.form-section-shell__header` | Header stack: eyebrow, title, framing copy |
-| `.form-section-shell__grid` | Responsive field grid inside a section |
-| `.form-field-shell` | Inner grouped field container |
-| `.form-field-shell--full` | Full-width field card spanning the grid |
-| `.form-field-shell__header` | Label + state badge row |
-| `.form-field-shell__footer` | Helper text + secondary control row |
-| `.form-field-shell__footer--stacked` | Footer variant for presets |
-| `.form-field-shell__footer-row` | Single row inside a stacked footer |
-| `.form-state-badge` | Small status badge for contextual field states |
-| `.form-actions-bar` | Closing actions row with helper copy and buttons |
+| Class                                | Purpose                                             |
+| ------------------------------------ | --------------------------------------------------- |
+| `.form-section-shell`                | Outer section container for a grouped decision area |
+| `.form-section-shell__header`        | Header stack: eyebrow, title, framing copy          |
+| `.form-section-shell__grid`          | Responsive field grid inside a section              |
+| `.form-field-shell`                  | Inner grouped field container                       |
+| `.form-field-shell--full`            | Full-width field card spanning the grid             |
+| `.form-field-shell__header`          | Label + state badge row                             |
+| `.form-field-shell__footer`          | Helper text + secondary control row                 |
+| `.form-field-shell__footer--stacked` | Footer variant for presets                          |
+| `.form-field-shell__footer-row`      | Single row inside a stacked footer                  |
+| `.form-state-badge`                  | Small status badge for contextual field states      |
+| `.form-actions-bar`                  | Closing actions row with helper copy and buttons    |
 
 ### Form Principles
 

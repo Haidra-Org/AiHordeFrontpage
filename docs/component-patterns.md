@@ -1,63 +1,62 @@
-
 # CSS Component Patterns
 
 Class catalog for the AI Horde frontend design system. For design philosophy, tokens, and surface primitives, see [design-system.md](design-system.md). For high-level rules and file organization, see [STYLING.md](../STYLING.md).
 
 - [CSS Component Patterns](#css-component-patterns)
-    - [Cards (`_cards.css`)](#cards-_cardscss)
-    - [Alerts (`_alerts.css`)](#alerts-_alertscss)
-    - [Buttons (`_buttons.css`)](#buttons-_buttonscss)
-    - [Headings (`_typography-headings.css`)](#headings-_typography-headingscss)
-    - [Typography (`_typography-text.css`)](#typography-_typography-textcss)
-    - [Forms (`_forms.css`)](#forms-_formscss)
-    - [Modals (`_modals.css`)](#modals-_modalscss)
-    - [Badges (`_badges.css`)](#badges-_badgescss)
-        - [Base](#base)
-        - [Color Variants](#color-variants)
-        - [Special Badges](#special-badges)
-    - [Tab System (`_details-tabs.css`)](#tab-system-_details-tabscss)
-        - [Primary Tab Bar](#primary-tab-bar)
-        - [Sub-Tabs](#sub-tabs)
-        - [Scroll Arrows](#scroll-arrows)
-    - [Table \& List Rows (`_tables.css`)](#table--list-rows-_tablescss)
-    - [Tooltip System (`_tooltips.css`)](#tooltip-system-_tooltipscss)
-        - [Classes](#classes)
-        - [Position Variants](#position-variants)
-        - [Fixed-Position Mode](#fixed-position-mode)
-        - [Text Utilities](#text-utilities)
-        - [Touch Tooltip](#touch-tooltip)
-        - [Usage](#usage)
-    - [Collapsible \& Accordion System (`_collapsibles.css`)](#collapsible--accordion-system-_collapsiblescss)
-        - [Card-Style Collapsible](#card-style-collapsible)
-        - [Sticky Section Header](#sticky-section-header)
-        - [Expanded Detail Panel](#expanded-detail-panel)
-    - [Data Display (`_data-display.css`)](#data-display-_data-displaycss)
-        - [Stat Columns](#stat-columns)
-        - [Data Item Boxes](#data-item-boxes)
-        - [Responsive Data Grids](#responsive-data-grids)
-        - [Domain Tinting](#domain-tinting)
-        - [Skeleton Loading](#skeleton-loading)
-    - [Loading \& Empty States (`_utilities.css`)](#loading--empty-states-_utilitiescss)
-    - [Animation \& Motion](#animation--motion)
-        - [Scroll Reveal (`_base.css`)](#scroll-reveal-_basecss)
-        - [Keyframe Inventory](#keyframe-inventory)
-        - [Easing Convention](#easing-convention)
-        - [Reduced Motion](#reduced-motion)
-    - [Icon System](#icon-system)
-        - [Sizing](#sizing)
-        - [SVG Color](#svg-color)
-        - [Tooltip Trigger (`_help.css`)](#tooltip-trigger-_helpcss)
-        - [Glossary Links](#glossary-links)
-    - [Responsive Design](#responsive-design)
-        - [Breakpoints](#breakpoints)
-        - [Fluid Typography](#fluid-typography)
-        - [Sticky Header Management](#sticky-header-management)
-    - [Accessibility Patterns](#accessibility-patterns)
-        - [Focus Rings](#focus-rings)
-        - [Screen Reader](#screen-reader)
-        - [Keyboard Navigation](#keyboard-navigation)
-        - [Modal Accessibility](#modal-accessibility)
-        - [Color Contrast](#color-contrast)
+  - [Cards (`_cards.css`)](#cards-_cardscss)
+  - [Alerts (`_alerts.css`)](#alerts-_alertscss)
+  - [Buttons (`_buttons.css`)](#buttons-_buttonscss)
+  - [Headings (`_typography-headings.css`)](#headings-_typography-headingscss)
+  - [Typography (`_typography-text.css`)](#typography-_typography-textcss)
+  - [Forms (`_forms.css`)](#forms-_formscss)
+  - [Modals (`_modals.css`)](#modals-_modalscss)
+  - [Badges (`_badges.css`)](#badges-_badgescss)
+    - [Base](#base)
+    - [Color Variants](#color-variants)
+    - [Special Badges](#special-badges)
+  - [Tab System (`_details-tabs.css`)](#tab-system-_details-tabscss)
+    - [Primary Tab Bar](#primary-tab-bar)
+    - [Sub-Tabs](#sub-tabs)
+    - [Scroll Arrows](#scroll-arrows)
+  - [Table \& List Rows (`_tables.css`)](#table--list-rows-_tablescss)
+  - [Tooltip System (`_tooltips.css`)](#tooltip-system-_tooltipscss)
+    - [Classes](#classes)
+    - [Position Variants](#position-variants)
+    - [Fixed-Position Mode](#fixed-position-mode)
+    - [Text Utilities](#text-utilities)
+    - [Touch Tooltip](#touch-tooltip)
+    - [Usage](#usage)
+  - [Collapsible \& Accordion System (`_collapsibles.css`)](#collapsible--accordion-system-_collapsiblescss)
+    - [Card-Style Collapsible](#card-style-collapsible)
+    - [Sticky Section Header](#sticky-section-header)
+    - [Expanded Detail Panel](#expanded-detail-panel)
+  - [Data Display (`_data-display.css`)](#data-display-_data-displaycss)
+    - [Stat Columns](#stat-columns)
+    - [Data Item Boxes](#data-item-boxes)
+    - [Responsive Data Grids](#responsive-data-grids)
+    - [Domain Tinting](#domain-tinting)
+    - [Skeleton Loading](#skeleton-loading)
+  - [Loading \& Empty States (`_utilities.css`)](#loading--empty-states-_utilitiescss)
+  - [Animation \& Motion](#animation--motion)
+    - [Scroll Reveal (`_base.css`)](#scroll-reveal-_basecss)
+    - [Keyframe Inventory](#keyframe-inventory)
+    - [Easing Convention](#easing-convention)
+    - [Reduced Motion](#reduced-motion)
+  - [Icon System](#icon-system)
+    - [Sizing](#sizing)
+    - [SVG Color](#svg-color)
+    - [Tooltip Trigger (`_help.css`)](#tooltip-trigger-_helpcss)
+    - [Glossary Links](#glossary-links)
+  - [Responsive Design](#responsive-design)
+    - [Breakpoints](#breakpoints)
+    - [Fluid Typography](#fluid-typography)
+    - [Sticky Header Management](#sticky-header-management)
+  - [Accessibility Patterns](#accessibility-patterns)
+    - [Focus Rings](#focus-rings)
+    - [Screen Reader](#screen-reader)
+    - [Keyboard Navigation](#keyboard-navigation)
+    - [Modal Accessibility](#modal-accessibility)
+    - [Color Contrast](#color-contrast)
 
 ---
 
@@ -177,18 +176,18 @@ For structured configuration forms, see the form shell system in [design-system.
 
 ### Color Variants
 
-| Class | Color | Usage |
-|-------|-------|-------|
-| `.badge-primary` | Blue | Brand / default |
-| `.badge-secondary` | Gray | Neutral / deemphasized |
-| `.badge-info` | Blue | Informational |
-| `.badge-warning` | Amber | Caution |
-| `.badge-success` | Green | Positive / healthy |
-| `.badge-danger` | Red | Error / destructive |
-| `.badge-purple` | Purple | Brand accent / kudos |
-| `.badge-pink` | Pink | Alternative accent |
-| `.badge-indigo` | Indigo | Secondary brand |
-| `.badge-teal` | Teal | Categorical |
+| Class              | Color  | Usage                  |
+| ------------------ | ------ | ---------------------- |
+| `.badge-primary`   | Blue   | Brand / default        |
+| `.badge-secondary` | Gray   | Neutral / deemphasized |
+| `.badge-info`      | Blue   | Informational          |
+| `.badge-warning`   | Amber  | Caution                |
+| `.badge-success`   | Green  | Positive / healthy     |
+| `.badge-danger`    | Red    | Error / destructive    |
+| `.badge-purple`    | Purple | Brand accent / kudos   |
+| `.badge-pink`      | Pink   | Alternative accent     |
+| `.badge-indigo`    | Indigo | Secondary brand        |
+| `.badge-teal`      | Teal   | Categorical            |
 
 ### Special Badges
 
@@ -344,13 +343,13 @@ Two-zone grid layout: content (left) and actions (right).
 
 ### Responsive Data Grids
 
-| Class | Columns |
-| ----- | ------- |
-| `.data-grid-2` | `grid-cols-2` |
-| `.data-grid-2-3` | `grid-cols-2 lg:grid-cols-3` |
-| `.data-grid-1-2` | `grid-cols-1 sm:grid-cols-2` |
+| Class              | Columns                                     |
+| ------------------ | ------------------------------------------- |
+| `.data-grid-2`     | `grid-cols-2`                               |
+| `.data-grid-2-3`   | `grid-cols-2 lg:grid-cols-3`                |
+| `.data-grid-1-2`   | `grid-cols-1 sm:grid-cols-2`                |
 | `.data-grid-1-2-3` | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` |
-| `.data-grid-2-4` | `grid-cols-2 md:grid-cols-4` |
+| `.data-grid-2-4`   | `grid-cols-2 md:grid-cols-4`                |
 
 ### Domain Tinting
 
@@ -402,17 +401,17 @@ Two-zone grid layout: content (left) and actions (right).
 
 ### Keyframe Inventory
 
-| Keyframe | Duration | Usage |
-| -------- | -------- | ----- |
-| `pulse` | 2s | Online badges, loading |
-| `fadeIn` | — | Element appearance |
-| `slideDown` | — | Expanded content |
-| `heroEntrance` | 0.7s | Homepage hero |
-| `featureCardEntrance` | 0.5s | Staggered feature cards |
-| `btn-shake` | 0.35s | Button error feedback |
-| `toast-slide-in` | 300ms | Toast notifications |
-| `skeleton-pulse` | 1.4s | Skeleton loading |
-| `faq-highlight-fade` | 2.5s | FAQ jump highlight |
+| Keyframe              | Duration | Usage                   |
+| --------------------- | -------- | ----------------------- |
+| `pulse`               | 2s       | Online badges, loading  |
+| `fadeIn`              | —        | Element appearance      |
+| `slideDown`           | —        | Expanded content        |
+| `heroEntrance`        | 0.7s     | Homepage hero           |
+| `featureCardEntrance` | 0.5s     | Staggered feature cards |
+| `btn-shake`           | 0.35s    | Button error feedback   |
+| `toast-slide-in`      | 300ms    | Toast notifications     |
+| `skeleton-pulse`      | 1.4s     | Skeleton loading        |
+| `faq-highlight-fade`  | 2.5s     | FAQ jump highlight      |
 
 ### Easing Convention
 
@@ -457,13 +456,13 @@ a.glossary-link         /* Dotted underline, purple text; hover: solid, blue */
 
 ### Breakpoints
 
-| Token | Width | Purpose |
-| ----- | ----- | ------- |
-| `sm` | 640px | Large phones |
-| `md` | 768px | Tablets |
-| `lg` | 1024px | Desktops |
-| `xl` | 1280px | Large desktops |
-| `2xl` | 1536px | Extra-large |
+| Token              | Width  | Purpose                  |
+| ------------------ | ------ | ------------------------ |
+| `sm`               | 640px  | Large phones             |
+| `md`               | 768px  | Tablets                  |
+| `lg`               | 1024px | Desktops                 |
+| `xl`               | 1280px | Large desktops           |
+| `2xl`              | 1536px | Extra-large              |
 | `--breakpoint-nav` | 1249px | Navigation layout switch |
 
 Mobile-first: all responsive styles use `@media (min-width: …)`.
@@ -471,8 +470,8 @@ Mobile-first: all responsive styles use `@media (min-width: …)`.
 ### Fluid Typography
 
 ```css
-font-size: clamp(0.75rem, 1.4vw, 0.9375rem);     /* Body */
-font-size: clamp(0.6875rem, 1.2vw, 0.875rem);     /* Sub-tabs */
+font-size: clamp(0.75rem, 1.4vw, 0.9375rem); /* Body */
+font-size: clamp(0.6875rem, 1.2vw, 0.875rem); /* Sub-tabs */
 ```
 
 ### Sticky Header Management
