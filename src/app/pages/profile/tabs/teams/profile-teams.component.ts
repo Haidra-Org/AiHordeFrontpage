@@ -22,6 +22,7 @@ import {
 import { HordeWorker } from '../../../../types/horde-worker';
 import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
 import { catchError, from, map, mergeMap, of } from 'rxjs';
+import { extractApiError } from '../../../../helper/extract-api-error';
 
 interface WorkerListItem {
   id: string;
@@ -179,9 +180,9 @@ export class ProfileTeamsComponent {
             this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
-          error: (err: any) => {
+          error: (err: unknown) => {
             this.teamSaving.set(false);
-            this.teamError.set(err.message ?? 'Failed to create team');
+            this.teamError.set(extractApiError(err, 'Failed to create team'));
           },
         });
     } else if (this.teamDialogType() === 'edit') {
@@ -199,9 +200,9 @@ export class ProfileTeamsComponent {
             this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
-          error: (err: any) => {
+          error: (err: unknown) => {
             this.teamSaving.set(false);
-            this.teamError.set(err.message ?? 'Failed to update team');
+            this.teamError.set(extractApiError(err, 'Failed to update team'));
           },
         });
     }
@@ -224,9 +225,9 @@ export class ProfileTeamsComponent {
           this.toast.success('teams.success', { transloco: true });
           this.loadAllTeams();
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.teamSaving.set(false);
-          this.teamError.set(err.message ?? 'Failed to delete team');
+          this.teamError.set(extractApiError(err, 'Failed to delete team'));
         },
       });
   }

@@ -5,6 +5,7 @@ import {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { Observable, catchError, of, tap, throwError } from 'rxjs';
+import { extractApiErrorField } from '../helper/extract-api-error';
 import {
   Team,
   TeamApiError,
@@ -39,8 +40,8 @@ export class TeamService {
     const apiError: TeamApiError = {
       status: error.status ?? 0,
       message:
-        error.error?.message ?? 'Unexpected error while contacting the API.',
-      rc: error.error?.rc,
+        extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+      rc: extractApiErrorField(error, 'rc'),
     };
     return throwError(() => apiError);
   };

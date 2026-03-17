@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, Observable, of, finalize, catchError, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { extractApiError } from '../../helper/extract-api-error';
 import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
 import { StyleService } from '../../services/style.service';
 import { AuthService } from '../../services/auth.service';
@@ -433,8 +434,8 @@ export class ProfileStylesListComponent implements OnInit {
               .pipe(takeUntilDestroyed(this.destroyRef))
               .subscribe(() => this.loadUserStyles());
           },
-          error: (err: any) => {
-            this.error.set(err.message || 'Failed to update style');
+          error: (err: unknown) => {
+            this.error.set(extractApiError(err, 'Failed to update style'));
           },
         });
       return;
@@ -475,8 +476,8 @@ export class ProfileStylesListComponent implements OnInit {
               ]);
             });
         },
-        error: (err: any) => {
-          this.error.set(err.message || 'Failed to create style');
+        error: (err: unknown) => {
+          this.error.set(extractApiError(err, 'Failed to create style'));
         },
       });
   }
@@ -516,8 +517,8 @@ export class ProfileStylesListComponent implements OnInit {
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe();
       },
-      error: (err: any) => {
-        this.error.set(err.message || 'Failed to delete style');
+      error: (err: unknown) => {
+        this.error.set(extractApiError(err, 'Failed to delete style'));
       },
     });
   }

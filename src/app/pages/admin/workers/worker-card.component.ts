@@ -535,7 +535,7 @@ export class WorkerCardComponent {
             this.deleteError.set('delete_failed');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.isUpdating.set(false);
           this.deleteError.set(extractApiError(err, 'delete_failed'));
         },
