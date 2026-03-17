@@ -20,7 +20,7 @@ import {
 } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { filter, map, startWith } from 'rxjs/operators';
+import { filter, map, startWith } from 'rxjs';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { NavNotificationService } from '../../services/nav-notification.service';

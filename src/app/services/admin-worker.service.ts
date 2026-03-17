@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, tap, from } from 'rxjs';
-import { distinctUntilChanged, map, mergeMap, scan } from 'rxjs/operators';
+import { distinctUntilChanged, map, mergeMap, scan } from 'rxjs';
 import {
   HordeWorker,
   PutWorkerRequest,

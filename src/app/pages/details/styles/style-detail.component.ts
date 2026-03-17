@@ -209,7 +209,7 @@ export class StyleDetailComponent implements OnInit {
         // Navigate back to styles list
         this.router.navigate(['/details/styles']);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error deleting style:', err);
         this.error.set(err.message || 'Failed to delete style');
         this.deleting.set(false);

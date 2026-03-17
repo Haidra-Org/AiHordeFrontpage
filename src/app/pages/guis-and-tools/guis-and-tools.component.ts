@@ -669,7 +669,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const pill = container.querySelector(
       `[data-section-id="${activeSectionId}"]`,
-    ) as HTMLElement | null;
+    );
     if (!pill) return;
 
     // Use horizontal-only scrolling to avoid browser vertical adjustments that

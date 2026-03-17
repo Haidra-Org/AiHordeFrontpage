@@ -2,7 +2,7 @@ import { inject, PLATFORM_ID } from '@angular/core';
 import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { filter, map, take } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 /**

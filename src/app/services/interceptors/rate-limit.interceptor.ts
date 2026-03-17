@@ -6,7 +6,7 @@ import {
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Observable, throwError, timer } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, switchMap } from 'rxjs';
 
 const MAX_RETRIES = 2;
 const DEFAULT_BACKOFF_MS = 2_000;

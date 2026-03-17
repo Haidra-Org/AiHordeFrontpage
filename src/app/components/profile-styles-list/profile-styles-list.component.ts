@@ -433,7 +433,7 @@ export class ProfileStylesListComponent implements OnInit {
               .pipe(takeUntilDestroyed(this.destroyRef))
               .subscribe(() => this.loadUserStyles());
           },
-          error: (err) => {
+          error: (err: any) => {
             this.error.set(err.message || 'Failed to update style');
           },
         });
@@ -475,7 +475,7 @@ export class ProfileStylesListComponent implements OnInit {
               ]);
             });
         },
-        error: (err) => {
+        error: (err: any) => {
           this.error.set(err.message || 'Failed to create style');
         },
       });
@@ -516,7 +516,7 @@ export class ProfileStylesListComponent implements OnInit {
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe();
       },
-      error: (err) => {
+      error: (err: any) => {
         this.error.set(err.message || 'Failed to delete style');
       },
     });

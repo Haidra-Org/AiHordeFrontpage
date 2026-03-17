@@ -457,7 +457,7 @@ export class FaqComponent implements OnInit, OnDestroy {
       // Scroll to first match after DOM update
       if (firstMatchElement && isPlatformBrowser(this.platformId)) {
         setTimeout(() => {
-          this.scrollToElement(firstMatchElement!);
+          this.scrollToElement(firstMatchElement);
         }, 150);
       }
 

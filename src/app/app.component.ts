@@ -9,7 +9,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterOutlet, Scroll } from '@angular/router';
 import { ViewportScroller, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { filter } from 'rxjs/operators';
+import { filter } from 'rxjs';
 import { FooterColorService } from './services/footer-color.service';
 import { FloatingControlsComponent } from './components/floating-controls/floating-controls.component';
 import { NetworkStatusComponent } from './components/network-status/network-status.component';
