@@ -187,7 +187,7 @@ export class OperationsComponent implements OnInit {
         next: (timeouts) => {
           this.ipTimeouts.set(timeouts);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load IP timeouts.'),
             { rawError: err },
@@ -334,7 +334,7 @@ export class OperationsComponent implements OnInit {
             this.toastService.error('Failed to add IP timeout.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to add IP timeout.'),
             { rawError: err },
@@ -373,7 +373,7 @@ export class OperationsComponent implements OnInit {
         next: (result) => {
           this.checkResult.set(result);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(extractApiError(err, 'Failed to check IP.'), {
             rawError: err,
           });
@@ -402,7 +402,7 @@ export class OperationsComponent implements OnInit {
         next: (workers) => {
           this.workers.set(workers);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load workers.'),
             { rawError: err },
@@ -479,7 +479,7 @@ export class OperationsComponent implements OnInit {
             this.workerFetchError.set('Worker not found with this UUID.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.workerFetchError.set(
             extractApiError(err, 'Failed to fetch worker information.'),
           );
@@ -564,7 +564,7 @@ export class OperationsComponent implements OnInit {
             this.toastService.error('Failed to remove IP timeout.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to remove IP timeout.'),
             { rawError: err },
@@ -594,7 +594,7 @@ export class OperationsComponent implements OnInit {
             this.toastService.error('Failed to refresh IP timeout.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to refresh IP timeout.'),
             { rawError: err },
@@ -694,7 +694,7 @@ export class OperationsComponent implements OnInit {
             this.toastService.error('Failed to block worker IP.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to block worker IP.'),
             { rawError: err },
@@ -725,7 +725,7 @@ export class OperationsComponent implements OnInit {
             this.toastService.error('Failed to unblock worker IP.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to unblock worker IP.'),
             { rawError: err },

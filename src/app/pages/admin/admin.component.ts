@@ -17,7 +17,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { filter } from 'rxjs/operators';
+import { filter } from 'rxjs';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { AuthService } from '../../services/auth.service';

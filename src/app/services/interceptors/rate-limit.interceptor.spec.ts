@@ -117,7 +117,7 @@ describe('rateLimitInterceptor', () => {
     let error: HttpErrorResponse | undefined;
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e) => (error = e) });
+      .subscribe({ error: (e: any) => (error = e) });
 
     // 1st attempt → 429
     httpTesting
@@ -159,7 +159,7 @@ describe('rateLimitInterceptor', () => {
     let error: HttpErrorResponse | undefined;
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e) => (error = e) });
+      .subscribe({ error: (e: any) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')
@@ -223,7 +223,7 @@ describe('rateLimitInterceptor', () => {
 
     http
       .post('https://aihorde.net/api/v2/generate/async', { prompt: 'x' })
-      .subscribe({ error: (e) => (error = e) });
+      .subscribe({ error: (e: any) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/generate/async')
@@ -242,7 +242,7 @@ describe('rateLimitInterceptor', () => {
 
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e) => (error = e) });
+      .subscribe({ error: (e: any) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')

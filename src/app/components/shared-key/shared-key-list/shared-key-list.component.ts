@@ -178,7 +178,7 @@ export class SharedKeyListComponent implements OnInit {
         next: (keys) => {
           this.internalSharedKeys.set(keys);
         },
-        error: (err) => {
+        error: (err: any) => {
           const message = this.extractError(err);
           this.error.set(message);
           this.internalLoading.set(false);
@@ -213,7 +213,7 @@ export class SharedKeyListComponent implements OnInit {
           );
           this.scrollToStatus();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.error.set(this.extractError(err));
           this.creating.set(false);
         },
@@ -249,7 +249,7 @@ export class SharedKeyListComponent implements OnInit {
           this.editingKeyId.set(null);
           this.scrollToStatus();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.error.set(this.extractError(err));
           this.savingKeyId.set(null);
         },
@@ -283,7 +283,7 @@ export class SharedKeyListComponent implements OnInit {
             'Shared key deleted. Changes can take up to 5 minutes to propagate due to caching.',
           );
         },
-        error: (err) => {
+        error: (err: any) => {
           this.error.set(this.extractError(err));
           this.deletingKeyId.set(null);
         },

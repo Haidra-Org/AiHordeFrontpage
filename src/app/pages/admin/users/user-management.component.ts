@@ -30,7 +30,7 @@ import { AdminDialogComponent } from '../../../components/admin/admin-dialog/adm
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { ToastService } from '../../../services/toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
-import { finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs';
 import { setPageTitle } from '../../../helper/page-title';
 import {
   JsonInspectorComponent,
@@ -349,7 +349,7 @@ export class UserManagementComponent implements OnInit {
               this.userNotFound.set(true);
             }
           },
-          error: (err) => {
+          error: (err: any) => {
             this.userNotFound.set(true);
             this.toastService.error(
               extractApiError(err, 'Failed to load user data.'),
@@ -555,7 +555,7 @@ export class UserManagementComponent implements OnInit {
             this.toastService.success('Changes saved successfully.');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to save changes.'),
             { rawError: err },
@@ -727,7 +727,7 @@ export class UserManagementComponent implements OnInit {
           this.userSharedKeys.set(sharedKeys);
           this.sharedKeysFetched.set(true);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.sharedKeysFetched.set(true);
           this.toastService.error(
             extractApiError(err, 'Failed to load shared keys.'),
@@ -764,7 +764,7 @@ export class UserManagementComponent implements OnInit {
         next: (workers) => {
           this.userWorkers.set(workers);
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load workers.'),
             { rawError: err },
@@ -832,7 +832,7 @@ export class UserManagementComponent implements OnInit {
             }
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           if (dialogType === 'resetSuspicion') {
             this.toastService.error(
               extractApiError(err, 'Failed to reset suspicion.'),
@@ -888,7 +888,7 @@ export class UserManagementComponent implements OnInit {
               });
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error(
             extractApiError(err, 'Failed to regenerate passkey.'),
             { rawError: err },

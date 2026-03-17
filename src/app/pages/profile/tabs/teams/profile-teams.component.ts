@@ -179,7 +179,7 @@ export class ProfileTeamsComponent {
             this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
-          error: (err) => {
+          error: (err: any) => {
             this.teamSaving.set(false);
             this.teamError.set(err.message ?? 'Failed to create team');
           },
@@ -199,7 +199,7 @@ export class ProfileTeamsComponent {
             this.toast.success('teams.success', { transloco: true });
             this.loadAllTeams();
           },
-          error: (err) => {
+          error: (err: any) => {
             this.teamSaving.set(false);
             this.teamError.set(err.message ?? 'Failed to update team');
           },
@@ -224,7 +224,7 @@ export class ProfileTeamsComponent {
           this.toast.success('teams.success', { transloco: true });
           this.loadAllTeams();
         },
-        error: (err) => {
+        error: (err: any) => {
           this.teamSaving.set(false);
           this.teamError.set(err.message ?? 'Failed to delete team');
         },
