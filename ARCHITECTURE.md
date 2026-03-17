@@ -6,15 +6,15 @@ Technical overview of the AI Horde frontend for developer navigation. For more o
 
 ## Tech Stack
 
-| Layer | Technology |
-| ----- | ---------- |
-| Framework | Angular 21 (standalone components, signals, SSR) |
-| Styling | Tailwind CSS 4 (PostCSS, CSS-first `@theme` config) |
-| i18n | Transloco |
-| HTTP | `HordeApiCacheService` wrapping Angular `HttpClient` |
-| Testing | Karma + Jasmine |
+| Layer      | Technology                                                                           |
+| ---------- | ------------------------------------------------------------------------------------ |
+| Framework  | Angular 21 (standalone components, signals, SSR)                                     |
+| Styling    | Tailwind CSS 4 (PostCSS, CSS-first `@theme` config)                                  |
+| i18n       | Transloco                                                                            |
+| HTTP       | `HordeApiCacheService` wrapping Angular `HttpClient`                                 |
+| Testing    | Karma + Jasmine                                                                      |
 | Deployment | Docker-based SSR with Express (`server.ts`) or Cloudflare Workers (`wrangler.jsonc`) |
-| CI | GitHub Actions — lint, format, typecheck, test, build |
+| CI         | GitHub Actions — lint, format, typecheck, test, build                                |
 
 ---
 
@@ -52,32 +52,32 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 
 ### Top-Level URL Routes (`app.routes.ts`)
 
-| Path | Component | Children |
-| ----- | ---------- | ---------- |
-| `/` | `HomepageComponent` | — |
-| `/profile` | `ProfileShellComponent` | 8 child routes (overview, generations, records, workers, teams, styles, settings, shared-keys) |
-| `/admin` | `AdminComponent` (guarded) | Admin child routes |
-| `/details` | `DetailsComponent` | ~15 child routes (models, workers, teams, styles, leaderboard, etc.) |
-| `/faq` | `FaqComponent` | — |
-| `/guis` | `GuisAndToolsComponent` | — |
-| `/news` | `NewsComponent` | — |
-| `/register` | `RegisterComponent` | — |
-| `/mission` | `MissionComponent` | — |
-| `/sponsors` | `SponsorsComponent` | — |
-| `/privacy` | `PrivacyComponent` | — |
-| `/terms` | `TermsComponent` | — |
-| `/contribute` | `ContributeComponent` | Child routes |
-| `/v2-transfer` | `TransferComponent` | — |
-| `/**` | `NotFoundComponent` | — |
+| Path           | Component                  | Children                                                                                       |
+| -------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `/`            | `HomepageComponent`        | —                                                                                              |
+| `/profile`     | `ProfileShellComponent`    | 8 child routes (overview, generations, records, workers, teams, styles, settings, shared-keys) |
+| `/admin`       | `AdminComponent` (guarded) | Admin child routes                                                                             |
+| `/details`     | `DetailsComponent`         | ~15 child routes (models, workers, teams, styles, leaderboard, etc.)                           |
+| `/faq`         | `FaqComponent`             | —                                                                                              |
+| `/guis`        | `GuisAndToolsComponent`    | —                                                                                              |
+| `/news`        | `NewsComponent`            | —                                                                                              |
+| `/register`    | `RegisterComponent`        | —                                                                                              |
+| `/mission`     | `MissionComponent`         | —                                                                                              |
+| `/sponsors`    | `SponsorsComponent`        | —                                                                                              |
+| `/privacy`     | `PrivacyComponent`         | —                                                                                              |
+| `/terms`       | `TermsComponent`           | —                                                                                              |
+| `/contribute`  | `ContributeComponent`      | Child routes                                                                                   |
+| `/v2-transfer` | `TransferComponent`        | —                                                                                              |
+| `/**`          | `NotFoundComponent`        | —                                                                                              |
 
 ### SSR Render Modes (`app.routes.server.ts`)
 
-| Route Pattern | Mode | Rationale |
-| ------------- | ---- | --------- |
-| `/admin/**`, `/profile/**` | Client | Auth-protected, no SSR benefit |
-| `/`, `/faq`, `/guis`, `/news`, `/mission`, etc. | Prerender | Static public pages |
-| `/details/**` | Server | Dynamic content per request |
-| `/**` | Server | Fallback |
+| Route Pattern                                   | Mode      | Rationale                      |
+| ----------------------------------------------- | --------- | ------------------------------ |
+| `/admin/**`, `/profile/**`                      | Client    | Auth-protected, no SSR benefit |
+| `/`, `/faq`, `/guis`, `/news`, `/mission`, etc. | Prerender | Static public pages            |
+| `/details/**`                                   | Server    | Dynamic content per request    |
+| `/**`                                           | Server    | Fallback                       |
 
 ---
 
@@ -85,46 +85,46 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 
 ### Core Services
 
-| Service | Purpose |
-| ------- | ------- |
+| Service                | Purpose                                                                         |
+| ---------------------- | ------------------------------------------------------------------------------- |
 | `HordeApiCacheService` | TTL-based HTTP cache with category invalidation. All API calls go through this. |
-| `AiHordeService` | Domain methods for stats, performance, news, models, workers, teams, styles |
-| `AuthService` | User authentication, session state, API key management |
-| `DatabaseService` | Local data persistence (localStorage/IndexedDB) |
-| `ToastService` | Signal-based notification system with auto-dismiss |
-| `ThemeService` | Theme management (`'light' \| 'dark' \| 'system'`) |
-| `IconRegistryService` | Register and retrieve SVG icon paths by name |
-| `TranslatorService` | Transloco wrapper for i18n |
+| `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
+| `AuthService`          | User authentication, session state, API key management                          |
+| `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
+| `ToastService`         | Signal-based notification system with auto-dismiss                              |
+| `ThemeService`         | Theme management (`'light' \| 'dark' \| 'system'`)                              |
+| `IconRegistryService`  | Register and retrieve SVG icon paths by name                                    |
+| `TranslatorService`    | Transloco wrapper for i18n                                                      |
 
 ### Admin Services
 
-| Service | Purpose |
-| ------- | ------- |
-| `AdminUserService` | User lookup, modification, shared key management |
-| `AdminWorkerService` | Worker management operations |
-| `AdminOperationsService` | Bulk admin operations |
-| `AdminFilterService` | Filter/flag management |
+| Service                  | Purpose                                          |
+| ------------------------ | ------------------------------------------------ |
+| `AdminUserService`       | User lookup, modification, shared key management |
+| `AdminWorkerService`     | Worker management operations                     |
+| `AdminOperationsService` | Bulk admin operations                            |
+| `AdminFilterService`     | Filter/flag management                           |
 
 ### UI Services
 
-| Service | Purpose |
-| ------- | ------- |
-| `FooterColorService` | Signal controlling dark/light footer variant |
-| `FloatingActionService` | Floating action button visibility |
-| `StickyRegistryService` | Manages `--sticky-offset` for stacked sticky headers |
-| `NavNotificationService` | Badge counts on nav items |
-| `NeedWorkersNotifierService` | Checks if the network needs workers |
-| `PageGuideService` | Page-level help/guide content |
-| `GlossaryService` | Term definitions for glossary modals |
-| `HordeStatusService` | Real-time network status polling |
-| `NetworkStatusService` | Network connectivity state |
+| Service                      | Purpose                                              |
+| ---------------------------- | ---------------------------------------------------- |
+| `FooterColorService`         | Signal controlling dark/light footer variant         |
+| `FloatingActionService`      | Floating action button visibility                    |
+| `StickyRegistryService`      | Manages `--sticky-offset` for stacked sticky headers |
+| `NavNotificationService`     | Badge counts on nav items                            |
+| `NeedWorkersNotifierService` | Checks if the network needs workers                  |
+| `PageGuideService`           | Page-level help/guide content                        |
+| `GlossaryService`            | Term definitions for glossary modals                 |
+| `HordeStatusService`         | Real-time network status polling                     |
+| `NetworkStatusService`       | Network connectivity state                           |
 
 ### Interceptors
 
-| Interceptor | Purpose |
-| ----------- | --------- |
+| Interceptor              | Purpose                                        |
+| ------------------------ | ---------------------------------------------- |
 | `clientAgentInterceptor` | Adds `Client-Agent` header to all API requests |
-| `rateLimitInterceptor` | Handles 429 responses with retry-after |
+| `rateLimitInterceptor`   | Handles 429 responses with retry-after         |
 
 ---
 
