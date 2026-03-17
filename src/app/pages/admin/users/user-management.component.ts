@@ -349,7 +349,7 @@ export class UserManagementComponent implements OnInit {
               this.userNotFound.set(true);
             }
           },
-          error: (err: any) => {
+          error: (err: unknown) => {
             this.userNotFound.set(true);
             this.toastService.error(
               extractApiError(err, 'Failed to load user data.'),
@@ -555,7 +555,7 @@ export class UserManagementComponent implements OnInit {
             this.toastService.success('Changes saved successfully.');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to save changes.'),
             { rawError: err },
@@ -727,7 +727,7 @@ export class UserManagementComponent implements OnInit {
           this.userSharedKeys.set(sharedKeys);
           this.sharedKeysFetched.set(true);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.sharedKeysFetched.set(true);
           this.toastService.error(
             extractApiError(err, 'Failed to load shared keys.'),
@@ -764,7 +764,7 @@ export class UserManagementComponent implements OnInit {
         next: (workers) => {
           this.userWorkers.set(workers);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load workers.'),
             { rawError: err },
@@ -832,7 +832,7 @@ export class UserManagementComponent implements OnInit {
             }
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           if (dialogType === 'resetSuspicion') {
             this.toastService.error(
               extractApiError(err, 'Failed to reset suspicion.'),
@@ -888,7 +888,7 @@ export class UserManagementComponent implements OnInit {
               });
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to regenerate passkey.'),
             { rawError: err },

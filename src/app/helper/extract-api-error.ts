@@ -1,18 +1,54 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
 /**
+ * Safely narrows `HttpErrorResponse.error` (typed as `any` by Angular)
+ * to `unknown` so downstream access goes through proper type guards.
+ */
+function getResponseBody(error: HttpErrorResponse): unknown {
+  return error.error as unknown;
+}
+
+/**
+ * Type guard: checks if a value is a non-null object.
+ */
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Safely extracts a string field from the body of an HttpErrorResponse.
+ * Accepts `unknown` so callers don't need to narrow first.
+ * Returns `undefined` if the error is not an HttpErrorResponse,
+ * the field is missing, or the field is not a string.
+ */
+export function extractApiErrorField(
+  error: unknown,
+  field: string,
+): string | undefined {
+  if (!(error instanceof HttpErrorResponse)) {
+    return undefined;
+  }
+  const body = getResponseBody(error);
+  if (isObject(body)) {
+    const value = body[field];
+    if (typeof value === 'string') {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Extracts a human-readable error message from an HTTP error response.
  * The AI Horde API returns `{ message: string }` on errors.
  */
 export function extractApiError(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
-    const body = error.error;
-    if (body && typeof body === 'object' && typeof body.message === 'string') {
-      return body.message;
-    }
-    if (error.message) {
-      return error.message;
-    }
+    return (
+      extractApiErrorField(error, 'message') ??
+      error.message ??
+      fallback
+    );
   }
   return fallback;
 }
@@ -23,8 +59,8 @@ export function extractApiError(error: unknown, fallback: string): string {
  */
 export function serializeErrorDetails(error: unknown): string | null {
   if (error instanceof HttpErrorResponse) {
-    const body = error.error;
-    if (body && typeof body === 'object') {
+    const body = getResponseBody(error);
+    if (isObject(body)) {
       try {
         return JSON.stringify(body, null, 2);
       } catch {

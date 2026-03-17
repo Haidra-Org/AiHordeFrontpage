@@ -1,6 +1,9 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError, map, tap, switchMap } from 'rxjs';
+import {
+  extractApiErrorField,
+} from '../helper/extract-api-error';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { ActiveGenerations, HordeUser } from '../types/horde-user';
@@ -178,14 +181,14 @@ export class AuthService {
       })
       .pipe(
         map((data) => ({ success: true as const, data })),
-        catchError((err: HttpErrorResponse) => {
+        catchError((err: unknown) => {
           const message =
-            err.error?.message ??
-            err.error?.detail ??
+            extractApiErrorField(err, 'message') ??
+            extractApiErrorField(err, 'detail') ??
             'Failed to delete account';
           return of({
             success: false as const,
-            error: { message, rc: err.error?.rc },
+            error: { message, rc: extractApiErrorField(err, 'rc') },
           });
         }),
       );
@@ -210,10 +213,10 @@ export class AuthService {
       )
       .pipe(
         map(() => ({ success: true })),
-        catchError((err: HttpErrorResponse) => {
+        catchError((err: unknown) => {
           const message =
-            err.error?.message ??
-            err.error?.detail ??
+            extractApiErrorField(err, 'message') ??
+            extractApiErrorField(err, 'detail') ??
             'Failed to restore account';
           return of({ success: false, error: message });
         }),
@@ -243,10 +246,10 @@ export class AuthService {
       .pipe(
         switchMap(() => this.refreshUser()),
         map(() => ({ success: true })),
-        catchError((err: HttpErrorResponse) => {
+        catchError((err: unknown) => {
           const message =
-            err.error?.message ??
-            err.error?.detail ??
+            extractApiErrorField(err, 'message') ??
+            extractApiErrorField(err, 'detail') ??
             'Failed to update profile';
           return of({ success: false, error: message });
         }),

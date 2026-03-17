@@ -524,7 +524,7 @@ export class WorkerListComponent implements OnInit {
         next: (workers) => {
           this.workers.set(workers);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.errorMessage.set(
             extractApiError(err, 'Failed to load workers.'),
           );

@@ -350,7 +350,7 @@ export class AiHordeService {
       .get<GenerationCheckResponse>(
         `${BASE}/generate/check/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError((err: any) => this.catchNotFound(err)));
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
   public getImageGenerationStatus(
@@ -360,7 +360,7 @@ export class AiHordeService {
       .get<GenerationStatusResponse>(
         `${BASE}/generate/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError((err: any) => this.catchNotFound(err)));
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
   public getTextGenerationStatus(
@@ -372,7 +372,7 @@ export class AiHordeService {
       .get<TextGenerationStatusResponse>(
         `${BASE}/generate/text/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError((err: any) => this.catchNotFound(err)));
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
   public getAlchemyStatus(
@@ -382,7 +382,7 @@ export class AiHordeService {
       .get<AlchemyStatusResponse>(
         `${BASE}/interrogate/status/${encodeURIComponent(id)}`,
       )
-      .pipe(catchError((err: any) => this.catchNotFound(err)));
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
   private catchNotFound(

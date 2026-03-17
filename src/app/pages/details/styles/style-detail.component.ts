@@ -19,6 +19,7 @@ import {
   TextStyle,
 } from '../../../types/style';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
+import { extractApiError } from '../../../helper/extract-api-error';
 import { IconComponent } from '../../../components/icon/icon.component';
 
 type StyleType = 'image' | 'text';
@@ -209,9 +210,9 @@ export class StyleDetailComponent implements OnInit {
         // Navigate back to styles list
         this.router.navigate(['/details/styles']);
       },
-      error: (err: any) => {
+      error: (err: unknown) => {
         console.error('Error deleting style:', err);
-        this.error.set(err.message || 'Failed to delete style');
+        this.error.set(extractApiError(err, 'Failed to delete style'));
         this.deleting.set(false);
         this.showDeleteConfirm.set(false);
       },

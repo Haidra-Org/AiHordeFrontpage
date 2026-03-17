@@ -255,7 +255,7 @@ export class GenerationsTabComponent {
     if (!data) return '';
     return JSON.stringify(
       data,
-      (_key, value) => {
+      (_key: string, value: unknown) => {
         if (
           typeof value === 'string' &&
           value.length > 256 &&
@@ -378,7 +378,7 @@ export class GenerationsTabComponent {
 
   private sanitizeResponsePayload(value: unknown): unknown {
     try {
-      const sanitized = JSON.stringify(value, (_key, currentValue) => {
+      const sanitized = JSON.stringify(value, (_key: string, currentValue: unknown) => {
         if (
           typeof currentValue === 'string' &&
           currentValue.length > 256 &&
@@ -490,23 +490,34 @@ export class GenerationsTabComponent {
 
   private applyJsonToForm(): void {
     try {
-      const parsed = JSON.parse(this.jsonText());
-      if (typeof parsed !== 'object' || parsed === null || !parsed.prompt) {
+      const raw: unknown = JSON.parse(this.jsonText());
+      if (typeof raw !== 'object' || raw === null) {
+        this.jsonError.set(
+          'JSON must be an object with at least a "prompt" field',
+        );
+        return;
+      }
+      const parsed = raw as Record<string, unknown>;
+      if (typeof parsed['prompt'] !== 'string') {
         this.jsonError.set(
           'JSON must be an object with at least a "prompt" field',
         );
         return;
       }
       this.jsonError.set(null);
+      const models = Array.isArray(parsed['models']) ? (parsed['models'] as string[]).join(', ') : 'stable_diffusion';
+      const params = (typeof parsed['params'] === 'object' && parsed['params'] !== null)
+        ? parsed['params'] as Record<string, unknown>
+        : {};
       this.form.patchValue({
-        prompt: parsed.prompt ?? '',
-        model: parsed.models?.join(', ') ?? 'stable_diffusion',
-        steps: parsed.params?.steps ?? 25,
-        cfg_scale: parsed.params?.cfg_scale ?? 7.5,
-        clip_skip: parsed.params?.clip_skip ?? 1,
-        width: parsed.params?.width ?? 512,
-        height: parsed.params?.height ?? 512,
-        nsfw: parsed.nsfw ?? false,
+        prompt: parsed['prompt'] ?? '',
+        model: models,
+        steps: typeof params['steps'] === 'number' ? params['steps'] : 25,
+        cfg_scale: typeof params['cfg_scale'] === 'number' ? params['cfg_scale'] : 7.5,
+        clip_skip: typeof params['clip_skip'] === 'number' ? params['clip_skip'] : 1,
+        width: typeof params['width'] === 'number' ? params['width'] : 512,
+        height: typeof params['height'] === 'number' ? params['height'] : 512,
+        nsfw: typeof parsed['nsfw'] === 'boolean' ? parsed['nsfw'] : false,
       });
     } catch {
       this.jsonError.set('Invalid JSON');

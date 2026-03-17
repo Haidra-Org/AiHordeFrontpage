@@ -179,7 +179,7 @@ export class FilterManagementComponent implements OnInit {
         next: (filters) => {
           this.filters.set(filters);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load filters.'),
             { rawError: err },
@@ -201,7 +201,7 @@ export class FilterManagementComponent implements OnInit {
         next: (regex) => {
           this.compiledRegex.set(regex);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to load compiled regex.'),
             { rawError: err },
@@ -350,7 +350,7 @@ export class FilterManagementComponent implements OnInit {
             this.toastService.error('Failed to create filter.');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to create filter.'),
             { rawError: err },
@@ -391,7 +391,7 @@ export class FilterManagementComponent implements OnInit {
             this.toastService.error('Failed to update filter.');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to update filter.'),
             { rawError: err },
@@ -421,7 +421,7 @@ export class FilterManagementComponent implements OnInit {
             this.toastService.error('Failed to delete filter.');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to delete filter.'),
             { rawError: err },
@@ -464,7 +464,7 @@ export class FilterManagementComponent implements OnInit {
             this.toastService.error('Failed to test prompt.');
           }
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           this.toastService.error(
             extractApiError(err, 'Failed to test prompt.'),
             { rawError: err },
