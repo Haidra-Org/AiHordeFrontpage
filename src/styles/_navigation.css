@@ -204,6 +204,9 @@
     @apply -translate-y-2.5 opacity-0 invisible;
     @apply transition-all duration-300;
     @apply dark:bg-gray-800 dark:border-gray-700;
+    max-height: calc(100dvh - 4rem);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .mobile-menu-panel.open {
