@@ -9,6 +9,13 @@
    ================================================================= */
 
 @layer components {
+  /* Routed components should grow to fill the wrapper */
+  .wrapper > router-outlet + * {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
   /* Main content needs top padding to account for fixed header */
   /* Ensure full viewport height coverage for proper background display */
   .wrapper {
@@ -101,6 +108,10 @@
   .homepage-section {
     @apply relative overflow-hidden;
     isolation: isolate;
+  }
+
+  .homepage-shell {
+    --homepage-scroll: 0px;
   }
 
   .homepage-section > * {
