@@ -1,12 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   computed,
+  ElementRef,
   forwardRef,
-  inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -29,7 +29,7 @@ import { ActiveModel } from '../../types/active-model';
   },
 })
 export class ModelAutocompleteComponent implements ControlValueAccessor {
-  private readonly elRef = inject(ElementRef<HTMLElement>);
+  private readonly wrapper = viewChild<ElementRef<HTMLElement>>('wrapper');
 
   public readonly models = input<ActiveModel[]>([]);
   public readonly inputId = input.required<string>();
@@ -228,7 +228,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
   }
 
   public onDocumentClick(event: MouseEvent): void {
-    if (this.elRef.nativeElement.contains(event.target as Node)) {
+    if (this.wrapper()?.nativeElement.contains(event.target as Node)) {
       return;
     }
 

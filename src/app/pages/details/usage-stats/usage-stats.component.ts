@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
@@ -45,7 +45,7 @@ interface ModelUsageEntry {
     UnitTooltipComponent,
     PageIntroComponent,
     InfoTooltipComponent,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     StickyHeaderDirective,
     IconComponent,
   ],

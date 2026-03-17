@@ -121,10 +121,9 @@
           <!-- User Profile -->
           <div class="container-page-content">
             <!-- Tab Navigation -->
-            <div
+            <app-scroll-fade
               class="details-tabs details-tabs--glass details-tabs--connected"
               role="tablist"
-              appScrollFade
               [appStickyHeader]="10"
             >
               @for (tab of tabs; track tab.slug) {
@@ -154,7 +153,7 @@
                   }
                 </a>
               }
-            </div>
+            </app-scroll-fade>
 
             <div class="tab-content-panel">
               <router-outlet />

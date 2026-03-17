@@ -15,7 +15,7 @@ import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { ToastService } from '../../../services/toast.service';
 import { finalize } from 'rxjs';
@@ -42,7 +42,7 @@ type TabType = 'tester' | 'filters' | 'compiled';
     TranslocoPipe,
     TranslocoModule,
     FormsModule,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     IconComponent,
   ],
   templateUrl: './filter-management.component.html',

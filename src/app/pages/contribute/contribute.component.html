@@ -14,10 +14,9 @@
 <section class="section-secondary">
   <div class="container-page-content">
     <!-- Tab Navigation -->
-    <div
+    <app-scroll-fade
       class="details-tabs details-tabs--glass details-tabs--connected tabs-container--centered"
       role="tablist"
-      appScrollFade
       [appStickyHeader]="10"
     >
       <a
@@ -38,7 +37,7 @@
         <app-icon name="heart" class="icon-sm" />
         {{ "contribute.tabs.donate" | transloco }}
       </a>
-    </div>
+    </app-scroll-fade>
 
     <!-- Tab Content -->
     <div class="tab-content-panel tabs-container--centered">

@@ -101,6 +101,7 @@ let nextTooltipId = 0;
   template: `
     @if (unit()) {
       <span
+        #wrapperEl
         class="tooltip-wrapper tooltip-fixed-mode"
         [class]="positionClasses()"
         [attr.data-tooltip-position]="position()"
@@ -159,7 +160,6 @@ let nextTooltipId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UnitTooltipComponent implements OnDestroy {
-  private readonly elementRef = inject(ElementRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly stickyRegistry = inject(StickyRegistryService);
@@ -193,6 +193,8 @@ export class UnitTooltipComponent implements OnDestroy {
 
   readonly tooltipContent =
     viewChild<ElementRef<HTMLElement>>('tooltipContent');
+
+  private readonly wrapperEl = viewChild<ElementRef<HTMLElement>>('wrapperEl');
 
   /** Whether the tooltip is currently visible */
   private readonly isVisible = signal(false);
@@ -330,8 +332,7 @@ export class UnitTooltipComponent implements OnDestroy {
       return;
     }
 
-    const element = this.elementRef.nativeElement as HTMLElement;
-    const wrapper = element.querySelector('.tooltip-wrapper');
+    const wrapper = this.wrapperEl()?.nativeElement;
     if (!wrapper) return;
 
     const tooltipEl = this.tooltipContent()?.nativeElement;

@@ -29,7 +29,7 @@
   }
 
   /* Overflow fade is handled on all devices by the sticky gradient arrow
-     overlays (ScrollFadeDirective). mask-image was removed because it fades
+     overlays (ScrollFadeComponent). mask-image was removed because it fades
      the entire element — including the glass background — to 0% opacity at
      the edges, which caused page content to bleed through. */
 
@@ -146,7 +146,7 @@
 
   /* =================================================================
      SCROLL ARROW BUTTONS
-     Injected by ScrollFadeDirective for non-touch hover navigation.
+     Declared in ScrollFadeComponent template for non-touch hover navigation.
      Sticky-positioned so they stay at the visible edges of the
      horizontal-scroll container. Negative margins cancel their
      width contribution so tab layout is unaffected.

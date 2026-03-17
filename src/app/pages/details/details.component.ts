@@ -10,7 +10,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-banner/volunteer-cta-banner.component';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -23,7 +23,7 @@ import { IconComponent } from '../../components/icon/icon.component';
     RouterLinkActive,
     TranslocoPipe,
     VolunteerCtaBannerComponent,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     StickyHeaderDirective,
     IconComponent,
   ],

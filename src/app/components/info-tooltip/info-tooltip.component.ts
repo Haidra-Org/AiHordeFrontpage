@@ -14,6 +14,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GlossaryService } from '../../services/glossary.service';
+import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { TooltipPosition } from '../unit-tooltip/unit-tooltip.component';
 import { IconComponent } from '../icon/icon.component';
 
@@ -39,6 +40,7 @@ interface TooltipStyles {
   imports: [TranslocoPipe, IconComponent],
   template: `
     <span
+      #triggerEl
       class="info-tooltip-trigger tooltip-wrapper tooltip-fixed-mode"
       [class]="positionClasses()"
       tabindex="0"
@@ -85,9 +87,9 @@ interface TooltipStyles {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InfoTooltipComponent implements OnDestroy {
-  private readonly elementRef = inject(ElementRef);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly glossary = inject(GlossaryService);
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   /** i18n key for the tooltip body text */
   public readonly termKey = input.required<string>();
@@ -108,6 +110,8 @@ export class InfoTooltipComponent implements OnDestroy {
 
   readonly tooltipContent =
     viewChild<ElementRef<HTMLElement>>('tooltipContent');
+
+  private readonly triggerEl = viewChild<ElementRef<HTMLElement>>('triggerEl');
 
   private readonly isVisible = signal(false);
   private readonly autoDetectedPosition = signal('');
@@ -243,8 +247,9 @@ export class InfoTooltipComponent implements OnDestroy {
   private calculateFixedPosition(): void {
     if (!isPlatformBrowser(this.platformId)) return;
 
-    const element = this.elementRef.nativeElement as HTMLElement;
-    const wrapper = element.querySelector('.info-tooltip-trigger') ?? element;
+    const wrapper = this.triggerEl()?.nativeElement;
+    if (!wrapper) return;
+
     const tooltipEl = this.tooltipContent()?.nativeElement;
     const rect = wrapper.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
@@ -316,7 +321,7 @@ export class InfoTooltipComponent implements OnDestroy {
 
     // Account for sticky/fixed elements at the top of the viewport
     // (e.g. nav bar, filter bar) that reduce usable space above the trigger
-    const topObstruction = this.getTopObstructionBottom();
+    const topObstruction = this.stickyRegistry.totalOffset();
     const minTop = topObstruction + VIEWPORT_MARGIN;
     const maxTop = viewportHeight - tooltipHeight - VIEWPORT_MARGIN;
     const preferredAboveTop = rect.top - TOOLTIP_OFFSET - tooltipHeight;
@@ -376,27 +381,6 @@ export class InfoTooltipComponent implements OnDestroy {
     }
 
     this.fixedStyles.set(styles);
-  }
-
-  /**
-   * Finds the bottom edge of sticky/fixed elements at the top of the viewport
-   * so the tooltip can avoid overlapping them.
-   */
-  private getTopObstructionBottom(): number {
-    const candidates = document.querySelectorAll<HTMLElement>(
-      '.tools-filter-bar, nav, [class*="nav-shell"]',
-    );
-    let maxBottom = 0;
-    candidates.forEach((el) => {
-      const style = window.getComputedStyle(el);
-      if (style.position === 'fixed' || style.position === 'sticky') {
-        const rect = el.getBoundingClientRect();
-        if (rect.top < VIEWPORT_MARGIN && rect.bottom > maxBottom) {
-          maxBottom = rect.bottom;
-        }
-      }
-    });
-    return maxBottom;
   }
 
   public readonly positionClasses = computed(() => {
