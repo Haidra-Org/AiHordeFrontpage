@@ -61,10 +61,9 @@
 
   <div [class.tab-sub-panel]="viewMode() === 'public'">
     <!-- Sub-Tab Navigation -->
-    <div
+    <app-scroll-fade
       class="details-tabs details-tabs--glass details-tabs--sub mb-6"
       role="tablist"
-      appScrollFade
       [appStickyHeader]="viewMode() === 'public' ? 20 : null"
     >
       <button
@@ -118,7 +117,7 @@
         }
         {{ "admin.workers.refresh" | transloco }}
       </button>
-    </div>
+    </app-scroll-fade>
 
     <!-- Glossary hint -->
     <div class="info-note info-note--blue mb-6">

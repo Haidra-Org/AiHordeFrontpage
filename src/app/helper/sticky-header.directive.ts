@@ -1,12 +1,13 @@
 import {
   Directive,
-  ElementRef,
   inject,
   input,
   OnDestroy,
   OnInit,
+  signal,
 } from '@angular/core';
 import { StickyRegistryService } from '../services/sticky-registry.service';
+import { injectHostElement } from './inject-host-element';
 
 /**
  * Registers a sticky/fixed element with the StickyRegistryService.
@@ -21,31 +22,37 @@ import { StickyRegistryService } from '../services/sticky-registry.service';
  * Pass `null` to opt out of registration while still positioning the
  * element below all registered sticky headers via `--sticky-offset`.
  */
-@Directive({ selector: '[appStickyHeader]' })
+@Directive({
+  selector: '[appStickyHeader]',
+  host: {
+    '[style.top]': 'topStyle()',
+  },
+})
 export class StickyHeaderDirective implements OnInit, OnDestroy {
   private readonly registry = inject(StickyRegistryService);
-  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  // Kept for StickyRegistryService.register() which needs the HTMLElement for ResizeObserver.
+  private readonly host = injectHostElement();
 
   public readonly appStickyHeader = input<number | null>(null);
 
+  protected readonly topStyle = signal<string | null>(null);
   private registered = false;
 
   ngOnInit(): void {
     const order = this.appStickyHeader();
     if (order !== null) {
-      this.registry.register(this.elementRef.nativeElement, order);
+      this.registry.register(this.host, order);
       this.registered = true;
     } else {
-      // Position below all registered sticky elements without contributing
-      this.elementRef.nativeElement.style.top = 'var(--sticky-offset, 0px)';
+      this.topStyle.set('var(--sticky-offset, 0px)');
     }
   }
 
   ngOnDestroy(): void {
     if (this.registered) {
-      this.registry.unregister(this.elementRef.nativeElement);
+      this.registry.unregister(this.host);
     } else {
-      this.elementRef.nativeElement.style.removeProperty('top');
+      this.topStyle.set(null);
     }
   }
 }

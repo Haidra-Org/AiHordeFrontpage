@@ -15,10 +15,9 @@
 
   <div class="tab-sub-panel">
     <!-- Sub-Tab Navigation -->
-    <div
+    <app-scroll-fade
       class="details-tabs details-tabs--glass details-tabs--sub"
       role="tablist"
-      appScrollFade
     >
       <button
         type="button"
@@ -80,7 +79,7 @@
       >
         {{ "styles.back_to_details" | transloco }}
       </a>
-    </div>
+    </app-scroll-fade>
 
     <!-- Create Form -->
     @if (showCreateForm() && !readonly()) {

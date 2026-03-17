@@ -16,7 +16,7 @@ import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { ScrollFadeDirective } from '../../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
@@ -60,7 +60,7 @@ type SortOrder = 'asc' | 'desc';
     InfoTooltipComponent,
     UnitTooltipComponent,
     IconComponent,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     StickyHeaderDirective,
   ],
   templateUrl: './worker-list.component.html',

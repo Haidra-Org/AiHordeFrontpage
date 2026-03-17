@@ -29,7 +29,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -67,7 +67,7 @@ interface ProfileTabDefinition {
     RouterLinkActive,
     TranslocoPipe,
     ReactiveFormsModule,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     StickyHeaderDirective,
     ToggleCheckboxComponent,
     PageIntroComponent,

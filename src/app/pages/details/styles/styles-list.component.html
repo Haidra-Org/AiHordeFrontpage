@@ -11,10 +11,9 @@
 
   <div class="tab-sub-panel">
     <!-- Sub-Tab Navigation -->
-    <div
+    <app-scroll-fade
       class="details-tabs details-tabs--glass details-tabs--sub"
       role="tablist"
-      appScrollFade
       [appStickyHeader]="20"
     >
       <button
@@ -68,7 +67,7 @@
           {{ "styles.create" | transloco }}
         </button>
       }
-    </div>
+    </app-scroll-fade>
 
     <!-- Filters -->
     <app-style-filters

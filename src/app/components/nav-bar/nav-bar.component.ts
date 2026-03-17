@@ -215,12 +215,12 @@ export class NavBarComponent implements OnInit, OnDestroy {
     if (this.document.getElementById(scriptId)) return;
     window.setTimeout(() => {
       if (this.document.getElementById(scriptId)) return;
-      const script = this.renderer.createElement('script');
+      const script = this.document.createElement('script');
       script.id = scriptId;
       script.src = 'https://buttons.github.io/buttons.js';
       script.async = true;
       script.defer = true;
-      this.renderer.appendChild(this.document.head, script);
+      this.document.head.appendChild(script);
     }, 0);
   }
 

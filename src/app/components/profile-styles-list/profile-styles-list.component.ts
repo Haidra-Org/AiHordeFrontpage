@@ -16,7 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, Observable, of, finalize, catchError, map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { extractApiError } from '../../helper/extract-api-error';
-import { ScrollFadeDirective } from '../../helper/scroll-fade.directive';
+import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StyleService } from '../../services/style.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -53,7 +53,7 @@ export interface LoadedStyle {
     StyleFormComponent,
     AdminDialogComponent,
     RouterLink,
-    ScrollFadeDirective,
+    ScrollFadeComponent,
     IconComponent,
   ],
   templateUrl: './profile-styles-list.component.html',

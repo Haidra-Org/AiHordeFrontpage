@@ -18,7 +18,7 @@
   </div>
 
   <!-- Tabs -->
-  <div class="details-tabs" role="tablist" appScrollFade>
+  <app-scroll-fade class="details-tabs" role="tablist">
     <button
       (click)="switchTab('tester')"
       class="details-tab"
@@ -52,7 +52,7 @@
       <app-icon name="code-bracket" class="icon-sm" />
       {{ "admin.filters.tabs.compiled_regex" | transloco }}
     </button>
-  </div>
+  </app-scroll-fade>
 
   <!-- Prompt Tester Tab -->
   @if (activeTab() === "tester") {

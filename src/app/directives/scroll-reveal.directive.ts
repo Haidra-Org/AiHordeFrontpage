@@ -1,12 +1,13 @@
 import {
   afterNextRender,
   Directive,
-  ElementRef,
   inject,
   input,
   PLATFORM_ID,
+  signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { injectHostElement } from '../helper/inject-host-element';
 
 /**
  * Adds a fade-and-slide entrance animation when an element scrolls into view.
@@ -20,37 +21,47 @@ import { isPlatformBrowser } from '@angular/common';
  */
 @Directive({
   selector: '[appScrollReveal], [scrollReveal]',
+  host: {
+    '[class.scroll-reveal]': 'shouldAnimate()',
+    '[class.scroll-reveal--visible]': 'isVisible()',
+    '[class]': 'delayClass()',
+  },
 })
 export class ScrollRevealDirective {
-  private readonly el = inject(ElementRef);
+  // Kept for IntersectionObserver.observe() and getBoundingClientRect() — no Angular abstraction exists.
+  private readonly host = injectHostElement();
   private readonly platformId = inject(PLATFORM_ID);
 
   /** Stagger slot (1-6). Maps to .scroll-reveal-delay-{n} utility class. */
   public scrollRevealDelay = input(0);
 
+  protected readonly shouldAnimate = signal(false);
+  protected readonly isVisible = signal(false);
+  protected readonly delayClass = signal('');
+
   constructor() {
     afterNextRender(() => {
       if (!isPlatformBrowser(this.platformId)) return;
 
-      const element = this.el.nativeElement as HTMLElement;
+      const element = this.host;
 
       // Skip elements that are already in the viewport — avoids a visible
       // hide→show flicker on first paint.
       const rect = element.getBoundingClientRect();
       if (rect.top < window.innerHeight && rect.bottom > 0) return;
 
-      element.classList.add('scroll-reveal');
+      this.shouldAnimate.set(true);
 
       const delay = this.scrollRevealDelay();
       if (delay > 0 && delay <= 6) {
-        element.classList.add(`scroll-reveal-delay-${delay}`);
+        this.delayClass.set(`scroll-reveal-delay-${delay}`);
       }
 
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
             if (entry.isIntersecting) {
-              element.classList.add('scroll-reveal--visible');
+              this.isVisible.set(true);
               observer.disconnect();
             }
           }

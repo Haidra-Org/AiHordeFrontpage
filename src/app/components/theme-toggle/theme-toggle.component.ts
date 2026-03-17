@@ -4,6 +4,7 @@ import {
   ElementRef,
   signal,
   inject,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ThemeService, type Theme } from '../../services/theme.service';
@@ -32,13 +33,13 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class ThemeToggleComponent {
   public readonly themeService = inject(ThemeService);
-  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly wrapper = viewChild<ElementRef<HTMLElement>>('wrapper');
 
   public readonly isOpen = signal(false);
 
   onDocumentClick(event: Event): void {
     if (!this.isOpen()) return;
-    if (!this.elementRef.nativeElement.contains(event.target as Node)) {
+    if (!this.wrapper()?.nativeElement.contains(event.target as Node)) {
       this.closeDropdown();
     }
   }

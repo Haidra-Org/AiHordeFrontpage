@@ -23,7 +23,7 @@ import { IconComponent } from '../icon/icon.component';
   imports: [TranslocoPipe, RouterLink, IconComponent],
   template: `
     @if (!isDismissed()) {
-      <div class="collapsible-card card-bg-secondary page-intro">
+      <div #container class="collapsible-card card-bg-secondary page-intro">
         <button
           type="button"
           class="collapsible-header-button"
@@ -98,7 +98,7 @@ import { IconComponent } from '../icon/icon.component';
         }
       </div>
     } @else {
-      <div class="page-intro-restore">
+      <div #container class="page-intro-restore">
         <button
           type="button"
           class="page-intro-restore-btn"
@@ -113,13 +113,13 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageIntroComponent {
-  private readonly elementRef = inject(ElementRef);
   private readonly document = inject(DOCUMENT);
   private readonly glossary = inject(GlossaryService);
   private readonly stickyRegistry = inject(StickyRegistryService);
   private readonly guideService = inject(PageGuideService);
   private readonly bodyContent =
     viewChild<ElementRef<HTMLElement>>('bodyContent');
+  private readonly container = viewChild<ElementRef<HTMLElement>>('container');
 
   /** Page key — drives localStorage key and i18n key prefix */
   public readonly pageKey = input.required<string>();
@@ -161,8 +161,10 @@ export class PageIntroComponent {
 
     if (wasExpanded) {
       setTimeout(() => {
-        const element = this.elementRef.nativeElement as HTMLElement;
-        scrollToElement(element, this.stickyRegistry.totalOffset());
+        const el = this.container()?.nativeElement;
+        if (el) {
+          scrollToElement(el, this.stickyRegistry.totalOffset());
+        }
       }, 50);
     }
   }
