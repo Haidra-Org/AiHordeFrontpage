@@ -34,6 +34,7 @@ export class HomepageLatestNewsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   public readonly news = signal<NewsItem[]>([]);
+  public readonly error = signal(false);
 
   constructor() {
     // Fetch news only in the browser after rendering completes.
@@ -42,8 +43,9 @@ export class HomepageLatestNewsComponent {
       this.aiHorde
         .getNews(3)
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((newsItems) => {
-          this.news.set(newsItems);
+        .subscribe({
+          next: (newsItems) => this.news.set(newsItems),
+          error: () => this.error.set(true),
         });
     });
   }

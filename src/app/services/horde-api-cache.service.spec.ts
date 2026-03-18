@@ -220,6 +220,51 @@ describe('HordeApiCacheService', () => {
   });
 
   // ========================================================================
+  // Late-subscriber regression (refCount: false guarantee)
+  // ========================================================================
+
+  describe('late subscriber after first unsubscribes', () => {
+    it('should serve cached data to a late subscriber without a new HTTP request', fakeAsync(() => {
+      let firstResult: unknown;
+      let lateResult: unknown;
+
+      // Subscriber A subscribes, HTTP completes, A receives data
+      const sub = service
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (firstResult = r));
+
+      httpTesting
+        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .flush({ worker_count: 42 });
+
+      expect(firstResult).toEqual({ worker_count: 42 });
+
+      // A unsubscribes — with refCount: true this would destroy the replay buffer
+      sub.unsubscribe();
+
+      tick(100);
+
+      // Subscriber B arrives late — should get cached data, no new request
+      service
+        .cachedGet(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (lateResult = r));
+
+      // No new HTTP request should be made — data is in the cache
+      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
+
+      expect(lateResult).toEqual({ worker_count: 42 });
+    }));
+  });
+
+  // ========================================================================
   // Cache key differentiation with query params
   // ========================================================================
 

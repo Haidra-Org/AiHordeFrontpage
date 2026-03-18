@@ -600,6 +600,44 @@ describe('AiHordeService', () => {
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(dupes);
     });
+
+    it('should handle missing more_info_urls gracefully', (done: DoneFn) => {
+      const items = [
+        {
+          title: 'No URLs field',
+          date_published: '2024-06-01',
+          newspiece: 'Content',
+          // more_info_urls is undefined/missing entirely
+        },
+      ];
+
+      service.getNews().subscribe((news) => {
+        expect(news.length).toBe(1);
+        expect(news[0].moreLink).toBeNull();
+        done();
+      });
+
+      http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+    });
+
+    it('should handle null more_info_urls gracefully', (done: DoneFn) => {
+      const items = [
+        {
+          title: 'Null URLs',
+          date_published: '2024-06-01',
+          newspiece: 'Content',
+          more_info_urls: null,
+        },
+      ];
+
+      service.getNews().subscribe((news) => {
+        expect(news.length).toBe(1);
+        expect(news[0].moreLink).toBeNull();
+        done();
+      });
+
+      http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+    });
   });
 
   // -----------------------------------------------------------------------

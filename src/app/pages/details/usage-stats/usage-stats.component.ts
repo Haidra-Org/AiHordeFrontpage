@@ -17,8 +17,8 @@ import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
+import { NetworkStatusService } from '../../../services/network-status.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
-import { HordePerformance } from '../../../types/horde-performance';
 import { ImageTotalStats } from '../../../types/image-total-stats';
 import { TextTotalStats } from '../../../types/text-total-stats';
 import { setPageTitle } from '../../../helper/page-title';
@@ -57,6 +57,7 @@ export class UsageStatsComponent implements OnInit {
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
   private readonly aiHorde = inject(AiHordeService);
+  private readonly networkStatus = inject(NetworkStatusService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly units = inject(UnitConversionService);
 
@@ -72,8 +73,8 @@ export class UsageStatsComponent implements OnInit {
   /** Error message. */
   public readonly error = signal<string | null>(null);
 
-  /** Performance stats. */
-  public readonly performance = signal<HordePerformance | null>(null);
+  /** Performance stats (from shared NetworkStatusService). */
+  public readonly performance = this.networkStatus.performance;
 
   /** Image stats. */
   public readonly imageStats = signal<ImageTotalStats | null>(null);
@@ -270,7 +271,6 @@ export class UsageStatsComponent implements OnInit {
     this.error.set(null);
 
     forkJoin({
-      performance: this.aiHorde.performance,
       imageStats: this.aiHorde.imageStats,
       textStats: this.aiHorde.textStats,
       imageModelStats: this.aiHorde.getImageModelStats('known'),
@@ -282,7 +282,6 @@ export class UsageStatsComponent implements OnInit {
       )
       .subscribe({
         next: (data) => {
-          this.performance.set(data.performance);
           this.imageStats.set(data.imageStats);
           this.textStats.set(data.textStats);
           this.imageModelStats.set(data.imageModelStats);

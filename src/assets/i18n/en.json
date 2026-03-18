@@ -20,6 +20,7 @@
   "news.loading": "Loading news...",
   "latest_news.title": "Latest news",
   "latest_news.subtitle": "Updates, announcements, and developments from the AI Horde community.",
+  "latest_news.error": "Unable to load news at this time.",
   "latest": "Latest",
   "read_more": "Read more",
   "no_news": "There are no news available.",
