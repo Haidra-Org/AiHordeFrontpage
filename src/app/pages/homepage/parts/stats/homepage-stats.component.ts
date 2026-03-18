@@ -13,13 +13,12 @@ import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { InlineSvgComponent } from '../../../../components/inline-svg/inline-svg.component';
 import { UnitTooltipComponent } from '../../../../components/unit-tooltip/unit-tooltip.component';
 import { InfoTooltipComponent } from '../../../../components/info-tooltip/info-tooltip.component';
-import { HordePerformance } from '../../../../types/horde-performance';
 import { SingleImageStatPoint } from '../../../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../../../types/single-text-stat-point';
 import { AiHordeService } from '../../../../services/ai-horde.service';
+import { NetworkStatusService } from '../../../../services/network-status.service';
 import { UnitConversionService } from '../../../../services/unit-conversion.service';
 import { SingleInterrogationStatPoint } from '../../../../types/single-interrogation-stat-point';
-import { forkJoin } from 'rxjs';
 import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
 @Component({
@@ -39,10 +38,11 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
 })
 export class HomepageStatsComponent {
   private readonly aiHorde = inject(AiHordeService);
+  private readonly networkStatus = inject(NetworkStatusService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly units = inject(UnitConversionService);
 
-  public stats = signal<HordePerformance | null>(null);
+  public readonly stats = this.networkStatus.performance;
   public imageStats = signal<SingleImageStatPoint | null>(null);
   public textStats = signal<SingleTextStatPoint | null>(null);
   public interrogationStats = signal<SingleInterrogationStatPoint | null>(null);
@@ -95,18 +95,16 @@ export class HomepageStatsComponent {
   }
 
   private updateStats(): void {
-    forkJoin({
-      performance: this.aiHorde.performance,
-      imageStats: this.aiHorde.imageStats,
-      textStats: this.aiHorde.textStats,
-      interrogationStats: this.aiHorde.interrogationStats,
-    })
+    this.aiHorde.imageStats
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((responses) => {
-        this.stats.set(responses.performance);
-        this.imageStats.set(responses.imageStats.total);
-        this.textStats.set(responses.textStats.total);
-        this.interrogationStats.set(responses.interrogationStats);
-      });
+      .subscribe((img) => this.imageStats.set(img.total));
+
+    this.aiHorde.textStats
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((txt) => this.textStats.set(txt.total));
+
+    this.aiHorde.interrogationStats
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((interr) => this.interrogationStats.set(interr));
   }
 }

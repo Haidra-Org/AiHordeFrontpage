@@ -21,10 +21,9 @@ import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
-import { AiHordeService } from '../../../services/ai-horde.service';
+import { NetworkStatusService } from '../../../services/network-status.service';
 import { TeamService } from '../../../services/team.service';
 import { HordeWorker, WorkerType } from '../../../types/horde-worker';
-import { HordePerformance } from '../../../types/horde-performance';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
@@ -71,7 +70,7 @@ export class WorkerListComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly workerService = inject(AdminWorkerService);
-  private readonly aiHordeService = inject(AiHordeService);
+  private readonly networkStatus = inject(NetworkStatusService);
   private readonly teamService = inject(TeamService);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
@@ -110,7 +109,7 @@ export class WorkerListComponent implements OnInit {
   public workerVersionsExpanded = signal<boolean>(false);
   public statisticsCollapsed = signal<boolean>(true);
   public deletionSuccessMessage = signal<boolean>(false);
-  public performanceStats = signal<HordePerformance | null>(null);
+  public readonly performanceStats = this.networkStatus.performance;
 
   /** Track whether initial type has been applied. */
   private initialTypeApplied = false;
@@ -149,7 +148,6 @@ export class WorkerListComponent implements OnInit {
     afterNextRender(() => {
       this.loadWorkers();
       this.loadTeams();
-      this.loadPerformanceStats();
     });
 
     this.glossary.registerPageContext({
@@ -544,17 +542,6 @@ export class WorkerListComponent implements OnInit {
         error: () => {
           // Silently fail - teams are optional for display
           this.teams.set([]);
-        },
-      });
-  }
-
-  private loadPerformanceStats(): void {
-    this.aiHordeService.performance
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (stats) => this.performanceStats.set(stats),
-        error: () => {
-          // Silently fail - throughput stat is supplementary
         },
       });
   }

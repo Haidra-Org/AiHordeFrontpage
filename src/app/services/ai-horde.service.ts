@@ -126,7 +126,7 @@ export class AiHordeService {
               datePublished: newsItem.date_published,
               excerpt: newsItem.newspiece,
               moreLink:
-                newsItem.more_info_urls.length > 0
+                newsItem.more_info_urls?.length > 0
                   ? newsItem.more_info_urls[0]
                   : null,
             };

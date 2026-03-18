@@ -7,7 +7,11 @@
             {{ "latest_news.title" | transloco }}
           </a>
         </h2>
-        @if (news().length > 0) {
+        @if (error()) {
+          <p class="text-secondary">
+            {{ "latest_news.error" | transloco }}
+          </p>
+        } @else if (news().length > 0) {
           @for (newsItem of news(); track newsItem.title) {
             <div class="news-home-item" scrollReveal>
               <h3 class="news-home-heading">
