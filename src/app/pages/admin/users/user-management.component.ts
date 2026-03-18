@@ -892,7 +892,7 @@ export class UserManagementComponent implements OnInit {
     try {
       const stored = localStorage.getItem(USER_HISTORY_KEY);
       if (stored) {
-        const history: UserHistoryItem[] = JSON.parse(stored);
+        const history = JSON.parse(stored) as UserHistoryItem[];
         this.userHistory.set(history);
       }
     } catch (error) {

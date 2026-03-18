@@ -188,8 +188,8 @@ describe('EnumDisplayService Integration Tests', () => {
       };
 
       expect(service.getItemTypeLabel(item.itemType!)).toBe('Image GUI');
-      expect(service.getDomainArrayLabel(item.domain!)).toBe('Image');
-      expect(service.getPlatformGroupedLabel(item.platform!)).toBe(
+      expect(service.getDomainArrayLabel(item.domain)).toBe('Image');
+      expect(service.getPlatformGroupedLabel(item.platform)).toBe(
         'Desktop, Web',
       );
       expect(service.getFunctionTypeLabel(item.functionKind!)).toBe('Frontend');
@@ -205,7 +205,7 @@ describe('EnumDisplayService Integration Tests', () => {
       };
 
       expect(service.getItemTypeLabel(item.itemType!)).toBe('Tool');
-      expect(service.getDomainArrayLabel(item.domain!)).toBe('Image');
+      expect(service.getDomainArrayLabel(item.domain)).toBe('Image');
       expect(service.getPlatformLabel(Platform.SERVER)).toBe('Server');
       expect(service.getFunctionTypeLabel(item.functionKind!)).toBe('Worker');
       expect(service.getCategoryBadgeClass('Worker')).toBe('badge-warning');
@@ -223,7 +223,7 @@ describe('EnumDisplayService Integration Tests', () => {
         categories: ['Bot', 'Image Generation', 'Text Generation'],
       };
 
-      expect(service.getDomainArrayLabel(item.domain!)).toBe('Image & Text');
+      expect(service.getDomainArrayLabel(item.domain)).toBe('Image & Text');
       expect(service.getFunctionTypeLabel(item.functionKind!)).toBe('Bot');
       expect(service.getCategoryBadgeClass('Bot')).toBe('badge-warning');
     });
@@ -237,7 +237,7 @@ describe('EnumDisplayService Integration Tests', () => {
         categories: ['Plugin', 'Image Generation'],
       };
 
-      expect(service.getPlatformGroupedLabel(item.platform!)).toBe('Desktop');
+      expect(service.getPlatformGroupedLabel(item.platform)).toBe('Desktop');
       expect(service.getFunctionTypeLabel(item.functionKind!)).toBe('Plugin');
       expect(service.getCategoryBadgeClass('Plugin')).toBe('badge-warning');
     });
@@ -251,7 +251,7 @@ describe('EnumDisplayService Integration Tests', () => {
         categories: ['Web'],
       };
 
-      expect(service.getPlatformGroupedLabel(item.platform!)).toBe('Web');
+      expect(service.getPlatformGroupedLabel(item.platform)).toBe('Web');
       expect(service.getCategoryBadgeClass('Web')).toBe('badge-info');
     });
 

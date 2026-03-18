@@ -133,8 +133,10 @@ export class StyleDetailComponent implements OnInit {
     this.route.params
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((params) => {
-        const type = params['type'] as StyleType;
-        const styleId = params['styleId'];
+        const rawType = params['type'] as string | undefined;
+        const styleId = params['styleId'] as string | undefined;
+        const type: StyleType | undefined =
+          rawType === 'image' || rawType === 'text' ? rawType : undefined;
         if (type && styleId) {
           this.styleType.set(type);
           this.loadStyle(styleId, type);
@@ -157,7 +159,9 @@ export class StyleDetailComponent implements OnInit {
           },
           error: (err: unknown) => {
             console.error('Error loading style:', err);
-            this.error.set(err instanceof Error ? err.message : 'Failed to load style');
+            this.error.set(
+              err instanceof Error ? err.message : 'Failed to load style',
+            );
             this.loading.set(false);
           },
         });
@@ -172,7 +176,9 @@ export class StyleDetailComponent implements OnInit {
           },
           error: (err: unknown) => {
             console.error('Error loading style:', err);
-            this.error.set(err instanceof Error ? err.message : 'Failed to load style');
+            this.error.set(
+              err instanceof Error ? err.message : 'Failed to load style',
+            );
             this.loading.set(false);
           },
         });

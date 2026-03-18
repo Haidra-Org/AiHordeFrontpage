@@ -8,13 +8,13 @@ import express from 'express';
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 app.use('*', (req, res, next) => {
-  angularApp
+  void angularApp
     .handle(req)
     .then((response) => {
       if (response) {
-        writeResponseToNodeResponse(response, res);
+        void writeResponseToNodeResponse(response, res);
       } else {
-        next(); // Pass control to the next middleware
+        next();
       }
     })
     .catch(next);

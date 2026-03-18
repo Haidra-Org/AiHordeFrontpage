@@ -3,16 +3,26 @@ const eslint = require("@eslint/js");
 const { defineConfig } = require("eslint/config");
 const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
-
+const rxjsX = require("eslint-plugin-rxjs-x");
+const { parse } = require("path");
 module.exports = defineConfig(
+  {
+    ignores: [".angular/", "dist/", "node_modules/", ".vscode/", "coverage/", ".husky/"],
+  },
   {
     files: ["**/*.ts"],
     extends: [
       eslint.configs.recommended,
-      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
       ...tseslint.configs.stylistic,
       ...angular.configs.tsRecommended,
+      rxjsX.default.configs.recommended,
     ],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
     processor: angular.processInlineTemplates,
     rules: {
       "@angular-eslint/directive-selector": [
@@ -49,6 +59,8 @@ module.exports = defineConfig(
           "ts-nocheck": true,
         },
       ],
+      // Angular Validators.* are static methods — safe to pass as references
+      "@typescript-eslint/unbound-method": ["error", { "ignoreStatic": true }],
     },
   },
   {
@@ -65,6 +77,14 @@ module.exports = defineConfig(
       "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/component-selector": "off",
       "@angular-eslint/directive-selector": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/unbound-method": "off",
+
     },
   },
 );

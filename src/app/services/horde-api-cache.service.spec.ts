@@ -672,7 +672,7 @@ describe('HordeApiCacheService', () => {
           {},
           { ttl: CacheTTL.LONG },
         )
-        .subscribe({ error: (e: any) => (error = e) });
+        .subscribe({ error: (e: unknown) => (error = e) });
 
       httpTesting
         .expectOne('https://aihorde.net/api/v2/status/performance')
@@ -707,7 +707,7 @@ describe('HordeApiCacheService', () => {
           {},
           { ttl: CacheTTL.LONG },
         )
-        .subscribe({ error: (e: any) => (firstError = e) });
+        .subscribe({ error: (e: unknown) => (firstError = e) });
 
       httpTesting
         .expectOne('https://aihorde.net/api/v2/status/performance')

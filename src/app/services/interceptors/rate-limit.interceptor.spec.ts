@@ -114,10 +114,10 @@ describe('rateLimitInterceptor', () => {
   }));
 
   it('should retry up to MAX_RETRIES (2) times', fakeAsync(() => {
-    let error: HttpErrorResponse | undefined;
+    let error: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e: any) => (error = e) });
+      .subscribe({ error: (e: unknown) => (error = e) });
 
     // 1st attempt → 429
     httpTesting
@@ -152,14 +152,15 @@ describe('rateLimitInterceptor', () => {
 
     // No more retries — error should propagate
     expect(error).toBeTruthy();
-    expect(error?.status).toBe(429);
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(429);
   }));
 
   it('should NOT retry on non-429 errors', () => {
-    let error: HttpErrorResponse | undefined;
+    let error: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e: any) => (error = e) });
+      .subscribe({ error: (e: unknown) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')
@@ -169,7 +170,8 @@ describe('rateLimitInterceptor', () => {
       });
 
     expect(error).toBeTruthy();
-    expect(error?.status).toBe(500);
+    expect(error).toBeInstanceOf(HttpErrorResponse);
+    expect((error as HttpErrorResponse).status).toBe(500);
     expect(state.limited()).toBe(false);
   });
 
@@ -223,7 +225,7 @@ describe('rateLimitInterceptor', () => {
 
     http
       .post('https://aihorde.net/api/v2/generate/async', { prompt: 'x' })
-      .subscribe({ error: (e: any) => (error = e) });
+      .subscribe({ error: (e: unknown) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/generate/async')
@@ -234,6 +236,7 @@ describe('rateLimitInterceptor', () => {
 
     // No retry request should be made for POST.
     httpTesting.expectNone('https://aihorde.net/api/v2/generate/async');
+    expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(429);
   });
 
@@ -242,7 +245,7 @@ describe('rateLimitInterceptor', () => {
 
     http
       .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe({ error: (e: any) => (error = e) });
+      .subscribe({ error: (e: unknown) => (error = e) });
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')

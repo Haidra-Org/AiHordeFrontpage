@@ -36,18 +36,21 @@ export class TeamService {
     return this.auth.getStoredApiKey();
   }
 
-  private handleError = (error: unknown) => {
+  private handleError = (error: unknown): Observable<never> => {
     if (error instanceof HttpErrorResponse) {
       return throwError(
         () =>
           new ApiError(
-            extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+            extractApiErrorField(error, 'message') ??
+              'Unexpected error while contacting the API.',
             error.status ?? 0,
             extractApiErrorField(error, 'rc'),
           ),
       );
     }
-    return throwError(() => error instanceof Error ? error : new ApiError('Unexpected error', 0));
+    return throwError(() =>
+      error instanceof Error ? error : new ApiError('Unexpected error', 0),
+    );
   };
 
   /**
@@ -83,7 +86,11 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
+        () =>
+          new ApiError(
+            'Missing API key. Please log in again to manage teams.',
+            401,
+          ),
       );
     }
 
@@ -108,7 +115,11 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
+        () =>
+          new ApiError(
+            'Missing API key. Please log in again to manage teams.',
+            401,
+          ),
       );
     }
 
@@ -130,7 +141,11 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
+        () =>
+          new ApiError(
+            'Missing API key. Please log in again to manage teams.',
+            401,
+          ),
       );
     }
 

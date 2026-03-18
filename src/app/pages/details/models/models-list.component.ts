@@ -79,7 +79,7 @@ export class ModelsListComponent implements OnInit {
 
   /** Model type from route (image or text). */
   private readonly routeModelType = computed<ModelsTab | null>(() => {
-    const type = this.params()['modelType'];
+    const type = this.params()['modelType'] as string | undefined;
     if (type === 'image' || type === 'text') {
       return type;
     }
@@ -88,7 +88,7 @@ export class ModelsListComponent implements OnInit {
 
   /** Model name to highlight/filter from route. */
   public readonly highlightModelName = computed<string | null>(() => {
-    const modelName = this.params()['modelName'];
+    const modelName = this.params()['modelName'] as string | undefined;
     return modelName ? decodeURIComponent(modelName) : null;
   });
 
@@ -454,7 +454,9 @@ export class ModelsListComponent implements OnInit {
           this.initialTypeApplied = true;
         },
         error: (err: unknown) => {
-          this.error.set(err instanceof Error ? err.message : 'Failed to load models');
+          this.error.set(
+            err instanceof Error ? err.message : 'Failed to load models',
+          );
         },
       });
   }

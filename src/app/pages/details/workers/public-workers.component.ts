@@ -36,7 +36,7 @@ export class PublicWorkersComponent implements OnInit {
 
   /** Initial worker type from route (image, text, interrogation). */
   public readonly initialWorkerType = computed<WorkerType | null>(() => {
-    const type = this.params()['workerType'];
+    const type = this.params()['workerType'] as string | undefined;
     if (type === 'image' || type === 'text' || type === 'interrogation') {
       return type;
     }
@@ -45,12 +45,12 @@ export class PublicWorkersComponent implements OnInit {
 
   /** Worker ID to highlight/filter from route. */
   public readonly highlightWorkerId = computed<string | null>(() => {
-    return this.params()['workerId'] ?? null;
+    return (this.params()['workerId'] as string | undefined) ?? null;
   });
 
   /** Owner ID to filter by from route. */
   public readonly filterOwnerId = computed<string | null>(() => {
-    return this.params()['ownerId'] ?? null;
+    return (this.params()['ownerId'] as string | undefined) ?? null;
   });
 
   ngOnInit(): void {
@@ -68,7 +68,9 @@ export class PublicWorkersComponent implements OnInit {
   public onWorkerTypeChange(type: WorkerType): void {
     // Only update URL if we had a type in the route
     if (this.initialWorkerType()) {
-      void this.router.navigate(['/details/workers', type], { replaceUrl: true });
+      void this.router.navigate(['/details/workers', type], {
+        replaceUrl: true,
+      });
     }
   }
 

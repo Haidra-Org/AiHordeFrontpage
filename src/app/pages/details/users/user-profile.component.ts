@@ -65,8 +65,8 @@ export class UserProfileComponent implements OnInit {
   public activeTab = signal<'profile' | 'records'>('profile');
 
   public readonly userId = computed(() => {
-    const idStr = this.params()['userId'];
-    const id = parseInt(idStr, 10);
+    const idStr = this.params()['userId'] as string | undefined;
+    const id = parseInt(idStr ?? '', 10);
     return isNaN(id) ? null : id;
   });
 
@@ -105,7 +105,7 @@ export class UserProfileComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((params) => {
-          const id = parseInt(params['userId'], 10);
+          const id = parseInt(params['userId'] as string, 10);
           if (isNaN(id)) {
             this.error.set('details.users.invalid_id');
             this.loading.set(false);

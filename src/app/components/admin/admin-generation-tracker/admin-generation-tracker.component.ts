@@ -150,7 +150,7 @@ export class AdminGenerationTrackerComponent {
     if (!data) return '';
     return JSON.stringify(
       data,
-      (_key, value) => {
+      (_key: string, value: unknown) => {
         if (
           typeof value === 'string' &&
           value.length > 256 &&
@@ -160,6 +160,7 @@ export class AdminGenerationTrackerComponent {
         }
         return value;
       },
+
       2,
     );
   }

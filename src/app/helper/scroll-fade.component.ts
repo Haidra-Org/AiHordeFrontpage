@@ -33,7 +33,9 @@ import {
       aria-label="Scroll tabs left"
       tabindex="-1"
       (click)="scrollLeft()"
-    >&#10094;</button>
+    >
+      &#10094;
+    </button>
     <ng-content />
     <button
       type="button"
@@ -42,7 +44,9 @@ import {
       aria-label="Scroll tabs right"
       tabindex="-1"
       (click)="scrollRight()"
-    >&#10095;</button>
+    >
+      &#10095;
+    </button>
   `,
   host: {
     '[class.has-overflow-left]': 'hasOverflowLeft()',
@@ -50,7 +54,7 @@ import {
   },
 })
 export class ScrollFadeComponent implements OnDestroy {
-  private readonly elementRef = inject(ElementRef);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly zone = inject(NgZone);
 
   private hostEl?: HTMLElement;
@@ -63,7 +67,7 @@ export class ScrollFadeComponent implements OnDestroy {
 
   constructor() {
     afterNextRender(() => {
-      this.hostEl = this.elementRef.nativeElement as HTMLElement;
+      this.hostEl = this.elementRef.nativeElement;
       this.zone.runOutsideAngular(() => {
         this.hostEl!.addEventListener('scroll', this.onScroll, {
           passive: true,

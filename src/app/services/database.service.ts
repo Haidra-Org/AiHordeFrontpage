@@ -109,7 +109,7 @@ export class DatabaseService {
       return null;
     }
 
-    return JSON.parse(value);
+    return JSON.parse(value) as T;
   }
 
   private getPermanent<T>(key: string): T | null {
@@ -118,6 +118,6 @@ export class DatabaseService {
       return null;
     }
 
-    return JSON.parse(value);
+    return JSON.parse(value) as T;
   }
 }
