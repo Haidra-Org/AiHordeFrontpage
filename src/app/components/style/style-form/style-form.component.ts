@@ -27,6 +27,7 @@ import {
   ImageStyle,
   TextStyle,
   StyleType,
+  ImageSamplerName,
   ImageStyleParams,
   TextStyleParams,
 } from '../../../types/style';
@@ -38,26 +39,97 @@ import {
 } from '../../../types/style-api';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { ActiveModel } from '../../../types/active-model';
+import {
+  StyleLoraConfig,
+  StyleTextualInversionConfig,
+} from '../../../types/style';
 import { ToggleCheckboxComponent } from '../../toggle-checkbox/toggle-checkbox.component';
 import { ModelAutocompleteComponent } from '../../model-autocomplete/model-autocomplete.component';
 import { IconComponent } from '../../icon/icon.component';
 
-function divisibleBy64(control: AbstractControl): ValidationErrors | null {
+function divisibleBy64(
+  control: AbstractControl<number | null>,
+): ValidationErrors | null {
   const v = control.value;
-  if (v === null || v === '' || v === undefined) return null;
-  return Number(v) % 64 === 0 ? null : { divisibleBy64: true };
+  if (v === null || v === undefined) return null;
+  return v % 64 === 0 ? null : { divisibleBy64: true };
 }
 
 function requiresAtLeastOneModel(
-  control: AbstractControl,
+  control: AbstractControl<string | null>,
 ): ValidationErrors | null {
-  const v = control.value as string;
+  const v = control.value;
   if (!v || !v.trim()) return { requiresModel: true };
   const items = v
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   return items.length > 0 ? null : { requiresModel: true };
+}
+
+interface StyleFormBaseValue {
+  name: string;
+  info: string;
+  prompt: string;
+  public: boolean;
+  nsfw: boolean;
+  tags: string;
+  models: string;
+}
+
+interface ImageStyleFormValue extends StyleFormBaseValue {
+  sharedkey: string;
+  sampler_name: string;
+  cfg_scale: number | null;
+  denoising_strength: number | string;
+  height: number | null;
+  width: number | null;
+  steps: number | null;
+  karras: boolean | null;
+  tiling: boolean | null;
+  hires_fix: boolean | null;
+  clip_skip: number | string;
+  facefixer_strength: number | string;
+  post_processing: string;
+  transparent: boolean | null;
+  loras_json: string;
+  tis_json: string;
+  workflow: string;
+}
+
+interface TextStyleFormValue extends StyleFormBaseValue {
+  temperature: number | null;
+  top_p: number | null;
+  top_k: number | string;
+  top_a: number | string;
+  typical: number | string;
+  min_p: number | string;
+  rep_pen: number | null;
+  rep_pen_range: number | string;
+  rep_pen_slope: number | string;
+  tfs: number | string;
+  singleline: boolean | null;
+  frmtadsnsp: boolean | null;
+  frmtrmblln: boolean | null;
+  frmtrmspch: boolean | null;
+  frmttriminc: boolean | null;
+  use_default_badwordsids: boolean | null;
+  stop_sequence: string;
+  smoothing_factor: number | string;
+  dynatemp_range: number | string;
+  dynatemp_exponent: number | string;
+}
+
+interface ParsedStyleJson {
+  name?: string;
+  info?: string;
+  prompt?: string;
+  public?: boolean;
+  nsfw?: boolean;
+  tags?: string[];
+  models?: string[];
+  params?: ImageStyleParams | TextStyleParams;
+  sharedkey?: string;
 }
 
 export type StyleFormMode = 'create' | 'edit';
@@ -215,7 +287,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   private getCurrentPayloadSnapshot(): string {
     if (this.showJsonView()) {
       try {
-        const parsed = JSON.parse(this.jsonContent());
+        const parsed: unknown = JSON.parse(this.jsonContent());
         return JSON.stringify(this.normalizeForSnapshot(parsed));
       } catch {
         return `__invalid_json__:${this.jsonContent().trim()}`;
@@ -354,7 +426,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
   private updateFormFromJson(): void {
     try {
-      const parsed = JSON.parse(this.jsonContent());
+      const parsed = JSON.parse(this.jsonContent()) as ParsedStyleJson;
       this.jsonError.set(null);
 
       // Update form fields from parsed JSON
@@ -457,17 +529,17 @@ export class StyleFormComponent implements OnInit, OnChanges {
     | CreateTextStyleInput
     | UpdateImageStyleInput
     | UpdateTextStyleInput {
-    const f = this.form.value;
     const isImage = this.isImageStyle();
+    const baseF = this.form.value as StyleFormBaseValue;
 
     const base = {
-      name: f.name,
-      info: f.info || undefined,
-      prompt: f.prompt,
-      public: f.public,
-      nsfw: f.nsfw,
-      tags: this.parseCommaSeparated(f.tags),
-      models: this.parseCommaSeparated(f.models),
+      name: baseF.name,
+      info: baseF.info || undefined,
+      prompt: baseF.prompt,
+      public: baseF.public,
+      nsfw: baseF.nsfw,
+      tags: this.parseCommaSeparated(baseF.tags),
+      models: this.parseCommaSeparated(baseF.models),
     };
 
     // Remove empty arrays
@@ -477,9 +549,11 @@ export class StyleFormComponent implements OnInit, OnChanges {
       delete (base as Record<string, unknown>)['models'];
 
     if (isImage) {
+      const f = this.form.value as ImageStyleFormValue;
       const params: ImageStyleParams = {};
 
-      if (f.sampler_name) params.sampler_name = f.sampler_name;
+      if (f.sampler_name)
+        params.sampler_name = f.sampler_name as ImageSamplerName;
       const cfgScale = this.parseOptionalNumber(f.cfg_scale);
       if (cfgScale !== undefined) params.cfg_scale = cfgScale;
       const denoisingStrength = this.parseOptionalNumber(f.denoising_strength);
@@ -513,14 +587,18 @@ export class StyleFormComponent implements OnInit, OnChanges {
       // Parse LoRAs and TIs from JSON
       if (f.loras_json) {
         try {
-          params.loras = JSON.parse(f.loras_json);
+          params.loras = JSON.parse(
+            f.loras_json,
+          ) as StyleLoraConfig[];
         } catch {
           // Invalid JSON, skip
         }
       }
       if (f.tis_json) {
         try {
-          params.tis = JSON.parse(f.tis_json);
+          params.tis = JSON.parse(
+            f.tis_json,
+          ) as StyleTextualInversionConfig[];
         } catch {
           // Invalid JSON, skip
         }
@@ -534,6 +612,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
       return payload;
     } else {
+      const f = this.form.value as TextStyleFormValue;
       const params: TextStyleParams = {};
 
       const temperature = this.parseOptionalNumber(f.temperature);
@@ -592,7 +671,8 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
   /** Whether the prompt template is missing a {p} placeholder. */
   public readonly promptMissingPlaceholder = computed(() => {
-    const prompt = this.form?.controls['prompt']?.value ?? '';
+    const prompt =
+      (this.form?.controls['prompt']?.value as string | undefined) ?? '';
     return prompt.length > 0 && !prompt.includes('{p}');
   });
 
@@ -610,7 +690,11 @@ export class StyleFormComponent implements OnInit, OnChanges {
   public onSubmit(): void {
     if (this.showJsonView()) {
       try {
-        const parsed = JSON.parse(this.jsonContent());
+        const parsed = JSON.parse(this.jsonContent()) as
+          | CreateImageStyleInput
+          | CreateTextStyleInput
+          | UpdateImageStyleInput
+          | UpdateTextStyleInput;
         this.pendingPayload.set({
           type: this.styleType(),
           payload: parsed,

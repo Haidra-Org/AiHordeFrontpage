@@ -155,9 +155,9 @@ export class StyleDetailComponent implements OnInit {
             this.style.set(style);
             this.loading.set(false);
           },
-          error: (err: Error) => {
+          error: (err: unknown) => {
             console.error('Error loading style:', err);
-            this.error.set(err.message || 'Failed to load style');
+            this.error.set(err instanceof Error ? err.message : 'Failed to load style');
             this.loading.set(false);
           },
         });
@@ -170,9 +170,9 @@ export class StyleDetailComponent implements OnInit {
             this.style.set(style);
             this.loading.set(false);
           },
-          error: (err: Error) => {
+          error: (err: unknown) => {
             console.error('Error loading style:', err);
-            this.error.set(err.message || 'Failed to load style');
+            this.error.set(err instanceof Error ? err.message : 'Failed to load style');
             this.loading.set(false);
           },
         });
@@ -208,7 +208,7 @@ export class StyleDetailComponent implements OnInit {
         this.deleting.set(false);
         this.showDeleteConfirm.set(false);
         // Navigate back to styles list
-        this.router.navigate(['/details/styles']);
+        void this.router.navigate(['/details/styles']);
       },
       error: (err: unknown) => {
         console.error('Error deleting style:', err);
@@ -220,7 +220,7 @@ export class StyleDetailComponent implements OnInit {
   }
 
   public goBack(): void {
-    this.router.navigate(['/details/styles']);
+    void this.router.navigate(['/details/styles']);
   }
 
   public copyToClipboard(text: string): void {

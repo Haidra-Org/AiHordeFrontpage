@@ -70,11 +70,7 @@ export interface DeletedTeamResponse {
   deleted_name?: string;
 }
 
-/**
- * API error response for team operations
- */
-export interface TeamApiError {
-  status: number;
-  message: string;
-  rc?: string;
-}
+import { ApiError } from './api-error';
+
+/** @deprecated Use {@link ApiError} directly. */
+export type TeamApiError = ApiError;

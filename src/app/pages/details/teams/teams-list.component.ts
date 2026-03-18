@@ -229,7 +229,7 @@ export class TeamsListComponent implements OnInit {
   public onTeamSearch(value: string): void {
     const trimmed = value.trim();
     if (trimmed) {
-      this.router.navigate(['/details/teams', trimmed]);
+      void this.router.navigate(['/details/teams', trimmed]);
     }
   }
 
@@ -237,7 +237,7 @@ export class TeamsListComponent implements OnInit {
    * Clear the owner filter and return to the full teams list.
    */
   public clearOwnerFilter(): void {
-    this.router.navigate(['/details/teams'], { replaceUrl: true });
+    void this.router.navigate(['/details/teams'], { replaceUrl: true });
   }
 
   /**
@@ -245,7 +245,7 @@ export class TeamsListComponent implements OnInit {
    * Uses replaceUrl so back button goes to previous page instead of re-highlighting.
    */
   public clearHighlight(): void {
-    this.router.navigate(['/details/teams'], { replaceUrl: true });
+    void this.router.navigate(['/details/teams'], { replaceUrl: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

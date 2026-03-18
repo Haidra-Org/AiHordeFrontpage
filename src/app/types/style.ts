@@ -289,11 +289,7 @@ export interface StyleWarning {
   message: string;
 }
 
-/**
- * Normalized API error shape for style requests.
- */
-export interface StyleApiError {
-  status: number;
-  message: string;
-  rc?: string;
-}
+import { ApiError } from './api-error';
+
+/** @deprecated Use {@link ApiError} directly. */
+export type StyleApiError = ApiError;

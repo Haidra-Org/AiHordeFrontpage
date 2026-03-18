@@ -10,6 +10,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { concatMap, EMPTY, tap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../../../services/auth.service';
 import { ToastService } from '../../../../services/toast.service';
@@ -187,32 +188,36 @@ export class ProfileSettingsComponent {
     this.deleteLoading.set(true);
     this.auth
       .deleteUser()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.deleteLoading.set(false);
-        if (result.success) {
-          this.deleteDialogOpen.set(false);
-          if (wasAlreadyDeleted) {
-            this.toast.success('profile.delete_account_permanent_success', {
-              transloco: true,
-            });
-            setTimeout(() => {
-              this.auth.logout();
-              this.router.navigate(['/']);
-            }, 2000);
+      .pipe(
+        tap((result) => {
+          this.deleteLoading.set(false);
+          if (result.success) {
+            this.deleteDialogOpen.set(false);
+            if (wasAlreadyDeleted) {
+              this.toast.success('profile.delete_account_permanent_success', {
+                transloco: true,
+              });
+              setTimeout(() => {
+                this.auth.logout();
+                void this.router.navigate(['/']);
+              }, 2000);
+            } else {
+              this.toast.success('profile.delete_account_success', {
+                transloco: true,
+              });
+            }
           } else {
-            this.toast.success('profile.delete_account_success', {
-              transloco: true,
-            });
-            this.auth
-              .refreshUser()
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe();
+            this.toast.error(result.error.message, { autoDismissMs: 5000 });
           }
-        } else {
-          this.toast.error(result.error.message, { autoDismissMs: 5000 });
-        }
-      });
+        }),
+        concatMap((result) =>
+          result.success && !wasAlreadyDeleted
+            ? this.auth.refreshUser()
+            : EMPTY,
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   // Undelete account
@@ -228,24 +233,26 @@ export class ProfileSettingsComponent {
     this.undeleteLoading.set(true);
     this.auth
       .undeleteUser()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => {
-        this.undeleteLoading.set(false);
-        this.undeleteDialogOpen.set(false);
-        if (result.success) {
-          this.toast.success('profile.undelete_account_success', {
-            transloco: true,
-          });
-          this.auth
-            .refreshUser()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe();
-        } else {
-          this.toast.error(result.error ?? 'Failed to restore account', {
-            autoDismissMs: 5000,
-          });
-        }
-      });
+      .pipe(
+        tap((result) => {
+          this.undeleteLoading.set(false);
+          this.undeleteDialogOpen.set(false);
+          if (result.success) {
+            this.toast.success('profile.undelete_account_success', {
+              transloco: true,
+            });
+          } else {
+            this.toast.error(result.error ?? 'Failed to restore account', {
+              autoDismissMs: 5000,
+            });
+          }
+        }),
+        concatMap((result) =>
+          result.success ? this.auth.refreshUser() : EMPTY,
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   private loadContactNagDismissed(): boolean {

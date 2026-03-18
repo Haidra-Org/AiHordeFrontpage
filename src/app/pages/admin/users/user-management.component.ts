@@ -30,7 +30,7 @@ import { AdminDialogComponent } from '../../../components/admin/admin-dialog/adm
 import { KudosBreakdownPanelComponent } from '../../../components/kudos-breakdown-panel/kudos-breakdown-panel.component';
 import { ToastService } from '../../../services/toast.service';
 import { FloatingActionService } from '../../../services/floating-action.service';
-import { finalize } from 'rxjs';
+import { concatMap, filter, finalize, tap } from 'rxjs';
 import { setPageTitle } from '../../../helper/page-title';
 import {
   JsonInspectorComponent,
@@ -537,22 +537,17 @@ export class UserManagementComponent implements OnInit {
     this.userService
       .updateUser(user.id, payload)
       .pipe(
+        filter((result) => !!result),
+        tap(() => this.toastService.success('Changes saved successfully.')),
+        concatMap(() => this.userService.getUser(user.id)),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isSaving.set(false)),
       )
       .subscribe({
-        next: (result) => {
-          if (result) {
-            this.userService
-              .getUser(user.id)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((updatedUser) => {
-                if (updatedUser) {
-                  this.setSelectedUser(updatedUser);
-                  this.inferAndSetPublicWorkers(updatedUser.id);
-                }
-              });
-            this.toastService.success('Changes saved successfully.');
+        next: (updatedUser) => {
+          if (updatedUser) {
+            this.setSelectedUser(updatedUser);
+            this.inferAndSetPublicWorkers(updatedUser.id);
           }
         },
         error: (err: unknown) => {
@@ -808,6 +803,15 @@ export class UserManagementComponent implements OnInit {
 
     action$
       .pipe(
+        filter((result) => !!result),
+        tap(() => {
+          if (dialogType === 'resetSuspicion') {
+            this.toastService.success('Suspicion reset successfully.');
+          } else if (dialogType === 'undeleteUser') {
+            this.toastService.success('User restored successfully.');
+          }
+        }),
+        concatMap(() => this.userService.getUser(user.id)),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => {
           this.isUpdating.set(false);
@@ -815,21 +819,9 @@ export class UserManagementComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: (result) => {
-          if (result) {
-            this.userService
-              .getUser(user.id)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((updatedUser) => {
-                if (updatedUser) {
-                  this.setSelectedUser(updatedUser);
-                }
-              });
-            if (dialogType === 'resetSuspicion') {
-              this.toastService.success('Suspicion reset successfully.');
-            } else if (dialogType === 'undeleteUser') {
-              this.toastService.success('User restored successfully.');
-            }
+        next: (updatedUser) => {
+          if (updatedUser) {
+            this.setSelectedUser(updatedUser);
           }
         },
         error: (err: unknown) => {
@@ -872,20 +864,15 @@ export class UserManagementComponent implements OnInit {
     this.userService
       .updateUser(user.id, { generate_proxy_passkey: true })
       .pipe(
+        filter((result) => !!result),
+        concatMap(() => this.userService.getUser(user.id)),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.isRegeneratingPasskey.set(false)),
       )
       .subscribe({
-        next: (result) => {
-          if (result) {
-            this.userService
-              .getUser(user.id)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((updatedUser) => {
-                if (updatedUser) {
-                  this.setSelectedUser(updatedUser);
-                }
-              });
+        next: (updatedUser) => {
+          if (updatedUser) {
+            this.setSelectedUser(updatedUser);
           }
         },
         error: (err: unknown) => {

@@ -70,12 +70,12 @@ export class UsersListComponent implements OnInit {
   public onUserSearch(value: string): void {
     const userId = extractUserId(value);
     if (userId !== null) {
-      this.router.navigate(['/details/users', userId]);
+      void this.router.navigate(['/details/users', userId]);
     } else {
       // Try treating it as a raw ID or show an error
       const numericId = parseInt(value.trim(), 10);
       if (!isNaN(numericId)) {
-        this.router.navigate(['/details/users', numericId]);
+        void this.router.navigate(['/details/users', numericId]);
       }
     }
   }

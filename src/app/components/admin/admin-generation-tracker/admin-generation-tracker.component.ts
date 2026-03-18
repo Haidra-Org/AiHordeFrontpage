@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { concatMap, EMPTY, tap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { highlightJson } from '../../../helper/json-formatter';
@@ -232,35 +233,38 @@ export class AdminGenerationTrackerComponent {
     if (type === 'image') {
       this.aiHorde
         .checkImageGeneration(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((check) => {
-          if (check === GENERATION_NOT_FOUND) {
+        .pipe(
+          tap((check) => {
+            if (check === GENERATION_NOT_FOUND) {
+              this.updateGeneration(id, { notFound: true });
+              return;
+            }
+            if (!check) return;
+            this.updateGeneration(id, {
+              check,
+              done: check.done,
+              faulted: check.faulted,
+            });
+          }),
+          concatMap((check) => {
+            if (check !== GENERATION_NOT_FOUND && check && check.done) {
+              return this.aiHorde.getImageGenerationStatus(id);
+            }
+            return EMPTY;
+          }),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe((status) => {
+          if (status === GENERATION_NOT_FOUND) {
             this.updateGeneration(id, { notFound: true });
             return;
           }
-          if (!check) return;
+          if (!status) return;
           this.updateGeneration(id, {
-            check,
-            done: check.done,
-            faulted: check.faulted,
+            result: status,
+            done: status.done,
+            faulted: status.faulted,
           });
-          if (check.done) {
-            this.aiHorde
-              .getImageGenerationStatus(id)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((status) => {
-                if (status === GENERATION_NOT_FOUND) {
-                  this.updateGeneration(id, { notFound: true });
-                  return;
-                }
-                if (!status) return;
-                this.updateGeneration(id, {
-                  result: status,
-                  done: status.done,
-                  faulted: status.faulted,
-                });
-              });
-          }
         });
     } else if (type === 'text') {
       this.aiHorde

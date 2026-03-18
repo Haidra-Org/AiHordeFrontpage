@@ -323,8 +323,8 @@ export class StylesListComponent implements OnInit {
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        error: (err: { message?: string }) =>
-          this.error.set(err.message || this.getLoadError(tab)),
+        error: (err: unknown) =>
+          this.error.set(err instanceof Error ? err.message : this.getLoadError(tab)),
       });
   }
 
@@ -357,18 +357,18 @@ export class StylesListComponent implements OnInit {
             );
           }
         },
-        error: (err: { message?: string }) =>
-          this.error.set(err.message || this.getLoadError(tab)),
+        error: (err: unknown) =>
+          this.error.set(err instanceof Error ? err.message : this.getLoadError(tab)),
       });
   }
 
   public navigateToStyle(style: Style, type: StyleType): void {
-    this.router.navigate(['/details/styles', type, style.id]);
+    void this.router.navigate(['/details/styles', type, style.id]);
   }
 
   public goToCreateStyle(): void {
     const targetType = this.activeTab() === 'text' ? 'text' : 'image';
-    this.router.navigate(['/profile/styles'], {
+    void this.router.navigate(['/profile/styles'], {
       queryParams: {
         from: 'details',
         create: 'true',
@@ -477,11 +477,11 @@ export class StylesListComponent implements OnInit {
     const uuidPattern =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
-      this.router.navigate(['/details/styles', type, trimmed]);
+      void this.router.navigate(['/details/styles', type, trimmed]);
     } else {
       // Treat as style name - navigate to detail page
       // The style detail component will handle name lookup
-      this.router.navigate(['/details/styles', type, trimmed]);
+      void this.router.navigate(['/details/styles', type, trimmed]);
     }
   }
 
@@ -490,7 +490,7 @@ export class StylesListComponent implements OnInit {
    * Uses replaceUrl so back button goes to previous page instead of re-highlighting.
    */
   public clearHighlight(): void {
-    this.router.navigate(['/details/styles'], { replaceUrl: true });
+    void this.router.navigate(['/details/styles'], { replaceUrl: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

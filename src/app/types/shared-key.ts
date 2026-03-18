@@ -40,9 +40,7 @@ export interface SharedKeyInput {
   max_text_tokens: number;
 }
 
-/** Normalized API error shape for shared key requests. */
-export interface SharedKeyApiError {
-  status: number;
-  message: string;
-  rc?: string;
-}
+import { ApiError } from './api-error';
+
+/** @deprecated Use {@link ApiError} directly. */
+export type SharedKeyApiError = ApiError;

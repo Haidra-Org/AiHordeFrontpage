@@ -100,7 +100,7 @@ export class DataService {
                       break;
                     default:
                       throw new Error(
-                        `Unsupported type: ${contextItem.valueType}`,
+                        `Unsupported type: ${String(contextItem.valueType)}`,
                       );
                   }
 
@@ -155,8 +155,11 @@ export class DataService {
         T[]
       >(primaryUrl, {}, { ttl: CacheTTL.VERY_LONG, category: 'local-data' })
       .pipe(
-        catchError((e: HttpErrorResponse) => {
-          if (e.status !== 404) {
+        catchError((e: unknown) => {
+          if (e instanceof HttpErrorResponse && e.status !== 404) {
+            return throwError(() => e);
+          }
+          if (!(e instanceof HttpErrorResponse)) {
             return throwError(() => e);
           }
 

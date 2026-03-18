@@ -281,7 +281,7 @@ export class ModelsListComponent implements OnInit {
    */
   public clearHighlight(): void {
     const currentType = this.activeTab();
-    this.router.navigate(['/details/models', currentType], {
+    void this.router.navigate(['/details/models', currentType], {
       replaceUrl: true,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -363,7 +363,7 @@ export class ModelsListComponent implements OnInit {
 
     // Update URL if we have a route type
     if (this.routeModelType()) {
-      this.router.navigate(['/details/models', tab], { replaceUrl: true });
+      void this.router.navigate(['/details/models', tab], { replaceUrl: true });
     }
 
     // Load models for the new tab if not already loaded
@@ -397,9 +397,10 @@ export class ModelsListComponent implements OnInit {
             this.textModels.set(models);
           }
         },
-        error: (err: { message?: string }) => {
+        error: (err: unknown) => {
+          const message = err instanceof Error ? err.message : undefined;
           this.error.set(
-            err.message ||
+            message ||
               (tab === 'image'
                 ? 'Failed to load image models'
                 : 'Failed to load text models'),
@@ -452,8 +453,8 @@ export class ModelsListComponent implements OnInit {
           // If not found in either, stay on current tab
           this.initialTypeApplied = true;
         },
-        error: (err: { message?: string }) => {
-          this.error.set(err.message || 'Failed to load models');
+        error: (err: unknown) => {
+          this.error.set(err instanceof Error ? err.message : 'Failed to load models');
         },
       });
   }
@@ -586,7 +587,7 @@ export class ModelsListComponent implements OnInit {
   public onModelSearch(value: string): void {
     const trimmed = value.trim();
     if (trimmed) {
-      this.router.navigate(['/details/models/name', trimmed]);
+      void this.router.navigate(['/details/models/name', trimmed]);
     }
   }
 }

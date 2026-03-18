@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, Observable, of, finalize, catchError, map } from 'rxjs';
+import { forkJoin, Observable, of, finalize, catchError, map, concatMap, tap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { extractApiError } from '../../helper/extract-api-error';
 import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
@@ -379,7 +379,7 @@ export class ProfileStylesListComponent implements OnInit {
 
   public navigateToStyle(style: Style): void {
     const type = isImageStyle(style) ? 'image' : 'text';
-    this.router.navigate(['/details/styles', type, style.id]);
+    void this.router.navigate(['/details/styles', type, style.id]);
   }
 
   public openCreateForm(): void {
@@ -422,18 +422,16 @@ export class ProfileStylesListComponent implements OnInit {
 
       update$
         .pipe(
+          tap(() => {
+            this.editingStyle.set(null);
+            this.showCreateForm.set(false);
+          }),
+          concatMap(() => this.auth.refreshUser()),
           takeUntilDestroyed(this.destroyRef),
           finalize(() => this.creating.set(false)),
         )
         .subscribe({
-          next: () => {
-            this.editingStyle.set(null);
-            this.showCreateForm.set(false);
-            this.auth
-              .refreshUser()
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe(() => this.loadUserStyles());
-          },
+          next: () => this.loadUserStyles(),
           error: (err: unknown) => {
             this.error.set(extractApiError(err, 'Failed to update style'));
           },
@@ -456,25 +454,23 @@ export class ProfileStylesListComponent implements OnInit {
 
     observable
       .pipe(
+        tap(() => {
+          this.editingStyle.set(null);
+          this.showCreateForm.set(false);
+        }),
+        concatMap((response) =>
+          this.auth.refreshUser().pipe(map(() => response)),
+        ),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.creating.set(false)),
       )
       .subscribe({
         next: (response) => {
-          this.editingStyle.set(null);
-          this.showCreateForm.set(false);
-          // Refresh user to get updated style list
-          this.auth
-            .refreshUser()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-              // Navigate to the new style
-              this.router.navigate([
-                '/details/styles',
-                event.type,
-                response.id,
-              ]);
-            });
+          void this.router.navigate([
+            '/details/styles',
+            event.type,
+            response.id,
+          ]);
         },
         error: (err: unknown) => {
           this.error.set(extractApiError(err, 'Failed to create style'));
@@ -503,23 +499,22 @@ export class ProfileStylesListComponent implements OnInit {
         ? this.styleService.deleteImageStyle(style.id)
         : this.styleService.deleteTextStyle(style.id);
 
-    deleteFn.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        // Remove from local state
-        const updated = this.userStyles().filter(
-          (item) => item.id !== style.id,
-        );
-        this.internalUserStyles.set(updated);
-        this.stylesChange.emit(updated);
-        // Trigger a user refresh to update the user's style references
-        this.auth
-          .refreshUser()
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe();
-      },
-      error: (err: unknown) => {
-        this.error.set(extractApiError(err, 'Failed to delete style'));
-      },
-    });
+    deleteFn
+      .pipe(
+        tap(() => {
+          const updated = this.userStyles().filter(
+            (item) => item.id !== style.id,
+          );
+          this.internalUserStyles.set(updated);
+          this.stylesChange.emit(updated);
+        }),
+        concatMap(() => this.auth.refreshUser()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        error: (err: unknown) => {
+          this.error.set(extractApiError(err, 'Failed to delete style'));
+        },
+      });
   }
 }

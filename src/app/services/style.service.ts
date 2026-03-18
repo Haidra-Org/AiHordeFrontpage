@@ -11,10 +11,10 @@ import { AuthService } from './auth.service';
 import {
   ImageStyle,
   TextStyle,
-  StyleApiError,
   StyleModifyResponse,
   StyleExample,
 } from '../types/style';
+import { ApiError } from '../types/api-error';
 import { StyleCollection } from '../types/style-collection';
 import {
   StyleQueryParams,
@@ -65,14 +65,18 @@ export class StyleService {
     return apiKey;
   }
 
-  private handleError = (error: HttpErrorResponse): Observable<never> => {
-    const apiError: StyleApiError = {
-      status: error.status ?? 0,
-      message:
-        extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
-      rc: extractApiErrorField(error, 'rc'),
-    };
-    return throwError(() => apiError);
+  private handleError = (error: unknown): Observable<never> => {
+    if (error instanceof HttpErrorResponse) {
+      return throwError(
+        () =>
+          new ApiError(
+            extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+            error.status ?? 0,
+            extractApiErrorField(error, 'rc'),
+          ),
+      );
+    }
+    return throwError(() => error instanceof Error ? error : new ApiError('Unexpected error', 0));
   };
 
   private buildQueryParams(params: StyleQueryParams): HttpParams {
@@ -123,7 +127,7 @@ export class StyleService {
       .cachedGet<
         ImageStyle[]
       >(`${this.baseUrl}/styles/image`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'styles' })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -136,7 +140,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'styles' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -149,7 +153,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'styles' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   // ==========================================================================
@@ -171,7 +175,7 @@ export class StyleService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -195,7 +199,7 @@ export class StyleService {
       )
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -213,7 +217,7 @@ export class StyleService {
       .pipe(
         map(() => true),
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -240,7 +244,7 @@ export class StyleService {
       )
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -264,7 +268,7 @@ export class StyleService {
       )
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -284,7 +288,7 @@ export class StyleService {
       .pipe(
         map(() => true),
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -301,7 +305,7 @@ export class StyleService {
       .cachedGet<
         TextStyle[]
       >(`${this.baseUrl}/styles/text`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'styles' })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -314,7 +318,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'styles' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -327,7 +331,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'styles' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   // ==========================================================================
@@ -349,7 +353,7 @@ export class StyleService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -373,7 +377,7 @@ export class StyleService {
       )
       .pipe(
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -391,7 +395,7 @@ export class StyleService {
       .pipe(
         map(() => true),
         tap(() => this.cache.invalidate({ category: 'styles' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -410,7 +414,7 @@ export class StyleService {
       .cachedGet<
         StyleCollection[]
       >(`${this.baseUrl}/collections`, { params: httpParams, context: this.styleContext }, { ttl: CacheTTL.LONG, category: 'collections' })
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -423,7 +427,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'collections' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   /**
@@ -438,7 +442,7 @@ export class StyleService {
         { context: this.styleContext },
         { ttl: CacheTTL.LONG, category: 'collections' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   // ==========================================================================
@@ -452,11 +456,7 @@ export class StyleService {
   public createCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () =>
-        ({
-          status: 501,
-          message: 'Collection creation not yet implemented (Phase 2)',
-        }) satisfies StyleApiError,
+      () => new ApiError('Collection creation not yet implemented (Phase 2)', 501),
     );
   }
 
@@ -467,11 +467,7 @@ export class StyleService {
   public updateCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () =>
-        ({
-          status: 501,
-          message: 'Collection update not yet implemented (Phase 2)',
-        }) satisfies StyleApiError,
+      () => new ApiError('Collection update not yet implemented (Phase 2)', 501),
     );
   }
 
@@ -482,11 +478,7 @@ export class StyleService {
   public deleteCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () =>
-        ({
-          status: 501,
-          message: 'Collection deletion not yet implemented (Phase 2)',
-        }) satisfies StyleApiError,
+      () => new ApiError('Collection deletion not yet implemented (Phase 2)', 501),
     );
   }
 }
