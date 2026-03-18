@@ -96,7 +96,7 @@ export class HordeApiCacheService {
         });
       }),
       finalize(() => this.inFlight.delete(key)),
-      shareReplay(1),
+      shareReplay({ bufferSize: 1, refCount: true }),
     );
 
     this.inFlight.set(key, request$);

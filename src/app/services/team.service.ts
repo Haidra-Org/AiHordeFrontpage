@@ -8,12 +8,12 @@ import { Observable, catchError, of, tap, throwError } from 'rxjs';
 import { extractApiErrorField } from '../helper/extract-api-error';
 import {
   Team,
-  TeamApiError,
   TeamModifyResponse,
   CreateTeamRequest,
   UpdateTeamRequest,
   DeletedTeamResponse,
 } from '../types/team';
+import { ApiError } from '../types/api-error';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
@@ -36,14 +36,18 @@ export class TeamService {
     return this.auth.getStoredApiKey();
   }
 
-  private handleError = (error: HttpErrorResponse) => {
-    const apiError: TeamApiError = {
-      status: error.status ?? 0,
-      message:
-        extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
-      rc: extractApiErrorField(error, 'rc'),
-    };
-    return throwError(() => apiError);
+  private handleError = (error: unknown) => {
+    if (error instanceof HttpErrorResponse) {
+      return throwError(
+        () =>
+          new ApiError(
+            extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+            error.status ?? 0,
+            extractApiErrorField(error, 'rc'),
+          ),
+      );
+    }
+    return throwError(() => error instanceof Error ? error : new ApiError('Unexpected error', 0));
   };
 
   /**
@@ -79,11 +83,7 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message: 'Missing API key. Please log in again to manage teams.',
-          }) satisfies TeamApiError,
+        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
       );
     }
 
@@ -94,7 +94,7 @@ export class TeamService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'teams' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -108,11 +108,7 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message: 'Missing API key. Please log in again to manage teams.',
-          }) satisfies TeamApiError,
+        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
       );
     }
 
@@ -123,7 +119,7 @@ export class TeamService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'teams' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -134,11 +130,7 @@ export class TeamService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message: 'Missing API key. Please log in again to manage teams.',
-          }) satisfies TeamApiError,
+        () => new ApiError('Missing API key. Please log in again to manage teams.', 401),
       );
     }
 
@@ -149,7 +141,7 @@ export class TeamService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'teams' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 }

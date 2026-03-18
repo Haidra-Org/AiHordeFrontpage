@@ -13,11 +13,12 @@ import {
   tap,
   throwError,
 } from 'rxjs';
+import { extractApiErrorField } from '../helper/extract-api-error';
 import {
-  SharedKeyApiError,
   SharedKeyDetails,
   SharedKeyInput,
 } from '../types/shared-key';
+import { ApiError } from '../types/api-error';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
@@ -40,14 +41,18 @@ export class SharedKeyService {
     return this.auth.getStoredApiKey();
   }
 
-  private handleError = (error: HttpErrorResponse) => {
-    const apiError: SharedKeyApiError = {
-      status: error.status ?? 0,
-      message:
-        error.error?.message ?? 'Unexpected error while contacting the API.',
-      rc: error.error?.rc,
-    };
-    return throwError(() => apiError);
+  private handleError = (error: unknown) => {
+    if (error instanceof HttpErrorResponse) {
+      return throwError(
+        () =>
+          new ApiError(
+            extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+            error.status ?? 0,
+            extractApiErrorField(error, 'rc'),
+          ),
+      );
+    }
+    return throwError(() => error instanceof Error ? error : new ApiError('Unexpected error', 0));
   };
 
   public getSharedKey(
@@ -62,7 +67,7 @@ export class SharedKeyService {
         { headers, context: this.sharedKeyContext },
         { ttl: CacheTTL.MEDIUM, category: 'sharedkeys' },
       )
-      .pipe(catchError(this.handleError));
+      .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
   public getSharedKeysByIds(
@@ -85,12 +90,7 @@ export class SharedKeyService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message:
-              'Missing API key. Please log in again to manage shared keys.',
-          }) satisfies SharedKeyApiError,
+        () => new ApiError('Missing API key. Please log in again to manage shared keys.', 401),
       );
     }
 
@@ -101,7 +101,7 @@ export class SharedKeyService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -112,12 +112,7 @@ export class SharedKeyService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message:
-              'Missing API key. Please log in again to manage shared keys.',
-          }) satisfies SharedKeyApiError,
+        () => new ApiError('Missing API key. Please log in again to manage shared keys.', 401),
       );
     }
 
@@ -128,7 +123,7 @@ export class SharedKeyService {
       })
       .pipe(
         tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 
@@ -136,12 +131,7 @@ export class SharedKeyService {
     const apiKey = this.ensureApiKey();
     if (!apiKey) {
       return throwError(
-        () =>
-          ({
-            status: 401,
-            message:
-              'Missing API key. Please log in again to manage shared keys.',
-          }) satisfies SharedKeyApiError,
+        () => new ApiError('Missing API key. Please log in again to manage shared keys.', 401),
       );
     }
 
@@ -153,7 +143,7 @@ export class SharedKeyService {
       .pipe(
         map(() => true),
         tap(() => this.cache.invalidate({ category: 'sharedkeys' })),
-        catchError(this.handleError),
+        catchError((err: unknown) => this.handleError(err)),
       );
   }
 }

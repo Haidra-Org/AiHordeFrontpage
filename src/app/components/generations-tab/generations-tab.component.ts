@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { concatMap, EMPTY, tap } from 'rxjs';
 import {
   FormControl,
   FormGroup,
@@ -589,35 +590,43 @@ export class GenerationsTabComponent {
       if (gen.type === 'image') {
         this.aiHorde
           .checkImageGeneration(gen.id)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((check) => {
-            if (check === GENERATION_NOT_FOUND) {
+          .pipe(
+            tap((check) => {
+              if (check === GENERATION_NOT_FOUND) {
+                this.updateGeneration(gen.id, { notFound: true });
+                return;
+              }
+              if (!check) return;
+              this.updateGeneration(gen.id, {
+                check,
+                done: check.done,
+                faulted: check.faulted,
+              });
+            }),
+            concatMap((check) => {
+              if (
+                check !== GENERATION_NOT_FOUND &&
+                check &&
+                check.done &&
+                !gen.result
+              ) {
+                return this.aiHorde.getImageGenerationStatus(gen.id);
+              }
+              return EMPTY;
+            }),
+            takeUntilDestroyed(this.destroyRef),
+          )
+          .subscribe((status) => {
+            if (status === GENERATION_NOT_FOUND) {
               this.updateGeneration(gen.id, { notFound: true });
               return;
             }
-            if (!check) return;
+            if (!status) return;
             this.updateGeneration(gen.id, {
-              check,
-              done: check.done,
-              faulted: check.faulted,
+              result: status,
+              done: status.done,
+              faulted: status.faulted,
             });
-            if (check.done && !gen.result) {
-              this.aiHorde
-                .getImageGenerationStatus(gen.id)
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe((status) => {
-                  if (status === GENERATION_NOT_FOUND) {
-                    this.updateGeneration(gen.id, { notFound: true });
-                    return;
-                  }
-                  if (!status) return;
-                  this.updateGeneration(gen.id, {
-                    result: status,
-                    done: status.done,
-                    faulted: status.faulted,
-                  });
-                });
-            }
           });
       } else if (gen.type === 'text') {
         this.aiHorde

@@ -27,7 +27,11 @@ export class InlineSvgComponent implements OnInit {
 
   private static readonly ALLOWED_PREFIXES = ['/assets/', 'assets/'];
 
-  public async ngOnInit(): Promise<void> {
+  public ngOnInit(): void {
+    void this.loadSvg();
+  }
+
+  private async loadSvg(): Promise<void> {
     const path = this.href();
     if (!InlineSvgComponent.ALLOWED_PREFIXES.some((p) => path.startsWith(p))) {
       console.error(`inline-svg: blocked untrusted path "${path}"`);

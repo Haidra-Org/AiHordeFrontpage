@@ -68,7 +68,7 @@ export class PublicWorkersComponent implements OnInit {
   public onWorkerTypeChange(type: WorkerType): void {
     // Only update URL if we had a type in the route
     if (this.initialWorkerType()) {
-      this.router.navigate(['/details/workers', type], { replaceUrl: true });
+      void this.router.navigate(['/details/workers', type], { replaceUrl: true });
     }
   }
 
@@ -81,10 +81,10 @@ export class PublicWorkersComponent implements OnInit {
     const uuidPattern =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (uuidPattern.test(trimmed)) {
-      this.router.navigate(['/details/workers/id', trimmed]);
+      void this.router.navigate(['/details/workers/id', trimmed]);
     } else {
       // Treat as worker name
-      this.router.navigate(['/details/workers/name', trimmed]);
+      void this.router.navigate(['/details/workers/name', trimmed]);
     }
   }
 
@@ -92,7 +92,7 @@ export class PublicWorkersComponent implements OnInit {
    * Clear the owner filter and return to the full workers list.
    */
   public clearOwnerFilter(): void {
-    this.router.navigate(['/details/workers'], { replaceUrl: true });
+    void this.router.navigate(['/details/workers'], { replaceUrl: true });
   }
 
   /**
@@ -102,11 +102,11 @@ export class PublicWorkersComponent implements OnInit {
   public clearHighlight(): void {
     const currentType = this.initialWorkerType();
     if (currentType) {
-      this.router.navigate(['/details/workers', currentType], {
+      void this.router.navigate(['/details/workers', currentType], {
         replaceUrl: true,
       });
     } else {
-      this.router.navigate(['/details/workers'], { replaceUrl: true });
+      void this.router.navigate(['/details/workers'], { replaceUrl: true });
     }
   }
 }

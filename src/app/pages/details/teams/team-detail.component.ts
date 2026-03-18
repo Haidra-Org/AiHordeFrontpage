@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { switchMap } from 'rxjs';
+import { EMPTY, map, switchMap, tap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
@@ -53,22 +53,20 @@ export class TeamDetailComponent implements OnInit {
           this.error.set(null);
           return this.teamService.getTeam(teamId);
         }),
+        tap((team) => {
+          this.team.set(team);
+          this.loading.set(false);
+        }),
+        switchMap((team) =>
+          team
+            ? this.translator.get('app_title').pipe(map((appTitle) => ({ team, appTitle })))
+            : EMPTY,
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (team) => {
-          this.team.set(team);
-          this.loading.set(false);
-
-          if (team) {
-            // Set title
-            this.translator
-              .get('app_title')
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((appTitle) => {
-                this.title.setTitle(`${team.name} | ${appTitle}`);
-              });
-          }
+        next: ({ team, appTitle }) => {
+          this.title.setTitle(`${team.name} | ${appTitle}`);
         },
         error: () => {
           this.error.set('Failed to load team');

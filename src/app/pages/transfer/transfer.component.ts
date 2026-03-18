@@ -17,7 +17,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { debounceTime, filter, switchMap } from 'rxjs';
+import { debounceTime, EMPTY, filter, map, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -197,61 +197,66 @@ export class TransferComponent implements OnInit {
       });
 
     this.form.controls.targetUser.valueChanges
-      .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
-      .subscribe((targetUser) => {
-        if (!targetUser) {
-          this.targetUserChecking.set(false);
-          return;
-        }
-
-        const normalizedTarget = targetUser.trim();
-        if (!normalizedTarget) {
-          this.targetUserChecking.set(false);
-          this.validatedTargetKind.set(null);
-          this.form.patchValue({ targetUserValidated: null });
-          return;
-        }
-
-        this.targetUserChecking.set(true);
-
-        const sourceApiKey = this.form.controls.apiKey.value?.trim();
-
-        const parts = normalizedTarget.split('#');
-        if (parts.length !== 2) {
-          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-          return;
-        }
-
-        const id = Number(parts[1]);
-        if (Number.isNaN(id)) {
-          this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-          return;
-        }
-
-        this.aiHorde
-          .getUserById(id)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe((user) => {
-            if (
-              this.form.controls.targetUser.value?.trim() !== normalizedTarget
-            ) {
-              return;
-            }
-
+      .pipe(
+        debounceTime(500),
+        switchMap((targetUser) => {
+          if (!targetUser) {
             this.targetUserChecking.set(false);
+            return EMPTY;
+          }
 
-            const isUserMatch =
-              user !== null &&
-              normalizedTarget.toLowerCase() === user.username.toLowerCase();
+          const normalizedTarget = targetUser.trim();
+          if (!normalizedTarget) {
+            this.targetUserChecking.set(false);
+            this.validatedTargetKind.set(null);
+            this.form.patchValue({ targetUserValidated: null });
+            return EMPTY;
+          }
 
-            if (isUserMatch) {
-              this.validatedTargetKind.set('user');
-              this.form.patchValue({ targetUserValidated: true });
-              return;
-            }
+          this.targetUserChecking.set(true);
 
+          const sourceApiKey = this.form.controls.apiKey.value?.trim();
+
+          const parts = normalizedTarget.split('#');
+          if (parts.length !== 2) {
             this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-          });
+            return EMPTY;
+          }
+
+          const id = Number(parts[1]);
+          if (Number.isNaN(id)) {
+            this.validateAsSharedKey(normalizedTarget, sourceApiKey);
+            return EMPTY;
+          }
+
+          return this.aiHorde
+            .getUserById(id)
+            .pipe(
+              map((user) => ({ user, normalizedTarget, sourceApiKey })),
+            );
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(({ user, normalizedTarget, sourceApiKey }) => {
+        if (
+          this.form.controls.targetUser.value?.trim() !== normalizedTarget
+        ) {
+          return;
+        }
+
+        this.targetUserChecking.set(false);
+
+        const isUserMatch =
+          user !== null &&
+          normalizedTarget.toLowerCase() === user.username.toLowerCase();
+
+        if (isUserMatch) {
+          this.validatedTargetKind.set('user');
+          this.form.patchValue({ targetUserValidated: true });
+          return;
+        }
+
+        this.validateAsSharedKey(normalizedTarget, sourceApiKey);
       });
 
     this.form.controls.targetUser.valueChanges
