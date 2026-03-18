@@ -150,7 +150,9 @@ export class NavNotificationService {
     if (!isPlatformBrowser(this.platformId)) return {};
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
+      return raw
+        ? (JSON.parse(raw) as Record<string, DismissedNotification>)
+        : {};
     } catch {
       return {};
     }

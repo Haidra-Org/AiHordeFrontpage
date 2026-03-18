@@ -56,12 +56,12 @@ export class TeamsListComponent implements OnInit {
 
   /** Owner ID to filter by from route. */
   public readonly filterOwnerId = computed<string | null>(() => {
-    return this.params()['ownerId'] ?? null;
+    return (this.params()['ownerId'] as string | undefined) ?? null;
   });
 
   /** Team ID to highlight from route. */
   public readonly highlightTeamId = computed<string | null>(() => {
-    return this.params()['highlightTeamId'] ?? null;
+    return (this.params()['highlightTeamId'] as string | undefined) ?? null;
   });
 
   /** Reference to highlighted team element for scrolling. */

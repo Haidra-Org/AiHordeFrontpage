@@ -17,7 +17,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { debounceTime, EMPTY, filter, map, switchMap } from 'rxjs';
+import { catchError, debounceTime, EMPTY, filter, switchMap, tap } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -218,46 +218,32 @@ export class TransferComponent implements OnInit {
           const sourceApiKey = this.form.controls.apiKey.value?.trim();
 
           const parts = normalizedTarget.split('#');
-          if (parts.length !== 2) {
-            this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-            return EMPTY;
+          const id = parts.length === 2 ? Number(parts[1]) : NaN;
+          if (parts.length !== 2 || Number.isNaN(id)) {
+            return this.validateAsSharedKey(normalizedTarget, sourceApiKey);
           }
 
-          const id = Number(parts[1]);
-          if (Number.isNaN(id)) {
-            this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-            return EMPTY;
-          }
+          return this.aiHorde.getUserById(id).pipe(
+            switchMap((user) => {
+              this.targetUserChecking.set(false);
 
-          return this.aiHorde
-            .getUserById(id)
-            .pipe(
-              map((user) => ({ user, normalizedTarget, sourceApiKey })),
-            );
+              const isUserMatch =
+                user !== null &&
+                normalizedTarget.toLowerCase() === user.username.toLowerCase();
+
+              if (isUserMatch) {
+                this.validatedTargetKind.set('user');
+                this.form.patchValue({ targetUserValidated: true });
+                return EMPTY;
+              }
+
+              return this.validateAsSharedKey(normalizedTarget, sourceApiKey);
+            }),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ user, normalizedTarget, sourceApiKey }) => {
-        if (
-          this.form.controls.targetUser.value?.trim() !== normalizedTarget
-        ) {
-          return;
-        }
-
-        this.targetUserChecking.set(false);
-
-        const isUserMatch =
-          user !== null &&
-          normalizedTarget.toLowerCase() === user.username.toLowerCase();
-
-        if (isUserMatch) {
-          this.validatedTargetKind.set('user');
-          this.form.patchValue({ targetUserValidated: true });
-          return;
-        }
-
-        this.validateAsSharedKey(normalizedTarget, sourceApiKey);
-      });
+      .subscribe();
 
     this.form.controls.targetUser.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -305,37 +291,20 @@ export class TransferComponent implements OnInit {
       });
   }
 
-  private validateAsSharedKey(
-    sharedKeyId: string,
-    sourceApiKey?: string,
-  ): void {
-    this.sharedKeyService
-      .getSharedKey(sharedKeyId, sourceApiKey)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-            return;
-          }
-
-          this.targetUserChecking.set(false);
-
-          this.validatedTargetKind.set('sharedKey');
-          this.form.patchValue({
-            targetUserValidated: true,
-          });
-        },
-        error: () => {
-          if (this.form.controls.targetUser.value?.trim() !== sharedKeyId) {
-            return;
-          }
-
-          this.targetUserChecking.set(false);
-
-          this.validatedTargetKind.set(null);
-          this.form.patchValue({ targetUserValidated: false });
-        },
-      });
+  private validateAsSharedKey(sharedKeyId: string, sourceApiKey?: string) {
+    return this.sharedKeyService.getSharedKey(sharedKeyId, sourceApiKey).pipe(
+      tap(() => {
+        this.targetUserChecking.set(false);
+        this.validatedTargetKind.set('sharedKey');
+        this.form.patchValue({ targetUserValidated: true });
+      }),
+      catchError(() => {
+        this.targetUserChecking.set(false);
+        this.validatedTargetKind.set(null);
+        this.form.patchValue({ targetUserValidated: false });
+        return EMPTY;
+      }),
+    );
   }
 
   public transfer(): void {

@@ -183,7 +183,7 @@ describe('ItemListSectionComponent - Data Structure Validation', () => {
 
       expect(lucidCreations.itemType).toBe(ItemType.GUI_IMAGE);
       expect(
-        enumDisplayService.getPlatformGroupedLabel(lucidCreations.platform!),
+        enumDisplayService.getPlatformGroupedLabel(lucidCreations.platform),
       ).toBe('Desktop, Web');
     });
 
@@ -218,7 +218,7 @@ describe('ItemListSectionComponent - Data Structure Validation', () => {
       };
 
       expect(bot.domain).toEqual([Domain.IMAGE, Domain.TEXT]);
-      expect(enumDisplayService.getDomainArrayLabel(bot.domain!)).toBe(
+      expect(enumDisplayService.getDomainArrayLabel(bot.domain)).toBe(
         'Image & Text',
       );
     });

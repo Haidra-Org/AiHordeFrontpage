@@ -47,7 +47,12 @@ export class TeamDetailComponent implements OnInit {
     this.route.params
       .pipe(
         switchMap((params) => {
-          const teamId = params['teamId'];
+          const teamId = params['teamId'] as string | undefined;
+          if (!teamId) {
+            this.error.set('Missing team ID');
+            this.loading.set(false);
+            return EMPTY;
+          }
           this.teamId.set(teamId);
           this.loading.set(true);
           this.error.set(null);
@@ -59,7 +64,9 @@ export class TeamDetailComponent implements OnInit {
         }),
         switchMap((team) =>
           team
-            ? this.translator.get('app_title').pipe(map((appTitle) => ({ team, appTitle })))
+            ? this.translator
+                .get('app_title')
+                .pipe(map((appTitle) => ({ team, appTitle })))
             : EMPTY,
         ),
         takeUntilDestroyed(this.destroyRef),

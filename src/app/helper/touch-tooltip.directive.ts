@@ -61,8 +61,8 @@ export class TouchTooltipContentComponent {
 @Directive({
   selector: '[appTouchTooltip]',
   host: {
-    'tabindex': '0',
-    'role': 'img',
+    tabindex: '0',
+    role: 'img',
     '[style.cursor]': '"help"',
     '[attr.aria-describedby]': 'tooltipId()',
     '(mouseenter)': 'show()',
@@ -75,7 +75,7 @@ export class TouchTooltipContentComponent {
   },
 })
 export class TouchTooltipDirective implements OnDestroy {
-  private readonly elementRef = inject(ElementRef);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlay = inject(Overlay);
   private readonly vcr = inject(ViewContainerRef);
   private readonly transloco = inject(TranslocoService);
@@ -177,7 +177,7 @@ export class TouchTooltipDirective implements OnDestroy {
   protected onDocumentPointerDown(event: Event): void {
     if (!this.visible) return;
     const target = event.target as Node;
-    const hostEl = this.elementRef.nativeElement as HTMLElement;
+    const hostEl = this.elementRef.nativeElement;
     if (hostEl.contains(target)) return;
     if (this.overlayRef?.overlayElement?.contains(target)) return;
     this.hide();

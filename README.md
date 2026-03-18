@@ -1,27 +1,92 @@
-# AiHordeWebsite
+# AI Horde Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.0.
+The homepage for [AI Horde](https://aihorde.net/), a community-driven distributed cluster for generating images and text using open-source AI models.
 
-## Development server
+Built with **Angular 21** and **Tailwind CSS 4**.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Prerequisites
 
-## Code scaffolding
+- **Node.js 24** — managed via [NVM for Windows](https://github.com/coreybutler/nvm-windows) or [nvm](https://github.com/nvm-sh/nvm)
+- **Angular CLI** — globally installed for development convenience (`npm install -g @angular/cli`)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+```bash
+# Windows (We recommend nvm-windows for ease of use)
+nvm install 24.12.0
+nvm use 24.12.0
 
-## Build
+# Verify
+node -v  # Should output v24.x
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+npm install -g @angular/cli
+```
 
-## Running unit tests
+## Getting Started
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+```bash
+# Install dependencies
+npm ci
 
-## Running end-to-end tests
+# Start development server (port 4209)
+npm start
+```
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Navigate to `http://localhost:4209/`. The app will hot-reload on file changes.
 
-## Further help
+## Scripts
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+| Command                            | Description                      |
+| ---------------------------------- | -------------------------------- |
+| `npm start`                        | Development server on port 4209  |
+| `npm test`                         | Run unit tests (Karma + Jasmine) |
+| `npm run build`                    | Production build with SSR        |
+| `npm run serve:ssr:AiHordeWebsite` | Serve the SSR build locally      |
+
+## Project Structure
+
+```bash
+src/
+├── app/
+│   ├── components/       # Standalone Angular components
+│   ├── pages/            # Route-level page components
+│   ├── services/         # Injectable services (API, auth, theme, etc.)
+│   ├── guards/           # Route guards
+│   ├── pipes/            # Custom pipes
+│   ├── directives/       # Custom directives
+│   ├── types/            # TypeScript interfaces and types
+│   ├── helper/           # Utility functions
+│   ├── app.routes.ts     # Route definitions
+│   └── app.config.ts     # App providers and configuration
+├── assets/
+│   ├── i18n/             # Transloco translation files
+│   ├── img/              # Static images
+│   └── data/             # Static data files
+├── styles/               # All CSS (centralized, not in components)
+│   ├── _theme.css        # Design tokens via @theme
+│   ├── _base.css         # Element defaults and keyframes
+│   └── _*.css            # Component and page-specific styles
+└── environments/         # Environment configs
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical overview including route tables, service inventory, and data flow.
+
+## Styling
+
+All styles are centralized in `src/styles/`. This project does not use component-level css files.
+
+- [STYLING.md](STYLING.md) — Conventions, file organization, quick reference
+- [docs/design-system.md](docs/design-system.md) — Design tokens, surface primitives, glass system, color system
+- [docs/component-patterns.md](docs/component-patterns.md) — Full CSS class catalog
+
+## API
+
+The frontend consumes the AI Horde API at `https://aihorde.net/api/v2/`. Service layer is in `src/app/services/`, with `HordeApiCacheService` providing TTL-based caching for all API calls.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development conventions, code standards, and PR guidelines.
+
+## License
+
+Code is licensed under the [AGPL-3.0 License](LICENSE). See the LICENSE file for details.
+
+This is a relicense of the [original code](https://github.com/RikudouSage/AiHordeFrontpage) (prior to commit 0a58cdde78410e208f7d5e0321ea3ddcda996c38) is licensed under the MIT License. See [original LICENSE](https://github.com/RikudouSage/AiHordeFrontpage/blob/master/LICENSE) for details.

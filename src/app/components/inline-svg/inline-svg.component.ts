@@ -38,14 +38,18 @@ export class InlineSvgComponent implements OnInit {
       return;
     }
 
-    this.svgContent.set(
-      this.sanitizer.bypassSecurityTrustHtml(
-        await toPromise(
-          this.httpClient.get(path, {
-            responseType: 'text',
-          }),
+    try {
+      this.svgContent.set(
+        this.sanitizer.bypassSecurityTrustHtml(
+          await toPromise(
+            this.httpClient.get(path, {
+              responseType: 'text',
+            }),
+          ),
         ),
-      ),
-    );
+      );
+    } catch {
+      // SVG load failed — leave content empty rather than crashing
+    }
   }
 }

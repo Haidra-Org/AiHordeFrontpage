@@ -79,7 +79,11 @@ export class WorkerLookupComponent implements OnInit {
   });
 
   public readonly lookupValue = computed(() => {
-    return this.params()['workerId'] ?? this.params()['workerName'] ?? '';
+    return (
+      (this.params()['workerId'] as string | undefined) ??
+      (this.params()['workerName'] as string | undefined) ??
+      ''
+    );
   });
 
   public readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
@@ -109,8 +113,8 @@ export class WorkerLookupComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         switchMap((params) => {
-          const workerId = params['workerId'];
-          const workerName = params['workerName'];
+          const workerId = params['workerId'] as string | undefined;
+          const workerName = params['workerName'] as string | undefined;
 
           this.loading.set(true);
           this.error.set(null);

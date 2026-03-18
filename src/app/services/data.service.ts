@@ -98,10 +98,12 @@ export class DataService {
                         },
                       ).format(new Date(contextItem.value));
                       break;
-                    default:
+                    default: {
+                      const _exhaustiveCheck: never = contextItem.valueType;
                       throw new Error(
-                        `Unsupported type: ${String(contextItem.valueType)}`,
+                        `Unsupported type: ${String(_exhaustiveCheck)}`,
                       );
+                    }
                   }
 
                   copy.text = copy.text.replaceAll(

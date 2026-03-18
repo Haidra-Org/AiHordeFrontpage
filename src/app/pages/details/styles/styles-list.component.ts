@@ -78,12 +78,12 @@ export class StylesListComponent implements OnInit {
 
   /** Style ID to highlight from route. */
   public readonly highlightStyleId = computed<string | null>(() => {
-    return this.params()['highlightStyleId'] ?? null;
+    return (this.params()['highlightStyleId'] as string | undefined) ?? null;
   });
 
   /** Style type from route for highlighting. */
   public readonly highlightStyleType = computed<StylesTab | null>(() => {
-    const type = this.params()['type'];
+    const type = this.params()['type'] as string | undefined;
     if (type === 'image' || type === 'text') {
       return type;
     }
@@ -324,7 +324,9 @@ export class StylesListComponent implements OnInit {
       )
       .subscribe({
         error: (err: unknown) =>
-          this.error.set(err instanceof Error ? err.message : this.getLoadError(tab)),
+          this.error.set(
+            err instanceof Error ? err.message : this.getLoadError(tab),
+          ),
       });
   }
 
@@ -358,7 +360,9 @@ export class StylesListComponent implements OnInit {
           }
         },
         error: (err: unknown) =>
-          this.error.set(err instanceof Error ? err.message : this.getLoadError(tab)),
+          this.error.set(
+            err instanceof Error ? err.message : this.getLoadError(tab),
+          ),
       });
   }
 
