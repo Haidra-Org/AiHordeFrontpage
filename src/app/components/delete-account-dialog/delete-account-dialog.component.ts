@@ -127,10 +127,12 @@ export class DeleteAccountDialogComponent implements OnDestroy {
   private previousActiveElement: Element | null = null;
 
   /** Reference to the dialog panel for focus management. */
-  private readonly dialogPanel = viewChild<ElementRef>('dialogPanel');
+  private readonly dialogPanel =
+    viewChild<ElementRef<HTMLElement>>('dialogPanel');
 
   /** Reference to the username input for focus. */
-  private readonly usernameInput = viewChild<ElementRef>('usernameInput');
+  private readonly usernameInput =
+    viewChild<ElementRef<HTMLElement>>('usernameInput');
 
   // ─────────────────────────────────────────────────────────────────────────
   // INPUTS
@@ -281,16 +283,14 @@ export class DeleteAccountDialogComponent implements OnDestroy {
     const panel = this.dialogPanel();
     if (!panel) return;
 
-    const focusableElements = panel.nativeElement.querySelectorAll(
+    const focusableElements = panel.nativeElement.querySelectorAll<HTMLElement>(
       'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
     );
 
     if (focusableElements.length === 0) return;
 
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[
-      focusableElements.length - 1
-    ] as HTMLElement;
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
 
     if (event.shiftKey) {
       // Shift+Tab: if on first element, go to last
