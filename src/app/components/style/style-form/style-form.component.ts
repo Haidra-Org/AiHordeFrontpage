@@ -337,7 +337,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
         initial?.prompt ?? (isImage ? '{p}{np}' : '{p}'),
         [Validators.required],
       ],
-      public: [initial?.public ?? true],
+      public: [initial?.public ?? false],
       nsfw: [initial?.nsfw ?? false],
       tags: [initial?.tags?.join(', ') ?? ''],
       models: [initial?.models?.join(', ') ?? '', [requiresAtLeastOneModel]],
@@ -587,18 +587,14 @@ export class StyleFormComponent implements OnInit, OnChanges {
       // Parse LoRAs and TIs from JSON
       if (f.loras_json) {
         try {
-          params.loras = JSON.parse(
-            f.loras_json,
-          ) as StyleLoraConfig[];
+          params.loras = JSON.parse(f.loras_json) as StyleLoraConfig[];
         } catch {
           // Invalid JSON, skip
         }
       }
       if (f.tis_json) {
         try {
-          params.tis = JSON.parse(
-            f.tis_json,
-          ) as StyleTextualInversionConfig[];
+          params.tis = JSON.parse(f.tis_json) as StyleTextualInversionConfig[];
         } catch {
           // Invalid JSON, skip
         }
