@@ -17,6 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormBuilder,
+  FormControl,
   FormGroup,
   ReactiveFormsModule,
   ValidationErrors,
@@ -120,6 +121,10 @@ interface TextStyleFormValue extends StyleFormBaseValue {
   dynatemp_exponent: number | string;
 }
 
+type FormControlsOf<T> = { [K in keyof T]: FormControl<T[K] | null> };
+type ImageStyleFormControls = FormControlsOf<ImageStyleFormValue>;
+type TextStyleFormControls = FormControlsOf<TextStyleFormValue>;
+
 interface ParsedStyleJson {
   name?: string;
   info?: string;
@@ -190,6 +195,13 @@ export class StyleFormComponent implements OnInit, OnChanges {
   /** The reactive form. */
   public form!: FormGroup;
   private initialPayloadSnapshot = '';
+
+  private get imageForm(): FormGroup<ImageStyleFormControls> {
+    return this.form as FormGroup<ImageStyleFormControls>;
+  }
+  private get textForm(): FormGroup<TextStyleFormControls> {
+    return this.form as FormGroup<TextStyleFormControls>;
+  }
 
   /** Whether this is an image style. */
   public readonly isImageStyle = computed(() => this.styleType() === 'image');
@@ -508,7 +520,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
     }
   }
 
-  private parseCommaSeparated(value: string): string[] {
+  private parseCommaSeparated(value: string | null | undefined): string[] {
     if (!value || !value.trim()) return [];
     return value
       .split(',')
@@ -530,16 +542,16 @@ export class StyleFormComponent implements OnInit, OnChanges {
     | UpdateImageStyleInput
     | UpdateTextStyleInput {
     const isImage = this.isImageStyle();
-    const baseF = this.form.value as StyleFormBaseValue;
+    const formValue = isImage ? this.imageForm.value : this.textForm.value;
 
     const base = {
-      name: baseF.name,
-      info: baseF.info || undefined,
-      prompt: baseF.prompt,
-      public: baseF.public,
-      nsfw: baseF.nsfw,
-      tags: this.parseCommaSeparated(baseF.tags),
-      models: this.parseCommaSeparated(baseF.models),
+      name: formValue.name ?? '',
+      info: formValue.info || undefined,
+      prompt: formValue.prompt ?? '',
+      public: formValue.public ?? false,
+      nsfw: formValue.nsfw ?? false,
+      tags: this.parseCommaSeparated(formValue.tags),
+      models: this.parseCommaSeparated(formValue.models),
     };
 
     // Remove empty arrays
@@ -549,7 +561,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
       delete (base as Record<string, unknown>)['models'];
 
     if (isImage) {
-      const f = this.form.value as ImageStyleFormValue;
+      const f = this.imageForm.value;
       const params: ImageStyleParams = {};
 
       if (f.sampler_name)
@@ -608,7 +620,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
       return payload;
     } else {
-      const f = this.form.value as TextStyleFormValue;
+      const f = this.textForm.value;
       const params: TextStyleParams = {};
 
       const temperature = this.parseOptionalNumber(f.temperature);
@@ -667,8 +679,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
 
   /** Whether the prompt template is missing a {p} placeholder. */
   public readonly promptMissingPlaceholder = computed(() => {
-    const prompt =
-      (this.form?.controls['prompt']?.value as string | undefined) ?? '';
+    const prompt = (this.form?.controls['prompt']?.value as string) ?? '';
     return prompt.length > 0 && !prompt.includes('{p}');
   });
 
