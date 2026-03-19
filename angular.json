@@ -25,6 +25,8 @@
             "inlineStyleLanguage": "css",
             "assets": [
               "src/assets",
+              "src/404.html",
+              "src/.nojekyll",
               {
                 "glob": "*",
                 "output": "/",
@@ -98,6 +100,8 @@
             "inlineStyleLanguage": "css",
             "assets": [
               "src/assets",
+              "src/404.html",
+              "src/.nojekyll",
               {
                 "glob": "*",
                 "output": "/",
