@@ -70,13 +70,16 @@ export class StyleService {
       return throwError(
         () =>
           new ApiError(
-            extractApiErrorField(error, 'message') ?? 'Unexpected error while contacting the API.',
+            extractApiErrorField(error, 'message') ??
+              'Unexpected error while contacting the API.',
             error.status ?? 0,
             extractApiErrorField(error, 'rc'),
           ),
       );
     }
-    return throwError(() => error instanceof Error ? error : new ApiError('Unexpected error', 0));
+    return throwError(() =>
+      error instanceof Error ? error : new ApiError('Unexpected error', 0),
+    );
   };
 
   private buildQueryParams(params: StyleQueryParams): HttpParams {
@@ -456,7 +459,8 @@ export class StyleService {
   public createCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () => new ApiError('Collection creation not yet implemented (Phase 2)', 501),
+      () =>
+        new ApiError('Collection creation not yet implemented (Phase 2)', 501),
     );
   }
 
@@ -467,7 +471,8 @@ export class StyleService {
   public updateCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () => new ApiError('Collection update not yet implemented (Phase 2)', 501),
+      () =>
+        new ApiError('Collection update not yet implemented (Phase 2)', 501),
     );
   }
 
@@ -478,7 +483,8 @@ export class StyleService {
   public deleteCollection(): Observable<never> {
     // TODO: Phase 2 - Implement collection CRUD
     return throwError(
-      () => new ApiError('Collection deletion not yet implemented (Phase 2)', 501),
+      () =>
+        new ApiError('Collection deletion not yet implemented (Phase 2)', 501),
     );
   }
 }

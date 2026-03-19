@@ -60,7 +60,11 @@ export const rateLimitInterceptor: HttpInterceptorFn = (req, next) => {
   const attempt = (remaining: number): Observable<HttpEvent<unknown>> =>
     next(req).pipe(
       catchError((error: unknown) => {
-        if (!(error instanceof HttpErrorResponse) || error.status !== 429 || remaining <= 0) {
+        if (
+          !(error instanceof HttpErrorResponse) ||
+          error.status !== 429 ||
+          remaining <= 0
+        ) {
           if (error instanceof HttpErrorResponse) {
             state.limited.set(false);
             state.retryAfterMs.set(-1);
