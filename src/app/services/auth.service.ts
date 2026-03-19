@@ -1,9 +1,7 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, catchError, map, tap, switchMap } from 'rxjs';
-import {
-  extractApiErrorField,
-} from '../helper/extract-api-error';
+import { extractApiErrorField } from '../helper/extract-api-error';
 import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { ActiveGenerations, HordeUser } from '../types/horde-user';

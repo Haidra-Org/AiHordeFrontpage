@@ -44,11 +44,7 @@ export function extractApiErrorField(
  */
 export function extractApiError(error: unknown, fallback: string): string {
   if (error instanceof HttpErrorResponse) {
-    return (
-      extractApiErrorField(error, 'message') ??
-      error.message ??
-      fallback
-    );
+    return extractApiErrorField(error, 'message') ?? error.message ?? fallback;
   }
   return fallback;
 }

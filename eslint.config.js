@@ -7,7 +7,14 @@ const rxjsX = require("eslint-plugin-rxjs-x");
 const { parse } = require("path");
 module.exports = defineConfig(
   {
-    ignores: [".angular/", "dist/", "node_modules/", ".vscode/", "coverage/", ".husky/"],
+    ignores: [
+      ".angular/",
+      "dist/",
+      "node_modules/",
+      ".vscode/",
+      "coverage/",
+      ".husky/",
+    ],
   },
   {
     files: ["**/*.ts"],
@@ -60,7 +67,7 @@ module.exports = defineConfig(
         },
       ],
       // Angular Validators.* are static methods — safe to pass as references
-      "@typescript-eslint/unbound-method": ["error", { "ignoreStatic": true }],
+      "@typescript-eslint/unbound-method": ["error", { ignoreStatic: true }],
     },
   },
   {
@@ -84,7 +91,6 @@ module.exports = defineConfig(
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/unbound-method": "off",
-
     },
   },
 );

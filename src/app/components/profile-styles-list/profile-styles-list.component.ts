@@ -13,7 +13,16 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { forkJoin, Observable, of, finalize, catchError, map, concatMap, tap } from 'rxjs';
+import {
+  forkJoin,
+  Observable,
+  of,
+  finalize,
+  catchError,
+  map,
+  concatMap,
+  tap,
+} from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { extractApiError } from '../../helper/extract-api-error';
 import { ScrollFadeComponent } from '../../helper/scroll-fade.component';

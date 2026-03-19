@@ -379,16 +379,19 @@ export class GenerationsTabComponent {
 
   private sanitizeResponsePayload(value: unknown): unknown {
     try {
-      const sanitized = JSON.stringify(value, (_key: string, currentValue: unknown) => {
-        if (
-          typeof currentValue === 'string' &&
-          currentValue.length > 256 &&
-          /^[A-Za-z0-9+/=]/.test(currentValue)
-        ) {
-          return '[base64 data omitted]';
-        }
-        return currentValue;
-      });
+      const sanitized = JSON.stringify(
+        value,
+        (_key: string, currentValue: unknown) => {
+          if (
+            typeof currentValue === 'string' &&
+            currentValue.length > 256 &&
+            /^[A-Za-z0-9+/=]/.test(currentValue)
+          ) {
+            return '[base64 data omitted]';
+          }
+          return currentValue;
+        },
+      );
 
       return sanitized ? (JSON.parse(sanitized) as unknown) : value;
     } catch {
@@ -506,16 +509,21 @@ export class GenerationsTabComponent {
         return;
       }
       this.jsonError.set(null);
-      const models = Array.isArray(parsed['models']) ? (parsed['models'] as string[]).join(', ') : 'stable_diffusion';
-      const params = (typeof parsed['params'] === 'object' && parsed['params'] !== null)
-        ? parsed['params'] as Record<string, unknown>
-        : {};
+      const models = Array.isArray(parsed['models'])
+        ? (parsed['models'] as string[]).join(', ')
+        : 'stable_diffusion';
+      const params =
+        typeof parsed['params'] === 'object' && parsed['params'] !== null
+          ? (parsed['params'] as Record<string, unknown>)
+          : {};
       this.form.patchValue({
         prompt: parsed['prompt'] ?? '',
         model: models,
         steps: typeof params['steps'] === 'number' ? params['steps'] : 25,
-        cfg_scale: typeof params['cfg_scale'] === 'number' ? params['cfg_scale'] : 7.5,
-        clip_skip: typeof params['clip_skip'] === 'number' ? params['clip_skip'] : 1,
+        cfg_scale:
+          typeof params['cfg_scale'] === 'number' ? params['cfg_scale'] : 7.5,
+        clip_skip:
+          typeof params['clip_skip'] === 'number' ? params['clip_skip'] : 1,
         width: typeof params['width'] === 'number' ? params['width'] : 512,
         height: typeof params['height'] === 'number' ? params['height'] : 512,
         nsfw: typeof parsed['nsfw'] === 'boolean' ? parsed['nsfw'] : false,
