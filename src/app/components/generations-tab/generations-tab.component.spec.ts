@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal, WritableSignal } from '@angular/core';
+import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of } from 'rxjs';
@@ -318,38 +318,39 @@ describe('GenerationsTabComponent', () => {
   let component: GenerationsTabComponent;
   let el: HTMLElement;
 
-  const mockAuth = jasmine.createSpyObj(
-    'AuthService',
-    ['getStoredApiKey', 'updateCurrentUserActiveGenerations'],
-    {
-      currentUser: signal(null),
-      isLoading: signal(false),
-      isLoggedIn: signal(false),
-      isInitialized: signal(true),
-    },
-  );
+  const mockUser = signal<HordeUser | null>(null);
 
-  const mockHorde = jasmine.createSpyObj('AiHordeService', [
-    'submitImageGeneration',
-    'checkImageGeneration',
-    'getImageGenerationStatus',
-    'getTextGenerationStatus',
-    'getAlchemyStatus',
-    'getUserById',
-    'getSelfUserByApiKeyUncached',
-    'getImageModels',
-  ]);
+  const mockAuth = {
+    currentUser: mockUser,
+    isLoading: signal(false),
+    isLoggedIn: signal(false),
+    isInitialized: signal(true),
+    getStoredApiKey: vi.fn().mockReturnValue(null),
+    updateCurrentUserActiveGenerations: vi.fn(),
+  };
+
+  const mockHorde = {
+    submitImageGeneration: vi.fn().mockReturnValue(of(null)),
+    checkImageGeneration: vi.fn().mockReturnValue(of(null)),
+    getImageGenerationStatus: vi.fn().mockReturnValue(of(null)),
+    getTextGenerationStatus: vi.fn().mockReturnValue(of(null)),
+    getAlchemyStatus: vi.fn().mockReturnValue(of(null)),
+    getUserById: vi.fn().mockReturnValue(of(null)),
+    getSelfUserByApiKeyUncached: vi.fn().mockReturnValue(of(null)),
+    getImageModels: vi.fn().mockReturnValue(of([])),
+  };
 
   beforeEach(async () => {
-    mockHorde.getImageModels.and.returnValue(of([]));
-    mockHorde.getUserById.and.returnValue(of(null));
-    mockHorde.getSelfUserByApiKeyUncached.and.returnValue(of(null));
-    mockHorde.submitImageGeneration.and.returnValue(of(null));
-    mockHorde.checkImageGeneration.and.returnValue(of(null));
-    mockHorde.getImageGenerationStatus.and.returnValue(of(null));
-    mockHorde.getTextGenerationStatus.and.returnValue(of(null));
-    mockHorde.getAlchemyStatus.and.returnValue(of(null));
-    mockAuth.getStoredApiKey.and.returnValue(null);
+    // Reset mock return values
+    mockHorde.getImageModels.mockReturnValue(of([]));
+    mockHorde.getUserById.mockReturnValue(of(null));
+    mockHorde.getSelfUserByApiKeyUncached.mockReturnValue(of(null));
+    mockHorde.submitImageGeneration.mockReturnValue(of(null));
+    mockHorde.checkImageGeneration.mockReturnValue(of(null));
+    mockHorde.getImageGenerationStatus.mockReturnValue(of(null));
+    mockHorde.getTextGenerationStatus.mockReturnValue(of(null));
+    mockHorde.getAlchemyStatus.mockReturnValue(of(null));
+    mockAuth.getStoredApiKey.mockReturnValue(null);
 
     await TestBed.configureTestingModule({
       imports: [
@@ -425,7 +426,7 @@ describe('GenerationsTabComponent', () => {
   // -----------------------------------------------------------------------
   describe('image generation scenarios', () => {
     for (const scenario of scenarios) {
-      describe(scenario.name, () => {
+      describe(`scenario: ${scenario.name}`, () => {
         beforeEach(() => {
           setGenerations(scenario.generations);
         });
@@ -439,14 +440,12 @@ describe('GenerationsTabComponent', () => {
 
         it('should display generation IDs', () => {
           if (scenario.generations.length === 0) {
-            expect(true).toBeTrue();
+            // No generations to check
             return;
           }
           for (const gen of scenario.generations) {
             const found = el.textContent?.includes(gen.id);
-            expect(found)
-              .withContext(`should find generation ID ${gen.id}`)
-              .toBeTrue();
+            expect(found).toBe(true);
           }
         });
       });
@@ -530,7 +529,12 @@ describe('GenerationsTabComponent', () => {
       id: 'test-censored',
       done: true,
       result: makeImageResult([
-        makeOutput({ id: 'out-c', censored: true, state: 'censored', img: '' }),
+        makeOutput({
+          id: 'out-c',
+          censored: true,
+          state: 'censored',
+          img: '',
+        }),
       ]),
     });
 
@@ -1080,8 +1084,7 @@ describe('GenerationsTabComponent', () => {
   describe('component methods', () => {
     describe('refresh user generations', () => {
       function setCurrentUser(user: HordeUser | null): void {
-        const currentUserSignal =
-          mockAuth.currentUser as WritableSignal<HordeUser | null>;
+        const currentUserSignal = mockAuth.currentUser;
         currentUserSignal.set(user);
       }
 
@@ -1095,16 +1098,16 @@ describe('GenerationsTabComponent', () => {
       }
 
       beforeEach(() => {
-        mockHorde.getSelfUserByApiKeyUncached.calls.reset();
-        mockHorde.getUserById.calls.reset();
-        mockAuth.updateCurrentUserActiveGenerations.calls.reset();
+        mockHorde.getSelfUserByApiKeyUncached.mockClear();
+        mockHorde.getUserById.mockClear();
+        mockAuth.updateCurrentUserActiveGenerations.mockClear();
         component.trackedGenerations.set([]);
       });
 
       it('should use uncached authenticated self lookup and sync auth state', () => {
         setCurrentUser(makeUser({ id: 32582 }));
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.getSelfUserByApiKeyUncached.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.getSelfUserByApiKeyUncached.mockReturnValue(
           of(
             makeUser({
               id: 32582,
@@ -1119,9 +1122,10 @@ describe('GenerationsTabComponent', () => {
 
         component.refreshUserGenerations();
 
-        expect(mockHorde.getSelfUserByApiKeyUncached).toHaveBeenCalledOnceWith(
+        expect(mockHorde.getSelfUserByApiKeyUncached).toHaveBeenCalledWith(
           'api-key',
         );
+        expect(mockHorde.getSelfUserByApiKeyUncached).toHaveBeenCalledTimes(1);
         expect(mockHorde.getUserById).not.toHaveBeenCalled();
         expect(
           mockAuth.updateCurrentUserActiveGenerations,
@@ -1134,14 +1138,14 @@ describe('GenerationsTabComponent', () => {
         const tracked = component.trackedGenerations();
         expect(tracked.length).toBe(3);
         expect(tracked.map((g) => g.id)).toEqual(
-          jasmine.arrayContaining(['img-1', 'txt-1', 'alc-1']),
+          expect.arrayContaining(['img-1', 'txt-1', 'alc-1']),
         );
-        expect(component.refreshingGenerations()).toBeFalse();
+        expect(component.refreshingGenerations()).toBe(false);
       });
 
       it('should skip polling when no current user is available', () => {
         setCurrentUser(null);
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
 
         component.refreshUserGenerations();
 
@@ -1149,12 +1153,12 @@ describe('GenerationsTabComponent', () => {
         expect(
           mockAuth.updateCurrentUserActiveGenerations,
         ).not.toHaveBeenCalled();
-        expect(component.refreshingGenerations()).toBeFalse();
+        expect(component.refreshingGenerations()).toBe(false);
       });
 
       it('should skip polling when api key is missing', () => {
         setCurrentUser(makeUser());
-        mockAuth.getStoredApiKey.and.returnValue(null);
+        mockAuth.getStoredApiKey.mockReturnValue(null);
 
         component.refreshUserGenerations();
 
@@ -1162,13 +1166,13 @@ describe('GenerationsTabComponent', () => {
         expect(
           mockAuth.updateCurrentUserActiveGenerations,
         ).not.toHaveBeenCalled();
-        expect(component.refreshingGenerations()).toBeFalse();
+        expect(component.refreshingGenerations()).toBe(false);
       });
 
       it('should sync auth state even when active_generations is missing', () => {
         setCurrentUser(makeUser({ id: 77 }));
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.getSelfUserByApiKeyUncached.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.getSelfUserByApiKeyUncached.mockReturnValue(
           of(makeUser({ id: 77 })),
         );
 
@@ -1178,14 +1182,14 @@ describe('GenerationsTabComponent', () => {
           mockAuth.updateCurrentUserActiveGenerations,
         ).toHaveBeenCalledWith(undefined);
         expect(component.trackedGenerations().length).toBe(0);
-        expect(component.refreshingGenerations()).toBeFalse();
+        expect(component.refreshingGenerations()).toBe(false);
       });
     });
 
     describe('request model handling', () => {
       it('should omit models when model is blank', () => {
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.submitImageGeneration.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.submitImageGeneration.mockReturnValue(
           of({ id: 'gen-model-blank', kudos: 1 }),
         );
 
@@ -1197,14 +1201,15 @@ describe('GenerationsTabComponent', () => {
         component.submitGeneration();
 
         expect(mockHorde.submitImageGeneration).toHaveBeenCalled();
-        const request = mockHorde.submitImageGeneration.calls.mostRecent()
-          .args[1] as ImageGenerationRequest;
+        const request = mockHorde.submitImageGeneration.mock.calls.at(
+          -1,
+        )![1] as ImageGenerationRequest;
         expect(request.models).toBeUndefined();
       });
 
       it('should omit models when model is whitespace-only', () => {
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.submitImageGeneration.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.submitImageGeneration.mockReturnValue(
           of({ id: 'gen-model-space', kudos: 1 }),
         );
 
@@ -1215,14 +1220,15 @@ describe('GenerationsTabComponent', () => {
 
         component.submitGeneration();
 
-        const request = mockHorde.submitImageGeneration.calls.mostRecent()
-          .args[1] as ImageGenerationRequest;
+        const request = mockHorde.submitImageGeneration.mock.calls.at(
+          -1,
+        )![1] as ImageGenerationRequest;
         expect(request.models).toBeUndefined();
       });
 
       it('should include trimmed model when model is provided', () => {
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.submitImageGeneration.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.submitImageGeneration.mockReturnValue(
           of({ id: 'gen-model-set', kudos: 1 }),
         );
 
@@ -1233,14 +1239,15 @@ describe('GenerationsTabComponent', () => {
 
         component.submitGeneration();
 
-        const request = mockHorde.submitImageGeneration.calls.mostRecent()
-          .args[1] as ImageGenerationRequest;
+        const request = mockHorde.submitImageGeneration.mock.calls.at(
+          -1,
+        )![1] as ImageGenerationRequest;
         expect(request.models).toEqual(['stable_diffusion']);
       });
 
       it('should include multiple comma-separated models', () => {
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.submitImageGeneration.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.submitImageGeneration.mockReturnValue(
           of({ id: 'gen-model-multi', kudos: 1 }),
         );
 
@@ -1251,14 +1258,15 @@ describe('GenerationsTabComponent', () => {
 
         component.submitGeneration();
 
-        const request = mockHorde.submitImageGeneration.calls.mostRecent()
-          .args[1] as ImageGenerationRequest;
+        const request = mockHorde.submitImageGeneration.mock.calls.at(
+          -1,
+        )![1] as ImageGenerationRequest;
         expect(request.models).toEqual(['model-a', 'model-b', 'model-c']);
       });
 
       it('should ignore empty comma-separated model entries', () => {
-        mockAuth.getStoredApiKey.and.returnValue('api-key');
-        mockHorde.submitImageGeneration.and.returnValue(
+        mockAuth.getStoredApiKey.mockReturnValue('api-key');
+        mockHorde.submitImageGeneration.mockReturnValue(
           of({ id: 'gen-model-sparse', kudos: 1 }),
         );
 
@@ -1269,8 +1277,9 @@ describe('GenerationsTabComponent', () => {
 
         component.submitGeneration();
 
-        const request = mockHorde.submitImageGeneration.calls.mostRecent()
-          .args[1] as ImageGenerationRequest;
+        const request = mockHorde.submitImageGeneration.mock.calls.at(
+          -1,
+        )![1] as ImageGenerationRequest;
         expect(request.models).toEqual(['model-a', 'model-b']);
       });
     });
@@ -1286,40 +1295,38 @@ describe('GenerationsTabComponent', () => {
       ];
 
       for (const [meta, expected] of cases) {
-        expect(component.getMetadataLabel(meta))
-          .withContext(`value=${meta.value}`)
-          .toBe(expected);
+        expect(component.getMetadataLabel(meta)).toBe(expected);
       }
     });
 
     it('isMetadataWarning should identify warning-level metadata', () => {
       expect(
         component.isMetadataWarning({ type: 'lora', value: 'download_failed' }),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         component.isMetadataWarning({ type: 'ti', value: 'parse_failed' }),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         component.isMetadataWarning({
           type: 'lora',
           value: 'baseline_mismatch',
         }),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         component.isMetadataWarning({ type: 'censorship', value: 'nsfw' }),
-      ).toBeFalse();
+      ).toBe(false);
     });
 
     it('isMetadataDanger should identify danger-level metadata', () => {
       expect(
         component.isMetadataDanger({ type: 'censorship', value: 'csam' }),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         component.isMetadataDanger({ type: 'censorship', value: 'nsfw' }),
-      ).toBeTrue();
+      ).toBe(true);
       expect(
         component.isMetadataDanger({ type: 'lora', value: 'download_failed' }),
-      ).toBeFalse();
+      ).toBe(false);
     });
 
     it('formatWaitTime should format seconds correctly', () => {
@@ -1375,19 +1382,19 @@ describe('GenerationsTabComponent', () => {
     });
 
     it('toggleResponseJson should toggle expansion state', () => {
-      expect(component.isResponseExpanded('x')).toBeFalse();
+      expect(component.isResponseExpanded('x')).toBe(false);
       component.toggleResponseJson('x');
-      expect(component.isResponseExpanded('x')).toBeTrue();
+      expect(component.isResponseExpanded('x')).toBe(true);
       component.toggleResponseJson('x');
-      expect(component.isResponseExpanded('x')).toBeFalse();
+      expect(component.isResponseExpanded('x')).toBe(false);
     });
 
     it('toggleSentRequest should toggle expansion state', () => {
-      expect(component.isSentRequestExpanded('y')).toBeFalse();
+      expect(component.isSentRequestExpanded('y')).toBe(false);
       component.toggleSentRequest('y');
-      expect(component.isSentRequestExpanded('y')).toBeTrue();
+      expect(component.isSentRequestExpanded('y')).toBe(true);
       component.toggleSentRequest('y');
-      expect(component.isSentRequestExpanded('y')).toBeFalse();
+      expect(component.isSentRequestExpanded('y')).toBe(false);
     });
   });
 });

@@ -8,13 +8,6 @@ Thank you for your interest in contributing to the AI Horde frontend.
 # Prerequisites: Node.js 24 via NVM
 nvm use 24.12.0
 
-# Clone with submodules (docs/haidra-assets is a git submodule and has many reference resources)
-git clone --recurse-submodules <repo-url>
-cd AiHordeFrontpage
-
-# If you already cloned without --recurse-submodules:
-git submodule update --init
-
 # Install dependencies
 npm ci
 
@@ -80,16 +73,6 @@ All styles are centralized in `src/styles/`. Component `.css` files must be empt
 
 See [STYLING.md](STYLING.md) for the full conventions and [docs/design-system.md](docs/design-system.md) for the token reference.
 
-### Internationalization (i18n)
-
-All user-facing text must use Transloco translation keys. Do not hardcode English strings in templates.
-
-- Add keys to `src/assets/i18n/en.json`
-- Use the `transloco` pipe in templates: `{{ "my.key" | transloco }}`
-- For programmatic strings (toasts, page titles), pass `{ transloco: true }` or use the `TranslatorService`
-
-The project currently ships English only (`availableLangs: ['en']`), but all text is routed through Transloco so that additional languages can be added later.
-
 ### Accessibility
 
 - All interactive elements must have visible focus states.
@@ -111,7 +94,7 @@ Pull requests run these checks (all must pass):
 1. **Lint** — `npm run lint`
 2. **Format** — `npm run format-check`
 3. **Typecheck** — `npx tsc --noEmit`
-4. **Test** — `npm test`
+4. **Test** — `npm test` (Vitest with coverage thresholds)
 5. **Build** — `npm run build` (SSR production build)
 
 ## Pull Requests

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { IconComponent } from './icon.component';
 import { IconRegistryService } from '../../services/icon-registry.service';
 
@@ -78,11 +79,11 @@ describe('IconComponent', () => {
   it('should have the icon host class', () => {
     fixture.componentRef.setInput('name', 'x-mark');
     fixture.detectChanges();
-    expect(fixture.nativeElement.classList.contains('icon')).toBeTrue();
+    expect(fixture.nativeElement.classList.contains('icon')).toBe(true);
   });
 
   it('should warn and render nothing for an unknown icon', () => {
-    spyOn(console, 'warn');
+    vi.spyOn(console, 'warn');
     fixture.componentRef.setInput('name', 'does-not-exist');
     fixture.detectChanges();
     expect(console.warn).toHaveBeenCalledWith(

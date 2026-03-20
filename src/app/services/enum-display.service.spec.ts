@@ -10,345 +10,328 @@ describe('EnumDisplayService', () => {
     service = TestBed.inject(EnumDisplayService);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
-  // ============================================================================
-  // ItemType Tests
-  // ============================================================================
+  // ==========================================================================
+  // ItemType methods
+  // ==========================================================================
 
   describe('ItemType methods', () => {
-    it('should return correct label for GUI_IMAGE', () => {
-      expect(service.getItemTypeLabel(ItemType.GUI_IMAGE)).toBe('Image GUI');
+    describe('getItemTypeLabel', () => {
+      it.each([
+        [ItemType.GUI_IMAGE, 'Image GUI'],
+        [ItemType.GUI_TEXT, 'Text GUI'],
+        [ItemType.TOOL, 'Tool'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getItemTypeLabel(input)).toBe(expected);
+      });
+
+      it('should return capitalized fallback for unknown item type', () => {
+        expect(service.getItemTypeLabel('unknown-type')).toBe('Unknown-type');
+      });
     });
 
-    it('should return correct label for GUI_TEXT', () => {
-      expect(service.getItemTypeLabel(ItemType.GUI_TEXT)).toBe('Text GUI');
+    describe('getItemTypeTranslationKey', () => {
+      it.each([
+        [ItemType.GUI_IMAGE, 'guis.image'],
+        [ItemType.GUI_TEXT, 'guis.text'],
+        [ItemType.TOOL, 'tools.tool'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getItemTypeTranslationKey(input)).toBe(expected);
+      });
+
+      it('should return undefined for unknown item type', () => {
+        expect(service.getItemTypeTranslationKey('unknown')).toBeUndefined();
+      });
     });
 
-    it('should return correct label for TOOL', () => {
-      expect(service.getItemTypeLabel(ItemType.TOOL)).toBe('Tool');
-    });
+    describe('getItemTypeBadgeClass', () => {
+      it.each([
+        [ItemType.GUI_IMAGE, 'badge-primary'],
+        [ItemType.TOOL, 'badge-warning'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getItemTypeBadgeClass(input)).toBe(expected);
+      });
 
-    it('should return capitalized fallback for unknown item type', () => {
-      expect(service.getItemTypeLabel('unknown-type')).toBe('Unknown-type');
-    });
-
-    it('should return correct translation key for GUI_IMAGE', () => {
-      expect(service.getItemTypeTranslationKey(ItemType.GUI_IMAGE)).toBe(
-        'guis.image',
-      );
-    });
-
-    it('should return correct translation key for GUI_TEXT', () => {
-      expect(service.getItemTypeTranslationKey(ItemType.GUI_TEXT)).toBe(
-        'guis.text',
-      );
-    });
-
-    it('should return correct translation key for TOOL', () => {
-      expect(service.getItemTypeTranslationKey(ItemType.TOOL)).toBe(
-        'tools.tool',
-      );
-    });
-
-    it('should return undefined translation key for unknown item type', () => {
-      expect(service.getItemTypeTranslationKey('unknown')).toBeUndefined();
-    });
-
-    it('should return correct badge class for GUI_IMAGE', () => {
-      expect(service.getItemTypeBadgeClass(ItemType.GUI_IMAGE)).toBe(
-        'badge-primary',
-      );
-    });
-
-    it('should return correct badge class for TOOL', () => {
-      expect(service.getItemTypeBadgeClass(ItemType.TOOL)).toBe(
-        'badge-warning',
-      );
-    });
-
-    it('should return fallback badge class for unknown item type', () => {
-      expect(service.getItemTypeBadgeClass('unknown')).toBe('badge-secondary');
+      it('should return fallback badge class for unknown item type', () => {
+        expect(service.getItemTypeBadgeClass('unknown')).toBe(
+          'badge-secondary',
+        );
+      });
     });
   });
 
-  // ============================================================================
-  // Domain Tests
-  // ============================================================================
+  // ==========================================================================
+  // Domain methods
+  // ==========================================================================
 
   describe('Domain methods', () => {
-    it('should return correct label for TEXT domain', () => {
-      expect(service.getDomainLabel(Domain.TEXT)).toBe('Text');
+    describe('getDomainLabel', () => {
+      it.each([
+        [Domain.TEXT, 'Text'],
+        [Domain.IMAGE, 'Image'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getDomainLabel(input)).toBe(expected);
+      });
+
+      it('should return capitalized fallback for unknown domain', () => {
+        expect(service.getDomainLabel('other')).toBe('Other');
+      });
     });
 
-    it('should return correct label for IMAGE domain', () => {
-      expect(service.getDomainLabel(Domain.IMAGE)).toBe('Image');
+    describe('getDomainArrayLabel', () => {
+      it('should return joined label for domain arrays', () => {
+        expect(service.getDomainArrayLabel([Domain.IMAGE, Domain.TEXT])).toBe(
+          'Image & Text',
+        );
+      });
+
+      it('should return single label for one-element domain array', () => {
+        expect(service.getDomainArrayLabel([Domain.IMAGE])).toBe('Image');
+      });
+
+      it('should return N/A for empty domain array', () => {
+        expect(service.getDomainArrayLabel([])).toBe('N/A');
+      });
+
+      it('should return N/A for undefined domain array', () => {
+        expect(service.getDomainArrayLabel(undefined)).toBe('N/A');
+      });
     });
 
-    it('should return capitalized fallback for unknown domain', () => {
-      expect(service.getDomainLabel('other')).toBe('Other');
-    });
+    describe('getDomainBadgeClass', () => {
+      it.each([
+        [Domain.TEXT, 'badge-purple'],
+        [Domain.IMAGE, 'badge-purple'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getDomainBadgeClass(input)).toBe(expected);
+      });
 
-    it('should return joined label for domain arrays', () => {
-      expect(service.getDomainArrayLabel([Domain.IMAGE, Domain.TEXT])).toBe(
-        'Image & Text',
-      );
-    });
-
-    it('should return single label for one-element domain array', () => {
-      expect(service.getDomainArrayLabel([Domain.IMAGE])).toBe('Image');
-    });
-
-    it('should return N/A for empty domain array', () => {
-      expect(service.getDomainArrayLabel([])).toBe('N/A');
-    });
-
-    it('should return N/A for undefined domain array', () => {
-      expect(service.getDomainArrayLabel(undefined)).toBe('N/A');
-    });
-
-    it('should return correct badge class for TEXT domain', () => {
-      expect(service.getDomainBadgeClass(Domain.TEXT)).toBe('badge-purple');
-    });
-
-    it('should return correct badge class for IMAGE domain', () => {
-      expect(service.getDomainBadgeClass(Domain.IMAGE)).toBe('badge-purple');
-    });
-
-    it('should return fallback badge class for unknown domain', () => {
-      expect(service.getDomainBadgeClass('unknown')).toBe('badge-secondary');
+      it('should return fallback badge class for unknown domain', () => {
+        expect(service.getDomainBadgeClass('unknown')).toBe('badge-secondary');
+      });
     });
   });
 
-  // ============================================================================
-  // Platform Tests
-  // ============================================================================
+  // ==========================================================================
+  // Platform methods
+  // ==========================================================================
 
   describe('Platform methods', () => {
-    it('should return correct label for WEB platform', () => {
-      expect(service.getPlatformLabel(Platform.WEB)).toBe('Web');
+    describe('getPlatformLabel', () => {
+      it.each([
+        [Platform.WEB, 'Web'],
+        [Platform.WINDOWS, 'Windows'],
+        [Platform.LINUX, 'Linux'],
+        [Platform.MACOS, 'macOS'],
+        [Platform.IOS, 'iOS'],
+        [Platform.ANDROID, 'Android'],
+        [Platform.FEDIVERSE, 'Fediverse'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getPlatformLabel(input)).toBe(expected);
+      });
+
+      it('should return capitalized fallback for unknown platform', () => {
+        expect(service.getPlatformLabel('unknown')).toBe('Unknown');
+      });
     });
 
-    it('should return correct label for WINDOWS platform', () => {
-      expect(service.getPlatformLabel(Platform.WINDOWS)).toBe('Windows');
+    describe('getPlatformBadgeClass', () => {
+      it.each([
+        [Platform.WEB, 'badge-info'],
+        [Platform.WINDOWS, 'badge-info'],
+        [Platform.LINUX, 'badge-info'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getPlatformBadgeClass(input)).toBe(expected);
+      });
+
+      it('should return fallback badge class for unknown platform', () => {
+        expect(service.getPlatformBadgeClass('unknown')).toBe(
+          'badge-secondary',
+        );
+      });
     });
 
-    it('should return correct label for LINUX platform', () => {
-      expect(service.getPlatformLabel(Platform.LINUX)).toBe('Linux');
+    describe('getPlatformDisplayArray', () => {
+      it('should convert array of platforms to display labels', () => {
+        expect(
+          service.getPlatformDisplayArray(['web', 'desktop', 'ios']),
+        ).toEqual(['Web', 'Desktop', 'iOS']);
+      });
+
+      it('should handle empty platform array', () => {
+        expect(service.getPlatformDisplayArray([])).toEqual([]);
+      });
     });
 
-    it('should return correct label for MACOS platform', () => {
-      expect(service.getPlatformLabel(Platform.MACOS)).toBe('macOS');
+    describe('getDesktopPlatforms', () => {
+      it('should return desktop platforms list', () => {
+        expect(service.getDesktopPlatforms()).toEqual([
+          Platform.WINDOWS,
+          Platform.LINUX,
+          Platform.MACOS,
+        ]);
+      });
     });
 
-    it('should return correct label for IOS platform', () => {
-      expect(service.getPlatformLabel(Platform.IOS)).toBe('iOS');
+    describe('isDesktopPlatform', () => {
+      it.each([
+        [Platform.WINDOWS, true],
+        [Platform.LINUX, true],
+        [Platform.MACOS, true],
+        [Platform.WEB, false],
+        [Platform.IOS, false],
+      ] as const)('should return %s for %s', (input, expected) => {
+        expect(service.isDesktopPlatform(input)).toBe(expected);
+      });
     });
 
-    it('should return correct label for ANDROID platform', () => {
-      expect(service.getPlatformLabel(Platform.ANDROID)).toBe('Android');
-    });
+    describe('getPlatformGroupedLabel', () => {
+      it('should group all desktop platforms as "Desktop"', () => {
+        expect(
+          service.getPlatformGroupedLabel([
+            Platform.WINDOWS,
+            Platform.LINUX,
+            Platform.MACOS,
+          ]),
+        ).toBe('Desktop');
+      });
 
-    it('should return correct label for FEDIVERSE platform', () => {
-      expect(service.getPlatformLabel(Platform.FEDIVERSE)).toBe('Fediverse');
-    });
+      it('should show individual desktop platforms when not all present', () => {
+        expect(
+          service.getPlatformGroupedLabel([Platform.WINDOWS, Platform.LINUX]),
+        ).toBe('Windows, Linux');
+      });
 
-    it('should return capitalized fallback for unknown platform', () => {
-      expect(service.getPlatformLabel('unknown')).toBe('Unknown');
-    });
+      it('should combine desktop group with other platforms', () => {
+        expect(
+          service.getPlatformGroupedLabel([
+            Platform.WINDOWS,
+            Platform.LINUX,
+            Platform.MACOS,
+            Platform.WEB,
+          ]),
+        ).toBe('Desktop, Web');
+      });
 
-    it('should return correct badge class for platforms', () => {
-      expect(service.getPlatformBadgeClass(Platform.WEB)).toBe('badge-info');
-      expect(service.getPlatformBadgeClass(Platform.WINDOWS)).toBe(
-        'badge-info',
-      );
-      expect(service.getPlatformBadgeClass(Platform.LINUX)).toBe('badge-info');
-    });
+      it('should handle undefined platform array', () => {
+        expect(service.getPlatformGroupedLabel(undefined)).toBe('N/A');
+      });
 
-    it('should return fallback badge class for unknown platform', () => {
-      expect(service.getPlatformBadgeClass('unknown')).toBe('badge-secondary');
-    });
-
-    it('should convert array of platforms to display labels', () => {
-      const platforms = ['web', 'desktop', 'ios'];
-      const result = service.getPlatformDisplayArray(platforms);
-      expect(result).toEqual(['Web', 'Desktop', 'iOS']);
-    });
-
-    it('should handle empty platform array', () => {
-      expect(service.getPlatformDisplayArray([])).toEqual([]);
-    });
-
-    it('should return desktop platforms list', () => {
-      const desktopPlatforms = service.getDesktopPlatforms();
-      expect(desktopPlatforms).toEqual([
-        Platform.WINDOWS,
-        Platform.LINUX,
-        Platform.MACOS,
-      ]);
-    });
-
-    it('should identify desktop platforms', () => {
-      expect(service.isDesktopPlatform(Platform.WINDOWS)).toBe(true);
-      expect(service.isDesktopPlatform(Platform.LINUX)).toBe(true);
-      expect(service.isDesktopPlatform(Platform.MACOS)).toBe(true);
-      expect(service.isDesktopPlatform(Platform.WEB)).toBe(false);
-      expect(service.isDesktopPlatform(Platform.IOS)).toBe(false);
-    });
-
-    it('should group all desktop platforms as "Desktop"', () => {
-      const platforms = [Platform.WINDOWS, Platform.LINUX, Platform.MACOS];
-      expect(service.getPlatformGroupedLabel(platforms)).toBe('Desktop');
-    });
-
-    it('should show individual desktop platforms when not all present', () => {
-      const platforms = [Platform.WINDOWS, Platform.LINUX];
-      expect(service.getPlatformGroupedLabel(platforms)).toBe('Windows, Linux');
-    });
-
-    it('should combine desktop group with other platforms', () => {
-      const platforms = [
-        Platform.WINDOWS,
-        Platform.LINUX,
-        Platform.MACOS,
-        Platform.WEB,
-      ];
-      expect(service.getPlatformGroupedLabel(platforms)).toBe('Desktop, Web');
-    });
-
-    it('should handle undefined platform array', () => {
-      expect(service.getPlatformGroupedLabel(undefined)).toBe('N/A');
-    });
-
-    it('should handle empty platform array', () => {
-      expect(service.getPlatformGroupedLabel([])).toBe('N/A');
+      it('should handle empty platform array', () => {
+        expect(service.getPlatformGroupedLabel([])).toBe('N/A');
+      });
     });
   });
 
-  // ============================================================================
-  // FunctionType Tests
-  // ============================================================================
+  // ==========================================================================
+  // FunctionType methods
+  // ==========================================================================
 
   describe('FunctionType methods', () => {
-    it('should return correct label for FRONTEND', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.FRONTEND)).toBe(
-        'Frontend',
-      );
+    describe('getFunctionTypeLabel', () => {
+      it.each([
+        [FunctionKind.FRONTEND, 'Frontend'],
+        [FunctionKind.WORKER, 'Worker'],
+        [FunctionKind.BOT, 'Bot'],
+        [FunctionKind.PLUGIN, 'Plugin'],
+        [FunctionKind.SDK, 'SDK'],
+        [FunctionKind.CLI_TOOL, 'CLI'],
+        [FunctionKind.INTERFACE, 'Interface'],
+        [FunctionKind.UTILITY, 'Utility'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getFunctionTypeLabel(input)).toBe(expected);
+      });
+
+      it('should return capitalized fallback for unknown function type', () => {
+        expect(service.getFunctionTypeLabel('custom-function')).toBe(
+          'Custom-function',
+        );
+      });
     });
 
-    it('should return correct label for WORKER', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.WORKER)).toBe('Worker');
-    });
+    describe('getFunctionTypeBadgeClass', () => {
+      it.each([
+        [FunctionKind.WORKER, 'badge-warning'],
+        [FunctionKind.BOT, 'badge-warning'],
+      ] as const)('should return "%s" for %s', (input, expected) => {
+        expect(service.getFunctionTypeBadgeClass(input)).toBe(expected);
+      });
 
-    it('should return correct label for BOT', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.BOT)).toBe('Bot');
-    });
-
-    it('should return correct label for PLUGIN', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.PLUGIN)).toBe('Plugin');
-    });
-
-    it('should return correct label for SDK', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.SDK)).toBe('SDK');
-    });
-
-    it('should return correct label for CLI_TOOL', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.CLI_TOOL)).toBe('CLI');
-    });
-
-    it('should return correct label for INTERFACE', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.INTERFACE)).toBe(
-        'Interface',
-      );
-    });
-
-    it('should return correct label for UTILITY', () => {
-      expect(service.getFunctionTypeLabel(FunctionKind.UTILITY)).toBe(
-        'Utility',
-      );
-    });
-
-    it('should return capitalized fallback for unknown function type', () => {
-      expect(service.getFunctionTypeLabel('custom-function')).toBe(
-        'Custom-function',
-      );
-    });
-
-    it('should return correct badge class for function types', () => {
-      expect(service.getFunctionTypeBadgeClass(FunctionKind.WORKER)).toBe(
-        'badge-warning',
-      );
-      expect(service.getFunctionTypeBadgeClass(FunctionKind.BOT)).toBe(
-        'badge-warning',
-      );
-    });
-
-    it('should return fallback badge class for unknown function type', () => {
-      expect(service.getFunctionTypeBadgeClass('unknown')).toBe(
-        'badge-secondary',
-      );
+      it('should return fallback badge class for unknown function type', () => {
+        expect(service.getFunctionTypeBadgeClass('unknown')).toBe(
+          'badge-secondary',
+        );
+      });
     });
   });
 
-  // ============================================================================
-  // Category Badge Tests
-  // ============================================================================
+  // ==========================================================================
+  // Category badge classification
+  // ==========================================================================
 
   describe('getCategoryBadgeClass', () => {
-    it('should return badge-info for platform categories', () => {
-      expect(service.getCategoryBadgeClass('windows')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('linux')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('macos')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('iOS')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('Android')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('Web')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('CLI')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('Server')).toBe('badge-info');
-      expect(service.getCategoryBadgeClass('fediverse')).toBe('badge-info');
-    });
+    it.each([
+      ['windows', 'badge-info'],
+      ['linux', 'badge-info'],
+      ['macos', 'badge-info'],
+      ['iOS', 'badge-info'],
+      ['Android', 'badge-info'],
+      ['Web', 'badge-info'],
+      ['CLI', 'badge-info'],
+      ['Server', 'badge-info'],
+      ['fediverse', 'badge-info'],
+    ] as const)(
+      'should return badge-info for platform category "%s"',
+      (input, expected) => {
+        expect(service.getCategoryBadgeClass(input)).toBe(expected);
+      },
+    );
 
-    it('should return badge-purple for domain categories', () => {
-      expect(service.getCategoryBadgeClass('image generation')).toBe(
-        'badge-purple',
-      );
-      expect(service.getCategoryBadgeClass('text generation')).toBe(
-        'badge-purple',
-      );
-      expect(service.getCategoryBadgeClass('Image')).toBe('badge-purple');
-      expect(service.getCategoryBadgeClass('Text')).toBe('badge-purple');
-    });
+    it.each([
+      ['image generation', 'badge-purple'],
+      ['text generation', 'badge-purple'],
+      ['Image', 'badge-purple'],
+      ['Text', 'badge-purple'],
+    ] as const)(
+      'should return badge-purple for domain category "%s"',
+      (input, expected) => {
+        expect(service.getCategoryBadgeClass(input)).toBe(expected);
+      },
+    );
 
-    it('should return badge-warning for tool type categories', () => {
-      expect(service.getCategoryBadgeClass('worker')).toBe('badge-warning');
-      expect(service.getCategoryBadgeClass('Bot')).toBe('badge-warning');
-      expect(service.getCategoryBadgeClass('Plugin')).toBe('badge-warning');
-      expect(service.getCategoryBadgeClass('SDK')).toBe('badge-warning');
-      expect(service.getCategoryBadgeClass('Frontend')).toBe('badge-warning');
-    });
+    it.each([
+      ['worker', 'badge-warning'],
+      ['Bot', 'badge-warning'],
+      ['Plugin', 'badge-warning'],
+      ['SDK', 'badge-warning'],
+      ['Frontend', 'badge-warning'],
+    ] as const)(
+      'should return badge-warning for tool type category "%s"',
+      (input, expected) => {
+        expect(service.getCategoryBadgeClass(input)).toBe(expected);
+      },
+    );
 
-    it('should return badge-teal for community categories', () => {
-      expect(service.getCategoryBadgeClass('official tools')).toBe(
-        'badge-teal',
-      );
-      expect(service.getCategoryBadgeClass('community bots')).toBe(
-        'badge-teal',
-      );
-      expect(service.getCategoryBadgeClass('community plugins')).toBe(
-        'badge-teal',
-      );
-      expect(service.getCategoryBadgeClass('community sdks')).toBe(
-        'badge-teal',
-      );
-    });
+    it.each([
+      ['official tools', 'badge-teal'],
+      ['community bots', 'badge-teal'],
+      ['community plugins', 'badge-teal'],
+      ['community sdks', 'badge-teal'],
+    ] as const)(
+      'should return badge-teal for community category "%s"',
+      (input, expected) => {
+        expect(service.getCategoryBadgeClass(input)).toBe(expected);
+      },
+    );
 
-    it('should return badge-indigo for development categories', () => {
-      expect(service.getCategoryBadgeClass('development')).toBe('badge-indigo');
-      expect(service.getCategoryBadgeClass('accessibility')).toBe(
-        'badge-indigo',
-      );
-    });
+    it.each([
+      ['development', 'badge-indigo'],
+      ['accessibility', 'badge-indigo'],
+    ] as const)(
+      'should return badge-indigo for dev category "%s"',
+      (input, expected) => {
+        expect(service.getCategoryBadgeClass(input)).toBe(expected);
+      },
+    );
 
     it('should return badge-secondary for unknown categories', () => {
       expect(service.getCategoryBadgeClass('random-category')).toBe(
@@ -362,51 +345,40 @@ describe('EnumDisplayService', () => {
     });
   });
 
-  // ============================================================================
-  // Utility Methods Tests
-  // ============================================================================
+  // ==========================================================================
+  // Utility methods
+  // ==========================================================================
 
   describe('Utility methods', () => {
     describe('capitalizeFirst', () => {
-      it('should capitalize first letter', () => {
-        expect(service.capitalizeFirst('hello')).toBe('Hello');
-      });
-
-      it('should handle already capitalized strings', () => {
-        expect(service.capitalizeFirst('Hello')).toBe('Hello');
-      });
-
-      it('should handle empty string', () => {
-        expect(service.capitalizeFirst('')).toBe('');
-      });
-
-      it('should handle single character', () => {
-        expect(service.capitalizeFirst('a')).toBe('A');
-      });
-
-      it('should preserve rest of string', () => {
-        expect(service.capitalizeFirst('hello world')).toBe('Hello world');
+      it.each([
+        ['hello', 'Hello'],
+        ['Hello', 'Hello'],
+        ['', ''],
+        ['a', 'A'],
+        ['hello world', 'Hello world'],
+      ] as const)('should capitalize "%s" → "%s"', (input, expected) => {
+        expect(service.capitalizeFirst(input)).toBe(expected);
       });
     });
 
     describe('isPlatformCategory', () => {
-      it('should return true for platform keywords', () => {
-        expect(service.isPlatformCategory('windows')).toBe(true);
-        expect(service.isPlatformCategory('linux')).toBe(true);
-        expect(service.isPlatformCategory('macos')).toBe(true);
-        expect(service.isPlatformCategory('iOS')).toBe(true);
-        expect(service.isPlatformCategory('Android')).toBe(true);
-        expect(service.isPlatformCategory('Web')).toBe(true);
-        expect(service.isPlatformCategory('cli')).toBe(true);
-        expect(service.isPlatformCategory('server')).toBe(true);
-        expect(service.isPlatformCategory('programming')).toBe(true);
-        expect(service.isPlatformCategory('fediverse')).toBe(true);
-      });
-
-      it('should return false for non-platform categories', () => {
-        expect(service.isPlatformCategory('worker')).toBe(false);
-        expect(service.isPlatformCategory('text generation')).toBe(false);
-        expect(service.isPlatformCategory('desktop')).toBe(false);
+      it.each([
+        ['windows', true],
+        ['linux', true],
+        ['macos', true],
+        ['iOS', true],
+        ['Android', true],
+        ['Web', true],
+        ['cli', true],
+        ['server', true],
+        ['programming', true],
+        ['fediverse', true],
+        ['worker', false],
+        ['text generation', false],
+        ['desktop', false],
+      ] as const)('should return %s for "%s"', (input, expected) => {
+        expect(service.isPlatformCategory(input)).toBe(expected);
       });
 
       it('should be case-insensitive', () => {
@@ -416,22 +388,66 @@ describe('EnumDisplayService', () => {
     });
 
     describe('isDomainCategory', () => {
-      it('should return true for domain keywords', () => {
-        expect(service.isDomainCategory('image generation')).toBe(true);
-        expect(service.isDomainCategory('text generation')).toBe(true);
-        expect(service.isDomainCategory('image')).toBe(true);
-        expect(service.isDomainCategory('text')).toBe(true);
-      });
-
-      it('should return false for non-domain categories', () => {
-        expect(service.isDomainCategory('desktop')).toBe(false);
-        expect(service.isDomainCategory('worker')).toBe(false);
+      it.each([
+        ['image generation', true],
+        ['text generation', true],
+        ['image', true],
+        ['text', true],
+        ['desktop', false],
+        ['worker', false],
+      ] as const)('should return %s for "%s"', (input, expected) => {
+        expect(service.isDomainCategory(input)).toBe(expected);
       });
 
       it('should be case-insensitive', () => {
         expect(service.isDomainCategory('IMAGE GENERATION')).toBe(true);
         expect(service.isDomainCategory('Text Generation')).toBe(true);
       });
+    });
+  });
+
+  // ==========================================================================
+  // Platform display service integration (absorbed from item-list-section spec)
+  // ==========================================================================
+
+  describe('Platform display integration', () => {
+    it('should group desktop platforms when all three OS platforms present', () => {
+      expect(
+        service.getPlatformGroupedLabel([
+          Platform.WINDOWS,
+          Platform.LINUX,
+          Platform.MACOS,
+        ]),
+      ).toBe('Desktop');
+    });
+
+    it('should display individual platforms when not all desktop OSes present', () => {
+      expect(
+        service.getPlatformGroupedLabel([Platform.WINDOWS, Platform.LINUX]),
+      ).toBe('Windows, Linux');
+    });
+
+    it('should mix desktop grouping with other platforms', () => {
+      expect(
+        service.getPlatformGroupedLabel([
+          Platform.WINDOWS,
+          Platform.LINUX,
+          Platform.MACOS,
+          Platform.WEB,
+        ]),
+      ).toBe('Desktop, Web');
+    });
+  });
+
+  describe('Domain display integration', () => {
+    it('should join multiple domains with ampersand', () => {
+      expect(service.getDomainArrayLabel([Domain.IMAGE, Domain.TEXT])).toBe(
+        'Image & Text',
+      );
+    });
+
+    it('should display single domain without separator', () => {
+      expect(service.getDomainArrayLabel([Domain.IMAGE])).toBe('Image');
     });
   });
 });

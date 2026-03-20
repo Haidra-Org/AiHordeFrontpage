@@ -4,6 +4,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import {
   GENERATION_NOT_FOUND,
@@ -50,6 +51,7 @@ describe('AiHordeService', () => {
       const req = http.expectOne('https://aihorde.net/api/v2/generate/async');
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('apikey')).toBe(apiKey);
+      // Integration: also verifies interceptor adds Client-Agent header
       expect(req.request.headers.get('Client-Agent')).toBe(
         'AiHordeFrontpage:generate',
       );
@@ -57,22 +59,22 @@ describe('AiHordeService', () => {
       req.flush({ id: 'gen-abc', kudos: 10 });
     });
 
-    it('should return the response on success', (done: DoneFn) => {
-      service.submitImageGeneration(apiKey, request).subscribe((res) => {
-        expect(res).toEqual({ id: 'gen-abc', kudos: 10 });
-        done();
-      });
+    it('should return the response on success', async () => {
+      const promise = firstValueFrom(
+        service.submitImageGeneration(apiKey, request),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/async')
         .flush({ id: 'gen-abc', kudos: 10 });
+
+      expect(await promise).toEqual({ id: 'gen-abc', kudos: 10 });
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.submitImageGeneration(apiKey, request).subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(
+        service.submitImageGeneration(apiKey, request),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/async')
@@ -80,6 +82,8 @@ describe('AiHordeService', () => {
           status: 500,
           statusText: 'Internal Server Error',
         });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -129,22 +133,18 @@ describe('AiHordeService', () => {
       });
     });
 
-    it('should return GENERATION_NOT_FOUND on 404', (done: DoneFn) => {
-      service.checkImageGeneration('gen-404').subscribe((res) => {
-        expect(res).toBe(GENERATION_NOT_FOUND);
-        done();
-      });
+    it('should return GENERATION_NOT_FOUND on 404', async () => {
+      const promise = firstValueFrom(service.checkImageGeneration('gen-404'));
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/check/gen-404')
         .flush('Not found', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBe(GENERATION_NOT_FOUND);
     });
 
-    it('should return null on non-404 HTTP error', (done: DoneFn) => {
-      service.checkImageGeneration('gen-500').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on non-404 HTTP error', async () => {
+      const promise = firstValueFrom(service.checkImageGeneration('gen-500'));
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/check/gen-500')
@@ -152,6 +152,8 @@ describe('AiHordeService', () => {
           status: 500,
           statusText: 'Internal Server Error',
         });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -159,7 +161,7 @@ describe('AiHordeService', () => {
   // getImageGenerationStatus
   // -----------------------------------------------------------------------
   describe('getImageGenerationStatus', () => {
-    it('should GET the status endpoint', (done: DoneFn) => {
+    it('should GET the status endpoint and return the response', async () => {
       const mockStatus = {
         finished: 1,
         processing: 0,
@@ -185,25 +187,27 @@ describe('AiHordeService', () => {
         ],
       };
 
-      service.getImageGenerationStatus('gen-done').subscribe((res) => {
-        expect(res).toEqual(mockStatus);
-        done();
-      });
+      const promise = firstValueFrom(
+        service.getImageGenerationStatus('gen-done'),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/status/gen-done')
         .flush(mockStatus);
+
+      expect(await promise).toEqual(mockStatus);
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.getImageGenerationStatus('bad-id').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(
+        service.getImageGenerationStatus('bad-id'),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/status/bad-id')
         .flush('Error', { status: 500, statusText: 'Server Error' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -211,7 +215,7 @@ describe('AiHordeService', () => {
   // getTextGenerationStatus
   // -----------------------------------------------------------------------
   describe('getTextGenerationStatus', () => {
-    it('should GET the text status endpoint', (done: DoneFn) => {
+    it('should GET the text status endpoint', async () => {
       const mockStatus = {
         finished: 1,
         processing: 0,
@@ -235,36 +239,37 @@ describe('AiHordeService', () => {
         ],
       };
 
-      service.getTextGenerationStatus('txt-1').subscribe((res) => {
-        expect(res).toEqual(mockStatus);
-        done();
-      });
+      const promise = firstValueFrom(service.getTextGenerationStatus('txt-1'));
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-1')
         .flush(mockStatus);
+
+      expect(await promise).toEqual(mockStatus);
     });
 
-    it('should return GENERATION_NOT_FOUND on 404', (done: DoneFn) => {
-      service.getTextGenerationStatus('txt-bad').subscribe((res) => {
-        expect(res).toBe(GENERATION_NOT_FOUND);
-        done();
-      });
+    it('should return GENERATION_NOT_FOUND on 404', async () => {
+      const promise = firstValueFrom(
+        service.getTextGenerationStatus('txt-bad'),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-bad')
         .flush('Error', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBe(GENERATION_NOT_FOUND);
     });
 
-    it('should return null on non-404 HTTP error', (done: DoneFn) => {
-      service.getTextGenerationStatus('txt-err').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on non-404 HTTP error', async () => {
+      const promise = firstValueFrom(
+        service.getTextGenerationStatus('txt-err'),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-err')
         .flush('Error', { status: 500, statusText: 'Internal Server Error' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -272,31 +277,29 @@ describe('AiHordeService', () => {
   // getAlchemyStatus
   // -----------------------------------------------------------------------
   describe('getAlchemyStatus', () => {
-    it('should GET the interrogate status endpoint', (done: DoneFn) => {
+    it('should GET the interrogate status endpoint', async () => {
       const mockStatus = {
         state: 'done',
         forms: [{ form: 'caption', state: 'done' }],
       };
 
-      service.getAlchemyStatus('alch-1').subscribe((res) => {
-        expect(res).toEqual(mockStatus);
-        done();
-      });
+      const promise = firstValueFrom(service.getAlchemyStatus('alch-1'));
 
       http
         .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-1')
         .flush(mockStatus);
+
+      expect(await promise).toEqual(mockStatus);
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.getAlchemyStatus('alch-bad').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(service.getAlchemyStatus('alch-bad'));
 
       http
         .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-bad')
         .flush('Error', { status: 500, statusText: 'Server Error' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -313,15 +316,14 @@ describe('AiHordeService', () => {
       req.flush({ username: 'TestUser', id: 1, kudos: 500 });
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.getUserByApiKey('bad-key').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(service.getUserByApiKey('bad-key'));
 
       http
         .expectOne('https://aihorde.net/api/v2/find_user')
         .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -351,15 +353,16 @@ describe('AiHordeService', () => {
       reqs[1].flush({ username: 'TestUser', id: 1, kudos: 500 });
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.getSelfUserByApiKeyUncached('bad-key').subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(
+        service.getSelfUserByApiKeyUncached('bad-key'),
+      );
 
       http
         .expectOne('https://aihorde.net/api/v2/find_user')
         .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -367,28 +370,26 @@ describe('AiHordeService', () => {
   // getUserById
   // -----------------------------------------------------------------------
   describe('getUserById', () => {
-    it('should GET the user endpoint with numeric ID', (done: DoneFn) => {
-      service.getUserById(42).subscribe((res) => {
-        expect(res).toEqual(
-          jasmine.objectContaining({ id: 42, username: 'User42' }),
-        );
-        done();
-      });
+    it('should GET the user endpoint with numeric ID', async () => {
+      const promise = firstValueFrom(service.getUserById(42));
 
       http
         .expectOne('https://aihorde.net/api/v2/users/42')
         .flush({ username: 'User42', id: 42, kudos: 100 });
+
+      expect(await promise).toEqual(
+        expect.objectContaining({ id: 42, username: 'User42' }),
+      );
     });
 
-    it('should return null on HTTP error', (done: DoneFn) => {
-      service.getUserById(9999).subscribe((res) => {
-        expect(res).toBeNull();
-        done();
-      });
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(service.getUserById(9999));
 
       http
         .expectOne('https://aihorde.net/api/v2/users/9999')
         .flush('Not found', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBeNull();
     });
   });
 
@@ -460,26 +461,24 @@ describe('AiHordeService', () => {
       req.flush({ transferred: 100 });
     });
 
-    it('should return true on success', (done: DoneFn) => {
-      service.transferKudos('key', 'user', 50).subscribe((res) => {
-        expect(res).toBeTrue();
-        done();
-      });
+    it('should return true on success', async () => {
+      const promise = firstValueFrom(service.transferKudos('key', 'user', 50));
 
       http
         .expectOne('https://aihorde.net/api/v2/kudos/transfer')
         .flush({ transferred: 50 });
+
+      expect(await promise).toBe(true);
     });
 
-    it('should return false on HTTP error', (done: DoneFn) => {
-      service.transferKudos('key', 'user', 50).subscribe((res) => {
-        expect(res).toBeFalse();
-        done();
-      });
+    it('should return false on HTTP error', async () => {
+      const promise = firstValueFrom(service.transferKudos('key', 'user', 50));
 
       http
         .expectOne('https://aihorde.net/api/v2/kudos/transfer')
         .flush('Error', { status: 400, statusText: 'Bad Request' });
+
+      expect(await promise).toBe(false);
     });
   });
 
@@ -545,38 +544,38 @@ describe('AiHordeService', () => {
       expect(req.request.method).toBe('GET');
     });
 
-    it('should map HordeNewsItem to NewsItem format', (done: DoneFn) => {
-      service.getNews().subscribe((news) => {
-        expect(news.length).toBe(3);
-        expect(news[0].title).toBe('Update 1');
-        expect(news[0].datePublished).toBe('2024-01-01');
-        expect(news[0].excerpt).toBe('Content 1');
-        expect(news[0].moreLink).toBe('https://example.com');
-        done();
-      });
+    it('should map HordeNewsItem to NewsItem format', async () => {
+      const promise = firstValueFrom(service.getNews());
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+
+      const news = await promise;
+      expect(news.length).toBe(3);
+      expect(news[0].title).toBe('Update 1');
+      expect(news[0].datePublished).toBe('2024-01-01');
+      expect(news[0].excerpt).toBe('Content 1');
+      expect(news[0].moreLink).toBe('https://example.com');
     });
 
-    it('should set moreLink to null when no URLs', (done: DoneFn) => {
-      service.getNews().subscribe((news) => {
-        expect(news[1].moreLink).toBeNull();
-        done();
-      });
+    it('should set moreLink to null when no URLs', async () => {
+      const promise = firstValueFrom(service.getNews());
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+
+      const news = await promise;
+      expect(news[1].moreLink).toBeNull();
     });
 
-    it('should slice results when count is provided', (done: DoneFn) => {
-      service.getNews(2).subscribe((news) => {
-        expect(news.length).toBe(2);
-        done();
-      });
+    it('should slice results when count is provided', async () => {
+      const promise = firstValueFrom(service.getNews(2));
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+
+      const news = await promise;
+      expect(news.length).toBe(2);
     });
 
-    it('should deduplicate titles with numeric suffix', (done: DoneFn) => {
+    it('should deduplicate titles with numeric suffix', async () => {
       const dupes = [
         {
           title: 'Same',
@@ -592,35 +591,34 @@ describe('AiHordeService', () => {
         },
       ];
 
-      service.getNews().subscribe((news) => {
-        expect(news[0].title).toBe('Same');
-        expect(news[1].title).toBe('Same (2)');
-        done();
-      });
+      const promise = firstValueFrom(service.getNews());
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(dupes);
+
+      const news = await promise;
+      expect(news[0].title).toBe('Same');
+      expect(news[1].title).toBe('Same (2)');
     });
 
-    it('should handle missing more_info_urls gracefully', (done: DoneFn) => {
+    it('should handle missing more_info_urls gracefully', async () => {
       const items = [
         {
           title: 'No URLs field',
           date_published: '2024-06-01',
           newspiece: 'Content',
-          // more_info_urls is undefined/missing entirely
         },
       ];
 
-      service.getNews().subscribe((news) => {
-        expect(news.length).toBe(1);
-        expect(news[0].moreLink).toBeNull();
-        done();
-      });
+      const promise = firstValueFrom(service.getNews());
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+
+      const news = await promise;
+      expect(news.length).toBe(1);
+      expect(news[0].moreLink).toBeNull();
     });
 
-    it('should handle null more_info_urls gracefully', (done: DoneFn) => {
+    it('should handle null more_info_urls gracefully', async () => {
       const items = [
         {
           title: 'Null URLs',
@@ -630,13 +628,13 @@ describe('AiHordeService', () => {
         },
       ];
 
-      service.getNews().subscribe((news) => {
-        expect(news.length).toBe(1);
-        expect(news[0].moreLink).toBeNull();
-        done();
-      });
+      const promise = firstValueFrom(service.getNews());
 
       http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+
+      const news = await promise;
+      expect(news.length).toBe(1);
+      expect(news[0].moreLink).toBeNull();
     });
   });
 
@@ -644,28 +642,26 @@ describe('AiHordeService', () => {
   // Documents
   // -----------------------------------------------------------------------
   describe('terms', () => {
-    it('should GET terms and extract HTML', (done: DoneFn) => {
-      service.terms.subscribe((html) => {
-        expect(html).toBe('<p>Terms content</p>');
-        done();
-      });
+    it('should GET terms and extract HTML', async () => {
+      const promise = firstValueFrom(service.terms);
 
       http
         .expectOne('https://aihorde.net/api/v2/documents/terms?format=html')
         .flush({ html: '<p>Terms content</p>' });
+
+      expect(await promise).toBe('<p>Terms content</p>');
     });
   });
 
   describe('privacyPolicy', () => {
-    it('should GET privacy policy and extract HTML', (done: DoneFn) => {
-      service.privacyPolicy.subscribe((html) => {
-        expect(html).toBe('<p>Privacy content</p>');
-        done();
-      });
+    it('should GET privacy policy and extract HTML', async () => {
+      const promise = firstValueFrom(service.privacyPolicy);
 
       http
         .expectOne('https://aihorde.net/api/v2/documents/privacy?format=html')
         .flush({ html: '<p>Privacy content</p>' });
+
+      expect(await promise).toBe('<p>Privacy content</p>');
     });
   });
 
@@ -681,33 +677,32 @@ describe('AiHordeService', () => {
       expect(req.request.method).toBe('GET');
     });
 
-    it('should map response to LeaderboardUser, limited to 25 by default', (done: DoneFn) => {
+    it('should map response to LeaderboardUser, limited to 25 by default', async () => {
       const users = Array.from({ length: 30 }, (_, i) => ({
         username: `user-${i}`,
         id: i,
         kudos: 1000 - i,
       }));
 
-      service.getKudosLeaderboard().subscribe((result) => {
-        expect(result.length).toBe(25);
-        expect(result[0]).toEqual({ username: 'user-0', id: 0, kudos: 1000 });
-        done();
-      });
+      const promise = firstValueFrom(service.getKudosLeaderboard());
 
       http
         .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
         .flush(users);
+
+      const result = await promise;
+      expect(result.length).toBe(25);
+      expect(result[0]).toEqual({ username: 'user-0', id: 0, kudos: 1000 });
     });
 
-    it('should return empty array on error', (done: DoneFn) => {
-      service.getKudosLeaderboard().subscribe((result) => {
-        expect(result).toEqual([]);
-        done();
-      });
+    it('should return empty array on error', async () => {
+      const promise = firstValueFrom(service.getKudosLeaderboard());
 
       http
         .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
         .flush('Error', { status: 500, statusText: 'Server Error' });
+
+      expect(await promise).toEqual([]);
     });
   });
 

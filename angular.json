@@ -20,7 +20,6 @@
             "outputPath": "dist/ai-horde-website",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "css",
             "assets": [
@@ -93,24 +92,7 @@
           }
         },
         "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "polyfills": ["zone.js", "zone.js/testing"],
-            "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "css",
-            "assets": [
-              "src/assets",
-              "src/404.html",
-              "src/.nojekyll",
-              {
-                "glob": "*",
-                "output": "/",
-                "input": "src/favicon"
-              }
-            ],
-            "styles": ["src/styles.css"],
-            "scripts": []
-          }
+          "builder": "@analogjs/vitest-angular:test"
         },
         "deploy": {
           "builder": "angular-cli-ghpages:deploy"

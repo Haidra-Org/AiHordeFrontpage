@@ -10,6 +10,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "serve:ssr:AiHordeWebsite": "node dist/ai-horde-website/server/server.mjs",
     "deploy": "ng build && npx wrangler deploy",
     "lint": "ng lint",
@@ -39,30 +41,28 @@
     "postcss": "^8.5.8",
     "rxjs": "~7.8.2",
     "tailwindcss": "^4.2.1",
-    "tslib": "^2.8.1",
-    "zone.js": "~0.16.1"
+    "tslib": "^2.8.1"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^2.3.1",
+    "@analogjs/vitest-angular": "^2.3.1",
     "@angular-devkit/build-angular": "^21.2.1",
     "@angular/cli": "^21.2.1",
     "@angular/compiler-cli": "^21.2.2",
     "@eslint/js": "^10.0.1",
     "@types/express": "^5.0.6",
-    "@types/jasmine": "~6.0.0",
     "@types/node": "^25.4.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "@vitest/eslint-plugin": "^1.6.12",
     "angular-cli-ghpages": "^3.0.2",
     "angular-eslint": "^21.3.0",
     "eslint-plugin-rxjs-x": "^1.0.0",
     "husky": "^9.1.7",
-    "jasmine-core": "~6.1.0",
-    "karma": "~6.4.4",
-    "karma-chrome-launcher": "~3.2.0",
-    "karma-coverage": "~2.2.1",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.2.0",
+    "jsdom": "^29.0.0",
     "lint-staged": "^16.4.0",
     "prettier": "3.8.1",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.0"
   },
   "lint-staged": {
     "*.ts": [

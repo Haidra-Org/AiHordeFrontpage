@@ -12,7 +12,7 @@ Technical overview of the AI Horde frontend for developer navigation. For more o
 | Styling    | Tailwind CSS 4 (PostCSS, CSS-first `@theme` config)                                  |
 | i18n       | Transloco                                                                            |
 | HTTP       | `HordeApiCacheService` wrapping Angular `HttpClient`                                 |
-| Testing    | Karma + Jasmine                                                                      |
+| Testing    | Vitest + jsdom (via @analogjs/vitest-angular)                                        |
 | Deployment | Docker-based SSR with Express (`server.ts`) or Cloudflare Workers (`wrangler.jsonc`) |
 | CI         | GitHub Actions — lint, format, typecheck, test, build                                |
 
@@ -196,11 +196,12 @@ All styles live in `src/styles/*.css`. Component CSS files are empty by conventi
 
 ## Testing
 
-- **Framework**: Karma + Jasmine
+- **Framework**: Vitest + jsdom (via `@analogjs/vitest-angular`)
+- **Config**: `vite.config.ts` (test options), `tsconfig.spec.json` (type checking)
 - **Spec files**: Co-located with source (e.g., `foo.service.spec.ts`)
 - **Integration tests**: Separate files with `.integration.spec.ts` suffix
-- **CI**: `npx ng test --watch=false --browsers=ChromeHeadless`
-- **HttpClient testing**: Uses `HttpClientTestingModule` — see `horde-api-cache.service.spec.ts` for patterns
+- **CI**: `npx vitest run --coverage` (V8 coverage with enforced thresholds)
+- **HttpClient testing**: Uses `provideHttpClientTesting()` — see `horde-api-cache.service.spec.ts` for patterns
 
 ---
 

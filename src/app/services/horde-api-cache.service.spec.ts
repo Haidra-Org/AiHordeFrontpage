@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -14,6 +14,7 @@ describe('HordeApiCacheService', () => {
   let httpTesting: HttpTestingController;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -28,6 +29,7 @@ describe('HordeApiCacheService', () => {
   afterEach(() => {
     httpTesting.verify();
     service.clear();
+    vi.useRealTimers();
   });
 
   // ========================================================================
@@ -35,10 +37,6 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('cachedGet basics', () => {
-    it('should be created', () => {
-      expect(service).toBeTruthy();
-    });
-
     it('should make an HTTP request on first call', () => {
       service
         .cachedGet('https://aihorde.net/api/v2/status/performance')
@@ -51,18 +49,15 @@ describe('HordeApiCacheService', () => {
       req.flush({ worker_count: 42 });
     });
 
-    it('should return cached data on second call within TTL', fakeAsync(() => {
+    it('should return cached data on second call within TTL', () => {
       let firstResult: unknown;
       let secondResult: unknown;
 
-      // First call
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
           {},
-          {
-            ttl: CacheTTL.LONG,
-          },
+          { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (firstResult = r));
 
@@ -70,37 +65,30 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ worker_count: 42 });
 
-      tick(1000); // 1s later — well within 300s TTL
+      vi.advanceTimersByTime(1000);
 
-      // Second call — should be served from cache
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
           {},
-          {
-            ttl: CacheTTL.LONG,
-          },
+          { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (secondResult = r));
 
-      // No new HTTP request should be made
       httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
 
       expect(firstResult).toEqual({ worker_count: 42 });
       expect(secondResult).toEqual({ worker_count: 42 });
-    }));
+    });
 
-    it('should refetch after TTL expires', fakeAsync(() => {
+    it('should refetch after TTL expires', () => {
       let result: unknown;
 
-      // First call
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
           {},
-          {
-            ttl: CacheTTL.SHORT, // 30s
-          },
+          { ttl: CacheTTL.SHORT },
         )
         .subscribe();
 
@@ -108,16 +96,13 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ worker_count: 42 });
 
-      tick(31_000); // Past the 30s TTL
+      vi.advanceTimersByTime(31_000);
 
-      // Second call — cache is stale, should make a new request
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
           {},
-          {
-            ttl: CacheTTL.SHORT,
-          },
+          { ttl: CacheTTL.SHORT },
         )
         .subscribe((r) => (result = r));
 
@@ -126,36 +111,26 @@ describe('HordeApiCacheService', () => {
         .flush({ worker_count: 99 });
 
       expect(result).toEqual({ worker_count: 99 });
-    }));
+    });
 
-    it('should not cache when TTL is NEVER (0)', fakeAsync(() => {
+    it('should not cache when TTL is NEVER (0)', () => {
       let result1: unknown;
       let result2: unknown;
 
-      // First call
       service
-        .cachedGet<{ worker_count: number }>(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          {
-            ttl: CacheTTL.NEVER,
-          },
-        )
+        .cachedGet<{
+          worker_count: number;
+        }>('https://aihorde.net/api/v2/status/performance', {}, { ttl: CacheTTL.NEVER })
         .subscribe((r) => (result1 = r));
 
       httpTesting
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ worker_count: 42 });
 
-      // Second call — should make a new request
       service
-        .cachedGet<{ worker_count: number }>(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          {
-            ttl: CacheTTL.NEVER,
-          },
-        )
+        .cachedGet<{
+          worker_count: number;
+        }>('https://aihorde.net/api/v2/status/performance', {}, { ttl: CacheTTL.NEVER })
         .subscribe((r) => (result2 = r));
 
       httpTesting
@@ -164,7 +139,7 @@ describe('HordeApiCacheService', () => {
 
       expect(result1).toEqual({ worker_count: 42 });
       expect(result2).toEqual({ worker_count: 43 });
-    }));
+    });
   });
 
   // ========================================================================
@@ -176,7 +151,6 @@ describe('HordeApiCacheService', () => {
       let result1: unknown;
       let result2: unknown;
 
-      // Two concurrent subscriptions to the same URL
       service
         .cachedGet('https://aihorde.net/api/v2/status/performance')
         .subscribe((r) => (result1 = r));
@@ -184,7 +158,6 @@ describe('HordeApiCacheService', () => {
         .cachedGet('https://aihorde.net/api/v2/status/performance')
         .subscribe((r) => (result2 = r));
 
-      // Only ONE HTTP request should be made
       const requests = httpTesting.match(
         'https://aihorde.net/api/v2/status/performance',
       );
@@ -224,11 +197,10 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('late subscriber after first unsubscribes', () => {
-    it('should serve cached data to a late subscriber without a new HTTP request', fakeAsync(() => {
+    it('should serve cached data to a late subscriber without a new HTTP request', () => {
       let firstResult: unknown;
       let lateResult: unknown;
 
-      // Subscriber A subscribes, HTTP completes, A receives data
       const sub = service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -243,12 +215,10 @@ describe('HordeApiCacheService', () => {
 
       expect(firstResult).toEqual({ worker_count: 42 });
 
-      // A unsubscribes — with refCount: true this would destroy the replay buffer
       sub.unsubscribe();
 
-      tick(100);
+      vi.advanceTimersByTime(100);
 
-      // Subscriber B arrives late — should get cached data, no new request
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -257,11 +227,10 @@ describe('HordeApiCacheService', () => {
         )
         .subscribe((r) => (lateResult = r));
 
-      // No new HTTP request should be made — data is in the cache
       httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
 
       expect(lateResult).toEqual({ worker_count: 42 });
-    }));
+    });
   });
 
   // ========================================================================
@@ -269,7 +238,7 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('cache key with params', () => {
-    it('should cache different params as separate entries', fakeAsync(() => {
+    it('should cache different params as separate entries', () => {
       const paramsImage = new HttpParams().set('type', 'image');
       const paramsText = new HttpParams().set('type', 'text');
       let resultImage: unknown;
@@ -291,16 +260,15 @@ describe('HordeApiCacheService', () => {
         })
         .subscribe((r) => (resultText = r));
 
-      // Different params → different cache key → new request
       httpTesting
         .expectOne('https://aihorde.net/api/v2/status/models?type=text')
         .flush([{ name: 'LLaMA' }]);
 
       expect(resultImage).toEqual([{ name: 'SD' }]);
       expect(resultText).toEqual([{ name: 'LLaMA' }]);
-    }));
+    });
 
-    it('should serve from cache for same URL + same params', fakeAsync(() => {
+    it('should serve from cache for same URL + same params', () => {
       const params = new HttpParams().set('type', 'image');
       let result1: unknown;
       let result2: unknown;
@@ -317,9 +285,8 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/models?type=image')
         .flush([{ name: 'SD' }]);
 
-      tick(1000);
+      vi.advanceTimersByTime(1000);
 
-      // Same URL + same params → should be cached
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/models',
@@ -334,9 +301,9 @@ describe('HordeApiCacheService', () => {
 
       expect(result1).toEqual([{ name: 'SD' }]);
       expect(result2).toEqual([{ name: 'SD' }]);
-    }));
+    });
 
-    it('should treat different headers as different cache keys', fakeAsync(() => {
+    it('should treat different headers as different cache keys', () => {
       let keyAResult: unknown;
       let keyBResult: unknown;
 
@@ -366,7 +333,7 @@ describe('HordeApiCacheService', () => {
 
       expect(keyAResult).toEqual({ username: 'A' });
       expect(keyBResult).toEqual({ username: 'B' });
-    }));
+    });
   });
 
   // ========================================================================
@@ -410,10 +377,9 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('invalidate', () => {
-    it('should invalidate by category', fakeAsync(() => {
+    it('should invalidate by category', () => {
       let result: unknown;
 
-      // Populate cache
       service
         .cachedGet(
           'https://aihorde.net/api/v2/styles/image',
@@ -426,12 +392,10 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/styles/image')
         .flush([]);
 
-      tick(100);
+      vi.advanceTimersByTime(100);
 
-      // Invalidate entire 'styles' category
       service.invalidate({ category: 'styles' });
 
-      // Next request should go to the network again
       service
         .cachedGet(
           'https://aihorde.net/api/v2/styles/image',
@@ -445,12 +409,11 @@ describe('HordeApiCacheService', () => {
         .flush([{ id: 'new' }]);
 
       expect(result).toEqual([{ id: 'new' }]);
-    }));
+    });
 
-    it('should invalidate by URL prefix', fakeAsync(() => {
+    it('should invalidate by URL prefix', () => {
       let result: unknown;
 
-      // Populate cache
       service
         .cachedGet(
           'https://aihorde.net/api/v2/users/42',
@@ -463,12 +426,10 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/users/42')
         .flush({ id: 42 });
 
-      tick(100);
+      vi.advanceTimersByTime(100);
 
-      // Invalidate by prefix
       service.invalidate('https://aihorde.net/api/v2/users');
 
-      // Should refetch after invalidation
       service
         .cachedGet(
           'https://aihorde.net/api/v2/users/42',
@@ -482,12 +443,11 @@ describe('HordeApiCacheService', () => {
         .flush({ id: 42, updated: true });
 
       expect(result).toEqual({ id: 42, updated: true });
-    }));
+    });
 
-    it('should only invalidate matching category (not all entries)', fakeAsync(() => {
+    it('should only invalidate matching category (not all entries)', () => {
       let perfResult: unknown;
 
-      // Populate two categories
       service
         .cachedGet(
           'https://aihorde.net/api/v2/styles/image',
@@ -510,12 +470,10 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ cached: true });
 
-      tick(100);
+      vi.advanceTimersByTime(100);
 
-      // Invalidate only styles
       service.invalidate({ category: 'styles' });
 
-      // Styles → should refetch
       service
         .cachedGet(
           'https://aihorde.net/api/v2/styles/image',
@@ -527,7 +485,6 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/styles/image')
         .flush([]);
 
-      // Performance → still cached
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -538,7 +495,7 @@ describe('HordeApiCacheService', () => {
       httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
 
       expect(perfResult).toEqual({ cached: true });
-    }));
+    });
   });
 
   // ========================================================================
@@ -546,7 +503,7 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('clear', () => {
-    it('should clear all cached entries', fakeAsync(() => {
+    it('should clear all cached entries', () => {
       let result: unknown;
 
       service
@@ -560,7 +517,7 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({});
 
-      tick(100);
+      vi.advanceTimersByTime(100);
 
       service.clear();
 
@@ -576,7 +533,7 @@ describe('HordeApiCacheService', () => {
         .flush({ refreshed: true });
 
       expect(result).toEqual({ refreshed: true });
-    }));
+    });
   });
 
   // ========================================================================
@@ -608,7 +565,6 @@ describe('HordeApiCacheService', () => {
       let result1: unknown;
       let result2: unknown;
 
-      // First call
       ssrService
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -620,7 +576,6 @@ describe('HordeApiCacheService', () => {
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ call: 1 });
 
-      // Second call — should still make a network request (no caching on server)
       ssrService
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -663,7 +618,7 @@ describe('HordeApiCacheService', () => {
   // ========================================================================
 
   describe('error handling', () => {
-    it('should NOT cache failed responses', fakeAsync(() => {
+    it('should NOT cache failed responses', () => {
       let error: unknown;
 
       service
@@ -683,7 +638,6 @@ describe('HordeApiCacheService', () => {
 
       expect(error).toBeTruthy();
 
-      // Next call should attempt a fresh request (error wasn't cached)
       service
         .cachedGet(
           'https://aihorde.net/api/v2/status/performance',
@@ -695,7 +649,7 @@ describe('HordeApiCacheService', () => {
       httpTesting
         .expectOne('https://aihorde.net/api/v2/status/performance')
         .flush({ worker_count: 42 });
-    }));
+    });
 
     it('should clear in-flight entry after failure', () => {
       let firstError: unknown;

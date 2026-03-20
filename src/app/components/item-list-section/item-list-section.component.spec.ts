@@ -1,4 +1,6 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, signal, WritableSignal } from '@angular/core';
+import { TranslocoTestingModule } from '@jsverse/transloco';
 import {
   ItemListSectionComponent,
   DisplayItem,
@@ -11,257 +13,240 @@ import {
   FunctionKind,
 } from '../../types/item-types';
 
-describe('ItemListSectionComponent - Data Structure Validation', () => {
-  let enumDisplayService: EnumDisplayService;
+// jsdom does not provide IntersectionObserver — stub it
+class FakeIntersectionObserver {
+  observe(): void {
+    /* no-op */
+  }
+  unobserve(): void {
+    /* no-op */
+  }
+  disconnect(): void {
+    /* no-op */
+  }
+}
+globalThis.IntersectionObserver =
+  FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+@Component({
+  template: `
+    <app-item-list-section
+      [items]="items()"
+      [sectionName]="sectionName()"
+      [title]="title()"
+      [expandedRows]="expandedRows()"
+      [collapsedSections]="collapsedSections()"
+      [viewMode]="viewMode()"
+      (rowToggle)="onRowToggle($event)"
+      (sectionToggle)="onSectionToggle($event)"
+    />
+  `,
+  imports: [ItemListSectionComponent],
+})
+class TestHostComponent {
+  items = signal<DisplayItem[]>([]);
+  sectionName = signal('test-section');
+  title = signal('guis_and_tools.section_title');
+  expandedRows = signal<WritableSignal<Set<string>>>(signal(new Set()));
+  collapsedSections = signal<WritableSignal<Set<string>>>(signal(new Set()));
+  viewMode = signal<'table' | 'grid'>('table');
+  rowToggleEvents: string[] = [];
+  sectionToggleEvents: string[] = [];
+
+  onRowToggle(name: string): void {
+    this.rowToggleEvents.push(name);
+  }
+  onSectionToggle(name: string): void {
+    this.sectionToggleEvents.push(name);
+  }
+}
+
+function makeItem(overrides: Partial<DisplayItem> = {}): DisplayItem {
+  return {
+    name: 'Test GUI',
+    description: 'A test GUI application',
+    link: 'https://example.com',
+    uniqueId: 'test-gui',
+    categories: ['Web'],
+    itemType: ItemType.GUI_IMAGE,
+    functionKind: FunctionKind.FRONTEND,
+    ...overrides,
+  };
+}
+
+describe('ItemListSectionComponent', () => {
+  let fixture: ComponentFixture<TestHostComponent>;
+  let host: TestHostComponent;
+  let el: HTMLElement;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ItemListSectionComponent],
+      imports: [
+        TestHostComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en: {} },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
     }).compileComponents();
 
-    enumDisplayService = TestBed.inject(EnumDisplayService);
+    fixture = TestBed.createComponent(TestHostComponent);
+    host = fixture.componentInstance;
+    el = fixture.nativeElement;
   });
 
-  // ============================================================================
-  // DisplayItem interface validation - ensuring refactoring correctness
-  // ============================================================================
-
-  describe('DisplayItem Structure Requirements', () => {
-    it('should require itemType field (not inferred)', () => {
-      const validDisplayItem: DisplayItem = {
-        name: 'Test GUI',
-        description: 'Test description',
-        link: 'https://test.com',
-        uniqueId: 'test-gui',
-        categories: ['Web'],
-        itemType: ItemType.GUI_IMAGE,
-        functionKind: FunctionKind.FRONTEND,
-      };
-
-      // itemType must be explicitly defined
-      expect(validDisplayItem.itemType).toBeDefined();
-      expect(validDisplayItem.itemType).toBe(ItemType.GUI_IMAGE);
-    });
-
-    it('should require functionKind field (not functionType)', () => {
-      const validDisplayItem: DisplayItem = {
-        name: 'Test Tool',
-        description: 'Test description',
-        link: 'https://test.com',
-        uniqueId: 'test-tool',
-        categories: ['Worker'],
-        itemType: ItemType.TOOL,
-        functionKind: FunctionKind.WORKER,
-      };
-
-      // functionKind must be explicitly defined (renamed from functionType)
-      expect(validDisplayItem.functionKind).toBeDefined();
-      expect(validDisplayItem.functionKind).toBe(FunctionKind.WORKER);
-    });
-
-    it('should have domain as optional array (not single value)', () => {
-      const withDomain: DisplayItem = {
-        name: 'Multi-Domain Tool',
-        description: 'Supports multiple domains',
-        link: 'https://test.com',
-        uniqueId: 'multi-tool',
-        categories: ['Bot'],
-        itemType: ItemType.TOOL,
-        functionKind: FunctionKind.BOT,
-        domain: [Domain.IMAGE, Domain.TEXT],
-      };
-
-      // domain should be an array
-      expect(Array.isArray(withDomain.domain)).toBe(true);
-      expect(withDomain.domain).toContain(Domain.IMAGE);
-      expect(withDomain.domain).toContain(Domain.TEXT);
-    });
-
-    it('should have platform as optional array (not single value)', () => {
-      const withPlatform: DisplayItem = {
-        name: 'Cross-Platform GUI',
-        description: 'Works on multiple platforms',
-        link: 'https://test.com',
-        uniqueId: 'cross-platform-gui',
-        categories: ['Desktop'],
-        itemType: ItemType.GUI_IMAGE,
-        functionKind: FunctionKind.FRONTEND,
-        platform: [Platform.WINDOWS, Platform.LINUX, Platform.MACOS],
-      };
-
-      // platform should be an array
-      expect(Array.isArray(withPlatform.platform)).toBe(true);
-      expect(withPlatform.platform).toContain(Platform.WINDOWS);
-      expect(withPlatform.platform).toContain(Platform.LINUX);
-      expect(withPlatform.platform).toContain(Platform.MACOS);
-    });
-
-    it('should have categories as required array (always)', () => {
-      const withCategories: DisplayItem = {
-        name: 'Test Item',
-        description: 'Has categories',
-        link: 'https://test.com',
-        uniqueId: 'test-item',
-        categories: ['Web', 'Desktop'],
-        itemType: ItemType.GUI_IMAGE,
-        functionKind: FunctionKind.FRONTEND,
-      };
-
-      // categories must always be an array
-      expect(Array.isArray(withCategories.categories)).toBe(true);
-      expect(withCategories.categories.length).toBeGreaterThan(0);
-    });
+  it('should create the component', () => {
+    fixture.detectChanges();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  describe('Platform Display Service Integration', () => {
-    it('should group desktop platforms when all three OS platforms present', () => {
-      const desktopPlatforms: Platform[] = [
-        Platform.WINDOWS,
-        Platform.LINUX,
-        Platform.MACOS,
-      ];
+  it('should render nothing when items array is empty', () => {
+    host.items.set([]);
+    fixture.detectChanges();
 
-      const label =
-        enumDisplayService.getPlatformGroupedLabel(desktopPlatforms);
-      expect(label).toBe('Desktop');
-    });
-
-    it('should display individual platforms when not all desktop OSes present', () => {
-      const partialDesktop: Platform[] = [Platform.WINDOWS, Platform.LINUX];
-
-      const label = enumDisplayService.getPlatformGroupedLabel(partialDesktop);
-      expect(label).toBe('Windows, Linux');
-    });
-
-    it('should mix desktop grouping with other platforms', () => {
-      const mixedPlatforms: Platform[] = [
-        Platform.WINDOWS,
-        Platform.LINUX,
-        Platform.MACOS,
-        Platform.WEB,
-      ];
-
-      const label = enumDisplayService.getPlatformGroupedLabel(mixedPlatforms);
-      expect(label).toBe('Desktop, Web');
-    });
+    expect(el.querySelector('.table-section-wrapper')).toBeNull();
   });
 
-  describe('Domain Display Service Integration', () => {
-    it('should join multiple domains with ampersand', () => {
-      const domains: Domain[] = [Domain.IMAGE, Domain.TEXT];
+  it('should render section header when items are provided', () => {
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
 
-      const label = enumDisplayService.getDomainArrayLabel(domains);
-      expect(label).toBe('Image & Text');
-    });
-
-    it('should display single domain without separator', () => {
-      const singleDomain: Domain[] = [Domain.IMAGE];
-
-      const label = enumDisplayService.getDomainArrayLabel(singleDomain);
-      expect(label).toBe('Image');
-    });
+    const header = el.querySelector('h2');
+    expect(header).not.toBeNull();
   });
 
-  describe('Real-world DisplayItem Patterns', () => {
-    it('should represent Lucid Creations pattern (cross-platform desktop + web)', () => {
-      const lucidCreations: DisplayItem = {
-        name: 'Lucid Creations',
-        description: 'Cross-platform GUI',
-        link: 'https://test.com',
-        uniqueId: 'lucid-creations',
-        categories: ['Web', 'Desktop'],
-        itemType: ItemType.GUI_IMAGE,
+  it('should display the item count', () => {
+    host.items.set([
+      makeItem({ uniqueId: 'a', name: 'Item A' }),
+      makeItem({ uniqueId: 'b', name: 'Item B' }),
+    ]);
+    fixture.detectChanges();
+
+    const count = el.querySelector('.tools-section-count');
+    expect(count?.textContent?.trim()).toBe('2');
+  });
+
+  it('should display item names in table view', () => {
+    host.items.set([
+      makeItem({ uniqueId: 'gui-1', name: 'Lucid Creations' }),
+      makeItem({ uniqueId: 'gui-2', name: 'ArtBot' }),
+    ]);
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('Lucid Creations');
+    expect(el.textContent).toContain('ArtBot');
+  });
+
+  it('should display item descriptions', () => {
+    host.items.set([makeItem({ description: 'A powerful image generator' })]);
+    fixture.detectChanges();
+
+    expect(el.textContent).toContain('A powerful image generator');
+  });
+
+  it('should emit rowToggle when a table row is clicked', () => {
+    host.items.set([makeItem({ name: 'ClickMe' })]);
+    fixture.detectChanges();
+
+    const row = el.querySelector('.item-list-row') as HTMLElement;
+    row?.click();
+    fixture.detectChanges();
+
+    expect(host.rowToggleEvents).toContain('ClickMe');
+  });
+
+  it('should emit sectionToggle when section header is clicked', () => {
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
+
+    const header = el.querySelector('h2') as HTMLElement;
+    header?.click();
+    fixture.detectChanges();
+
+    expect(host.sectionToggleEvents).toContain('test-section');
+  });
+
+  it('should set aria-expanded on section header', () => {
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
+
+    const header = el.querySelector('h2');
+    expect(header?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('should set aria-expanded=false when section is collapsed', () => {
+    const collapsed = signal(new Set(['test-section']));
+    host.collapsedSections.set(collapsed);
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
+
+    const header = el.querySelector('h2');
+    expect(header?.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('should hide items when section is collapsed', () => {
+    const collapsed = signal(new Set(['test-section']));
+    host.collapsedSections.set(collapsed);
+    host.items.set([makeItem({ name: 'HiddenItem' })]);
+    fixture.detectChanges();
+
+    expect(el.querySelector('.item-list-row')).toBeNull();
+  });
+
+  it('should display domain and platform badges', () => {
+    TestBed.inject(EnumDisplayService);
+
+    host.items.set([
+      makeItem({
         domain: [Domain.IMAGE],
-        platform: [
-          Platform.WINDOWS,
-          Platform.LINUX,
-          Platform.MACOS,
-          Platform.WEB,
-        ],
-        functionKind: FunctionKind.FRONTEND,
-      };
+        platform: [Platform.WEB],
+      }),
+    ]);
+    fixture.detectChanges();
 
-      expect(lucidCreations.itemType).toBe(ItemType.GUI_IMAGE);
-      expect(
-        enumDisplayService.getPlatformGroupedLabel(lucidCreations.platform),
-      ).toBe('Desktop, Web');
-    });
-
-    it('should represent worker pattern (server-side tool)', () => {
-      const worker: DisplayItem = {
-        name: 'horde-worker-reGen',
-        description: 'GPU worker',
-        link: 'https://test.com',
-        uniqueId: 'horde-worker-regen',
-        categories: ['Worker', 'Image Generation'],
-        itemType: ItemType.TOOL,
-        domain: [Domain.IMAGE],
-        platform: [Platform.SERVER],
-        functionKind: FunctionKind.WORKER,
-      };
-
-      expect(worker.functionKind).toBe(FunctionKind.WORKER);
-      expect(worker.platform).toEqual([Platform.SERVER]);
-    });
-
-    it('should represent multi-domain bot pattern', () => {
-      const bot: DisplayItem = {
-        name: 'Discord Bot',
-        description: 'Multi-domain bot',
-        link: 'https://test.com',
-        uniqueId: 'discord-bot',
-        categories: ['Bot'],
-        itemType: ItemType.TOOL,
-        domain: [Domain.IMAGE, Domain.TEXT],
-        platform: [Platform.SERVER],
-        functionKind: FunctionKind.BOT,
-      };
-
-      expect(bot.domain).toEqual([Domain.IMAGE, Domain.TEXT]);
-      expect(enumDisplayService.getDomainArrayLabel(bot.domain)).toBe(
-        'Image & Text',
-      );
-    });
+    const badges = el.querySelectorAll('.badge-base');
+    expect(badges.length).toBeGreaterThan(0);
   });
 
-  describe('Migration Validation', () => {
-    it('should not use "BOTH" domain value (removed in refactoring)', () => {
-      const multiDomainItem: DisplayItem = {
-        name: 'Multi-Domain Item',
-        description: 'Supports both domains',
-        link: 'https://test.com',
-        uniqueId: 'multi-domain',
-        categories: ['Test'],
-        itemType: ItemType.TOOL,
-        domain: [Domain.IMAGE, Domain.TEXT],
-        functionKind: FunctionKind.TOOL,
-      };
+  it('should render grid view when viewMode is grid', () => {
+    host.viewMode.set('grid');
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
 
-      // Should use array of domains, not a "BOTH" value
-      expect(Array.isArray(multiDomainItem.domain)).toBe(true);
-      expect(multiDomainItem.domain).not.toContain('both' as unknown as Domain);
-    });
+    expect(el.querySelector('.tools-grid')).not.toBeNull();
+    expect(el.querySelector('.table-items')).toBeNull();
+  });
 
-    it('should not use "DESKTOP" platform value (removed in refactoring)', () => {
-      const desktopItem: DisplayItem = {
-        name: 'Desktop App',
-        description: 'Desktop application',
-        link: 'https://test.com',
-        uniqueId: 'desktop-app',
-        categories: ['Desktop'],
-        itemType: ItemType.GUI_IMAGE,
-        platform: [Platform.WINDOWS, Platform.LINUX, Platform.MACOS],
-        functionKind: FunctionKind.FRONTEND,
-      };
+  it('should render table view when viewMode is table', () => {
+    host.viewMode.set('table');
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
 
-      // Should use specific OS platforms, not a "DESKTOP" value
-      expect(Array.isArray(desktopItem.platform)).toBe(true);
-      expect(desktopItem.platform).not.toContain(
-        'desktop' as unknown as Platform,
-      );
-      expect(desktopItem.platform).toContain(Platform.WINDOWS);
-      expect(desktopItem.platform).toContain(Platform.LINUX);
-      expect(desktopItem.platform).toContain(Platform.MACOS);
-    });
+    expect(el.querySelector('.table-items')).not.toBeNull();
+    expect(el.querySelector('.tools-grid')).toBeNull();
+  });
+
+  it('should show recommended badge for recommended items', () => {
+    host.items.set([makeItem({ recommended: true })]);
+    fixture.detectChanges();
+
+    const badge = el.querySelector('.badge-recommended');
+    expect(badge).not.toBeNull();
+  });
+
+  it('should render source control link when provided and row is expanded', () => {
+    const expanded = signal(new Set(['TestItem']));
+    host.expandedRows.set(expanded);
+    host.items.set([
+      makeItem({
+        name: 'TestItem',
+        sourceControlLink: 'https://github.com/test/repo',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    const sourceLink = el.querySelector('.btn-source-control');
+    expect(sourceLink).not.toBeNull();
+    expect(sourceLink?.textContent).toContain('GitHub');
   });
 });

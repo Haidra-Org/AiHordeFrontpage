@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import {
   provideHttpClient,
   withInterceptors,
@@ -17,6 +17,7 @@ describe('rateLimitInterceptor', () => {
   let state: RateLimitState;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([rateLimitInterceptor])),
@@ -30,6 +31,7 @@ describe('rateLimitInterceptor', () => {
 
   afterEach(() => {
     httpTesting.verify();
+    vi.useRealTimers();
   });
 
   it('should pass through successful responses unchanged', () => {
@@ -55,7 +57,7 @@ describe('rateLimitInterceptor', () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it('should retry on 429 with Retry-After header (seconds)', fakeAsync(() => {
+  it('should retry on 429 with Retry-After header (seconds)', () => {
     let result: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
@@ -74,7 +76,7 @@ describe('rateLimitInterceptor', () => {
     expect(state.retryAfterMs()).toBeGreaterThan(0);
 
     // Advance past the 1-second retry delay
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     // Retry request succeeds
     httpTesting
@@ -84,9 +86,9 @@ describe('rateLimitInterceptor', () => {
     expect(result).toEqual({ worker_count: 50 });
     expect(state.limited()).toBe(false);
     expect(state.retryAfterMs()).toBe(-1);
-  }));
+  });
 
-  it('should use exponential backoff when no Retry-After header', fakeAsync(() => {
+  it('should use exponential backoff when no Retry-After header', () => {
     let result: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
@@ -102,7 +104,7 @@ describe('rateLimitInterceptor', () => {
 
     expect(state.limited()).toBe(true);
 
-    tick(2000);
+    vi.advanceTimersByTime(2000);
 
     // Retry succeeds
     httpTesting
@@ -111,9 +113,9 @@ describe('rateLimitInterceptor', () => {
 
     expect(result).toEqual({ ok: true });
     expect(state.limited()).toBe(false);
-  }));
+  });
 
-  it('should retry up to MAX_RETRIES (2) times', fakeAsync(() => {
+  it('should retry up to MAX_RETRIES (2) times', () => {
     let error: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
@@ -128,7 +130,7 @@ describe('rateLimitInterceptor', () => {
         headers: { 'Retry-After': '1' },
       });
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     // 2nd attempt (retry 1) → 429
     httpTesting
@@ -139,7 +141,7 @@ describe('rateLimitInterceptor', () => {
         headers: { 'Retry-After': '1' },
       });
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     // 3rd attempt (retry 2) → 429 again
     httpTesting
@@ -154,7 +156,7 @@ describe('rateLimitInterceptor', () => {
     expect(error).toBeTruthy();
     expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(429);
-  }));
+  });
 
   it('should NOT retry on non-429 errors', () => {
     let error: unknown;
@@ -175,12 +177,11 @@ describe('rateLimitInterceptor', () => {
     expect(state.limited()).toBe(false);
   });
 
-  it('should clear rate-limit state on non-429 errors', fakeAsync(() => {
+  it('should clear rate-limit state on non-429 errors', () => {
     http
       .get('https://aihorde.net/api/v2/status/performance')
       .subscribe({ error: () => undefined });
 
-    // Return a 400 error
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')
       .flush('Bad request', {
@@ -190,9 +191,9 @@ describe('rateLimitInterceptor', () => {
 
     expect(state.limited()).toBe(false);
     expect(state.retryAfterMs()).toBe(-1);
-  }));
+  });
 
-  it('should recover after retries succeed', fakeAsync(() => {
+  it('should recover after retries succeed', () => {
     let result: unknown;
     http
       .get('https://aihorde.net/api/v2/status/performance')
@@ -208,7 +209,7 @@ describe('rateLimitInterceptor', () => {
       });
 
     expect(state.limited()).toBe(true);
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     // Second: success
     httpTesting
@@ -218,7 +219,7 @@ describe('rateLimitInterceptor', () => {
     expect(result).toEqual({ recovered: true });
     expect(state.limited()).toBe(false);
     expect(state.retryAfterMs()).toBe(-1);
-  }));
+  });
 
   it('should NOT retry POST requests', () => {
     let error: unknown;
@@ -240,7 +241,7 @@ describe('rateLimitInterceptor', () => {
     expect((error as HttpErrorResponse).status).toBe(429);
   });
 
-  it('should clear state after terminal 429 failure', fakeAsync(() => {
+  it('should clear state after terminal 429 failure', () => {
     let error: unknown;
 
     http
@@ -255,7 +256,7 @@ describe('rateLimitInterceptor', () => {
         headers: { 'Retry-After': '1' },
       });
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')
@@ -265,7 +266,7 @@ describe('rateLimitInterceptor', () => {
         headers: { 'Retry-After': '1' },
       });
 
-    tick(1000);
+    vi.advanceTimersByTime(1000);
 
     httpTesting
       .expectOne('https://aihorde.net/api/v2/status/performance')
@@ -278,7 +279,7 @@ describe('rateLimitInterceptor', () => {
     expect((error as HttpErrorResponse).status).toBe(429);
     expect(state.limited()).toBe(false);
     expect(state.retryAfterMs()).toBe(-1);
-  }));
+  });
 });
 
 // Separate describe for RateLimitState service

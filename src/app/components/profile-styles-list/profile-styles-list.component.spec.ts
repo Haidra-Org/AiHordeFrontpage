@@ -23,7 +23,14 @@ import { ImageStyle, TextStyle } from '../../types/style';
  * to call the correct endpoint directly.
  */
 describe('ProfileStylesListComponent - type-aware style fetching', () => {
-  let styleService: jasmine.SpyObj<StyleService>;
+  let styleService: {
+    getImageStyle: ReturnType<typeof vi.fn>;
+    getTextStyle: ReturnType<typeof vi.fn>;
+    createImageStyle: ReturnType<typeof vi.fn>;
+    createTextStyle: ReturnType<typeof vi.fn>;
+    deleteImageStyle: ReturnType<typeof vi.fn>;
+    deleteTextStyle: ReturnType<typeof vi.fn>;
+  };
   let mockCurrentUser: ReturnType<typeof signal>;
 
   const mockImageStyle: ImageStyle = {
@@ -55,14 +62,14 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
   } as unknown as TextStyle;
 
   beforeEach(() => {
-    styleService = jasmine.createSpyObj('StyleService', [
-      'getImageStyle',
-      'getTextStyle',
-      'createImageStyle',
-      'createTextStyle',
-      'deleteImageStyle',
-      'deleteTextStyle',
-    ]);
+    styleService = {
+      getImageStyle: vi.fn(),
+      getTextStyle: vi.fn(),
+      createImageStyle: vi.fn(),
+      createTextStyle: vi.fn(),
+      deleteImageStyle: vi.fn(),
+      deleteTextStyle: vi.fn(),
+    };
 
     mockCurrentUser = signal({
       id: 1,
@@ -77,9 +84,7 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
 
     const authServiceMock = {
       currentUser: mockCurrentUser,
-      getStoredApiKey: jasmine
-        .createSpy('getStoredApiKey')
-        .and.returnValue('test-key'),
+      getStoredApiKey: vi.fn().mockReturnValue('test-key'),
     };
 
     TestBed.configureTestingModule({
@@ -98,8 +103,8 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
   });
 
   it('should call getImageStyle for image-type refs (not getTextStyle)', () => {
-    styleService.getImageStyle.and.returnValue(of(mockImageStyle));
-    styleService.getTextStyle.and.returnValue(of(mockTextStyle));
+    styleService.getImageStyle.mockReturnValue(of(mockImageStyle));
+    styleService.getTextStyle.mockReturnValue(of(mockTextStyle));
 
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
     fixture.detectChanges(); // triggers ngOnInit → loadUserStyles
@@ -114,8 +119,8 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
   });
 
   it('should call getTextStyle for text-type refs (not getImageStyle)', () => {
-    styleService.getImageStyle.and.returnValue(of(mockImageStyle));
-    styleService.getTextStyle.and.returnValue(of(mockTextStyle));
+    styleService.getImageStyle.mockReturnValue(of(mockImageStyle));
+    styleService.getTextStyle.mockReturnValue(of(mockTextStyle));
 
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
     fixture.detectChanges();
@@ -128,10 +133,10 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
 
   it('should NOT call getTextStyle as a fallback for image styles', () => {
     // Even if image fetch fails, it should NOT try text endpoint
-    styleService.getImageStyle.and.returnValue(
+    styleService.getImageStyle.mockReturnValue(
       throwError(() => new Error('Not found')),
     );
-    styleService.getTextStyle.and.returnValue(of(mockTextStyle));
+    styleService.getTextStyle.mockReturnValue(of(mockTextStyle));
 
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
     fixture.detectChanges();
@@ -142,8 +147,8 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
   });
 
   it('should correctly categorize fetched styles by type', () => {
-    styleService.getImageStyle.and.returnValue(of(mockImageStyle));
-    styleService.getTextStyle.and.returnValue(of(mockTextStyle));
+    styleService.getImageStyle.mockReturnValue(of(mockImageStyle));
+    styleService.getTextStyle.mockReturnValue(of(mockTextStyle));
 
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
     fixture.detectChanges();
@@ -169,11 +174,11 @@ describe('ProfileStylesListComponent - type-aware style fetching', () => {
 
   it('should handle fetch errors gracefully without wrong-type fallback', () => {
     // img-1 fails, img-2 succeeds, txt-1 succeeds
-    styleService.getImageStyle.and.callFake((id: string) => {
+    styleService.getImageStyle.mockImplementation((id: string) => {
       if (id === 'img-1') return throwError(() => new Error('404'));
       return of(mockImageStyle);
     });
-    styleService.getTextStyle.and.returnValue(of(mockTextStyle));
+    styleService.getTextStyle.mockReturnValue(of(mockTextStyle));
 
     const fixture = TestBed.createComponent(ProfileStylesListComponent);
     fixture.detectChanges();

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
+import { vi } from 'vitest';
 import { StickyHeaderDirective } from './sticky-header.directive';
 import { StickyRegistryService } from '../services/sticky-registry.service';
 
@@ -14,13 +15,14 @@ class TestHostComponent {
 
 describe('StickyHeaderDirective', () => {
   let fixture: ComponentFixture<TestHostComponent>;
-  let mockRegistry: jasmine.SpyObj<StickyRegistryService>;
+  const mockRegistry = {
+    register: vi.fn(),
+    unregister: vi.fn(),
+  };
 
   beforeEach(() => {
-    mockRegistry = jasmine.createSpyObj('StickyRegistryService', [
-      'register',
-      'unregister',
-    ]);
+    mockRegistry.register.mockReset();
+    mockRegistry.unregister.mockReset();
 
     TestBed.configureTestingModule({
       imports: [TestHostComponent],
@@ -37,7 +39,7 @@ describe('StickyHeaderDirective', () => {
     fixture.detectChanges(); // triggers ngOnInit
 
     expect(mockRegistry.register).toHaveBeenCalledTimes(1);
-    const [element, order] = mockRegistry.register.calls.mostRecent().args;
+    const [element, order] = mockRegistry.register.mock.calls.at(-1)!;
     expect(element).toBeInstanceOf(HTMLElement);
     expect(order).toBe(10);
   });
@@ -46,14 +48,14 @@ describe('StickyHeaderDirective', () => {
     fixture.componentInstance.order = 25;
     fixture.detectChanges();
 
-    const [, order] = mockRegistry.register.calls.mostRecent().args;
+    const [, order] = mockRegistry.register.mock.calls.at(-1)!;
     expect(order).toBe(25);
   });
 
   it('should unregister the element on destroy', () => {
     fixture.detectChanges();
 
-    const registeredElement = mockRegistry.register.calls.mostRecent().args[0];
+    const registeredElement = mockRegistry.register.mock.calls.at(-1)![0];
 
     fixture.destroy();
 
@@ -64,7 +66,7 @@ describe('StickyHeaderDirective', () => {
   it('should register the native DOM element, not a wrapper', () => {
     fixture.detectChanges();
 
-    const registeredElement = mockRegistry.register.calls.mostRecent().args[0];
+    const registeredElement = mockRegistry.register.mock.calls.at(-1)![0];
     expect(registeredElement.tagName).toBe('DIV');
   });
 });
