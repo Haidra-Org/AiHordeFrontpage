@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { vi } from 'vitest';
 import { StickyRegistryService } from './sticky-registry.service';
 
 /**
@@ -67,28 +68,27 @@ function makeFakeElement(height: number): HTMLElement {
 
 /** Flush the requestAnimationFrame used by scheduleRecalculate(). */
 function flushRAF(): void {
-  jasmine.clock().tick(17); // One frame at ~60fps
+  vi.advanceTimersByTime(17); // One frame at ~60fps
 }
 
 describe('StickyRegistryService', () => {
   let service: StickyRegistryService;
   let doc: Document;
-  let originalRAF: typeof requestAnimationFrame;
 
   beforeEach(() => {
-    FakeResizeObserver.instances = [];
-    (window as unknown as Record<string, unknown>)['ResizeObserver'] =
-      FakeResizeObserver as unknown;
+    vi.useFakeTimers();
 
-    // Use jasmine clock so we can control requestAnimationFrame timing
-    jasmine.clock().install();
-    originalRAF = window.requestAnimationFrame;
-    window.requestAnimationFrame = (cb: FrameRequestCallback) => {
-      return window.setTimeout(
-        () => cb(performance.now()),
-        16,
-      ) as unknown as number;
-    };
+    FakeResizeObserver.instances = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      FakeResizeObserver as unknown as typeof ResizeObserver,
+    );
+
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      (cb: FrameRequestCallback) =>
+        setTimeout(() => cb(performance.now()), 16) as unknown as number,
+    );
 
     TestBed.configureTestingModule({
       providers: [
@@ -102,8 +102,7 @@ describe('StickyRegistryService', () => {
   });
 
   afterEach(() => {
-    jasmine.clock().uninstall();
-    window.requestAnimationFrame = originalRAF;
+    vi.useRealTimers();
   });
 
   it('should be created', () => {
@@ -285,11 +284,7 @@ describe('StickyRegistryService', () => {
 
       for (let i = 0; i < elements.length - 1; i++) {
         const expectedNext = tops[i] + heights[i];
-        expect(tops[i + 1]).toBe(
-          expectedNext,
-          `Gap detected between element ${i} (order ${elements[i].order}) and element ${i + 1} (order ${elements[i + 1].order}): ` +
-            `top[${i}]=${tops[i]} + height=${heights[i]} = ${expectedNext}, but top[${i + 1}]=${tops[i + 1]}`,
-        );
+        expect(tops[i + 1]).toBe(expectedNext);
       }
     });
 

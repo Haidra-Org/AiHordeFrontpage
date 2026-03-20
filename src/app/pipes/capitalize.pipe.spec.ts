@@ -14,33 +14,16 @@ describe('CapitalizePipe', () => {
     pipe = TestBed.runInInjectionContext(() => new CapitalizePipe());
   });
 
-  it('should create', () => {
-    expect(pipe).toBeTruthy();
-  });
-
   describe('first letter capitalization', () => {
-    it('should capitalize first letter only', () => {
-      expect(pipe.transform('hello world')).toBe('Hello world');
-    });
-
-    it('should handle already capitalized strings', () => {
-      expect(pipe.transform('Hello world')).toBe('Hello world');
-    });
-
-    it('should handle single character', () => {
-      expect(pipe.transform('a')).toBe('A');
-    });
-
-    it('should handle empty string', () => {
-      expect(pipe.transform('')).toBe('');
-    });
-
-    it('should handle all lowercase', () => {
-      expect(pipe.transform('hello')).toBe('Hello');
-    });
-
-    it('should preserve the rest of the string', () => {
-      expect(pipe.transform('hello WORLD test')).toBe('Hello WORLD test');
+    it.each([
+      ['hello world', 'Hello world'],
+      ['Hello world', 'Hello world'],
+      ['a', 'A'],
+      ['', ''],
+      ['hello', 'Hello'],
+      ['hello WORLD test', 'Hello WORLD test'],
+    ])('should transform "%s" to "%s"', (input, expected) => {
+      expect(pipe.transform(input)).toBe(expected);
     });
   });
 
@@ -53,24 +36,23 @@ describe('CapitalizePipe', () => {
       expect(pipe.transform(undefined)).toBe('');
     });
 
-    it('should handle numeric strings', () => {
-      expect(pipe.transform('123')).toBe('123');
-    });
-
-    it('should handle strings with numbers', () => {
-      expect(pipe.transform('test123')).toBe('Test123');
-    });
-
-    it('should handle special characters only', () => {
-      expect(pipe.transform('!!!')).toBe('!!!');
+    it.each([
+      ['123', '123'],
+      ['test123', 'Test123'],
+      ['!!!', '!!!'],
+    ])('should handle "%s" → "%s"', (input, expected) => {
+      expect(pipe.transform(input)).toBe(expected);
     });
   });
 
   describe('integration with EnumDisplayService', () => {
-    it('should use service capitalizeFirst method', () => {
-      spyOn(service, 'capitalizeFirst').and.returnValue('Mocked');
-      pipe.transform('test');
+    it('should delegate to service capitalizeFirst and return its result', () => {
+      vi.spyOn(service, 'capitalizeFirst').mockReturnValue('Mocked');
+
+      const result = pipe.transform('test');
+
       expect(service.capitalizeFirst).toHaveBeenCalledWith('test');
+      expect(result).toBe('Mocked');
     });
   });
 });

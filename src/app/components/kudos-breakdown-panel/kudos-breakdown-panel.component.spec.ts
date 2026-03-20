@@ -184,8 +184,6 @@ describe('KudosBreakdownPanelComponent', () => {
       host.translationPrefix.set(undefined);
       fixture.detectChanges();
 
-      // Component should use 'admin.users.kudos.' prefix internally
-      // We can't directly test translation keys, but we can verify component renders
       const component = fixture.nativeElement.querySelector(
         'app-kudos-breakdown-panel',
       );
@@ -197,7 +195,6 @@ describe('KudosBreakdownPanelComponent', () => {
       host.translationPrefix.set(undefined);
       fixture.detectChanges();
 
-      // Component should use 'profile.kudos_' prefix internally
       const component = fixture.nativeElement.querySelector(
         'app-kudos-breakdown-panel',
       );
@@ -208,7 +205,6 @@ describe('KudosBreakdownPanelComponent', () => {
       host.translationPrefix.set('custom.');
       fixture.detectChanges();
 
-      // Component should use custom prefix
       const component = fixture.nativeElement.querySelector(
         'app-kudos-breakdown-panel',
       );

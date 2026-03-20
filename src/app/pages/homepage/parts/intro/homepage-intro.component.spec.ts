@@ -3,8 +3,34 @@ import { PLATFORM_ID } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HomepageIntroComponent } from './homepage-intro.component';
 import { StickyRegistryService } from '../../../../services/sticky-registry.service';
+
+// ScrollRevealDirective uses IntersectionObserver which jsdom lacks
+globalThis.IntersectionObserver ??= class IntersectionObserver {
+  constructor(
+    _cb: IntersectionObserverCallback,
+    _opts?: IntersectionObserverInit,
+  ) {
+    /* no-op */
+  }
+  observe() {
+    /* no-op */
+  }
+  unobserve() {
+    /* no-op */
+  }
+  disconnect() {
+    /* no-op */
+  }
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+  readonly root = null;
+  readonly rootMargin = '';
+  readonly thresholds: readonly number[] = [];
+} as unknown as typeof globalThis.IntersectionObserver;
 
 describe('HomepageIntroComponent', () => {
   let component: HomepageIntroComponent;
@@ -46,27 +72,30 @@ describe('HomepageIntroComponent', () => {
       const mockElement = {
         getBoundingClientRect: () => ({ top: 200, height: 20 }),
       };
-      spyOn(injectedDoc, 'getElementById').and.returnValue(
+      vi.spyOn(injectedDoc, 'getElementById').mockReturnValue(
         mockElement as unknown as HTMLElement,
       );
-      const scrollSpy = spyOn(window, 'scrollTo');
-      spyOnProperty(window, 'scrollY', 'get').and.returnValue(100);
+      const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {
+        /* no-op */
+      });
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(100);
 
       const event = new Event('click');
-      spyOn(event, 'preventDefault');
+      vi.spyOn(event, 'preventDefault');
 
       component.scrollToFragment('quickstart', event);
 
       expect(event.preventDefault).toHaveBeenCalled();
       expect(injectedDoc.getElementById).toHaveBeenCalledWith('quickstart');
       expect(scrollSpy).toHaveBeenCalled();
-      const options = scrollSpy.calls.mostRecent().args[0] as ScrollToOptions;
+      const options = scrollSpy.mock.calls.at(-1)![0] as ScrollToOptions;
+      // top = getBoundingClientRect().top(200) + scrollY(100) - offset(64) - SCROLL_PADDING(16) = 220
       expect(options.top).toBe(220);
       expect(options.behavior).toBe('smooth');
     });
 
     it('should not scroll if element is not found', () => {
-      spyOn(injectedDoc, 'getElementById').and.returnValue(null);
+      vi.spyOn(injectedDoc, 'getElementById').mockReturnValue(null);
 
       const event = new Event('click');
       component.scrollToFragment('nonexistent', event);
@@ -79,10 +108,10 @@ describe('HomepageIntroComponent', () => {
     beforeEach(() => createComponent('server'));
 
     it('should not access document on server', () => {
-      spyOn(injectedDoc, 'getElementById');
+      vi.spyOn(injectedDoc, 'getElementById');
 
       const event = new Event('click');
-      spyOn(event, 'preventDefault');
+      vi.spyOn(event, 'preventDefault');
 
       component.scrollToFragment('quickstart', event);
 

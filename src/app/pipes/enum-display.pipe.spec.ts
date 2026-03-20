@@ -15,45 +15,42 @@ describe('EnumDisplayPipe', () => {
     pipe = TestBed.runInInjectionContext(() => new EnumDisplayPipe());
   });
 
-  it('should create', () => {
-    expect(pipe).toBeTruthy();
-  });
-
-  // ============================================================================
-  // ItemType Transformation Tests
-  // ============================================================================
+  // ==========================================================================
+  // ItemType — golden-file regression guards
+  // ==========================================================================
 
   describe('ItemType transformations', () => {
-    it('should transform itemType to label', () => {
-      expect(pipe.transform(ItemType.GUI_IMAGE, 'itemType', 'label')).toBe(
-        'Image GUI',
-      );
-      expect(pipe.transform(ItemType.GUI_TEXT, 'itemType', 'label')).toBe(
-        'Text GUI',
-      );
-      expect(pipe.transform(ItemType.TOOL, 'itemType', 'label')).toBe('Tool');
-    });
+    it.each([
+      [ItemType.GUI_IMAGE, 'label', 'Image GUI'],
+      [ItemType.GUI_TEXT, 'label', 'Text GUI'],
+      [ItemType.TOOL, 'label', 'Tool'],
+    ] as const)(
+      'should return "%s" label → "%s"',
+      (value, displayType, expected) => {
+        expect(pipe.transform(value, 'itemType', displayType)).toBe(expected);
+      },
+    );
 
-    it('should transform itemType to badge class', () => {
-      expect(pipe.transform(ItemType.GUI_IMAGE, 'itemType', 'badge')).toBe(
-        'badge-primary',
-      );
-      expect(pipe.transform(ItemType.TOOL, 'itemType', 'badge')).toBe(
-        'badge-warning',
-      );
-    });
+    it.each([
+      [ItemType.GUI_IMAGE, 'badge', 'badge-primary'],
+      [ItemType.TOOL, 'badge', 'badge-warning'],
+    ] as const)(
+      'should return "%s" badge → "%s"',
+      (value, displayType, expected) => {
+        expect(pipe.transform(value, 'itemType', displayType)).toBe(expected);
+      },
+    );
 
-    it('should transform itemType to translation key', () => {
-      expect(
-        pipe.transform(ItemType.GUI_IMAGE, 'itemType', 'translation'),
-      ).toBe('guis.image');
-      expect(pipe.transform(ItemType.GUI_TEXT, 'itemType', 'translation')).toBe(
-        'guis.text',
-      );
-      expect(pipe.transform(ItemType.TOOL, 'itemType', 'translation')).toBe(
-        'tools.tool',
-      );
-    });
+    it.each([
+      [ItemType.GUI_IMAGE, 'guis.image'],
+      [ItemType.GUI_TEXT, 'guis.text'],
+      [ItemType.TOOL, 'tools.tool'],
+    ] as const)(
+      'should return translation key "%s" for %s',
+      (value, expected) => {
+        expect(pipe.transform(value, 'itemType', 'translation')).toBe(expected);
+      },
+    );
 
     it('should default to label when displayType not specified', () => {
       expect(pipe.transform(ItemType.GUI_IMAGE, 'itemType')).toBe('Image GUI');
@@ -69,24 +66,22 @@ describe('EnumDisplayPipe', () => {
     });
   });
 
-  // ============================================================================
-  // Domain Transformation Tests
-  // ============================================================================
+  // ==========================================================================
+  // Domain — golden-file regression guards
+  // ==========================================================================
 
   describe('Domain transformations', () => {
-    it('should transform domain to label', () => {
-      expect(pipe.transform(Domain.TEXT, 'domain', 'label')).toBe('Text');
-      expect(pipe.transform(Domain.IMAGE, 'domain', 'label')).toBe('Image');
-    });
-
-    it('should transform domain to badge class', () => {
-      expect(pipe.transform(Domain.TEXT, 'domain', 'badge')).toBe(
-        'badge-purple',
-      );
-      expect(pipe.transform(Domain.IMAGE, 'domain', 'badge')).toBe(
-        'badge-purple',
-      );
-    });
+    it.each([
+      [Domain.TEXT, 'label', 'Text'],
+      [Domain.IMAGE, 'label', 'Image'],
+      [Domain.TEXT, 'badge', 'badge-purple'],
+      [Domain.IMAGE, 'badge', 'badge-purple'],
+    ] as const)(
+      'should return %s %s → "%s"',
+      (value, displayType, expected) => {
+        expect(pipe.transform(value, 'domain', displayType)).toBe(expected);
+      },
+    );
 
     it('should return undefined for domain translation (not supported)', () => {
       expect(
@@ -102,35 +97,35 @@ describe('EnumDisplayPipe', () => {
     });
   });
 
-  // ============================================================================
-  // Platform Transformation Tests
-  // ============================================================================
+  // ==========================================================================
+  // Platform — golden-file regression guards
+  // ==========================================================================
 
   describe('Platform transformations', () => {
-    it('should transform platform to label', () => {
-      expect(pipe.transform(Platform.WEB, 'platform', 'label')).toBe('Web');
-      expect(pipe.transform(Platform.WINDOWS, 'platform', 'label')).toBe(
-        'Windows',
-      );
-      expect(pipe.transform(Platform.LINUX, 'platform', 'label')).toBe('Linux');
-      expect(pipe.transform(Platform.MACOS, 'platform', 'label')).toBe('macOS');
-      expect(pipe.transform(Platform.IOS, 'platform', 'label')).toBe('iOS');
-      expect(pipe.transform(Platform.ANDROID, 'platform', 'label')).toBe(
-        'Android',
-      );
-      expect(pipe.transform(Platform.FEDIVERSE, 'platform', 'label')).toBe(
-        'Fediverse',
-      );
-    });
+    it.each([
+      [Platform.WEB, 'Web'],
+      [Platform.WINDOWS, 'Windows'],
+      [Platform.LINUX, 'Linux'],
+      [Platform.MACOS, 'macOS'],
+      [Platform.IOS, 'iOS'],
+      [Platform.ANDROID, 'Android'],
+      [Platform.FEDIVERSE, 'Fediverse'],
+    ] as const)(
+      'should return label "%s" for platform %s',
+      (value, expected) => {
+        expect(pipe.transform(value, 'platform', 'label')).toBe(expected);
+      },
+    );
 
-    it('should transform platform to badge class', () => {
-      expect(pipe.transform(Platform.WEB, 'platform', 'badge')).toBe(
-        'badge-info',
-      );
-      expect(pipe.transform(Platform.WINDOWS, 'platform', 'badge')).toBe(
-        'badge-info',
-      );
-    });
+    it.each([
+      [Platform.WEB, 'badge-info'],
+      [Platform.WINDOWS, 'badge-info'],
+    ] as const)(
+      'should return badge "%s" for platform %s',
+      (value, expected) => {
+        expect(pipe.transform(value, 'platform', 'badge')).toBe(expected);
+      },
+    );
 
     it('should return undefined for platform translation (not supported)', () => {
       expect(
@@ -146,40 +141,34 @@ describe('EnumDisplayPipe', () => {
     });
   });
 
-  // ============================================================================
-  // FunctionType Transformation Tests
-  // ============================================================================
+  // ==========================================================================
+  // FunctionType — golden-file regression guards
+  // ==========================================================================
 
   describe('FunctionType transformations', () => {
-    it('should transform functionType to label', () => {
-      expect(
-        pipe.transform(FunctionKind.FRONTEND, 'functionType', 'label'),
-      ).toBe('Frontend');
-      expect(pipe.transform(FunctionKind.WORKER, 'functionType', 'label')).toBe(
-        'Worker',
-      );
-      expect(pipe.transform(FunctionKind.BOT, 'functionType', 'label')).toBe(
-        'Bot',
-      );
-      expect(pipe.transform(FunctionKind.PLUGIN, 'functionType', 'label')).toBe(
-        'Plugin',
-      );
-      expect(pipe.transform(FunctionKind.SDK, 'functionType', 'label')).toBe(
-        'SDK',
-      );
-      expect(
-        pipe.transform(FunctionKind.CLI_TOOL, 'functionType', 'label'),
-      ).toBe('CLI');
-    });
+    it.each([
+      [FunctionKind.FRONTEND, 'Frontend'],
+      [FunctionKind.WORKER, 'Worker'],
+      [FunctionKind.BOT, 'Bot'],
+      [FunctionKind.PLUGIN, 'Plugin'],
+      [FunctionKind.SDK, 'SDK'],
+      [FunctionKind.CLI_TOOL, 'CLI'],
+    ] as const)(
+      'should return label "%s" for functionType %s',
+      (value, expected) => {
+        expect(pipe.transform(value, 'functionType', 'label')).toBe(expected);
+      },
+    );
 
-    it('should transform functionType to badge class', () => {
-      expect(pipe.transform(FunctionKind.WORKER, 'functionType', 'badge')).toBe(
-        'badge-warning',
-      );
-      expect(pipe.transform(FunctionKind.BOT, 'functionType', 'badge')).toBe(
-        'badge-warning',
-      );
-    });
+    it.each([
+      [FunctionKind.WORKER, 'badge-warning'],
+      [FunctionKind.BOT, 'badge-warning'],
+    ] as const)(
+      'should return badge "%s" for functionType %s',
+      (value, expected) => {
+        expect(pipe.transform(value, 'functionType', 'badge')).toBe(expected);
+      },
+    );
 
     it('should return undefined for functionType translation (not supported)', () => {
       expect(
@@ -195,36 +184,26 @@ describe('EnumDisplayPipe', () => {
     });
   });
 
-  // ============================================================================
-  // Generic Category Transformation Tests
-  // ============================================================================
+  // ==========================================================================
+  // Category — golden-file regression guards
+  // ==========================================================================
 
   describe('Category transformations', () => {
-    it('should capitalize category labels', () => {
-      expect(pipe.transform('worker', 'category', 'label')).toBe('Worker');
-      expect(pipe.transform('development', 'category', 'label')).toBe(
-        'Development',
-      );
-    });
-
-    it('should transform category to appropriate badge class', () => {
-      expect(pipe.transform('windows', 'category', 'badge')).toBe('badge-info');
-      expect(pipe.transform('worker', 'category', 'badge')).toBe(
-        'badge-warning',
-      );
-      expect(pipe.transform('image generation', 'category', 'badge')).toBe(
-        'badge-purple',
-      );
-      expect(pipe.transform('official tools', 'category', 'badge')).toBe(
-        'badge-teal',
-      );
-      expect(pipe.transform('development', 'category', 'badge')).toBe(
-        'badge-indigo',
-      );
-      expect(pipe.transform('unknown', 'category', 'badge')).toBe(
-        'badge-secondary',
-      );
-    });
+    it.each([
+      ['worker', 'label', 'Worker'],
+      ['development', 'label', 'Development'],
+      ['windows', 'badge', 'badge-info'],
+      ['worker', 'badge', 'badge-warning'],
+      ['image generation', 'badge', 'badge-purple'],
+      ['official tools', 'badge', 'badge-teal'],
+      ['development', 'badge', 'badge-indigo'],
+      ['unknown', 'badge', 'badge-secondary'],
+    ] as const)(
+      'should return %s %s → "%s"',
+      (value, displayType, expected) => {
+        expect(pipe.transform(value, 'category', displayType)).toBe(expected);
+      },
+    );
 
     it('should return undefined for category translation (not supported)', () => {
       expect(
@@ -237,9 +216,9 @@ describe('EnumDisplayPipe', () => {
     });
   });
 
-  // ============================================================================
+  // ==========================================================================
   // Edge Cases
-  // ============================================================================
+  // ==========================================================================
 
   describe('Edge cases', () => {
     it('should return empty string for null value', () => {
@@ -259,36 +238,37 @@ describe('EnumDisplayPipe', () => {
     });
 
     it('should handle numeric enum values', () => {
-      // Even though our enums are string-based, the pipe should handle any input
       expect(pipe.transform('123', 'category', 'label')).toBe('123');
     });
   });
 
-  // ============================================================================
-  // Integration Tests
-  // ============================================================================
+  // ==========================================================================
+  // Integration — service delegation
+  // ==========================================================================
 
   describe('Integration with EnumDisplayService', () => {
     it('should use service for itemType labels', () => {
-      spyOn(service, 'getItemTypeLabel').and.returnValue('Mocked Label');
+      vi.spyOn(service, 'getItemTypeLabel').mockReturnValue('Mocked Label');
       pipe.transform(ItemType.GUI_IMAGE, 'itemType', 'label');
       expect(service.getItemTypeLabel).toHaveBeenCalledWith(ItemType.GUI_IMAGE);
     });
 
     it('should use service for domain badge classes', () => {
-      spyOn(service, 'getDomainBadgeClass').and.returnValue('mocked-class');
+      vi.spyOn(service, 'getDomainBadgeClass').mockReturnValue('mocked-class');
       pipe.transform(Domain.TEXT, 'domain', 'badge');
       expect(service.getDomainBadgeClass).toHaveBeenCalledWith(Domain.TEXT);
     });
 
     it('should use service for platform labels', () => {
-      spyOn(service, 'getPlatformLabel').and.returnValue('Mocked Platform');
+      vi.spyOn(service, 'getPlatformLabel').mockReturnValue('Mocked Platform');
       pipe.transform(Platform.WEB, 'platform', 'label');
       expect(service.getPlatformLabel).toHaveBeenCalledWith(Platform.WEB);
     });
 
     it('should use service for functionType labels', () => {
-      spyOn(service, 'getFunctionTypeLabel').and.returnValue('Mocked Function');
+      vi.spyOn(service, 'getFunctionTypeLabel').mockReturnValue(
+        'Mocked Function',
+      );
       pipe.transform(FunctionKind.WORKER, 'functionType', 'label');
       expect(service.getFunctionTypeLabel).toHaveBeenCalledWith(
         FunctionKind.WORKER,
@@ -296,13 +276,15 @@ describe('EnumDisplayPipe', () => {
     });
 
     it('should use service for category badge classes', () => {
-      spyOn(service, 'getCategoryBadgeClass').and.returnValue('mocked-badge');
+      vi.spyOn(service, 'getCategoryBadgeClass').mockReturnValue(
+        'mocked-badge',
+      );
       pipe.transform('worker', 'category', 'badge');
       expect(service.getCategoryBadgeClass).toHaveBeenCalledWith('worker');
     });
 
     it('should use service capitalizeFirst for category labels', () => {
-      spyOn(service, 'capitalizeFirst').and.returnValue('Capitalized');
+      vi.spyOn(service, 'capitalizeFirst').mockReturnValue('Capitalized');
       pipe.transform('test', 'category', 'label');
       expect(service.capitalizeFirst).toHaveBeenCalledWith('test');
     });

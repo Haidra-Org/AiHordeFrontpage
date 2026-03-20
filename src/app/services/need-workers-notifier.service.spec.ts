@@ -35,7 +35,6 @@ describe('NeedWorkersNotifierService', () => {
     networkMock = new MockNetworkStatusService();
 
     TestBed.configureTestingModule({
-      declarations: [],
       providers: [
         { provide: PLATFORM_ID, useValue: 'browser' },
         { provide: NetworkStatusService, useValue: networkMock },
@@ -137,7 +136,7 @@ describe('NeedWorkersNotifierService', () => {
   });
 
   // ===================================================================
-  // Injection-context regression (THE BUG)
+  // Injection-context regression
   // ===================================================================
 
   it('should actually fire the effect inside afterNextRender (injection context regression)', () => {
@@ -150,12 +149,7 @@ describe('NeedWorkersNotifierService', () => {
     renderHost();
 
     const active = navService.activeNotifications();
-    expect(active.length)
-      .withContext(
-        'effect() must fire inside afterNextRender — if this fails, ' +
-          'the Injector is likely not being passed to effect()',
-      )
-      .toBe(1);
+    expect(active.length).toBe(1);
     expect(active[0].stateHash).toBe('image,text,alchemy');
   });
 });

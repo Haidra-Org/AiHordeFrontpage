@@ -4,6 +4,7 @@ const { defineConfig } = require("eslint/config");
 const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 const rxjsX = require("eslint-plugin-rxjs-x");
+const vitest = require("@vitest/eslint-plugin");
 const { parse } = require("path");
 module.exports = defineConfig(
   {
@@ -80,6 +81,7 @@ module.exports = defineConfig(
   },
   {
     files: ["**/*.spec.ts"],
+    plugins: { vitest },
     rules: {
       "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/component-selector": "off",
@@ -91,6 +93,7 @@ module.exports = defineConfig(
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/unbound-method": "off",
+      ...vitest.configs.recommended.rules,
     },
   },
 );

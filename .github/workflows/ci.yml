@@ -52,6 +52,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: npx tsc --noEmit -p tsconfig.spec.json
 
   test:
     name: Test
@@ -65,7 +66,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx ng test --watch=false --browsers=ChromeHeadless
+      - run: npx vitest run --coverage
 
   build:
     name: Build

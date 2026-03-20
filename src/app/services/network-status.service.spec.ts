@@ -1,9 +1,4 @@
-import {
-  TestBed,
-  fakeAsync,
-  tick,
-  discardPeriodicTasks,
-} from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Component, PLATFORM_ID } from '@angular/core';
 import { Subject } from 'rxjs';
 import { NetworkStatusService } from './network-status.service';
@@ -70,6 +65,7 @@ describe('NetworkStatusService', () => {
   let aiHordeMock: MockAiHordeService;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     aiHordeMock = new MockAiHordeService();
 
     TestBed.configureTestingModule({
@@ -81,6 +77,10 @@ describe('NetworkStatusService', () => {
     });
 
     service = TestBed.inject(NetworkStatusService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   /** Create the host component to fire afterNextRender callbacks. */
@@ -154,14 +154,13 @@ describe('NetworkStatusService', () => {
   // ========================================================================
 
   describe('afterNextRender auto-fetch', () => {
-    it('should call refresh after first render', fakeAsync(() => {
+    it('should call refresh after first render', () => {
       renderHost();
       aiHordeMock.emit(makePerformance({ worker_count: 42 }));
-      tick();
+      vi.advanceTimersByTime(0);
 
       expect(service.performance()!.worker_count).toBe(42);
-      discardPeriodicTasks();
-    }));
+    });
   });
 
   // ========================================================================
@@ -169,35 +168,33 @@ describe('NetworkStatusService', () => {
   // ========================================================================
 
   describe('isStale', () => {
-    it('should be false right after a refresh', fakeAsync(() => {
+    it('should be false right after a refresh', () => {
       renderHost();
       aiHordeMock.emit(makePerformance());
-      tick();
+      vi.advanceTimersByTime(0);
 
       expect(service.isStale()).toBe(false);
-      discardPeriodicTasks();
-    }));
+    });
 
-    it('should become true after the stale threshold', fakeAsync(() => {
+    it('should become true after the stale threshold', () => {
       renderHost();
       aiHordeMock.emit(makePerformance());
-      tick();
+      vi.advanceTimersByTime(0);
 
       // The stale ticker fires every STALE_THRESHOLD_MS (120,000ms).
       // At the first tick (120,000ms), diff equals the threshold exactly
       // (not strictly greater). Stale flips on the second tick (240,000ms).
-      tick(240_001);
+      vi.advanceTimersByTime(240_001);
 
       expect(service.isStale()).toBe(true);
-      discardPeriodicTasks();
-    }));
+    });
 
-    it('should reset to false after a new refresh', fakeAsync(() => {
+    it('should reset to false after a new refresh', () => {
       renderHost();
       aiHordeMock.emit(makePerformance());
-      tick();
+      vi.advanceTimersByTime(0);
 
-      tick(240_001);
+      vi.advanceTimersByTime(240_001);
       expect(service.isStale()).toBe(true);
 
       // Refresh again
@@ -205,8 +202,7 @@ describe('NetworkStatusService', () => {
       aiHordeMock.emit(makePerformance());
 
       expect(service.isStale()).toBe(false);
-      discardPeriodicTasks();
-    }));
+    });
   });
 
   // ========================================================================

@@ -9,10 +9,6 @@ describe('UnitConversionService', () => {
     service = TestBed.inject(UnitConversionService);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
   // ============================================================================
   // formatWithSiPrefix Tests
   // ============================================================================
@@ -139,7 +135,6 @@ describe('UnitConversionService', () => {
 
   describe('formatModelQueuedImage', () => {
     it('should convert raw pixelsteps to megapixelsteps', () => {
-      // 100 million pixelsteps = 100 mps
       const result = service.formatModelQueuedImage(100_000_000);
       expect(result.primary.value).toBe(100);
       expect(result.primary.prefix).toBe('');
@@ -148,17 +143,14 @@ describe('UnitConversionService', () => {
     });
 
     it('should use kilo prefix for >= 1000 mps (BUG REGRESSION TEST)', () => {
-      // 6.4 billion pixelsteps = 6400 mps = 6.4 kilomps
       const result = service.formatModelQueuedImage(6_400_000_000);
       expect(result.primary.value).toBe(6.4);
       expect(result.primary.prefix).toBe('kilo');
       expect(result.primary.unit).toBe('mps');
       expect(result.primary.formatted).toBe('6.4 kilomps');
-      // The bug was showing "6.4 mps" instead of "6.4 kilomps"
     });
 
     it('should use mega prefix for >= 1,000,000 mps', () => {
-      // 2.5 trillion pixelsteps = 2.5 million mps = 2.5 megamps
       const result = service.formatModelQueuedImage(2_500_000_000_000);
       expect(result.primary.value).toBe(2.5);
       expect(result.primary.prefix).toBe('mega');
@@ -166,7 +158,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate standard images correctly', () => {
-      // 100 million pixelsteps = 100 mps = 5 standard images
       const result = service.formatModelQueuedImage(100_000_000);
       expect(result.technical.value).toBe(5);
       expect(result.technical.unit).toBe('standard images');
@@ -184,8 +175,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should handle real-world API value example', () => {
-      // From screenshot: 6.4 kilomps total queued
-      // This means ~6.4 billion pixelsteps raw
       const rawPixelsteps = 6_400_000_000;
       const result = service.formatModelQueuedImage(rawPixelsteps);
 
@@ -193,15 +182,11 @@ describe('UnitConversionService', () => {
       expect(result.primary.prefix).toBe('kilo');
       expect(result.primary.unit).toBe('mps');
       expect(result.primary.formatted).toBe('6.4 kilomps');
-
-      // Technical should show standard images
-      // 6400 mps / 20 = 320 standard images
       expect(result.technical.value).toBe(320);
       expect(result.technical.unit).toBe('standard images');
     });
 
     it('should handle boundary value at exactly 1000 mps', () => {
-      // 1 billion pixelsteps = 1000 mps
       const result = service.formatModelQueuedImage(1_000_000_000);
       expect(result.primary.value).toBe(1);
       expect(result.primary.prefix).toBe('kilo');
@@ -209,7 +194,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should handle value just below 1000 mps', () => {
-      // 999 million pixelsteps = 999 mps (no prefix)
       const result = service.formatModelQueuedImage(999_000_000);
       expect(result.primary.value).toBe(999);
       expect(result.primary.prefix).toBe('');
@@ -223,7 +207,6 @@ describe('UnitConversionService', () => {
 
   describe('formatModelPerformanceImage', () => {
     it('should convert raw pixelsteps/s to mps/s', () => {
-      // 1 million pixelsteps/s = 1 mps/s
       const result = service.formatModelPerformanceImage(1_000_000);
       expect(result.primary.value).toBe(1);
       expect(result.primary.unit).toBe('mps/s');
@@ -231,24 +214,20 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate standard images/s correctly', () => {
-      // 1 million pixelsteps/s = 1 mps/s = 0.05 std img/s
       const result = service.formatModelPerformanceImage(1_000_000);
       expect(result.technical.value).toBe(0.05);
       expect(result.technical.unit).toBe('std img/s');
     });
 
     it('should handle high performance values', () => {
-      // 6.2 million pixelsteps/s = 6.2 mps/s
       const result = service.formatModelPerformanceImage(6_200_000);
       expect(result.primary.value).toBeCloseTo(6.2, 1);
       expect(result.primary.formatted).toBe('6.20 mps/s');
     });
 
     it('should handle real API value', () => {
-      // From API: waifu_diffusion has performance: 6204232.4
       const result = service.formatModelPerformanceImage(6_204_232);
       expect(result.primary.value).toBeCloseTo(6.204, 2);
-      // Standard images per second: 6.204 / 20 = 0.31
       expect(result.technical.value).toBeCloseTo(0.31, 1);
     });
 
@@ -272,14 +251,12 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate pages of text', () => {
-      // 10000 tokens * 0.75 / 500 = 15 pages
       const result = service.formatModelQueuedText(10000);
       expect(result.technical.value).toBe(15);
       expect(result.technical.unit).toBe('pages of text');
     });
 
     it('should handle large token values', () => {
-      // 1 million tokens
       const result = service.formatModelQueuedText(1_000_000);
       expect(result.primary.value).toBe(1);
       expect(result.primary.prefix).toBe('mega');
@@ -300,7 +277,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate pages/s', () => {
-      // 1000 tokens/s * 0.75 / 500 = 1.5 pages/s
       const result = service.formatModelPerformanceText(1000);
       expect(result.technical.value).toBeCloseTo(1.5, 1);
       expect(result.technical.unit).toBe('pages/s');
@@ -315,7 +291,6 @@ describe('UnitConversionService', () => {
     it('should have all required properties for image queued', () => {
       const result = service.formatModelQueuedImage(100_000_000);
 
-      // Primary
       expect(result.primary).toBeDefined();
       expect(result.primary.value).toBeDefined();
       expect(result.primary.prefix).toBeDefined();
@@ -324,19 +299,16 @@ describe('UnitConversionService', () => {
       expect(result.primary.formatted).toBeDefined();
       expect(result.primary.formattedShort).toBeDefined();
 
-      // Technical
       expect(result.technical).toBeDefined();
       expect(result.technical.value).toBeDefined();
       expect(result.technical.formatted).toBeDefined();
 
-      // Meta
       expect(result.rawValue).toBe(100_000_000);
       expect(result.explanationKeys).toBeDefined();
       expect(result.explanationKeys.length).toBeGreaterThan(0);
     });
 
     it('should provide correct prefix+unit combination for tooltip', () => {
-      // This is how the template will use it
       const result = service.formatModelQueuedImage(6_400_000_000);
       const displayUnit = result.primary.prefix + result.primary.unit;
       expect(displayUnit).toBe('kilomps');
@@ -355,14 +327,12 @@ describe('UnitConversionService', () => {
 
   describe('formatWorkerPerformanceImage', () => {
     it('should format worker mps/s correctly', () => {
-      // Worker API gives mps/s directly (already in megapixelsteps)
       const result = service.formatWorkerPerformanceImage(1.5);
       expect(result.primary.value).toBe(1.5);
       expect(result.primary.formatted).toBe('1.50 mps/s');
     });
 
     it('should calculate standard images/s from mps/s', () => {
-      // 1.5 mps/s = 0.075 std img/s
       const result = service.formatWorkerPerformanceImage(1.5);
       expect(result.technical.value).toBeCloseTo(0.075, 3);
     });
@@ -370,7 +340,6 @@ describe('UnitConversionService', () => {
 
   describe('formatWorkerMegapixelstepsGenerated', () => {
     it('should format total mps generated', () => {
-      // 5000 mps
       const result = service.formatWorkerMegapixelstepsGenerated(5000);
       expect(result.primary.value).toBe(5);
       expect(result.primary.prefix).toBe('kilo');
@@ -378,7 +347,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate standard images from mps', () => {
-      // 5000 mps / 20 = 250 standard images
       const result = service.formatWorkerMegapixelstepsGenerated(5000);
       expect(result.technical.value).toBe(250);
     });
@@ -390,14 +358,12 @@ describe('UnitConversionService', () => {
 
   describe('formatImagePerformanceRate', () => {
     it('should convert mps/min to standard images/sec', () => {
-      // 1200 mps/min = 20 mps/sec = 1 std img/sec
       const result = service.formatImagePerformanceRate(1200);
       expect(result.primary.value).toBe(1);
       expect(result.primary.unit).toBe('standard images/sec');
     });
 
     it('should provide technical mps/sec value', () => {
-      // 1200 mps/min = 20 mps/sec
       const result = service.formatImagePerformanceRate(1200);
       expect(result.technical.value).toBeCloseTo(20, 0);
       expect(result.technical.formatted).toContain('megapixelsteps/sec');
@@ -406,14 +372,12 @@ describe('UnitConversionService', () => {
 
   describe('formatQueuedImageWork', () => {
     it('should convert queued mps to standard images', () => {
-      // 100 mps / 20 = 5 standard images
       const result = service.formatQueuedImageWork(100);
       expect(result.primary.value).toBe(5);
       expect(result.primary.unit).toBe('standard images');
     });
 
     it('should use kilo prefix for large standard image counts', () => {
-      // 40000 mps / 20 = 2000 standard images
       const result = service.formatQueuedImageWork(40000);
       expect(result.primary.value).toBe(2);
       expect(result.primary.prefix).toBe('kilo');
@@ -427,7 +391,6 @@ describe('UnitConversionService', () => {
 
   describe('formatTotalPixelsteps', () => {
     it('should format raw pixelsteps with SI prefix', () => {
-      // 2.7e15 pixelsteps = 2.7 petapixelsteps
       const result = service.formatTotalPixelsteps(2_700_000_000_000_000);
       expect(result.primary.value).toBe(2.7);
       expect(result.primary.prefix).toBe('peta');
@@ -435,7 +398,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate standard images from pixelsteps', () => {
-      // 2.7e15 ps / 1e6 = 2.7e9 mps / 20 = 135 million std images
       const result = service.formatTotalPixelsteps(2_700_000_000_000_000);
       expect(result.technical.value).toBe(135);
       expect(result.technical.prefix).toBe('million');
@@ -452,7 +414,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate pages of text', () => {
-      // 5e9 tokens * 0.75 / 500 = 7.5 million pages
       const result = service.formatTotalTokens(5_000_000_000);
       expect(result.technical.value).toBe(7.5);
       expect(result.technical.prefix).toBe('million');
@@ -507,7 +468,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should parse a string with trailing text', () => {
-      // parseFloat handles "1.5 megapixelsteps per second" → 1.5
       expect(
         service.parseWorkerPerformance('1.5 megapixelsteps per second'),
       ).toBe(1.5);
@@ -560,7 +520,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate standard images/s for image aggregate', () => {
-      // 20 mps/s = 1 std img/s
       const result = service.formatAggregateWorkerPerformance(20, 'image')!;
       expect(result.technical.value).toBe(1);
       expect(result.technical.unit).toBe('std img/s');
@@ -575,7 +534,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should calculate pages/s for text aggregate', () => {
-      // 1000 tokens/s * 0.75 / 500 = 1.5 pages/s
       const result = service.formatAggregateWorkerPerformance(1000, 'text')!;
       expect(result.technical.value).toBeCloseTo(1.5, 1);
       expect(result.technical.unit).toBe('pages/s');
@@ -592,7 +550,6 @@ describe('UnitConversionService', () => {
       expect(result.primary.formatted).toBe('3.75 seconds/form');
     });
 
-    // Verify aggregate uses the same formatting as individual workers
     it('should produce identical result to formatWorkerPerformanceImage for image type', () => {
       const totalMps = 15.7;
       const aggregate = service.formatAggregateWorkerPerformance(
@@ -629,9 +586,6 @@ describe('UnitConversionService', () => {
 
   describe('Cross-format consistency', () => {
     it('should produce consistent mps/s between homepage and worker aggregate', () => {
-      // Scenario: network has total capacity of 25 mps/s
-      // Homepage API returns past_minute_megapixelsteps = 25 * 60 = 1500 mps/min
-      // Worker list sums individual worker.performance values to 25 mps/s
       const totalMpsPerSecond = 25;
       const apiMpsPerMinute = totalMpsPerSecond * 60;
 
@@ -642,13 +596,9 @@ describe('UnitConversionService', () => {
         'image',
       )!;
 
-      // Homepage technical value should be mps/sec
       expect(homepageResult.technical.value).toBeCloseTo(totalMpsPerSecond, 5);
-
-      // Worker aggregate primary value should also be mps/sec
       expect(workerAggregate.primary.value).toBeCloseTo(totalMpsPerSecond, 5);
 
-      // Both should yield the same standard images/sec
       const expectedStdImgPerSec = totalMpsPerSecond / 20;
       expect(homepageResult.primary.value).toBeCloseTo(expectedStdImgPerSec, 5);
       expect(workerAggregate.technical.value).toBeCloseTo(
@@ -658,9 +608,6 @@ describe('UnitConversionService', () => {
     });
 
     it('should produce consistent tokens/s between homepage and worker aggregate', () => {
-      // Scenario: network has total capacity of 5000 tokens/s
-      // Homepage API returns past_minute_tokens = 5000 * 60 = 300000 tokens/min
-      // Worker list sums individual worker.performance values to 5000 tokens/s
       const totalTokensPerSecond = 5000;
       const apiTokensPerMinute = totalTokensPerSecond * 60;
 
@@ -671,11 +618,9 @@ describe('UnitConversionService', () => {
         'text',
       )!;
 
-      // Both raw values should trace back to tokens/sec (homepage stores tokens/min as raw)
       expect(homepageResult.rawValue / 60).toBeCloseTo(totalTokensPerSecond, 5);
       expect(workerAggregate.rawValue).toBeCloseTo(totalTokensPerSecond, 5);
 
-      // Both should yield the same pages/sec
       const expectedPagesPerSec = (totalTokensPerSecond * 0.75) / 500;
       expect(homepageResult.primary.value).toBeCloseTo(expectedPagesPerSec, 3);
       expect(workerAggregate.technical.value).toBeCloseTo(
@@ -687,48 +632,38 @@ describe('UnitConversionService', () => {
     it('should use consistent standard image conversion factor (÷ 20) everywhere', () => {
       const mps = 100;
 
-      // Worker performance (mps/s → std img/s)
       const workerResult = service.formatWorkerPerformanceImage(mps);
       expect(workerResult.technical.value).toBeCloseTo(mps / 20, 5);
 
-      // Homepage performance (mps/min → mps/s → std img/s)
       const homepageResult = service.formatImagePerformanceRate(mps * 60);
       expect(homepageResult.primary.value).toBeCloseTo(mps / 20, 5);
 
-      // Model performance (ps/s → mps/s → std img/s)
       const modelResult = service.formatModelPerformanceImage(mps * 1e6);
       expect(modelResult.technical.value).toBeCloseTo(mps / 20, 5);
 
-      // Queued work (mps → std img)
       const queuedResult = service.formatQueuedImageWork(mps);
       expect(queuedResult.primary.value).toBeCloseTo(mps / 20, 5);
 
-      // Total pixelsteps (ps → mps → std img)
       const totalResult = service.formatTotalPixelsteps(mps * 1e6);
       expect(totalResult.technical.value).toBeCloseTo(mps / 20, 5);
     });
 
     it('should use consistent pages of text conversion factor everywhere', () => {
       const tokens = 10000;
-      const expectedPages = (tokens * 0.75) / 500; // = 15
+      const expectedPages = (tokens * 0.75) / 500;
 
-      // Worker text performance
       const workerResult = service.formatWorkerPerformanceText(tokens);
       expect(workerResult.technical.value).toBeCloseTo(expectedPages, 3);
 
-      // Homepage text performance (tokens/min → tokens/s → pages/s)
       const homepageResult = service.formatTextPerformanceRate(tokens * 60);
       expect(homepageResult.primary.value).toBeCloseTo(expectedPages, 3);
 
-      // Model text performance
       const modelResult = service.formatModelPerformanceText(tokens);
       expect(modelResult.technical.value).toBeCloseTo(expectedPages, 3);
 
-      // Total tokens
       const totalResult = service.formatTotalTokens(tokens);
       expect(totalResult.technical.value).toBeCloseTo(expectedPages, 3);
 
-      // Queued tokens
       const queuedResult = service.formatQueuedTokens(tokens);
       expect(queuedResult.technical.value).toBeCloseTo(expectedPages, 3);
     });

@@ -1,4 +1,4 @@
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { of, Subject } from 'rxjs';
 import { AdminWorkerService } from './admin-worker.service';
@@ -53,13 +53,13 @@ describe('AdminWorkerService', () => {
     service = TestBed.inject(AdminWorkerService);
   });
 
-  it('should emit workers progressively as each worker lookup completes', fakeAsync(() => {
+  it('should emit workers progressively as each worker lookup completes', () => {
     const firstWorker$ = new Subject<HordeWorker | null>();
     const secondWorker$ = new Subject<HordeWorker | null>();
     const workerA = createWorker('worker-a');
     const workerB = createWorker('worker-b');
 
-    spyOn(service, 'getWorker').and.callFake((id: string) => {
+    vi.spyOn(service, 'getWorker').mockImplementation((id: string) => {
       if (id === 'worker-a') return firstWorker$.asObservable();
       return secondWorker$.asObservable();
     });
@@ -72,23 +72,21 @@ describe('AdminWorkerService', () => {
 
     firstWorker$.next(workerA);
     firstWorker$.complete();
-    tick();
 
     expect(emissions).toEqual([[workerA]]);
 
     secondWorker$.next(workerB);
     secondWorker$.complete();
-    tick();
 
     expect(emissions).toEqual([[workerA], [workerA, workerB]]);
-  }));
+  });
 
-  it('should still emit successful workers when one worker lookup fails', fakeAsync(() => {
+  it('should still emit successful workers when one worker lookup fails', () => {
     const firstWorker$ = new Subject<HordeWorker | null>();
     const secondWorker$ = new Subject<HordeWorker | null>();
     const workerA = createWorker('worker-a');
 
-    spyOn(service, 'getWorker').and.callFake((id: string) => {
+    vi.spyOn(service, 'getWorker').mockImplementation((id: string) => {
       if (id === 'worker-a') return firstWorker$.asObservable();
       return secondWorker$.asObservable();
     });
@@ -101,11 +99,9 @@ describe('AdminWorkerService', () => {
 
     firstWorker$.next(workerA);
     firstWorker$.complete();
-    tick();
 
     secondWorker$.error(new Error('worker-b failed'));
-    tick();
 
     expect(emissions).toEqual([[workerA]]);
-  }));
+  });
 });

@@ -1,9 +1,4 @@
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, signal } from '@angular/core';
 import { AdminDialogComponent } from './admin-dialog.component';
 
@@ -152,8 +147,8 @@ describe('AdminDialogComponent', () => {
     fixture.detectChanges();
 
     const buttons = fixture.nativeElement.querySelectorAll('button');
-    expect(buttons[0].disabled).toBeTrue();
-    expect(buttons[1].disabled).toBeTrue();
+    expect(buttons[0].disabled).toBe(true);
+    expect(buttons[1].disabled).toBe(true);
   });
 
   it('should show loading spinner when loading', () => {
@@ -190,28 +185,36 @@ describe('AdminDialogComponent', () => {
     expect(content.textContent).toContain('Dialog content');
   });
 
-  it('should close on Escape key', fakeAsync(() => {
+  it('should close on Escape key', async () => {
+    vi.useFakeTimers();
+
     host.open.set(true);
     fixture.detectChanges();
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     const event = new KeyboardEvent('keydown', { key: 'Escape' });
     document.dispatchEvent(event);
     fixture.detectChanges();
 
     expect(host.cancelCount).toBe(1);
-  }));
 
-  it('should not close on Escape when loading', fakeAsync(() => {
+    vi.useRealTimers();
+  });
+
+  it('should not close on Escape when loading', async () => {
+    vi.useFakeTimers();
+
     host.open.set(true);
     host.loading.set(true);
     fixture.detectChanges();
-    tick();
+    await vi.advanceTimersByTimeAsync(0);
 
     const event = new KeyboardEvent('keydown', { key: 'Escape' });
     document.dispatchEvent(event);
     fixture.detectChanges();
 
     expect(host.cancelCount).toBe(0);
-  }));
+
+    vi.useRealTimers();
+  });
 });

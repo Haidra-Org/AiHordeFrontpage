@@ -7,8 +7,8 @@ import { ImageStyle, TextStyle } from '../../../types/style';
 
 describe('StyleFormComponent', () => {
   const aiHordeMock = {
-    getImageModels: jasmine.createSpy('getImageModels').and.returnValue(of([])),
-    getTextModels: jasmine.createSpy('getTextModels').and.returnValue(of([])),
+    getImageModels: vi.fn().mockReturnValue(of([])),
+    getTextModels: vi.fn().mockReturnValue(of([])),
   };
 
   const imageStyleA: ImageStyle = {
@@ -54,8 +54,8 @@ describe('StyleFormComponent', () => {
   } as TextStyle;
 
   beforeEach(() => {
-    aiHordeMock.getImageModels.calls.reset();
-    aiHordeMock.getTextModels.calls.reset();
+    aiHordeMock.getImageModels.mockClear();
+    aiHordeMock.getTextModels.mockClear();
 
     TestBed.configureTestingModule({
       imports: [StyleFormComponent],

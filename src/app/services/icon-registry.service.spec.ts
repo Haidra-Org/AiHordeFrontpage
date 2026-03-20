@@ -16,7 +16,7 @@ describe('IconRegistryService', () => {
   describe('register', () => {
     it('should register a single icon', () => {
       service.register('test-icon', '<path d="M0 0"/>');
-      expect(service.has('test-icon')).toBeTrue();
+      expect(service.has('test-icon')).toBe(true);
       expect(service.get('test-icon')).toBe('<path d="M0 0"/>');
     });
 
@@ -34,9 +34,9 @@ describe('IconRegistryService', () => {
         beta: '<path d="B"/>',
         gamma: '<path d="C"/>',
       });
-      expect(service.has('alpha')).toBeTrue();
-      expect(service.has('beta')).toBeTrue();
-      expect(service.has('gamma')).toBeTrue();
+      expect(service.has('alpha')).toBe(true);
+      expect(service.has('beta')).toBe(true);
+      expect(service.has('gamma')).toBe(true);
       expect(service.get('beta')).toBe('<path d="B"/>');
     });
   });
@@ -49,12 +49,12 @@ describe('IconRegistryService', () => {
 
   describe('has', () => {
     it('should return false for an unregistered icon', () => {
-      expect(service.has('nonexistent')).toBeFalse();
+      expect(service.has('nonexistent')).toBe(false);
     });
 
     it('should return true after registration', () => {
       service.register('exists', '<path/>');
-      expect(service.has('exists')).toBeTrue();
+      expect(service.has('exists')).toBe(true);
     });
   });
 });
