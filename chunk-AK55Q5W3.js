@@ -1,1 +1,0 @@
-import{T as r,na as o}from"./chunk-BJMLTSWG.js";var c=(()=>{class t{constructor(){this.dark=o(!0)}setDarkMode(e){this.dark.set(e)}static{this.\u0275fac=function(a){return new(a||t)}}static{this.\u0275prov=r({token:t,factory:t.\u0275fac,providedIn:"root"})}}return t})();export{c as a};

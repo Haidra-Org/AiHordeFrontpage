@@ -1,0 +1,1 @@
+import{z as s}from"./chunk-MSQENHYO.js";import{o as r,p as l}from"./chunk-I2YYXRHG.js";function a(e,t,i,p,m=" | "){l([e.get(p),e.get("app_title")]).pipe(r(([o,b])=>`${o}${m}${b}`),s(i)).subscribe(o=>t.setTitle(o))}function f(e,t,i){e.get("app_title").pipe(s(i)).subscribe(p=>t.setTitle(p))}export{a,f as b};
