@@ -22,6 +22,7 @@ import { AdminDialogComponent } from '../../../../components/admin/admin-dialog/
 import { GlossaryService } from '../../../../services/glossary.service';
 import { WORKERS_GLOSSARY_CONTEXT } from '../../../admin/workers/worker-icons';
 import { IconComponent } from '../../../../components/icon/icon.component';
+import { WorkerCardDisplaySettingsComponent } from '../../../../components/worker-card-display-settings/worker-card-display-settings.component';
 
 interface WorkerListItem {
   id: string;
@@ -38,6 +39,7 @@ interface WorkerListItem {
     InfoTooltipComponent,
     AdminDialogComponent,
     IconComponent,
+    WorkerCardDisplaySettingsComponent,
   ],
   templateUrl: './profile-workers.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

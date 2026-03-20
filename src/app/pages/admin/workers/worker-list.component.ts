@@ -33,6 +33,7 @@ import {
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { WorkerCardDisplaySettingsComponent } from '../../../components/worker-card-display-settings/worker-card-display-settings.component';
 import { setPageTitle } from '../../../helper/page-title';
 import { finalize } from 'rxjs';
 import { extractUserId } from '../../../helper/user-parser';
@@ -61,6 +62,7 @@ type SortOrder = 'asc' | 'desc';
     IconComponent,
     ScrollFadeComponent,
     StickyHeaderDirective,
+    WorkerCardDisplaySettingsComponent,
   ],
   templateUrl: './worker-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

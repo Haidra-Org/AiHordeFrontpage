@@ -453,6 +453,11 @@
           <app-icon name="chevron-down" class="icon-md" />
         }
       </button>
+
+      <!-- Card Display Settings -->
+      <app-worker-card-display-settings
+        [isModerator]="auth.currentUser()?.moderator ?? false"
+      />
     </div>
 
     <!-- Loading State -->

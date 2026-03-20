@@ -566,359 +566,421 @@
   <!-- Content -->
   <div class="worker-card-content worker-card-section">
     <!-- Basic Information -->
-    <div class="worker-card-info-group">
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.type" | transloco }}:</span
-        >
-        @switch (worker().type) {
-          @case ("image") {
-            <span class="worker-type-label worker-type-label--image">{{
-              "admin.workers.type.image" | transloco
-            }}</span>
-          }
-          @case ("text") {
-            <span class="worker-type-label worker-type-label--text">{{
-              "admin.workers.type.text" | transloco
-            }}</span>
-          }
-          @case ("interrogation") {
-            <span class="worker-type-label worker-type-label--interrogation">{{
-              "admin.workers.type.interrogation" | transloco
-            }}</span>
-          }
+    @if (
+      shouldShowField("type") ||
+      shouldShowValue("owner", worker().owner) ||
+      shouldShowValue("team", worker().team?.id || worker().team?.name) ||
+      shouldShowValue("info", worker().info) ||
+      shouldShowField("bridgeAgent") ||
+      shouldShowValue("softwareContact", getParsedBridgeAgent()?.contact) ||
+      (isModerator() &&
+        (shouldShowValue("contact", worker().contact) ||
+          shouldShowValue("ipaddr", worker().ipaddr)))
+    ) {
+      <div class="worker-card-info-group">
+        @if (shouldShowField("type")) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.type" | transloco }}:</span
+            >
+            @switch (worker().type) {
+              @case ("image") {
+                <span class="worker-type-label worker-type-label--image">{{
+                  "admin.workers.type.image" | transloco
+                }}</span>
+              }
+              @case ("text") {
+                <span class="worker-type-label worker-type-label--text">{{
+                  "admin.workers.type.text" | transloco
+                }}</span>
+              }
+              @case ("interrogation") {
+                <span
+                  class="worker-type-label worker-type-label--interrogation"
+                  >{{ "admin.workers.type.interrogation" | transloco }}</span
+                >
+              }
+            }
+          </div>
         }
-      </div>
 
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.owner" | transloco }}:</span
-        >
-        @if (getOwnerUserId() && isModerator()) {
-          <a
-            [routerLink]="['/admin/users', getOwnerUserId()]"
-            class="worker-link truncate"
-            [title]="worker().owner"
-            >{{ getOwnerDisplayName() }}</a
-          >
-        } @else if (hasOwnerName() && getOwnerUserId()) {
-          <a
-            [routerLink]="['/details/workers/owner', getOwnerUserId()]"
-            class="worker-link truncate"
-            [title]="worker().owner"
-            >{{ getOwnerDisplayName() }}</a
-          >
-        } @else if (hasOwnerName()) {
-          <span class="worker-card-value" [title]="worker().owner ?? ''">{{
-            getOwnerDisplayName()
-          }}</span>
-        } @else {
-          <span class="worker-card-value worker-card-value-muted">{{
-            "admin.common.none" | transloco
-          }}</span>
-        }
-      </div>
-      <div class="worker-card-row">
-        <span class="worker-card-label">
-          {{ "admin.workers.card.team" | transloco }}:
-          @if (canChangeTeam()) {
-            <button
-              type="button"
-              class="worker-inline-action ml-1.5"
-              (click)="openTeamDialog()"
-              [attr.aria-label]="'admin.workers.action.change_team' | transloco"
+        @if (shouldShowValue("owner", worker().owner)) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.owner" | transloco }}:</span
             >
-              @if (worker().team?.id || worker().team?.name) {
-                {{ "admin.workers.button.change" | transloco }}
-              } @else {
-                {{ "admin.workers.button.set_team" | transloco }}
+            @if (getOwnerUserId() && isModerator()) {
+              <a
+                [routerLink]="['/admin/users', getOwnerUserId()]"
+                class="worker-link truncate"
+                [title]="worker().owner"
+                >{{ getOwnerDisplayName() }}</a
+              >
+            } @else if (hasOwnerName() && getOwnerUserId()) {
+              <a
+                [routerLink]="['/details/workers/owner', getOwnerUserId()]"
+                class="worker-link truncate"
+                [title]="worker().owner"
+                >{{ getOwnerDisplayName() }}</a
+              >
+            } @else if (hasOwnerName()) {
+              <span class="worker-card-value" [title]="worker().owner ?? ''">{{
+                getOwnerDisplayName()
+              }}</span>
+            } @else {
+              <span class="worker-card-value worker-card-value-muted">{{
+                "admin.common.none" | transloco
+              }}</span>
+            }
+          </div>
+        }
+        @if (
+          shouldShowValue("team", worker().team?.id || worker().team?.name)
+        ) {
+          <div class="worker-card-row">
+            <span class="worker-card-label">
+              {{ "admin.workers.card.team" | transloco }}:
+              @if (canChangeTeam()) {
+                <button
+                  type="button"
+                  class="worker-inline-action ml-1.5"
+                  (click)="openTeamDialog()"
+                  [attr.aria-label]="
+                    'admin.workers.action.change_team' | transloco
+                  "
+                >
+                  @if (worker().team?.id || worker().team?.name) {
+                    {{ "admin.workers.button.change" | transloco }}
+                  } @else {
+                    {{ "admin.workers.button.set_team" | transloco }}
+                  }
+                </button>
               }
-            </button>
-          }
-        </span>
-        @if (worker().team?.id) {
-          <a
-            [routerLink]="['/details/teams', worker().team!.id]"
-            class="worker-link truncate"
-            [title]="worker().team?.name ?? worker().team?.id ?? ''"
-            >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a
-          >
-        } @else if (worker().team?.name) {
-          <span
-            class="worker-card-value truncate"
-            [title]="worker().team?.name ?? ''"
-            >{{ worker().team?.name ?? "" }}</span
-          >
-        } @else {
-          <span class="worker-card-value worker-card-value-muted">{{
-            "admin.common.unset" | transloco
-          }}</span>
+            </span>
+            @if (worker().team?.id) {
+              <a
+                [routerLink]="['/details/teams', worker().team!.id]"
+                class="worker-link truncate"
+                [title]="worker().team?.name ?? worker().team?.id ?? ''"
+                >{{ worker().team?.name ?? worker().team?.id ?? "" }}</a
+              >
+            } @else if (worker().team?.name) {
+              <span
+                class="worker-card-value truncate"
+                [title]="worker().team?.name ?? ''"
+                >{{ worker().team?.name ?? "" }}</span
+              >
+            } @else {
+              <span class="worker-card-value worker-card-value-muted">{{
+                "admin.common.unset" | transloco
+              }}</span>
+            }
+          </div>
         }
-      </div>
-      <div class="worker-card-col">
-        <span class="worker-card-label">
-          {{ "admin.workers.card.info" | transloco }}:
-          @if (canSetInfo()) {
-            <button
-              type="button"
-              class="worker-inline-action ml-1.5"
-              (click)="openInfoDialog()"
-              [attr.aria-label]="'admin.workers.action.set_info' | transloco"
-            >
-              @if (worker().info) {
-                {{ "admin.workers.button.edit" | transloco }}
-              } @else {
-                {{ "admin.workers.button.set_info" | transloco }}
+        @if (shouldShowValue("info", worker().info)) {
+          <div class="worker-card-col">
+            <span class="worker-card-label">
+              {{ "admin.workers.card.info" | transloco }}:
+              @if (canSetInfo()) {
+                <button
+                  type="button"
+                  class="worker-inline-action ml-1.5"
+                  (click)="openInfoDialog()"
+                  [attr.aria-label]="
+                    'admin.workers.action.set_info' | transloco
+                  "
+                >
+                  @if (worker().info) {
+                    {{ "admin.workers.button.edit" | transloco }}
+                  } @else {
+                    {{ "admin.workers.button.set_info" | transloco }}
+                  }
+                </button>
               }
-            </button>
+            </span>
+            @if (worker().info) {
+              <span class="worker-card-value">{{ worker().info }}</span>
+            } @else {
+              <span class="worker-card-value worker-card-value-muted">{{
+                "admin.common.unset" | transloco
+              }}</span>
+            }
+          </div>
+        }
+        @if (shouldShowField("bridgeAgent")) {
+          <div class="worker-card-col">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.bridge_agent" | transloco }}:</span
+            >
+            @if (getParsedBridgeAgent(); as parsed) {
+              <span class="worker-card-value" [title]="worker().bridge_agent"
+                >{{ parsed.name }} v{{ parsed.version }}</span
+              >
+            } @else {
+              <span class="worker-card-value" [title]="worker().bridge_agent">{{
+                worker().bridge_agent
+              }}</span>
+            }
+          </div>
+        }
+        @if (
+          shouldShowValue("softwareContact", getParsedBridgeAgent()?.contact)
+        ) {
+          @if (getParsedBridgeAgent(); as parsed) {
+            <div class="worker-card-col">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.software_contact" | transloco }}:</span
+              >
+              @if (parsed.contact) {
+                <span
+                  class="worker-card-value worker-card-contact"
+                  [title]="parsed.contact"
+                  >{{ parsed.contact }}</span
+                >
+              } @else {
+                <span
+                  class="worker-card-value worker-card-value-muted worker-card-contact"
+                  >{{ "admin.common.none" | transloco }}</span
+                >
+              }
+            </div>
           }
-        </span>
-        @if (worker().info) {
-          <span class="worker-card-value">{{ worker().info }}</span>
-        } @else {
-          <span class="worker-card-value worker-card-value-muted">{{
-            "admin.common.unset" | transloco
-          }}</span>
+        }
+        @if (isModerator()) {
+          @if (shouldShowValue("contact", worker().contact)) {
+            <div class="worker-card-col">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.contact" | transloco }}:</span
+              >
+              @if (worker().contact) {
+                <span class="worker-card-value break-all">{{
+                  worker().contact
+                }}</span>
+              } @else {
+                <span class="worker-card-value worker-card-value-muted">{{
+                  "admin.common.none" | transloco
+                }}</span>
+              }
+            </div>
+          }
+          @if (shouldShowValue("ipaddr", worker().ipaddr)) {
+            <div class="worker-card-row">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.ipaddr" | transloco }}:</span
+              >
+              @if (worker().ipaddr) {
+                <span class="worker-card-value worker-card-value-mono">{{
+                  worker().ipaddr
+                }}</span>
+              } @else {
+                <span class="worker-card-value worker-card-value-muted">{{
+                  "admin.common.none" | transloco
+                }}</span>
+              }
+            </div>
+          }
         }
       </div>
-      <div class="worker-card-col">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.bridge_agent" | transloco }}:</span
-        >
-        @if (getParsedBridgeAgent(); as parsed) {
-          <span class="worker-card-value" [title]="worker().bridge_agent"
-            >{{ parsed.name }} v{{ parsed.version }}</span
-          >
-        } @else {
-          <span class="worker-card-value" [title]="worker().bridge_agent">{{
-            worker().bridge_agent
-          }}</span>
-        }
-      </div>
-      @if (getParsedBridgeAgent(); as parsed) {
-        <div class="worker-card-col">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.software_contact" | transloco }}:</span
-          >
-          @if (parsed.contact) {
-            <span
-              class="worker-card-value worker-card-contact"
-              [title]="parsed.contact"
-              >{{ parsed.contact }}</span
-            >
-          } @else {
-            <span
-              class="worker-card-value worker-card-value-muted worker-card-contact"
-              >{{ "admin.common.none" | transloco }}</span
-            >
-          }
-        </div>
-      }
-      @if (isModerator()) {
-        <div class="worker-card-col">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.contact" | transloco }}:</span
-          >
-          @if (worker().contact) {
-            <span class="worker-card-value break-all">{{
-              worker().contact
-            }}</span>
-          } @else {
-            <span class="worker-card-value worker-card-value-muted">{{
-              "admin.common.none" | transloco
-            }}</span>
-          }
-        </div>
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.ipaddr" | transloco }}:</span
-          >
-          @if (worker().ipaddr) {
-            <span class="worker-card-value worker-card-value-mono">{{
-              worker().ipaddr
-            }}</span>
-          } @else {
-            <span class="worker-card-value worker-card-value-muted">{{
-              "admin.common.none" | transloco
-            }}</span>
-          }
-        </div>
-      }
-    </div>
+    }
 
     <!-- Performance Metrics -->
-    <div class="worker-card-info-group-bordered">
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.uptime" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{
-          formatUptime(worker().uptime)
-        }}</span>
-      </div>
-      <div
-        class="worker-card-row"
-        [class.worker-speed-highlight-low]="isLowSpeed()"
-        [class.worker-speed-highlight-high]="isHighSpeed()"
-      >
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.speed" | transloco }}:</span
-        >
-        @if (getPerformanceUnit(); as perfUnit) {
-          <span class="worker-card-value">
-            {{ perfUnit.primary.value.toFixed(2) }}
-            <app-unit-tooltip
-              [unit]="perfUnit"
-              [primaryOverride]="perfUnit.primary.unit"
-            />
-          </span>
-        } @else {
-          <span class="worker-card-value">{{ worker().performance }}</span>
+    @if (
+      shouldShowField("uptime") ||
+      shouldShowField("speed") ||
+      shouldShowField("threads") ||
+      shouldShowField("requestsFulfilled") ||
+      shouldShowField("generated")
+    ) {
+      <div class="worker-card-info-group-bordered">
+        @if (shouldShowField("uptime")) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.uptime" | transloco }}:</span
+            >
+            <span class="worker-card-value">{{
+              formatUptime(worker().uptime)
+            }}</span>
+          </div>
+        }
+        @if (shouldShowField("speed")) {
+          <div
+            class="worker-card-row"
+            [class.worker-speed-highlight-low]="isLowSpeed()"
+            [class.worker-speed-highlight-high]="isHighSpeed()"
+          >
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.speed" | transloco }}:</span
+            >
+            @if (getPerformanceUnit(); as perfUnit) {
+              <span class="worker-card-value">
+                {{ perfUnit.primary.value.toFixed(2) }}
+                <app-unit-tooltip
+                  [unit]="perfUnit"
+                  [primaryOverride]="perfUnit.primary.unit"
+                />
+              </span>
+            } @else {
+              <span class="worker-card-value">{{ worker().performance }}</span>
+            }
+          </div>
+        }
+        @if (shouldShowField("threads")) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.threads" | transloco }}:</span
+            >
+            <span class="worker-card-value">{{ worker().threads }}</span>
+          </div>
+        }
+        @if (shouldShowField("requestsFulfilled")) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.requests_fulfilled" | transloco }}:</span
+            >
+            <span class="worker-card-value">{{
+              worker().requests_fulfilled | formatNumber
+            }}</span>
+          </div>
+        }
+        @if (shouldShowField("generated")) {
+          @if (
+            worker().type === "image" &&
+            worker().megapixelsteps_generated !== undefined
+          ) {
+            <div class="worker-card-row">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.mps_generated" | transloco }}:</span
+              >
+              @if (getMpsGeneratedUnit(); as mpsUnit) {
+                <span class="worker-card-value">
+                  {{ mpsUnit.primary.value.toFixed(1) }}
+                  <app-unit-tooltip
+                    [unit]="mpsUnit"
+                    [primaryOverride]="
+                      mpsUnit.primary.prefix + mpsUnit.primary.unit
+                    "
+                  />
+                </span>
+              } @else {
+                <span class="worker-card-value">{{
+                  worker().megapixelsteps_generated ?? 0 | formatNumber
+                }}</span>
+              }
+            </div>
+          }
+          @if (
+            worker().type === "text" && worker().tokens_generated !== undefined
+          ) {
+            <div class="worker-card-row">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.tokens_generated" | transloco }}:</span
+              >
+              @if (getTokensGeneratedUnit(); as tokensUnit) {
+                <span class="worker-card-value">
+                  {{ tokensUnit.primary.value.toFixed(1) }}
+                  <app-unit-tooltip
+                    [unit]="tokensUnit"
+                    [primaryOverride]="
+                      tokensUnit.primary.prefix + tokensUnit.primary.unit
+                    "
+                  />
+                </span>
+              } @else {
+                <span class="worker-card-value">{{
+                  worker().tokens_generated ?? 0 | formatNumber
+                }}</span>
+              }
+            </div>
+          }
         }
       </div>
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.threads" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{ worker().threads }}</span>
-      </div>
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.requests_fulfilled" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{
-          worker().requests_fulfilled | formatNumber
-        }}</span>
-      </div>
-      @if (
-        worker().type === "image" &&
-        worker().megapixelsteps_generated !== undefined
-      ) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.mps_generated" | transloco }}:</span
-          >
-          @if (getMpsGeneratedUnit(); as mpsUnit) {
-            <span class="worker-card-value">
-              {{ mpsUnit.primary.value.toFixed(1) }}
-              <app-unit-tooltip
-                [unit]="mpsUnit"
-                [primaryOverride]="
-                  mpsUnit.primary.prefix + mpsUnit.primary.unit
-                "
-              />
-            </span>
-          } @else {
-            <span class="worker-card-value">{{
-              worker().megapixelsteps_generated ?? 0 | formatNumber
-            }}</span>
-          }
-        </div>
-      }
-      @if (
-        worker().type === "text" && worker().tokens_generated !== undefined
-      ) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.tokens_generated" | transloco }}:</span
-          >
-          @if (getTokensGeneratedUnit(); as tokensUnit) {
-            <span class="worker-card-value">
-              {{ tokensUnit.primary.value.toFixed(1) }}
-              <app-unit-tooltip
-                [unit]="tokensUnit"
-                [primaryOverride]="
-                  tokensUnit.primary.prefix + tokensUnit.primary.unit
-                "
-              />
-            </span>
-          } @else {
-            <span class="worker-card-value">{{
-              worker().tokens_generated ?? 0 | formatNumber
-            }}</span>
-          }
-        </div>
-      }
-    </div>
+    }
 
     <!-- Capabilities & Features -->
-    <div class="worker-card-info-group-bordered-last">
-      @if (worker().type !== "interrogation") {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.models_loaded" | transloco }}:</span
-          >
-          <span class="worker-card-value worker-card-value-inline">
-            @if ((worker().models?.length ?? 0) === 1) {
-              <a
-                [routerLink]="getModelLink(worker().models![0])"
-                class="worker-link worker-single-model-name"
-                [title]="worker().models![0]"
-                >{{ worker().models![0] }}</a
+    @if (shouldShowField("modelsLoaded") || shouldShowField("nsfw")) {
+      <div class="worker-card-info-group-bordered-last">
+        @if (shouldShowField("modelsLoaded")) {
+          @if (worker().type !== "interrogation") {
+            <div class="worker-card-row">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.models_loaded" | transloco }}:</span
               >
-            } @else if ((worker().models?.length ?? 0) > 1) {
-              <button
-                type="button"
-                class="worker-inline-action"
-                (click)="openModelsDialog()"
-                [attr.aria-label]="
-                  'admin.workers.action.show_models' | transloco
-                "
+              <span class="worker-card-value worker-card-value-inline">
+                @if ((worker().models?.length ?? 0) === 1) {
+                  <a
+                    [routerLink]="getModelLink(worker().models![0])"
+                    class="worker-link worker-single-model-name"
+                    [title]="worker().models![0]"
+                    >{{ worker().models![0] }}</a
+                  >
+                } @else if ((worker().models?.length ?? 0) > 1) {
+                  <button
+                    type="button"
+                    class="worker-inline-action"
+                    (click)="openModelsDialog()"
+                    [attr.aria-label]="
+                      'admin.workers.action.show_models' | transloco
+                    "
+                  >
+                    {{ "admin.workers.button.show_all" | transloco }}
+                  </button>
+                  <span
+                    class="worker-models-count"
+                    [appRichTooltip]="modelsListTpl"
+                    >{{ worker().models?.length ?? 0 }}</span
+                  >
+                  <ng-template #modelsListTpl>
+                    <div class="rich-tooltip surface-floating">
+                      <ul class="rich-tooltip-list">
+                        @for (model of getSortedModels(); track model) {
+                          <li>
+                            <a
+                              [routerLink]="getModelLink(model)"
+                              class="worker-link"
+                              >{{ model }}</a
+                            >
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  </ng-template>
+                } @else {
+                  <span>0</span>
+                }
+              </span>
+            </div>
+          }
+          @if (
+            worker().type === "interrogation" &&
+            (worker().forms?.length ?? 0) > 0
+          ) {
+            <div class="worker-card-row">
+              <span class="worker-card-label"
+                >{{ "admin.workers.card.forms" | transloco }}:</span
               >
-                {{ "admin.workers.button.show_all" | transloco }}
-              </button>
-              <span
-                class="worker-models-count"
-                [appRichTooltip]="modelsListTpl"
-                >{{ worker().models?.length ?? 0 }}</span
-              >
-              <ng-template #modelsListTpl>
-                <div class="rich-tooltip surface-floating">
-                  <ul class="rich-tooltip-list">
-                    @for (model of getSortedModels(); track model) {
-                      <li>
-                        <a
-                          [routerLink]="getModelLink(model)"
-                          class="worker-link"
-                          >{{ model }}</a
-                        >
-                      </li>
-                    }
-                  </ul>
-                </div>
-              </ng-template>
-            } @else {
-              <span>0</span>
-            }
-          </span>
-        </div>
-      }
-      @if (
-        worker().type === "interrogation" && (worker().forms?.length ?? 0) > 0
-      ) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.forms" | transloco }}:</span
-          >
-          <span class="worker-card-value">{{
-            worker().forms?.join(", ") ?? ""
-          }}</span>
-        </div>
-      }
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.nsfw" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{
-          worker().nsfw
-            ? ("admin.common.enabled" | transloco)
-            : ("admin.common.disabled" | transloco)
-        }}</span>
+              <span class="worker-card-value">{{
+                worker().forms?.join(", ") ?? ""
+              }}</span>
+            </div>
+          }
+        }
+        @if (shouldShowField("nsfw")) {
+          <div class="worker-card-row">
+            <span class="worker-card-label"
+              >{{ "admin.workers.card.nsfw" | transloco }}:</span
+            >
+            <span class="worker-card-value">{{
+              worker().nsfw
+                ? ("admin.common.enabled" | transloco)
+                : ("admin.common.disabled" | transloco)
+            }}</span>
+          </div>
+        }
       </div>
-    </div>
+    }
 
     <!-- Capabilities (Image workers) -->
-    @if (worker().type === "image") {
+    @if (worker().type === "image" && shouldShowField("imageCapabilities")) {
       <div class="mt-3 pt-3 worker-card-section">
         <span class="worker-card-label worker-card-section-label"
           >{{ "admin.workers.card.capabilities" | transloco }}:</span
@@ -977,7 +1039,11 @@
     }
 
     <!-- Messages (Moderator only) -->
-    @if ((worker().messages?.length ?? 0) > 0 && isModerator()) {
+    @if (
+      (worker().messages?.length ?? 0) > 0 &&
+      isModerator() &&
+      shouldShowField("messages")
+    ) {
       <div class="mt-3 pt-3 worker-card-section">
         <span class="worker-card-label worker-card-section-label"
           >{{ "admin.workers.card.messages" | transloco }} ({{

@@ -1416,4 +1416,51 @@
   .admin-filter-sort {
     @apply flex items-center gap-2;
   }
+
+  /* =================================================================
+     WORKER DISPLAY SETTINGS POPOVER
+     ================================================================= */
+
+  .worker-display-settings {
+    @apply relative;
+  }
+
+  .worker-display-settings-panel {
+    @apply absolute right-0 top-full mt-2 z-50;
+    @apply rounded-xl p-4 min-w-64 max-h-[70vh] overflow-y-auto;
+    @apply shadow-lg border border-edge-primary;
+    @apply bg-surface-primary dark:bg-gray-800;
+  }
+
+  .worker-display-settings-heading {
+    @apply text-sm font-semibold mb-3;
+    @apply text-content-primary dark:text-white;
+  }
+
+  .worker-display-settings-group {
+    @apply mb-3;
+  }
+
+  .worker-display-settings-group-label {
+    @apply block text-xs font-semibold uppercase tracking-wider mb-1.5;
+    @apply text-content-muted dark:text-gray-400;
+  }
+
+  .worker-display-settings-check {
+    @apply flex items-center gap-2 py-0.5 text-sm cursor-pointer;
+    @apply text-content-secondary dark:text-gray-300;
+  }
+
+  .worker-display-settings-check input[type="checkbox"] {
+    @apply rounded border-gray-300 dark:border-gray-600;
+  }
+
+  .worker-display-settings-divider {
+    @apply border-t border-edge-primary my-3;
+  }
+
+  .worker-display-settings-reset {
+    @apply text-sm text-blue-600 dark:text-blue-400 hover:underline cursor-pointer;
+    @apply bg-transparent border-none p-0;
+  }
 }

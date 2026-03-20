@@ -37,6 +37,8 @@ import {
 import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GlossaryService } from '../../../services/glossary.service';
+import { WorkerCardDisplayService } from '../../../services/worker-card-display.service';
+import { WorkerCardField } from '../../../types/worker-card-display';
 
 @Component({
   selector: 'app-worker-card',
@@ -69,6 +71,7 @@ export class WorkerCardComponent {
   private readonly unitConversion = inject(UnitConversionService);
   private readonly cdkDialog = inject(Dialog);
   private readonly glossary = inject(GlossaryService);
+  private readonly displayService = inject(WorkerCardDisplayService);
 
   private readonly dialogTpl =
     viewChild.required<TemplateRef<unknown>>('dialogTpl');
@@ -162,6 +165,23 @@ export class WorkerCardComponent {
     // Fallback: Parse the owner field (for cases where worker_ids isn't available)
     const ownerId = this.getOwnerUserId();
     return !!ownerId && ownerId === `${currentUser.id}`;
+  }
+
+  private readonly showAllFields = computed(
+    () =>
+      this.displayService.alwaysShowOwnWorkerFields() &&
+      this.isOwnedByCurrentUser(),
+  );
+
+  public shouldShowField(field: WorkerCardField): boolean {
+    return this.showAllFields() || this.displayService.isFieldVisible(field);
+  }
+
+  public shouldShowValue(field: WorkerCardField, value: unknown): boolean {
+    if (!this.shouldShowField(field)) return false;
+    if (this.showAllFields()) return true;
+    if (!this.displayService.hideUnsetFields()) return true;
+    return value !== null && value !== undefined && value !== '';
   }
 
   /**

@@ -147,6 +147,11 @@
           </option>
         </select>
       </div>
+
+      <!-- Card Display Settings -->
+      <app-worker-card-display-settings
+        [isModerator]="auth.currentUser()?.moderator ?? false"
+      />
     </div>
 
     @if (loadingWorkers()) {
