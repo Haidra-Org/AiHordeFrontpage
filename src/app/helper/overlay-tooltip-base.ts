@@ -9,7 +9,7 @@ import { StickyRegistryService } from '../services/sticky-registry.service';
 const VIEWPORT_MARGIN = 12;
 const TOOLTIP_OFFSET = 4;
 const HIDE_DELAY_MS = 150;
-const SHOW_DELAY_MS = 200;
+const SHOW_DELAY_MS = 400;
 const CLICK_CLOSE_GUARD_MS = 600;
 
 /**
