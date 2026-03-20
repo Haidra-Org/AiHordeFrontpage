@@ -1397,12 +1397,20 @@
     @apply absolute z-30 mt-1 py-1 rounded-lg;
     @apply border shadow-lg;
     min-width: 10rem;
+    max-width: calc(100vw - 2rem);
     top: 100%;
     left: 0;
     background: var(--color-glass-surface-elevated);
     border-color: var(--color-glass-border);
     backdrop-filter: blur(var(--blur-glass-md));
     -webkit-backdrop-filter: blur(var(--blur-glass-md));
+  }
+
+  /* On small screens, ensure the dropdown doesn't clip off the left edge */
+  @media (max-width: 639px) {
+    .worker-status-dropdown {
+      left: -0.5rem;
+    }
   }
 
   .dark .worker-status-dropdown {

@@ -1427,9 +1427,27 @@
 
   .worker-display-settings-panel {
     @apply absolute right-0 top-full mt-2 z-50;
-    @apply rounded-xl p-4 min-w-64 max-h-[70vh] overflow-y-auto;
+    @apply rounded-xl p-4 min-w-64 overflow-y-auto;
     @apply shadow-lg border border-edge-primary;
     @apply bg-surface-primary dark:bg-gray-800;
+    max-height: min(70vh, calc(100dvh - 8rem));
+  }
+
+  /* On small viewports the toggle can sit left OR right depending on layout
+     wrapping, so re-parent the dropdown against .admin-filter-bar which
+     always spans the full content width. */
+  @media (max-width: 639px) {
+    .admin-filter-bar {
+      position: relative;
+    }
+
+    .admin-filter-bar .worker-display-settings {
+      position: static;
+    }
+
+    .worker-display-settings-panel {
+      max-height: min(35vh, 14rem);
+    }
   }
 
   .worker-display-settings-heading {

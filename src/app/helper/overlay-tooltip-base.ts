@@ -4,7 +4,6 @@ import {
   OverlayRef,
   FlexibleConnectedPositionStrategy,
 } from '@angular/cdk/overlay';
-import { StickyRegistryService } from '../services/sticky-registry.service';
 
 const VIEWPORT_MARGIN = 12;
 const TOOLTIP_OFFSET = 4;
@@ -18,7 +17,6 @@ const CLICK_CLOSE_GUARD_MS = 600;
  * Handles:
  *  - Lazy overlay creation with smart positioning (above/below).
  *  - Hover, focus, touch and click show/hide behaviour.
- *  - Sticky-header viewport-margin compensation.
  *  - Outside-click dismissal.
  *
  * Subclasses implement `onAttach()` / `onDetach()` to control
@@ -28,7 +26,6 @@ const CLICK_CLOSE_GUARD_MS = 600;
 export abstract class OverlayTooltipBase implements OnDestroy {
   protected readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly overlay = inject(Overlay);
-  private readonly stickyRegistry = inject(StickyRegistryService);
 
   protected overlayRef: OverlayRef | null = null;
   protected visible = false;
@@ -66,11 +63,15 @@ export abstract class OverlayTooltipBase implements OnDestroy {
       this.setupOverlayEvents();
     }
 
-    const stickyOffset = this.stickyRegistry.totalOffset();
+    // NOTE: Previously used stickyOffset as a uniform viewport margin, but CDK
+    // applies it to ALL sides equally. On a 320px-wide viewport with a 64px
+    // navbar, that left only 192px of horizontal space — less than a 200px
+    // tooltip — so no position could fit and push was disabled.
+    // The prefer-below position ordering already avoids sticky header overlap.
     (
       this.overlayRef.getConfig()
         .positionStrategy as FlexibleConnectedPositionStrategy
-    ).withViewportMargin(Math.max(VIEWPORT_MARGIN, stickyOffset));
+    ).withViewportMargin(VIEWPORT_MARGIN);
 
     if (!this.overlayRef.hasAttached()) {
       this.onAttach();
@@ -140,28 +141,71 @@ export abstract class OverlayTooltipBase implements OnDestroy {
   }
 
   private createOverlay(): OverlayRef {
-    const above = {
+    // Center-aligned positions (preferred — clean centering on trigger)
+    const aboveCenter = {
       originX: 'center' as const,
       originY: 'top' as const,
       overlayX: 'center' as const,
       overlayY: 'bottom' as const,
       offsetY: -TOOLTIP_OFFSET,
     };
-    const below = {
+    const belowCenter = {
       originX: 'center' as const,
       originY: 'bottom' as const,
       overlayX: 'center' as const,
       overlayY: 'top' as const,
       offsetY: TOOLTIP_OFFSET,
     };
-    const positions = this.preferBelow ? [below, above] : [above, below];
+
+    // End-aligned fallbacks (overlay's right edge aligns with trigger's right —
+    // used when the trigger is near the right viewport edge)
+    const aboveEnd = {
+      originX: 'end' as const,
+      originY: 'top' as const,
+      overlayX: 'end' as const,
+      overlayY: 'bottom' as const,
+      offsetY: -TOOLTIP_OFFSET,
+    };
+    const belowEnd = {
+      originX: 'end' as const,
+      originY: 'bottom' as const,
+      overlayX: 'end' as const,
+      overlayY: 'top' as const,
+      offsetY: TOOLTIP_OFFSET,
+    };
+
+    // Start-aligned fallbacks (overlay's left edge aligns with trigger's left —
+    // used when the trigger is near the left viewport edge)
+    const aboveStart = {
+      originX: 'start' as const,
+      originY: 'top' as const,
+      overlayX: 'start' as const,
+      overlayY: 'bottom' as const,
+      offsetY: -TOOLTIP_OFFSET,
+    };
+    const belowStart = {
+      originX: 'start' as const,
+      originY: 'bottom' as const,
+      overlayX: 'start' as const,
+      overlayY: 'top' as const,
+      offsetY: TOOLTIP_OFFSET,
+    };
+
+    // CDK tries positions in order, selecting the first that fits the viewport.
+    // Center first for aesthetics, then end-aligned (right-edge triggers),
+    // then start-aligned (left-edge triggers).
+    const positions = this.preferBelow
+      ? [belowCenter, aboveCenter, belowEnd, aboveEnd, belowStart, aboveStart]
+      : [aboveCenter, belowCenter, aboveEnd, belowEnd, aboveStart, belowStart];
 
     const positionStrategy = this.overlay
       .position()
       .flexibleConnectedTo(this.elementRef)
       .withPositions(positions)
       .withViewportMargin(VIEWPORT_MARGIN)
-      .withPush(true);
+      .withPush(true)
+      .withFlexibleDimensions(false)
+      .withGrowAfterOpen(false);
 
     return this.overlay.create({
       positionStrategy,
