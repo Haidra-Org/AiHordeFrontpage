@@ -748,6 +748,7 @@
   "admin.workers.dialog.confirm": "Confirm",
   "admin.workers.dialog.delete_title": "Delete \"{{name}}\"",
   "admin.workers.dialog.delete_warning_permanent": "Warning: This action is permanent and cannot be undone.",
+  "admin.workers.dialog.delete_name_label": "Type \"{{name}}\" to confirm:",
   "admin.workers.dialog.delete_confirm": "Delete Worker",
   "admin.workers.dialog.delete_error": "Failed to delete worker. You may not have permission to delete it.",
   "admin.workers.action.delete": "Delete Worker",

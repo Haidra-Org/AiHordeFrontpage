@@ -94,6 +94,10 @@ export class WorkerCardComponent {
   public isUpdating = signal<boolean>(false);
   public showSuccess = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
+  public deleteNameConfirm = signal<string>('');
+  public readonly deleteConfirmValid = computed(
+    () => this.deleteNameConfirm() === this.worker().name,
+  );
   public infoText = signal<string>('');
   public statusDropdownOpen = signal<boolean>(false);
   public selectedTeamId = signal<string>('');
@@ -592,6 +596,7 @@ export class WorkerCardComponent {
   public openDeleteDialog(): void {
     this.dialogType.set('delete');
     this.deleteError.set(null);
+    this.deleteNameConfirm.set('');
     this.openCdkDialog('24rem');
   }
 
