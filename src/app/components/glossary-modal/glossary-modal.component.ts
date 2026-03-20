@@ -18,6 +18,7 @@ import {
   GlossaryCategory,
   GlossaryTab,
   GlossaryTerm,
+  PageGlossaryContext,
   GLOSSARY_CATEGORIES,
   GLOSSARY_TERMS,
 } from '../../services/glossary.service';
@@ -69,19 +70,23 @@ import {
             >
               {{ 'help.glossary.tab.dictionary' | transloco }}
             </button>
-            @if (glossary.pageContext()) {
+            @for (ctx of pageContextList(); track ctx.pageId) {
               <button
                 type="button"
                 role="tab"
                 class="glossary-tab"
                 [class.glossary-tab-active]="
-                  glossary.activeTab() === 'this-page'
+                  glossary.activeTab() === 'this-page' &&
+                  glossary.activePageId() === ctx.pageId
                 "
-                [attr.aria-selected]="glossary.activeTab() === 'this-page'"
-                aria-controls="glossary-panel-this-page"
-                (click)="switchTab('this-page')"
+                [attr.aria-selected]="
+                  glossary.activeTab() === 'this-page' &&
+                  glossary.activePageId() === ctx.pageId
+                "
+                [attr.aria-controls]="'glossary-panel-page-' + ctx.pageId"
+                (click)="switchToPageTab(ctx.pageId)"
               >
-                {{ glossary.pageContext()!.pageTitleKey | transloco }}
+                {{ ctx.pageTitleKey | transloco }}
               </button>
             }
           </div>
@@ -185,16 +190,19 @@ import {
             </div>
           }
 
-          <!-- This Page tab panel -->
-          @if (glossary.activeTab() === 'this-page' && glossary.pageContext()) {
-            <div id="glossary-panel-this-page" role="tabpanel">
+          <!-- Page-context tab panel -->
+          @if (glossary.activeTab() === 'this-page' && activePageContext()) {
+            <div
+              [id]="'glossary-panel-page-' + activePageContext()!.pageId"
+              role="tabpanel"
+            >
               <div class="modal-scroll glossary-terms-list">
                 <!-- Page-specific entries -->
-                @for (
-                  entry of glossary.pageContext()!.entries;
-                  track entry.id
-                ) {
-                  <div class="glossary-page-entry">
+                @for (entry of activePageContext()!.entries; track entry.id) {
+                  <div
+                    class="glossary-page-entry"
+                    [id]="'glossary-entry-' + entry.id"
+                  >
                     @if (entry.iconName) {
                       <app-icon
                         [name]="entry.iconName"
@@ -261,11 +269,26 @@ export class GlossaryModalComponent {
   private readonly searchInput =
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
+  /** All registered page contexts as an array (for @for in template). */
+  public readonly pageContextList = computed<PageGlossaryContext[]>(() =>
+    Array.from(this.glossary.pageContexts().values()),
+  );
+
+  /** Currently active page context (from activePageId). */
+  public readonly activePageContext = computed<PageGlossaryContext | null>(
+    () => {
+      const pageId = this.glossary.activePageId();
+      if (!pageId) return null;
+      return this.glossary.pageContexts().get(pageId) ?? null;
+    },
+  );
+
   public readonly filteredTerms = computed(() => {
     let terms: GlossaryTerm[] = GLOSSARY_TERMS;
 
     if (this.showRelevantOnly()) {
-      const relevant = this.glossary.pageContext()?.relevantTermIds ?? [];
+      const ctx = this.activePageContext();
+      const relevant = ctx?.relevantTermIds ?? [];
       if (relevant.length > 0) {
         terms = terms.filter((t) => relevant.includes(t.id));
       }
@@ -290,20 +313,23 @@ export class GlossaryModalComponent {
   });
 
   public readonly relevantTerms = computed(() => {
-    const ctx = this.glossary.pageContext();
+    const ctx = this.activePageContext();
     if (!ctx?.relevantTermIds?.length) return [];
     return GLOSSARY_TERMS.filter((t) => ctx.relevantTermIds.includes(t.id));
   });
 
   constructor() {
-    // Scroll to active term when modal opens
+    // Scroll to active term/entry when modal opens
     effect(() => {
       const termId = this.glossary.activeTermId();
       const isOpen = this.glossary.isOpen();
+      const activeTab = this.glossary.activeTab();
       if (isOpen && termId && isPlatformBrowser(this.platformId)) {
-        // Wait for DOM to render
         setTimeout(() => {
-          const el = this.document.getElementById(`glossary-term-${termId}`);
+          // Try dictionary term first, then page entry
+          const prefix =
+            activeTab === 'this-page' ? 'glossary-entry-' : 'glossary-term-';
+          const el = this.document.getElementById(`${prefix}${termId}`);
           if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
@@ -348,6 +374,11 @@ export class GlossaryModalComponent {
         this.searchInput()?.nativeElement.focus();
       }, 50);
     }
+  }
+
+  public switchToPageTab(pageId: string): void {
+    this.glossary.activePageId.set(pageId);
+    this.glossary.activeTab.set('this-page');
   }
 
   public toggleRelevantOnly(): void {

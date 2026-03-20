@@ -409,13 +409,13 @@
   }
 
   @media (min-width: 640px) {
-    .worker-models-list {
+    .worker-models-list:not(.worker-models-list--single-col) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   @media (min-width: 1024px) {
-    .worker-models-list {
+    .worker-models-list:not(.worker-models-list--single-col) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
@@ -424,6 +424,24 @@
     @apply py-2 px-3 rounded-md text-sm truncate transition-colors duration-150;
     background-color: var(--color-bg-secondary);
     color: var(--color-text-primary);
+  }
+
+  .worker-models-list-item--with-copy {
+    @apply flex items-center gap-2;
+  }
+
+  .worker-model-copy-btn {
+    @apply shrink-0 p-1 rounded text-gray-400 hover:text-blue-500 transition-colors cursor-pointer;
+    @apply dark:text-gray-500 dark:hover:text-blue-400;
+    @apply opacity-0;
+  }
+
+  .worker-models-list-item:hover .worker-model-copy-btn {
+    @apply opacity-100;
+  }
+
+  .worker-model-copy-btn:focus-visible {
+    @apply opacity-100 outline-2 outline-offset-1 outline-blue-500;
   }
 
   .worker-models-list-item:hover {

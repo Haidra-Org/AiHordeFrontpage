@@ -486,6 +486,36 @@
   .dark .touch-tooltip-desc {
     color: var(--color-gray-400);
   }
+
+  /* =================================================================
+     RICH TOOLTIP
+
+     Template-based content rendered by RichTooltipDirective inside a
+     CDK Overlay portal. Used for interactive popovers (e.g. model
+     list with links). CDK handles positioning and z-index layering.
+     ================================================================= */
+
+  .rich-tooltip {
+    @apply rounded-lg text-sm;
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    min-width: 10rem;
+    max-width: 20rem;
+    max-height: 16rem;
+    overflow-y: auto;
+    color: var(--color-content-primary);
+  }
+
+  .dark .rich-tooltip {
+    color: var(--color-gray-100);
+  }
+
+  .rich-tooltip-list {
+    @apply list-none p-0 m-0 space-y-1;
+  }
+
+  .rich-tooltip-list li {
+    @apply truncate;
+  }
 }
 
 /* =================================================================
