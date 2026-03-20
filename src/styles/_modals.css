@@ -191,8 +191,12 @@
 
   .json-dialog {
     @apply flex flex-col p-4;
-    max-width: none;
-    width: calc(100vw - 2rem);
+    /* Shrink to content width but never overflow the viewport or exceed 60rem (~960px).
+       On small screens (<62rem viewport) the modal fills edge-to-edge; on large screens
+       it is as wide as the JSON content needs, capped at 60rem. */
+    width: fit-content;
+    min-width: min(calc(100vw - 2rem), 28rem);
+    max-width: min(calc(100vw - 2rem), 60rem);
     height: calc(100vh - 2rem);
   }
 
