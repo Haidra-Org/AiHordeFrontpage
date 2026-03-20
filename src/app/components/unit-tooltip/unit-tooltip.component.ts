@@ -61,6 +61,7 @@ const TOOLTIP_HEIGHT_ESTIMATE = 200;
 const VIEWPORT_MARGIN = 16;
 const TOOLTIP_OFFSET = 8;
 
+const SHOW_DELAY_MS = 400;
 const HIDE_DELAY_MS = 150;
 const POPOVER_CLOSE_DELAY_MS = 200;
 const CLICK_CLOSE_GUARD_MS = 600;
@@ -110,7 +111,7 @@ let nextTooltipId = 0;
         [attr.aria-describedby]="tooltipId"
         (pointerdown)="handlePointerDown()"
         (click)="handleClick($event)"
-        (mouseenter)="showTooltip()"
+        (mouseenter)="scheduleShow()"
         (mouseleave)="scheduleHide()"
         (focusin)="handleFocusIn()"
         (focusout)="scheduleHide()"
@@ -206,6 +207,7 @@ export class UnitTooltipComponent implements OnDestroy {
   private readonly fixedStyles = signal<Partial<TooltipStyles>>({});
 
   private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  private showTimer: ReturnType<typeof setTimeout> | null = null;
   private popoverTimer: ReturnType<typeof setTimeout> | null = null;
   private pointerTriggered = false;
   private shownAt = 0;
@@ -219,14 +221,22 @@ export class UnitTooltipComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearHideTimer();
+    this.clearShowTimer();
     this.clearPopoverTimer();
     this.closePopover();
+  }
+
+  public scheduleShow(): void {
+    this.clearShowTimer();
+    this.clearHideTimer();
+    this.showTimer = setTimeout(() => this.showTooltip(), SHOW_DELAY_MS);
   }
 
   /**
    * Shows the tooltip and calculates its fixed position.
    */
   public showTooltip(): void {
+    this.clearShowTimer();
     this.clearHideTimer();
     this.clearPopoverTimer();
     this.isVisible.set(true);
@@ -244,6 +254,7 @@ export class UnitTooltipComponent implements OnDestroy {
   }
 
   public scheduleHide(): void {
+    this.clearShowTimer();
     this.clearHideTimer();
     this.hideTimer = setTimeout(() => {
       this.isVisible.set(false);
@@ -280,6 +291,13 @@ export class UnitTooltipComponent implements OnDestroy {
     if (this.hideTimer !== null) {
       clearTimeout(this.hideTimer);
       this.hideTimer = null;
+    }
+  }
+
+  private clearShowTimer(): void {
+    if (this.showTimer !== null) {
+      clearTimeout(this.showTimer);
+      this.showTimer = null;
     }
   }
 
