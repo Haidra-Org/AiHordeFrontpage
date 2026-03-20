@@ -171,6 +171,23 @@
             {{ "admin.workers.dialog.delete_warning_permanent" | transloco }}
           </span>
         </div>
+        <div class="form-field">
+          <label for="delete-name-confirm" class="form-label">
+            {{
+              "admin.workers.dialog.delete_name_label"
+                | transloco: { name: worker().name }
+            }}
+          </label>
+          <input
+            id="delete-name-confirm"
+            type="text"
+            class="form-input w-full"
+            [value]="deleteNameConfirm()"
+            (input)="deleteNameConfirm.set($any($event.target).value)"
+            [placeholder]="worker().name"
+            autocomplete="off"
+          />
+        </div>
         @if (deleteError()) {
           <div class="alert alert--danger">
             <span class="alert-content">
@@ -185,7 +202,7 @@
         </button>
         <button
           (click)="confirmDelete()"
-          [disabled]="isUpdating()"
+          [disabled]="isUpdating() || !deleteConfirmValid()"
           class="worker-glass-btn worker-glass-btn--danger"
         >
           {{ "admin.workers.dialog.delete_confirm" | transloco }}
