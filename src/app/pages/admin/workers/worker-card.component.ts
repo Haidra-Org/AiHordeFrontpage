@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   input,
   output,
@@ -25,6 +26,7 @@ import {
 } from '../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
+import { RichTooltipDirective } from '../../../helper/rich-tooltip.directive';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 import { extractApiError } from '../../../helper/extract-api-error';
@@ -34,6 +36,7 @@ import {
 } from '../../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GlossaryService } from '../../../services/glossary.service';
 
 @Component({
   selector: 'app-worker-card',
@@ -45,6 +48,7 @@ import { IconComponent } from '../../../components/icon/icon.component';
     DialogModule,
     UnitTooltipComponent,
     TouchTooltipDirective,
+    RichTooltipDirective,
     WorkerStatusIconComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
@@ -52,13 +56,19 @@ import { IconComponent } from '../../../components/icon/icon.component';
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'closeStatusDropdown()',
+  },
 })
 export class WorkerCardComponent {
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly workerService = inject(AdminWorkerService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly auth = inject(AuthService);
   private readonly unitConversion = inject(UnitConversionService);
   private readonly cdkDialog = inject(Dialog);
+  private readonly glossary = inject(GlossaryService);
 
   private readonly dialogTpl =
     viewChild.required<TemplateRef<unknown>>('dialogTpl');
@@ -77,13 +87,15 @@ export class WorkerCardComponent {
   // Dialog state
   public dialogOpen = signal<boolean>(false);
   public dialogType = signal<
-    'models' | 'maintenance' | 'pause' | 'delete' | 'team'
+    'models' | 'maintenance' | 'pause' | 'delete' | 'team' | 'info'
   >('models');
   public maintenanceReason = signal<string>('');
   public modelSearch = signal<string>('');
   public isUpdating = signal<boolean>(false);
   public showSuccess = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
+  public infoText = signal<string>('');
+  public statusDropdownOpen = signal<boolean>(false);
   public selectedTeamId = signal<string>('');
   public rawJsonOpen = signal(false);
 
@@ -156,7 +168,7 @@ export class WorkerCardComponent {
   }
 
   public canTogglePause(): boolean {
-    return this.viewMode() === 'admin' && this.isUserModerator;
+    return this.isUserModerator;
   }
 
   /**
@@ -413,12 +425,17 @@ export class WorkerCardComponent {
     this.modelSearch.set(target.value);
   }
 
+  public canSetInfo(): boolean {
+    return this.isOwnedByCurrentUser() || this.isModerator();
+  }
+
   // Dialog actions
-  private openCdkDialog(): void {
+  private openCdkDialog(maxWidth = '28rem'): void {
     this.cdkDialogRef = this.cdkDialog.open(this.dialogTpl(), {
       hasBackdrop: true,
       backdropClass: 'modal-cdk-backdrop',
-      panelClass: ['modal-panel', 'modal-panel--xl'],
+      panelClass: 'modal-panel',
+      maxWidth,
       ariaModal: true,
     });
     this.cdkDialogRef.closed
@@ -433,24 +450,84 @@ export class WorkerCardComponent {
   public openModelsDialog(): void {
     this.dialogType.set('models');
     this.modelSearch.set('');
-    this.openCdkDialog();
+    this.openCdkDialog('48rem');
+  }
+
+  public async copyModelName(model: string): Promise<void> {
+    await this.copyToClipboard(model);
+  }
+
+  public async copyAllModels(): Promise<void> {
+    const models = this.getSortedModels().join('\n');
+    await this.copyToClipboard(models);
+  }
+
+  private async copyToClipboard(text: string): Promise<boolean> {
+    try {
+      const clipboard = globalThis.navigator?.clipboard;
+      if (globalThis.isSecureContext && clipboard?.writeText) {
+        await clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // Async clipboard failed, try fallback
+    }
+
+    const body = globalThis.document?.body;
+    if (!body) return false;
+
+    const textArea = globalThis.document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.opacity = '0';
+    body.append(textArea);
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    try {
+      return globalThis.document.execCommand('copy');
+    } catch {
+      return false;
+    } finally {
+      textArea.remove();
+    }
   }
 
   public openMaintenanceDialog(): void {
     this.dialogType.set('maintenance');
     this.maintenanceReason.set('');
-    this.openCdkDialog();
+    this.openCdkDialog('24rem');
   }
 
   public openPauseDialog(): void {
     this.dialogType.set('pause');
-    this.openCdkDialog();
+    this.openCdkDialog('24rem');
   }
 
   public closeDialog(): void {
     this.cdkDialogRef?.close();
     this.cdkDialogRef = null;
     this.dialogOpen.set(false);
+  }
+
+  public toggleStatusDropdown(): void {
+    this.statusDropdownOpen.update((v) => !v);
+  }
+
+  public closeStatusDropdown(): void {
+    this.statusDropdownOpen.set(false);
+  }
+
+  public openGlossary(): void {
+    this.glossary.open('maintenance');
+  }
+
+  public onDocumentClick(_event: Event): void {
+    if (!this.statusDropdownOpen()) return;
+    this.closeStatusDropdown();
   }
 
   public onMaintenanceReasonChange(event: Event): void {
@@ -515,7 +592,7 @@ export class WorkerCardComponent {
   public openDeleteDialog(): void {
     this.dialogType.set('delete');
     this.deleteError.set(null);
-    this.openCdkDialog();
+    this.openCdkDialog('24rem');
   }
 
   public confirmDelete(): void {
@@ -605,6 +682,37 @@ export class WorkerCardComponent {
   // ============================================================================
 
   /**
+   * Open the info edit dialog
+   */
+  public openInfoDialog(): void {
+    if (!this.canSetInfo()) return;
+    this.dialogType.set('info');
+    this.infoText.set(this.worker().info ?? '');
+    this.openCdkDialog('24rem');
+  }
+
+  public onInfoTextChange(event: Event): void {
+    const target = event.target as HTMLTextAreaElement;
+    this.infoText.set(target.value);
+  }
+
+  public confirmInfoChange(): void {
+    this.isUpdating.set(true);
+    this.workerService
+      .updateWorker(this.worker().id, { info: this.infoText() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((result) => {
+        this.isUpdating.set(false);
+        if (result) {
+          this.showSuccess.set(true);
+          setTimeout(() => this.showSuccess.set(false), 3000);
+          this.workerUpdated.emit();
+        }
+        this.closeDialog();
+      });
+  }
+
+  /**
    * Open the team assignment dialog
    */
   public openTeamDialog(): void {
@@ -612,7 +720,7 @@ export class WorkerCardComponent {
 
     this.dialogType.set('team');
     this.selectedTeamId.set(this.worker().team?.id ?? '');
-    this.openCdkDialog();
+    this.openCdkDialog('24rem');
   }
 
   /**

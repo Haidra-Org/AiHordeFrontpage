@@ -19,6 +19,8 @@ import { Team } from '../../../../types/team';
 import { WorkerCardComponent } from '../../../admin/workers/worker-card.component';
 import { InfoTooltipComponent } from '../../../../components/info-tooltip/info-tooltip.component';
 import { AdminDialogComponent } from '../../../../components/admin/admin-dialog/admin-dialog.component';
+import { GlossaryService } from '../../../../services/glossary.service';
+import { WORKERS_GLOSSARY_CONTEXT } from '../../../admin/workers/worker-icons';
 import { IconComponent } from '../../../../components/icon/icon.component';
 
 interface WorkerListItem {
@@ -46,6 +48,7 @@ export class ProfileWorkersComponent {
   private readonly teamService = inject(TeamService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly glossary = inject(GlossaryService);
   private readonly workerRequestConcurrency = 3;
 
   // Workers state
@@ -132,6 +135,11 @@ export class ProfileWorkersComponent {
   });
 
   constructor() {
+    this.glossary.registerPageContext(WORKERS_GLOSSARY_CONTEXT);
+    this.destroyRef.onDestroy(() => {
+      this.glossary.clearPageContext('workers');
+    });
+
     // Load workers and teams when user data arrives
     effect(() => {
       const user = this.auth.currentUser();

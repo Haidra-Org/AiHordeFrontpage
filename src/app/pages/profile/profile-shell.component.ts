@@ -298,7 +298,7 @@ export class ProfileShellComponent implements OnInit {
     });
 
     this.destroyRef.onDestroy(() => {
-      this.glossary.clearPageContext();
+      this.glossary.clearPageContext('profile');
     });
   }
 

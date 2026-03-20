@@ -10,15 +10,25 @@
 <ng-template #dialogTpl>
   @switch (dialogType()) {
     @case ("models") {
-      <h3 class="heading-card mb-4">
-        {{
-          "admin.workers.dialog.models_title"
-            | transloco: { name: worker().name }
-        }}
-        <span class="text-secondary text-sm font-normal ml-2"
-          >({{ getSortedModels().length }})</span
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="heading-card">
+          {{
+            "admin.workers.dialog.models_title"
+              | transloco: { name: worker().name }
+          }}
+          <span class="text-secondary text-sm font-normal ml-2"
+            >({{ getSortedModels().length }})</span
+          >
+        </h3>
+        <button
+          type="button"
+          class="worker-inline-action"
+          (click)="copyAllModels()"
+          [attr.aria-label]="'admin.workers.action.copy_all_models' | transloco"
         >
-      </h3>
+          {{ "admin.workers.button.copy_all" | transloco }}
+        </button>
+      </div>
       @if (getSortedModels().length > 0) {
         <div class="mb-4">
           <input
@@ -31,15 +41,32 @@
         </div>
         <div class="worker-modal-scroll">
           @if (getFilteredModels().length > 0) {
-            <ul class="worker-models-list">
+            <ul
+              class="worker-models-list"
+              [class.worker-models-list--single-col]="worker().type === 'text'"
+            >
               @for (model of getFilteredModels(); track model) {
-                <li class="worker-models-list-item">
+                <li
+                  class="worker-models-list-item worker-models-list-item--with-copy"
+                  [title]="model"
+                >
                   <a
                     [routerLink]="getModelLink(model)"
                     (click)="closeDialog()"
-                    class="worker-link"
+                    class="worker-link truncate"
                     >{{ model }}</a
                   >
+                  <button
+                    type="button"
+                    class="worker-model-copy-btn"
+                    (click)="copyModelName(model)"
+                    [attr.aria-label]="
+                      'admin.workers.action.copy_model'
+                        | transloco: { name: model }
+                    "
+                  >
+                    <app-icon class="w-3.5 h-3.5" name="copy" />
+                  </button>
                 </li>
               }
             </ul>
@@ -205,6 +232,38 @@
         </button>
       </div>
     }
+    @case ("info") {
+      <h3 class="heading-card mb-4">
+        {{
+          "admin.workers.dialog.info_title" | transloco: { name: worker().name }
+        }}
+      </h3>
+      <div class="form-field mb-4">
+        <label class="form-label" for="info-text">
+          {{ "admin.workers.dialog.info_label" | transloco }}
+        </label>
+        <textarea
+          id="info-text"
+          [value]="infoText()"
+          (input)="onInfoTextChange($event)"
+          rows="3"
+          class="form-input w-full"
+          [placeholder]="'admin.workers.dialog.info_placeholder' | transloco"
+        ></textarea>
+      </div>
+      <div class="modal-actions">
+        <button (click)="closeDialog()" class="worker-glass-btn">
+          {{ "admin.workers.dialog.cancel" | transloco }}
+        </button>
+        <button
+          (click)="confirmInfoChange()"
+          [disabled]="isUpdating()"
+          class="worker-glass-btn worker-glass-btn--blue"
+        >
+          {{ "admin.workers.dialog.confirm" | transloco }}
+        </button>
+      </div>
+    }
   }
 </ng-template>
 
@@ -218,16 +277,111 @@
     <div class="worker-card-header">
       <!-- Row 1: status icon + name -->
       <div class="worker-card-name-row">
-        <div
-          class="worker-card-status-icon-wrap"
-          [appTouchTooltip]="getStatusTooltipKey()"
-          [appTouchTooltipDesc]="getStatusDescKey()"
-        >
-          <app-worker-status-icon
-            [type]="getStatusType()"
-            sizeClass="w-6 h-6"
-          />
-        </div>
+        @if (canToggleMaintenance()) {
+          <div
+            class="worker-status-trigger"
+            [appTouchTooltip]="'admin.workers.card.status_actions_hint'"
+            [appTouchTooltipPreferBelow]="true"
+            [appTouchTooltipDisabled]="statusDropdownOpen()"
+            (click)="toggleStatusDropdown(); $event.stopPropagation()"
+            (keydown.enter)="toggleStatusDropdown(); $event.stopPropagation()"
+            (keydown.space)="
+              toggleStatusDropdown();
+              $event.preventDefault();
+              $event.stopPropagation()
+            "
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'admin.workers.card.status_actions' | transloco"
+            [attr.aria-expanded]="statusDropdownOpen()"
+          >
+            <app-worker-status-icon
+              [type]="getStatusType()"
+              sizeClass="w-6 h-6"
+            />
+            <app-icon
+              name="chevron-down"
+              class="worker-status-trigger-chevron"
+            />
+          </div>
+          @if (statusDropdownOpen()) {
+            <div
+              class="worker-status-dropdown"
+              role="menu"
+              tabindex="-1"
+              (keydown.escape)="closeStatusDropdown()"
+            >
+              <div
+                class="worker-status-dropdown-item"
+                role="menuitem"
+                [title]="'admin.workers.button.maintenance_tooltip' | transloco"
+              >
+                <button
+                  type="button"
+                  class="worker-status-dropdown-action"
+                  (click)="openMaintenanceDialog(); closeStatusDropdown()"
+                >
+                  <app-worker-status-icon
+                    type="maintenance"
+                    sizeClass="w-4 h-4"
+                  />
+                  @if (worker().maintenance_mode) {
+                    {{ "admin.workers.button.disable_maintenance" | transloco }}
+                  } @else {
+                    {{ "admin.workers.button.maintenance" | transloco }}
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="worker-status-dropdown-help"
+                  (click)="openGlossary(); closeStatusDropdown()"
+                  [attr.aria-label]="
+                    'admin.workers.card.whats_this' | transloco
+                  "
+                >
+                  {{ "admin.workers.card.whats_this" | transloco }}
+                </button>
+              </div>
+              @if (canTogglePause()) {
+                <button
+                  type="button"
+                  class="worker-status-dropdown-item"
+                  (click)="openPauseDialog(); closeStatusDropdown()"
+                >
+                  <app-worker-status-icon type="paused" sizeClass="w-4 h-4" />
+                  @if (worker().paused) {
+                    {{ "admin.workers.button.unpause" | transloco }}
+                  } @else {
+                    {{ "admin.workers.button.pause" | transloco }}
+                  }
+                </button>
+              }
+              @if (canDelete()) {
+                <div class="worker-status-dropdown-divider"></div>
+                <button
+                  type="button"
+                  class="worker-status-dropdown-item worker-status-dropdown-item--danger"
+                  (click)="openDeleteDialog(); closeStatusDropdown()"
+                >
+                  <app-icon name="trash" class="w-4 h-4" />
+                  {{ "admin.workers.button.delete" | transloco }}
+                </button>
+              }
+            </div>
+          }
+        } @else {
+          <div
+            class="worker-card-status-icon-wrap"
+            [appTouchTooltip]="getStatusTooltipKey()"
+            [appTouchTooltipDesc]="getStatusDescKey()"
+            [appTouchTooltipPreferBelow]="true"
+          >
+            <app-worker-status-icon
+              [type]="getStatusType()"
+              sizeClass="w-6 h-6"
+            />
+          </div>
+        }
 
         <div class="worker-card-name-block">
           <h3 class="heading-item truncate" [title]="worker().name">
@@ -261,6 +415,7 @@
         class="worker-card-icon-pad"
         [appTouchTooltip]="'admin.workers.card.trusted'"
         [appTouchTooltipDesc]="iconDesc('trusted')"
+        [appTouchTooltipPreferBelow]="true"
       >
         <app-worker-status-icon type="trusted" />
       </div>
@@ -277,6 +432,7 @@
         class="worker-card-icon-pad"
         [appTouchTooltip]="'admin.workers.card.low_speed_warning'"
         [appTouchTooltipDesc]="iconDesc('low_speed')"
+        [appTouchTooltipPreferBelow]="true"
       >
         <app-worker-status-icon type="low_speed" />
       </div>
@@ -293,6 +449,7 @@
         class="worker-card-icon-pad"
         [appTouchTooltip]="'admin.workers.card.high_speed_warning'"
         [appTouchTooltipDesc]="iconDesc('high_speed')"
+        [appTouchTooltipPreferBelow]="true"
       >
         <app-worker-status-icon type="high_speed" />
       </div>
@@ -305,13 +462,28 @@
       </div>
     }
     @if (worker().maintenance_mode) {
-      <div
-        class="worker-card-icon-pad"
-        [appTouchTooltip]="'admin.workers.card.maintenance'"
-        [appTouchTooltipDesc]="iconDesc('maintenance')"
-      >
-        <app-worker-status-icon type="maintenance" />
-      </div>
+      @if (canToggleMaintenance()) {
+        <button
+          type="button"
+          class="worker-card-icon-pad worker-card-icon-btn"
+          (click)="openMaintenanceDialog()"
+          [attr.aria-label]="
+            'admin.workers.button.disable_maintenance' | transloco
+          "
+          [title]="'admin.workers.button.maintenance_tooltip' | transloco"
+        >
+          <app-worker-status-icon type="maintenance" />
+        </button>
+      } @else {
+        <div
+          class="worker-card-icon-pad"
+          [appTouchTooltip]="'admin.workers.card.maintenance'"
+          [appTouchTooltipDesc]="iconDesc('maintenance')"
+          [appTouchTooltipPreferBelow]="true"
+        >
+          <app-worker-status-icon type="maintenance" />
+        </div>
+      }
     } @else {
       <div
         class="worker-card-icon-pad worker-status-icon-muted"
@@ -326,6 +498,7 @@
           class="worker-card-icon-pad"
           [appTouchTooltip]="'admin.workers.card.paused'"
           [appTouchTooltipDesc]="iconDesc('paused')"
+          [appTouchTooltipPreferBelow]="true"
         >
           <app-worker-status-icon type="paused" />
         </div>
@@ -342,6 +515,7 @@
           class="worker-card-icon-pad"
           [appTouchTooltip]="'admin.workers.card.flagged'"
           [appTouchTooltipDesc]="iconDesc('flagged')"
+          [appTouchTooltipPreferBelow]="true"
         >
           <app-worker-status-icon type="flagged" />
         </div>
@@ -359,6 +533,7 @@
       class="worker-card-icon-pad ml-auto"
       [appTouchTooltip]="getWorkerTypeTooltipKey()"
       [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
+      [appTouchTooltipPreferBelow]="true"
     >
       <app-worker-status-icon
         [type]="getWorkerTypeIcon()"
@@ -427,9 +602,23 @@
         }
       </div>
       <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.team" | transloco }}:</span
-        >
+        <span class="worker-card-label">
+          {{ "admin.workers.card.team" | transloco }}:
+          @if (canChangeTeam()) {
+            <button
+              type="button"
+              class="worker-inline-action ml-1.5"
+              (click)="openTeamDialog()"
+              [attr.aria-label]="'admin.workers.action.change_team' | transloco"
+            >
+              @if (worker().team?.id || worker().team?.name) {
+                {{ "admin.workers.button.change" | transloco }}
+              } @else {
+                {{ "admin.workers.button.set_team" | transloco }}
+              }
+            </button>
+          }
+        </span>
         @if (worker().team?.id) {
           <a
             [routerLink]="['/details/teams', worker().team!.id]"
@@ -445,7 +634,33 @@
           >
         } @else {
           <span class="worker-card-value worker-card-value-muted">{{
-            "admin.common.none" | transloco
+            "admin.common.unset" | transloco
+          }}</span>
+        }
+      </div>
+      <div class="worker-card-col">
+        <span class="worker-card-label">
+          {{ "admin.workers.card.info" | transloco }}:
+          @if (canSetInfo()) {
+            <button
+              type="button"
+              class="worker-inline-action ml-1.5"
+              (click)="openInfoDialog()"
+              [attr.aria-label]="'admin.workers.action.set_info' | transloco"
+            >
+              @if (worker().info) {
+                {{ "admin.workers.button.edit" | transloco }}
+              } @else {
+                {{ "admin.workers.button.set_info" | transloco }}
+              }
+            </button>
+          }
+        </span>
+        @if (worker().info) {
+          <span class="worker-card-value">{{ worker().info }}</span>
+        } @else {
+          <span class="worker-card-value worker-card-value-muted">{{
+            "admin.common.unset" | transloco
           }}</span>
         }
       </div>
@@ -616,9 +831,49 @@
           <span class="worker-card-label"
             >{{ "admin.workers.card.models_loaded" | transloco }}:</span
           >
-          <span class="worker-card-value">{{
-            worker().models?.length ?? 0
-          }}</span>
+          <span class="worker-card-value worker-card-value-inline">
+            @if ((worker().models?.length ?? 0) === 1) {
+              <a
+                [routerLink]="getModelLink(worker().models![0])"
+                class="worker-link worker-single-model-name"
+                [title]="worker().models![0]"
+                >{{ worker().models![0] }}</a
+              >
+            } @else if ((worker().models?.length ?? 0) > 1) {
+              <button
+                type="button"
+                class="worker-inline-action"
+                (click)="openModelsDialog()"
+                [attr.aria-label]="
+                  'admin.workers.action.show_models' | transloco
+                "
+              >
+                {{ "admin.workers.button.show_all" | transloco }}
+              </button>
+              <span
+                class="worker-models-count"
+                [appRichTooltip]="modelsListTpl"
+                >{{ worker().models?.length ?? 0 }}</span
+              >
+              <ng-template #modelsListTpl>
+                <div class="rich-tooltip surface-floating">
+                  <ul class="rich-tooltip-list">
+                    @for (model of getSortedModels(); track model) {
+                      <li>
+                        <a
+                          [routerLink]="getModelLink(model)"
+                          class="worker-link"
+                          >{{ model }}</a
+                        >
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </ng-template>
+            } @else {
+              <span>0</span>
+            }
+          </span>
         </div>
       }
       @if (
@@ -723,74 +978,6 @@
           }
         </div>
       </div>
-    }
-  </div>
-
-  <!-- Actions -->
-  <div class="worker-card-actions worker-card-section">
-    <!-- Show Models -->
-    <button
-      (click)="openModelsDialog()"
-      class="worker-glass-btn worker-glass-btn--blue"
-      [title]="'admin.workers.action.show_models' | transloco"
-    >
-      {{ "admin.workers.button.models" | transloco }}
-    </button>
-
-    @if (canChangeTeam()) {
-      <!-- Change Team -->
-      <button
-        (click)="openTeamDialog()"
-        class="worker-glass-btn"
-        [title]="'admin.workers.action.change_team' | transloco"
-      >
-        {{ "admin.workers.button.team" | transloco }}
-      </button>
-    }
-
-    @if (canToggleMaintenance()) {
-      <!-- Maintenance Toggle -->
-      <button
-        (click)="openMaintenanceDialog()"
-        class="worker-glass-btn worker-glass-btn--amber"
-        [title]="'admin.workers.button.maintenance_tooltip' | transloco"
-      >
-        @if (worker().maintenance_mode) {
-          {{ "admin.workers.button.disable_maintenance" | transloco }}
-        } @else {
-          {{ "admin.workers.button.maintenance" | transloco }}
-        }
-      </button>
-    }
-
-    @if (canTogglePause()) {
-      <!-- Pause Toggle -->
-      <button
-        (click)="openPauseDialog()"
-        class="worker-glass-btn worker-glass-btn--red"
-        [title]="
-          worker().paused
-            ? ('admin.workers.action.unset_paused' | transloco)
-            : ('admin.workers.action.set_paused' | transloco)
-        "
-      >
-        @if (worker().paused) {
-          {{ "admin.workers.button.unpause" | transloco }}
-        } @else {
-          {{ "admin.workers.button.pause" | transloco }}
-        }
-      </button>
-    }
-
-    @if (canDelete()) {
-      <!-- Delete Worker -->
-      <button
-        (click)="openDeleteDialog()"
-        class="worker-glass-btn worker-glass-btn--danger"
-        [title]="'admin.workers.action.delete' | transloco"
-      >
-        {{ "admin.workers.button.delete" | transloco }}
-      </button>
     }
   </div>
 </div>

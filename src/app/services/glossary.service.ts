@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 
 export interface GlossaryLink {
   labelKey: string;
@@ -328,17 +328,47 @@ export class GlossaryService {
   public readonly isOpen = signal(false);
   public readonly activeTermId = signal<string | null>(null);
   public readonly activeTab = signal<GlossaryTab>('dictionary');
-  public readonly pageContext = signal<PageGlossaryContext | null>(null);
+
+  /**
+   * All registered page contexts, keyed by pageId.
+   * Multiple pages can register simultaneously; the glossary shows a tab for each.
+   */
+  public readonly pageContexts = signal<Map<string, PageGlossaryContext>>(
+    new Map(),
+  );
+
+  /** Active page-context tab (pageId), used when activeTab === 'this-page'. */
+  public readonly activePageId = signal<string | null>(null);
+
+  /**
+   * Backward-compatible computed: returns the current/active page context.
+   * Prefers activePageId if set, otherwise falls back to the first registered.
+   */
+  public readonly pageContext = computed<PageGlossaryContext | null>(() => {
+    const all = this.pageContexts();
+    if (all.size === 0) return null;
+    const active = this.activePageId();
+    if (active && all.has(active)) return all.get(active)!;
+    return all.values().next().value ?? null;
+  });
 
   public open(termId?: string): void {
     this.activeTermId.set(termId ?? null);
     if (termId) {
       this.activeTab.set('dictionary');
-    } else if (this.pageContext()) {
+    } else if (this.pageContexts().size > 0) {
       this.activeTab.set('this-page');
     } else {
       this.activeTab.set('dictionary');
     }
+    this.isOpen.set(true);
+  }
+
+  /** Open the glossary's page-context tab and scroll to a specific entry. */
+  public openToPageEntry(pageId: string, entryId: string): void {
+    this.activePageId.set(pageId);
+    this.activeTab.set('this-page');
+    this.activeTermId.set(entryId);
     this.isOpen.set(true);
   }
 
@@ -348,10 +378,34 @@ export class GlossaryService {
   }
 
   public registerPageContext(ctx: PageGlossaryContext): void {
-    this.pageContext.set(ctx);
+    this.pageContexts.update((map) => {
+      const next = new Map(map);
+      next.set(ctx.pageId, ctx);
+      return next;
+    });
+    // Set as active if it's the first, or if nothing is active yet
+    if (!this.activePageId()) {
+      this.activePageId.set(ctx.pageId);
+    }
   }
 
-  public clearPageContext(): void {
-    this.pageContext.set(null);
+  public clearPageContext(pageId?: string): void {
+    if (pageId) {
+      this.pageContexts.update((map) => {
+        const next = new Map(map);
+        next.delete(pageId);
+        return next;
+      });
+      if (this.activePageId() === pageId) {
+        const remaining = this.pageContexts();
+        this.activePageId.set(
+          remaining.size > 0 ? (remaining.keys().next().value ?? null) : null,
+        );
+      }
+    } else {
+      // Legacy: clear all
+      this.pageContexts.set(new Map());
+      this.activePageId.set(null);
+    }
   }
 }

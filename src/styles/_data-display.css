@@ -1183,6 +1183,7 @@
   /* Row containing worker name + status icon — takes remaining space */
   .worker-card-name-row {
     @apply flex items-center gap-2 min-w-0 flex-1;
+    position: relative;
   }
 
   /* Wrapper for the leading status icon in the header */
@@ -1284,6 +1285,239 @@
   /* Monospace small value (IP addresses, hashes) */
   .worker-card-value-mono {
     @apply font-mono text-xs;
+  }
+
+  /* Value row that can contain inline actions alongside text */
+  .worker-card-value-inline {
+    @apply flex items-center gap-1.5;
+  }
+
+  /* Small inline glass-style button that sits beside a label or value */
+  .worker-inline-action {
+    @apply text-xs font-medium rounded-md px-2 py-0.5;
+    @apply cursor-pointer;
+    @apply text-blue-700;
+    @apply mr-2;
+    background: rgb(59 130 246 / 0.08);
+    border: 1px solid rgb(59 130 246 / 0.18);
+    white-space: nowrap;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .worker-inline-action:hover {
+    @apply text-blue-800;
+    background: rgb(59 130 246 / 0.15);
+    border-color: rgb(59 130 246 / 0.3);
+    box-shadow: 0 1px 4px rgb(59 130 246 / 0.1);
+  }
+
+  .dark .worker-inline-action {
+    @apply text-blue-300;
+    background: rgb(59 130 246 / 0.12);
+    border-color: rgb(59 130 246 / 0.22);
+  }
+
+  .dark .worker-inline-action:hover {
+    @apply text-blue-200;
+    background: rgb(59 130 246 / 0.22);
+    border-color: rgb(59 130 246 / 0.38);
+    box-shadow: 0 1px 6px rgb(59 130 246 / 0.15);
+  }
+
+  .worker-inline-action:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Clickable status icon wrapper in the header */
+  .worker-card-status-clickable {
+    @apply cursor-pointer rounded-md;
+    position: relative;
+    transition: background-color 150ms ease;
+  }
+
+  .worker-card-status-clickable:hover {
+    background: rgb(0 0 0 / 0.06);
+  }
+
+  .dark .worker-card-status-clickable:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .worker-card-status-clickable:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Status trigger: wraps status icon + chevron as a visually grouped button */
+  .worker-status-trigger {
+    @apply flex items-center gap-0.5 cursor-pointer rounded-md shrink-0 p-1;
+    position: relative;
+    border: 1px solid transparent;
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .worker-status-trigger:hover {
+    background: rgb(0 0 0 / 0.05);
+    border-color: rgb(0 0 0 / 0.1);
+  }
+
+  .dark .worker-status-trigger:hover {
+    background: rgb(255 255 255 / 0.07);
+    border-color: rgb(255 255 255 / 0.12);
+  }
+
+  .worker-status-trigger:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Small chevron indicator inside the trigger */
+  .worker-status-trigger-chevron {
+    @apply w-3 h-3 opacity-40;
+    transition: opacity 150ms ease;
+  }
+
+  .worker-status-trigger:hover .worker-status-trigger-chevron {
+    @apply opacity-70;
+  }
+
+  .dark .worker-status-trigger-chevron {
+    @apply text-gray-400 opacity-60;
+  }
+
+  .dark .worker-status-trigger:hover .worker-status-trigger-chevron {
+    @apply text-gray-300 opacity-80;
+  }
+
+  /* Status action dropdown (positioned below the status icon) */
+  .worker-status-dropdown {
+    @apply absolute z-30 mt-1 py-1 rounded-lg;
+    @apply border shadow-lg;
+    min-width: 10rem;
+    top: 100%;
+    left: 0;
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    backdrop-filter: blur(var(--blur-glass-md));
+    -webkit-backdrop-filter: blur(var(--blur-glass-md));
+  }
+
+  .dark .worker-status-dropdown {
+    background: rgb(31 41 55 / 0.95);
+    border-color: rgb(255 255 255 / 0.12);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  }
+
+  .worker-status-dropdown-item {
+    @apply flex items-center gap-2 w-full text-left px-3 py-2 text-sm;
+    @apply bg-transparent border-none cursor-pointer;
+    color: var(--color-content-primary);
+    transition: background-color 150ms ease;
+  }
+
+  .dark .worker-status-dropdown-item {
+    @apply text-gray-200;
+  }
+
+  .worker-status-dropdown-item:hover {
+    background: rgb(0 0 0 / 0.06);
+  }
+
+  .dark .worker-status-dropdown-item:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  /* Flex label inside dropdown item, pushes help link to end */
+  .worker-status-dropdown-label {
+    @apply flex-1;
+  }
+
+  /* Main action button inside a composite dropdown item */
+  .worker-status-dropdown-action {
+    @apply flex items-center gap-2 flex-1 bg-transparent border-none cursor-pointer text-sm p-0;
+    color: inherit;
+  }
+
+  /* Small "What's this?" link inside a dropdown item */
+  .worker-status-dropdown-help {
+    @apply text-xs bg-transparent border-none cursor-pointer rounded px-1 py-0.5;
+    color: var(--color-content-link);
+    white-space: nowrap;
+    transition: opacity 150ms ease;
+  }
+
+  .worker-status-dropdown-help:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+  }
+
+  .worker-status-dropdown-help:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Divider line between dropdown sections */
+  .worker-status-dropdown-divider {
+    @apply my-1;
+    border-top: 1px solid rgb(0 0 0 / 0.1);
+  }
+
+  .dark .worker-status-dropdown-divider {
+    border-top-color: rgb(255 255 255 / 0.1);
+  }
+
+  /* Danger variant for destructive actions */
+  .worker-status-dropdown-item--danger {
+    @apply text-red-600;
+  }
+
+  .worker-status-dropdown-item--danger:hover {
+    background: rgb(239 68 68 / 0.08);
+  }
+
+  .dark .worker-status-dropdown-item--danger {
+    @apply text-red-400;
+  }
+
+  .dark .worker-status-dropdown-item--danger:hover {
+    background: rgb(239 68 68 / 0.12);
+  }
+
+  /* Clickable icon button in status bar (e.g. maintenance toggle) */
+  .worker-card-icon-btn {
+    @apply border-none bg-transparent cursor-pointer rounded-md;
+    @apply p-1;
+    transition: background-color 150ms ease;
+  }
+
+  .worker-card-icon-btn:hover {
+    background: rgb(0 0 0 / 0.06);
+  }
+
+  .dark .worker-card-icon-btn:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .worker-card-icon-btn:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500;
+  }
+
+  /* Hoverable models count */
+  .worker-models-count {
+    @apply cursor-default;
+    border-bottom: 1px dashed currentColor;
+  }
+
+  .worker-models-count:focus-visible {
+    @apply outline-2 outline-offset-1 outline-blue-500 rounded;
+  }
+
+  /* Single model inline name (truncated) */
+  .worker-single-model-name {
+    @apply truncate text-sm;
+    max-width: 18ch;
   }
 
   /* =================================================================
