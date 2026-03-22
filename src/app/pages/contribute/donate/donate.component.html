@@ -70,13 +70,13 @@
     <br />
     <!-- Haidra (preferred) - full width -->
     <div class="mb-6">
-      <a
-        href="https://haidra.net/donate/"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="card card-full card-bg-secondary card-interactive"
-      >
-        <div class="flex items-center gap-4 mb-4">
+      <div class="card card-full card-bg-secondary card-interactive">
+        <a
+          href="https://haidra.net/donate/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center gap-4 mb-4 no-underline text-inherit"
+        >
           <div class="feature-card-icon">
             <img
               ngSrc="./assets/img/logo.png"
@@ -98,7 +98,7 @@
               {{ "donate.ways_to_donate.haidra.description" | transloco }}
             </p>
           </div>
-        </div>
+        </a>
         <div class="info-note info-note--orange">
           <p class="m-0">
             <strong>{{
@@ -109,7 +109,7 @@
             }}</a>
           </p>
         </div>
-      </a>
+      </div>
     </div>
 
     <div class="grid gap-6 md:grid-cols-2">
