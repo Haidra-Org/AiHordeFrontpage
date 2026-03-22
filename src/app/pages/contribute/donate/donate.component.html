@@ -77,8 +77,13 @@
         class="card card-full card-bg-secondary card-interactive"
       >
         <div class="flex items-center gap-4 mb-4">
-          <div class="feature-card-icon feature-card-icon-green">
-            <app-icon name="heart-simple" class="w-6 h-6" />
+          <div class="feature-card-icon">
+            <img
+              ngSrc="./assets/img/logo.png"
+              alt="haidra logo"
+              width="24"
+              height="24"
+            />
           </div>
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-1">
@@ -138,7 +143,7 @@
         class="card card-full card-bg-secondary card-interactive"
       >
         <div class="flex items-center gap-4 mb-4">
-          <div class="feature-card-icon feature-card-icon-gray">
+          <div class="feature-card-icon">
             <img
               [ngSrc]="
                 themeService.isDark()
