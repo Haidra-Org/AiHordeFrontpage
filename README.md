@@ -41,6 +41,38 @@ Navigate to `http://localhost:4209/`. The app will hot-reload on file changes.
 | `npm run build`                    | Production build with SSR        |
 | `npm run serve:ssr:AiHordeWebsite` | Serve the SSR build locally      |
 
+## SSR Host Allowlist (Security)
+
+Angular SSR validates request hostnames to reduce SSRF risk. Configure allowed hosts with the `NG_ALLOWED_HOSTS` environment variable.
+
+- Local machine (LAN testing included):
+
+```bash
+# Linux/macOS
+export NG_ALLOWED_HOSTS="localhost,127.0.0.1,::1,192.168.1.7"
+npm run serve:ssr:AiHordeWebsite
+```
+
+```powershell
+# Windows PowerShell
+$env:NG_ALLOWED_HOSTS="localhost,127.0.0.1,::1,192.168.1.7"
+npm run serve:ssr:AiHordeWebsite
+```
+
+- Docker runtime override:
+
+```bash
+docker run -e NG_ALLOWED_HOSTS="localhost,127.0.0.1,::1,192.168.1.7,app.example.com" -p 8006:8006 aihorde-frontpage:latest
+```
+
+- Production behind reverse proxy:
+
+```text
+NG_ALLOWED_HOSTS=app.example.com,www.example.com
+```
+
+Only include hostnames and IPs that should legitimately reach your app. See the [angular docs on ssrf security](https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf) for more details.
+
 ## Project Structure
 
 ```bash
