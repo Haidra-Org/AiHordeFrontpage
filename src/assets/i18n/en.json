@@ -1638,6 +1638,8 @@
   "donate.ways_to_donate.patreon.kudos_link": "Learn more about kudos.",
   "donate.ways_to_donate.kofi.title": "Ko-fi",
   "donate.ways_to_donate.kofi.description": "Make a one-time or recurring donation on Ko-fi",
+  "donate.ways_to_donate.liberapay.title": "LiberaPay",
+  "donate.ways_to_donate.liberapay.description": "Support the project with recurring donations on LiberaPay",
   "donate.transparency.title": "Transparency",
   "donate.transparency.non_profit": "Non-profit project",
   "donate.transparency.volunteer_run": "Volunteer-run",
