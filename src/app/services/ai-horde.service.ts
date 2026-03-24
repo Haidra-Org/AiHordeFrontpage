@@ -28,8 +28,9 @@ import {
 } from '../types/generation';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
+import { environment } from '../../environments/environment';
 
-const BASE = 'https://aihorde.net/api/v2';
+const BASE = environment.apiBaseUrl;
 
 @Injectable({
   providedIn: 'root',

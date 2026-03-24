@@ -1,13 +1,27 @@
-FROM node:20 as build
+# ── Build stage ──────────────────────────────────────────────────
+FROM node:24-slim AS build
 
+ARG BUILD_CONFIG=production
 ENV NG_CLI_ANALYTICS="false"
 
-COPY . /app
 WORKDIR /app
+COPY package.json package-lock.json ./
 RUN npm ci
-RUN npm run build
+COPY . .
+RUN npm run build -- --configuration=${BUILD_CONFIG}
 
-FROM node:20
+# ── Runtime stage ────────────────────────────────────────────────
+FROM node:24-slim
 
-COPY --from=build /app/dist/ai-horde-website /app
-ENTRYPOINT ["node", "/app/server/server.mjs"]
+ENV NODE_ENV=production
+ENV PORT=8006
+
+WORKDIR /app
+COPY --from=build /app/dist/ai-horde-website ./
+
+EXPOSE ${PORT}
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://localhost:' + (process.env.PORT || 8006)).then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+
+ENTRYPOINT ["node", "server/server.mjs"]

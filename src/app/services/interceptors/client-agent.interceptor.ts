@@ -1,4 +1,5 @@
 import { HttpContextToken, HttpInterceptorFn } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 /**
  * Set this context token on individual requests to override the default
@@ -8,7 +9,7 @@ export const CLIENT_AGENT = new HttpContextToken<string>(
   () => 'AiHordeFrontpage:web',
 );
 
-const HORDE_API_HOST = 'aihorde.net';
+const HORDE_API_HOST = new URL(environment.apiBaseUrl).hostname;
 
 export const clientAgentInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.includes(HORDE_API_HOST)) {
