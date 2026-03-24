@@ -120,7 +120,11 @@ describe('HordeApiCacheService', () => {
       service
         .cachedGet<{
           worker_count: number;
-        }>('https://aihorde.net/api/v2/status/performance', {}, { ttl: CacheTTL.NEVER })
+        }>(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          { ttl: CacheTTL.NEVER },
+        )
         .subscribe((r) => (result1 = r));
 
       httpTesting
@@ -130,7 +134,11 @@ describe('HordeApiCacheService', () => {
       service
         .cachedGet<{
           worker_count: number;
-        }>('https://aihorde.net/api/v2/status/performance', {}, { ttl: CacheTTL.NEVER })
+        }>(
+          'https://aihorde.net/api/v2/status/performance',
+          {},
+          { ttl: CacheTTL.NEVER },
+        )
         .subscribe((r) => (result2 = r));
 
       httpTesting

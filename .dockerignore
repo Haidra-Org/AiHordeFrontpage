@@ -30,6 +30,9 @@ e2e/*.map
 # System Files
 .DS_Store/
 
+# VCS
+.git/
+
 /.github
 /.vscode
 /.editorconfig
