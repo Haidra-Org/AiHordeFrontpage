@@ -14,7 +14,15 @@
 @import "tailwindcss";
 
 /* =================================================================
-   THEME LAYER - Design tokens and CSS custom properties
+   SHARED DESIGN SYSTEM - Tokens and surface primitives
+   Provided by horde-design-system (submodule at src/shared/design-system).
+   ================================================================= */
+@import "./shared/design-system/tokens/index.css";
+@import "./shared/design-system/primitives/surfaces.css";
+@import "./shared/design-system/primitives/badges.css";
+
+/* =================================================================
+   THEME LAYER - Project-specific design tokens and overrides
    ================================================================= */
 @import "./styles/_theme.css";
 

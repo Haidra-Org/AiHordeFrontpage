@@ -844,18 +844,39 @@
     <!-- Capabilities & Features -->
     <div class="worker-card-info-group-bordered-last">
       @if (worker().type !== "interrogation") {
-        <div class="worker-card-row">
+        <div class="worker-card-col">
           <span class="worker-card-label"
             >{{ "admin.workers.card.models_loaded" | transloco }}:</span
           >
           <span class="worker-card-value worker-card-value-inline">
             @if ((worker().models?.length ?? 0) === 1) {
-              <a
-                [routerLink]="getModelLink(worker().models![0])"
-                class="worker-link worker-single-model-name"
-                [title]="worker().models![0]"
-                >{{ worker().models![0] }}</a
+              @if (singleModelExpanded()) {
+                <a
+                  [routerLink]="getModelLink(worker().models![0])"
+                  class="worker-link worker-single-model-name worker-single-model-name-expanded"
+                  >{{ worker().models![0] }}</a
+                >
+              } @else {
+                <button
+                  type="button"
+                  class="worker-link worker-single-model-name"
+                  [title]="worker().models![0]"
+                  (click)="singleModelExpanded.set(true)"
+                >
+                  {{ worker().models![0] }}
+                </button>
+              }
+              <button
+                type="button"
+                class="worker-model-copy-btn"
+                (click)="copyModelName(worker().models![0])"
+                [attr.aria-label]="
+                  'admin.workers.action.copy_model'
+                    | transloco: { name: worker().models![0] }
+                "
               >
+                <app-icon class="w-3.5 h-3.5" name="copy" />
+              </button>
             } @else if ((worker().models?.length ?? 0) > 1) {
               <button
                 type="button"

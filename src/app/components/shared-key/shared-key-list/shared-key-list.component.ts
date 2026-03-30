@@ -13,6 +13,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { HordeAlertComponent } from '../../../../shared/design-system/components/alert';
+import { HordeButtonComponent } from '../../../../shared/design-system/components/button';
 import { SharedKeyService } from '../../../services/shared-key.service';
 import { AuthService } from '../../../services/auth.service';
 import {
@@ -29,7 +31,13 @@ import { SharedKeyFormComponent } from '../shared-key-form/shared-key-form.compo
 
 @Component({
   selector: 'app-shared-key-list',
-  imports: [TranslocoPipe, SharedKeyCardComponent, SharedKeyFormComponent],
+  imports: [
+    TranslocoPipe,
+    SharedKeyCardComponent,
+    SharedKeyFormComponent,
+    HordeAlertComponent,
+    HordeButtonComponent,
+  ],
   templateUrl: './shared-key-list.component.html',
   styleUrl: './shared-key-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

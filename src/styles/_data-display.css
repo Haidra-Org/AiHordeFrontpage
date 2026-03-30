@@ -729,7 +729,7 @@
   /* 1-2-3 column responsive grid for workers */
   .worker-grid {
     @apply grid grid-cols-1 gap-6;
-    @apply max-w-lg mx-auto;
+    @apply mx-auto;
     @apply pb-4;
 
     /* Two columns only when cards have enough room (~450px each) */
@@ -1517,7 +1517,13 @@
   /* Single model inline name (truncated) */
   .worker-single-model-name {
     @apply truncate text-sm;
-    max-width: 18ch;
+    max-width: 60ch;
+  }
+
+  /* Expanded single model name (full, wrapping) */
+  .worker-single-model-name-expanded {
+    @apply whitespace-normal break-all;
+    max-width: none;
   }
 
   /* =================================================================

@@ -27,14 +27,14 @@
 
   /* Intro paragraph text - emphasized secondary text for homepage intro */
   .text-intro {
-    @apply max-w-2xl mb-2 sm:mb-4 font-normal text-gray-500 text-sm sm:text-base;
+    @apply mb-2 sm:mb-4 font-normal text-gray-500 text-sm sm:text-base;
     @apply md:text-lg lg:text-xl lg:mb-5;
     @apply dark:text-gray-400;
   }
 
   /* Intro lead text - large, attention-grabbing intro text */
   .text-intro-lead {
-    @apply max-w-3xl mb-8 text-xl font-medium leading-relaxed text-gray-700;
+    @apply mb-8 text-xl font-medium leading-relaxed text-gray-700;
     @apply md:text-[1.375rem] lg:text-2xl lg:mb-10;
     @apply dark:text-gray-300;
   }

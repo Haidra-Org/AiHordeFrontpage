@@ -102,6 +102,7 @@ export class WorkerCardComponent {
   public statusDropdownOpen = signal<boolean>(false);
   public selectedTeamId = signal<string>('');
   public rawJsonOpen = signal(false);
+  public singleModelExpanded = signal(false);
 
   public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
     () => {

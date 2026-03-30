@@ -1,3 +1,6 @@
 [submodule "docs/haidra-assets"]
 	path = docs/haidra-assets
 	url = https://github.com/Haidra-Org/haidra-assets.git
+[submodule "src/shared/design-system"]
+	path = src/shared/design-system
+	url = https://github.com/Haidra-Org/horde-design-system.git

@@ -35,6 +35,7 @@ export default defineConfig(({ mode: _mode }) => ({
     onConsoleLog(log) {
       // Suppress known framework noise in test output
       if (log.includes('Transloco') || log.includes('NG0')) return false;
+      return true;
     },
   },
 }));
