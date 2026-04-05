@@ -58,7 +58,7 @@
                   >
                   <button
                     type="button"
-                    class="worker-model-copy-btn"
+                    class="btn-icon worker-model-list-copy-btn"
                     (click)="copyModelName(model)"
                     [attr.aria-label]="
                       'admin.workers.action.copy_model'
@@ -851,10 +851,9 @@
           <span class="worker-card-value worker-card-value-inline">
             @if ((worker().models?.length ?? 0) === 1) {
               @if (singleModelExpanded()) {
-                <a
-                  [routerLink]="getModelLink(worker().models![0])"
+                <span
                   class="worker-link worker-single-model-name worker-single-model-name-expanded"
-                  >{{ worker().models![0] }}</a
+                  >{{ worker().models![0] }}</span
                 >
               } @else {
                 <button
@@ -866,9 +865,19 @@
                   {{ worker().models![0] }}
                 </button>
               }
+              <a
+                [routerLink]="getModelLink(worker().models![0])"
+                class="btn-icon worker-single-model-action"
+                [attr.aria-label]="
+                  'admin.workers.action.view_model'
+                    | transloco: { name: worker().models![0] }
+                "
+              >
+                <app-icon class="w-3.5 h-3.5" name="external-link" />
+              </a>
               <button
                 type="button"
-                class="worker-model-copy-btn"
+                class="btn-icon worker-single-model-action"
                 (click)="copyModelName(worker().models![0])"
                 [attr.aria-label]="
                   'admin.workers.action.copy_model'

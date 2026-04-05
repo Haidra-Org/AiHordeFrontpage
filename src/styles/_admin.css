@@ -430,18 +430,13 @@
     @apply flex items-center gap-2;
   }
 
-  .worker-model-copy-btn {
-    @apply shrink-0 p-1 rounded text-gray-400 hover:text-blue-500 transition-colors cursor-pointer;
-    @apply dark:text-gray-500 dark:hover:text-blue-400;
-    @apply opacity-0;
+  .worker-model-list-copy-btn {
+    @apply shrink-0 opacity-0;
   }
 
-  .worker-models-list-item:hover .worker-model-copy-btn {
+  .worker-models-list-item:hover .worker-model-list-copy-btn,
+  .worker-model-list-copy-btn:focus-visible {
     @apply opacity-100;
-  }
-
-  .worker-model-copy-btn:focus-visible {
-    @apply opacity-100 outline-2 outline-offset-1 outline-blue-500;
   }
 
   .worker-models-list-item:hover {

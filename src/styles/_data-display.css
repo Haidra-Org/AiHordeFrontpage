@@ -1526,6 +1526,11 @@
     max-width: none;
   }
 
+  /* Compact icon buttons next to the single model name */
+  .worker-single-model-action {
+    @apply shrink-0 p-1;
+  }
+
   /* =================================================================
      WORKER TYPE INDICATOR - Icon + label row below header
      ================================================================= */

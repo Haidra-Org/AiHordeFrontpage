@@ -37,6 +37,7 @@ import {
 import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GlossaryService } from '../../../services/glossary.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-worker-card',
@@ -69,6 +70,7 @@ export class WorkerCardComponent {
   private readonly unitConversion = inject(UnitConversionService);
   private readonly cdkDialog = inject(Dialog);
   private readonly glossary = inject(GlossaryService);
+  private readonly toastService = inject(ToastService);
 
   private readonly dialogTpl =
     viewChild.required<TemplateRef<unknown>>('dialogTpl');
@@ -459,12 +461,23 @@ export class WorkerCardComponent {
   }
 
   public async copyModelName(model: string): Promise<void> {
-    await this.copyToClipboard(model);
+    const success = await this.copyToClipboard(model);
+    if (success) {
+      this.toastService.success('admin.workers.toast.model_name_copied', {
+        transloco: true,
+        messageParams: { name: model },
+      });
+    }
   }
 
   public async copyAllModels(): Promise<void> {
     const models = this.getSortedModels().join('\n');
-    await this.copyToClipboard(models);
+    const success = await this.copyToClipboard(models);
+    if (success) {
+      this.toastService.success('admin.workers.toast.models_copied', {
+        transloco: true,
+      });
+    }
   }
 
   private async copyToClipboard(text: string): Promise<boolean> {
