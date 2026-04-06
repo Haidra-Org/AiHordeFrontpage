@@ -145,7 +145,10 @@
 
   /* Card full-width modifier - removes max-width constraint */
   .card-full {
-    @apply max-w-none text-left;
+    max-width: none;
+    text-align: left;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   /* Card with primary background - translucent for glass depth */

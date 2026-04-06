@@ -360,11 +360,7 @@ export class ModelsListComponent implements OnInit {
     if (this.activeTab() === tab) return;
     this.activeTab.set(tab);
     this.searchQuery.set('');
-
-    // Update URL if we have a route type
-    if (this.routeModelType()) {
-      void this.router.navigate(['/details/models', tab], { replaceUrl: true });
-    }
+    void this.router.navigate(['/details/models', tab], { replaceUrl: true });
 
     // Load models for the new tab if not already loaded
     if (tab === 'image' && this.imageModels().length === 0) {

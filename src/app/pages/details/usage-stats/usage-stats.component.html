@@ -82,51 +82,29 @@
       @if (activeTab() === "overview") {
         <div class="usage-overview">
           <!-- Real-time Performance Section -->
-          <div class="card card-bg-primary">
+          <div class="card card-bg-primary card-full card-spaced">
             <h3 class="heading-card">
               {{ "details.usage.realtime_performance" | transloco }}
               <app-info-tooltip
                 termKey="help.stats.tooltip.realtime_performance"
               />
             </h3>
-            <div class="space-y-4">
-              <!-- Performance Rates -->
-              <div class="data-grid-1-2">
-                <!-- Image Performance -->
-                <div class="data-item-box highlight-box">
-                  @if (imagePerformanceRate(); as rate) {
-                    <span class="data-value-xl">{{
-                      rate.primary.value | number: "1.0-1"
-                    }}</span>
-                    <span class="data-label-spaced">
-                      <app-unit-tooltip
-                        [unit]="rate"
-                        [primaryOverride]="'standard_images' | transloco"
-                      />
-                      {{ "details.usage.per_second" | transloco }}
-                    </span>
-                  }
-                </div>
-                <!-- Text Performance -->
-                <div class="data-item-box highlight-box">
-                  @if (textPerformanceRate(); as rate) {
-                    <span class="data-value-xl">{{
-                      rate.technical.value | number: "1.0-1"
-                    }}</span>
-                    <span class="data-label-spaced">
-                      <app-unit-tooltip
-                        [unit]="rate"
-                        [primaryOverride]="rate.technical.unit"
-                      />
-                      {{ "details.usage.per_second" | transloco }}
-                    </span>
-                  }
-                </div>
-              </div>
-              <!-- Worker Counts -->
-              <div class="data-grid-1-2">
-                <!-- Image Workers -->
-                <div class="data-item-box">
+            <div class="data-grid-1-2">
+              <!-- Image Domain -->
+              <div class="data-item-box domain-tint--image">
+                @if (imagePerformanceRate(); as rate) {
+                  <span class="data-value-xl">{{
+                    rate.primary.value | number: "1.0-1"
+                  }}</span>
+                  <span class="data-label-spaced">
+                    <app-unit-tooltip
+                      [unit]="rate"
+                      [primaryOverride]="'standard_images' | transloco"
+                    />
+                    {{ "details.usage.per_second" | transloco }}
+                  </span>
+                }
+                <div class="section-divider-top inline-gap">
                   <span class="data-value-lg">{{
                     performance()!.worker_count | number
                   }}</span>
@@ -134,8 +112,22 @@
                     "details.usage.image_workers" | transloco
                   }}</span>
                 </div>
-                <!-- Text Workers -->
-                <div class="data-item-box">
+              </div>
+              <!-- Text Domain -->
+              <div class="data-item-box domain-tint--text">
+                @if (textPerformanceRate(); as rate) {
+                  <span class="data-value-xl">{{
+                    rate.technical.value | number: "1.0-1"
+                  }}</span>
+                  <span class="data-label-spaced">
+                    <app-unit-tooltip
+                      [unit]="rate"
+                      [primaryOverride]="rate.technical.unit"
+                    />
+                    {{ "details.usage.per_second" | transloco }}
+                  </span>
+                }
+                <div class="section-divider-top inline-gap">
                   <span class="data-value-lg">{{
                     performance()!.text_worker_count | number
                   }}</span>
@@ -148,39 +140,41 @@
           </div>
 
           <!-- Queue Status Section -->
-          <div class="card card-bg-primary">
+          <div class="card card-bg-primary card-full card-spaced">
             <h3 class="heading-card">
               {{ "details.usage.queue_status" | transloco }}
               <app-info-tooltip termKey="help.stats.tooltip.queued_requests" />
             </h3>
             <div class="data-grid-1-2-3">
-              <div class="data-item-box">
+              <div class="data-item-box domain-tint--image data-item-centered">
                 <span class="data-value-lg">{{
                   performance()!.queued_requests | number
                 }}</span>
                 <span class="data-label-spaced">
                   {{ "details.usage.queued_image_requests" | transloco }}
-                  @if (queuedImageWork(); as work) {
-                    <span class="text-secondary">
-                      (<app-unit-tooltip [unit]="work" />)
-                    </span>
-                  }
                 </span>
+                @if (queuedImageWork(); as work) {
+                  <span class="data-label-spaced text-secondary">
+                    <app-unit-tooltip [unit]="work" />
+                  </span>
+                }
               </div>
-              <div class="data-item-box">
+              <div class="data-item-box domain-tint--text data-item-centered">
                 <span class="data-value-lg">{{
                   performance()!.queued_text_requests | number
                 }}</span>
                 <span class="data-label-spaced">
                   {{ "details.usage.queued_text_requests" | transloco }}
-                  @if (queuedTextWork(); as work) {
-                    <span class="text-secondary">
-                      (<app-unit-tooltip [unit]="work" />)
-                    </span>
-                  }
                 </span>
+                @if (queuedTextWork(); as work) {
+                  <span class="data-label-spaced text-secondary">
+                    <app-unit-tooltip [unit]="work" />
+                  </span>
+                }
               </div>
-              <div class="data-item-box">
+              <div
+                class="data-item-box domain-tint--alchemy data-item-centered"
+              >
                 <span class="data-value-lg">{{
                   performance()!.queued_forms | number
                 }}</span>
@@ -195,11 +189,13 @@
           @if (imageStats() && textStats()) {
             <div class="usage-totals-grid">
               <!-- Image Totals -->
-              <div class="card card-bg-primary">
+              <div class="card card-bg-primary card-full card-spaced">
                 <h3 class="heading-card">
-                  {{ "details.usage.image_totals" | transloco }}
+                  <span class="domain-label--image">
+                    {{ "details.usage.image_totals" | transloco }}
+                  </span>
                 </h3>
-                <div class="space-y-4">
+                <div class="stack-sm">
                   <div class="data-item">
                     <span class="data-label">{{
                       "details.usage.total_images_generated" | transloco
@@ -246,11 +242,13 @@
               </div>
 
               <!-- Text Totals -->
-              <div class="card card-bg-primary">
+              <div class="card card-bg-primary card-full card-spaced">
                 <h3 class="heading-card">
-                  {{ "details.usage.text_totals" | transloco }}
+                  <span class="domain-label--text">
+                    {{ "details.usage.text_totals" | transloco }}
+                  </span>
                 </h3>
-                <div class="space-y-4">
+                <div class="stack-sm">
                   <div class="data-item">
                     <span class="data-label">{{
                       "details.usage.total_requests" | transloco
@@ -302,7 +300,7 @@
           @if (imageModelStats() && textModelStats()) {
             <div class="usage-totals-grid">
               <!-- Top Image Models -->
-              <div class="card card-bg-primary">
+              <div class="card card-bg-primary card-full card-spaced">
                 <div class="card-header-flex">
                   <h3 class="heading-card">
                     {{ "details.usage.top_image_models" | transloco }}
@@ -340,7 +338,7 @@
               </div>
 
               <!-- Top Text Models -->
-              <div class="card card-bg-primary">
+              <div class="card card-bg-primary card-full card-spaced">
                 <div class="card-header-flex">
                   <h3 class="heading-card">
                     {{ "details.usage.top_text_models" | transloco }}
@@ -380,36 +378,30 @@
           }
 
           <!-- Grafana Link -->
-          <div class="card card-bg-secondary">
-            <div class="flex items-center gap-2">
-              <app-icon
-                class="icon-sm text-brand-purple flex-shrink-0"
-                name="arrow-top-right-on-square"
-              />
-              <div class="flex-1">
-                <h4 class="font-semibold text-primary text-sm">
-                  {{ "details.usage.grafana_title" | transloco }}
-                </h4>
-                <p class="text-secondary text-xs">
-                  {{ "details.usage.grafana_description" | transloco }}
-                </p>
-              </div>
-              <a
-                href="https://grafana.aihorde.net/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="btn-primary external-link"
-              >
-                {{ "details.usage.open_grafana" | transloco }}
-              </a>
+          <div class="info-note info-note--blue info-note--padded">
+            <app-icon
+              class="icon-sm text-blue-600 dark:text-blue-400 flex-shrink-0"
+              name="arrow-top-right-on-square"
+            />
+            <div class="flex-1">
+              <strong>{{ "details.usage.grafana_title" | transloco }}</strong>
+              {{ "details.usage.grafana_description" | transloco }}
             </div>
+            <a
+              href="https://grafana.aihorde.net/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-primary btn-sm external-link"
+            >
+              {{ "details.usage.open_grafana" | transloco }}
+            </a>
           </div>
         </div>
       }
 
       <!-- Image Models Tab -->
       @if (activeTab() === "image") {
-        <div class="usage-models">
+        <div class="card card-bg-primary card-full card-spaced usage-models">
           <!-- Period Selector & Search -->
           <div class="details-filters">
             <div class="filter-period">
@@ -560,7 +552,7 @@
 
       <!-- Text Models Tab -->
       @if (activeTab() === "text") {
-        <div class="usage-models">
+        <div class="card card-bg-primary card-full card-spaced usage-models">
           <!-- Period Selector & Search -->
           <div class="details-filters">
             <div class="filter-period">

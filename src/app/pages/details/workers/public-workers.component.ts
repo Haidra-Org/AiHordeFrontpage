@@ -66,12 +66,9 @@ export class PublicWorkersComponent implements OnInit {
    * Handle worker type changes from child component and update URL.
    */
   public onWorkerTypeChange(type: WorkerType): void {
-    // Only update URL if we had a type in the route
-    if (this.initialWorkerType()) {
-      void this.router.navigate(['/details/workers', type], {
-        replaceUrl: true,
-      });
-    }
+    void this.router.navigate(['/details/workers', type], {
+      replaceUrl: true,
+    });
   }
 
   /**

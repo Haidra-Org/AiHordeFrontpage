@@ -137,6 +137,7 @@
   /* Data label with top margin - for spacing below values */
   .data-label-spaced {
     @apply text-xs text-content-secondary mt-1;
+    @apply dark:text-gray-300;
   }
 
   /* Data item value */
@@ -256,6 +257,19 @@
   /* Extra large data value - for hero stats */
   .data-value-xl {
     @apply text-4xl font-extrabold text-brand-purple;
+  }
+
+  /* Domain-tinted contexts: match the accent color for contrast */
+  .domain-tint--image .data-value-xl {
+    @apply text-purple-700 dark:text-purple-300;
+  }
+
+  .domain-tint--text .data-value-xl {
+    @apply text-blue-700 dark:text-blue-300;
+  }
+
+  .domain-tint--alchemy .data-value-xl {
+    @apply text-green-700 dark:text-green-300;
   }
 
   /* =================================================================
@@ -601,6 +615,11 @@
   /* Top border divider */
   .section-divider-top {
     @apply mt-6 pt-6 border-t border-edge-primary;
+  }
+
+  /* Inline flex with baseline alignment and small gap */
+  .inline-gap {
+    @apply flex items-baseline gap-1;
   }
 
   /* Bottom border divider */

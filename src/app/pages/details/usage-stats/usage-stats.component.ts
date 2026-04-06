@@ -4,12 +4,14 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   OnInit,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
@@ -59,7 +61,23 @@ export class UsageStatsComponent implements OnInit {
   private readonly aiHorde = inject(AiHordeService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   public readonly units = inject(UnitConversionService);
+
+  /** Route parameters as signals. */
+  private readonly params = toSignal(this.route.params, {
+    initialValue: {} as Record<string, string>,
+  });
+
+  /** Tab from route (overview, image, text). */
+  private readonly routeTab = computed<UsageTab | null>(() => {
+    const tab = this.params()['tab'] as string | undefined;
+    if (tab === 'overview' || tab === 'image' || tab === 'text') {
+      return tab;
+    }
+    return null;
+  });
 
   /** Current active tab. */
   public readonly activeTab = signal<UsageTab>('overview');
@@ -231,6 +249,14 @@ export class UsageStatsComponent implements OnInit {
   });
 
   constructor() {
+    // Apply initial tab from route.
+    effect(() => {
+      const routeTab = this.routeTab();
+      if (routeTab && this.activeTab() !== routeTab) {
+        this.activeTab.set(routeTab);
+      }
+    });
+
     // Fetch stats only in the browser after rendering completes.
     // This prevents stale prerendered data from appearing during static builds.
     afterNextRender(() => {
@@ -251,6 +277,7 @@ export class UsageStatsComponent implements OnInit {
     if (this.activeTab() === tab) return;
     this.activeTab.set(tab);
     this.searchQuery.set('');
+    void this.router.navigate(['/details/usage', tab], { replaceUrl: true });
   }
 
   public setTimePeriod(period: TimePeriod): void {

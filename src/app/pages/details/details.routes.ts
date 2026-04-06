@@ -124,8 +124,26 @@ export const detailsRoutes: Routes = [
         (c) => c.UsageStatsComponent,
       ),
   },
+  // Usage filtered by tab (overview, image, text)
+  {
+    path: 'usage/:tab',
+    data: { headingKey: 'details.heading.usage' },
+    loadComponent: () =>
+      import('./usage-stats/usage-stats.component').then(
+        (c) => c.UsageStatsComponent,
+      ),
+  },
   {
     path: 'styles',
+    data: { headingKey: 'details.heading.styles' },
+    loadComponent: () =>
+      import('./styles/styles-list.component').then(
+        (c) => c.StylesListComponent,
+      ),
+  },
+  // Styles filtered by type (image, text, collections)
+  {
+    path: 'styles/:type',
     data: { headingKey: 'details.heading.styles' },
     loadComponent: () =>
       import('./styles/styles-list.component').then(

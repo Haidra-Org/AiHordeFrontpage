@@ -81,10 +81,10 @@ export class StylesListComponent implements OnInit {
     return (this.params()['highlightStyleId'] as string | undefined) ?? null;
   });
 
-  /** Style type from route for highlighting. */
+  /** Style type from route (image, text, collections) — used both for tab selection and highlight navigation. */
   public readonly highlightStyleType = computed<StylesTab | null>(() => {
     const type = this.params()['type'] as string | undefined;
-    if (type === 'image' || type === 'text') {
+    if (type === 'image' || type === 'text' || type === 'collections') {
       return type;
     }
     return null;
@@ -252,19 +252,7 @@ export class StylesListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Set page title
     setPageTitle(this.translator, this.title, this.destroyRef, 'styles.title');
-
-    // Check for tab in query params
-    this.route.queryParams
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((params) => {
-        if (params['tab'] === 'text') {
-          this.activeTab.set('text');
-        } else if (params['tab'] === 'collections') {
-          this.activeTab.set('collections');
-        }
-      });
   }
 
   public setActiveTab(tab: StylesTab): void {
@@ -275,6 +263,7 @@ export class StylesListComponent implements OnInit {
     this.clientFilters.set(DEFAULT_CLIENT_FILTERS);
     this.resetPaginationState();
     this.loadStyles();
+    void this.router.navigate(['/details/styles', tab], { replaceUrl: true });
   }
 
   public onQueryParamsChange(params: StyleQueryParams): void {
