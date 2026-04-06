@@ -3,7 +3,7 @@ name: Discord Channel Sync
 on:
   schedule:
     # Weekly on Monday at 06:00 UTC
-    - cron: '0 6 * * 1'
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install -r scripts/discord/requirements.txt

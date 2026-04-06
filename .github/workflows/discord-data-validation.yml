@@ -3,18 +3,18 @@ name: Discord Data Validation
 on:
   push:
     paths:
-      - 'src/assets/data/*.en.json'
-      - 'discord_data/item_channel_map.json'
-      - 'discord_data/channels.json'
-      - 'scripts/discord/update_messages.py'
+      - "src/assets/data/*.en.json"
+      - "discord_data/item_channel_map.json"
+      - "discord_data/channels.json"
+      - "scripts/discord/update_messages.py"
     branches:
       - master
   pull_request:
     paths:
-      - 'src/assets/data/*.en.json'
-      - 'discord_data/item_channel_map.json'
-      - 'discord_data/channels.json'
-      - 'scripts/discord/update_messages.py'
+      - "src/assets/data/*.en.json"
+      - "discord_data/item_channel_map.json"
+      - "discord_data/channels.json"
+      - "scripts/discord/update_messages.py"
 
 jobs:
   validate:
@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Validate data coherency
         run: python scripts/discord/update_messages.py --validate
