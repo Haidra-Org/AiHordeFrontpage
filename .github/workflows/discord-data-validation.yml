@@ -8,7 +8,7 @@ on:
       - "discord_data/channels.json"
       - "scripts/discord/update_messages.py"
     branches:
-      - master
+      - main
   pull_request:
     paths:
       - "src/assets/data/*.en.json"

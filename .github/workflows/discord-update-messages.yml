@@ -12,7 +12,7 @@ on:
       - "discord_data/item_channel_map.json"
       - "discord_data/messages.json"
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       section:
