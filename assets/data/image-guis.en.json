@@ -10,7 +10,11 @@
     "functionKind": "frontend",
     "platform": ["web"],
     "sourceControlLink": "https://github.com/Haidra-Org/artbot",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      { "label": "v1", "url": "https://tinybots.net/artbot" },
+      { "label": "v2", "url": "https://artbot.site/" }
+    ]
   },
   {
     "name": "Lucid Creations",
@@ -24,7 +28,10 @@
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos", "web"],
     "sourceControlLink": "https://github.com/Haidra-Org/Lucid-Creations",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      { "label": "itch", "url": "https://dbzer0.itch.io/lucid-creations" }
+    ]
   },
   {
     "name": "AI Scribbles",
@@ -51,7 +58,17 @@
     "functionKind": "frontend",
     "platform": ["ios"],
     "sourceControlLink": "https://github.com/amiantos/aislingeach",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      {
+        "label": "app store",
+        "url": "https://apps.apple.com/us/app/aislingeach/id6449862063"
+      },
+      {
+        "label": "test flight",
+        "url": "https://testflight.apple.com/join/Q6WyyEpS"
+      }
+    ]
   },
   {
     "name": "HordeNG",
@@ -64,7 +81,10 @@
     "functionKind": "frontend",
     "platform": ["web"],
     "sourceControlLink": "https://github.com/RikudouSage/HordeNG",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      { "label": "horde-ng.org", "url": "https://horde-ng.org/" }
+    ]
   },
   {
     "name": "AI Painter",
@@ -76,7 +96,18 @@
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["ios"]
+    "platform": ["ios"],
+    "discordLinks": [
+      {
+        "label": "test flight",
+        "url": "https://testflight.apple.com/join/Jba4JP2I"
+      },
+      {
+        "label": "app store",
+        "url": "https://apps.apple.com/us/app/id1644645946"
+      }
+    ],
+    "discordNote": "\n -# (removed from Play by Google \ud83d\ude2d)"
   },
   {
     "name": "BreadImagine",
@@ -87,7 +118,10 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/ItsBreadTime/BreadImagine"
+    "sourceControlLink": "https://github.com/ItsBreadTime/BreadImagine",
+    "discordLinks": [
+      { "label": "website", "url": "https://imagine.breadtm.xyz/" }
+    ]
   },
   {
     "name": "HordeQT",
@@ -98,7 +132,8 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos"],
-    "sourceControlLink": "https://github.com/Unit1208/HordeQT"
+    "sourceControlLink": "https://github.com/Unit1208/HordeQT",
+    "discordLinks": []
   },
   {
     "name": "Justaaa",
@@ -108,7 +143,10 @@
     "itemType": "gui-image",
     "domain": ["image"],
     "functionKind": "frontend",
-    "platform": ["web"]
+    "platform": ["web"],
+    "discordLinks": [
+      { "label": "website", "url": "https://justaaa.fyrean.com/" }
+    ]
   },
   {
     "name": "Stable UI",
@@ -120,6 +158,71 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "deprecated": true
+    "deprecated": true,
+    "discordLinks": [
+      { "label": "improved fork", "url": "https://efreak.github.io/stableui" },
+      { "label": "original", "url": "https://aqualxx.github.io/stableui" }
+    ]
+  },
+  {
+    "name": "AiBrush",
+    "description": "A web-based AI image generation UI powered by AI Horde.",
+    "link": "https://aibrush-2.vercel.app",
+    "categories": ["Web"],
+    "discordLinks": [
+      {
+        "label": "aibrush.art",
+        "url": "https://www.aibrush.art/",
+        "strikethrough": true
+      },
+      { "label": "aibrush-2.vercel.app", "url": "https://aibrush-2.vercel.app" }
+    ],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "AI Studio",
+    "description": "A web-based AI image generation interface powered by AI Horde.",
+    "link": "https://horde-smalinge.de/",
+    "categories": ["Web"],
+    "discordLinks": [
+      { "label": "website", "url": "https://horde-smalinge.de/" }
+    ],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "Artificial Art",
+    "description": "A web-based image generation UI powered by AI Horde.",
+    "link": "https://artificial-art.eu/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "ComicsMaker",
+    "description": "A web-based comic creation tool powered by AI Horde image generation.",
+    "link": "https://comicsmaker.ai/",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"]
+  },
+  {
+    "name": "Aeionic Diffusion Deluxe",
+    "description": "A desktop AI image generation client for Windows and Linux.",
+    "link": "https://aeionic.com/",
+    "categories": ["Desktop"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux"]
   }
 ]

@@ -7,7 +7,9 @@
     "itemType": "resource",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "resource_collection"
+    "functionKind": "resource_collection",
+    "discordSection": "see-also",
+    "discordLabel": "Horde Tools created by the community"
   },
   {
     "name": "Horde Projects on GitHub",
@@ -17,27 +19,32 @@
     "itemType": "resource",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "resource_collection"
+    "functionKind": "resource_collection",
+    "discordSection": "see-also"
   },
   {
-    "name": "Horde Wiki — Available client interfaces",
+    "name": "Horde Wiki",
     "description": "Horde Wiki page listing available client interfaces and tools.",
     "link": "https://github.com/Haidra-Org/AI-Horde/wiki/Available-client-interfaces",
     "categories": ["Docs", "Wiki", "Documentation"],
     "itemType": "resource",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "informational"
+    "functionKind": "informational",
+    "discordSection": "see-also"
   },
   {
-    "name": "AI-Horde-Ratings (Haidra)",
+    "name": "AI-Horde-Ratings",
     "description": "Haidra's dataset of AI-Horde ratings hosted on Hugging Face (useful for training/analysis).",
     "link": "https://huggingface.co/datasets/Haidra-Org/AI-Horde-Ratings",
     "categories": ["Data", "Dataset"],
     "itemType": "dataset",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "informational"
+    "functionKind": "informational",
+    "discordSection": "non-horde",
+    "discordPrefix": "Haidra's",
+    "discordSuffix": "dataset"
   },
   {
     "name": "DiffusionDB",
@@ -47,36 +54,45 @@
     "itemType": "dataset",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "informational"
+    "functionKind": "informational",
+    "discordSection": "non-horde"
   },
   {
-    "name": "stable-prompts (Superintendent)",
+    "name": "stable-prompts",
     "description": "A Hugging Face dataset of stable prompts curated by Superintendent.",
     "link": "https://huggingface.co/datasets/Superintendent/stable-prompts",
     "categories": ["Data", "Dataset"],
     "itemType": "dataset",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "informational"
+    "functionKind": "informational",
+    "discordSection": "non-horde",
+    "discordAuthor": "936029184407519262",
+    "discordAuthorPrefix": true
   },
   {
-    "name": "Stable Foundation Pantheon (Prompts & Images)",
+    "name": "Stable Foundation Pantheon",
     "description": "Collection of prompts and images that were accepted into the Stable Foundation Pantheon (mostly SDXL).",
     "link": "https://sddscrd.sfury.com/?filter=pantheon",
     "categories": ["Gallery", "Prompts", "Data"],
     "itemType": "resource",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "resource_collection"
+    "functionKind": "resource_collection",
+    "discordSection": "non-horde",
+    "discordLabel": "Prompts and corresponding images",
+    "discordSuffix": "that got into the Stable Foundation Pantheon (mostly sdxl?)"
   },
   {
-    "name": "30k SDXL Prompts (Stable Foundation testing)",
+    "name": "30k SDXL Prompts",
     "description": "A collection of ~30k prompts used during SDXL testing (link points to the Discord post).",
     "link": "https://discord.com/channels/781145214752129095/1022617696413679696/1143337436638888036",
     "categories": ["Data", "Prompts"],
     "itemType": "dataset",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "informational"
+    "functionKind": "informational",
+    "discordSection": "non-horde",
+    "discordLabel": "30k prompts from stable foundation sdxl testing"
   }
 ]

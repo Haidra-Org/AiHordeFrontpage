@@ -10,7 +10,14 @@
     "functionKind": "frontend",
     "platform": ["web"],
     "sourceControlLink": "https://github.com/LostRuins/lite.koboldai.net",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      { "label": "lite.koboldai.org", "url": "https://lite.koboldai.org/" },
+      {
+        "label": "Discord",
+        "url": "https://discord.com/channels/781145214752129095/1107641846005501972/1249086475757293588"
+      }
+    ]
   },
   {
     "name": "SillyTavern",
@@ -24,7 +31,14 @@
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos"],
     "sourceControlLink": "https://github.com/SillyTavern/SillyTavern",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      { "label": "sillytavern.app", "url": "https://sillytavern.app/" },
+      {
+        "label": "Discord",
+        "url": "https://discord.com/channels/781145214752129095/1107645027536093184/1304741093757161472"
+      }
+    ]
   },
 
   {
@@ -39,7 +53,13 @@
     "functionKind": "frontend",
     "platform": ["ios"],
     "sourceControlLink": "https://github.com/amiantos/inneal",
-    "recommended": true
+    "recommended": true,
+    "discordLinks": [
+      {
+        "label": "app store",
+        "url": "https://apps.apple.com/us/app/inneal-ai-character-tavern/id6482289560"
+      }
+    ]
   },
   {
     "name": "AgnAIstic",
@@ -51,7 +71,11 @@
     "domain": ["text"],
     "functionKind": "frontend",
     "platform": ["web"],
-    "sourceControlLink": "https://github.com/agnaistic/agnai"
+    "sourceControlLink": "https://github.com/agnaistic/agnai",
+    "discordLinks": [
+      { "label": "agnai.chat", "url": "https://agnai.chat/" },
+      { "label": "Discord", "url": "https://agnai.chat/discord" }
+    ]
   },
   {
     "name": "TavernAI",
@@ -62,6 +86,30 @@
     "domain": ["text"],
     "functionKind": "frontend",
     "platform": ["windows", "linux", "macos"],
-    "sourceControlLink": "https://github.com/TavernAI/TavernAI"
+    "sourceControlLink": "https://github.com/TavernAI/TavernAI",
+    "discordLinks": [
+      {
+        "label": "Discord",
+        "url": "https://discord.com/channels/781145214752129095/1107645073589555333/1395175197509812346"
+      }
+    ]
+  },
+  {
+    "name": "KoboldAI Client",
+    "description": "A full-featured locally-installed AI text generation client supporting AI Horde and other backends. The original KoboldAI desktop application.",
+    "link": "https://koboldai.org/",
+    "downloadButtonText": "Get {name}",
+    "categories": ["Desktop"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["windows", "linux", "macos"],
+    "discordLinks": [
+      { "label": "koboldai.org", "url": "https://koboldai.org/" },
+      {
+        "label": "Discord",
+        "url": "https://discord.com/channels/781145214752129095/1107642180346073198/1395172494402523307"
+      }
+    ]
   }
 ]
