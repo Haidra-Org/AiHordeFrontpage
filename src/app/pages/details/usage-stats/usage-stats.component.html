@@ -378,23 +378,25 @@
           }
 
           <!-- Grafana Link -->
-          <div class="info-note info-note--blue info-note--padded">
+          <div
+            class="info-note info-note--blue info-note--padded flex items-center gap-3"
+          >
             <app-icon
-              class="icon-sm text-blue-600 dark:text-blue-400 flex-shrink-0"
+              class="icon-sm text-blue-600 dark:text-blue-400 shrink-0"
               name="arrow-top-right-on-square"
             />
-            <div class="flex-1">
+            <span class="flex-1">
               <strong>{{ "details.usage.grafana_title" | transloco }}</strong>
               {{ "details.usage.grafana_description" | transloco }}
-            </div>
-            <a
-              href="https://grafana.aihorde.net/"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-primary btn-sm external-link"
-            >
-              {{ "details.usage.open_grafana" | transloco }}
-            </a>
+              <a
+                href="https://grafana.aihorde.net/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-primary btn-sm external-link shrink-0"
+              >
+                {{ "details.usage.open_grafana" | transloco }}
+              </a>
+            </span>
           </div>
         </div>
       }
