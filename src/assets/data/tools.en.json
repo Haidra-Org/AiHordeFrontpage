@@ -8,7 +8,8 @@
     "domain": ["image"],
     "platform": ["server"],
     "functionKind": "worker",
-    "recommended": true
+    "recommended": true,
+    "discordAuthor": "190164560655810561"
   },
   {
     "name": "AI-Horde-Worker",
@@ -50,7 +51,14 @@
     "domain": ["image"],
     "platform": ["server"],
     "functionKind": "bot",
-    "sourceControlLink": "https://github.com/Haidra-Org/AI-Horde-Discord"
+    "sourceControlLink": "https://github.com/Haidra-Org/AI-Horde-Discord",
+    "discordLinks": [
+      {
+        "label": "upstream",
+        "url": "https://github.com/ZeldaFan0225/AI_Horde_Discord"
+      }
+    ],
+    "discordNote": "is <@1019572037360025650>"
   },
   {
     "name": "Fediverse bots",
@@ -60,7 +68,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["server", "fediverse"],
-    "functionKind": "bot"
+    "functionKind": "bot",
+    "deprecated": true
   },
   {
     "name": "Reddit bot",
@@ -70,7 +79,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["server"],
-    "functionKind": "bot"
+    "functionKind": "bot",
+    "deprecated": true
   },
   {
     "name": "Python SDK",
@@ -90,8 +100,9 @@
     "categories": ["CLI", "Development"],
     "itemType": "tool",
     "domain": ["image", "text"],
-    "platform": ["cli"],
-    "functionKind": "cli"
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "cli",
+    "discordLinks": []
   },
   {
     "name": "CraiyonArt Bot",
@@ -102,7 +113,11 @@
     "domain": ["image"],
     "platform": ["server"],
     "functionKind": "bot",
-    "sourceControlLink": "https://github.com/JelNiSlaw/craiyon-bot"
+    "sourceControlLink": "https://github.com/JelNiSlaw/craiyon-bot",
+    "discordLinks": [
+      { "label": "telegram", "url": "https://t.me/CraiyonArtBot" }
+    ],
+    "discordNote": "- supports AI Horde for image generation"
   },
   {
     "name": "WriterBot",
@@ -112,7 +127,8 @@
     "itemType": "tool",
     "domain": ["image", "text"],
     "platform": ["server"],
-    "functionKind": "bot"
+    "functionKind": "bot",
+    "deprecated": true
   },
   {
     "name": "Imaginarium",
@@ -122,7 +138,10 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["server"],
-    "functionKind": "bot"
+    "functionKind": "bot",
+    "discordLinks": [
+      { "label": "Telegram", "url": "https://t.me/ImaginariumAIbot" }
+    ]
   },
   {
     "name": "GIMP plugin",
@@ -152,7 +171,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["windows", "linux", "macos"],
-    "functionKind": "plugin"
+    "functionKind": "plugin",
+    "deprecated": true
   },
   {
     "name": "Unreal Engine plugin",
@@ -172,7 +192,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["windows", "linux", "macos"],
-    "functionKind": "plugin"
+    "functionKind": "plugin",
+    "deprecated": true
   },
   {
     "name": "Blender plugin",
@@ -182,7 +203,8 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["windows", "linux", "macos"],
-    "functionKind": "plugin"
+    "functionKind": "plugin",
+    "deprecated": true
   },
   {
     "name": "Photoshop plugin",
@@ -252,7 +274,8 @@
     "itemType": "tool",
     "domain": ["text"],
     "platform": ["server", "web"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordAuthor": "754492285185556508"
   },
   {
     "name": "AI Horde Monitor",
@@ -262,7 +285,8 @@
     "itemType": "tool",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordAuthor": "1257128949620936757"
   },
   {
     "name": "GPU_Monitor (hoardworker)",
@@ -272,7 +296,12 @@
     "itemType": "tool",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordSection": "non-horde",
+    "discordAuthor": "1073508690776313889",
+    "discordAuthorPrefix": true,
+    "discordLabel": "GPU_Monitor",
+    "discordDescription": "posted [here](<https://discord.com/channels/781145214752129095/1022617696413679696/1075254352903675995>)"
   },
   {
     "name": "SD API Timer (user info refresher)",
@@ -282,7 +311,9 @@
     "itemType": "tool",
     "domain": ["image", "text"],
     "platform": ["web"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordPrefix": "Refresh your user info on a timer",
+    "discordLabel": "here"
   },
   {
     "name": "Tag-based Prompt Generator (magnabos)",
@@ -292,7 +323,11 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordSection": "non-horde",
+    "discordAuthor": "1060285302188556348",
+    "discordAuthorPrefix": true,
+    "discordLabel": "tag-based prompt generator"
   },
   {
     "name": "Acura NSX — Worker Info Script",
@@ -302,7 +337,11 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["cli"],
-    "functionKind": "utility"
+    "functionKind": "utility",
+    "discordAuthor": "544620828214558721",
+    "discordAuthorPrefix": true,
+    "discordLabel": "script",
+    "discordSuffix": "to show worker info"
   },
 
   {
@@ -310,11 +349,15 @@
     "description": "Community image-generation group (Discord + Guilded).",
     "link": "https://discord.dreamdiffusion.net/",
     "otherLinks": ["https://www.guilded.gg/dreamdiffusion"],
-    "categories": ["Community", "Chat"],
+    "categories": ["Bot", "Image Generation"],
     "itemType": "tool",
     "domain": ["image"],
-    "platform": ["web"],
-    "functionKind": "community"
+    "platform": ["server"],
+    "functionKind": "bot",
+    "discordLinks": [
+      { "label": "Discord", "url": "https://discord.dreamdiffusion.net/" },
+      { "label": "Guilded", "url": "https://www.guilded.gg/dreamdiffusion" }
+    ]
   },
   {
     "name": "Ketsuna",
@@ -324,8 +367,9 @@
     "itemType": "tool",
     "domain": ["image"],
     "platform": ["web"],
-    "functionKind": "frontend",
-    "sourceControlLink": "https://github.com/gazes-media/ketsuna"
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/gazes-media/ketsuna",
+    "discordLinks": [{ "label": "ketsuna.com", "url": "https://ketsuna.com/" }]
   },
   {
     "name": "Lemmy Bot",
@@ -336,7 +380,11 @@
     "domain": ["image"],
     "platform": ["server", "fediverse"],
     "functionKind": "bot",
-    "sourceControlLink": "https://github.com/Haidra-Org/fediverse-ai-horde-generate"
+    "sourceControlLink": "https://github.com/Haidra-Org/fediverse-ai-horde-generate",
+    "discordLinks": [
+      { "label": "Lemmy", "url": "https://lemmy.dbzer0.com/post/13211160" },
+      { "label": "FAQ", "url": "https://wiki.dbzer0.com/cbotart/" }
+    ]
   },
   {
     "name": "Mastodon Bot",
@@ -347,6 +395,166 @@
     "domain": ["image"],
     "platform": ["server", "fediverse"],
     "functionKind": "bot",
-    "sourceControlLink": "https://github.com/Haidra-Org/mastodon-stable-horde-generate"
+    "sourceControlLink": "https://github.com/Haidra-Org/mastodon-stable-horde-generate",
+    "discordLinks": [
+      {
+        "label": "mastodon",
+        "url": "https://sigmoid.social/@stablehorde_generator"
+      }
+    ]
+  },
+  {
+    "name": "Image Synth",
+    "description": "A Telegram bot for AI Horde image generation.",
+    "link": "https://t.me/hdimgbot",
+    "categories": ["Bot", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server"],
+    "functionKind": "bot",
+    "discordLinks": [{ "label": "Telegram", "url": "https://t.me/hdimgbot" }]
+  },
+  {
+    "name": "SolidBooruAI",
+    "description": "A bot that uses AI Horde for image generation.",
+    "link": "https://discord.com/channels/781145214752129095/1192161917985366066",
+    "categories": ["Bot", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server"],
+    "functionKind": "bot",
+    "discordLinks": []
+  },
+  {
+    "name": "Turing Bot",
+    "description": "A Discord bot using AI Horde.",
+    "link": "https://discord.com/channels/781145214752129095/1107634754515386388",
+    "categories": ["Bot"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server"],
+    "functionKind": "bot",
+    "discordLinks": []
+  },
+  {
+    "name": "Foundry VTT plugin",
+    "description": "A plugin for integrating AI Horde image generation into Foundry Virtual Tabletop.",
+    "link": "https://discord.com/channels/781145214752129095/1244725099677089802",
+    "categories": ["Plugin", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["windows", "linux", "macos"],
+    "functionKind": "plugin"
+  },
+  {
+    "name": "Horde OpenAI Proxy (Logicism)",
+    "description": "Another proxy that exposes the Horde as an OpenAI-compatible API.",
+    "link": "https://github.com/Luke100000/horde-openai-proxy",
+    "categories": ["Developer", "GitHub", "Proxy"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["server", "web"],
+    "functionKind": "utility",
+    "discordPrefix": "Another",
+    "discordLabel": "Horde OpenAI Proxy",
+    "discordAuthor": "214029393809506306"
+  },
+  {
+    "name": "OpenCorde",
+    "description": "An OpenCode clone using AI Horde as a backend.",
+    "link": "https://github.com/TriDefender/OpenCorde",
+    "categories": ["Developer", "GitHub"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["cli"],
+    "functionKind": "utility",
+    "sourceControlLink": "https://github.com/TriDefender/OpenCorde",
+    "discordAuthor": "523226281438085151",
+    "discordDescription": "an OpenCode clone using Horde as a backend"
+  },
+  {
+    "name": "belarrius-ai-horde-bridge",
+    "description": "An alternative text bridge with support for OpenAI free moderation API, connecting half a dozen inferencers to Horde.",
+    "link": "https://github.com/Belarrius1/belarrius-ai-horde-bridge",
+    "categories": ["Developer", "GitHub", "Worker"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["server"],
+    "functionKind": "utility",
+    "sourceControlLink": "https://github.com/Belarrius1/belarrius-ai-horde-bridge",
+    "discordAuthor": "389264763076739082",
+    "discordAuthorPrefix": true,
+    "discordDescription": "an alternative text bridge with support for openai free moderation API, connecting half a dozen inferencers to Horde."
+  },
+  {
+    "name": "Arcaria-VCF",
+    "description": "A vibe-coded web interface for AI Horde image generation.",
+    "link": "https://arcaria.github.io/Arcaria-VCF/",
+    "categories": ["Web", "Image Generation"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/arcaria/Arcaria-VCF",
+    "discordAuthor": "884968968685776947",
+    "discordDescription": "a vibe-coded interface"
+  },
+  {
+    "name": "Dreamers Guild",
+    "description": "A self-hosted web app and PWA for AI Horde image generation.",
+    "link": "https://github.com/amiantos/dreamers-guild",
+    "categories": ["Web", "Image Generation"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/amiantos/dreamers-guild",
+    "discordAuthor": "700520314425049108",
+    "discordDescription": "a self-hosted web app and pwa for image generation",
+    "discordSuffix": "([demo](https://dreamers-guild.org))"
+  },
+  {
+    "name": "Writers Guild",
+    "description": "A SillyTavern alternative focused on short story writing with full support for Tavern cards and Lorebooks.",
+    "link": "https://github.com/amiantos/writers-guild",
+    "categories": ["Web", "Text Generation"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "sourceControlLink": "https://github.com/amiantos/writers-guild",
+    "discordAuthor": "700520314425049108",
+    "discordDescription": "A SillyTavern alternative focused on short story writing with full support for Tavern cards and Lorebooks"
+  },
+  {
+    "name": "AI Wallpaper Changer",
+    "description": "An Android app that automatically changes your wallpaper using AI Horde image generation.",
+    "link": "https://play.google.com/store/apps/details?id=cz.chrastecky.aiwallpaperchanger",
+    "categories": ["Android", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["android"],
+    "functionKind": "utility",
+    "discordSection": "programs",
+    "sourceControlLink": "https://github.com/RikudouSage/AiWallpaperChanger",
+    "discordLinks": [
+      {
+        "label": "Google",
+        "url": "https://play.google.com/store/apps/details?id=cz.chrastecky.aiwallpaperchanger"
+      }
+    ]
+  },
+  {
+    "name": "Ealain",
+    "description": "A macOS screensaver that displays AI-generated art from AI Horde.",
+    "link": "https://discord.com/channels/781145214752129095/1338432140802658366",
+    "categories": ["macOS", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["macos"],
+    "functionKind": "utility",
+    "discordSection": "programs",
+    "discordLinks": [],
+    "discordNote": "screensaver"
   }
 ]

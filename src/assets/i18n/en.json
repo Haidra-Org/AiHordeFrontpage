@@ -175,6 +175,7 @@
   "guis_and_tools_page.utilities_section_title": "Utilities",
   "guis_and_tools_page.resources_section_title": "Resources",
   "guis_and_tools_page.workers_section_title": "Workers",
+  "guis_and_tools_page.games_section_title": "Games",
   "guis_and_tools_page.tools_section_title": "Developer Tools",
   "guis_and_tools_page.filter_primary": "Primary Filters",
   "guis_and_tools_page.filter_secondary": "Additional Filters",
@@ -1899,6 +1900,7 @@
   "help.tools.tooltip.utilities": "Helper tools that complement frontends, such as model browsers, prompt builders, and workflow managers.",
   "help.tools.tooltip.bots": "Chat platform integrations that let you generate images or text through Discord, Telegram, and other messaging apps.",
   "help.tools.tooltip.developer_tools": "SDKs, libraries, CLI tools, and plugins for developers who want to build on the AI Horde API.",
+  "help.tools.tooltip.games": "Games that use AI Horde for procedural content and image generation.",
 
   "mission_callout.title": "Our Mission",
   "mission_callout.description": "AI Horde is a free, community-powered service that provides open access to generative AI. We are a volunteer-run, non-profit effort dedicated to ensuring powerful machine learning technologies remain available to all people, regardless of their financial means or technical resources.",

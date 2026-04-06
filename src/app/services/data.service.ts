@@ -68,6 +68,17 @@ export class DataService {
     );
   }
 
+  public get games(): Observable<SortedItems<GuiItem>> {
+    return this.getData<GuiItem>('games').pipe(
+      map((items) =>
+        items.map((item) =>
+          replaceContext(item, ['description', 'downloadButtonText']),
+        ),
+      ),
+      map((items) => this.formatToMapped(items, 'categories')),
+    );
+  }
+
   public get privacyPolicy(): Observable<
     Map<string, Map<string, PrivacyPolicyItem[]>>
   > {

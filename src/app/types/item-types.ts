@@ -6,6 +6,7 @@ export enum ItemType {
   TOOL = 'tool',
   RESOURCE = 'resource',
   DATASET = 'dataset',
+  GAME = 'game',
 }
 
 export enum Domain {
@@ -40,4 +41,5 @@ export enum FunctionKind {
   RESOURCE_COLLECTION = 'resource_collection',
   INFORMATIONAL = 'informational',
   COMMUNITY = 'community',
+  GAME = 'game',
 }

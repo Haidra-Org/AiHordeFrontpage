@@ -1,0 +1,52 @@
+[
+  {
+    "name": "AI Roguelite",
+    "description": "A roguelite game that uses AI Horde for procedural image generation.",
+    "link": "https://discord.com/channels/781145214752129095/1107642840177197158",
+    "categories": ["Game", "Image Generation"],
+    "itemType": "game",
+    "domain": ["image"],
+    "functionKind": "game",
+    "platform": ["windows", "linux", "macos"]
+  },
+  {
+    "name": "NumerAI",
+    "description": "A game that integrates AI Horde for image generation.",
+    "link": "https://discord.com/channels/781145214752129095/1161203047901429830",
+    "categories": ["Game", "Image Generation"],
+    "itemType": "game",
+    "domain": ["image"],
+    "functionKind": "game",
+    "platform": ["windows", "linux", "macos"]
+  },
+  {
+    "name": "QuestSim",
+    "description": "A game that uses AI Horde for image generation.",
+    "link": "https://discord.com/channels/781145214752129095/1161569244836810823",
+    "categories": ["Game", "Image Generation"],
+    "itemType": "game",
+    "domain": ["image"],
+    "functionKind": "game",
+    "platform": ["windows", "linux", "macos"]
+  },
+  {
+    "name": "Roll-E",
+    "description": "A game that uses AI Horde for image generation.",
+    "link": "https://discord.com/channels/781145214752129095/1107657288589779066",
+    "categories": ["Game", "Image Generation"],
+    "itemType": "game",
+    "domain": ["image"],
+    "functionKind": "game",
+    "platform": ["windows", "linux", "macos"]
+  },
+  {
+    "name": "Tensor Tales",
+    "description": "A game that uses AI Horde for procedural content generation.",
+    "link": "https://discord.com/channels/781145214752129095/1236754350668251297",
+    "categories": ["Game", "Image Generation"],
+    "itemType": "game",
+    "domain": ["image"],
+    "functionKind": "game",
+    "platform": ["windows", "linux", "macos"]
+  }
+]

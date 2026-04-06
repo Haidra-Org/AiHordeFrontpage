@@ -70,6 +70,11 @@ export class EnumDisplayService {
       translationKey: 'datasets.dataset',
       badgeClass: 'badge-purple',
     },
+    [ItemType.GAME]: {
+      label: 'Game',
+      translationKey: 'games.game',
+      badgeClass: 'badge-teal',
+    },
   };
 
   /**
@@ -187,6 +192,10 @@ export class EnumDisplayService {
     [FunctionKind.COMMUNITY]: {
       label: 'Community',
       badgeClass: 'badge-warning',
+    },
+    [FunctionKind.GAME]: {
+      label: 'Game',
+      badgeClass: 'badge-teal',
     },
   };
 

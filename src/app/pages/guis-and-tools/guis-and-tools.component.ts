@@ -100,6 +100,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private textGuis = toSignal(this.dataService.textGuis);
   private tools = toSignal(this.dataService.tools);
   private resources = toSignal(this.dataService.resources);
+  private games = toSignal(this.dataService.games);
 
   // Search and filter signals
   public searchQuery = signal<string>('');
@@ -165,6 +166,12 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       tooltipKey: 'help.tools.tooltip.developer_tools',
       tooltipGlossaryId: 'sdk',
     },
+    {
+      id: 'games',
+      titleKey: 'guis_and_tools_page.games_section_title',
+      items: () => this.filteredGames(),
+      tooltipKey: 'help.tools.tooltip.games',
+    },
   ];
 
   /** Get visible sections (those with items after filtering) */
@@ -178,12 +185,14 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     const textGuis = this.textGuis();
     const tools = this.tools();
     const resources = this.resources();
+    const games = this.games();
 
     if (
       imageGuis === undefined ||
       textGuis === undefined ||
       tools === undefined ||
-      resources === undefined
+      resources === undefined ||
+      games === undefined
     ) {
       return [];
     }
@@ -193,6 +202,7 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     const seenGuisText = new Set<string>();
     const seenTools = new Set<string>();
     const seenResources = new Set<string>();
+    const seenGames = new Set<string>();
 
     // Add image GUIs (deduplicate by name)
     imageGuis.forEach((items) => {
@@ -261,6 +271,26 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
               uniqueId: `resource-${resource.name}`,
             });
             seenResources.add(resource.name);
+          }
+        });
+      });
+    }
+
+    // Add games (flatten and deduplicate by name)
+    if (games) {
+      games.forEach((gameArray) => {
+        gameArray.forEach((game: GuiItem) => {
+          if (!seenGames.has(game.name)) {
+            result.push({
+              ...game,
+              categories: Array.isArray(game.categories)
+                ? game.categories
+                : game.categories
+                  ? [game.categories]
+                  : [],
+              uniqueId: `game-${game.name}`,
+            });
+            seenGames.add(game.name);
           }
         });
       });
@@ -371,6 +401,12 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   public filteredWorkers = computed(() => {
     return this.filteredItems().filter(
       (item) => item.functionKind === FunctionKind.WORKER,
+    );
+  });
+
+  public filteredGames = computed(() => {
+    return this.filteredItems().filter(
+      (item) => item.itemType === ItemType.GAME,
     );
   });
 
