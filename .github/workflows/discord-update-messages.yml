@@ -1,0 +1,52 @@
+name: Update Discord Messages
+
+on:
+  push:
+    paths:
+      - 'src/assets/data/image-guis.en.json'
+      - 'src/assets/data/text-guis.en.json'
+      - 'src/assets/data/tools.en.json'
+      - 'src/assets/data/games.en.json'
+      - 'src/assets/data/resource.en.json'
+      - 'discord_data/channels.json'
+      - 'discord_data/item_channel_map.json'
+      - 'discord_data/messages.json'
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      section:
+        description: 'Specific section to update (leave empty for all)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Dry run (print payloads without pushing)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  update-discord:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r scripts/discord/requirements.txt
+
+      - name: Update Discord messages
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          if [ -n "${{ inputs.section }}" ]; then
+            ARGS="$ARGS --section ${{ inputs.section }}"
+          fi
+          python scripts/discord/update_messages.py $ARGS

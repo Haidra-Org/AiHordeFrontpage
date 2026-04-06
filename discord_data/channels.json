@@ -1,0 +1,572 @@
+{
+  "guild_id": "781145214752129095",
+  "synced_at": "2026-04-06T13:52:16.310081+00:00",
+  "channel_count": 113,
+  "channels": {
+    "rules": {
+      "id": "977495527950262302",
+      "type": "text",
+      "category": "Info"
+    },
+    "get-roles": {
+      "id": "977498954616954890",
+      "type": "text",
+      "category": "Info"
+    },
+    "segfault-welcomes": {
+      "id": "1020696804913840180",
+      "type": "text",
+      "category": "Info"
+    },
+    "server-announcements": {
+      "id": "1028816116425949265",
+      "type": "announcement",
+      "category": "Info"
+    },
+    "batcave": {
+      "id": "1231329672957137038",
+      "type": "text",
+      "category": "Info"
+    },
+    "uis-index": {
+      "id": "1339333106712444958",
+      "type": "text",
+      "category": "Info"
+    },
+    "horde-announcements": {
+      "id": "1020707945694101564",
+      "type": "announcement",
+      "category": "AI Horde"
+    },
+    "horde-notifications": {
+      "id": "1081586239217618984",
+      "type": "announcement",
+      "category": "AI Horde"
+    },
+    "horde-info": {
+      "id": "1029124966471442443",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "horde-general": {
+      "id": "1020695869927981086",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "noob-meeting-point": {
+      "id": "1074805488643997706",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "horde-ratings": {
+      "id": "1088376183395188737",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "bot": {
+      "id": "1026475967612457010",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "parties": {
+      "id": "1190551102874198066",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "horde-suggestions": {
+      "id": "1026220091534213233",
+      "type": "forum",
+      "category": "AI Horde"
+    },
+    "competitions-and-games": {
+      "id": "1068116822559293491",
+      "type": "forum",
+      "category": "AI Horde"
+    },
+    "horde-bounties": {
+      "id": "1026521185988657372",
+      "type": "forum",
+      "category": "AI Horde"
+    },
+    "horde-crisis": {
+      "id": "1027506429139095562",
+      "type": "text",
+      "category": "AI Horde"
+    },
+    "horde-forum": {
+      "id": "1037657099083186206",
+      "type": "forum",
+      "category": "AI Horde"
+    },
+    "horde-worker-faq": {
+      "id": "1184491564358180875",
+      "type": "text",
+      "category": "AI Horde Q&A + Tech Support"
+    },
+    "horde-support": {
+      "id": "1020708029102043291",
+      "type": "forum",
+      "category": "AI Horde Q&A + Tech Support"
+    },
+    "cloud-workers": {
+      "id": "1050476592691957880",
+      "type": "text",
+      "category": "AI Horde Q&A + Tech Support"
+    },
+    "local-workers": {
+      "id": "1076124012305993768",
+      "type": "text",
+      "category": "AI Horde Q&A + Tech Support"
+    },
+    "worker-vpn-access-request": {
+      "id": "1184492706609770517",
+      "type": "text",
+      "category": "AI Horde Q&A + Tech Support"
+    },
+    "horde-integrations": {
+      "id": "1042786389474947112",
+      "type": "text",
+      "category": "AI Horde Development"
+    },
+    "horde-devs": {
+      "id": "1081743238194536458",
+      "type": "text",
+      "category": "AI Horde Development"
+    },
+    "horde-project-feed": {
+      "id": "1202584636375703612",
+      "type": "text",
+      "category": "AI Horde Development"
+    },
+    "ratings-notices": {
+      "id": "1086456013827362846",
+      "type": "text",
+      "category": "AI Horde Monitoring"
+    },
+    "mod-notifications": {
+      "id": "1123910734032674836",
+      "type": "text",
+      "category": "AI Horde Monitoring"
+    },
+    "image-model-reference": {
+      "id": "1290309549290422314",
+      "type": "text",
+      "category": "AI Horde Monitoring"
+    },
+    "grafana-notifications": {
+      "id": "1380897098525966577",
+      "type": "text",
+      "category": "AI Horde Monitoring"
+    },
+    "off-topic": {
+      "id": "908066072853356595",
+      "type": "text",
+      "category": "Social"
+    },
+    "memes": {
+      "id": "1028815194312417320",
+      "type": "text",
+      "category": "Social"
+    },
+    "discord-meta": {
+      "id": "1028815423627612180",
+      "type": "forum",
+      "category": "Social"
+    },
+    "ethics-and-philosophy": {
+      "id": "1116202510634467411",
+      "type": "text",
+      "category": "Social"
+    },
+    "⭐sharing": {
+      "id": "1243483280087715903",
+      "type": "text",
+      "category": "starboard"
+    },
+    "⭐parties": {
+      "id": "1243485076830814339",
+      "type": "text",
+      "category": "starboard"
+    },
+    "⭐contests": {
+      "id": "1246345036627443733",
+      "type": "text",
+      "category": "starboard"
+    },
+    "share-your-art": {
+      "id": "1028815264843829249",
+      "type": "text",
+      "category": "sharing"
+    },
+    "share-your-text": {
+      "id": "1111800679871303761",
+      "type": "text",
+      "category": "sharing"
+    },
+    "share-your-models": {
+      "id": "1175211301983748196",
+      "type": "text",
+      "category": "sharing"
+    },
+    "scifi-art": {
+      "id": "1061633911777669190",
+      "type": "text",
+      "category": "sharing"
+    },
+    "anime-art": {
+      "id": "1042125419920502836",
+      "type": "text",
+      "category": "sharing"
+    },
+    "risque-art": {
+      "id": "1070703363534102679",
+      "type": "text",
+      "category": "sharing"
+    },
+    "fantasy-art": {
+      "id": "1070704937178247260",
+      "type": "text",
+      "category": "sharing"
+    },
+    "landscape-art": {
+      "id": "1070770456459755520",
+      "type": "text",
+      "category": "sharing"
+    },
+    "still-life-art": {
+      "id": "1070771105477963878",
+      "type": "text",
+      "category": "sharing"
+    },
+    "furry-art": {
+      "id": "1114480262454186055",
+      "type": "text",
+      "category": "sharing"
+    },
+    "general-portrait-art": {
+      "id": "1108799342975930388",
+      "type": "text",
+      "category": "sharing"
+    },
+    "prompt-crafting": {
+      "id": "1027697691628679189",
+      "type": "text",
+      "category": "sharing"
+    },
+    "prompt-challenge": {
+      "id": "1114103609848774706",
+      "type": "text",
+      "category": "sharing"
+    },
+    "prompt-suggestions": {
+      "id": "1140244658082029674",
+      "type": "text",
+      "category": "sharing"
+    },
+    "disastrous-art": {
+      "id": "1175104325807251567",
+      "type": "text",
+      "category": "sharing"
+    },
+    "horror-art": {
+      "id": "1192755175509737606",
+      "type": "text",
+      "category": "sharing"
+    },
+    "creations": {
+      "id": "1183535031126327438",
+      "type": "forum",
+      "category": "sharing"
+    },
+    "share-your-art-in-class": {
+      "id": "1410332768939933696",
+      "type": "text",
+      "category": "sharing"
+    },
+    "📱agnaistic": {
+      "id": "1107644996716343396",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱ai-wallpaper-changer": {
+      "id": "1233082898912120933",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱aibrush": {
+      "id": "1131856477087350784",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱aislingeach": {
+      "id": "1112310729429745764",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱aipainter": {
+      "id": "1108160262873301012",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "📱ai-scribbles": {
+      "id": "1189362453671313408",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱ai-studio": {
+      "id": "1390392406553268304",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱artbot": {
+      "id": "1107628882783391744",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱artificial-art": {
+      "id": "1107629719194718208",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱breadimagine": {
+      "id": "1147499017178202122",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱cli": {
+      "id": "1107679300104228864",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱comicsmaker": {
+      "id": "1113012613161439302",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱horde-ng": {
+      "id": "1218539303429345410",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱hordeqt": {
+      "id": "1300507939865366558",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱inneal": {
+      "id": "1230069655343861800",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱ealain": {
+      "id": "1338432140802658366",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱justaaa": {
+      "id": "1316898688932647023",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱koboldai-client": {
+      "id": "1107642180346073198",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱koboldai-lite": {
+      "id": "1107641846005501972",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱lucid-creations": {
+      "id": "1107629678233124944",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱horde-worker-gui": {
+      "id": "1389366757009129483",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱silly-tavern": {
+      "id": "1107645027536093184",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱aeionic-diffusion-deluxe": {
+      "id": "1222150109593210972",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱stable-ui": {
+      "id": "1107629376889172098",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱tavernai": {
+      "id": "1107645073589555333",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "🤖craiyon-bot": {
+      "id": "1107647283060818010",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖discord-official": {
+      "id": "1107634538332557412",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖dreamdiffusion": {
+      "id": "1108800184483328040",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖image-synth": {
+      "id": "1441945526026371123",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖imaginarium": {
+      "id": "1109825249933000714",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖ketsuna": {
+      "id": "1192162051989184532",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖lemmy": {
+      "id": "1107634600571830323",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖mastodon": {
+      "id": "1107634578644021319",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🤖solidbooru-ai": {
+      "id": "1192161917985366066",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🤖turing-bot": {
+      "id": "1107634754515386388",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩foundry-vtt": {
+      "id": "1244725099677089802",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩genalt": {
+      "id": "1107647281320185920",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🧩g-i-m-p": {
+      "id": "1107636192360534127",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩godot-engine": {
+      "id": "1107636612059373659",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩libre-office": {
+      "id": "1401005281332433057",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩photoshop": {
+      "id": "1107638422547484722",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🧩unreal-engine": {
+      "id": "1107638359637110824",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮ai-roguelite": {
+      "id": "1107642840177197158",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮numerai": {
+      "id": "1161203047901429830",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮questsim": {
+      "id": "1161569244836810823",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮roll-e": {
+      "id": "1107657288589779066",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮tensor-tales": {
+      "id": "1236754350668251297",
+      "type": "text",
+      "category": "AI Horde Integrations Cont'd"
+    },
+    "📱a1111-extension": {
+      "id": "1107648022642429993",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "📱quackertonai": {
+      "id": "1205644532230656050",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🧩blender": {
+      "id": "1107646967519129680",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🧩krita": {
+      "id": "1107636373789347870",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🧩sdnext": {
+      "id": "1161207788475785296",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "📱airis": {
+      "id": "1147488835236810862",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "📱skaya": {
+      "id": "1161570445024317452",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "📱flutter-app": {
+      "id": "1107634131841601577",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "sdxl-bug-reports": {
+      "id": "1158098421111066705",
+      "type": "text",
+      "category": "AI Horde Retired Channels"
+    },
+    "horde-invites": {
+      "id": "1027513635691561021",
+      "type": "text",
+      "category": "AI Horde Retired Channels"
+    }
+  }
+}

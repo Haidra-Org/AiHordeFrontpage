@@ -1,0 +1,58 @@
+{
+  "_comment": "Maps item names (from the data JSONs) to their Discord channel names (from channels.json). The update_messages.py script uses this to resolve <#channel_id> references in embeds.",
+
+  "Artbot": "artbot",
+  "Lucid Creations": "lucid-creations",
+  "AI Scribbles": "ai-scribbles",
+  "Aislingeach": "aislingeach",
+  "HordeNG": "horde-ng",
+  "AI Painter": "aipainter",
+  "BreadImagine": "breadimagine",
+  "HordeQT": "hordeqt",
+  "Justaaa": "justaaa",
+  "Stable UI": "stable-ui",
+  "AiBrush": "aibrush",
+  "AI Studio": "ai-studio",
+  "Artificial Art": "artificial-art",
+  "ComicsMaker": "comicsmaker",
+  "Aeionic Diffusion Deluxe": "aeionic-diffusion-deluxe",
+  "AI Horde CLI": "cli",
+
+  "KoboldAI Lite": "koboldai-lite",
+  "SillyTavern": "silly-tavern",
+  "Inneal": "inneal",
+  "AgnAIstic": "agnaistic",
+  "TavernAI": "tavernai",
+  "KoboldAI Client": "koboldai-client",
+
+  "CraiyonArt Bot": "craiyon-bot",
+  "Discord Bot": "discord-official",
+  "DreamDiffusion": "dreamdiffusion",
+  "Image Synth": "image-synth",
+  "Imaginarium": "imaginarium",
+  "Ketsuna": "ketsuna",
+  "Lemmy Bot": "lemmy",
+  "Mastodon Bot": "mastodon",
+  "SolidBooruAI": "solidbooru-ai",
+  "Turing Bot": "turing-bot",
+  "DreamDiffusion": "dreamdiffusion",
+
+  "Foundry VTT plugin": "foundry-vtt",
+  "GIMP plugin": "g-i-m-p",
+  "Godot Engine plugin": "godot-engine",
+  "LibreOffice extension": "libre-office",
+  "Photoshop plugin": "photoshop",
+  "Unreal Engine plugin": "unreal-engine",
+  "Chrome accessibility": "genalt",
+
+  "horde-worker-reGen": "local-workers",
+
+  "AI Wallpaper Changer": "ai-wallpaper-changer",
+  "Ealain": "ealain",
+
+  "AI Roguelite": "ai-roguelite",
+  "NumerAI": "numerai",
+  "QuestSim": "questsim",
+  "Roll-E": "roll-e",
+  "Tensor Tales": "tensor-tales"
+}
