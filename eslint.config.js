@@ -15,6 +15,8 @@ module.exports = defineConfig(
       ".vscode/",
       "coverage/",
       ".husky/",
+      "src/shared/design-system/",
+      "docs/haidra-assets/",
     ],
   },
   {
@@ -83,6 +85,7 @@ module.exports = defineConfig(
     files: ["**/*.spec.ts"],
     plugins: { vitest },
     rules: {
+      ...vitest.configs.recommended.rules,
       "@angular-eslint/prefer-on-push-component-change-detection": "off",
       "@angular-eslint/component-selector": "off",
       "@angular-eslint/directive-selector": "off",
@@ -93,7 +96,13 @@ module.exports = defineConfig(
       "@typescript-eslint/no-unsafe-return": "off",
       "@typescript-eslint/no-floating-promises": "off",
       "@typescript-eslint/unbound-method": "off",
-      ...vitest.configs.recommended.rules,
+      "vitest/valid-title": [
+        "error",
+        {
+          ignoreTypeOfDescribeName: false,
+          allowArguments: true,
+        },
+      ],
     },
   },
 );
