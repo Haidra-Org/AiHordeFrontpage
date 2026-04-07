@@ -14,12 +14,12 @@
 @import "tailwindcss";
 
 /* =================================================================
-   SHARED DESIGN SYSTEM - Tokens and surface primitives
+   SHARED DESIGN SYSTEM - Tokens and all primitives
    Provided by horde-design-system (submodule at src/shared/design-system).
+   App files below may override specific classes for project needs.
    ================================================================= */
 @import "./shared/design-system/tokens/index.css";
-@import "./shared/design-system/primitives/surfaces.css";
-@import "./shared/design-system/primitives/badges.css";
+@import "./shared/design-system/primitives/index.css";
 
 /* =================================================================
    THEME LAYER - Project-specific design tokens and overrides

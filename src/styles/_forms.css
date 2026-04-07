@@ -1,23 +1,12 @@
 /* =================================================================
-   FORM STYLES
+   FORM STYLES — App overrides & extensions
    
-   Includes:
-   - Form labels
-   - Form inputs
-   - Checkboxes
-   - Filter components
+   Base form primitives (label, hint, checkbox, input/select/textarea,
+   validation states, grids) are provided by the shared design system.
+   This file contains AiHordeFrontpage-specific form patterns.
    ================================================================= */
 
 @layer components {
-  /* Form label */
-  .form-label {
-    @apply block mb-2 text-sm font-medium;
-    color: var(--color-text-primary);
-  }
-  .dark .form-label {
-    @apply text-gray-200;
-  }
-
   /* Form group container */
   .form-group {
     @apply flex flex-col gap-1.5;
@@ -209,23 +198,7 @@
     @apply flex items-center justify-between gap-3 flex-wrap;
   }
 
-  .form-checkbox {
-    @apply flex items-center gap-2;
-  }
-
-  .form-checkbox .checkbox-label {
-    @apply ml-0;
-  }
-
-  /* Form hint and error text */
-  .form-hint {
-    @apply m-0 text-xs;
-    color: var(--color-text-secondary);
-  }
-  .dark .form-hint {
-    @apply text-gray-400;
-  }
-
+  /* Override: form-input-error uses simplified border-only styling */
   .form-input-error {
     @apply border-red-500;
   }
@@ -259,81 +232,8 @@
     @apply min-w-0 items-center;
   }
 
-  /* Checkbox input - standard form checkbox */
-  .checkbox-input {
-    @apply w-4 h-4 text-blue-600 bg-gray-100 border border-gray-300 rounded;
-    @apply focus:outline-none focus:border-blue-600;
-    @apply dark:bg-gray-700 dark:border-gray-600;
-  }
-
-  .checkbox-input:focus {
-    box-shadow: 0 0 0 2px rgb(191 219 254);
-  }
-
-  .dark .checkbox-input:focus {
-    box-shadow: 0 0 0 2px rgb(30 58 138);
-  }
-
-  /* Checkbox label - label next to checkbox */
-  .checkbox-label {
-    @apply ml-2 text-sm font-medium text-gray-900 cursor-pointer;
-    @apply dark:text-gray-300;
-  }
-
-  /* =================================================================
-     FORM INPUT/SELECT/TEXTAREA
-     Unified styling for all form input elements
-     ================================================================= */
-
-  .form-input,
-  .form-select,
-  .form-textarea {
-    @apply py-2.5 px-3.5 text-sm rounded-lg transition-all duration-150;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border);
-    color: var(--color-text-primary);
-    box-shadow: var(--shadow-glass-inset), var(--shadow-glass);
-  }
-
   .form-input-wide {
     @apply w-full;
-  }
-
-  .form-input:focus,
-  .form-select:focus,
-  .form-textarea:focus {
-    @apply outline-none;
-    border-color: var(--color-brand-blue);
-    box-shadow:
-      0 0 0 3px rgb(59 130 246 / 0.15),
-      var(--shadow-glass-inset);
-  }
-
-  .dark .form-input,
-  .dark .form-select,
-  .dark .form-textarea {
-    background: rgb(31 41 55 / 0.55);
-    border-color: rgb(255 255 255 / 0.08);
-    color: rgb(229 231 235);
-    box-shadow:
-      inset 0 1px 1px rgb(255 255 255 / 0.06),
-      0 2px 8px rgb(0 0 0 / 0.2);
-  }
-
-  .dark .form-input:focus,
-  .dark .form-select:focus,
-  .dark .form-textarea:focus {
-    border-color: rgb(96 165 250 / 0.7);
-    box-shadow:
-      0 0 0 3px rgb(96 165 250 / 0.12),
-      inset 0 1px 1px rgb(255 255 255 / 0.06);
-  }
-
-  .form-input::placeholder,
-  .form-textarea::placeholder {
-    @apply text-gray-400;
   }
 
   /* Form input with unsaved changes - yellow border */
@@ -344,33 +244,6 @@
   .dark .form-select.form-input-changed,
   .dark .form-textarea.form-input-changed {
     @apply outline-2 outline-yellow-500 outline-offset-0;
-  }
-
-  /* Disabled form inputs - grayed out with striped pattern */
-  .form-input:disabled,
-  .form-select:disabled,
-  .form-textarea:disabled {
-    @apply opacity-60 cursor-not-allowed bg-gray-100 text-gray-500;
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(0, 0, 0, 0.03) 10px,
-      rgba(0, 0, 0, 0.03) 20px
-    );
-  }
-
-  .dark .form-input:disabled,
-  .dark .form-select:disabled,
-  .dark .form-textarea:disabled {
-    @apply bg-gray-800 text-gray-400;
-    background-image: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255, 255, 255, 0.05) 10px,
-      rgba(255, 255, 255, 0.05) 20px
-    );
   }
 
   /* Form field container for inputs with unlimited overlay */

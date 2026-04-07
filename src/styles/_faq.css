@@ -334,7 +334,7 @@
 
   /* Hero subtitle constraint */
   .faq-subtitle {
-    @apply mt-4 max-w-2xl;
+    @apply mt-4 max-w-3xl;
   }
 
   /* Section wrapper */

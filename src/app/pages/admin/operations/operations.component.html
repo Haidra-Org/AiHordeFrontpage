@@ -191,7 +191,7 @@
             />
             @if (addIPWarning()) {
               <p class="admin-text-warning text-sm mt-1">
-                <app-icon name="warning-triangle" class="admin-icon-inline" />
+                <app-icon name="warning-triangle" />
                 {{ addIPWarning() }}
               </p>
             }
@@ -326,8 +326,8 @@
     <p class="text-secondary mb-4">
       {{ "admin.operations.worker_block.description" | transloco }}
     </p>
-    <p class="admin-text-warning mb-4">
-      <app-icon name="warning-triangle" class="admin-icon-inline" />
+    <p class="admin-text-warning text-sm mt-1 mb-4">
+      <app-icon name="warning-triangle" />
       {{ "admin.operations.worker_block.active_workers_note" | transloco }}
     </p>
 
@@ -569,7 +569,7 @@
           }
           @if (workerFetchError()) {
             <p class="admin-text-warning text-sm mt-2">
-              <app-icon name="warning-triangle" class="admin-icon-inline" />
+              <app-icon name="warning-triangle" />
               {{ workerFetchError() }}
             </p>
           }

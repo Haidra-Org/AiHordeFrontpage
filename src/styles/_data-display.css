@@ -1,45 +1,13 @@
 /* =================================================================
-   DATA DISPLAY STYLES
+   DATA DISPLAY STYLES — App overrides & extensions
    
-   Reusable patterns for displaying data, stats, and key-value pairs.
-   
-   Includes:
-   - Data item (label + value pairs)
-   - Data grids (responsive column layouts)
-   - Highlight boxes (gradient backgrounds for emphasis)
-   - Section dividers (internal section borders)
-   - Avatar circles
-   - Loading skeletons/placeholders
-   - Worker cards and related components
+   Base data-display primitives (data-item, data-item-box, labels,
+   values, stat-column/item/text, grids, text-tabular) are provided
+   by the shared design system.
+   This file contains AiHordeFrontpage-specific extensions.
    ================================================================= */
 
 @layer components {
-  /* =================================================================
-     DATA ITEMS - Label + Value pairs
-     ================================================================= */
-
-  /* Base data item - vertical stack */
-  .data-item {
-    @apply flex flex-col;
-  }
-
-  /* Data item with background - glass stat box */
-  .data-item-box {
-    @apply flex flex-col p-3 rounded-lg;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.04);
-    transition: box-shadow var(--transition-normal) ease;
-  }
-
-  .dark .data-item-box {
-    background: rgb(55 65 81 / 0.35);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
-  }
-
   /* Clickable data-item-box — used for quick-nav asset links */
   a.data-item-box {
     @apply no-underline cursor-pointer items-center text-center;
@@ -76,83 +44,13 @@
       0 2px 10px rgb(251 191 36 / 0.14);
   }
 
-  /* Quick-nav grid: 3 equal columns on sm+, single column on mobile */
-  .quick-nav-grid {
-    @apply grid grid-cols-1 gap-3 sm:grid-cols-3;
-  }
-
   /* Active generation badge row */
   .active-gen-row {
     @apply flex flex-wrap items-center gap-2;
   }
 
-  /* =================================================================
-     STAT COLUMN - Glass card for homepage stat groupings
-     ================================================================= */
-
-  .stat-column {
-    @apply p-4 rounded-xl space-y-3;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-  }
-
-  .dark .stat-column {
-    background: rgb(31 41 55 / 0.45);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow:
-      0 4px 24px rgb(0 0 0 / 0.2),
-      0 1px 2px rgb(0 0 0 / 0.1);
-  }
-
-  /* Stat list item - icon + text row */
-  .stat-item {
-    @apply flex items-start gap-2;
-  }
-
-  /* Stat text block */
-  .stat-text {
-    @apply text-sm leading-relaxed text-gray-900;
-    @apply dark:text-white;
-  }
-
-  /* Bold label inside stat text */
-  .stat-text-label {
-    @apply font-medium;
-  }
-
-  /* Centered variant */
-  .data-item-centered {
-    @apply text-center items-center;
-  }
-
-  /* Data item label */
-  .data-label {
-    @apply text-base font-semibold text-content-secondary;
-    @apply dark:text-gray-400;
-  }
-
-  /* Data label with top margin - for spacing below values */
-  .data-label-spaced {
-    @apply text-xs text-content-secondary mt-1;
-    @apply dark:text-gray-300;
-  }
-
-  /* Data item value */
-  .data-value {
-    @apply font-semibold text-content-primary;
-    @apply dark:text-white;
-  }
-
   .kudos-balance-row {
     @apply mt-1 flex flex-wrap items-center gap-2;
-  }
-
-  /* Split metric value used in compact nested stat pairs (e.g. MPS/Tokens). */
-  .data-value-split {
-    @apply block mt-1;
   }
 
   /* =================================================================
@@ -243,22 +141,6 @@
     @apply text-green-700 dark:text-green-300;
   }
 
-  /* Tabular numeric text utility */
-  .text-tabular {
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Large data value - for prominent stats */
-  .data-value-lg {
-    @apply text-2xl font-bold text-content-primary;
-    @apply dark:text-white;
-  }
-
-  /* Extra large data value - for hero stats */
-  .data-value-xl {
-    @apply text-4xl font-extrabold text-brand-purple;
-  }
-
   /* Domain-tinted contexts: match the accent color for contrast */
   .domain-tint--image .data-value-xl {
     @apply text-purple-700 dark:text-purple-300;
@@ -275,16 +157,6 @@
   /* =================================================================
      DATA GRIDS - Responsive column layouts
      ================================================================= */
-
-  /* 2-column grid */
-  .data-grid-2 {
-    @apply grid grid-cols-2 gap-3;
-  }
-
-  /* 2-3 column responsive grid */
-  .data-grid-2-3 {
-    @apply grid grid-cols-2 gap-3 lg:grid-cols-3;
-  }
 
   /* ── Kudos breakdown: base grid (admin variant) ── */
   .kudos-breakdown {

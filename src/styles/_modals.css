@@ -1,25 +1,13 @@
 /* =================================================================
-   MODAL & DIALOG STYLES
+   MODAL & DIALOG STYLES — App overrides & extensions
    
-   Unified modal system for all dialogs and overlays.
-   Consolidates patterns from _admin.css and _cards.css.
-   
-   Includes:
-   - Modal overlay and backdrop
-   - Modal panel variants
-   - Modal content structure
-   - JSON/Code viewer dialogs
+   Base modal primitives (overlay, backdrop, panel, sizes, header,
+   scroll) are provided by the shared design system.
+   This file contains AiHordeFrontpage-specific dialog patterns
+   and overrides for modal content/actions layout.
    ================================================================= */
 
 @layer components {
-  /* =================================================================
-     MODAL OVERLAY
-     ================================================================= */
-
-  .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto;
-  }
-
   /* =================================================================
      NATIVE DIALOG WRAPPER
      Uses showModal() top-layer to escape stacking contexts (e.g. admin-content z-[1]).
@@ -44,88 +32,9 @@
     background-color: rgb(0 0 0 / 0.5);
   }
 
-  .modal-backdrop {
-    @apply fixed inset-0 -z-10;
-    background-color: rgb(0 0 0 / 0.5);
-  }
-
-  .modal-backdrop--blur {
-    @apply backdrop-blur-sm;
-  }
-
-  /* Higher z-index variant for nested modals */
-  .modal-overlay--high {
-    z-index: 9999;
-  }
-
-  .modal-overlay--high .modal-backdrop {
-    z-index: -1;
-  }
-
   /* =================================================================
-     MODAL PANEL BASE
+     MODAL CONTENT OVERRIDES — No CSS variable fallbacks (tokens always defined)
      ================================================================= */
-
-  .modal-panel {
-    @apply relative rounded-lg p-6 w-full overflow-y-auto;
-    background: var(--color-glass-surface-elevated);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    border: 1px solid var(--color-glass-border);
-    max-height: 80vh;
-    box-shadow: var(--shadow-glass-elevated);
-    z-index: 51;
-    margin: auto;
-  }
-
-  .dark .modal-panel {
-    background: rgb(31 41 55 / 0.75);
-    border-color: rgb(255 255 255 / 0.1);
-    box-shadow:
-      0 12px 40px rgb(0 0 0 / 0.4),
-      0 4px 8px rgb(0 0 0 / 0.2);
-  }
-
-  /* =================================================================
-     MODAL PANEL SIZE VARIANTS
-     ================================================================= */
-
-  .modal-panel--sm {
-    @apply max-w-sm;
-  }
-
-  .modal-panel--md {
-    @apply max-w-md;
-  }
-
-  .modal-panel--lg {
-    @apply max-w-xl;
-  }
-
-  .modal-panel--xl {
-    @apply max-w-3xl;
-    max-height: 85vh;
-  }
-
-  @media (min-width: 1024px) {
-    .modal-panel--xl {
-      @apply max-w-4xl;
-    }
-  }
-
-  .modal-panel--full {
-    max-width: calc(100vw - 2rem);
-    height: calc(100vh - 2rem);
-    max-height: none;
-  }
-
-  /* =================================================================
-     MODAL CONTENT STRUCTURE
-     ================================================================= */
-
-  .modal-header {
-    @apply flex items-center justify-between mb-4;
-  }
 
   .modal-title {
     @apply m-0 text-lg font-semibold;
@@ -146,14 +55,6 @@
     color: var(--color-content-primary);
   }
 
-  .dark .modal-close {
-    @apply text-gray-400;
-  }
-
-  .dark .modal-close:hover {
-    @apply bg-gray-700 text-white;
-  }
-
   .modal-body {
     @apply text-sm;
     color: var(--color-content-secondary);
@@ -167,18 +68,10 @@
     @apply m-0 mb-4;
   }
 
-  .modal-scroll {
-    @apply flex-1 overflow-y-auto pr-2 min-h-0;
-    max-height: 60vh;
-  }
-
+  /* Override: adds top border separator and larger spacing */
   .modal-actions {
     @apply flex justify-end gap-2 mt-6 pt-4;
     border-top: 1px solid var(--color-edge-primary);
-  }
-
-  .dark .modal-actions {
-    border-color: rgb(255 255 255 / 0.08);
   }
 
   .dark .modal-actions {

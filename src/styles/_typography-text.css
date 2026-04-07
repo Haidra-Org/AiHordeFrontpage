@@ -98,15 +98,7 @@
 /* ── Link Styles ─────────────────────────────────────────────── */
 
 @layer components {
-  /* Standard link */
-  .link {
-    @apply text-blue-600;
-    @apply dark:text-blue-500;
-
-    &:hover {
-      @apply underline;
-    }
-  }
+  /* Base .link provided by shared design system */
 
   /* Emphasized link for CTAs */
   .link-bold {

@@ -1,225 +1,44 @@
 /* =================================================================
-   BUTTON STYLES
+   BUTTON STYLES — App overrides & extensions
    
-   Includes:
-   - Primary button (blue)
-   - Purple button
-   - Source control button (muted)
-   - Danger button (red)
-   - Warning button (yellow)
-   - Muted button (gray)
-   - Icon buttons
-   - Size variants
+   Base button variants (primary, purple, source-control, muted, danger,
+   warning, icon, sizes, groups) are provided by the shared design system.
+   This file contains only AiHordeFrontpage-specific overrides and additions.
    ================================================================= */
 
 @layer components {
   /* =================================================================
-     PRIMARY BUTTONS
+     SECONDARY BUTTON — Override: different color palette from design system
      ================================================================= */
 
-  /* Primary button - Blue branded button */
-  .btn-primary {
-    @apply inline-flex items-center gap-2;
-    @apply px-5 py-2.5;
-    @apply text-sm font-medium text-white text-center;
-    @apply bg-brand-blue rounded-lg;
-    @apply transition-colors duration-200;
-    @apply hover:bg-brand-blue-hover;
-    @apply focus:outline-none;
-    @apply dark:bg-blue-600 dark:hover:bg-brand-blue;
-  }
-
-  /* Error state for primary button — indicates validation failure */
-  .btn-primary--error {
-    @apply bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800;
-    @apply ring-2 ring-red-400 ring-offset-1 dark:ring-red-500;
-    animation: btn-shake 0.35s ease;
-  }
-
-  @keyframes btn-shake {
-    0%,
-    100% {
-      transform: translateX(0);
-    }
-    20% {
-      transform: translateX(-4px);
-    }
-    40% {
-      transform: translateX(4px);
-    }
-    60% {
-      transform: translateX(-3px);
-    }
-    80% {
-      transform: translateX(3px);
-    }
-  }
-
-  .btn-primary:focus {
-    box-shadow: var(--shadow-focus-blue);
-  }
-
-  .dark .btn-primary:focus {
-    box-shadow: var(--shadow-focus-blue-dark);
-  }
-
-  .btn-primary .icon {
-    @apply w-5 h-5 shrink-0;
-  }
-
-  /* Purple button - Purple branded button */
-  .btn-purple {
-    @apply inline-flex items-center gap-2;
-    @apply px-5 py-2.5;
-    @apply text-sm font-medium text-white text-center;
-    @apply bg-brand-purple rounded-lg;
-    @apply transition-colors duration-200;
-    @apply hover:bg-brand-purple-hover;
-    @apply focus:outline-none;
-  }
-
-  .btn-purple:focus {
-    box-shadow: var(--shadow-focus-purple);
-  }
-
-  .dark .btn-purple:focus {
-    box-shadow: var(--shadow-focus-purple-dark);
-  }
-
-  .btn-purple .icon {
-    @apply w-5 h-5 shrink-0;
-  }
-
-  /* =================================================================
-     SECONDARY / MUTED BUTTONS
-     ================================================================= */
-
-  /* Source control button - Muted/drab style for secondary actions */
-  .btn-source-control {
+  .btn-secondary {
     @apply inline-flex items-center gap-2;
     @apply px-5 py-2.5;
     @apply text-sm font-medium text-center;
-    @apply text-gray-600 bg-gray-200 rounded-lg;
+    @apply text-gray-700 bg-gray-100 rounded-lg;
     @apply transition-colors duration-200;
-    @apply hover:bg-gray-300 hover:text-gray-700;
+    @apply hover:bg-gray-200 hover:text-gray-900;
     @apply focus:outline-none;
-    @apply dark:text-gray-400 dark:bg-gray-700;
-    @apply dark:hover:bg-gray-600 dark:hover:text-gray-300;
+    @apply dark:text-gray-300 dark:bg-gray-700;
+    @apply dark:hover:bg-gray-600 dark:hover:text-white;
   }
 
-  .btn-source-control:focus {
-    box-shadow: 0 0 0 4px rgb(229 231 235 / 0.5);
+  .btn-secondary:focus {
+    box-shadow: 0 0 0 4px rgb(156 163 175 / 0.5);
   }
 
-  .dark .btn-source-control:focus {
-    box-shadow: 0 0 0 4px rgb(55 65 81 / 0.5);
+  .dark .btn-secondary:focus {
+    box-shadow: 0 0 0 4px rgb(75 85 99 / 0.5);
   }
 
-  .btn-source-control .icon {
-    @apply w-5 h-5 shrink-0;
-  }
-
-  /* Muted button - Gray secondary button */
-  .btn-muted {
-    @apply py-2 px-4 text-sm font-medium rounded-lg transition-colors duration-200;
-    color: var(--color-content-secondary);
-    background-color: var(--color-surface-secondary);
-  }
-
-  .btn-muted:hover {
-    background-color: var(--color-edge-primary);
-    color: var(--color-content-primary);
-  }
-
-  .dark .btn-muted {
-    @apply text-gray-300 bg-gray-700;
-  }
-
-  .dark .btn-muted:hover {
-    @apply bg-gray-600 text-white;
-  }
-
-  .btn-muted:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  /* =================================================================
-     DANGER / WARNING BUTTONS
-     ================================================================= */
-
-  /* Danger button for destructive actions */
-  .btn-danger {
-    @apply py-2 px-4 text-sm font-medium text-white bg-red-600 rounded-lg transition-colors duration-200;
-  }
-
-  .btn-danger:hover:not(:disabled) {
-    @apply bg-red-700;
-  }
-
-  .btn-danger:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  /* Warning button for cautionary actions (e.g., undelete) */
-  .btn-warning {
-    @apply inline-flex items-center gap-2;
-    @apply px-5 py-2.5;
-    @apply text-sm font-medium text-center;
-    @apply bg-yellow-500 text-gray-900 rounded-lg;
-    @apply transition-colors duration-200;
-    @apply hover:bg-yellow-600;
-    @apply focus:outline-none;
-  }
-
-  .btn-warning:focus {
-    box-shadow: 0 0 0 4px rgb(234 179 8 / 0.5);
-  }
-
-  .dark .btn-warning:focus {
-    box-shadow: 0 0 0 4px rgb(234 179 8 / 0.3);
-  }
-
-  .btn-warning:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  .btn-warning .icon {
+  .btn-secondary .icon {
     @apply w-5 h-5 shrink-0;
   }
 
   /* =================================================================
-     ICON BUTTONS
+     JSON INSPECTOR BUTTON — Low-prominence power-user affordance
      ================================================================= */
 
-  /* Icon button - square button with icon only */
-  .btn-icon {
-    @apply inline-flex items-center justify-center p-2 rounded-lg transition-colors duration-200;
-    color: var(--color-content-secondary);
-    background-color: var(--color-surface-secondary);
-  }
-
-  .btn-icon:hover {
-    background-color: var(--color-edge-primary);
-    color: var(--color-content-primary);
-  }
-
-  .dark .btn-icon {
-    @apply text-gray-400 bg-gray-700;
-  }
-
-  .dark .btn-icon:hover {
-    @apply bg-gray-600 text-white;
-  }
-
-  .btn-icon:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  .btn-icon .icon {
-    @apply w-5 h-5;
-  }
-
-  /* JSON inspector trigger - intentionally low-prominence power-user affordance */
   .btn-json-inspector {
     @apply inline-flex items-center justify-center rounded-md p-1.5 transition-colors duration-150;
     color: var(--color-content-tertiary);
@@ -262,26 +81,10 @@
     @apply opacity-50 cursor-not-allowed;
   }
 
-  /* Icon button with danger hover */
-  .btn-icon-danger {
-    color: var(--color-content-secondary);
-  }
-
-  .btn-icon-danger:hover {
-    @apply text-red-600;
-    background-color: rgb(254 226 226);
-  }
-
-  .dark .btn-icon-danger:hover {
-    @apply text-red-400;
-    background-color: rgb(127 29 29 / 0.3);
-  }
-
   /* =================================================================
-     CONTEXTUAL BUTTONS (for specific actions)
+     CONTEXTUAL BUTTONS — Color-coded for specific action types
      ================================================================= */
 
-  /* Blue contextual - for models/info actions */
   .btn-contextual--blue {
     @apply text-blue-600 hover:bg-blue-100;
   }
@@ -290,7 +93,6 @@
     @apply text-blue-400 hover:bg-blue-900/30;
   }
 
-  /* Yellow contextual - for maintenance/warning actions */
   .btn-contextual--yellow {
     @apply text-yellow-700 hover:bg-yellow-100;
   }
@@ -299,7 +101,6 @@
     @apply text-yellow-400 hover:bg-yellow-900/30;
   }
 
-  /* Red contextual - for pause/stop actions */
   .btn-contextual--red {
     @apply text-red-600 hover:bg-red-100;
   }
@@ -308,7 +109,6 @@
     @apply text-red-400 hover:bg-red-900/30;
   }
 
-  /* Green contextual - for resume/start actions */
   .btn-contextual--green {
     @apply text-green-600 hover:bg-green-100;
   }
@@ -318,36 +118,10 @@
   }
 
   /* =================================================================
-     SIZE VARIANTS
-     ================================================================= */
-
-  .btn-xs {
-    @apply px-2 py-1 text-xs;
-  }
-
-  .btn-sm {
-    @apply px-3 py-1.5 text-xs whitespace-nowrap shrink-0;
-  }
-
-  .btn-md {
-    @apply px-4 py-2 text-sm whitespace-nowrap shrink-0;
-  }
-
-  /* =================================================================
      SPECIAL BUTTONS
      ================================================================= */
 
-  /* Responsive button - full width on mobile, auto on larger */
-  .btn-responsive {
-    @apply w-full sm:w-auto;
-  }
-
-  /* Disabled button state */
-  .btn-disabled {
-    @apply cursor-not-allowed bg-gray-600 text-gray-500;
-  }
-
-  /* Fixed save button - rendered inside the floating-controls container. */
+  /* Fixed save button - rendered inside the floating-controls container */
   .btn-save-fixed {
     @apply py-3 px-6 text-base font-semibold text-white bg-green-600 rounded-lg shadow-lg transition-all duration-200;
     outline: 3px solid rgb(234 179 8);
@@ -381,21 +155,9 @@
   }
 
   /* =================================================================
-     BUTTON GROUPS - Responsive button layouts
+     BUTTON GROUP OVERRIDE — Adds worker-btn mobile breakpoint
      ================================================================= */
 
-  /* Horizontal button group - stacks on mobile, row on larger */
-  .btn-group {
-    @apply flex flex-col gap-4;
-    @apply sm:flex-row;
-  }
-
-  /* Centered button group */
-  .btn-group--center {
-    @apply justify-center;
-  }
-
-  /* Always-horizontal compact button group - stays in a row at all widths */
   .btn-group--inline {
     @apply flex flex-row flex-wrap gap-1;
 
@@ -404,33 +166,5 @@
         @apply px-2.5 py-1 text-xs;
       }
     }
-  }
-
-  /* =================================================================
-     SECONDARY BUTTON (outline/soft style)
-     ================================================================= */
-
-  .btn-secondary {
-    @apply inline-flex items-center gap-2;
-    @apply px-5 py-2.5;
-    @apply text-sm font-medium text-center;
-    @apply text-gray-700 bg-gray-100 rounded-lg;
-    @apply transition-colors duration-200;
-    @apply hover:bg-gray-200 hover:text-gray-900;
-    @apply focus:outline-none;
-    @apply dark:text-gray-300 dark:bg-gray-700;
-    @apply dark:hover:bg-gray-600 dark:hover:text-white;
-  }
-
-  .btn-secondary:focus {
-    box-shadow: 0 0 0 4px rgb(156 163 175 / 0.5);
-  }
-
-  .dark .btn-secondary:focus {
-    box-shadow: 0 0 0 4px rgb(75 85 99 / 0.5);
-  }
-
-  .btn-secondary .icon {
-    @apply w-5 h-5 shrink-0;
   }
 }
