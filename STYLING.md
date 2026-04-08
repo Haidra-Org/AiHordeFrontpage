@@ -1,6 +1,6 @@
 # Styling Guide
 
-Styling conventions for the AI Horde frontend. For the full design token reference and surface system, see [docs/design-system.md](docs/design-system.md). For the CSS class catalog, see [docs/component-patterns.md](docs/component-patterns.md).
+Styling conventions for the AI Horde frontend. This project consumes the [shared Horde design system](src/shared/design-system/) as its foundation. For the shared design token reference and surface system, see [the design system docs](src/shared/design-system/docs/design-system.md). For the shared CSS class catalog, see [the design system component patterns](src/shared/design-system/docs/component-patterns.md). For AiHordeFrontpage-specific patterns, see [docs/design-system.md](docs/design-system.md) and [docs/component-patterns.md](docs/component-patterns.md).
 
 ---
 

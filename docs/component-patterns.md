@@ -1,6 +1,8 @@
-# CSS Component Patterns
+# CSS Component Patterns — AiHordeFrontpage
 
-Class catalog for the AI Horde frontend design system. For design philosophy, tokens, and surface primitives, see [design-system.md](design-system.md). For high-level rules and file organization, see [STYLING.md](../STYLING.md).
+> **Shared primitives**: The base CSS class catalog (buttons, badges, alerts, forms, modals, cards, typography, tables, tabs, tooltips, data display) is documented in the [shared design system](../src/shared/design-system/docs/component-patterns.md). This document covers the **full class inventory** as consumed by AiHordeFrontpage, including project-specific extensions and overrides.
+
+Class catalog for the AI Horde frontend. For design philosophy, tokens, and surface primitives, see [design-system.md](design-system.md). For high-level rules and file organization, see [STYLING.md](../STYLING.md).
 
 - [CSS Component Patterns](#css-component-patterns)
   - [Cards (`_cards.css`)](#cards-_cardscss)

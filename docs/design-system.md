@@ -1,6 +1,6 @@
-# Design System Reference
+# Design System Reference — AiHordeFrontpage
 
-This document covers the visual foundation of the AI Horde frontend: design tokens, surface primitives, color system, and form structures. For the higher-level principles and file organization, see [STYLING.md](../STYLING.md). For the CSS class catalog, see [component-patterns.md](component-patterns.md).
+> **Shared foundation**: The core design ethic, token reference, surface primitives, color system, form primitives, and accessibility requirements are documented in the [shared design system](../src/shared/design-system/docs/design-system.md). This document covers **AiHordeFrontpage-specific** extensions and patterns built on top of that foundation. For the CSS class catalog, see [component-patterns.md](component-patterns.md).
 
 - [Design System Reference](#design-system-reference)
   - [Design Ethic: Glassmorphism \& Depth](#design-ethic-glassmorphism--depth)
