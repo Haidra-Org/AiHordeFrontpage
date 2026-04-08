@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/admin.guard';
+import { environment } from '../environments/environment';
 
 export const routes: Routes = [
   {
@@ -105,6 +106,12 @@ export const routes: Routes = [
     path: 'joining',
     redirectTo: 'contribute/workers',
     pathMatch: 'full',
+  },
+  {
+    path: 'rate',
+    canMatch: [() => environment.features.ratingsPage],
+    loadComponent: () =>
+      import('./pages/rate/rate.component').then((c) => c.RateComponent),
   },
   {
     path: 'v2-transfer',

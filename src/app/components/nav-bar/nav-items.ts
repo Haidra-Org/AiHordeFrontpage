@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { NavItem } from './nav-item';
 
 export const NAV_ITEMS: NavItem[] = [
@@ -20,6 +21,9 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { labelKey: 'faq', routerLink: '/faq/' },
+  ...(environment.features.ratingsPage
+    ? [{ labelKey: 'rate', routerLink: '/rate/' } as NavItem]
+    : []),
   { labelKey: 'api', href: '/api/' },
   {
     labelKey: 'nav.active_details',

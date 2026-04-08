@@ -1,0 +1,222 @@
+/* =================================================================
+   RATE PAGE STYLES
+   
+   Rating page layout: info cards, image display,
+   rating/artifact scale buttons, reward banner.
+   ================================================================= */
+
+@layer components {
+  /* ── Info row ───────────────────────────────────────────────────── */
+
+  .rate-info-row {
+    @apply flex flex-col gap-4 mb-8 sm:flex-row;
+  }
+
+  .rate-info-card {
+    @apply flex items-center gap-3 flex-1 rounded-xl px-5 py-4 text-sm;
+    background-color: var(--color-surface-secondary);
+    border: 1px solid var(--color-edge-primary);
+    color: var(--color-content-secondary);
+  }
+
+  .dark .rate-info-card {
+    @apply bg-gray-800/60 border-gray-700 text-gray-300;
+  }
+
+  .rate-info-card-warning {
+    background-color: var(--color-warning-bg);
+    border-color: var(--color-warning-border);
+    color: var(--color-warning-text);
+  }
+
+  .dark .rate-info-card-warning {
+    @apply bg-yellow-900/30 border-yellow-700/40 text-yellow-300;
+  }
+
+  .rate-info-icon {
+    @apply w-5 h-5 shrink-0;
+  }
+
+  /* ── Reward banner ──────────────────────────────────────────────── */
+
+  .rate-reward-banner {
+    @apply flex items-center gap-3 rounded-xl px-5 py-4 mb-8 text-sm font-medium;
+    background-color: var(--color-success-bg);
+    border: 1px solid var(--color-success-border);
+    color: var(--color-success-text);
+    animation: rate-reward-pop 0.3s ease-out;
+  }
+
+  .dark .rate-reward-banner {
+    @apply bg-green-900/30 border-green-700/40 text-green-300;
+  }
+
+  .rate-reward-icon {
+    @apply w-5 h-5 shrink-0 text-yellow-500;
+  }
+
+  @keyframes rate-reward-pop {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ── Loading ────────────────────────────────────────────────────── */
+
+  .rate-loading {
+    @apply flex flex-col items-center justify-center gap-3 py-16 text-content-secondary;
+  }
+
+  .rate-spinner {
+    @apply w-8 h-8 animate-spin;
+  }
+
+  .rate-btn-spinner {
+    @apply w-4 h-4 animate-spin mr-2;
+  }
+
+  /* ── Image display ──────────────────────────────────────────────── */
+
+  .rate-image-wrapper {
+    @apply flex justify-center mb-8 rounded-xl overflow-hidden;
+    background-color: var(--color-surface-tertiary);
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .rate-image-wrapper {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  .rate-image {
+    @apply max-w-full max-h-[70vh] object-contain;
+  }
+
+  /* ── Fieldset / Legend ──────────────────────────────────────────── */
+
+  .rate-fieldset {
+    @apply border-0 p-0 mb-8;
+  }
+
+  .rate-legend {
+    @apply flex items-center gap-2 text-lg font-semibold mb-2;
+    color: var(--color-content-primary);
+  }
+
+  .dark .rate-legend {
+    @apply text-white;
+  }
+
+  .rate-legend-icon {
+    @apply w-5 h-5;
+  }
+
+  .rate-scale-hint {
+    @apply text-sm mb-4;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .rate-scale-hint {
+    @apply text-gray-400;
+  }
+
+  /* ── Scale buttons ──────────────────────────────────────────────── */
+
+  .rate-scale {
+    @apply grid gap-2;
+    grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  }
+
+  .rate-scale-artifacts {
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  }
+
+  .rate-scale-btn {
+    @apply flex flex-col items-center gap-1 rounded-xl px-3 py-3 cursor-pointer;
+    @apply transition-all duration-150 ease-in-out;
+    @apply border-2 border-transparent;
+    background-color: var(--color-surface-secondary);
+    color: var(--color-content-secondary);
+  }
+
+  .dark .rate-scale-btn {
+    @apply bg-gray-800 text-gray-400;
+  }
+
+  .rate-scale-btn:hover {
+    @apply border-blue-300 shadow-sm;
+    background-color: var(--color-surface-tertiary);
+  }
+
+  .dark .rate-scale-btn:hover {
+    @apply border-blue-600 bg-gray-700;
+  }
+
+  .rate-scale-btn:focus-visible {
+    @apply outline-2 outline-offset-2 outline-blue-500;
+  }
+
+  .rate-scale-value {
+    @apply text-xl font-bold leading-none;
+    color: var(--color-content-primary);
+  }
+
+  .dark .rate-scale-value {
+    @apply text-white;
+  }
+
+  .rate-scale-label {
+    @apply text-xs text-center leading-tight;
+  }
+
+  /* ── Selected state ─────────────────────────────────────────────── */
+
+  .rate-scale-btn-selected {
+    @apply border-blue-500 shadow-md ring-2 ring-blue-200;
+    background-color: var(--color-blue-50);
+  }
+
+  .dark .rate-scale-btn-selected {
+    @apply border-blue-400 ring-blue-900 bg-blue-900/40 text-blue-200;
+  }
+
+  .dark .rate-scale-btn-selected .rate-scale-value {
+    @apply text-blue-100;
+  }
+
+  /* ── Semantic color hints (subtle background tint) ──────────────── */
+
+  .rate-scale-btn-low:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(239 68 68 / 0.3);
+  }
+
+  .rate-scale-btn-mid:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(234 179 8 / 0.3);
+  }
+
+  .rate-scale-btn-high:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(34 197 94 / 0.3);
+  }
+
+  .rate-scale-btn-artifact-good:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(34 197 94 / 0.3);
+  }
+
+  .rate-scale-btn-artifact-mid:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(234 179 8 / 0.3);
+  }
+
+  .rate-scale-btn-artifact-bad:not(.rate-scale-btn-selected) {
+    border-left: 3px solid rgb(239 68 68 / 0.3);
+  }
+
+  /* ── Actions bar ────────────────────────────────────────────────── */
+
+  .rate-actions {
+    @apply flex items-center gap-4 justify-center pt-4 pb-12;
+  }
+}

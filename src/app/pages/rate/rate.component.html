@@ -1,0 +1,194 @@
+<!-- Page Header -->
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-hero">
+        {{ "rate.title" | transloco }}
+      </h1>
+      <p class="text-description">
+        {{ "rate.description" | transloco }}
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content -->
+<section class="section-secondary">
+  <div class="container-content-sm">
+    <!-- Info Cards -->
+    <div class="rate-info-row">
+      <!-- Login Status -->
+      <div class="rate-info-card">
+        <app-icon
+          [name]="auth.isLoggedIn() ? 'user-circle' : 'user-simple'"
+          class="rate-info-icon"
+          aria-hidden="true"
+        />
+        @if (auth.isLoggedIn()) {
+          <span>{{
+            "rate.logged_in_as"
+              | transloco: { username: auth.currentUser()!.username }
+          }}</span>
+        } @else {
+          <span>{{ "rate.rating_anonymously" | transloco }}</span>
+        }
+      </div>
+
+      <!-- Captcha Info -->
+      <div class="rate-info-card rate-info-card-warning">
+        <app-icon
+          name="alert-triangle"
+          class="rate-info-icon"
+          aria-hidden="true"
+        />
+        <span>{{ "rate.captcha_info" | transloco }}</span>
+      </div>
+    </div>
+
+    <!-- Reward Banner -->
+    @if (lastReward() !== null) {
+      <div class="rate-reward-banner" role="status">
+        <app-icon
+          name="lightning"
+          class="rate-reward-icon"
+          aria-hidden="true"
+        />
+        <span>{{
+          "rate.reward_earned" | transloco: { kudos: lastReward() }
+        }}</span>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if (error()) {
+      <div class="callout callout-error" role="alert">
+        <p>{{ error()! | transloco }}</p>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading()) {
+      <div class="rate-loading" aria-live="polite">
+        <app-icon name="spinner" class="rate-spinner" aria-hidden="true" />
+        <span>{{ "rate.loading" | transloco }}</span>
+      </div>
+    }
+
+    <!-- Image & Rating Form -->
+    @if (currentImage(); as image) {
+      @if (!isLoading()) {
+        <!-- Image Display -->
+        <div class="rate-image-wrapper">
+          <img
+            [src]="image.url"
+            alt="{{ 'rate.image_alt' | transloco }}"
+            class="rate-image"
+          />
+        </div>
+
+        <!-- Rating Scale -->
+        <fieldset class="rate-fieldset">
+          <legend class="rate-legend">
+            <app-icon name="star" class="rate-legend-icon" aria-hidden="true" />
+            {{ "rate.rating_label" | transloco }}
+          </legend>
+          <p class="rate-scale-hint">{{ "rate.rating_hint" | transloco }}</p>
+          <div
+            class="rate-scale"
+            role="radiogroup"
+            aria-label="{{ 'rate.rating_label' | transloco }}"
+          >
+            @for (option of ratingOptions; track option.value) {
+              <button
+                type="button"
+                class="rate-scale-btn"
+                [class.rate-scale-btn-selected]="
+                  selectedRating() === option.value
+                "
+                [class.rate-scale-btn-low]="option.value <= 3"
+                [class.rate-scale-btn-mid]="
+                  option.value >= 4 && option.value <= 6
+                "
+                [class.rate-scale-btn-high]="option.value >= 7"
+                [attr.aria-pressed]="selectedRating() === option.value"
+                (click)="selectRating(option.value)"
+              >
+                <span class="rate-scale-value">{{ option.value }}</span>
+                <span class="rate-scale-label">{{
+                  option.labelKey | transloco
+                }}</span>
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        <!-- Artifacts Scale -->
+        <fieldset class="rate-fieldset">
+          <legend class="rate-legend">
+            <app-icon
+              name="exclamation-circle"
+              class="rate-legend-icon"
+              aria-hidden="true"
+            />
+            {{ "rate.artifacts_label" | transloco }}
+          </legend>
+          <p class="rate-scale-hint">{{ "rate.artifacts_hint" | transloco }}</p>
+          <div
+            class="rate-scale rate-scale-artifacts"
+            role="radiogroup"
+            aria-label="{{ 'rate.artifacts_label' | transloco }}"
+          >
+            @for (option of artifactOptions; track option.value) {
+              <button
+                type="button"
+                class="rate-scale-btn"
+                [class.rate-scale-btn-selected]="
+                  selectedArtifacts() === option.value
+                "
+                [class.rate-scale-btn-artifact-good]="option.value <= 1"
+                [class.rate-scale-btn-artifact-mid]="
+                  option.value >= 2 && option.value <= 3
+                "
+                [class.rate-scale-btn-artifact-bad]="option.value >= 4"
+                [attr.aria-pressed]="selectedArtifacts() === option.value"
+                (click)="selectArtifacts(option.value)"
+              >
+                <span class="rate-scale-value">{{ option.value }}</span>
+                <span class="rate-scale-label">{{
+                  option.labelKey | transloco
+                }}</span>
+              </button>
+            }
+          </div>
+        </fieldset>
+
+        <!-- Actions -->
+        <div class="rate-actions">
+          <button
+            type="button"
+            class="btn btn-primary btn-lg"
+            [disabled]="!canSubmit()"
+            (click)="submitRating()"
+          >
+            @if (isSubmitting()) {
+              <app-icon
+                name="spinner"
+                class="rate-btn-spinner"
+                aria-hidden="true"
+              />
+            }
+            {{ "rate.submit" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-muted"
+            [disabled]="isSubmitting()"
+            (click)="skipImage()"
+          >
+            {{ "rate.skip" | transloco }}
+          </button>
+        </div>
+      }
+    }
+  </div>
+</section>
