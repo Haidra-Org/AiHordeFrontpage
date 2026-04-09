@@ -1,1 +1,0 @@
-import{Y as t,ta as n}from"./chunk-JY76NJWG.js";function i(){let e=t(n).nativeElement;if(!(e instanceof HTMLElement))throw new Error("Directive/component host is not an HTMLElement");return e}export{i as a};
