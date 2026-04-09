@@ -33,52 +33,6 @@
   }
 
   /* =================================================================
-     MODAL CONTENT OVERRIDES — No CSS variable fallbacks (tokens always defined)
-     ================================================================= */
-
-  .modal-title {
-    @apply m-0 text-lg font-semibold;
-    color: var(--color-content-primary);
-  }
-
-  .dark .modal-title {
-    @apply text-white;
-  }
-
-  .modal-close {
-    @apply p-2 rounded-lg transition-colors duration-150;
-    color: var(--color-content-secondary);
-  }
-
-  .modal-close:hover {
-    background-color: var(--color-surface-secondary);
-    color: var(--color-content-primary);
-  }
-
-  .modal-body {
-    @apply text-sm;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .modal-body {
-    @apply text-gray-400;
-  }
-
-  .modal-body p {
-    @apply m-0 mb-4;
-  }
-
-  /* Override: adds top border separator and larger spacing */
-  .modal-actions {
-    @apply flex justify-end gap-2 mt-6 pt-4;
-    border-top: 1px solid var(--color-edge-primary);
-  }
-
-  .dark .modal-actions {
-    @apply border-gray-700;
-  }
-
-  /* =================================================================
      JSON/CODE VIEWER DIALOG
      ================================================================= */
 

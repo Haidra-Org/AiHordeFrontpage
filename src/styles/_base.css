@@ -29,52 +29,10 @@
   }
 }
 
-@layer utilities {
-  /* Screen reader only text - for accessibility */
-  .sr-only {
-    @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap;
-    clip: rect(0, 0, 0, 0);
-    border-width: 0;
-  }
-}
-
 @layer components {
   /* Body scroll lock for mobile menu */
   body.overflow-hidden {
     @apply overflow-hidden lg:overflow-auto;
-  }
-}
-
-/* Global keyframes */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-10px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
   }
 }
 

@@ -150,10 +150,6 @@
     @apply flex flex-wrap gap-4;
   }
 
-  .form-field {
-    @apply flex flex-col gap-1.5 flex-1 min-w-64;
-  }
-
   .form-field-half {
     @apply flex-1 min-w-72;
   }
@@ -196,11 +192,6 @@
 
   .form-actions-bar {
     @apply flex items-center justify-between gap-3 flex-wrap;
-  }
-
-  /* Override: form-input-error uses simplified border-only styling */
-  .form-input-error {
-    @apply border-red-500;
   }
 
   /* Dimmed state for unset/empty optional fields */

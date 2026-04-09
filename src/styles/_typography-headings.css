@@ -24,21 +24,9 @@
     @apply dark:text-white;
   }
 
-  /* Card heading - h3 for card components */
-  .heading-card {
-    @apply mb-4 text-2xl font-semibold text-content-primary;
-    @apply dark:text-white;
-  }
-
   /* Card heading item - h3 for list items */
   .heading-item {
     @apply text-lg font-semibold text-gray-900;
-    @apply dark:text-white;
-  }
-
-  /* Section heading (h2) */
-  .heading-section {
-    @apply text-3xl font-extrabold tracking-tight text-content-primary;
     @apply dark:text-white;
   }
 

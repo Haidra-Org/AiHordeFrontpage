@@ -1000,7 +1000,8 @@
   }
 
   .filter-search {
-    @apply flex-1 min-w-48 max-w-md;
+    @apply flex-1 min-w-48;
+    max-width: 28rem;
   }
 
   .filter-type-select {
@@ -1082,7 +1083,8 @@
 
   /* Truncated description */
   .data-table-truncate {
-    @apply max-w-xs overflow-hidden text-ellipsis whitespace-nowrap;
+    max-width: 20rem;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
 
   /* Action buttons cell */

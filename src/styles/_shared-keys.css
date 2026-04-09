@@ -28,10 +28,6 @@
     @apply grid gap-5 mt-4;
   }
 
-  .alert-title {
-    @apply font-semibold mb-1;
-  }
-
   .alert-body {
     @apply m-0;
   }

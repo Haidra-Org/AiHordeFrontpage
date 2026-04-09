@@ -144,7 +144,8 @@
 
   .news-empty-state {
     @apply flex flex-col items-center justify-center py-16 text-center;
-    @apply max-w-md mx-auto;
+    max-width: 28rem;
+    @apply mx-auto;
   }
 
   .news-empty-icon-container {

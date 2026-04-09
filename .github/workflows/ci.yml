@@ -54,6 +54,20 @@ jobs:
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: npx tsc --noEmit -p tsconfig.spec.json
 
+  css-lint-duplicates:
+    name: CSS Lint (duplicate selector check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint:css
+
   test:
     name: Test
     runs-on: ubuntu-latest

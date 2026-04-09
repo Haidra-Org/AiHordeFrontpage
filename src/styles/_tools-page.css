@@ -40,7 +40,8 @@
 
   /* Search Input */
   .tools-search-wrapper {
-    @apply relative flex-1 min-w-48 max-w-md;
+    @apply relative flex-1 min-w-48;
+    max-width: 28rem;
   }
 
   .tools-search-icon {

@@ -8,34 +8,6 @@
 
 @layer components {
   /* =================================================================
-     SECONDARY BUTTON — Override: different color palette from design system
-     ================================================================= */
-
-  .btn-secondary {
-    @apply inline-flex items-center gap-2;
-    @apply px-5 py-2.5;
-    @apply text-sm font-medium text-center;
-    @apply text-gray-700 bg-gray-100 rounded-lg;
-    @apply transition-colors duration-200;
-    @apply hover:bg-gray-200 hover:text-gray-900;
-    @apply focus:outline-none;
-    @apply dark:text-gray-300 dark:bg-gray-700;
-    @apply dark:hover:bg-gray-600 dark:hover:text-white;
-  }
-
-  .btn-secondary:focus {
-    box-shadow: 0 0 0 4px rgb(156 163 175 / 0.5);
-  }
-
-  .dark .btn-secondary:focus {
-    box-shadow: 0 0 0 4px rgb(75 85 99 / 0.5);
-  }
-
-  .btn-secondary .icon {
-    @apply w-5 h-5 shrink-0;
-  }
-
-  /* =================================================================
      JSON INSPECTOR BUTTON — Low-prominence power-user affordance
      ================================================================= */
 

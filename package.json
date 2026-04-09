@@ -15,6 +15,7 @@
     "serve:ssr:AiHordeWebsite": "node dist/ai-horde-website/server/server.mjs",
     "deploy": "ng build && npx wrangler deploy",
     "lint": "ng lint",
+    "lint:css": "node scripts/lint-css-duplicates.mjs",
     "lint:fix": "ng lint --fix",
     "format": "prettier --write \"src/**/*.{ts,html,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css,json}\"",

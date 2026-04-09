@@ -336,11 +336,6 @@
     @apply inline-flex flex-wrap gap-1.5;
   }
 
-  /* Small badge variant */
-  .badge-sm {
-    @apply py-0.5 px-2 text-xs;
-  }
-
   /* =================================================================
      CODE BLOCK COMPACT
      ================================================================= */
