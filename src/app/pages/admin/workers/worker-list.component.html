@@ -453,6 +453,40 @@
           <app-icon name="chevron-down" class="icon-md" />
         }
       </button>
+
+      <!-- View Mode Toggle -->
+      <div
+        class="worker-view-toggle"
+        role="radiogroup"
+        [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
+      >
+        <button
+          type="button"
+          class="worker-view-btn"
+          [class.active]="workerViewMode() === 'card'"
+          (click)="workerViewMode.set('card')"
+          role="radio"
+          [attr.aria-checked]="workerViewMode() === 'card'"
+          [title]="'admin.workers.view_mode.card' | transloco"
+        >
+          <span class="worker-view-btn-content">
+            <app-icon name="squares-2x2" class="icon-sm" aria-hidden="true" />
+          </span>
+        </button>
+        <button
+          type="button"
+          class="worker-view-btn"
+          [class.active]="workerViewMode() === 'row'"
+          (click)="workerViewMode.set('row')"
+          role="radio"
+          [attr.aria-checked]="workerViewMode() === 'row'"
+          [title]="'admin.workers.view_mode.row' | transloco"
+        >
+          <span class="worker-view-btn-content">
+            <app-icon name="bars-4" class="icon-sm" aria-hidden="true" />
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -467,22 +501,49 @@
         <p>{{ "admin.workers.no_workers" | transloco }}</p>
       </div>
     } @else {
-      <!-- Worker Grid -->
-      <div class="worker-grid">
-        @for (worker of filteredWorkers(); track worker.id) {
-          <app-worker-card
-            [worker]="worker"
-            [isModerator]="auth.currentUser()?.moderator ?? false"
-            [viewMode]="viewMode()"
-            [pinHeaderOnMobile]="true"
-            [availableTeams]="teams()"
-            [highlighted]="isWorkerHighlighted(worker.id)"
-            (workerUpdated)="onWorkerUpdated()"
-            (workerDeleted)="onWorkerDeleted($event)"
-            (clearHighlight)="onHighlightCleared()"
-          />
-        }
-      </div>
+      @if (workerViewMode() === "card") {
+        <!-- Worker Grid (Card View) -->
+        <div class="worker-grid">
+          @for (worker of filteredWorkers(); track worker.id) {
+            <app-worker-card
+              [worker]="worker"
+              [isModerator]="auth.currentUser()?.moderator ?? false"
+              [viewMode]="viewMode()"
+              [pinHeaderOnMobile]="true"
+              [availableTeams]="teams()"
+              [highlighted]="isWorkerHighlighted(worker.id)"
+              (workerUpdated)="onWorkerUpdated()"
+              (workerDeleted)="onWorkerDeleted($event)"
+              (clearHighlight)="onHighlightCleared()"
+            />
+          }
+        </div>
+      } @else {
+        <!-- Worker Row List -->
+        <div class="worker-row-list">
+          @for (worker of filteredWorkers(); track worker.id) {
+            <app-worker-row
+              [worker]="worker"
+              [isModerator]="auth.currentUser()?.moderator ?? false"
+              [viewMode]="viewMode()"
+              [highlighted]="isWorkerHighlighted(worker.id)"
+              (openDetail)="openWorkerDetail($event)"
+            />
+          }
+        </div>
+      }
+
+      <!-- Worker Detail Modal (for row view clicks) -->
+      <app-worker-detail-modal
+        [open]="detailModalOpen()"
+        [worker]="selectedWorker()"
+        [isModerator]="auth.currentUser()?.moderator ?? false"
+        [viewMode]="viewMode()"
+        [availableTeams]="teams()"
+        (closed)="closeWorkerDetail()"
+        (workerUpdated)="onWorkerUpdated()"
+        (workerDeleted)="onWorkerDeleted($event)"
+      />
     }
   </div>
 </div>

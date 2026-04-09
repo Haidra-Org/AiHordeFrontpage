@@ -147,6 +147,45 @@
           </option>
         </select>
       </div>
+
+      <!-- View Mode Toggle -->
+      <div class="filter-field">
+        <span class="form-label">{{
+          "admin.workers.view_mode.card" | transloco
+        }}</span>
+        <div
+          class="worker-view-toggle"
+          role="radiogroup"
+          [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
+        >
+          <button
+            type="button"
+            class="worker-view-btn"
+            [class.active]="workerViewMode() === 'card'"
+            (click)="workerViewMode.set('card')"
+            role="radio"
+            [attr.aria-checked]="workerViewMode() === 'card'"
+            [title]="'admin.workers.view_mode.card' | transloco"
+          >
+            <span class="worker-view-btn-content">
+              <app-icon name="squares-2x2" class="icon-sm" aria-hidden="true" />
+            </span>
+          </button>
+          <button
+            type="button"
+            class="worker-view-btn"
+            [class.active]="workerViewMode() === 'row'"
+            (click)="workerViewMode.set('row')"
+            role="radio"
+            [attr.aria-checked]="workerViewMode() === 'row'"
+            [title]="'admin.workers.view_mode.row' | transloco"
+          >
+            <span class="worker-view-btn-content">
+              <app-icon name="bars-4" class="icon-sm" aria-hidden="true" />
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
 
     @if (loadingWorkers()) {
@@ -217,33 +256,13 @@
           />
         </h4>
         @if (!isWorkerTypeCollapsed(group.type)) {
-          <div class="worker-grid">
-            @for (workerEntry of group.workers; track workerEntry.id) {
-              @if (workerEntry.loading) {
-                <div class="skeleton-box" aria-busy="true">
-                  <p class="data-value text-sm break-all">
-                    {{ workerEntry.id }}
-                  </p>
-                  <div class="skeleton-bar skeleton-bar-sm"></div>
-                  <div class="skeleton-bar skeleton-bar-lg"></div>
-                  <p class="text-secondary text-sm">
-                    {{ "profile.loading_workers" | transloco }}
-                  </p>
-                </div>
-              } @else if (workerEntry.worker) {
-                @if (!loadingTeams()) {
-                  <app-worker-card
-                    [worker]="workerEntry.worker"
-                    [isModerator]="auth.currentUser()?.moderator ?? false"
-                    [pinHeaderOnMobile]="true"
-                    [availableTeams]="allTeams()"
-                    (workerUpdated)="onWorkerUpdated()"
-                    (workerDeleted)="onWorkerDeleted($event)"
-                  />
-                } @else {
+          @if (workerViewMode() === "card") {
+            <div class="worker-grid">
+              @for (workerEntry of group.workers; track workerEntry.id) {
+                @if (workerEntry.loading) {
                   <div class="skeleton-box" aria-busy="true">
                     <p class="data-value text-sm break-all">
-                      {{ workerEntry.worker.name }}
+                      {{ workerEntry.id }}
                     </p>
                     <div class="skeleton-bar skeleton-bar-sm"></div>
                     <div class="skeleton-bar skeleton-bar-lg"></div>
@@ -251,21 +270,66 @@
                       {{ "profile.loading_workers" | transloco }}
                     </p>
                   </div>
+                } @else if (workerEntry.worker) {
+                  @if (!loadingTeams()) {
+                    <app-worker-card
+                      [worker]="workerEntry.worker"
+                      [isModerator]="auth.currentUser()?.moderator ?? false"
+                      [pinHeaderOnMobile]="true"
+                      [availableTeams]="allTeams()"
+                      (workerUpdated)="onWorkerUpdated()"
+                      (workerDeleted)="onWorkerDeleted($event)"
+                    />
+                  } @else {
+                    <div class="skeleton-box" aria-busy="true">
+                      <p class="data-value text-sm break-all">
+                        {{ workerEntry.worker.name }}
+                      </p>
+                      <div class="skeleton-bar skeleton-bar-sm"></div>
+                      <div class="skeleton-bar skeleton-bar-lg"></div>
+                      <p class="text-secondary text-sm">
+                        {{ "profile.loading_workers" | transloco }}
+                      </p>
+                    </div>
+                  }
+                } @else {
+                  <div class="skeleton-box skeleton-box-dashed" role="status">
+                    <p class="data-value text-sm break-all">
+                      {{ workerEntry.id }}
+                    </p>
+                    <p class="text-secondary text-sm">
+                      {{ "profile.no_workers_found" | transloco }}
+                    </p>
+                  </div>
                 }
-              } @else {
-                <div class="skeleton-box skeleton-box-dashed" role="status">
-                  <p class="data-value text-sm break-all">
-                    {{ workerEntry.id }}
-                  </p>
-                  <p class="text-secondary text-sm">
-                    {{ "profile.no_workers_found" | transloco }}
-                  </p>
-                </div>
               }
-            }
-          </div>
+            </div>
+          } @else {
+            <div class="worker-row-list">
+              @for (workerEntry of group.workers; track workerEntry.id) {
+                @if (workerEntry.worker) {
+                  <app-worker-row
+                    [worker]="workerEntry.worker"
+                    [isModerator]="auth.currentUser()?.moderator ?? false"
+                    (openDetail)="openWorkerDetail($event)"
+                  />
+                }
+              }
+            </div>
+          }
         }
       }
     }
   }
 </div>
+
+<!-- Worker Detail Modal (for row view clicks) -->
+<app-worker-detail-modal
+  [open]="detailModalOpen()"
+  [worker]="selectedWorker()"
+  [isModerator]="auth.currentUser()?.moderator ?? false"
+  [availableTeams]="allTeams()"
+  (closed)="closeWorkerDetail()"
+  (workerUpdated)="onWorkerUpdated()"
+  (workerDeleted)="onWorkerDeleted($event)"
+/>

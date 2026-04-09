@@ -9,12 +9,13 @@ import {
   input,
   OnInit,
   output,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
@@ -26,6 +27,8 @@ import { TeamService } from '../../../services/team.service';
 import { HordeWorker, WorkerType } from '../../../types/horde-worker';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
+import { WorkerRowComponent } from './worker-row.component';
+import { WorkerDetailModalComponent } from './worker-detail-modal.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import {
   UnitConversionService,
@@ -48,6 +51,8 @@ type SortKey =
   | 'megapixelsteps_generated';
 type SortOrder = 'asc' | 'desc';
 
+const WORKER_VIEW_MODE_STORAGE_KEY = 'workers.view_mode';
+
 @Component({
   selector: 'app-worker-list',
   imports: [
@@ -55,6 +60,8 @@ type SortOrder = 'asc' | 'desc';
     TranslocoModule,
     FormsModule,
     WorkerCardComponent,
+    WorkerRowComponent,
+    WorkerDetailModalComponent,
     DecimalPipe,
     InfoTooltipComponent,
     UnitTooltipComponent,
@@ -72,6 +79,7 @@ export class WorkerListComponent implements OnInit {
   private readonly workerService = inject(AdminWorkerService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly teamService = inject(TeamService);
+  private readonly platformId = inject(PLATFORM_ID);
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
   private readonly glossary = inject(GlossaryService);
@@ -111,6 +119,13 @@ export class WorkerListComponent implements OnInit {
   public deletionSuccessMessage = signal<boolean>(false);
   public readonly performanceStats = this.networkStatus.performance;
 
+  // View mode (card | row)
+  public workerViewMode = signal<'card' | 'row'>('card');
+
+  // Modal state for row-click detail view
+  public selectedWorker = signal<HordeWorker | null>(null);
+  public detailModalOpen = signal<boolean>(false);
+
   /** Track whether initial type has been applied. */
   private initialTypeApplied = false;
 
@@ -118,6 +133,12 @@ export class WorkerListComponent implements OnInit {
   private pendingScrollToWorker = false;
 
   constructor() {
+    this.workerViewMode.set(this.loadWorkerViewModePreference());
+
+    effect(() => {
+      this.storeWorkerViewModePreference(this.workerViewMode());
+    });
+
     // Effect to apply initial worker type from route
     effect(() => {
       const initialType = this.initialWorkerType();
@@ -264,6 +285,18 @@ export class WorkerListComponent implements OnInit {
   /** Check if a worker is highlighted (for styling). */
   public isWorkerHighlighted(workerId: string): boolean {
     return this.highlightWorkerId() === workerId;
+  }
+
+  /** Open the detail modal for a given worker (row click). */
+  public openWorkerDetail(worker: HordeWorker): void {
+    this.selectedWorker.set(worker);
+    this.detailModalOpen.set(true);
+  }
+
+  /** Close the detail modal. */
+  public closeWorkerDetail(): void {
+    this.detailModalOpen.set(false);
+    this.selectedWorker.set(null);
   }
 
   // Statistics computed signals
@@ -535,5 +568,26 @@ export class WorkerListComponent implements OnInit {
 
   public clearError(): void {
     this.errorMessage.set(null);
+  }
+
+  private loadWorkerViewModePreference(): 'card' | 'row' {
+    if (!isPlatformBrowser(this.platformId)) return 'card';
+
+    try {
+      const stored = localStorage.getItem(WORKER_VIEW_MODE_STORAGE_KEY);
+      return stored === 'row' ? 'row' : 'card';
+    } catch {
+      return 'card';
+    }
+  }
+
+  private storeWorkerViewModePreference(mode: 'card' | 'row'): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    try {
+      localStorage.setItem(WORKER_VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // localStorage may be unavailable
+    }
   }
 }

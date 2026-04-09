@@ -1,0 +1,149 @@
+<!-- Worker Row — structured scan-friendly display -->
+<div
+  [class]="rowClasses()"
+  (click)="onRowClick()"
+  (keydown)="onRowKeydown($event)"
+  tabindex="0"
+  role="button"
+  [attr.aria-label]="
+    'admin.workers.row.aria_open_detail' | transloco: { name: worker().name }
+  "
+>
+  <div class="worker-row-main">
+    <div class="worker-row-identity">
+      <div class="worker-row-name-line">
+        <app-worker-status-icon [type]="statusType()" sizeClass="w-4 h-4" />
+
+        <span class="worker-row-name" [title]="worker().name">{{
+          truncateName(worker().name, 48)
+        }}</span>
+
+        <button
+          type="button"
+          class="btn-icon worker-row-copy-btn"
+          (click)="copyName($event)"
+          [attr.aria-label]="
+            'admin.workers.action.copy_name'
+              | transloco: { name: worker().name }
+          "
+        >
+          <app-icon class="w-3 h-3" name="copy" />
+        </button>
+
+        <button
+          type="button"
+          class="btn-icon worker-row-copy-btn worker-row-copy-btn--id"
+          (click)="copyId($event)"
+          [attr.aria-label]="
+            'admin.workers.action.copy_id' | transloco: { id: worker().id }
+          "
+          [title]="worker().id"
+        >
+          <app-icon class="w-3 h-3" name="key" />
+        </button>
+      </div>
+
+      <div class="worker-row-meta-line">
+        <span class="worker-row-id" [title]="worker().id">{{
+          compactWorkerId(worker().id)
+        }}</span>
+        <span class="worker-row-meta-separator" aria-hidden="true">|</span>
+        <span class="worker-row-type-pill">
+          <app-worker-status-icon
+            [type]="getWorkerTypeIcon()"
+            sizeClass="w-3.5 h-3.5"
+          />
+          <span>{{ getWorkerTypeLabelKey() | transloco }}</span>
+        </span>
+
+        @if (teamLabel(); as team) {
+          <span class="worker-row-meta-separator" aria-hidden="true">|</span>
+          <span class="worker-row-meta-chip" [title]="team">
+            <app-icon class="w-3.5 h-3.5" name="user-group-simple" />
+            <span class="truncate">{{ team }}</span>
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="worker-row-metrics">
+      <div
+        class="worker-row-metric worker-row-metric--speed"
+        [class.worker-speed-highlight-low]="isLowSpeed()"
+        [class.worker-speed-highlight-high]="isHighSpeed()"
+      >
+        <span class="worker-row-metric-label">{{
+          "admin.workers.card.speed" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">
+          @if (performanceUnit(); as perfUnit) {
+            {{ perfUnit.primary.value.toFixed(2) }}
+            <app-unit-tooltip
+              [unit]="perfUnit"
+              [primaryOverride]="perfUnit.primary.unit"
+            />
+          } @else {
+            <span class="text-secondary">—</span>
+          }
+        </span>
+      </div>
+
+      <div
+        class="worker-row-metric"
+        [class.worker-row-metric--queued-active]="queuedJobs() > 0"
+      >
+        <span class="worker-row-metric-label">{{
+          "workers.stats.queued" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">{{
+          formatMetricNumber(queuedJobs())
+        }}</span>
+      </div>
+
+      <div class="worker-row-metric">
+        <span class="worker-row-metric-label">{{
+          "admin.workers.card.models_loaded" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">{{
+          formatMetricNumber(modelsCount())
+        }}</span>
+      </div>
+
+      <div class="worker-row-metric">
+        <span class="worker-row-metric-label">{{
+          "admin.workers.card.requests_fulfilled" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">{{
+          formatMetricNumber(fulfilledRequests())
+        }}</span>
+      </div>
+
+      <div class="worker-row-metric">
+        <span class="worker-row-metric-label">{{
+          "admin.workers.card.uptime" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">{{
+          formatUptime(worker().uptime)
+        }}</span>
+      </div>
+
+      <div class="worker-row-metric">
+        <span class="worker-row-metric-label">{{
+          "admin.workers.card.threads" | transloco
+        }}</span>
+        <span class="worker-row-metric-value">{{
+          formatMetricNumber(workerThreads())
+        }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="worker-row-rail">
+    <div class="worker-row-flags">
+      @for (flag of activeFlags(); track flag.type) {
+        <app-worker-status-icon [type]="flag.type" sizeClass="w-3.5 h-3.5" />
+      }
+    </div>
+    <app-icon class="worker-row-expand-icon" name="chevron-right" />
+  </div>
+</div>

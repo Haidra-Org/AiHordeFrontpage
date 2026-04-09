@@ -635,6 +635,391 @@
   }
 
   /* =================================================================
+      WORKER ROW — Structured metric list display
+      ================================================================= */
+
+  .worker-row-list {
+    @apply flex flex-col gap-2;
+    @apply pb-4;
+  }
+
+  .worker-row {
+    @apply grid items-center gap-3 px-3.5 py-3 rounded-xl cursor-pointer;
+    @apply transition-colors duration-150;
+    grid-template-columns: minmax(0, 1fr) auto;
+    color: var(--color-content-primary);
+    background: var(--color-glass-surface);
+    border: 1px solid var(--color-glass-border-subtle);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+  }
+
+  .worker-row:hover,
+  .worker-row:focus-visible {
+    background: var(--color-glass-surface-elevated);
+    border-color: var(--color-glass-border);
+    box-shadow:
+      var(--shadow-glass-hover),
+      inset 0 1px 0 0 var(--color-glass-highlight);
+    outline: none;
+  }
+
+  .worker-row:focus-visible {
+    @apply ring-2 ring-purple-400;
+  }
+
+  .dark .worker-row {
+    color: white;
+    background: var(--color-glass-surface-dark-subtle);
+    border-color: var(--color-glass-border-dark-subtle);
+  }
+
+  .dark .worker-row:hover,
+  .dark .worker-row:focus-visible {
+    background: var(--color-glass-surface-dark);
+    border-color: var(--color-glass-border-dark-strong);
+  }
+
+  /* Domain color left-border tints */
+  .worker-row--image {
+    border-left: 3px solid rgb(168 85 247 / 0.6);
+  }
+  .worker-row--text {
+    border-left: 3px solid rgb(59 130 246 / 0.6);
+  }
+  .worker-row--interrogation {
+    border-left: 3px solid rgb(34 197 94 / 0.6);
+  }
+
+  /* Issue state */
+  .worker-row--issue {
+    background: var(--color-glass-danger-surface);
+    border-color: var(--color-danger-border);
+  }
+  .worker-row--issue:hover {
+    background: rgb(254 226 226 / 0.55);
+  }
+  .dark .worker-row--issue {
+    background: var(--color-glass-danger-surface-dark);
+    border-color: rgb(185 28 28 / 0.3);
+  }
+  .dark .worker-row--issue:hover {
+    background: rgb(127 29 29 / 0.35);
+  }
+
+  /* Highlighted row (linked from URL) */
+  .worker-row--highlighted {
+    @apply ring-2 ring-orange-400;
+    @apply dark:ring-orange-500;
+    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
+  }
+
+  .worker-row-main {
+    @apply min-w-0 grid gap-2;
+  }
+
+  .worker-row-identity {
+    @apply min-w-0 grid gap-1;
+  }
+
+  .worker-row-name-line {
+    @apply flex items-center gap-1.5 min-w-0;
+  }
+
+  .worker-row-name {
+    @apply font-semibold truncate;
+    font-size: 0.92rem;
+    line-height: 1.25;
+    color: inherit;
+  }
+
+  .worker-row-meta-line {
+    @apply flex items-center gap-1 min-w-0 flex-wrap;
+    font-size: 0.72rem;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-row-meta-line {
+    color: var(--color-gray-400);
+  }
+
+  .worker-row-id {
+    @apply font-mono;
+    letter-spacing: 0.01em;
+  }
+
+  .worker-row-meta-separator {
+    @apply opacity-60;
+  }
+
+  .worker-row-type-pill,
+  .worker-row-meta-chip {
+    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 min-w-0;
+    border: 1px solid var(--color-glass-border-subtle);
+    background: color-mix(
+      in srgb,
+      var(--color-glass-surface-elevated) 72%,
+      transparent
+    );
+  }
+
+  .dark .worker-row-type-pill,
+  .dark .worker-row-meta-chip {
+    border-color: var(--color-glass-border-dark-subtle);
+    background: color-mix(
+      in srgb,
+      var(--color-glass-surface-dark) 62%,
+      transparent
+    );
+  }
+
+  .worker-row-copy-btn {
+    @apply opacity-0 transition-opacity duration-150;
+    @apply p-0.5;
+  }
+
+  .worker-row:hover .worker-row-copy-btn,
+  .worker-row:focus-within .worker-row-copy-btn {
+    @apply opacity-60;
+  }
+
+  .worker-row-copy-btn:hover {
+    @apply opacity-100;
+  }
+
+  /* Always show on touch devices */
+  @media (hover: none) {
+    .worker-row-copy-btn {
+      @apply opacity-60;
+    }
+  }
+
+  .worker-row-metrics {
+    @apply grid gap-1.5;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .worker-row-metric {
+    @apply min-w-0 flex flex-col gap-0.5 rounded-lg px-2 py-1;
+    border: 1px solid var(--color-glass-border-subtle);
+    background: color-mix(
+      in srgb,
+      var(--color-glass-surface-elevated) 75%,
+      transparent
+    );
+  }
+
+  .dark .worker-row-metric {
+    border-color: var(--color-glass-border-dark-subtle);
+    background: color-mix(
+      in srgb,
+      var(--color-glass-surface-dark) 65%,
+      transparent
+    );
+  }
+
+  .worker-row-metric-label {
+    font-size: 0.65rem;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 0.035em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-row-metric-label {
+    color: var(--color-gray-400);
+  }
+
+  .worker-row-metric-value {
+    @apply inline-flex items-center gap-1 font-semibold truncate;
+    font-size: 0.84rem;
+    line-height: 1.2;
+    color: inherit;
+    min-width: 0;
+  }
+
+  .worker-row-metric--queued-active .worker-row-metric-value {
+    @apply text-amber-700 dark:text-amber-300;
+  }
+
+  .worker-row-rail {
+    @apply flex items-center gap-2 shrink-0;
+  }
+
+  .worker-row-flags {
+    @apply flex items-center gap-0.5;
+  }
+
+  .worker-row-expand-icon {
+    @apply w-4 h-4;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-row-expand-icon {
+    color: var(--color-gray-400);
+  }
+
+  .worker-row:hover .worker-row-expand-icon,
+  .worker-row:focus-visible .worker-row-expand-icon {
+    color: var(--color-content-primary);
+  }
+
+  .dark .worker-row:hover .worker-row-expand-icon,
+  .dark .worker-row:focus-visible .worker-row-expand-icon {
+    color: white;
+  }
+
+  @media (min-width: 768px) {
+    .worker-row {
+      @apply px-4 py-3;
+    }
+
+    .worker-row-metrics {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .worker-row-copy-btn--id {
+      @apply inline-flex;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .worker-row-main {
+      grid-template-columns: minmax(16rem, 1.6fr) minmax(24rem, 2.4fr);
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .worker-row-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .worker-row-metric {
+      min-height: 3rem;
+      justify-content: center;
+    }
+
+    .worker-row-meta-line {
+      flex-wrap: nowrap;
+    }
+
+    .worker-row-meta-chip {
+      max-width: 13rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .worker-row {
+      @apply px-3 py-2.5;
+    }
+
+    .worker-row-rail {
+      @apply self-start pt-0.5;
+    }
+
+    .worker-row-copy-btn--id {
+      @apply hidden;
+    }
+  }
+
+  @media (max-width: 399px) {
+    .worker-row-metrics {
+      grid-template-columns: 1fr;
+    }
+
+    .worker-row-meta-line {
+      @apply hidden;
+    }
+  }
+
+  /* =================================================================
+     WORKER VIEW TOGGLE — Card/Row switcher
+     ================================================================= */
+
+  .worker-view-toggle {
+    @apply inline-flex items-center rounded-lg overflow-hidden;
+    border: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .worker-view-toggle {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  .worker-view-btn {
+    @apply p-1.5 border-0 cursor-pointer;
+    @apply transition-colors duration-150;
+    background: var(--color-glass-surface);
+    color: var(--color-content-secondary);
+  }
+
+  .worker-view-btn:hover {
+    background: var(--color-glass-surface-elevated);
+  }
+
+  .dark .worker-view-btn {
+    background: rgb(31 41 55 / 0.5);
+    color: var(--color-gray-400);
+  }
+
+  .dark .worker-view-btn:hover {
+    background: rgb(55 65 81 / 0.5);
+  }
+
+  .worker-view-btn.active {
+    @apply bg-purple-100 text-purple-600;
+  }
+
+  .dark .worker-view-btn.active {
+    background: color-mix(in oklab, var(--color-purple-900) 50%, transparent);
+    color: var(--color-purple-400);
+  }
+
+  .worker-view-btn + .worker-view-btn {
+    border-left: 1px solid var(--color-edge-primary);
+  }
+
+  .dark .worker-view-btn + .worker-view-btn {
+    border-color: rgb(255 255 255 / 0.1);
+  }
+
+  .worker-view-btn-content {
+    @apply flex items-center gap-1;
+  }
+
+  /* =================================================================
+     WORKER DETAIL MODAL — Card displayed inside modal overlay
+     ================================================================= */
+
+  .worker-detail-modal-panel {
+    @apply p-2;
+    max-width: 56rem;
+  }
+
+  .worker-detail-modal-header {
+    @apply flex justify-end p-1;
+  }
+
+  .worker-detail-modal-header .btn-icon {
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-detail-modal-header .btn-icon {
+    color: var(--color-gray-400);
+  }
+
+  .worker-detail-modal-header .btn-icon:hover {
+    color: var(--color-content-primary);
+  }
+
+  .dark .worker-detail-modal-header .btn-icon:hover {
+    color: white;
+  }
+
+  /* =================================================================
      ENTITY HIGHLIGHTING - Unified highlighting for linked/selected items
      ================================================================= */
 
@@ -652,6 +1037,7 @@
   /* Worker card base */
   .worker-card-normal {
     @apply rounded-xl;
+    color: var(--color-content-primary);
     background: var(--color-glass-surface);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
@@ -670,6 +1056,7 @@
   }
 
   .dark .worker-card-normal {
+    color: var(--color-gray-200);
     background: rgb(31 41 55 / 0.5);
     border-color: rgb(255 255 255 / 0.06);
     box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
@@ -687,6 +1074,7 @@
   /* Worker card with issue state */
   .worker-card-issue {
     @apply rounded-xl;
+    color: var(--color-content-primary);
     background: rgb(254 226 226 / 0.6);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));
@@ -703,6 +1091,7 @@
   }
 
   .dark .worker-card-issue {
+    color: var(--color-gray-200);
     background: rgb(127 29 29 / 0.25);
     border-color: rgb(185 28 28 / 0.4);
   }
@@ -750,8 +1139,13 @@
   }
 
   .worker-card-label {
-    @apply text-content-secondary shrink-0;
+    @apply shrink-0;
+    color: var(--color-content-secondary);
     font-size: 0.8125rem;
+  }
+
+  .dark .worker-card-label {
+    color: var(--color-gray-400);
   }
 
   .worker-card-value {
@@ -908,7 +1302,12 @@
 
   /* Worker item ID/subtitle - small muted text */
   .worker-item-subtitle {
-    @apply text-xs text-content-secondary mt-1 truncate;
+    @apply text-xs mt-1 truncate;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-item-subtitle {
+    color: var(--color-gray-400);
   }
 
   /* Team/entity card link - larger clickable card for grid lists */
@@ -935,7 +1334,12 @@
 
   /* Entity card stats row - compact stats with icons */
   .entity-card-stats {
-    @apply flex flex-wrap gap-3 text-xs text-content-secondary;
+    @apply flex flex-wrap gap-3 text-xs;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .entity-card-stats {
+    color: var(--color-gray-400);
   }
 
   /* Entity card stat item - icon + text */
@@ -1087,9 +1491,45 @@
     @apply min-w-0;
   }
 
+  /* Name line with copy button */
+  .worker-card-name-line {
+    @apply flex items-center gap-1 min-w-0;
+  }
+
+  /* ID line with copy button */
+  .worker-card-id-line {
+    @apply flex items-center gap-1 min-w-0;
+  }
+
+  /* Copy button in card header — visible on hover */
+  .worker-card-copy-btn {
+    @apply opacity-0 transition-opacity duration-150 shrink-0;
+    @apply p-0.5;
+  }
+
+  .worker-card-name-line:hover .worker-card-copy-btn,
+  .worker-card-id-line:hover .worker-card-copy-btn {
+    @apply opacity-60;
+  }
+
+  .worker-card-copy-btn:hover {
+    @apply opacity-100;
+  }
+
+  @media (hover: none) {
+    .worker-card-copy-btn {
+      @apply opacity-60;
+    }
+  }
+
   /* Small worker ID line below the name */
   .worker-card-id {
-    @apply text-xs text-content-secondary truncate mt-0.5;
+    @apply text-xs truncate mt-0.5;
+    color: var(--color-content-secondary);
+  }
+
+  .dark .worker-card-id {
+    color: var(--color-gray-400);
   }
 
   /* Badge row: type badge, trusted icon, highlighted badge — never wrap */
@@ -1586,9 +2026,15 @@
   .worker-cap--muted {
     @apply opacity-30;
     background: var(--color-glass-surface);
-    @apply text-content-secondary;
+    color: var(--color-content-secondary);
     border-color: var(--color-glass-border-subtle);
     box-shadow: none;
+  }
+
+  .dark .worker-cap--muted {
+    background: var(--color-glass-surface-dark-subtle);
+    color: var(--color-gray-500);
+    border-color: var(--color-glass-border-dark-subtle);
   }
 
   /* =================================================================

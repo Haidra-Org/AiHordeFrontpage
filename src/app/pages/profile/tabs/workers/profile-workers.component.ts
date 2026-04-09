@@ -5,9 +5,11 @@ import {
   DestroyRef,
   effect,
   inject,
+  PLATFORM_ID,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { catchError, from, map, mergeMap, of } from 'rxjs';
 import { AuthService } from '../../../../services/auth.service';
@@ -17,6 +19,8 @@ import { ToastService } from '../../../../services/toast.service';
 import { HordeWorker, WorkerType } from '../../../../types/horde-worker';
 import { Team } from '../../../../types/team';
 import { WorkerCardComponent } from '../../../admin/workers/worker-card.component';
+import { WorkerRowComponent } from '../../../admin/workers/worker-row.component';
+import { WorkerDetailModalComponent } from '../../../admin/workers/worker-detail-modal.component';
 import { InfoTooltipComponent } from '../../../../components/info-tooltip/info-tooltip.component';
 import { AdminDialogComponent } from '../../../../components/admin/admin-dialog/admin-dialog.component';
 import { GlossaryService } from '../../../../services/glossary.service';
@@ -30,11 +34,15 @@ interface WorkerListItem {
   worker: HordeWorker | null;
 }
 
+const WORKER_VIEW_MODE_STORAGE_KEY = 'workers.view_mode';
+
 @Component({
   selector: 'app-profile-workers',
   imports: [
     TranslocoPipe,
     WorkerCardComponent,
+    WorkerRowComponent,
+    WorkerDetailModalComponent,
     InfoTooltipComponent,
     AdminDialogComponent,
     IconComponent,
@@ -48,6 +56,7 @@ export class ProfileWorkersComponent {
   private readonly teamService = inject(TeamService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly glossary = inject(GlossaryService);
   private readonly workerRequestConcurrency = 3;
 
@@ -71,6 +80,13 @@ export class ProfileWorkersComponent {
   public publicWorkersDialogOpen = signal<boolean>(false);
   public publicWorkersNewValue = signal<boolean>(false);
   public publicWorkersSaving = signal<boolean>(false);
+
+  // View mode (card | row)
+  public workerViewMode = signal<'card' | 'row'>('card');
+
+  // Modal state for row-click detail view
+  public selectedWorker = signal<HordeWorker | null>(null);
+  public detailModalOpen = signal<boolean>(false);
 
   // Computed filtered workers
   public filteredAndSortedWorkers = computed(() => {
@@ -135,6 +151,12 @@ export class ProfileWorkersComponent {
   });
 
   constructor() {
+    this.workerViewMode.set(this.loadWorkerViewModePreference());
+
+    effect(() => {
+      this.storeWorkerViewModePreference(this.workerViewMode());
+    });
+
     this.glossary.registerPageContext(WORKERS_GLOSSARY_CONTEXT);
     this.destroyRef.onDestroy(() => {
       this.glossary.clearPageContext('workers');
@@ -178,6 +200,18 @@ export class ProfileWorkersComponent {
       workers.filter((w) => w.id !== workerId),
     );
     this.toast.success('admin.workers.deletion_success', { transloco: true });
+  }
+
+  /** Open the detail modal for a given worker (row click). */
+  public openWorkerDetail(worker: HordeWorker): void {
+    this.selectedWorker.set(worker);
+    this.detailModalOpen.set(true);
+  }
+
+  /** Close the detail modal. */
+  public closeWorkerDetail(): void {
+    this.detailModalOpen.set(false);
+    this.selectedWorker.set(null);
   }
 
   public onFilterTextChange(event: Event): void {
@@ -307,5 +341,26 @@ export class ProfileWorkersComponent {
   private isActiveWorker(worker: HordeWorker | null): boolean {
     if (!worker) return false;
     return worker.online && !worker.paused && !worker.maintenance_mode;
+  }
+
+  private loadWorkerViewModePreference(): 'card' | 'row' {
+    if (!isPlatformBrowser(this.platformId)) return 'card';
+
+    try {
+      const stored = localStorage.getItem(WORKER_VIEW_MODE_STORAGE_KEY);
+      return stored === 'row' ? 'row' : 'card';
+    } catch {
+      return 'card';
+    }
+  }
+
+  private storeWorkerViewModePreference(mode: 'card' | 'row'): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    try {
+      localStorage.setItem(WORKER_VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // localStorage may be unavailable
+    }
   }
 }

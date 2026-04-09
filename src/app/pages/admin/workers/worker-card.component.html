@@ -401,10 +401,35 @@
         }
 
         <div class="worker-card-name-block">
-          <h3 class="heading-item truncate" [title]="worker().name">
-            {{ truncateName(worker().name) }}
-          </h3>
-          <p class="worker-card-id">{{ worker().id }}</p>
+          <div class="worker-card-name-line">
+            <h3 class="heading-item truncate" [title]="worker().name">
+              {{ truncateName(worker().name) }}
+            </h3>
+            <button
+              type="button"
+              class="btn-icon worker-card-copy-btn"
+              (click)="copyWorkerName(); $event.stopPropagation()"
+              [attr.aria-label]="
+                'admin.workers.action.copy_name'
+                  | transloco: { name: worker().name }
+              "
+            >
+              <app-icon class="w-3.5 h-3.5" name="copy" />
+            </button>
+          </div>
+          <div class="worker-card-id-line">
+            <p class="worker-card-id">{{ worker().id }}</p>
+            <button
+              type="button"
+              class="btn-icon worker-card-copy-btn"
+              (click)="copyWorkerId(); $event.stopPropagation()"
+              [attr.aria-label]="
+                'admin.workers.action.copy_id' | transloco: { id: worker().id }
+              "
+            >
+              <app-icon class="w-3 h-3" name="copy" />
+            </button>
+          </div>
         </div>
       </div>
 

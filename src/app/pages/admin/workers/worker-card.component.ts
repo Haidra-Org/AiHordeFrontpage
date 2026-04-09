@@ -460,6 +460,26 @@ export class WorkerCardComponent {
     this.openCdkDialog('48rem');
   }
 
+  public async copyWorkerName(): Promise<void> {
+    const success = await this.copyToClipboard(this.worker().name);
+    if (success) {
+      this.toastService.success('admin.workers.toast.name_copied', {
+        transloco: true,
+        messageParams: { name: this.worker().name },
+      });
+    }
+  }
+
+  public async copyWorkerId(): Promise<void> {
+    const success = await this.copyToClipboard(this.worker().id);
+    if (success) {
+      this.toastService.success('admin.workers.toast.id_copied', {
+        transloco: true,
+        messageParams: { id: this.worker().id },
+      });
+    }
+  }
+
   public async copyModelName(model: string): Promise<void> {
     const success = await this.copyToClipboard(model);
     if (success) {
