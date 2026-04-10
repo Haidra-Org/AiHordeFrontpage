@@ -10,6 +10,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: 24.12.0
+  NPM_VERSION: 11.6.2
+
 jobs:
   lint:
     name: Lint
@@ -20,8 +24,9 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run lint
 
@@ -34,8 +39,9 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run format:check
 
@@ -48,8 +54,9 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: npx tsc --noEmit -p tsconfig.spec.json
@@ -63,8 +70,9 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run lint:css
 
@@ -77,8 +85,9 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx vitest run --coverage
 
@@ -92,7 +101,8 @@ jobs:
           submodules: true
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run build
