@@ -18,6 +18,7 @@ import {
   isTextStyle,
   TextStyle,
 } from '../../../types/style';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -229,10 +230,11 @@ export class StyleDetailComponent implements OnInit {
     void this.router.navigate(['/details/styles']);
   }
 
-  public copyToClipboard(text: string): void {
-    navigator.clipboard.writeText(text).catch((err) => {
-      console.error('Failed to copy:', err);
-    });
+  public async copyToClipboard(text: string): Promise<void> {
+    const copied = await copyToClipboard(text);
+    if (!copied) {
+      console.error('Failed to copy style details to clipboard.');
+    }
   }
 
   /**

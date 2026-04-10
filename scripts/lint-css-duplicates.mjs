@@ -135,13 +135,13 @@ for (const file of appFiles) {
 
 if (duplicates.length === 0) {
   console.log(
-    `✓ No duplicate selectors found (${dsSelectors.size} DS selectors, ${appFiles.length} app files scanned).`
+    `✓ No duplicate selectors found (${dsSelectors.size} DS selectors, ${appFiles.length} app files scanned).`,
   );
   process.exit(0);
 }
 
 console.error(
-  `✗ Found ${duplicates.length} duplicate selector(s) between design-system and app styles:\n`
+  `✗ Found ${duplicates.length} duplicate selector(s) between design-system and app styles:\n`,
 );
 
 for (const d of duplicates) {
@@ -151,7 +151,7 @@ for (const d of duplicates) {
 }
 
 console.error(
-  "Remove the app-side duplicate or, if intentional, add an /* allow-override */ comment."
+  "Remove the app-side duplicate or, if intentional, add an /* allow-override */ comment.",
 );
 
 process.exit(1);

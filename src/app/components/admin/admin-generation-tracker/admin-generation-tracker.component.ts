@@ -13,7 +13,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { concatMap, EMPTY, tap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiHordeService } from '../../../services/ai-horde.service';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { highlightJson } from '../../../helper/json-formatter';
+import {
+  isLikelyImageFileLink,
+  sanitizeGenerationResponseValue,
+  toRenderableImageSource,
+} from '../../../helper/generation-image';
+import { IconComponent } from '../../icon/icon.component';
 import {
   TrackedGeneration,
   GenerationType,
@@ -27,7 +34,7 @@ import {
 
 @Component({
   selector: 'app-admin-generation-tracker',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, IconComponent],
   templateUrl: './admin-generation-tracker.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -40,6 +47,7 @@ export class AdminGenerationTrackerComponent {
   private static readonly CHECK_POLL_MS = 10_000;
 
   private checkPollTimer: ReturnType<typeof setInterval> | null = null;
+  private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
   private pollingStarted = false;
 
   public readonly trackedGenerations = signal<TrackedGeneration[]>([]);
@@ -62,6 +70,8 @@ export class AdminGenerationTrackerComponent {
 
   public readonly loadingResults = signal<Set<string>>(new Set());
   public readonly expandedResponse = signal<Set<string>>(new Set());
+  public readonly copiedGenerationId = signal<string | null>(null);
+  public readonly lastRefreshedAt = signal<number | null>(null);
 
   public trackGeneration(id: string, type: GenerationType): void {
     const existing = this.trackedGenerations();
@@ -83,6 +93,33 @@ export class AdminGenerationTrackerComponent {
     this.ensurePolling();
     // Immediately poll for this new generation
     this.pollSingleGeneration(id, type);
+  }
+
+  public async copyGenerationId(id: string): Promise<void> {
+    const copied = await copyToClipboard(id);
+    if (!copied) {
+      return;
+    }
+
+    this.copiedGenerationId.set(id);
+
+    if (this.copyResetTimer != null) {
+      clearTimeout(this.copyResetTimer);
+    }
+
+    this.copyResetTimer = setTimeout(() => {
+      this.copiedGenerationId.set(null);
+      this.copyResetTimer = null;
+    }, 2000);
+  }
+
+  public getLastRefreshedTimeLabel(): string | null {
+    const timestamp = this.lastRefreshedAt();
+    if (!timestamp) {
+      return null;
+    }
+
+    return new Date(timestamp).toLocaleTimeString();
   }
 
   public isTracked(id: string): boolean {
@@ -111,6 +148,7 @@ export class AdminGenerationTrackerComponent {
         const l = new Set(this.loadingResults());
         l.delete(gen.id);
         this.loadingResults.set(l);
+        this.markStatusRefreshed();
 
         if (status === GENERATION_NOT_FOUND) {
           this.updateGeneration(gen.id, { notFound: true });
@@ -151,14 +189,7 @@ export class AdminGenerationTrackerComponent {
     return JSON.stringify(
       data,
       (_key: string, value: unknown) => {
-        if (
-          typeof value === 'string' &&
-          value.length > 256 &&
-          /^[A-Za-z0-9+/=]/.test(value)
-        ) {
-          return '[base64 data omitted]';
-        }
-        return value;
+        return sanitizeGenerationResponseValue(value);
       },
 
       2,
@@ -172,6 +203,18 @@ export class AdminGenerationTrackerComponent {
   public getGenerationOutputs(gen: TrackedGeneration): GenerationOutput[] {
     if (!gen.result || gen.type !== 'image') return [];
     return (gen.result as GenerationStatusResponse).generations ?? [];
+  }
+
+  public getOutputImageSrc(output: GenerationOutput): string | null {
+    const rawImage = output.img?.trim();
+    if (!rawImage) return null;
+    return toRenderableImageSource(rawImage);
+  }
+
+  public getOutputImageLink(output: GenerationOutput): string | null {
+    const rawImage = output.img?.trim();
+    if (!rawImage) return null;
+    return isLikelyImageFileLink(rawImage) ? rawImage : null;
   }
 
   public getTextOutputs(gen: TrackedGeneration): string[] {
@@ -236,6 +279,7 @@ export class AdminGenerationTrackerComponent {
         .checkImageGeneration(id)
         .pipe(
           tap((check) => {
+            this.markStatusRefreshed();
             if (check === GENERATION_NOT_FOUND) {
               this.updateGeneration(id, { notFound: true });
               return;
@@ -272,6 +316,7 @@ export class AdminGenerationTrackerComponent {
         .getTextGenerationStatus(id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((status) => {
+          this.markStatusRefreshed();
           if (status === GENERATION_NOT_FOUND) {
             this.updateGeneration(id, { notFound: true });
             return;
@@ -300,6 +345,7 @@ export class AdminGenerationTrackerComponent {
         .getAlchemyStatus(id)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((status) => {
+          this.markStatusRefreshed();
           if (status === GENERATION_NOT_FOUND) {
             this.updateGeneration(id, { notFound: true });
             return;
@@ -340,6 +386,13 @@ export class AdminGenerationTrackerComponent {
       if (this.checkPollTimer != null) {
         clearInterval(this.checkPollTimer);
       }
+      if (this.copyResetTimer != null) {
+        clearTimeout(this.copyResetTimer);
+      }
     });
+  }
+
+  private markStatusRefreshed(): void {
+    this.lastRefreshedAt.set(Date.now());
   }
 }

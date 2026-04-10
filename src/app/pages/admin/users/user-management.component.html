@@ -1084,16 +1084,30 @@
                     </h4>
                     <div class="flex flex-wrap gap-2">
                       @for (
-                        id of selectedUser()!.active_generations!.image!.slice(
-                          0,
-                          10
-                        );
+                        id of getVisibleActiveGenerationIds("image");
                         track id
                       ) {
                         <span
-                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark admin-text-light px-2 py-1 rounded"
                         >
-                          {{ id }}
+                          <span class="truncate max-w-80" [title]="id">{{
+                            id
+                          }}</span>
+                          <button
+                            type="button"
+                            class="btn-icon p-0.5"
+                            (click)="copyActiveGenerationId(id)"
+                            [attr.aria-label]="
+                              'admin.users.active_generations.copy_id'
+                                | transloco: { id: id }
+                            "
+                          >
+                            @if (copiedActiveGenerationId() === id) {
+                              <app-icon class="w-3 h-3" name="check" />
+                            } @else {
+                              <app-icon class="w-3 h-3" name="copy" />
+                            }
+                          </button>
                           <button
                             type="button"
                             class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
@@ -1101,7 +1115,8 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.text-secondary]="isGenerationTracked(id)"
+                            [class.admin-text-light]="isGenerationTracked(id)"
+                            [class.opacity-70]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'image')"
                           >
@@ -1119,16 +1134,28 @@
                           </button>
                         </span>
                       }
-                      @if (
-                        selectedUser()!.active_generations!.image!.length > 10
-                      ) {
-                        <span class="text-xs text-secondary"
-                          >+{{
-                            selectedUser()!.active_generations!.image!.length -
-                              10
-                          }}
-                          more</span
+                      @if (hasExpandableActiveGenerationIds("image")) {
+                        <button
+                          type="button"
+                          class="btn-muted btn-xs"
+                          (click)="toggleActiveGenerationIdsExpansion('image')"
                         >
+                          @if (isActiveGenerationIdsExpanded("image")) {
+                            {{
+                              "admin.users.active_generations.show_less"
+                                | transloco
+                            }}
+                          } @else {
+                            {{
+                              "admin.users.active_generations.show_more"
+                                | transloco
+                                  : {
+                                      count:
+                                        hiddenActiveGenerationCount("image"),
+                                    }
+                            }}
+                          }
+                        </button>
                       }
                     </div>
                   </div>
@@ -1141,16 +1168,30 @@
                     </h4>
                     <div class="flex flex-wrap gap-2">
                       @for (
-                        id of selectedUser()!.active_generations!.text!.slice(
-                          0,
-                          10
-                        );
+                        id of getVisibleActiveGenerationIds("text");
                         track id
                       ) {
                         <span
-                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark admin-text-light px-2 py-1 rounded"
                         >
-                          {{ id }}
+                          <span class="truncate max-w-80" [title]="id">{{
+                            id
+                          }}</span>
+                          <button
+                            type="button"
+                            class="btn-icon p-0.5"
+                            (click)="copyActiveGenerationId(id)"
+                            [attr.aria-label]="
+                              'admin.users.active_generations.copy_id'
+                                | transloco: { id: id }
+                            "
+                          >
+                            @if (copiedActiveGenerationId() === id) {
+                              <app-icon class="w-3 h-3" name="check" />
+                            } @else {
+                              <app-icon class="w-3 h-3" name="copy" />
+                            }
+                          </button>
                           <button
                             type="button"
                             class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
@@ -1158,7 +1199,8 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.text-secondary]="isGenerationTracked(id)"
+                            [class.admin-text-light]="isGenerationTracked(id)"
+                            [class.opacity-70]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'text')"
                           >
@@ -1176,16 +1218,28 @@
                           </button>
                         </span>
                       }
-                      @if (
-                        selectedUser()!.active_generations!.text!.length > 10
-                      ) {
-                        <span class="text-xs text-secondary"
-                          >+{{
-                            selectedUser()!.active_generations!.text!.length -
-                              10
-                          }}
-                          more</span
+                      @if (hasExpandableActiveGenerationIds("text")) {
+                        <button
+                          type="button"
+                          class="btn-muted btn-xs"
+                          (click)="toggleActiveGenerationIdsExpansion('text')"
                         >
+                          @if (isActiveGenerationIdsExpanded("text")) {
+                            {{
+                              "admin.users.active_generations.show_less"
+                                | transloco
+                            }}
+                          } @else {
+                            {{
+                              "admin.users.active_generations.show_more"
+                                | transloco
+                                  : {
+                                      count:
+                                        hiddenActiveGenerationCount("text"),
+                                    }
+                            }}
+                          }
+                        </button>
                       }
                     </div>
                   </div>
@@ -1200,16 +1254,30 @@
                     </h4>
                     <div class="flex flex-wrap gap-2">
                       @for (
-                        id of selectedUser()!.active_generations!.alchemy!.slice(
-                          0,
-                          10
-                        );
+                        id of getVisibleActiveGenerationIds("alchemy");
                         track id
                       ) {
                         <span
-                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark px-2 py-1 rounded"
+                          class="inline-flex items-center gap-1 text-xs font-mono admin-bg-dark admin-text-light px-2 py-1 rounded"
                         >
-                          {{ id }}
+                          <span class="truncate max-w-80" [title]="id">{{
+                            id
+                          }}</span>
+                          <button
+                            type="button"
+                            class="btn-icon p-0.5"
+                            (click)="copyActiveGenerationId(id)"
+                            [attr.aria-label]="
+                              'admin.users.active_generations.copy_id'
+                                | transloco: { id: id }
+                            "
+                          >
+                            @if (copiedActiveGenerationId() === id) {
+                              <app-icon class="w-3 h-3" name="check" />
+                            } @else {
+                              <app-icon class="w-3 h-3" name="copy" />
+                            }
+                          </button>
                           <button
                             type="button"
                             class="ml-1 px-1.5 py-0.5 rounded text-xs font-sans transition-colors"
@@ -1217,7 +1285,8 @@
                             [class.hover:text-blue-300]="
                               !isGenerationTracked(id)
                             "
-                            [class.text-secondary]="isGenerationTracked(id)"
+                            [class.admin-text-light]="isGenerationTracked(id)"
+                            [class.opacity-70]="isGenerationTracked(id)"
                             [disabled]="isGenerationTracked(id)"
                             (click)="trackGeneration(id, 'alchemy')"
                           >
@@ -1235,16 +1304,30 @@
                           </button>
                         </span>
                       }
-                      @if (
-                        selectedUser()!.active_generations!.alchemy!.length > 10
-                      ) {
-                        <span class="text-xs text-secondary"
-                          >+{{
-                            selectedUser()!.active_generations!.alchemy!
-                              .length - 10
-                          }}
-                          more</span
+                      @if (hasExpandableActiveGenerationIds("alchemy")) {
+                        <button
+                          type="button"
+                          class="btn-muted btn-xs"
+                          (click)="
+                            toggleActiveGenerationIdsExpansion('alchemy')
+                          "
                         >
+                          @if (isActiveGenerationIdsExpanded("alchemy")) {
+                            {{
+                              "admin.users.active_generations.show_less"
+                                | transloco
+                            }}
+                          } @else {
+                            {{
+                              "admin.users.active_generations.show_more"
+                                | transloco
+                                  : {
+                                      count:
+                                        hiddenActiveGenerationCount("alchemy"),
+                                    }
+                            }}
+                          }
+                        </button>
                       }
                     </div>
                   </div>

@@ -41,6 +41,7 @@ import { AdminGenerationTrackerComponent } from '../../../components/admin/admin
 import { GenerationType } from '../../../types/generation';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 
 type DialogType = 'resetSuspicion' | 'undeleteUser';
 
@@ -118,6 +119,18 @@ export class UserManagementComponent implements OnInit {
   public stylesExpanded = signal<boolean>(false);
   public sharedKeysExpanded = signal<boolean>(false);
   public rawJsonModalOpen = signal<boolean>(false);
+  public expandedActiveGenerationTypes = signal<
+    Record<GenerationType, boolean>
+  >({
+    image: false,
+    text: false,
+    alchemy: false,
+  });
+  public copiedActiveGenerationId = signal<string | null>(null);
+
+  private static readonly ACTIVE_GENERATION_PREVIEW_LIMIT = 10;
+  private activeGenerationCopyResetTimer: ReturnType<typeof setTimeout> | null =
+    null;
 
   // Form state
   public trustedValue = signal<boolean>(false);
@@ -277,6 +290,9 @@ export class UserManagementComponent implements OnInit {
     this.destroyRef.onDestroy(() => {
       this.floatingActions.unregister('admin-user-save');
       this.stopGenerationsRefreshTimer();
+      if (this.activeGenerationCopyResetTimer != null) {
+        clearTimeout(this.activeGenerationCopyResetTimer);
+      }
     });
 
     // Check for route param first (e.g., /admin/users/304597)
@@ -364,6 +380,7 @@ export class UserManagementComponent implements OnInit {
   }
 
   private setSelectedUser(user: AdminUserDetails): void {
+    this.resetActiveGenerationUiState();
     this.selectedUser.set(user);
     this.trustedValue.set(user.trusted ?? false);
     this.flaggedValue.set(user.flagged ?? false);
@@ -660,6 +677,66 @@ export class UserManagementComponent implements OnInit {
     this.trackedGenerationsExpanded.set(true);
   }
 
+  public activeGenerationIdsTotal(type: GenerationType): number {
+    return this.getActiveGenerationIds(type).length;
+  }
+
+  public hasExpandableActiveGenerationIds(type: GenerationType): boolean {
+    return (
+      this.activeGenerationIdsTotal(type) >
+      UserManagementComponent.ACTIVE_GENERATION_PREVIEW_LIMIT
+    );
+  }
+
+  public hiddenActiveGenerationCount(type: GenerationType): number {
+    return Math.max(
+      0,
+      this.activeGenerationIdsTotal(type) -
+        UserManagementComponent.ACTIVE_GENERATION_PREVIEW_LIMIT,
+    );
+  }
+
+  public isActiveGenerationIdsExpanded(type: GenerationType): boolean {
+    return this.expandedActiveGenerationTypes()[type];
+  }
+
+  public getVisibleActiveGenerationIds(type: GenerationType): string[] {
+    const ids = this.getActiveGenerationIds(type);
+    if (this.isActiveGenerationIdsExpanded(type)) {
+      return ids;
+    }
+
+    return ids.slice(
+      0,
+      UserManagementComponent.ACTIVE_GENERATION_PREVIEW_LIMIT,
+    );
+  }
+
+  public toggleActiveGenerationIdsExpansion(type: GenerationType): void {
+    this.expandedActiveGenerationTypes.update((state) => ({
+      ...state,
+      [type]: !state[type],
+    }));
+  }
+
+  public async copyActiveGenerationId(id: string): Promise<void> {
+    const copied = await copyToClipboard(id);
+    if (!copied) {
+      return;
+    }
+
+    this.copiedActiveGenerationId.set(id);
+
+    if (this.activeGenerationCopyResetTimer != null) {
+      clearTimeout(this.activeGenerationCopyResetTimer);
+    }
+
+    this.activeGenerationCopyResetTimer = setTimeout(() => {
+      this.copiedActiveGenerationId.set(null);
+      this.activeGenerationCopyResetTimer = null;
+    }, 2000);
+  }
+
   public isGenerationTracked(id: string): boolean {
     const tracker = this.generationTracker();
     return tracker ? tracker.isTracked(id) : false;
@@ -740,6 +817,28 @@ export class UserManagementComponent implements OnInit {
       (gen.text?.length ?? 0) > 0 ||
       (gen.alchemy?.length ?? 0) > 0
     );
+  }
+
+  private resetActiveGenerationUiState(): void {
+    this.expandedActiveGenerationTypes.set({
+      image: false,
+      text: false,
+      alchemy: false,
+    });
+    this.copiedActiveGenerationId.set(null);
+    if (this.activeGenerationCopyResetTimer != null) {
+      clearTimeout(this.activeGenerationCopyResetTimer);
+      this.activeGenerationCopyResetTimer = null;
+    }
+  }
+
+  private getActiveGenerationIds(type: GenerationType): string[] {
+    const user = this.selectedUser();
+    if (!user?.active_generations) {
+      return [];
+    }
+
+    return user.active_generations[type] ?? [];
   }
 
   private loadUserWorkers(): void {

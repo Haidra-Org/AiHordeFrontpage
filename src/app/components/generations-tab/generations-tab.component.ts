@@ -22,6 +22,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import {
+  isLikelyImageFileLink,
+  sanitizeGenerationResponseValue,
+  toRenderableImageSource,
+} from '../../helper/generation-image';
 import {
   TrackedGeneration,
   GenerationType,
@@ -68,6 +74,7 @@ export class GenerationsTabComponent {
 
   private userPollTimer: ReturnType<typeof setInterval> | null = null;
   private checkPollTimer: ReturnType<typeof setInterval> | null = null;
+  private copyResetTimer: ReturnType<typeof setTimeout> | null = null;
 
   public readonly trackedGenerations = signal<TrackedGeneration[]>([]);
 
@@ -99,6 +106,8 @@ export class GenerationsTabComponent {
   public readonly expandedResponse = signal<Set<string>>(new Set());
   public readonly rawJsonOpen = signal(false);
   public readonly rawJsonGeneration = signal<TrackedGeneration | null>(null);
+  public readonly copiedGenerationId = signal<string | null>(null);
+  public readonly lastRefreshedAt = signal<number | null>(null);
 
   public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
     () => {
@@ -230,9 +239,48 @@ export class GenerationsTabComponent {
     return gen.sentRequest ? JSON.stringify(gen.sentRequest, null, 2) : '';
   }
 
+  public async copyGenerationId(id: string): Promise<void> {
+    const copied = await copyToClipboard(id);
+    if (!copied) {
+      return;
+    }
+
+    this.copiedGenerationId.set(id);
+
+    if (this.copyResetTimer != null) {
+      clearTimeout(this.copyResetTimer);
+    }
+
+    this.copyResetTimer = setTimeout(() => {
+      this.copiedGenerationId.set(null);
+      this.copyResetTimer = null;
+    }, 2000);
+  }
+
+  public getLastRefreshedTimeLabel(): string | null {
+    const timestamp = this.lastRefreshedAt();
+    if (!timestamp) {
+      return null;
+    }
+
+    return new Date(timestamp).toLocaleTimeString();
+  }
+
   public getGenerationOutputs(gen: TrackedGeneration): GenerationOutput[] {
     if (!gen.result || gen.type !== 'image') return [];
     return (gen.result as GenerationStatusResponse).generations ?? [];
+  }
+
+  public getOutputImageSrc(output: GenerationOutput): string | null {
+    const rawImage = output.img?.trim();
+    if (!rawImage) return null;
+    return toRenderableImageSource(rawImage);
+  }
+
+  public getOutputImageLink(output: GenerationOutput): string | null {
+    const rawImage = output.img?.trim();
+    if (!rawImage) return null;
+    return isLikelyImageFileLink(rawImage) ? rawImage : null;
   }
 
   public toggleResponseJson(id: string): void {
@@ -257,14 +305,7 @@ export class GenerationsTabComponent {
     return JSON.stringify(
       data,
       (_key: string, value: unknown) => {
-        if (
-          typeof value === 'string' &&
-          value.length > 256 &&
-          /^[A-Za-z0-9+/=]/.test(value)
-        ) {
-          return '[base64 data omitted]';
-        }
-        return value;
+        return sanitizeGenerationResponseValue(value);
       },
       2,
     );
@@ -353,6 +394,7 @@ export class GenerationsTabComponent {
         const l = new Set(this.loadingResults());
         l.delete(gen.id);
         this.loadingResults.set(l);
+        this.markStatusRefreshed();
 
         if (status === GENERATION_NOT_FOUND) {
           this.updateGeneration(gen.id, { notFound: true });
@@ -373,7 +415,7 @@ export class GenerationsTabComponent {
     return (
       status.generations
         ?.filter((g) => g.state === 'ok' && g.img)
-        .map((g) => g.img) ?? []
+        .map((g) => toRenderableImageSource(g.img)) ?? []
     );
   }
 
@@ -382,14 +424,7 @@ export class GenerationsTabComponent {
       const sanitized = JSON.stringify(
         value,
         (_key: string, currentValue: unknown) => {
-          if (
-            typeof currentValue === 'string' &&
-            currentValue.length > 256 &&
-            /^[A-Za-z0-9+/=]/.test(currentValue)
-          ) {
-            return '[base64 data omitted]';
-          }
-          return currentValue;
+          return sanitizeGenerationResponseValue(currentValue);
         },
       );
 
@@ -581,7 +616,10 @@ export class GenerationsTabComponent {
             this.addTrackedGeneration(id, 'alchemy');
           }
         },
-        complete: () => onComplete?.(),
+        complete: () => {
+          this.markStatusRefreshed();
+          onComplete?.();
+        },
       });
   }
 
@@ -722,6 +760,13 @@ export class GenerationsTabComponent {
       if (this.checkPollTimer != null) {
         clearInterval(this.checkPollTimer);
       }
+      if (this.copyResetTimer != null) {
+        clearTimeout(this.copyResetTimer);
+      }
     });
+  }
+
+  private markStatusRefreshed(): void {
+    this.lastRefreshedAt.set(Date.now());
   }
 }

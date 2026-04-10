@@ -13,6 +13,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { PLATFORM_ID } from '@angular/core';
 import { highlightJson, stringifyAsJson } from '../../helper/json-formatter';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
 
 export interface JsonInspectorSection {
   id: string;
@@ -131,7 +132,11 @@ export class JsonInspectorComponent {
       return;
     }
 
-    await this.copyToClipboard(section.json);
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    await copyToClipboard(section.json);
   }
 
   public downloadActiveSection(): void {
@@ -166,46 +171,6 @@ export class JsonInspectorComponent {
       `${this.downloadFilePrefix()}-all.json`,
     );
     this.downloadJson(fileName, combinedJson);
-  }
-
-  private async copyToClipboard(text: string): Promise<void> {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-
-    try {
-      const clipboard = globalThis.navigator?.clipboard;
-      if (globalThis.isSecureContext && clipboard?.writeText) {
-        await clipboard.writeText(text);
-        return;
-      }
-    } catch (error) {
-      console.error('Async clipboard copy failed.', error);
-    }
-
-    const body = globalThis.document?.body;
-    if (!body) {
-      return;
-    }
-
-    const textArea = globalThis.document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.opacity = '0';
-    body.append(textArea);
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-
-    try {
-      globalThis.document.execCommand('copy');
-    } catch (error) {
-      console.error('Fallback clipboard copy failed.', error);
-    } finally {
-      textArea.remove();
-    }
   }
 
   private downloadJson(fileName: string, json: string): void {

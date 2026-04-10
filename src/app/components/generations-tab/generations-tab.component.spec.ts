@@ -372,6 +372,11 @@ describe('GenerationsTabComponent', () => {
     el = fixture.nativeElement;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
   // -----------------------------------------------------------------------
   // Helper: set generations and detect changes
   // -----------------------------------------------------------------------
@@ -432,10 +437,10 @@ describe('GenerationsTabComponent', () => {
         });
 
         it('should render a generation ID span for every tracked generation', () => {
-          const idSpans = el.querySelectorAll(
-            '.font-mono.text-secondary.truncate',
+          const copyButtons = el.querySelectorAll(
+            'button[aria-label^="profile.generations.copy_id"]',
           );
-          expect(idSpans.length).toBe(scenario.generations.length);
+          expect(copyButtons.length).toBe(scenario.generations.length);
         });
 
         it('should display generation IDs', () => {
@@ -1336,6 +1341,72 @@ describe('GenerationsTabComponent', () => {
       expect(component.formatWaitTime(0)).toBe('0s');
     });
 
+    it('getLastRefreshedTimeLabel should return null when no refresh occurred yet', () => {
+      component.lastRefreshedAt.set(null);
+
+      expect(component.getLastRefreshedTimeLabel()).toBeNull();
+    });
+
+    it('getLastRefreshedTimeLabel should format stored refresh timestamp', () => {
+      const timestamp = Date.UTC(2025, 0, 1, 9, 10, 11);
+      component.lastRefreshedAt.set(timestamp);
+
+      expect(component.getLastRefreshedTimeLabel()).toBe(
+        new Date(timestamp).toLocaleTimeString(),
+      );
+    });
+
+    it('copyGenerationId should set copied id and clear it after timeout', async () => {
+      vi.useFakeTimers();
+      const writeText = vi.fn().mockResolvedValue(undefined);
+
+      vi.stubGlobal('isSecureContext', true);
+      vi.stubGlobal('navigator', {
+        clipboard: { writeText },
+      } as unknown as Navigator);
+
+      await component.copyGenerationId('gen-copy');
+
+      expect(writeText).toHaveBeenCalledWith('gen-copy');
+      expect(component.copiedGenerationId()).toBe('gen-copy');
+
+      vi.advanceTimersByTime(2000);
+
+      expect(component.copiedGenerationId()).toBeNull();
+
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    });
+
+    it('copyGenerationId should keep copied state unchanged when copy fails', async () => {
+      const doc = document as Document & {
+        execCommand?: (commandId: string) => boolean;
+      };
+      if (!doc.execCommand) {
+        Object.defineProperty(doc, 'execCommand', {
+          value: () => false,
+          configurable: true,
+          writable: true,
+        });
+      }
+      const execSpy = vi.spyOn(doc, 'execCommand').mockReturnValue(false);
+      const writeText = vi.fn().mockRejectedValue(new Error('denied'));
+
+      vi.stubGlobal('isSecureContext', true);
+      vi.stubGlobal('navigator', {
+        clipboard: { writeText },
+      } as unknown as Navigator);
+
+      component.copiedGenerationId.set('existing-copy');
+
+      await component.copyGenerationId('gen-copy');
+
+      expect(component.copiedGenerationId()).toBe('existing-copy');
+      expect(execSpy).toHaveBeenCalledWith('copy');
+
+      vi.unstubAllGlobals();
+    });
+
     it('getResponseJson should strip long base64-like strings', () => {
       const gen = makeTracked({
         id: 'test-strip',
@@ -1349,16 +1420,39 @@ describe('GenerationsTabComponent', () => {
       expect(json).not.toContain('A'.repeat(300));
     });
 
-    it('getResponseJson should preserve short strings', () => {
+    it('getResponseJson should preserve image URLs even when long', () => {
+      const longUrl = `https://example.com/img.webp?token=${'A'.repeat(400)}`;
       const gen = makeTracked({
         id: 'test-short',
         done: true,
         result: makeImageResult([
-          makeOutput({ id: 'out-short', img: 'https://example.com/img.webp' }),
+          makeOutput({ id: 'out-short', img: longUrl }),
         ]),
       });
       const json = component.getResponseJson(gen);
-      expect(json).toContain('https://example.com/img.webp');
+      expect(json).toContain(longUrl);
+      expect(json).not.toContain('[base64 data omitted]');
+    });
+
+    it('getOutputImageSrc should convert raw base64 payload to data URL', () => {
+      const rawBase64 = `iVBORw0KGgo${'A'.repeat(301)}`;
+      const output = makeOutput({ img: rawBase64 });
+
+      expect(component.getOutputImageSrc(output)).toBe(
+        `data:image/png;base64,${rawBase64}`,
+      );
+      expect(component.getOutputImageLink(output)).toBeNull();
+    });
+
+    it('getOutputImageSrc should keep URL payload unchanged', () => {
+      const output = makeOutput({ img: 'https://example.com/generated.webp' });
+
+      expect(component.getOutputImageSrc(output)).toBe(
+        'https://example.com/generated.webp',
+      );
+      expect(component.getOutputImageLink(output)).toBe(
+        'https://example.com/generated.webp',
+      );
     });
 
     it('getResponseJson should return empty string when no result', () => {

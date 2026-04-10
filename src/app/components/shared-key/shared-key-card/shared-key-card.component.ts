@@ -16,6 +16,7 @@ import {
 } from '../../json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../icon/icon.component';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 
 export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
 
@@ -102,7 +103,7 @@ export class SharedKeyCardComponent {
   }
 
   public async copyKeyId(): Promise<void> {
-    const didCopy = await this.copyToClipboard(this.sharedKey().id);
+    const didCopy = await copyToClipboard(this.sharedKey().id);
     if (!didCopy) {
       console.error('Failed to copy shared key ID.');
       return;
@@ -143,42 +144,5 @@ export class SharedKeyCardComponent {
     }
 
     return 'active';
-  }
-
-  private async copyToClipboard(text: string): Promise<boolean> {
-    try {
-      const clipboard = globalThis.navigator?.clipboard;
-      if (globalThis.isSecureContext && clipboard?.writeText) {
-        await clipboard.writeText(text);
-        return true;
-      }
-    } catch (error) {
-      console.error('Async clipboard copy failed.', error);
-    }
-
-    const body = globalThis.document?.body;
-    if (!body) {
-      return false;
-    }
-
-    const textArea = globalThis.document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.opacity = '0';
-    body.append(textArea);
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-
-    try {
-      return globalThis.document.execCommand('copy');
-    } catch (error) {
-      console.error('Fallback clipboard copy failed.', error);
-      return false;
-    } finally {
-      textArea.remove();
-    }
   }
 }

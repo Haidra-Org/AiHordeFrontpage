@@ -12,6 +12,7 @@ import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ToastService } from '../../../services/toast.service';
 import { AuthService } from '../../../services/auth.service';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import {
   UnitConversionService,
   SynthesizedUnit,
@@ -238,7 +239,7 @@ export class WorkerRowComponent {
 
   public async copyName(event: Event): Promise<void> {
     event.stopPropagation();
-    const success = await this.copyToClipboard(this.worker().name);
+    const success = await copyToClipboard(this.worker().name);
     if (success) {
       this.toastService.success('admin.workers.toast.name_copied', {
         transloco: true,
@@ -249,46 +250,12 @@ export class WorkerRowComponent {
 
   public async copyId(event: Event): Promise<void> {
     event.stopPropagation();
-    const success = await this.copyToClipboard(this.worker().id);
+    const success = await copyToClipboard(this.worker().id);
     if (success) {
       this.toastService.success('admin.workers.toast.id_copied', {
         transloco: true,
         messageParams: { id: this.worker().id },
       });
-    }
-  }
-
-  private async copyToClipboard(text: string): Promise<boolean> {
-    try {
-      const clipboard = globalThis.navigator?.clipboard;
-      if (globalThis.isSecureContext && clipboard?.writeText) {
-        await clipboard.writeText(text);
-        return true;
-      }
-    } catch {
-      // Async clipboard failed, try fallback
-    }
-
-    const body = globalThis.document?.body;
-    if (!body) return false;
-
-    const textArea = globalThis.document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.opacity = '0';
-    body.append(textArea);
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-
-    try {
-      return globalThis.document.execCommand('copy');
-    } catch {
-      return false;
-    } finally {
-      textArea.remove();
     }
   }
 }

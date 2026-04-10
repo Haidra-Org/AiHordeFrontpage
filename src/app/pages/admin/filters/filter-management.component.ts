@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { ToastService } from '../../../services/toast.service';
 import { finalize } from 'rxjs';
@@ -479,11 +480,14 @@ export class FilterManagementComponent implements OnInit {
   }
 
   // Copy to clipboard
-  public copyToClipboard(text: string): void {
-    navigator.clipboard.writeText(text).then(
-      () => this.toastService.success('Copied to clipboard.'),
-      () => this.toastService.error('Failed to copy to clipboard.'),
-    );
+  public async copyToClipboard(text: string): Promise<void> {
+    const copied = await copyToClipboard(text);
+    if (copied) {
+      this.toastService.success('Copied to clipboard.');
+      return;
+    }
+
+    this.toastService.error('Failed to copy to clipboard.');
   }
 
   // Unsaved changes guard support

@@ -1,9 +1,24 @@
 @if (hasTrackedGenerations()) {
   <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <p class="text-sm text-secondary">
-        {{ "admin.users.tracked_generations.info" | transloco }}
-      </p>
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex flex-col gap-1">
+        <p class="text-sm text-secondary">
+          {{ "admin.users.tracked_generations.info" | transloco }}
+        </p>
+        <p class="text-xs text-secondary">
+          @if (getLastRefreshedTimeLabel(); as refreshedAt) {
+            {{
+              "admin.users.tracked_generations.last_refreshed_at"
+                | transloco: { time: refreshedAt }
+            }}
+          } @else {
+            {{
+              "admin.users.tracked_generations.last_refreshed_pending"
+                | transloco
+            }}
+          }
+        </p>
+      </div>
       <button
         type="button"
         class="text-xs text-secondary hover:admin-text-light transition-colors"
@@ -27,9 +42,28 @@
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono text-secondary truncate">{{
-                    gen.id
-                  }}</span>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span
+                      class="text-xs font-mono admin-text-light truncate"
+                      [title]="gen.id"
+                      >{{ gen.id }}</span
+                    >
+                    <button
+                      type="button"
+                      class="btn-icon p-1 shrink-0"
+                      (click)="copyGenerationId(gen.id)"
+                      [attr.aria-label]="
+                        'admin.users.tracked_generations.copy_id'
+                          | transloco: { id: gen.id }
+                      "
+                    >
+                      @if (copiedGenerationId() === gen.id) {
+                        <app-icon class="w-3.5 h-3.5" name="check" />
+                      } @else {
+                        <app-icon class="w-3.5 h-3.5" name="copy" />
+                      }
+                    </button>
+                  </div>
                   @if (gen.done) {
                     <span class="text-green-500 text-sm font-medium">{{
                       "profile.generations.status.done" | transloco
@@ -191,19 +225,31 @@
                 <div class="mt-4 flex flex-col gap-4">
                   @for (output of getGenerationOutputs(gen); track output.id) {
                     <div class="flex flex-col gap-2">
-                      @if (output.state === "ok" && output.img) {
-                        <a
-                          [href]="output.img"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                      @if (
+                        output.state === "ok" && getOutputImageSrc(output);
+                        as imageSrc
+                      ) {
+                        @if (getOutputImageLink(output); as imageLink) {
+                          <a
+                            [href]="imageLink"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <img
+                              [src]="imageSrc"
+                              alt="Generated image"
+                              class="rounded-lg max-w-80 max-h-64 object-contain border border-gray-600"
+                              loading="lazy"
+                            />
+                          </a>
+                        } @else {
                           <img
-                            [src]="output.img"
+                            [src]="imageSrc"
                             alt="Generated image"
-                            class="rounded-lg max-w-[20rem] max-h-64 object-contain border border-gray-600"
+                            class="rounded-lg max-w-80 max-h-64 object-contain border border-gray-600"
                             loading="lazy"
                           />
-                        </a>
+                        }
                       }
                       <div
                         class="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs text-secondary"
@@ -270,7 +316,7 @@
                               @if (meta.ref) {
                                 <span>&middot;</span>
                                 <span
-                                  class="font-mono text-xs truncate max-w-[200px]"
+                                  class="font-mono text-xs truncate max-w-50"
                                   [title]="meta.ref"
                                   >{{ meta.ref }}</span
                                 >
@@ -322,9 +368,28 @@
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono text-secondary truncate">{{
-                    gen.id
-                  }}</span>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span
+                      class="text-xs font-mono admin-text-light truncate"
+                      [title]="gen.id"
+                      >{{ gen.id }}</span
+                    >
+                    <button
+                      type="button"
+                      class="btn-icon p-1 shrink-0"
+                      (click)="copyGenerationId(gen.id)"
+                      [attr.aria-label]="
+                        'admin.users.tracked_generations.copy_id'
+                          | transloco: { id: gen.id }
+                      "
+                    >
+                      @if (copiedGenerationId() === gen.id) {
+                        <app-icon class="w-3.5 h-3.5" name="check" />
+                      } @else {
+                        <app-icon class="w-3.5 h-3.5" name="copy" />
+                      }
+                    </button>
+                  </div>
                   @if (gen.done) {
                     <span class="text-green-500 text-sm font-medium">{{
                       "profile.generations.status.done" | transloco
@@ -512,9 +577,28 @@
             <div class="p-4 rounded-lg admin-bg-dark">
               <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex flex-col gap-1 min-w-0">
-                  <span class="text-xs font-mono text-secondary truncate">{{
-                    gen.id
-                  }}</span>
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span
+                      class="text-xs font-mono admin-text-light truncate"
+                      [title]="gen.id"
+                      >{{ gen.id }}</span
+                    >
+                    <button
+                      type="button"
+                      class="btn-icon p-1 shrink-0"
+                      (click)="copyGenerationId(gen.id)"
+                      [attr.aria-label]="
+                        'admin.users.tracked_generations.copy_id'
+                          | transloco: { id: gen.id }
+                      "
+                    >
+                      @if (copiedGenerationId() === gen.id) {
+                        <app-icon class="w-3.5 h-3.5" name="check" />
+                      } @else {
+                        <app-icon class="w-3.5 h-3.5" name="copy" />
+                      }
+                    </button>
+                  </div>
                   @if (gen.done) {
                     <span class="text-green-500 text-sm font-medium">{{
                       "profile.generations.status.done" | transloco

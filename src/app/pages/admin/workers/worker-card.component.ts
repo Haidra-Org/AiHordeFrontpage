@@ -30,6 +30,7 @@ import { RichTooltipDirective } from '../../../helper/rich-tooltip.directive';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 import { extractApiError } from '../../../helper/extract-api-error';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import {
   JsonInspectorComponent,
   JsonInspectorSection,
@@ -461,7 +462,7 @@ export class WorkerCardComponent {
   }
 
   public async copyWorkerName(): Promise<void> {
-    const success = await this.copyToClipboard(this.worker().name);
+    const success = await copyToClipboard(this.worker().name);
     if (success) {
       this.toastService.success('admin.workers.toast.name_copied', {
         transloco: true,
@@ -471,7 +472,7 @@ export class WorkerCardComponent {
   }
 
   public async copyWorkerId(): Promise<void> {
-    const success = await this.copyToClipboard(this.worker().id);
+    const success = await copyToClipboard(this.worker().id);
     if (success) {
       this.toastService.success('admin.workers.toast.id_copied', {
         transloco: true,
@@ -481,7 +482,7 @@ export class WorkerCardComponent {
   }
 
   public async copyModelName(model: string): Promise<void> {
-    const success = await this.copyToClipboard(model);
+    const success = await copyToClipboard(model);
     if (success) {
       this.toastService.success('admin.workers.toast.model_name_copied', {
         transloco: true,
@@ -492,45 +493,11 @@ export class WorkerCardComponent {
 
   public async copyAllModels(): Promise<void> {
     const models = this.getSortedModels().join('\n');
-    const success = await this.copyToClipboard(models);
+    const success = await copyToClipboard(models);
     if (success) {
       this.toastService.success('admin.workers.toast.models_copied', {
         transloco: true,
       });
-    }
-  }
-
-  private async copyToClipboard(text: string): Promise<boolean> {
-    try {
-      const clipboard = globalThis.navigator?.clipboard;
-      if (globalThis.isSecureContext && clipboard?.writeText) {
-        await clipboard.writeText(text);
-        return true;
-      }
-    } catch {
-      // Async clipboard failed, try fallback
-    }
-
-    const body = globalThis.document?.body;
-    if (!body) return false;
-
-    const textArea = globalThis.document.createElement('textarea');
-    textArea.value = text;
-    textArea.setAttribute('readonly', '');
-    textArea.style.position = 'fixed';
-    textArea.style.top = '0';
-    textArea.style.left = '0';
-    textArea.style.opacity = '0';
-    body.append(textArea);
-    textArea.select();
-    textArea.setSelectionRange(0, text.length);
-
-    try {
-      return globalThis.document.execCommand('copy');
-    } catch {
-      return false;
-    } finally {
-      textArea.remove();
     }
   }
 
