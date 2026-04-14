@@ -473,6 +473,32 @@
     "discordDescription": "an OpenCode clone using Horde as a backend"
   },
   {
+    "name": "Java Horde Bridge",
+    "description": "A Java based implementation for StableHorde's Generations UI",
+    "link": "https://github.com/LogicismDev/Java-Horde-Bridge",
+    "categories": ["Developer", "GitHub"],
+    "itemType": "tool",
+    "domain": ["text", "image"],
+    "platform": ["server", "cli"],
+    "functionKind": "utility",
+    "sourceControlLink": "https://github.com/LogicismDev/Java-Horde-Bridge",
+    "discordAuthor": "214029393809506306",
+    "discordDescription": "a modern bridge for connecting text workers using kobold protocol or interrogation workers to Horde."
+  },
+  {
+    "name": "Horde Interrogate Agent",
+    "description": "A simple backend for Horde image interrogation",
+    "link": "https://github.com/LogicismDev/HordeInterrogateAgent",
+    "categories": ["Developer", "GitHub"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "cli"],
+    "functionKind": "worker",
+    "sourceControlLink": "https://github.com/TriDefender/OpenCorde",
+    "discordAuthor": "214029393809506306",
+    "discordDescription": "a modern interrogator backend for Horde, used with the Java bridge"
+  },
+  {
     "name": "belarrius-ai-horde-bridge",
     "description": "An alternative text bridge with support for OpenAI free moderation API, connecting half a dozen inferencers to Horde.",
     "link": "https://github.com/Belarrius1/belarrius-ai-horde-bridge",
@@ -487,6 +513,29 @@
     "discordDescription": "an alternative text bridge with support for openai free moderation API, connecting half a dozen inferencers to Horde."
   },
   {
+    "name": "llmfit",
+    "description": "A terminal tool that right-sizes LLM models to your system's RAM, CPU, and GPU. Detects your hardware, scores each model across quality, speed, fit, and context, and tells you which models can actually run well on your machine.",
+    "link": "https://www.llmfit.org/",
+    "categories": ["Developer", "GitHub"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["cli"],
+    "functionKind": "utility",
+    "sourceControlLink": "https://github.com/AlexsJones/llmfit",
+    "discordDescription": "find out what models work well with your GPU."
+  },
+  {
+    "name": "canirun.ai",
+    "description": "Find out which AI models your machine can actually run.",
+    "link": "https://www.canirun.ai/",
+    "categories": ["Web", "Site"],
+    "itemType": "tool",
+    "domain": ["text"],
+    "platform": ["web"],
+    "functionKind": "utility",
+    "discordDescription": "find out what models work well with your PC in the browser."
+  },
+  {
     "name": "Arcaria-VCF",
     "description": "A vibe-coded web interface for AI Horde image generation.",
     "link": "https://arcaria.github.io/Arcaria-VCF/",
@@ -498,6 +547,18 @@
     "sourceControlLink": "https://github.com/arcaria/Arcaria-VCF",
     "discordAuthor": "884968968685776947",
     "discordDescription": "a vibe-coded interface"
+  },
+  {
+    "name": "Refine Forever",
+    "description": "Transform your images with advanced editing, character creation, and AI-powered tools.",
+    "link": "https://refineforever.com",
+    "categories": ["Web", "Image Generation"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "discordAuthor": "265627913733406721",
+    "discordDescription": "a new UI"
   },
   {
     "name": "Dreamers Guild",
