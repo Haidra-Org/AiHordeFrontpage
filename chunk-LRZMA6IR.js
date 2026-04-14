@@ -1,0 +1,1 @@
+import"./chunk-7CGTOI24.js";var o=[{path:"",redirectTo:"workers",pathMatch:"full"},{path:"workers",loadComponent:()=>import("./chunk-JRV2N6DL.js").then(e=>e.WorkersComponent)},{path:"joining",redirectTo:"workers",pathMatch:"full"},{path:"donate",loadComponent:()=>import("./chunk-J6USKTIO.js").then(e=>e.DonateComponent)}];export{o as contributeRoutes};
