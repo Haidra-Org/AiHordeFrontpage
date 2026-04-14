@@ -10,19 +10,12 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
-import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { setPageTitle } from '../../../helper/page-title';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [
-    TranslocoPipe,
-    TranslocoModule,
-    RouterLink,
-    FormatNumberPipe,
-    IconComponent,
-  ],
+  imports: [TranslocoPipe, TranslocoModule, RouterLink, IconComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -280,6 +280,93 @@ describe('rateLimitInterceptor', () => {
     expect(state.limited()).toBe(false);
     expect(state.retryAfterMs()).toBe(-1);
   });
+
+  it('should parse Retry-After as an HTTP-date', () => {
+    let result: unknown;
+    http
+      .get('https://aihorde.net/api/v2/status/performance')
+      .subscribe((r) => (result = r));
+
+    // Use a date ~2 seconds in the future
+    const futureDate = new Date(Date.now() + 2000);
+    const httpDate = futureDate.toUTCString();
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush('Rate limited', {
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: { 'Retry-After': httpDate },
+      });
+
+    expect(state.limited()).toBe(true);
+    const delayMs = state.retryAfterMs() - Date.now();
+    expect(delayMs).toBeGreaterThan(0);
+
+    // Advance by the derived delay, not a hardcoded guess.
+    vi.advanceTimersByTime(delayMs);
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush({ ok: true });
+
+    expect(result).toEqual({ ok: true });
+    expect(state.limited()).toBe(false);
+  });
+
+  it('should fall back to exponential backoff for non-parseable Retry-After', () => {
+    let result: unknown;
+    http
+      .get('https://aihorde.net/api/v2/status/performance')
+      .subscribe((r) => (result = r));
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush('Rate limited', {
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: { 'Retry-After': 'garbage-value' },
+      });
+
+    expect(state.limited()).toBe(true);
+
+    // Default backoff for first retry: 2000 * 2^0 = 2000ms
+    vi.advanceTimersByTime(2000);
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush({ ok: true });
+
+    expect(result).toEqual({ ok: true });
+    expect(state.limited()).toBe(false);
+  });
+
+  it('should clamp Retry-After HTTP-date in the past to 0ms delay', () => {
+    let result: unknown;
+    http
+      .get('https://aihorde.net/api/v2/status/performance')
+      .subscribe((r) => (result = r));
+
+    // A date in the past
+    const pastDate = new Date(Date.now() - 5000).toUTCString();
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush('Rate limited', {
+        status: 429,
+        statusText: 'Too Many Requests',
+        headers: { 'Retry-After': pastDate },
+      });
+
+    // timer(0) still needs to fire
+    vi.advanceTimersByTime(0);
+
+    httpTesting
+      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .flush({ ok: true });
+
+    expect(result).toEqual({ ok: true });
+  });
 });
 
 // Separate describe for RateLimitState service

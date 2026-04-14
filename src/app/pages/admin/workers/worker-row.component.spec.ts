@@ -50,15 +50,45 @@ describe('WorkerRowComponent', () => {
   };
 
   const imageUnit: SynthesizedUnit = {
-    value: 1.5,
-    unit: 'MPS',
-    precision: 1,
+    primary: {
+      value: 1.5,
+      prefix: '',
+      prefixShort: '',
+      unit: 'mps/s',
+      formatted: '1.50 mps/s',
+      formattedShort: '1.50 mps/s',
+    },
+    technical: {
+      value: 0.075,
+      prefix: '',
+      prefixShort: '',
+      unit: 'std img/s',
+      formatted: '0.08 std img/s',
+      formattedShort: '0.08 std img/s',
+    },
+    rawValue: 1.5,
+    explanationKeys: ['mps.tooltip.line1'],
   };
 
   const textUnit: SynthesizedUnit = {
-    value: 5,
-    unit: 'TPS',
-    precision: 1,
+    primary: {
+      value: 5,
+      prefix: '',
+      prefixShort: '',
+      unit: 'tokens/s',
+      formatted: '5.0 tokens/s',
+      formattedShort: '5.0 tokens/s',
+    },
+    technical: {
+      value: 0.0075,
+      prefix: '',
+      prefixShort: '',
+      unit: 'pages/s',
+      formatted: '0.008 pages/s',
+      formattedShort: '0.008 pages/s',
+    },
+    rawValue: 5,
+    explanationKeys: ['pages_of_text.tooltip.line1'],
   };
 
   const mockUnitConversion = {

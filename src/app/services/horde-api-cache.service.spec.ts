@@ -342,6 +342,70 @@ describe('HordeApiCacheService', () => {
       expect(keyAResult).toEqual({ username: 'A' });
       expect(keyBResult).toEqual({ username: 'B' });
     });
+
+    it('should normalize header key casing so equivalent headers share cache', () => {
+      let result1: unknown;
+      let result2: unknown;
+
+      // First call with lowercase 'apikey'
+      service
+        .cachedGet(
+          'https://aihorde.net/api/v2/find_user',
+          { headers: { apikey: 'my-key' } },
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (result1 = r));
+
+      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+        username: 'Cached',
+      });
+
+      // Second call with different casing 'Apikey' — should hit cache
+      service
+        .cachedGet(
+          'https://aihorde.net/api/v2/find_user',
+          { headers: { Apikey: 'my-key' } },
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (result2 = r));
+
+      // No new request — cache hit due to case-insensitive header normalization
+      httpTesting.expectNone('https://aihorde.net/api/v2/find_user');
+
+      expect(result1).toEqual({ username: 'Cached' });
+      expect(result2).toEqual({ username: 'Cached' });
+    });
+
+    it('should normalize header key ordering so reordered headers share cache', () => {
+      let result1: unknown;
+      let result2: unknown;
+
+      service
+        .cachedGet(
+          'https://aihorde.net/api/v2/find_user',
+          { headers: { apikey: 'k', 'x-custom': 'v' } },
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (result1 = r));
+
+      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+        username: 'Ordered',
+      });
+
+      // Same headers in different insertion order
+      service
+        .cachedGet(
+          'https://aihorde.net/api/v2/find_user',
+          { headers: { 'x-custom': 'v', apikey: 'k' } },
+          { ttl: CacheTTL.LONG },
+        )
+        .subscribe((r) => (result2 = r));
+
+      httpTesting.expectNone('https://aihorde.net/api/v2/find_user');
+
+      expect(result1).toEqual({ username: 'Ordered' });
+      expect(result2).toEqual({ username: 'Ordered' });
+    });
   });
 
   // ========================================================================

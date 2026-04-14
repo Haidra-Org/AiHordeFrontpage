@@ -212,10 +212,8 @@ export class AiHordeService {
     // todo once filtering is available, filter it on the api, this is only temporary solution
     const userIds = [258170];
 
-    return zip(
-      userIds.map((userId) =>
-        this.getUserById(userId).pipe(map((user) => user!)),
-      ),
+    return zip(userIds.map((userId) => this.getUserById(userId))).pipe(
+      map((users) => users.filter((user): user is HordeUser => user !== null)),
     );
   }
 

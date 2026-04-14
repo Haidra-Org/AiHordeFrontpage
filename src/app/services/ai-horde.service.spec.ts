@@ -209,6 +209,18 @@ describe('AiHordeService', () => {
 
       expect(await promise).toBeNull();
     });
+
+    it('should return GENERATION_NOT_FOUND on 404', async () => {
+      const promise = firstValueFrom(
+        service.getImageGenerationStatus('gen-gone'),
+      );
+
+      http
+        .expectOne('https://aihorde.net/api/v2/generate/status/gen-gone')
+        .flush('Not found', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBe(GENERATION_NOT_FOUND);
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -292,7 +304,17 @@ describe('AiHordeService', () => {
       expect(await promise).toEqual(mockStatus);
     });
 
-    it('should return null on HTTP error', async () => {
+    it('should return GENERATION_NOT_FOUND on 404', async () => {
+      const promise = firstValueFrom(service.getAlchemyStatus('alch-gone'));
+
+      http
+        .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-gone')
+        .flush('Not found', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBe(GENERATION_NOT_FOUND);
+    });
+
+    it('should return null on non-404 HTTP error', async () => {
       const promise = firstValueFrom(service.getAlchemyStatus('alch-bad'));
 
       http
@@ -600,6 +622,47 @@ describe('AiHordeService', () => {
       expect(news[1].title).toBe('Same (2)');
     });
 
+    it('should produce incrementing suffixes for 3+ duplicates', async () => {
+      const tripleItems = [
+        {
+          title: 'Dupe',
+          date_published: '2024-01-01',
+          newspiece: 'A',
+          more_info_urls: [],
+        },
+        {
+          title: 'Dupe',
+          date_published: '2024-01-02',
+          newspiece: 'B',
+          more_info_urls: [],
+        },
+        {
+          title: 'Dupe',
+          date_published: '2024-01-03',
+          newspiece: 'C',
+          more_info_urls: [],
+        },
+        {
+          title: 'Dupe',
+          date_published: '2024-01-04',
+          newspiece: 'D',
+          more_info_urls: [],
+        },
+      ];
+
+      const promise = firstValueFrom(service.getNews());
+
+      http
+        .expectOne('https://aihorde.net/api/v2/status/news')
+        .flush(tripleItems);
+
+      const news = await promise;
+      expect(news[0].title).toBe('Dupe');
+      expect(news[1].title).toBe('Dupe (2)');
+      expect(news[2].title).toBe('Dupe (3)');
+      expect(news[3].title).toBe('Dupe (4)');
+    });
+
     it('should handle missing more_info_urls gracefully', async () => {
       const items = [
         {
@@ -734,6 +797,149 @@ describe('AiHordeService', () => {
         'https://aihorde.net/api/v2/stats/text/models',
       );
       expect(req.request.method).toBe('GET');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // interrogationStats
+  // -----------------------------------------------------------------------
+  describe('interrogationStats', () => {
+    it('should return a valid processed-count payload', async () => {
+      const result = await firstValueFrom(service.interrogationStats);
+      expect(result).toEqual({ processed: expect.any(Number) });
+      expect(result.processed).toBeGreaterThan(0);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // inferPublicWorkers
+  // -----------------------------------------------------------------------
+  describe('inferPublicWorkers', () => {
+    it('should call user endpoint with anonymous API key', () => {
+      service.inferPublicWorkers(42).subscribe();
+
+      const req = http.expectOne('https://aihorde.net/api/v2/users/42');
+      expect(req.request.headers.get('apikey')).toBe('0000000000');
+      req.flush({ username: 'test', id: 42, worker_ids: ['w1'] });
+    });
+
+    it('should return true when worker_ids is a non-empty array', async () => {
+      const promise = firstValueFrom(service.inferPublicWorkers(42));
+
+      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+        username: 'test',
+        id: 42,
+        worker_ids: ['w1', 'w2'],
+      });
+
+      expect(await promise).toBe(true);
+    });
+
+    it('should return false when worker_ids is an empty array', async () => {
+      const promise = firstValueFrom(service.inferPublicWorkers(42));
+
+      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+        username: 'test',
+        id: 42,
+        worker_ids: [],
+      });
+
+      expect(await promise).toBe(false);
+    });
+
+    it('should return false when worker_ids is undefined', async () => {
+      const promise = firstValueFrom(service.inferPublicWorkers(42));
+
+      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+        username: 'test',
+        id: 42,
+      });
+
+      expect(await promise).toBe(false);
+    });
+
+    it('should return false on API error', async () => {
+      const promise = firstValueFrom(service.inferPublicWorkers(42));
+
+      http
+        .expectOne('https://aihorde.net/api/v2/users/42')
+        .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+      expect(await promise).toBe(false);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // getEducatorAccounts
+  // -----------------------------------------------------------------------
+  describe('getEducatorAccounts', () => {
+    it('should fetch the hardcoded educator user ID', async () => {
+      const promise = firstValueFrom(service.getEducatorAccounts());
+
+      http.expectOne('https://aihorde.net/api/v2/users/258170').flush({
+        username: 'educator',
+        id: 258170,
+        kudos: 1000,
+      });
+
+      const result = await promise;
+      expect(result).toEqual([
+        { username: 'educator', id: 258170, kudos: 1000 },
+      ]);
+    });
+
+    it('should filter out null users when a lookup fails', async () => {
+      const promise = firstValueFrom(service.getEducatorAccounts());
+
+      http.expectOne('https://aihorde.net/api/v2/users/258170').flush('Gone', {
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      await expect(promise).resolves.toEqual([]);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // getKudosLeaderboardPage
+  // -----------------------------------------------------------------------
+  describe('getKudosLeaderboardPage', () => {
+    it('should GET users with the page parameter', () => {
+      service.getKudosLeaderboardPage(3).subscribe();
+      const req = http.expectOne(
+        'https://aihorde.net/api/v2/users?page=3&sort=kudos',
+      );
+      expect(req.request.method).toBe('GET');
+    });
+
+    it('should map all users without slicing', async () => {
+      const users = Array.from({ length: 30 }, (_, i) => ({
+        username: `user-${i}`,
+        id: i,
+        kudos: 1000 - i,
+      }));
+
+      const promise = firstValueFrom(service.getKudosLeaderboardPage(1));
+
+      http
+        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
+        .flush(users);
+
+      const result = await promise;
+      // Unlike getKudosLeaderboard which slices to 25, this returns all users
+      expect(result.length).toBe(30);
+      expect(result[0]).toEqual({ username: 'user-0', id: 0, kudos: 1000 });
+      expect(result[29]).toEqual({ username: 'user-29', id: 29, kudos: 971 });
+    });
+
+    it('should return empty array on error', async () => {
+      const promise = firstValueFrom(service.getKudosLeaderboardPage(1));
+
+      http
+        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
+        .flush('Error', { status: 500, statusText: 'Server Error' });
+
+      expect(await promise).toEqual([]);
     });
   });
 });
