@@ -9,6 +9,7 @@ import {
   SimpleResponse,
 } from '../types/ip-operations';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { API_BASE_URL } from './api-config';
 
 /**
  * Service for managing IP operations (timeouts and blocks).
@@ -22,7 +23,7 @@ export class AdminOperationsService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly cache = inject(HordeApiCacheService);
-  private readonly baseUrl = 'https://aihorde.net/api/v2';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   /**
    * Get authorization headers for API requests.

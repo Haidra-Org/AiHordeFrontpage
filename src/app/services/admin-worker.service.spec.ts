@@ -9,6 +9,9 @@ import { AdminWorkerService } from './admin-worker.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { HordeWorker } from '../types/horde-worker';
+import { API_BASE } from '../testing/api-test-helpers';
+
+const BASE = API_BASE;
 
 describe('AdminWorkerService', () => {
   let service: AdminWorkerService;
@@ -182,9 +185,7 @@ describe('AdminWorkerService', () => {
     it('sends PUT with apikey and invalidates cache', () => {
       service.updateWorker('w1', { paused: true }).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/workers/w1',
-      );
+      const req = httpTesting.expectOne(`${BASE}/workers/w1`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.headers.get('apikey')).toBe('admin-key');
       req.flush({ paused: true });
@@ -210,9 +211,7 @@ describe('AdminWorkerService', () => {
     it('sends maintenance flag with message', () => {
       service.setMaintenance('w1', true, 'GPU update').subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/workers/w1',
-      );
+      const req = httpTesting.expectOne(`${BASE}/workers/w1`);
       expect(req.request.body).toEqual({
         maintenance: true,
         maintenance_msg: 'GPU update',
@@ -223,9 +222,7 @@ describe('AdminWorkerService', () => {
     it('clears message when disabling maintenance', () => {
       service.setMaintenance('w1', false).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/workers/w1',
-      );
+      const req = httpTesting.expectOne(`${BASE}/workers/w1`);
       expect(req.request.body.maintenance).toBe(false);
       expect(req.request.body.maintenance_msg).toBe('');
       req.flush({});
@@ -236,9 +233,7 @@ describe('AdminWorkerService', () => {
     it('sends paused payload', () => {
       service.setPaused('w1', true).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/workers/w1',
-      );
+      const req = httpTesting.expectOne(`${BASE}/workers/w1`);
       expect(req.request.body).toEqual({ paused: true });
       req.flush({});
     });
@@ -253,9 +248,7 @@ describe('AdminWorkerService', () => {
       let result: unknown;
       service.deleteWorker('w1').subscribe((r) => (result = r));
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/workers/w1',
-      );
+      const req = httpTesting.expectOne(`${BASE}/workers/w1`);
       expect(req.request.method).toBe('DELETE');
       req.flush({ deleted_id: 'w1', deleted_name: 'test' });
 

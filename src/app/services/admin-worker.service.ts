@@ -9,6 +9,7 @@ import {
 } from '../types/horde-worker';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { API_BASE_URL } from './api-config';
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +18,7 @@ export class AdminWorkerService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly cache = inject(HordeApiCacheService);
-  private readonly baseUrl = 'https://aihorde.net/api/v2';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   /**
    * Get all workers in the horde

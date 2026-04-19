@@ -28,9 +28,7 @@ import {
 } from '../types/generation';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
-import { environment } from '../../environments/environment';
-
-const BASE = environment.apiBaseUrl;
+import { API_BASE_URL } from './api-config';
 
 @Injectable({
   providedIn: 'root',
@@ -38,10 +36,11 @@ const BASE = environment.apiBaseUrl;
 export class AiHordeService {
   private readonly httpClient = inject(HttpClient);
   private readonly cache = inject(HordeApiCacheService);
+  private readonly baseUrl = inject(API_BASE_URL);
 
   public get imageStats(): Observable<ImageTotalStats> {
     return this.cache.cachedGet<ImageTotalStats>(
-      `${BASE}/stats/img/totals`,
+      `${this.baseUrl}/stats/img/totals`,
       undefined,
       {
         ttl: CacheTTL.LONG,
@@ -52,7 +51,7 @@ export class AiHordeService {
 
   public get textStats(): Observable<TextTotalStats> {
     return this.cache.cachedGet<TextTotalStats>(
-      `${BASE}/stats/text/totals`,
+      `${this.baseUrl}/stats/text/totals`,
       undefined,
       {
         ttl: CacheTTL.LONG,
@@ -63,7 +62,7 @@ export class AiHordeService {
 
   public get performance(): Observable<HordePerformance> {
     return this.cache.cachedGet<HordePerformance>(
-      `${BASE}/status/performance`,
+      `${this.baseUrl}/status/performance`,
       undefined,
       {
         ttl: CacheTTL.MEDIUM,
@@ -81,7 +80,7 @@ export class AiHordeService {
   public get terms(): Observable<string> {
     return this.cache
       .cachedGet<HtmlHordeDocument>(
-        `${BASE}/documents/terms?format=html`,
+        `${this.baseUrl}/documents/terms?format=html`,
         undefined,
         {
           ttl: CacheTTL.VERY_LONG,
@@ -94,7 +93,7 @@ export class AiHordeService {
   public get privacyPolicy(): Observable<string> {
     return this.cache
       .cachedGet<HtmlHordeDocument>(
-        `${BASE}/documents/privacy?format=html`,
+        `${this.baseUrl}/documents/privacy?format=html`,
         undefined,
         {
           ttl: CacheTTL.VERY_LONG,
@@ -108,7 +107,7 @@ export class AiHordeService {
     return this.cache
       .cachedGet<
         HordeNewsItem[]
-      >(`${BASE}/status/news`, undefined, { ttl: CacheTTL.VERY_LONG, category: 'news' })
+      >(`${this.baseUrl}/status/news`, undefined, { ttl: CacheTTL.VERY_LONG, category: 'news' })
       .pipe(
         map((newsItems) => (count ? newsItems.slice(0, count) : newsItems)),
         map((newsItems) => {
@@ -138,7 +137,7 @@ export class AiHordeService {
   public getUserByApiKey(apiKey: string): Observable<HordeUser | null> {
     return this.cache
       .cachedGet<HordeUser>(
-        `${BASE}/find_user`,
+        `${this.baseUrl}/find_user`,
         { headers: { apikey: apiKey } },
         { ttl: CacheTTL.MEDIUM, category: 'user' },
       )
@@ -149,7 +148,7 @@ export class AiHordeService {
     apiKey: string,
   ): Observable<HordeUser | null> {
     return this.httpClient
-      .get<HordeUser>(`${BASE}/find_user`, {
+      .get<HordeUser>(`${this.baseUrl}/find_user`, {
         headers: { apikey: apiKey },
       })
       .pipe(catchError(() => of(null)));
@@ -157,7 +156,7 @@ export class AiHordeService {
 
   public getUserById(id: number): Observable<HordeUser | null> {
     return this.cache
-      .cachedGet<HordeUser>(`${BASE}/users/${id}`, undefined, {
+      .cachedGet<HordeUser>(`${this.baseUrl}/users/${id}`, undefined, {
         ttl: CacheTTL.MEDIUM,
         category: 'user',
       })
@@ -171,7 +170,7 @@ export class AiHordeService {
   public inferPublicWorkers(userId: number): Observable<boolean> {
     return this.cache
       .cachedGet<HordeUser>(
-        `${BASE}/users/${userId}`,
+        `${this.baseUrl}/users/${userId}`,
         { headers: { apikey: '0000000000' } },
         { ttl: CacheTTL.MEDIUM, category: 'user' },
       )
@@ -191,7 +190,7 @@ export class AiHordeService {
   ): Observable<boolean> {
     return this.httpClient
       .post<unknown>(
-        `${BASE}/kudos/transfer`,
+        `${this.baseUrl}/kudos/transfer`,
         {
           username: targetUser,
           amount: amount,
@@ -227,7 +226,7 @@ export class AiHordeService {
     modelState: 'known' | 'custom' | 'all' = 'all',
   ): Observable<ActiveModel[]> {
     return this.cache.cachedGet<ActiveModel[]>(
-      `${BASE}/status/models?type=${type}&model_state=${modelState}`,
+      `${this.baseUrl}/status/models?type=${type}&model_state=${modelState}`,
       undefined,
       { ttl: CacheTTL.LONG, category: 'models' },
     );
@@ -255,7 +254,7 @@ export class AiHordeService {
     modelState: 'known' | 'custom' | 'all' = 'known',
   ): Observable<ImageModelStats> {
     return this.cache.cachedGet<ImageModelStats>(
-      `${BASE}/stats/img/models?model_state=${modelState}`,
+      `${this.baseUrl}/stats/img/models?model_state=${modelState}`,
       undefined,
       {
         ttl: CacheTTL.LONG,
@@ -269,7 +268,7 @@ export class AiHordeService {
    */
   public getTextModelStats(): Observable<TextModelStats> {
     return this.cache.cachedGet<TextModelStats>(
-      `${BASE}/stats/text/models`,
+      `${this.baseUrl}/stats/text/models`,
       undefined,
       {
         ttl: CacheTTL.LONG,
@@ -290,7 +289,7 @@ export class AiHordeService {
     return this.cache
       .cachedGet<
         HordeUser[]
-      >(`${BASE}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
+      >(`${this.baseUrl}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
       .pipe(
         map((users) =>
           users.slice(0, limit).map((user) => ({
@@ -311,7 +310,7 @@ export class AiHordeService {
     return this.cache
       .cachedGet<
         HordeUser[]
-      >(`${BASE}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
+      >(`${this.baseUrl}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
       .pipe(
         map((users) =>
           users.map((user) => ({
@@ -334,10 +333,14 @@ export class AiHordeService {
     request: ImageGenerationRequest,
   ): Observable<ImageGenerationResponse | null> {
     return this.httpClient
-      .post<ImageGenerationResponse>(`${BASE}/generate/async`, request, {
-        headers: { apikey: apiKey },
-        context: this.generateContext,
-      })
+      .post<ImageGenerationResponse>(
+        `${this.baseUrl}/generate/async`,
+        request,
+        {
+          headers: { apikey: apiKey },
+          context: this.generateContext,
+        },
+      )
       .pipe(catchError(() => of(null)));
   }
 
@@ -347,7 +350,7 @@ export class AiHordeService {
   ): Observable<GenerationCheckResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationCheckResponse>(
-        `${BASE}/generate/check/${encodeURIComponent(id)}`,
+        `${this.baseUrl}/generate/check/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
@@ -357,7 +360,7 @@ export class AiHordeService {
   ): Observable<GenerationStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<GenerationStatusResponse>(
-        `${BASE}/generate/status/${encodeURIComponent(id)}`,
+        `${this.baseUrl}/generate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
@@ -369,7 +372,7 @@ export class AiHordeService {
   > {
     return this.httpClient
       .get<TextGenerationStatusResponse>(
-        `${BASE}/generate/text/status/${encodeURIComponent(id)}`,
+        `${this.baseUrl}/generate/text/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
@@ -379,7 +382,7 @@ export class AiHordeService {
   ): Observable<AlchemyStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<AlchemyStatusResponse>(
-        `${BASE}/interrogate/status/${encodeURIComponent(id)}`,
+        `${this.baseUrl}/interrogate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }

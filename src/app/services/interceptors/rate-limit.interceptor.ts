@@ -7,11 +7,11 @@ import {
 import { inject } from '@angular/core';
 import { Observable, throwError, timer } from 'rxjs';
 import { catchError, switchMap } from 'rxjs';
+import { API_BASE_URL } from '../api-config';
 
 const MAX_RETRIES = 2;
 const DEFAULT_BACKOFF_MS = 2_000;
 
-const HORDE_API_HOST = 'aihorde.net';
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD']);
 
 /**
@@ -47,7 +47,9 @@ function parseRetryAfterMs(response: HttpErrorResponse): number | null {
 }
 
 export const rateLimitInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.includes(HORDE_API_HOST)) {
+  const apiHost = new URL(inject(API_BASE_URL)).hostname;
+
+  if (!req.url.includes(apiHost)) {
     return next(req);
   }
 

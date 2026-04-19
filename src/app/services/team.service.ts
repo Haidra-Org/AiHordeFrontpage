@@ -17,6 +17,7 @@ import { ApiError } from '../types/api-error';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
+import { API_BASE_URL } from './api-config';
 
 @Injectable({
   providedIn: 'root',
@@ -25,7 +26,7 @@ export class TeamService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly cache = inject(HordeApiCacheService);
-  private readonly baseUrl = 'https://aihorde.net/api/v2/teams';
+  private readonly baseUrl = `${inject(API_BASE_URL)}/teams`;
 
   private readonly teamContext = new HttpContext().set(
     CLIENT_AGENT,

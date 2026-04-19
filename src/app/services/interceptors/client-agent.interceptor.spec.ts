@@ -13,6 +13,7 @@ import {
   clientAgentInterceptor,
   CLIENT_AGENT,
 } from './client-agent.interceptor';
+import { API_BASE } from '../../testing/api-test-helpers';
 
 describe('clientAgentInterceptor', () => {
   let http: HttpClient;
@@ -33,12 +34,10 @@ describe('clientAgentInterceptor', () => {
     httpTesting.verify();
   });
 
-  it('should add the default Client-Agent header to aihorde.net requests', () => {
-    http.get('https://aihorde.net/api/v2/status/performance').subscribe();
+  it('should add the default Client-Agent header to API requests', () => {
+    http.get(`${API_BASE}/status/performance`).subscribe();
 
-    const req = httpTesting.expectOne(
-      'https://aihorde.net/api/v2/status/performance',
-    );
+    const req = httpTesting.expectOne(`${API_BASE}/status/performance`);
     expect(req.request.headers.get('Client-Agent')).toBe(
       'AiHordeFrontpage:web',
     );
@@ -67,13 +66,9 @@ describe('clientAgentInterceptor', () => {
       'AiHordeFrontpage:generate',
     );
 
-    http
-      .get('https://aihorde.net/api/v2/generate/async', { context: ctx })
-      .subscribe();
+    http.get(`${API_BASE}/generate/async`, { context: ctx }).subscribe();
 
-    const req = httpTesting.expectOne(
-      'https://aihorde.net/api/v2/generate/async',
-    );
+    const req = httpTesting.expectOne(`${API_BASE}/generate/async`);
     expect(req.request.headers.get('Client-Agent')).toBe(
       'AiHordeFrontpage:generate',
     );
@@ -82,12 +77,12 @@ describe('clientAgentInterceptor', () => {
 
   it('should preserve existing headers on the request', () => {
     http
-      .get('https://aihorde.net/api/v2/find_user', {
+      .get(`${API_BASE}/find_user`, {
         headers: { apikey: 'test-key-123' },
       })
       .subscribe();
 
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/find_user');
+    const req = httpTesting.expectOne(`${API_BASE}/find_user`);
     expect(req.request.headers.get('apikey')).toBe('test-key-123');
     expect(req.request.headers.get('Client-Agent')).toBe(
       'AiHordeFrontpage:web',

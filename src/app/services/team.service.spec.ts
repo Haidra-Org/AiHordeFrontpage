@@ -15,8 +15,9 @@ import type {
   TeamModifyResponse,
   DeletedTeamResponse,
 } from '../types/team';
+import { API_BASE } from '../testing/api-test-helpers';
 
-const BASE = 'https://aihorde.net/api/v2/teams';
+const BASE = `${API_BASE}/teams`;
 
 describe('TeamService', () => {
   let svc: TeamService;

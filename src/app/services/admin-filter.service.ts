@@ -11,6 +11,7 @@ import {
   TestPromptRequest,
 } from '../types/filter';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
+import { API_BASE_URL } from './api-config';
 
 /**
  * Service for managing AI Horde filters.
@@ -24,7 +25,7 @@ export class AdminFilterService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly cache = inject(HordeApiCacheService);
-  private readonly baseUrl = 'https://aihorde.net/api/v2';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   /**
    * Get authorization headers for API requests.

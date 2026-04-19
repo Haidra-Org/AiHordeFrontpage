@@ -10,6 +10,7 @@ import { StyleService } from './style.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { ApiError } from '../types/api-error';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('StyleService', () => {
   let service: StyleService;
@@ -157,9 +158,7 @@ describe('StyleService', () => {
       const payload = { name: 'New Style', prompt: 'test {p}' };
       service.createImageStyle(payload as never).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/image`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('apikey')).toBe('test-key');
       req.flush({ id: 'new-id' });
@@ -171,9 +170,7 @@ describe('StyleService', () => {
 
     it('updateImageStyle sends PATCH to correct URL', () => {
       service.updateImageStyle('s1', { name: 'Updated' } as never).subscribe();
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image/s1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/image/s1`);
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 's1' });
     });
@@ -181,9 +178,7 @@ describe('StyleService', () => {
     it('deleteImageStyle sends DELETE and returns true', () => {
       let result: unknown;
       service.deleteImageStyle('s1').subscribe((r) => (result = r));
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image/s1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/image/s1`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
       expect(result).toBe(true);
@@ -191,18 +186,14 @@ describe('StyleService', () => {
 
     it('createTextStyle sends POST', () => {
       service.createTextStyle({ name: 'TS' } as never).subscribe();
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/text',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/text`);
       expect(req.request.method).toBe('POST');
       req.flush({ id: 'ts1' });
     });
 
     it('deleteTextStyle sends DELETE', () => {
       service.deleteTextStyle('ts1').subscribe();
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/text/ts1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/text/ts1`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
     });
@@ -231,9 +222,7 @@ describe('StyleService', () => {
       service
         .addImageStyleExample('s1', { url: 'https://img.example.com' } as never)
         .subscribe();
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image/s1/example',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/image/s1/example`);
       expect(req.request.method).toBe('POST');
       req.flush({ id: 'ex1' });
     });
@@ -243,7 +232,7 @@ describe('StyleService', () => {
         .updateImageStyleExample('s1', 'ex1', { primary: true } as never)
         .subscribe();
       const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image/s1/example/ex1',
+        `${API_BASE}/styles/image/s1/example/ex1`,
       );
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 'ex1' });
@@ -255,7 +244,7 @@ describe('StyleService', () => {
         .deleteImageStyleExample('s1', 'ex1')
         .subscribe((r) => (result = r));
       const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image/s1/example/ex1',
+        `${API_BASE}/styles/image/s1/example/ex1`,
       );
       req.flush(null);
       expect(result).toBe(true);
@@ -304,9 +293,7 @@ describe('StyleService', () => {
         error: (e: unknown) => (error = e as ApiError),
       });
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/styles/image',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/styles/image`);
       req.flush(
         { message: 'Forbidden', rc: 'StyleOwnerOnly' },
         { status: 403, statusText: 'Forbidden' },

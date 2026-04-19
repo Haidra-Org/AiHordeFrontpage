@@ -6,7 +6,7 @@ import { DatabaseService, StorageType } from './database.service';
 import { AiHordeService } from './ai-horde.service';
 import { ActiveGenerations, HordeUser } from '../types/horde-user';
 import { PutUserRequest } from '../types/horde-user-admin';
-
+import { API_BASE_URL } from './api-config';
 export interface DeleteUserResponse {
   deleted_id: string;
   deleted_name: string;
@@ -24,7 +24,7 @@ export class AuthService {
   private readonly database = inject(DatabaseService);
   private readonly aiHorde = inject(AiHordeService);
   private readonly httpClient = inject(HttpClient);
-  private readonly baseUrl = 'https://aihorde.net/api/v2';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly _currentUser = signal<HordeUser | null>(null);
   private readonly _isLoading = signal<boolean>(false);

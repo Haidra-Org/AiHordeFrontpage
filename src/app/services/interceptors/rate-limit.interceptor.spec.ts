@@ -10,6 +10,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { rateLimitInterceptor, RateLimitState } from './rate-limit.interceptor';
+import { API_BASE } from '../../testing/api-test-helpers';
 
 describe('rateLimitInterceptor', () => {
   let http: HttpClient;
@@ -36,12 +37,10 @@ describe('rateLimitInterceptor', () => {
 
   it('should pass through successful responses unchanged', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush({ worker_count: 50 });
 
     expect(result).toEqual({ worker_count: 50 });
@@ -59,13 +58,11 @@ describe('rateLimitInterceptor', () => {
 
   it('should retry on 429 with Retry-After header (seconds)', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     // First request returns 429 with Retry-After: 1
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -80,7 +77,7 @@ describe('rateLimitInterceptor', () => {
 
     // Retry request succeeds
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush({ worker_count: 50 });
 
     expect(result).toEqual({ worker_count: 50 });
@@ -90,13 +87,11 @@ describe('rateLimitInterceptor', () => {
 
   it('should use exponential backoff when no Retry-After header', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     // First 429 - no Retry-After header, default backoff = 2000 * 2^0 = 2000ms
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -107,9 +102,7 @@ describe('rateLimitInterceptor', () => {
     vi.advanceTimersByTime(2000);
 
     // Retry succeeds
-    httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
-      .flush({ ok: true });
+    httpTesting.expectOne(`${API_BASE}/status/performance`).flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
     expect(state.limited()).toBe(false);
@@ -118,12 +111,12 @@ describe('rateLimitInterceptor', () => {
   it('should retry up to MAX_RETRIES (2) times', () => {
     let error: unknown;
     http
-      .get('https://aihorde.net/api/v2/status/performance')
+      .get(`${API_BASE}/status/performance`)
       .subscribe({ error: (e: unknown) => (error = e) });
 
     // 1st attempt → 429
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -134,7 +127,7 @@ describe('rateLimitInterceptor', () => {
 
     // 2nd attempt (retry 1) → 429
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -145,7 +138,7 @@ describe('rateLimitInterceptor', () => {
 
     // 3rd attempt (retry 2) → 429 again
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -161,11 +154,11 @@ describe('rateLimitInterceptor', () => {
   it('should NOT retry on non-429 errors', () => {
     let error: unknown;
     http
-      .get('https://aihorde.net/api/v2/status/performance')
+      .get(`${API_BASE}/status/performance`)
       .subscribe({ error: (e: unknown) => (error = e) });
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Server error', {
         status: 500,
         statusText: 'Internal Server Error',
@@ -179,11 +172,11 @@ describe('rateLimitInterceptor', () => {
 
   it('should clear rate-limit state on non-429 errors', () => {
     http
-      .get('https://aihorde.net/api/v2/status/performance')
+      .get(`${API_BASE}/status/performance`)
       .subscribe({ error: () => undefined });
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Bad request', {
         status: 400,
         statusText: 'Bad Request',
@@ -195,13 +188,11 @@ describe('rateLimitInterceptor', () => {
 
   it('should recover after retries succeed', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     // First: 429
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -213,7 +204,7 @@ describe('rateLimitInterceptor', () => {
 
     // Second: success
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush({ recovered: true });
 
     expect(result).toEqual({ recovered: true });
@@ -225,18 +216,16 @@ describe('rateLimitInterceptor', () => {
     let error: unknown;
 
     http
-      .post('https://aihorde.net/api/v2/generate/async', { prompt: 'x' })
+      .post(`${API_BASE}/generate/async`, { prompt: 'x' })
       .subscribe({ error: (e: unknown) => (error = e) });
 
-    httpTesting
-      .expectOne('https://aihorde.net/api/v2/generate/async')
-      .flush('Rate limited', {
-        status: 429,
-        statusText: 'Too Many Requests',
-      });
+    httpTesting.expectOne(`${API_BASE}/generate/async`).flush('Rate limited', {
+      status: 429,
+      statusText: 'Too Many Requests',
+    });
 
     // No retry request should be made for POST.
-    httpTesting.expectNone('https://aihorde.net/api/v2/generate/async');
+    httpTesting.expectNone(`${API_BASE}/generate/async`);
     expect(error).toBeInstanceOf(HttpErrorResponse);
     expect((error as HttpErrorResponse).status).toBe(429);
   });
@@ -245,11 +234,11 @@ describe('rateLimitInterceptor', () => {
     let error: unknown;
 
     http
-      .get('https://aihorde.net/api/v2/status/performance')
+      .get(`${API_BASE}/status/performance`)
       .subscribe({ error: (e: unknown) => (error = e) });
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -259,7 +248,7 @@ describe('rateLimitInterceptor', () => {
     vi.advanceTimersByTime(1000);
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -269,7 +258,7 @@ describe('rateLimitInterceptor', () => {
     vi.advanceTimersByTime(1000);
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -283,16 +272,14 @@ describe('rateLimitInterceptor', () => {
 
   it('should parse Retry-After as an HTTP-date', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     // Use a date ~2 seconds in the future
     const futureDate = new Date(Date.now() + 2000);
     const httpDate = futureDate.toUTCString();
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -306,9 +293,7 @@ describe('rateLimitInterceptor', () => {
     // Advance by the derived delay, not a hardcoded guess.
     vi.advanceTimersByTime(delayMs);
 
-    httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
-      .flush({ ok: true });
+    httpTesting.expectOne(`${API_BASE}/status/performance`).flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
     expect(state.limited()).toBe(false);
@@ -316,12 +301,10 @@ describe('rateLimitInterceptor', () => {
 
   it('should fall back to exponential backoff for non-parseable Retry-After', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -333,9 +316,7 @@ describe('rateLimitInterceptor', () => {
     // Default backoff for first retry: 2000 * 2^0 = 2000ms
     vi.advanceTimersByTime(2000);
 
-    httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
-      .flush({ ok: true });
+    httpTesting.expectOne(`${API_BASE}/status/performance`).flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
     expect(state.limited()).toBe(false);
@@ -343,15 +324,13 @@ describe('rateLimitInterceptor', () => {
 
   it('should clamp Retry-After HTTP-date in the past to 0ms delay', () => {
     let result: unknown;
-    http
-      .get('https://aihorde.net/api/v2/status/performance')
-      .subscribe((r) => (result = r));
+    http.get(`${API_BASE}/status/performance`).subscribe((r) => (result = r));
 
     // A date in the past
     const pastDate = new Date(Date.now() - 5000).toUTCString();
 
     httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
+      .expectOne(`${API_BASE}/status/performance`)
       .flush('Rate limited', {
         status: 429,
         statusText: 'Too Many Requests',
@@ -361,9 +340,7 @@ describe('rateLimitInterceptor', () => {
     // timer(0) still needs to fire
     vi.advanceTimersByTime(0);
 
-    httpTesting
-      .expectOne('https://aihorde.net/api/v2/status/performance')
-      .flush({ ok: true });
+    httpTesting.expectOne(`${API_BASE}/status/performance`).flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
   });

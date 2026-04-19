@@ -7,23 +7,27 @@ import {
   RatePostInput,
   RatePostResponse,
 } from '../types/ratings';
+import { RATINGS_API_BASE_URL } from './api-config';
 
-const RATINGS_API = 'https://ratings.aihorde.net/api/v1';
 const ANON_API_KEY = '0000000000';
 
 @Injectable({ providedIn: 'root' })
 export class RatingsApiService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+  private readonly ratingsApi = inject(RATINGS_API_BASE_URL);
 
   private getApiKey(): string {
     return this.auth.getStoredApiKey() ?? ANON_API_KEY;
   }
 
   getNewImage(): Observable<DatasetImagePopResponse> {
-    return this.http.get<DatasetImagePopResponse>(`${RATINGS_API}/rating/new`, {
-      headers: { apikey: this.getApiKey() },
-    });
+    return this.http.get<DatasetImagePopResponse>(
+      `${this.ratingsApi}/rating/new`,
+      {
+        headers: { apikey: this.getApiKey() },
+      },
+    );
   }
 
   submitRating(
@@ -33,7 +37,7 @@ export class RatingsApiService {
   ): Observable<RatePostResponse> {
     const body: RatePostInput = { rating, artifacts };
     return this.http.post<RatePostResponse>(
-      `${RATINGS_API}/rating/${encodeURIComponent(imageId)}`,
+      `${this.ratingsApi}/rating/${encodeURIComponent(imageId)}`,
       body,
       { headers: { apikey: this.getApiKey() } },
     );

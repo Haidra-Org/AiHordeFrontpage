@@ -9,6 +9,7 @@ import { of } from 'rxjs';
 import { AdminFilterService } from './admin-filter.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('AdminFilterService', () => {
   let service: AdminFilterService;
@@ -119,7 +120,7 @@ describe('AdminFilterService', () => {
       const payload = { regex: 'bad.*word', filter_type: 10 };
       service.createFilter(payload as never).subscribe();
 
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/filters');
+      const req = httpTesting.expectOne(`${API_BASE}/filters`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.headers.get('apikey')).toBe('mod-key');
       req.flush({ id: 'new-id' });
@@ -146,9 +147,7 @@ describe('AdminFilterService', () => {
       service
         .updateFilter('f1', { description: 'updated' } as never)
         .subscribe();
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/filters/f1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/filters/f1`);
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 'f1' });
       expect(mockCache.invalidate).toHaveBeenCalled();
@@ -170,9 +169,7 @@ describe('AdminFilterService', () => {
     it('sends DELETE and returns true on success', () => {
       let result: unknown;
       service.deleteFilter('f1').subscribe((r) => (result = r));
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/filters/f1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/filters/f1`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
       expect(result).toBe(true);
@@ -194,7 +191,7 @@ describe('AdminFilterService', () => {
   describe('testPrompt()', () => {
     it('sends POST with prompt data', () => {
       service.testPrompt({ prompt: 'hello world' } as never).subscribe();
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/filters');
+      const req = httpTesting.expectOne(`${API_BASE}/filters`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ prompt: 'hello world' });
       req.flush({ suspicion: 0 });

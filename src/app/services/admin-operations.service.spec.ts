@@ -9,8 +9,9 @@ import { of } from 'rxjs';
 import { AdminOperationsService } from './admin-operations.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
+import { API_BASE } from '../testing/api-test-helpers';
 
-const BASE = 'https://aihorde.net/api/v2';
+const BASE = API_BASE;
 
 describe('AdminOperationsService', () => {
   let svc: AdminOperationsService;

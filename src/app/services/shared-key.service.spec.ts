@@ -10,6 +10,7 @@ import { SharedKeyService } from './shared-key.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { ApiError } from '../types/api-error';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('SharedKeyService', () => {
   let service: SharedKeyService;
@@ -87,9 +88,7 @@ describe('SharedKeyService', () => {
       const payload = { name: 'Test Key' };
       service.createSharedKey(payload as never).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/sharedkeys',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/sharedkeys`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.headers.get('apikey')).toBe('user-key');
       req.flush({ id: 'new-sk' });
@@ -114,9 +113,7 @@ describe('SharedKeyService', () => {
     it('sends PATCH to the correct URL', () => {
       service.updateSharedKey('sk1', { name: 'Updated' } as never).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/sharedkeys/sk1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/sharedkeys/sk1`);
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 'sk1' });
     });
@@ -137,9 +134,7 @@ describe('SharedKeyService', () => {
       let result: unknown;
       service.deleteSharedKey('sk1').subscribe((r) => (result = r));
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/sharedkeys/sk1',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/sharedkeys/sk1`);
       expect(req.request.method).toBe('DELETE');
       req.flush(null);
 
@@ -164,9 +159,7 @@ describe('SharedKeyService', () => {
         error: (e: unknown) => (error = e as ApiError),
       });
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/sharedkeys',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/sharedkeys`);
       req.flush(
         { message: 'Forbidden' },
         { status: 403, statusText: 'Forbidden' },

@@ -7,8 +7,9 @@ import {
 import { vi } from 'vitest';
 import { RatingsApiService } from './ratings-api.service';
 import { AuthService } from './auth.service';
+import { RATINGS_API_BASE } from '../testing/api-test-helpers';
 
-const RATINGS_API = 'https://ratings.aihorde.net/api/v1';
+const RATINGS_API = RATINGS_API_BASE;
 const ANON_KEY = '0000000000';
 
 describe('RatingsApiService', () => {

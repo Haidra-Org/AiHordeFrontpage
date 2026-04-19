@@ -11,6 +11,7 @@ import {
   ImageGenerationRequest,
 } from '../types/generation';
 import { clientAgentInterceptor } from './interceptors/client-agent.interceptor';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('AiHordeService', () => {
   let service: AiHordeService;
@@ -48,7 +49,7 @@ describe('AiHordeService', () => {
     it('should POST to the async endpoint with correct headers', () => {
       service.submitImageGeneration(apiKey, request).subscribe();
 
-      const req = http.expectOne('https://aihorde.net/api/v2/generate/async');
+      const req = http.expectOne(`${API_BASE}/generate/async`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('apikey')).toBe(apiKey);
       // Integration: also verifies interceptor adds Client-Agent header
@@ -65,7 +66,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/async')
+        .expectOne(`${API_BASE}/generate/async`)
         .flush({ id: 'gen-abc', kudos: 10 });
 
       expect(await promise).toEqual({ id: 'gen-abc', kudos: 10 });
@@ -76,12 +77,10 @@ describe('AiHordeService', () => {
         service.submitImageGeneration(apiKey, request),
       );
 
-      http
-        .expectOne('https://aihorde.net/api/v2/generate/async')
-        .flush('Server error', {
-          status: 500,
-          statusText: 'Internal Server Error',
-        });
+      http.expectOne(`${API_BASE}/generate/async`).flush('Server error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
 
       expect(await promise).toBeNull();
     });
@@ -94,9 +93,7 @@ describe('AiHordeService', () => {
     it('should GET the check endpoint with encoded ID', () => {
       service.checkImageGeneration('gen-123').subscribe();
 
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/generate/check/gen-123',
-      );
+      const req = http.expectOne(`${API_BASE}/generate/check/gen-123`);
       expect(req.request.method).toBe('GET');
       req.flush({
         finished: 0,
@@ -116,7 +113,7 @@ describe('AiHordeService', () => {
       service.checkImageGeneration('gen/special+id').subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/generate/check/gen%2Fspecial%2Bid',
+        `${API_BASE}/generate/check/gen%2Fspecial%2Bid`,
       );
       expect(req.request.method).toBe('GET');
       req.flush({
@@ -137,7 +134,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.checkImageGeneration('gen-404'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/check/gen-404')
+        .expectOne(`${API_BASE}/generate/check/gen-404`)
         .flush('Not found', { status: 404, statusText: 'Not Found' });
 
       expect(await promise).toBe(GENERATION_NOT_FOUND);
@@ -147,7 +144,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.checkImageGeneration('gen-500'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/check/gen-500')
+        .expectOne(`${API_BASE}/generate/check/gen-500`)
         .flush('Server error', {
           status: 500,
           statusText: 'Internal Server Error',
@@ -191,9 +188,7 @@ describe('AiHordeService', () => {
         service.getImageGenerationStatus('gen-done'),
       );
 
-      http
-        .expectOne('https://aihorde.net/api/v2/generate/status/gen-done')
-        .flush(mockStatus);
+      http.expectOne(`${API_BASE}/generate/status/gen-done`).flush(mockStatus);
 
       expect(await promise).toEqual(mockStatus);
     });
@@ -204,7 +199,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/status/bad-id')
+        .expectOne(`${API_BASE}/generate/status/bad-id`)
         .flush('Error', { status: 500, statusText: 'Server Error' });
 
       expect(await promise).toBeNull();
@@ -216,7 +211,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/status/gen-gone')
+        .expectOne(`${API_BASE}/generate/status/gen-gone`)
         .flush('Not found', { status: 404, statusText: 'Not Found' });
 
       expect(await promise).toBe(GENERATION_NOT_FOUND);
@@ -254,7 +249,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getTextGenerationStatus('txt-1'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-1')
+        .expectOne(`${API_BASE}/generate/text/status/txt-1`)
         .flush(mockStatus);
 
       expect(await promise).toEqual(mockStatus);
@@ -266,7 +261,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-bad')
+        .expectOne(`${API_BASE}/generate/text/status/txt-bad`)
         .flush('Error', { status: 404, statusText: 'Not Found' });
 
       expect(await promise).toBe(GENERATION_NOT_FOUND);
@@ -278,7 +273,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/generate/text/status/txt-err')
+        .expectOne(`${API_BASE}/generate/text/status/txt-err`)
         .flush('Error', { status: 500, statusText: 'Internal Server Error' });
 
       expect(await promise).toBeNull();
@@ -297,9 +292,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getAlchemyStatus('alch-1'));
 
-      http
-        .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-1')
-        .flush(mockStatus);
+      http.expectOne(`${API_BASE}/interrogate/status/alch-1`).flush(mockStatus);
 
       expect(await promise).toEqual(mockStatus);
     });
@@ -308,7 +301,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getAlchemyStatus('alch-gone'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-gone')
+        .expectOne(`${API_BASE}/interrogate/status/alch-gone`)
         .flush('Not found', { status: 404, statusText: 'Not Found' });
 
       expect(await promise).toBe(GENERATION_NOT_FOUND);
@@ -318,7 +311,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getAlchemyStatus('alch-bad'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/interrogate/status/alch-bad')
+        .expectOne(`${API_BASE}/interrogate/status/alch-bad`)
         .flush('Error', { status: 500, statusText: 'Server Error' });
 
       expect(await promise).toBeNull();
@@ -332,7 +325,7 @@ describe('AiHordeService', () => {
     it('should GET find_user with the apikey header', () => {
       service.getUserByApiKey('my-key').subscribe();
 
-      const req = http.expectOne('https://aihorde.net/api/v2/find_user');
+      const req = http.expectOne(`${API_BASE}/find_user`);
       expect(req.request.method).toBe('GET');
       expect(req.request.headers.get('apikey')).toBe('my-key');
       req.flush({ username: 'TestUser', id: 1, kudos: 500 });
@@ -342,7 +335,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getUserByApiKey('bad-key'));
 
       http
-        .expectOne('https://aihorde.net/api/v2/find_user')
+        .expectOne(`${API_BASE}/find_user`)
         .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
       expect(await promise).toBeNull();
@@ -356,7 +349,7 @@ describe('AiHordeService', () => {
     it('should GET find_user with the apikey header', () => {
       service.getSelfUserByApiKeyUncached('my-key').subscribe();
 
-      const req = http.expectOne('https://aihorde.net/api/v2/find_user');
+      const req = http.expectOne(`${API_BASE}/find_user`);
       expect(req.request.method).toBe('GET');
       expect(req.request.headers.get('apikey')).toBe('my-key');
       req.flush({ username: 'TestUser', id: 1, kudos: 500 });
@@ -366,7 +359,7 @@ describe('AiHordeService', () => {
       service.getSelfUserByApiKeyUncached('my-key').subscribe();
       service.getSelfUserByApiKeyUncached('my-key').subscribe();
 
-      const reqs = http.match('https://aihorde.net/api/v2/find_user');
+      const reqs = http.match(`${API_BASE}/find_user`);
       expect(reqs.length).toBe(2);
       expect(reqs[0].request.headers.get('apikey')).toBe('my-key');
       expect(reqs[1].request.headers.get('apikey')).toBe('my-key');
@@ -381,7 +374,7 @@ describe('AiHordeService', () => {
       );
 
       http
-        .expectOne('https://aihorde.net/api/v2/find_user')
+        .expectOne(`${API_BASE}/find_user`)
         .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
       expect(await promise).toBeNull();
@@ -396,7 +389,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getUserById(42));
 
       http
-        .expectOne('https://aihorde.net/api/v2/users/42')
+        .expectOne(`${API_BASE}/users/42`)
         .flush({ username: 'User42', id: 42, kudos: 100 });
 
       expect(await promise).toEqual(
@@ -408,7 +401,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getUserById(9999));
 
       http
-        .expectOne('https://aihorde.net/api/v2/users/9999')
+        .expectOne(`${API_BASE}/users/9999`)
         .flush('Not found', { status: 404, statusText: 'Not Found' });
 
       expect(await promise).toBeNull();
@@ -423,7 +416,7 @@ describe('AiHordeService', () => {
       service.getModels().subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/models?type=image&model_state=all',
+        `${API_BASE}/status/models?type=image&model_state=all`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -432,7 +425,7 @@ describe('AiHordeService', () => {
       service.getModels('text', 'known').subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/models?type=text&model_state=known',
+        `${API_BASE}/status/models?type=text&model_state=known`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -443,7 +436,7 @@ describe('AiHordeService', () => {
       service.getImageModels('known').subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/models?type=image&model_state=known',
+        `${API_BASE}/status/models?type=image&model_state=known`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -452,7 +445,7 @@ describe('AiHordeService', () => {
       service.getImageModels().subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/models?type=image&model_state=all',
+        `${API_BASE}/status/models?type=image&model_state=all`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -463,7 +456,7 @@ describe('AiHordeService', () => {
       service.getTextModels('custom').subscribe();
 
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/models?type=text&model_state=custom',
+        `${API_BASE}/status/models?type=text&model_state=custom`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -476,7 +469,7 @@ describe('AiHordeService', () => {
     it('should POST to the kudos transfer endpoint', () => {
       service.transferKudos('my-key', 'recipient', 100).subscribe();
 
-      const req = http.expectOne('https://aihorde.net/api/v2/kudos/transfer');
+      const req = http.expectOne(`${API_BASE}/kudos/transfer`);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('apikey')).toBe('my-key');
       expect(req.request.body).toEqual({ username: 'recipient', amount: 100 });
@@ -486,9 +479,7 @@ describe('AiHordeService', () => {
     it('should return true on success', async () => {
       const promise = firstValueFrom(service.transferKudos('key', 'user', 50));
 
-      http
-        .expectOne('https://aihorde.net/api/v2/kudos/transfer')
-        .flush({ transferred: 50 });
+      http.expectOne(`${API_BASE}/kudos/transfer`).flush({ transferred: 50 });
 
       expect(await promise).toBe(true);
     });
@@ -497,7 +488,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.transferKudos('key', 'user', 50));
 
       http
-        .expectOne('https://aihorde.net/api/v2/kudos/transfer')
+        .expectOne(`${API_BASE}/kudos/transfer`)
         .flush('Error', { status: 400, statusText: 'Bad Request' });
 
       expect(await promise).toBe(false);
@@ -510,7 +501,7 @@ describe('AiHordeService', () => {
   describe('imageStats', () => {
     it('should GET image totals', () => {
       service.imageStats.subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/stats/img/totals');
+      const req = http.expectOne(`${API_BASE}/stats/img/totals`);
       expect(req.request.method).toBe('GET');
     });
   });
@@ -518,9 +509,7 @@ describe('AiHordeService', () => {
   describe('textStats', () => {
     it('should GET text totals', () => {
       service.textStats.subscribe();
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/stats/text/totals',
-      );
+      const req = http.expectOne(`${API_BASE}/stats/text/totals`);
       expect(req.request.method).toBe('GET');
     });
   });
@@ -528,9 +517,7 @@ describe('AiHordeService', () => {
   describe('performance', () => {
     it('should GET performance stats', () => {
       service.performance.subscribe();
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      const req = http.expectOne(`${API_BASE}/status/performance`);
       expect(req.request.method).toBe('GET');
     });
   });
@@ -562,14 +549,14 @@ describe('AiHordeService', () => {
 
     it('should GET news from the status endpoint', () => {
       service.getNews().subscribe();
-      const req = http.expectOne('https://aihorde.net/api/v2/status/news');
+      const req = http.expectOne(`${API_BASE}/status/news`);
       expect(req.request.method).toBe('GET');
     });
 
     it('should map HordeNewsItem to NewsItem format', async () => {
       const promise = firstValueFrom(service.getNews());
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+      http.expectOne(`${API_BASE}/status/news`).flush(mockItems);
 
       const news = await promise;
       expect(news.length).toBe(3);
@@ -582,7 +569,7 @@ describe('AiHordeService', () => {
     it('should set moreLink to null when no URLs', async () => {
       const promise = firstValueFrom(service.getNews());
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+      http.expectOne(`${API_BASE}/status/news`).flush(mockItems);
 
       const news = await promise;
       expect(news[1].moreLink).toBeNull();
@@ -591,7 +578,7 @@ describe('AiHordeService', () => {
     it('should slice results when count is provided', async () => {
       const promise = firstValueFrom(service.getNews(2));
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(mockItems);
+      http.expectOne(`${API_BASE}/status/news`).flush(mockItems);
 
       const news = await promise;
       expect(news.length).toBe(2);
@@ -615,7 +602,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getNews());
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(dupes);
+      http.expectOne(`${API_BASE}/status/news`).flush(dupes);
 
       const news = await promise;
       expect(news[0].title).toBe('Same');
@@ -652,9 +639,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getNews());
 
-      http
-        .expectOne('https://aihorde.net/api/v2/status/news')
-        .flush(tripleItems);
+      http.expectOne(`${API_BASE}/status/news`).flush(tripleItems);
 
       const news = await promise;
       expect(news[0].title).toBe('Dupe');
@@ -674,7 +659,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getNews());
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+      http.expectOne(`${API_BASE}/status/news`).flush(items);
 
       const news = await promise;
       expect(news.length).toBe(1);
@@ -693,7 +678,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getNews());
 
-      http.expectOne('https://aihorde.net/api/v2/status/news').flush(items);
+      http.expectOne(`${API_BASE}/status/news`).flush(items);
 
       const news = await promise;
       expect(news.length).toBe(1);
@@ -709,7 +694,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.terms);
 
       http
-        .expectOne('https://aihorde.net/api/v2/documents/terms?format=html')
+        .expectOne(`${API_BASE}/documents/terms?format=html`)
         .flush({ html: '<p>Terms content</p>' });
 
       expect(await promise).toBe('<p>Terms content</p>');
@@ -721,7 +706,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.privacyPolicy);
 
       http
-        .expectOne('https://aihorde.net/api/v2/documents/privacy?format=html')
+        .expectOne(`${API_BASE}/documents/privacy?format=html`)
         .flush({ html: '<p>Privacy content</p>' });
 
       expect(await promise).toBe('<p>Privacy content</p>');
@@ -734,9 +719,7 @@ describe('AiHordeService', () => {
   describe('getKudosLeaderboard', () => {
     it('should GET users sorted by kudos with page parameter', () => {
       service.getKudosLeaderboard(2).subscribe();
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/users?page=2&sort=kudos',
-      );
+      const req = http.expectOne(`${API_BASE}/users?page=2&sort=kudos`);
       expect(req.request.method).toBe('GET');
     });
 
@@ -749,9 +732,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getKudosLeaderboard());
 
-      http
-        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
-        .flush(users);
+      http.expectOne(`${API_BASE}/users?page=1&sort=kudos`).flush(users);
 
       const result = await promise;
       expect(result.length).toBe(25);
@@ -762,7 +743,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getKudosLeaderboard());
 
       http
-        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
+        .expectOne(`${API_BASE}/users?page=1&sort=kudos`)
         .flush('Error', { status: 500, statusText: 'Server Error' });
 
       expect(await promise).toEqual([]);
@@ -776,7 +757,7 @@ describe('AiHordeService', () => {
     it('should default to known state', () => {
       service.getImageModelStats().subscribe();
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/stats/img/models?model_state=known',
+        `${API_BASE}/stats/img/models?model_state=known`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -784,7 +765,7 @@ describe('AiHordeService', () => {
     it('should pass the model_state parameter', () => {
       service.getImageModelStats('all').subscribe();
       const req = http.expectOne(
-        'https://aihorde.net/api/v2/stats/img/models?model_state=all',
+        `${API_BASE}/stats/img/models?model_state=all`,
       );
       expect(req.request.method).toBe('GET');
     });
@@ -793,9 +774,7 @@ describe('AiHordeService', () => {
   describe('getTextModelStats', () => {
     it('should GET text model stats', () => {
       service.getTextModelStats().subscribe();
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/stats/text/models',
-      );
+      const req = http.expectOne(`${API_BASE}/stats/text/models`);
       expect(req.request.method).toBe('GET');
     });
   });
@@ -818,7 +797,7 @@ describe('AiHordeService', () => {
     it('should call user endpoint with anonymous API key', () => {
       service.inferPublicWorkers(42).subscribe();
 
-      const req = http.expectOne('https://aihorde.net/api/v2/users/42');
+      const req = http.expectOne(`${API_BASE}/users/42`);
       expect(req.request.headers.get('apikey')).toBe('0000000000');
       req.flush({ username: 'test', id: 42, worker_ids: ['w1'] });
     });
@@ -826,7 +805,7 @@ describe('AiHordeService', () => {
     it('should return true when worker_ids is a non-empty array', async () => {
       const promise = firstValueFrom(service.inferPublicWorkers(42));
 
-      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+      http.expectOne(`${API_BASE}/users/42`).flush({
         username: 'test',
         id: 42,
         worker_ids: ['w1', 'w2'],
@@ -838,7 +817,7 @@ describe('AiHordeService', () => {
     it('should return false when worker_ids is an empty array', async () => {
       const promise = firstValueFrom(service.inferPublicWorkers(42));
 
-      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+      http.expectOne(`${API_BASE}/users/42`).flush({
         username: 'test',
         id: 42,
         worker_ids: [],
@@ -850,7 +829,7 @@ describe('AiHordeService', () => {
     it('should return false when worker_ids is undefined', async () => {
       const promise = firstValueFrom(service.inferPublicWorkers(42));
 
-      http.expectOne('https://aihorde.net/api/v2/users/42').flush({
+      http.expectOne(`${API_BASE}/users/42`).flush({
         username: 'test',
         id: 42,
       });
@@ -862,7 +841,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.inferPublicWorkers(42));
 
       http
-        .expectOne('https://aihorde.net/api/v2/users/42')
+        .expectOne(`${API_BASE}/users/42`)
         .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
       expect(await promise).toBe(false);
@@ -876,7 +855,7 @@ describe('AiHordeService', () => {
     it('should fetch the hardcoded educator user ID', async () => {
       const promise = firstValueFrom(service.getEducatorAccounts());
 
-      http.expectOne('https://aihorde.net/api/v2/users/258170').flush({
+      http.expectOne(`${API_BASE}/users/258170`).flush({
         username: 'educator',
         id: 258170,
         kudos: 1000,
@@ -891,7 +870,7 @@ describe('AiHordeService', () => {
     it('should filter out null users when a lookup fails', async () => {
       const promise = firstValueFrom(service.getEducatorAccounts());
 
-      http.expectOne('https://aihorde.net/api/v2/users/258170').flush('Gone', {
+      http.expectOne(`${API_BASE}/users/258170`).flush('Gone', {
         status: 404,
         statusText: 'Not Found',
       });
@@ -906,9 +885,7 @@ describe('AiHordeService', () => {
   describe('getKudosLeaderboardPage', () => {
     it('should GET users with the page parameter', () => {
       service.getKudosLeaderboardPage(3).subscribe();
-      const req = http.expectOne(
-        'https://aihorde.net/api/v2/users?page=3&sort=kudos',
-      );
+      const req = http.expectOne(`${API_BASE}/users?page=3&sort=kudos`);
       expect(req.request.method).toBe('GET');
     });
 
@@ -921,9 +898,7 @@ describe('AiHordeService', () => {
 
       const promise = firstValueFrom(service.getKudosLeaderboardPage(1));
 
-      http
-        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
-        .flush(users);
+      http.expectOne(`${API_BASE}/users?page=1&sort=kudos`).flush(users);
 
       const result = await promise;
       // Unlike getKudosLeaderboard which slices to 25, this returns all users
@@ -936,7 +911,7 @@ describe('AiHordeService', () => {
       const promise = firstValueFrom(service.getKudosLeaderboardPage(1));
 
       http
-        .expectOne('https://aihorde.net/api/v2/users?page=1&sort=kudos')
+        .expectOne(`${API_BASE}/users?page=1&sort=kudos`)
         .flush('Error', { status: 500, statusText: 'Server Error' });
 
       expect(await promise).toEqual([]);

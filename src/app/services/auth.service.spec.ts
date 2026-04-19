@@ -9,6 +9,7 @@ import { AuthService } from './auth.service';
 import { AiHordeService } from './ai-horde.service';
 import { DatabaseService, StorageType } from './database.service';
 import { HordeUser } from '../types/horde-user';
+import { API_BASE } from '../testing/api-test-helpers';
 
 function fakeUser(overrides: Partial<HordeUser> = {}): HordeUser {
   return {
@@ -261,7 +262,7 @@ describe('AuthService', () => {
       let result: unknown;
       service.deleteUser().subscribe((r) => (result = r));
 
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+      const req = httpTesting.expectOne(`${API_BASE}/users/42`);
       expect(req.request.method).toBe('DELETE');
       expect(req.request.headers.get('apikey')).toBe('my-key');
       req.flush({ deleted_id: '42', deleted_name: 'testuser' });
@@ -297,7 +298,7 @@ describe('AuthService', () => {
       let result: unknown;
       service.undeleteUser().subscribe((r) => (result = r));
 
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+      const req = httpTesting.expectOne(`${API_BASE}/users/42`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual({ undelete: true });
       req.flush({});

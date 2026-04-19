@@ -8,6 +8,7 @@ import {
 import { HttpContext, HttpParams } from '@angular/common/http';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('HordeApiCacheService', () => {
   let service: HordeApiCacheService;
@@ -38,13 +39,9 @@ describe('HordeApiCacheService', () => {
 
   describe('cachedGet basics', () => {
     it('should make an HTTP request on first call', () => {
-      service
-        .cachedGet('https://aihorde.net/api/v2/status/performance')
-        .subscribe();
+      service.cachedGet(`${API_BASE}/status/performance`).subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/status/performance`);
       expect(req.request.method).toBe('GET');
       req.flush({ worker_count: 42 });
     });
@@ -54,28 +51,20 @@ describe('HordeApiCacheService', () => {
       let secondResult: unknown;
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (firstResult = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 42 });
 
       vi.advanceTimersByTime(1000);
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (secondResult = r));
 
-      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
+      httpTesting.expectNone(`${API_BASE}/status/performance`);
 
       expect(firstResult).toEqual({ worker_count: 42 });
       expect(secondResult).toEqual({ worker_count: 42 });
@@ -86,28 +75,28 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
+          `${API_BASE}/status/performance`,
           {},
           { ttl: CacheTTL.SHORT },
         )
         .subscribe();
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 42 });
 
       vi.advanceTimersByTime(31_000);
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
+          `${API_BASE}/status/performance`,
           {},
           { ttl: CacheTTL.SHORT },
         )
         .subscribe((r) => (result = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 99 });
 
       expect(result).toEqual({ worker_count: 99 });
@@ -120,29 +109,21 @@ describe('HordeApiCacheService', () => {
       service
         .cachedGet<{
           worker_count: number;
-        }>(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.NEVER },
-        )
+        }>(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.NEVER })
         .subscribe((r) => (result1 = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 42 });
 
       service
         .cachedGet<{
           worker_count: number;
-        }>(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.NEVER },
-        )
+        }>(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.NEVER })
         .subscribe((r) => (result2 = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 43 });
 
       expect(result1).toEqual({ worker_count: 42 });
@@ -160,15 +141,13 @@ describe('HordeApiCacheService', () => {
       let result2: unknown;
 
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance')
+        .cachedGet(`${API_BASE}/status/performance`)
         .subscribe((r) => (result1 = r));
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance')
+        .cachedGet(`${API_BASE}/status/performance`)
         .subscribe((r) => (result2 = r));
 
-      const requests = httpTesting.match(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      const requests = httpTesting.match(`${API_BASE}/status/performance`);
       expect(requests.length).toBe(1);
 
       requests[0].flush({ worker_count: 42 });
@@ -182,17 +161,17 @@ describe('HordeApiCacheService', () => {
       let result2: unknown;
 
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance')
+        .cachedGet(`${API_BASE}/status/performance`)
         .subscribe((r) => (result1 = r));
       service
-        .cachedGet('https://aihorde.net/api/v2/status/models')
+        .cachedGet(`${API_BASE}/status/models`)
         .subscribe((r) => (result2 = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ perf: true });
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/models')
+        .expectOne(`${API_BASE}/status/models`)
         .flush([{ model: true }]);
 
       expect(result1).toEqual({ perf: true });
@@ -210,15 +189,11 @@ describe('HordeApiCacheService', () => {
       let lateResult: unknown;
 
       const sub = service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (firstResult = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 42 });
 
       expect(firstResult).toEqual({ worker_count: 42 });
@@ -228,14 +203,10 @@ describe('HordeApiCacheService', () => {
       vi.advanceTimersByTime(100);
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (lateResult = r));
 
-      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
+      httpTesting.expectNone(`${API_BASE}/status/performance`);
 
       expect(lateResult).toEqual({ worker_count: 42 });
     });
@@ -253,23 +224,23 @@ describe('HordeApiCacheService', () => {
       let resultText: unknown;
 
       service
-        .cachedGet('https://aihorde.net/api/v2/status/models', {
+        .cachedGet(`${API_BASE}/status/models`, {
           params: paramsImage,
         })
         .subscribe((r) => (resultImage = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/models?type=image')
+        .expectOne(`${API_BASE}/status/models?type=image`)
         .flush([{ name: 'SD' }]);
 
       service
-        .cachedGet('https://aihorde.net/api/v2/status/models', {
+        .cachedGet(`${API_BASE}/status/models`, {
           params: paramsText,
         })
         .subscribe((r) => (resultText = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/models?type=text')
+        .expectOne(`${API_BASE}/status/models?type=text`)
         .flush([{ name: 'LLaMA' }]);
 
       expect(resultImage).toEqual([{ name: 'SD' }]);
@@ -283,29 +254,27 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/models',
+          `${API_BASE}/status/models`,
           { params },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result1 = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/models?type=image')
+        .expectOne(`${API_BASE}/status/models?type=image`)
         .flush([{ name: 'SD' }]);
 
       vi.advanceTimersByTime(1000);
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/models',
+          `${API_BASE}/status/models`,
           { params },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result2 = r));
 
-      httpTesting.expectNone(
-        'https://aihorde.net/api/v2/status/models?type=image',
-      );
+      httpTesting.expectNone(`${API_BASE}/status/models?type=image`);
 
       expect(result1).toEqual([{ name: 'SD' }]);
       expect(result2).toEqual([{ name: 'SD' }]);
@@ -317,25 +286,25 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { apikey: 'key-a' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (keyAResult = r));
 
-      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+      httpTesting.expectOne(`${API_BASE}/find_user`).flush({
         username: 'A',
       });
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { apikey: 'key-b' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (keyBResult = r));
 
-      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+      httpTesting.expectOne(`${API_BASE}/find_user`).flush({
         username: 'B',
       });
 
@@ -350,27 +319,27 @@ describe('HordeApiCacheService', () => {
       // First call with lowercase 'apikey'
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { apikey: 'my-key' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result1 = r));
 
-      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+      httpTesting.expectOne(`${API_BASE}/find_user`).flush({
         username: 'Cached',
       });
 
       // Second call with different casing 'Apikey' — should hit cache
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { Apikey: 'my-key' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result2 = r));
 
       // No new request — cache hit due to case-insensitive header normalization
-      httpTesting.expectNone('https://aihorde.net/api/v2/find_user');
+      httpTesting.expectNone(`${API_BASE}/find_user`);
 
       expect(result1).toEqual({ username: 'Cached' });
       expect(result2).toEqual({ username: 'Cached' });
@@ -382,26 +351,26 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { apikey: 'k', 'x-custom': 'v' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result1 = r));
 
-      httpTesting.expectOne('https://aihorde.net/api/v2/find_user').flush({
+      httpTesting.expectOne(`${API_BASE}/find_user`).flush({
         username: 'Ordered',
       });
 
       // Same headers in different insertion order
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/find_user',
+          `${API_BASE}/find_user`,
           { headers: { 'x-custom': 'v', apikey: 'k' } },
           { ttl: CacheTTL.LONG },
         )
         .subscribe((r) => (result2 = r));
 
-      httpTesting.expectNone('https://aihorde.net/api/v2/find_user');
+      httpTesting.expectNone(`${API_BASE}/find_user`);
 
       expect(result1).toEqual({ username: 'Ordered' });
       expect(result2).toEqual({ username: 'Ordered' });
@@ -415,12 +384,12 @@ describe('HordeApiCacheService', () => {
   describe('options forwarding', () => {
     it('should forward custom headers to the HTTP request', () => {
       service
-        .cachedGet('https://aihorde.net/api/v2/find_user', {
+        .cachedGet(`${API_BASE}/find_user`, {
           headers: { apikey: 'my-key' },
         })
         .subscribe();
 
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/find_user');
+      const req = httpTesting.expectOne(`${API_BASE}/find_user`);
       expect(req.request.headers.get('apikey')).toBe('my-key');
       req.flush({});
     });
@@ -429,14 +398,12 @@ describe('HordeApiCacheService', () => {
       const ctx = new HttpContext().set(CLIENT_AGENT, 'AiHordeFrontpage:test');
 
       service
-        .cachedGet('https://aihorde.net/api/v2/status/performance', {
+        .cachedGet(`${API_BASE}/status/performance`, {
           context: ctx,
         })
         .subscribe();
 
-      const req = httpTesting.expectOne(
-        'https://aihorde.net/api/v2/status/performance',
-      );
+      const req = httpTesting.expectOne(`${API_BASE}/status/performance`);
       expect(req.request.context.get(CLIENT_AGENT)).toBe(
         'AiHordeFrontpage:test',
       );
@@ -454,15 +421,13 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/styles/image',
+          `${API_BASE}/styles/image`,
           {},
           { ttl: CacheTTL.LONG, category: 'styles' },
         )
         .subscribe();
 
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/styles/image')
-        .flush([]);
+      httpTesting.expectOne(`${API_BASE}/styles/image`).flush([]);
 
       vi.advanceTimersByTime(100);
 
@@ -470,15 +435,13 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/styles/image',
+          `${API_BASE}/styles/image`,
           {},
           { ttl: CacheTTL.LONG, category: 'styles' },
         )
         .subscribe((r) => (result = r));
 
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/styles/image')
-        .flush([{ id: 'new' }]);
+      httpTesting.expectOne(`${API_BASE}/styles/image`).flush([{ id: 'new' }]);
 
       expect(result).toEqual([{ id: 'new' }]);
     });
@@ -487,31 +450,21 @@ describe('HordeApiCacheService', () => {
       let result: unknown;
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/users/42',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/users/42`, {}, { ttl: CacheTTL.LONG })
         .subscribe();
 
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/users/42')
-        .flush({ id: 42 });
+      httpTesting.expectOne(`${API_BASE}/users/42`).flush({ id: 42 });
 
       vi.advanceTimersByTime(100);
 
-      service.invalidate('https://aihorde.net/api/v2/users');
+      service.invalidate(`${API_BASE}/users`);
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/users/42',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/users/42`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (result = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/users/42')
+        .expectOne(`${API_BASE}/users/42`)
         .flush({ id: 42, updated: true });
 
       expect(result).toEqual({ id: 42, updated: true });
@@ -522,24 +475,22 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/styles/image',
+          `${API_BASE}/styles/image`,
           {},
           { ttl: CacheTTL.LONG, category: 'styles' },
         )
         .subscribe();
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/styles/image')
-        .flush([]);
+      httpTesting.expectOne(`${API_BASE}/styles/image`).flush([]);
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
+          `${API_BASE}/status/performance`,
           {},
           { ttl: CacheTTL.LONG, category: 'performance' },
         )
         .subscribe();
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ cached: true });
 
       vi.advanceTimersByTime(100);
@@ -548,23 +499,21 @@ describe('HordeApiCacheService', () => {
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/styles/image',
+          `${API_BASE}/styles/image`,
           {},
           { ttl: CacheTTL.LONG, category: 'styles' },
         )
         .subscribe();
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/styles/image')
-        .flush([]);
+      httpTesting.expectOne(`${API_BASE}/styles/image`).flush([]);
 
       service
         .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
+          `${API_BASE}/status/performance`,
           {},
           { ttl: CacheTTL.LONG, category: 'performance' },
         )
         .subscribe((r) => (perfResult = r));
-      httpTesting.expectNone('https://aihorde.net/api/v2/status/performance');
+      httpTesting.expectNone(`${API_BASE}/status/performance`);
 
       expect(perfResult).toEqual({ cached: true });
     });
@@ -579,29 +528,19 @@ describe('HordeApiCacheService', () => {
       let result: unknown;
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe();
-      httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
-        .flush({});
+      httpTesting.expectOne(`${API_BASE}/status/performance`).flush({});
 
       vi.advanceTimersByTime(100);
 
       service.clear();
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (result = r));
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ refreshed: true });
 
       expect(result).toEqual({ refreshed: true });
@@ -638,25 +577,17 @@ describe('HordeApiCacheService', () => {
       let result2: unknown;
 
       ssrService
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (result1 = r));
       ssrHttpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ call: 1 });
 
       ssrService
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (result2 = r));
       ssrHttpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ call: 2 });
 
       expect(result1).toEqual({ call: 1 });
@@ -694,15 +625,11 @@ describe('HordeApiCacheService', () => {
       let error: unknown;
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe({ error: (e: unknown) => (error = e) });
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush('Server error', {
           status: 500,
           statusText: 'Internal Server Error',
@@ -711,15 +638,11 @@ describe('HordeApiCacheService', () => {
       expect(error).toBeTruthy();
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe();
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 42 });
     });
 
@@ -728,15 +651,11 @@ describe('HordeApiCacheService', () => {
       let secondResult: unknown;
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe({ error: (e: unknown) => (firstError = e) });
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush('Server error', {
           status: 500,
           statusText: 'Internal Server Error',
@@ -745,15 +664,11 @@ describe('HordeApiCacheService', () => {
       expect(firstError).toBeTruthy();
 
       service
-        .cachedGet(
-          'https://aihorde.net/api/v2/status/performance',
-          {},
-          { ttl: CacheTTL.LONG },
-        )
+        .cachedGet(`${API_BASE}/status/performance`, {}, { ttl: CacheTTL.LONG })
         .subscribe((r) => (secondResult = r));
 
       httpTesting
-        .expectOne('https://aihorde.net/api/v2/status/performance')
+        .expectOne(`${API_BASE}/status/performance`)
         .flush({ worker_count: 99 });
 
       expect(secondResult).toEqual({ worker_count: 99 });

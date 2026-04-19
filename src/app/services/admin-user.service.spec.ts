@@ -10,6 +10,7 @@ import { of } from 'rxjs';
 import { AdminUserService } from './admin-user.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
+import { API_BASE } from '../testing/api-test-helpers';
 
 describe('AdminUserService', () => {
   let service: AdminUserService;
@@ -116,7 +117,7 @@ describe('AdminUserService', () => {
     it('sends PUT with apikey and invalidates cache', () => {
       service.updateUser(42, { trusted: true }).subscribe();
 
-      const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+      const req = httpTesting.expectOne(`${API_BASE}/users/42`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.headers.get('apikey')).toBe('admin-key');
       expect(req.request.body).toEqual({ trusted: true });
@@ -141,35 +142,35 @@ describe('AdminUserService', () => {
 
   it('setTrusted sends { trusted } payload', () => {
     service.setTrusted(42, true).subscribe();
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+    const req = httpTesting.expectOne(`${API_BASE}/users/42`);
     expect(req.request.body).toEqual({ trusted: true });
     req.flush({});
   });
 
   it('setFlagged sends { flagged } payload', () => {
     service.setFlagged(42, false).subscribe();
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+    const req = httpTesting.expectOne(`${API_BASE}/users/42`);
     expect(req.request.body).toEqual({ flagged: false });
     req.flush({});
   });
 
   it('resetSuspicion sends { reset_suspicion: true }', () => {
     service.resetSuspicion(42).subscribe();
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+    const req = httpTesting.expectOne(`${API_BASE}/users/42`);
     expect(req.request.body).toEqual({ reset_suspicion: true });
     req.flush({});
   });
 
   it('setVpnAccess sends { vpn } payload', () => {
     service.setVpnAccess(42, true).subscribe();
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+    const req = httpTesting.expectOne(`${API_BASE}/users/42`);
     expect(req.request.body).toEqual({ vpn: true });
     req.flush({});
   });
 
   it('setWorkerInvites sends { worker_invite } payload', () => {
     service.setWorkerInvites(42, 5).subscribe();
-    const req = httpTesting.expectOne('https://aihorde.net/api/v2/users/42');
+    const req = httpTesting.expectOne(`${API_BASE}/users/42`);
     expect(req.request.body).toEqual({ worker_invite: 5 });
     req.flush({});
   });

@@ -29,6 +29,7 @@ import {
 } from '../types/style-api';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
+import { API_BASE_URL } from './api-config';
 
 @Injectable({
   providedIn: 'root',
@@ -37,7 +38,7 @@ export class StyleService {
   private readonly httpClient = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly cache = inject(HordeApiCacheService);
-  private readonly baseUrl = 'https://aihorde.net/api/v2';
+  private readonly baseUrl = inject(API_BASE_URL);
 
   private readonly styleContext = new HttpContext().set(
     CLIENT_AGENT,
