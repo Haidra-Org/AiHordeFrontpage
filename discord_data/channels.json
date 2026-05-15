@@ -1,7 +1,7 @@
 {
   "guild_id": "781145214752129095",
-  "synced_at": "2026-04-06T13:52:16.310081+00:00",
-  "channel_count": 113,
+  "synced_at": "2026-05-15T21:03:12.209112+00:00",
+  "channel_count": 115,
   "channels": {
     "rules": {
       "id": "977495527950262302",
@@ -28,8 +28,8 @@
       "type": "text",
       "category": "Info"
     },
-    "uis-index": {
-      "id": "1339333106712444958",
+    "ui-index": {
+      "id": "1490712789382074568",
       "type": "text",
       "category": "Info"
     },
@@ -303,11 +303,6 @@
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
-    "📱aipainter": {
-      "id": "1108160262873301012",
-      "type": "text",
-      "category": "AI Horde Retired Integrations"
-    },
     "📱ai-scribbles": {
       "id": "1189362453671313408",
       "type": "text",
@@ -348,18 +343,23 @@
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
+    "📱hordedash": {
+      "id": "1503078614474821673",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
     "📱hordeqt": {
       "id": "1300507939865366558",
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
-    "📱inneal": {
-      "id": "1230069655343861800",
+    "📱ealain": {
+      "id": "1338432140802658366",
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
-    "📱ealain": {
-      "id": "1338432140802658366",
+    "📱inneal": {
+      "id": "1230069655343861800",
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
@@ -448,11 +448,6 @@
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
     },
-    "🤖solidbooru-ai": {
-      "id": "1192161917985366066",
-      "type": "text",
-      "category": "AI Horde Retired Integrations"
-    },
     "🤖turing-bot": {
       "id": "1107634754515386388",
       "type": "text",
@@ -462,11 +457,6 @@
       "id": "1244725099677089802",
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
-    },
-    "🧩genalt": {
-      "id": "1107647281320185920",
-      "type": "text",
-      "category": "AI Horde Retired Integrations"
     },
     "🧩g-i-m-p": {
       "id": "1107636192360534127",
@@ -518,6 +508,21 @@
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
     },
+    "📱aipainter": {
+      "id": "1108160262873301012",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🤖solidbooru-ai": {
+      "id": "1192161917985366066",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
+    "🧩genalt": {
+      "id": "1107647281320185920",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
+    },
     "📱a1111-extension": {
       "id": "1107648022642429993",
       "type": "text",
@@ -560,6 +565,11 @@
     },
     "sdxl-bug-reports": {
       "id": "1158098421111066705",
+      "type": "text",
+      "category": "AI Horde Retired Channels"
+    },
+    "uis-index-original": {
+      "id": "1339333106712444958",
       "type": "text",
       "category": "AI Horde Retired Channels"
     },
