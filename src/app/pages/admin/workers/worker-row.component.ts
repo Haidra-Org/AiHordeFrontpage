@@ -58,7 +58,7 @@ export class WorkerRowComponent {
     () => this.worker().models?.length ?? 0,
   );
 
-  public readonly queuedJobs = computed(
+  public readonly failedJobs = computed(
     () => this.worker().uncompleted_jobs ?? 0,
   );
 

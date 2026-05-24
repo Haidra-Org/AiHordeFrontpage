@@ -842,7 +842,7 @@
     min-width: 0;
   }
 
-  .worker-row-metric--queued-active .worker-row-metric-value {
+  .worker-row-metric--failed-active .worker-row-metric-value {
     @apply text-amber-700 dark:text-amber-300;
   }
 
@@ -895,7 +895,7 @@
     }
 
     .worker-row-metrics {
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 
     .worker-row-metric {

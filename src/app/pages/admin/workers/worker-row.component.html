@@ -88,18 +88,6 @@
         </span>
       </div>
 
-      <div
-        class="worker-row-metric"
-        [class.worker-row-metric--queued-active]="queuedJobs() > 0"
-      >
-        <span class="worker-row-metric-label">{{
-          "workers.stats.queued" | transloco
-        }}</span>
-        <span class="worker-row-metric-value">{{
-          formatMetricNumber(queuedJobs())
-        }}</span>
-      </div>
-
       <div class="worker-row-metric">
         <span class="worker-row-metric-label">{{
           "admin.workers.card.models_loaded" | transloco

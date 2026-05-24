@@ -1617,7 +1617,7 @@
   "workers.stats.title": "Network Status",
   "workers.stats.workers": "Workers",
   "workers.stats.threads": "Threads",
-  "workers.stats.queued": "Queued",
+  "workers.stats.failed_jobs": "Failed Jobs",
   "workers.stats.image.label": "Image (Dreamers)",
   "workers.stats.text.label": "Text (Scribes)",
   "workers.stats.alchemy.label": "Alchemy",
