@@ -21,7 +21,7 @@
     [value]="contactInput()"
     (input)="onContactInputChange($event)"
     minlength="5"
-    maxlength="500"
+    maxlength="50"
   />
   @if (contactDialogError()) {
     <p class="text-error" role="alert" aria-live="assertive">
