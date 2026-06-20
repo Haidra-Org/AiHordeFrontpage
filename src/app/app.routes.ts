@@ -37,6 +37,13 @@ export const routes: Routes = [
       import('./pages/details/details.routes').then((m) => m.detailsRoutes),
   },
   {
+    path: 'alchemy',
+    loadComponent: () =>
+      import('./pages/alchemy/alchemy.component').then(
+        (c) => c.AlchemyComponent,
+      ),
+  },
+  {
     path: 'faq',
     loadComponent: () =>
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),

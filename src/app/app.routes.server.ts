@@ -36,6 +36,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
+    path: 'alchemy',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'faq',
     renderMode: RenderMode.Prerender,
   },

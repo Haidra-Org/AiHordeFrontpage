@@ -92,3 +92,20 @@ export function sanitizeGenerationResponseValue(value: unknown): unknown {
 
   return isLikelyBase64ImagePayload(value) ? BASE64_IMAGE_PLACEHOLDER : value;
 }
+
+/**
+ * Deep-clone a response payload with every embedded base64 image replaced by a
+ * short placeholder, so the result is safe to display in a JSON viewer or write
+ * to a downloadable file without dumping multi-megabyte data blobs. Image links
+ * are preserved. Returns the original value if (de)serialization fails.
+ */
+export function sanitizeGenerationResponsePayload(value: unknown): unknown {
+  try {
+    const sanitized = JSON.stringify(value, (_key, currentValue: unknown) =>
+      sanitizeGenerationResponseValue(currentValue),
+    );
+    return sanitized ? (JSON.parse(sanitized) as unknown) : value;
+  } catch {
+    return value;
+  }
+}

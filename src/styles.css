@@ -109,6 +109,9 @@
 /* Rate (image rating) */
 @import "./styles/_rate.css";
 
+/* Alchemy (interrogation) page */
+@import "./styles/_alchemy.css";
+
 /* =================================================================
    UTILITY LAYERS
    ================================================================= */

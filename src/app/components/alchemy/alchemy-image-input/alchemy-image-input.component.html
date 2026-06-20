@@ -1,0 +1,111 @@
+<div class="alchemy-image-input">
+  <div
+    class="alchemy-segmented"
+    role="tablist"
+    aria-label="{{ 'alchemy.image_input.tab_url' | transloco }}"
+  >
+    <button
+      type="button"
+      class="alchemy-segmented__btn"
+      [class.alchemy-segmented__btn--active]="mode() === 'url'"
+      [disabled]="disabled()"
+      role="tab"
+      [attr.aria-selected]="mode() === 'url'"
+      (click)="setMode('url')"
+    >
+      <app-icon name="globe-alt" />
+      {{ "alchemy.image_input.tab_url" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="alchemy-segmented__btn"
+      [class.alchemy-segmented__btn--active]="mode() === 'upload'"
+      [disabled]="disabled()"
+      role="tab"
+      [attr.aria-selected]="mode() === 'upload'"
+      (click)="setMode('upload')"
+    >
+      <app-icon name="arrow-up" />
+      {{ "alchemy.image_input.tab_upload" | transloco }}
+    </button>
+  </div>
+
+  @if (mode() === "url") {
+    <div class="alchemy-form-group">
+      <label class="form-label" for="alchemy-image-url">
+        {{ "alchemy.image_input.url_label" | transloco }}
+      </label>
+      <input
+        id="alchemy-image-url"
+        type="url"
+        class="form-input"
+        autocomplete="off"
+        [disabled]="disabled()"
+        [value]="urlValue()"
+        [placeholder]="'alchemy.image_input.url_placeholder' | transloco"
+        (input)="onUrlInput($any($event.target).value)"
+      />
+      <p class="form-hint">{{ "alchemy.image_input.url_hint" | transloco }}</p>
+    </div>
+  } @else {
+    <label
+      class="alchemy-dropzone"
+      for="alchemy-image-file"
+      [class.alchemy-dropzone--active]="dragActive()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      @if (encoding()) {
+        <app-icon name="spinner" class="animate-spin alchemy-dropzone__icon" />
+        <span class="alchemy-dropzone__text">{{
+          "alchemy.image_input.encoding" | transloco
+        }}</span>
+      } @else {
+        <app-icon name="photo" class="alchemy-dropzone__icon" />
+        <span class="alchemy-dropzone__text">{{
+          "alchemy.image_input.upload_prompt" | transloco
+        }}</span>
+        <span class="alchemy-dropzone__hint">{{
+          "alchemy.image_input.upload_hint" | transloco
+        }}</span>
+      }
+      <input
+        id="alchemy-image-file"
+        type="file"
+        accept="image/*"
+        class="sr-only"
+        [disabled]="disabled() || encoding()"
+        (change)="onFileSelected($event)"
+      />
+    </label>
+  }
+
+  @if (error()) {
+    <p class="form-error">{{ error()! | transloco }}</p>
+  }
+
+  @if (previewSrc(); as src) {
+    <div class="alchemy-image-input__preview">
+      <img
+        [src]="src"
+        alt="{{ 'alchemy.image_input.preview_alt' | transloco }}"
+      />
+      <div class="alchemy-image-input__preview-meta">
+        @if (encodedInfo(); as info) {
+          <span class="badge badge-info"
+            >{{ info.width }}×{{ info.height }} · webp</span
+          >
+        }
+        <button
+          type="button"
+          class="btn btn-sm btn-muted"
+          [disabled]="disabled()"
+          (click)="clear()"
+        >
+          {{ "alchemy.image_input.clear" | transloco }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

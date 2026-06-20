@@ -5,7 +5,15 @@ export const NAV_ITEMS: NavItem[] = [
   { labelKey: 'home', routerLink: '/', exact: true },
   { labelKey: 'mission.nav_link', routerLink: '/mission/' },
   { labelKey: 'news', routerLink: '/news/' },
-  { labelKey: 'guis_and_tools', routerLink: '/guis/' },
+  {
+    labelKey: 'guis_and_tools',
+    dropdownId: 'guis-and-tools',
+    activeRoutePrefix: '/guis',
+    children: [
+      { labelKey: 'nav.guis_and_tools.full_list', routerLink: '/guis/' },
+      { labelKey: 'alchemy.nav_link', routerLink: '/alchemy/' },
+    ],
+  },
   {
     labelKey: 'joining',
     dropdownId: 'contribute',

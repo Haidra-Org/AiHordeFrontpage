@@ -1,0 +1,179 @@
+<section class="alchemy-result" [class.alchemy-result--open]="isOpen()">
+  <header class="alchemy-result__head">
+    <button
+      type="button"
+      class="alchemy-result__toggle"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-label]="'alchemy.result.toggle_label' | transloco"
+      (click)="toggleOpen()"
+    >
+      <app-icon
+        name="chevron-right"
+        class="alchemy-result__chevron"
+        [class.alchemy-result__chevron--open]="isOpen()"
+      />
+      <h4 class="alchemy-result__title">
+        {{ "alchemy.form_names." + form().form | transloco }}
+      </h4>
+      <span
+        class="badge"
+        [class.badge-secondary]="!returnsImage()"
+        [class.badge-info]="returnsImage()"
+      >
+        {{
+          (returnsImage()
+            ? "alchemy.result.output_image"
+            : "alchemy.result.output_text"
+          ) | transloco
+        }}
+      </span>
+
+      @if (!isOpen()) {
+        <span class="alchemy-result__summary">
+          @switch (kind()) {
+            @case ("caption") {
+              <span class="alchemy-result__summary-text">{{ caption() }}</span>
+            }
+            @case ("nsfw") {
+              <span
+                class="badge"
+                [class.badge-danger]="nsfw()"
+                [class.badge-success]="!nsfw()"
+                >{{
+                  (nsfw()
+                    ? "alchemy.result.nsfw_true"
+                    : "alchemy.result.nsfw_false"
+                  ) | transloco
+                }}</span
+              >
+            }
+            @case ("interrogation") {
+              {{
+                "alchemy.result.tag_summary"
+                  | transloco: { tags: totalTags(), facets: facetCount() }
+              }}
+            }
+            @case ("image") {
+              <img
+                class="alchemy-result__thumb"
+                [src]="imageUrl()!"
+                alt="{{ 'alchemy.result.image_alt' | transloco }}"
+              />
+            }
+          }
+        </span>
+      }
+    </button>
+
+    @if (rawJsonSections().length > 0) {
+      <app-json-inspector-trigger
+        class="alchemy-result__raw-trigger"
+        [label]="'alchemy.result.raw_toggle' | transloco"
+        (triggered)="openRawJson()"
+      />
+    }
+  </header>
+
+  @if (isOpen()) {
+    <div class="alchemy-result__body">
+      @switch (kind()) {
+        @case ("caption") {
+          <blockquote class="alchemy-caption">{{ caption() }}</blockquote>
+        }
+        @case ("nsfw") {
+          <div class="alchemy-nsfw">
+            @if (nsfw()) {
+              <span class="badge badge-danger">{{
+                "alchemy.result.nsfw_true" | transloco
+              }}</span>
+            } @else {
+              <span class="badge badge-success">{{
+                "alchemy.result.nsfw_false" | transloco
+              }}</span>
+            }
+          </div>
+        }
+        @case ("image") {
+          <img
+            class="alchemy-result__image"
+            [src]="imageUrl()!"
+            alt="{{ 'alchemy.result.image_alt' | transloco }}"
+          />
+          <a
+            class="btn btn-sm btn-secondary"
+            [href]="imageUrl()!"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ "alchemy.result.open_image" | transloco }}
+          </a>
+          <p class="form-hint alchemy-result__save-hint">
+            {{ "alchemy.result.save_hint" | transloco }}
+          </p>
+        }
+        @case ("interrogation") {
+          <div class="alchemy-tags">
+            @for (section of sections(); track section.key) {
+              <section class="alchemy-tags__group">
+                <h5 class="alchemy-tags__legend">
+                  {{ "alchemy.result.sections." + section.key | transloco }}
+                  <span class="alchemy-tags__count">{{
+                    section.entries.length
+                  }}</span>
+                </h5>
+                <ul class="alchemy-tags__list">
+                  @for (tag of visibleEntries(section); track tag.text) {
+                    <li
+                      class="alchemy-tagrow alchemy-tagrow--{{
+                        tagTier(tag.weight)
+                      }}"
+                      [style.--weight]="tag.weight + '%'"
+                      [attr.title]="
+                        ('alchemy.result.confidence' | transloco) +
+                        ': ' +
+                        formatConfidence(tag.confidence)
+                      "
+                    >
+                      <span class="alchemy-tagrow__text">{{ tag.text }}</span>
+                      <span class="alchemy-tagrow__conf">{{
+                        formatConfidence(tag.confidence)
+                      }}</span>
+                    </li>
+                  }
+                </ul>
+                @if (hiddenCount(section) > 0) {
+                  <button
+                    type="button"
+                    class="alchemy-tags__more"
+                    (click)="toggleSection(section.key)"
+                  >
+                    @if (isSectionExpanded(section.key)) {
+                      {{ "alchemy.result.show_less" | transloco }}
+                    } @else {
+                      {{
+                        "alchemy.result.show_more"
+                          | transloco: { count: hiddenCount(section) }
+                      }}
+                    }
+                  </button>
+                }
+              </section>
+            }
+          </div>
+        }
+        @default {
+          <p class="form-hint">{{ "alchemy.result.raw_only" | transloco }}</p>
+        }
+      }
+    </div>
+  }
+
+  <app-json-inspector
+    [open]="rawJsonOpen()"
+    [title]="'alchemy.form_names.' + form().form | transloco"
+    [closeLabel]="'alchemy.result.raw_close' | transloco"
+    [downloadFilePrefix]="'alchemy-' + form().form"
+    [sections]="rawJsonSections()"
+    (closed)="closeRawJson()"
+  />
+</section>

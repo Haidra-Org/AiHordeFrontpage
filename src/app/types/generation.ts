@@ -143,13 +143,99 @@ export interface TextGenerationStatusResponse {
 }
 
 // ============================================================================
-// Alchemy (Interrogation) Response Types
+// Alchemy (Interrogation) Types
 // ============================================================================
+
+/**
+ * Forms that return textual/structured data about the source image.
+ */
+export const ALCHEMY_DATA_FORMS = ['caption', 'interrogation', 'nsfw'] as const;
+
+/**
+ * Forms that return a processed image (upscalers, face fixers, background
+ * removal). The exact set is enforced server-side; see
+ * docs/alchemy-api-samples.md for the authoritative list.
+ */
+export const ALCHEMY_POST_PROCESSOR_FORMS = [
+  'GFPGAN',
+  'CodeFormers',
+  'RealESRGAN_x4plus',
+  'RealESRGAN_x2plus',
+  'RealESRGAN_x4plus_anime_6B',
+  'NMKD_Siax',
+  '4x_AnimeSharp',
+  'strip_background',
+] as const;
+
+export type AlchemyDataFormName = (typeof ALCHEMY_DATA_FORMS)[number];
+export type AlchemyPostProcessorFormName =
+  (typeof ALCHEMY_POST_PROCESSOR_FORMS)[number];
+export type AlchemyFormName =
+  | AlchemyDataFormName
+  | AlchemyPostProcessorFormName;
+
+// --- Request types ---------------------------------------------------------
+
+export interface InterrogationForm {
+  name: AlchemyFormName;
+  payload?: Record<string, unknown>;
+}
+
+export interface InterrogationRequest {
+  forms: InterrogationForm[];
+  /** A public image URL or a bare base64-encoded image (no data-URL prefix). */
+  source_image: string;
+  slow_workers?: boolean;
+}
+
+export interface InterrogationResponse {
+  id: string;
+  /** Only returned for registered API keys, not anonymous submissions. */
+  kudos?: number;
+  message?: string;
+}
+
+// --- Response types --------------------------------------------------------
+
+/** A single `{ text, confidence }` entry within an interrogation result. */
+export interface InterrogationTag {
+  text: string;
+  confidence: number;
+}
+
+/**
+ * The `interrogation` form result. Every section is optional because workers
+ * may omit empty sections; unknown sections are tolerated via the index
+ * signature. See docs/alchemy-api-samples.md.
+ */
+export interface InterrogationDetails {
+  tags?: InterrogationTag[];
+  sites?: InterrogationTag[];
+  artists?: InterrogationTag[];
+  flavors?: InterrogationTag[];
+  mediums?: InterrogationTag[];
+  movements?: InterrogationTag[];
+  techniques?: InterrogationTag[];
+  [section: string]: InterrogationTag[] | undefined;
+}
+
+/**
+ * Per-form result. Modeled permissively: the known keys are typed, but the
+ * base remains an open record so an unexpected worker payload never breaks
+ * rendering (the UI falls back to a raw-JSON view). Post-processor forms set a
+ * key matching the form name to the processed image URL.
+ */
+export interface AlchemyFormResult {
+  caption?: string;
+  nsfw?: boolean;
+  interrogation?: InterrogationDetails;
+  [key: string]: unknown;
+}
 
 export interface AlchemyForm {
   form: string;
   state: string;
-  result?: Record<string, unknown>;
+  result?: AlchemyFormResult;
 }
 
 export interface AlchemyStatusResponse {
