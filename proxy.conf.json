@@ -1,0 +1,10 @@
+{
+  "/status-api": {
+    "target": "http://localhost:19810",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/status-api": ""
+    }
+  }
+}

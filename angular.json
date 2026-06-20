@@ -88,11 +88,15 @@
             },
             "development": {
               "buildTarget": "AiHordeWebsite:build:development"
+            },
+            "local": {
+              "buildTarget": "AiHordeWebsite:build:local"
             }
           },
           "defaultConfiguration": "development",
           "options": {
-            "port": 4209
+            "port": 4209,
+            "proxyConfig": "proxy.conf.json"
           }
         },
         "extract-i18n": {

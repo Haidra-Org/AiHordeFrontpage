@@ -24,6 +24,8 @@ import {
   GenerationStatusResponse,
   TextGenerationStatusResponse,
   AlchemyStatusResponse,
+  InterrogationRequest,
+  InterrogationResponse,
   GENERATION_NOT_FOUND,
 } from '../types/generation';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
@@ -377,11 +379,38 @@ export class AiHordeService {
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
+  public submitInterrogation(
+    apiKey: string,
+    request: InterrogationRequest,
+  ): Observable<InterrogationResponse | null> {
+    return this.httpClient
+      .post<InterrogationResponse>(
+        `${this.baseUrl}/interrogate/async`,
+        request,
+        {
+          headers: { apikey: apiKey },
+          context: this.generateContext,
+        },
+      )
+      .pipe(catchError(() => of(null)));
+  }
+
   public getAlchemyStatus(
     id: string,
   ): Observable<AlchemyStatusResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
       .get<AlchemyStatusResponse>(
+        `${this.baseUrl}/interrogate/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
+  }
+
+  // Cancelling returns the status with any already-completed forms preserved.
+  public cancelInterrogation(
+    id: string,
+  ): Observable<AlchemyStatusResponse | typeof GENERATION_NOT_FOUND | null> {
+    return this.httpClient
+      .delete<AlchemyStatusResponse>(
         `${this.baseUrl}/interrogate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));

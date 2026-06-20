@@ -9,6 +9,7 @@ import { AiHordeService } from './ai-horde.service';
 import {
   GENERATION_NOT_FOUND,
   ImageGenerationRequest,
+  InterrogationRequest,
 } from '../types/generation';
 import { clientAgentInterceptor } from './interceptors/client-agent.interceptor';
 import { API_BASE } from '../testing/api-test-helpers';
@@ -309,6 +310,97 @@ describe('AiHordeService', () => {
 
     it('should return null on non-404 HTTP error', async () => {
       const promise = firstValueFrom(service.getAlchemyStatus('alch-bad'));
+
+      http
+        .expectOne(`${API_BASE}/interrogate/status/alch-bad`)
+        .flush('Error', { status: 500, statusText: 'Server Error' });
+
+      expect(await promise).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // submitInterrogation
+  // -----------------------------------------------------------------------
+  describe('submitInterrogation', () => {
+    const apiKey = 'test-api-key';
+    const request: InterrogationRequest = {
+      forms: [{ name: 'caption' }, { name: 'nsfw' }],
+      source_image: 'https://example.com/cat.webp',
+      slow_workers: true,
+    };
+
+    it('should POST to the interrogate async endpoint with correct headers', () => {
+      service.submitInterrogation(apiKey, request).subscribe();
+
+      const req = http.expectOne(`${API_BASE}/interrogate/async`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('apikey')).toBe(apiKey);
+      // Integration: also verifies interceptor adds Client-Agent header
+      expect(req.request.headers.get('Client-Agent')).toBe(
+        'AiHordeFrontpage:generate',
+      );
+      expect(req.request.body).toEqual(request);
+      req.flush({ id: 'alch-abc', kudos: 5 });
+    });
+
+    it('should return the response on success', async () => {
+      const promise = firstValueFrom(
+        service.submitInterrogation(apiKey, request),
+      );
+
+      http
+        .expectOne(`${API_BASE}/interrogate/async`)
+        .flush({ id: 'alch-abc', kudos: 5 });
+
+      expect(await promise).toEqual({ id: 'alch-abc', kudos: 5 });
+    });
+
+    it('should return null on HTTP error', async () => {
+      const promise = firstValueFrom(
+        service.submitInterrogation(apiKey, request),
+      );
+
+      http.expectOne(`${API_BASE}/interrogate/async`).flush('Bad request', {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+
+      expect(await promise).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // cancelInterrogation
+  // -----------------------------------------------------------------------
+  describe('cancelInterrogation', () => {
+    it('should DELETE the interrogate status endpoint and return status', async () => {
+      const cancelled = {
+        state: 'partial',
+        forms: [{ form: 'caption', state: 'cancelled' }],
+      };
+
+      const promise = firstValueFrom(service.cancelInterrogation('alch-1'));
+
+      const req = http.expectOne(`${API_BASE}/interrogate/status/alch-1`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush(cancelled);
+
+      expect(await promise).toEqual(cancelled);
+    });
+
+    it('should return GENERATION_NOT_FOUND on 404', async () => {
+      const promise = firstValueFrom(service.cancelInterrogation('alch-gone'));
+
+      http
+        .expectOne(`${API_BASE}/interrogate/status/alch-gone`)
+        .flush('Not found', { status: 404, statusText: 'Not Found' });
+
+      expect(await promise).toBe(GENERATION_NOT_FOUND);
+    });
+
+    it('should return null on non-404 HTTP error', async () => {
+      const promise = firstValueFrom(service.cancelInterrogation('alch-bad'));
 
       http
         .expectOne(`${API_BASE}/interrogate/status/alch-bad`)
