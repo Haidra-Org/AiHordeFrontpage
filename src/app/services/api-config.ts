@@ -13,3 +13,11 @@ export const RATINGS_API_BASE_URL = new InjectionToken<string>(
     factory: () => environment.ratingsApiBaseUrl,
   },
 );
+
+export const STATUS_API_BASE_URL = new InjectionToken<string>(
+  'STATUS_API_BASE_URL',
+  {
+    providedIn: 'root',
+    factory: () => environment.statusApiBaseUrl,
+  },
+);

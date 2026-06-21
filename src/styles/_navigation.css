@@ -235,14 +235,17 @@
 /* ── Navigation Links & Dropdowns ────────────────────────────── */
 
 @layer components {
-  /* Desktop navigation menu bar */
+  /* Desktop navigation menu bar.
+     Spacing stays tight from the `nav` breakpoint up so the full item list
+     fits on one line on ~1280px-wide viewports (e.g. 1080p at 150% scaling);
+     it only relaxes to the roomy gaps once there is genuine width to spare. */
   .nav-menu-desktop {
-    @apply hidden nav:flex nav:flex-nowrap nav:items-center nav:gap-4 xl:gap-6 nav:min-w-0;
+    @apply hidden nav:flex nav:flex-nowrap nav:items-center nav:gap-2 xl:gap-3 2xl:gap-6 nav:min-w-0;
   }
 
   /* Desktop Navigation Links */
   .nav-link {
-    @apply px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap shrink-0;
+    @apply px-2 2xl:px-3 py-2 text-sm font-medium rounded-md whitespace-nowrap shrink-0;
     @apply text-content-secondary no-underline;
     @apply transition-all duration-200;
     @apply hover:text-brand-purple hover:bg-surface-secondary;

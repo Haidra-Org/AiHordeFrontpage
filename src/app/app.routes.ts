@@ -49,6 +49,11 @@ export const routes: Routes = [
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),
   },
   {
+    path: 'status',
+    loadComponent: () =>
+      import('./pages/status/status.component').then((c) => c.StatusComponent),
+  },
+  {
     path: 'guis',
     loadComponent: () =>
       import('./pages/guis-and-tools/guis-and-tools.component').then(

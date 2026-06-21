@@ -112,6 +112,9 @@
 /* Alchemy (interrogation) page */
 @import "./styles/_alchemy.css";
 
+/* Status page */
+@import "./styles/_status.css";
+
 /* =================================================================
    UTILITY LAYERS
    ================================================================= */

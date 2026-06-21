@@ -105,10 +105,14 @@ export class NavBarComponent implements OnInit, OnDestroy {
   /** Check whether any child route of a dropdown matches the current URL */
   public isDropdownRouteActive(item: NavItem): boolean {
     const url = this.currentUrl();
-    if (item.activeRoutePrefix) {
-      return url.startsWith(item.activeRoutePrefix);
+    if (item.activeRoutePrefix && url.startsWith(item.activeRoutePrefix)) {
+      return true;
     }
-    return false;
+    // Children may live under unrelated routes (e.g. /guis and /alchemy), so
+    // fall back to matching any child link rather than a single shared prefix.
+    return (item.children ?? []).some(
+      (child) => child.routerLink && url.startsWith(child.routerLink),
+    );
   }
 
   /** Get the notification signal for a dropdown (by notificationNavItem key) */

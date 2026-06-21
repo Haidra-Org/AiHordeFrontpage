@@ -1,0 +1,389 @@
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-page-title">{{ "status.title" | transloco }}</h1>
+      <p class="text-description">{{ "status.intro" | transloco }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
+  <div class="container-content status-page">
+    @if (!loaded()) {
+      <div class="status-message">
+        <app-icon name="refresh-alt" />
+        <span>{{ "status.loading" | transloco }}</span>
+      </div>
+    } @else if (backendUnavailable()) {
+      <div class="status-message status-message--error">
+        <app-icon name="exclamation-circle" />
+        <span>{{ "status.unavailable" | transloco }}</span>
+      </div>
+    } @else {
+      <!-- Overall roll-up banner -->
+      <div
+        class="status-banner status-banner--{{
+          statusView(overall()).modifier
+        }}"
+      >
+        <span class="status-banner__icon">
+          <app-icon [name]="statusView(overall()).icon" />
+        </span>
+        <div class="status-banner__body">
+          <div class="status-banner__eyebrow">
+            {{ "status.current_status" | transloco }}
+          </div>
+          <div class="status-banner__headline">
+            {{ overallSummaryKey() | transloco }}
+          </div>
+        </div>
+        @if (generatedAt(); as ts) {
+          <div class="status-banner__meta">
+            <div>{{ "status.last_checked" | transloco }}</div>
+            <div class="status-banner__meta-value">
+              {{ ts | date: "shortTime" }}
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Live network stats (from the AI Horde performance API) -->
+      @if (ns.performance(); as perf) {
+        <div class="status-stats">
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.image_workers" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.worker_count | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.online" | transloco }}
+            </div>
+          </div>
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.text_workers" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.text_worker_count | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.online" | transloco }}
+            </div>
+          </div>
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.alchemy_workers" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.interrogator_count | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.online" | transloco }}
+            </div>
+          </div>
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.image_queue" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.queued_requests | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.requests" | transloco }}
+            </div>
+          </div>
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.text_queue" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.queued_text_requests | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.requests" | transloco }}
+            </div>
+          </div>
+          <div class="status-stats__cell">
+            <div class="status-stats__label">
+              {{ "status.stats.alchemy_queue" | transloco }}
+            </div>
+            <div class="status-stats__value">
+              {{ perf.queued_forms | number }}
+            </div>
+            <div class="status-stats__hint">
+              {{ "status.stats.forms" | transloco }}
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Active incidents -->
+      @if (hasIncidents()) {
+        <section class="status-section">
+          <h2 class="heading-section-lg">
+            {{ "status.active_issues" | transloco }}
+          </h2>
+          <div class="status-incidents">
+            @for (inc of activeIncidents(); track inc.id) {
+              <article
+                class="status-incident status-incident--{{ inc.severity }}"
+              >
+                <header class="status-incident__head">
+                  <div>
+                    <div class="status-incident__tags">
+                      <span
+                        class="badge {{ severityBadgeClass(inc.severity) }}"
+                      >
+                        {{ "status.severity." + inc.severity | transloco }}
+                      </span>
+                      <span class="status-incident__state">
+                        ·
+                        {{ "status.incident_status." + inc.status | transloco }}
+                      </span>
+                    </div>
+                    <h3 class="status-incident__title">{{ inc.title }}</h3>
+                    @if (inc.affects_names.length > 0) {
+                      <div class="status-incident__affects">
+                        {{ "status.affects" | transloco }}:
+                        {{ inc.affects_names.join(", ") }}
+                      </div>
+                    }
+                  </div>
+                  <div class="status-incident__started">
+                    <div>{{ "status.started" | transloco }}</div>
+                    <div class="status-incident__started-value">
+                      {{ inc.started_at | date: "short" }}
+                    </div>
+                  </div>
+                </header>
+                <div class="status-incident__timeline">
+                  @for (update of inc.updates; track update.posted_at) {
+                    <div class="status-incident__update">
+                      <div class="status-incident__update-meta">
+                        <div class="status-incident__update-status">
+                          {{
+                            "status.incident_status." + update.status
+                              | transloco
+                          }}
+                        </div>
+                        <div class="status-incident__update-time">
+                          {{ update.posted_at | date: "short" }}
+                        </div>
+                      </div>
+                      <div class="status-incident__update-body">
+                        {{ update.body }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Recently resolved incidents -->
+      @if (hasResolvedIncidents()) {
+        <section class="status-section">
+          <h2 class="heading-section-lg">
+            {{ "status.resolved_issues" | transloco }}
+          </h2>
+          <div class="status-incidents">
+            @for (inc of resolvedIncidents(); track inc.id) {
+              <article class="status-incident status-incident--resolved">
+                <header class="status-incident__head">
+                  <div>
+                    <div class="status-incident__tags">
+                      <span
+                        class="badge {{ severityBadgeClass(inc.severity) }}"
+                      >
+                        {{ "status.severity." + inc.severity | transloco }}
+                      </span>
+                      <span class="status-incident__state">
+                        ·
+                        {{ "status.incident_status." + inc.status | transloco }}
+                      </span>
+                    </div>
+                    <h3 class="status-incident__title">{{ inc.title }}</h3>
+                    @if (inc.affects_names.length > 0) {
+                      <div class="status-incident__affects">
+                        {{ "status.affects" | transloco }}:
+                        {{ inc.affects_names.join(", ") }}
+                      </div>
+                    }
+                  </div>
+                  @if (inc.resolved_at; as resolvedAt) {
+                    <div class="status-incident__started">
+                      <div>{{ "status.resolved" | transloco }}</div>
+                      <div class="status-incident__started-value">
+                        {{ resolvedAt | date: "short" }}
+                      </div>
+                    </div>
+                  }
+                </header>
+                @if (inc.updates.length > 0) {
+                  <div class="status-incident__timeline">
+                    @for (update of inc.updates; track update.posted_at) {
+                      <div class="status-incident__update">
+                        <div class="status-incident__update-meta">
+                          <div class="status-incident__update-status">
+                            {{
+                              "status.incident_status." + update.status
+                                | transloco
+                            }}
+                          </div>
+                          <div class="status-incident__update-time">
+                            {{ update.posted_at | date: "short" }}
+                          </div>
+                        </div>
+                        <div class="status-incident__update-body">
+                          {{ update.body }}
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Scheduled maintenance -->
+      @if (maintenance().length > 0) {
+        <section class="status-section">
+          <h2 class="heading-section-lg">
+            {{ "status.maintenance" | transloco }}
+          </h2>
+          <div class="status-maintenance">
+            @for (m of maintenance(); track m.id) {
+              <article class="status-maint">
+                <span class="status-maint__icon">
+                  <app-icon name="clock-alt" />
+                </span>
+                <div class="status-maint__body">
+                  <div class="status-maint__window">
+                    {{ "status.maintenance" | transloco }} ·
+                    {{ m.starts_at | date: "short" }} –
+                    {{ m.ends_at | date: "short" }}
+                    @if (m.is_active) {
+                      <span class="badge badge-info badge-sm">
+                        {{ "status.in_progress" | transloco }}
+                      </span>
+                    }
+                  </div>
+                  <div class="status-maint__title">{{ m.title }}</div>
+                  <div class="status-maint__text">{{ m.body }}</div>
+                  @if (m.affects_names.length > 0) {
+                    <div class="status-maint__affects">
+                      {{ "status.affects" | transloco }}:
+                      {{ m.affects_names.join(", ") }}
+                    </div>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- Services -->
+      <section class="status-section">
+        <div class="status-section__head">
+          <h2 class="heading-section-lg">
+            {{ "status.services" | transloco }}
+          </h2>
+          <div class="status-legend">
+            <span class="status-legend__item">
+              <span class="status-dot status-dot--operational"></span>
+              {{ "status.state.operational" | transloco }}
+            </span>
+            <span class="status-legend__item">
+              <span class="status-dot status-dot--degraded"></span>
+              {{ "status.state.degraded" | transloco }}
+            </span>
+            <span class="status-legend__item">
+              <span class="status-dot status-dot--down"></span>
+              {{ "status.state.down" | transloco }}
+            </span>
+            <span class="status-legend__item">
+              <span class="status-dot status-dot--maintenance"></span>
+              {{ "status.state.maintenance" | transloco }}
+            </span>
+          </div>
+        </div>
+
+        @if (components(); as svcs) {
+          <div class="status-services">
+            @for (svc of svcs; track svc.id) {
+              <div class="status-service">
+                <div class="status-service__row">
+                  <span
+                    class="status-dot status-dot--{{
+                      statusView(svc.status).modifier
+                    }}"
+                  ></span>
+                  <div class="status-service__info">
+                    <div class="status-service__name">{{ svc.name }}</div>
+                    <div class="status-service__desc">
+                      {{ svc.description }}
+                    </div>
+                    @if (svc.last_change_at; as changed) {
+                      <div class="status-service__changed">
+                        {{ "status.last_change" | transloco }}:
+                        {{ changed | date: "short" }}
+                      </div>
+                    }
+                  </div>
+                  <div class="status-service__metrics">
+                    @if (svc.uptime_90d !== null) {
+                      <div class="status-service__uptime">
+                        <div class="status-service__uptime-label">
+                          {{ "status.uptime_90d" | transloco }}
+                        </div>
+                        <div class="status-service__uptime-value">
+                          {{ svc.uptime_90d | number: "1.2-2" }}%
+                        </div>
+                      </div>
+                    }
+                    <span
+                      class="status-pill status-pill--{{
+                        statusView(svc.status).modifier
+                      }}"
+                    >
+                      <span class="status-dot status-dot--sm"></span>
+                      {{ statusView(svc.status).labelKey | transloco }}
+                    </span>
+                  </div>
+                </div>
+                @if (historyFor(svc.id).length > 0) {
+                  <div
+                    class="status-history"
+                    [attr.aria-label]="'status.history_label' | transloco"
+                  >
+                    @for (day of historyFor(svc.id); track day.date) {
+                      <span
+                        class="status-history__bar status-history__bar--{{
+                          historyLevelModifier(day.status_level)
+                        }}"
+                        [title]="
+                          day.date +
+                          ' — ' +
+                          (historyLevelLabelKey(day.status_level) | transloco)
+                        "
+                      ></span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <p class="status-note">{{ "status.tbd_note" | transloco }}</p>
+    }
+  </div>
+</section>
