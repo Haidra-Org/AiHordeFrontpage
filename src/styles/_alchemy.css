@@ -454,106 +454,106 @@
   height: 1rem;
 }
 
+/* The tool's three regions now stack as full-width bands (builder, crowd,
+   results) rather than a narrow sticky rail beside a results column. This is
+   what lets the builder spread sideways instead of forcing a long scroll. */
 .alchemy-page__layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+/* --- Request builder: a wide band ------------------------------- */
+
+/* Source and operations share a row; the submit bar spans underneath. The
+   genuine order survives as numbered eyebrows, but nothing is chained into a
+   single vertical lane. */
+.alchemy-build {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.alchemy-build__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-lg);
 }
 
-@media (min-width: 64rem) {
-  .alchemy-page__layout {
-    grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+/* Source gets a fixed narrow column; operations take the rest so the tiles
+   fan out across several columns. Below this width the two stack. */
+@media (min-width: 56rem) {
+  .alchemy-build__grid {
+    grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
     align-items: start;
   }
 
-  .alchemy-builder {
-    position: sticky;
-    top: var(--spacing-lg);
+  .alchemy-step--source {
+    position: relative;
+  }
+
+  /* A hairline divider between the two regions, in place of the old rail. */
+  .alchemy-step--ops {
+    padding-left: var(--spacing-lg);
+    border-left: 1px solid var(--color-gray-200);
+  }
+
+  .dark .alchemy-step--ops {
+    border-left-color: var(--color-gray-700);
   }
 }
 
-/* --- Step spine -------------------------------------------------- */
-
-.alchemy-steps {
+.alchemy-step {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--spacing-sm);
+  min-width: 0;
 }
 
-.alchemy-step {
-  position: relative;
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
-  gap: var(--spacing-md);
-  padding-bottom: var(--spacing-xl);
-}
-
-/* The connective rail: a vertical line behind the markers. */
-.alchemy-step::before {
-  content: "";
-  position: absolute;
-  left: calc(1rem - 1px);
-  top: 2rem;
-  bottom: 0;
-  width: 2px;
-  background-color: var(--color-gray-200);
-}
-
-.dark .alchemy-step::before {
-  background-color: var(--color-gray-700);
-}
-
-.alchemy-step--last {
-  padding-bottom: 0;
-}
-
-.alchemy-step--last::before {
-  display: none;
-}
-
-.alchemy-step__marker {
-  position: relative;
-  z-index: 1;
+/* Numbered eyebrow: a compact marker inline with the step title, not a big
+   circle on a connective spine. */
+.alchemy-step__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs) var(--spacing-sm);
+}
+
+.alchemy-step__num {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: var(--radius-full);
   border: 2px solid var(--color-gray-300);
   background-color: var(--color-surface-primary);
   color: var(--color-text-secondary);
-  font-weight: 600;
-  font-size: var(--text-sm);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
   transition:
     background-color var(--transition-fast),
     border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
-.dark .alchemy-step__marker {
+.dark .alchemy-step__num {
   background-color: var(--color-gray-800);
   border-color: var(--color-gray-600);
   color: var(--color-gray-300);
 }
 
-.alchemy-step__marker .icon {
-  width: 1rem;
-  height: 1rem;
+.alchemy-step__num .icon {
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
-.alchemy-step--done .alchemy-step__marker {
+.alchemy-step--done .alchemy-step__num {
   background-color: var(--color-success-500);
   border-color: var(--color-success-500);
   color: #fff;
-}
-
-.alchemy-step__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  min-width: 0;
-  padding-top: 0.125rem;
 }
 
 .alchemy-step__title {
@@ -567,10 +567,42 @@
   color: var(--color-gray-100);
 }
 
+/* The hint trails the operations title on one line when there's room, then
+   wraps below it on narrow widths. */
 .alchemy-step__hint {
+  flex: 1 1 100%;
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin: 0;
+}
+
+@media (min-width: 56rem) {
+  .alchemy-step__hint {
+    flex: 1 1 14rem;
+  }
+}
+
+/* --- Operations: stacked option sets, each wide ------------------ */
+
+.alchemy-ops {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* --- Submit action bar ------------------------------------------- */
+
+.alchemy-build__footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm) var(--spacing-md);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.dark .alchemy-build__footer {
+  border-top-color: var(--color-gray-700);
 }
 
 /* --- Segmented control (URL / Upload) ---------------------------- */
@@ -874,17 +906,20 @@
 
 /* --- Submit ------------------------------------------------------ */
 
+/* In the footer bar this cluster (summary + run button) is pushed to the
+   trailing edge so the primary action sits where the eye ends up. */
 .alchemy-submit {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--spacing-sm) var(--spacing-md);
-  margin-top: var(--spacing-xs);
+  margin-left: auto;
 }
 
 .alchemy-submit__summary {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+  text-align: right;
 }
 
 /* --- Results panel ----------------------------------------------- */

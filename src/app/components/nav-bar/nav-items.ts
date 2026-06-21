@@ -29,7 +29,6 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { labelKey: 'faq', routerLink: '/faq/' },
-  { labelKey: 'status.nav_link', routerLink: '/status/' },
   ...(environment.features.ratingsPage
     ? [{ labelKey: 'rate', routerLink: '/rate/' } as NavItem]
     : []),
@@ -39,6 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
     dropdownId: 'details',
     activeRoutePrefix: '/details',
     children: [
+      { labelKey: 'status.nav_link', routerLink: '/status/' },
       {
         labelKey: 'nav.active_details.workers',
         routerLink: '/details/workers/',

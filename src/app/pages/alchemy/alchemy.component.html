@@ -275,9 +275,12 @@
       }
 
       <div class="alchemy-page__layout">
-        <!-- Request builder -->
+        <!-- Request builder: a wide band rather than a tall lane. Source sits
+             in a narrow column on the left; operations take the remaining
+             width so every tile is reachable without scrolling. The genuine
+             order (provide / pick / run) survives as numbered eyebrows. -->
         <section
-          class="card alchemy-builder"
+          class="card card-full alchemy-builder"
           aria-labelledby="alchemy-request-heading"
         >
           <div class="card-header">
@@ -286,163 +289,170 @@
             </h2>
           </div>
 
-          <div class="card-body alchemy-steps">
-            <!-- Step 1: source image -->
-            <div class="alchemy-step" [class.alchemy-step--done]="hasSource()">
-              <div class="alchemy-step__marker" aria-hidden="true">
-                @if (hasSource()) {
-                  <app-icon name="check" />
-                } @else {
-                  <span>1</span>
-                }
-              </div>
-              <div class="alchemy-step__content">
-                <h3 class="alchemy-step__title">
-                  {{ "alchemy.steps.source" | transloco }}
-                </h3>
+          <div class="card-body alchemy-build">
+            <div class="alchemy-build__grid">
+              <!-- Step 1: source image -->
+              <section
+                class="alchemy-step alchemy-step--source"
+                [class.alchemy-step--done]="hasSource()"
+              >
+                <div class="alchemy-step__head">
+                  <span class="alchemy-step__num" aria-hidden="true">
+                    @if (hasSource()) {
+                      <app-icon name="check" />
+                    } @else {
+                      <span>1</span>
+                    }
+                  </span>
+                  <h3 class="alchemy-step__title">
+                    {{ "alchemy.steps.source" | transloco }}
+                  </h3>
+                </div>
                 <app-alchemy-image-input
                   [disabled]="isSubmitting()"
                   (sourceImage)="onSourceImage($event)"
                 />
-              </div>
+              </section>
+
+              <!-- Step 2: operations -->
+              <section
+                class="alchemy-step alchemy-step--ops"
+                [class.alchemy-step--done]="selectedCount() > 0"
+              >
+                <div class="alchemy-step__head">
+                  <span class="alchemy-step__num" aria-hidden="true">
+                    @if (selectedCount() > 0) {
+                      <app-icon name="check" />
+                    } @else {
+                      <span>2</span>
+                    }
+                  </span>
+                  <h3 class="alchemy-step__title">
+                    {{ "alchemy.steps.operations" | transloco }}
+                  </h3>
+                  <p class="alchemy-step__hint">
+                    {{ "alchemy.operations.hint" | transloco }}
+                  </p>
+                </div>
+
+                <div class="alchemy-ops">
+                  <fieldset class="alchemy-optset">
+                    <legend class="alchemy-optset__legend">
+                      <span class="alchemy-optset__label">
+                        <app-icon name="document-text" />
+                        {{ "alchemy.forms.analyze_title" | transloco }}
+                      </span>
+                      <span class="alchemy-optset__output">{{
+                        "alchemy.forms.analyze_output" | transloco
+                      }}</span>
+                    </legend>
+                    <div class="alchemy-optset__grid">
+                      @for (form of dataForms; track form) {
+                        <label
+                          class="alchemy-op"
+                          [class.alchemy-op--selected]="isFormSelected(form)"
+                        >
+                          <input
+                            type="checkbox"
+                            class="sr-only"
+                            [checked]="isFormSelected(form)"
+                            [disabled]="isSubmitting()"
+                            (change)="toggleForm(form)"
+                          />
+                          <span class="alchemy-op__check" aria-hidden="true">
+                            <app-icon name="check" />
+                          </span>
+                          <span class="alchemy-op__name">{{
+                            "alchemy.form_names." + form | transloco
+                          }}</span>
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+
+                  <fieldset class="alchemy-optset">
+                    <legend class="alchemy-optset__legend">
+                      <span class="alchemy-optset__label">
+                        <app-icon name="photo" />
+                        {{ "alchemy.forms.enhance_title" | transloco }}
+                      </span>
+                      <span class="alchemy-optset__output">{{
+                        "alchemy.forms.enhance_output" | transloco
+                      }}</span>
+                    </legend>
+                    <div class="alchemy-optset__grid">
+                      @for (form of postProcessorForms; track form) {
+                        <label
+                          class="alchemy-op"
+                          [class.alchemy-op--selected]="isFormSelected(form)"
+                        >
+                          <input
+                            type="checkbox"
+                            class="sr-only"
+                            [checked]="isFormSelected(form)"
+                            [disabled]="isSubmitting()"
+                            (change)="toggleForm(form)"
+                          />
+                          <span class="alchemy-op__check" aria-hidden="true">
+                            <app-icon name="check" />
+                          </span>
+                          <span class="alchemy-op__name">{{
+                            "alchemy.form_names." + form | transloco
+                          }}</span>
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+                </div>
+              </section>
             </div>
 
-            <!-- Step 2: operations -->
-            <div
-              class="alchemy-step"
-              [class.alchemy-step--done]="selectedCount() > 0"
-            >
-              <div class="alchemy-step__marker" aria-hidden="true">
-                @if (selectedCount() > 0) {
-                  <app-icon name="check" />
-                } @else {
-                  <span>2</span>
-                }
-              </div>
-              <div class="alchemy-step__content">
-                <h3 class="alchemy-step__title">
-                  {{ "alchemy.steps.operations" | transloco }}
-                </h3>
-                <p class="alchemy-step__hint">
-                  {{ "alchemy.operations.hint" | transloco }}
-                </p>
-
-                <fieldset class="alchemy-optset">
-                  <legend class="alchemy-optset__legend">
-                    <span class="alchemy-optset__label">
-                      <app-icon name="document-text" />
-                      {{ "alchemy.forms.analyze_title" | transloco }}
-                    </span>
-                    <span class="alchemy-optset__output">{{
-                      "alchemy.forms.analyze_output" | transloco
-                    }}</span>
-                  </legend>
-                  <div class="alchemy-optset__grid">
-                    @for (form of dataForms; track form) {
-                      <label
-                        class="alchemy-op"
-                        [class.alchemy-op--selected]="isFormSelected(form)"
-                      >
-                        <input
-                          type="checkbox"
-                          class="sr-only"
-                          [checked]="isFormSelected(form)"
-                          [disabled]="isSubmitting()"
-                          (change)="toggleForm(form)"
-                        />
-                        <span class="alchemy-op__check" aria-hidden="true">
-                          <app-icon name="check" />
-                        </span>
-                        <span class="alchemy-op__name">{{
-                          "alchemy.form_names." + form | transloco
-                        }}</span>
-                      </label>
-                    }
-                  </div>
-                </fieldset>
-
-                <fieldset class="alchemy-optset">
-                  <legend class="alchemy-optset__legend">
-                    <span class="alchemy-optset__label">
-                      <app-icon name="photo" />
-                      {{ "alchemy.forms.enhance_title" | transloco }}
-                    </span>
-                    <span class="alchemy-optset__output">{{
-                      "alchemy.forms.enhance_output" | transloco
-                    }}</span>
-                  </legend>
-                  <div class="alchemy-optset__grid">
-                    @for (form of postProcessorForms; track form) {
-                      <label
-                        class="alchemy-op"
-                        [class.alchemy-op--selected]="isFormSelected(form)"
-                      >
-                        <input
-                          type="checkbox"
-                          class="sr-only"
-                          [checked]="isFormSelected(form)"
-                          [disabled]="isSubmitting()"
-                          (change)="toggleForm(form)"
-                        />
-                        <span class="alchemy-op__check" aria-hidden="true">
-                          <app-icon name="check" />
-                        </span>
-                        <span class="alchemy-op__name">{{
-                          "alchemy.form_names." + form | transloco
-                        }}</span>
-                      </label>
-                    }
-                  </div>
-                </fieldset>
-              </div>
-            </div>
-
-            <!-- Step 3: submit -->
-            <div class="alchemy-step alchemy-step--last">
-              <div class="alchemy-step__marker" aria-hidden="true">
-                <span>3</span>
-              </div>
-              <div class="alchemy-step__content">
+            <!-- Step 3: submit, as a full-width action bar -->
+            <div class="alchemy-build__footer">
+              <div class="alchemy-step__head">
+                <span class="alchemy-step__num" aria-hidden="true"
+                  ><span>3</span></span
+                >
                 <h3 class="alchemy-step__title">
                   {{ "alchemy.steps.submit" | transloco }}
                 </h3>
+              </div>
 
-                <label class="form-checkbox alchemy-form-option">
-                  <input
-                    type="checkbox"
-                    class="checkbox-input"
-                    [checked]="slowWorkers()"
-                    [disabled]="isSubmitting()"
-                    (change)="toggleSlowWorkers()"
-                  />
-                  <span class="checkbox-label">{{
-                    "alchemy.slow_workers" | transloco
-                  }}</span>
-                </label>
+              <label class="form-checkbox alchemy-form-option">
+                <input
+                  type="checkbox"
+                  class="checkbox-input"
+                  [checked]="slowWorkers()"
+                  [disabled]="isSubmitting()"
+                  (change)="toggleSlowWorkers()"
+                />
+                <span class="checkbox-label">{{
+                  "alchemy.slow_workers" | transloco
+                }}</span>
+              </label>
 
-                <div class="alchemy-submit">
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    [disabled]="!canSubmit()"
-                    (click)="submit()"
-                  >
-                    @if (isSubmitting()) {
-                      <app-icon name="spinner" class="animate-spin" />
-                    }
-                    {{ "alchemy.submit.button" | transloco }}
-                  </button>
-                  <span class="alchemy-submit__summary">
-                    @if (selectedCount() > 0) {
-                      {{
-                        "alchemy.submit.summary"
-                          | transloco: { count: selectedCount() }
-                      }}
-                    } @else {
-                      {{ "alchemy.submit.summary_empty" | transloco }}
-                    }
-                  </span>
-                </div>
+              <div class="alchemy-submit">
+                <span class="alchemy-submit__summary">
+                  @if (selectedCount() > 0) {
+                    {{
+                      "alchemy.submit.summary"
+                        | transloco: { count: selectedCount() }
+                    }}
+                  } @else {
+                    {{ "alchemy.submit.summary_empty" | transloco }}
+                  }
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  [disabled]="!canSubmit()"
+                  (click)="submit()"
+                >
+                  @if (isSubmitting()) {
+                    <app-icon name="spinner" class="animate-spin" />
+                  }
+                  {{ "alchemy.submit.button" | transloco }}
+                </button>
               </div>
             </div>
           </div>
