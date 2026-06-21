@@ -1,0 +1,138 @@
+<section class="mod-section">
+  <div class="mod-section__head">
+    <h3 class="mod-section__title">
+      {{ "status.moderator.alerts.title" | transloco }}
+    </h3>
+    <label class="mod-toggle">
+      <input
+        type="checkbox"
+        [checked]="unpromotedOnly()"
+        (change)="unpromotedOnly.set($any($event.target).checked)"
+      />
+      {{ "status.moderator.alerts.unpromoted_only" | transloco }}
+    </label>
+  </div>
+  <p class="mod-section__hint">
+    {{ "status.moderator.alerts.hint" | transloco }}
+  </p>
+
+  @if (!loaded()) {
+    <div class="mod-empty">{{ "status.loading" | transloco }}</div>
+  } @else if (visibleAlerts().length === 0) {
+    <div class="mod-empty">
+      {{ "status.moderator.alerts.empty" | transloco }}
+    </div>
+  } @else {
+    <div class="mod-list">
+      @for (alert of visibleAlerts(); track alert.fingerprint) {
+        <div class="mod-row">
+          <div class="mod-row__main">
+            <div class="mod-row__title">
+              {{ alert.alertname }}
+              @if (alert.severity) {
+                <span class="badge badge-secondary badge-sm">
+                  {{ alert.severity }}
+                </span>
+              }
+              @if (alert.promoted_incident_id) {
+                <span class="badge badge-info badge-sm">
+                  {{ "status.moderator.alerts.promoted" | transloco }}
+                </span>
+              }
+            </div>
+            @if (alert.summary) {
+              <div class="mod-row__meta">{{ alert.summary }}</div>
+            }
+            <div class="mod-row__meta">
+              @if (alert.component) {
+                {{ alert.component }} ·
+              }
+              {{ alert.state }} · {{ alert.started_at | date: "short" }}
+            </div>
+          </div>
+          <div class="mod-row__actions">
+            <button
+              type="button"
+              class="btn-muted btn-sm"
+              [disabled]="alert.promoted_incident_id !== null"
+              (click)="openPromote(alert)"
+            >
+              {{ "status.moderator.alerts.promote" | transloco }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<app-admin-dialog
+  [open]="promoting() !== null"
+  [title]="'status.moderator.alerts.dialog_title' | transloco"
+  [confirmLabel]="'status.moderator.alerts.promote' | transloco"
+  [cancelLabel]="'status.moderator.cancel' | transloco"
+  [loading]="submitting()"
+  (confirmed)="submit()"
+  (cancelled)="closeDialog()"
+>
+  <div class="mod-form">
+    <div class="mod-form__field">
+      <label class="form-label" for="promote-title">
+        {{ "status.moderator.incidents.field_title" | transloco }}
+      </label>
+      <input
+        id="promote-title"
+        type="text"
+        class="form-input"
+        [ngModel]="formTitle()"
+        (ngModelChange)="formTitle.set($event)"
+      />
+    </div>
+    <div class="mod-form__field">
+      <label class="form-label" for="promote-severity">
+        {{ "status.moderator.incidents.field_severity" | transloco }}
+      </label>
+      <select
+        id="promote-severity"
+        class="form-input"
+        [ngModel]="formSeverity()"
+        (ngModelChange)="formSeverity.set($event)"
+      >
+        @for (option of severities; track option) {
+          <option [value]="option">
+            {{ "status.severity." + option | transloco }}
+          </option>
+        }
+      </select>
+    </div>
+    <div class="mod-form__field">
+      <label class="form-label" for="promote-body">
+        {{ "status.moderator.incidents.field_body" | transloco }}
+      </label>
+      <textarea
+        id="promote-body"
+        rows="3"
+        class="form-input"
+        [ngModel]="formBody()"
+        (ngModelChange)="formBody.set($event)"
+      ></textarea>
+    </div>
+    <div class="mod-form__field">
+      <span class="form-label">
+        {{ "status.moderator.incidents.field_affected" | transloco }}
+      </span>
+      <div class="mod-checks">
+        @for (component of components(); track component.id) {
+          <label class="mod-check">
+            <input
+              type="checkbox"
+              [checked]="isAffected(component.id)"
+              (change)="toggleAffected(component.id)"
+            />
+            {{ component.name }}
+          </label>
+        }
+      </div>
+    </div>
+  </div>
+</app-admin-dialog>

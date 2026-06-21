@@ -1,0 +1,51 @@
+<section class="section-secondary mod-status">
+  <div class="container-content mod-status__inner">
+    <div class="mod-status__header">
+      <div>
+        <div class="mod-status__eyebrow">
+          <app-icon name="lock-closed" />
+          {{ "status.moderator.eyebrow" | transloco }}
+        </div>
+        <h2 class="heading-section-lg">
+          {{ "status.moderator.title" | transloco }}
+        </h2>
+        <p class="text-description">
+          {{ "status.moderator.intro" | transloco }}
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn-muted btn-sm"
+        (click)="onChanged()"
+        [attr.aria-label]="'status.moderator.refresh_all' | transloco"
+      >
+        <app-icon name="refresh-alt" />
+        {{ "status.moderator.refresh_all" | transloco }}
+      </button>
+    </div>
+
+    <app-status-component-overrides
+      [components]="components()"
+      [loaded]="componentsLoaded()"
+      (changed)="onChanged()"
+    />
+
+    <app-status-incident-manager
+      [components]="components()"
+      [reloadToken]="reloadToken()"
+      (changed)="onChanged()"
+    />
+
+    <app-status-maintenance-manager
+      [components]="components()"
+      [reloadToken]="reloadToken()"
+      (changed)="onChanged()"
+    />
+
+    <app-status-alerts-feed
+      [components]="components()"
+      [reloadToken]="reloadToken()"
+      (changed)="onChanged()"
+    />
+  </div>
+</section>

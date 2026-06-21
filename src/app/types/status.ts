@@ -103,3 +103,145 @@ export interface PublicHistoryResponse {
   buckets: PublicHistoryDay[];
   uptime_percent: number | null;
 }
+
+/**
+ * Moderator-only (privileged) shapes for the status-page backend, served under
+ * `/api/v1/internal/*` and authorized with an AI Horde moderator `apikey`.
+ *
+ * These mirror the Pydantic models in `ai-horde-service-alerts`. Unlike the
+ * public surface, these expose operator authoring fields (override reasons,
+ * `created_by`, raw alert labels) and accept write requests.
+ */
+
+/** Who a record is visible to once published: end users or operators only. */
+export type Audience = 'public' | 'internal';
+
+export interface AdminComponent {
+  id: string;
+  name: string;
+  description: string;
+  audience: Audience;
+  status: ComponentStatusValue;
+  last_change_at: string | null;
+  /** Operator-forced status, if an override is currently in effect. */
+  override_status: ComponentStatusValue | null;
+  override_reason: string | null;
+  override_expires_at: string | null;
+  override_id: string | null;
+}
+
+export interface ComponentOverrideRequest {
+  target_status: ComponentStatusValue;
+  reason?: string;
+  expires_at?: string | null;
+}
+
+export interface AdminIncident {
+  id: string;
+  slug: string;
+  title: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  started_at: string;
+  resolved_at: string | null;
+  affects: string[];
+  affects_names: string[];
+  updates: PublicIncidentUpdate[];
+  audience: Audience;
+  created_by: string;
+  /** Fingerprint of the alert this incident was promoted from, if any. */
+  linked_alert_fingerprint: string | null;
+}
+
+export interface IncidentCreateRequest {
+  title: string;
+  audience?: Audience;
+  severity: IncidentSeverity;
+  status?: IncidentStatus;
+  affected_components: string[];
+  body: string;
+  started_at?: string | null;
+}
+
+/**
+ * Patches an incident's descriptive fields only. Status transitions go through
+ * the timeline (`/updates`) and `/resolve` endpoints, not here.
+ */
+export interface IncidentUpdateRequest {
+  title?: string | null;
+  severity?: IncidentSeverity | null;
+  affected_components?: string[] | null;
+}
+
+export interface IncidentResolveRequest {
+  body: string;
+}
+
+export interface IncidentTimelinePostRequest {
+  body: string;
+  new_status: IncidentStatus;
+}
+
+export interface AdminMaintenance {
+  id: string;
+  title: string;
+  body: string;
+  starts_at: string;
+  ends_at: string;
+  affects: string[];
+  affects_names: string[];
+  is_active: boolean;
+  audience: Audience;
+  cancelled_at: string | null;
+  activated_at: string | null;
+  deactivated_at: string | null;
+  created_by: string;
+}
+
+export interface MaintenanceCreateRequest {
+  title: string;
+  body?: string;
+  audience?: Audience;
+  starts_at: string;
+  ends_at: string;
+  affected_components: string[];
+}
+
+/** Condensed alert row from the moderator alert summary feed. */
+export interface AdminAlertSummary {
+  fingerprint: string;
+  alertname: string;
+  severity: string | null;
+  component: string | null;
+  summary: string | null;
+  started_at: string;
+  state: string;
+  /** Set once this alert has been promoted into an incident. */
+  promoted_incident_id: string | null;
+}
+
+/** Status sub-object on a raw Alertmanager alert; `state` is the key field. */
+export interface AlertmanagerAlertStatus {
+  state: string;
+  silencedBy?: string[];
+  inhibitedBy?: string[];
+}
+
+export interface AlertmanagerAlert {
+  fingerprint: string;
+  startsAt: string;
+  endsAt: string | null;
+  updatedAt: string | null;
+  status: AlertmanagerAlertStatus;
+  labels: Record<string, string>;
+  annotations: Record<string, string>;
+  generatorURL: string | null;
+}
+
+export interface AlertPromotionRequest {
+  title: string;
+  severity: IncidentSeverity;
+  affected_components: string[];
+  body: string;
+  audience?: Audience;
+}

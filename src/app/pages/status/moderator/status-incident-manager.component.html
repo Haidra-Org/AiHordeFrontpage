@@ -1,0 +1,240 @@
+<section class="mod-section">
+  <div class="mod-section__head">
+    <h3 class="mod-section__title">
+      {{ "status.moderator.incidents.title" | transloco }}
+    </h3>
+    <div class="mod-section__actions">
+      <label class="mod-toggle">
+        <input
+          type="checkbox"
+          [checked]="includeResolved()"
+          (change)="toggleResolved($any($event.target).checked)"
+        />
+        {{ "status.moderator.incidents.include_resolved" | transloco }}
+      </label>
+      <button type="button" class="btn-primary btn-sm" (click)="openCreate()">
+        <app-icon name="pencil" />
+        {{ "status.moderator.incidents.create" | transloco }}
+      </button>
+    </div>
+  </div>
+
+  @if (!loaded()) {
+    <div class="mod-empty">{{ "status.loading" | transloco }}</div>
+  } @else if (incidents().length === 0) {
+    <div class="mod-empty">
+      {{ "status.moderator.incidents.empty" | transloco }}
+    </div>
+  } @else {
+    <div class="mod-list">
+      @for (incident of incidents(); track incident.id) {
+        <article class="mod-card">
+          <div class="mod-card__head">
+            <div class="mod-card__tags">
+              <span class="badge {{ severityBadgeClass(incident.severity) }}">
+                {{ "status.severity." + incident.severity | transloco }}
+              </span>
+              <span class="badge badge-secondary badge-sm">
+                {{ "status.incident_status." + incident.status | transloco }}
+              </span>
+              @if (incident.linked_alert_fingerprint) {
+                <span class="badge badge-info badge-sm">
+                  {{ "status.moderator.incidents.from_alert" | transloco }}
+                </span>
+              }
+            </div>
+            <div class="mod-card__time">
+              {{ incident.started_at | date: "short" }}
+            </div>
+          </div>
+          <h4 class="mod-card__title">{{ incident.title }}</h4>
+          @if (incident.affects_names.length > 0) {
+            <div class="mod-card__meta">
+              {{ "status.affects" | transloco }}:
+              {{ incident.affects_names.join(", ") }}
+            </div>
+          }
+          <div class="mod-card__meta">
+            {{ "status.moderator.incidents.created_by" | transloco }}:
+            {{ incident.created_by }}
+          </div>
+
+          @if (incident.updates.length > 0) {
+            <div class="mod-timeline">
+              @for (update of incident.updates; track update.posted_at) {
+                <div class="mod-timeline__item">
+                  <div class="mod-timeline__meta">
+                    <span class="mod-timeline__status">
+                      {{
+                        "status.incident_status." + update.status | transloco
+                      }}
+                    </span>
+                    <span class="mod-timeline__time">
+                      {{ update.posted_at | date: "short" }}
+                    </span>
+                  </div>
+                  <div class="mod-timeline__body">{{ update.body }}</div>
+                </div>
+              }
+            </div>
+          }
+
+          @if (incident.status !== "resolved") {
+            <div class="mod-card__actions">
+              <button
+                type="button"
+                class="btn-muted btn-sm"
+                (click)="openUpdate(incident)"
+              >
+                {{ "status.moderator.incidents.post_update" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="btn-muted btn-sm"
+                (click)="openEdit(incident)"
+              >
+                <app-icon name="pencil" />
+                {{ "status.moderator.incidents.edit" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="btn-muted btn-sm"
+                (click)="openResolve(incident)"
+              >
+                <app-icon name="check" />
+                {{ "status.moderator.incidents.resolve" | transloco }}
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<app-admin-dialog
+  [open]="dialogMode() !== null"
+  [title]="
+    dialogMode()
+      ? ('status.moderator.incidents.dialog_' + dialogMode() | transloco)
+      : ''
+  "
+  [confirmLabel]="'status.moderator.save' | transloco"
+  [cancelLabel]="'status.moderator.cancel' | transloco"
+  [loading]="submitting()"
+  (confirmed)="submit()"
+  (cancelled)="closeDialog()"
+>
+  <div class="mod-form">
+    @if (dialogMode() === "create" || dialogMode() === "edit") {
+      <div class="mod-form__field">
+        <label class="form-label" for="incident-title">
+          {{ "status.moderator.incidents.field_title" | transloco }}
+        </label>
+        <input
+          id="incident-title"
+          type="text"
+          class="form-input"
+          [ngModel]="formTitle()"
+          (ngModelChange)="formTitle.set($event)"
+        />
+      </div>
+      <div class="mod-form__field">
+        <label class="form-label" for="incident-severity">
+          {{ "status.moderator.incidents.field_severity" | transloco }}
+        </label>
+        <select
+          id="incident-severity"
+          class="form-input"
+          [ngModel]="formSeverity()"
+          (ngModelChange)="formSeverity.set($event)"
+        >
+          @for (option of severities; track option) {
+            <option [value]="option">
+              {{ "status.severity." + option | transloco }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (dialogMode() === "create") {
+      <div class="mod-form__field">
+        <label class="form-label" for="incident-status">
+          {{ "status.moderator.incidents.field_status" | transloco }}
+        </label>
+        <select
+          id="incident-status"
+          class="form-input"
+          [ngModel]="formStatus()"
+          (ngModelChange)="formStatus.set($event)"
+        >
+          @for (option of statuses; track option) {
+            <option [value]="option">
+              {{ "status.incident_status." + option | transloco }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (dialogMode() === "update") {
+      <div class="mod-form__field">
+        <label class="form-label" for="incident-new-status">
+          {{ "status.moderator.incidents.field_new_status" | transloco }}
+        </label>
+        <select
+          id="incident-new-status"
+          class="form-input"
+          [ngModel]="formStatus()"
+          (ngModelChange)="formStatus.set($event)"
+        >
+          @for (option of updateStatuses; track option) {
+            <option [value]="option">
+              {{ "status.incident_status." + option | transloco }}
+            </option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (
+      dialogMode() === "create" ||
+      dialogMode() === "update" ||
+      dialogMode() === "resolve"
+    ) {
+      <div class="mod-form__field">
+        <label class="form-label" for="incident-body">
+          {{ "status.moderator.incidents.field_body" | transloco }}
+        </label>
+        <textarea
+          id="incident-body"
+          rows="3"
+          class="form-input"
+          [ngModel]="formBody()"
+          (ngModelChange)="formBody.set($event)"
+        ></textarea>
+      </div>
+    }
+
+    @if (dialogMode() === "create" || dialogMode() === "edit") {
+      <div class="mod-form__field">
+        <span class="form-label">
+          {{ "status.moderator.incidents.field_affected" | transloco }}
+        </span>
+        <div class="mod-checks">
+          @for (component of components(); track component.id) {
+            <label class="mod-check">
+              <input
+                type="checkbox"
+                [checked]="isAffected(component.id)"
+                (change)="toggleAffected(component.id)"
+              />
+              {{ component.name }}
+            </label>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</app-admin-dialog>

@@ -1,0 +1,136 @@
+<section class="mod-section">
+  <div class="mod-section__head">
+    <h3 class="mod-section__title">
+      {{ "status.moderator.overrides.title" | transloco }}
+    </h3>
+  </div>
+  <p class="mod-section__hint">
+    {{ "status.moderator.overrides.hint" | transloco }}
+  </p>
+
+  @if (!loaded()) {
+    <div class="mod-empty">{{ "status.loading" | transloco }}</div>
+  } @else if (components().length === 0) {
+    <div class="mod-empty">
+      {{ "status.moderator.overrides.empty" | transloco }}
+    </div>
+  } @else {
+    <div class="mod-list">
+      @for (component of components(); track component.id) {
+        <div class="mod-row">
+          <div class="mod-row__main">
+            <div class="mod-row__title">
+              {{ component.name }}
+              @if (component.override_id) {
+                <span class="badge badge-warning badge-sm">
+                  {{ "status.moderator.overrides.active_badge" | transloco }}
+                </span>
+              }
+            </div>
+            <div class="mod-row__meta">
+              {{ "status.moderator.overrides.effective" | transloco }}:
+              {{ "status.state." + component.status | transloco }}
+              @if (component.override_status) {
+                ·
+                {{ "status.moderator.overrides.forced" | transloco }}:
+                {{ "status.state." + component.override_status | transloco }}
+              }
+            </div>
+            @if (component.override_reason) {
+              <div class="mod-row__meta">
+                {{ "status.moderator.overrides.reason" | transloco }}:
+                {{ component.override_reason }}
+              </div>
+            }
+            @if (component.override_expires_at; as expiry) {
+              <div class="mod-row__meta">
+                {{ "status.moderator.overrides.expires" | transloco }}:
+                {{ expiry | date: "short" }}
+              </div>
+            }
+          </div>
+          <div class="mod-row__actions">
+            <button
+              type="button"
+              class="btn-muted btn-sm"
+              (click)="openOverride(component)"
+            >
+              <app-icon name="pencil" />
+              {{ "status.moderator.overrides.set" | transloco }}
+            </button>
+            @if (component.override_id) {
+              <button
+                type="button"
+                class="btn-muted btn-sm"
+                [disabled]="clearingId() === component.id"
+                (click)="clearOverride(component)"
+              >
+                <app-icon name="x-mark" />
+                {{ "status.moderator.overrides.clear" | transloco }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<app-admin-dialog
+  [open]="editing() !== null"
+  [title]="'status.moderator.overrides.dialog_title' | transloco"
+  [confirmLabel]="'status.moderator.overrides.set' | transloco"
+  [cancelLabel]="'status.moderator.cancel' | transloco"
+  [loading]="submitting()"
+  (confirmed)="submitOverride()"
+  (cancelled)="closeDialog()"
+>
+  @if (editing(); as component) {
+    <div class="mod-form">
+      <div class="mod-form__field">
+        <label class="form-label" for="override-status">
+          {{ "status.moderator.overrides.target_status" | transloco }}
+        </label>
+        <select
+          id="override-status"
+          class="form-input"
+          [ngModel]="formStatus()"
+          (ngModelChange)="formStatus.set($event)"
+        >
+          @for (option of statusOptions; track option) {
+            <option [value]="option">
+              {{ "status.state." + option | transloco }}
+            </option>
+          }
+        </select>
+      </div>
+      <div class="mod-form__field">
+        <label class="form-label" for="override-reason">
+          {{ "status.moderator.overrides.reason" | transloco }}
+        </label>
+        <input
+          id="override-reason"
+          type="text"
+          class="form-input"
+          [ngModel]="formReason()"
+          (ngModelChange)="formReason.set($event)"
+          [placeholder]="
+            'status.moderator.overrides.reason_placeholder' | transloco
+          "
+        />
+      </div>
+      <div class="mod-form__field">
+        <label class="form-label" for="override-expires">
+          {{ "status.moderator.overrides.expires_optional" | transloco }}
+        </label>
+        <input
+          id="override-expires"
+          type="datetime-local"
+          class="form-input"
+          [ngModel]="formExpiresAt()"
+          (ngModelChange)="formExpiresAt.set($event)"
+        />
+      </div>
+    </div>
+  }
+</app-admin-dialog>

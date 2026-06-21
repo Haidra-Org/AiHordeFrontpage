@@ -1,0 +1,147 @@
+<section class="mod-section">
+  <div class="mod-section__head">
+    <h3 class="mod-section__title">
+      {{ "status.moderator.maintenance.title" | transloco }}
+    </h3>
+    <button type="button" class="btn-primary btn-sm" (click)="openCreate()">
+      <app-icon name="clock-alt" />
+      {{ "status.moderator.maintenance.schedule" | transloco }}
+    </button>
+  </div>
+
+  @if (!loaded()) {
+    <div class="mod-empty">{{ "status.loading" | transloco }}</div>
+  } @else if (windows().length === 0) {
+    <div class="mod-empty">
+      {{ "status.moderator.maintenance.empty" | transloco }}
+    </div>
+  } @else {
+    <div class="mod-list">
+      @for (window of windows(); track window.id) {
+        <article class="mod-card" [class.mod-card--muted]="window.cancelled_at">
+          <div class="mod-card__head">
+            <div class="mod-card__tags">
+              @if (window.is_active) {
+                <span class="badge badge-info badge-sm">
+                  {{ "status.in_progress" | transloco }}
+                </span>
+              }
+              @if (window.cancelled_at) {
+                <span class="badge badge-secondary badge-sm">
+                  {{ "status.moderator.maintenance.cancelled" | transloco }}
+                </span>
+              }
+            </div>
+            <div class="mod-card__time">
+              {{ window.starts_at | date: "short" }} –
+              {{ window.ends_at | date: "short" }}
+            </div>
+          </div>
+          <h4 class="mod-card__title">{{ window.title }}</h4>
+          @if (window.body) {
+            <div class="mod-card__body">{{ window.body }}</div>
+          }
+          @if (window.affects_names.length > 0) {
+            <div class="mod-card__meta">
+              {{ "status.affects" | transloco }}:
+              {{ window.affects_names.join(", ") }}
+            </div>
+          }
+          @if (!window.cancelled_at) {
+            <div class="mod-card__actions">
+              <button
+                type="button"
+                class="btn-muted btn-sm"
+                [disabled]="cancellingId() === window.id"
+                (click)="cancel(window)"
+              >
+                <app-icon name="x-mark" />
+                {{ "status.moderator.maintenance.cancel" | transloco }}
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<app-admin-dialog
+  [open]="creating()"
+  [title]="'status.moderator.maintenance.dialog_title' | transloco"
+  [confirmLabel]="'status.moderator.maintenance.schedule' | transloco"
+  [cancelLabel]="'status.moderator.cancel' | transloco"
+  [loading]="submitting()"
+  (confirmed)="submit()"
+  (cancelled)="closeDialog()"
+>
+  <div class="mod-form">
+    <div class="mod-form__field">
+      <label class="form-label" for="maint-title">
+        {{ "status.moderator.maintenance.field_title" | transloco }}
+      </label>
+      <input
+        id="maint-title"
+        type="text"
+        class="form-input"
+        [ngModel]="formTitle()"
+        (ngModelChange)="formTitle.set($event)"
+      />
+    </div>
+    <div class="mod-form__field">
+      <label class="form-label" for="maint-body">
+        {{ "status.moderator.maintenance.field_body" | transloco }}
+      </label>
+      <textarea
+        id="maint-body"
+        rows="3"
+        class="form-input"
+        [ngModel]="formBody()"
+        (ngModelChange)="formBody.set($event)"
+      ></textarea>
+    </div>
+    <div class="mod-form__row">
+      <div class="mod-form__field">
+        <label class="form-label" for="maint-start">
+          {{ "status.moderator.maintenance.field_starts" | transloco }}
+        </label>
+        <input
+          id="maint-start"
+          type="datetime-local"
+          class="form-input"
+          [ngModel]="formStartsAt()"
+          (ngModelChange)="formStartsAt.set($event)"
+        />
+      </div>
+      <div class="mod-form__field">
+        <label class="form-label" for="maint-end">
+          {{ "status.moderator.maintenance.field_ends" | transloco }}
+        </label>
+        <input
+          id="maint-end"
+          type="datetime-local"
+          class="form-input"
+          [ngModel]="formEndsAt()"
+          (ngModelChange)="formEndsAt.set($event)"
+        />
+      </div>
+    </div>
+    <div class="mod-form__field">
+      <span class="form-label">
+        {{ "status.moderator.maintenance.field_affected" | transloco }}
+      </span>
+      <div class="mod-checks">
+        @for (component of components(); track component.id) {
+          <label class="mod-check">
+            <input
+              type="checkbox"
+              [checked]="isAffected(component.id)"
+              (change)="toggleAffected(component.id)"
+            />
+            {{ component.name }}
+          </label>
+        }
+      </div>
+    </div>
+  </div>
+</app-admin-dialog>

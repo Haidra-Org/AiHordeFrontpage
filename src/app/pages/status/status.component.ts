@@ -15,7 +15,9 @@ import { setPageTitle } from '../../helper/page-title';
 import { TranslatorService } from '../../services/translator.service';
 import { StatusService } from '../../services/status.service';
 import { NetworkStatusService } from '../../services/network-status.service';
+import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ModeratorStatusPanelComponent } from './moderator/moderator-status-panel.component';
 import {
   ComponentStatusValue,
   PublicComponent,
@@ -96,13 +98,20 @@ const STATUS_VIEWS: Record<ComponentStatusValue, StatusView> = {
 
 @Component({
   selector: 'app-status',
-  imports: [TranslocoPipe, DecimalPipe, DatePipe, IconComponent],
+  imports: [
+    TranslocoPipe,
+    DecimalPipe,
+    DatePipe,
+    IconComponent,
+    ModeratorStatusPanelComponent,
+  ],
   templateUrl: './status.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatusComponent {
   private readonly status = inject(StatusService);
   public readonly ns = inject(NetworkStatusService);
+  private readonly auth = inject(AuthService);
   private readonly translator = inject(TranslatorService);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
@@ -131,6 +140,11 @@ export class StatusComponent {
 
   public readonly hasResolvedIncidents = computed(
     () => this.resolvedIncidents().length > 0,
+  );
+
+  /** Gates the inline moderator console; only AI Horde moderators see it. */
+  public readonly isModerator = computed(
+    () => this.auth.currentUser()?.moderator === true,
   );
 
   constructor() {

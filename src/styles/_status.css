@@ -665,6 +665,292 @@
 }
 
 /* =================================================================
+   MODERATOR CONSOLE
+   Inline privileged surface shown to logged-in moderators beneath the
+   public status page. Neutral card shells with the shared form and
+   badge primitives; reuses the status-page token remap in dark mode.
+   ================================================================= */
+
+.mod-status {
+  border-top: 1px solid var(--color-edge-primary);
+}
+
+.mod-status__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.mod-status__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.mod-status__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-warning-700);
+  margin-bottom: 0.25rem;
+}
+
+.mod-status__eyebrow .icon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.mod-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-edge-primary);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-primary);
+}
+
+.mod-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.mod-section__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.mod-section__title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-content-primary);
+}
+
+.mod-section__hint {
+  font-size: var(--text-sm);
+  color: var(--color-content-secondary);
+}
+
+.mod-empty {
+  padding: var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-content-tertiary);
+}
+
+.mod-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+/* --- Compact rows (overrides, alerts) ---------------------------- */
+
+.mod-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-edge-secondary);
+  border-radius: var(--radius-md);
+}
+
+.mod-row__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.mod-row__title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-content-primary);
+}
+
+.mod-row__meta {
+  font-size: var(--text-xs);
+  color: var(--color-content-secondary);
+  margin-top: 0.2rem;
+}
+
+.mod-row__actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* --- Cards (incidents, maintenance) ------------------------------ */
+
+.mod-card {
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-edge-secondary);
+  border-radius: var(--radius-md);
+}
+
+.mod-card--muted {
+  opacity: 0.65;
+}
+
+.mod-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+}
+
+.mod-card__tags {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.mod-card__time {
+  font-size: var(--text-xs);
+  color: var(--color-content-tertiary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mod-card__title {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-content-primary);
+  margin-top: 0.35rem;
+}
+
+.mod-card__body {
+  font-size: var(--text-sm);
+  color: var(--color-content-secondary);
+  margin-top: 0.25rem;
+  line-height: 1.5;
+}
+
+.mod-card__meta {
+  font-size: var(--text-xs);
+  color: var(--color-content-secondary);
+  margin-top: 0.25rem;
+}
+
+.mod-card__actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  margin-top: var(--spacing-sm);
+}
+
+/* --- Incident timeline ------------------------------------------- */
+
+.mod-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-edge-secondary);
+}
+
+.mod-timeline__item {
+  font-size: var(--text-sm);
+}
+
+.mod-timeline__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+}
+
+.mod-timeline__status {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-content-secondary);
+}
+
+.mod-timeline__time {
+  font-size: var(--text-xs);
+  color: var(--color-content-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mod-timeline__body {
+  color: var(--color-content-primary);
+  line-height: 1.4;
+}
+
+/* --- Inline form controls ---------------------------------------- */
+
+.mod-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--color-content-secondary);
+  cursor: pointer;
+}
+
+.mod-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.mod-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mod-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (max-width: 560px) {
+  .mod-form__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mod-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.mod-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  color: var(--color-content-primary);
+  cursor: pointer;
+}
+
+.dark .mod-status__eyebrow {
+  color: var(--color-warning-300);
+}
+
+/* =================================================================
    DARK MODE
    The neutral semantic tokens (surface/content/edge) ship light-mode
    values only, and the tinted surfaces above lean on near-white `-50`
@@ -674,7 +960,8 @@
    `-800` hairline) used by the badge primitives.
    ================================================================= */
 
-.dark .status-page {
+.dark .status-page,
+.dark .mod-status {
   --color-surface-primary: rgb(33 43 58);
   --color-surface-elevated: rgb(38 49 66);
   --color-edge-primary: rgb(55 65 81);
@@ -683,6 +970,10 @@
   --color-content-primary: rgb(243 244 246);
   --color-content-secondary: rgb(156 163 175);
   --color-content-tertiary: rgb(120 130 148);
+}
+
+.dark .mod-section {
+  box-shadow: var(--shadow-glass-dark);
 }
 
 /* The neutral banner/stats/incident/service shells now inherit the
