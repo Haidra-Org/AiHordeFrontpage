@@ -47,10 +47,61 @@ interface DayBar {
   labelKey: string;
   /**
    * True when the day stayed green but still saw some down/degraded time below
-   * the colouring threshold — rendered as a small marker under the tick so brief
+   * the colouring threshold, rendered as a small marker under the tick so brief
    * instability is visible without being escalated to a full outage.
    */
   flapping: boolean;
+}
+
+/** Pre-computed SVG point strings for a single service's uptime sparkline. */
+interface SparkPoints {
+  /** `points` for the trend `<polyline>`. */
+  line: string;
+  /** `points` for the filled `<polygon>` beneath the trend. */
+  area: string;
+}
+
+/** Coordinate space the sparkline is authored in; CSS scales it responsively. */
+const SPARK_WIDTH = 100;
+const SPARK_HEIGHT = 28;
+
+/** Trailing days of history charted in the sparkline, matching the mock-up. */
+const SPARK_DAYS = 30;
+
+/**
+ * A single day's operational fraction (0-100). Matches the backend definition:
+ * uptime = operational / (operational + degraded + down). Unknown and
+ * maintenance seconds are excluded so pre-monitoring gaps do not count as
+ * downtime. Days with no tracked time read as fully up.
+ */
+function dailyUptimePercent(day: PublicHistoryDay): number {
+  const active =
+    day.operational_seconds + day.degraded_seconds + day.down_seconds;
+  if (active <= 0) return 100;
+  return (day.operational_seconds / active) * 100;
+}
+
+/**
+ * Project a uptime series onto the sparkline coordinate space. Mirrors the
+ * mock-up's normalisation: the visible range is padded by 0.1% on each side so
+ * a flat 100% line still renders with a little headroom. Returns null when
+ * there are too few points to draw a line.
+ */
+function buildSparkline(series: number[]): SparkPoints | null {
+  if (series.length < 2) return null;
+  const min = Math.min(...series) - 0.1;
+  const max = Math.max(...series) + 0.1;
+  const range = Math.max(0.1, max - min);
+  const points = series.map((value, index) => {
+    const x = (index / (series.length - 1)) * SPARK_WIDTH;
+    const y = SPARK_HEIGHT - ((value - min) / range) * (SPARK_HEIGHT - 2) - 1;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const line = points.join(' ');
+  return {
+    line,
+    area: `0,${SPARK_HEIGHT} ${line} ${SPARK_WIDTH},${SPARK_HEIGHT}`,
+  };
 }
 
 /** How a status value reads in the UI: a translation key and a CSS modifier. */
@@ -128,6 +179,17 @@ export class StatusComponent {
 
   /** Per-component 90-day daily buckets, keyed by component id. */
   private readonly histories = signal<Record<string, PublicHistoryDay[]>>({});
+
+  /** Sparkline point strings derived from the trailing daily buckets. */
+  private readonly sparklines = computed<Record<string, SparkPoints>>(() => {
+    const result: Record<string, SparkPoints> = {};
+    for (const [id, days] of Object.entries(this.histories())) {
+      const series = days.slice(-SPARK_DAYS).map(dailyUptimePercent);
+      const points = buildSparkline(series);
+      if (points) result[id] = points;
+    }
+    return result;
+  });
 
   /** True once the components call has returned without any data to show. */
   public readonly backendUnavailable = computed(
@@ -277,6 +339,16 @@ export class StatusComponent {
       labelKey: 'status.history_level.ok',
       flapping: day.down_seconds > 0 || day.degraded_seconds > 0,
     };
+  }
+
+  /** Sparkline geometry for a component, or null when history is too sparse. */
+  public sparklineFor(componentId: string): SparkPoints | null {
+    return this.sparklines()[componentId] ?? null;
+  }
+
+  /** A day's bar modifier: `ok` | `minor` | `major` | `maintenance`. */
+  public historyLevelModifier(level: number): string {
+    return ['ok', 'minor', 'major', 'maintenance'][level] ?? 'ok';
   }
 
   /** Compact human duration for tooltips: `15s`, `4m`, `1h 32m`. */

@@ -69,9 +69,45 @@
   background: var(--color-gray-400);
 }
 
+/* A service that is anything other than fully operational gets a soft,
+   slow halo on its leading dot, echoing the mock-up's "this one needs
+   attention" pulse. Operational rows stay still so motion reads as signal.
+   `color` is set to the tone so the keyframe's `currentColor` ring matches
+   the dot rather than inheriting the row's text colour. */
+.status-service__row > .status-dot--degraded,
+.status-service__row > .status-dot--partial,
+.status-service__row > .status-dot--down,
+.status-service__row > .status-dot--maintenance {
+  animation: status-dot-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-service__row > .status-dot--degraded {
+  color: var(--color-warning-500);
+}
+.status-service__row > .status-dot--partial,
+.status-service__row > .status-dot--down {
+  color: var(--color-danger-500);
+}
+.status-service__row > .status-dot--maintenance {
+  color: var(--color-info-500);
+}
+
+@keyframes status-dot-pulse {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  70% {
+    box-shadow: 0 0 0 0.4rem transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
 /* --- Overall banner ---------------------------------------------- */
 
 .status-banner {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-lg);
@@ -79,8 +115,12 @@
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-edge-primary);
   background: var(--color-surface-elevated);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
+/* The icon sits on a white disc ringed in the tone accent, lifting it off
+   the tinted banner the way the mock-up's hero badge does. */
 .status-banner__icon {
   display: flex;
   align-items: center;
@@ -89,6 +129,8 @@
   height: 3rem;
   border-radius: var(--radius-full);
   background: var(--color-surface-primary);
+  border: 2px solid var(--color-edge-strong);
+  box-shadow: var(--shadow-card);
   flex-shrink: 0;
 }
 
@@ -133,20 +175,30 @@
 /* Tone the banner accent + icon per overall status. */
 .status-banner--operational {
   border-color: var(--color-success-300);
-  background: var(--color-success-50);
+  background: linear-gradient(
+    120deg,
+    var(--color-success-50) 0%,
+    var(--color-success-100) 100%
+  );
 }
 .status-banner--operational .status-banner__icon {
   color: var(--color-success-600);
+  border-color: var(--color-success-300);
 }
 .status-banner--operational .status-banner__eyebrow {
   color: var(--color-success-700);
 }
 .status-banner--degraded {
   border-color: var(--color-warning-300);
-  background: var(--color-warning-50);
+  background: linear-gradient(
+    120deg,
+    var(--color-warning-50) 0%,
+    var(--color-warning-100) 100%
+  );
 }
 .status-banner--degraded .status-banner__icon {
   color: var(--color-warning-600);
+  border-color: var(--color-warning-300);
 }
 .status-banner--degraded .status-banner__eyebrow {
   color: var(--color-warning-700);
@@ -154,11 +206,16 @@
 .status-banner--partial,
 .status-banner--down {
   border-color: var(--color-danger-300);
-  background: var(--color-danger-50);
+  background: linear-gradient(
+    120deg,
+    var(--color-danger-50) 0%,
+    var(--color-danger-100) 100%
+  );
 }
 .status-banner--partial .status-banner__icon,
 .status-banner--down .status-banner__icon {
   color: var(--color-danger-600);
+  border-color: var(--color-danger-300);
 }
 .status-banner--partial .status-banner__eyebrow,
 .status-banner--down .status-banner__eyebrow {
@@ -166,10 +223,15 @@
 }
 .status-banner--maintenance {
   border-color: var(--color-info-300);
-  background: var(--color-info-50);
+  background: linear-gradient(
+    120deg,
+    var(--color-info-50) 0%,
+    var(--color-info-100) 100%
+  );
 }
 .status-banner--maintenance .status-banner__icon {
   color: var(--color-info-600);
+  border-color: var(--color-info-300);
 }
 .status-banner--maintenance .status-banner__eyebrow {
   color: var(--color-info-700);
@@ -191,6 +253,7 @@
   border: 1px solid var(--color-edge-primary);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  box-shadow: var(--shadow-card);
 }
 
 .status-stats__cell {
@@ -281,6 +344,15 @@
   border-left: 3px solid var(--color-edge-strong);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.status-incident:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
 }
 
 .status-incident--minor {
@@ -462,6 +534,7 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--color-surface-primary);
+  box-shadow: var(--shadow-card);
 }
 
 .status-service {
@@ -469,6 +542,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  transition: background 160ms ease;
+}
+
+.status-service:hover {
+  background: var(--color-surface-elevated);
 }
 
 .status-service + .status-service {
@@ -599,6 +677,59 @@
   background: var(--color-gray-400);
 }
 
+/* --- Uptime sparkline -------------------------------------------- */
+/* A 30-day uptime trend drawn in the row's metrics cluster, between the
+   90-day figure and the status pill. The SVG is authored in a fixed
+   100×28 space and scaled by these box dimensions; `currentColor` ties the
+   line + area fill to the per-status tone set below, so it tracks the dot
+   and pill (and the dark-mode remaps) without per-tone SVG attributes. */
+
+.status-sparkline {
+  display: block;
+  width: 6.25rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  color: var(--color-success-500);
+  overflow: visible;
+}
+
+.status-sparkline__line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.status-sparkline__area {
+  fill: currentColor;
+  fill-opacity: 0.08;
+  stroke: none;
+}
+
+.status-sparkline--degraded {
+  color: var(--color-warning-500);
+}
+.status-sparkline--partial,
+.status-sparkline--down {
+  color: var(--color-danger-500);
+}
+.status-sparkline--maintenance {
+  color: var(--color-info-500);
+}
+.status-sparkline--unknown {
+  color: var(--color-gray-400);
+}
+
+/* The 90-day figure is already dropped on narrow rows; the sparkline is the
+   same supporting detail, so it goes too and the pill keeps the right edge. */
+@media (max-width: 640px) {
+  .status-sparkline {
+    display: none;
+  }
+}
+
 /* --- 90-day history bars ----------------------------------------- */
 
 .status-history {
@@ -622,6 +753,14 @@
   height: 1.75rem;
   border-radius: 1.5px;
   background: var(--color-success-500);
+  transition:
+    transform 120ms ease,
+    filter 120ms ease;
+}
+
+.status-history__bar:hover {
+  transform: scaleY(1.15);
+  filter: brightness(1.1);
 }
 
 /* Sub-threshold instability marker: a small dot under the tick, hidden (but
@@ -993,20 +1132,30 @@
 
 .dark .status-banner--operational {
   border-color: var(--color-success-800);
-  background: var(--color-success-950);
+  background: linear-gradient(
+    120deg,
+    var(--color-success-950) 0%,
+    var(--color-success-900) 100%
+  );
 }
 .dark .status-banner--operational .status-banner__icon {
   color: var(--color-success-300);
+  border-color: var(--color-success-800);
 }
 .dark .status-banner--operational .status-banner__eyebrow {
   color: var(--color-success-300);
 }
 .dark .status-banner--degraded {
   border-color: var(--color-warning-800);
-  background: var(--color-warning-950);
+  background: linear-gradient(
+    120deg,
+    var(--color-warning-950) 0%,
+    var(--color-warning-900) 100%
+  );
 }
 .dark .status-banner--degraded .status-banner__icon {
   color: var(--color-warning-300);
+  border-color: var(--color-warning-800);
 }
 .dark .status-banner--degraded .status-banner__eyebrow {
   color: var(--color-warning-300);
@@ -1014,11 +1163,16 @@
 .dark .status-banner--partial,
 .dark .status-banner--down {
   border-color: var(--color-danger-800);
-  background: var(--color-danger-950);
+  background: linear-gradient(
+    120deg,
+    var(--color-danger-950) 0%,
+    var(--color-danger-900) 100%
+  );
 }
 .dark .status-banner--partial .status-banner__icon,
 .dark .status-banner--down .status-banner__icon {
   color: var(--color-danger-300);
+  border-color: var(--color-danger-800);
 }
 .dark .status-banner--partial .status-banner__eyebrow,
 .dark .status-banner--down .status-banner__eyebrow {
@@ -1026,10 +1180,15 @@
 }
 .dark .status-banner--maintenance {
   border-color: var(--color-info-800);
-  background: var(--color-info-950);
+  background: linear-gradient(
+    120deg,
+    var(--color-info-950) 0%,
+    var(--color-info-900) 100%
+  );
 }
 .dark .status-banner--maintenance .status-banner__icon {
   color: var(--color-info-300);
+  border-color: var(--color-info-800);
 }
 .dark .status-banner--maintenance .status-banner__eyebrow {
   color: var(--color-info-300);
@@ -1082,4 +1241,33 @@
   background: var(--color-gray-800);
   color: var(--color-gray-300);
   border-color: var(--color-gray-600);
+}
+
+/* =================================================================
+   REDUCED MOTION
+   The dot halo and hover lifts are decorative; drop them for users who
+   ask the OS to minimise motion.
+   ================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .status-service__row > .status-dot--degraded,
+  .status-service__row > .status-dot--partial,
+  .status-service__row > .status-dot--down,
+  .status-service__row > .status-dot--maintenance {
+    animation: none;
+  }
+
+  .status-incident,
+  .status-service,
+  .status-history__bar {
+    transition: none;
+  }
+
+  .status-incident:hover {
+    transform: none;
+  }
+
+  .status-history__bar:hover {
+    transform: none;
+  }
 }

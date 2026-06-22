@@ -348,6 +348,27 @@
                         </div>
                       </div>
                     }
+                    @if (sparklineFor(svc.id); as spark) {
+                      <svg
+                        class="status-sparkline status-sparkline--{{
+                          statusView(svc.status).modifier
+                        }}"
+                        viewBox="0 0 100 28"
+                        width="100"
+                        height="28"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <polygon
+                          class="status-sparkline__area"
+                          [attr.points]="spark.area"
+                        ></polygon>
+                        <polyline
+                          class="status-sparkline__line"
+                          [attr.points]="spark.line"
+                        ></polyline>
+                      </svg>
+                    }
                     <span
                       class="status-pill status-pill--{{
                         statusView(svc.status).modifier

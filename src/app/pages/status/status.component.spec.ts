@@ -12,6 +12,11 @@ import { AuthService } from '../../services/auth.service';
 import { TranslatorService } from '../../services/translator.service';
 import { clientAgentInterceptor } from '../../services/interceptors/client-agent.interceptor';
 import { HordeUser } from '../../types/horde-user';
+import {
+  PublicComponentsResponse,
+  PublicHistoryDay,
+  PublicHistoryResponse,
+} from '../../types/status';
 
 function moderatorUser(): HordeUser {
   return { username: 'Mod#1', id: 1, kudos: 0, moderator: true };
@@ -98,5 +103,100 @@ describe('StatusComponent moderator gating', () => {
     fixture.detectChanges();
 
     expect(panelPresent()).toBe(true);
+  });
+});
+
+describe('StatusComponent service sparkline', () => {
+  function day(date: string, operational: number, down = 0): PublicHistoryDay {
+    return {
+      date,
+      status_level: down > 0 ? 2 : 0,
+      operational_seconds: operational,
+      degraded_seconds: 0,
+      down_seconds: down,
+      maintenance_seconds: 0,
+      unknown_seconds: 0,
+    };
+  }
+
+  function setup(
+    buckets: PublicHistoryDay[],
+  ): ComponentFixture<StatusComponent> {
+    const components: PublicComponentsResponse = {
+      components: [
+        {
+          id: 'api',
+          name: 'AI Horde API',
+          description: 'Public REST API',
+          status: 'operational',
+          uptime_90d: 99.9,
+          last_change_at: null,
+        },
+      ],
+      overall: 'operational',
+      generated_at: '2026-06-21T00:00:00Z',
+    };
+
+    const history: PublicHistoryResponse = {
+      component_id: 'api',
+      days: buckets.length,
+      buckets,
+      uptime_percent: 99.9,
+    };
+
+    const statusMock: Partial<StatusService> = {
+      getComponents: () => of(components),
+      getIncidents: () => of(null),
+      getMaintenance: () => of(null),
+      getHistory: () => of(history),
+    };
+
+    TestBed.configureTestingModule({
+      imports: [
+        StatusComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en: {} },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(withInterceptors([clientAgentInterceptor])),
+        provideHttpClientTesting(),
+        { provide: StatusService, useValue: statusMock },
+        {
+          provide: StatusAdminService,
+          useValue: { getComponents: () => of([]) },
+        },
+        {
+          provide: NetworkStatusService,
+          useValue: { performance: signal(null) },
+        },
+        { provide: AuthService, useValue: { currentUser: signal(null) } },
+        { provide: TranslatorService, useValue: { get: () => of('') } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(StatusComponent);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('renders a sparkline polyline once a component history loads', () => {
+    const fixture = setup([
+      day('2026-06-19', 86400),
+      day('2026-06-20', 80000, 6400),
+      day('2026-06-21', 86400),
+    ]);
+    const line = fixture.nativeElement.querySelector(
+      '.status-sparkline__line',
+    ) as SVGPolylineElement | null;
+    expect(line).not.toBeNull();
+    // Three days produce three coordinate pairs in the polyline.
+    expect(line?.getAttribute('points')?.trim().split(' ').length).toBe(3);
+  });
+
+  it('omits the sparkline when there is too little history to draw a line', () => {
+    const fixture = setup([day('2026-06-21', 86400)]);
+    expect(fixture.nativeElement.querySelector('.status-sparkline')).toBeNull();
   });
 });
