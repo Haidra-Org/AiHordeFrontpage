@@ -605,14 +605,39 @@
   display: flex;
   gap: 2px;
   align-items: stretch;
-  height: 1.75rem;
+}
+
+/* Each day is a column: the uptime bar, plus a reserved strip below it for the
+   "flapping" marker so all bars stay vertically aligned whether or not a given
+   day carries a marker. */
+.status-history__cell {
+  flex: 1;
+  min-width: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .status-history__bar {
-  flex: 1;
-  min-width: 2px;
+  height: 1.75rem;
   border-radius: 1.5px;
   background: var(--color-success-500);
+}
+
+/* Sub-threshold instability marker: a small dot under the tick, hidden (but
+   space-reserved) on clean days. */
+.status-history__flap {
+  align-self: center;
+  width: 5px;
+  height: 5px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--color-warning-500);
+  opacity: 0;
+}
+
+.status-history__flap--on {
+  opacity: 0.9;
 }
 
 .status-history__bar--ok {

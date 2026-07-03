@@ -24,6 +24,33 @@ import {
   PublicMaintenance,
 } from '../../types/status';
 
+/**
+ * Duration thresholds for the 90-day history bars, mirroring the backend's
+ * `BucketThresholds`. A day goes major only when hard-down time crosses an
+ * absolute floor OR a fraction of the day's observed signal (whichever is
+ * larger), and minor likewise for degraded time. Kept in lockstep with
+ * `ai-horde-service-alerts`'s defaults so the client- and server-side
+ * classifications agree.
+ */
+const BAR_MAJOR_DOWN_FLOOR_S = 300;
+const BAR_MAJOR_DOWN_FRACTION = 0.01;
+const BAR_MINOR_DEGRADED_FLOOR_S = 600;
+const BAR_MINOR_DEGRADED_FRACTION = 0.05;
+
+/** A history day's rendered bar: its colour modifier, label, and flap marker. */
+interface DayBar {
+  /** BEM modifier suffix for the bar: `ok` | `minor` | `major` | `maintenance`. */
+  modifier: 'ok' | 'minor' | 'major' | 'maintenance';
+  /** transloco key for the bar's status label, e.g. `status.history_level.ok`. */
+  labelKey: string;
+  /**
+   * True when the day stayed green but still saw some down/degraded time below
+   * the colouring threshold — rendered as a small marker under the tick so brief
+   * instability is visible without being escalated to a full outage.
+   */
+  flapping: boolean;
+}
+
 /** How a status value reads in the UI: a translation key and a CSS modifier. */
 interface StatusView {
   /** transloco key for the human label, e.g. `status.state.operational`. */
@@ -188,13 +215,66 @@ export class StatusComponent {
     return this.histories()[componentId] ?? [];
   }
 
-  /** A day's bar modifier: `ok` | `minor` | `major` | `maintenance`. */
-  public historyLevelModifier(level: number): string {
-    return ['ok', 'minor', 'major', 'maintenance'][level] ?? 'ok';
+  /**
+   * Classify a day's bar from its raw per-day seconds, mirroring the backend's
+   * duration-weighted thresholds ({@link BAR_MAJOR_DOWN_FLOOR_S} et al).
+   *
+   * This is deliberately independent of the backend's `status_level`: if the
+   * backend ever regresses to a worst-observed rollup again, the page still
+   * refuses to paint a whole day red over a few seconds of blip. Sub-threshold
+   * down/degraded time surfaces as {@link DayBar.flapping} (a small marker)
+   * rather than a coloured bar.
+   */
+  public dayBar(day: PublicHistoryDay): DayBar {
+    const signal =
+      day.operational_seconds + day.degraded_seconds + day.down_seconds;
+    if (signal === 0) {
+      const modifier = day.maintenance_seconds > 0 ? 'maintenance' : 'ok';
+      return {
+        modifier,
+        labelKey: `status.history_level.${modifier}`,
+        flapping: false,
+      };
+    }
+    const majorCut = Math.max(
+      BAR_MAJOR_DOWN_FLOOR_S,
+      BAR_MAJOR_DOWN_FRACTION * signal,
+    );
+    if (day.down_seconds >= majorCut) {
+      return {
+        modifier: 'major',
+        labelKey: 'status.history_level.major',
+        flapping: false,
+      };
+    }
+    const minorCut = Math.max(
+      BAR_MINOR_DEGRADED_FLOOR_S,
+      BAR_MINOR_DEGRADED_FRACTION * signal,
+    );
+    if (day.degraded_seconds >= minorCut) {
+      return {
+        modifier: 'minor',
+        labelKey: 'status.history_level.minor',
+        flapping: false,
+      };
+    }
+    return {
+      modifier: 'ok',
+      labelKey: 'status.history_level.ok',
+      flapping: day.down_seconds > 0 || day.degraded_seconds > 0,
+    };
   }
 
-  /** transloco key for a history bar's status, e.g. `status.history_level.ok`. */
-  public historyLevelLabelKey(level: number): string {
-    return `status.history_level.${this.historyLevelModifier(level)}`;
+  /** Compact human duration for tooltips: `15s`, `4m`, `1h 32m`. */
+  public formatDuration(seconds: number): string {
+    if (seconds >= 3600) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.round((seconds % 3600) / 60);
+      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+    }
+    if (seconds >= 60) {
+      return `${Math.round(seconds / 60)}m`;
+    }
+    return `${Math.max(0, Math.round(seconds))}s`;
   }
 }

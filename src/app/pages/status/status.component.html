@@ -364,16 +364,41 @@
                     [attr.aria-label]="'status.history_label' | transloco"
                   >
                     @for (day of historyFor(svc.id); track day.date) {
+                      @let bar = dayBar(day);
                       <span
-                        class="status-history__bar status-history__bar--{{
-                          historyLevelModifier(day.status_level)
-                        }}"
+                        class="status-history__cell"
                         [title]="
                           day.date +
                           ' — ' +
-                          (historyLevelLabelKey(day.status_level) | transloco)
+                          (bar.labelKey | transloco) +
+                          (day.down_seconds > 0
+                            ? '  ·  ' +
+                              formatDuration(day.down_seconds) +
+                              ' ' +
+                              ('status.history_tooltip.down' | transloco)
+                            : '') +
+                          (day.degraded_seconds > 0
+                            ? '  ·  ' +
+                              formatDuration(day.degraded_seconds) +
+                              ' ' +
+                              ('status.history_tooltip.degraded' | transloco)
+                            : '') +
+                          (bar.flapping
+                            ? '  ·  ' + ('status.history_flapping' | transloco)
+                            : '')
                         "
-                      ></span>
+                      >
+                        <span
+                          class="status-history__bar status-history__bar--{{
+                            bar.modifier
+                          }}"
+                        ></span>
+                        <span
+                          class="status-history__flap"
+                          [class.status-history__flap--on]="bar.flapping"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
                     }
                   </div>
                 }
