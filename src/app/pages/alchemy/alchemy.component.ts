@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Dialog } from '@angular/cdk/dialog';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { AuthService } from '../../services/auth.service';
 import { NetworkStatusService } from '../../services/network-status.service';
@@ -31,8 +32,10 @@ import {
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
 import { AlchemyResultComponent } from '../../components/alchemy/alchemy-result/alchemy-result.component';
+import { AlchemyFormInfoDialogComponent } from '../../components/alchemy/alchemy-form-info-dialog/alchemy-form-info-dialog.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
+import { NgClass } from '@angular/common';
 
 const ANONYMOUS_API_KEY = '0000000000';
 
@@ -44,6 +47,15 @@ interface FormStatusView {
   icon: string;
   spin: boolean;
   modifier: string;
+}
+
+interface AlchemyOperationGroup {
+  id: string;
+  icon: string;
+  titleKey: string;
+  outputKey: string;
+  blurbKey: string;
+  forms: readonly AlchemyFormName[];
 }
 
 const FORM_STATUS_VIEWS: Record<string, FormStatusView> = {
@@ -75,6 +87,7 @@ interface AlchemyJob {
     TranslocoPipe,
     DecimalPipe,
     RouterLink,
+    NgClass,
     AlchemyImageInputComponent,
     AlchemyResultComponent,
     IconComponent,
@@ -92,6 +105,7 @@ export class AlchemyComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly dialog = inject(Dialog);
 
   private static readonly POLL_MS = 10_000;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -115,7 +129,72 @@ export class AlchemyComponent {
   public readonly dataForms = ALCHEMY_DATA_FORMS;
   public readonly postProcessorForms = ALCHEMY_POST_PROCESSOR_FORMS;
 
+  /**
+   * The post-processor forms split into the groups shown in the builder, so
+   * each fieldset can carry its own explanation of what its options do
+   * instead of one undifferentiated "enhance" bucket. `postProcessorForms`
+   * above is kept as-is for the developers tab's plain form-name reference.
+   */
+  public readonly upscalerForms: readonly AlchemyFormName[] = [
+    'RealESRGAN_x4plus',
+    'RealESRGAN_x2plus',
+    'RealESRGAN_x4plus_anime_6B',
+    'NMKD_Siax',
+    '4x_AnimeSharp',
+    '4xNomos8kSC',
+    '4xLSDIRplus',
+    '4xNomosWebPhoto_RealPLKSR',
+    '4xNomos2_realplksr_dysample',
+    '4xNomos2_hq_dat2',
+    '2xModernSpanimationV1',
+  ];
+  public readonly faceFixerForms: readonly AlchemyFormName[] = [
+    'GFPGAN',
+    'GFPGANv1.3',
+    'CodeFormers',
+    'RestoreFormer',
+  ];
+  public readonly backgroundForms: readonly AlchemyFormName[] = [
+    'strip_background',
+  ];
+
+  public readonly operationGroups: readonly AlchemyOperationGroup[] = [
+    {
+      id: 'analyze',
+      icon: 'document-text',
+      titleKey: 'alchemy.forms.analyze_title',
+      outputKey: 'alchemy.forms.analyze_output',
+      blurbKey: 'alchemy.forms.analyze_blurb',
+      forms: this.dataForms,
+    },
+    {
+      id: 'upscale',
+      icon: 'photo',
+      titleKey: 'alchemy.forms.upscale_title',
+      outputKey: 'alchemy.forms.upscale_output',
+      blurbKey: 'alchemy.forms.upscale_blurb',
+      forms: this.upscalerForms,
+    },
+    {
+      id: 'facefix',
+      icon: 'paintbrush',
+      titleKey: 'alchemy.forms.facefix_title',
+      outputKey: 'alchemy.forms.facefix_output',
+      blurbKey: 'alchemy.forms.facefix_blurb',
+      forms: this.faceFixerForms,
+    },
+    {
+      id: 'background',
+      icon: 'cube-transparent',
+      titleKey: 'alchemy.forms.background_title',
+      outputKey: 'alchemy.forms.background_output',
+      blurbKey: 'alchemy.forms.background_blurb',
+      forms: this.backgroundForms,
+    },
+  ];
+
   public readonly activeTab = signal<AlchemyTab>('tool');
+  public readonly activeOperation = signal<AlchemyFormName>('caption');
 
   /**
    * Static API samples for the developer tab. Kept as component strings
@@ -152,6 +231,20 @@ Content-Type: application/json
 
   /** Which job cards are expanded. Collapsed jobs show only their summary line. */
   public readonly expandedJobs = signal<ReadonlySet<string>>(new Set());
+
+  /**
+   * The job a submission just added, so its card can pulse into view instead
+   * of silently appearing at the top of a list the user may not be looking
+   * at. Cleared a couple seconds after it's set.
+   */
+  public readonly justAddedJobId = signal<string | null>(null);
+
+  /** Jobs still in flight, for the flow connector's live status line. */
+  public readonly pendingJobsCount = computed(
+    () => this.jobs().filter((j) => !this.isJobSettled(j)).length,
+  );
+
+  public readonly hasAnyJobs = computed(() => this.jobs().length > 0);
 
   /**
    * When on, a newly tracked request opens on its own and earlier ones fold
@@ -222,6 +315,7 @@ Content-Type: application/json
   }
 
   public toggleForm(form: AlchemyFormName): void {
+    this.activeOperation.set(form);
     this.selectedForms.update((current) => {
       const next = new Set(current);
       if (next.has(form)) {
@@ -231,6 +325,36 @@ Content-Type: application/json
       }
       return next;
     });
+  }
+
+  public previewForm(form: AlchemyFormName): void {
+    this.activeOperation.set(form);
+  }
+
+  /**
+   * Opens a modal dialog showing detailed information about a form.
+   * Used on mobile/narrow screens where inline explanations are offscreen.
+   */
+  public openFormInfoDialog(form: AlchemyFormName, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.dialog.open(AlchemyFormInfoDialogComponent, {
+      data: { formName: form },
+      hasBackdrop: true,
+      backdropClass: 'modal-cdk-backdrop',
+      panelClass: 'alchemy-form-info-dialog-panel',
+      maxWidth: '90vw',
+      maxHeight: '90vh',
+    });
+  }
+
+  public hasExample(form: AlchemyFormName): boolean {
+    // strip_background is the only form without an example entry
+    return form !== 'strip_background';
+  }
+
+  public isUpscalerForm(form: AlchemyFormName): boolean {
+    return this.upscalerForms.includes(form);
   }
 
   public toggleSlowWorkers(): void {
@@ -264,6 +388,16 @@ Content-Type: application/json
         this.addJob(response.id, forms);
         this.toast.success('alchemy.submit.success', { transloco: true });
       });
+  }
+
+  /**
+   * The connector link between the builder and the results below it. Used
+   * both for the static "results will appear below" hint and, once jobs
+   * exist, the live "jump to results" affordance.
+   */
+  public scrollToResultsSection(event?: Event): void {
+    event?.preventDefault();
+    this.focusElementById('alchemy-results');
   }
 
   public cancelJob(id: string): void {
@@ -452,6 +586,37 @@ Content-Type: application/json
     if (this.autoOpenResults()) {
       this.expandedJobs.set(new Set([id]));
     }
+
+    // Carry the user straight to their new job instead of leaving the result
+    // to appear off-screen: the card pulses briefly and scroll/focus follow.
+    this.justAddedJobId.set(id);
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => {
+        if (this.justAddedJobId() === id) this.justAddedJobId.set(null);
+      }, 2500);
+    }
+    this.focusElementById(`alchemy-job-${id}`);
+  }
+
+  /**
+   * Scrolls an element into view and moves accessibility focus to it. Runs on
+   * a macrotask so the DOM node exists after the triggering signal update has
+   * rendered, and respects the reduced-motion preference for the scroll.
+   */
+  private focusElementById(id: string): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    setTimeout(() => {
+      const el = globalThis.document.getElementById(id);
+      if (!el) return;
+      const reduceMotion = globalThis.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      ).matches;
+      el.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+      el.focus({ preventScroll: true });
+    }, 0);
   }
 
   private updateJob(id: string, update: Partial<AlchemyJob>): void {

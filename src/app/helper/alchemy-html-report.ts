@@ -46,15 +46,48 @@ const FORM_LABELS: Record<string, string> = {
   caption: 'Caption',
   interrogation: 'Interrogation (tags)',
   nsfw: 'NSFW check',
+  vectorize: 'Vectorize',
+  palette: 'Palette',
+  describe: 'Describe',
   GFPGAN: 'GFPGAN (face fix)',
+  'GFPGANv1.3': 'GFPGAN v1.3 (face fix)',
   CodeFormers: 'CodeFormers (face fix)',
+  RestoreFormer: 'RestoreFormer (face fix)',
   RealESRGAN_x4plus: 'RealESRGAN x4',
   RealESRGAN_x2plus: 'RealESRGAN x2',
   RealESRGAN_x4plus_anime_6B: 'RealESRGAN x4 (anime)',
   NMKD_Siax: 'NMKD Siax (upscale)',
   '4x_AnimeSharp': '4x AnimeSharp (upscale)',
+  '4xNomos8kSC': '4x Nomos 8k SC (upscale)',
+  '4xLSDIRplus': '4x LSDIR+ (upscale)',
+  '4xNomosWebPhoto_RealPLKSR': '4x Nomos WebPhoto RealPLKSR',
+  '4xNomos2_realplksr_dysample': '4x Nomos2 RealPLKSR Dysample',
+  '4xNomos2_hq_dat2': '4x Nomos2 HQ DAT2',
+  '2xModernSpanimationV1': '2x Modern Spanimation v1',
   strip_background: 'Strip background',
 };
+
+const DESCRIBE_LABELS: Record<string, string> = {
+  dhash: 'dHash',
+  phash: 'pHash',
+  width: 'Width',
+  height: 'Height',
+  format: 'Format',
+  blurhash: 'BlurHash',
+  has_alpha: 'Alpha channel',
+  aspect_ratio: 'Aspect ratio',
+};
+
+const DESCRIBE_ORDER = [
+  'format',
+  'width',
+  'height',
+  'aspect_ratio',
+  'has_alpha',
+  'dhash',
+  'phash',
+  'blurhash',
+] as const;
 
 function formLabel(form: string): string {
   return FORM_LABELS[form] ?? form;
@@ -67,6 +100,20 @@ function isDataForm(form: string): boolean {
 function sectionRank(key: string): number {
   const index = (SECTION_ORDER as readonly string[]).indexOf(key);
   return index === -1 ? SECTION_ORDER.length : index;
+}
+
+function describeRank(key: string): number {
+  const index = (DESCRIBE_ORDER as readonly string[]).indexOf(key);
+  return index === -1 ? DESCRIBE_ORDER.length : index;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractSvgMarkup(value: string): string {
+  const match = /<svg\b[\s\S]*<\/svg>/i.exec(value);
+  return match?.[0].trim() ?? '';
 }
 
 function interrogationDetails(form: AlchemyForm): InterrogationDetails | null {
@@ -135,6 +182,85 @@ function renderInterrogation(form: AlchemyForm): string {
   return `<div class="tag-groups">${renderedGroups}</div>`;
 }
 
+function renderInlineText(form: AlchemyForm): string {
+  const value = form.result?.[form.form];
+  let text = '';
+  if (typeof value === 'string') {
+    text = value;
+  } else if (typeof value === 'number' || typeof value === 'boolean') {
+    text = String(value);
+  } else if (Array.isArray(value) || (value && typeof value === 'object')) {
+    text = stringifyAsJson(value);
+  }
+  if (!text) return '';
+  return `<pre class="inline-text">${escapeHtml(text)}</pre>`;
+}
+
+function renderDescribe(form: AlchemyForm): string {
+  const value = form.result?.describe;
+  if (!isRecord(value)) return '';
+  const fields = Object.entries(value)
+    .sort(([a], [b]) => describeRank(a) - describeRank(b))
+    .map(([key, rawValue]) => {
+      const label = DESCRIBE_LABELS[key] ?? key;
+      let display = '';
+      if (typeof rawValue === 'boolean') {
+        display = rawValue ? 'Yes' : 'No';
+      } else if (typeof rawValue === 'number') {
+        display =
+          key === 'width' || key === 'height'
+            ? `${rawValue}px`
+            : key === 'aspect_ratio'
+              ? rawValue.toFixed(4)
+              : String(rawValue);
+      } else if (typeof rawValue === 'string') {
+        display = rawValue;
+      } else {
+        display = stringifyAsJson(rawValue);
+      }
+      return `<div class="describe-item"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(display)}</dd></div>`;
+    })
+    .join('');
+  return fields ? `<dl class="describe-grid">${fields}</dl>` : '';
+}
+
+function renderPalette(form: AlchemyForm): string {
+  const value = form.result?.palette;
+  const colors = isRecord(value) ? value['colors'] : null;
+  if (!Array.isArray(colors)) return '';
+  const rows = colors
+    .filter((entry): entry is { hex: string; proportion: number } => {
+      if (!isRecord(entry)) return false;
+      return (
+        typeof entry['hex'] === 'string' &&
+        /^#[0-9a-f]{6}$/i.test(entry['hex']) &&
+        typeof entry['proportion'] === 'number' &&
+        Number.isFinite(entry['proportion'])
+      );
+    })
+    .map((entry) => {
+      const percent = `${(entry.proportion * 100).toFixed(1)}%`;
+      const safeHex = escapeHtml(entry.hex);
+      return `<div class="palette-row">
+        <span class="palette-swatch" style="background:${safeHex}"></span>
+        <code>${safeHex}</code>
+        <span class="palette-bar"><span style="width:${percent};background:${safeHex}"></span></span>
+        <span class="palette-percent">${percent}</span>
+      </div>`;
+    })
+    .join('');
+  return rows ? `<div class="palette-list">${rows}</div>` : '';
+}
+
+function renderVectorize(form: AlchemyForm): string {
+  const value = form.result?.vectorize;
+  if (typeof value !== 'string') return '';
+  const svg = extractSvgMarkup(value);
+  if (!svg) return '';
+  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  return `<div class="vector-preview"><img src="${escapeHtml(src)}" alt="SVG preview" /></div>`;
+}
+
 function renderDataForm(form: AlchemyForm): string {
   let body = '';
   if (form.form === 'caption') {
@@ -143,6 +269,14 @@ function renderDataForm(form: AlchemyForm): string {
     body = renderNsfw(form);
   } else if (form.form === 'interrogation') {
     body = renderInterrogation(form);
+  } else if (form.form === 'describe') {
+    body = renderDescribe(form);
+  } else if (form.form === 'palette') {
+    body = renderPalette(form);
+  } else if (form.form === 'vectorize') {
+    body = renderVectorize(form);
+  } else {
+    body = renderInlineText(form);
   }
   if (!body) return '';
 
@@ -197,6 +331,19 @@ header.report-head .sub { margin: 0.15rem 0 0; font-size: 0.85rem; opacity: 0.85
 }
 .result h3 { margin: 0 0 0.75rem; font-size: 1.05rem; }
 .caption { margin: 0; padding: 0.5rem 0.9rem; border-left: 3px solid #9333ea; background: #faf5ff; font-style: italic; }
+.inline-text { margin: 0; padding: 0.75rem 0.9rem; border: 1px solid #e6e8f0; border-radius: 0.6rem; background: #f8f9fc; white-space: pre-wrap; word-break: break-word; font: inherit; }
+.describe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; margin: 0; }
+.describe-item { min-width: 0; padding: 0.65rem; border: 1px solid #e6e8f0; border-radius: 0.45rem; background: #f8f9fc; }
+.describe-item dt { margin: 0 0 0.2rem; color: #5b6172; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.describe-item dd { margin: 0; overflow-wrap: anywhere; }
+.palette-list { display: grid; gap: 0.45rem; }
+.palette-row { display: grid; grid-template-columns: 2rem 6rem minmax(6rem, 1fr) 4rem; align-items: center; gap: 0.6rem; }
+.palette-swatch { width: 2rem; height: 2rem; border: 1px solid rgba(0,0,0,0.2); border-radius: 0.4rem; }
+.palette-bar { height: 0.6rem; overflow: hidden; border-radius: 999px; background: #e6e8f0; }
+.palette-bar span { display: block; height: 100%; min-width: 2px; }
+.palette-percent { color: #5b6172; font-size: 0.8rem; text-align: right; font-variant-numeric: tabular-nums; }
+.vector-preview { display: grid; place-items: center; min-height: 12rem; max-height: 32rem; overflow: auto; padding: 1rem; border: 1px solid #e6e8f0; border-radius: 0.6rem; background: #f8f9fc; }
+.vector-preview img { display: block; max-width: 100%; max-height: 30rem; height: auto; }
 .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; }
 .badge--ok { background: #dcfce7; color: #166534; }
 .badge--danger { background: #fee2e2; color: #991b1b; }

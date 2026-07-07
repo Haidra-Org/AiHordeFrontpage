@@ -11,10 +11,46 @@
   margin-bottom: var(--spacing-md);
 }
 
+.alchemy-anonymous-notice--compact {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.alchemy-hero__container {
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+}
+
+.alchemy-hero .place-center {
+  max-width: none;
+  min-width: 0;
+}
+
+.alchemy-hero .heading-page-title {
+  margin-bottom: var(--spacing-xs);
+  font-size: 2.25rem;
+}
+
+.alchemy-hero .text-description {
+  width: 100%;
+  max-width: 76rem;
+  margin: 0;
+  color: var(--color-gray-500);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.alchemy-tool-shell {
+  min-width: 0;
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+}
+
 /* --- Page-level tabs (tool / developers) ------------------------- */
 
 .alchemy-tabs {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .alchemy-tabs__link {
@@ -46,6 +82,7 @@
   flex-direction: column;
   gap: var(--spacing-2xl);
   max-width: 44rem;
+  counter-reset: alchemy-dev-section;
 }
 
 .alchemy-dev__lead {
@@ -63,13 +100,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+  counter-increment: alchemy-dev-section;
 }
 
 /* Section heading: a doc-scale title (well below the page title) keyed
-   by a short green rule, the alchemy domain accent. */
+   by a monospace section mark rather than a colour bar -- it reads as
+   spec numbering (echoing the numbered flow spine below) instead of a
+   decorative accent. */
 .alchemy-dev__title {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: var(--spacing-sm);
   font-size: var(--text-xl);
   font-weight: 700;
@@ -83,12 +123,16 @@
 }
 
 .alchemy-dev__title::before {
-  content: "";
+  content: "\00A7" counter(alchemy-dev-section, decimal-leading-zero);
   flex-shrink: 0;
-  width: 0.25rem;
-  height: 1.05em;
-  border-radius: var(--radius-full);
-  background-color: var(--color-success-500);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.dark .alchemy-dev__title::before {
+  color: var(--color-gray-400);
 }
 
 .alchemy-dev__subtitle {
@@ -454,52 +498,145 @@
   height: 1rem;
 }
 
-/* The tool's three regions now stack as full-width bands (builder, crowd,
-   results) rather than a narrow sticky rail beside a results column. This is
-   what lets the builder spread sideways instead of forcing a long scroll. */
 .alchemy-page__layout {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
 }
 
-/* --- Request builder: a wide band ------------------------------- */
+/* --- Request builder: compact workbench ------------------------- */
 
-/* Source and operations share a row; the submit bar spans underneath. The
-   genuine order survives as numbered eyebrows, but nothing is chained into a
-   single vertical lane. */
-.alchemy-build {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
+.alchemy-workbench-card {
+  overflow: clip;
+  padding: 0;
+  border-color: var(--color-glass-border-strong);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-panel);
+  box-shadow:
+    var(--shadow-glass),
+    inset 0 1px 0 var(--color-glass-highlight);
+  backdrop-filter: blur(var(--blur-glass-md));
+  -webkit-backdrop-filter: blur(var(--blur-glass-md));
 }
 
-.alchemy-build__grid {
+.dark .alchemy-workbench-card {
+  border-color: var(--color-glass-border-dark-strong);
+  background:
+    linear-gradient(135deg, rgb(71 85 105 / 0.08), rgb(15 23 42 / 0.03)),
+    var(--color-glass-surface-dark);
+  box-shadow:
+    0 10px 32px rgb(0 0 0 / 0.22),
+    0 1px 2px rgb(0 0 0 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.alchemy-builder__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-glass-border-subtle);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-elevated);
+}
+
+.dark .alchemy-builder__header {
+  border-bottom-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(71 85 105 / 0.06), rgb(30 41 59 / 0.03)),
+    var(--color-glass-surface-dark-elevated);
+}
+
+.alchemy-builder__header .heading-card {
+  margin-bottom: var(--spacing-2xs);
+}
+
+.alchemy-builder__intro {
+  max-width: 46rem;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.alchemy-builder__summary {
+  flex: 0 0 auto;
+  max-width: 18rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-success-200, var(--color-gray-200));
+  border-radius: var(--radius-md);
+  background-color: var(--color-success-50);
+  color: var(--color-success-700);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-align: right;
+}
+
+.dark .alchemy-builder__summary {
+  border-color: var(--color-gray-700);
+  background-color: var(--color-glass-surface-dark-subtle);
+  color: var(--color-success-300);
+}
+
+.alchemy-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--spacing-lg);
+  gap: 0;
+  padding: 0;
 }
 
-/* Source gets a fixed narrow column; operations take the rest so the tiles
-   fan out across several columns. Below this width the two stack. */
-@media (min-width: 56rem) {
-  .alchemy-build__grid {
-    grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
-    align-items: start;
+@media (min-width: 64rem) {
+  .alchemy-workbench {
+    grid-template-columns: minmax(17rem, 20rem) minmax(0, 1fr);
   }
 
-  .alchemy-step--source {
-    position: relative;
+  .alchemy-source-rail {
+    position: sticky;
+    top: calc(var(--sticky-offset, var(--nav-height-desktop)) + 0.75rem);
+    max-height: calc(
+      100vh - var(--sticky-offset, var(--nav-height-desktop)) - 1.5rem
+    );
+    overflow: auto;
+  }
+}
+
+.alchemy-source-rail {
+  --alchemy-zone-accent: var(--color-blue-500);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 0;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-glass-border-subtle);
+  background:
+    linear-gradient(180deg, rgb(239 246 255 / 0.08), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 3px 0 rgb(59 130 246 / 0.42),
+    inset -1px 0 0 rgb(255 255 255 / 0.22);
+}
+
+.dark .alchemy-source-rail {
+  border-bottom-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.035), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 3px 0 rgb(96 165 250 / 0.42),
+    inset -1px 0 0 rgb(255 255 255 / 0.045);
+}
+
+@media (min-width: 64rem) {
+  .alchemy-source-rail {
+    border-right: 1px solid var(--color-glass-border-subtle);
+    border-bottom: none;
   }
 
-  /* A hairline divider between the two regions, in place of the old rail. */
-  .alchemy-step--ops {
-    padding-left: var(--spacing-lg);
-    border-left: 1px solid var(--color-gray-200);
-  }
-
-  .dark .alchemy-step--ops {
-    border-left-color: var(--color-gray-700);
+  .dark .alchemy-source-rail {
+    border-right-color: var(--color-glass-border-dark-subtle);
   }
 }
 
@@ -527,12 +664,17 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: var(--radius-full);
-  border: 2px solid var(--color-gray-300);
-  background-color: var(--color-surface-primary);
+  border: 1px solid var(--color-glass-border-strong);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.06)),
+    var(--color-glass-surface-heavy);
   color: var(--color-text-secondary);
   font-weight: 700;
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.64);
   transition:
     background-color var(--transition-fast),
     border-color var(--transition-fast),
@@ -540,9 +682,14 @@
 }
 
 .dark .alchemy-step__num {
-  background-color: var(--color-gray-800);
-  border-color: var(--color-gray-600);
+  background:
+    linear-gradient(180deg, rgb(71 85 105 / 0.12), rgb(30 41 59 / 0.05)),
+    var(--color-glass-surface-dark-elevated);
+  border-color: var(--color-glass-border-dark-strong);
   color: var(--color-gray-300);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 
 .alchemy-step__num .icon {
@@ -551,6 +698,7 @@
 }
 
 .alchemy-step--done .alchemy-step__num {
+  background: var(--color-success-500);
   background-color: var(--color-success-500);
   border-color: var(--color-success-500);
   color: #fff;
@@ -567,57 +715,197 @@
   color: var(--color-gray-100);
 }
 
-/* The hint trails the operations title on one line when there's room, then
-   wraps below it on narrow widths. */
-.alchemy-step__hint {
-  flex: 1 1 100%;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
+/* --- Operations: dense matrix with one contextual detail pane ----- */
+
+.alchemy-step--ops {
+  --alchemy-zone-accent: var(--color-success-500);
+  padding: var(--spacing-md);
+  background:
+    linear-gradient(180deg, rgb(240 253 244 / 0.06), rgb(255 255 255 / 0.02)),
+    rgb(255 255 255 / 0.03);
+  box-shadow: inset 0 3px 0 rgb(34 197 94 / 0.36);
 }
 
-@media (min-width: 56rem) {
-  .alchemy-step__hint {
-    flex: 1 1 14rem;
+.dark .alchemy-step--ops {
+  background:
+    linear-gradient(180deg, rgb(34 197 94 / 0.025), rgb(15 23 42 / 0.015)),
+    transparent;
+  box-shadow: inset 0 3px 0 rgb(74 222 128 / 0.32);
+}
+
+/* A recessed readout rather than a colour-flagged callout: it sits
+   inset into the workbench surface (paired with the raised operation
+   tiles below) so depth, not colour, marks it as informational. */
+.alchemy-operation-focus {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--spacing-2xs);
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  height: 5.75rem;
+  overflow: hidden;
+  border: 1px solid var(--color-glass-border-subtle);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.48);
+}
+
+.dark .alchemy-operation-focus {
+  border-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(51 65 85 / 0.05), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+.alchemy-operation-focus__head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.alchemy-operation-focus__eyebrow {
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dark .alchemy-operation-focus__eyebrow {
+  color: var(--color-gray-100);
+}
+
+.alchemy-operation-focus__desc,
+.alchemy-operation-focus__example {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.alchemy-operation-focus__desc {
+  -webkit-line-clamp: 2;
+}
+
+.dark .alchemy-operation-focus__desc,
+.dark .alchemy-operation-focus__example {
+  color: var(--color-gray-400);
+}
+
+.alchemy-operation-focus__example {
+  -webkit-line-clamp: 1;
+  font-style: italic;
+}
+
+/* On narrow screens (below tablet), hide the inline explanation entirely.
+   Users access form details via the info icon modal instead. */
+@media (max-width: 767px) {
+  .alchemy-operation-focus {
+    display: none;
   }
 }
-
-/* --- Operations: stacked option sets, each wide ------------------ */
 
 .alchemy-ops {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
-/* --- Submit action bar ------------------------------------------- */
-
-.alchemy-build__footer {
+/* --- Flow connector ------------------------------------------------
+   Ties the submit action to where its output shows up. Before any request
+   exists it's a quiet, static promise; once a job is tracked it becomes a
+   live, clickable link naming what's happening below, so a toast is never
+   the only thing pointing the user downward. */
+.alchemy-flow {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm) var(--spacing-md);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--color-gray-200);
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
 }
 
-.dark .alchemy-build__footer {
-  border-top-color: var(--color-gray-700);
+.alchemy-flow__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  animation: alchemy-flow-bob 2s ease-in-out infinite;
+}
+
+@keyframes alchemy-flow-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(0.1875rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alchemy-flow__icon {
+    animation: none;
+  }
+}
+
+/* Once a request exists, the connector reads as an action rather than a
+   passive hint: primary color, underline on hover, focus-visible ring. */
+.alchemy-flow--live {
+  color: var(--color-primary-600);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dark .alchemy-flow--live {
+  color: var(--color-primary-300);
+}
+
+.alchemy-flow--live:hover {
+  text-decoration: underline;
+}
+
+.alchemy-flow--live .alchemy-flow__icon {
+  color: var(--color-primary-500);
 }
 
 /* --- Segmented control (URL / Upload) ---------------------------- */
 
 .alchemy-segmented {
   display: inline-flex;
-  padding: 0.1875rem;
+  padding: 0.25rem;
   gap: 0.1875rem;
-  border-radius: var(--radius-lg);
-  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-glass-border-subtle);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.02)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.32);
   width: fit-content;
 }
 
 .dark .alchemy-segmented {
-  background-color: var(--color-gray-800);
+  border-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(51 65 85 / 0.04), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
 }
 
 .alchemy-segmented__btn {
@@ -625,40 +913,70 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   font-size: var(--text-sm);
   font-weight: 500;
-  color: var(--color-text-secondary);
-  background-color: transparent;
+  color: var(--color-text-primary);
+  background-color: rgb(255 255 255 / 0.16);
   cursor: pointer;
   transition:
     background-color var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.dark .alchemy-segmented__btn {
+  color: var(--color-gray-100);
+  background-color: rgb(30 41 59 / 0.2);
 }
 
 .alchemy-segmented__btn .icon {
   width: 1rem;
   height: 1rem;
+  color: var(--color-primary-500);
+}
+
+.dark .alchemy-segmented__btn .icon {
+  color: var(--color-primary-300);
 }
 
 .alchemy-segmented__btn:hover:not(:disabled) {
   color: var(--color-text-primary);
+  border-color: rgb(37 99 235 / 0.24);
+  background-color: rgb(255 255 255 / 0.28);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.34);
 }
 
 .dark .alchemy-segmented__btn:hover:not(:disabled) {
-  color: var(--color-gray-100);
+  border-color: rgb(147 197 253 / 0.18);
+  background-color: rgb(51 65 85 / 0.26);
+  color: var(--color-gray-50);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
 }
 
 .alchemy-segmented__btn--active {
-  background-color: var(--color-surface-primary);
+  border-color: var(--color-glass-border-strong);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.04)),
+    var(--color-glass-surface-heavy);
   color: var(--color-primary-600);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.78);
 }
 
 .dark .alchemy-segmented__btn--active {
-  background-color: var(--color-gray-700);
+  border-color: var(--color-glass-border-dark-strong);
+  background:
+    linear-gradient(180deg, rgb(96 165 250 / 0.05), rgb(51 65 85 / 0.04)),
+    var(--color-glass-surface-dark-elevated);
   color: var(--color-primary-300);
+  box-shadow:
+    0 2px 6px rgb(0 0 0 / 0.26),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 
 .alchemy-segmented__btn:disabled {
@@ -674,29 +992,55 @@
   align-items: center;
   justify-content: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-xl) var(--spacing-md);
-  border: 2px dashed var(--color-gray-300);
-  border-radius: var(--radius-lg);
+  min-height: 8rem;
+  padding: var(--spacing-lg) var(--spacing-md);
+  border: 1px dashed rgb(15 23 42 / 0.22);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgb(239 246 255 / 0.07), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.34),
+    inset 0 -1px 0 rgb(15 23 42 / 0.04);
   text-align: center;
   cursor: pointer;
   transition:
     border-color var(--transition-fast),
-    background-color var(--transition-fast);
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .dark .alchemy-dropzone {
-  border-color: var(--color-gray-600);
+  border-color: rgb(147 197 253 / 0.22);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.035), rgb(30 41 59 / 0.025)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -1px 0 rgb(0 0 0 / 0.24);
 }
 
 .alchemy-dropzone:hover,
 .alchemy-dropzone--active {
   border-color: var(--color-primary-400);
-  background-color: var(--color-primary-50);
+  background:
+    linear-gradient(180deg, rgb(239 246 255 / 0.1), rgb(255 255 255 / 0.04)),
+    var(--color-glass-surface-elevated);
+  box-shadow:
+    0 8px 22px rgb(37 99 235 / 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.62);
+  transform: translateY(-1px);
 }
 
 .dark .alchemy-dropzone:hover,
 .dark .alchemy-dropzone--active {
-  background-color: var(--color-glass-surface-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.055), rgb(30 41 59 / 0.035)),
+    var(--color-glass-surface-dark-elevated);
+  box-shadow:
+    0 8px 22px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
 }
 
 .alchemy-dropzone:focus-within {
@@ -707,7 +1051,11 @@
 .alchemy-dropzone__icon {
   width: 1.75rem;
   height: 1.75rem;
-  color: var(--color-text-secondary);
+  color: var(--color-primary-500);
+}
+
+.dark .alchemy-dropzone__icon {
+  color: var(--color-primary-300);
 }
 
 .alchemy-dropzone__text {
@@ -722,7 +1070,13 @@
 
 .alchemy-dropzone__hint {
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+  opacity: 0.72;
+}
+
+.dark .alchemy-dropzone__hint {
+  color: var(--color-gray-200);
+  opacity: 0.82;
 }
 
 /* --- Image preview ----------------------------------------------- */
@@ -741,7 +1095,7 @@
 
 .alchemy-image-input__preview img {
   max-width: 100%;
-  max-height: 18rem;
+  max-height: 13rem;
   border-radius: var(--radius-md);
   object-fit: contain;
   align-self: flex-start;
@@ -764,19 +1118,46 @@
 .alchemy-optset {
   border: none;
   margin: 0;
-  padding: 0;
+  padding: var(--spacing-xs);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  min-inline-size: 0;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.02)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 0 0 1px var(--color-glass-border-subtle),
+    inset 0 1px 0 rgb(255 255 255 / 0.24);
+}
+
+.dark .alchemy-optset {
+  background:
+    linear-gradient(180deg, rgb(51 65 85 / 0.04), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 0 0 1px var(--color-glass-border-dark-subtle),
+    inset 0 1px 0 rgb(255 255 255 / 0.045);
 }
 
 .alchemy-optset__legend {
+  float: left;
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--spacing-xs) var(--spacing-sm);
-  padding: 0;
+  max-width: 100%;
+  margin: 0 0 var(--spacing-xs);
+  padding: var(--spacing-xs);
   width: 100%;
+  align-self: start;
+  background-color: transparent;
+  line-height: 1.2;
+}
+
+.dark .alchemy-optset__legend {
+  background-color: transparent;
 }
 
 .alchemy-optset__label {
@@ -786,10 +1167,39 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-text-primary);
+  transition: color var(--transition-fast);
 }
 
 .dark .alchemy-optset__label {
   color: var(--color-gray-100);
+}
+
+.alchemy-optset--analyze .alchemy-op--selected {
+  border-color: var(--color-blue-500);
+}
+.alchemy-optset--analyze .alchemy-optset__label .icon {
+  color: var(--color-blue-500);
+}
+
+.alchemy-optset--upscale .alchemy-op--selected {
+  border-color: var(--color-green-500);
+}
+.alchemy-optset--upscale .alchemy-optset__label .icon {
+  color: var(--color-green-500);
+}
+
+.alchemy-optset--facefix .alchemy-op--selected {
+  border-color: var(--color-purple-500);
+}
+.alchemy-optset--facefix .alchemy-optset__label .icon {
+  color: var(--color-purple-500);
+}
+
+.alchemy-optset--background .alchemy-op--selected {
+  border-color: var(--color-yellow-500);
+}
+.alchemy-optset--background .alchemy-optset__label .icon {
+  color: var(--color-yellow-500);
 }
 
 .alchemy-optset__label .icon {
@@ -800,38 +1210,104 @@
 
 .alchemy-optset__output {
   font-size: var(--text-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
+  opacity: 0.7;
+}
+
+.dark .alchemy-optset__output {
+  color: var(--color-gray-200);
+  opacity: 0.78;
+}
+
+.alchemy-optset__blurb {
+  display: none;
 }
 
 .alchemy-optset__grid {
+  clear: both;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(10.25rem, 1fr));
   gap: var(--spacing-xs);
+  align-items: stretch;
+  min-width: 0;
 }
 
-/* Selectable operation tile. The native checkbox is sr-only; the tile
-   itself is the hit area and carries the selected state. */
+/* Tiles are the page's main draw, so they're raised off the workbench
+   surface (shadow, not a colour bar) at rest, lift further on preview,
+   and only the selected state is allowed to claim colour -- kept to a
+   ring rather than a border-width change so nothing reflows. */
 .alchemy-op {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-gray-200);
+  min-height: 2.375rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  overflow: hidden;
+  border: 1px solid rgb(15 23 42 / 0.14);
   border-radius: var(--radius-md);
-  background-color: var(--color-surface-primary);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-elevated);
+  --alchemy-op-elevation:
+    0 2px 7px rgb(15 23 42 / 0.09), inset 0 1px 0 rgb(255 255 255 / 0.36),
+    inset 0 -1px 0 rgb(15 23 42 / 0.05);
+  --alchemy-op-ring: 0 0 #0000;
+  box-shadow: var(--alchemy-op-elevation), var(--alchemy-op-ring);
   cursor: pointer;
   transition:
     border-color var(--transition-fast),
-    background-color var(--transition-fast);
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.alchemy-op::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, rgb(255 255 255 / 0.04), transparent 42%);
+  opacity: 1;
 }
 
 .dark .alchemy-op {
-  border-color: var(--color-gray-700);
-  background-color: var(--color-gray-800);
+  border-color: rgb(255 255 255 / 0.14);
+  background:
+    linear-gradient(180deg, rgb(71 85 105 / 0.05), rgb(30 41 59 / 0.025)),
+    var(--color-glass-surface-dark-elevated);
+  --alchemy-op-elevation:
+    0 2px 7px rgb(0 0 0 / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -1px 0 rgb(0 0 0 / 0.22);
+}
+
+.dark .alchemy-op::before {
+  background: linear-gradient(
+    110deg,
+    rgb(255 255 255 / 0.025),
+    transparent 42%
+  );
+}
+
+.alchemy-op:hover,
+.alchemy-op--active {
+  border-color: rgb(37 99 235 / 0.36);
+  --alchemy-op-elevation:
+    0 6px 14px rgb(15 23 42 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.4),
+    inset 0 -1px 0 rgb(15 23 42 / 0.06);
+  transform: translateY(-1px);
+}
+
+.dark .alchemy-op:hover,
+.dark .alchemy-op--active {
+  border-color: rgb(147 197 253 / 0.26);
+  --alchemy-op-elevation:
+    0 6px 14px rgb(0 0 0 / 0.23), inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 -1px 0 rgb(0 0 0 / 0.24);
 }
 
 .alchemy-op:hover {
-  border-color: var(--color-primary-300);
+  border-color: rgb(37 99 235 / 0.42);
 }
 
 .alchemy-op:focus-within {
@@ -841,12 +1317,20 @@
 
 .alchemy-op--selected {
   border-color: var(--color-primary-500);
-  background-color: var(--color-primary-50);
+  background:
+    linear-gradient(180deg, rgb(239 246 255 / 0.1), rgb(255 255 255 / 0.04)),
+    var(--color-glass-surface-elevated);
+  --alchemy-op-ring:
+    inset 0 0 0 1px rgb(37 99 235 / 0.46), 0 0 0 1px rgb(37 99 235 / 0.08);
 }
 
 .dark .alchemy-op--selected {
-  border-color: var(--color-primary-400);
-  background-color: var(--color-glass-surface-dark-subtle);
+  border-color: rgb(96 165 250 / 0.58);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.055), rgb(30 41 59 / 0.035)),
+    var(--color-glass-surface-dark-elevated);
+  --alchemy-op-ring:
+    inset 0 0 0 1px rgb(96 165 250 / 0.36), 0 0 0 1px rgb(96 165 250 / 0.06);
 }
 
 .alchemy-op__check {
@@ -856,18 +1340,30 @@
   flex-shrink: 0;
   width: 1.125rem;
   height: 1.125rem;
-  border-radius: var(--radius-sm);
-  border: 1.5px solid var(--color-gray-300);
-  background-color: transparent;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(15 23 42 / 0.22);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(15 23 42 / 0.02)),
+    transparent;
   color: transparent;
+  box-shadow:
+    inset 0 1px 2px rgb(15 23 42 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.36);
   transition:
     background-color var(--transition-fast),
     border-color var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .dark .alchemy-op__check {
-  border-color: var(--color-gray-600);
+  border-color: rgb(255 255 255 / 0.15);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.025), rgb(0 0 0 / 0.06)),
+    transparent;
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
 }
 
 .alchemy-op__check .icon {
@@ -876,50 +1372,310 @@
 }
 
 .alchemy-op--selected .alchemy-op__check {
-  background-color: var(--color-primary-600);
+  background:
+    radial-gradient(circle at 50% 40%, rgb(255 255 255 / 0.2), transparent 18%),
+    linear-gradient(180deg, rgb(59 130 246 / 0.96), rgb(37 99 235 / 0.96));
   border-color: var(--color-primary-600);
   color: #fff;
+  box-shadow:
+    0 0 10px rgb(37 99 235 / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.34);
+}
+
+.alchemy-op__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.alchemy-op__name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-xs);
+  min-width: 0;
 }
 
 .alchemy-op__name {
   font-size: var(--text-sm);
+  font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .dark .alchemy-op__name {
-  color: var(--color-gray-100);
+  color: var(--color-gray-50);
+}
+
+/* Scale badge for upscalers: the net effect at a glance. Deliberately a
+   different hue (teal, a non-status tagging colour) from the selection
+   state's blue, so "this tile is 4x" and "this tile is picked" never
+   read as the same signal. */
+.alchemy-op__badge {
+  flex-shrink: 0;
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid rgb(20 184 166 / 0.24);
+  border-radius: 0.375rem;
+  background: linear-gradient(
+    180deg,
+    rgb(204 251 241 / 0.24),
+    rgb(153 246 228 / 0.16)
+  );
+  color: var(--color-teal-800);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.56);
+}
+
+.dark .alchemy-op__badge {
+  border-color: rgb(45 212 191 / 0.18);
+  background: linear-gradient(
+    180deg,
+    rgb(20 184 166 / 0.08),
+    rgb(15 118 110 / 0.05)
+  );
+  color: var(--color-teal-200);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+/* Info button: appears only on narrow screens to open a modal with form
+   details. Hidden on tablet+ where the inline explanation is visible. */
+.alchemy-op__info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  margin-left: auto;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.alchemy-op__info-btn:hover {
+  background-color: var(--color-gray-100);
+  color: var(--color-primary-600);
+}
+
+.dark .alchemy-op__info-btn:hover {
+  background-color: var(--color-gray-700);
+  color: var(--color-primary-300);
+}
+
+.alchemy-op__info-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alchemy-op__info-btn .icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* Hide info button on tablet+ screens where inline explanation is visible */
+@media (min-width: 768px) {
+  .alchemy-op__info-btn {
+    display: none;
+  }
+}
+
+.alchemy-op__desc {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+
+/* The example line for analyze forms: styled as a concrete sample of the
+   output, not another description, so the two never blur together. */
+.alchemy-op__example {
+  font-size: var(--text-xs);
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
 }
 
 /* Slow-workers toggle keeps the design-system checkbox row with a
    padded, hover-highlighted hit area. */
 .alchemy-form-option {
+  align-items: center;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-glass-border-subtle);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.02)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.06),
+    inset 0 1px 0 rgb(255 255 255 / 0.5);
   cursor: pointer;
-  transition: background-color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .alchemy-form-option:hover {
-  background-color: var(--color-glass-surface-subtle);
+  border-color: rgb(37 99 235 / 0.24);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-elevated);
+  box-shadow:
+    0 5px 14px rgb(15 23 42 / 0.08),
+    inset 0 1px 0 rgb(255 255 255 / 0.62);
+  transform: translateY(-1px);
+}
+
+.dark .alchemy-form-option:hover {
+  border-color: rgb(147 197 253 / 0.18);
+  background:
+    linear-gradient(180deg, rgb(51 65 85 / 0.055), rgb(30 41 59 / 0.025)),
+    var(--color-glass-surface-dark-elevated);
+  box-shadow:
+    0 5px 14px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+.dark .alchemy-form-option {
+  border-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(51 65 85 / 0.04), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.16),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+.alchemy-run-panel {
+  --alchemy-zone-accent: var(--color-purple-500);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-glass-border-subtle);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgb(250 245 255 / 0.07), rgb(255 255 255 / 0.03)),
+    var(--color-glass-surface-nested);
+  box-shadow:
+    inset 0 3px 0 rgb(168 85 247 / 0.34),
+    inset 0 1px 0 rgb(255 255 255 / 0.48),
+    0 1px 2px rgb(15 23 42 / 0.04);
+}
+
+.dark .alchemy-run-panel {
+  border-color: var(--color-glass-border-dark-subtle);
+  background:
+    linear-gradient(180deg, rgb(168 85 247 / 0.03), rgb(15 23 42 / 0.02)),
+    var(--color-glass-surface-dark-nested);
+  box-shadow:
+    inset 0 3px 0 rgb(192 132 252 / 0.34),
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 1px 2px rgb(0 0 0 / 0.14);
 }
 
 /* --- Submit ------------------------------------------------------ */
 
-/* In the footer bar this cluster (summary + run button) is pushed to the
-   trailing edge so the primary action sits where the eye ends up. */
 .alchemy-submit {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm) var(--spacing-md);
-  margin-left: auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-sm);
 }
 
 .alchemy-submit__summary {
   font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  text-align: right;
+  color: var(--color-text-primary);
+  opacity: 0.75;
+  text-align: left;
+}
+
+.dark .alchemy-submit__summary {
+  color: var(--color-gray-200);
+  opacity: 0.84;
+}
+
+.alchemy-submit__button {
+  justify-content: center;
+  min-height: 2.75rem;
+  border: 1px solid rgb(37 99 235 / 0.34);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.94), rgb(37 99 235 / 0.94)),
+    var(--color-primary-600);
+  box-shadow:
+    0 6px 14px rgb(37 99 235 / 0.17),
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -1px 0 rgb(0 0 0 / 0.18);
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.alchemy-submit__button:hover:not(:disabled) {
+  border-color: rgb(96 165 250 / 0.5);
+  box-shadow:
+    0 9px 20px rgb(37 99 235 / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.26),
+    inset 0 -1px 0 rgb(0 0 0 / 0.18);
+  transform: translateY(-1px);
+}
+
+.alchemy-submit__button:active:not(:disabled) {
+  box-shadow:
+    0 3px 8px rgb(37 99 235 / 0.18),
+    inset 0 2px 5px rgb(0 0 0 / 0.24);
+  transform: translateY(0);
+}
+
+.dark .alchemy-submit__button {
+  border-color: rgb(96 165 250 / 0.32);
+  background:
+    linear-gradient(180deg, rgb(59 130 246 / 0.8), rgb(37 99 235 / 0.8)),
+    var(--color-primary-600);
+  box-shadow:
+    0 6px 14px rgb(0 0 0 / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    inset 0 -1px 0 rgb(0 0 0 / 0.24);
+}
+
+.dark .alchemy-submit__button:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, rgb(96 165 250 / 0.82), rgb(37 99 235 / 0.8)),
+    var(--color-primary-600);
+  box-shadow:
+    0 10px 22px rgb(0 0 0 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.16),
+    inset 0 -1px 0 rgb(0 0 0 / 0.24);
+}
+
+@media (max-width: 47.9375rem) {
+  .alchemy-builder__header {
+    flex-direction: column;
+  }
+
+  .alchemy-builder__summary {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  .alchemy-optset__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* --- Results panel ----------------------------------------------- */
@@ -995,6 +1751,11 @@
   color: var(--color-text-primary);
 }
 
+.dark .alchemy-controls__btn:hover {
+  background-color: var(--color-glass-surface-dark-subtle);
+  color: var(--color-gray-100);
+}
+
 .alchemy-controls__btn .icon {
   width: 0.875rem;
   height: 0.875rem;
@@ -1021,6 +1782,34 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* A newly submitted job's card, scrolled to and focused straight out of
+   submit(). The ring fades over its short lifetime instead of appearing
+   and disappearing abruptly. */
+.alchemy-job--new {
+  animation: alchemy-job-highlight 2.5s ease-out;
+}
+
+.alchemy-job:focus {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+@keyframes alchemy-job-highlight {
+  0% {
+    box-shadow: 0 0 0 3px var(--color-primary-400);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alchemy-job--new {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--color-primary-400);
+  }
 }
 
 /* The header is a clickable summary row: a wide toggle button on the
@@ -1335,6 +2124,10 @@
   flex-shrink: 0;
 }
 
+.alchemy-result__copy-trigger {
+  flex-shrink: 0;
+}
+
 .alchemy-result__body {
   display: flex;
   flex-direction: column;
@@ -1349,11 +2142,13 @@
   align-self: flex-start;
 }
 
-/* Caption: a distinct quoted passage rather than a bare paragraph. */
+/* Caption: a distinct quoted passage rather than a bare paragraph --
+   marked by an actual quotation glyph instead of a colour bar, since
+   this is literally the model's quoted reading of the image. */
 .alchemy-caption {
+  position: relative;
   margin: 0;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-left: 3px solid var(--color-primary-400);
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-sm) 2.25rem;
   border-radius: var(--radius-sm);
   background-color: var(--color-gray-50);
   color: var(--color-text-primary);
@@ -1364,6 +2159,201 @@
 .dark .alchemy-caption {
   background-color: var(--color-gray-800);
   color: var(--color-gray-100);
+}
+
+.alchemy-caption::before {
+  content: "\201C";
+  position: absolute;
+  top: -0.125rem;
+  left: 0.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: normal;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--color-gray-300);
+}
+
+.dark .alchemy-caption::before {
+  color: var(--color-gray-600);
+}
+
+.alchemy-result__text {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-gray-50);
+  color: var(--color-text-primary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: inherit;
+}
+
+.dark .alchemy-result__text {
+  border-color: var(--color-gray-700);
+  background-color: var(--color-gray-800);
+  color: var(--color-gray-100);
+}
+
+.alchemy-describe {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--spacing-sm);
+  margin: 0;
+}
+
+.alchemy-describe__item {
+  min-width: 0;
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-gray-50);
+}
+
+.dark .alchemy-describe__item {
+  border-color: var(--color-gray-700);
+  background-color: var(--color-gray-800);
+}
+
+.alchemy-describe__item dt {
+  margin: 0 0 var(--spacing-2xs);
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.alchemy-describe__item dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.dark .alchemy-describe__item dd {
+  color: var(--color-gray-100);
+}
+
+.alchemy-palette-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  min-width: 0;
+}
+
+.alchemy-palette-preview__swatch {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: 0 0 auto;
+  border: 1px solid rgb(0 0 0 / 0.2);
+  border-radius: 999px;
+}
+
+.alchemy-palette {
+  display: grid;
+  gap: var(--spacing-xs);
+}
+
+.alchemy-palette__row {
+  display: grid;
+  grid-template-columns: 2rem minmax(5.5rem, max-content) minmax(6rem, 1fr) 4rem;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.alchemy-palette__swatch {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgb(0 0 0 / 0.2);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+}
+
+.alchemy-palette__hex {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-sm);
+}
+
+.dark .alchemy-palette__hex {
+  color: var(--color-gray-100);
+}
+
+.alchemy-palette__bar {
+  height: 0.625rem;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: var(--color-gray-200);
+}
+
+.dark .alchemy-palette__bar {
+  background-color: var(--color-gray-700);
+}
+
+.alchemy-palette__bar-fill {
+  display: block;
+  height: 100%;
+  min-width: 0.125rem;
+}
+
+.alchemy-palette__percent {
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.alchemy-vector {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 14rem;
+  max-height: min(70vh, 42rem);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(45deg, rgb(0 0 0 / 0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgb(0 0 0 / 0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgb(0 0 0 / 0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgb(0 0 0 / 0.04) 75%),
+    var(--color-gray-50);
+  background-position:
+    0 0,
+    0 0.5rem,
+    0.5rem -0.5rem,
+    -0.5rem 0;
+  background-size: 1rem 1rem;
+}
+
+.dark .alchemy-vector {
+  border-color: var(--color-gray-700);
+  background-color: var(--color-gray-800);
+}
+
+.alchemy-vector svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .alchemy-palette__row {
+    grid-template-columns: 2rem minmax(0, 1fr) 3.5rem;
+  }
+
+  .alchemy-palette__bar {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Interrogation: one labeled region per facet. Facets flow into as many
@@ -1525,13 +2515,30 @@
   color: var(--color-primary-300);
 }
 
-/* --- Right column stack: crowd panel above the live results -------- */
+/* --- Results + crowd panel: results lead, crowd panel supports -----
+   Results sit immediately under the builder in source order (so they're
+   first on narrow screens, right where a user scrolling down expects
+   them). From 64rem up there's room to run the crowd panel as a narrow
+   aside beside the results instead of a full-width block stacked above
+   them, shortening the path from submit to result even further. Its own
+   internal side-by-side layout override lives with the rest of the crowd
+   panel's rules further down, so cascade order still favors the later,
+   narrower-width rule. */
 
-.alchemy-stack {
+.alchemy-below {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
   min-width: 0;
+}
+
+@media (min-width: 64rem) {
+  .alchemy-below {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+    align-items: start;
+    gap: var(--spacing-lg);
+  }
 }
 
 /* =================================================================
@@ -1544,23 +2551,26 @@
    stronger than the surrounding copy.
    ================================================================= */
 
+/* A recessed instrument panel rather than a colour-flagged banner: the
+   live count still carries the alchemy domain green (text + live dot),
+   but the card itself reads as an inset gauge built into the page
+   rather than a bar-flagged callout. */
 .alchemy-crowd {
-  border: 1px solid var(--color-success-200, var(--color-gray-200));
-  border-left: 3px solid var(--color-success-500);
+  border: 1px solid var(--color-gray-200);
   border-radius: var(--radius-lg);
-  background-color: var(--color-success-50);
+  background-color: var(--color-surface-secondary);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.06);
   padding: var(--spacing-sm) var(--spacing-md);
 }
 
 .dark .alchemy-crowd {
   border-color: var(--color-gray-700);
-  border-left-color: var(--color-success-500);
-  background-color: var(--color-glass-surface-dark-subtle);
+  background-color: var(--color-gray-900);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.35);
 }
 
 .alchemy-crowd--needs-help {
   border-color: var(--color-warning-border);
-  border-left-color: var(--color-warning-text);
   background-color: var(--color-warning-bg);
 }
 
@@ -1721,7 +2731,7 @@
     flex-shrink: 0;
     justify-content: center;
     padding-right: var(--spacing-lg);
-    border-right: 1px solid var(--color-success-200, var(--color-gray-200));
+    border-right: 1px solid var(--color-gray-200);
   }
 
   .dark .alchemy-crowd__readout {
@@ -1733,8 +2743,168 @@
   }
 }
 
+/* As the narrow aside beside results (see .alchemy-below), the panel's
+   own side-by-side layout above would crush the readout numbers, so it
+   reverts to a stacked card. This comes after the min-width: 48rem rule
+   above so it wins the cascade once both queries match. */
+@media (min-width: 64rem) {
+  .alchemy-crowd__inner {
+    flex-direction: column;
+  }
+
+  .alchemy-crowd__readout {
+    padding-right: 0;
+    padding-bottom: var(--spacing-sm);
+    border-right: none;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .dark .alchemy-crowd__readout {
+    border-bottom-color: var(--color-gray-700);
+  }
+
+  .alchemy-crowd--needs-help .alchemy-crowd__readout {
+    border-bottom-color: var(--color-warning-border);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .alchemy-crowd__live-dot {
     animation: none;
   }
+}
+
+/* =================================================================
+   ALCHEMY FORM INFO DIALOG
+   Modal dialog for displaying form details on mobile/narrow screens.
+   Uses CDK Dialog with backdrop and positioning.
+   ================================================================= */
+
+.alchemy-form-info-dialog-panel {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  margin: auto;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.alchemy-form-info-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  background-color: var(--color-surface-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.dark .alchemy-form-info-dialog {
+  background-color: var(--color-gray-800);
+}
+
+.alchemy-form-info-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-gray-200);
+  background-color: var(--color-surface-secondary);
+}
+
+.dark .alchemy-form-info-dialog__header {
+  border-bottom-color: var(--color-gray-700);
+  background-color: var(--color-gray-900);
+}
+
+.alchemy-form-info-dialog__title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.dark .alchemy-form-info-dialog__title {
+  color: var(--color-gray-50);
+}
+
+.alchemy-form-info-dialog__close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.alchemy-form-info-dialog__close:hover {
+  background-color: var(--color-gray-100);
+  color: var(--color-text-primary);
+}
+
+.dark .alchemy-form-info-dialog__close:hover {
+  background-color: var(--color-gray-700);
+  color: var(--color-gray-100);
+}
+
+.alchemy-form-info-dialog__close .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.alchemy-form-info-dialog__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+}
+
+.alchemy-form-info-dialog__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.alchemy-form-info-dialog__label {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.alchemy-form-info-dialog__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-text-primary);
+}
+
+.dark .alchemy-form-info-dialog__text {
+  color: var(--color-gray-100);
+}
+
+.alchemy-form-info-dialog__text--example {
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+.dark .alchemy-form-info-dialog__text--example {
+  color: var(--color-gray-400);
 }

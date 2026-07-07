@@ -15,9 +15,14 @@ const STATUS: AlchemyStatusResponse = {
   forms: [
     { form: 'caption', state: 'done', result: { caption: 'a cat' } },
     {
-      form: 'GFPGAN',
+      form: 'describe',
       state: 'done',
-      result: { GFPGAN: 'https://cdn.example/r2/out.webp' },
+      result: { describe: { format: 'WEBP', width: 1024, height: 801 } },
+    },
+    {
+      form: 'RestoreFormer',
+      state: 'done',
+      result: { RestoreFormer: 'https://cdn.example/r2/out.webp' },
     },
   ],
 };
@@ -39,7 +44,7 @@ describe('buildAlchemyJobArchive', () => {
 
     const entries = unzipSync(bytes);
     expect(Object.keys(entries).sort()).toEqual([
-      'images/GFPGAN.webp',
+      'images/RestoreFormer.webp',
       'results.html',
       'results.json',
     ]);
@@ -50,7 +55,9 @@ describe('buildAlchemyJobArchive', () => {
 
     const html = strFromU8(entries['results.html']);
     expect(html).toContain('a cat');
-    expect(html).toContain('images/GFPGAN.webp');
+    expect(html).toContain('WEBP');
+    expect(html).toContain('1024px');
+    expect(html).toContain('images/RestoreFormer.webp');
     // No base64 image payloads embedded in the portable page.
     expect(html).not.toContain('data:image');
   });

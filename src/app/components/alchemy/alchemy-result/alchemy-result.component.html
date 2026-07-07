@@ -53,6 +53,32 @@
                   | transloco: { tags: totalTags(), facets: facetCount() }
               }}
             }
+            @case ("describe") {
+              <span class="alchemy-result__summary-text">{{
+                describeSummary()
+              }}</span>
+            }
+            @case ("palette") {
+              <span class="alchemy-palette-preview">
+                @for (color of paletteColors(); track color.hex) {
+                  <span
+                    class="alchemy-palette-preview__swatch"
+                    [style.background-color]="color.hex"
+                  ></span>
+                }
+                <span class="alchemy-result__summary-text">{{
+                  paletteSummary()
+                }}</span>
+              </span>
+            }
+            @case ("vectorize") {
+              <span class="alchemy-result__summary-text">SVG</span>
+            }
+            @case ("text") {
+              <span class="alchemy-result__summary-text">{{
+                inlineText()
+              }}</span>
+            }
             @case ("image") {
               <img
                 class="alchemy-result__thumb"
@@ -71,6 +97,28 @@
         [label]="'alchemy.result.raw_toggle' | transloco"
         (triggered)="openRawJson()"
       />
+    }
+
+    @if (rawCopyText()) {
+      <button
+        type="button"
+        class="btn-json-inspector alchemy-result__copy-trigger"
+        [attr.aria-label]="
+          (copiedRaw()
+            ? 'alchemy.result.raw_copied'
+            : 'alchemy.result.raw_copy'
+          ) | transloco
+        "
+        [attr.title]="
+          (copiedRaw()
+            ? 'alchemy.result.raw_copied'
+            : 'alchemy.result.raw_copy'
+          ) | transloco
+        "
+        (click)="copyRaw($event)"
+      >
+        <app-icon [name]="copiedRaw() ? 'check' : 'copy'" />
+      </button>
     }
   </header>
 
@@ -160,6 +208,49 @@
               </section>
             }
           </div>
+        }
+        @case ("describe") {
+          <dl class="alchemy-describe">
+            @for (field of describeFields(); track field.key) {
+              <div class="alchemy-describe__item">
+                <dt>{{ field.label }}</dt>
+                <dd>{{ field.value }}</dd>
+              </div>
+            }
+          </dl>
+        }
+        @case ("palette") {
+          <div class="alchemy-palette">
+            @for (color of paletteColors(); track color.hex) {
+              <div class="alchemy-palette__row">
+                <span
+                  class="alchemy-palette__swatch"
+                  [style.background-color]="color.hex"
+                ></span>
+                <span class="alchemy-palette__hex">{{ color.hex }}</span>
+                <span class="alchemy-palette__bar">
+                  <span
+                    class="alchemy-palette__bar-fill"
+                    [style.width]="color.percentage"
+                    [style.background-color]="color.hex"
+                  ></span>
+                </span>
+                <span class="alchemy-palette__percent">{{
+                  color.percentage
+                }}</span>
+              </div>
+            }
+          </div>
+        }
+        @case ("vectorize") {
+          <div
+            class="alchemy-vector"
+            [innerHTML]="vectorSvgHtml()"
+            aria-label="SVG preview"
+          ></div>
+        }
+        @case ("text") {
+          <pre class="alchemy-result__text">{{ inlineText() }}</pre>
         }
         @default {
           <p class="form-hint">{{ "alchemy.result.raw_only" | transloco }}</p>

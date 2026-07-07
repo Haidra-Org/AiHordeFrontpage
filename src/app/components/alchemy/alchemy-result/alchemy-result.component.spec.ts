@@ -83,6 +83,64 @@ describe('AlchemyResultComponent', () => {
     expect(c.imageUrl()).toBe('https://r2.example.com/out.webp');
   });
 
+  it('detects newer inline data forms keyed by form name', () => {
+    const c = withForm({
+      form: 'describe',
+      state: 'done',
+      result: { describe: { format: 'WEBP', width: 1024, height: 801 } },
+    });
+    expect(c.kind()).toBe('describe');
+    expect(c.returnsImage()).toBe(false);
+    expect(c.describeSummary()).toBe('WEBP · 1024px x 801px');
+    expect(c.rawCopyText()).toContain('"format": "WEBP"');
+  });
+
+  it('stringifies structured inline data form values for display', () => {
+    const c = withForm({
+      form: 'palette',
+      state: 'done',
+      result: {
+        palette: { colors: [{ hex: '#111111', proportion: 0.25 }] },
+      },
+    });
+    expect(c.kind()).toBe('palette');
+    expect(c.paletteColors()).toEqual([
+      { hex: '#111111', proportion: 0.25, percentage: '25.0%' },
+    ]);
+    expect(c.rawCopyText()).toContain('#111111');
+  });
+
+  it('renders vectorize SVG as sanitized inline SVG while keeping raw SVG copy text', () => {
+    const svg =
+      '<?xml version="1.0" encoding="UTF-8"?>\n<!-- Generator: visioncortex VTracer 0.6.12 -->\n<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="1024" height="801"><path d="M0 0h10v10H0z"/></svg>';
+    const c = withForm({
+      form: 'vectorize',
+      state: 'done',
+      result: { vectorize: svg },
+    });
+    expect(c.kind()).toBe('vectorize');
+    expect(c.vectorSvgMarkup()).toContain('<svg version="1.1"');
+    expect(c.vectorSvgPreviewMarkup()).toContain('<svg');
+    expect(c.vectorSvgPreviewMarkup()).toContain('viewBox="0 0 1024 801"');
+    expect(c.vectorSvgHtml()).toBeTruthy();
+    expect(c.rawCopyText()).toBe(svg);
+  });
+
+  it('strips active content from vectorize SVG previews', () => {
+    const c = withForm({
+      form: 'vectorize',
+      state: 'done',
+      result: {
+        vectorize:
+          '<svg onload="alert(1)"><script>alert(1)</script><path onclick="alert(2)" d="M0 0h1v1"/></svg>',
+      },
+    });
+    expect(c.vectorSvgPreviewMarkup()).toContain('<svg');
+    expect(c.vectorSvgPreviewMarkup()).not.toContain('script');
+    expect(c.vectorSvgPreviewMarkup()).not.toContain('onload');
+    expect(c.vectorSvgPreviewMarkup()).not.toContain('onclick');
+  });
+
   it('falls back to unknown for an unrecognized shape without throwing', () => {
     const c = withForm({
       form: 'caption',

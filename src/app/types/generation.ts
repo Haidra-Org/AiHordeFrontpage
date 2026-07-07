@@ -149,21 +149,36 @@ export interface TextGenerationStatusResponse {
 /**
  * Forms that return textual/structured data about the source image.
  */
-export const ALCHEMY_DATA_FORMS = ['caption', 'interrogation', 'nsfw'] as const;
+export const ALCHEMY_DATA_FORMS = [
+  'caption',
+  'interrogation',
+  'nsfw',
+  'vectorize',
+  'palette',
+  'describe',
+] as const;
 
 /**
  * Forms that return a processed image (upscalers, face fixers, background
- * removal). The exact set is enforced server-side; see
- * docs/alchemy-api-samples.md for the authoritative list.
+ * removal). The exact set is enforced server-side by AI-Horde's
+ * KNOWN_POST_PROCESSORS.
  */
 export const ALCHEMY_POST_PROCESSOR_FORMS = [
   'GFPGAN',
+  'GFPGANv1.3',
   'CodeFormers',
+  'RestoreFormer',
   'RealESRGAN_x4plus',
   'RealESRGAN_x2plus',
   'RealESRGAN_x4plus_anime_6B',
   'NMKD_Siax',
   '4x_AnimeSharp',
+  '4xNomos8kSC',
+  '4xLSDIRplus',
+  '4xNomosWebPhoto_RealPLKSR',
+  '4xNomos2_realplksr_dysample',
+  '4xNomos2_hq_dat2',
+  '2xModernSpanimationV1',
   'strip_background',
 ] as const;
 
@@ -206,7 +221,7 @@ export interface InterrogationTag {
 /**
  * The `interrogation` form result. Every section is optional because workers
  * may omit empty sections; unknown sections are tolerated via the index
- * signature. See docs/alchemy-api-samples.md.
+ * signature.
  */
 export interface InterrogationDetails {
   tags?: InterrogationTag[];
@@ -228,6 +243,9 @@ export interface InterrogationDetails {
 export interface AlchemyFormResult {
   caption?: string;
   nsfw?: boolean;
+  vectorize?: string;
+  palette?: unknown;
+  describe?: string;
   interrogation?: InterrogationDetails;
   [key: string]: unknown;
 }
