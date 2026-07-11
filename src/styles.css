@@ -112,6 +112,9 @@
 /* Alchemy (interrogation) page */
 @import "./styles/_alchemy.css";
 
+/* Generate (image generation) page */
+@import "./styles/_generate.css";
+
 /* Status page */
 @import "./styles/_status.css";
 

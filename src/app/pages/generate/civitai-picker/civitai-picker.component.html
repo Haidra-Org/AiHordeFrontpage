@@ -1,0 +1,161 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+>
+  <div class="gs-modal-panel gs-fadeup">
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        {{ "generate.civitai.title" | transloco }}
+        <span class="gs-modal-badge">
+          {{ "generate.civitai.third_party" | transloco }}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="onClose()"
+        [attr.aria-label]="'generate.civitai.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-search-bar">
+      <div class="gs-modal-search">
+        <app-icon name="search" class="gs-ico-sm gs-muted" />
+        <input
+          type="text"
+          [formControl]="queryControl"
+          [placeholder]="'generate.civitai.search_placeholder' | transloco"
+        />
+      </div>
+      <div class="gs-seg" role="group">
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'lora'"
+          (click)="setTab('lora')"
+        >
+          {{ "generate.civitai.tab_lora" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'ti'"
+          (click)="setTab('ti')"
+        >
+          {{ "generate.civitai.tab_ti" | transloco }}
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-modal-body">
+      @if (loading()) {
+        <div class="gs-civit-grid" aria-hidden="true">
+          @for (n of [1, 2, 3, 4]; track n) {
+            <div class="gs-civit-card">
+              <div class="gs-civit-thumb gs-shimmer"></div>
+              <div class="gs-civit-meta">
+                <div
+                  class="gs-civit-name gs-shimmer"
+                  style="height: 12px"
+                ></div>
+                <div class="gs-civit-sub gs-shimmer" style="height: 9px"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (errored()) {
+        <div class="gs-modal-state">
+          {{ "generate.civitai.error" | transloco }}
+        </div>
+      } @else if (results().length === 0) {
+        <div class="gs-modal-state">
+          {{ "generate.civitai.empty" | transloco }}
+        </div>
+      } @else {
+        <div class="gs-civit-grid">
+          @for (model of results(); track model.id; let i = $index) {
+            <div
+              class="gs-civit-card"
+              [class.gs-civit-card--added]="isAdded(model)"
+            >
+              <div class="gs-civit-thumb" [style.background]="gradient(i)">
+                @if (model.thumbnailUrl) {
+                  <img
+                    [src]="model.thumbnailUrl"
+                    alt=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                  />
+                }
+                @if (isAdded(model)) {
+                  <span class="gs-civit-added-badge">
+                    {{ "generate.civitai.added" | transloco }}
+                  </span>
+                }
+              </div>
+              <div class="gs-civit-meta">
+                <div class="gs-civit-name" [title]="model.name">
+                  {{ model.name }}
+                </div>
+                <div class="gs-civit-sub">
+                  {{
+                    "generate.civitai.meta"
+                      | transloco
+                        : {
+                            creator:
+                              model.creator ||
+                              ("generate.civitai.by_unknown" | transloco),
+                            downloads: model.downloadCount,
+                          }
+                  }}
+                </div>
+                <div class="gs-civit-actions">
+                  <div class="gs-civit-tags">
+                    @if (model.versions[0]?.baseModel) {
+                      <span class="gs-civit-tag">
+                        {{ model.versions[0].baseModel }}
+                      </span>
+                    }
+                    @if (model.versions[0]?.triggerWords?.[0]; as trigger) {
+                      <span class="gs-civit-tag" [title]="trigger">
+                        {{ trigger }}
+                      </span>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="gs-civit-add"
+                    [class.gs-civit-add--remove]="isAdded(model)"
+                    (click)="toggle(model)"
+                  >
+                    {{
+                      (isAdded(model)
+                        ? "generate.civitai.remove"
+                        : "generate.civitai.add"
+                      ) | transloco
+                    }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="gs-modal-footer">
+      <span class="gs-modal-foot-note">
+        {{ "generate.civitai.footer_note" | transloco }}
+      </span>
+      <button type="button" class="gs-modal-done" (click)="onClose()">
+        {{ "generate.civitai.done" | transloco: { count: selectedCount() } }}
+      </button>
+    </div>
+  </div>
+</div>

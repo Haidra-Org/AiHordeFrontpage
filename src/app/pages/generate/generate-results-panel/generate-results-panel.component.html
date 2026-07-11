@@ -1,121 +1,103 @@
-<div class="flex flex-col gap-4">
-  <section>
-    <h2 class="heading-section mb-2">
-      {{ "generate.results.pending_heading" | transloco }}
-    </h2>
-    @if (pendingJobs().length === 0) {
-      <p class="text-description text-sm">
-        {{ "generate.results.pending_empty" | transloco }}
-      </p>
-    }
-    <ul class="flex flex-col gap-2">
-      @for (job of pendingJobs(); track job.localId) {
-        <li class="card flex items-center gap-3 p-3">
-          <span class="spinner" aria-hidden="true"></span>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium">{{ job.request.prompt }}</p>
-            <p class="text-description text-xs">
-              @switch (job.status) {
-                @case ("waiting") {
-                  {{ "generate.status.waiting" | transloco }}
-                }
-                @case ("requested") {
-                  {{ "generate.status.submitted" | transloco }}
-                }
-                @default {
-                  {{ "generate.status." + job.status | transloco }}
-                  @if (job.queuePosition) {
-                    ·
-                    {{
-                      "generate.results.queue_position"
-                        | transloco: { position: job.queuePosition }
-                    }}
-                  }
-                  @if (job.waitTime) {
-                    ·
-                    {{
-                      "generate.results.wait_time"
-                        | transloco: { seconds: job.waitTime }
-                    }}
-                  }
-                }
-              }
-            </p>
-          </div>
-          <button
-            type="button"
-            class="btn-icon"
-            (click)="cancel(job)"
-            [attr.aria-label]="'generate.results.cancel' | transloco"
-            [title]="'generate.results.cancel' | transloco"
-          >
-            <app-icon name="x-circle" />
-          </button>
-          <button
-            type="button"
-            class="btn-icon"
-            (click)="remove(job)"
-            [attr.aria-label]="'generate.results.delete' | transloco"
-            [title]="'generate.results.delete' | transloco"
-          >
-            <app-icon name="trash-modern" />
-          </button>
-        </li>
+<div class="flex h-full min-h-0 flex-col">
+  <!-- Pane header: title, live status pill, download-all -->
+  <header class="gs-results-header">
+    <div class="flex items-center gap-2.5">
+      <span class="gs-results-title">
+        {{ "generate.results.heading" | transloco }}
+      </span>
+      @if (isBusy()) {
+        <span class="gs-status gs-status--busy">
+          <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
+          {{
+            "generate.results.status_generating"
+              | transloco
+                : { generating: generatingCount(), queued: queuedCount() }
+          }}
+        </span>
+      } @else if (doneCount() > 0) {
+        <span class="gs-status gs-status--done">
+          {{
+            "generate.results.status_done" | transloco: { count: doneCount() }
+          }}
+        </span>
+      } @else {
+        <span class="gs-status gs-status--ready">
+          {{ "generate.results.status_ready" | transloco }}
+        </span>
       }
-    </ul>
-  </section>
+    </div>
+    <button
+      type="button"
+      class="gs-download-all"
+      (click)="downloadAllFinished()"
+      [disabled]="!hasDownloadableResults()"
+    >
+      <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+      {{ "generate.results.download_all" | transloco }}
+    </button>
+  </header>
 
-  <section>
-    <h2 class="heading-section mb-2">
-      {{ "generate.results.finished_heading" | transloco }}
-    </h2>
-    @if (finishedJobs().length === 0) {
-      <p class="text-description text-sm">
-        {{ "generate.results.finished_empty" | transloco }}
-      </p>
-    }
-    <ul class="flex flex-col gap-3">
-      @for (job of finishedJobs(); track job.localId) {
-        <li class="card flex flex-col gap-2 p-3">
-          <div class="flex items-start gap-2">
-            <p class="min-w-0 flex-1 truncate text-sm font-medium">
-              {{ job.request.prompt }}
-            </p>
-            @if (job.kudos !== undefined) {
-              <span class="badge-base">
-                {{
-                  "generate.results.kudos"
-                    | transloco: { kudos: job.kudos | number: "1.0-0" }
-                }}
-              </span>
-            }
+  <div class="gs-results-body">
+    @if (tiles().length === 0) {
+      <div class="gs-empty">
+        <app-icon name="photo" />
+        <div>
+          <div class="gs-empty-title">
+            {{ "generate.results.empty_title" | transloco }}
           </div>
-
-          @switch (job.status) {
+          <div class="gs-empty-sub">
+            {{ "generate.results.empty_sub" | transloco }}
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="gs-tile-grid">
+        @for (tile of tiles(); track tile.key) {
+          @switch (tile.kind) {
             @case ("done") {
-              <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                @for (
-                  thumb of thumbnailsFor(job.localId);
-                  track thumb.imageId;
-                  let i = $index
-                ) {
-                  <figure class="group relative">
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <button
+                  type="button"
+                  class="gs-tile-imgbtn"
+                  (click)="openLightbox(tile)"
+                  [attr.aria-label]="
+                    'generate.results.open_preview' | transloco
+                  "
+                >
+                  <img
+                    class="gs-tile-img"
+                    [src]="tile.url"
+                    alt=""
+                    loading="lazy"
+                  />
+                </button>
+                @if (tile.dims) {
+                  <span class="gs-tile-badge">{{ tile.dims }}</span>
+                }
+                <div class="gs-tile-actions-top">
+                  <button
+                    type="button"
+                    class="gs-icobtn"
+                    (click)="deleteJob(tile.jobLocalId)"
+                    [attr.aria-label]="'generate.results.delete' | transloco"
+                    [title]="'generate.results.delete' | transloco"
+                  >
+                    <app-icon name="trash-modern" />
+                  </button>
+                </div>
+                <div class="gs-tile-bar">
+                  <span class="gs-tile-seed">
+                    @if (tile.seed) {
+                      {{
+                        "generate.results.seed" | transloco: { seed: tile.seed }
+                      }}
+                    }
+                  </span>
+                  <div class="gs-tile-btnrow">
                     <button
                       type="button"
-                      class="block w-full overflow-hidden rounded-md"
-                      (click)="openLightbox(thumb)"
-                    >
-                      <img
-                        [src]="thumb.url"
-                        [alt]="job.request.prompt"
-                        loading="lazy"
-                        class="aspect-square w-full object-cover"
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-icon absolute right-1 top-1 bg-black/50"
-                      (click)="downloadImage(thumb, i)"
+                      class="gs-icobtn"
+                      (click)="downloadTile(tile)"
                       [attr.aria-label]="
                         'generate.results.download' | transloco
                       "
@@ -123,76 +105,151 @@
                     >
                       <app-icon name="arrow-down-tray" />
                     </button>
-                  </figure>
-                } @empty {
-                  <p class="text-description col-span-full text-xs">
-                    {{ "generate.results.no_images" | transloco }}
-                  </p>
-                }
+                    <button
+                      type="button"
+                      class="gs-icobtn"
+                      (click)="reuseAsSource()"
+                      [attr.aria-label]="'generate.results.reuse' | transloco"
+                      [title]="'generate.results.reuse' | transloco"
+                    >
+                      <app-icon name="refresh-alt" />
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-icobtn"
+                      (click)="copySeed(tile)"
+                      [disabled]="!tile.seed"
+                      [attr.aria-label]="
+                        'generate.results.copy_seed' | transloco
+                      "
+                      [title]="'generate.results.copy_seed' | transloco"
+                    >
+                      <app-icon name="copy" />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="flex flex-wrap gap-2">
-                @if (thumbnailsFor(job.localId).length > 1) {
+            }
+            @case ("generating") {
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <div class="gs-tile-actions-top">
                   <button
                     type="button"
-                    class="btn btn-sm btn-secondary"
-                    (click)="downloadZip(job)"
+                    class="gs-icobtn"
+                    (click)="cancelJob(tile.jobLocalId)"
+                    [attr.aria-label]="'generate.results.cancel' | transloco"
+                    [title]="'generate.results.cancel' | transloco"
                   >
-                    <app-icon name="arrow-down-tray" />
-                    {{ "generate.results.download_zip" | transloco }}
+                    <app-icon name="x-mark" />
                   </button>
-                }
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger"
-                  (click)="remove(job)"
-                >
-                  {{ "generate.results.delete" | transloco }}
-                </button>
+                </div>
+                <div class="gs-tile-center">
+                  <span class="gs-tile-ring gs-spin" aria-hidden="true"></span>
+                  <span class="gs-tile-status-text">
+                    {{ "generate.results.tile_generating" | transloco }}
+                  </span>
+                </div>
+              </div>
+            }
+            @case ("queued") {
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <span class="gs-shimmer gs-tile-fill" aria-hidden="true"></span>
+                <div class="gs-tile-actions-top">
+                  <button
+                    type="button"
+                    class="gs-icobtn"
+                    (click)="cancelJob(tile.jobLocalId)"
+                    [attr.aria-label]="'generate.results.cancel' | transloco"
+                    [title]="'generate.results.cancel' | transloco"
+                  >
+                    <app-icon name="x-mark" />
+                  </button>
+                </div>
+                <div class="gs-tile-queued-box">
+                  <span class="gs-tile-status-text">
+                    {{ "generate.results.tile_queued" | transloco }}
+                  </span>
+                  @if (tile.queuePosition || tile.waitTime) {
+                    <span class="gs-tile-substatus">
+                      @if (tile.queuePosition) {
+                        {{
+                          "generate.results.queue_position"
+                            | transloco: { position: tile.queuePosition }
+                        }}
+                      }
+                      @if (tile.queuePosition && tile.waitTime) {
+                        ·
+                      }
+                      @if (tile.waitTime) {
+                        {{
+                          "generate.results.wait_time"
+                            | transloco: { seconds: tile.waitTime }
+                        }}
+                      }
+                    </span>
+                  }
+                </div>
               </div>
             }
             @case ("error") {
-              <p class="alert alert--danger text-sm">
-                {{
-                  job.errorMessage || ("generate.results.errored" | transloco)
-                }}
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-secondary"
-                  (click)="retry(job)"
-                >
-                  <app-icon name="refresh-alt" />
-                  {{ "generate.results.retry" | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger"
-                  (click)="remove(job)"
-                >
-                  {{ "generate.results.delete" | transloco }}
-                </button>
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <div class="gs-tile-center">
+                  <app-icon
+                    name="warning-triangle"
+                    class="gs-ico-sm gs-muted"
+                  />
+                  <span class="gs-tile-msg">
+                    {{
+                      tile.errorMessage ||
+                        ("generate.results.errored" | transloco)
+                    }}
+                  </span>
+                  <div class="gs-tile-btnrow">
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="retryJob(tile.jobLocalId)"
+                    >
+                      <app-icon name="refresh-alt" />
+                      {{ "generate.results.retry" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn gs-tile-btn--danger"
+                      (click)="deleteJob(tile.jobLocalId)"
+                    >
+                      {{ "generate.results.delete" | transloco }}
+                    </button>
+                  </div>
+                </div>
               </div>
             }
             @default {
-              <p class="text-description text-sm">
-                {{ "generate.status.cancelled" | transloco }}
-              </p>
-              <div class="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger"
-                  (click)="remove(job)"
-                >
-                  {{ "generate.results.delete" | transloco }}
-                </button>
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <div class="gs-tile-center">
+                  <span class="gs-tile-msg">
+                    {{ "generate.status.cancelled" | transloco }}
+                  </span>
+                  <button
+                    type="button"
+                    class="gs-tile-btn gs-tile-btn--danger"
+                    (click)="deleteJob(tile.jobLocalId)"
+                  >
+                    {{ "generate.results.delete" | transloco }}
+                  </button>
+                </div>
               </div>
             }
           }
-        </li>
-      }
-    </ul>
-  </section>
+        }
+      </div>
+
+      <div class="gs-retention">
+        <app-icon name="info-circle" class="gs-ico-sm" />
+        <span>{{ "generate.results.retention_note" | transloco }}</span>
+      </div>
+    }
+  </div>
 </div>
 
 @if (lightbox(); as view) {

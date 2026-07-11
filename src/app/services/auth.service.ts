@@ -35,6 +35,13 @@ export class AuthService {
   public readonly isLoggedIn = computed(() => this._currentUser() !== null);
   public readonly isInitialized = this._isInitialized.asReadonly();
 
+  /**
+   * The current user's kudos balance, or null when logged out. Derived from the
+   * stored user object (populated by `find_user`, cached by `AiHordeService`);
+   * `refreshUser()` re-fetches it. Exposed as a computed for header consumers.
+   */
+  public readonly kudos = computed(() => this._currentUser()?.kudos ?? null);
+
   constructor() {
     this.initializeFromStorage();
   }

@@ -1,23 +1,14 @@
-@if (!embedded()) {
-  <section class="section-primary">
-    <div class="container-page-header">
-      <div>
-        <h1 class="heading-page-title">{{ "generate.title" | transloco }}</h1>
-        <p class="text-description">{{ "generate.intro" | transloco }}</p>
-      </div>
-    </div>
-  </section>
-}
-
-<section class="section-secondary">
-  <div
-    class="container-page-content grid gap-6 py-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start"
-  >
+<div class="gen-studio gs-workspace" [class.gs-workspace--full]="!embedded()">
+  <!-- Left: control panel -->
+  <section class="gs-panel">
     <app-generate-form
+      class="gs-fill"
       [form]="form"
       [models]="models()"
       [kudos]="kudos()"
       [estimating]="estimating()"
+      [forcedParams]="forcedParams()"
+      [styleGroups]="styleGroups()"
       (create)="onCreate()"
     >
       <app-generate-source-image
@@ -27,8 +18,10 @@
         (stateChange)="onSourceState($event)"
       />
     </app-generate-form>
-    <aside class="lg:sticky lg:top-24">
-      <app-generate-results-panel />
-    </aside>
-  </div>
-</section>
+  </section>
+
+  <!-- Right: results pane -->
+  <section class="gs-results">
+    <app-generate-results-panel class="gs-fill" />
+  </section>
+</div>

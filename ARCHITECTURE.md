@@ -90,7 +90,10 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | ---------------------- | ------------------------------------------------------------------------------- |
 | `HordeApiCacheService` | TTL-based HTTP cache with category invalidation. All API calls go through this. |
 | `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
-| `AuthService`          | User authentication, session state, API key management                          |
+| `StyleService`         | CRUD over the horde's native `/v2/styles` user styles and collections           |
+| `HordeStylesService`   | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (with `applyStyle` `{p}`/`{np}` merge) |
+| `CivitaiService`       | Typed public CivitAI model search for LoRAs and textual inversions              |
+| `AuthService`          | User authentication, session state, API key management, kudos balance signal    |
 | `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
 | `GenerationQueueService` | Client-side image generation queue: dispatch, polling, result download          |
 | `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
@@ -229,18 +232,32 @@ over this queue. The profile `generations` tab
 `ProfileGenerationsComponent` renders `<app-generate [embedded]="true" />`, where
 the `embedded` input suppresses the page's own intro/title chrome and its claim on
 the document title so it nests cleanly inside the profile shell.
-`GenerateComponent` owns a reactive form, drives a debounced
-`estimateKudos` dry run, persists the form to `localStorage` via
-`DatabaseService`, and hands built requests to `enqueue`. `GenerateFormComponent`
-is the presentational request builder (it exposes a `[generateSourceImage]`
-content slot). `GenerateSourceImageComponent` is projected into that slot: it
+The page is a two-pane workspace: a fixed-width control panel on the left
+(own scroll, sticky footer) and a results pane on the right (own scroll). Below
+`lg` the panes stack (controls first, results below). `GenerateComponent` owns a
+reactive form, drives a debounced `estimateKudos` dry run, persists the form to
+`localStorage` via `DatabaseService`, resolves the selected curated style via
+`HordeStylesService`, and hands `buildStyledImageRequest` output to `enqueue`.
+A `mode` field (`simple`/`advanced`, persisted, never sent) drives a segmented
+toggle: simple mode exposes only prompt, negative prompt, model, size, style,
+and batch, and submits every advanced-only field at its default (see
+`simpleModeValue`) rather than at a persisted advanced value. Styles are applied
+at build time and may force model/dimensions/sampling params, which the panel
+flags with a "set by style" hint. `GenerateFormComponent` is the presentational
+left control panel (segmented header, scrollable control cards, sticky footer
+with the batch stepper, dimensions/kudos readout, and Generate button); it
+exposes a `[generateSourceImage]` content slot shown only in advanced mode.
+`GenerateSourceImageComponent` is projected into that slot: it
 drives the img2img/controlnet/inpaint controls on the shared form, owns the
 uploaded source blob (downscaled client-side to the 3072px cap) and an
 inpainting paint-mask canvas, and emits a `GenerateSourceState` (source blob,
 mask blob, validity) so the page can gate Create and hand blobs to `enqueue`.
 Image blobs are never form state; only the serialisable mode/denoise/control
-fields are. `GenerateResultsPanelComponent` renders `pendingJobs`/`finishedJobs`,
-turning stored result blobs into object URLs that it revokes on destroy or delete.
+fields are. `GenerateResultsPanelComponent` fills the right pane: a header with a
+live status pill (Ready / "N generating · N queued" / "N done") and a Download-all
+action, a note that horde image links expire (~20 min) while local copies persist,
+and the `pendingJobs`/`finishedJobs` lists, turning stored result blobs into object
+URLs that it revokes on destroy or delete.
 
 The inpainting mask follows the horde convention (verified against hordelib
 `ImageUtils.add_image_alpha_channel`): WHITE marks the region to regenerate,

@@ -1,211 +1,208 @@
-<details class="card p-4">
-  <summary class="cursor-pointer font-medium">
+<div class="gs-card flex flex-col gap-3">
+  <span class="gs-card-title">
     {{ "generate.source.section" | transloco }}
-  </summary>
-  <div class="mt-3 flex flex-col gap-3">
-    <div class="flex flex-wrap gap-2" role="group">
-      @for (m of modes; track m) {
-        <button
-          type="button"
-          class="btn btn-sm"
-          [class.btn-primary]="mode() === m"
-          [class.btn-secondary]="mode() !== m"
-          [disabled]="disabled()"
-          (click)="setMode(m)"
-        >
-          {{ "generate.source.mode_" + m | transloco }}
-        </button>
-      }
-    </div>
+  </span>
 
-    @if (mode() !== "none") {
-      <label
-        class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center dark:border-gray-600"
-        [class.border-primary-500]="dragActive()"
-        for="generate-source-file"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
+  <div class="flex flex-wrap gap-1.5" role="group">
+    @for (m of modes; track m) {
+      <button
+        type="button"
+        class="gs-chip"
+        [class.gs-chip--active]="mode() === m"
+        [disabled]="disabled()"
+        (click)="setMode(m)"
       >
-        @if (encoding()) {
-          <app-icon name="spinner" class="animate-spin" />
-          <span class="text-sm">
-            {{ "generate.source.encoding" | transloco }}
-          </span>
-        } @else {
-          <app-icon name="photo" />
-          <span class="text-sm font-medium">
-            {{ "generate.source.upload_prompt" | transloco }}
-          </span>
-          <span class="form-hint">
-            {{ "generate.source.upload_hint" | transloco }}
-          </span>
-        }
-        <input
-          id="generate-source-file"
-          type="file"
-          accept="image/*"
-          class="sr-only"
-          [disabled]="disabled() || encoding()"
-          (change)="onFileSelected($event)"
-        />
-      </label>
+        {{ "generate.source.mode_" + m | transloco }}
+      </button>
+    }
+  </div>
 
-      @if (error(); as err) {
-        <p class="form-error">{{ err | transloco }}</p>
+  @if (mode() !== "none") {
+    <label
+      class="gs-add-tile"
+      [class.gs-chip--active]="dragActive()"
+      for="generate-source-file"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      @if (encoding()) {
+        <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+        <span class="gs-add-tile-title">
+          {{ "generate.source.encoding" | transloco }}
+        </span>
+      } @else {
+        <app-icon name="photo" class="gs-ico-sm" />
+        <span class="gs-add-tile-title">
+          {{ "generate.source.upload_prompt" | transloco }}
+        </span>
+        <span class="gs-add-tile-sub">
+          {{ "generate.source.upload_hint" | transloco }}
+        </span>
       }
+      <input
+        id="generate-source-file"
+        type="file"
+        accept="image/*"
+        class="sr-only"
+        [disabled]="disabled() || encoding()"
+        (change)="onFileSelected($event)"
+      />
+    </label>
 
-      @if (previewUrl(); as src) {
-        <div class="flex flex-col gap-2">
-          <div class="relative w-full">
-            <img
-              [src]="src"
-              class="w-full rounded-lg"
-              alt="{{ 'generate.source.preview_alt' | transloco }}"
-            />
-            @if (mode() === "inpainting") {
-              <canvas
-                #paintCanvas
-                class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
-                (pointerdown)="onPaintPointerDown($event)"
-                (pointermove)="onPaintPointerMove($event)"
-                (pointerup)="onPaintPointerUp($event)"
-                (pointerleave)="onPaintPointerUp($event)"
-              ></canvas>
-            }
-          </div>
+    @if (error(); as err) {
+      <p class="gs-warn">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ err | transloco }}
+      </p>
+    }
 
-          <div class="flex items-center gap-2">
-            @if (sourceImage(); as img) {
-              <span class="badge badge-info">
-                {{ img.width }}×{{ img.height }} · webp
-              </span>
-            }
-            <button
-              type="button"
-              class="btn btn-sm btn-muted"
-              [disabled]="disabled()"
-              (click)="clearImage()"
-            >
-              {{ "generate.source.clear_image" | transloco }}
-            </button>
-          </div>
+    @if (previewUrl(); as src) {
+      <div class="flex flex-col gap-2">
+        <div class="relative w-full">
+          <img
+            [src]="src"
+            class="w-full rounded-lg"
+            alt="{{ 'generate.source.preview_alt' | transloco }}"
+          />
+          @if (mode() === "inpainting") {
+            <canvas
+              #paintCanvas
+              class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
+              (pointerdown)="onPaintPointerDown($event)"
+              (pointermove)="onPaintPointerMove($event)"
+              (pointerup)="onPaintPointerUp($event)"
+              (pointerleave)="onPaintPointerUp($event)"
+            ></canvas>
+          }
         </div>
-      }
 
-      @if (mode() === "img2img" || mode() === "controlnet") {
+        <div class="flex items-center gap-2">
+          @if (sourceImage(); as img) {
+            <span class="gs-sublabel gs-mono">
+              {{ img.width }}×{{ img.height }} · webp
+            </span>
+          }
+          <button
+            type="button"
+            class="gs-textlink ml-auto"
+            [disabled]="disabled()"
+            (click)="clearImage()"
+          >
+            {{ "generate.source.clear_image" | transloco }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (mode() === "img2img" || mode() === "controlnet") {
+      <div>
+        <label class="gs-slabel" for="generate-denoise">
+          {{
+            "generate.source.denoise_label"
+              | transloco: { value: form().controls.denoising_strength.value }
+          }}
+        </label>
+        <input
+          id="generate-denoise"
+          class="gs-range mt-1.5"
+          type="range"
+          [formControl]="form().controls.denoising_strength"
+          [min]="minDenoise"
+          [max]="maxDenoise"
+          [step]="denoiseStep"
+        />
+        <p class="gs-sublabel mt-1">
+          {{ "generate.source.denoise_hint" | transloco }}
+        </p>
+      </div>
+    }
+
+    @if (mode() === "controlnet") {
+      <div>
+        <label class="gs-slabel" for="generate-control-type">
+          {{ "generate.source.control_type_label" | transloco }}
+        </label>
+        <select
+          id="generate-control-type"
+          class="gs-native-select gs-native-select--sm mt-1.5"
+          [formControl]="form().controls.control_type"
+        >
+          <option value="">
+            {{ "generate.source.control_type_placeholder" | transloco }}
+          </option>
+          @for (control of controlTypes; track control) {
+            <option [value]="control">{{ control }}</option>
+          }
+        </select>
+      </div>
+      <label class="gs-switch gs-switch-row">
+        <span>{{ "generate.source.image_is_control_label" | transloco }}</span>
+        <input
+          type="checkbox"
+          [formControl]="form().controls.image_is_control"
+        />
+        <span class="gs-switch-track"
+          ><span class="gs-switch-knob"></span
+        ></span>
+      </label>
+      <label class="gs-switch gs-switch-row">
+        <span>{{
+          "generate.source.return_control_map_label" | transloco
+        }}</span>
+        <input
+          type="checkbox"
+          [formControl]="form().controls.return_control_map"
+        />
+        <span class="gs-switch-track"
+          ><span class="gs-switch-knob"></span
+        ></span>
+      </label>
+    }
+
+    @if (mode() === "inpainting" && previewUrl()) {
+      <div class="flex flex-col gap-2">
         <div>
-          <label class="form-label" for="generate-denoise">
+          <label class="gs-slabel" for="generate-brush">
             {{
-              "generate.source.denoise_label"
-                | transloco: { value: form().controls.denoising_strength.value }
+              "generate.source.brush_label" | transloco: { value: brushSize() }
             }}
           </label>
           <input
-            id="generate-denoise"
-            class="w-full"
+            id="generate-brush"
+            class="gs-range mt-1.5"
             type="range"
-            [formControl]="form().controls.denoising_strength"
-            [min]="minDenoise"
-            [max]="maxDenoise"
-            [step]="denoiseStep"
+            [min]="minBrush"
+            [max]="maxBrush"
+            step="1"
+            [value]="brushSize()"
+            (input)="setBrushSize(+$any($event.target).value)"
           />
-          <p class="form-hint mt-1">
-            {{ "generate.source.denoise_hint" | transloco }}
-          </p>
         </div>
-      }
-
-      @if (mode() === "controlnet") {
-        <div>
-          <label class="form-label" for="generate-control-type">
-            {{ "generate.source.control_type_label" | transloco }}
-          </label>
-          <select
-            id="generate-control-type"
-            class="form-select w-full"
-            [formControl]="form().controls.control_type"
+        <div class="flex gap-1.5">
+          <button
+            type="button"
+            class="gs-chip"
+            [class.gs-chip--active]="eraser()"
+            (click)="toggleEraser()"
           >
-            <option value="">
-              {{ "generate.source.control_type_placeholder" | transloco }}
-            </option>
-            @for (control of controlTypes; track control) {
-              <option [value]="control">{{ control }}</option>
-            }
-          </select>
+            {{ "generate.source.eraser_label" | transloco }}
+          </button>
+          <button type="button" class="gs-chip" (click)="clearMask()">
+            {{ "generate.source.clear_mask" | transloco }}
+          </button>
         </div>
-        <label class="form-checkbox">
-          <input
-            type="checkbox"
-            class="checkbox-input"
-            [formControl]="form().controls.image_is_control"
-          />
-          <span class="checkbox-label">
-            {{ "generate.source.image_is_control_label" | transloco }}
-          </span>
-        </label>
-        <label class="form-checkbox">
-          <input
-            type="checkbox"
-            class="checkbox-input"
-            [formControl]="form().controls.return_control_map"
-          />
-          <span class="checkbox-label">
-            {{ "generate.source.return_control_map_label" | transloco }}
-          </span>
-        </label>
-      }
-
-      @if (mode() === "inpainting" && previewUrl()) {
-        <div class="flex flex-col gap-2">
-          <div>
-            <label class="form-label" for="generate-brush">
-              {{
-                "generate.source.brush_label"
-                  | transloco: { value: brushSize() }
-              }}
-            </label>
-            <input
-              id="generate-brush"
-              class="w-full"
-              type="range"
-              [min]="minBrush"
-              [max]="maxBrush"
-              step="1"
-              [value]="brushSize()"
-              (input)="setBrushSize(+$any($event.target).value)"
-            />
-          </div>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              class="btn btn-sm"
-              [class.btn-primary]="eraser()"
-              [class.btn-secondary]="!eraser()"
-              (click)="toggleEraser()"
-            >
-              {{ "generate.source.eraser_label" | transloco }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-muted"
-              (click)="clearMask()"
-            >
-              {{ "generate.source.clear_mask" | transloco }}
-            </button>
-          </div>
-          <p class="form-hint">
-            {{ "generate.source.mask_hint" | transloco }}
-          </p>
-        </div>
-      }
-
-      @if (showValidation() && validationMessage(); as message) {
-        <p class="alert alert--warning flex items-center gap-2 text-sm">
-          <app-icon name="warning-triangle" />
-          {{ message | transloco }}
+        <p class="gs-sublabel">
+          {{ "generate.source.mask_hint" | transloco }}
         </p>
-      }
+      </div>
     }
-  </div>
-</details>
+
+    @if (showValidation() && validationMessage(); as message) {
+      <p class="gs-warn">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ message | transloco }}
+      </p>
+    }
+  }
+</div>

@@ -80,28 +80,52 @@ describe('GenerateResultsPanelComponent', () => {
   });
 
   it('cancels a pending job through the queue', async () => {
-    await component.cancel(job('a', 'waiting'));
+    await component.cancelJob('a');
     expect(cancel).toHaveBeenCalledWith('a');
   });
 
   it('retries an errored job and notifies', async () => {
-    await component.retry(job('b', 'error'));
+    await component.retryJob('b');
     expect(retry).toHaveBeenCalledWith('b');
     expect(toastSuccess).toHaveBeenCalled();
   });
 
   it('deletes a job through the queue', async () => {
-    await component.remove(job('c', 'done'));
+    await component.deleteJob('c');
     expect(deleteJob).toHaveBeenCalledWith('c');
+  });
+
+  it('expands pending and finished jobs into grid tiles', () => {
+    pendingJobs.set([
+      {
+        ...job('p', 'processing'),
+        request: { prompt: 'x', params: { n: 2, width: 512, height: 768 } },
+      },
+    ]);
+    finishedJobs.set([job('e', 'error'), job('x', 'cancelled')]);
+
+    const tiles = component.tiles();
+    // 2 generating tiles (batch of 2) + 1 error tile + 1 cancelled tile.
+    expect(tiles.map((t) => t.kind)).toEqual([
+      'generating',
+      'generating',
+      'error',
+      'cancelled',
+    ]);
+    expect(tiles[0].aspect).toBe('512/768');
   });
 
   it('opens and closes the lightbox view', () => {
     expect(component.lightbox()).toBeNull();
     component.openLightbox({
-      imageId: 'i1',
+      key: 'k',
+      kind: 'done',
+      jobLocalId: 'j',
+      aspect: '1/1',
+      dims: '',
       url: 'blob:x',
-      mimeType: 'image/webp',
-      metadata: { seed: '7', model: 'test' },
+      seed: '7',
+      model: 'test',
     });
     expect(component.lightbox()?.seed).toBe('7');
     component.closeLightbox();

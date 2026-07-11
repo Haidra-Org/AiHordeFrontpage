@@ -66,17 +66,18 @@ Styles in `src/styles/` are organized by concern:
 
 ### Page-Specific Layers
 
-| File                  | Purpose                                    |
-| --------------------- | ------------------------------------------ |
-| `_network-status.css` | Network status panel and domain stat grid  |
-| `_intro-features.css` | Homepage hero stage, feature cards         |
-| `_news.css`           | News timeline, date badges                 |
-| `_workers-page.css`   | Worker type sections, domain-colored cards |
-| `_tools-page.css`     | Tool filter bar, view mode toggle          |
-| `_leaderboard.css`    | Leaderboard layout, top cards              |
-| `_faq.css`            | FAQ accordion, TOC sidebar                 |
-| `_style-detail.css`   | Style detail page layout                   |
-| `_prose.css`          | Rendered markdown/prose content            |
+| File                  | Purpose                                      |
+| --------------------- | -------------------------------------------- |
+| `_network-status.css` | Network status panel and domain stat grid    |
+| `_intro-features.css` | Homepage hero stage, feature cards           |
+| `_news.css`           | News timeline, date badges                   |
+| `_workers-page.css`   | Worker type sections, domain-colored cards   |
+| `_tools-page.css`     | Tool filter bar, view mode toggle            |
+| `_leaderboard.css`    | Leaderboard layout, top cards                |
+| `_faq.css`            | FAQ accordion, TOC sidebar                   |
+| `_style-detail.css`   | Style detail page layout                     |
+| `_prose.css`          | Rendered markdown/prose content              |
+| `_generate.css`       | Generate "studio" workspace (see note below) |
 
 ### Other
 
@@ -87,6 +88,29 @@ Styles in `src/styles/` are organized by concern:
 | `_additional_pieces.css` | Third-party overrides, breakpoint media queries |
 
 ---
+
+## The `/generate` studio exception
+
+The `/generate` page is a deliberate, approved departure from the shared design
+system: it is a focused creation workspace with its own visual language taken
+from the interactive design mockup. Its styles still follow the core principle of
+living centrally in `src/styles/_generate.css` (component CSS stays empty), but:
+
+- **Scoped, not shared.** Every rule is namespaced under the `.gen-studio`
+  page-root class and prefixed `gs-*` (for example `.gs-card`, `.gs-switch`,
+  `.gs-tile`). Nothing here is meant for reuse elsewhere, and the `gs-` prefix
+  keeps it from colliding with the shared catalog.
+- **Its own tokens.** A local `--gs-*` variable set defines the studio palette on
+  `.gen-studio` (light) and `.dark .gen-studio` (dark). Prefer these over both raw
+  literals and the global tokens when working inside the studio.
+- **Self-hosted fonts.** `Inter` / `JetBrains Mono` are declared with `@font-face`
+  in `_generate.css` so the download only triggers for text under `.gen-studio`.
+- **Tailwind utilities** are still used for layout/spacing inside the studio
+  templates (`flex`, `gap-*`, `grid`), same as the rest of the app.
+
+Do not carry `gs-*` classes or the `--gs-*` tokens outside `/generate`, and do not
+pull shared component classes into the studio unless a control is intentionally
+left in the shared style (e.g. the model autocomplete).
 
 ## Naming Conventions
 

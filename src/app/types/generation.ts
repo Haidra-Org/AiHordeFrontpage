@@ -34,13 +34,43 @@ export type ImageSourceProcessing =
   | 'outpainting'
   | 'remix';
 
+/**
+ * Named special-purpose generation workflows. The horde currently constrains
+ * `params.workflow` to this single value (see `ModelPayloadStyleStable`); the
+ * `qr_code` workflow pairs with {@link ImageGenerationExtraText} entries that
+ * carry the QR payload.
+ */
+export type ImageWorkflowName = 'qr_code';
+
+/**
+ * A keyed free-text entry carried alongside a workflow (for example the string a
+ * `qr_code` workflow should encode). `reference` names which slot the worker
+ * should read the text into.
+ */
+export interface ImageGenerationExtraText {
+  text: string;
+  reference: string;
+}
+
+/**
+ * Auxiliary source image for remix-style workflows, submitted as base64 webp.
+ * `strength` weights how strongly it influences the result (server default 1).
+ */
+export interface ImageExtraSourceImage {
+  image: string;
+  strength?: number;
+}
+
 export interface ImageGenerationParams {
   sampler_name?: ImageSamplerName;
   cfg_scale?: number;
   denoising_strength?: number;
+  /** Denoise strength applied during the hires-fix upscaling pass (0.01-1). */
+  hires_fix_denoising_strength?: number;
   seed?: string;
   height?: number;
   width?: number;
+  /** Per-image seed increment when `n` > 1 (1-1000). */
   seed_variation?: number;
   steps?: number;
   n?: number;
@@ -52,7 +82,9 @@ export interface ImageGenerationParams {
   facefixer_strength?: number;
   loras?: StyleLoraConfig[];
   tis?: StyleTextualInversionConfig[];
-  workflow?: string;
+  workflow?: ImageWorkflowName;
+  /** Free-text payload consumed by the active `workflow` (for example qr_code). */
+  extra_texts?: ImageGenerationExtraText[];
   transparent?: boolean;
   control_type?: ImageControlType;
   /** Treat `source_image` as an already-computed control map (skip annotation). */
@@ -68,17 +100,27 @@ export interface ImageGenerationRequest {
   censor_nsfw?: boolean;
   trusted_workers?: boolean;
   slow_workers?: boolean;
+  /** Opt in to workers flagged as very slow (extends reach, raises latency). */
+  extra_slow_workers?: boolean;
   workers?: string[];
   worker_blacklist?: boolean;
   models?: string[];
   source_image?: string;
   source_processing?: ImageSourceProcessing;
   source_mask?: string;
+  /** Additional source images for remix workflows. */
+  extra_source_images?: ImageExtraSourceImage[];
   r2?: boolean;
   shared?: boolean;
   replacement_filter?: boolean;
+  /** Trusted/Patreon-only: disable batching so returned seeds stay accurate. */
+  disable_batching?: boolean;
   dry_run?: boolean;
   allow_downgrade?: boolean;
+  /** URL the horde POSTs to when the request finishes. */
+  webhook?: string;
+  /** Server-side style reference (name or ID) the horde applies to the request. */
+  style?: string;
 }
 
 // ============================================================================

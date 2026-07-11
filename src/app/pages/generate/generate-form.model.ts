@@ -5,7 +5,13 @@ import {
   ImageGenerationRequest,
   ImageSourceProcessing,
 } from '../../types/generation';
-import { ImagePostProcessor, ImageSamplerName } from '../../types/style';
+import {
+  ImagePostProcessor,
+  ImageSamplerName,
+  StyleLoraConfig,
+  StyleTextualInversionConfig,
+} from '../../types/style';
+import type { AppliedStyle } from '../../services/horde-styles.service';
 
 /**
  * The samplers AI Horde accepts, in the display order used by the form.
@@ -39,6 +45,30 @@ export const POST_PROCESSORS: readonly ImagePostProcessor[] = [
   '4x_AnimeSharp',
   'strip_background',
 ];
+
+/**
+ * Upscaler post-processors offered as a single-choice "Upscale" control. A
+ * subset of {@link POST_PROCESSORS}; picking one replaces any other upscaler in
+ * the `post_processing` array so at most one runs.
+ */
+export const UPSCALERS: readonly ImagePostProcessor[] = [
+  'RealESRGAN_x4plus',
+  'RealESRGAN_x4plus_anime_6B',
+  'NMKD_Siax',
+  '4x_AnimeSharp',
+];
+
+/**
+ * Face-fixer post-processors offered as a single-choice control. Selecting one
+ * makes `facefixer_strength` meaningful (see {@link buildImageRequest}).
+ */
+export const FACE_FIXERS: readonly ImagePostProcessor[] = [
+  'GFPGAN',
+  'CodeFormers',
+];
+
+/** The background-strip post-processor, toggled independently of the above. */
+export const STRIP_BACKGROUND: ImagePostProcessor = 'strip_background';
 
 export const MIN_DIMENSION = 64;
 export const MAX_DIMENSION = 3072;
@@ -76,6 +106,66 @@ export const MIN_DENOISE = 0.01;
 export const MAX_DENOISE = 1;
 export const DENOISE_STEP = 0.01;
 export const DEFAULT_DENOISE = 0.75;
+
+/** Top-level UI mode. Persisted for convenience but never sent to the API. */
+export const GENERATE_MODES = ['simple', 'advanced'] as const;
+export type GenerateMode = (typeof GENERATE_MODES)[number];
+
+/** Horde LoRA/TI strength bounds (`model`, `clip`, TI `strength`): -5 to 5. */
+export const MIN_LORA_STRENGTH = -5;
+export const MAX_LORA_STRENGTH = 5;
+export const DEFAULT_LORA_STRENGTH = 1;
+
+export const MIN_FACEFIXER_STRENGTH = 0;
+export const MAX_FACEFIXER_STRENGTH = 1;
+export const DEFAULT_FACEFIXER_STRENGTH = 0.75;
+
+export const MIN_SEED_VARIATION = 1;
+export const MAX_SEED_VARIATION = 1000;
+
+export const MIN_HIRES_DENOISE = 0.01;
+export const MAX_HIRES_DENOISE = 1;
+export const DEFAULT_HIRES_DENOISE = 0.65;
+
+/** Where the horde may auto-inject a textual inversion trigger. */
+export const TI_INJECT_TARGETS = ['prompt', 'negprompt'] as const;
+export type TiInjectTarget = (typeof TI_INJECT_TARGETS)[number];
+
+/**
+ * Post-processors that are face fixers; `facefixer_strength` is only meaningful
+ * (and only emitted) when one of these is selected.
+ */
+const FACE_FIXER_POST_PROCESSORS: readonly ImagePostProcessor[] = [
+  'GFPGAN',
+  'CodeFormers',
+];
+
+/**
+ * A persisted LoRA selection. `name` is the horde LoRA identifier: an exact name
+ * or CivitAI model-page ID, or a CivitAI version ID when `is_version` is set.
+ * `model` and `clip` are strengths in the -5..5 range.
+ */
+export interface FormLoraEntry {
+  name: string;
+  model: number;
+  clip: number;
+  inject_trigger?: string;
+  is_version?: boolean;
+  /** Friendly display name (e.g. from CivitAI); never sent to the horde. */
+  label?: string;
+}
+
+/**
+ * A persisted textual-inversion selection. `strength` is in the -5..5 range;
+ * `inject_ti` asks the horde to add the embedding to the given prompt half.
+ */
+export interface FormTiEntry {
+  name: string;
+  strength: number;
+  inject_ti?: TiInjectTarget;
+  /** Friendly display name (e.g. from CivitAI); never sent to the horde. */
+  label?: string;
+}
 
 /**
  * Total-pixel budget above which the form warns that the request may be slow or
@@ -122,6 +212,10 @@ export function buildAspectPresets(
  * storage and what {@link buildImageRequest} maps into a horde request.
  */
 export interface GenerateFormValue {
+  /** UI mode only; not sent to the API. Simple mode drives generation via styles. */
+  mode: GenerateMode;
+  /** Selected style-preset name; '' means no style. */
+  styleName: string;
   prompt: string;
   negativePrompt: string;
   n: number;
@@ -150,6 +244,22 @@ export interface GenerateFormValue {
   control_type: ImageControlType | '';
   image_is_control: boolean;
   return_control_map: boolean;
+  karras: boolean;
+  /** Face-fixer strength (0-1); only applied when a face fixer is selected. */
+  facefixer_strength: number;
+  /** Denoise strength for the hires-fix pass; only applied when hires_fix is on. */
+  hires_fix_denoising_strength: number;
+  /** Per-image seed increment; only sent when > 1 and n > 1. */
+  seed_variation: number;
+  loras: FormLoraEntry[];
+  tis: FormTiEntry[];
+  transparent: boolean;
+  /** Share the result with LAION for kudos. Forced on for anonymous users. */
+  shared: boolean;
+  extra_slow_workers: boolean;
+  /** Route suspicious prompts through the replacement filter (horde default on). */
+  replacement_filter: boolean;
+  disable_batching: boolean;
 }
 
 export type GenerateFormControls = {
@@ -159,6 +269,8 @@ export type GenerateFormControls = {
 export type GenerateFormGroup = FormGroup<GenerateFormControls>;
 
 export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
+  mode: 'simple',
+  styleName: '',
   prompt: '',
   negativePrompt: '',
   n: 1,
@@ -183,7 +295,100 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   control_type: '',
   image_is_control: false,
   return_control_map: false,
+  karras: true,
+  facefixer_strength: DEFAULT_FACEFIXER_STRENGTH,
+  hires_fix_denoising_strength: DEFAULT_HIRES_DENOISE,
+  seed_variation: MIN_SEED_VARIATION,
+  loras: [],
+  tis: [],
+  transparent: false,
+  shared: true,
+  extra_slow_workers: false,
+  replacement_filter: true,
+  disable_batching: false,
 };
+
+function clampNumber(
+  value: unknown,
+  min: number,
+  max: number,
+  fallback: number,
+): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.min(max, Math.max(min, value));
+  }
+  return fallback;
+}
+
+/** Validate one persisted LoRA entry, returning null if it is malformed. */
+function coerceLoraEntry(raw: unknown): FormLoraEntry | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+  const source = raw as Record<string, unknown>;
+  if (typeof source['name'] !== 'string' || source['name'].trim() === '') {
+    return null;
+  }
+  const entry: FormLoraEntry = {
+    name: source['name'],
+    model: clampNumber(
+      source['model'],
+      MIN_LORA_STRENGTH,
+      MAX_LORA_STRENGTH,
+      DEFAULT_LORA_STRENGTH,
+    ),
+    clip: clampNumber(
+      source['clip'],
+      MIN_LORA_STRENGTH,
+      MAX_LORA_STRENGTH,
+      DEFAULT_LORA_STRENGTH,
+    ),
+  };
+  if (
+    typeof source['inject_trigger'] === 'string' &&
+    source['inject_trigger'].trim() !== ''
+  ) {
+    entry.inject_trigger = source['inject_trigger'];
+  }
+  if (typeof source['is_version'] === 'boolean') {
+    entry.is_version = source['is_version'];
+  }
+  if (typeof source['label'] === 'string' && source['label'].trim() !== '') {
+    entry.label = source['label'];
+  }
+  return entry;
+}
+
+/** Validate one persisted textual-inversion entry, returning null if malformed. */
+function coerceTiEntry(raw: unknown): FormTiEntry | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+  const source = raw as Record<string, unknown>;
+  if (typeof source['name'] !== 'string' || source['name'].trim() === '') {
+    return null;
+  }
+  const entry: FormTiEntry = {
+    name: source['name'],
+    strength: clampNumber(
+      source['strength'],
+      MIN_LORA_STRENGTH,
+      MAX_LORA_STRENGTH,
+      DEFAULT_LORA_STRENGTH,
+    ),
+  };
+  if (
+    (TI_INJECT_TARGETS as readonly string[]).includes(
+      source['inject_ti'] as string,
+    )
+  ) {
+    entry.inject_ti = source['inject_ti'] as TiInjectTarget;
+  }
+  if (typeof source['label'] === 'string' && source['label'].trim() !== '') {
+    entry.label = source['label'];
+  }
+  return entry;
+}
 
 /**
  * Merge a possibly-partial persisted snapshot onto the defaults, dropping any
@@ -234,6 +439,57 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
+    if (key === 'mode') {
+      if ((GENERATE_MODES as readonly string[]).includes(value as string)) {
+        merged.mode = value as GenerateMode;
+      }
+      continue;
+    }
+    if (key === 'loras') {
+      if (Array.isArray(value)) {
+        merged.loras = value
+          .map(coerceLoraEntry)
+          .filter((entry): entry is FormLoraEntry => entry !== null);
+      }
+      continue;
+    }
+    if (key === 'tis') {
+      if (Array.isArray(value)) {
+        merged.tis = value
+          .map(coerceTiEntry)
+          .filter((entry): entry is FormTiEntry => entry !== null);
+      }
+      continue;
+    }
+    if (key === 'facefixer_strength') {
+      merged.facefixer_strength = clampNumber(
+        value,
+        MIN_FACEFIXER_STRENGTH,
+        MAX_FACEFIXER_STRENGTH,
+        DEFAULT_GENERATE_FORM_VALUE.facefixer_strength,
+      );
+      continue;
+    }
+    if (key === 'hires_fix_denoising_strength') {
+      merged.hires_fix_denoising_strength = clampNumber(
+        value,
+        MIN_HIRES_DENOISE,
+        MAX_HIRES_DENOISE,
+        DEFAULT_GENERATE_FORM_VALUE.hires_fix_denoising_strength,
+      );
+      continue;
+    }
+    if (key === 'seed_variation') {
+      merged.seed_variation = Math.round(
+        clampNumber(
+          value,
+          MIN_SEED_VARIATION,
+          MAX_SEED_VARIATION,
+          DEFAULT_GENERATE_FORM_VALUE.seed_variation,
+        ),
+      );
+      continue;
+    }
     if (typeof value === expected) {
       // Index assignment is sound: `key` and `value` share a type per branch.
       (merged as Record<keyof GenerateFormValue, unknown>)[key] = value;
@@ -248,6 +504,8 @@ export function createGenerateForm(
   const control = <T>(initial: T): FormControl<T> =>
     new FormControl<T>(initial, { nonNullable: true });
   return new FormGroup<GenerateFormControls>({
+    mode: control(value.mode),
+    styleName: control(value.styleName),
     prompt: control(value.prompt),
     negativePrompt: control(value.negativePrompt),
     n: control(value.n),
@@ -272,7 +530,52 @@ export function createGenerateForm(
     control_type: control(value.control_type),
     image_is_control: control(value.image_is_control),
     return_control_map: control(value.return_control_map),
+    karras: control(value.karras),
+    facefixer_strength: control(value.facefixer_strength),
+    hires_fix_denoising_strength: control(value.hires_fix_denoising_strength),
+    seed_variation: control(value.seed_variation),
+    loras: control(value.loras),
+    tis: control(value.tis),
+    transparent: control(value.transparent),
+    shared: control(value.shared),
+    extra_slow_workers: control(value.extra_slow_workers),
+    replacement_filter: control(value.replacement_filter),
+    disable_batching: control(value.disable_batching),
   });
+}
+
+/**
+ * The fields the simple-mode UI exposes to the user. Width/height are included
+ * because the aspect-ratio presets set them in simple mode; the rest are the
+ * prompt, negative prompt, model, batch count, and selected style.
+ */
+export const SIMPLE_MODE_FIELDS = [
+  'mode',
+  'styleName',
+  'prompt',
+  'negativePrompt',
+  'n',
+  'model',
+  'width',
+  'height',
+] as const satisfies readonly (keyof GenerateFormValue)[];
+
+/**
+ * Project a form snapshot down to what simple mode submits. Simple mode keeps
+ * only the {@link SIMPLE_MODE_FIELDS}; every advanced-only field is reset to its
+ * default rather than carrying whatever a prior advanced-mode session persisted.
+ * This is the least-surprising rule: switching to simple mode always yields a
+ * clean request (default sampler/steps/cfg, no source image, no post-processing,
+ * default worker/output options), and any style the user picked is still applied
+ * on top afterwards via {@link buildStyledImageRequest}.
+ */
+export function simpleModeValue(value: GenerateFormValue): GenerateFormValue {
+  const result: GenerateFormValue = { ...DEFAULT_GENERATE_FORM_VALUE };
+  for (const key of SIMPLE_MODE_FIELDS) {
+    // Index assignment is sound: each key copies the same-typed field across.
+    (result as Record<keyof GenerateFormValue, unknown>)[key] = value[key];
+  }
+  return result;
 }
 
 /**
@@ -283,6 +586,32 @@ export function combinePrompt(positive: string, negative: string): string {
   const p = positive.trim();
   const n = negative.trim();
   return n ? `${p} ### ${n}` : p;
+}
+
+function mapFormLora(entry: FormLoraEntry): StyleLoraConfig {
+  const lora: StyleLoraConfig = {
+    name: entry.name,
+    model: entry.model,
+    clip: entry.clip,
+  };
+  if (entry.inject_trigger) {
+    lora.inject_trigger = entry.inject_trigger;
+  }
+  if (entry.is_version) {
+    lora.is_version = entry.is_version;
+  }
+  return lora;
+}
+
+function mapFormTi(entry: FormTiEntry): StyleTextualInversionConfig {
+  const ti: StyleTextualInversionConfig = {
+    name: entry.name,
+    strength: entry.strength,
+  };
+  if (entry.inject_ti) {
+    ti.inject_ti = entry.inject_ti;
+  }
+  return ti;
 }
 
 export interface BuildImageRequestOptions {
@@ -329,9 +658,34 @@ export function buildImageRequest(
   }
   if (value.hires_fix) {
     params.hires_fix = true;
+    params.hires_fix_denoising_strength = value.hires_fix_denoising_strength;
   }
   if (value.tiling) {
     params.tiling = true;
+  }
+  // The horde default for karras is false, so only the enabled state is sent.
+  if (value.karras) {
+    params.karras = true;
+  }
+  if (value.transparent) {
+    params.transparent = true;
+  }
+  // seed_variation only bites when n > 1; a value of 1 is the no-op default.
+  if (value.seed_variation > MIN_SEED_VARIATION) {
+    params.seed_variation = value.seed_variation;
+  }
+  // facefixer_strength is meaningless unless a face fixer is post-processing.
+  const usesFaceFixer = value.post_processing.some((processor) =>
+    FACE_FIXER_POST_PROCESSORS.includes(processor),
+  );
+  if (usesFaceFixer) {
+    params.facefixer_strength = value.facefixer_strength;
+  }
+  if (value.loras.length > 0) {
+    params.loras = value.loras.map(mapFormLora);
+  }
+  if (value.tis.length > 0) {
+    params.tis = value.tis.map(mapFormTi);
   }
 
   // Only describe source processing when an image is genuinely attached.
@@ -381,9 +735,82 @@ export function buildImageRequest(
     request.source_processing = sourceProcessing;
   }
 
+  // shared / extra_slow_workers / disable_batching all default off server-side,
+  // so only their enabled state is sent. replacement_filter defaults ON, so only
+  // an explicit opt-out is worth sending.
+  if (value.shared) {
+    request.shared = true;
+  }
+  if (value.extra_slow_workers) {
+    request.extra_slow_workers = true;
+  }
+  if (!value.replacement_filter) {
+    request.replacement_filter = false;
+  }
+  if (value.disable_batching) {
+    request.disable_batching = true;
+  }
+
   const model = value.model.trim();
   if (model) {
     request.models = [model];
+  }
+  return request;
+}
+
+/**
+ * Build a request with a resolved style applied on top of the form's own values.
+ * When `applied` is null this is exactly {@link buildImageRequest}. Otherwise the
+ * style's final prompt and any parameters it forces (model, dimensions, steps,
+ * cfg, sampler, clip_skip, karras, hires_fix, loras, tis) override the form's,
+ * matching the horde behaviour where a style pins those fields.
+ *
+ * `applied` is produced by the styles service's `applyStyle(preset, positive,
+ * negative)`, keeping preset resolution out of the form model.
+ */
+export function buildStyledImageRequest(
+  value: GenerateFormValue,
+  applied: AppliedStyle | null,
+  options: BuildImageRequestOptions = {},
+): ImageGenerationRequest {
+  const request = buildImageRequest(value, options);
+  if (!applied) {
+    return request;
+  }
+
+  request.prompt = applied.prompt;
+  const params: ImageGenerationParams = request.params ?? {};
+  const forced = applied.forcedParams;
+
+  if (forced.width !== undefined) params.width = forced.width;
+  if (forced.height !== undefined) params.height = forced.height;
+  if (forced.steps !== undefined) params.steps = forced.steps;
+  if (forced.cfg_scale !== undefined) params.cfg_scale = forced.cfg_scale;
+  if (forced.sampler_name !== undefined) {
+    params.sampler_name = forced.sampler_name;
+  }
+  if (forced.clip_skip !== undefined) params.clip_skip = forced.clip_skip;
+  if (forced.karras !== undefined) {
+    if (forced.karras) {
+      params.karras = true;
+    } else {
+      delete params.karras;
+    }
+  }
+  if (forced.hires_fix !== undefined) {
+    if (forced.hires_fix) {
+      params.hires_fix = true;
+    } else {
+      delete params.hires_fix;
+      delete params.hires_fix_denoising_strength;
+    }
+  }
+  if (forced.loras) params.loras = forced.loras;
+  if (forced.tis) params.tis = forced.tis;
+
+  request.params = params;
+  if (forced.model !== undefined) {
+    request.models = [forced.model];
   }
   return request;
 }

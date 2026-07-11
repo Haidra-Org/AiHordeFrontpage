@@ -9,6 +9,7 @@ import { AiHordeService } from '../../../../services/ai-horde.service';
 import { GenerationQueueService } from '../../../../services/generation-queue.service';
 import { ToastService } from '../../../../services/toast.service';
 import { TranslatorService } from '../../../../services/translator.service';
+import { HordeStylesService } from '../../../../services/horde-styles.service';
 
 describe('ProfileGenerationsComponent', () => {
   let fixture: ComponentFixture<ProfileGenerationsComponent>;
@@ -34,6 +35,13 @@ describe('ProfileGenerationsComponent', () => {
           useValue: { success: vi.fn(), error: vi.fn() },
         },
         { provide: TranslatorService, useValue: { get: () => of('') } },
+        {
+          provide: HordeStylesService,
+          useValue: {
+            getStyles: () => of([]),
+            getCategoryGroups: () => of([]),
+          },
+        },
       ],
     })
       // The canonical page is exercised by its own spec; here we only assert the

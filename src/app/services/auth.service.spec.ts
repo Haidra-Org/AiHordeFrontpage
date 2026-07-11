@@ -75,6 +75,30 @@ describe('AuthService', () => {
   // login()
   // ===========================================================================
 
+  describe('kudos', () => {
+    it('is null when logged out', () => {
+      expect(service.kudos()).toBeNull();
+    });
+
+    it('reflects the current user balance after login', () => {
+      mockHorde.getUserByApiKey.mockReturnValue(of(fakeUser({ kudos: 2500 })));
+
+      service.login('key').subscribe();
+
+      expect(service.kudos()).toBe(2500);
+    });
+
+    it('returns to null after logout', () => {
+      mockHorde.getUserByApiKey.mockReturnValue(of(fakeUser({ kudos: 500 })));
+      service.login('key').subscribe();
+      expect(service.kudos()).toBe(500);
+
+      service.logout();
+
+      expect(service.kudos()).toBeNull();
+    });
+  });
+
   describe('login()', () => {
     it('fetches user and stores API key on success', () => {
       const user = fakeUser();

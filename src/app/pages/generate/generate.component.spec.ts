@@ -7,6 +7,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
+import { HordeStylesService } from '../../services/horde-styles.service';
 import { ImageGenerationRequest } from '../../types/generation';
 
 describe('GenerateComponent', () => {
@@ -42,6 +43,21 @@ describe('GenerateComponent', () => {
           useValue: { success: toastSuccess, error: toastError },
         },
         { provide: TranslatorService, useValue: { get: () => of('') } },
+        {
+          provide: HordeStylesService,
+          useValue: {
+            getStyles: () =>
+              of([
+                {
+                  name: 'Test',
+                  preset: { prompt: '{p}, masterpiece', model: 'flux' },
+                  categories: ['fun'],
+                },
+              ]),
+            getCategoryGroups: () =>
+              of([{ category: 'fun', styleNames: ['Test'] }]),
+          },
+        },
       ],
     })
       .overrideComponent(GenerateComponent, { set: { template: '' } })
@@ -114,6 +130,7 @@ describe('GenerateComponent', () => {
 
   it('enqueues a request built from the form and toasts on success', async () => {
     component.form.patchValue({
+      mode: 'advanced',
       prompt: 'a castle on a hill',
       seed: '',
       post_processing: ['GFPGAN'],
@@ -159,7 +176,11 @@ describe('GenerateComponent', () => {
   });
 
   it('blocks enqueue and shows validation when the source section is invalid', async () => {
-    component.form.controls.prompt.setValue('a valid prompt');
+    component.form.patchValue({
+      mode: 'advanced',
+      prompt: 'a valid prompt',
+      sourceMode: 'controlnet',
+    });
     component.sourceState.set({
       mode: 'controlnet',
       sourceBlob: null,
@@ -177,6 +198,7 @@ describe('GenerateComponent', () => {
     const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
     const maskBlob = new Blob([new Uint8Array([2])], { type: 'image/png' });
     component.form.patchValue({
+      mode: 'advanced',
       prompt: 'inpaint here',
       sourceMode: 'inpainting',
       denoising_strength: 0.6,
@@ -201,6 +223,70 @@ describe('GenerateComponent', () => {
     expect(sources.map((s) => s.kind)).toEqual(['source', 'mask']);
     expect(sources[0].blob).toBe(sourceBlob);
     expect(sources[1].blob).toBe(maskBlob);
+  });
+
+  it('submits advanced-only fields at their defaults in simple mode', async () => {
+    // Simple mode keeps the simple controls (prompt/model/size/batch/style) but
+    // resets advanced-only fields, so a persisted advanced value cannot leak in.
+    component.form.patchValue({
+      mode: 'simple',
+      prompt: 'a castle on a hill',
+      post_processing: ['GFPGAN'],
+      steps: 40,
+      seed: '99',
+    });
+
+    await component.onCreate();
+
+    const request = enqueue.mock.calls[0][0] as ImageGenerationRequest;
+    expect(request.prompt).toBe('a castle on a hill');
+    expect(request.params?.post_processing).toBeUndefined();
+    expect(request.params?.steps).toBe(25);
+    expect(request.params?.seed).toBeUndefined();
+  });
+
+  it('ignores a persisted source image in simple mode', async () => {
+    const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
+    component.form.patchValue({
+      mode: 'simple',
+      prompt: 'a plain image',
+      sourceMode: 'img2img',
+    });
+    component.sourceState.set({
+      mode: 'img2img',
+      sourceBlob,
+      maskBlob: null,
+      valid: true,
+    });
+
+    await component.onCreate();
+
+    const [request, sources] = enqueue.mock.calls[0] as [
+      ImageGenerationRequest,
+      unknown,
+    ];
+    expect(request.source_processing).toBeUndefined();
+    expect(sources).toBeUndefined();
+  });
+
+  it('applies a selected style to the built request', async () => {
+    component.form.patchValue({
+      mode: 'advanced',
+      prompt: 'a cat',
+      styleName: 'Test',
+    });
+
+    await component.onCreate();
+
+    const request = enqueue.mock.calls[0][0] as ImageGenerationRequest;
+    expect(request.prompt).toBe('a cat, masterpiece');
+    expect(request.models).toEqual(['flux']);
+  });
+
+  it('exposes the style-forced params for hints once a style is selected', () => {
+    component.form.controls.styleName.setValue('Test');
+
+    expect(component.forcedParams()?.model).toBe('flux');
   });
 
   it('sorts fetched models by worker count, descending', () => {

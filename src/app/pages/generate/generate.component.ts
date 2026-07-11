@@ -11,27 +11,38 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { debounceTime } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
 import { DatabaseService } from '../../services/database.service';
 import { TranslatorService } from '../../services/translator.service';
+import {
+  AppliedStyle,
+  HordeStylePreset,
+  HordeStylesService,
+  StyleForcedParams,
+  applyStyle,
+} from '../../services/horde-styles.service';
 import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
 import { blobToBase64 } from '../../helper/blob-base64';
-import { GenerateFormComponent } from './generate-form/generate-form.component';
+import {
+  GenerateFormComponent,
+  StylePickerGroup,
+} from './generate-form/generate-form.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
   GenerateSourceImageComponent,
   GenerateSourceState,
 } from './generate-source-image/generate-source-image.component';
 import {
-  buildImageRequest,
+  GenerateFormValue,
+  buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  simpleModeValue,
 } from './generate-form.model';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
@@ -53,7 +64,6 @@ const KUDOS_DEBOUNCE_MS = 1000;
 @Component({
   selector: 'app-generate',
   imports: [
-    TranslocoPipe,
     GenerateFormComponent,
     GenerateSourceImageComponent,
     GenerateResultsPanelComponent,
@@ -67,6 +77,7 @@ export class GenerateComponent {
   private readonly toast = inject(ToastService);
   private readonly db = inject(DatabaseService);
   private readonly translator = inject(TranslatorService);
+  private readonly styles = inject(HordeStylesService);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -84,6 +95,15 @@ export class GenerateComponent {
   public readonly models = signal<ActiveModel[]>([]);
   public readonly kudos = signal<number | null>(null);
   public readonly estimating = signal(false);
+
+  /** Curated style presets grouped by category, for the styles picker. */
+  public readonly styleGroups = signal<StylePickerGroup[]>([]);
+  /** `styleName` -> preset, so a picked style can be resolved and applied. */
+  private readonly stylePresets = signal<Map<string, HordeStylePreset>>(
+    new Map(),
+  );
+  /** Params the currently-selected style forces, for "set by style" hints. */
+  public readonly forcedParams = signal<StyleForcedParams | null>(null);
 
   public readonly sourceState =
     signal<GenerateSourceState>(DEFAULT_SOURCE_STATE);
@@ -111,6 +131,7 @@ export class GenerateComponent {
 
     if (this.isBrowser) {
       this.fetchModels();
+      this.fetchStyles();
       this.form.valueChanges
         .pipe(
           debounceTime(KUDOS_DEBOUNCE_MS),
@@ -120,8 +141,62 @@ export class GenerateComponent {
           this.persist();
           void this.updateKudos();
         });
+      // The "set by style" hints and the source reset on leaving advanced must
+      // react immediately, so track raw form changes without the kudos debounce.
+      this.form.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.onFormChanged());
+      this.refreshForcedParams();
       void this.updateKudos();
     }
+  }
+
+  /**
+   * React to any form change: refresh the style hints, and when the user leaves
+   * advanced mode drop any lingering source-image state so a simple-mode request
+   * can never carry a source the (now-hidden) source section still remembers.
+   */
+  private onFormChanged(): void {
+    this.refreshForcedParams();
+    if (
+      this.form.controls.mode.value === 'simple' &&
+      this.sourceState().mode !== 'none'
+    ) {
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.cachedSourceBlob = null;
+      this.sourceBase64 = null;
+    }
+  }
+
+  private refreshForcedParams(): void {
+    const applied = this.resolveApplied(this.form.getRawValue());
+    this.forcedParams.set(applied?.forcedParams ?? null);
+  }
+
+  /**
+   * Resolve the style the form currently selects into an {@link AppliedStyle},
+   * or null when no style is selected (or its preset is not loaded yet). The
+   * style's prompt/params are merged on top of the form's own at build time.
+   */
+  private resolveApplied(value: GenerateFormValue): AppliedStyle | null {
+    if (!value.styleName) {
+      return null;
+    }
+    const preset = this.stylePresets().get(value.styleName);
+    if (!preset) {
+      return null;
+    }
+    return applyStyle(preset, value.prompt, value.negativePrompt);
+  }
+
+  /**
+   * The form value to actually submit/estimate. Advanced mode submits the form
+   * as-is; simple mode strips advanced-only fields back to their defaults (see
+   * {@link simpleModeValue}) so a simple request is clean and predictable.
+   */
+  private effectiveValue(): GenerateFormValue {
+    const raw = this.form.getRawValue();
+    return raw.mode === 'simple' ? simpleModeValue(raw) : raw;
   }
 
   public async onCreate(): Promise<void> {
@@ -130,16 +205,20 @@ export class GenerateComponent {
       promptControl.markAsTouched();
       return;
     }
+    const effective = this.effectiveValue();
+    const usesSource = effective.sourceMode !== 'none';
     const state = this.sourceState();
-    if (!state.valid) {
+    if (usesSource && !state.valid) {
       this.sourceValidationVisible.set(true);
       return;
     }
-    const hasSourceImage = state.sourceBlob !== null;
-    const request = buildImageRequest(this.form.getRawValue(), {
-      hasSourceImage,
-    });
-    const sourceImages = this.buildEnqueueSources(state);
+    const hasSourceImage = usesSource && state.sourceBlob !== null;
+    const request = buildStyledImageRequest(
+      effective,
+      this.resolveApplied(effective),
+      { hasSourceImage },
+    );
+    const sourceImages = usesSource ? this.buildEnqueueSources(state) : [];
     try {
       await this.queue.enqueue(
         request,
@@ -219,22 +298,45 @@ export class GenerateComponent {
       );
   }
 
+  private fetchStyles(): void {
+    zip(this.styles.getStyles(), this.styles.getCategoryGroups())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(([summaries, groups]) => {
+        this.stylePresets.set(
+          new Map(summaries.map((summary) => [summary.name, summary.preset])),
+        );
+        this.styleGroups.set(
+          groups.map((group) => ({
+            category: group.category,
+            names: group.styleNames,
+          })),
+        );
+        // A style may already be selected from persisted state; surface its hints.
+        this.refreshForcedParams();
+      });
+  }
+
   private persist(): void {
     this.db.store(STORAGE_KEY, this.form.getRawValue());
   }
 
   private async updateKudos(): Promise<void> {
-    const raw = this.form.getRawValue();
-    const hasSourceImage = this.sourceBase64 !== null;
+    const effective = this.effectiveValue();
+    const usesSource = effective.sourceMode !== 'none';
+    const hasSourceImage = usesSource && this.sourceBase64 !== null;
     // The horde rejects an empty prompt even for a dry run, so estimate against
-    // a placeholder while leaving the actual form untouched.
-    const request = buildImageRequest(
-      { ...raw, prompt: raw.prompt.trim() || '_' },
-      { hasSourceImage },
-    );
+    // a placeholder while leaving the actual form untouched. The styled request
+    // is what the user will actually submit, so the estimate must reflect it.
+    const base: GenerateFormValue = {
+      ...effective,
+      prompt: effective.prompt.trim() || '_',
+    };
+    const request = buildStyledImageRequest(base, this.resolveApplied(base), {
+      hasSourceImage,
+    });
     // Attach the source image (but never the mask) so controlnet/img2img cost
     // differences are reflected in the estimate.
-    if (this.sourceBase64 !== null) {
+    if (hasSourceImage && this.sourceBase64 !== null) {
       request.source_image = this.sourceBase64;
     }
     const seq = ++this.estimateSeq;

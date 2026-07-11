@@ -1,15 +1,61 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildImageRequest,
+  buildStyledImageRequest,
   coerceFormValue,
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  simpleModeValue,
 } from './generate-form.model';
+import { AppliedStyle } from '../../services/horde-styles.service';
 
 function value(overrides: Partial<GenerateFormValue> = {}): GenerateFormValue {
   return { ...DEFAULT_GENERATE_FORM_VALUE, ...overrides };
 }
+
+describe('simpleModeValue', () => {
+  it('keeps the simple-mode fields and resets everything else to defaults', () => {
+    const result = simpleModeValue(
+      value({
+        mode: 'simple',
+        styleName: 'Cinematic',
+        prompt: 'a fox',
+        negativePrompt: 'blurry',
+        n: 3,
+        model: 'flux',
+        width: 768,
+        height: 512,
+        // Advanced-only fields that must be discarded in simple mode.
+        steps: 40,
+        post_processing: ['GFPGAN'],
+        sourceMode: 'img2img',
+        seed: '12345',
+        nsfw: true,
+      }),
+    );
+
+    expect(result.styleName).toBe('Cinematic');
+    expect(result.prompt).toBe('a fox');
+    expect(result.negativePrompt).toBe('blurry');
+    expect(result.n).toBe(3);
+    expect(result.model).toBe('flux');
+    expect(result.width).toBe(768);
+    expect(result.height).toBe(512);
+
+    expect(result.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+    expect(result.post_processing).toEqual([]);
+    expect(result.sourceMode).toBe('none');
+    expect(result.seed).toBe('');
+    expect(result.nsfw).toBe(false);
+  });
+
+  it('does not mutate the input value', () => {
+    const original = value({ mode: 'simple', steps: 40 });
+    simpleModeValue(original);
+    expect(original.steps).toBe(40);
+  });
+});
 
 describe('buildImageRequest', () => {
   it('maps the core params and defaults r2 on', () => {
@@ -176,6 +222,152 @@ describe('buildImageRequest source processing', () => {
   });
 });
 
+describe('buildImageRequest advanced params', () => {
+  it('sends karras only when enabled (default on emits true)', () => {
+    expect(buildImageRequest(value()).params?.karras).toBe(true);
+    expect(
+      buildImageRequest(value({ karras: false })).params?.karras,
+    ).toBeUndefined();
+  });
+
+  it('emits transparent only when enabled', () => {
+    expect(buildImageRequest(value()).params?.transparent).toBeUndefined();
+    expect(
+      buildImageRequest(value({ transparent: true })).params?.transparent,
+    ).toBe(true);
+  });
+
+  it('emits facefixer_strength only when a face fixer is post-processing', () => {
+    expect(
+      buildImageRequest(value({ facefixer_strength: 0.4 })).params
+        ?.facefixer_strength,
+    ).toBeUndefined();
+    expect(
+      buildImageRequest(
+        value({ post_processing: ['GFPGAN'], facefixer_strength: 0.4 }),
+      ).params?.facefixer_strength,
+    ).toBe(0.4);
+  });
+
+  it('emits hires_fix_denoising_strength only alongside hires_fix', () => {
+    expect(
+      buildImageRequest(value({ hires_fix_denoising_strength: 0.5 })).params
+        ?.hires_fix_denoising_strength,
+    ).toBeUndefined();
+    const on = buildImageRequest(
+      value({ hires_fix: true, hires_fix_denoising_strength: 0.5 }),
+    );
+    expect(on.params?.hires_fix).toBe(true);
+    expect(on.params?.hires_fix_denoising_strength).toBe(0.5);
+  });
+
+  it('emits seed_variation only when greater than one', () => {
+    expect(
+      buildImageRequest(value({ seed_variation: 1 })).params?.seed_variation,
+    ).toBeUndefined();
+    expect(
+      buildImageRequest(value({ seed_variation: 5 })).params?.seed_variation,
+    ).toBe(5);
+  });
+
+  it('maps loras only when present, carrying strengths and flags', () => {
+    expect(
+      buildImageRequest(value({ loras: [] })).params?.loras,
+    ).toBeUndefined();
+    const request = buildImageRequest(
+      value({
+        loras: [
+          { name: '247778', model: 0.8, clip: 0.5, is_version: true },
+          { name: 'Plain', model: 1, clip: 1 },
+        ],
+      }),
+    );
+    expect(request.params?.loras).toEqual([
+      { name: '247778', model: 0.8, clip: 0.5, is_version: true },
+      { name: 'Plain', model: 1, clip: 1 },
+    ]);
+  });
+
+  it('maps tis only when present, carrying inject target and strength', () => {
+    expect(buildImageRequest(value({ tis: [] })).params?.tis).toBeUndefined();
+    const request = buildImageRequest(
+      value({ tis: [{ name: '7808', strength: 0.6, inject_ti: 'negprompt' }] }),
+    );
+    expect(request.params?.tis).toEqual([
+      { name: '7808', strength: 0.6, inject_ti: 'negprompt' },
+    ]);
+  });
+});
+
+describe('buildImageRequest request-level toggles', () => {
+  it('emits shared true by default and drops it when disabled', () => {
+    expect(buildImageRequest(value()).shared).toBe(true);
+    expect(buildImageRequest(value({ shared: false })).shared).toBeUndefined();
+  });
+
+  it('emits replacement_filter only as an explicit opt-out', () => {
+    expect(buildImageRequest(value()).replacement_filter).toBeUndefined();
+    expect(
+      buildImageRequest(value({ replacement_filter: false }))
+        .replacement_filter,
+    ).toBe(false);
+  });
+
+  it('emits extra_slow_workers and disable_batching only when enabled', () => {
+    const off = buildImageRequest(value());
+    expect(off.extra_slow_workers).toBeUndefined();
+    expect(off.disable_batching).toBeUndefined();
+
+    const on = buildImageRequest(
+      value({ extra_slow_workers: true, disable_batching: true }),
+    );
+    expect(on.extra_slow_workers).toBe(true);
+    expect(on.disable_batching).toBe(true);
+  });
+});
+
+describe('buildStyledImageRequest', () => {
+  it('is identical to buildImageRequest when no style is applied', () => {
+    const form = value({ prompt: 'a fox', negativePrompt: 'blurry' });
+    expect(buildStyledImageRequest(form, null)).toEqual(
+      buildImageRequest(form),
+    );
+  });
+
+  it('overrides the prompt and forced params from the style', () => {
+    const form = value({
+      prompt: 'a fox',
+      negativePrompt: 'blurry',
+      model: 'user-model',
+      steps: 25,
+      cfg_scale: 7.5,
+      karras: true,
+    });
+    const applied: AppliedStyle = {
+      prompt: 'stylised a fox ### blurry',
+      forcedParams: {
+        model: 'SDXL 1.0',
+        steps: 8,
+        cfg_scale: 2,
+        karras: false,
+        loras: [{ name: '247778', is_version: true }],
+      },
+    };
+
+    const request = buildStyledImageRequest(form, applied);
+
+    expect(request.prompt).toBe('stylised a fox ### blurry');
+    expect(request.models).toEqual(['SDXL 1.0']);
+    expect(request.params?.steps).toBe(8);
+    expect(request.params?.cfg_scale).toBe(2);
+    // Style forces karras off, so it must not linger from the form default.
+    expect(request.params?.karras).toBeUndefined();
+    expect(request.params?.loras).toEqual([
+      { name: '247778', is_version: true },
+    ]);
+  });
+});
+
 describe('combinePrompt', () => {
   it('returns the positive prompt unchanged with no negative', () => {
     expect(combinePrompt('sunset', '')).toBe('sunset');
@@ -215,6 +407,56 @@ describe('coerceFormValue', () => {
       'openpose',
     );
     expect(coerceFormValue({ control_type: '' }).control_type).toBe('');
+  });
+
+  it('drops malformed lora entries and clamps strengths', () => {
+    const merged = coerceFormValue({
+      loras: [
+        { name: 'Good', model: 0.5, clip: 0.5 },
+        { name: '', model: 1, clip: 1 },
+        { model: 1, clip: 1 },
+        'nonsense',
+        null,
+        { name: 'Clamped', model: 99, clip: -99, is_version: true },
+        { name: 'Trimmed', inject_trigger: '  ' },
+      ],
+    });
+    expect(merged.loras).toEqual([
+      { name: 'Good', model: 0.5, clip: 0.5 },
+      { name: 'Clamped', model: 5, clip: -5, is_version: true },
+      { name: 'Trimmed', model: 1, clip: 1 },
+    ]);
+  });
+
+  it('drops malformed ti entries and validates the inject target', () => {
+    const merged = coerceFormValue({
+      tis: [
+        { name: '7808', strength: 0.6, inject_ti: 'negprompt' },
+        { name: 'Bad', inject_ti: 'sideways' },
+        { strength: 1 },
+      ],
+    });
+    expect(merged.tis).toEqual([
+      { name: '7808', strength: 0.6, inject_ti: 'negprompt' },
+      { name: 'Bad', strength: 1 },
+    ]);
+  });
+
+  it('rejects a junk mode and keeps a valid one', () => {
+    expect(coerceFormValue({ mode: 'bogus' }).mode).toBe('simple');
+    expect(coerceFormValue({ mode: 'advanced' }).mode).toBe('advanced');
+  });
+
+  it('clamps facefixer, hires denoise and seed_variation into range', () => {
+    expect(coerceFormValue({ facefixer_strength: 9 }).facefixer_strength).toBe(
+      1,
+    );
+    expect(
+      coerceFormValue({ hires_fix_denoising_strength: 0 })
+        .hires_fix_denoising_strength,
+    ).toBe(0.01);
+    expect(coerceFormValue({ seed_variation: 9000 }).seed_variation).toBe(1000);
+    expect(coerceFormValue({ seed_variation: 3.7 }).seed_variation).toBe(4);
   });
 
   it('clamps denoising strength into range and ignores non-numbers', () => {
