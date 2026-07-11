@@ -74,6 +74,11 @@
             @case ("vectorize") {
               <span class="alchemy-result__summary-text">SVG</span>
             }
+            @case ("aesthetic") {
+              <span class="alchemy-result__summary-text">{{
+                aestheticScore() | number: "1.2"
+              }}</span>
+            }
             @case ("text") {
               <span class="alchemy-result__summary-text">{{
                 inlineText()
@@ -139,6 +144,28 @@
                 "alchemy.result.nsfw_false" | transloco
               }}</span>
             }
+          </div>
+        }
+        @case ("aesthetic") {
+          <div class="alchemy-aesthetic">
+            <div class="alchemy-aesthetic__score">
+              <span class="alchemy-aesthetic__value">{{
+                aestheticScore() | number: "1.2"
+              }}</span>
+              <span class="alchemy-aesthetic__max">/ 10</span>
+            </div>
+            <div class="alchemy-aesthetic__bar">
+              <span
+                class="alchemy-aesthetic__bar-fill"
+                [style.width]="((aestheticScore() ?? 0) / 10) * 100 + '%'"
+              ></span>
+            </div>
+            <p class="alchemy-aesthetic__label">
+              {{
+                "alchemy.result.aesthetic_rating." + aestheticRating()
+                  | transloco
+              }}
+            </p>
           </div>
         }
         @case ("image") {

@@ -2908,3 +2908,71 @@
 .dark .alchemy-form-info-dialog__text--example {
   color: var(--color-gray-400);
 }
+
+/* ── Aesthetic score ────────────────────────────────────────────────────
+   A single numeric score (0-10) from the LAION aesthetic predictor.
+   Presented with a visual gauge bar and a human-readable rating label. */
+
+.alchemy-aesthetic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.alchemy-aesthetic__score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-2xs);
+}
+
+.alchemy-aesthetic__value {
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.dark .alchemy-aesthetic__value {
+  color: var(--color-gray-100);
+}
+
+.alchemy-aesthetic__max {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.alchemy-aesthetic__bar {
+  width: 100%;
+  max-width: 16rem;
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: var(--color-gray-200);
+}
+
+.dark .alchemy-aesthetic__bar {
+  background-color: var(--color-gray-700);
+}
+
+.alchemy-aesthetic__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--color-red-400),
+    var(--color-yellow-400),
+    var(--color-green-400)
+  );
+  transition: width 0.3s ease;
+}
+
+.alchemy-aesthetic__label {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: capitalize;
+}

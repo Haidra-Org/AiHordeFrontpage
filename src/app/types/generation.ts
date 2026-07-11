@@ -156,6 +156,7 @@ export const ALCHEMY_DATA_FORMS = [
   'vectorize',
   'palette',
   'describe',
+  'aesthetic',
 ] as const;
 
 /**

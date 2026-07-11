@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
@@ -33,6 +34,7 @@ type ResultKind =
   | 'describe'
   | 'palette'
   | 'vectorize'
+  | 'aesthetic'
   | 'text'
   | 'image'
   | 'unknown';
@@ -152,6 +154,7 @@ function sanitizeSvgMarkup(svg: string): string {
   selector: 'app-alchemy-result',
   imports: [
     TranslocoPipe,
+    DecimalPipe,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
     IconComponent,
@@ -265,6 +268,9 @@ export class AlchemyResultComponent {
     if (f.form === 'vectorize' && this.vectorSvgMarkup()) {
       return 'vectorize';
     }
+    if (f.form === 'aesthetic' && typeof f.result?.['aesthetic'] === 'number') {
+      return 'aesthetic';
+    }
     if (this.inlineText()) {
       return 'text';
     }
@@ -277,6 +283,26 @@ export class AlchemyResultComponent {
   public readonly caption = computed(() => this.form().result?.caption ?? '');
 
   public readonly nsfw = computed(() => this.form().result?.nsfw === true);
+
+  public readonly aestheticScore = computed(() => {
+    const score = this.form().result?.['aesthetic'];
+    return typeof score === 'number' ? score : null;
+  });
+
+  /**
+   * Maps the 0-10 aesthetic score to a named rating bucket for a human-readable
+   * label below the score bar. The buckets follow LAION aesthetic conventions.
+   */
+  public readonly aestheticRating = computed(() => {
+    const score = this.aestheticScore();
+    if (score === null) return 'unknown';
+    if (score >= 8) return 'excellent';
+    if (score >= 7) return 'great';
+    if (score >= 6) return 'good';
+    if (score >= 5) return 'average';
+    if (score >= 4) return 'below_average';
+    return 'poor';
+  });
 
   /**
    * Newer alchemy data forms return inline values keyed by their form name
