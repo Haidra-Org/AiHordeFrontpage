@@ -9,6 +9,31 @@ import {
 // Image Generation Request Types
 // ============================================================================
 
+/**
+ * ControlNet guidance modes accepted by the AI Horde `control_type` param.
+ * Mirrors the enum on `ModelPayloadStyleStable` in the v2 swagger.
+ */
+export type ImageControlType =
+  | 'canny'
+  | 'hed'
+  | 'depth'
+  | 'normal'
+  | 'openpose'
+  | 'seg'
+  | 'scribble'
+  | 'fakescribbles'
+  | 'hough';
+
+/**
+ * The ways a `source_image` may be interpreted. `remix` feeds the source into
+ * a compositional remix workflow rather than a denoise-from-source pass.
+ */
+export type ImageSourceProcessing =
+  | 'img2img'
+  | 'inpainting'
+  | 'outpainting'
+  | 'remix';
+
 export interface ImageGenerationParams {
   sampler_name?: ImageSamplerName;
   cfg_scale?: number;
@@ -29,6 +54,11 @@ export interface ImageGenerationParams {
   tis?: StyleTextualInversionConfig[];
   workflow?: string;
   transparent?: boolean;
+  control_type?: ImageControlType;
+  /** Treat `source_image` as an already-computed control map (skip annotation). */
+  image_is_control?: boolean;
+  /** Ask the worker to also return the derived control map alongside the result. */
+  return_control_map?: boolean;
 }
 
 export interface ImageGenerationRequest {
@@ -42,7 +72,7 @@ export interface ImageGenerationRequest {
   worker_blacklist?: boolean;
   models?: string[];
   source_image?: string;
-  source_processing?: 'img2img' | 'inpainting' | 'outpainting';
+  source_processing?: ImageSourceProcessing;
   source_mask?: string;
   r2?: boolean;
   shared?: boolean;
@@ -73,6 +103,27 @@ export interface GenerationCheckResponse {
   kudos: number;
   is_possible: boolean;
 }
+
+/**
+ * Normalized transport error surfaced by the `*Result` service methods so the
+ * generation queue engine can branch on the HTTP status (for example, a 429
+ * that should trigger a submit backoff) instead of collapsing every failure to
+ * `null` like the fire-and-forget methods do.
+ */
+export interface HordeApiError {
+  /** HTTP status, or 0 when the failure was not an HTTP response. */
+  status: number;
+  message: string;
+}
+
+export type SubmitImageResult =
+  | { kind: 'success'; response: ImageGenerationResponse }
+  | { kind: 'error'; error: HordeApiError };
+
+export type CheckImageResult =
+  | { kind: 'success'; check: GenerationCheckResponse }
+  | { kind: 'not_found' }
+  | { kind: 'error'; error: HordeApiError };
 
 export type GenerationMetadataType =
   | 'lora'

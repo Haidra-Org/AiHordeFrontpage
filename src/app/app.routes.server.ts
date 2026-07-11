@@ -39,6 +39,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'alchemy',
     renderMode: RenderMode.Prerender,
   },
+  // Client-only: the page is driven entirely by browser-side IndexedDB/queue
+  // state, so there is nothing meaningful to server-render.
+  {
+    path: 'generate',
+    renderMode: RenderMode.Client,
+  },
   {
     path: 'faq',
     renderMode: RenderMode.Prerender,

@@ -1,0 +1,34 @@
+@if (!embedded()) {
+  <section class="section-primary">
+    <div class="container-page-header">
+      <div>
+        <h1 class="heading-page-title">{{ "generate.title" | transloco }}</h1>
+        <p class="text-description">{{ "generate.intro" | transloco }}</p>
+      </div>
+    </div>
+  </section>
+}
+
+<section class="section-secondary">
+  <div
+    class="container-page-content grid gap-6 py-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start"
+  >
+    <app-generate-form
+      [form]="form"
+      [models]="models()"
+      [kudos]="kudos()"
+      [estimating]="estimating()"
+      (create)="onCreate()"
+    >
+      <app-generate-source-image
+        generateSourceImage
+        [form]="form"
+        [showValidation]="sourceValidationVisible()"
+        (stateChange)="onSourceState($event)"
+      />
+    </app-generate-form>
+    <aside class="lg:sticky lg:top-24">
+      <app-generate-results-panel />
+    </aside>
+  </div>
+</section>

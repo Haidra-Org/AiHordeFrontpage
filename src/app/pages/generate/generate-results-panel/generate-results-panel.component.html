@@ -1,0 +1,233 @@
+<div class="flex flex-col gap-4">
+  <section>
+    <h2 class="heading-section mb-2">
+      {{ "generate.results.pending_heading" | transloco }}
+    </h2>
+    @if (pendingJobs().length === 0) {
+      <p class="text-description text-sm">
+        {{ "generate.results.pending_empty" | transloco }}
+      </p>
+    }
+    <ul class="flex flex-col gap-2">
+      @for (job of pendingJobs(); track job.localId) {
+        <li class="card flex items-center gap-3 p-3">
+          <span class="spinner" aria-hidden="true"></span>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-sm font-medium">{{ job.request.prompt }}</p>
+            <p class="text-description text-xs">
+              @switch (job.status) {
+                @case ("waiting") {
+                  {{ "generate.status.waiting" | transloco }}
+                }
+                @case ("requested") {
+                  {{ "generate.status.submitted" | transloco }}
+                }
+                @default {
+                  {{ "generate.status." + job.status | transloco }}
+                  @if (job.queuePosition) {
+                    ·
+                    {{
+                      "generate.results.queue_position"
+                        | transloco: { position: job.queuePosition }
+                    }}
+                  }
+                  @if (job.waitTime) {
+                    ·
+                    {{
+                      "generate.results.wait_time"
+                        | transloco: { seconds: job.waitTime }
+                    }}
+                  }
+                }
+              }
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="cancel(job)"
+            [attr.aria-label]="'generate.results.cancel' | transloco"
+            [title]="'generate.results.cancel' | transloco"
+          >
+            <app-icon name="x-circle" />
+          </button>
+          <button
+            type="button"
+            class="btn-icon"
+            (click)="remove(job)"
+            [attr.aria-label]="'generate.results.delete' | transloco"
+            [title]="'generate.results.delete' | transloco"
+          >
+            <app-icon name="trash-modern" />
+          </button>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="heading-section mb-2">
+      {{ "generate.results.finished_heading" | transloco }}
+    </h2>
+    @if (finishedJobs().length === 0) {
+      <p class="text-description text-sm">
+        {{ "generate.results.finished_empty" | transloco }}
+      </p>
+    }
+    <ul class="flex flex-col gap-3">
+      @for (job of finishedJobs(); track job.localId) {
+        <li class="card flex flex-col gap-2 p-3">
+          <div class="flex items-start gap-2">
+            <p class="min-w-0 flex-1 truncate text-sm font-medium">
+              {{ job.request.prompt }}
+            </p>
+            @if (job.kudos !== undefined) {
+              <span class="badge-base">
+                {{
+                  "generate.results.kudos"
+                    | transloco: { kudos: job.kudos | number: "1.0-0" }
+                }}
+              </span>
+            }
+          </div>
+
+          @switch (job.status) {
+            @case ("done") {
+              <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                @for (
+                  thumb of thumbnailsFor(job.localId);
+                  track thumb.imageId;
+                  let i = $index
+                ) {
+                  <figure class="group relative">
+                    <button
+                      type="button"
+                      class="block w-full overflow-hidden rounded-md"
+                      (click)="openLightbox(thumb)"
+                    >
+                      <img
+                        [src]="thumb.url"
+                        [alt]="job.request.prompt"
+                        loading="lazy"
+                        class="aspect-square w-full object-cover"
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-icon absolute right-1 top-1 bg-black/50"
+                      (click)="downloadImage(thumb, i)"
+                      [attr.aria-label]="
+                        'generate.results.download' | transloco
+                      "
+                      [title]="'generate.results.download' | transloco"
+                    >
+                      <app-icon name="arrow-down-tray" />
+                    </button>
+                  </figure>
+                } @empty {
+                  <p class="text-description col-span-full text-xs">
+                    {{ "generate.results.no_images" | transloco }}
+                  </p>
+                }
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @if (thumbnailsFor(job.localId).length > 1) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-secondary"
+                    (click)="downloadZip(job)"
+                  >
+                    <app-icon name="arrow-down-tray" />
+                    {{ "generate.results.download_zip" | transloco }}
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger"
+                  (click)="remove(job)"
+                >
+                  {{ "generate.results.delete" | transloco }}
+                </button>
+              </div>
+            }
+            @case ("error") {
+              <p class="alert alert--danger text-sm">
+                {{
+                  job.errorMessage || ("generate.results.errored" | transloco)
+                }}
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-secondary"
+                  (click)="retry(job)"
+                >
+                  <app-icon name="refresh-alt" />
+                  {{ "generate.results.retry" | transloco }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger"
+                  (click)="remove(job)"
+                >
+                  {{ "generate.results.delete" | transloco }}
+                </button>
+              </div>
+            }
+            @default {
+              <p class="text-description text-sm">
+                {{ "generate.status.cancelled" | transloco }}
+              </p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-danger"
+                  (click)="remove(job)"
+                >
+                  {{ "generate.results.delete" | transloco }}
+                </button>
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  </section>
+</div>
+
+@if (lightbox(); as view) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+    (click)="closeLightbox()"
+    (keydown.escape)="closeLightbox()"
+    tabindex="0"
+    role="dialog"
+    aria-modal="true"
+  >
+    <button
+      type="button"
+      class="btn-icon absolute right-4 top-4 text-white"
+      (click)="closeLightbox()"
+      [attr.aria-label]="'generate.results.close' | transloco"
+    >
+      <app-icon name="x-mark" />
+    </button>
+    <figure class="flex max-h-full max-w-full flex-col items-center gap-2">
+      <img
+        [src]="view.url"
+        alt=""
+        class="max-h-[80vh] max-w-full rounded-md object-contain"
+      />
+      @if (view.seed || view.model) {
+        <figcaption class="text-xs text-white/80">
+          @if (view.model) {
+            {{ view.model }}
+          }
+          @if (view.seed) {
+            · {{ "generate.results.seed" | transloco: { seed: view.seed } }}
+          }
+        </figcaption>
+      }
+    </figure>
+  </div>
+}

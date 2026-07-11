@@ -44,6 +44,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'generate',
+    loadComponent: () =>
+      import('./pages/generate/generate.component').then(
+        (c) => c.GenerateComponent,
+      ),
+  },
+  {
     path: 'faq',
     loadComponent: () =>
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),

@@ -67,6 +67,7 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `/privacy`     | `PrivacyComponent`         | —                                                                                              |
 | `/terms`       | `TermsComponent`           | —                                                                                              |
 | `/contribute`  | `ContributeComponent`      | Child routes                                                                                   |
+| `/generate`    | `GenerateComponent`        | —                                                                                              |
 | `/v2-transfer` | `TransferComponent`        | —                                                                                              |
 | `/**`          | `NotFoundComponent`        | —                                                                                              |
 
@@ -91,6 +92,8 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
 | `AuthService`          | User authentication, session state, API key management                          |
 | `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
+| `GenerationQueueService` | Client-side image generation queue: dispatch, polling, result download          |
+| `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
 | `ToastService`         | Signal-based notification system with auto-dismiss                              |
 | `ThemeService`         | Theme management (`'light' \| 'dark' \| 'system'`)                              |
 | `IconRegistryService`  | Register and retrieve SVG icon paths by name                                    |
@@ -178,6 +181,71 @@ Template reads signal()  →  OnPush detects change  →  render
 ```
 
 ---
+
+## Generation Queue Subsystem
+
+Client-side image generation is driven by two root-provided, browser-only
+services. On the server both are inert: `GenerationDbService` methods no-op and
+`GenerationQueueService` starts no loops, so injecting them during SSR is safe.
+
+- **`GenerationDbService`** owns an IndexedDB database (`ai-horde-frontpage`)
+  with two stores: `generationJobs` (keyed by `localId`, indexed on `status` and
+  `createdAt`) and `generationImages` (keyed by `[localId, imageId]`, indexed on
+  `localId`). It exposes job CRUD, per-job image storage, cascade delete, and a
+  retention prune that keeps at most N terminal jobs. The schema is versioned and
+  self-healing: the upgrade callback creates stores and indexes idempotently, and
+  if an opened database is found missing a required store (a foreign layout at or
+  above the current version) or the open fails with a `VersionError`, the database
+  is deleted and rebuilt fresh. Generation history is a disposable local cache, so
+  losing it on recovery is preferable to a permanently wedged page. Recovery is
+  race-safe because the open promise is memoized, so concurrent callers share a
+  single wipe-and-recreate.
+
+- **`GenerationQueueService`** exposes `jobs`, `pendingJobs`, and `finishedJobs`
+  signals plus `enqueue`, `cancel`, `deleteJob`, `retry`, `getJobImages`, and
+  `estimateKudos` (a `dry_run` submission). It runs two cooperative loops:
+  - a **dispatch loop** (~1s) that submits `waiting` jobs while the active count
+    is below the concurrency cap and a sliding-window rate limit allows it,
+    backing off on 429 and marking 4xx validation failures as errored,
+  - a **poll loop** (~2s) that advances in-flight jobs from the check endpoint,
+    then on completion fetches the status, downloads each result (R2 URL or
+    base64) to a `Blob`, and stores it.
+
+  Large base64 `source_image` / `source_mask` payloads are never embedded in the
+  persisted request; source/mask blobs live in the image store and are
+  rehydrated into the request at submit time. Timers run via
+  `NgZone.runOutsideAngular`; signal writes are marshalled back inside the zone.
+  On startup the service loads persisted jobs so in-flight work resumes polling
+  and `waiting` work resumes dispatch.
+
+  The queue relies on the `*Result` variants of `AiHordeService`
+  (`submitImageGenerationResult`, `checkImageGenerationResult`) which surface the
+  HTTP status so the engine can distinguish a 429 backoff from a permanent 4xx
+  rejection, unlike the `null`-collapsing fire-and-forget methods.
+
+The `/generate` page (`pages/generate/`, `RenderMode.Client`) is the canonical UI
+over this queue. The profile `generations` tab
+(`/profile/generations`) reuses it rather than duplicating the flow: its
+`ProfileGenerationsComponent` renders `<app-generate [embedded]="true" />`, where
+the `embedded` input suppresses the page's own intro/title chrome and its claim on
+the document title so it nests cleanly inside the profile shell.
+`GenerateComponent` owns a reactive form, drives a debounced
+`estimateKudos` dry run, persists the form to `localStorage` via
+`DatabaseService`, and hands built requests to `enqueue`. `GenerateFormComponent`
+is the presentational request builder (it exposes a `[generateSourceImage]`
+content slot). `GenerateSourceImageComponent` is projected into that slot: it
+drives the img2img/controlnet/inpaint controls on the shared form, owns the
+uploaded source blob (downscaled client-side to the 3072px cap) and an
+inpainting paint-mask canvas, and emits a `GenerateSourceState` (source blob,
+mask blob, validity) so the page can gate Create and hand blobs to `enqueue`.
+Image blobs are never form state; only the serialisable mode/denoise/control
+fields are. `GenerateResultsPanelComponent` renders `pendingJobs`/`finishedJobs`,
+turning stored result blobs into object URLs that it revokes on destroy or delete.
+
+The inpainting mask follows the horde convention (verified against hordelib
+`ImageUtils.add_image_alpha_channel`): WHITE marks the region to regenerate,
+BLACK is preserved. The paint layer keeps strokes in its alpha channel and the
+export (`helper/source-image.ts`) flattens any painted pixel to white on black.
 
 ## SSR & Hydration
 

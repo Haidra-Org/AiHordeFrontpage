@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { GenerationsTabComponent } from '../../../../components/generations-tab/generations-tab.component';
+import { GenerateComponent } from '../../../generate/generate.component';
 
 @Component({
   selector: 'app-profile-generations',
-  imports: [GenerationsTabComponent],
-  template: '<app-generations-tab />',
+  imports: [GenerateComponent],
+  template: '<app-generate [embedded]="true" />',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileGenerationsComponent {}

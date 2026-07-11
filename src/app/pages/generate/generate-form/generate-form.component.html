@@ -1,0 +1,366 @@
+<form [formGroup]="form()" (ngSubmit)="onCreate()" class="flex flex-col gap-4">
+  <div>
+    <label class="form-label" for="generate-prompt">
+      {{ "generate.form.prompt_label" | transloco }}
+    </label>
+    <textarea
+      id="generate-prompt"
+      class="form-textarea w-full"
+      formControlName="prompt"
+      cdkTextareaAutosize
+      cdkAutosizeMinRows="3"
+      cdkAutosizeMaxRows="12"
+      [placeholder]="'generate.form.prompt_placeholder' | transloco"
+    ></textarea>
+  </div>
+
+  <div>
+    <button
+      type="button"
+      class="flex items-center gap-1 text-sm font-medium"
+      (click)="toggleNegativePrompt()"
+      [attr.aria-expanded]="negativePromptOpen()"
+    >
+      <app-icon
+        [name]="negativePromptOpen() ? 'chevron-down' : 'chevron-right'"
+      />
+      {{ "generate.form.negative_prompt_label" | transloco }}
+    </button>
+    @if (negativePromptOpen()) {
+      <textarea
+        class="form-textarea mt-2 w-full"
+        formControlName="negativePrompt"
+        cdkTextareaAutosize
+        cdkAutosizeMinRows="2"
+        cdkAutosizeMaxRows="8"
+        [placeholder]="'generate.form.negative_prompt_placeholder' | transloco"
+      ></textarea>
+    }
+  </div>
+
+  <div>
+    <label class="form-label" for="generate-batch">
+      {{
+        "generate.form.batch_label"
+          | transloco: { count: form().controls.n.value }
+      }}
+    </label>
+    <input
+      id="generate-batch"
+      class="w-full"
+      type="range"
+      formControlName="n"
+      [min]="minBatch"
+      [max]="maxBatch"
+      step="1"
+    />
+  </div>
+
+  <!-- Extension point: the source-image (img2img / controlnet / inpaint)
+       controls are projected here by the parent in a later slice. -->
+  <ng-content select="[generateSourceImage]" />
+
+  <details class="card p-4">
+    <summary class="cursor-pointer font-medium">
+      {{ "generate.form.model_section" | transloco }}
+    </summary>
+    <div class="mt-3">
+      <label class="form-label" for="generate-model">
+        {{ "generate.form.model_label" | transloco }}
+      </label>
+      <app-model-autocomplete
+        formControlName="model"
+        inputId="generate-model"
+        [models]="models()"
+        [allowMultiple]="false"
+        placeholderKey="generate.form.model_placeholder"
+        listAriaLabelKey="generate.form.model_list_label"
+        toggleAriaLabelKey="generate.form.model_toggle_label"
+        hiddenCountKey="generate.form.model_hidden_count"
+        emptyKey="generate.form.model_empty"
+      />
+      <p class="form-hint mt-1">
+        {{ "generate.form.model_hint" | transloco }}
+      </p>
+    </div>
+  </details>
+
+  <details class="card p-4">
+    <summary class="cursor-pointer font-medium">
+      {{ "generate.form.sampling_section" | transloco }}
+    </summary>
+    <div class="mt-3 flex flex-col gap-3">
+      <div>
+        <label class="form-label" for="generate-sampler">
+          {{ "generate.form.sampler_label" | transloco }}
+        </label>
+        <select
+          id="generate-sampler"
+          class="form-select w-full"
+          formControlName="sampler_name"
+        >
+          @for (sampler of samplers; track sampler) {
+            <option [value]="sampler">{{ sampler }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="form-label" for="generate-steps">
+          {{
+            "generate.form.steps_label"
+              | transloco: { value: form().controls.steps.value }
+          }}
+        </label>
+        <input
+          id="generate-steps"
+          class="w-full"
+          type="range"
+          formControlName="steps"
+          min="1"
+          max="500"
+          step="1"
+        />
+      </div>
+      <div>
+        <label class="form-label" for="generate-cfg">
+          {{
+            "generate.form.cfg_label"
+              | transloco: { value: form().controls.cfg_scale.value }
+          }}
+        </label>
+        <input
+          id="generate-cfg"
+          class="w-full"
+          type="range"
+          formControlName="cfg_scale"
+          min="0"
+          max="100"
+          step="0.5"
+        />
+      </div>
+      <div>
+        <label class="form-label" for="generate-clip">
+          {{
+            "generate.form.clip_skip_label"
+              | transloco: { value: form().controls.clip_skip.value }
+          }}
+        </label>
+        <input
+          id="generate-clip"
+          class="w-full"
+          type="range"
+          formControlName="clip_skip"
+          min="1"
+          max="12"
+          step="1"
+        />
+      </div>
+      <div>
+        <label class="form-label" for="generate-seed">
+          {{ "generate.form.seed_label" | transloco }}
+        </label>
+        <input
+          id="generate-seed"
+          class="form-input w-full"
+          type="text"
+          formControlName="seed"
+          [placeholder]="'generate.form.seed_placeholder' | transloco"
+        />
+      </div>
+    </div>
+  </details>
+
+  <details class="card p-4">
+    <summary class="cursor-pointer font-medium">
+      {{ "generate.form.dimensions_section" | transloco }}
+    </summary>
+    <div class="mt-3 flex flex-col gap-3">
+      <div class="flex gap-2">
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="sizeBase() === 512"
+          [class.btn-secondary]="sizeBase() !== 512"
+          (click)="setSizeBase(512)"
+        >
+          {{ "generate.form.base_sd15" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="sizeBase() === 1024"
+          [class.btn-secondary]="sizeBase() !== 1024"
+          (click)="setSizeBase(1024)"
+        >
+          {{ "generate.form.base_sdxl" | transloco }}
+        </button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        @for (preset of presets(); track preset.labelKey) {
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="isPresetActive(preset.width, preset.height)"
+            [class.btn-secondary]="!isPresetActive(preset.width, preset.height)"
+            (click)="applyPreset(preset.width, preset.height)"
+          >
+            {{ preset.labelKey | transloco }}
+          </button>
+        }
+      </div>
+      <div>
+        <label class="form-label" for="generate-width">
+          {{
+            "generate.form.width_label"
+              | transloco: { value: form().controls.width.value }
+          }}
+        </label>
+        <input
+          id="generate-width"
+          class="w-full"
+          type="range"
+          formControlName="width"
+          [min]="minDimension"
+          [max]="maxDimension"
+          [step]="dimensionStep"
+        />
+      </div>
+      <div>
+        <label class="form-label" for="generate-height">
+          {{
+            "generate.form.height_label"
+              | transloco: { value: form().controls.height.value }
+          }}
+        </label>
+        <input
+          id="generate-height"
+          class="w-full"
+          type="range"
+          formControlName="height"
+          [min]="minDimension"
+          [max]="maxDimension"
+          [step]="dimensionStep"
+        />
+      </div>
+      @if (totalPixels() > pixelWarnThreshold) {
+        <p class="alert alert--warning flex items-center gap-2 text-sm">
+          <app-icon name="warning-triangle" />
+          {{ "generate.form.pixel_warning" | transloco }}
+        </p>
+      }
+    </div>
+  </details>
+
+  <details class="card p-4">
+    <summary class="cursor-pointer font-medium">
+      {{ "generate.form.post_processing_section" | transloco }}
+    </summary>
+    <div class="mt-3 flex flex-col gap-2">
+      @for (processor of postProcessors; track processor) {
+        <label class="form-checkbox">
+          <input
+            type="checkbox"
+            class="checkbox-input"
+            [checked]="isPostProcessorSelected(processor)"
+            (change)="onCheckboxChange($event, processor)"
+          />
+          <span class="checkbox-label">{{ processor }}</span>
+        </label>
+      }
+      <label class="form-checkbox mt-2">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="hires_fix"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.hires_fix_label" | transloco }}
+        </span>
+      </label>
+      <label class="form-checkbox">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="tiling"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.tiling_label" | transloco }}
+        </span>
+      </label>
+    </div>
+  </details>
+
+  <details class="card p-4">
+    <summary class="cursor-pointer font-medium">
+      {{ "generate.form.horde_section" | transloco }}
+    </summary>
+    <div class="mt-3 flex flex-col gap-2">
+      <label class="form-checkbox">
+        <input type="checkbox" class="checkbox-input" formControlName="nsfw" />
+        <span class="checkbox-label">
+          {{ "generate.form.nsfw_label" | transloco }}
+        </span>
+      </label>
+      <label class="form-checkbox">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="censor_nsfw"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.censor_nsfw_label" | transloco }}
+        </span>
+      </label>
+      <label class="form-checkbox">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="trusted_workers"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.trusted_workers_label" | transloco }}
+        </span>
+      </label>
+      <label class="form-checkbox">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="slow_workers"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.slow_workers_label" | transloco }}
+        </span>
+      </label>
+      <label class="form-checkbox">
+        <input
+          type="checkbox"
+          class="checkbox-input"
+          formControlName="allow_downgrade"
+        />
+        <span class="checkbox-label">
+          {{ "generate.form.allow_downgrade_label" | transloco }}
+        </span>
+      </label>
+    </div>
+  </details>
+
+  <button
+    type="submit"
+    class="btn btn-primary w-full justify-center"
+    [disabled]="form().controls.prompt.invalid"
+  >
+    <span>{{ "generate.form.create" | transloco }}</span>
+    <span class="text-xs opacity-90">
+      @if (estimating()) {
+        {{ "generate.form.kudos_estimating" | transloco }}
+      } @else if (kudos() !== null) {
+        {{
+          "generate.form.kudos_estimate"
+            | transloco: { kudos: (kudos() | number: "1.0-0") }
+        }}
+      } @else {
+        &ndash;
+      }
+    </span>
+  </button>
+</form>

@@ -27,7 +27,11 @@ import {
   InterrogationRequest,
   InterrogationResponse,
   GENERATION_NOT_FOUND,
+  SubmitImageResult,
+  CheckImageResult,
+  HordeApiError,
 } from '../types/generation';
+import { extractApiErrorField } from '../helper/extract-api-error';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 import { API_BASE_URL } from './api-config';
@@ -330,31 +334,98 @@ export class AiHordeService {
     'AiHordeFrontpage:generate',
   );
 
+  private postGenerateAsync(
+    apiKey: string,
+    request: ImageGenerationRequest,
+  ): Observable<ImageGenerationResponse> {
+    return this.httpClient.post<ImageGenerationResponse>(
+      `${this.baseUrl}/generate/async`,
+      request,
+      {
+        headers: { apikey: apiKey },
+        context: this.generateContext,
+      },
+    );
+  }
+
   public submitImageGeneration(
     apiKey: string,
     request: ImageGenerationRequest,
   ): Observable<ImageGenerationResponse | null> {
-    return this.httpClient
-      .post<ImageGenerationResponse>(
-        `${this.baseUrl}/generate/async`,
-        request,
-        {
-          headers: { apikey: apiKey },
-          context: this.generateContext,
-        },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.postGenerateAsync(apiKey, request).pipe(
+      catchError(() => of(null)),
+    );
+  }
+
+  /**
+   * Submit a generation, surfacing the HTTP status on failure. The queue engine
+   * needs to distinguish a 429 (submit backoff) from a 4xx validation rejection
+   * (permanent job error), which the `null`-collapsing method above cannot.
+   */
+  public submitImageGenerationResult(
+    apiKey: string,
+    request: ImageGenerationRequest,
+  ): Observable<SubmitImageResult> {
+    return this.postGenerateAsync(apiKey, request).pipe(
+      map((response) => ({ kind: 'success' as const, response })),
+      catchError((err: unknown) =>
+        of({ kind: 'error' as const, error: this.toHordeApiError(err) }),
+      ),
+    );
+  }
+
+  private getCheck(id: string): Observable<GenerationCheckResponse> {
+    return this.httpClient.get<GenerationCheckResponse>(
+      `${this.baseUrl}/generate/check/${encodeURIComponent(id)}`,
+    );
   }
 
   // Generation status checks are never cached — they need real-time data
   public checkImageGeneration(
     id: string,
   ): Observable<GenerationCheckResponse | typeof GENERATION_NOT_FOUND | null> {
+    return this.getCheck(id).pipe(
+      catchError((err: unknown) => this.catchNotFound(err)),
+    );
+  }
+
+  /**
+   * Poll a generation, surfacing whether the failure was a 404 (job expired) or
+   * some other status (for example a 429 the engine should back off from).
+   */
+  public checkImageGenerationResult(id: string): Observable<CheckImageResult> {
+    return this.getCheck(id).pipe(
+      map((check) => ({ kind: 'success' as const, check })),
+      catchError((err: unknown) => {
+        if (err instanceof HttpErrorResponse && err.status === 404) {
+          return of({ kind: 'not_found' as const });
+        }
+        return of({ kind: 'error' as const, error: this.toHordeApiError(err) });
+      }),
+    );
+  }
+
+  /**
+   * Cancel an in-flight generation. The horde returns the check payload with any
+   * already-finished images preserved; a 404 means it was already gone.
+   */
+  public cancelImageGeneration(
+    id: string,
+  ): Observable<GenerationCheckResponse | typeof GENERATION_NOT_FOUND | null> {
     return this.httpClient
-      .get<GenerationCheckResponse>(
-        `${this.baseUrl}/generate/check/${encodeURIComponent(id)}`,
+      .delete<GenerationCheckResponse>(
+        `${this.baseUrl}/generate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
+  }
+
+  private toHordeApiError(err: unknown): HordeApiError {
+    const status = err instanceof HttpErrorResponse ? err.status : 0;
+    const message =
+      extractApiErrorField(err, 'message') ??
+      extractApiErrorField(err, 'detail') ??
+      'Request failed';
+    return { status, message };
   }
 
   public getImageGenerationStatus(
