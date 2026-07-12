@@ -11,11 +11,12 @@ import {
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { TextFieldModule } from '@angular/cdk/text-field';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
+import { GeneratePresetsService } from '../../../services/generate-presets.service';
+import { ToastService } from '../../../services/toast.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
 import { StyleForcedParams } from '../../../services/horde-styles.service';
@@ -25,6 +26,7 @@ import {
   FormLoraEntry,
   FormTiEntry,
   GenerateFormGroup,
+  GenerateFormValue,
   GenerateMode,
   MAX_BATCH,
   MAX_DIMENSION,
@@ -40,11 +42,13 @@ import {
   MIN_SEED_VARIATION,
   DIMENSION_STEP,
   ModelSizeBase,
+  PanelSize,
   PIXEL_WARN_THRESHOLD,
   SAMPLERS,
   STRIP_BACKGROUND,
   UPSCALERS,
   buildAspectPresets,
+  cyclePanelSize,
 } from '../generate-form.model';
 
 /** A style category paired with the style names under it, for the picker. */
@@ -68,7 +72,6 @@ export interface StylePickerGroup {
   imports: [
     DecimalPipe,
     ReactiveFormsModule,
-    TextFieldModule,
     TranslocoPipe,
     IconComponent,
     ModelAutocompleteComponent,
@@ -79,6 +82,8 @@ export interface StylePickerGroup {
 })
 export class GenerateFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  public readonly presetsSvc = inject(GeneratePresetsService);
+  private readonly toast = inject(ToastService);
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
@@ -88,8 +93,21 @@ export class GenerateFormComponent implements OnInit {
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */
   public readonly styleGroups = input<StylePickerGroup[]>([]);
+  /** Current control-panel width; drives the reflow and the expand control. */
+  public readonly panelSize = input<PanelSize>('normal');
+  /** Whether the expand/collapse control is offered (off when embedded). */
+  public readonly expandable = input(true);
 
   public readonly create = output<void>();
+  public readonly panelSizeChange = output<PanelSize>();
+  /** Ask the parent to open a preview of the request this form would submit. */
+  public readonly preview = output<void>();
+  /** Load a saved/recent preset back into the form (via the parent's confirm). */
+  public readonly applySettings = output<GenerateFormValue>();
+
+  /** Whether the header presets menu is open, and the pending save-as name. */
+  public readonly presetsOpen = signal(false);
+  public readonly saveName = signal('');
 
   public readonly samplers = SAMPLERS;
   public readonly upscalers = UPSCALERS;
@@ -369,31 +387,97 @@ export class GenerateFormComponent implements OnInit {
 
   // --- Style "set by style" hints -----------------------------------------
 
-  public styleForcesModel(): boolean {
-    return this.forcedParams()?.model !== undefined;
+  /**
+   * The concrete model a selected style forces, so the hint can name it rather
+   * than only flagging that a model is set (the model field keeps showing the
+   * user's own pick, which is what made the forced model easy to miss).
+   */
+  public styleModelText(): string | null {
+    return this.forcedParams()?.model ?? null;
   }
 
-  public styleForcesDimensions(): boolean {
+  /** The dimensions a style forces, as `W×H`, or null when it forces neither. */
+  public styleDimensionsText(): string | null {
     const forced = this.forcedParams();
-    return forced?.width !== undefined || forced?.height !== undefined;
+    if (
+      !forced ||
+      (forced.width === undefined && forced.height === undefined)
+    ) {
+      return null;
+    }
+    const width = forced.width ?? this.form().controls.width.value;
+    const height = forced.height ?? this.form().controls.height.value;
+    return `${width}×${height}`;
   }
 
-  public styleForcesSampling(): boolean {
+  /** A compact summary of the sampling params a style forces, or null if none. */
+  public styleSamplingText(): string | null {
     const forced = this.forcedParams();
     if (!forced) {
-      return false;
+      return null;
     }
-    return (
-      forced.steps !== undefined ||
-      forced.cfg_scale !== undefined ||
-      forced.sampler_name !== undefined ||
-      forced.clip_skip !== undefined ||
-      forced.karras !== undefined ||
-      forced.hires_fix !== undefined
-    );
+    const parts: string[] = [];
+    if (forced.sampler_name !== undefined) parts.push(forced.sampler_name);
+    if (forced.steps !== undefined) parts.push(`${forced.steps} steps`);
+    if (forced.cfg_scale !== undefined) parts.push(`cfg ${forced.cfg_scale}`);
+    if (forced.clip_skip !== undefined) parts.push(`clip ${forced.clip_skip}`);
+    if (forced.karras !== undefined) {
+      parts.push(forced.karras ? 'karras' : 'no karras');
+    }
+    if (forced.hires_fix !== undefined) {
+      parts.push(forced.hires_fix ? 'hires fix' : 'no hires fix');
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
   }
 
   public onCreate(): void {
     this.create.emit();
+  }
+
+  public onPreview(): void {
+    this.preview.emit();
+  }
+
+  // --- Presets menu --------------------------------------------------------
+
+  public togglePresets(): void {
+    this.presetsOpen.update((open) => !open);
+  }
+
+  public closePresets(): void {
+    this.presetsOpen.set(false);
+  }
+
+  public setSaveName(value: string): void {
+    this.saveName.set(value);
+  }
+
+  public saveCurrentPreset(): void {
+    const name = this.saveName().trim();
+    if (!name) {
+      return;
+    }
+    this.presetsSvc.savePreset(name, this.form().getRawValue());
+    this.saveName.set('');
+    this.toast.success('generate.form.preset_saved', { transloco: true });
+  }
+
+  /** Load a saved/recent preset: hand it to the parent for confirm + apply. */
+  public loadPreset(value: GenerateFormValue): void {
+    this.applySettings.emit(value);
+    this.closePresets();
+  }
+
+  public deletePreset(id: string, event: Event): void {
+    event.stopPropagation();
+    this.presetsSvc.deletePreset(id);
+  }
+
+  /**
+   * Step the panel one width wider, wrapping `full` back to `normal`. Backs the
+   * single expand/collapse toggle in the header.
+   */
+  public cyclePanel(): void {
+    this.panelSizeChange.emit(cyclePanelSize(this.panelSize()));
   }
 }

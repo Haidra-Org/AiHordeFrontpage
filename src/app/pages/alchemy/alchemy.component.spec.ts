@@ -59,13 +59,48 @@ describe('AlchemyComponent', () => {
     for (const f of forms) component.toggleForm(f);
   };
 
-  describe('tabs', () => {
-    it('defaults to the tool tab and switches to developers', () => {
-      expect(component.activeTab()).toBe('tool');
-      component.setTab('developers');
-      expect(component.activeTab()).toBe('developers');
-      component.setTab('tool');
-      expect(component.activeTab()).toBe('tool');
+  describe('api modal', () => {
+    it('opens and closes the API request preview', () => {
+      expect(component.apiModalOpen()).toBe(false);
+      component.openApi();
+      expect(component.apiModalOpen()).toBe(true);
+      component.closeApi();
+      expect(component.apiModalOpen()).toBe(false);
+    });
+
+    it('previews the request body built from the current selection', () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('caption', 'nsfw');
+
+      const payload = JSON.parse(component.apiPayload());
+      expect(payload).toEqual({
+        forms: [{ name: 'caption' }, { name: 'nsfw' }],
+        source_image: 'https://example.com/i.png',
+        slow_workers: true,
+      });
+    });
+  });
+
+  describe('panel size', () => {
+    it('cycles normal -> double -> full -> normal on each toggle', () => {
+      expect(component.panelSize()).toBe('normal');
+      component.cyclePanel();
+      expect(component.panelSize()).toBe('double');
+      component.cyclePanel();
+      expect(component.panelSize()).toBe('full');
+      component.cyclePanel();
+      expect(component.panelSize()).toBe('normal');
+    });
+  });
+
+  describe('collapsible groups', () => {
+    it('starts expanded and toggles a group closed then open', () => {
+      expect(component.isGroupCollapsed('upscale')).toBe(false);
+      component.toggleGroup('upscale');
+      expect(component.isGroupCollapsed('upscale')).toBe(true);
+      expect(component.isGroupCollapsed('analyze')).toBe(false);
+      component.toggleGroup('upscale');
+      expect(component.isGroupCollapsed('upscale')).toBe(false);
     });
   });
 

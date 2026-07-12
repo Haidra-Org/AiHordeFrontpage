@@ -37,18 +37,36 @@ export const routes: Routes = [
       import('./pages/details/details.routes').then((m) => m.detailsRoutes),
   },
   {
-    path: 'alchemy',
-    loadComponent: () =>
-      import('./pages/alchemy/alchemy.component').then(
-        (c) => c.AlchemyComponent,
-      ),
-  },
-  {
+    // Image generation and Alchemy are subtabs of one full-height /generate
+    // workspace: /generate/image and /generate/alchemy share the shell's tab bar.
     path: 'generate',
     loadComponent: () =>
-      import('./pages/generate/generate.component').then(
-        (c) => c.GenerateComponent,
+      import('./pages/generate/generate-shell.component').then(
+        (c) => c.GenerateShellComponent,
       ),
+    children: [
+      {
+        path: 'image',
+        loadComponent: () =>
+          import('./pages/generate/generate.component').then(
+            (c) => c.GenerateComponent,
+          ),
+      },
+      {
+        path: 'alchemy',
+        loadComponent: () =>
+          import('./pages/alchemy/alchemy.component').then(
+            (c) => c.AlchemyComponent,
+          ),
+      },
+      { path: '', redirectTo: 'image', pathMatch: 'full' },
+    ],
+  },
+  {
+    // Preserve the old top-level /alchemy entry point.
+    path: 'alchemy',
+    redirectTo: 'generate/alchemy',
+    pathMatch: 'full',
   },
   {
     path: 'faq',

@@ -29,16 +29,26 @@ export function imageFileName(image: StoredJobImage, index: number): string {
 
 /**
  * Zip a job's result images into a single archive. Returns the zipped bytes; the
- * caller wraps them in a Blob and triggers the download.
+ * caller wraps them in a Blob and triggers the download. When `metaByImageId` is
+ * given, a `<name>.json` metadata sidecar is written next to each image whose id
+ * it carries, so an export keeps each image's parameters and returned data.
  */
 export async function buildJobImageArchive(
   images: StoredJobImage[],
+  metaByImageId?: Map<string, string>,
 ): Promise<Uint8Array> {
   const files: Zippable = {};
+  const encoder = new TextEncoder();
   await Promise.all(
     images.map(async (image, index) => {
       const bytes = new Uint8Array(await image.blob.arrayBuffer());
-      files[imageFileName(image, index)] = bytes;
+      const name = imageFileName(image, index);
+      files[name] = bytes;
+      const meta = metaByImageId?.get(image.imageId);
+      if (meta) {
+        const stem = name.replace(/\.[^.]+$/, '');
+        files[`${stem}.json`] = encoder.encode(meta);
+      }
     }),
   );
   return zipSync(files);

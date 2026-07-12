@@ -1,210 +1,212 @@
 <app-toast-bar />
-<div class="wrapper">
+<div class="wrapper" [class.wrapper--flush]="hideFooter()">
   <app-nav-bar />
 
   <router-outlet></router-outlet>
-  <footer class="footer-shell" [class.footer-dark]="darkFooter()">
-    <div class="footer-container">
-      <div class="footer-grid">
-        <div>
-          <h3 class="footer-heading">
-            {{ "community" | transloco }}
-          </h3>
-          <ul class="footer-links">
-            <li class="mb-3">
-              <a
-                href="https://discord.gg/3DxrhksKzn"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "discord" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://www.patreon.com/db0"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "patreon" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://github.com/Haidra-Org"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "github" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://sigmoid.social/@stablehorde"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "mastodon" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://lemmy.dbzer0.com/c/aihorde"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "lemmy" | transloco }}</a
-              >
-            </li>
-          </ul>
+  @if (!hideFooter()) {
+    <footer class="footer-shell" [class.footer-dark]="darkFooter()">
+      <div class="footer-container">
+        <div class="footer-grid">
+          <div>
+            <h3 class="footer-heading">
+              {{ "community" | transloco }}
+            </h3>
+            <ul class="footer-links">
+              <li class="mb-3">
+                <a
+                  href="https://discord.gg/3DxrhksKzn"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "discord" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://www.patreon.com/db0"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "patreon" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://github.com/Haidra-Org"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "github" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://sigmoid.social/@stablehorde"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "mastodon" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://lemmy.dbzer0.com/c/aihorde"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "lemmy" | transloco }}</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="footer-heading">
+              {{ "credits" | transloco }}
+            </h3>
+            <ul class="footer-links">
+              <li class="mb-3">
+                <a
+                  href="https://dbzer0.com/"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >db0</a
+                >
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://github.com/haidra-org"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >Haidra</a
+                >
+              </li>
+              <li class="mb-3">
+                <a routerLink="/sponsors" class="hover:underline">{{
+                  "sponsors" | transloco
+                }}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="footer-heading">
+              {{ "legal" | transloco }}
+            </h3>
+            <ul class="footer-links">
+              <li class="mb-3">
+                <a routerLink="/privacy" class="hover:underline">{{
+                  "privacy_policy" | transloco
+                }}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/terms" class="hover:underline">{{
+                  "terms_of_service" | transloco
+                }}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="footer-heading">
+              {{ "documentation" | transloco }}
+            </h3>
+            <ul class="footer-links">
+              <li class="mb-3">
+                <a routerLink="/mission" class="hover:underline">{{
+                  "mission.nav_link" | transloco
+                }}</a>
+              </li>
+              <li class="mb-3">
+                <a
+                  href="https://aihorde.net/api/"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "rest_api" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a routerLink="/contribute/workers" class="hover:underline">{{
+                  "join_horde" | transloco
+                }}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/faq/" class="hover:underline">{{
+                  "frequently_asked_questions" | transloco
+                }}</a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="footer-heading">
+              {{ "other_links" | transloco }}
+            </h3>
+            <ul class="footer-links">
+              <li class="mb-3">
+                <a
+                  href="https://aihorde.net/register"
+                  class="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  >{{ "register_account" | transloco }}</a
+                >
+              </li>
+              <li class="mb-3">
+                <a routerLink="/profile/" class="hover:underline">{{
+                  "profile.title" | transloco
+                }}</a>
+              </li>
+              <li class="mb-3">
+                <a routerLink="/v2-transfer/" class="hover:underline">{{
+                  "transfer.title" | transloco
+                }}</a>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div>
-          <h3 class="footer-heading">
-            {{ "credits" | transloco }}
-          </h3>
-          <ul class="footer-links">
-            <li class="mb-3">
-              <a
-                href="https://dbzer0.com/"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >db0</a
-              >
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://github.com/haidra-org"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >Haidra</a
-              >
-            </li>
-            <li class="mb-3">
-              <a routerLink="/sponsors" class="hover:underline">{{
-                "sponsors" | transloco
-              }}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="footer-heading">
-            {{ "legal" | transloco }}
-          </h3>
-          <ul class="footer-links">
-            <li class="mb-3">
-              <a routerLink="/privacy" class="hover:underline">{{
-                "privacy_policy" | transloco
-              }}</a>
-            </li>
-            <li class="mb-3">
-              <a routerLink="/terms" class="hover:underline">{{
-                "terms_of_service" | transloco
-              }}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="footer-heading">
-            {{ "documentation" | transloco }}
-          </h3>
-          <ul class="footer-links">
-            <li class="mb-3">
-              <a routerLink="/mission" class="hover:underline">{{
-                "mission.nav_link" | transloco
-              }}</a>
-            </li>
-            <li class="mb-3">
-              <a
-                href="https://aihorde.net/api/"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "rest_api" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a routerLink="/contribute/workers" class="hover:underline">{{
-                "join_horde" | transloco
-              }}</a>
-            </li>
-            <li class="mb-3">
-              <a routerLink="/faq/" class="hover:underline">{{
-                "frequently_asked_questions" | transloco
-              }}</a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="footer-heading">
-            {{ "other_links" | transloco }}
-          </h3>
-          <ul class="footer-links">
-            <li class="mb-3">
-              <a
-                href="https://aihorde.net/register"
-                class="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-                >{{ "register_account" | transloco }}</a
-              >
-            </li>
-            <li class="mb-3">
-              <a routerLink="/profile/" class="hover:underline">{{
-                "profile.title" | transloco
-              }}</a>
-            </li>
-            <li class="mb-3">
-              <a routerLink="/v2-transfer/" class="hover:underline">{{
-                "transfer.title" | transloco
-              }}</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <app-network-status variant="footer" />
-      <hr class="footer-divider" />
-      <div class="footer-bottom">
-        <a href="#" class="footer-logo-wrapper">
-          <img
-            ngSrc="./assets/img/logo.png"
-            class="footer-logo-image"
-            [alt]="'logo.alt' | transloco"
-            height="455"
-            width="393"
-          />
-          {{ "app_title" | transloco }}
-        </a>
-        <!-- <span class="block text-sm text-center text-gray-500 dark:text-gray-400 built-with">
+        <app-network-status variant="footer" />
+        <hr class="footer-divider" />
+        <div class="footer-bottom">
+          <a href="#" class="footer-logo-wrapper">
+            <img
+              ngSrc="./assets/img/logo.png"
+              class="footer-logo-image"
+              [alt]="'logo.alt' | transloco"
+              height="455"
+              width="393"
+            />
+            {{ "app_title" | transloco }}
+          </a>
+          <!-- <span class="block text-sm text-center text-gray-500 dark:text-gray-400 built-with">
             {{ 'built_with' | transloco: {flowbiteLink: 'https://flowbite.com', tailwindLink: 'https://tailwindcss.com', angularLink: 'https://angular.dev'} }}
 
           </span> -->
-        <!-- Safe: Translated credits with framework links from trusted i18n files, sanitized by Angular -->
-        <span
-          class="footer-text"
-          [innerHTML]="
-            'built_with'
-              | transloco
-                : {
-                    flowbiteLink:
-                      '<a href=&quot;https://flowbite.com&quot; target=&quot;_blank&quot;>' +
-                      ('built_with.flowbiteLink' | transloco) +
-                      '</a>',
-                    tailwindLink:
-                      '<a href=&quot;https://tailwindcss.com&quot; target=&quot;_blank&quot;>' +
-                      ('built_with.tailwindLink' | transloco) +
-                      '</a>',
-                    angularLink:
-                      '<a href=&quot;https://angular.dev&quot; target=&quot;_blank&quot;>' +
-                      ('built_with.angularLink' | transloco) +
-                      '</a>',
-                  }
-          "
-        ></span>
+          <!-- Safe: Translated credits with framework links from trusted i18n files, sanitized by Angular -->
+          <span
+            class="footer-text"
+            [innerHTML]="
+              'built_with'
+                | transloco
+                  : {
+                      flowbiteLink:
+                        '<a href=&quot;https://flowbite.com&quot; target=&quot;_blank&quot;>' +
+                        ('built_with.flowbiteLink' | transloco) +
+                        '</a>',
+                      tailwindLink:
+                        '<a href=&quot;https://tailwindcss.com&quot; target=&quot;_blank&quot;>' +
+                        ('built_with.tailwindLink' | transloco) +
+                        '</a>',
+                      angularLink:
+                        '<a href=&quot;https://angular.dev&quot; target=&quot;_blank&quot;>' +
+                        ('built_with.angularLink' | transloco) +
+                        '</a>',
+                    }
+            "
+          ></span>
+        </div>
       </div>
-    </div>
-  </footer>
+    </footer>
+  }
 </div>
 
 <app-floating-controls />

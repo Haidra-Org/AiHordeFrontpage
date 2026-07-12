@@ -140,6 +140,7 @@ export class GenerationQueueService {
   public async enqueue(
     request: ImageGenerationRequest,
     sourceImages?: EnqueueSourceImage[],
+    opts?: { retryCount?: number },
   ): Promise<string> {
     const localId = randomUuid();
     const now = this.now();
@@ -154,6 +155,7 @@ export class GenerationQueueService {
       updatedAt: now,
       request: storedRequest,
       resultImageIds: [],
+      ...(opts?.retryCount ? { retryCount: opts.retryCount } : {}),
     };
 
     await this.db.putJob(job);
@@ -216,7 +218,9 @@ export class GenerationQueueService {
         blob: image.blob,
         mimeType: image.mimeType,
       }));
-    return this.enqueue(job.request, sourceImages);
+    return this.enqueue(job.request, sourceImages, {
+      retryCount: (job.retryCount ?? 0) + 1,
+    });
   }
 
   /**
@@ -503,6 +507,7 @@ export class GenerationQueueService {
         workerName: generation.worker_name,
         censored: generation.censored,
         state: generation.state,
+        genMetadata: generation.gen_metadata,
       },
     };
     await this.db.putImage(image);

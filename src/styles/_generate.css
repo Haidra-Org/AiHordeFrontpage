@@ -96,6 +96,7 @@
   --gs-seg-active: #111827;
   --gs-seg-active-ink: #ffffff;
   --gs-switch-off: #e5e7eb;
+  --gs-subtab-height: 45px;
 
   font-family: "Inter", system-ui, sans-serif;
   color: var(--gs-ink);
@@ -153,9 +154,138 @@
 @media (min-width: 1024px) {
   .gen-studio.gs-workspace {
     grid-template-columns: 426px minmax(0, 1fr);
+    /* Pin the single grid row to the container height so each panel gets a
+       definite height and its own body (not the page) is what scrolls. */
+    grid-template-rows: minmax(0, 1fr);
+  }
+  /* Full-height inside the /generate shell. The app wrapper already reserves the
+     fixed nav and hands the routed shell a flex:1 row, so rather than compute a
+     height (which risks a 100vh/100dvh gap the footer used to hide) the studio
+     just fills the flex chain: shell -> outlet -> workspace. `display: contents`
+     lets the routed component's own .gs-workspace be the outlet's flex child. */
+  .gen-studio.gs-shell {
+    flex: 1;
+    min-height: 0;
+  }
+  .gen-studio .gs-shell-outlet {
+    display: flex;
+    flex-direction: column;
+  }
+  .gen-studio .gs-shell-outlet > app-generate,
+  .gen-studio .gs-shell-outlet > app-alchemy {
+    display: contents;
   }
   .gen-studio.gs-workspace--full {
-    height: calc(100dvh - var(--nav-height-desktop));
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* ------- /generate shell (subtabs) --------------------------------- */
+.gen-studio.gs-shell {
+  display: flex;
+  flex-direction: column;
+  background: var(--gs-canvas);
+}
+.gen-studio .gs-subtabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: var(--gs-subtab-height);
+  padding: 0 14px;
+  background: var(--gs-panel);
+  border-bottom: 1px solid var(--gs-border);
+  overflow-x: auto;
+}
+.gen-studio .gs-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--gs-label);
+  border-bottom: 2px solid transparent;
+  text-decoration: none;
+}
+.gen-studio .gs-subtab:hover {
+  color: var(--gs-ink);
+  text-decoration: none;
+}
+.gen-studio .gs-subtab.gs-subtab--active {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-subtab--image.gs-subtab--active {
+  border-bottom-color: #1d4ed8;
+}
+.gen-studio .gs-subtab--alchemy.gs-subtab--active {
+  border-bottom-color: #9333ea;
+}
+.gen-studio .gs-subtab:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gen-studio .gs-shell-outlet {
+  flex: 1;
+  min-height: 0;
+}
+
+/* On mobile the studio scrolls with the page (it's only pinned to a fixed
+   viewport height on desktop), so keep the tool tab bar stuck just beneath the
+   fixed nav instead of letting it slide up and disappear behind the nav's
+   translucent glass. Its opaque background then cleanly hides the panel content
+   scrolling under it. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-subtabs {
+    position: sticky;
+    top: var(--nav-height-mobile);
+    z-index: 5;
+  }
+}
+
+/* ------- panel expand (double / full width) ------------------------ */
+.gen-studio .gs-expand {
+  display: inline-flex;
+  gap: 2px;
+}
+@media (min-width: 1024px) {
+  /* Double: widen the panel and reflow settings into two columns (results
+     stays, just narrower). Full: the panel takes the whole width, settings go
+     to three columns, and the results/jobs pane is hidden until you collapse. */
+  .gen-studio.gs-workspace--wide {
+    grid-template-columns: minmax(0, 820px) minmax(0, 1fr);
+  }
+  .gen-studio.gs-workspace--max {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gen-studio.gs-workspace--max .gs-results {
+    display: none;
+  }
+  .gen-studio.gs-workspace--max .gs-panel {
+    border-right: 0;
+  }
+  .gen-studio.gs-workspace--wide .gs-body-flow,
+  .gen-studio.gs-workspace--max .gs-body-flow {
+    display: block;
+    column-gap: 14px;
+  }
+  .gen-studio.gs-workspace--wide .gs-body-flow {
+    column-count: 2;
+  }
+  .gen-studio.gs-workspace--max .gs-body-flow {
+    column-count: 3;
+  }
+  .gen-studio.gs-workspace--wide .gs-body-flow > *,
+  .gen-studio.gs-workspace--max .gs-body-flow > * {
+    break-inside: avoid;
+    margin-bottom: 14px;
+  }
+  /* the "Advanced" divider reads oddly stranded in one column */
+  .gen-studio.gs-workspace--wide .gs-adv-divider,
+  .gen-studio.gs-workspace--max .gs-adv-divider {
+    display: none;
   }
 }
 
@@ -193,8 +323,7 @@
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 20px;
   padding: 15px 18px 13px;
   border-bottom: 1px solid var(--gs-border-soft);
 }
@@ -244,6 +373,14 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* This scroll pane is sized by flex, not an explicit height. In this
+       nested flex-in-grid layout Chromium otherwise leaks the pane's scrollable
+       overflow up to the document, so a tall panel (e.g. Alchemy's operation
+       list) scrolls the whole page and slides the studio under the fixed nav.
+       A containing block keeps that overflow inside the pane, where
+       overflow-y:auto already handles it. The image tab only escaped this
+       because its default content happened to fit. */
+    position: relative;
   }
 }
 .gen-studio .gs-footer {
@@ -270,6 +407,14 @@
   font-size: 13.5px;
   line-height: 1.5;
   resize: none;
+}
+
+/* Compact prompt box: starts around two rows and grows only when the user drags
+   the grip, locked to the vertical axis so it can't widen the panel. */
+.gen-studio .gs-textarea--resize {
+  min-height: 52px;
+  max-height: 340px;
+  resize: vertical;
 }
 .gen-studio .gs-neg-input {
   padding: 9px 12px;
@@ -750,6 +895,24 @@
   color: var(--gs-purple);
 }
 
+/* "set by style" pill that names the concrete forced value (model, W×H, the
+   sampling summary). Same purple styling as the hint, but keeps the value's own
+   casing and truncates so a long value can't blow out the label row. */
+.gen-studio .gs-style-val {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--gs-purple-tint);
+  color: var(--gs-purple);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ------- post-process / output rows -------------------------------- */
 .gen-studio .gs-row {
   display: flex;
@@ -864,6 +1027,9 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* Same containing-block guard as .gs-body: keep a long results/job list's
+       scrollable overflow inside this pane instead of leaking it to the page. */
+    position: relative;
   }
 }
 .gen-studio .gs-status {
@@ -913,9 +1079,8 @@
 }
 .gen-studio .gs-tile-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  max-width: 640px;
 }
 .gen-studio .gs-retention {
   margin-top: 20px;
@@ -1063,6 +1228,484 @@
 .gen-studio .gs-tile:focus-within .gs-tile-actions-top {
   opacity: 1;
 }
+/* Touch devices have no hover, so keep the in-flight cancel action visible
+   rather than leaving an invisible tap target sitting over the image (which
+   also stole taps meant to open the preview). */
+@media (hover: none) {
+  .gen-studio .gs-tile-actions-top {
+    opacity: 1;
+  }
+}
+
+/* select-to-delete: a marked tile is outlined and shows a checkbox; the dims
+   badge steps aside for the checkbox while selecting. */
+.gen-studio .gs-tile--selectable .gs-tile-imgbtn {
+  cursor: pointer;
+}
+.gen-studio .gs-tile--selectable .gs-tile-badge {
+  display: none;
+}
+.gen-studio .gs-tile--selected {
+  outline: 3px solid var(--gs-blue);
+  outline-offset: -3px;
+}
+.gen-studio .gs-tile-check {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid var(--gs-field-border);
+  color: transparent;
+}
+.gen-studio .gs-tile-check--on {
+  background: var(--gs-blue);
+  border-color: var(--gs-blue);
+  color: #fff;
+}
+.gen-studio .gs-tile-check app-icon,
+.gen-studio .gs-tile-check app-icon svg {
+  width: 13px;
+  height: 13px;
+  display: inline-flex;
+}
+.gen-studio .gs-download-all--danger {
+  color: #dc2626;
+}
+.dark .gen-studio .gs-download-all--danger {
+  color: #f87171;
+}
+.gen-studio .gs-download-all--danger:hover:not(:disabled) {
+  color: #b91c1c;
+}
+
+/* ------- results view bar (density / NSFW / sort / filter) ---------- */
+.gen-studio .gs-view-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 22px;
+  border-bottom: 1px solid var(--gs-border-results);
+}
+.gen-studio .gs-view-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--gs-label);
+}
+.gen-studio .gs-view-ctl app-icon {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-view-ctl-label {
+  font-weight: 600;
+}
+.gen-studio .gs-view-select {
+  padding: 3px 6px;
+  border: 1px solid var(--gs-border);
+  border-radius: 6px;
+  background: var(--gs-field);
+  color: var(--gs-ink);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-view-select:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
+}
+.gen-studio .gs-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-field);
+  color: var(--gs-label);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-view-toggle:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-view-toggle--on {
+  color: var(--gs-blue);
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-view-toggle--warn.gs-view-toggle--on {
+  color: #b45309;
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+}
+.dark .gen-studio .gs-view-toggle--warn.gs-view-toggle--on {
+  color: #fbbf24;
+}
+.gen-studio .gs-view-toggle app-icon,
+.gen-studio .gs-view-toggle app-icon svg {
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+}
+
+/* ------- per-tile badges: aesthetic score, NSFW marker, errors ------ */
+.gen-studio .gs-tile-tags {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+}
+.gen-studio .gs-tile-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.62);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.gen-studio .gs-tile-tag app-icon,
+.gen-studio .gs-tile-tag app-icon svg {
+  width: 10px;
+  height: 10px;
+  display: inline-flex;
+}
+.gen-studio .gs-tile-tag--score {
+  background: rgba(22, 163, 74, 0.85);
+}
+.gen-studio .gs-tile-tag--nsfw {
+  background: rgba(217, 119, 6, 0.9);
+}
+.gen-studio .gs-tile-tag--csam,
+.gen-studio .gs-tile-tag--error {
+  background: rgba(220, 38, 38, 0.88);
+}
+
+/* ------- NSFW blur veil --------------------------------------------- */
+.gen-studio .gs-tile-img--blur {
+  filter: blur(22px);
+  transform: scale(1.06);
+}
+.gen-studio .gs-tile-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  border: 0;
+  cursor: pointer;
+  text-align: center;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.5);
+  font-family: inherit;
+}
+.gen-studio .gs-tile-veil app-icon,
+.gen-studio .gs-tile-veil app-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.gen-studio .gs-tile-veil-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.gen-studio .gs-tile-veil-sub {
+  font-size: 10px;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gen-studio .gs-tile-veil-reveal {
+  margin-top: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+}
+
+/* ------- per-tile prompt header (expandable, contained) ------------- */
+.gen-studio .gs-tile-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Leave the top-right corner free for the dims/tags/cancel affordances. */
+  max-width: calc(100% - 44px);
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px;
+}
+.gen-studio .gs-tile-prompt-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(17, 24, 39, 0.62);
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-tile-prompt-btn:hover {
+  background: rgba(17, 24, 39, 0.8);
+}
+.gen-studio .gs-tile-prompt-chev,
+.gen-studio .gs-tile-prompt-chev svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  margin-top: 2px;
+  transition: transform 0.15s;
+}
+.gen-studio .gs-tile-prompt-chev--open {
+  transform: rotate(90deg);
+}
+.gen-studio .gs-tile-prompt-text {
+  font-size: 10.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-tile-prompt-btn--open .gs-tile-prompt-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-height: 8em;
+  overflow-y: auto;
+}
+.gen-studio .gs-tile-retry {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(147, 51, 234, 0.9);
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.gen-studio .gs-tile-retry app-icon,
+.gen-studio .gs-tile-retry app-icon svg {
+  width: 9px;
+  height: 9px;
+}
+.gen-studio .gs-tile-btnrow--wrap {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ------- header presets menu (save / load / recent) ----------------- */
+.gen-studio .gs-presets {
+  position: relative;
+}
+.gen-studio .gs-presets-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 262px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.gen-studio .gs-presets-save {
+  display: flex;
+  gap: 6px;
+}
+.gen-studio .gs-presets-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 7px;
+  background: var(--gs-field);
+  color: var(--gs-ink);
+  font-size: 12px;
+  font-family: inherit;
+}
+.gen-studio .gs-presets-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.35);
+}
+.gen-studio .gs-presets-save-btn {
+  flex: none;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--gs-blue);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-presets-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.gen-studio .gs-presets-label {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-presets-empty {
+  font-size: 11px;
+  color: var(--gs-muted);
+  padding: 2px 0;
+}
+.gen-studio .gs-presets-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gen-studio .gs-presets-load {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 6px 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-field);
+  color: var(--gs-ink);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-presets-load:hover {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-presets-del {
+  flex: none;
+  display: inline-flex;
+  padding: 6px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-field);
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-presets-del:hover {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.gen-studio .gs-presets-del app-icon,
+.gen-studio .gs-presets-del app-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.gen-studio .gs-presets-recent {
+  text-align: left;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--gs-field-soft);
+  color: var(--gs-ink-2);
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-presets-recent:hover {
+  color: var(--gs-ink);
+  background: var(--gs-seg-track);
+}
+
+/* ------- metadata modal highlight rows ------------------------------ */
+.gen-studio .gs-meta-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gen-studio .gs-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-meta-label {
+  font-weight: 700;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-meta-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--gs-ink);
+  text-align: right;
+}
+.gen-studio .gs-meta-row--good {
+  border-color: rgba(22, 163, 74, 0.4);
+  background: var(--gs-green-tint);
+}
+.gen-studio .gs-meta-row--good .gs-meta-value {
+  color: var(--gs-green);
+}
+.gen-studio .gs-meta-row--warn {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
+}
+.gen-studio .gs-meta-row--danger {
+  border-color: rgba(220, 38, 38, 0.4);
+  background: rgba(220, 38, 38, 0.1);
+}
+.gen-studio .gs-meta-row--danger .gs-meta-value {
+  color: #dc2626;
+}
+.dark .gen-studio .gs-meta-row--danger .gs-meta-value {
+  color: #fca5a5;
+}
 .gen-studio .gs-tile-btnrow {
   display: flex;
   gap: 6px;
@@ -1086,6 +1729,11 @@
   border-radius: 50%;
   border: 5px solid var(--gs-switch-off);
   border-top-color: var(--gs-blue);
+}
+/* A calmer generating spinner: the shared 1.1s spin reads as frantic on a tile
+   that may sit here for many seconds. */
+.gen-studio .gs-tile-ring.gs-spin {
+  animation-duration: 2.6s;
 }
 .gen-studio .gs-tile-queued-box {
   position: absolute;
@@ -1154,7 +1802,9 @@
 .gen-studio .gs-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  /* Above the fixed site nav (z-50) so the nav can't clip the top of the
+     modal — on mobile the modal was sliding under the nav bar. */
+  z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1383,6 +2033,720 @@
   background: var(--gs-blue-hover);
 }
 
+/* compact confirm dialog (permanent-delete warning), studio-native */
+.gen-studio .gs-modal-panel--sm {
+  width: 420px;
+}
+.gen-studio .gs-confirm-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-modal-done--danger {
+  background: #dc2626;
+}
+.gen-studio .gs-modal-done--danger:hover {
+  background: #b91c1c;
+}
+
+/* ===================================================================
+   ALCHEMY STUDIO — the purple sibling of the generate studio.
+
+   The whole gs-* system keys its accent off --gs-blue, so flipping that
+   token (plus its hover/tint variants) on the .gs-alchemy page-root
+   recolours buttons, chips, sliders, switches, status pills, and focus
+   rings to purple without duplicating a single component rule. Only the
+   alchemy-specific structure (step spine, operation grid, job cards,
+   volunteer strip, API modal chrome) needs its own classes below.
+   =================================================================== */
+.gen-studio.gs-alchemy {
+  --gs-blue: #9333ea;
+  --gs-blue-hover: #7e22ce;
+  --gs-blue-tint: #faf5ff;
+  --gs-blue-tint-border: #e9d5ff;
+}
+.dark .gen-studio.gs-alchemy {
+  --gs-blue: #a855f7;
+  --gs-blue-hover: #9333ea;
+  --gs-blue-tint: rgba(147, 51, 234, 0.16);
+  --gs-blue-tint-border: rgba(147, 51, 234, 0.4);
+}
+.gen-studio.gs-alchemy .gs-genbtn {
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.28);
+}
+
+/* header badge + API affordance */
+.gen-studio .gs-alchemy-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, #9333ea, #c084fc);
+}
+.gen-studio .gs-alchemy-badge app-icon,
+.gen-studio .gs-alchemy-badge app-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.gen-studio .gs-api-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--gs-label);
+  background: var(--gs-field);
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.gen-studio .gs-api-btn:hover {
+  color: var(--gs-ink);
+}
+
+/* numbered step spine */
+.gen-studio .gs-step-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.gen-studio .gs-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gs-muted);
+  background: var(--gs-seg-track);
+  border: 1px solid var(--gs-border);
+}
+.gen-studio .gs-step-num--done {
+  color: #fff;
+  background: var(--gs-blue);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-step-num app-icon,
+.gen-studio .gs-step-num app-icon svg {
+  width: 12px;
+  height: 12px;
+}
+.gen-studio .gs-step-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* studio info note (anonymous notice) */
+.gen-studio .gs-info-note {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+  background: var(--gs-blue-tint);
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 9px;
+  padding: 9px 11px;
+}
+
+/* operation focus/detail panel */
+.gen-studio .gs-focus {
+  border: 1px solid var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+  border-radius: 10px;
+  padding: 11px 12px;
+}
+.gen-studio .gs-focus-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gs-blue);
+}
+.gen-studio .gs-focus-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--gs-blue);
+  background: var(--gs-field);
+  border: 1px solid var(--gs-blue-tint-border);
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.gen-studio .gs-focus-desc {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+}
+
+/* Docked operation detail: a fixed slot under the panel header. Its height is
+   pinned and the description clamps to two lines so hovering operations with
+   longer blurbs swaps the text without resizing the box (which used to push the
+   whole operation list). */
+.gen-studio .gs-focus-dock {
+  flex: none;
+  padding: 4px 18px 10px;
+}
+.gen-studio .gs-focus-example {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-focus--fixed {
+  height: 112px;
+}
+/* Clamp the two variable-length lines so swapping operations changes the text
+   but never the box height (which used to push the operation list around). */
+.gen-studio .gs-focus--fixed .gs-focus-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.gen-studio .gs-focus--fixed .gs-focus-example {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* operation group headers */
+.gen-studio .gs-opgroup-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-opgroup-ico {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gen-studio .gs-opgroup-ico app-icon,
+.gen-studio .gs-opgroup-ico app-icon svg {
+  width: 12px;
+  height: 12px;
+}
+.gen-studio .gs-opgroup-ico--analyze {
+  background: rgba(147, 51, 234, 0.15);
+  color: #9333ea;
+}
+.gen-studio .gs-opgroup-ico--upscale {
+  background: rgba(37, 99, 235, 0.14);
+  color: #2563eb;
+}
+.gen-studio .gs-opgroup-ico--facefix {
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+}
+.gen-studio .gs-opgroup-ico--background {
+  background: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+}
+
+/* operation checkbox cards */
+.gen-studio .gs-op {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-field);
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+.gen-studio .gs-op:hover {
+  border-color: var(--gs-blue-tint-border);
+}
+.gen-studio .gs-op--selected {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-op:focus-within {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+}
+.gen-studio .gs-op-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  background: var(--gs-field);
+  border: 1.5px solid var(--gs-field-border);
+  transition: all 0.12s;
+}
+.gen-studio .gs-op--selected .gs-op-check {
+  color: #fff;
+  background: var(--gs-blue);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-op-check app-icon,
+.gen-studio .gs-op-check app-icon svg {
+  width: 10px;
+  height: 10px;
+}
+.gen-studio .gs-op-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-op-badge {
+  flex: none;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--gs-label);
+  background: var(--gs-seg-track);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* collapsible operation-group header */
+.gen-studio .gs-opgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 0 8px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.gen-studio .gs-opgroup-chev,
+.gen-studio .gs-opgroup-chev svg {
+  width: 13px;
+  height: 13px;
+  display: inline-flex;
+  flex: none;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-opgroup-chev {
+  transition: transform 0.15s;
+}
+.gen-studio .gs-opgroup-chev--open {
+  transform: rotate(90deg);
+}
+.gen-studio .gs-opsub-label {
+  margin-bottom: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+/* full-width upscaler rows: don't truncate the long names */
+.gen-studio .gs-op--wide .gs-op-name {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* reflow the operation groups into columns when the panel is expanded */
+@media (min-width: 1024px) {
+  .gen-studio.gs-workspace--wide .gs-op-groups,
+  .gen-studio.gs-workspace--max .gs-op-groups {
+    display: block;
+    column-gap: 14px;
+  }
+  .gen-studio.gs-workspace--wide .gs-op-groups {
+    column-count: 2;
+  }
+  .gen-studio.gs-workspace--max .gs-op-groups {
+    column-count: 3;
+  }
+  .gen-studio.gs-workspace--wide .gs-op-groups > *,
+  .gen-studio.gs-workspace--max .gs-op-groups > * {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+}
+
+/* submit hint under the run button */
+.gen-studio .gs-submit-hint {
+  margin-top: 7px;
+  font-size: 10.5px;
+  text-align: center;
+  color: var(--gs-muted);
+}
+
+/* live "N alchemists online" readout */
+.gen-studio .gs-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--gs-label);
+  white-space: nowrap;
+}
+.gen-studio .gs-online-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--gs-green);
+}
+
+/* amber retention variant (alchemy) */
+.gen-studio .gs-retention--amber {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+.dark .gen-studio .gs-retention--amber {
+  border-color: rgba(217, 119, 6, 0.4);
+  background: rgba(217, 119, 6, 0.12);
+  color: #fbbf24;
+}
+
+/* job cards */
+.gen-studio .gs-job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+.gen-studio .gs-job {
+  border: 1px solid var(--gs-border);
+  border-radius: 13px;
+  background: var(--gs-panel);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.gen-studio .gs-job--new {
+  animation: gs-fadeup 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.gen-studio .gs-job-head-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 13px;
+}
+.gen-studio .gs-job--selected {
+  border-color: var(--gs-blue);
+  box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
+}
+.gen-studio .gs-job-check {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gs-field);
+  border: 1.5px solid var(--gs-field-border);
+  color: transparent;
+}
+.gen-studio .gs-job-check--on {
+  background: var(--gs-blue);
+  border-color: var(--gs-blue);
+  color: #fff;
+}
+.gen-studio .gs-job-check app-icon,
+.gen-studio .gs-job-check app-icon svg {
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+}
+.gen-studio .gs-job-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+.gen-studio .gs-job-chev,
+.gen-studio .gs-job-chev svg {
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  flex: none;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-job-chev {
+  transition: transform 0.15s;
+}
+.gen-studio .gs-job-chev--open {
+  transform: rotate(90deg);
+}
+.gen-studio .gs-job-state {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.gen-studio .gs-job-state--waiting {
+  background: var(--gs-seg-track);
+  color: var(--gs-label);
+}
+.gen-studio .gs-job-state--processing {
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-job-state--done {
+  background: var(--gs-green-tint);
+  color: var(--gs-green);
+}
+.gen-studio .gs-job-state--faulted {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+}
+.dark .gen-studio .gs-job-state--faulted {
+  color: #fca5a5;
+}
+.gen-studio .gs-job-chips {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+}
+.gen-studio .gs-job-chip {
+  font-size: 10.5px;
+  color: var(--gs-label);
+  background: var(--gs-seg-track);
+  border-radius: 5px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.gen-studio .gs-job-chip--more {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-job-count,
+.gen-studio .gs-job-age {
+  flex: none;
+  font-size: 11px;
+  color: var(--gs-muted);
+  white-space: nowrap;
+}
+.gen-studio .gs-job-actions {
+  flex: none;
+  display: flex;
+  gap: 6px;
+}
+.gen-studio .gs-job-body {
+  border-top: 1px solid var(--gs-border-soft);
+  padding: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* per-form checklist */
+.gen-studio .gs-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gen-studio .gs-checkrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+}
+.gen-studio .gs-checkrow-ico {
+  flex: none;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-checkrow--processing .gs-checkrow-ico {
+  color: var(--gs-blue);
+}
+.gen-studio .gs-checkrow--done .gs-checkrow-ico {
+  color: var(--gs-green);
+}
+.gen-studio .gs-checkrow--faulted .gs-checkrow-ico {
+  color: #dc2626;
+}
+.gen-studio .gs-checkrow-name {
+  flex: 1;
+  font-weight: 500;
+}
+.gen-studio .gs-checkrow-state {
+  font-size: 11px;
+  color: var(--gs-muted);
+}
+
+/* volunteer strip */
+.gen-studio .gs-volunteer {
+  max-width: 720px;
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--gs-blue-tint), var(--gs-canvas));
+}
+.gen-studio .gs-volunteer-ico {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-volunteer-ico app-icon,
+.gen-studio .gs-volunteer-ico app-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.gen-studio .gs-volunteer-title {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.gen-studio .gs-volunteer-sub {
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--gs-label);
+}
+.gen-studio .gs-volunteer-nudge {
+  margin-top: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gs-blue);
+}
+.gen-studio .gs-volunteer-cta {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 15px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--gs-blue);
+  border-radius: 8px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.gen-studio .gs-volunteer-cta:hover {
+  background: var(--gs-blue-hover);
+  text-decoration: none;
+}
+
+/* API preview modal chrome */
+.gen-studio .gs-api-endpoint {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-api-verb {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.gen-studio .gs-api-verb--post {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+}
+.gen-studio .gs-api-verb--get {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+}
+.gen-studio .gs-api-verb--del {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+}
+.gen-studio .gs-api-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gen-studio .gs-api-code {
+  margin: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.gen-studio .gs-api-section-title {
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.gen-studio .gs-api-routes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gen-studio .gs-api-route {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+}
+.gen-studio .gs-api-route-desc {
+  color: var(--gs-label);
+}
+.gen-studio .gs-api-note {
+  margin-top: 8px;
+  line-height: 1.5;
+}
+.gen-studio .gs-api-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* ------- animations + scrollbar (scoped) --------------------------- */
 @keyframes gs-shim {
   0% {
@@ -1412,11 +2776,29 @@
   background-size: 200% 100%;
   animation: gs-shim 1.6s infinite;
 }
+/* The queued shimmer was near-white and jarring in dark mode; key it off the
+   dark panel tones instead. */
+.dark .gen-studio .gs-shimmer {
+  background: linear-gradient(90deg, #1b1e24 25%, #262a32 50%, #1b1e24 75%);
+  background-size: 200% 100%;
+}
 .gen-studio .gs-spin {
   animation: gs-spin 1.1s linear infinite;
 }
 .gen-studio .gs-fadeup {
   animation: gs-fadeup 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes gs-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.gen-studio .gs-pulse {
+  animation: gs-pulse 1.4s ease-in-out infinite;
 }
 .gen-studio ::-webkit-scrollbar {
   width: 10px;
@@ -1434,7 +2816,8 @@
 @media (prefers-reduced-motion: reduce) {
   .gen-studio .gs-shimmer,
   .gen-studio .gs-spin,
-  .gen-studio .gs-fadeup {
+  .gen-studio .gs-fadeup,
+  .gen-studio .gs-pulse {
     animation: none;
   }
   .gen-studio .gs-seg-opt,

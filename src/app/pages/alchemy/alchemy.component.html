@@ -1,786 +1,711 @@
-<section class="section-primary alchemy-hero">
-  <div class="container-page-header alchemy-hero__container">
-    <div class="place-center">
-      <h1 class="heading-page-title">{{ "alchemy.title" | transloco }}</h1>
-      <p class="text-description">{{ "alchemy.intro" | transloco }}</p>
-    </div>
-  </div>
-</section>
-
-<section class="section-secondary alchemy-tool-section">
-  <div class="container-content-sm alchemy-tool-shell">
-    <div class="tabs-nav alchemy-tabs" role="tablist">
-      <button
-        type="button"
-        class="tabs-link alchemy-tabs__link"
-        [class.tabs-link-active]="activeTab() === 'tool'"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'tool'"
-        (click)="setTab('tool')"
-      >
-        <app-icon name="beaker" />
-        {{ "alchemy.tabs.tool" | transloco }}
-      </button>
-      <button
-        type="button"
-        class="tabs-link alchemy-tabs__link"
-        [class.tabs-link-active]="activeTab() === 'developers'"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'developers'"
-        (click)="setTab('developers')"
-      >
-        <app-icon name="code-bracket" />
-        {{ "alchemy.tabs.developers" | transloco }}
-      </button>
-    </div>
-
-    @if (activeTab() === "developers") {
-      <div class="alchemy-dev" role="tabpanel">
-        <p class="alchemy-dev__lead">
-          {{ "alchemy.dev.lead" | transloco }}
-        </p>
-
-        <!-- The flow: a genuine ordered protocol, echoing the numbered step
-             spine on the tool tab. -->
-        <section
-          class="alchemy-dev__section"
-          aria-labelledby="alchemy-dev-flow"
-        >
-          <h2 id="alchemy-dev-flow" class="alchemy-dev__title">
-            {{ "alchemy.dev.flow.heading" | transloco }}
-          </h2>
-          <ol class="alchemy-dev__protocol">
-            <li class="alchemy-dev__step">
-              <span class="alchemy-dev__step-num" aria-hidden="true">1</span>
-              <div class="alchemy-dev__step-body">
-                <h3 class="alchemy-dev__step-title">
-                  {{ "alchemy.dev.flow.submit_title" | transloco }}
-                </h3>
-                <p class="alchemy-dev__step-desc">
-                  {{ "alchemy.dev.flow.submit_desc" | transloco }}
-                </p>
-              </div>
-            </li>
-            <li class="alchemy-dev__step">
-              <span class="alchemy-dev__step-num" aria-hidden="true">2</span>
-              <div class="alchemy-dev__step-body">
-                <h3 class="alchemy-dev__step-title">
-                  {{ "alchemy.dev.flow.poll_title" | transloco }}
-                </h3>
-                <p class="alchemy-dev__step-desc">
-                  {{ "alchemy.dev.flow.poll_desc" | transloco }}
-                </p>
-              </div>
-            </li>
-            <li class="alchemy-dev__step">
-              <span class="alchemy-dev__step-num" aria-hidden="true">3</span>
-              <div class="alchemy-dev__step-body">
-                <h3 class="alchemy-dev__step-title">
-                  {{ "alchemy.dev.flow.read_title" | transloco }}
-                </h3>
-                <p class="alchemy-dev__step-desc">
-                  {{ "alchemy.dev.flow.read_desc" | transloco }}
-                </p>
-              </div>
-            </li>
-            <li class="alchemy-dev__step alchemy-dev__step--last">
-              <span class="alchemy-dev__step-num" aria-hidden="true">4</span>
-              <div class="alchemy-dev__step-body">
-                <h3 class="alchemy-dev__step-title">
-                  {{ "alchemy.dev.flow.cancel_title" | transloco }}
-                </h3>
-                <p class="alchemy-dev__step-desc">
-                  {{ "alchemy.dev.flow.cancel_desc" | transloco }}
-                </p>
-              </div>
-            </li>
-          </ol>
-        </section>
-
-        <!-- Endpoints -->
-        <section
-          class="alchemy-dev__section"
-          aria-labelledby="alchemy-dev-endpoints"
-        >
-          <h2 id="alchemy-dev-endpoints" class="alchemy-dev__title">
-            {{ "alchemy.dev.endpoints.heading" | transloco }}
-          </h2>
-          <p class="alchemy-dev__base">
-            {{ "alchemy.dev.endpoints.base_label" | transloco }}
-            <code>https://aihorde.net/api/v2</code>
-          </p>
-          <ul class="alchemy-dev__routes">
-            <li class="alchemy-dev__route">
-              <span class="alchemy-dev__verb alchemy-dev__verb--post"
-                >POST</span
-              >
-              <code class="alchemy-dev__route-path">/interrogate/async</code>
-              <span class="alchemy-dev__route-desc">{{
-                "alchemy.dev.endpoints.submit" | transloco
-              }}</span>
-            </li>
-            <li class="alchemy-dev__route">
-              <span class="alchemy-dev__verb alchemy-dev__verb--get">GET</span>
-              <code class="alchemy-dev__route-path"
-                >/interrogate/status/:id</code
-              >
-              <span class="alchemy-dev__route-desc">{{
-                "alchemy.dev.endpoints.status" | transloco
-              }}</span>
-            </li>
-            <li class="alchemy-dev__route">
-              <span class="alchemy-dev__verb alchemy-dev__verb--del"
-                >DELETE</span
-              >
-              <code class="alchemy-dev__route-path"
-                >/interrogate/status/:id</code
-              >
-              <span class="alchemy-dev__route-desc">{{
-                "alchemy.dev.endpoints.cancel" | transloco
-              }}</span>
-            </li>
-          </ul>
-          <p class="alchemy-dev__note">
-            <app-icon name="key" class="alchemy-dev__note-icon" />
-            <span>{{ "alchemy.dev.endpoints.auth_note" | transloco }}</span>
-          </p>
-        </section>
-
-        <!-- Request -->
-        <section
-          class="alchemy-dev__section"
-          aria-labelledby="alchemy-dev-request"
-        >
-          <h2 id="alchemy-dev-request" class="alchemy-dev__title">
-            {{ "alchemy.dev.request.heading" | transloco }}
-          </h2>
-          <p class="alchemy-dev__body">
-            {{ "alchemy.dev.request.desc" | transloco }}
-          </p>
-          <figure class="alchemy-dev__codecard">
-            <figcaption class="alchemy-dev__codecard-head">
-              <span class="alchemy-dev__verb alchemy-dev__verb--post"
-                >POST</span
-              >
-              <code class="alchemy-dev__codecard-path"
-                >https://aihorde.net/api/v2/interrogate/async</code
-              >
-            </figcaption>
-            <pre
-              class="alchemy-dev__code"
-            ><code>{{ requestSample }}</code></pre>
-          </figure>
-          <p class="alchemy-dev__note">
-            <app-icon name="info-circle" class="alchemy-dev__note-icon" />
-            <span>{{ "alchemy.dev.request.source_note" | transloco }}</span>
-          </p>
-
-          <h3 class="alchemy-dev__subtitle">
-            {{ "alchemy.dev.request.forms_heading" | transloco }}
-          </h3>
-          <div class="alchemy-dev__formgroup">
-            <span class="alchemy-dev__formgroup-label">
-              <app-icon name="document-text" />
-              {{ "alchemy.dev.request.data_forms" | transloco }}
+<div
+  class="gen-studio gs-alchemy gs-workspace gs-workspace--full"
+  [class.gs-workspace--wide]="panelSize() === 'double'"
+  [class.gs-workspace--max]="panelSize() === 'full'"
+>
+  <!-- ============ CONTROL PANEL ============ -->
+  <section class="gs-panel">
+    <div class="flex min-h-0 flex-1 flex-col">
+      <!-- header -->
+      <header class="gs-panel-header">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="gs-alchemy-badge">
+              <app-icon name="beaker" class="gs-ico-sm" />
             </span>
-            <ul class="alchemy-dev__chips">
-              @for (form of dataForms; track form) {
-                <li>
-                  <code>{{ form }}</code>
-                </li>
-              }
-            </ul>
+            <span class="gs-title">{{ "alchemy.title" | transloco }}</span>
           </div>
-          <div class="alchemy-dev__formgroup">
-            <span class="alchemy-dev__formgroup-label">
-              <app-icon name="photo" />
-              {{ "alchemy.dev.request.pp_forms" | transloco }}
+          <div class="gs-sublabel mt-0.5">
+            {{ "alchemy.subtitle" | transloco }}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="gs-mini-btn"
+            (click)="cyclePanel()"
+            [attr.aria-label]="
+              (panelSize() === 'full'
+                ? 'generate.panel.narrow'
+                : 'generate.panel.widen'
+              ) | transloco
+            "
+            [title]="
+              (panelSize() === 'full'
+                ? 'generate.panel.narrow'
+                : 'generate.panel.widen'
+              ) | transloco
+            "
+          >
+            <app-icon
+              [name]="panelSize() === 'full' ? 'panel-narrow' : 'panel-widen'"
+              class="gs-ico-sm"
+            />
+          </button>
+          <button type="button" class="gs-api-btn" (click)="openApi()">
+            <span class="gs-mono">&#123;&#125;</span>
+            {{ "alchemy.api.button" | transloco }}
+          </button>
+        </div>
+      </header>
+
+      <!-- Operation detail: docked at a fixed height directly under the header
+           so it stays on-screen while the operation list scrolls below it, and
+           a 1–2 line description can no longer grow and shove the layout. -->
+      @let activeForm = activeOperation();
+      <div class="gs-focus-dock">
+        <div class="gs-focus gs-focus--fixed" aria-live="polite">
+          <div class="mb-1 flex items-center gap-2">
+            <span class="gs-focus-name">
+              {{ "alchemy.form_names." + activeForm | transloco }}
             </span>
-            <ul class="alchemy-dev__chips">
-              @for (form of postProcessorForms; track form) {
-                <li>
-                  <code>{{ form }}</code>
-                </li>
-              }
-            </ul>
+            @if (isUpscalerForm(activeForm)) {
+              <span class="gs-focus-badge">
+                {{ "alchemy.form_meta." + activeForm + ".badge" | transloco }}
+              </span>
+            }
           </div>
-        </section>
-
-        <!-- Status -->
-        <section
-          class="alchemy-dev__section"
-          aria-labelledby="alchemy-dev-status"
-        >
-          <h2 id="alchemy-dev-status" class="alchemy-dev__title">
-            {{ "alchemy.dev.status.heading" | transloco }}
-          </h2>
-          <p class="alchemy-dev__body">
-            {{ "alchemy.dev.status.desc" | transloco }}
-          </p>
-          <figure class="alchemy-dev__codecard">
-            <figcaption class="alchemy-dev__codecard-head">
-              <span class="alchemy-dev__verb alchemy-dev__verb--get">GET</span>
-              <code class="alchemy-dev__codecard-path"
-                >/interrogate/status/:id</code
-              >
-            </figcaption>
-            <pre class="alchemy-dev__code"><code>{{ statusSample }}</code></pre>
-          </figure>
-          <p class="alchemy-dev__note">
-            <app-icon name="clock" class="alchemy-dev__note-icon" />
-            <span>{{ "alchemy.dev.status.result_note" | transloco }}</span>
-          </p>
-        </section>
-
-        <!-- SDK -->
-        <section class="alchemy-dev__section" aria-labelledby="alchemy-dev-sdk">
-          <h2 id="alchemy-dev-sdk" class="alchemy-dev__title">
-            {{ "alchemy.dev.sdk.heading" | transloco }}
-          </h2>
-          <p class="alchemy-dev__body">
-            {{ "alchemy.dev.sdk.desc" | transloco }}
-          </p>
-          <div class="alchemy-dev__links">
-            <a
-              href="https://github.com/Haidra-Org/horde-sdk"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-primary alchemy-dev__link"
-            >
-              <app-icon name="github" />
-              {{ "alchemy.dev.sdk.repo_link" | transloco }}
-              <app-icon name="arrow-top-right-on-square" />
-            </a>
-            <a
-              href="https://github.com/Haidra-Org/horde-sdk/blob/main/examples/ai_horde_client/image/alchemy_example.py"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-secondary alchemy-dev__link"
-            >
-              <app-icon name="code-bracket" />
-              {{ "alchemy.dev.sdk.example_link" | transloco }}
-              <app-icon name="arrow-top-right-on-square" />
-            </a>
+          <div class="gs-focus-desc">
+            {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
           </div>
-        </section>
+          <div class="gs-focus-example">
+            {{ "alchemy.form_meta." + activeForm + ".example" | transloco }}
+          </div>
+        </div>
       </div>
-    } @else {
-      <div class="alchemy-page__layout">
-        <section
-          class="card card-full alchemy-builder alchemy-workbench-card"
-          aria-labelledby="alchemy-request-heading"
-        >
-          <header class="alchemy-builder__header">
-            <div>
-              <h2 id="alchemy-request-heading" class="heading-card">
-                {{ "alchemy.request.heading" | transloco }}
-              </h2>
-              <p class="alchemy-builder__intro">
-                {{ "alchemy.operations.hint" | transloco }}
-              </p>
-            </div>
-            <span class="alchemy-builder__summary">
+
+      <!-- body -->
+      <div class="gs-body">
+        <div class="flex flex-col gap-[14px]">
+          <!-- STEP 1: source -->
+          <div class="gs-step-head">
+            <span
+              class="gs-step-num"
+              [class.gs-step-num--done]="hasSource()"
+              aria-hidden="true"
+            >
+              @if (hasSource()) {
+                <app-icon name="check" class="gs-ico-sm" />
+              } @else {
+                1
+              }
+            </span>
+            <span class="gs-step-title">
+              {{ "alchemy.steps.source" | transloco }}
+            </span>
+          </div>
+
+          @if (!isLoggedIn()) {
+            <p class="gs-info-note">
+              {{ "alchemy.anonymous_notice" | transloco }}
+            </p>
+          }
+
+          <app-alchemy-image-input
+            [disabled]="isSubmitting()"
+            (sourceImage)="onSourceImage($event)"
+          />
+
+          <!-- STEP 2: operations -->
+          <div class="gs-step-head mt-1.5">
+            <span
+              class="gs-step-num"
+              [class.gs-step-num--done]="selectedCount() > 0"
+              aria-hidden="true"
+            >
+              @if (selectedCount() > 0) {
+                <app-icon name="check" class="gs-ico-sm" />
+              } @else {
+                2
+              }
+            </span>
+            <span class="gs-step-title">
+              {{ "alchemy.steps.operations" | transloco }}
+            </span>
+            <span class="gs-sublabel ml-auto">
               @if (selectedCount() > 0) {
                 {{
                   "alchemy.submit.summary"
                     | transloco: { count: selectedCount() }
                 }}
               } @else {
-                {{ "alchemy.submit.summary_empty" | transloco }}
+                {{ "alchemy.submit.none" | transloco }}
               }
             </span>
-          </header>
+          </div>
 
-          <div class="card-body alchemy-build alchemy-workbench">
-            <aside class="alchemy-source-rail">
-              <section
-                class="alchemy-step alchemy-step--source"
-                [class.alchemy-step--done]="hasSource()"
-              >
-                <div class="alchemy-step__head">
-                  <span class="alchemy-step__num" aria-hidden="true">
-                    @if (hasSource()) {
-                      <app-icon name="check" />
-                    } @else {
-                      <span>1</span>
-                    }
-                  </span>
-                  <h3 class="alchemy-step__title">
-                    {{ "alchemy.steps.source" | transloco }}
-                  </h3>
-                </div>
-
-                @if (!isLoggedIn()) {
-                  <div
-                    class="alert alert--info alchemy-anonymous-notice alchemy-anonymous-notice--compact"
-                  >
-                    <div class="alert-content">
-                      {{ "alchemy.anonymous_notice" | transloco }}
-                    </div>
-                  </div>
-                }
-
-                <app-alchemy-image-input
-                  [disabled]="isSubmitting()"
-                  (sourceImage)="onSourceImage($event)"
-                />
-              </section>
-
-              <section class="alchemy-run-panel">
-                <div class="alchemy-step__head">
-                  <span class="alchemy-step__num" aria-hidden="true"
-                    ><span>3</span></span
-                  >
-                  <h3 class="alchemy-step__title">
-                    {{ "alchemy.steps.submit" | transloco }}
-                  </h3>
-                </div>
-
-                <label class="form-checkbox alchemy-form-option">
-                  <input
-                    type="checkbox"
-                    class="checkbox-input"
-                    [checked]="slowWorkers()"
-                    [disabled]="isSubmitting()"
-                    (change)="toggleSlowWorkers()"
+          <!-- operation groups (collapsible; upscalers split by use case) -->
+          <div class="gs-op-groups flex flex-col gap-4">
+            @for (group of operationGroups; track group.id) {
+              @let collapsed = isGroupCollapsed(group.id);
+              <div class="gs-op-group">
+                <button
+                  type="button"
+                  class="gs-opgroup-head"
+                  [attr.aria-expanded]="!collapsed"
+                  (click)="toggleGroup(group.id)"
+                >
+                  <app-icon
+                    name="chevron-right"
+                    class="gs-opgroup-chev"
+                    [class.gs-opgroup-chev--open]="!collapsed"
                   />
-                  <span class="checkbox-label">{{
-                    "alchemy.slow_workers" | transloco
-                  }}</span>
-                </label>
-
-                <div class="alchemy-submit">
-                  <span class="alchemy-submit__summary">
-                    @if (selectedCount() > 0) {
-                      {{
-                        "alchemy.submit.summary"
-                          | transloco: { count: selectedCount() }
-                      }}
-                    } @else {
-                      {{ "alchemy.submit.summary_empty" | transloco }}
-                    }
+                  <span class="gs-opgroup-label">
+                    <span class="gs-opgroup-ico gs-opgroup-ico--{{ group.id }}">
+                      <app-icon [name]="group.icon" class="gs-ico-sm" />
+                    </span>
+                    {{ group.titleKey | transloco }}
                   </span>
-                  <button
-                    type="button"
-                    class="btn btn-primary alchemy-submit__button"
-                    [disabled]="!canSubmit()"
-                    (click)="submit()"
-                  >
-                    @if (isSubmitting()) {
-                      <app-icon name="spinner" class="animate-spin" />
-                    }
-                    {{ "alchemy.submit.button" | transloco }}
-                  </button>
-                </div>
-              </section>
-            </aside>
-
-            <section
-              class="alchemy-step alchemy-step--ops"
-              [class.alchemy-step--done]="selectedCount() > 0"
-            >
-              <div class="alchemy-step__head">
-                <span class="alchemy-step__num" aria-hidden="true">
-                  @if (selectedCount() > 0) {
-                    <app-icon name="check" />
-                  } @else {
-                    <span>2</span>
-                  }
-                </span>
-                <h3 class="alchemy-step__title">
-                  {{ "alchemy.steps.operations" | transloco }}
-                </h3>
-              </div>
-
-              @let activeForm = activeOperation();
-              <div
-                class="alchemy-operation-focus"
-                id="alchemy-operation-detail"
-                aria-live="polite"
-              >
-                <div class="alchemy-operation-focus__head">
-                  <span class="alchemy-operation-focus__eyebrow">
-                    {{ "alchemy.form_names." + activeForm | transloco }}
+                  <span class="gs-sublabel gs-mono ml-auto">
+                    {{ group.outputKey | transloco }}
                   </span>
-                  @if (isUpscalerForm(activeForm)) {
-                    <span class="alchemy-op__badge">{{
-                      "alchemy.form_meta." + activeForm + ".badge" | transloco
-                    }}</span>
-                  }
-                </div>
-                <p class="alchemy-operation-focus__desc">
-                  {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
-                </p>
-                @if (hasExample(activeForm)) {
-                  <p class="alchemy-operation-focus__example">
-                    {{
-                      "alchemy.form_meta." + activeForm + ".example" | transloco
-                    }}
-                  </p>
-                }
-              </div>
+                </button>
 
-              <div class="alchemy-ops">
-                @for (group of operationGroups; track group.id) {
-                  <fieldset
-                    class="alchemy-optset"
-                    [ngClass]="'alchemy-optset--' + group.id"
-                  >
-                    <legend class="alchemy-optset__legend">
-                      <span class="alchemy-optset__label">
-                        <app-icon [name]="group.icon" />
-                        {{ group.titleKey | transloco }}
-                      </span>
-                      <span class="alchemy-optset__output">{{
-                        group.outputKey | transloco
-                      }}</span>
-                    </legend>
-                    <p class="alchemy-optset__blurb">
-                      {{ group.blurbKey | transloco }}
-                    </p>
-                    <div class="alchemy-optset__grid">
-                      @for (form of group.forms; track form) {
-                        <label
-                          class="alchemy-op"
-                          [class.alchemy-op--selected]="isFormSelected(form)"
-                          [class.alchemy-op--active]="activeForm === form"
-                          [attr.title]="
-                            'alchemy.form_meta.' + form + '.desc' | transloco
-                          "
-                          aria-describedby="alchemy-operation-detail"
-                          (mouseenter)="previewForm(form)"
-                          (focusin)="previewForm(form)"
-                        >
-                          <input
-                            type="checkbox"
-                            class="sr-only"
-                            [checked]="isFormSelected(form)"
-                            [disabled]="isSubmitting()"
-                            (change)="toggleForm(form)"
-                          />
-                          <span class="alchemy-op__check" aria-hidden="true">
-                            <app-icon name="check" />
-                          </span>
-                          <span class="alchemy-op__body">
-                            <span class="alchemy-op__name-row">
-                              <span class="alchemy-op__name">{{
-                                "alchemy.form_names." + form | transloco
-                              }}</span>
-                              @if (isUpscalerForm(form)) {
-                                <span class="alchemy-op__badge">{{
-                                  "alchemy.form_meta." + form + ".badge"
-                                    | transloco
-                                }}</span>
-                              }
-                              <button
-                                type="button"
-                                class="alchemy-op__info-btn"
-                                (click)="openFormInfoDialog(form, $event)"
-                                [attr.aria-label]="
-                                  'Show details for ' +
-                                  ('alchemy.form_names.' + form | transloco)
+                @if (!collapsed) {
+                  @if (group.subGroups; as subGroups) {
+                    <div class="flex flex-col gap-2.5">
+                      @for (sub of subGroups; track sub.labelKey) {
+                        <div>
+                          <div class="gs-opsub-label">
+                            {{ sub.labelKey | transloco }}
+                          </div>
+                          <div class="flex flex-col gap-1.5">
+                            @for (form of sub.forms; track form) {
+                              <ng-container
+                                *ngTemplateOutlet="
+                                  opLabel;
+                                  context: { $implicit: form, wide: true }
                                 "
-                                [disabled]="isSubmitting()"
-                              >
-                                <app-icon name="info-circle" />
-                              </button>
-                            </span>
-                          </span>
-                        </label>
+                              />
+                            }
+                          </div>
+                        </div>
                       }
                     </div>
-                  </fieldset>
-                }
-              </div>
-            </section>
-          </div>
-        </section>
-
-        <!-- Flow connector: a persistent visual and textual hint that ties
-             the submit action to where its output shows up, instead of a
-             toast being the only thing pointing the user downward. Its
-             content upgrades once a request exists: from a static promise to
-             a live, clickable link to the in-flight job. -->
-        <a
-          href="#alchemy-results"
-          class="alchemy-flow"
-          [class.alchemy-flow--live]="hasAnyJobs()"
-          (click)="scrollToResultsSection($event)"
-        >
-          <app-icon name="chevron-double-down" class="alchemy-flow__icon" />
-          @if (pendingJobsCount() > 0) {
-            <span>{{
-              "alchemy.flow.jump" | transloco: { count: pendingJobsCount() }
-            }}</span>
-          } @else if (hasAnyJobs()) {
-            <span>{{ "alchemy.flow.view_results" | transloco }}</span>
-          } @else {
-            <span>{{ "alchemy.flow.hint" | transloco }}</span>
-          }
-        </a>
-
-        <div class="alchemy-below">
-          <!-- Job tracking: the primary destination of the flow above, so it
-               sits immediately under the builder rather than behind the
-               volunteer pitch. -->
-          <section
-            class="alchemy-results"
-            id="alchemy-results"
-            tabindex="-1"
-            aria-labelledby="alchemy-jobs-heading"
-          >
-            <h2 id="alchemy-jobs-heading" class="heading-section">
-              {{ "alchemy.jobs.heading" | transloco }}
-            </h2>
-
-            <div class="alert alert--warning alchemy-retention-notice">
-              <div class="alert-content">
-                {{ "alchemy.jobs.retention_warning" | transloco }}
-              </div>
-            </div>
-
-            @if (jobs().length === 0) {
-              <div class="alchemy-empty">
-                <app-icon name="beaker" class="alchemy-empty__icon" />
-                <p class="form-hint">{{ "alchemy.jobs.empty" | transloco }}</p>
-              </div>
-            } @else {
-              <div class="alchemy-controls">
-                <div class="alchemy-controls__group">
-                  <button
-                    type="button"
-                    class="alchemy-controls__btn"
-                    (click)="expandAllJobs()"
-                  >
-                    <app-icon name="chevron-down" />
-                    {{ "alchemy.jobs.expand_all" | transloco }}
-                  </button>
-                  <button
-                    type="button"
-                    class="alchemy-controls__btn"
-                    (click)="collapseAllJobs()"
-                  >
-                    <app-icon name="chevron-up" />
-                    {{ "alchemy.jobs.collapse_all" | transloco }}
-                  </button>
-                </div>
-                <label
-                  class="alchemy-controls__toggle"
-                  [title]="'alchemy.jobs.auto_open_hint' | transloco"
-                >
-                  <input
-                    type="checkbox"
-                    class="checkbox-input"
-                    [checked]="autoOpenResults()"
-                    (change)="toggleAutoOpen()"
-                  />
-                  <span>{{ "alchemy.jobs.auto_open" | transloco }}</span>
-                </label>
-              </div>
-
-              <div class="alchemy-jobs">
-                @for (job of jobs(); track job.id) {
-                  @let expanded = isJobExpanded(job.id);
-                  @let chips = jobFormChips(job);
-                  @let age = jobAge(job);
-                  <article
-                    class="card alchemy-job"
-                    [id]="'alchemy-job-' + job.id"
-                    tabindex="-1"
-                    [class.alchemy-job--open]="expanded"
-                    [class.alchemy-job--new]="justAddedJobId() === job.id"
-                  >
-                    <header class="alchemy-job__header">
-                      <button
-                        type="button"
-                        class="alchemy-job__toggle"
-                        [attr.aria-expanded]="expanded"
-                        [attr.aria-label]="
-                          'alchemy.jobs.toggle_label' | transloco
-                        "
-                        (click)="toggleJob(job.id)"
-                      >
-                        <app-icon
-                          name="chevron-right"
-                          class="alchemy-job__chevron"
-                          [class.alchemy-job__chevron--open]="expanded"
+                  } @else {
+                    <div class="grid grid-cols-2 gap-2">
+                      @for (form of group.forms; track form) {
+                        <ng-container
+                          *ngTemplateOutlet="
+                            opLabel;
+                            context: { $implicit: form, wide: false }
+                          "
                         />
-                        <span
-                          class="badge badge-secondary alchemy-job__state"
-                          [class.badge-danger]="job.faulted"
-                          >{{
-                            "alchemy.state." + (job.status?.state ?? "waiting")
-                              | transloco
-                          }}</span
-                        >
-                        <span class="alchemy-job__chips">
-                          @for (form of chips.shown; track form) {
-                            <span class="alchemy-job__chip">{{
-                              "alchemy.form_names." + form | transloco
-                            }}</span>
-                          }
-                          @if (chips.extra > 0) {
-                            <span
-                              class="alchemy-job__chip alchemy-job__chip--more"
-                              >+{{ chips.extra }}</span
-                            >
-                          }
-                        </span>
-                        <span class="alchemy-job__count">{{
-                          formsProgressLabel(job)
-                        }}</span>
-                        <span class="alchemy-job__age">{{
-                          age.key | transloco: { count: age.count }
-                        }}</span>
-                      </button>
-                      <div class="alchemy-job__actions">
-                        @if (!isJobSettled(job)) {
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-danger"
-                            (click)="cancelJob(job.id)"
-                          >
-                            {{ "alchemy.jobs.cancel" | transloco }}
-                          </button>
-                        } @else if (jobHasResults(job)) {
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-secondary"
-                            [disabled]="downloadingJobId() === job.id"
-                            (click)="downloadJobResults(job)"
-                          >
-                            @if (downloadingJobId() === job.id) {
-                              <app-icon name="spinner" class="animate-spin" />
-                              {{ "alchemy.jobs.download_busy" | transloco }}
-                            } @else {
-                              <app-icon name="arrow-down-tray" />
-                              {{ "alchemy.jobs.download" | transloco }}
-                            }
-                          </button>
-                        }
-                      </div>
-                    </header>
-
-                    @if (expanded) {
-                      <div class="alchemy-job__body">
-                        @if (job.notFound) {
-                          <div class="alert alert--warning">
-                            <div class="alert-content">
-                              {{ "alchemy.jobs.not_found" | transloco }}
-                            </div>
-                          </div>
-                        }
-                        @if (job.faulted) {
-                          <div class="alert alert--danger">
-                            <div class="alert-content">
-                              {{ "alchemy.jobs.faulted" | transloco }}
-                            </div>
-                          </div>
-                        }
-
-                        <ul class="alchemy-checklist">
-                          @for (row of jobFormRows(job); track row.form) {
-                            @let view = formStatusView(row.state);
-                            <li
-                              class="alchemy-formrow alchemy-formrow--{{
-                                view.modifier
-                              }}"
-                            >
-                              <app-icon
-                                [name]="view.icon"
-                                [class.animate-spin]="view.spin"
-                                class="alchemy-formrow__icon"
-                              />
-                              <span class="alchemy-formrow__name">{{
-                                "alchemy.form_names." + row.form | transloco
-                              }}</span>
-                              <span class="alchemy-formrow__state">{{
-                                "alchemy.state." + row.state | transloco
-                              }}</span>
-                            </li>
-                          }
-                        </ul>
-
-                        @for (
-                          form of job.status?.forms ?? [];
-                          track form.form
-                        ) {
-                          @if (form.state === "done" && form.result) {
-                            <app-alchemy-result [form]="form" />
-                          }
-                        }
-                      </div>
-                    }
-                  </article>
+                      }
+                    </div>
+                  }
                 }
               </div>
             }
-          </section>
-
-          <!-- Powered by the horde: live pool readout fused with the volunteer ask.
-               A supporting aside beside the results on wide screens, rather than a
-               full-width block the user has to scroll past to reach their job. -->
-          <aside
-            class="alchemy-crowd"
-            [class.alchemy-crowd--needs-help]="ns.alchemyNeedsHelp()"
-            aria-labelledby="alchemy-crowd-heading"
-          >
-            <div class="alchemy-crowd__inner">
-              @if (ns.performance(); as perf) {
-                <div class="alchemy-crowd__readout">
-                  <span class="alchemy-crowd__count">
-                    <span
-                      class="alchemy-crowd__live-dot"
-                      aria-hidden="true"
-                    ></span>
-                    {{ perf.interrogator_count | number }}
-                  </span>
-                  <span class="alchemy-crowd__count-label">{{
-                    "alchemy.crowd.online" | transloco
-                  }}</span>
-                  <span class="alchemy-crowd__queue">{{
-                    "alchemy.crowd.queued"
-                      | transloco: { count: perf.queued_forms }
-                  }}</span>
-                </div>
-              }
-
-              <div class="alchemy-crowd__pitch">
-                <h2 id="alchemy-crowd-heading" class="alchemy-crowd__heading">
-                  {{ "alchemy.crowd.heading" | transloco }}
-                </h2>
-                <p class="alchemy-crowd__hook">
-                  <app-icon name="cpu-chip" class="alchemy-crowd__hook-icon" />
-                  <span>{{ "alchemy.crowd.hook" | transloco }}</span>
-                </p>
-
-                @if (alchemyHelpReason(); as reason) {
-                  <p class="alchemy-crowd__nudge">
-                    {{ "alchemy.crowd.needs_help_" + reason | transloco }}
-                  </p>
-                }
-
-                <div class="alchemy-crowd__actions">
-                  <a
-                    routerLink="/contribute/workers"
-                    fragment="alchemy"
-                    class="btn btn-primary alchemy-crowd__cta"
-                  >
-                    {{ "alchemy.crowd.cta" | transloco }}
-                    <app-icon name="chevron-right" />
-                  </a>
-                  <a
-                    routerLink="/contribute/donate"
-                    class="alchemy-crowd__donate"
-                  >
-                    {{ "alchemy.crowd.donate" | transloco }}
-                  </a>
-                </div>
-              </div>
-            </div>
-          </aside>
+          </div>
         </div>
       </div>
-    }
-  </div>
-</section>
+
+      <!-- shared operation checkbox (flat 2-col and full-width sub-group rows) -->
+      <ng-template #opLabel let-form let-wide="wide">
+        <label
+          class="gs-op"
+          [class.gs-op--selected]="isFormSelected(form)"
+          [class.gs-op--wide]="wide"
+          [attr.title]="'alchemy.form_meta.' + form + '.desc' | transloco"
+          (mouseenter)="previewForm(form)"
+          (focusin)="previewForm(form)"
+        >
+          <input
+            type="checkbox"
+            class="sr-only"
+            [checked]="isFormSelected(form)"
+            [disabled]="isSubmitting()"
+            (change)="toggleForm(form)"
+          />
+          <span class="gs-op-check" aria-hidden="true">
+            <app-icon name="check" />
+          </span>
+          <span class="gs-op-name">
+            {{ "alchemy.form_names." + form | transloco }}
+          </span>
+          @if (isUpscalerForm(form)) {
+            <span class="gs-op-badge">
+              {{ "alchemy.form_meta." + form + ".badge" | transloco }}
+            </span>
+          }
+        </label>
+      </ng-template>
+
+      <!-- footer -->
+      <footer class="gs-footer">
+        <label class="gs-switch mb-2.5">
+          <input
+            type="checkbox"
+            [checked]="slowWorkers()"
+            [disabled]="isSubmitting()"
+            (change)="toggleSlowWorkers()"
+          />
+          <span class="gs-switch-track"
+            ><span class="gs-switch-knob"></span
+          ></span>
+          {{ "alchemy.slow_workers" | transloco }}
+        </label>
+        <button
+          type="button"
+          class="gs-genbtn"
+          [disabled]="!canSubmit()"
+          (click)="submit()"
+        >
+          @if (isSubmitting()) {
+            <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+          } @else {
+            <app-icon name="beaker" class="gs-ico-sm" />
+          }
+          @if (!hasSource()) {
+            {{ "alchemy.submit.need_source" | transloco }}
+          } @else if (selectedCount() === 0) {
+            {{ "alchemy.submit.need_operation" | transloco }}
+          } @else {
+            {{ "alchemy.submit.button" | transloco }}
+          }
+        </button>
+        <div class="gs-submit-hint">
+          @if (canSubmit()) {
+            {{ "alchemy.submit.hint_ready" | transloco }}
+          } @else {
+            {{ "alchemy.submit.hint_incomplete" | transloco }}
+          }
+        </div>
+      </footer>
+    </div>
+  </section>
+
+  <!-- ============ JOBS PANEL ============ -->
+  <section class="gs-results">
+    <div class="flex min-h-0 flex-1 flex-col">
+      <header class="gs-results-header">
+        <div class="flex items-center gap-2.5">
+          <span class="gs-results-title">
+            {{ "alchemy.jobs.heading" | transloco }}
+          </span>
+          @if (pendingJobsCount() > 0) {
+            <span class="gs-status gs-status--busy">
+              <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
+              {{
+                "alchemy.jobs.status_running"
+                  | transloco: { count: pendingJobsCount() }
+              }}
+            </span>
+          } @else if (hasAnyJobs()) {
+            <span class="gs-status gs-status--done">
+              {{ "alchemy.jobs.status_done" | transloco }}
+            </span>
+          } @else {
+            <span class="gs-status gs-status--ready">
+              {{ "alchemy.jobs.status_ready" | transloco }}
+            </span>
+          }
+        </div>
+        <div class="flex items-center gap-3">
+          @if (ns.performance(); as perf) {
+            <span class="gs-online">
+              <span class="gs-online-dot gs-pulse" aria-hidden="true"></span>
+              <b class="gs-mono gs-ink">{{
+                perf.interrogator_count | number
+              }}</b>
+              {{ "alchemy.crowd.online" | transloco }}
+            </span>
+          }
+          @if (hasAnyJobs()) {
+            @if (selectMode()) {
+              <button
+                type="button"
+                class="gs-download-all gs-download-all--danger"
+                (click)="requestDeleteSelected()"
+                [disabled]="selectedJobCount() === 0"
+              >
+                <app-icon name="trash-modern" class="gs-ico-sm" />
+                {{
+                  "alchemy.jobs.delete_selected"
+                    | transloco: { count: selectedJobCount() }
+                }}
+              </button>
+              <button
+                type="button"
+                class="gs-download-all"
+                (click)="toggleSelectMode()"
+              >
+                {{ "alchemy.jobs.select_done" | transloco }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="gs-download-all"
+                (click)="toggleSelectMode()"
+              >
+                <app-icon name="check-circle" class="gs-ico-sm" />
+                {{ "alchemy.jobs.select" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-download-all"
+                (click)="expandAllJobs()"
+              >
+                {{ "alchemy.jobs.expand_all" | transloco }}
+              </button>
+            }
+          }
+        </div>
+      </header>
+
+      <div class="gs-results-body">
+        <div class="gs-retention gs-retention--amber">
+          <app-icon name="clock" class="gs-ico-sm" />
+          <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
+        </div>
+
+        @if (!hasAnyJobs()) {
+          <div class="gs-empty">
+            <app-icon name="beaker" />
+            <div>
+              <div class="gs-empty-title">
+                {{ "alchemy.jobs.empty_title" | transloco }}
+              </div>
+              <div class="gs-empty-sub">
+                {{ "alchemy.jobs.empty_hint" | transloco }}
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="gs-job-list">
+            @for (job of jobs(); track job.id) {
+              @let expanded = isJobExpanded(job.id);
+              @let chips = jobFormChips(job);
+              @let age = jobAge(job);
+              @let stateView = jobStateView(job);
+              <article
+                class="gs-job"
+                [id]="'alchemy-job-' + job.id"
+                tabindex="-1"
+                [class.gs-job--new]="justAddedJobId() === job.id"
+                [class.gs-job--selected]="selectMode() && isJobSelected(job.id)"
+              >
+                <div class="gs-job-head-row">
+                  @if (selectMode()) {
+                    <span
+                      class="gs-job-check"
+                      [class.gs-job-check--on]="isJobSelected(job.id)"
+                      aria-hidden="true"
+                    >
+                      <app-icon name="check" />
+                    </span>
+                  }
+                  <button
+                    type="button"
+                    class="gs-job-toggle"
+                    [attr.aria-expanded]="selectMode() ? null : expanded"
+                    [attr.aria-pressed]="
+                      selectMode() ? isJobSelected(job.id) : null
+                    "
+                    [attr.aria-label]="'alchemy.jobs.toggle_label' | transloco"
+                    (click)="
+                      selectMode()
+                        ? toggleJobSelected(job.id)
+                        : toggleJob(job.id)
+                    "
+                  >
+                    @if (!selectMode()) {
+                      <app-icon
+                        name="chevron-right"
+                        class="gs-job-chev"
+                        [class.gs-job-chev--open]="expanded"
+                      />
+                    }
+                    <span
+                      class="gs-job-state gs-job-state--{{
+                        stateView.modifier
+                      }}"
+                    >
+                      {{ stateView.key | transloco }}
+                    </span>
+                    <span class="gs-job-chips">
+                      @for (form of chips.shown; track form) {
+                        <span class="gs-job-chip">
+                          {{ "alchemy.form_names." + form | transloco }}
+                        </span>
+                      }
+                      @if (chips.extra > 0) {
+                        <span class="gs-job-chip gs-job-chip--more">
+                          +{{ chips.extra }}
+                        </span>
+                      }
+                    </span>
+                    <span class="gs-job-count gs-mono">
+                      {{ formsProgressLabel(job) }}
+                    </span>
+                    <span class="gs-job-age">
+                      {{ age.key | transloco: { count: age.count } }}
+                    </span>
+                  </button>
+                  @if (!selectMode()) {
+                    <div class="gs-job-actions">
+                      @if (!isJobSettled(job)) {
+                        <button
+                          type="button"
+                          class="gs-tile-btn gs-tile-btn--danger"
+                          (click)="cancelJob(job.id)"
+                        >
+                          {{ "alchemy.jobs.cancel" | transloco }}
+                        </button>
+                      } @else if (jobHasResults(job)) {
+                        <button
+                          type="button"
+                          class="gs-tile-btn"
+                          [disabled]="downloadingJobId() === job.id"
+                          (click)="downloadJobResults(job)"
+                        >
+                          @if (downloadingJobId() === job.id) {
+                            <app-icon name="spinner" class="gs-spin" />
+                            {{ "alchemy.jobs.download_busy" | transloco }}
+                          } @else {
+                            <app-icon name="arrow-down-tray" />
+                            {{ "alchemy.jobs.download" | transloco }}
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                @if (expanded) {
+                  <div class="gs-job-body">
+                    @if (job.notFound) {
+                      <p class="gs-warn">
+                        <app-icon name="warning-triangle" class="gs-ico-sm" />
+                        {{ "alchemy.jobs.not_found" | transloco }}
+                      </p>
+                    }
+                    @if (job.faulted) {
+                      <p class="gs-warn">
+                        <app-icon name="warning-triangle" class="gs-ico-sm" />
+                        {{ "alchemy.jobs.faulted" | transloco }}
+                      </p>
+                    }
+
+                    <ul class="gs-checklist">
+                      @for (row of jobFormRows(job); track row.form) {
+                        @let view = formStatusView(row.state);
+                        <li
+                          class="gs-checkrow gs-checkrow--{{ view.modifier }}"
+                        >
+                          <app-icon
+                            [name]="view.icon"
+                            [class.gs-spin]="view.spin"
+                            class="gs-checkrow-ico gs-ico-sm"
+                          />
+                          <span class="gs-checkrow-name">
+                            {{ "alchemy.form_names." + row.form | transloco }}
+                          </span>
+                          <span class="gs-checkrow-state">
+                            {{ "alchemy.state." + row.state | transloco }}
+                          </span>
+                        </li>
+                      }
+                    </ul>
+
+                    @for (form of job.status?.forms ?? []; track form.form) {
+                      @if (form.state === "done" && form.result) {
+                        <app-alchemy-result [form]="form" />
+                      }
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+
+          <!-- volunteer strip -->
+          <aside
+            class="gs-volunteer"
+            [class.gs-volunteer--needs-help]="ns.alchemyNeedsHelp()"
+          >
+            <span class="gs-volunteer-ico">
+              <app-icon name="cpu-chip" class="gs-ico-sm" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="gs-volunteer-title">
+                {{ "alchemy.crowd.heading" | transloco }}
+              </div>
+              <div class="gs-volunteer-sub">
+                {{ "alchemy.crowd.hook" | transloco }}
+              </div>
+              @if (alchemyHelpReason(); as reason) {
+                <div class="gs-volunteer-nudge">
+                  {{ "alchemy.crowd.needs_help_" + reason | transloco }}
+                </div>
+              }
+            </div>
+            <a
+              routerLink="/contribute/workers"
+              fragment="alchemy"
+              class="gs-volunteer-cta"
+            >
+              {{ "alchemy.crowd.cta" | transloco }}
+              <app-icon name="chevron-right" class="gs-ico-sm" />
+            </a>
+          </aside>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ API PREVIEW MODAL ============ -->
+  @if (apiModalOpen()) {
+    <div
+      class="gs-modal-overlay"
+      (click)="onApiBackdrop($event)"
+      (keydown.escape)="closeApi()"
+      role="dialog"
+      aria-modal="true"
+      tabindex="0"
+    >
+      <div class="gs-modal-panel gs-fadeup">
+        <div class="gs-modal-header">
+          <div class="gs-modal-title">
+            {{ "alchemy.api.title" | transloco }}
+          </div>
+          <button
+            type="button"
+            class="gs-modal-close"
+            (click)="closeApi()"
+            [attr.aria-label]="'generate.civitai.close' | transloco"
+          >
+            <app-icon name="x-mark" class="gs-ico-sm" />
+          </button>
+        </div>
+
+        <div class="gs-api-endpoint">
+          <span class="gs-api-verb gs-api-verb--post">POST</span>
+          <code class="gs-mono">/api/v2/interrogate/async</code>
+        </div>
+
+        <div class="gs-modal-body gs-api-body">
+          <pre class="gs-api-code"><code>{{ apiPayload() }}</code></pre>
+
+          <div class="gs-api-section">
+            <div class="gs-api-section-title">
+              {{ "alchemy.dev.endpoints.heading" | transloco }}
+            </div>
+            <ul class="gs-api-routes">
+              <li class="gs-api-route">
+                <span class="gs-api-verb gs-api-verb--post">POST</span>
+                <code class="gs-mono">/interrogate/async</code>
+                <span class="gs-api-route-desc">
+                  {{ "alchemy.dev.endpoints.submit" | transloco }}
+                </span>
+              </li>
+              <li class="gs-api-route">
+                <span class="gs-api-verb gs-api-verb--get">GET</span>
+                <code class="gs-mono">/interrogate/status/:id</code>
+                <span class="gs-api-route-desc">
+                  {{ "alchemy.dev.endpoints.status" | transloco }}
+                </span>
+              </li>
+              <li class="gs-api-route">
+                <span class="gs-api-verb gs-api-verb--del">DELETE</span>
+                <code class="gs-mono">/interrogate/status/:id</code>
+                <span class="gs-api-route-desc">
+                  {{ "alchemy.dev.endpoints.cancel" | transloco }}
+                </span>
+              </li>
+            </ul>
+            <p class="gs-sublabel gs-api-note">
+              {{ "alchemy.dev.endpoints.auth_note" | transloco }}
+            </p>
+          </div>
+
+          <div class="gs-api-section">
+            <div class="gs-api-section-title">
+              {{ "alchemy.api.response_heading" | transloco }}
+            </div>
+            <pre class="gs-api-code"><code>{{ statusSample }}</code></pre>
+          </div>
+
+          <div class="gs-api-links">
+            <a
+              href="https://github.com/Haidra-Org/horde-sdk"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gs-tile-btn"
+            >
+              <app-icon name="github" />
+              {{ "alchemy.dev.sdk.repo_link" | transloco }}
+            </a>
+            <a
+              href="https://github.com/Haidra-Org/horde-sdk/blob/main/examples/ai_horde_client/image/alchemy_example.py"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gs-tile-btn"
+            >
+              <app-icon name="code-bracket" />
+              {{ "alchemy.dev.sdk.example_link" | transloco }}
+            </a>
+          </div>
+        </div>
+
+        <div class="gs-modal-footer">
+          <span class="gs-modal-foot-note">
+            {{ "alchemy.api.footer_note" | transloco }}
+          </span>
+          <button
+            type="button"
+            class="gs-modal-done"
+            (click)="copyApiPayload()"
+          >
+            {{ "alchemy.api.copy_close" | transloco }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============ DELETE CONFIRMATION ============ -->
+  @if (confirmDeleteOpen()) {
+    <div
+      class="gs-modal-overlay"
+      (click)="onConfirmBackdrop($event)"
+      (keydown.escape)="cancelDelete()"
+      role="dialog"
+      aria-modal="true"
+      tabindex="0"
+    >
+      <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
+        <div class="gs-modal-header">
+          <div class="gs-modal-title">
+            <app-icon name="trash-modern" class="gs-ico-sm" />
+            {{ "alchemy.jobs.delete_confirm_title" | transloco }}
+          </div>
+        </div>
+        <div class="gs-modal-body">
+          <p class="gs-confirm-text">
+            {{
+              "alchemy.jobs.delete_confirm_body"
+                | transloco: { count: pendingDeleteCount() }
+            }}
+          </p>
+        </div>
+        <div class="gs-modal-footer">
+          <button type="button" class="gs-tile-btn" (click)="cancelDelete()">
+            {{ "alchemy.jobs.delete_confirm_cancel" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-modal-done gs-modal-done--danger"
+            (click)="confirmDelete()"
+          >
+            {{
+              "alchemy.jobs.delete_confirm_action"
+                | transloco: { count: pendingDeleteCount() }
+            }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

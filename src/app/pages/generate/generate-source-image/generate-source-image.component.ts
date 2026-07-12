@@ -30,6 +30,7 @@ import {
 } from '../generate-form.model';
 import {
   SourceImage,
+  blobToSourceImage,
   exportMaskFromPaintLayer,
   fileToSourceImage,
 } from '../../../helper/source-image';
@@ -208,6 +209,29 @@ export class GenerateSourceImageComponent implements OnInit {
   public onDragLeave(event: DragEvent): void {
     event.preventDefault();
     this.dragActive.set(false);
+  }
+
+  /**
+   * Adopt an already-encoded blob as the source image, e.g. when loading a past
+   * generation's settings back into the form. Replaces any current source and
+   * clears the mask; the caller is responsible for setting the source mode.
+   */
+  public async applySource(blob: Blob): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+    try {
+      const image = await blobToSourceImage(blob);
+      this.revokePreview();
+      this.sourceImage.set(image);
+      this.previewUrl.set(URL.createObjectURL(image.blob));
+      this.paintCanvasFor = null;
+      this.maskPainted.set(false);
+      this.maskBlob.set(null);
+      this.emitState();
+    } catch {
+      this.error.set('generate.source.encode_failed');
+    }
   }
 
   public clearImage(): void {

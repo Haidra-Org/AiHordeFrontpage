@@ -30,6 +30,25 @@
     }
   }
 
+  /* Full-height studio routes (/generate/*): pin the wrapper to a DEFINITE
+     viewport height so the flex -> grid chain below can resolve a real height
+     (letting each studio panel scroll internally) and so the min-height:100vh
+     floor can't leave an empty band under the studio once the footer is gone.
+     Desktop only — on narrow screens the studio is a normal scrolling page. */
+  @media (min-width: 64rem) {
+    .wrapper--flush {
+      min-height: 0;
+      height: 100dvh;
+    }
+    /* The routed studio component is flex:1 but defaults to min-height:auto
+       (min-content), which would keep it at its tall content size and overflow
+       the wrapper. Let it shrink so the definite height propagates down the
+       flex -> grid chain and each panel scrolls internally. */
+    .wrapper--flush > router-outlet + * {
+      min-height: 0;
+    }
+  }
+
   /* =================================================================
      SECTION STYLES
      ================================================================= */

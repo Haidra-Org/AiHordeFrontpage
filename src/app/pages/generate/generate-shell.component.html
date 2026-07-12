@@ -1,0 +1,30 @@
+<div class="gen-studio gs-shell">
+  <nav
+    class="gs-subtabs"
+    role="tablist"
+    [attr.aria-label]="'generate.shell.tabs_label' | transloco"
+  >
+    <a
+      class="gs-subtab gs-subtab--image"
+      routerLink="/generate/image"
+      routerLinkActive="gs-subtab--active"
+      role="tab"
+    >
+      <app-icon name="photo" class="gs-ico-sm" />
+      {{ "generate.shell.tab_image" | transloco }}
+    </a>
+    <a
+      class="gs-subtab gs-subtab--alchemy"
+      routerLink="/generate/alchemy"
+      routerLinkActive="gs-subtab--active"
+      role="tab"
+    >
+      <app-icon name="beaker" class="gs-ico-sm" />
+      {{ "generate.shell.tab_alchemy" | transloco }}
+    </a>
+  </nav>
+
+  <div class="gs-shell-outlet">
+    <router-outlet />
+  </div>
+</div>

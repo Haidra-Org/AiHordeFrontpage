@@ -95,6 +95,21 @@ export async function fileToSourceImage(
   }
 }
 
+/**
+ * Wrap an already-encoded image blob (e.g. a stored source blob being re-loaded
+ * into the form) as a {@link SourceImage}, reading its dimensions via decode.
+ * Unlike {@link fileToSourceImage} it does not downscale or re-encode; the blob
+ * is assumed to already satisfy the horde's constraints. Browser-only.
+ */
+export async function blobToSourceImage(blob: Blob): Promise<SourceImage> {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    return { blob, width: bitmap.width, height: bitmap.height };
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** True when any pixel of an RGBA buffer has a non-zero alpha (was painted). */
 export function alphaHasPaint(rgba: Uint8ClampedArray): boolean {
   for (let i = 3; i < rgba.length; i += 4) {

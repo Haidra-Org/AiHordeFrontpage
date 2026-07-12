@@ -6,6 +6,7 @@ import {
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  requestToFormValue,
   simpleModeValue,
 } from './generate-form.model';
 import { AppliedStyle } from '../../services/horde-styles.service';
@@ -469,5 +470,88 @@ describe('coerceFormValue', () => {
     expect(
       coerceFormValue({ denoising_strength: 'nope' }).denoising_strength,
     ).toBe(DEFAULT_GENERATE_FORM_VALUE.denoising_strength);
+  });
+});
+
+describe('requestToFormValue', () => {
+  it('splits the combined prompt and recovers core parameters', () => {
+    const result = requestToFormValue({
+      prompt: 'a castle ### blurry, low quality',
+      params: {
+        sampler_name: 'k_euler',
+        steps: 30,
+        cfg_scale: 6,
+        width: 768,
+        height: 1024,
+        n: 2,
+        seed: '42',
+        karras: true,
+      },
+      models: ['Deliberate'],
+      nsfw: true,
+      censor_nsfw: false,
+    });
+
+    expect(result.prompt).toBe('a castle');
+    expect(result.negativePrompt).toBe('blurry, low quality');
+    expect(result.model).toBe('Deliberate');
+    expect(result.sampler_name).toBe('k_euler');
+    expect(result.steps).toBe(30);
+    expect(result.width).toBe(768);
+    expect(result.height).toBe(1024);
+    expect(result.n).toBe(2);
+    expect(result.seed).toBe('42');
+    expect(result.karras).toBe(true);
+    expect(result.nsfw).toBe(true);
+    expect(result.censor_nsfw).toBe(false);
+    // Loading always opens advanced so every recovered field is visible.
+    expect(result.mode).toBe('advanced');
+  });
+
+  it('recovers a plain prompt with no negative half', () => {
+    const result = requestToFormValue({ prompt: 'just a prompt' });
+    expect(result.prompt).toBe('just a prompt');
+    expect(result.negativePrompt).toBe('');
+  });
+
+  it('distinguishes controlnet, img2img, and inpainting source modes', () => {
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        source_processing: 'img2img',
+        params: { control_type: 'canny' },
+      }).sourceMode,
+    ).toBe('controlnet');
+    expect(
+      requestToFormValue({ prompt: 'x', source_processing: 'img2img' })
+        .sourceMode,
+    ).toBe('img2img');
+    expect(
+      requestToFormValue({ prompt: 'x', source_processing: 'inpainting' })
+        .sourceMode,
+    ).toBe('inpainting');
+    expect(requestToFormValue({ prompt: 'x' }).sourceMode).toBe('none');
+  });
+
+  it('maps loras and tis back with defaulted strengths', () => {
+    const result = requestToFormValue({
+      prompt: 'x',
+      params: {
+        loras: [{ name: 'l1', model: 0.8 }],
+        tis: [{ name: 't1', inject_ti: 'negprompt' }],
+      },
+    });
+    expect(result.loras).toEqual([{ name: 'l1', model: 0.8, clip: 1 }]);
+    expect(result.tis[0].name).toBe('t1');
+    expect(result.tis[0].strength).toBe(1);
+    expect(result.tis[0].inject_ti).toBe('negprompt');
+  });
+
+  it('treats an absent replacement_filter as enabled', () => {
+    expect(requestToFormValue({ prompt: 'x' }).replacement_filter).toBe(true);
+    expect(
+      requestToFormValue({ prompt: 'x', replacement_filter: false })
+        .replacement_filter,
+    ).toBe(false);
   });
 });

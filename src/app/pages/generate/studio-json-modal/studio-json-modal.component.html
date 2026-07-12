@@ -1,0 +1,56 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="close()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+>
+  <div class="gs-modal-panel gs-fadeup">
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        <app-icon name="code-bracket" class="gs-ico-sm" />
+        {{ title() }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="close()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-body gs-api-body">
+      @if (highlights().length > 0) {
+        <div class="gs-meta-highlights">
+          @for (row of highlights(); track row.label) {
+            <div class="gs-meta-row gs-meta-row--{{ row.tone ?? 'default' }}">
+              <span class="gs-meta-label">{{ row.label }}</span>
+              <span class="gs-meta-value">{{ row.value }}</span>
+            </div>
+          }
+        </div>
+      }
+      <pre class="gs-api-code"><code>{{ json() }}</code></pre>
+    </div>
+
+    <div class="gs-modal-footer">
+      <span class="gs-modal-foot-note">
+        {{ "generate.results.metadata_note" | transloco }}
+      </span>
+      <div class="flex items-center gap-2">
+        @if (downloadName()) {
+          <button type="button" class="gs-tile-btn" (click)="download()">
+            <app-icon name="arrow-down-tray" />
+            {{ "generate.results.metadata_download" | transloco }}
+          </button>
+        }
+        <button type="button" class="gs-modal-done" (click)="copy()">
+          {{ "generate.results.metadata_copy" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

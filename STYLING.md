@@ -66,18 +66,18 @@ Styles in `src/styles/` are organized by concern:
 
 ### Page-Specific Layers
 
-| File                  | Purpose                                      |
-| --------------------- | -------------------------------------------- |
-| `_network-status.css` | Network status panel and domain stat grid    |
-| `_intro-features.css` | Homepage hero stage, feature cards           |
-| `_news.css`           | News timeline, date badges                   |
-| `_workers-page.css`   | Worker type sections, domain-colored cards   |
-| `_tools-page.css`     | Tool filter bar, view mode toggle            |
-| `_leaderboard.css`    | Leaderboard layout, top cards                |
-| `_faq.css`            | FAQ accordion, TOC sidebar                   |
-| `_style-detail.css`   | Style detail page layout                     |
-| `_prose.css`          | Rendered markdown/prose content              |
-| `_generate.css`       | Generate "studio" workspace (see note below) |
+| File                  | Purpose                                                      |
+| --------------------- | ------------------------------------------------------------ |
+| `_network-status.css` | Network status panel and domain stat grid                    |
+| `_intro-features.css` | Homepage hero stage, feature cards                           |
+| `_news.css`           | News timeline, date badges                                   |
+| `_workers-page.css`   | Worker type sections, domain-colored cards                   |
+| `_tools-page.css`     | Tool filter bar, view mode toggle                            |
+| `_leaderboard.css`    | Leaderboard layout, top cards                                |
+| `_faq.css`            | FAQ accordion, TOC sidebar                                   |
+| `_style-detail.css`   | Style detail page layout                                     |
+| `_prose.css`          | Rendered markdown/prose content                              |
+| `_generate.css`       | `/generate` studio: image + alchemy + shell (see note below) |
 
 ### Other
 
@@ -91,10 +91,19 @@ Styles in `src/styles/` are organized by concern:
 
 ## The `/generate` studio exception
 
-The `/generate` page is a deliberate, approved departure from the shared design
-system: it is a focused creation workspace with its own visual language taken
-from the interactive design mockup. Its styles still follow the core principle of
-living centrally in `src/styles/_generate.css` (component CSS stays empty), but:
+The `/generate` workspace is a deliberate, approved departure from the shared
+design system: a focused creation studio with its own visual language taken from
+the interactive design mockups. It hosts two tools as subtabs — image generation
+(`/generate/image`) and Alchemy (`/generate/alchemy`) — under one full-height
+shell, and the site footer is dropped on `/generate/*`. Its styles still follow
+the core principle of living centrally in `src/styles/_generate.css` (component
+CSS stays empty), but:
+
+- **One system, two accents.** Every `gs-*` rule keys its accent off the
+  `--gs-blue` token. The image tool uses it as blue; the Alchemy tool re-declares
+  it (and its tints) as purple on the `.gs-alchemy` page-root, recolouring the
+  whole component set without duplicating a rule. Reach for a token flip before a
+  new class when a variant just needs a different accent.
 
 - **Scoped, not shared.** Every rule is namespaced under the `.gen-studio`
   page-root class and prefixed `gs-*` (for example `.gs-card`, `.gs-switch`,

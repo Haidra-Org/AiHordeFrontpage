@@ -2,14 +2,21 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   inject,
   OnInit,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router, RouterLink, RouterOutlet, Scroll } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterOutlet,
+  Scroll,
+} from '@angular/router';
 import { ViewportScroller, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { filter } from 'rxjs';
+import { filter, map, startWith } from 'rxjs';
 import { FooterColorService } from './services/footer-color.service';
 import { FloatingControlsComponent } from './components/floating-controls/floating-controls.component';
 import { NetworkStatusComponent } from './components/network-status/network-status.component';
@@ -45,6 +52,26 @@ export class AppComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   public darkFooter = this.footerColor.dark;
+
+  /** Current post-redirect URL, for chrome that depends on the active route. */
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * The `/generate` workspace is a full-height, self-contained studio; the site
+   * footer (link tree, logo, network status) below it reads as a strange second
+   * page, and every one of those links is reachable elsewhere, so it is dropped
+   * on `/generate/*`.
+   */
+  public readonly hideFooter = computed(() =>
+    this.currentUrl().startsWith('/generate'),
+  );
 
   ngOnInit(): void {
     this.viewportScroller.setOffset(() => {

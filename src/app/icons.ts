@@ -227,6 +227,17 @@ export const APP_ICONS: Record<string, string> = {
   // ── Navigation (additional) ──────────────────────────────────────────
   'arrows-up-down':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.75 8.5L8 5.25M8 5.25L11.25 8.5M8 5.25V18.75M19.25 15.5L16 18.75M16 18.75L12.75 15.5M16 18.75V5.25"/>',
+  'arrows-pointing-out':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/>',
+  'arrows-pointing-in':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"/>',
+  // Panel-width toggle: a pinned left edge with the right edge pushed outward
+  // (widen) or pulled inward (narrow). Reads as "-> / <-" rather than the
+  // fullscreen diagonal arrows, which were mistaken for enter/exit fullscreen.
+  'panel-widen':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.5 5v14"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9.5 12H20m0 0l-3.5-3.5M20 12l-3.5 3.5"/>',
+  'panel-narrow':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4.5 5v14"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M20 12H9.5m0 0l3.5-3.5M9.5 12l3.5 3.5"/>',
 
   // ── Network & Infrastructure ─────────────────────────────────────────
   'server-stack':

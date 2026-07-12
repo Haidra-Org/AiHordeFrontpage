@@ -175,7 +175,10 @@ export type GenerationMetadataType =
   | 'source_mask'
   | 'extra_source_images'
   | 'batch_index'
-  | 'information';
+  | 'information'
+  // Newer workers report the LAION aesthetic score here; the numeric score is
+  // carried in `ref` (with value `see_ref`).
+  | 'aesthetic_score';
 
 export type GenerationMetadataValue =
   | 'download_failed'

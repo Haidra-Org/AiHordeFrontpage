@@ -1,9 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TranslocoService } from '@jsverse/transloco';
 import { GenerateResultsPanelComponent } from './generate-results-panel.component';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
 import { ToastService } from '../../../services/toast.service';
+import { DatabaseService } from '../../../services/database.service';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -56,6 +58,14 @@ describe('GenerateResultsPanelComponent', () => {
           },
         },
         { provide: ToastService, useValue: { success: toastSuccess } },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        {
+          provide: TranslocoService,
+          useValue: { translate: (key: string) => key },
+        },
       ],
     })
       .overrideComponent(GenerateResultsPanelComponent, {

@@ -1,4 +1,8 @@
-import { GenerationOutput, ImageGenerationRequest } from './generation';
+import {
+  GenerationMetadataStable,
+  GenerationOutput,
+  ImageGenerationRequest,
+} from './generation';
 
 /**
  * Lifecycle of a locally-tracked image generation job.
@@ -33,6 +37,12 @@ export interface StoredJobImageMetadata {
   workerName?: string;
   censored?: boolean;
   state?: GenerationOutput['state'];
+  /**
+   * Raw per-image metadata from the horde (`gen_metadata`): censorship reason,
+   * lora/ti/source download or parse failures, aesthetic score, etc. Kept so the
+   * results UI can surface NSFW/error/aesthetic signals and the metadata export.
+   */
+  genMetadata?: GenerationMetadataStable[];
 }
 
 /**
@@ -65,6 +75,8 @@ export interface LocalGenerationJob {
   queuePosition?: number;
   waitTime?: number;
   errorMessage?: string;
+  /** How many times this job has been re-submitted via Retry (0/undefined = original). */
+  retryCount?: number;
   resultImageIds: string[];
   /**
    * Epoch ms of the last poll, used by the engine to throttle check calls.

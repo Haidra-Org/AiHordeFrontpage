@@ -10,12 +10,15 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { DecimalPipe, isPlatformBrowser } from '@angular/common';
+import {
+  DecimalPipe,
+  NgTemplateOutlet,
+  isPlatformBrowser,
+} from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { Dialog } from '@angular/cdk/dialog';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { AuthService } from '../../services/auth.service';
 import { NetworkStatusService } from '../../services/network-status.service';
@@ -32,21 +35,23 @@ import {
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
 import { AlchemyResultComponent } from '../../components/alchemy/alchemy-result/alchemy-result.component';
-import { AlchemyFormInfoDialogComponent } from '../../components/alchemy/alchemy-form-info-dialog/alchemy-form-info-dialog.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
-import { NgClass } from '@angular/common';
+import { PanelSize, cyclePanelSize } from '../generate/generate-form.model';
 
 const ANONYMOUS_API_KEY = '0000000000';
-
-/** The page's two faces: the interactive tool and the API integration guide. */
-type AlchemyTab = 'tool' | 'developers';
 
 /** How a single form's state reads in the per-form checklist. */
 interface FormStatusView {
   icon: string;
   spin: boolean;
   modifier: string;
+}
+
+/** A labelled slice of a group's forms, for use-case sub-grouping. */
+interface AlchemyOperationSubGroup {
+  labelKey: string;
+  forms: readonly AlchemyFormName[];
 }
 
 interface AlchemyOperationGroup {
@@ -56,6 +61,12 @@ interface AlchemyOperationGroup {
   outputKey: string;
   blurbKey: string;
   forms: readonly AlchemyFormName[];
+  /**
+   * When set, the group renders these labelled sub-groups (full-width, one form
+   * per line) instead of the flat two-column grid — used for the upscalers,
+   * whose long names don't fit two-up and read better split by use case.
+   */
+  subGroups?: readonly AlchemyOperationSubGroup[];
 }
 
 const FORM_STATUS_VIEWS: Record<string, FormStatusView> = {
@@ -86,8 +97,8 @@ interface AlchemyJob {
   imports: [
     TranslocoPipe,
     DecimalPipe,
+    NgTemplateOutlet,
     RouterLink,
-    NgClass,
     AlchemyImageInputComponent,
     AlchemyResultComponent,
     IconComponent,
@@ -105,7 +116,6 @@ export class AlchemyComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly dialog = inject(Dialog);
 
   private static readonly POLL_MS = 10_000;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -158,6 +168,32 @@ export class AlchemyComponent {
     'strip_background',
   ];
 
+  /** Upscalers split by use case, so their long names get a full line each. */
+  private readonly upscalerSubGroups: readonly AlchemyOperationSubGroup[] = [
+    {
+      labelKey: 'alchemy.forms.upscale_photo',
+      forms: [
+        'RealESRGAN_x4plus',
+        'RealESRGAN_x2plus',
+        '4xNomosWebPhoto_RealPLKSR',
+        '4xNomos2_realplksr_dysample',
+        'NMKD_Siax',
+      ],
+    },
+    {
+      labelKey: 'alchemy.forms.upscale_anime',
+      forms: [
+        'RealESRGAN_x4plus_anime_6B',
+        '4x_AnimeSharp',
+        '2xModernSpanimationV1',
+      ],
+    },
+    {
+      labelKey: 'alchemy.forms.upscale_general',
+      forms: ['4xLSDIRplus', '4xNomos8kSC', '4xNomos2_hq_dat2'],
+    },
+  ];
+
   public readonly operationGroups: readonly AlchemyOperationGroup[] = [
     {
       id: 'analyze',
@@ -174,6 +210,7 @@ export class AlchemyComponent {
       outputKey: 'alchemy.forms.upscale_output',
       blurbKey: 'alchemy.forms.upscale_blurb',
       forms: this.upscalerForms,
+      subGroups: this.upscalerSubGroups,
     },
     {
       id: 'facefix',
@@ -193,24 +230,45 @@ export class AlchemyComponent {
     },
   ];
 
-  public readonly activeTab = signal<AlchemyTab>('tool');
+  /** The API request-preview modal (the header's "{ } API" affordance). */
+  public readonly apiModalOpen = signal(false);
   public readonly activeOperation = signal<AlchemyFormName>('caption');
 
+  /** How wide the control panel is expanded (normal/double/full). UI-only. */
+  public readonly panelSize = signal<PanelSize>('normal');
+
   /**
-   * Static API samples for the developer tab. Kept as component strings
-   * because their JSON braces would otherwise collide with Angular's
-   * control-flow block syntax in the template. The method and path live in
-   * each code card's header strip, so the samples start at the headers/body.
+   * Step the panel one width wider, wrapping `full` back to `normal`. Backs the
+   * single expand/collapse toggle in the header.
    */
-  public readonly requestSample = `apikey: 0000000000
-Content-Type: application/json
+  public cyclePanel(): void {
+    this.panelSize.update((size) => cyclePanelSize(size));
+  }
 
-{
-  "forms": [{ "name": "caption" }, { "name": "RealESRGAN_x4plus" }],
-  "source_image": "https://example.com/image.png",
-  "slow_workers": true
-}`;
+  /** Operation groups the user has collapsed. Empty = all expanded (default). */
+  public readonly collapsedGroups = signal<ReadonlySet<string>>(new Set());
 
+  public isGroupCollapsed(id: string): boolean {
+    return this.collapsedGroups().has(id);
+  }
+
+  public toggleGroup(id: string): void {
+    this.collapsedGroups.update((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  /**
+   * Static API status sample for the request-preview modal. Kept as a component
+   * string because its JSON braces would otherwise collide with Angular's
+   * control-flow block syntax in the template.
+   */
   public readonly statusSample = `{
   "state": "done",
   "forms": [
@@ -231,6 +289,23 @@ Content-Type: application/json
 
   /** Which job cards are expanded. Collapsed jobs show only their summary line. */
   public readonly expandedJobs = signal<ReadonlySet<string>>(new Set());
+
+  /**
+   * Select-to-delete for tracked job cards, mirroring the image results grid.
+   * Deleting a card just stops tracking it (results are server-side and expire
+   * on their own), but it is still gated behind an explicit select + confirm so
+   * a stray tap can't wipe the list.
+   */
+  public readonly selectMode = signal(false);
+  public readonly selectedJobIds = signal<ReadonlySet<string>>(new Set());
+  public readonly selectedJobCount = computed(() => this.selectedJobIds().size);
+  private readonly pendingDelete = signal<readonly string[]>([]);
+  public readonly confirmDeleteOpen = computed(
+    () => this.pendingDelete().length > 0,
+  );
+  public readonly pendingDeleteCount = computed(
+    () => this.pendingDelete().length,
+  );
 
   /**
    * The job a submission just added, so its card can pulse into view instead
@@ -302,8 +377,55 @@ Content-Type: application/json
     });
   }
 
-  public setTab(tab: AlchemyTab): void {
-    this.activeTab.set(tab);
+  public openApi(): void {
+    this.apiModalOpen.set(true);
+  }
+
+  public closeApi(): void {
+    this.apiModalOpen.set(false);
+  }
+
+  /** Close the API modal only when its backdrop (not the panel) is clicked. */
+  public onApiBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeApi();
+    }
+  }
+
+  /**
+   * Live preview of the `/interrogate/async` request body the current source and
+   * selected operations would submit. A base64 source is elided to a placeholder
+   * so the modal stays readable; a URL source is shown verbatim.
+   */
+  public readonly apiPayload = computed(() => {
+    const source = this.sourceImage();
+    const forms = [...this.selectedForms()].map((name) => ({ name }));
+    const payload = {
+      forms: forms.length > 0 ? forms : [{ name: 'caption' }],
+      source_image: source
+        ? source.startsWith('data:')
+          ? '<base64 webp>'
+          : source
+        : '<source image>',
+      slow_workers: this.slowWorkers(),
+    };
+    return JSON.stringify(payload, null, 2);
+  });
+
+  /** Copy the previewed request body to the clipboard, then close the modal. */
+  public async copyApiPayload(): Promise<void> {
+    if (
+      isPlatformBrowser(this.platformId) &&
+      typeof navigator !== 'undefined' &&
+      navigator.clipboard
+    ) {
+      try {
+        await navigator.clipboard.writeText(this.apiPayload());
+      } catch {
+        // Clipboard access can be denied; closing the modal is the main intent.
+      }
+    }
+    this.closeApi();
   }
 
   public onSourceImage(value: string | null): void {
@@ -329,23 +451,6 @@ Content-Type: application/json
 
   public previewForm(form: AlchemyFormName): void {
     this.activeOperation.set(form);
-  }
-
-  /**
-   * Opens a modal dialog showing detailed information about a form.
-   * Used on mobile/narrow screens where inline explanations are offscreen.
-   */
-  public openFormInfoDialog(form: AlchemyFormName, event: Event): void {
-    event.stopPropagation();
-    event.preventDefault();
-    this.dialog.open(AlchemyFormInfoDialogComponent, {
-      data: { formName: form },
-      hasBackdrop: true,
-      backdropClass: 'modal-cdk-backdrop',
-      panelClass: 'alchemy-form-info-dialog-panel',
-      maxWidth: '90vw',
-      maxHeight: '90vh',
-    });
   }
 
   public hasExample(form: AlchemyFormName): boolean {
@@ -488,6 +593,73 @@ Content-Type: application/json
     this.expandedJobs.set(new Set());
   }
 
+  /** Enter/leave select mode, dropping any marks when leaving. */
+  public toggleSelectMode(): void {
+    const next = !this.selectMode();
+    this.selectMode.set(next);
+    if (!next) {
+      this.selectedJobIds.set(new Set());
+    }
+  }
+
+  public isJobSelected(id: string): boolean {
+    return this.selectedJobIds().has(id);
+  }
+
+  public toggleJobSelected(id: string): void {
+    this.selectedJobIds.update((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  /** Open the confirmation dialog for a specific set of tracked jobs. */
+  public requestDeleteJobs(ids: readonly string[]): void {
+    const filtered = ids.filter((id) => id.length > 0);
+    if (filtered.length > 0) {
+      this.pendingDelete.set(filtered);
+    }
+  }
+
+  public requestDeleteSelected(): void {
+    this.requestDeleteJobs([...this.selectedJobIds()]);
+  }
+
+  public cancelDelete(): void {
+    this.pendingDelete.set([]);
+  }
+
+  /** Close the confirm dialog only when its backdrop (not the panel) is clicked. */
+  public onConfirmBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.cancelDelete();
+    }
+  }
+
+  /** Stop tracking the confirmed jobs, then leave select mode. */
+  public confirmDelete(): void {
+    const ids = new Set(this.pendingDelete());
+    this.pendingDelete.set([]);
+    if (ids.size === 0) {
+      return;
+    }
+    this.jobs.update((jobs) => jobs.filter((job) => !ids.has(job.id)));
+    this.expandedJobs.update((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        next.delete(id);
+      }
+      return next;
+    });
+    this.selectedJobIds.set(new Set());
+    this.selectMode.set(false);
+  }
+
   public toggleAutoOpen(): void {
     this.autoOpenResults.update((v) => !v);
   }
@@ -542,6 +714,26 @@ Content-Type: application/json
 
   public formStatusView(state: string): FormStatusView {
     return FORM_STATUS_VIEWS[state] ?? FORM_STATUS_VIEWS['waiting'];
+  }
+
+  /**
+   * The job's overall state, as an i18n key plus a colour modifier for its
+   * pill: faulted → done (settled) → processing (any form started) → waiting.
+   */
+  public jobStateView(job: AlchemyJob): { key: string; modifier: string } {
+    if (job.faulted || job.status?.state === 'faulted') {
+      return { key: 'alchemy.state.faulted', modifier: 'faulted' };
+    }
+    if (this.isJobSettled(job)) {
+      return { key: 'alchemy.state.done', modifier: 'done' };
+    }
+    const forms = job.status?.forms ?? [];
+    const started = forms.some(
+      (f) => f.state === 'processing' || f.state === 'done',
+    );
+    return started
+      ? { key: 'alchemy.state.processing', modifier: 'processing' }
+      : { key: 'alchemy.state.waiting', modifier: 'waiting' };
   }
 
   private static readonly TERMINAL_FORM_STATES = new Set([

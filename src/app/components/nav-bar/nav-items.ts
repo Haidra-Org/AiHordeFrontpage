@@ -11,8 +11,8 @@ export const NAV_ITEMS: NavItem[] = [
     activeRoutePrefix: '/guis',
     children: [
       { labelKey: 'nav.guis_and_tools.full_list', routerLink: '/guis/' },
-      { labelKey: 'generate.nav_link', routerLink: '/generate/' },
-      { labelKey: 'alchemy.nav_link', routerLink: '/alchemy/' },
+      { labelKey: 'generate.nav_link', routerLink: '/generate/image' },
+      { labelKey: 'alchemy.nav_link', routerLink: '/generate/alchemy' },
     ],
   },
   {

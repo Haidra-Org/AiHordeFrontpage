@@ -3,14 +3,17 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   inject,
   input,
   PLATFORM_ID,
   signal,
+  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
@@ -27,11 +30,15 @@ import {
 import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
+import { ImageGenerationRequest } from '../../types/generation';
+import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { blobToBase64 } from '../../helper/blob-base64';
 import {
   GenerateFormComponent,
   StylePickerGroup,
 } from './generate-form/generate-form.component';
+import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
+import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
   GenerateSourceImageComponent,
@@ -39,9 +46,11 @@ import {
 } from './generate-source-image/generate-source-image.component';
 import {
   GenerateFormValue,
+  PanelSize,
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  requestToFormValue,
   simpleModeValue,
 } from './generate-form.model';
 
@@ -67,6 +76,9 @@ const KUDOS_DEBOUNCE_MS = 1000;
     GenerateFormComponent,
     GenerateSourceImageComponent,
     GenerateResultsPanelComponent,
+    StudioJsonModalComponent,
+    IconComponent,
+    TranslocoPipe,
   ],
   templateUrl: './generate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,7 +92,11 @@ export class GenerateComponent {
   private readonly styles = inject(HordeStylesService);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly presets = inject(GeneratePresetsService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** The projected source-image section, so a loaded source blob can re-attach. */
+  private readonly sourceImageRef = viewChild(GenerateSourceImageComponent);
 
   /**
    * When true the page's own intro/title block is suppressed and the component
@@ -96,6 +112,9 @@ export class GenerateComponent {
   public readonly kudos = signal<number | null>(null);
   public readonly estimating = signal(false);
 
+  /** How wide the control panel is expanded (normal/double/full). UI-only. */
+  public readonly panelSize = signal<PanelSize>('normal');
+
   /** Curated style presets grouped by category, for the styles picker. */
   public readonly styleGroups = signal<StylePickerGroup[]>([]);
   /** `styleName` -> preset, so a picked style can be resolved and applied. */
@@ -109,6 +128,20 @@ export class GenerateComponent {
     signal<GenerateSourceState>(DEFAULT_SOURCE_STATE);
   /** Whether the source section's validation hint should be shown. */
   public readonly sourceValidationVisible = signal(false);
+
+  /** The built request shown in the pre-submit preview modal, or null. */
+  public readonly previewRequest = signal<unknown>(null);
+
+  /**
+   * A pending "load these settings into the form" request awaiting the user's
+   * confirmation. `sourceLocalId` is set when a stored source image can be
+   * re-attached (loading from a past generation rather than a preset).
+   */
+  public readonly pendingLoad = signal<{
+    value: GenerateFormValue;
+    sourceLocalId?: string;
+  } | null>(null);
+  public readonly loadConfirmOpen = computed(() => this.pendingLoad() !== null);
 
   /** Monotonic guard so a slow estimate cannot overwrite a newer one. */
   private estimateSeq = 0;
@@ -199,6 +232,88 @@ export class GenerateComponent {
     return raw.mode === 'simple' ? simpleModeValue(raw) : raw;
   }
 
+  /**
+   * Build the exact request this form would submit and show it in the shared
+   * JSON modal, so a user can inspect the payload before generating. Mirrors the
+   * request built in {@link onCreate} (the base64 source image is attached only
+   * at submit time, so the preview shows the request without it).
+   */
+  public openPreview(): void {
+    const effective = this.effectiveValue();
+    const usesSource = effective.sourceMode !== 'none';
+    const state = this.sourceState();
+    const hasSourceImage = usesSource && state.sourceBlob !== null;
+    const request = buildStyledImageRequest(
+      effective,
+      this.resolveApplied(effective),
+      { hasSourceImage },
+    );
+    this.previewRequest.set(request);
+  }
+
+  public closePreview(): void {
+    this.previewRequest.set(null);
+  }
+
+  /** Load a saved/recent preset (from the form's presets menu) into the form. */
+  public onApplyPreset(value: GenerateFormValue): void {
+    this.pendingLoad.set({ value });
+  }
+
+  /** Load a past generation's settings (from the results grid) into the form. */
+  public onLoadSettings(event: {
+    request: ImageGenerationRequest;
+    localId: string;
+  }): void {
+    this.pendingLoad.set({
+      value: requestToFormValue(event.request),
+      sourceLocalId: event.localId,
+    });
+  }
+
+  public cancelLoad(): void {
+    this.pendingLoad.set(null);
+  }
+
+  public onLoadBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.cancelLoad();
+    }
+  }
+
+  /**
+   * Replace the form with the pending settings, clearing the current source
+   * first and re-attaching the past generation's stored source image when one is
+   * available and the loaded mode uses it.
+   */
+  public async confirmLoad(): Promise<void> {
+    const pending = this.pendingLoad();
+    this.pendingLoad.set(null);
+    if (!pending) {
+      return;
+    }
+    this.sourceState.set(DEFAULT_SOURCE_STATE);
+    this.cachedSourceBlob = null;
+    this.sourceBase64 = null;
+    this.form.setValue(pending.value);
+    this.form.markAsDirty();
+    if (pending.sourceLocalId && pending.value.sourceMode !== 'none') {
+      await this.reattachSource(pending.sourceLocalId);
+    }
+  }
+
+  private async reattachSource(localId: string): Promise<void> {
+    const ref = this.sourceImageRef();
+    if (!ref) {
+      return;
+    }
+    const images = await this.queue.getJobImages(localId);
+    const source = images.find((image) => image.kind === 'source');
+    if (source) {
+      await ref.applySource(source.blob);
+    }
+  }
+
   public async onCreate(): Promise<void> {
     const promptControl = this.form.controls.prompt;
     if (promptControl.value.trim().length === 0) {
@@ -224,6 +339,8 @@ export class GenerateComponent {
         request,
         sourceImages.length > 0 ? sourceImages : undefined,
       );
+      // Keep the submitted settings in the recent-history list for quick reload.
+      this.presets.pushRecent(this.form.getRawValue());
       this.toast.success('generate.form.enqueued', { transloco: true });
     } catch (error) {
       console.error('Failed to enqueue generation:', error);

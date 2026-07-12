@@ -26,16 +26,112 @@
         </span>
       }
     </div>
-    <button
-      type="button"
-      class="gs-download-all"
-      (click)="downloadAllFinished()"
-      [disabled]="!hasDownloadableResults()"
-    >
-      <app-icon name="arrow-down-tray" class="gs-ico-sm" />
-      {{ "generate.results.download_all" | transloco }}
-    </button>
+    <div class="flex items-center gap-2">
+      @if (selectMode()) {
+        <button
+          type="button"
+          class="gs-download-all gs-download-all--danger"
+          (click)="requestDeleteSelected()"
+          [disabled]="selectedCount() === 0"
+        >
+          <app-icon name="trash-modern" class="gs-ico-sm" />
+          {{
+            "generate.results.delete_selected"
+              | transloco: { count: selectedCount() }
+          }}
+        </button>
+        <button
+          type="button"
+          class="gs-download-all"
+          (click)="toggleSelectMode()"
+        >
+          {{ "generate.results.select_done" | transloco }}
+        </button>
+      } @else {
+        @if (hasFinished()) {
+          <button
+            type="button"
+            class="gs-download-all"
+            (click)="toggleSelectMode()"
+          >
+            <app-icon name="check-circle" class="gs-ico-sm" />
+            {{ "generate.results.select" | transloco }}
+          </button>
+        }
+        <button
+          type="button"
+          class="gs-download-all"
+          (click)="downloadAllFinished()"
+          [disabled]="!hasDownloadableResults()"
+        >
+          <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+          {{ "generate.results.download_all" | transloco }}
+        </button>
+      }
+    </div>
   </header>
+
+  @if (hasFinished() && !selectMode()) {
+    <div class="gs-view-bar">
+      <label class="gs-view-ctl">
+        <app-icon name="squares-2x2" class="gs-ico-sm" />
+        <span class="gs-view-ctl-label">
+          {{ "generate.results.per_row" | transloco }}
+        </span>
+        <select
+          class="gs-view-select"
+          [value]="imagesPerRow()"
+          (change)="setImagesPerRow(+$any($event.target).value)"
+          [attr.aria-label]="'generate.results.per_row' | transloco"
+        >
+          @for (n of perRowOptions; track n) {
+            <option [value]="n">{{ n }}</option>
+          }
+        </select>
+      </label>
+
+      @if (hasNsfw()) {
+        <button
+          type="button"
+          class="gs-view-toggle"
+          [class.gs-view-toggle--on]="showNsfw()"
+          [attr.aria-pressed]="showNsfw()"
+          (click)="toggleShowNsfw()"
+        >
+          {{
+            (showNsfw()
+              ? "generate.results.nsfw_hide"
+              : "generate.results.nsfw_show"
+            ) | transloco
+          }}
+        </button>
+      }
+      @if (hasAesthetic()) {
+        <button
+          type="button"
+          class="gs-view-toggle"
+          [class.gs-view-toggle--on]="sortMode() === 'aesthetic'"
+          [attr.aria-pressed]="sortMode() === 'aesthetic'"
+          (click)="toggleSort()"
+        >
+          <app-icon name="star" class="gs-ico-sm" />
+          {{ "generate.results.sort_aesthetic" | transloco }}
+        </button>
+      }
+      @if (hasErrors()) {
+        <button
+          type="button"
+          class="gs-view-toggle gs-view-toggle--warn"
+          [class.gs-view-toggle--on]="errorsOnly()"
+          [attr.aria-pressed]="errorsOnly()"
+          (click)="toggleErrorsOnly()"
+        >
+          <app-icon name="warning-triangle" class="gs-ico-sm" />
+          {{ "generate.results.filter_errors" | transloco }}
+        </button>
+      }
+    </div>
+  }
 
   <div class="gs-results-body">
     @if (tiles().length === 0) {
@@ -50,41 +146,171 @@
           </div>
         </div>
       </div>
+    } @else if (filteredOut()) {
+      <div class="gs-empty">
+        <app-icon name="warning-triangle" />
+        <div>
+          <div class="gs-empty-title">
+            {{ "generate.results.filter_empty_title" | transloco }}
+          </div>
+          <div class="gs-empty-sub">
+            {{ "generate.results.filter_empty_sub" | transloco }}
+          </div>
+        </div>
+      </div>
     } @else {
-      <div class="gs-tile-grid">
-        @for (tile of tiles(); track tile.key) {
+      <!-- Prompt header + retry badge, shared by every tile kind. -->
+      <ng-template #tileTop let-t>
+        @if (t.prompt || t.retryCount) {
+          <div class="gs-tile-top">
+            @if (t.prompt) {
+              <button
+                type="button"
+                class="gs-tile-prompt-btn"
+                [class.gs-tile-prompt-btn--open]="isPromptOpen(t)"
+                (click)="togglePrompt(t)"
+                [attr.aria-expanded]="isPromptOpen(t)"
+                [attr.aria-label]="'generate.results.prompt_toggle' | transloco"
+              >
+                <app-icon
+                  name="chevron-right"
+                  class="gs-tile-prompt-chev"
+                  [class.gs-tile-prompt-chev--open]="isPromptOpen(t)"
+                />
+                <span class="gs-tile-prompt-text">{{ t.prompt }}</span>
+              </button>
+            }
+            @if (t.retryCount) {
+              <span
+                class="gs-tile-retry"
+                [title]="
+                  'generate.results.retry_n' | transloco: { n: t.retryCount }
+                "
+              >
+                <app-icon name="refresh-alt" />
+                {{ t.retryCount }}
+              </span>
+            }
+          </div>
+        }
+      </ng-template>
+      <div class="gs-tile-grid" [style.gridTemplateColumns]="gridColumns()">
+        @for (tile of visibleTiles(); track tile.key) {
           @switch (tile.kind) {
             @case ("done") {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+              <div
+                class="gs-tile"
+                [class.gs-tile--selectable]="selectMode()"
+                [class.gs-tile--selected]="
+                  selectMode() && isSelected(tile.jobLocalId)
+                "
+                [style.aspectRatio]="tile.aspect"
+              >
+                @if (!selectMode()) {
+                  <ng-container
+                    [ngTemplateOutlet]="tileTop"
+                    [ngTemplateOutletContext]="{ $implicit: tile }"
+                  />
+                }
                 <button
                   type="button"
                   class="gs-tile-imgbtn"
-                  (click)="openLightbox(tile)"
+                  (click)="
+                    selectMode()
+                      ? toggleSelected(tile.jobLocalId)
+                      : openLightbox(tile)
+                  "
                   [attr.aria-label]="
-                    'generate.results.open_preview' | transloco
+                    (selectMode()
+                      ? 'generate.results.select_image'
+                      : 'generate.results.open_preview'
+                    ) | transloco
                   "
                 >
                   <img
                     class="gs-tile-img"
+                    [class.gs-tile-img--blur]="isNsfwHidden(tile)"
                     [src]="tile.url"
                     alt=""
                     loading="lazy"
                   />
                 </button>
+                @if (selectMode()) {
+                  <span
+                    class="gs-tile-check"
+                    [class.gs-tile-check--on]="isSelected(tile.jobLocalId)"
+                    aria-hidden="true"
+                  >
+                    <app-icon name="check" />
+                  </span>
+                }
                 @if (tile.dims) {
                   <span class="gs-tile-badge">{{ tile.dims }}</span>
                 }
-                <div class="gs-tile-actions-top">
+                @if (!selectMode()) {
+                  <div class="gs-tile-tags">
+                    @if (
+                      tile.aesthetic !== null && tile.aesthetic !== undefined
+                    ) {
+                      <span
+                        class="gs-tile-tag gs-tile-tag--score"
+                        [title]="'generate.results.meta_aesthetic' | transloco"
+                      >
+                        <app-icon name="star" />
+                        {{ tile.aesthetic | number: "1.1-1" }}
+                      </span>
+                    }
+                    @if (tile.nsfw) {
+                      <span
+                        class="gs-tile-tag gs-tile-tag--nsfw"
+                        [class.gs-tile-tag--csam]="tile.censorReason === 'csam'"
+                        [title]="
+                          (tile.censorReason
+                            ? 'generate.results.censor_' + tile.censorReason
+                            : 'generate.results.meta_flagged'
+                          ) | transloco
+                        "
+                      >
+                        {{ "generate.results.nsfw_badge" | transloco }}
+                      </span>
+                    }
+                    @if (tile.errors?.length; as errCount) {
+                      <span
+                        class="gs-tile-tag gs-tile-tag--error"
+                        [title]="
+                          'generate.results.errors_count'
+                            | transloco: { count: errCount }
+                        "
+                      >
+                        <app-icon name="warning-triangle" />
+                        {{ errCount }}
+                      </span>
+                    }
+                  </div>
+                }
+                @if (isNsfwHidden(tile)) {
                   <button
                     type="button"
-                    class="gs-icobtn"
-                    (click)="deleteJob(tile.jobLocalId)"
-                    [attr.aria-label]="'generate.results.delete' | transloco"
-                    [title]="'generate.results.delete' | transloco"
+                    class="gs-tile-veil"
+                    (click)="revealNsfw(tile)"
                   >
-                    <app-icon name="trash-modern" />
+                    <app-icon name="lock-closed" class="gs-ico-sm" />
+                    <span class="gs-tile-veil-title">
+                      {{ "generate.results.nsfw_badge" | transloco }}
+                    </span>
+                    @if (tile.censorReason) {
+                      <span class="gs-tile-veil-sub">
+                        {{
+                          "generate.results.censor_" + tile.censorReason
+                            | transloco
+                        }}
+                      </span>
+                    }
+                    <span class="gs-tile-veil-reveal">
+                      {{ "generate.results.nsfw_reveal" | transloco }}
+                    </span>
                   </button>
-                </div>
+                }
                 <div class="gs-tile-bar">
                   <span class="gs-tile-seed">
                     @if (tile.seed) {
@@ -126,12 +352,38 @@
                     >
                       <app-icon name="copy" />
                     </button>
+                    <button
+                      type="button"
+                      class="gs-icobtn"
+                      (click)="openMeta(tile)"
+                      [attr.aria-label]="
+                        'generate.results.metadata' | transloco
+                      "
+                      [title]="'generate.results.metadata' | transloco"
+                    >
+                      <app-icon name="code-bracket" />
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-icobtn"
+                      (click)="emitLoadSettings(tile)"
+                      [attr.aria-label]="
+                        'generate.results.load_settings' | transloco
+                      "
+                      [title]="'generate.results.load_settings' | transloco"
+                    >
+                      <app-icon name="adjustments-horizontal" />
+                    </button>
                   </div>
                 </div>
               </div>
             }
             @case ("generating") {
               <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
                 <div class="gs-tile-actions-top">
                   <button
                     type="button"
@@ -154,6 +406,10 @@
             @case ("queued") {
               <div class="gs-tile" [style.aspectRatio]="tile.aspect">
                 <span class="gs-shimmer gs-tile-fill" aria-hidden="true"></span>
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
                 <div class="gs-tile-actions-top">
                   <button
                     type="button"
@@ -193,6 +449,10 @@
             }
             @case ("error") {
               <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
                 <div class="gs-tile-center">
                   <app-icon
                     name="warning-triangle"
@@ -204,7 +464,7 @@
                         ("generate.results.errored" | transloco)
                     }}
                   </span>
-                  <div class="gs-tile-btnrow">
+                  <div class="gs-tile-btnrow gs-tile-btnrow--wrap">
                     <button
                       type="button"
                       class="gs-tile-btn"
@@ -215,8 +475,24 @@
                     </button>
                     <button
                       type="button"
+                      class="gs-tile-btn"
+                      (click)="openMeta(tile)"
+                    >
+                      <app-icon name="code-bracket" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="emitLoadSettings(tile)"
+                    >
+                      <app-icon name="adjustments-horizontal" />
+                      {{ "generate.results.load" | transloco }}
+                    </button>
+                    <button
+                      type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
-                      (click)="deleteJob(tile.jobLocalId)"
+                      (click)="requestDelete([tile.jobLocalId])"
                     >
                       {{ "generate.results.delete" | transloco }}
                     </button>
@@ -226,17 +502,39 @@
             }
             @default {
               <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
                 <div class="gs-tile-center">
                   <span class="gs-tile-msg">
                     {{ "generate.status.cancelled" | transloco }}
                   </span>
-                  <button
-                    type="button"
-                    class="gs-tile-btn gs-tile-btn--danger"
-                    (click)="deleteJob(tile.jobLocalId)"
-                  >
-                    {{ "generate.results.delete" | transloco }}
-                  </button>
+                  <div class="gs-tile-btnrow gs-tile-btnrow--wrap">
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="openMeta(tile)"
+                    >
+                      <app-icon name="code-bracket" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="emitLoadSettings(tile)"
+                    >
+                      <app-icon name="adjustments-horizontal" />
+                      {{ "generate.results.load" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn gs-tile-btn--danger"
+                      (click)="requestDelete([tile.jobLocalId])"
+                    >
+                      {{ "generate.results.delete" | transloco }}
+                    </button>
+                  </div>
                 </div>
               </div>
             }
@@ -254,7 +552,7 @@
 
 @if (lightbox(); as view) {
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+    class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
     (click)="closeLightbox()"
     (keydown.escape)="closeLightbox()"
     tabindex="0"
@@ -287,4 +585,57 @@
       }
     </figure>
   </div>
+}
+
+@if (confirmOpen()) {
+  <div
+    class="gs-modal-overlay"
+    (click)="onConfirmBackdrop($event)"
+    (keydown.escape)="cancelDelete()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="0"
+  >
+    <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
+      <div class="gs-modal-header">
+        <div class="gs-modal-title">
+          <app-icon name="trash-modern" class="gs-ico-sm" />
+          {{ "generate.results.delete_confirm_title" | transloco }}
+        </div>
+      </div>
+      <div class="gs-modal-body">
+        <p class="gs-confirm-text">
+          {{
+            "generate.results.delete_confirm_body"
+              | transloco: { count: pendingDeleteCount() }
+          }}
+        </p>
+      </div>
+      <div class="gs-modal-footer">
+        <button type="button" class="gs-tile-btn" (click)="cancelDelete()">
+          {{ "generate.results.delete_confirm_cancel" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-modal-done gs-modal-done--danger"
+          (click)="confirmDelete()"
+        >
+          {{
+            "generate.results.delete_confirm_action"
+              | transloco: { count: pendingDeleteCount() }
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (metaTile(); as tile) {
+  <app-studio-json-modal
+    [title]="'generate.results.metadata_title' | transloco"
+    [data]="tile.metaExport"
+    [highlights]="metaHighlights()"
+    [downloadName]="metaDownloadName(tile)"
+    (closed)="closeMeta()"
+  />
 }

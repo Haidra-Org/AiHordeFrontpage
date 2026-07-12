@@ -1,4 +1,9 @@
-<div class="gen-studio gs-workspace" [class.gs-workspace--full]="!embedded()">
+<div
+  class="gen-studio gs-workspace"
+  [class.gs-workspace--full]="!embedded()"
+  [class.gs-workspace--wide]="!embedded() && panelSize() === 'double'"
+  [class.gs-workspace--max]="!embedded() && panelSize() === 'full'"
+>
   <!-- Left: control panel -->
   <section class="gs-panel">
     <app-generate-form
@@ -9,7 +14,12 @@
       [estimating]="estimating()"
       [forcedParams]="forcedParams()"
       [styleGroups]="styleGroups()"
+      [panelSize]="panelSize()"
+      [expandable]="!embedded()"
+      (panelSizeChange)="panelSize.set($event)"
       (create)="onCreate()"
+      (preview)="openPreview()"
+      (applySettings)="onApplyPreset($event)"
     >
       <app-generate-source-image
         generateSourceImage
@@ -22,6 +32,50 @@
 
   <!-- Right: results pane -->
   <section class="gs-results">
-    <app-generate-results-panel class="gs-fill" />
+    <app-generate-results-panel
+      class="gs-fill"
+      (loadSettings)="onLoadSettings($event)"
+    />
   </section>
+
+  @if (previewRequest(); as request) {
+    <app-studio-json-modal
+      [title]="'generate.form.preview_title' | transloco"
+      [data]="request"
+      (closed)="closePreview()"
+    />
+  }
+
+  @if (loadConfirmOpen()) {
+    <div
+      class="gs-modal-overlay"
+      (click)="onLoadBackdrop($event)"
+      (keydown.escape)="cancelLoad()"
+      role="dialog"
+      aria-modal="true"
+      tabindex="0"
+    >
+      <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
+        <div class="gs-modal-header">
+          <div class="gs-modal-title">
+            <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+            {{ "generate.form.load_confirm_title" | transloco }}
+          </div>
+        </div>
+        <div class="gs-modal-body">
+          <p class="gs-confirm-text">
+            {{ "generate.form.load_confirm_body" | transloco }}
+          </p>
+        </div>
+        <div class="gs-modal-footer">
+          <button type="button" class="gs-tile-btn" (click)="cancelLoad()">
+            {{ "generate.form.load_confirm_cancel" | transloco }}
+          </button>
+          <button type="button" class="gs-modal-done" (click)="confirmLoad()">
+            {{ "generate.form.load_confirm_action" | transloco }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

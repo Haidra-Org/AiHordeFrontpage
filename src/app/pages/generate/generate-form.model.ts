@@ -111,6 +111,25 @@ export const DEFAULT_DENOISE = 0.75;
 export const GENERATE_MODES = ['simple', 'advanced'] as const;
 export type GenerateMode = (typeof GENERATE_MODES)[number];
 
+/**
+ * How wide the control panel is expanded, to trade horizontal space for less
+ * vertical scrolling. `normal` is the single-column panel; `double` widens it
+ * and reflows settings into two columns (results stays); `full` fills the width
+ * with a multi-column panel and hides the results pane. UI-only, never sent.
+ */
+export const PANEL_SIZES = ['normal', 'double', 'full'] as const;
+export type PanelSize = (typeof PANEL_SIZES)[number];
+
+/**
+ * Advance the panel one width step, wrapping `full` back to `normal`. Backs the
+ * single expand/collapse toggle: each click widens a step, and the last step
+ * (`full`) collapses all the way back to `normal`.
+ */
+export function cyclePanelSize(size: PanelSize): PanelSize {
+  const index = PANEL_SIZES.indexOf(size);
+  return PANEL_SIZES[(index + 1) % PANEL_SIZES.length];
+}
+
 /** Horde LoRA/TI strength bounds (`model`, `clip`, TI `strength`): -5 to 5. */
 export const MIN_LORA_STRENGTH = -5;
 export const MAX_LORA_STRENGTH = 5;
@@ -813,4 +832,122 @@ export function buildStyledImageRequest(
     request.models = [forced.model];
   }
   return request;
+}
+
+/** Split a combined horde prompt back into its positive/negative halves. */
+function splitCombinedPrompt(prompt: string): [string, string] {
+  const index = prompt.indexOf(' ### ');
+  if (index === -1) {
+    return [prompt, ''];
+  }
+  return [prompt.slice(0, index).trim(), prompt.slice(index + 5).trim()];
+}
+
+function loraConfigToForm(lora: StyleLoraConfig): FormLoraEntry {
+  const entry: FormLoraEntry = {
+    name: lora.name,
+    model: typeof lora.model === 'number' ? lora.model : DEFAULT_LORA_STRENGTH,
+    clip: typeof lora.clip === 'number' ? lora.clip : DEFAULT_LORA_STRENGTH,
+  };
+  if (lora.inject_trigger) {
+    entry.inject_trigger = lora.inject_trigger;
+  }
+  if (lora.is_version) {
+    entry.is_version = lora.is_version;
+  }
+  return entry;
+}
+
+function tiConfigToForm(ti: StyleTextualInversionConfig): FormTiEntry {
+  const entry: FormTiEntry = {
+    name: ti.name,
+    strength:
+      typeof ti.strength === 'number' ? ti.strength : DEFAULT_LORA_STRENGTH,
+  };
+  if (ti.inject_ti === 'prompt' || ti.inject_ti === 'negprompt') {
+    entry.inject_ti = ti.inject_ti;
+  }
+  return entry;
+}
+
+/**
+ * Reverse of {@link buildImageRequest}: recover a {@link GenerateFormValue} from
+ * a stored request, so a past generation's settings can be loaded back into the
+ * form. It is inherently lossy (a request carries no style name, and the base64
+ * source image lives outside it), so `styleName` is cleared and the caller
+ * re-attaches any source blob separately. The result opens in advanced mode so
+ * every recovered field is visible and editable.
+ */
+export function requestToFormValue(
+  request: ImageGenerationRequest,
+): GenerateFormValue {
+  const result: GenerateFormValue = { ...DEFAULT_GENERATE_FORM_VALUE };
+  const params = request.params ?? {};
+
+  const [positive, negative] = splitCombinedPrompt(request.prompt);
+  result.prompt = positive;
+  result.negativePrompt = negative;
+  result.mode = 'advanced';
+  result.styleName = '';
+
+  if (request.models && request.models.length > 0) {
+    result.model = request.models[0];
+  }
+  if (params.sampler_name) result.sampler_name = params.sampler_name;
+  if (typeof params.steps === 'number') result.steps = params.steps;
+  if (typeof params.cfg_scale === 'number') result.cfg_scale = params.cfg_scale;
+  if (typeof params.clip_skip === 'number') result.clip_skip = params.clip_skip;
+  if (typeof params.seed === 'string') result.seed = params.seed;
+  if (typeof params.width === 'number') result.width = params.width;
+  if (typeof params.height === 'number') result.height = params.height;
+  if (typeof params.n === 'number') result.n = params.n;
+  if (Array.isArray(params.post_processing)) {
+    result.post_processing = [...params.post_processing];
+  }
+  result.hires_fix = params.hires_fix === true;
+  if (typeof params.hires_fix_denoising_strength === 'number') {
+    result.hires_fix_denoising_strength = params.hires_fix_denoising_strength;
+  }
+  result.tiling = params.tiling === true;
+  result.karras = params.karras === true;
+  result.transparent = params.transparent === true;
+  if (typeof params.seed_variation === 'number') {
+    result.seed_variation = params.seed_variation;
+  }
+  if (typeof params.facefixer_strength === 'number') {
+    result.facefixer_strength = params.facefixer_strength;
+  }
+  if (typeof params.denoising_strength === 'number') {
+    result.denoising_strength = params.denoising_strength;
+  }
+  if (params.control_type) result.control_type = params.control_type;
+  result.image_is_control = params.image_is_control === true;
+  result.return_control_map = params.return_control_map === true;
+  if (Array.isArray(params.loras)) {
+    result.loras = params.loras.map(loraConfigToForm);
+  }
+  if (Array.isArray(params.tis)) {
+    result.tis = params.tis.map(tiConfigToForm);
+  }
+
+  result.nsfw = request.nsfw === true;
+  result.censor_nsfw = request.censor_nsfw ?? true;
+  result.trusted_workers = request.trusted_workers === true;
+  result.slow_workers = request.slow_workers ?? true;
+  result.allow_downgrade = request.allow_downgrade ?? true;
+  result.shared = request.shared === true;
+  result.extra_slow_workers = request.extra_slow_workers === true;
+  // replacement_filter is only sent when explicitly off, so absence means on.
+  result.replacement_filter = request.replacement_filter !== false;
+  result.disable_batching = request.disable_batching === true;
+
+  if (request.source_processing === 'inpainting') {
+    result.sourceMode = 'inpainting';
+  } else if (request.source_processing === 'img2img') {
+    result.sourceMode = params.control_type ? 'controlnet' : 'img2img';
+  } else {
+    result.sourceMode = 'none';
+  }
+
+  return result;
 }
