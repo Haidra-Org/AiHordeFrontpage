@@ -1,16 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildAspectPresets,
   buildImageRequest,
   buildStyledImageRequest,
+  cfgRequirementHint,
+  clipSkipRequirementHint,
   coerceFormValue,
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  isSnappableSize,
+  karrasRequirementHint,
+  nativeSizeHint,
+  nativeSquareFor,
   normalizeWorkers,
   promptHistoryFromJobs,
   requestToFormValue,
+  samplerRequirementHint,
+  sd15HiresHint,
   simpleModeValue,
+  sizeBaseFor,
+  sizeSuitsNativeSquare,
+  stepsRequirementHint,
   stripEphemeralExtras,
+  suggestedSamplers,
 } from './generate-form.model';
 import { AppliedStyle } from '../../services/horde-styles.service';
 import { LocalGenerationJob } from '../../types/generation-job';
@@ -738,5 +751,172 @@ describe('coerceFormValue extras', () => {
   it('accepts remix as a persisted source mode', () => {
     expect(coerceFormValue({ sourceMode: 'remix' }).sourceMode).toBe('remix');
     expect(coerceFormValue({ sourceMode: 'nonsense' }).sourceMode).toBe('none');
+  });
+});
+
+describe('baseline size defaults', () => {
+  it('maps each baseline family onto its native square and preset base', () => {
+    expect(nativeSquareFor('stable_diffusion_1')).toBe(512);
+    expect(nativeSquareFor('stable_diffusion_2')).toBe(768);
+    expect(nativeSquareFor('stable_diffusion_xl')).toBe(1024);
+    expect(nativeSquareFor('stable_cascade')).toBe(1024);
+    expect(nativeSquareFor('flux_1')).toBe(1024);
+    expect(sizeBaseFor('stable_diffusion_1')).toBe(512);
+    expect(sizeBaseFor('stable_diffusion_2')).toBe(512);
+    expect(sizeBaseFor('flux_1')).toBe(1024);
+  });
+
+  it('assumes a baseline it has never seen is a modern one', () => {
+    expect(nativeSquareFor('some_future_baseline')).toBe(1024);
+    expect(sizeBaseFor('some_future_baseline')).toBe(1024);
+  });
+
+  it('answers nothing when no baseline is known', () => {
+    expect(nativeSquareFor(null)).toBeNull();
+    expect(sizeBaseFor(null)).toBeNull();
+  });
+
+  it('only treats a baseline native square as snappable', () => {
+    expect(isSnappableSize(512, 512)).toBe(true);
+    expect(isSnappableSize(768, 768)).toBe(true);
+    expect(isSnappableSize(1024, 1024)).toBe(true);
+    expect(
+      isSnappableSize(
+        DEFAULT_GENERATE_FORM_VALUE.width,
+        DEFAULT_GENERATE_FORM_VALUE.height,
+      ),
+    ).toBe(true);
+    expect(isSnappableSize(1216, 832)).toBe(false);
+    expect(isSnappableSize(640, 640)).toBe(false);
+  });
+
+  it('accepts the aspect presets of a family as suiting its native square', () => {
+    for (const preset of buildAspectPresets(1024)) {
+      expect(sizeSuitsNativeSquare(1024, preset.width, preset.height)).toBe(
+        true,
+      );
+    }
+    for (const preset of buildAspectPresets(512)) {
+      expect(sizeSuitsNativeSquare(512, preset.width, preset.height)).toBe(
+        true,
+      );
+    }
+  });
+
+  it('rejects a size carried over from another family', () => {
+    expect(sizeSuitsNativeSquare(1024, 512, 512)).toBe(false);
+    expect(sizeSuitsNativeSquare(512, 1024, 1024)).toBe(false);
+  });
+});
+
+describe('requirement hints', () => {
+  it('reads a step range and flags a value outside it', () => {
+    const req = { min_steps: 3, max_steps: 6 };
+    expect(stepsRequirementHint(req, 4)).toEqual({
+      key: 'generate.form.requirement.steps_range',
+      params: { min: 3, max: 6 },
+      violated: false,
+    });
+    expect(stepsRequirementHint(req, 25)?.violated).toBe(true);
+    expect(stepsRequirementHint(req, 2)?.violated).toBe(true);
+  });
+
+  it('reads a half-open step range', () => {
+    expect(stepsRequirementHint({ min_steps: 20 }, 10)).toEqual({
+      key: 'generate.form.requirement.steps_min',
+      params: { min: 20 },
+      violated: true,
+    });
+    expect(stepsRequirementHint({ max_steps: 8 }, 8)?.violated).toBe(false);
+    expect(stepsRequirementHint({}, 25)).toBeNull();
+    expect(stepsRequirementHint(null, 25)).toBeNull();
+  });
+
+  it('prefers an exact cfg over a range that accompanies it', () => {
+    expect(
+      cfgRequirementHint(
+        { cfg_scale: 2, min_cfg_scale: 1, max_cfg_scale: 4 },
+        2,
+      ),
+    ).toEqual({
+      key: 'generate.form.requirement.cfg_exact',
+      params: { value: 2 },
+      violated: false,
+    });
+    expect(cfgRequirementHint({ cfg_scale: 2 }, 7.5)?.violated).toBe(true);
+    expect(
+      cfgRequirementHint({ min_cfg_scale: 1, max_cfg_scale: 4 }, 7.5),
+    ).toEqual({
+      key: 'generate.form.requirement.cfg_range',
+      params: { min: 1, max: 4 },
+      violated: true,
+    });
+    expect(cfgRequirementHint(null, 7.5)).toBeNull();
+  });
+
+  it('flags a clip skip that differs from the suggested one', () => {
+    expect(clipSkipRequirementHint({ clip_skip: 2 }, 2)?.violated).toBe(false);
+    expect(clipSkipRequirementHint({ clip_skip: 2 }, 1)).toEqual({
+      key: 'generate.form.requirement.clip_skip_exact',
+      params: { value: 2 },
+      violated: true,
+    });
+    expect(clipSkipRequirementHint({}, 1)).toBeNull();
+  });
+
+  it('lists the suggested samplers and flags one outside the list', () => {
+    const req = { samplers: ['k_dpmpp_sde', 'k_euler'] };
+    expect(suggestedSamplers(req)).toEqual(['k_dpmpp_sde', 'k_euler']);
+    expect(suggestedSamplers(null)).toEqual([]);
+    expect(samplerRequirementHint(req, 'k_euler')).toEqual({
+      key: 'generate.form.requirement.samplers',
+      params: { list: 'k_dpmpp_sde, k_euler' },
+      violated: false,
+    });
+    expect(samplerRequirementHint(req, 'k_lms')?.violated).toBe(true);
+    expect(samplerRequirementHint({}, 'k_lms')).toBeNull();
+  });
+
+  it('reads karras off the suggested schedulers, and only when they exist', () => {
+    expect(karrasRequirementHint({ schedulers: ['karras'] }, true)).toEqual({
+      key: 'generate.form.requirement.karras_on',
+      params: {},
+      violated: false,
+    });
+    expect(
+      karrasRequirementHint({ schedulers: ['karras'] }, false)?.violated,
+    ).toBe(true);
+    expect(karrasRequirementHint({ schedulers: ['simple'] }, true)).toEqual({
+      key: 'generate.form.requirement.karras_off',
+      params: {},
+      violated: true,
+    });
+    expect(karrasRequirementHint({}, true)).toBeNull();
+    expect(karrasRequirementHint(null, false)).toBeNull();
+  });
+
+  it('notes an off-family size without calling it a violation', () => {
+    expect(nativeSizeHint('stable_diffusion_xl', 1024, 1024)).toBeNull();
+    expect(nativeSizeHint('stable_diffusion_xl', 512, 512)).toEqual({
+      key: 'generate.form.requirement.native_size',
+      params: { size: '1024×1024' },
+      violated: false,
+    });
+    expect(nativeSizeHint(null, 512, 512)).toBeNull();
+  });
+
+  it('warns an SD 1.5 request past 768px with no hires pass', () => {
+    expect(sd15HiresHint('stable_diffusion_1', 1024, 512, false)).toEqual({
+      key: 'generate.form.requirement.sd15_hires',
+      params: {},
+      violated: true,
+    });
+    expect(
+      sd15HiresHint('stable_diffusion_1', 512, 1024, false),
+    ).not.toBeNull();
+    expect(sd15HiresHint('stable_diffusion_1', 1024, 1024, true)).toBeNull();
+    expect(sd15HiresHint('stable_diffusion_1', 768, 768, false)).toBeNull();
+    expect(sd15HiresHint('stable_diffusion_xl', 1024, 1024, false)).toBeNull();
+    expect(sd15HiresHint(null, 1024, 1024, false)).toBeNull();
   });
 });

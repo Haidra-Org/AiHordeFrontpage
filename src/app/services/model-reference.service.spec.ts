@@ -11,18 +11,32 @@ import {
   baselineSupportsQrCode,
   baselineSupportsRemix,
   coerceBaselineMap,
+  coerceRequirements,
+  coerceRequirementsMap,
   normalizeBaseline,
 } from './model-reference.service';
 
 const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
 const CACHE_KEY = 'aihorde.generate.model_baselines';
+const CACHE_VERSION = 2;
 
 const REFERENCE_FIXTURE = {
   Deliberate: { baseline: 'stable diffusion 1', nsfw: false },
   'AlbedoBase XL (SDXL)': { baseline: 'stable_diffusion_xl' },
   'Stable Cascade 1.0': { baseline: 'Stable Cascade' },
-  Flux: { baseline: 'flux_1' },
+  Flux: {
+    baseline: 'flux_1',
+    requirements: {
+      min_steps: 3,
+      max_steps: 8,
+      min_cfg_scale: 1,
+      max_cfg_scale: 4,
+      clip_skip: 1,
+      samplers: ['k_euler'],
+      schedulers: ['karras'],
+    },
+  },
   NoBaseline: { nsfw: true },
   NotAnObject: 'nope',
 };
@@ -65,6 +79,66 @@ describe('coerceBaselineMap', () => {
   it('tolerates a non-object payload', () => {
     expect(coerceBaselineMap(null)).toEqual({});
     expect(coerceBaselineMap('nope')).toEqual({});
+  });
+});
+
+describe('coerceRequirements', () => {
+  it('keeps well-formed numbers and string lists', () => {
+    expect(
+      coerceRequirements({
+        min_steps: 3,
+        max_steps: 6,
+        cfg_scale: 2,
+        samplers: ['k_dpmpp_sde'],
+        schedulers: ['karras'],
+      }),
+    ).toEqual({
+      min_steps: 3,
+      max_steps: 6,
+      cfg_scale: 2,
+      samplers: ['k_dpmpp_sde'],
+      schedulers: ['karras'],
+    });
+  });
+
+  it('drops malformed fields and keys it does not model', () => {
+    expect(
+      coerceRequirements({
+        clip_skip: 2,
+        min_steps: 'three',
+        max_steps: Number.NaN,
+        samplers: [7, 'k_euler', ''],
+        schedulers: [],
+        some_future_key: 'ignored',
+      }),
+    ).toEqual({ clip_skip: 2, samplers: ['k_euler'] });
+  });
+
+  it('answers null when nothing usable survives', () => {
+    expect(coerceRequirements(null)).toBeNull();
+    expect(coerceRequirements('nope')).toBeNull();
+    expect(coerceRequirements({})).toBeNull();
+    expect(coerceRequirements({ samplers: [] })).toBeNull();
+  });
+});
+
+describe('coerceRequirementsMap', () => {
+  it('keeps only the records that carry requirements', () => {
+    expect(coerceRequirementsMap(REFERENCE_FIXTURE)).toEqual({
+      Flux: {
+        min_steps: 3,
+        max_steps: 8,
+        min_cfg_scale: 1,
+        max_cfg_scale: 4,
+        clip_skip: 1,
+        samplers: ['k_euler'],
+        schedulers: ['karras'],
+      },
+    });
+  });
+
+  it('tolerates a non-object payload', () => {
+    expect(coerceRequirementsMap(null)).toEqual({});
   });
 });
 
@@ -115,17 +189,47 @@ describe('ModelReferenceService', () => {
     expect(service.supportsQrCode('Flux')).toBe(false);
   });
 
-  it('persists the baselines with the time they were fetched', () => {
+  it('loads the requirements alongside the baselines', () => {
+    const { service, http } = setup();
+    service.load();
+    http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
+
+    expect(service.requirementsFor('Flux')?.max_steps).toBe(8);
+    expect(service.requirementsFor('Deliberate')).toBeNull();
+    expect(service.requirementsFor('')).toBeNull();
+  });
+
+  it('persists the reference with its shape version and fetch time', () => {
     const { http } = setup();
     TestBed.inject(ModelReferenceService).load();
     http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
 
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null');
+    expect(cached.version).toBe(CACHE_VERSION);
     expect(typeof cached.fetchedAt).toBe('number');
     expect(cached.baselines['Flux']).toBe('flux_1');
+    expect(cached.requirements['Flux'].samplers).toEqual(['k_euler']);
   });
 
   it('serves a fresh cache without a request', () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now(),
+        baselines: { Deliberate: 'stable_diffusion_1' },
+        requirements: { Deliberate: { clip_skip: 2 } },
+      }),
+    );
+    const { service, http } = setup();
+    service.load();
+
+    http.expectNone(MODEL_REFERENCE_URL);
+    expect(service.baselineFor('Deliberate')).toBe('stable_diffusion_1');
+    expect(service.requirementsFor('Deliberate')?.clip_skip).toBe(2);
+  });
+
+  it('discards a cache written by an older shape', () => {
     localStorage.setItem(
       CACHE_KEY,
       JSON.stringify({
@@ -136,7 +240,8 @@ describe('ModelReferenceService', () => {
     const { service, http } = setup();
     service.load();
 
-    http.expectNone(MODEL_REFERENCE_URL);
+    expect(service.baselines()).toBeNull();
+    http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
     expect(service.baselineFor('Deliberate')).toBe('stable_diffusion_1');
   });
 
@@ -144,8 +249,10 @@ describe('ModelReferenceService', () => {
     localStorage.setItem(
       CACHE_KEY,
       JSON.stringify({
+        version: CACHE_VERSION,
         fetchedAt: Date.now() - MODEL_REFERENCE_TTL_MS - 1,
         baselines: { Deliberate: 'stable_diffusion_1' },
+        requirements: {},
       }),
     );
     const { service, http } = setup();

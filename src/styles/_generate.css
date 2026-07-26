@@ -4625,12 +4625,14 @@
 /* Reserve the box's top-right corner so a long first line never runs under the
    history button. */
 .gen-studio .gs-textarea--history {
-  padding-right: 44px;
+  padding-right: 58px;
 }
+/* Inset past a classic (non-overlay) scrollbar track, so the button never sits
+   half on top of the textarea's own scrollbar once the prompt runs long. */
 .gen-studio .gs-prompt-hist-btn {
   position: absolute;
   top: 6px;
-  right: 6px;
+  right: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4888,11 +4890,27 @@
 .gen-studio .gs-hist-row--open .gs-hist-expand app-icon {
   transform: rotate(180deg);
 }
+/* A collapsed grid track rather than `display: none`, because the pointer route
+   has to be delayable: a cursor crossing the list on its way somewhere else
+   should not unfold every row it touches. */
 .gen-studio .gs-hist-detail {
-  display: none;
+  display: grid;
+  grid-template-rows: 0fr;
   flex-basis: 100%;
+  overflow: hidden;
+  visibility: hidden;
+  transition-property: grid-template-rows, visibility;
+  transition-duration: 0.18s, 0s;
+  transition-timing-function: ease;
+  /* Closing keeps a shorter grace than opening, so a slip off the row does not
+     snap it shut; visibility trails the collapse so the text is not cut mid-way. */
+  transition-delay: 0.15s, 0.33s;
+}
+.gen-studio .gs-hist-detail-inner {
+  min-height: 0;
   max-height: min(38vh, 220px);
   overflow-y: auto;
+  scrollbar-width: thin;
   margin: 2px 4px 6px;
   padding: 7px 9px 0;
   border-top: 1px solid var(--gs-pop-border);
@@ -4903,21 +4921,45 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.gen-studio .gs-hist-row--open .gs-hist-detail,
-.gen-studio .gs-hist-row:focus-within .gs-hist-detail {
-  display: block;
-}
 @media (hover: hover) and (pointer: fine) {
   .gen-studio .gs-hist-row:hover .gs-hist-detail {
-    display: block;
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition-delay: 0.4s;
   }
+}
+/* After the hover rule so a row opened by its toggle, or reached by keyboard,
+   wins the tie and opens with no dwell. */
+.gen-studio .gs-hist-row--open .gs-hist-detail,
+.gen-studio .gs-hist-row:focus-within .gs-hist-detail {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition-delay: 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The dwell is the point and stays; only the growth animation goes. */
+  .gen-studio .gs-hist-detail {
+    transition-duration: 0s;
+    transition-delay: 0.15s;
+  }
+}
+/* Which half of the pair is which, without competing with the text for weight. */
+.gen-studio .gs-hist-detail-label {
+  margin: 0 0 1px;
+  color: var(--gs-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gen-studio .gs-hist-detail-label:not(:first-child) {
+  margin-top: 7px;
 }
 .gen-studio .gs-hist-detail-text,
 .gen-studio .gs-hist-detail-neg {
   margin: 0;
 }
 .gen-studio .gs-hist-detail-neg {
-  margin-top: 5px;
   color: var(--gs-label);
 }
 @media (max-width: 1023.98px) {
@@ -5015,4 +5057,96 @@
 .gen-studio .gs-seed-input[disabled] {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ------- prompt overlay: contained scrim ---------------------------- */
+/* A rounded caption plate rather than a band down the top of the frame: the
+   text needs its own ground to sit on over a busy image, but the image is what
+   the grid is for. The plate is dark and light-texted in both themes, since it
+   floats on the picture rather than on a themed surface. */
+.gen-studio .gs-prompt-overlay {
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.66);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.gen-studio .gs-prompt-overlay--below-badge {
+  top: 34px;
+}
+/* Stops short of the tag stack instead of sliding under it. */
+.gen-studio .gs-prompt-overlay--clear-tags {
+  right: 54px;
+}
+.gen-studio .gs-tile-grid--compact .gs-prompt-overlay {
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  padding: 4px 6px;
+  border-radius: 7px;
+}
+.gen-studio .gs-tile-grid--compact .gs-prompt-overlay--below-badge {
+  top: 26px;
+}
+.gen-studio .gs-tile-grid--compact .gs-prompt-overlay--clear-tags {
+  right: 40px;
+}
+
+/* ------- tile action targets ---------------------------------------- */
+/* The flip menu and the status-tile buttons are the only route to a tile's
+   actions under a thumb, so they take the full 44px rather than the 30px that
+   reads fine under a cursor. Both faces already scroll, so a list that no longer
+   fits the tile scrolls instead of the rows being squeezed back down. */
+.gen-studio .gs-flip-item,
+.gen-studio .gs-tile-grid--compact .gs-flip-item {
+  min-height: 44px;
+}
+.gen-studio .gs-flip-menu {
+  overscroll-behavior: contain;
+}
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-tile-btn {
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+  /* `safe` keeps the first button reachable once the stack outgrows the tile:
+     plain centring would push the overflow past the scroll origin. */
+  .gen-studio .gs-tile-center {
+    justify-content: safe center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .gen-studio .gs-tile-grid--compact .gs-tile-btnrow--status .gs-tile-btn {
+    padding-inline: 8px;
+  }
+}
+
+/* model-reference advice under a control: a suggestion reads as quiet metadata,
+   and a value the model was not tuned for gets a tinted, iconned warning that
+   stays short of the alarm the pixel-budget line uses. */
+.gen-studio .gs-req {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-req--warn {
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(180, 83, 9, 0.28);
+  background: rgba(251, 191, 36, 0.14);
+  color: #b45309;
+}
+.dark .gen-studio .gs-req--warn {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
 }

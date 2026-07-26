@@ -19,6 +19,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { merge } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
@@ -56,17 +57,30 @@ import {
   PanelSize,
   PIXEL_WARN_THRESHOLD,
   PromptHistoryEntry,
+  RequirementHint,
   SAMPLERS,
   STRIP_BACKGROUND,
   StyleLockSection,
   StylePickerGroup,
   UPSCALERS,
   buildAspectPresets,
+  cfgRequirementHint,
+  clipSkipRequirementHint,
   cyclePanelSize,
   detachedStyleSections,
+  isSnappableSize,
   isValidWebhook,
+  karrasRequirementHint,
+  nativeSizeHint,
+  nativeSquareFor,
   normalizeWorkers,
+  samplerRequirementHint,
+  sd15HiresHint,
+  sizeBaseFor,
+  stepsRequirementHint,
+  suggestedSamplers,
 } from '../generate-form.model';
+import type { ModelRequirements } from '../../../services/model-reference.service';
 
 // Re-exported for the parent page, which has always imported the picker group
 // type from here; it lives in the form model so the style browser can use it
@@ -128,6 +142,16 @@ export class GenerateFormComponent implements OnInit {
    * is guidance, and an unknown baseline must not lock the user out of it.
    */
   public readonly qrSupported = input<boolean | null>(null);
+  /**
+   * The selected model's normalised baseline, or null when nothing is known. It
+   * drives the native-size guidance and the model-change size snap.
+   */
+  public readonly modelBaseline = input<string | null>(null);
+  /**
+   * The settings the selected model recommends. Null means the model names none
+   * (or none is selected), in which case no guidance is shown.
+   */
+  public readonly modelRequirements = input<ModelRequirements | null>(null);
 
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
@@ -288,6 +312,52 @@ export class GenerateFormComponent implements OnInit {
   public readonly sizeBase = signal<ModelSizeBase>(1024);
   public readonly presets = computed(() => buildAspectPresets(this.sizeBase()));
 
+  /**
+   * Whether the dimensions have been set by anything other than the model-driven
+   * snap since the panel was created: a preset, a slider, the size-family
+   * toggle, a loaded preset, or a style handing its values back. Once set, the
+   * snap stands down for the rest of the session, so a chosen size survives every
+   * later model change. Combined with {@link isSnappableSize} this is deliberately
+   * conservative: it would rather leave a stale square in place than overwrite a
+   * size the user meant.
+   */
+  private readonly sizeTouched = signal(false);
+
+  /**
+   * Set while the snap writes the dimensions, so its own patch is not mistaken
+   * for the user touching them. Form writes emit synchronously, so a plain flag
+   * covers the whole window.
+   */
+  private snappingSize = false;
+
+  /**
+   * Follow the selected model's baseline: preselect the aspect-preset family it
+   * belongs to, and move still-pristine dimensions onto its native square.
+   */
+  private readonly baselineSizeSync = effect(() => {
+    const baseline = this.modelBaseline();
+    const native = nativeSquareFor(baseline);
+    const base = sizeBaseFor(baseline);
+    if (native === null || base === null || this.sizeTouched()) {
+      return;
+    }
+    const controls = this.form().controls;
+    if (
+      controls.width.disabled ||
+      controls.height.disabled ||
+      !isSnappableSize(controls.width.value, controls.height.value)
+    ) {
+      return;
+    }
+    this.sizeBase.set(base);
+    if (controls.width.value === native && controls.height.value === native) {
+      return;
+    }
+    this.snappingSize = true;
+    this.form().patchValue({ width: native, height: native });
+    this.snappingSize = false;
+  });
+
   public ngOnInit(): void {
     const modeControl = this.form().controls.mode;
     this.mode.set(modeControl.value);
@@ -304,6 +374,14 @@ export class GenerateFormComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.syncDetachedSections());
     this.syncDetachedSections();
+
+    merge(controls.width.valueChanges, controls.height.valueChanges)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (!this.snappingSize) {
+          this.sizeTouched.set(true);
+        }
+      });
   }
 
   public setMode(mode: GenerateMode): void {
@@ -316,6 +394,7 @@ export class GenerateFormComponent implements OnInit {
 
   public setSizeBase(base: ModelSizeBase): void {
     this.sizeBase.set(base);
+    this.sizeTouched.set(true);
   }
 
   public totalPixels(): number {
@@ -331,6 +410,75 @@ export class GenerateFormComponent implements OnInit {
   public isPresetActive(width: number, height: number): boolean {
     const controls = this.form().controls;
     return controls.width.value === width && controls.height.value === height;
+  }
+
+  // --- Model recommendations ----------------------------------------------
+  //
+  // Advice the model reference carries for the selected model, rendered as a
+  // line under the control it concerns. A line that the form's current value
+  // contradicts reads as a warning; none of it gates submission. Form controls
+  // are not signals, so these are methods the template re-reads on each change
+  // detection rather than computeds.
+
+  public stepsHint(): RequirementHint | null {
+    return stepsRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.steps.value,
+    );
+  }
+
+  public cfgHint(): RequirementHint | null {
+    return cfgRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.cfg_scale.value,
+    );
+  }
+
+  public clipSkipHint(): RequirementHint | null {
+    return clipSkipRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.clip_skip.value,
+    );
+  }
+
+  public samplerHint(): RequirementHint | null {
+    return samplerRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.sampler_name.value,
+    );
+  }
+
+  public karrasHint(): RequirementHint | null {
+    return karrasRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.karras.value,
+    );
+  }
+
+  /** Whether the model names `sampler` among the ones it was tuned for. */
+  public isSuggestedSampler(sampler: string): boolean {
+    return suggestedSamplers(this.modelRequirements()).includes(sampler);
+  }
+
+  /** A note that the dimensions sit outside the model baseline's family. */
+  public nativeSizeHint(): RequirementHint | null {
+    const controls = this.form().controls;
+    return nativeSizeHint(
+      this.modelBaseline(),
+      controls.width.value,
+      controls.height.value,
+    );
+  }
+
+  /** The SD 1.5 "turn on hires fix or pick a newer model" warning. */
+  public hiresHint(): RequirementHint | null {
+    const controls = this.form().controls;
+    return sd15HiresHint(
+      this.modelBaseline(),
+      controls.width.value,
+      controls.height.value,
+      controls.hires_fix.value,
+    );
   }
 
   public toggleNegativePrompt(): void {

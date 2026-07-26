@@ -215,6 +215,29 @@ export class GenerateComponent {
     this.modelSupport((model) => this.modelReference.supportsQrCode(model)),
   );
 
+  /**
+   * The selected model's normalised baseline, or null when no model is picked or
+   * the reference has not loaded. Drives the control panel's size guidance.
+   */
+  public readonly modelBaseline = computed(() => {
+    const model = this.formValue().model.trim();
+    // Read the signal unconditionally so this recomputes when the reference
+    // lands after the form has already settled.
+    const baselines = this.modelReference.baselines();
+    return baselines === null || model === ''
+      ? null
+      : this.modelReference.baselineFor(model);
+  });
+
+  /** The settings the selected model recommends, or null when it names none. */
+  public readonly modelRequirements = computed(() => {
+    const model = this.formValue().model.trim();
+    const requirements = this.modelReference.requirements();
+    return requirements === null || model === ''
+      ? null
+      : this.modelReference.requirementsFor(model);
+  });
+
   /** Monotonic guard so a slow estimate cannot overwrite a newer one. */
   private estimateSeq = 0;
 

@@ -12,6 +12,7 @@ import {
   StyleTextualInversionConfig,
 } from '../../types/style';
 import type { AppliedStyle } from '../../services/horde-styles.service';
+import type { ModelRequirements } from '../../services/model-reference.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
 
 /**
@@ -266,6 +267,251 @@ export function buildAspectPresets(
   base: ModelSizeBase,
 ): readonly AspectPreset[] {
   return ASPECT_PRESETS[base];
+}
+
+// --- Model recommendations ------------------------------------------------
+
+/** The normalised baseline whose models want a hires pass above 768px. */
+export const SD15_BASELINE = 'stable_diffusion_1';
+
+/** Native square resolution per normalised baseline; everything else is 1024. */
+const BASELINE_NATIVE_SQUARES: Readonly<Record<string, number>> = {
+  stable_diffusion_1: 512,
+  stable_diffusion_2: 768,
+};
+
+const DEFAULT_NATIVE_SQUARE = 1024;
+
+/**
+ * The square resolution `baseline`'s models were trained at, or null when no
+ * baseline is known (no model picked, or the reference has not loaded). A
+ * baseline the table does not name is assumed modern, so a newly published
+ * family reads as 1024 rather than dropping the guidance entirely.
+ */
+export function nativeSquareFor(baseline: string | null): number | null {
+  if (baseline === null) {
+    return null;
+  }
+  return BASELINE_NATIVE_SQUARES[baseline] ?? DEFAULT_NATIVE_SQUARE;
+}
+
+/** The aspect-preset family that suits `baseline`, or null when unknown. */
+export function sizeBaseFor(baseline: string | null): ModelSizeBase | null {
+  const native = nativeSquareFor(baseline);
+  if (native === null) {
+    return null;
+  }
+  return native <= 768 ? 512 : 1024;
+}
+
+/**
+ * Square resolutions the model-driven size snap is allowed to overwrite: the
+ * native square of every baseline family, which includes the form's own default.
+ * Anything else is a size the user (or a loaded preset) chose deliberately.
+ */
+const SNAPPABLE_SQUARES: readonly number[] = [512, 768, 1024];
+
+/**
+ * Whether the dimensions still look untouched, so switching model may snap them
+ * to the new baseline's native square. Only a square from
+ * {@link SNAPPABLE_SQUARES} qualifies: every aspect preset and every custom size
+ * is left alone, which keeps the snap from ever discarding a deliberate choice.
+ */
+export function isSnappableSize(width: number, height: number): boolean {
+  return width === height && SNAPPABLE_SQUARES.includes(width);
+}
+
+/**
+ * How far the shorter side may sit from the native square before the size reads
+ * as belonging to another baseline family. The bounds are asymmetric because the
+ * aspect presets shrink the shorter side (down to 0.75x at 16:9) but never grow
+ * it, while a size carried over from a larger family overshoots it outright.
+ */
+const NATIVE_SIZE_MIN_RATIO = 0.75;
+const NATIVE_SIZE_MAX_RATIO = 1.5;
+
+/** Whether `width`x`height` reads as belonging to the `native` square's family. */
+export function sizeSuitsNativeSquare(
+  native: number,
+  width: number,
+  height: number,
+): boolean {
+  const shortest = Math.min(width, height);
+  return (
+    shortest >= native * NATIVE_SIZE_MIN_RATIO &&
+    shortest <= native * NATIVE_SIZE_MAX_RATIO
+  );
+}
+
+/** Above this on either side an SD 1.5 model wants a hires pass to stay coherent. */
+export const HIRES_WARN_DIMENSION = 768;
+
+const REQUIREMENT_KEY_PREFIX = 'generate.form.requirement.';
+
+/** The scheduler token the form's `karras` switch stands for. */
+const KARRAS_SCHEDULER = 'karras';
+
+/**
+ * One line of advice under a control. `violated` is true when the form's current
+ * value contradicts the advice, which only changes how the line reads: the horde
+ * accepts the request either way and nothing here blocks a submission.
+ */
+export interface RequirementHint {
+  /** Transloco key for the line's text. */
+  key: string;
+  /** Interpolation params for {@link RequirementHint.key}. */
+  params: Record<string, string | number>;
+  violated: boolean;
+}
+
+function hint(
+  suffix: string,
+  params: Record<string, string | number>,
+  violated: boolean,
+): RequirementHint {
+  return { key: `${REQUIREMENT_KEY_PREFIX}${suffix}`, params, violated };
+}
+
+/**
+ * Advice on a value bounded by an optional `min`/`max` pair, as the reference
+ * spells step and CFG ranges. Either end may stand alone.
+ */
+function rangeHint(
+  suffix: string,
+  min: number | undefined,
+  max: number | undefined,
+  value: number,
+): RequirementHint | null {
+  if (min !== undefined && max !== undefined) {
+    return hint(`${suffix}_range`, { min, max }, value < min || value > max);
+  }
+  if (min !== undefined) {
+    return hint(`${suffix}_min`, { min }, value < min);
+  }
+  if (max !== undefined) {
+    return hint(`${suffix}_max`, { max }, value > max);
+  }
+  return null;
+}
+
+export function stepsRequirementHint(
+  requirements: ModelRequirements | null,
+  steps: number,
+): RequirementHint | null {
+  return rangeHint(
+    'steps',
+    requirements?.min_steps,
+    requirements?.max_steps,
+    steps,
+  );
+}
+
+/**
+ * CFG advice. An exact `cfg_scale` wins over the range, which a record may carry
+ * alongside it; the exact value is the tighter statement of the same intent.
+ */
+export function cfgRequirementHint(
+  requirements: ModelRequirements | null,
+  cfg: number,
+): RequirementHint | null {
+  const exact = requirements?.cfg_scale;
+  if (exact !== undefined) {
+    return hint('cfg_exact', { value: exact }, cfg !== exact);
+  }
+  return rangeHint(
+    'cfg',
+    requirements?.min_cfg_scale,
+    requirements?.max_cfg_scale,
+    cfg,
+  );
+}
+
+export function clipSkipRequirementHint(
+  requirements: ModelRequirements | null,
+  clipSkip: number,
+): RequirementHint | null {
+  const exact = requirements?.clip_skip;
+  if (exact === undefined) {
+    return null;
+  }
+  return hint('clip_skip_exact', { value: exact }, clipSkip !== exact);
+}
+
+/** The `sampler_name` values a model suggests; empty when it suggests none. */
+export function suggestedSamplers(
+  requirements: ModelRequirements | null,
+): readonly string[] {
+  return requirements?.samplers ?? [];
+}
+
+export function samplerRequirementHint(
+  requirements: ModelRequirements | null,
+  sampler: string,
+): RequirementHint | null {
+  const samplers = suggestedSamplers(requirements);
+  if (samplers.length === 0) {
+    return null;
+  }
+  return hint(
+    'samplers',
+    { list: samplers.join(', ') },
+    !samplers.includes(sampler),
+  );
+}
+
+/**
+ * Karras advice, read off the suggested schedulers. Absent schedulers say
+ * nothing either way, so no line is shown; a list that names some other
+ * scheduler is a positive statement that karras is not wanted.
+ */
+export function karrasRequirementHint(
+  requirements: ModelRequirements | null,
+  karras: boolean,
+): RequirementHint | null {
+  const schedulers = requirements?.schedulers;
+  if (!schedulers || schedulers.length === 0) {
+    return null;
+  }
+  const suggested = schedulers.some(
+    (scheduler) => scheduler.trim().toLowerCase() === KARRAS_SCHEDULER,
+  );
+  return hint(suggested ? 'karras_on' : 'karras_off', {}, karras !== suggested);
+}
+
+/**
+ * A note that the dimensions sit outside the selected baseline's family. Purely
+ * informational: off-native sizes generate fine, they just drift from what the
+ * model was trained on.
+ */
+export function nativeSizeHint(
+  baseline: string | null,
+  width: number,
+  height: number,
+): RequirementHint | null {
+  const native = nativeSquareFor(baseline);
+  if (native === null || sizeSuitsNativeSquare(native, width, height)) {
+    return null;
+  }
+  return hint('native_size', { size: `${native}×${native}` }, false);
+}
+
+/**
+ * The SD 1.5 high-resolution warning: past {@link HIRES_WARN_DIMENSION} those
+ * models repeat and duplicate subjects unless the hires pass is on.
+ */
+export function sd15HiresHint(
+  baseline: string | null,
+  width: number,
+  height: number,
+  hiresFix: boolean,
+): RequirementHint | null {
+  if (baseline !== SD15_BASELINE || hiresFix) {
+    return null;
+  }
+  if (width <= HIRES_WARN_DIMENSION && height <= HIRES_WARN_DIMENSION) {
+    return null;
+  }
+  return hint('sd15_hires', {}, true);
 }
 
 /** A style category paired with the style names under it, for the picker. */

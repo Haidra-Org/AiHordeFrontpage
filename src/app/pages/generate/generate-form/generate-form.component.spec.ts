@@ -12,6 +12,7 @@ import {
   AppliedStyle,
   StyleForcedParams,
 } from '../../../services/horde-styles.service';
+import type { ModelRequirements } from '../../../services/model-reference.service';
 
 const FORCED: StyleForcedParams = {
   model: 'Flux.1-Schnell fp8',
@@ -484,5 +485,138 @@ describe('GenerateFormComponent extras', () => {
 
     form.controls.n.setValue(1);
     expect(component.qrBatchNoteVisible()).toBe(false);
+  });
+});
+
+describe('GenerateFormComponent model recommendations', () => {
+  async function createWithModel(
+    value: Partial<GenerateFormValue> = {},
+    baseline: string | null = null,
+    requirements: ModelRequirements | null = null,
+  ): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+  }> {
+    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+      .overrideComponent(GenerateFormComponent, { set: { template: '' } })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.componentRef.setInput('modelRequirements', requirements);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance, form };
+  }
+
+  it('reads each hint off the live form values', async () => {
+    const { component, form } = await createWithModel({}, 'flux_1', {
+      min_steps: 3,
+      max_steps: 8,
+      cfg_scale: 2,
+      clip_skip: 1,
+      samplers: ['k_euler'],
+      schedulers: ['karras'],
+    });
+
+    // The form defaults (25 steps, cfg 7.5, k_euler_a) contradict all of these.
+    expect(component.stepsHint()?.violated).toBe(true);
+    expect(component.cfgHint()?.violated).toBe(true);
+    expect(component.samplerHint()?.violated).toBe(true);
+    expect(component.clipSkipHint()?.violated).toBe(false);
+    expect(component.karrasHint()?.violated).toBe(false);
+    expect(component.isSuggestedSampler('k_euler')).toBe(true);
+    expect(component.isSuggestedSampler('k_lms')).toBe(false);
+
+    form.controls.steps.setValue(6);
+    form.controls.cfg_scale.setValue(2);
+    form.controls.sampler_name.setValue('k_euler');
+    form.controls.karras.setValue(false);
+
+    expect(component.stepsHint()?.violated).toBe(false);
+    expect(component.cfgHint()?.violated).toBe(false);
+    expect(component.samplerHint()?.violated).toBe(false);
+    expect(component.karrasHint()?.violated).toBe(true);
+  });
+
+  it('shows no hints for a model that recommends nothing', async () => {
+    const { component } = await createWithModel({}, 'flux_1', null);
+
+    expect(component.stepsHint()).toBeNull();
+    expect(component.cfgHint()).toBeNull();
+    expect(component.clipSkipHint()).toBeNull();
+    expect(component.samplerHint()).toBeNull();
+    expect(component.karrasHint()).toBeNull();
+  });
+
+  it('snaps a pristine size onto the baseline native square', async () => {
+    const { fixture, component, form } = await createWithModel();
+
+    expect(form.controls.width.value).toBe(1024);
+
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    expect(form.controls.width.value).toBe(512);
+    expect(form.controls.height.value).toBe(512);
+    expect(component.sizeBase()).toBe(512);
+
+    // Its own patch must not read as the user customising the size, so a later
+    // model change still follows the baseline.
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_xl');
+    fixture.detectChanges();
+
+    expect(form.controls.width.value).toBe(1024);
+    expect(component.sizeBase()).toBe(1024);
+  });
+
+  it('never touches dimensions the user chose', async () => {
+    const { fixture, form } = await createWithModel({
+      width: 1216,
+      height: 832,
+    });
+
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    expect(form.controls.width.value).toBe(1216);
+    expect(form.controls.height.value).toBe(832);
+  });
+
+  it('stands down once the size has been touched this session', async () => {
+    const { fixture, component, form } = await createWithModel();
+
+    component.setSizeBase(1024);
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    expect(form.controls.width.value).toBe(1024);
+    expect(component.sizeBase()).toBe(1024);
+  });
+
+  it('notes an off-family size and the SD 1.5 hires case', async () => {
+    const { fixture, component, form } = await createWithModel({
+      width: 1024,
+      height: 1024,
+    });
+
+    // Touched first, so the snap cannot rewrite the size out from under the hint.
+    component.setSizeBase(1024);
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    expect(component.nativeSizeHint()?.key).toBe(
+      'generate.form.requirement.native_size',
+    );
+    expect(component.hiresHint()?.violated).toBe(true);
+
+    form.controls.hires_fix.setValue(true);
+    expect(component.hiresHint()).toBeNull();
   });
 });

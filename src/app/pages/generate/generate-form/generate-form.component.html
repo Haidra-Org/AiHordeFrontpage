@@ -230,15 +230,22 @@
                     <app-icon name="chevron-down" class="gs-ico-sm" />
                   </button>
                   <div class="gs-hist-detail" [id]="'gs-hist-detail-' + $index">
-                    <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
-                    @if (entry.negativePrompt) {
-                      <p class="gs-hist-detail-neg">
-                        {{
-                          "generate.form.history_negative"
-                            | transloco: { negative: entry.negativePrompt }
-                        }}
+                    <div class="gs-hist-detail-inner">
+                      <p class="gs-hist-detail-label">
+                        {{ "generate.form.prompt_label" | transloco }}
                       </p>
-                    }
+                      <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
+                      @if (entry.negativePrompt) {
+                        <p class="gs-hist-detail-label">
+                          {{
+                            "generate.form.negative_prompt_label" | transloco
+                          }}
+                        </p>
+                        <p class="gs-hist-detail-neg">
+                          {{ entry.negativePrompt }}
+                        </p>
+                      }
+                    </div>
                   </div>
                 </div>
               }
@@ -480,6 +487,12 @@
               {{ "generate.form.pixel_warning" | transloco }}
             </p>
           }
+          <ng-container
+            *ngTemplateOutlet="reqHint; context: { hint: nativeSizeHint() }"
+          />
+          <ng-container
+            *ngTemplateOutlet="reqHint; context: { hint: hiresHint() }"
+          />
         </div>
 
         @if (isAdvanced()) {
@@ -528,6 +541,9 @@
                   step="1"
                   [attr.aria-label]="'generate.form.steps_short' | transloco"
                 />
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: stepsHint() }"
+                />
               </div>
               <div [class.gs-locked]="isSectionLocked('sampling')">
                 <div class="gs-slabel">
@@ -545,6 +561,9 @@
                   step="0.5"
                   [attr.aria-label]="'generate.form.cfg_short' | transloco"
                 />
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: cfgHint() }"
+                />
               </div>
               <div [class.gs-locked]="isSectionLocked('sampling')">
                 <label class="gs-slabel" for="generate-sampler">
@@ -556,9 +575,19 @@
                   formControlName="sampler_name"
                 >
                   @for (sampler of samplers; track sampler) {
-                    <option [value]="sampler">{{ sampler }}</option>
+                    <option [value]="sampler">
+                      {{
+                        isSuggestedSampler(sampler)
+                          ? ("generate.form.requirement.sampler_option"
+                            | transloco: { sampler: sampler })
+                          : sampler
+                      }}
+                    </option>
                   }
                 </select>
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"
+                />
               </div>
               <div>
                 <label class="gs-slabel" for="generate-seed">
@@ -600,6 +629,9 @@
                 max="12"
                 step="1"
               />
+              <ng-container
+                *ngTemplateOutlet="reqHint; context: { hint: clipSkipHint() }"
+              />
             </div>
             <div class="gs-hairline flex flex-wrap gap-4 pt-3">
               <label
@@ -630,6 +662,9 @@
                 {{ "generate.form.tiling_label" | transloco }}
               </label>
             </div>
+            <ng-container
+              *ngTemplateOutlet="reqHint; context: { hint: karrasHint() }"
+            />
             @if (form().controls.hires_fix.value) {
               <div>
                 <label class="gs-slabel" for="generate-hires-denoise">
@@ -899,13 +934,6 @@
                   ><span class="gs-switch-knob"></span
                 ></span>
               </label>
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.transparent_label" | transloco }}</span>
-                <input type="checkbox" formControlName="transparent" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
             </div>
           </div>
 
@@ -957,134 +985,168 @@
                 ><span class="gs-switch-knob"></span
               ></span>
             </label>
-          </div>
 
-          <!-- Extras: webhook, worker targeting, QR-code workflow -->
-          <div class="gs-card flex flex-col gap-3">
-            <span class="gs-card-title">
-              {{ "generate.form.extras_section" | transloco }}
-            </span>
-            <p class="gs-sublabel">
-              {{ "generate.form.extras_hint" | transloco }}
-            </p>
+            <!-- Delivery and routing: still horde-side choices about who runs
+                 the job and where the result goes, so they share the card with
+                 the worker preferences above under a hairline. -->
+            <div class="gs-hairline flex flex-col gap-2.5 pt-3">
+              <span class="gs-card-title--sm font-bold">
+                {{ "generate.form.delivery_subsection" | transloco }}
+              </span>
 
-            <div>
-              <label class="gs-slabel" for="generate-webhook">
-                {{ "generate.form.webhook_label" | transloco }}
-              </label>
-              <input
-                id="generate-webhook"
-                class="gs-seed-input mt-1.5"
-                type="url"
-                inputmode="url"
-                autocomplete="off"
-                formControlName="webhook"
-                [maxlength]="maxWebhookLength"
-                [placeholder]="'generate.form.webhook_placeholder' | transloco"
-                aria-describedby="generate-webhook-hint"
-              />
-              @if (webhookInvalid()) {
-                <p id="generate-webhook-hint" class="gs-warn mt-1.5">
+              <div>
+                <label class="gs-slabel" for="generate-webhook">
+                  {{ "generate.form.webhook_label" | transloco }}
+                </label>
+                <input
+                  id="generate-webhook"
+                  class="gs-seed-input mt-1.5"
+                  type="url"
+                  inputmode="url"
+                  autocomplete="off"
+                  formControlName="webhook"
+                  [maxlength]="maxWebhookLength"
+                  [placeholder]="
+                    'generate.form.webhook_placeholder' | transloco
+                  "
+                  aria-describedby="generate-webhook-hint"
+                />
+                @if (webhookInvalid()) {
+                  <p id="generate-webhook-hint" class="gs-warn mt-1.5">
+                    {{
+                      "generate.form.webhook_invalid"
+                        | transloco
+                          : { min: minWebhookLength, max: maxWebhookLength }
+                    }}
+                  </p>
+                } @else {
+                  <p id="generate-webhook-hint" class="gs-sublabel mt-1.5">
+                    {{ "generate.form.webhook_hint" | transloco }}
+                  </p>
+                }
+              </div>
+
+              <div class="flex flex-col gap-1.5">
+                <span class="gs-slabel">
                   {{
-                    "generate.form.webhook_invalid"
+                    "generate.form.workers_label"
                       | transloco
-                        : { min: minWebhookLength, max: maxWebhookLength }
+                        : { count: workerList().length, max: maxWorkers }
+                  }}
+                </span>
+                <div
+                  class="gs-seg gs-seg--xs"
+                  role="group"
+                  [attr.aria-label]="
+                    'generate.form.worker_mode_group' | transloco
+                  "
+                >
+                  <button
+                    type="button"
+                    class="gs-seg-opt"
+                    [attr.aria-pressed]="!form().controls.workerBlacklist.value"
+                    (click)="setWorkerBlacklist(false)"
+                  >
+                    {{ "generate.form.worker_mode_allow" | transloco }}
+                  </button>
+                  <button
+                    type="button"
+                    class="gs-seg-opt"
+                    [attr.aria-pressed]="form().controls.workerBlacklist.value"
+                    (click)="setWorkerBlacklist(true)"
+                  >
+                    {{ "generate.form.worker_mode_block" | transloco }}
+                  </button>
+                </div>
+                <p class="gs-sublabel">
+                  {{
+                    (form().controls.workerBlacklist.value
+                      ? "generate.form.worker_mode_block_hint"
+                      : "generate.form.worker_mode_allow_hint"
+                    ) | transloco
                   }}
                 </p>
-              } @else {
-                <p id="generate-webhook-hint" class="gs-sublabel mt-1.5">
-                  {{ "generate.form.webhook_hint" | transloco }}
-                </p>
-              }
-            </div>
 
-            <div class="flex flex-col gap-1.5">
-              <span class="gs-slabel">
-                {{
-                  "generate.form.workers_label"
-                    | transloco: { count: workerList().length, max: maxWorkers }
-                }}
-              </span>
-              <div
-                class="gs-seg gs-seg--xs"
-                role="group"
-                [attr.aria-label]="
-                  'generate.form.worker_mode_group' | transloco
-                "
-              >
-                <button
-                  type="button"
-                  class="gs-seg-opt"
-                  [attr.aria-pressed]="!form().controls.workerBlacklist.value"
-                  (click)="setWorkerBlacklist(false)"
-                >
-                  {{ "generate.form.worker_mode_allow" | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="gs-seg-opt"
-                  [attr.aria-pressed]="form().controls.workerBlacklist.value"
-                  (click)="setWorkerBlacklist(true)"
-                >
-                  {{ "generate.form.worker_mode_block" | transloco }}
-                </button>
+                @for (worker of workerList(); track worker; let i = $index) {
+                  <div class="gs-worker-row">
+                    <span class="gs-worker-id">{{ worker }}</span>
+                    <button
+                      type="button"
+                      class="gs-worker-remove"
+                      [attr.aria-label]="
+                        'generate.form.worker_remove'
+                          | transloco: { name: worker }
+                      "
+                      (click)="removeWorker(i)"
+                    >
+                      <app-icon name="trash-modern" class="gs-ico-sm" />
+                    </button>
+                  </div>
+                }
+
+                @if (workerList().length < maxWorkers) {
+                  <div class="flex gap-1.5">
+                    <input
+                      class="gs-seed-input"
+                      type="text"
+                      autocomplete="off"
+                      spellcheck="false"
+                      [value]="workerDraft()"
+                      [attr.aria-label]="
+                        'generate.form.worker_add_label' | transloco
+                      "
+                      [placeholder]="
+                        'generate.form.worker_add_placeholder' | transloco
+                      "
+                      (input)="workerDraft.set($any($event.target).value)"
+                      (keydown.enter)="$event.preventDefault(); addWorker()"
+                    />
+                    <button
+                      type="button"
+                      class="gs-mini-btn"
+                      [disabled]="!canAddWorker()"
+                      [attr.aria-label]="'generate.form.worker_add' | transloco"
+                      [title]="'generate.form.worker_add' | transloco"
+                      (click)="addWorker()"
+                    >
+                      <span aria-hidden="true">&plus;</span>
+                    </button>
+                  </div>
+                }
               </div>
+
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.remember_extras_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="rememberExtras" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
               <p class="gs-sublabel">
-                {{
-                  (form().controls.workerBlacklist.value
-                    ? "generate.form.worker_mode_block_hint"
-                    : "generate.form.worker_mode_allow_hint"
-                  ) | transloco
-                }}
+                {{ "generate.form.remember_extras_hint" | transloco }}
               </p>
-
-              @for (worker of workerList(); track worker; let i = $index) {
-                <div class="gs-worker-row">
-                  <span class="gs-worker-id">{{ worker }}</span>
-                  <button
-                    type="button"
-                    class="gs-worker-remove"
-                    [attr.aria-label]="
-                      'generate.form.worker_remove'
-                        | transloco: { name: worker }
-                    "
-                    (click)="removeWorker(i)"
-                  >
-                    <app-icon name="trash-modern" class="gs-ico-sm" />
-                  </button>
-                </div>
-              }
-
-              @if (workerList().length < maxWorkers) {
-                <div class="flex gap-1.5">
-                  <input
-                    class="gs-seed-input"
-                    type="text"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [value]="workerDraft()"
-                    [attr.aria-label]="
-                      'generate.form.worker_add_label' | transloco
-                    "
-                    [placeholder]="
-                      'generate.form.worker_add_placeholder' | transloco
-                    "
-                    (input)="workerDraft.set($any($event.target).value)"
-                    (keydown.enter)="$event.preventDefault(); addWorker()"
-                  />
-                  <button
-                    type="button"
-                    class="gs-mini-btn"
-                    [disabled]="!canAddWorker()"
-                    [attr.aria-label]="'generate.form.worker_add' | transloco"
-                    [title]="'generate.form.worker_add' | transloco"
-                    (click)="addWorker()"
-                  >
-                    <span aria-hidden="true">&plus;</span>
-                  </button>
-                </div>
-              }
             </div>
+          </div>
+
+          <!-- Workflows: output modes that need a model or a worker feature
+               behind them, rather than plain request settings. -->
+          <div class="gs-card flex flex-col gap-3">
+            <span class="gs-card-title">
+              {{ "generate.form.workflows_section" | transloco }}
+            </span>
+            <p class="gs-sublabel">
+              {{ "generate.form.workflows_hint" | transloco }}
+            </p>
+
+            <label class="gs-switch gs-switch-row">
+              <span>{{ "generate.form.transparent_label" | transloco }}</span>
+              <input type="checkbox" formControlName="transparent" />
+              <span class="gs-switch-track"
+                ><span class="gs-switch-knob"></span
+              ></span>
+            </label>
 
             <div>
               <label class="gs-slabel" for="generate-qr-text">
@@ -1115,19 +1177,6 @@
                 </p>
               }
             </div>
-
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.remember_extras_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="rememberExtras" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-            <p class="gs-sublabel">
-              {{ "generate.form.remember_extras_hint" | transloco }}
-            </p>
           </div>
         }
       </div>
@@ -1231,6 +1280,20 @@
 
 <!-- Lock badge for one style-pinned section: names the value the style pins and
      offers the per-section escape hatch (and the way back to the style). -->
+<!-- One line of model-reference advice under a control. Recommendations only:
+     the warning treatment marks a value the model was not tuned for, and never
+     stops the request being submitted. -->
+<ng-template #reqHint let-hint="hint">
+  @if (hint) {
+    <p class="gs-req" [class.gs-req--warn]="hint.violated">
+      @if (hint.violated) {
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+      }
+      {{ hint.key | transloco: hint.params }}
+    </p>
+  }
+</ng-template>
+
 <ng-template #styleLock let-section="section" let-value="value">
   <span class="gs-lock">
     @if (isSectionDetached(section)) {
