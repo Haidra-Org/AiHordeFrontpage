@@ -145,4 +145,18 @@ describe('GenerateSourceImageComponent', () => {
     expect(form.controls.control_type.value).toBe('');
     expect(form.controls.image_is_control.value).toBe(false);
   });
+  it('routes a file handed over by the page through the shared encode path', async () => {
+    const { component, states } = await createComponent();
+    const before = states.length;
+
+    await component.applyFile(
+      new File(['x'], 'shot.png', { type: 'image/png' }),
+    );
+
+    // jsdom cannot decode an image, so the shared failure path is what is
+    // observable here: the point is that applyFile goes through it at all.
+    expect(component.error()).toBe('generate.source.encode_failed');
+    expect(component.encoding()).toBe(false);
+    expect(states.length).toBe(before);
+  });
 });

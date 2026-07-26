@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
@@ -10,6 +10,7 @@ import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ImageGenerationRequest } from '../../types/generation';
+import { LocalGenerationJob } from '../../types/generation-job';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -20,6 +21,7 @@ describe('GenerateComponent', () => {
   let toastError: ReturnType<typeof vi.fn>;
   let styleIncrement: ReturnType<typeof vi.fn>;
   let getJobImages: ReturnType<typeof vi.fn>;
+  let jobs: WritableSignal<LocalGenerationJob[]>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -28,6 +30,7 @@ describe('GenerateComponent', () => {
     toastError = vi.fn();
     styleIncrement = vi.fn();
     getJobImages = vi.fn().mockResolvedValue([]);
+    jobs = signal<LocalGenerationJob[]>([]);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -39,6 +42,7 @@ describe('GenerateComponent', () => {
           useValue: {
             estimateKudos,
             enqueue,
+            jobs,
             pendingJobs: signal([]),
             finishedJobs: signal([]),
             getJobImages,
@@ -507,5 +511,122 @@ describe('GenerateComponent', () => {
       'mid',
       'low',
     ]);
+  });
+  describe('images pasted or dropped on the studio', () => {
+    it('switches the form into advanced img2img before attaching', async () => {
+      await component.onDroppedImage(
+        new File(['x'], 'shot.png', { type: 'image/png' }),
+      );
+
+      const value = component.form.getRawValue();
+      expect(value.mode).toBe('advanced');
+      expect(value.sourceMode).toBe('img2img');
+      // The source section is not rendered in this template-less harness, so the
+      // attach itself cannot land and is reported as a failure.
+      expect(toastError).toHaveBeenCalledWith('generate.source.attach_failed', {
+        transloco: true,
+      });
+    });
+
+    it('keeps an already-chosen source mode instead of forcing img2img', async () => {
+      component.form.patchValue({ mode: 'advanced', sourceMode: 'controlnet' });
+
+      await component.onDroppedImage(
+        new File(['x'], 'shot.png', { type: 'image/png' }),
+      );
+
+      expect(component.form.getRawValue().sourceMode).toBe('controlnet');
+    });
+
+    it('reports a non-image file rather than attaching it', () => {
+      component.onRejectedImage();
+      expect(toastError).toHaveBeenCalledWith('generate.source.not_an_image', {
+        transloco: true,
+      });
+    });
+  });
+
+  describe('prompt history', () => {
+    const job = (prompt: string, createdAt: number): LocalGenerationJob => ({
+      localId: `job-${createdAt}`,
+      status: 'done',
+      createdAt,
+      updatedAt: createdAt,
+      request: { prompt },
+      resultImageIds: [],
+    });
+
+    it('is empty until something has been generated', () => {
+      expect(component.promptHistory()).toEqual([]);
+    });
+
+    it('derives newest-first distinct entries from the queue jobs', () => {
+      jobs.set([
+        job('a castle ### blurry', 300),
+        job('a fox', 200),
+        job('a castle ### blurry', 100),
+      ]);
+
+      expect(component.promptHistory()).toEqual([
+        { prompt: 'a castle', negativePrompt: 'blurry' },
+        { prompt: 'a fox', negativePrompt: '' },
+      ]);
+    });
+  });
+});
+
+describe('GenerateComponent skip link', () => {
+  /**
+   * The skip link's only job is to land accessibility focus on the results pane,
+   * which needs a real element, so this stands in a template holding just that
+   * pane (with the tabindex the real one carries).
+   */
+  it('moves focus to the results pane', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    await TestBed.configureTestingModule({
+      imports: [GenerateComponent],
+      providers: [
+        { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            estimateKudos: vi.fn().mockResolvedValue(1),
+            enqueue: vi.fn(),
+            jobs: signal([]),
+            pendingJobs: signal([]),
+            finishedJobs: signal([]),
+            getJobImages: vi.fn().mockResolvedValue([]),
+          },
+        },
+        { provide: StyleUsageService, useValue: { increment: vi.fn() } },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), error: vi.fn() },
+        },
+        { provide: TranslatorService, useValue: { get: () => of('') } },
+        {
+          provide: HordeStylesService,
+          useValue: {
+            getStyles: () => of([]),
+            getCategoryGroups: () => of([]),
+          },
+        },
+      ],
+    })
+      .overrideComponent(GenerateComponent, {
+        set: {
+          template: '<section #resultsPane tabindex="-1">results</section>',
+        },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const pane = fixture.nativeElement.querySelector('section') as HTMLElement;
+
+    fixture.componentInstance.skipToResults(new MouseEvent('click'));
+
+    expect(document.activeElement).toBe(pane);
+    fixture.destroy();
   });
 });

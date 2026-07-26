@@ -159,16 +159,64 @@
   <!-- Scrollable control body -->
   <div class="gs-body">
     <div class="gs-body-flow flex flex-col gap-[14px]">
-      <!-- Prompt (compact by default; drag the grip to grow it vertically) -->
-      <textarea
-        class="gs-textarea gs-textarea--resize"
-        formControlName="prompt"
-        rows="2"
-        [placeholder]="'generate.form.prompt_placeholder' | transloco"
-        [attr.aria-label]="'generate.form.prompt_label' | transloco"
-        (keydown.control.enter)="onSubmitShortcut()"
-        (keydown.meta.enter)="onSubmitShortcut()"
-      ></textarea>
+      <!-- Prompt (compact by default; drag the grip to grow it vertically).
+           The history quick-pick sits in the box's top-right corner, over the
+           padding the placeholder never reaches. -->
+      <div class="gs-prompt-wrap" #historyContainer>
+        <textarea
+          #promptInput
+          class="gs-textarea gs-textarea--resize"
+          [class.gs-textarea--history]="promptHistory().length > 0"
+          formControlName="prompt"
+          rows="2"
+          [placeholder]="'generate.form.prompt_placeholder' | transloco"
+          [attr.aria-label]="'generate.form.prompt_label' | transloco"
+          (keydown.control.enter)="onSubmitShortcut()"
+          (keydown.meta.enter)="onSubmitShortcut()"
+        ></textarea>
+        @if (promptHistory().length > 0) {
+          <button
+            type="button"
+            class="gs-prompt-hist-btn"
+            (click)="toggleHistory()"
+            [attr.aria-expanded]="historyOpen()"
+            [attr.aria-label]="'generate.form.history' | transloco"
+            [title]="'generate.form.history' | transloco"
+          >
+            <app-icon name="clock" class="gs-ico-sm" />
+          </button>
+          @if (historyOpen()) {
+            <div
+              class="gs-hist-menu"
+              role="listbox"
+              [attr.aria-label]="'generate.form.history' | transloco"
+            >
+              <div class="gs-presets-label">
+                {{ "generate.form.history" | transloco }}
+              </div>
+              @for (entry of promptHistory(); track $index) {
+                <button
+                  type="button"
+                  class="gs-hist-item"
+                  role="option"
+                  aria-selected="false"
+                  (click)="pickHistory(entry)"
+                >
+                  <span class="gs-hist-text">{{ entry.prompt }}</span>
+                  @if (entry.negativePrompt) {
+                    <span class="gs-hist-neg">
+                      {{
+                        "generate.form.history_negative"
+                          | transloco: { negative: entry.negativePrompt }
+                      }}
+                    </span>
+                  }
+                </button>
+              }
+            </div>
+          }
+        }
+      </div>
 
       <!-- Negative prompt (one row by default; drag the grip to grow it) -->
       <textarea
@@ -942,16 +990,6 @@
           }}
         </span>
       </div>
-      <span class="gs-label">
-        @if (estimating()) {
-          {{ "generate.form.kudos_estimating" | transloco }}
-        } @else if (kudos() !== null) {
-          ~<b class="gs-blue gs-mono">{{ kudos() | number: "1.0-0" }}</b>
-          {{ "generate.form.kudos_unit" | transloco }}
-        } @else {
-          &ndash;
-        }
-      </span>
     </div>
     <button
       type="submit"
@@ -966,6 +1004,33 @@
           : "generate.footer.generate_other"
         ) | transloco: { count: form().controls.n.value }
       }}
+      <!-- The estimate belongs to the act of generating, so it rides the button
+           rather than sitting beside it: a tint chip keeps it legible on the
+           blue fill in both themes without competing with the label. -->
+      @if (estimating() || kudos() !== null) {
+        <span
+          class="gs-genbtn-kudos"
+          [attr.aria-label]="
+            estimating()
+              ? ('generate.form.kudos_estimating' | transloco)
+              : ('generate.form.kudos_estimate'
+                | transloco: { kudos: kudos() ?? 0 })
+          "
+        >
+          @if (estimating()) {
+            <span class="gs-genbtn-kudos-dots" aria-hidden="true"
+              >&hellip;</span
+            >
+          } @else {
+            <span class="gs-mono" aria-hidden="true"
+              >~{{ kudos() | number: "1.0-0" }}</span
+            >
+            <span class="gs-genbtn-kudos-unit" aria-hidden="true">{{
+              "generate.form.kudos_unit" | transloco
+            }}</span>
+          }
+        </span>
+      }
     </button>
   </footer>
 </form>

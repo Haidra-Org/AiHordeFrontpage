@@ -190,7 +190,7 @@
   </p>
 
   <div class="gs-results-body">
-    @if (tiles().length === 0) {
+    @if (showStarters()) {
       <div class="gs-empty">
         <app-icon name="photo" />
         <div>
@@ -199,6 +199,31 @@
           </div>
           <div class="gs-empty-sub">
             {{ "generate.results.empty_sub" | transloco }}
+          </div>
+          <!-- Starting from nothing is the hardest part of a prompt box, so the
+               empty state offers a few prompts to depart from. -->
+          <div class="gs-starters">
+            <div class="gs-starters-label">
+              {{ "generate.results.starters_label" | transloco }}
+            </div>
+            <div class="gs-starters-row">
+              @for (starter of starterPrompts; track starter) {
+                @let starterText =
+                  "generate.results.starters." + starter + ".prompt"
+                    | transloco;
+                <button
+                  type="button"
+                  class="gs-chip gs-chip--starter"
+                  [title]="starterText"
+                  (click)="usePrompt.emit(starterText)"
+                >
+                  {{
+                    "generate.results.starters." + starter + ".label"
+                      | transloco
+                  }}
+                </button>
+              }
+            </div>
           </div>
         </div>
       </div>

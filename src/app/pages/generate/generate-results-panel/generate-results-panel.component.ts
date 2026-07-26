@@ -226,6 +226,28 @@ export class GenerateResultsPanelComponent {
   /** Ask the parent to attach one stored result as the form's source image. */
   public readonly useAsSource = output<{ localId: string; imageId: string }>();
 
+  /** Ask the parent to put a prompt in the form (the empty state's starters). */
+  public readonly usePrompt = output<string>();
+
+  /**
+   * Whether the empty state (and with it the starter prompts) is shown: only
+   * while the grid is genuinely empty, since once anything exists the user has
+   * their own prompts to reuse.
+   */
+  public readonly showStarters = computed(() => this.tiles().length === 0);
+
+  /**
+   * Ids of the curated example prompts offered while nothing has been generated.
+   * Each has a `.label` (the chip) and a `.prompt` (what the form receives) under
+   * `generate.results.starters`.
+   */
+  public readonly starterPrompts: readonly string[] = [
+    'landscape',
+    'character',
+    'texture',
+    'pixel',
+  ];
+
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
     request: ImageGenerationRequest;

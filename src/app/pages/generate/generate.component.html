@@ -3,7 +3,17 @@
   [class.gs-workspace--full]="!embedded()"
   [class.gs-workspace--wide]="!embedded() && panelSize() === 'double'"
   [class.gs-workspace--max]="!embedded() && panelSize() === 'full'"
+  appStudioImageDrop
+  #imageDrop="studioImageDrop"
+  (imageFile)="onDroppedImage($event)"
+  (rejected)="onRejectedImage()"
 >
+  <!-- Keyboard users land in the control panel first; the results pane is a long
+       scroll away past every setting, so it gets a skip link. -->
+  <a class="gs-skip" href="#generate-results" (click)="skipToResults($event)">
+    {{ "generate.skip_to_results" | transloco }}
+  </a>
+
   <!-- Left: control panel -->
   <section class="gs-panel">
     <app-generate-form
@@ -16,6 +26,7 @@
       [styleGroups]="styleGroups()"
       [panelSize]="panelSize()"
       [expandable]="!embedded()"
+      [promptHistory]="promptHistory()"
       (panelSizeChange)="panelSize.set($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
@@ -31,14 +42,32 @@
   </section>
 
   <!-- Right: results pane -->
-  <section class="gs-results">
+  <section
+    #resultsPane
+    id="generate-results"
+    class="gs-results"
+    tabindex="-1"
+    [attr.aria-label]="'generate.results.heading' | transloco"
+  >
     <app-generate-results-panel
       class="gs-fill"
       [formValue]="formValue()"
       (applyMeta)="onApplyMeta($event)"
       (useAsSource)="onUseAsSource($event)"
+      (usePrompt)="onUsePrompt($event)"
     />
   </section>
+
+  @if (imageDrop.dragActive()) {
+    <!-- Pointer-driven and transient: a screen-reader user never triggers a drag,
+         and the paste route needs no visual affordance. -->
+    <div class="gs-dropzone" aria-hidden="true">
+      <div class="gs-dropzone-card">
+        <app-icon name="photo" />
+        <span>{{ "generate.source.drop_hint" | transloco }}</span>
+      </div>
+    </div>
+  }
 
   @if (previewRequest(); as request) {
     <app-studio-json-modal

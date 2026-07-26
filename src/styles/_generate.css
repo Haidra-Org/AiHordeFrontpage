@@ -4547,3 +4547,308 @@
     transition: none;
   }
 }
+
+/* ------- skip link -------------------------------------------------- */
+/* Present for keyboard users only: the control panel is a long tab-run and the
+   results pane sits after all of it. Invisible until focused, then a normal
+   studio pill in the viewport's top-left corner (fixed rather than absolute so
+   it does not depend on an ancestor happening to be positioned). */
+.gen-studio .gs-skip {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+  z-index: 61;
+  padding: 10px 14px;
+  border-radius: 0 0 10px 0;
+  background: var(--gs-blue);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.gen-studio .gs-skip:focus-visible,
+.gen-studio .gs-skip:focus {
+  left: 0;
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+.gen-studio .gs-results:focus-visible,
+.gen-studio .gs-results-body:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -3px;
+}
+
+/* ------- page-wide image drop overlay ------------------------------- */
+/* Shown while a file is dragged over the studio. Pointer-transparent so the
+   drag keeps reaching the workspace underneath (the overlay is feedback, not a
+   target), and hidden from assistive tech: a drag is a pointer-only gesture and
+   the equivalent paste route needs no visual cue. */
+.gen-studio .gs-dropzone {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+  background: rgba(15, 23, 42, 0.55);
+}
+.gen-studio .gs-dropzone-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 34px;
+  border: 2px dashed var(--gs-blue);
+  border-radius: 16px;
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+}
+.gen-studio .gs-dropzone-card app-icon,
+.gen-studio .gs-dropzone-card app-icon svg {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  color: var(--gs-blue);
+}
+.gen-studio.gs-alchemy .gs-dropzone-card {
+  border-color: var(--gs-purple);
+}
+.gen-studio.gs-alchemy .gs-dropzone-card app-icon,
+.gen-studio.gs-alchemy .gs-dropzone-card app-icon svg {
+  color: var(--gs-purple);
+}
+
+/* ------- prompt history quick-pick ---------------------------------- */
+.gen-studio .gs-prompt-wrap {
+  position: relative;
+}
+/* Reserve the box's top-right corner so a long first line never runs under the
+   history button. */
+.gen-studio .gs-textarea--history {
+  padding-right: 44px;
+}
+.gen-studio .gs-prompt-hist-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: var(--gs-field);
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-prompt-hist-btn:hover {
+  color: var(--gs-blue);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-prompt-hist-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-hist-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: min(340px, calc(100vw - 32px));
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 11px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+}
+.gen-studio .gs-hist-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--gs-ink-2);
+  font-family: inherit;
+  font-size: 11.5px;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-hist-item:hover {
+  background: var(--gs-field-soft);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-hist-item:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+/* Two lines is enough to recognise a prompt by. */
+.gen-studio .gs-hist-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.gen-studio .gs-hist-neg {
+  color: var(--gs-muted);
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------- starter prompts (results empty state) ---------------------- */
+.gen-studio .gs-starters {
+  margin-top: 14px;
+}
+.gen-studio .gs-starters-label {
+  margin-bottom: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-starters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.gen-studio .gs-chip--starter {
+  border-color: var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-chip--starter:hover {
+  border-color: var(--gs-blue);
+}
+.dark .gen-studio .gs-chip--starter {
+  color: #bfdbfe;
+}
+
+/* ------- kudos estimate on the Generate button ---------------------- */
+/* A light tint chip on the blue fill: white text over the blended surface holds
+   ~5:1 in both themes (the fill is the same blue either way), where the
+   blue-on-panel treatment used beside the button would not. */
+.gen-studio .gs-genbtn-kudos {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-left: 2px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.gen-studio .gs-genbtn-kudos-unit {
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.gen-studio .gs-genbtn-kudos-dots {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+/* ------- switch rows are whole-row targets --------------------------- */
+/* The switch itself is a 28x16 track, far under a thumb's width, so the labelled
+   row it sits in is the control: the label already wraps the input, this gives
+   the row the hit area and the focus ring. Fixing the idiom fixes every
+   advanced toggle (karras, hires fix, tiling, transparent, ...) at once. */
+.gen-studio .gs-switch {
+  padding: 2px 0;
+  border-radius: 8px;
+}
+/* The ring belongs on the row, since the row is what the pointer and the
+   keyboard both act on; the track's own ring would sit inside it. */
+.gen-studio .gs-switch:has(input:focus-visible) {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-switch:has(input:focus-visible) .gs-switch-track {
+  outline: none;
+}
+.gen-studio .gs-switch--purple:has(input:focus-visible) {
+  outline-color: var(--gs-purple);
+}
+
+/* ------- mobile touch targets --------------------------------------- */
+/* Controls that read fine under a mouse but not under a thumb. Where a size is
+   load-bearing for the layout the hit area is extended with a pseudo-element
+   instead of the control being grown. */
+@media (max-width: 1023.98px) {
+  /* The generate footer sits against the bottom edge of the viewport. */
+  .gen-studio .gs-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .gen-studio .gs-switch,
+  .gen-studio .gs-switch-row {
+    min-height: 40px;
+  }
+  .gen-studio .gs-mini-btn,
+  .gen-studio .gs-view-toggle,
+  .gen-studio .gs-view-select,
+  .gen-studio .gs-density-btn,
+  .gen-studio .gs-presets-del,
+  .gen-studio .gs-prompt-hist-btn,
+  .gen-studio .gs-seg--xs .gs-seg-opt,
+  .gen-studio .gs-batch-btn {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  .gen-studio .gs-hist-item {
+    min-height: 44px;
+  }
+  .gen-studio .gs-chip--starter {
+    min-height: 40px;
+  }
+  /* Metadata-panel checkbox rows: the label is the target, so it only has to be
+     tall enough to hit. */
+  .gen-studio .gs-meta-row,
+  .gen-studio .gs-meta-group-head {
+    min-height: 40px;
+    align-items: center;
+  }
+  .gen-studio .gs-meta-row input,
+  .gen-studio .gs-meta-group-head input {
+    width: 17px;
+    height: 17px;
+  }
+  /* Tile overlay buttons must stay 26px to sit in the tile corner, so the hit
+     area is extended past the visual box. */
+  .gen-studio .gs-icobtn {
+    position: relative;
+  }
+  .gen-studio .gs-icobtn::after {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+  .gen-studio .gs-viewer-nav {
+    width: 44px;
+    height: 64px;
+  }
+  .gen-studio .gs-viewer-x {
+    min-width: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+  }
+}

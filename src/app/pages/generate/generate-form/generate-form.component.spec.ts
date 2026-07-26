@@ -244,3 +244,92 @@ describe('GenerateFormComponent shortcuts', () => {
     expect(component.styleBrowserOpen()).toBe(false);
   });
 });
+
+describe('GenerateFormComponent prompt history', () => {
+  /**
+   * The history popover needs its anchor and the prompt box itself, so this
+   * stands in a minimal template holding just those two refs.
+   */
+  async function createWithPromptBox(): Promise<{
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+    anchor: HTMLElement;
+    promptBox: HTMLTextAreaElement;
+  }> {
+    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+      .overrideComponent(GenerateFormComponent, {
+        set: {
+          template:
+            '<div #historyContainer><textarea #promptInput></textarea></div>',
+        },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'a fox',
+      negativePrompt: 'blurry',
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('promptHistory', [
+      { prompt: 'a castle', negativePrompt: 'washed out' },
+    ]);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    return {
+      component: fixture.componentInstance,
+      form,
+      anchor: root.querySelector('div') as HTMLElement,
+      promptBox: root.querySelector('textarea') as HTMLTextAreaElement,
+    };
+  }
+
+  it('fills both prompt halves from a picked entry and closes the popover', async () => {
+    const { component, form } = await createWithPromptBox();
+    component.toggleHistory();
+
+    component.pickHistory({ prompt: 'a castle', negativePrompt: 'washed out' });
+
+    expect(form.controls.prompt.value).toBe('a castle');
+    expect(form.controls.negativePrompt.value).toBe('washed out');
+    expect(component.historyOpen()).toBe(false);
+  });
+
+  it('clears the negative prompt when the picked entry had none', async () => {
+    const { component, form } = await createWithPromptBox();
+    component.pickHistory({ prompt: 'a castle', negativePrompt: '' });
+    expect(form.controls.negativePrompt.value).toBe('');
+  });
+
+  it('leaves the negative prompt alone when only a prompt is supplied', async () => {
+    const { component, form } = await createWithPromptBox();
+    component.fillPrompt('a lighthouse');
+    expect(form.controls.prompt.value).toBe('a lighthouse');
+    expect(form.controls.negativePrompt.value).toBe('blurry');
+  });
+
+  it('focuses the prompt box after filling it', async () => {
+    const { component, promptBox } = await createWithPromptBox();
+    component.fillPrompt('a lighthouse');
+    expect(document.activeElement).toBe(promptBox);
+  });
+
+  it('dismisses on escape and on a press outside the anchor', async () => {
+    const { component, anchor } = await createWithPromptBox();
+
+    component.toggleHistory();
+    component.onDocumentEscape();
+    expect(component.historyOpen()).toBe(false);
+
+    component.toggleHistory();
+    component.onDocumentPointerDown(new PointerEvent('pointerdown'));
+    expect(component.historyOpen()).toBe(false);
+
+    component.toggleHistory();
+    const inside = new PointerEvent('pointerdown');
+    Object.defineProperty(inside, 'target', { value: anchor });
+    component.onDocumentPointerDown(inside);
+    expect(component.historyOpen()).toBe(true);
+  });
+});

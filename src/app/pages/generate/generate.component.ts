@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   input,
@@ -34,6 +35,7 @@ import { ImageGenerationRequest } from '../../types/generation';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { blobToBase64 } from '../../helper/blob-base64';
+import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
   GenerateFormComponent,
   StylePickerGroup,
@@ -52,6 +54,7 @@ import {
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  promptHistoryFromJobs,
   requestToFormValue,
   simpleModeValue,
 } from './generate-form.model';
@@ -93,6 +96,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GenerateSourceImageComponent,
     GenerateResultsPanelComponent,
     StudioJsonModalComponent,
+    StudioImageDropDirective,
     IconComponent,
     TranslocoPipe,
   ],
@@ -114,6 +118,11 @@ export class GenerateComponent {
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
   private readonly sourceImageRef = viewChild(GenerateSourceImageComponent);
+  /** The control panel, so a picked prompt can be written and focused. */
+  private readonly formRef = viewChild(GenerateFormComponent);
+  /** The results pane, the skip link's target. */
+  private readonly resultsRef =
+    viewChild<ElementRef<HTMLElement>>('resultsPane');
 
   /**
    * When true the page's own intro/title block is suppressed and the component
@@ -156,6 +165,14 @@ export class GenerateComponent {
    */
   public readonly pendingLoad = signal<GenerateFormValue | null>(null);
   public readonly loadConfirmOpen = computed(() => this.pendingLoad() !== null);
+
+  /**
+   * Recent distinct prompts for the form's quick-pick, read off the jobs the
+   * queue already holds in memory rather than re-querying IndexedDB.
+   */
+  public readonly promptHistory = computed(() =>
+    promptHistoryFromJobs(this.queue.jobs()),
+  );
 
   /**
    * The current form value as a signal, so the results grid's metadata panel can
@@ -375,6 +392,40 @@ export class GenerateComponent {
       this.toast.error('generate.results.reuse_failed', { transloco: true });
       return;
     }
+    const section = await this.openSourceSection();
+    if (!section) {
+      this.toast.error('generate.results.reuse_failed', { transloco: true });
+      return;
+    }
+    await section.applySource(image.blob);
+    this.toast.success('generate.results.reuse_done', { transloco: true });
+  }
+
+  /**
+   * Adopt an image pasted onto the page or dropped on the workspace as the
+   * source image. It goes through the source section's own encode path, so a
+   * dropped 8000px PNG is downscaled and re-encoded exactly as a picked file is.
+   */
+  public async onDroppedImage(file: File): Promise<void> {
+    const section = await this.openSourceSection();
+    if (!section) {
+      this.toast.error('generate.source.attach_failed', { transloco: true });
+      return;
+    }
+    await section.applyFile(file);
+    this.toast.success('generate.source.attached', { transloco: true });
+  }
+
+  /** A paste or drop carried files, but no image among them. */
+  public onRejectedImage(): void {
+    this.toast.error('generate.source.not_an_image', { transloco: true });
+  }
+
+  /**
+   * Put the form in advanced img2img (the only mode the source section exists in)
+   * and hand back the section once it has rendered.
+   */
+  private async openSourceSection(): Promise<GenerateSourceImageComponent | null> {
     this.form.patchValue({
       mode: 'advanced',
       sourceMode:
@@ -385,13 +436,32 @@ export class GenerateComponent {
     // The source section is rendered inside the advanced block, so it may only
     // exist after the change above has been rendered.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    const ref = this.sourceImageRef();
-    if (!ref) {
-      this.toast.error('generate.results.reuse_failed', { transloco: true });
+    return this.sourceImageRef() ?? null;
+  }
+
+  /** Fill the prompt from a results-pane starter chip and focus the box. */
+  public onUsePrompt(prompt: string): void {
+    this.formRef()?.fillPrompt(prompt);
+  }
+
+  /**
+   * Move keyboard focus to the results pane (the skip link's action). On narrow
+   * viewports the panes stack, so the pane is scrolled to as well.
+   */
+  public skipToResults(event: Event): void {
+    event.preventDefault();
+    const pane = this.resultsRef()?.nativeElement;
+    if (!pane) {
       return;
     }
-    await ref.applySource(image.blob);
-    this.toast.success('generate.results.reuse_done', { transloco: true });
+    const reduceMotion = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    pane.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    pane.focus({ preventScroll: true });
   }
 
   private async reattachSource(localId: string): Promise<void> {

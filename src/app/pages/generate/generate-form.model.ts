@@ -12,6 +12,7 @@ import {
   StyleTextualInversionConfig,
 } from '../../types/style';
 import type { AppliedStyle } from '../../services/horde-styles.service';
+import type { LocalGenerationJob } from '../../types/generation-job';
 
 /**
  * The samplers AI Horde accepts, in the display order used by the form.
@@ -671,6 +672,46 @@ export function combinePrompt(positive: string, negative: string): string {
   const p = positive.trim();
   const n = negative.trim();
   return n ? `${p} ### ${n}` : p;
+}
+
+/** How many past prompts the prompt-history quick-pick offers. */
+export const PROMPT_HISTORY_LIMIT = 10;
+
+/** One past prompt, already split into the halves the form's two boxes hold. */
+export interface PromptHistoryEntry {
+  prompt: string;
+  negativePrompt: string;
+}
+
+/**
+ * The most recent distinct prompts across `jobs`, newest first. A stored request
+ * holds the combined `positive ### negative` string, so every entry is split
+ * back into the two fields the form fills, and a repeated prompt keeps only its
+ * newest occurrence. Jobs whose prompt is empty are skipped.
+ */
+export function promptHistoryFromJobs(
+  jobs: readonly LocalGenerationJob[],
+  limit: number = PROMPT_HISTORY_LIMIT,
+): PromptHistoryEntry[] {
+  const history: PromptHistoryEntry[] = [];
+  const seen = new Set<string>();
+  const newestFirst = [...jobs].sort((a, b) => b.createdAt - a.createdAt);
+  for (const job of newestFirst) {
+    const raw = job.request.prompt.trim();
+    if (raw === '' || seen.has(raw)) {
+      continue;
+    }
+    seen.add(raw);
+    const [prompt, negativePrompt] = splitCombinedPrompt(raw);
+    if (prompt === '') {
+      continue;
+    }
+    history.push({ prompt, negativePrompt });
+    if (history.length === limit) {
+      break;
+    }
+  }
+  return history;
 }
 
 function mapFormLora(entry: FormLoraEntry): StyleLoraConfig {

@@ -41,6 +41,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
 import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
 import { toRenderableImageSource } from '../../helper/generation-image';
+import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
   base64ByteLength,
   sourceToThumbnailDataUrl,
@@ -98,6 +99,7 @@ interface AlchemyOperationGroup {
     RouterLink,
     AlchemyImageInputComponent,
     AlchemyResultsBrowserComponent,
+    StudioImageDropDirective,
     IconComponent,
   ],
   templateUrl: './alchemy.component.html',
@@ -505,6 +507,24 @@ export class AlchemyComponent {
 
   public onSourceImage(value: string | null): void {
     this.sourceImage.set(value);
+  }
+
+  /**
+   * Adopt an image pasted onto the page or dropped on the workspace as the
+   * source, through the picker's own encode path so the size guard and its own
+   * error messaging apply exactly as for a picked file.
+   */
+  public async onDroppedImage(file: File): Promise<void> {
+    const input = this.imageInput();
+    if (!input) {
+      return;
+    }
+    await input.applyBlob(file, file.type);
+  }
+
+  /** A paste or drop carried files, but no image among them. */
+  public onRejectedImage(): void {
+    this.toast.error('alchemy.image_input.not_an_image', { transloco: true });
   }
 
   public isFormSelected(form: AlchemyFormName): boolean {

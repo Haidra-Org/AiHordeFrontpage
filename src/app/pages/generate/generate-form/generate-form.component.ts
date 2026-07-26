@@ -52,6 +52,7 @@ import {
   ModelSizeBase,
   PanelSize,
   PIXEL_WARN_THRESHOLD,
+  PromptHistoryEntry,
   SAMPLERS,
   STRIP_BACKGROUND,
   StyleLockSection,
@@ -113,6 +114,8 @@ export class GenerateFormComponent implements OnInit {
   public readonly panelSize = input<PanelSize>('normal');
   /** Whether the expand/collapse control is offered (off when embedded). */
   public readonly expandable = input(true);
+  /** Recent distinct prompts for the quick-pick, newest first. */
+  public readonly promptHistory = input<readonly PromptHistoryEntry[]>([]);
 
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
@@ -130,6 +133,15 @@ export class GenerateFormComponent implements OnInit {
   /** The style select, so clearing the style can hand focus back to it. */
   private readonly styleSelect =
     viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
+
+  /** Whether the prompt-history quick-pick popover is open. */
+  public readonly historyOpen = signal(false);
+  /** The history popover's anchor, used to detect click-away dismissals. */
+  private readonly historyRef =
+    viewChild<ElementRef<HTMLElement>>('historyContainer');
+  /** The prompt box, so a picked history entry or starter prompt can focus it. */
+  private readonly promptInput =
+    viewChild<ElementRef<HTMLTextAreaElement>>('promptInput');
 
   public readonly samplers = SAMPLERS;
   public readonly upscalers = UPSCALERS;
@@ -678,14 +690,20 @@ export class GenerateFormComponent implements OnInit {
     this.presetsOpen.set(false);
   }
 
-  /** Dismiss the presets popover when a press lands anywhere outside it. */
+  /** Dismiss the presets/history popovers when a press lands outside them. */
   public onDocumentPointerDown(event: PointerEvent): void {
-    if (!this.presetsOpen()) {
-      return;
+    const target = event.target as Node;
+    if (this.presetsOpen()) {
+      const anchor = this.presetsRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closePresets();
+      }
     }
-    const anchor = this.presetsRef()?.nativeElement;
-    if (anchor && !anchor.contains(event.target as Node)) {
-      this.closePresets();
+    if (this.historyOpen()) {
+      const anchor = this.historyRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeHistory();
+      }
     }
   }
 
@@ -693,6 +711,57 @@ export class GenerateFormComponent implements OnInit {
     if (this.presetsOpen()) {
       this.closePresets();
     }
+    if (this.historyOpen()) {
+      this.closeHistory();
+    }
+  }
+
+  // --- Prompt history quick-pick -------------------------------------------
+
+  public toggleHistory(): void {
+    this.historyOpen.update((open) => !open);
+  }
+
+  public closeHistory(): void {
+    this.historyOpen.set(false);
+  }
+
+  /**
+   * Reuse a past prompt: both halves are written, so picking an entry that had
+   * no negative prompt clears whatever negative the form holds rather than
+   * silently pairing an old negative with a new positive.
+   */
+  public pickHistory(entry: PromptHistoryEntry): void {
+    this.closeHistory();
+    this.fillPrompt(entry.prompt, entry.negativePrompt);
+  }
+
+  /**
+   * Write the prompt boxes and put the cursor in the positive one. Also the
+   * entry point for the results pane's starter prompts, which the parent
+   * forwards here so a chip lands the user in the box they will now edit.
+   */
+  public fillPrompt(
+    prompt: string,
+    negativePrompt: string | null = null,
+  ): void {
+    const controls = this.form().controls;
+    controls.prompt.setValue(prompt);
+    controls.prompt.markAsDirty();
+    if (negativePrompt !== null) {
+      controls.negativePrompt.setValue(negativePrompt);
+      controls.negativePrompt.markAsDirty();
+    }
+    this.focusPrompt();
+  }
+
+  public focusPrompt(): void {
+    const input = this.promptInput()?.nativeElement;
+    if (!input) {
+      return;
+    }
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
   }
 
   public setSaveName(value: string): void {

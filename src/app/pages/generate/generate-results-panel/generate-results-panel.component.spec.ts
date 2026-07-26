@@ -819,4 +819,24 @@ describe('GenerateResultsPanelComponent', () => {
     });
     expect(component.metaTile()).toBeNull();
   });
+
+  it('offers starter prompts only while the grid is empty', () => {
+    expect(component.showStarters()).toBe(true);
+    expect(new Set(component.starterPrompts).size).toBe(
+      component.starterPrompts.length,
+    );
+
+    finishedJobs.set([job('e', 'error')]);
+
+    expect(component.showStarters()).toBe(false);
+  });
+
+  it('asks the parent to use a starter prompt', () => {
+    const used: string[] = [];
+    component.usePrompt.subscribe((prompt) => used.push(prompt));
+
+    component.usePrompt.emit('a misty mountain lake');
+
+    expect(used).toEqual(['a misty mountain lake']);
+  });
 });

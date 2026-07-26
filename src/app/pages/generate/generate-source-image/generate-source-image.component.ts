@@ -212,6 +212,15 @@ export class GenerateSourceImageComponent implements OnInit {
   }
 
   /**
+   * Adopt a file handed over from the page (an image pasted onto the studio or
+   * dropped on the workspace), taking the same decode/downscale/encode path as a
+   * file picked here so the size cap and error handling apply identically.
+   */
+  public applyFile(file: File): Promise<void> {
+    return this.encodeFile(file);
+  }
+
+  /**
    * Adopt an already-encoded blob as the source image, e.g. when loading a past
    * generation's settings back into the form. Replaces any current source and
    * clears the mask; the caller is responsible for setting the source mode.

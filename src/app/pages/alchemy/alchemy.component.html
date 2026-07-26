@@ -2,7 +2,21 @@
   class="gen-studio gs-alchemy gs-workspace gs-workspace--full"
   [class.gs-workspace--wide]="panelSize() === 'double'"
   [class.gs-workspace--max]="panelSize() === 'full'"
+  appStudioImageDrop
+  #imageDrop="studioImageDrop"
+  (imageFile)="onDroppedImage($event)"
+  (rejected)="onRejectedImage()"
 >
+  <!-- Keyboard users land in the builder first; the jobs pane is a long scroll
+       past every operation, so it gets a skip link. -->
+  <a
+    class="gs-skip"
+    href="#alchemy-results"
+    (click)="scrollToResultsSection($event)"
+  >
+    {{ "alchemy.skip_to_results" | transloco }}
+  </a>
+
   <!-- ============ CONTROL PANEL ============ -->
   <section class="gs-panel">
     <div class="flex min-h-0 flex-1 flex-col">
@@ -418,6 +432,7 @@
 
       <div
         id="alchemy-results"
+        tabindex="-1"
         class="gs-results-body"
         [class.gs-results-body--browser]="hasAnyJobs()"
       >
@@ -687,6 +702,17 @@
             </p>
           }
         </div>
+      </div>
+    </div>
+  }
+
+  @if (imageDrop.dragActive()) {
+    <!-- Pointer-driven and transient: a screen-reader user never triggers a drag,
+         and the paste route needs no visual affordance. -->
+    <div class="gs-dropzone" aria-hidden="true">
+      <div class="gs-dropzone-card">
+        <app-icon name="photo" />
+        <span>{{ "alchemy.image_input.drop_hint" | transloco }}</span>
       </div>
     </div>
   }

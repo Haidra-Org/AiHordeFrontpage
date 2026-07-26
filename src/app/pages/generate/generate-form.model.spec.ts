@@ -6,10 +6,12 @@ import {
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  promptHistoryFromJobs,
   requestToFormValue,
   simpleModeValue,
 } from './generate-form.model';
 import { AppliedStyle } from '../../services/horde-styles.service';
+import { LocalGenerationJob } from '../../types/generation-job';
 
 function value(overrides: Partial<GenerateFormValue> = {}): GenerateFormValue {
   return { ...DEFAULT_GENERATE_FORM_VALUE, ...overrides };
@@ -553,5 +555,45 @@ describe('requestToFormValue', () => {
       requestToFormValue({ prompt: 'x', replacement_filter: false })
         .replacement_filter,
     ).toBe(false);
+  });
+});
+
+describe('promptHistoryFromJobs', () => {
+  const job = (prompt: string, createdAt: number): LocalGenerationJob => ({
+    localId: `job-${createdAt}`,
+    status: 'done',
+    createdAt,
+    updatedAt: createdAt,
+    request: { prompt },
+    resultImageIds: [],
+  });
+
+  it('lists distinct prompts newest first, splitting off the negative half', () => {
+    const history = promptHistoryFromJobs([
+      job('a castle ### blurry', 300),
+      job('a fox', 200),
+      job('a castle ### blurry', 100),
+    ]);
+
+    expect(history).toEqual([
+      { prompt: 'a castle', negativePrompt: 'blurry' },
+      { prompt: 'a fox', negativePrompt: '' },
+    ]);
+  });
+
+  it('orders by creation time rather than the order it was handed', () => {
+    const history = promptHistoryFromJobs([
+      job('older', 100),
+      job('newer', 900),
+    ]);
+    expect(history.map((entry) => entry.prompt)).toEqual(['newer', 'older']);
+  });
+
+  it('skips jobs with an empty prompt and honours the limit', () => {
+    const history = promptHistoryFromJobs(
+      [job('   ', 400), job('one', 300), job('two', 200), job('three', 100)],
+      2,
+    );
+    expect(history.map((entry) => entry.prompt)).toEqual(['one', 'two']);
   });
 });
