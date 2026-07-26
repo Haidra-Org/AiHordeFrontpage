@@ -1,56 +1,377 @@
 {
-  "generated_at": "2026-07-26T00:00:00Z",
+  "schema_version": 1,
+  "seed": 1312,
   "strips": [
     {
+      "strip_id": "steps/albedobase-xl/person",
       "parameter": "steps",
-      "model": "AlbedoBase XL (SDXL)",
-      "scene": "portrait",
+      "presentation": "strip",
+      "caption": "How far the sampler gets to run before the picture is handed back.",
+      "rationale": "The first number newcomers raise, and the first one they overpay for.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 4,
+        "cfg_scale": 7.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": ["steps"],
       "stops": [
         {
-          "value": "4 steps",
-          "file": "004.webp",
-          "caption": "Barely resolved: the shapes are there and nothing else is."
+          "value": 4,
+          "label": "4",
+          "caption": "Barely resolved: the shapes are there and nothing else is.",
+          "file": "steps/albedobase-xl/person/001_4.webp",
+          "sidecar": "steps/albedobase-xl/person/001_4.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 4,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         },
         {
-          "value": "12 steps",
-          "file": "012.webp",
-          "caption": "The face and the light have settled."
+          "value": 12,
+          "label": "12",
+          "caption": "The face and the light have settled.",
+          "file": "steps/albedobase-xl/person/002_12.webp",
+          "sidecar": "steps/albedobase-xl/person/002_12.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 12,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         },
         {
-          "value": "30 steps",
-          "file": "030.webp",
-          "caption": "Past here the picture stops changing and only costs more."
+          "value": 30,
+          "label": "30",
+          "caption": "Past here the picture stops changing and only costs more.",
+          "file": "steps/albedobase-xl/person/003_30.webp",
+          "sidecar": "steps/albedobase-xl/person/003_30.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 30,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         }
-      ]
+      ],
+      "grid": null
     },
     {
+      "strip_id": "steps/deliberate/landscape",
       "parameter": "steps",
-      "model": "Deliberate",
-      "scene": "landscape",
+      "presentation": "strip",
+      "caption": "The same sweep on a second model.",
+      "rationale": "Models do not agree on where the returns stop.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "landscape",
+        "label": "Landscape",
+        "prompt": "a wide valley under a low sun"
+      },
+      "held": {
+        "width": 512,
+        "height": 512,
+        "steps": 8,
+        "cfg_scale": 7.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": [],
       "stops": [
         {
-          "value": "8 steps",
-          "file": "008.webp",
-          "caption": "A second model, for testing the model-specific lookup."
+          "value": 8,
+          "label": "8",
+          "caption": "A second model, for testing the model-specific lookup.",
+          "file": "steps/deliberate/landscape/001_8.webp",
+          "sidecar": "steps/deliberate/landscape/001_8.json",
+          "params": {
+            "width": 512,
+            "height": 512,
+            "steps": 8,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         }
-      ]
+      ],
+      "grid": null
     },
     {
+      "strip_id": "steps/deliberate/person",
+      "parameter": "steps",
+      "presentation": "strip",
+      "caption": "A strip whose renders did not all land.",
+      "rationale": "An incomplete strip would scrub into a gap, so it is never offered.",
+      "complete": false,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 512,
+        "height": 512,
+        "steps": 4,
+        "cfg_scale": 7.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": [],
+      "stops": [
+        {
+          "value": 4,
+          "label": "4",
+          "caption": "The only stop of this strip that rendered.",
+          "file": "steps/deliberate/person/001_4.webp",
+          "sidecar": "steps/deliberate/person/001_4.json",
+          "params": {
+            "width": 512,
+            "height": 512,
+            "steps": 4,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
+        }
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "cfg-scale/albedobase-xl/person",
       "parameter": "cfg_scale",
-      "model": "AlbedoBase XL (SDXL)",
-      "scene": "portrait",
+      "presentation": "strip",
+      "caption": "How hard the model is pushed towards the words you gave it.",
+      "rationale": "Too high is the most common self-inflicted wound.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 30,
+        "cfg_scale": 2.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": ["cfg_scale"],
       "stops": [
         {
-          "value": "cfg 2",
-          "file": "02.webp",
-          "caption": "Loose: the model wanders away from what you asked for."
+          "value": 2.0,
+          "label": "2",
+          "caption": "Loose: the model wanders away from what you asked for.",
+          "file": "cfg-scale/albedobase-xl/person/001_2.webp",
+          "sidecar": "cfg-scale/albedobase-xl/person/001_2.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 30,
+            "cfg_scale": 2.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         },
         {
-          "value": "cfg 7",
-          "file": "07.webp",
-          "caption": "The usual middle, following the prompt without straining."
+          "value": 7.0,
+          "label": "7",
+          "caption": "The usual middle, following the prompt without straining.",
+          "file": "cfg-scale/albedobase-xl/person/002_7.webp",
+          "sidecar": "cfg-scale/albedobase-xl/person/002_7.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 30,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
         }
-      ]
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "steps-cfg-grid/albedobase-xl/person",
+      "parameter": "steps_cfg_grid",
+      "presentation": "grid",
+      "caption": "Steps against guidance, as a plate.",
+      "rationale": "The two settings are usually mistuned together, not separately.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 8,
+        "cfg_scale": 2.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": ["steps", "cfg_scale"],
+      "stops": [
+        {
+          "value": "8x2",
+          "label": "s08_c2",
+          "caption": "8 steps at guidance 2.",
+          "file": "steps-cfg-grid/albedobase-xl/person/001_s08_c2.webp",
+          "sidecar": "steps-cfg-grid/albedobase-xl/person/001_s08_c2.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 8,
+            "cfg_scale": 2.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
+        },
+        {
+          "value": "8x7",
+          "label": "s08_c7",
+          "caption": "8 steps at guidance 7.",
+          "file": "steps-cfg-grid/albedobase-xl/person/002_s08_c7.webp",
+          "sidecar": "steps-cfg-grid/albedobase-xl/person/002_s08_c7.json",
+          "params": {
+            "width": 1024,
+            "height": 1024,
+            "steps": 8,
+            "cfg_scale": 7.0,
+            "sampler_name": "k_euler_a",
+            "clip_skip": 1,
+            "hires_fix": false,
+            "tiling": false,
+            "karras": true,
+            "denoising_strength": 0.75,
+            "seed": 1312
+          }
+        }
+      ],
+      "grid": {
+        "rows": {
+          "parameter": "steps",
+          "values": [8],
+          "caption": "Rows are steps."
+        },
+        "columns": {
+          "parameter": "cfg_scale",
+          "values": [2.0, 7.0],
+          "caption": "Columns are guidance."
+        }
+      }
     }
   ]
 }

@@ -10,7 +10,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import {
   SweepLibraryService,
   SweepStop,
-  SweepStrip,
 } from '../../services/sweep-library.service';
 
 /**
@@ -32,14 +31,14 @@ import {
   selector: 'app-gs-sweep-scrub',
   imports: [TranslocoPipe],
   template: `
-    @if (strip(); as current) {
+    @if (strip()) {
       <div class="gs-sweep">
         @if (expanded()) {
           <div class="gs-sweep-open">
             <figure class="gs-sweep-figure">
               <img
                 class="gs-sweep-frame"
-                [src]="frameUrl(current, stop())"
+                [src]="frameUrl(stop())"
                 [alt]="'generate.sweeps.frame_alt' | transloco: valueParams()"
                 (load)="onFrameLoad()"
               />
@@ -66,7 +65,7 @@ import {
               [max]="lastIndex()"
               [value]="index()"
               [attr.aria-label]="'generate.sweeps.slider_label' | transloco"
-              [attr.aria-valuetext]="stop().value"
+              [attr.aria-valuetext]="valueLabel()"
               (input)="onScrub($event)"
             />
 
@@ -88,7 +87,7 @@ import {
             @if (showPreview()) {
               <img
                 class="gs-sweep-preview"
-                [src]="frameUrl(current, stop())"
+                [src]="frameUrl(stop())"
                 alt=""
                 loading="lazy"
               />
@@ -109,9 +108,9 @@ export class GsSweepScrubComponent {
   /** API field name the sweep varies, e.g. `steps`. */
   public readonly parameter = input.required<string>();
   /** Narrow the strip to one model, when the surface knows which is in play. */
-  public readonly model = input<string | undefined>(undefined);
+  public readonly modelSlug = input<string | undefined>(undefined);
   /** Narrow the strip to one scene. */
-  public readonly scene = input<string | undefined>(undefined);
+  public readonly sceneId = input<string | undefined>(undefined);
 
   private readonly cursor = signal<number | null>(null);
   private readonly open = signal(false);
@@ -121,7 +120,7 @@ export class GsSweepScrubComponent {
   public readonly frameLoaded = this.loaded.asReadonly();
 
   public readonly strip = computed(() =>
-    this.sweeps.strip(this.parameter(), this.model(), this.scene()),
+    this.sweeps.strip(this.parameter(), this.modelSlug(), this.sceneId()),
   );
 
   public readonly lastIndex = computed(
@@ -141,7 +140,16 @@ export class GsSweepScrubComponent {
     () => this.strip()!.stops[this.index()],
   );
 
-  public readonly valueParams = computed(() => ({ value: this.stop().value }));
+  /**
+   * How the stop is read out. The index labels every stop, including the ones
+   * whose value is a flag rather than a number, so the label is preferred over
+   * the raw value wherever there is one.
+   */
+  public readonly valueLabel = computed(
+    () => this.stop().label || String(this.stop().value),
+  );
+
+  public readonly valueParams = computed(() => ({ value: this.valueLabel() }));
 
   /**
    * A reader on a metered connection is offered the sweep in words and fetches
@@ -153,8 +161,8 @@ export class GsSweepScrubComponent {
     void this.sweeps.ensureLoaded();
   }
 
-  public frameUrl(strip: SweepStrip, stop: SweepStop): string {
-    return this.sweeps.imageUrl(strip, stop);
+  public frameUrl(stop: SweepStop): string {
+    return this.sweeps.imageUrl(stop);
   }
 
   public expand(): void {
@@ -192,7 +200,7 @@ export class GsSweepScrubComponent {
     for (const offset of [-1, 1]) {
       const stop = strip.stops[this.index() + offset];
       if (stop) {
-        new Image().src = this.sweeps.imageUrl(strip, stop);
+        new Image().src = this.sweeps.imageUrl(stop);
       }
     }
   }

@@ -61,25 +61,43 @@ describe('SweepLibraryService', () => {
     http.expectOne(indexUrl).flush(stubIndex);
     await loaded;
 
-    expect(sweeps.strip('steps', 'Deliberate', 'landscape')?.model).toBe(
-      'Deliberate',
+    expect(sweeps.strip('steps', 'deliberate', 'landscape')?.strip_id).toBe(
+      'steps/deliberate/landscape',
     );
-    expect(sweeps.strip('steps', 'Deliberate')?.model).toBe('Deliberate');
+    expect(sweeps.strip('steps', 'deliberate')?.image_model.slug).toBe(
+      'deliberate',
+    );
     // Unknown model falls back rather than going empty.
-    expect(sweeps.strip('steps', 'Nothing By This Name')?.model).toBe(
-      'AlbedoBase XL (SDXL)',
-    );
-    expect(sweeps.strip('sampler_name')).toBeNull();
+    expect(
+      sweeps.strip('steps', 'nothing-by-this-name')?.image_model.slug,
+    ).toBe('albedobase-xl');
+    expect(sweeps.strip('sampler')).toBeNull();
   });
 
-  it('builds frame urls under the configured base', async () => {
+  it('leaves out the strips a scrubber cannot show', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    // The incomplete strip would scrub into a missing render.
+    expect(sweeps.strip('steps', 'deliberate', 'person')?.strip_id).not.toBe(
+      'steps/deliberate/person',
+    );
+    // A grid is a plate, not a one-axis scrub.
+    expect(sweeps.strip('steps_cfg_grid')).toBeNull();
+  });
+
+  it('builds frame urls from the stop path verbatim', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);
     await loaded;
 
     const strip = sweeps.strip('cfg_scale')!;
-    expect(sweeps.imageUrl(strip, strip.stops[0])).toBe(
-      `${environment.sweepLibraryBaseUrl}/cfg_scale/AlbedoBase XL (SDXL)/portrait/02.webp`,
+    expect(strip.stops[0].file).toBe(
+      'cfg-scale/albedobase-xl/person/001_2.webp',
+    );
+    expect(sweeps.imageUrl(strip.stops[0])).toBe(
+      `${environment.sweepLibraryBaseUrl}/cfg-scale/albedobase-xl/person/001_2.webp`,
     );
   });
 });

@@ -99,7 +99,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/AlbedoBase XL (SDXL)/portrait/012.webp`,
+      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
   });
 
@@ -117,10 +117,10 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(find<HTMLImageElement>('.gs-sweep-frame')?.getAttribute('src')).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/AlbedoBase XL (SDXL)/portrait/012.webp`,
+      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
     expect(el().textContent).toContain('The face and the light have settled.');
-    expect(el().textContent).toContain('Set to 12 steps');
+    expect(el().textContent).toContain('Set to 12');
     expect(find('.gs-sweep-range')).not.toBeNull();
   });
 
@@ -137,15 +137,15 @@ describe('GsSweepScrubComponent', () => {
     expect(range.getAttribute('aria-label')).toBe(
       en['generate.sweeps.slider_label'],
     );
-    expect(range.getAttribute('aria-valuetext')).toBe('12 steps');
+    expect(range.getAttribute('aria-valuetext')).toBe('12');
 
     // What ArrowRight does to a range input, which jsdom does not do for us.
     range.value = '2';
     range.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    expect(range.getAttribute('aria-valuetext')).toBe('30 steps');
-    expect(el().textContent).toContain('Set to 30 steps');
+    expect(range.getAttribute('aria-valuetext')).toBe('30');
+    expect(el().textContent).toContain('Set to 30');
     expect(el().textContent).toContain('Past here the picture stops changing');
   });
 

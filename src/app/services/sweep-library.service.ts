@@ -5,27 +5,51 @@ import { environment } from '../../environments/environment';
 
 /** One frame of a sweep: the parameter value it was rendered at. */
 export interface SweepStop {
-  /** The parameter value as it should be read out, e.g. "8" or "cfg 3.5". */
-  value: string;
-  /** File name within the strip's directory. */
-  file: string;
+  /** The parameter value, in the type the API takes it in. */
+  value: string | number | boolean;
+  /** The value as a token safe to read out and to put in a filename, e.g. `12` or `off`. */
+  label: string;
   /** One line about what this frame shows, in the same voice as the studio. */
   caption: string;
+  /** Path to the image relative to the library root, slashes included. */
+  file: string;
+}
+
+/** The image model a strip was rendered with. */
+export interface SweepStripModel {
+  slug: string;
+  name: string;
+  baseline: string;
+  note: string;
+}
+
+/** The scene a strip was rendered from. */
+export interface SweepStripScene {
+  scene_id: string;
+  label: string;
+  prompt: string;
 }
 
 /** A single parameter swept across one model and one scene. */
 export interface SweepStrip {
+  strip_id: string;
   /** API field name being swept, e.g. `steps` or `cfg_scale`. */
   parameter: string;
-  model: string;
-  scene: string;
+  /** How the generator asks the strip to be laid out; `grid` is not a scrubber. */
+  presentation: string;
+  caption: string;
+  /** False when a stop failed to render, which takes the strip out of use. */
+  complete: boolean;
+  image_model: SweepStripModel;
+  scene: SweepStripScene;
   /** Ordered low to high; the middle one is used as the collapsed preview. */
   stops: SweepStop[];
 }
 
 /** The whole library's manifest, as published beside the images. */
 export interface SweepIndex {
-  generated_at: string;
+  schema_version: number;
+  seed: number;
   strips: SweepStrip[];
 }
 
@@ -85,29 +109,36 @@ export class SweepLibraryService {
    */
   public strip(
     parameter: string,
-    model?: string,
-    scene?: string,
+    modelSlug?: string,
+    sceneId?: string,
   ): SweepStrip | null {
     const candidates = this.strips().filter(
-      (entry) => entry.parameter === parameter && entry.stops.length > 0,
+      (entry) => entry.parameter === parameter,
     );
     if (candidates.length === 0) {
       return null;
     }
     return (
-      (model && scene
+      (modelSlug && sceneId
         ? candidates.find(
-            (entry) => entry.model === model && entry.scene === scene,
+            (entry) =>
+              entry.image_model.slug === modelSlug &&
+              entry.scene.scene_id === sceneId,
           )
         : undefined) ??
-      (model ? candidates.find((entry) => entry.model === model) : undefined) ??
+      (modelSlug
+        ? candidates.find((entry) => entry.image_model.slug === modelSlug)
+        : undefined) ??
       candidates[0]
     );
   }
 
-  /** Where one frame of a strip is published. */
-  public imageUrl(strip: SweepStrip, stop: SweepStop): string {
-    return `${this.baseUrl}/${strip.parameter}/${strip.model}/${strip.scene}/${stop.file}`;
+  /**
+   * Where one frame is published. The index states each stop's path relative to
+   * the library root, so nothing is assembled from the strip's own fields.
+   */
+  public imageUrl(stop: SweepStop): string {
+    return `${this.baseUrl}/${stop.file}`;
   }
 
   private async fetchIndex(): Promise<void> {
@@ -115,13 +146,25 @@ export class SweepLibraryService {
       const index = await firstValueFrom(
         this.http.get<SweepIndex>(`${this.baseUrl}/index.json`),
       );
-      this.strips.set(
-        index?.strips?.filter((entry) => !!entry.parameter) ?? [],
-      );
+      this.strips.set(index?.strips?.filter(isScrubbable) ?? []);
     } catch {
       this.strips.set([]);
     } finally {
       this.settled.set(true);
     }
   }
+}
+
+/**
+ * Whether a published strip is one this scrubber can show. A strip missing a
+ * render is incomplete and would scrub into a gap, and a `grid` strip is a
+ * two-dimensional plate that a one-axis slider cannot represent at all.
+ */
+function isScrubbable(strip: SweepStrip): boolean {
+  return (
+    !!strip?.parameter &&
+    strip.complete &&
+    strip.presentation !== 'grid' &&
+    (strip.stops?.length ?? 0) > 0
+  );
 }
