@@ -96,6 +96,11 @@
   --gs-pop-surface: #ffffff;
   --gs-pop-border: #c9cfd9;
   --gs-pop-hover: #eef1f6;
+  /* The alternating step for banded popover lists. Deliberately shallower than
+     --gs-pop-hover: the band has body text on it, and the hover step is dark
+     enough to push --gs-label under AA. */
+  --gs-pop-stripe: #f6f8fb;
+  --gs-pop-accent: #1d4ed8;
   --gs-pop-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
   --gs-blue: #1d4ed8;
   --gs-blue-hover: #1e40af;
@@ -142,6 +147,10 @@
   --gs-pop-surface: #242a36;
   --gs-pop-border: #3f4756;
   --gs-pop-hover: #2c3444;
+  --gs-pop-stripe: #2a3140;
+  /* --gs-blue is the same #1d4ed8 in both themes and sinks into a dark popover
+     at 2.2:1, so the accent takes a lighter blue here. */
+  --gs-pop-accent: #60a5fa;
   --gs-pop-shadow: 0 22px 56px rgba(0, 0, 0, 0.66);
   --gs-blue-tint: rgba(29, 78, 216, 0.16);
   --gs-blue-tint-border: rgba(59, 130, 246, 0.35);
@@ -4686,8 +4695,9 @@
   text-align: left;
   cursor: pointer;
 }
+/* Colour only: the row underneath now carries the surface, and painting the
+   summary's own box would both hide its stripe and drop --gs-label under AA. */
 .gen-studio .gs-hist-item:hover {
-  background: var(--gs-pop-hover);
   color: var(--gs-ink);
 }
 .gen-studio .gs-hist-item:focus-visible {
@@ -4702,8 +4712,9 @@
   line-clamp: 2;
   overflow: hidden;
 }
-/* Label rather than muted: 5.6:1 light and 5.7:1 dark on the popover plane,
-   which the smaller type needs more than the summary line does. */
+/* Label rather than muted, which the smaller type needs more than the summary
+   line does. Holds AA on both stripes: 4.8:1 / 4.5:1 light, 5.7:1 / 5.1:1 dark.
+   The light figures are the floor the stripe token is chosen against. */
 .gen-studio .gs-hist-neg {
   color: var(--gs-label);
   font-size: 11px;
@@ -4855,15 +4866,47 @@
 /* ------- prompt history: full-text reveal ---------------------------- */
 /* The row keeps its two-line summary and carries the whole prompt with it,
    out of the way until it is wanted. Pointers get it on hover, keyboards on
-   focus, and the per-row toggle covers touch, where neither exists. */
+   focus, and the per-row toggle covers touch, where neither exists.
+
+   Rows are banded so each entry reads as one bounded unit rather than a run of
+   coequal lines. The row owns both surfaces: its own, and the opposite one for
+   the detail plate nested inside it, so the plate never matches the band it
+   sits on and can never be misread as the next entry. Passing them down as
+   custom properties keeps the parity selector out of the descendant's
+   cascade. */
 .gen-studio .gs-hist-row {
+  --gs-hist-row-bg: var(--gs-pop-surface);
+  --gs-hist-detail-bg: var(--gs-pop-stripe);
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
   border-radius: 7px;
+  background: var(--gs-hist-row-bg);
+  /* The enclosure runs on the detail's schedule so a ring never draws itself
+     around nothing for the length of the hover dwell. */
+  transition: box-shadow 0.15s ease;
+  transition-delay: 0.15s;
 }
-.gen-studio .gs-hist-row--open {
-  background: var(--gs-pop-hover);
+.gen-studio .gs-hist-row:nth-child(even) {
+  --gs-hist-row-bg: var(--gs-pop-stripe);
+  --gs-hist-detail-bg: var(--gs-pop-surface);
+}
+@media (hover: hover) and (pointer: fine) {
+  .gen-studio .gs-hist-row:hover {
+    box-shadow:
+      inset 0 0 0 1px var(--gs-pop-border),
+      inset 3px 0 0 var(--gs-pop-accent);
+    transition-delay: 0.4s;
+  }
+}
+/* After the hover rule, as with the detail itself, so a row opened by its
+   toggle or reached by keyboard wins the tie and encloses with no dwell. */
+.gen-studio .gs-hist-row.gs-hist-row--open,
+.gen-studio .gs-hist-row:focus-within {
+  box-shadow:
+    inset 0 0 0 1px var(--gs-pop-border),
+    inset 3px 0 0 var(--gs-pop-accent);
+  transition-delay: 0s;
 }
 .gen-studio .gs-hist-expand {
   flex: none;
@@ -4906,14 +4949,18 @@
      snap it shut; visibility trails the collapse so the text is not cut mid-way. */
   transition-delay: 0.15s, 0.33s;
 }
+/* Inset on all four sides and given the opposite band: a plate nested inside
+   its entry. The left margin clears the open row's accent. */
 .gen-studio .gs-hist-detail-inner {
   min-height: 0;
   max-height: min(38vh, 220px);
   overflow-y: auto;
   scrollbar-width: thin;
-  margin: 2px 4px 6px;
-  padding: 7px 9px 0;
-  border-top: 1px solid var(--gs-pop-border);
+  margin: 0 7px 7px 10px;
+  padding: 7px 9px;
+  border: 1px solid var(--gs-pop-border);
+  border-radius: 6px;
+  background: var(--gs-hist-detail-bg);
   color: var(--gs-ink);
   font-size: 12px;
   line-height: 1.5;
@@ -4942,11 +4989,16 @@
     transition-duration: 0s;
     transition-delay: 0.15s;
   }
+  .gen-studio .gs-hist-row {
+    transition-duration: 0s;
+  }
 }
-/* Which half of the pair is which, without competing with the text for weight. */
+/* Which half of the pair is which, without competing with the text for weight.
+   Label rather than muted: muted sits at 4.3:1 on the light bands, under AA for
+   type this small. */
 .gen-studio .gs-hist-detail-label {
   margin: 0 0 1px;
-  color: var(--gs-muted);
+  color: var(--gs-label);
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -5149,4 +5201,407 @@
   border-color: rgba(251, 191, 36, 0.3);
   background: rgba(251, 191, 36, 0.1);
   color: #fbbf24;
+}
+
+/* ------- style browser: expand, contents row, mature toggle ---------- */
+/* The card stays the select target; the expand button is layered over it as a
+   separate one so a tap never has to be guessed at. */
+.gen-studio .gs-sb-card-wrap {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+.gen-studio .gs-sb-card-wrap .gs-sb-card {
+  flex: 1;
+  min-width: 0;
+}
+.gen-studio .gs-sb-expand {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(17, 24, 39, 0.55);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.gen-studio .gs-sb-card-wrap:hover .gs-sb-expand,
+.gen-studio .gs-sb-expand:focus-visible {
+  opacity: 1;
+}
+/* Pointers that cannot hover have no way to reveal the button, so it is always
+   on for them. */
+@media (hover: none) {
+  .gen-studio .gs-sb-expand {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-sb-expand {
+    transition: none;
+  }
+}
+
+/* A single scrolling rail at every width. Wrapping the ~40 curated categories
+   cost four rows of the modal's height, which is space the grid needs more. */
+.gen-studio .gs-sb-toc {
+  flex: none;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--gs-border-soft);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  /* Focus rings must not be clipped by the rail, so the overflowed chip scrolls
+     into view with room around it. */
+  scroll-padding-inline: 20px;
+}
+.gen-studio .gs-sb-toc-chip {
+  flex: none;
+  min-height: 32px;
+  white-space: nowrap;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--gs-label);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-toc-chip:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+
+.gen-studio .gs-sb-mature {
+  flex: none;
+  min-height: 44px;
+  padding: 6px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--gs-label);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-mature--on {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+
+/* ------- style browser: enlarged preview ---------------------------- */
+/* Its own layer above the browser modal (z-60), so the browser stays visible
+   behind it and Escape unwinds one step at a time. */
+.gen-studio .gs-sb-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 5, 10, 0.82);
+}
+/* The height is definite rather than content-derived on purpose. A percentage
+   `max-height` on the image resolves against an auto-height ancestor as "none",
+   which let a 1024px render set the layer's height and push the subject switch
+   and the use-this-style action out under the clipped bottom edge. */
+.gen-studio .gs-sb-viewer-body {
+  display: flex;
+  flex-direction: column;
+  width: 900px;
+  max-width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  outline: none;
+}
+.gen-studio .gs-sb-viewer-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gs-border-results);
+}
+.gen-studio .gs-sb-viewer-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-sb-viewer-counter {
+  flex: none;
+  font-size: 11px;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-sb-viewer-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-viewer-x:hover {
+  color: var(--gs-ink);
+}
+/* The stage takes whatever the header and the action bar leave and no more, so
+   stepping between renders never reflows the layer and never crowds the
+   controls: both of those are `flex: none` and win the space fight. */
+.gen-studio .gs-sb-viewer-stage {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 12px;
+  background: var(--gs-seg-track);
+}
+.gen-studio .gs-sb-viewer-img {
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.gen-studio .gs-sb-viewer-empty {
+  margin: 0;
+  padding: 48px 16px;
+  font-size: 12px;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-sb-viewer-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 56px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(17, 24, 39, 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+.gen-studio .gs-sb-viewer-nav:hover {
+  background: rgba(17, 24, 39, 0.75);
+}
+.gen-studio .gs-sb-viewer-nav--prev {
+  left: 8px;
+}
+.gen-studio .gs-sb-viewer-nav--next {
+  right: 8px;
+}
+.gen-studio .gs-sb-viewer-nav app-icon,
+.gen-studio .gs-sb-viewer-nav app-icon svg {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+}
+.gen-studio .gs-sb-viewer-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--gs-border-results);
+}
+.gen-studio .gs-sb-viewer-variant {
+  flex: 1;
+  min-width: 0;
+}
+.gen-studio .gs-sb-viewer-variant .gs-seg-opt {
+  min-height: 44px;
+}
+.gen-studio .gs-sb-viewer-use {
+  flex: none;
+  min-height: 44px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  border: 0;
+  border-radius: 10px;
+  background: var(--gs-blue);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-viewer-use:hover {
+  background: var(--gs-blue-hover);
+}
+@media (max-width: 1023.98px) {
+  /* Near-fullscreen on phones: the preview is the point of the layer. */
+  .gen-studio .gs-sb-viewer {
+    padding: 0;
+  }
+  .gen-studio .gs-sb-viewer-body {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  .gen-studio .gs-sb-viewer-actions {
+    flex-wrap: wrap;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .gen-studio .gs-sb-viewer-variant {
+    flex: 1 1 100%;
+    display: flex;
+  }
+  .gen-studio .gs-sb-viewer-variant .gs-seg-opt {
+    flex: 1 1 0;
+  }
+  .gen-studio .gs-sb-viewer-use {
+    flex: 1 1 100%;
+  }
+}
+@media (max-width: 1023.98px) {
+  /* The fold handle collapses the whole control bar, mature toggle included. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-mature {
+    display: none;
+  }
+  .gen-studio .gs-sb-toc {
+    padding: 8px 14px;
+  }
+  .gen-studio .gs-sb-toc-chip {
+    min-height: 44px;
+  }
+  /* The subject switch used to be ordered last; it now follows the source, so
+     the stack reads search, mature, subject, sort at both breakpoints. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-variant {
+    order: 0;
+  }
+}
+
+/* ------- style browser: fullscreen ---------------------------------- */
+/* A size choice, not a layer: the panel keeps its own structure and the
+   enlarged preview (position: fixed, z-61) still covers it either way. */
+.gen-studio .gs-sb-full {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-full:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-sb-full--on {
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-modal-overlay--full {
+  padding: 0;
+}
+.gen-studio .gs-modal-panel--browser-full {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+}
+
+@media (min-width: 1024px) {
+  /* The header region is overhead: every row it takes is a row of styles the
+     user cannot see. Trimmed so the grid dominates the modal. */
+  .gen-studio .gs-modal-panel--browser .gs-modal-header {
+    padding: 10px 20px;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar {
+    padding: 10px 20px;
+    gap: 8px;
+  }
+  /* Every control but the search field is content-width, so the row only wraps
+     once the search field is down to its own minimum. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    flex: 1 1 160px;
+    padding: 7px 12px;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-variant,
+  .gen-studio .gs-modal-panel--browser .gs-sb-sort {
+    flex: none;
+  }
+  .gen-studio .gs-sb-mature {
+    min-height: 38px;
+    padding: 5px 12px;
+  }
+}
+
+/* ------- scrollbars: completes the scoped treatment ------------------ */
+/* The block near the top of this file themed the Chromium thumb and nothing
+   else, which left two gaps that both read as "white scrollbar in dark mode":
+   the track was never painted, and no `scrollbar-color` was ever set, so
+   Firefox got browser default chrome throughout. Chromium 121+ compounds it:
+   once a container sets `scrollbar-width`, the `::-webkit-scrollbar`
+   pseudo-elements are ignored there, so every `scrollbar-width: thin` area in
+   the studio fell back to default chrome as well.
+   Declared on the studio root so every scroll area inside it inherits: the
+   modal and the enlarged preview are descendants, so they are covered without
+   being named. The page's own scrollbar sits on `html` and is left alone. */
+.gen-studio {
+  --gs-scroll-thumb: #d1d5db;
+  --gs-scroll-track: #f3f4f6;
+  --gs-scroll-thumb-hover: #b6bcc6;
+  scrollbar-color: var(--gs-scroll-thumb) var(--gs-scroll-track);
+}
+.dark .gen-studio {
+  --gs-scroll-thumb: #3a3f47;
+  --gs-scroll-track: #14171d;
+  --gs-scroll-thumb-hover: #4c525c;
+}
+.gen-studio ::-webkit-scrollbar-track {
+  background: var(--gs-scroll-track);
+}
+/* The inset band is the track colour rather than the canvas: these scrollbars
+   sit on panels as often as on the studio background, and a canvas-coloured
+   ring showed as a seam against every panel surface. */
+.gen-studio ::-webkit-scrollbar-thumb {
+  background: var(--gs-scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid var(--gs-scroll-track);
+}
+.gen-studio ::-webkit-scrollbar-thumb:hover {
+  background: var(--gs-scroll-thumb-hover);
+}
+.dark .gen-studio ::-webkit-scrollbar-thumb {
+  background: var(--gs-scroll-thumb);
 }

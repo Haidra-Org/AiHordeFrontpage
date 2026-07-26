@@ -1,5 +1,6 @@
 <div
   class="gs-modal-overlay"
+  [class.gs-modal-overlay--full]="fullscreen()"
   (click)="onBackdrop($event)"
   (keydown.escape)="onClose()"
   role="dialog"
@@ -10,6 +11,7 @@
   <div
     #panel
     class="gs-modal-panel gs-modal-panel--browser gs-fadeup"
+    [class.gs-modal-panel--browser-full]="fullscreen()"
     tabindex="-1"
   >
     <div class="gs-modal-header">
@@ -28,6 +30,20 @@
           </button>
         }
       </div>
+      <button
+        type="button"
+        class="gs-sb-full"
+        [class.gs-sb-full--on]="fullscreen()"
+        [attr.aria-pressed]="fullscreen()"
+        (click)="toggleFullscreen()"
+        [attr.aria-label]="'generate.form.browser_fullscreen' | transloco"
+        [title]="'generate.form.browser_fullscreen' | transloco"
+      >
+        <app-icon
+          [name]="fullscreen() ? 'arrows-pointing-in' : 'arrows-pointing-out'"
+          class="gs-ico-sm"
+        />
+      </button>
       <button
         type="button"
         class="gs-modal-close"
@@ -65,6 +81,15 @@
           [attr.aria-label]="'generate.form.style_search' | transloco"
         />
       </div>
+      <button
+        type="button"
+        class="gs-sb-mature"
+        [class.gs-sb-mature--on]="showMature()"
+        [attr.aria-pressed]="showMature()"
+        (click)="toggleMature()"
+      >
+        {{ "generate.form.show_mature" | transloco }}
+      </button>
       <div
         class="gs-seg gs-seg--xs gs-sb-variant"
         role="group"
@@ -105,7 +130,24 @@
       </div>
     </div>
 
-    <div class="gs-modal-body">
+    @if (sort() === "category" && sections().length > 1) {
+      <nav
+        class="gs-sb-toc"
+        [attr.aria-label]="'generate.form.toc_label' | transloco"
+      >
+        @for (section of sections(); track section.category) {
+          <button
+            type="button"
+            class="gs-sb-toc-chip"
+            (click)="jumpToSection(section.category)"
+          >
+            {{ section.category }}
+          </button>
+        }
+      </nav>
+    }
+
+    <div #body class="gs-modal-body">
       @if (previewsFailed()) {
         <p class="gs-sb-note">
           {{ "generate.form.previews_unavailable" | transloco }}
@@ -140,7 +182,7 @@
           </section>
         }
         @for (section of sections(); track section.category) {
-          <section class="gs-sb-section">
+          <section class="gs-sb-section" [id]="sectionId(section.category)">
             <h3 class="gs-sb-section-title">{{ section.category }}</h3>
             <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
               @for (card of section.cards; track card.name) {
@@ -156,45 +198,167 @@
   </div>
 </div>
 
-<!-- One style card: preview (or placeholder), name, and usage badge. -->
+<!-- One style card: preview (or placeholder), name, and usage badge. The card
+     itself selects the style; enlarging is a separate target so the two
+     outcomes are never guessed at from one tap. -->
 <ng-template #styleCard let-card="card">
-  <button
-    type="button"
-    class="gs-sb-card"
-    [class.gs-sb-card--active]="selectedStyle() === card.name"
-    [attr.aria-pressed]="selectedStyle() === card.name"
-    (click)="select(card.name)"
-    [title]="card.name"
-  >
-    <span class="gs-sb-thumbs">
-      @if (card.previewUrls.length === 0) {
-        <span class="gs-sb-thumb">
-          <span class="gs-sb-thumb-empty">
-            <app-icon name="photo" class="gs-ico-sm" />
-          </span>
-        </span>
-      } @else {
-        @for (url of card.previewUrls; track url) {
+  <div class="gs-sb-card-wrap">
+    <button
+      type="button"
+      class="gs-sb-card"
+      [class.gs-sb-card--active]="selectedStyle() === card.name"
+      [attr.aria-pressed]="selectedStyle() === card.name"
+      (click)="select(card.name)"
+      [title]="card.name"
+    >
+      <span class="gs-sb-thumbs">
+        @if (card.previewUrls.length === 0) {
           <span class="gs-sb-thumb">
-            <img
-              [src]="url"
-              [alt]="card.name"
-              loading="lazy"
-              decoding="async"
-            />
+            <span class="gs-sb-thumb-empty">
+              <app-icon name="photo" class="gs-ico-sm" />
+            </span>
+          </span>
+        } @else {
+          @for (url of card.previewUrls; track url) {
+            <span class="gs-sb-thumb">
+              <img
+                [src]="url"
+                [alt]="card.name"
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
+          }
+        }
+      </span>
+      <span class="gs-sb-meta">
+        <span class="gs-sb-name">{{ card.name }}</span>
+        @if (card.count > 0) {
+          <span class="gs-sb-badge">
+            {{
+              "generate.form.style_used_count"
+                | transloco: { count: card.count }
+            }}
           </span>
         }
-      }
-    </span>
-    <span class="gs-sb-meta">
-      <span class="gs-sb-name">{{ card.name }}</span>
-      @if (card.count > 0) {
-        <span class="gs-sb-badge">
-          {{
-            "generate.form.style_used_count" | transloco: { count: card.count }
-          }}
-        </span>
-      }
-    </span>
-  </button>
+      </span>
+    </button>
+    @if (card.previewUrls.length > 0) {
+      <button
+        type="button"
+        class="gs-sb-expand"
+        (click)="openExpanded(card.name, $event)"
+        [attr.aria-label]="
+          'generate.form.style_expand' | transloco: { style: card.name }
+        "
+        [title]="'generate.form.style_expand' | transloco: { style: card.name }"
+      >
+        <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+      </button>
+    }
+  </div>
 </ng-template>
+
+<!-- The enlarged preview: one style at full render size, steppable across the
+     styles the body currently shows. -->
+@if (expanded(); as view) {
+  <div
+    class="gs-sb-viewer"
+    (click)="onExpandedBackdrop($event)"
+    (keydown.escape)="closeExpanded()"
+    tabindex="0"
+  >
+    <div
+      #expandedPanel
+      class="gs-sb-viewer-body"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      [attr.aria-label]="
+        'generate.form.style_expanded_title' | transloco: { style: view.name }
+      "
+    >
+      <div class="gs-sb-viewer-top">
+        <span class="gs-sb-viewer-name">{{ view.name }}</span>
+        @if (view.total > 1) {
+          <span
+            class="gs-sb-viewer-counter gs-mono"
+            [attr.aria-label]="
+              'generate.form.expand_counter'
+                | transloco: { index: view.index + 1, total: view.total }
+            "
+          >
+            {{ view.index + 1 }} / {{ view.total }}
+          </span>
+        }
+        <button
+          type="button"
+          class="gs-sb-viewer-x"
+          (click)="closeExpanded()"
+          [attr.aria-label]="'generate.form.expand_close' | transloco"
+        >
+          <app-icon name="x-mark" class="gs-ico-sm" />
+        </button>
+      </div>
+      <div class="gs-sb-viewer-stage">
+        @if (view.total > 1) {
+          <button
+            type="button"
+            class="gs-sb-viewer-nav gs-sb-viewer-nav--prev"
+            (click)="expandedPrev()"
+            [attr.aria-label]="'generate.form.expand_prev' | transloco"
+          >
+            <app-icon name="chevron-right" class="gs-viewer-nav-ico--flip" />
+          </button>
+        }
+        @if (view.url) {
+          <img
+            class="gs-sb-viewer-img"
+            [src]="view.url"
+            [alt]="view.name"
+            decoding="async"
+          />
+        } @else {
+          <p class="gs-sb-viewer-empty">
+            {{ "generate.form.expand_no_preview" | transloco }}
+          </p>
+        }
+        @if (view.total > 1) {
+          <button
+            type="button"
+            class="gs-sb-viewer-nav gs-sb-viewer-nav--next"
+            (click)="expandedNext()"
+            [attr.aria-label]="'generate.form.expand_next' | transloco"
+          >
+            <app-icon name="chevron-right" />
+          </button>
+        }
+      </div>
+      <div class="gs-sb-viewer-actions">
+        <div
+          class="gs-seg gs-seg--xs gs-sb-viewer-variant"
+          role="group"
+          [attr.aria-label]="'generate.form.variant_label' | transloco"
+        >
+          @for (option of previewVariants; track option) {
+            <button
+              type="button"
+              class="gs-seg-opt"
+              [attr.aria-pressed]="expandedVariant() === option"
+              (click)="setExpandedVariant(option)"
+            >
+              {{ "generate.form.variant_" + option | transloco }}
+            </button>
+          }
+        </div>
+        <button
+          type="button"
+          class="gs-sb-viewer-use"
+          (click)="select(view.name)"
+        >
+          {{ "generate.form.expand_use" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
