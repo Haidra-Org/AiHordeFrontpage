@@ -209,4 +209,6 @@
   }
 </div>
 
-<app-floating-controls />
+@if (!hideFloatingControls()) {
+  <app-floating-controls />
+}

@@ -64,14 +64,18 @@ export class AppComponent implements OnInit {
   );
 
   /**
-   * The `/generate` workspace is a full-height, self-contained studio; the site
-   * footer (link tree, logo, network status) below it reads as a strange second
-   * page, and every one of those links is reachable elsewhere, so it is dropped
-   * on `/generate/*`.
+   * The `/generate` workspace is a full-height, self-contained studio, so two
+   * bits of site chrome are dropped on `/generate/*`:
+   *  - the footer (link tree, logo, network status) reads as a strange second
+   *    page below it, and every link is reachable elsewhere;
+   *  - the floating jump-to-top / glossary controls overlap the studio's own
+   *    on-canvas controls and add nothing on a single-screen tool.
    */
-  public readonly hideFooter = computed(() =>
+  private readonly onStudioRoute = computed(() =>
     this.currentUrl().startsWith('/generate'),
   );
+  public readonly hideFooter = this.onStudioRoute;
+  public readonly hideFloatingControls = this.onStudioRoute;
 
   ngOnInit(): void {
     this.viewportScroller.setOffset(() => {
