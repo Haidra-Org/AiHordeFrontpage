@@ -74,11 +74,12 @@
   /* Elevation ladder: canvas (page floor) -> panel (workspace) -> card
      (grouped controls). Deepening the canvas is what lets the white panels
      read as raised planes instead of dissolving into the page. */
-  --gs-canvas: #f1f2f5;
+  --gs-canvas: #eceef3;
   --gs-panel: #ffffff;
-  --gs-card: #f7f8fa;
-  --gs-card-border: #e2e5ea;
+  --gs-card: #f4f6f9;
+  --gs-card-border: #dde1e8;
   --gs-border: #e5e7eb;
+  --gs-green-tint-border: #bbf7d0;
   --gs-border-soft: #f0f1f3;
   --gs-border-results: #eceef1;
   --gs-ink: #111827;
@@ -114,9 +115,10 @@
   --gs-canvas: #0f1115;
   /* One visible step above the canvas; cards take a second step so grouped
      controls read as objects on the workspace rather than outlines in it. */
-  --gs-panel: #1a1d24;
-  --gs-card: #21252d;
-  --gs-card-border: #313743;
+  --gs-panel: #1c202a;
+  --gs-card: #242a36;
+  --gs-card-border: #3a4150;
+  --gs-green-tint-border: rgba(34, 197, 94, 0.35);
   --gs-border: #2a2e37;
   --gs-border-soft: #23262d;
   --gs-border-results: #23262d;
@@ -137,6 +139,29 @@
   --gs-seg-active: #f3f4f6;
   --gs-seg-active-ink: #111827;
   --gs-switch-off: #3a3f47;
+}
+
+/* ------- concept zones ---------------------------------------------- */
+/* Each workspace plane carries a concept hue that its structural devices
+   (section ticks, pane-title ticks, card edges, step numbers) inherit:
+   blue = create/input, green = results/output, purple = alchemy's
+   transformation form. One hue per zone, applied through repeated small
+   devices rather than washes, so the coding aids scanning without turning
+   the studio technicolor. */
+.gen-studio .gs-panel {
+  --gs-zone: var(--gs-blue);
+  --gs-zone-tint: var(--gs-blue-tint);
+  --gs-zone-tint-border: var(--gs-blue-tint-border);
+}
+.gen-studio .gs-results {
+  --gs-zone: var(--gs-green);
+  --gs-zone-tint: var(--gs-green-tint);
+  --gs-zone-tint-border: var(--gs-green-tint-border);
+}
+.gen-studio.gs-alchemy .gs-panel {
+  --gs-zone: var(--gs-purple);
+  --gs-zone-tint: var(--gs-purple-tint);
+  --gs-zone-tint-border: var(--gs-purple-tint-border);
 }
 
 /* ------- mono / numeric readouts ------------------------------------ */
@@ -367,7 +392,7 @@
   align-items: center;
   gap: 20px;
   padding: 15px 18px 13px;
-  border-bottom: 1px solid var(--gs-border-soft);
+  border-bottom: 2px solid var(--gs-zone-tint-border, var(--gs-border-soft));
 }
 .gen-studio .gs-title {
   font-weight: 800;
@@ -675,6 +700,7 @@
 /* ------- cards ------------------------------------------------------ */
 .gen-studio .gs-card {
   border: 1px solid var(--gs-card-border);
+  border-left: 3px solid var(--gs-zone-tint-border, var(--gs-card-border));
   border-radius: 10px;
   padding: 12px 13px;
   background: var(--gs-card);
@@ -696,7 +722,24 @@
   width: 3px;
   height: 12px;
   border-radius: 2px;
-  background: var(--gs-blue);
+  background: var(--gs-zone, var(--gs-blue));
+  flex: none;
+}
+/* Pane titles carry a taller tick in their zone hue, echoing the card device
+   one level up the hierarchy. */
+.gen-studio .gs-title,
+.gen-studio .gs-results-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.gen-studio .gs-title::before,
+.gen-studio .gs-results-title::before {
+  content: "";
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--gs-zone, var(--gs-blue));
   flex: none;
 }
 .gen-studio .gs-card-title--sm {
@@ -1123,7 +1166,7 @@
   flex-wrap: wrap;
   gap: 10px 12px;
   padding: 15px 22px;
-  border-bottom: 1px solid var(--gs-border-results);
+  border-bottom: 2px solid var(--gs-zone-tint-border, var(--gs-border-results));
 }
 .gen-studio .gs-results-title {
   font-weight: 700;
@@ -2360,9 +2403,9 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: var(--gs-muted);
-  background: var(--gs-seg-track);
-  border: 1px solid var(--gs-border);
+  color: var(--gs-zone, var(--gs-muted));
+  background: var(--gs-zone-tint, var(--gs-seg-track));
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
 }
 .gen-studio .gs-step-num--done {
   color: #fff;
