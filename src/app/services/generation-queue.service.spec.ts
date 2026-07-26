@@ -234,6 +234,61 @@ describe('GenerationQueueService', () => {
     expect(submittedRequest.source_image).toBe('aGVsbG8=');
   });
 
+  it('rehydrates remix extras into ordered extra_source_images', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    const queue = await createQueue();
+    const localId = await queue.enqueue(
+      {
+        prompt: 'a cat',
+        source_processing: 'remix',
+        extra_source_images: [{ image: 'BIGBASE64' }],
+      },
+      [
+        { kind: 'source', blob: new Blob(['hello']), mimeType: 'image/webp' },
+        {
+          kind: 'extra_source',
+          blob: new Blob(['hello']),
+          mimeType: 'image/webp',
+          strength: 0.5,
+        },
+        {
+          kind: 'extra_source',
+          blob: new Blob(['hello']),
+          mimeType: 'image/webp',
+        },
+      ],
+    );
+
+    expect(
+      fakeDb.jobs.get(localId)?.request.extra_source_images,
+    ).toBeUndefined();
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    const submittedRequest =
+      aiHorde.submitImageGenerationResult.mock.calls[0][1];
+    expect(submittedRequest.extra_source_images).toEqual([
+      { image: 'aGVsbG8=', strength: 0.5 },
+      { image: 'aGVsbG8=' },
+    ]);
+  });
+
+  it('sends no extra_source_images when none were attached', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    expect(
+      aiHorde.submitImageGenerationResult.mock.calls[0][1].extra_source_images,
+    ).toBeUndefined();
+  });
+
   it('respects the concurrency cap, leaving overflow jobs waiting', async () => {
     let counter = 0;
     aiHorde.submitImageGenerationResult.mockImplementation(() =>

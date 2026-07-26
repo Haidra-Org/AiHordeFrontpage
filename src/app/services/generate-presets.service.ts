@@ -3,6 +3,7 @@ import { DatabaseService } from './database.service';
 import {
   GenerateFormValue,
   coerceFormValue,
+  stripEphemeralExtras,
 } from '../pages/generate/generate-form.model';
 
 /** A user-named, saved set of generate-form settings. */
@@ -28,7 +29,9 @@ const RECENT_LIMIT = 12;
  * recently-submitted settings. Both persist through {@link DatabaseService} and
  * are exposed as signals so the form's presets menu updates reactively. Values
  * are run through {@link coerceFormValue} on load so a stale payload can never
- * corrupt the form.
+ * corrupt the form, and through {@link stripEphemeralExtras} on the way in: a
+ * preset is persistence like any other, so the webhook and worker routing are
+ * only written when the user has opted into remembering them.
  */
 @Injectable({ providedIn: 'root' })
 export class GeneratePresetsService {
@@ -47,7 +50,7 @@ export class GeneratePresetsService {
     const preset: SavedPreset = {
       id: `${Date.now()}-${this.idCounter++}`,
       name: name.trim() || 'Untitled',
-      value,
+      value: stripEphemeralExtras(value),
       createdAt: Date.now(),
     };
     const next = [preset, ...this.presets()];
@@ -67,12 +70,16 @@ export class GeneratePresetsService {
    * skipping an exact repeat of the newest entry and capping the list length.
    */
   public pushRecent(value: GenerateFormValue): void {
+    const stored = stripEphemeralExtras(value);
     const current = this.recent();
-    const signature = JSON.stringify(value);
+    const signature = JSON.stringify(stored);
     if (current.length > 0 && JSON.stringify(current[0].value) === signature) {
       return;
     }
-    const next = [{ value, at: Date.now() }, ...current].slice(0, RECENT_LIMIT);
+    const next = [{ value: stored, at: Date.now() }, ...current].slice(
+      0,
+      RECENT_LIMIT,
+    );
     this.recent.set(next);
     this.db.store(RECENT_KEY, next);
   }

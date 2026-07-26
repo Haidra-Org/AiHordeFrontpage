@@ -42,12 +42,15 @@ import {
   MAX_HIRES_DENOISE,
   MAX_LORA_STRENGTH,
   MAX_SEED_VARIATION,
+  MAX_WEBHOOK_LENGTH,
+  MAX_WORKERS,
   MIN_BATCH,
   MIN_DIMENSION,
   MIN_FACEFIXER_STRENGTH,
   MIN_HIRES_DENOISE,
   MIN_LORA_STRENGTH,
   MIN_SEED_VARIATION,
+  MIN_WEBHOOK_LENGTH,
   DIMENSION_STEP,
   ModelSizeBase,
   PanelSize,
@@ -61,6 +64,8 @@ import {
   buildAspectPresets,
   cyclePanelSize,
   detachedStyleSections,
+  isValidWebhook,
+  normalizeWorkers,
 } from '../generate-form.model';
 
 // Re-exported for the parent page, which has always imported the picker group
@@ -116,6 +121,13 @@ export class GenerateFormComponent implements OnInit {
   public readonly expandable = input(true);
   /** Recent distinct prompts for the quick-pick, newest first. */
   public readonly promptHistory = input<readonly PromptHistoryEntry[]>([]);
+  /**
+   * Whether the selected model's baseline can serve the `qr_code` workflow.
+   * Null means the caller has no answer (no model picked, or the model
+   * reference has not loaded), in which case the control stays usable: gating
+   * is guidance, and an unknown baseline must not lock the user out of it.
+   */
+  public readonly qrSupported = input<boolean | null>(null);
 
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
@@ -130,15 +142,27 @@ export class GenerateFormComponent implements OnInit {
   /** The presets popover's anchor, used to detect click-away dismissals. */
   private readonly presetsRef =
     viewChild<ElementRef<HTMLElement>>('presetsContainer');
+  /** The presets toggle, so the parent's load panel can hand focus back to it. */
+  private readonly presetsBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('presetsBtn');
   /** The style select, so clearing the style can hand focus back to it. */
   private readonly styleSelect =
     viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
 
   /** Whether the prompt-history quick-pick popover is open. */
   public readonly historyOpen = signal(false);
+  /**
+   * Which history row has its full text pinned open, by position. Hover and
+   * focus reveal the same block in CSS; this is the explicit toggle, which is
+   * the only route available on touch.
+   */
+  public readonly historyDetail = signal<number | null>(null);
   /** The history popover's anchor, used to detect click-away dismissals. */
   private readonly historyRef =
     viewChild<ElementRef<HTMLElement>>('historyContainer');
+  /** The history toggle, so dismissing with a key hands focus back to it. */
+  private readonly historyBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
   /** The prompt box, so a picked history entry or starter prompt can focus it. */
   private readonly promptInput =
     viewChild<ElementRef<HTMLTextAreaElement>>('promptInput');
@@ -161,6 +185,9 @@ export class GenerateFormComponent implements OnInit {
   public readonly maxSeedVariation = MAX_SEED_VARIATION;
   public readonly minLoraStrength = MIN_LORA_STRENGTH;
   public readonly maxLoraStrength = MAX_LORA_STRENGTH;
+  public readonly maxWorkers = MAX_WORKERS;
+  public readonly minWebhookLength = MIN_WEBHOOK_LENGTH;
+  public readonly maxWebhookLength = MAX_WEBHOOK_LENGTH;
 
   public readonly negativePromptOpen = signal(false);
   public readonly customSizeOpen = signal(false);
@@ -169,13 +196,63 @@ export class GenerateFormComponent implements OnInit {
   /** Whether the style preview browser is open. */
   public readonly styleBrowserOpen = signal(false);
 
-  /** Transloco keys for the planned-but-unavailable extras, one badge each. */
-  public readonly plannedExtras = [
-    'generate.form.extra_qr',
-    'generate.form.extra_webhook',
-    'generate.form.extra_worker_target',
-    'generate.form.extra_remix',
-  ];
+  /** Whether the QR-code control accepts input; unknown support reads as yes. */
+  public readonly qrAllowed = computed(() => this.qrSupported() !== false);
+
+  /** The worker ID typed into the add field, before it joins the list. */
+  public readonly workerDraft = signal('');
+
+  /** The worker IDs the request is currently pinned to. */
+  public workerList(): readonly string[] {
+    return this.form().controls.workers.value;
+  }
+
+  public canAddWorker(): boolean {
+    return (
+      this.workerDraft().trim() !== '' && this.workerList().length < MAX_WORKERS
+    );
+  }
+
+  /**
+   * Move the drafted worker ID into the list. `normalizeWorkers` is what the
+   * request builder applies too, so a duplicate or over-cap entry is dropped
+   * here rather than silently disappearing at submit time.
+   */
+  public addWorker(): void {
+    if (!this.canAddWorker()) {
+      return;
+    }
+    const control = this.form().controls.workers;
+    control.setValue(normalizeWorkers([...control.value, this.workerDraft()]));
+    this.workerDraft.set('');
+  }
+
+  public removeWorker(index: number): void {
+    const control = this.form().controls.workers;
+    control.setValue(control.value.filter((_, position) => position !== index));
+  }
+
+  public setWorkerBlacklist(blacklist: boolean): void {
+    this.form().controls.workerBlacklist.setValue(blacklist);
+  }
+
+  /** Whether the typed webhook would be dropped from the request as malformed. */
+  public webhookInvalid(): boolean {
+    const webhook = this.form().controls.webhook.value.trim();
+    return webhook !== '' && !isValidWebhook(webhook);
+  }
+
+  /**
+   * Whether to warn that a QR batch will not be batched. The horde forces
+   * `disable_batching` on for the `qr_code` workflow, so asking for more than
+   * one image costs the time of that many separate jobs.
+   */
+  public qrBatchNoteVisible(): boolean {
+    return (
+      this.form().controls.qrText.value.trim() !== '' &&
+      this.form().controls.n.value > 1
+    );
+  }
 
   /** Deterministic gradient for a LoRA/TI chip, cycled by list position. */
   public addonGradient(index: number): string {
@@ -711,19 +788,36 @@ export class GenerateFormComponent implements OnInit {
     if (this.presetsOpen()) {
       this.closePresets();
     }
-    if (this.historyOpen()) {
-      this.closeHistory();
+    if (!this.historyOpen()) {
+      return;
     }
+    // An expanded row is dismissed first: escape backs out one layer at a time
+    // rather than taking the whole popover with it.
+    if (this.historyDetail() !== null) {
+      this.historyDetail.set(null);
+      return;
+    }
+    this.closeHistory();
+    this.historyBtn()?.nativeElement.focus();
   }
 
   // --- Prompt history quick-pick -------------------------------------------
 
   public toggleHistory(): void {
     this.historyOpen.update((open) => !open);
+    if (!this.historyOpen()) {
+      this.historyDetail.set(null);
+    }
   }
 
   public closeHistory(): void {
     this.historyOpen.set(false);
+    this.historyDetail.set(null);
+  }
+
+  /** Pin or unpin one row's full prompt; only one is ever open. */
+  public toggleHistoryDetail(index: number): void {
+    this.historyDetail.update((open) => (open === index ? null : index));
   }
 
   /**
@@ -778,10 +872,15 @@ export class GenerateFormComponent implements OnInit {
     this.toast.success('generate.form.preset_saved', { transloco: true });
   }
 
-  /** Load a saved/recent preset: hand it to the parent for confirm + apply. */
+  /** Load a saved/recent preset: hand it to the parent for review + apply. */
   public loadPreset(value: GenerateFormValue): void {
     this.applySettings.emit(value);
     this.closePresets();
+  }
+
+  /** Return focus to the presets toggle once the parent's load panel closes. */
+  public focusPresetsButton(): void {
+    this.presetsBtn()?.nativeElement.focus();
   }
 
   public deletePreset(id: string, event: Event): void {

@@ -9,8 +9,18 @@ import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import { StyleUsageService } from '../../services/style-usage.service';
+import {
+  ModelBaselineMap,
+  ModelReferenceService,
+  baselineSupportsQrCode,
+  baselineSupportsRemix,
+} from '../../services/model-reference.service';
 import { ImageGenerationRequest } from '../../types/generation';
 import { LocalGenerationJob } from '../../types/generation-job';
+import {
+  DEFAULT_GENERATE_FORM_VALUE,
+  GenerateFormValue,
+} from './generate-form.model';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -22,6 +32,7 @@ describe('GenerateComponent', () => {
   let styleIncrement: ReturnType<typeof vi.fn>;
   let getJobImages: ReturnType<typeof vi.fn>;
   let jobs: WritableSignal<LocalGenerationJob[]>;
+  let baselines: WritableSignal<ModelBaselineMap | null>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -31,6 +42,7 @@ describe('GenerateComponent', () => {
     styleIncrement = vi.fn();
     getJobImages = vi.fn().mockResolvedValue([]);
     jobs = signal<LocalGenerationJob[]>([]);
+    baselines = signal<ModelBaselineMap | null>(null);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -49,6 +61,19 @@ describe('GenerateComponent', () => {
           },
         },
         { provide: StyleUsageService, useValue: { increment: styleIncrement } },
+        {
+          // Stubbed rather than stubbing HttpClient, so a test can publish a
+          // baseline map and drive the remix/QR gating directly.
+          provide: ModelReferenceService,
+          useValue: {
+            baselines,
+            load: () => undefined,
+            supportsRemix: (model: string) =>
+              baselineSupportsRemix(baselines()?.[model] ?? null),
+            supportsQrCode: (model: string) =>
+              baselineSupportsQrCode(baselines()?.[model] ?? null),
+          },
+        },
         {
           provide: ToastService,
           useValue: { success: toastSuccess, error: toastError },
@@ -234,6 +259,162 @@ describe('GenerateComponent', () => {
     expect(sources.map((s) => s.kind)).toEqual(['source', 'mask']);
     expect(sources[0].blob).toBe(sourceBlob);
     expect(sources[1].blob).toBe(maskBlob);
+  });
+
+  it('passes remix extras to enqueue alongside the source image', async () => {
+    const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
+    const first = new Blob([new Uint8Array([2])], { type: 'image/webp' });
+    const second = new Blob([new Uint8Array([3])], { type: 'image/webp' });
+    component.form.patchValue({
+      mode: 'advanced',
+      prompt: 'remix these',
+      sourceMode: 'remix',
+    });
+    component.sourceState.set({
+      mode: 'remix',
+      sourceBlob,
+      maskBlob: null,
+      extras: [
+        { blob: first, strength: 1 },
+        { blob: second, strength: 0.5 },
+      ],
+      valid: true,
+    });
+
+    await component.onCreate();
+
+    const [request, sources] = enqueue.mock.calls[0] as [
+      ImageGenerationRequest,
+      { kind: string; blob: Blob; index?: number; strength?: number }[],
+    ];
+    expect(request.source_processing).toBe('remix');
+    expect(sources.map((source) => source.kind)).toEqual([
+      'source',
+      'extra_source',
+      'extra_source',
+    ]);
+    expect(sources[1]).toMatchObject({ blob: first, index: 0, strength: 1 });
+    expect(sources[2]).toMatchObject({ blob: second, index: 1, strength: 0.5 });
+  });
+
+  it('leaves remix extras out of enqueue when the mode is not remix', async () => {
+    const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
+    component.form.patchValue({
+      mode: 'advanced',
+      prompt: 'img2img',
+      sourceMode: 'img2img',
+    });
+    component.sourceState.set({
+      mode: 'img2img',
+      sourceBlob,
+      maskBlob: null,
+      extras: [{ blob: new Blob([new Uint8Array([2])]), strength: 1 }],
+      valid: true,
+    });
+
+    await component.onCreate();
+
+    const sources = enqueue.mock.calls[0][1] as { kind: string }[];
+    expect(sources.map((source) => source.kind)).toEqual(['source']);
+  });
+
+  describe('extras persistence', () => {
+    const storageKey = 'aihorde.generate.form';
+
+    const persistedValue = (): Partial<GenerateFormValue> => {
+      const raw = localStorage.getItem(storageKey);
+      return raw === null ? {} : (JSON.parse(raw) as GenerateFormValue);
+    };
+
+    it('keeps the webhook and worker routing out of storage by default', () => {
+      vi.useFakeTimers();
+      component.form.patchValue({
+        webhook: 'https://example.com/hook',
+        workers: ['worker-a'],
+        workerBlacklist: true,
+        qrText: 'https://aihorde.net',
+      });
+      vi.advanceTimersByTime(1000);
+
+      expect(persistedValue()).toMatchObject({
+        webhook: '',
+        workers: [],
+        workerBlacklist: false,
+        // The QR text is creative input, not routing, so it always persists.
+        qrText: 'https://aihorde.net',
+      });
+    });
+
+    it('persists them once the user opts in', () => {
+      vi.useFakeTimers();
+      component.form.patchValue({
+        rememberExtras: true,
+        webhook: 'https://example.com/hook',
+        workers: ['worker-a'],
+        workerBlacklist: true,
+      });
+      vi.advanceTimersByTime(1000);
+
+      expect(persistedValue()).toMatchObject({
+        webhook: 'https://example.com/hook',
+        workers: ['worker-a'],
+        workerBlacklist: true,
+      });
+    });
+  });
+
+  describe('model capability gating', () => {
+    it('stays permissive while the reference has not loaded', () => {
+      component.form.controls.model.setValue('AlbedoBase XL (SDXL)');
+
+      expect(component.remixSupported()).toBeNull();
+      expect(component.qrSupported()).toBeNull();
+    });
+
+    it('stays permissive when no model is selected', () => {
+      baselines.set({ 'Stable Cascade 1.0': 'stable_cascade' });
+
+      expect(component.remixSupported()).toBeNull();
+      expect(component.qrSupported()).toBeNull();
+    });
+
+    it('answers per baseline once the reference is known', () => {
+      baselines.set({
+        'Stable Cascade 1.0': 'stable_cascade',
+        'AlbedoBase XL (SDXL)': 'stable_diffusion_xl',
+      });
+
+      component.form.controls.model.setValue('Stable Cascade 1.0');
+      expect(component.remixSupported()).toBe(true);
+      expect(component.qrSupported()).toBe(false);
+
+      component.form.controls.model.setValue('AlbedoBase XL (SDXL)');
+      expect(component.remixSupported()).toBe(false);
+      expect(component.qrSupported()).toBe(true);
+    });
+
+    it('strips a stale qrText from built requests when the model cannot serve it', () => {
+      baselines.set({
+        'Stable Cascade 1.0': 'stable_cascade',
+        'AlbedoBase XL (SDXL)': 'stable_diffusion_xl',
+      });
+      component.form.patchValue({
+        mode: 'advanced',
+        prompt: 'a castle on a hill',
+        model: 'AlbedoBase XL (SDXL)',
+        qrText: 'https://haidra.net',
+      });
+
+      component.openPreview();
+      const supported = component.previewRequest() as ImageGenerationRequest;
+      expect(supported.params?.workflow).toBe('qr_code');
+
+      component.form.controls.model.setValue('Stable Cascade 1.0');
+      component.openPreview();
+      const unsupported = component.previewRequest() as ImageGenerationRequest;
+      expect(unsupported.params?.workflow).toBeUndefined();
+      expect(unsupported.params?.extra_texts).toBeUndefined();
+    });
   });
 
   it('submits advanced-only fields at their defaults in simple mode', async () => {
@@ -571,6 +752,75 @@ describe('GenerateComponent', () => {
         { prompt: 'a castle', negativePrompt: 'blurry' },
         { prompt: 'a fox', negativePrompt: '' },
       ]);
+    });
+  });
+
+  describe('preset load', () => {
+    const preset = (): GenerateFormValue => ({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a castle',
+      steps: 42,
+      n: 4,
+      clip_skip: 3,
+      tiling: true,
+    });
+
+    it('holds the picked preset as a request for review', () => {
+      component.onApplyPreset(preset());
+      expect(component.pendingLoadRequest()?.prompt).toBe('a castle');
+    });
+
+    it('keeps fields the review panel never offers and resets the declined ones', () => {
+      const value = preset();
+      component.onApplyPreset(value);
+
+      component.onApplyPresetSelection(
+        { localId: '', keys: ['prompt'], mode: 'replace' },
+        ['prompt', 'steps'],
+      );
+
+      const applied = component.form.getRawValue();
+      expect(applied.prompt).toBe('a castle');
+      // Declined, so back to the default rather than the preset's 42.
+      expect(applied.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+      // Never on offer, so they come back with the preset.
+      expect(applied.n).toBe(4);
+      expect(applied.clip_skip).toBe(3);
+      expect(applied.tiling).toBe(true);
+      expect(component.pendingLoadRequest()).toBeNull();
+    });
+
+    it('writes only the ticked fields in overlay mode and drops the style', () => {
+      component.form.patchValue({
+        prompt: 'a fox',
+        n: 2,
+        styleName: 'Test',
+        mode: 'simple',
+      });
+      component.onApplyPreset(preset());
+
+      component.onApplyPresetSelection(
+        { localId: '', keys: ['steps'], mode: 'overlay' },
+        ['prompt', 'steps'],
+      );
+
+      const applied = component.form.getRawValue();
+      expect(applied.steps).toBe(42);
+      expect(applied.prompt).toBe('a fox');
+      expect(applied.n).toBe(2);
+      expect(applied.styleName).toBe('');
+      expect(applied.mode).toBe('advanced');
+    });
+
+    it('leaves the form alone when the review is dismissed', () => {
+      component.form.patchValue({ prompt: 'a fox' });
+      component.onApplyPreset(preset());
+
+      component.cancelLoad();
+
+      expect(component.pendingLoadRequest()).toBeNull();
+      expect(component.form.getRawValue().prompt).toBe('a fox');
     });
   });
 });

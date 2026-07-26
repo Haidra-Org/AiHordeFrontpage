@@ -102,6 +102,11 @@ export class ImageMetaPanelComponent {
   public readonly defaultMode = input<MetaApplyMode>('replace');
   /** Whether the host keeps this panel open across images. */
   public readonly pinned = input(false);
+  /** Whether pinning is on offer at all; hosts with nothing to pin turn it off. */
+  public readonly pinnable = input(true);
+  /** The panel's heading, so hosts that review something other than an image
+   * can say what it is. */
+  public readonly titleKey = input('generate.results.metadata_title');
 
   public readonly apply = output<MetaApplyEvent>();
   public readonly closed = output<void>();
@@ -461,6 +466,21 @@ export class ImageMetaPanelComponent {
   });
 
   public readonly selectedCount = computed(() => this.selectedKeys().length);
+
+  /**
+   * Every form field this panel puts on offer, selected or not. A host applying
+   * the selection over a value of its own needs this to tell the fields the user
+   * declined from the ones the panel never showed them.
+   */
+  public readonly offeredKeys = computed<(keyof GenerateFormValue)[]>(() => {
+    const keys: (keyof GenerateFormValue)[] = [];
+    for (const group of this.groups()) {
+      for (const row of group.rows) {
+        keys.push(...row.keys);
+      }
+    }
+    return keys;
+  });
 
   /**
    * Rows whose incoming value is not what the form currently holds. Only

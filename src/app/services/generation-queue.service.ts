@@ -14,13 +14,16 @@ import { GenerationDbService } from './generation-db.service';
 import {
   GENERATION_NOT_FOUND,
   GenerationOutput,
+  ImageExtraSourceImage,
   ImageGenerationRequest,
 } from '../types/generation';
 import {
   EnqueueSourceImage,
   LocalGenerationJob,
   LocalGenerationJobStatus,
+  MAX_EXTRA_SOURCE_IMAGES,
   StoredJobImage,
+  extraSourceImageId,
 } from '../types/generation-job';
 import { base64ToBlob, blobToBase64 } from '../helper/blob-base64';
 import { randomUuid } from '../helper/random-uuid';
@@ -133,9 +136,10 @@ export class GenerationQueueService {
   // ---------------------------------------------------------------------------
 
   /**
-   * Persist a job as `waiting` along with any source/mask blobs. The request is
-   * stored without its base64 `source_image` / `source_mask`; those are
-   * rehydrated from the stored blobs when the job is submitted.
+   * Persist a job as `waiting` along with any source/mask/remix-extra blobs. The
+   * request is stored without its base64 `source_image` / `source_mask` /
+   * `extra_source_images`; those are rehydrated from the stored blobs when the
+   * job is submitted.
    */
   public async enqueue(
     request: ImageGenerationRequest,
@@ -147,6 +151,7 @@ export class GenerationQueueService {
     const storedRequest: ImageGenerationRequest = { ...request };
     delete storedRequest.source_image;
     delete storedRequest.source_mask;
+    delete storedRequest.extra_source_images;
 
     const job: LocalGenerationJob = {
       localId,
@@ -160,14 +165,29 @@ export class GenerationQueueService {
     };
 
     await this.db.putJob(job);
+    let extraIndex = 0;
     for (const source of sourceImages ?? []) {
+      const isExtra = source.kind === 'extra_source';
+      if (isExtra && extraIndex >= MAX_EXTRA_SOURCE_IMAGES) {
+        continue;
+      }
       await this.db.putImage({
         localId,
-        imageId: source.kind,
+        // Extras are slotted in the order they arrive unless the caller pinned
+        // an index; the slot is what buildSubmitRequest walks to rebuild them.
+        imageId: isExtra
+          ? extraSourceImageId(source.index ?? extraIndex)
+          : source.kind,
         kind: source.kind,
         blob: source.blob,
         mimeType: source.mimeType,
+        ...(isExtra && source.strength !== undefined
+          ? { strength: source.strength }
+          : {}),
       });
+      if (isExtra) {
+        extraIndex++;
+      }
     }
     this.addToState(job);
     return localId;
@@ -372,7 +392,33 @@ export class GenerationQueueService {
     if (mask) {
       request.source_mask = await blobToBase64(mask.blob);
     }
+    const extras = await this.readExtraSourceImages(job.localId);
+    if (extras.length > 0) {
+      request.extra_source_images = extras;
+    }
     return request;
+  }
+
+  /**
+   * Rebuild a remix job's `extra_source_images` from its stored blobs. Slots are
+   * walked in order and the first gap ends the list, so the array the horde
+   * receives matches the order the user attached the images in.
+   */
+  private async readExtraSourceImages(
+    localId: string,
+  ): Promise<ImageExtraSourceImage[]> {
+    const extras: ImageExtraSourceImage[] = [];
+    for (let index = 0; index < MAX_EXTRA_SOURCE_IMAGES; index++) {
+      const stored = await this.db.getImage(localId, extraSourceImageId(index));
+      if (!stored) {
+        break;
+      }
+      extras.push({
+        image: await blobToBase64(stored.blob),
+        ...(stored.strength !== undefined ? { strength: stored.strength } : {}),
+      });
+    }
+    return extras;
   }
 
   // ---------------------------------------------------------------------------

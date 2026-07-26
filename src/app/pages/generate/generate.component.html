@@ -27,6 +27,7 @@
       [panelSize]="panelSize()"
       [expandable]="!embedded()"
       [promptHistory]="promptHistory()"
+      [qrSupported]="qrSupported()"
       (panelSizeChange)="panelSize.set($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
@@ -36,6 +37,7 @@
         generateSourceImage
         [form]="form"
         [showValidation]="sourceValidationVisible()"
+        [remixSupported]="remixSupported()"
         (stateChange)="onSourceState($event)"
       />
     </app-generate-form>
@@ -77,36 +79,26 @@
     />
   }
 
-  @if (loadConfirmOpen()) {
+  @if (pendingLoadRequest(); as request) {
+    <!-- A preset is reviewed the same way a past generation's settings are: the
+         same panel, a sheet on phones and a centred panel on desktop. -->
     <div
-      class="gs-modal-overlay"
+      class="gs-meta-host"
       (click)="onLoadBackdrop($event)"
       (keydown.escape)="cancelLoad()"
-      role="dialog"
-      aria-modal="true"
       tabindex="0"
     >
-      <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
-        <div class="gs-modal-header">
-          <div class="gs-modal-title">
-            <app-icon name="arrow-down-tray" class="gs-ico-sm" />
-            {{ "generate.form.load_confirm_title" | transloco }}
-          </div>
-        </div>
-        <div class="gs-modal-body">
-          <p class="gs-confirm-text">
-            {{ "generate.form.load_confirm_body" | transloco }}
-          </p>
-        </div>
-        <div class="gs-modal-footer">
-          <button type="button" class="gs-tile-btn" (click)="cancelLoad()">
-            {{ "generate.form.load_confirm_cancel" | transloco }}
-          </button>
-          <button type="button" class="gs-modal-done" (click)="confirmLoad()">
-            {{ "generate.form.load_confirm_action" | transloco }}
-          </button>
-        </div>
-      </div>
+      <app-image-meta-panel
+        #presetMeta
+        [request]="request"
+        [currentValue]="formValue()"
+        [titleKey]="'generate.form.load_title'"
+        [pinnable]="false"
+        [defaultMode]="'replace'"
+        (apply)="onApplyPresetSelection($event, presetMeta.offeredKeys())"
+        (rawJson)="previewRequest.set(request)"
+        (closed)="cancelLoad()"
+      />
     </div>
   }
 </div>

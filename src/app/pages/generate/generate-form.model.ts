@@ -80,13 +80,16 @@ export const MAX_BATCH = 10;
 /**
  * How a source image is used, if one is attached. `none` is plain txt2img.
  * `controlnet` reuses the horde's `img2img` source-processing with a
- * `control_type` set; `inpainting` additionally carries a paint mask.
+ * `control_type` set; `inpainting` additionally carries a paint mask; `remix`
+ * blends the source with a handful of extra source images and is only served by
+ * Stable Cascade models.
  */
 export const SOURCE_MODES = [
   'none',
   'img2img',
   'controlnet',
   'inpainting',
+  'remix',
 ] as const;
 export type GenerateSourceMode = (typeof SOURCE_MODES)[number];
 
@@ -142,6 +145,44 @@ export const DEFAULT_FACEFIXER_STRENGTH = 0.75;
 
 export const MIN_SEED_VARIATION = 1;
 export const MAX_SEED_VARIATION = 1000;
+
+/**
+ * Blend weight of one remix extra source image. The horde schema documents no
+ * bounds beyond a default of 1, so the slider is capped at that default and
+ * floored just above zero, where the image would stop contributing.
+ */
+export const MIN_EXTRA_SOURCE_STRENGTH = 0.05;
+export const MAX_EXTRA_SOURCE_STRENGTH = 1;
+export const EXTRA_SOURCE_STRENGTH_STEP = 0.05;
+export const DEFAULT_EXTRA_SOURCE_STRENGTH = 1;
+
+/** The horde services at most this many named workers per request. */
+export const MAX_WORKERS = 5;
+
+/** Schema bounds on the webhook URL the horde POSTs each generation to. */
+export const MIN_WEBHOOK_LENGTH = 10;
+export const MAX_WEBHOOK_LENGTH = 1024;
+
+const WEBHOOK_PATTERN = /^https?:\/\/\S+$/i;
+
+/**
+ * Whether a webhook string is one the horde will accept: an http(s) URL within
+ * the schema's length bounds. A malformed webhook fails the horde's validation
+ * and rejects the whole request, so {@link buildImageRequest} drops anything
+ * this rejects; the form's inline hint reads the same predicate so the two can
+ * never drift apart.
+ */
+export function isValidWebhook(webhook: string): boolean {
+  const trimmed = webhook.trim();
+  return (
+    trimmed.length >= MIN_WEBHOOK_LENGTH &&
+    trimmed.length <= MAX_WEBHOOK_LENGTH &&
+    WEBHOOK_PATTERN.test(trimmed)
+  );
+}
+
+/** The `extra_texts` reference the `qr_code` workflow reads its payload from. */
+export const QR_CODE_TEXT_REFERENCE = 'qr_code';
 
 export const MIN_HIRES_DENOISE = 0.01;
 export const MAX_HIRES_DENOISE = 1;
@@ -304,6 +345,21 @@ export interface GenerateFormValue {
   /** Route suspicious prompts through the replacement filter (horde default on). */
   replacement_filter: boolean;
   disable_batching: boolean;
+  /** URL the horde POSTs each finished generation to; '' disables the webhook. */
+  webhook: string;
+  /** Up to {@link MAX_WORKERS} worker names to pin the request to. */
+  workers: string[];
+  /** Treat {@link GenerateFormValue.workers} as a blacklist instead of a whitelist. */
+  workerBlacklist: boolean;
+  /** Payload for the `qr_code` workflow; '' leaves the workflow unset. */
+  qrText: string;
+  /**
+   * Opt-in to persisting the webhook and worker routing between sessions. These
+   * carry account-shaped detail that should not linger in local storage unless
+   * the user asks for it, so {@link stripEphemeralExtras} blanks them on the way
+   * out when this is off.
+   */
+  rememberExtras: boolean;
 }
 
 export type GenerateFormControls = {
@@ -351,7 +407,50 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   extra_slow_workers: false,
   replacement_filter: true,
   disable_batching: false,
+  webhook: '',
+  workers: [],
+  workerBlacklist: false,
+  qrText: '',
+  rememberExtras: false,
 };
+
+/**
+ * Normalise a worker list: trimmed, de-duplicated, blanks dropped, capped at
+ * {@link MAX_WORKERS}. Applied both when loading a persisted list and when
+ * building a request, so neither path can send a list the horde will reject.
+ */
+export function normalizeWorkers(raw: readonly string[]): string[] {
+  const seen = new Set<string>();
+  for (const entry of raw) {
+    const name = entry.trim();
+    if (name !== '') {
+      seen.add(name);
+    }
+    if (seen.size === MAX_WORKERS) {
+      break;
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * The form snapshot as it should be persisted. Without an explicit opt-in the
+ * webhook and worker routing are session-only, so they are blanked here rather
+ * than at the call site.
+ */
+export function stripEphemeralExtras(
+  value: GenerateFormValue,
+): GenerateFormValue {
+  if (value.rememberExtras) {
+    return value;
+  }
+  return {
+    ...value,
+    webhook: DEFAULT_GENERATE_FORM_VALUE.webhook,
+    workers: [],
+    workerBlacklist: DEFAULT_GENERATE_FORM_VALUE.workerBlacklist,
+  };
+}
 
 function clampNumber(
   value: unknown,
@@ -562,6 +661,20 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       );
       continue;
     }
+    if (key === 'workers') {
+      if (Array.isArray(value)) {
+        merged.workers = normalizeWorkers(
+          value.filter((item): item is string => typeof item === 'string'),
+        );
+      }
+      continue;
+    }
+    if (key === 'webhook') {
+      if (typeof value === 'string') {
+        merged.webhook = value.slice(0, MAX_WEBHOOK_LENGTH);
+      }
+      continue;
+    }
     if (key === 'seed_variation') {
       merged.seed_variation = Math.round(
         clampNumber(
@@ -625,6 +738,11 @@ export function createGenerateForm(
     extra_slow_workers: control(value.extra_slow_workers),
     replacement_filter: control(value.replacement_filter),
     disable_batching: control(value.disable_batching),
+    webhook: control(value.webhook),
+    workers: control(value.workers),
+    workerBlacklist: control(value.workerBlacklist),
+    qrText: control(value.qrText),
+    rememberExtras: control(value.rememberExtras),
   });
 }
 
@@ -843,7 +961,18 @@ export function buildImageRequest(
         sourceProcessing = 'inpainting';
         params.denoising_strength = value.denoising_strength;
         break;
+      // Remix weights its inputs through per-image `extra_source_images`
+      // strengths rather than a denoise pass, so no denoising_strength is sent.
+      case 'remix':
+        sourceProcessing = 'remix';
+        break;
     }
+  }
+
+  const qrText = value.qrText.trim();
+  if (qrText) {
+    params.workflow = 'qr_code';
+    params.extra_texts = [{ text: qrText, reference: QR_CODE_TEXT_REFERENCE }];
   }
 
   const request: ImageGenerationRequest = {
@@ -875,6 +1004,17 @@ export function buildImageRequest(
   }
   if (value.disable_batching) {
     request.disable_batching = true;
+  }
+
+  const webhook = value.webhook.trim();
+  if (isValidWebhook(webhook)) {
+    request.webhook = webhook;
+  }
+
+  const workers = normalizeWorkers(value.workers);
+  if (workers.length > 0) {
+    request.workers = workers;
+    request.worker_blacklist = value.workerBlacklist;
   }
 
   const model = value.model.trim();
@@ -1061,10 +1201,33 @@ export function requestToFormValue(
 
   if (request.source_processing === 'inpainting') {
     result.sourceMode = 'inpainting';
+  } else if (request.source_processing === 'remix') {
+    result.sourceMode = 'remix';
   } else if (request.source_processing === 'img2img') {
     result.sourceMode = params.control_type ? 'controlnet' : 'img2img';
   } else {
     result.sourceMode = 'none';
+  }
+
+  if (typeof request.webhook === 'string') {
+    result.webhook = request.webhook;
+  }
+  if (Array.isArray(request.workers)) {
+    result.workers = normalizeWorkers(
+      request.workers.filter(
+        (item): item is string => typeof item === 'string',
+      ),
+    );
+  }
+  result.workerBlacklist = request.worker_blacklist === true;
+
+  if (Array.isArray(params.extra_texts)) {
+    const qr = params.extra_texts.find(
+      (entry) => entry.reference === QR_CODE_TEXT_REFERENCE,
+    );
+    if (qr && typeof qr.text === 'string') {
+      result.qrText = qr.text;
+    }
   }
 
   return result;

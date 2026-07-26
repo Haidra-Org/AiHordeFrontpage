@@ -19,13 +19,18 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ImageControlType } from '../../../types/generation';
+import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
 import {
   CONTROL_TYPES,
+  DEFAULT_EXTRA_SOURCE_STRENGTH,
   DENOISE_STEP,
+  EXTRA_SOURCE_STRENGTH_STEP,
   GenerateFormGroup,
   GenerateSourceMode,
   MAX_DENOISE,
+  MAX_EXTRA_SOURCE_STRENGTH,
   MIN_DENOISE,
+  MIN_EXTRA_SOURCE_STRENGTH,
   SOURCE_MODES,
 } from '../generate-form.model';
 import {
@@ -35,16 +40,35 @@ import {
   fileToSourceImage,
 } from '../../../helper/source-image';
 
+/** One remix extra source image, in the order it is submitted. */
+export interface GenerateSourceExtra {
+  blob: Blob;
+  strength: number;
+}
+
 /**
  * Snapshot the parent page needs to gate Create and hand blobs to the queue.
- * `sourceBlob`/`maskBlob` are the raw blobs (webp source, png mask); `valid`
- * summarises whether the current mode has everything it needs.
+ * `sourceBlob`/`maskBlob` are the raw blobs (webp source, png mask); `extras`
+ * carries the remix blend inputs; `valid` summarises whether the current mode
+ * has everything it needs.
  */
 export interface GenerateSourceState {
   mode: GenerateSourceMode;
   sourceBlob: Blob | null;
   maskBlob: Blob | null;
+  /**
+   * Always set by this component (empty outside remix), but optional so a
+   * caller can still write a source state literal without it.
+   */
+  extras?: GenerateSourceExtra[];
   valid: boolean;
+}
+
+/** A remix extra held locally, with the object URL its thumbnail renders from. */
+interface RemixExtra {
+  image: SourceImage;
+  strength: number;
+  previewUrl: string;
 }
 
 const DEFAULT_BRUSH = 40;
@@ -53,10 +77,11 @@ const MAX_BRUSH = 200;
 
 /**
  * The /generate source-image section, projected into the form's
- * `[generateSourceImage]` slot. Drives the img2img / controlnet / inpainting
- * controls bound to the parent form, owns the uploaded source blob and (for
- * inpainting) a paint-mask canvas, and emits a {@link GenerateSourceState} so
- * the page can gate submission and enqueue the blobs.
+ * `[generateSourceImage]` slot. Drives the img2img / controlnet / inpainting /
+ * remix controls bound to the parent form, owns the uploaded source blob, the
+ * remix extra images, and (for inpainting) a paint-mask canvas, and emits a
+ * {@link GenerateSourceState} so the page can gate submission and enqueue the
+ * blobs.
  *
  * Browser-only work (decode, canvas, object URLs) is guarded; the page is
  * RenderMode.Client but the guards keep the component inert under SSR.
@@ -75,6 +100,13 @@ export class GenerateSourceImageComponent implements OnInit {
   /** When true, show a validation hint for whatever the current mode lacks. */
   public readonly showValidation = input(false);
   public readonly disabled = input(false);
+  /**
+   * Whether the selected model's baseline can serve a remix request. Null means
+   * the caller has no answer (no model picked, or the model reference has not
+   * loaded), in which case the mode stays offered: gating is guidance, and an
+   * unknown baseline must not lock the user out of it.
+   */
+  public readonly remixSupported = input<boolean | null>(null);
 
   public readonly stateChange = output<GenerateSourceState>();
 
@@ -85,12 +117,20 @@ export class GenerateSourceImageComponent implements OnInit {
   public readonly denoiseStep = DENOISE_STEP;
   public readonly minBrush = MIN_BRUSH;
   public readonly maxBrush = MAX_BRUSH;
+  public readonly maxExtras = MAX_EXTRA_SOURCE_IMAGES;
+  public readonly minExtraStrength = MIN_EXTRA_SOURCE_STRENGTH;
+  public readonly maxExtraStrength = MAX_EXTRA_SOURCE_STRENGTH;
+  public readonly extraStrengthStep = EXTRA_SOURCE_STRENGTH_STEP;
 
   public readonly sourceImage = signal<SourceImage | null>(null);
   public readonly previewUrl = signal<string | null>(null);
   public readonly encoding = signal(false);
   public readonly error = signal<string | null>(null);
   public readonly dragActive = signal(false);
+
+  public readonly extras = signal<RemixExtra[]>([]);
+  public readonly extraEncoding = signal(false);
+  public readonly extraDragActive = signal(false);
 
   public readonly maskPainted = signal(false);
   public readonly maskBlob = signal<Blob | null>(null);
@@ -115,6 +155,16 @@ export class GenerateSourceImageComponent implements OnInit {
 
   public readonly valid = computed(() => this.computeValid());
 
+  /** Whether remix may be selected at all; unknown support reads as allowed. */
+  public readonly remixAllowed = computed(
+    () => this.remixSupported() !== false,
+  );
+
+  /** Whether another extra source image still fits. */
+  public readonly canAddExtra = computed(
+    () => this.extras().length < MAX_EXTRA_SOURCE_IMAGES,
+  );
+
   /** Transloco key for the current validation failure, or null when valid. */
   public readonly validationMessage = computed(() => {
     if (this.valid()) {
@@ -129,6 +179,9 @@ export class GenerateSourceImageComponent implements OnInit {
     }
     if (mode === 'inpainting' && !this.maskPainted()) {
       return 'generate.source.error_no_mask';
+    }
+    if (mode === 'remix' && !this.remixAllowed()) {
+      return 'generate.source.remix_unsupported';
     }
     return null;
   });
@@ -154,7 +207,19 @@ export class GenerateSourceImageComponent implements OnInit {
       }
     });
 
-    this.destroyRef.onDestroy(() => this.revokePreview());
+    // The parent gates submission on the last emitted state, and validity
+    // depends on `remixSupported`, which flips when the user changes model —
+    // an event this component never sees. Re-emit so the parent's snapshot
+    // cannot go stale on a model switch while remix is active.
+    effect(() => {
+      this.remixAllowed();
+      this.emitState();
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.revokePreview();
+      this.revokeExtraPreviews();
+    });
   }
 
   public ngOnInit(): void {
@@ -174,10 +239,68 @@ export class GenerateSourceImageComponent implements OnInit {
   }
 
   public setMode(mode: GenerateSourceMode): void {
+    if (mode === 'remix' && !this.remixAllowed()) {
+      return;
+    }
     if (this.form().controls.sourceMode.value === mode) {
       return;
     }
     this.form().controls.sourceMode.setValue(mode);
+  }
+
+  public onExtraFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    // The picker is reset so re-choosing the same file still fires a change.
+    input.value = '';
+    void this.encodeExtras(files);
+  }
+
+  public onExtraDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.extraDragActive.set(false);
+    if (this.disabled()) {
+      return;
+    }
+    void this.encodeExtras(Array.from(event.dataTransfer?.files ?? []));
+  }
+
+  public onExtraDragOver(event: DragEvent): void {
+    event.preventDefault();
+    if (!this.disabled()) {
+      this.extraDragActive.set(true);
+    }
+  }
+
+  public onExtraDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.extraDragActive.set(false);
+  }
+
+  public removeExtra(index: number): void {
+    const current = this.extras();
+    const doomed = current[index];
+    if (!doomed) {
+      return;
+    }
+    if (this.isBrowser) {
+      URL.revokeObjectURL(doomed.previewUrl);
+    }
+    this.extras.set(current.filter((_, position) => position !== index));
+    this.emitState();
+  }
+
+  public setExtraStrength(index: number, value: number): void {
+    const strength = Math.min(
+      MAX_EXTRA_SOURCE_STRENGTH,
+      Math.max(MIN_EXTRA_SOURCE_STRENGTH, value),
+    );
+    this.extras.update((current) =>
+      current.map((extra, position) =>
+        position === index ? { ...extra, strength } : extra,
+      ),
+    );
+    this.emitState();
   }
 
   public onFileSelected(event: Event): void {
@@ -364,6 +487,63 @@ export class GenerateSourceImageComponent implements OnInit {
     }
   }
 
+  /**
+   * Decode and attach as many of `files` as still fit, skipping anything that
+   * fails to decode. A partial batch is kept rather than discarded: the user
+   * sees which images landed and can retry the rest.
+   */
+  private async encodeExtras(files: readonly File[]): Promise<void> {
+    if (!this.isBrowser || files.length === 0) {
+      return;
+    }
+    this.error.set(null);
+    this.extraEncoding.set(true);
+    let failed = false;
+    try {
+      for (const file of files) {
+        if (!this.canAddExtra()) {
+          break;
+        }
+        try {
+          const image = await fileToSourceImage(file);
+          this.extras.update((current) => [
+            ...current,
+            {
+              image,
+              strength: DEFAULT_EXTRA_SOURCE_STRENGTH,
+              previewUrl: URL.createObjectURL(image.blob),
+            },
+          ]);
+        } catch {
+          failed = true;
+        }
+      }
+    } finally {
+      this.extraEncoding.set(false);
+    }
+    if (failed) {
+      this.error.set('generate.source.encode_failed');
+    }
+    this.emitState();
+  }
+
+  private clearExtras(): void {
+    if (this.extras().length === 0) {
+      return;
+    }
+    this.revokeExtraPreviews();
+    this.extras.set([]);
+  }
+
+  private revokeExtraPreviews(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    for (const extra of this.extras()) {
+      URL.revokeObjectURL(extra.previewUrl);
+    }
+  }
+
   private onModeChanged(mode: GenerateSourceMode): void {
     this.mode.set(mode);
     if (mode === 'none') {
@@ -374,6 +554,9 @@ export class GenerateSourceImageComponent implements OnInit {
     }
     if (mode !== 'inpainting') {
       this.clearMask();
+    }
+    if (mode !== 'remix') {
+      this.clearExtras();
     }
     this.emitState();
   }
@@ -410,6 +593,12 @@ export class GenerateSourceImageComponent implements OnInit {
         return hasImage && this.controlType() !== '';
       case 'inpainting':
         return hasImage && this.maskPainted();
+      // Extras are optional: a remix with only a primary image is a valid
+      // request, so the gate is the same as img2img — plus the baseline gate,
+      // because a remix the model cannot serve is rejected by the horde even
+      // though the section itself is complete.
+      case 'remix':
+        return hasImage && this.remixAllowed();
     }
   }
 
@@ -419,6 +608,13 @@ export class GenerateSourceImageComponent implements OnInit {
       mode,
       sourceBlob: this.sourceImage()?.blob ?? null,
       maskBlob: mode === 'inpainting' ? this.maskBlob() : null,
+      extras:
+        mode === 'remix'
+          ? this.extras().map((extra) => ({
+              blob: extra.image.blob,
+              strength: extra.strength,
+            }))
+          : [],
       valid: this.computeValid(),
     });
   }

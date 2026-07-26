@@ -34,6 +34,7 @@ import { EnqueueSourceImage } from '../../types/generation-job';
 import { ImageGenerationRequest } from '../../types/generation';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
+import { ModelReferenceService } from '../../services/model-reference.service';
 import { blobToBase64 } from '../../helper/blob-base64';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
@@ -51,14 +52,20 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
   PanelSize,
+  buildImageRequest,
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
   promptHistoryFromJobs,
   requestToFormValue,
   simpleModeValue,
+  stripEphemeralExtras,
 } from './generate-form.model';
-import { MetaApplyMode } from './image-meta-panel/image-meta-panel.component';
+import {
+  ImageMetaPanelComponent,
+  MetaApplyEvent,
+  MetaApplyMode,
+} from './image-meta-panel/image-meta-panel.component';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -95,6 +102,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GenerateFormComponent,
     GenerateSourceImageComponent,
     GenerateResultsPanelComponent,
+    ImageMetaPanelComponent,
     StudioJsonModalComponent,
     StudioImageDropDirective,
     IconComponent,
@@ -114,6 +122,7 @@ export class GenerateComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
+  private readonly modelReference = inject(ModelReferenceService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
@@ -159,12 +168,22 @@ export class GenerateComponent {
   public readonly previewRequest = signal<unknown>(null);
 
   /**
-   * A pending "load this preset into the form" request awaiting the user's
-   * confirmation. Past generations no longer come through here: their settings
-   * are reviewed and applied in the results grid's metadata panel.
+   * The preset the user picked from the control panel's presets menu, held while
+   * they pick over it in the metadata panel. Past generations are reviewed the
+   * same way, from the results grid.
    */
   public readonly pendingLoad = signal<GenerateFormValue | null>(null);
-  public readonly loadConfirmOpen = computed(() => this.pendingLoad() !== null);
+  /** The pending preset as a request, which is what the review panel reads. */
+  public readonly pendingLoadRequest = computed<ImageGenerationRequest | null>(
+    () => {
+      const pending = this.pendingLoad();
+      // A preset carries no image, so its source-mode fields describe nothing
+      // and are left out of the request entirely.
+      return pending
+        ? buildImageRequest(pending, { hasSourceImage: false })
+        : null;
+    },
+  );
 
   /**
    * Recent distinct prompts for the form's quick-pick, read off the jobs the
@@ -180,6 +199,20 @@ export class GenerateComponent {
    */
   public readonly formValue = signal<GenerateFormValue>(
     this.form.getRawValue(),
+  );
+
+  /**
+   * Whether the selected model's baseline can serve a remix request. Null when
+   * no model is picked or the model reference has not loaded, which the source
+   * section reads as "leave the mode offered".
+   */
+  public readonly remixSupported = computed(() =>
+    this.modelSupport((model) => this.modelReference.supportsRemix(model)),
+  );
+
+  /** As {@link remixSupported}, for the `qr_code` workflow (SD 1.5 / SDXL). */
+  public readonly qrSupported = computed(() =>
+    this.modelSupport((model) => this.modelReference.supportsQrCode(model)),
   );
 
   /** Monotonic guard so a slow estimate cannot overwrite a newer one. */
@@ -204,6 +237,7 @@ export class GenerateComponent {
     if (this.isBrowser) {
       this.fetchModels();
       this.fetchStyles();
+      this.modelReference.load();
       this.form.valueChanges
         .pipe(
           debounceTime(KUDOS_DEBOUNCE_MS),
@@ -241,6 +275,22 @@ export class GenerateComponent {
     }
   }
 
+  /**
+   * Ask the model reference whether the form's selected model supports a
+   * feature. "Any model" and a reference that has not loaded both answer null,
+   * because gating is guidance and must never lock a user out on a guess.
+   */
+  private modelSupport(supports: (model: string) => boolean): boolean | null {
+    const model = this.formValue().model.trim();
+    // Read the baselines signal unconditionally so this recomputes when the
+    // reference lands after the form has already settled.
+    const loaded = this.modelReference.baselines() !== null;
+    if (!loaded || model === '') {
+      return null;
+    }
+    return supports(model);
+  }
+
   private refreshForcedParams(): void {
     const applied = this.resolveApplied(this.form.getRawValue());
     this.forcedParams.set(applied?.forcedParams ?? null);
@@ -269,7 +319,15 @@ export class GenerateComponent {
    */
   private effectiveValue(): GenerateFormValue {
     const raw = this.form.getRawValue();
-    return raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    // A qrText typed before switching to a model that cannot serve the
+    // qr_code workflow would make the horde reject the whole request; the
+    // form disables the input in that state, and the built request (submit,
+    // preview, estimate alike) must match what that disabled input implies.
+    if (value.qrText.trim() !== '' && this.qrSupported() === false) {
+      return { ...value, qrText: '' };
+    }
+    return value;
   }
 
   /**
@@ -302,6 +360,7 @@ export class GenerateComponent {
 
   public cancelLoad(): void {
     this.pendingLoad.set(null);
+    this.formRef()?.focusPresetsButton();
   }
 
   public onLoadBackdrop(event: MouseEvent): void {
@@ -310,18 +369,59 @@ export class GenerateComponent {
     }
   }
 
-  /** Replace the form with the pending preset, clearing any current source. */
-  public confirmLoad(): void {
+  /**
+   * Apply the reviewed selection of a preset. `replace` restores the preset as
+   * it was saved and then resets the parameters the user unticked, so the fields
+   * the review panel never offers (batch size, worker and sharing preferences,
+   * the saved mode and style) still come back with it. `overlay` grafts only the
+   * ticked parameters onto the current form, and since a style would force its
+   * own values back over them the form drops to advanced without one.
+   *
+   * Values come from the preset itself rather than from the request the panel
+   * was shown, which only carries the fields the horde API has.
+   */
+  public onApplyPresetSelection(
+    event: MetaApplyEvent,
+    offeredKeys: readonly (keyof GenerateFormValue)[],
+  ): void {
     const pending = this.pendingLoad();
     this.pendingLoad.set(null);
-    if (!pending) {
+    this.formRef()?.focusPresetsButton();
+    if (!pending || event.keys.length === 0) {
       return;
     }
-    this.sourceState.set(DEFAULT_SOURCE_STATE);
-    this.cachedSourceBlob = null;
-    this.sourceBase64 = null;
-    this.form.setValue(pending);
+    const next: GenerateFormValue =
+      event.mode === 'replace'
+        ? { ...pending }
+        : { ...this.form.getRawValue() };
+    if (event.mode === 'replace') {
+      const applied = new Set<keyof GenerateFormValue>(event.keys);
+      for (const key of offeredKeys) {
+        if (!applied.has(key)) {
+          (next as Record<keyof GenerateFormValue, unknown>)[key] =
+            DEFAULT_GENERATE_FORM_VALUE[key];
+        }
+      }
+      // Nothing here can re-attach a source image, so a replace has to leave the
+      // form describing a plain txt2img rather than a mode with no image.
+      next.sourceMode = DEFAULT_GENERATE_FORM_VALUE.sourceMode;
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.cachedSourceBlob = null;
+      this.sourceBase64 = null;
+    } else {
+      for (const key of event.keys) {
+        // Index assignment is sound: pending and next share the field's type.
+        (next as Record<keyof GenerateFormValue, unknown>)[key] = pending[key];
+      }
+      next.mode = 'advanced';
+      next.styleName = '';
+    }
+    this.form.setValue(next);
     this.form.markAsDirty();
+    this.toast.success('generate.results.meta_applied', {
+      transloco: true,
+      messageParams: { count: event.keys.length },
+    });
   }
 
   /**
@@ -572,6 +672,19 @@ export class GenerateComponent {
         mimeType: state.maskBlob.type || 'image/png',
       });
     }
+    // Remix extras are only meaningful alongside a primary source image; the
+    // horde rejects extra_source_images on any other source_processing.
+    if (state.mode === 'remix' && state.sourceBlob) {
+      (state.extras ?? []).forEach((extra, index) => {
+        sources.push({
+          kind: 'extra_source',
+          blob: extra.blob,
+          mimeType: extra.blob.type || 'image/webp',
+          index,
+          strength: extra.strength,
+        });
+      });
+    }
     return sources;
   }
 
@@ -603,7 +716,7 @@ export class GenerateComponent {
   }
 
   private persist(): void {
-    this.db.store(STORAGE_KEY, this.form.getRawValue());
+    this.db.store(STORAGE_KEY, stripEphemeralExtras(this.form.getRawValue()));
   }
 
   private async updateKudos(): Promise<void> {

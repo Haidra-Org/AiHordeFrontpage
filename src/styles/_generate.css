@@ -90,6 +90,13 @@
   --gs-field: #ffffff;
   --gs-field-soft: #fafafa;
   --gs-field-border: #d1d5db;
+  /* Popover plane: a menu opening over a panel of the same colour only reads as
+     a separate surface through its edge and its shadow, so both are stronger
+     than the panel's own. */
+  --gs-pop-surface: #ffffff;
+  --gs-pop-border: #c9cfd9;
+  --gs-pop-hover: #eef1f6;
+  --gs-pop-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
   --gs-blue: #1d4ed8;
   --gs-blue-hover: #1e40af;
   --gs-blue-tint: #eff6ff;
@@ -130,6 +137,12 @@
   --gs-field: #14171d;
   --gs-field-soft: #14171d;
   --gs-field-border: #313640;
+  /* Dark popovers rise by getting lighter: they take the card step above the
+     panel, and lean on a deeper, wider shadow to sit clear of it. */
+  --gs-pop-surface: #242a36;
+  --gs-pop-border: #3f4756;
+  --gs-pop-hover: #2c3444;
+  --gs-pop-shadow: 0 22px 56px rgba(0, 0, 0, 0.66);
   --gs-blue-tint: rgba(29, 78, 216, 0.16);
   --gs-blue-tint-border: rgba(59, 130, 246, 0.35);
   --gs-purple-tint: rgba(147, 51, 234, 0.16);
@@ -1061,25 +1074,6 @@
 .gen-studio .gs-row-val {
   color: var(--gs-blue);
   font-weight: 700;
-}
-
-/* planned / disabled extras */
-.gen-studio .gs-planned-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  opacity: 0.6;
-}
-.gen-studio .gs-planned-badge {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--gs-seg-track);
-  color: var(--gs-muted);
 }
 
 /* ------- footer batch stepper + generate --------------------------- */
@@ -4661,23 +4655,24 @@
   top: calc(100% + 6px);
   right: 0;
   z-index: 30;
-  width: min(340px, calc(100vw - 32px));
-  max-height: 320px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(64vh, 420px);
   overflow-y: auto;
   padding: 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: var(--gs-panel);
-  border: 1px solid var(--gs-border);
+  background: var(--gs-pop-surface);
+  border: 1px solid var(--gs-pop-border);
   border-radius: 11px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--gs-pop-shadow);
 }
 .gen-studio .gs-hist-item {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
-  width: 100%;
+  min-width: 0;
   min-height: 36px;
   padding: 7px 9px;
   border: 0;
@@ -4690,7 +4685,7 @@
   cursor: pointer;
 }
 .gen-studio .gs-hist-item:hover {
-  background: var(--gs-field-soft);
+  background: var(--gs-pop-hover);
   color: var(--gs-ink);
 }
 .gen-studio .gs-hist-item:focus-visible {
@@ -4705,9 +4700,11 @@
   line-clamp: 2;
   overflow: hidden;
 }
+/* Label rather than muted: 5.6:1 light and 5.7:1 dark on the popover plane,
+   which the smaller type needs more than the summary line does. */
 .gen-studio .gs-hist-neg {
-  color: var(--gs-muted);
-  font-size: 10.5px;
+  color: var(--gs-label);
+  font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4851,4 +4848,171 @@
     align-items: center;
     justify-content: center;
   }
+}
+
+/* ------- prompt history: full-text reveal ---------------------------- */
+/* The row keeps its two-line summary and carries the whole prompt with it,
+   out of the way until it is wanted. Pointers get it on hover, keyboards on
+   focus, and the per-row toggle covers touch, where neither exists. */
+.gen-studio .gs-hist-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  border-radius: 7px;
+}
+.gen-studio .gs-hist-row--open {
+  background: var(--gs-pop-hover);
+}
+.gen-studio .gs-hist-expand {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-hist-expand:hover {
+  background: var(--gs-pop-hover);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-hist-expand:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gen-studio .gs-hist-row--open .gs-hist-expand app-icon {
+  transform: rotate(180deg);
+}
+.gen-studio .gs-hist-detail {
+  display: none;
+  flex-basis: 100%;
+  max-height: min(38vh, 220px);
+  overflow-y: auto;
+  margin: 2px 4px 6px;
+  padding: 7px 9px 0;
+  border-top: 1px solid var(--gs-pop-border);
+  color: var(--gs-ink);
+  font-size: 12px;
+  line-height: 1.5;
+  /* A prompt is one long comma-run: without this it has nothing to break on. */
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.gen-studio .gs-hist-row--open .gs-hist-detail,
+.gen-studio .gs-hist-row:focus-within .gs-hist-detail {
+  display: block;
+}
+@media (hover: hover) and (pointer: fine) {
+  .gen-studio .gs-hist-row:hover .gs-hist-detail {
+    display: block;
+  }
+}
+.gen-studio .gs-hist-detail-text,
+.gen-studio .gs-hist-detail-neg {
+  margin: 0;
+}
+.gen-studio .gs-hist-detail-neg {
+  margin-top: 5px;
+  color: var(--gs-label);
+}
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-hist-expand {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+/* ------- remix extra source images ---------------------------------- */
+/* One row per extra image: thumbnail, its strength slider, and a remove
+   button sized to the 44px touch target the studio holds itself to. */
+.gen-studio .gs-remix-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-remix-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.gen-studio .gs-remix-remove {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+}
+.gen-studio .gs-remix-remove:hover:not(:disabled) {
+  color: var(--gs-ink);
+  border-color: var(--gs-field-border);
+}
+.gen-studio .gs-remix-remove:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ------- extras: pinned worker list --------------------------------- */
+/* One row per pinned worker ID: the ID is a UUID, so it gets the mono
+   treatment and is allowed to wrap rather than overflow the panel. */
+.gen-studio .gs-worker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 9px;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-worker-id {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  color: var(--gs-ink-2);
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-worker-remove {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+}
+.gen-studio .gs-worker-remove:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-field-border);
+}
+.gen-studio .gs-worker-remove:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+}
+/* A gated QR field stays legible while reading as unavailable. */
+.gen-studio .gs-seed-input[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

@@ -6,9 +6,11 @@ import {
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  normalizeWorkers,
   promptHistoryFromJobs,
   requestToFormValue,
   simpleModeValue,
+  stripEphemeralExtras,
 } from './generate-form.model';
 import { AppliedStyle } from '../../services/horde-styles.service';
 import { LocalGenerationJob } from '../../types/generation-job';
@@ -595,5 +597,146 @@ describe('promptHistoryFromJobs', () => {
       2,
     );
     expect(history.map((entry) => entry.prompt)).toEqual(['one', 'two']);
+  });
+});
+
+describe('normalizeWorkers', () => {
+  it('trims, drops blanks, de-duplicates, and caps at the horde limit', () => {
+    expect(
+      normalizeWorkers([' a ', 'a', '', '   ', 'b', 'c', 'd', 'e', 'f']),
+    ).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+});
+
+describe('stripEphemeralExtras', () => {
+  it('blanks the webhook and worker routing without the opt-in', () => {
+    const stripped = stripEphemeralExtras(
+      value({
+        webhook: 'https://example.test/hook',
+        workers: ['alpha'],
+        workerBlacklist: true,
+        qrText: 'https://aihorde.net',
+      }),
+    );
+
+    expect(stripped.webhook).toBe('');
+    expect(stripped.workers).toEqual([]);
+    expect(stripped.workerBlacklist).toBe(false);
+    // qrText is a generation parameter, not account-shaped detail.
+    expect(stripped.qrText).toBe('https://aihorde.net');
+  });
+
+  it('keeps everything once the user opts in', () => {
+    const input = value({
+      rememberExtras: true,
+      webhook: 'https://example.test/hook',
+      workers: ['alpha'],
+      workerBlacklist: true,
+    });
+    expect(stripEphemeralExtras(input)).toBe(input);
+  });
+});
+
+describe('buildImageRequest extras', () => {
+  it('sends a valid webhook and drops anything else', () => {
+    expect(
+      buildImageRequest(value({ webhook: '  https://example.test/hook  ' }))
+        .webhook,
+    ).toBe('https://example.test/hook');
+    expect(
+      buildImageRequest(value({ webhook: 'ftp://x.test' })).webhook,
+    ).toBeUndefined();
+    expect(
+      buildImageRequest(value({ webhook: 'nope' })).webhook,
+    ).toBeUndefined();
+    expect(buildImageRequest(value()).webhook).toBeUndefined();
+  });
+
+  it('sends workers with the blacklist flag, and neither when the list is empty', () => {
+    const request = buildImageRequest(
+      value({ workers: [' alpha ', 'alpha', 'beta'], workerBlacklist: true }),
+    );
+    expect(request.workers).toEqual(['alpha', 'beta']);
+    expect(request.worker_blacklist).toBe(true);
+
+    const bare = buildImageRequest(value({ workerBlacklist: true }));
+    expect(bare.workers).toBeUndefined();
+    expect(bare.worker_blacklist).toBeUndefined();
+  });
+
+  it('turns qrText into the qr_code workflow and its extra text', () => {
+    const request = buildImageRequest(
+      value({ qrText: ' https://aihorde.net ' }),
+    );
+    expect(request.params?.workflow).toBe('qr_code');
+    expect(request.params?.extra_texts).toEqual([
+      { text: 'https://aihorde.net', reference: 'qr_code' },
+    ]);
+
+    const bare = buildImageRequest(value({ qrText: '   ' }));
+    expect(bare.params?.workflow).toBeUndefined();
+    expect(bare.params?.extra_texts).toBeUndefined();
+  });
+
+  it('maps remix onto its own source processing without a denoise pass', () => {
+    const request = buildImageRequest(value({ sourceMode: 'remix' }), {
+      hasSourceImage: true,
+    });
+    expect(request.source_processing).toBe('remix');
+    expect(request.params?.denoising_strength).toBeUndefined();
+  });
+});
+
+describe('requestToFormValue extras', () => {
+  it('recovers the webhook, workers, qr text, and remix mode', () => {
+    const recovered = requestToFormValue(
+      buildImageRequest(
+        value({
+          sourceMode: 'remix',
+          webhook: 'https://example.test/hook',
+          workers: ['alpha', 'beta'],
+          workerBlacklist: true,
+          qrText: 'https://aihorde.net',
+        }),
+        { hasSourceImage: true },
+      ),
+    );
+
+    expect(recovered.sourceMode).toBe('remix');
+    expect(recovered.webhook).toBe('https://example.test/hook');
+    expect(recovered.workers).toEqual(['alpha', 'beta']);
+    expect(recovered.workerBlacklist).toBe(true);
+    expect(recovered.qrText).toBe('https://aihorde.net');
+  });
+
+  it('defaults the extras when the request carries none', () => {
+    const recovered = requestToFormValue({ prompt: 'a fox' });
+    expect(recovered.webhook).toBe('');
+    expect(recovered.workers).toEqual([]);
+    expect(recovered.workerBlacklist).toBe(false);
+    expect(recovered.qrText).toBe('');
+  });
+});
+
+describe('coerceFormValue extras', () => {
+  it('normalises a persisted worker list and rejects malformed members', () => {
+    const merged = coerceFormValue({
+      workers: [' alpha ', 42, '', 'beta', 'alpha'],
+      webhook: 'https://example.test/hook',
+      workerBlacklist: 'yes',
+      qrText: 7,
+      rememberExtras: true,
+    });
+
+    expect(merged.workers).toEqual(['alpha', 'beta']);
+    expect(merged.webhook).toBe('https://example.test/hook');
+    expect(merged.workerBlacklist).toBe(false);
+    expect(merged.qrText).toBe('');
+    expect(merged.rememberExtras).toBe(true);
+  });
+
+  it('accepts remix as a persisted source mode', () => {
+    expect(coerceFormValue({ sourceMode: 'remix' }).sourceMode).toBe('remix');
+    expect(coerceFormValue({ sourceMode: 'nonsense' }).sourceMode).toBe('none');
   });
 });

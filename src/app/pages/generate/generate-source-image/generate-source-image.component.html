@@ -9,13 +9,24 @@
         type="button"
         class="gs-chip"
         [class.gs-chip--active]="mode() === m"
-        [disabled]="disabled()"
+        [disabled]="disabled() || (m === 'remix' && !remixAllowed())"
+        [attr.title]="
+          m === 'remix' && !remixAllowed()
+            ? ('generate.source.remix_unsupported' | transloco)
+            : null
+        "
         (click)="setMode(m)"
       >
         {{ "generate.source.mode_" + m | transloco }}
       </button>
     }
   </div>
+
+  @if (!remixAllowed()) {
+    <p class="gs-sublabel">
+      {{ "generate.source.remix_unsupported" | transloco }}
+    </p>
+  }
 
   @if (mode() !== "none") {
     <label
@@ -195,6 +206,95 @@
         <p class="gs-sublabel">
           {{ "generate.source.mask_hint" | transloco }}
         </p>
+      </div>
+    }
+
+    @if (mode() === "remix") {
+      <div class="flex flex-col gap-2">
+        <span class="gs-slabel">
+          {{
+            "generate.source.remix_extras_label"
+              | transloco: { count: extras().length, max: maxExtras }
+          }}
+        </span>
+        <p class="gs-sublabel">
+          {{ "generate.source.remix_extras_hint" | transloco }}
+        </p>
+
+        @for (extra of extras(); track extra.previewUrl; let i = $index) {
+          <div class="gs-remix-row">
+            <img
+              class="gs-thumb-sm"
+              [src]="extra.previewUrl"
+              alt="{{
+                'generate.source.remix_extra_alt' | transloco: { index: i + 1 }
+              }}"
+            />
+            <div class="gs-remix-row-body">
+              <label class="gs-sublabel" [attr.for]="'generate-remix-' + i">
+                {{
+                  "generate.source.remix_strength_label"
+                    | transloco: { value: extra.strength }
+                }}
+              </label>
+              <input
+                class="gs-range"
+                type="range"
+                [id]="'generate-remix-' + i"
+                [min]="minExtraStrength"
+                [max]="maxExtraStrength"
+                [step]="extraStrengthStep"
+                [value]="extra.strength"
+                [disabled]="disabled()"
+                (input)="setExtraStrength(i, +$any($event.target).value)"
+              />
+            </div>
+            <button
+              type="button"
+              class="gs-remix-remove"
+              [disabled]="disabled()"
+              [attr.aria-label]="
+                'generate.source.remix_remove_extra'
+                  | transloco: { index: i + 1 }
+              "
+              (click)="removeExtra(i)"
+            >
+              <app-icon name="trash-modern" class="gs-ico-sm" />
+            </button>
+          </div>
+        }
+
+        @if (canAddExtra()) {
+          <label
+            class="gs-add-tile"
+            [class.gs-chip--active]="extraDragActive()"
+            for="generate-remix-file"
+            (dragover)="onExtraDragOver($event)"
+            (dragleave)="onExtraDragLeave($event)"
+            (drop)="onExtraDrop($event)"
+          >
+            @if (extraEncoding()) {
+              <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+              <span class="gs-add-tile-title">
+                {{ "generate.source.encoding" | transloco }}
+              </span>
+            } @else {
+              <app-icon name="photo" class="gs-ico-sm" />
+              <span class="gs-add-tile-title">
+                {{ "generate.source.remix_add_extra" | transloco }}
+              </span>
+            }
+            <input
+              id="generate-remix-file"
+              type="file"
+              accept="image/*"
+              multiple
+              class="sr-only"
+              [disabled]="disabled() || extraEncoding()"
+              (change)="onExtraFileSelected($event)"
+            />
+          </label>
+        }
       </div>
     }
 

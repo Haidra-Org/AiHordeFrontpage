@@ -24,7 +24,28 @@ export type LocalGenerationJobStatus =
   | 'cancelled';
 
 /** Which role a stored blob plays for its job. */
-export type StoredImageKind = 'result' | 'source' | 'mask' | 'control_map';
+export type StoredImageKind =
+  | 'result'
+  | 'source'
+  | 'mask'
+  | 'control_map'
+  | 'extra_source';
+
+/**
+ * How many extra source images a remix request may carry alongside its primary
+ * source image. The horde schema sets no maxItems, so this is a client-side cap
+ * chosen to keep the request payload (one base64 webp per image) manageable.
+ */
+export const MAX_EXTRA_SOURCE_IMAGES = 5;
+
+/**
+ * The image-store id for the extra source blob at `index`. Extra blobs share the
+ * `[localId, imageId]` keying with the primary source and mask, so their ids
+ * must not collide with the fixed `source` / `mask` ones.
+ */
+export function extraSourceImageId(index: number): string {
+  return `extra-${index}`;
+}
 
 /**
  * Per-image provenance captured from the status response. Every field is
@@ -56,6 +77,12 @@ export interface StoredJobImage {
   kind: StoredImageKind;
   blob: Blob;
   mimeType: string;
+  /**
+   * Blend weight for an `extra_source` blob, carried here rather than on the job
+   * so a remix extra keeps its strength next to the bytes it belongs to and the
+   * two can never drift out of alignment. Unset for every other kind.
+   */
+  strength?: number;
   metadata?: StoredJobImageMetadata;
 }
 
@@ -93,11 +120,15 @@ export interface LocalGenerationJob {
 }
 
 /**
- * A source or mask blob handed to `enqueue`. The engine stores it immediately
- * and rehydrates it into base64 on the request at submit time.
+ * A source, mask, or remix-extra blob handed to `enqueue`. The engine stores it
+ * immediately and rehydrates it into base64 on the request at submit time.
  */
 export interface EnqueueSourceImage {
-  kind: 'source' | 'mask';
+  kind: 'source' | 'mask' | 'extra_source';
   blob: Blob;
   mimeType: string;
+  /** Slot of an `extra_source` blob; ignored for the primary source and mask. */
+  index?: number;
+  /** Blend weight of an `extra_source` blob; ignored for the other kinds. */
+  strength?: number;
 }

@@ -4,6 +4,7 @@ import { GenerateFormComponent } from './generate-form.component';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
+  GenerateFormValue,
   buildStyledImageRequest,
   createGenerateForm,
 } from '../generate-form.model';
@@ -315,6 +316,40 @@ describe('GenerateFormComponent prompt history', () => {
     expect(document.activeElement).toBe(promptBox);
   });
 
+  it('pins one row open at a time', async () => {
+    const { component } = await createWithPromptBox();
+
+    component.toggleHistoryDetail(1);
+    expect(component.historyDetail()).toBe(1);
+    component.toggleHistoryDetail(0);
+    expect(component.historyDetail()).toBe(0);
+    component.toggleHistoryDetail(0);
+    expect(component.historyDetail()).toBeNull();
+  });
+
+  it('backs escape out of an expanded row before the popover', async () => {
+    const { component } = await createWithPromptBox();
+    component.toggleHistory();
+    component.toggleHistoryDetail(0);
+
+    component.onDocumentEscape();
+    expect(component.historyDetail()).toBeNull();
+    expect(component.historyOpen()).toBe(true);
+
+    component.onDocumentEscape();
+    expect(component.historyOpen()).toBe(false);
+  });
+
+  it('drops any expanded row when the popover closes', async () => {
+    const { component } = await createWithPromptBox();
+    component.toggleHistory();
+    component.toggleHistoryDetail(0);
+
+    component.toggleHistory();
+
+    expect(component.historyDetail()).toBeNull();
+  });
+
   it('dismisses on escape and on a press outside the anchor', async () => {
     const { component, anchor } = await createWithPromptBox();
 
@@ -331,5 +366,123 @@ describe('GenerateFormComponent prompt history', () => {
     Object.defineProperty(inside, 'target', { value: anchor });
     component.onDocumentPointerDown(inside);
     expect(component.historyOpen()).toBe(true);
+  });
+});
+
+describe('GenerateFormComponent extras', () => {
+  async function createExtras(value: Partial<GenerateFormValue> = {}): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+  }> {
+    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+      .overrideComponent(GenerateFormComponent, { set: { template: '' } })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.detectChanges();
+    return { fixture, component: fixture.componentInstance, form };
+  }
+
+  it('adds a drafted worker and clears the draft', async () => {
+    const { component, form } = await createExtras();
+
+    component.workerDraft.set('  worker-a  ');
+    component.addWorker();
+
+    expect(form.controls.workers.value).toEqual(['worker-a']);
+    expect(component.workerDraft()).toBe('');
+  });
+
+  it('ignores a blank draft and a repeat of a listed worker', async () => {
+    const { component, form } = await createExtras({ workers: ['worker-a'] });
+
+    component.workerDraft.set('   ');
+    expect(component.canAddWorker()).toBe(false);
+    component.addWorker();
+
+    component.workerDraft.set('worker-a');
+    component.addWorker();
+
+    expect(form.controls.workers.value).toEqual(['worker-a']);
+  });
+
+  it('stops offering the add control at the worker cap', async () => {
+    const { component, form } = await createExtras({
+      workers: ['w1', 'w2', 'w3', 'w4', 'w5'],
+    });
+
+    component.workerDraft.set('w6');
+    expect(component.canAddWorker()).toBe(false);
+    component.addWorker();
+
+    expect(form.controls.workers.value).toHaveLength(component.maxWorkers);
+    expect(form.controls.workers.value).not.toContain('w6');
+  });
+
+  it('removes a worker by position', async () => {
+    const { component, form } = await createExtras({
+      workers: ['w1', 'w2', 'w3'],
+    });
+
+    component.removeWorker(1);
+
+    expect(form.controls.workers.value).toEqual(['w1', 'w3']);
+  });
+
+  it('flips the worker list between an allowlist and a blocklist', async () => {
+    const { component, form } = await createExtras();
+
+    component.setWorkerBlacklist(true);
+    expect(form.controls.workerBlacklist.value).toBe(true);
+
+    component.setWorkerBlacklist(false);
+    expect(form.controls.workerBlacklist.value).toBe(false);
+  });
+
+  it('hints only on a webhook the request builder would drop', async () => {
+    const { component, form } = await createExtras();
+
+    expect(component.webhookInvalid()).toBe(false);
+
+    form.controls.webhook.setValue('example.com/hook');
+    expect(component.webhookInvalid()).toBe(true);
+
+    form.controls.webhook.setValue('http://a.io');
+    expect(component.webhookInvalid()).toBe(false);
+
+    // Under the horde's 10-character minimum, so it would be dropped silently.
+    form.controls.webhook.setValue('http://a');
+    expect(component.webhookInvalid()).toBe(true);
+  });
+
+  it('leaves the QR control usable until the model is known not to serve it', async () => {
+    const { fixture, component } = await createExtras();
+
+    expect(component.qrAllowed()).toBe(true);
+
+    fixture.componentRef.setInput('qrSupported', true);
+    expect(component.qrAllowed()).toBe(true);
+
+    fixture.componentRef.setInput('qrSupported', false);
+    expect(component.qrAllowed()).toBe(false);
+  });
+
+  it('notes the batching rule only for a QR batch of more than one', async () => {
+    const { component, form } = await createExtras({ n: 4 });
+
+    expect(component.qrBatchNoteVisible()).toBe(false);
+
+    form.controls.qrText.setValue('https://aihorde.net');
+    expect(component.qrBatchNoteVisible()).toBe(true);
+
+    form.controls.n.setValue(1);
+    expect(component.qrBatchNoteVisible()).toBe(false);
   });
 });

@@ -2,7 +2,7 @@
   class="gs-meta-panel gs-fadeup"
   role="dialog"
   aria-modal="true"
-  [attr.aria-label]="'generate.results.metadata_title' | transloco"
+  [attr.aria-label]="titleKey() | transloco"
 >
   <button
     type="button"
@@ -12,23 +12,25 @@
   ></button>
   <div class="gs-meta-head">
     <span class="gs-meta-title">
-      {{ "generate.results.metadata_title" | transloco }}
+      {{ titleKey() | transloco }}
     </span>
     <button type="button" class="gs-meta-raw" (click)="rawJson.emit()">
       <app-icon name="code-bracket" />
       {{ "generate.results.raw_json" | transloco }}
     </button>
-    <button
-      type="button"
-      class="gs-meta-pin"
-      [class.gs-meta-pin--on]="pinned()"
-      [attr.aria-pressed]="pinned()"
-      (click)="pinToggle.emit()"
-      [attr.aria-label]="'generate.results.meta_pin' | transloco"
-      [title]="'generate.results.meta_pin' | transloco"
-    >
-      <app-icon name="pin" />
-    </button>
+    @if (pinnable()) {
+      <button
+        type="button"
+        class="gs-meta-pin"
+        [class.gs-meta-pin--on]="pinned()"
+        [attr.aria-pressed]="pinned()"
+        (click)="pinToggle.emit()"
+        [attr.aria-label]="'generate.results.meta_pin' | transloco"
+        [title]="'generate.results.meta_pin' | transloco"
+      >
+        <app-icon name="pin" />
+      </button>
+    }
     <button
       type="button"
       class="gs-modal-close"
