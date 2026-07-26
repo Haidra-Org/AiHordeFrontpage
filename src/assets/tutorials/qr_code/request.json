@@ -1,0 +1,24 @@
+{
+  "prompt": "circuit-board city seen from above, isometric, teal and copper, glowing traces, dense square blocks, flat graphic design, stark black background, very high contrast",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7,
+    "height": 1024,
+    "width": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1,
+    "workflow": "qr_code",
+    "extra_texts": [
+      {
+        "text": "https://aihorde.net",
+        "reference": "qr_code"
+      }
+    ]
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["AlbedoBase XL (SDXL)"],
+  "r2": true
+}

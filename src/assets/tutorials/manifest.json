@@ -1,0 +1,116 @@
+{
+  "generated_against": "https://aihorde.net/api/v2",
+  "flows": [
+    {
+      "id": "txt2img",
+      "directory": "txt2img",
+      "title": "Text to image",
+      "summary": "A prompt, a model and a seed: the smallest complete request the Horde accepts.",
+      "status": "available",
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json",
+      "files": ["meta.json", "request.json", "result.webp"]
+    },
+    {
+      "id": "img2img",
+      "directory": "img2img",
+      "title": "Image to image",
+      "summary": "Re-render an existing image, with denoising_strength deciding how far it may drift.",
+      "status": "available",
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "request": "request.json",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"]
+    },
+    {
+      "id": "controlnet",
+      "directory": "controlnet",
+      "title": "ControlNet (canny)",
+      "summary": "Hold a composition with a canny edge map while the prompt changes the style entirely.",
+      "status": "available",
+      "model": "Deliberate",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "request": "request.json",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"]
+    },
+    {
+      "id": "inpainting",
+      "directory": "inpainting",
+      "title": "Inpainting",
+      "summary": "Repaint only the masked region of an image, leaving the rest untouched.",
+      "status": "available",
+      "model": "Deliberate Inpainting",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "mask": "mask.png",
+      "request": "request.json",
+      "files": [
+        "mask.png",
+        "mask.webp",
+        "meta.json",
+        "request.json",
+        "result.webp",
+        "source.webp"
+      ]
+    },
+    {
+      "id": "remix",
+      "directory": "remix",
+      "title": "Remix",
+      "summary": "Blend a source image with extra reference images on Stable Cascade.",
+      "status": "skipped",
+      "skipped_reason": "No workers were serving Stable Cascade 1.0 when the examples were generated. See SKIPPED.md.",
+      "files": ["SKIPPED.md"]
+    },
+    {
+      "id": "qr_code",
+      "directory": "qr_code",
+      "title": "Scannable QR code",
+      "summary": "Hide a scannable QR code inside artwork using the qr_code workflow.",
+      "status": "available",
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json",
+      "files": ["meta.json", "request.json", "result.webp"]
+    },
+    {
+      "id": "transparent",
+      "directory": "transparent",
+      "title": "Transparent background",
+      "summary": "Cut a subject out onto a real alpha channel with Layer Diffuse.",
+      "status": "available",
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json",
+      "files": ["meta.json", "request.json", "result.webp"]
+    },
+    {
+      "id": "facefix",
+      "directory": "facefix",
+      "title": "Face fixing with GFPGAN",
+      "summary": "The same seed with and without the GFPGAN post-processor, side by side.",
+      "status": "available",
+      "model": "Deliberate",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "before": "before.webp",
+      "request": "request.json",
+      "files": [
+        "before.webp",
+        "meta.json",
+        "request-before.json",
+        "request.json",
+        "result.webp"
+      ]
+    }
+  ]
+}

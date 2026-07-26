@@ -1,0 +1,17 @@
+{
+  "prompt": "a lighthouse keeper standing on a cliffside path at golden hour, facing the viewer, weathered kindly face, coastal village below, dramatic sky, sweeping ocean view, cinematic lighting, highly detailed",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "height": 1024,
+    "width": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["AlbedoBase XL (SDXL)"],
+  "r2": true
+}

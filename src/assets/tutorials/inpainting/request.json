@@ -1,0 +1,21 @@
+{
+  "prompt": "vivid aurora borealis rippling across the sky, green and violet curtains of light, scattered stars, deep night sky",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "denoising_strength": 1,
+    "height": 512,
+    "width": 512,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["Deliberate Inpainting"],
+  "source_image": "<base64 of source.webp>",
+  "source_mask": "<base64 of mask.webp>",
+  "source_processing": "inpainting",
+  "r2": true
+}

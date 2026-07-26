@@ -1,0 +1,19 @@
+{
+  "flow": "img2img",
+  "model": "AlbedoBase XL (SDXL)",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "worker_name": "justsomepcthatgenerating1mages",
+  "worker_id": "9027cc0d-ff79-4056-a616-84c39be134b1",
+  "generation_id": "6cfa125c-9002-41ca-97dd-c63a7789458e",
+  "job_id": "4ade3850-e91e-4c93-9382-217c86bad1cf",
+  "kudos_estimate": 20,
+  "kudos_charged": 56,
+  "wall_time_seconds": 35,
+  "censored": false,
+  "gen_metadata": [],
+  "title": "Image to image",
+  "source": "txt2img/result.webp",
+  "denoising_strength": 0.55,
+  "notes": "source_image is the base64 of the txt2img result (webp, no data: prefix). request.json substitutes a placeholder for that base64 blob."
+}

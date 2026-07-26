@@ -1,0 +1,18 @@
+{
+  "prompt": "a single potted echeveria succulent, thick blue-green rosette leaves with pink tips, terracotta pot, studio product photography, sharp focus, even lighting, isolated subject",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "height": 1024,
+    "width": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1,
+    "transparent": true
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["AlbedoBase XL (SDXL)"],
+  "r2": true
+}

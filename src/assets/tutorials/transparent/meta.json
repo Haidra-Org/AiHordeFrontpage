@@ -1,0 +1,26 @@
+{
+  "flow": "transparent",
+  "model": "AlbedoBase XL (SDXL)",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "worker_name": "Zepharock Dreamer",
+  "worker_id": "846ccd2f-f908-4155-a6d9-14634068784f",
+  "generation_id": "9ff744c9-f806-4c76-869f-f02c94939825",
+  "job_id": "3f18767d-251a-4cd4-b391-7c07511642ee",
+  "kudos_estimate": 21,
+  "kudos_charged": 45,
+  "wall_time_seconds": 102.2,
+  "censored": false,
+  "gen_metadata": [],
+  "title": "Transparent background",
+  "alpha_verification": {
+    "method": "ImageMagick identify on the downloaded result.webp",
+    "channels": "srgba",
+    "has_alpha_channel": true,
+    "alpha_min": 0,
+    "alpha_mean": 0.3464,
+    "transparent_pixel_fraction": 0.6502,
+    "passed": true
+  },
+  "notes": "params.transparent selects Layer Diffuse, which produces a cut-out subject on a transparent background instead of a painted backdrop. Prompts that describe a single isolated subject separate far more cleanly than scenes. The returned webp carries a real alpha channel, so keep it as webp or png; converting to jpeg discards the cut-out."
+}

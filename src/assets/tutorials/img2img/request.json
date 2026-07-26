@@ -1,0 +1,20 @@
+{
+  "prompt": "a lighthouse keeper on a cliffside path in a snowstorm at dusk, warm lantern light, snow-covered coastal village below, drifting snow, moody blue hour, highly detailed",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "denoising_strength": 0.55,
+    "height": 1024,
+    "width": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["AlbedoBase XL (SDXL)"],
+  "source_image": "<base64 of source.webp>",
+  "source_processing": "img2img",
+  "r2": true
+}

@@ -1,0 +1,21 @@
+{
+  "flow": "inpainting",
+  "model": "Deliberate Inpainting",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "worker_name": "Roaring 3050#3",
+  "worker_id": "85270a4a-490d-4c6f-bc50-cd0817355c80",
+  "generation_id": "8ebde1be-4661-4e66-812a-5cbcdb7fd121",
+  "job_id": "1f8123d4-0b4d-484d-bfd0-df9211b64e51",
+  "kudos_estimate": 10,
+  "kudos_charged": 16,
+  "wall_time_seconds": 42.1,
+  "censored": false,
+  "gen_metadata": [],
+  "title": "Inpainting",
+  "source": "txt2img/result.webp, downscaled to 512x512",
+  "mask": "mask.png (white = repaint), transmitted as lossless mask.webp base64",
+  "mask_region": "rectangle 0,0 to 270,180 in a 512x512 frame",
+  "notes": "source_processing must be \"inpainting\" and the mask must match the source dimensions. The mask is sent losslessly so the binary black/white edge is not softened by webp compression.",
+  "deviations": "Requested model was stable_diffusion_inpainting; that base model repainted the region but produced a flat, featureless sky with no aurora. Re-ran on Deliberate Inpainting, which rendered the aurora clearly. A faint seam remains at the mask boundary (x=270)."
+}

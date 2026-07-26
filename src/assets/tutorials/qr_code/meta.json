@@ -1,0 +1,28 @@
+{
+  "flow": "qr_code",
+  "model": "AlbedoBase XL (SDXL)",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "worker_name": "justsomepc1",
+  "worker_id": "2543cc23-930f-440d-be9d-ab068a7a8ac0",
+  "generation_id": "03e8c0ae-ce88-4723-a8e3-1137cbb21ab7",
+  "job_id": "72c55ce8-9399-45c4-889d-f6aec636b00c",
+  "kudos_estimate": 21,
+  "kudos_charged": 87,
+  "wall_time_seconds": 124.7,
+  "censored": false,
+  "gen_metadata": [
+    {
+      "type": "source_image",
+      "value": "parse_failed"
+    },
+    {
+      "type": "aesthetic_score",
+      "value": "see_ref",
+      "ref": "5.3073"
+    }
+  ],
+  "title": "Scannable QR code",
+  "encoded_text": "https://aihorde.net",
+  "notes": "The QR payload travels in params.extra_texts with reference \"qr_code\"; params.workflow selects the QR ControlNet workflow. High-contrast, geometric prompts scan far more reliably than soft or low-contrast ones."
+}

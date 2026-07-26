@@ -1,0 +1,21 @@
+{
+  "prompt": "ink and watercolor illustration of a lighthouse keeper on a cliffside path, coastal village below, loose brush strokes, soft washes of colour, visible paper texture",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "denoising_strength": 0.75,
+    "control_type": "canny",
+    "height": 512,
+    "width": 512,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "n": 1
+  },
+  "nsfw": false,
+  "censor_nsfw": true,
+  "models": ["Deliberate"],
+  "source_image": "<base64 of source.webp>",
+  "source_processing": "img2img",
+  "r2": true
+}
