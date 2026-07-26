@@ -2,11 +2,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   effect,
   inject,
+  input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ImageGenerationRequest } from '../../../types/generation';
@@ -23,9 +26,17 @@ import {
 import { buildJobImageArchive } from '../generate-archive';
 import {
   ImageMetaError,
+  ImageMetaProvenance,
   buildImageMetadataExport,
+  buildImageProvenance,
   deriveImageMeta,
 } from '../image-metadata';
+import {
+  ImageMetaPanelComponent,
+  MetaApplyEvent,
+  MetaApplyMode,
+} from '../image-meta-panel/image-meta-panel.component';
+import { GenerateFormValue } from '../generate-form.model';
 import {
   JsonModalHighlight,
   StudioJsonModalComponent,
@@ -38,6 +49,25 @@ type ResultSortMode = 'default' | 'aesthetic';
 const PER_ROW_OPTIONS = [2, 3, 4, 5, 6] as const;
 const PER_ROW_KEY = 'aihorde.generate.results.perRow';
 const DEFAULT_PER_ROW = 4;
+const SHOW_PROMPTS_KEY = 'aihorde.generate.show_prompts';
+const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
+
+/**
+ * Narrowest tile the grid will render. A per-row preference chosen on a wide
+ * window would otherwise produce unusable slivers when the studio is narrow
+ * (the flip menu cannot fit, the status tiles cram), so the column count is
+ * clamped to whatever keeps tiles at least this wide.
+ */
+const MIN_TILE_PX = 140;
+/** Tile width below which the tile chrome drops to its most compact form. */
+const COMPACT_TILE_PX = 168;
+/** Must track the `gap` on `.gs-tile-grid`, for the tile-width arithmetic. */
+const GRID_GAP_PX = 16;
+
+/** How far a finger has to travel across the viewer before it counts as a swipe. */
+const SWIPE_THRESHOLD_PX = 40;
+/** Movement above this is a drag, so the click that follows is not a tap. */
+const DRAG_SLOP_PX = 10;
 
 interface JobThumbnail {
   imageId: string;
@@ -47,10 +77,11 @@ interface JobThumbnail {
   metadata?: StoredJobImageMetadata;
 }
 
-interface LightboxView {
-  url: string;
-  seed?: string;
-  model?: string;
+/** An open per-tile actions menu, anchored at viewport coordinates. */
+interface TileMenuState {
+  tile: ResultTile;
+  x: number;
+  y: number;
 }
 
 /** One cell of the results tile grid, derived from the queue's jobs. */
@@ -79,14 +110,37 @@ interface ResultTile {
   aesthetic?: number | null;
   /** Per-field failures (lora/ti/source download or parse errors). */
   errors?: ImageMetaError[];
-  /** Full metadata record for the modal + Download All sidecar. */
+  /** Full metadata record for the raw JSON view + Download All sidecar. */
   metaExport?: Record<string, unknown>;
+  /** Everything the worker reported, as read-only rows for the metadata panel. */
+  provenance?: ImageMetaProvenance;
   /** The positive prompt, shown (expandable) atop every tile. */
   prompt?: string;
   /** The job's stored request, for viewing/loading its settings. */
   request?: ImageGenerationRequest;
+  /**
+   * The request the metadata panel reads and applies from. Same as `request`
+   * except that a randomised seed is replaced by the one the horde actually
+   * returned, so applying the seed row reproduces this image.
+   */
+  applyRequest?: ImageGenerationRequest;
   /** Which Retry attempt produced this job (0/undefined = original). */
   retryCount?: number;
+}
+
+/**
+ * The request to expose for metadata display and selective apply. A request that
+ * let the horde randomise its seed still produced a concrete one, so the
+ * returned seed is folded in; anything else is passed through untouched.
+ */
+function requestForApply(
+  request: ImageGenerationRequest,
+  seed: string | undefined,
+): ImageGenerationRequest {
+  if (!seed || request.params?.seed) {
+    return request;
+  }
+  return { ...request, params: { ...request.params, seed } };
 }
 
 /** The positive half of a combined `positive ### negative` prompt. */
@@ -109,10 +163,16 @@ function positivePrompt(prompt: string): string {
     NgTemplateOutlet,
     TranslocoPipe,
     IconComponent,
+    ImageMetaPanelComponent,
     StudioJsonModalComponent,
   ],
   templateUrl: './generate-results-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:pointerdown)': 'onDocumentPointerDown($event)',
+    '(document:keydown.escape)': 'onDocumentEscape()',
+    '(window:resize)': 'closeTileMenu()',
+  },
 })
 export class GenerateResultsPanelComponent {
   private readonly queue = inject(GenerationQueueService);
@@ -123,10 +183,18 @@ export class GenerateResultsPanelComponent {
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
 
-  /** Ask the parent to load a job's settings back into the form. */
-  public readonly loadSettings = output<{
+  /**
+   * The form as it stands, so the metadata panel can mark the rows a replace
+   * would actually change. Null (the default) turns the markers off.
+   */
+  public readonly formValue = input<GenerateFormValue | null>(null);
+
+  /** Ask the parent to write a selection of one image's parameters to the form. */
+  public readonly applyMeta = output<{
     request: ImageGenerationRequest;
     localId: string;
+    keys: (keyof GenerateFormValue)[];
+    mode: MetaApplyEvent['mode'];
   }>();
 
   public readonly pendingJobs = this.queue.pendingJobs;
@@ -154,7 +222,9 @@ export class GenerateResultsPanelComponent {
   );
 
   private readonly thumbnails = signal<Map<string, JobThumbnail[]>>(new Map());
-  public readonly lightbox = signal<LightboxView | null>(null);
+
+  /** The open per-tile actions menu (kebab click / right-click), or null. */
+  public readonly tileMenu = signal<TileMenuState | null>(null);
 
   /** Jobs whose thumbnails have been (or are being) loaded, to avoid re-fetching. */
   private readonly loaded = new Set<string>();
@@ -184,8 +254,67 @@ export class GenerateResultsPanelComponent {
 
   /** Grid density (columns per row), persisted so it sticks across sessions. */
   public readonly imagesPerRow = signal<number>(this.loadPerRow());
+
+  /** Measured width of the tile grid; 0 until a ResizeObserver reports one. */
+  public readonly gridWidth = signal(0);
+  private readonly tileGrid = viewChild<ElementRef<HTMLElement>>('tileGrid');
+  private gridObserver: ResizeObserver | null = null;
+
+  /**
+   * Columns actually rendered: the stored preference, reduced to what fits at
+   * {@link MIN_TILE_PX}. The preference itself is untouched, so widening the
+   * window restores it.
+   */
+  public readonly effectiveColumns = computed(() => {
+    const preferred = this.imagesPerRow();
+    const width = this.gridWidth();
+    if (width <= 0) {
+      return preferred;
+    }
+    const fits = Math.floor(
+      (width + GRID_GAP_PX) / (MIN_TILE_PX + GRID_GAP_PX),
+    );
+    return Math.min(preferred, Math.max(1, fits));
+  });
   public readonly gridColumns = computed(
-    () => `repeat(${this.imagesPerRow()}, minmax(0, 1fr))`,
+    () => `repeat(${this.effectiveColumns()}, minmax(0, 1fr))`,
+  );
+  /** Rendered width of one tile, or 0 while the grid is unmeasured. */
+  public readonly tileWidth = computed(() => {
+    const width = this.gridWidth();
+    if (width <= 0) {
+      return 0;
+    }
+    const columns = this.effectiveColumns();
+    return (width - GRID_GAP_PX * (columns - 1)) / columns;
+  });
+  /**
+   * The rendered tile width as a CSS length for `--gs-tile-w`, or null while the
+   * grid is unmeasured so the stylesheet's own fallback applies.
+   */
+  public readonly tileWidthVar = computed<string | null>(() => {
+    const width = this.tileWidth();
+    return width > 0 ? `${Math.round(width)}px` : null;
+  });
+
+  /** Tiles are too small for full chrome: labels and icons step aside. */
+  public readonly compactTiles = computed(() => {
+    const width = this.tileWidth();
+    return width > 0 && width < COMPACT_TILE_PX;
+  });
+
+  /**
+   * Superimpose a clamped prompt scrim on every finished tile. On by default:
+   * a grid of images with no prompts is hard to place. Persisted, since whether
+   * prompts help or clutter is a lasting per-user preference.
+   */
+  public readonly showPrompts = signal<boolean>(
+    this.db.get(SHOW_PROMPTS_KEY) !== false,
+  );
+
+  /** Keep the metadata panel open across viewer navigation. Persisted. */
+  public readonly metaPinned = signal<boolean>(
+    this.db.get(META_PINNED_KEY) === true,
   );
 
   /** Reveal NSFW/flagged images globally; individual tiles can also be revealed. */
@@ -196,8 +325,21 @@ export class GenerateResultsPanelComponent {
   /** Show only finished images that came back with a reported error. */
   public readonly errorsOnly = signal(false);
 
-  /** The tile whose metadata modal is open, or null. */
-  public readonly metaTile = signal<ResultTile | null>(null);
+  /** Whether the metadata panel is showing. */
+  public readonly metaOpen = signal(false);
+  /** Which tile the panel describes while the viewer is closed. */
+  private readonly metaKey = signal<string | null>(null);
+  /** Which apply mode the panel opens on; "Load settings" forces `replace`. */
+  public readonly metaMode = signal<MetaApplyMode>('replace');
+  /** The raw JSON view, only reachable from inside the metadata panel. */
+  public readonly metaJsonOpen = signal(false);
+
+  /**
+   * The flipped mobile tile, or null. Only one tile is flipped at a time: two
+   * open menus in a three-across grid is unreadable, and the back face covers
+   * the image it belongs to.
+   */
+  public readonly flippedTile = signal<string | null>(null);
 
   /** Tile keys whose prompt header is expanded to its full text. */
   private readonly openPrompts = signal<ReadonlySet<string>>(new Set());
@@ -259,8 +401,10 @@ export class GenerateResultsPanelComponent {
               job.request,
               derived,
             ),
+            provenance: buildImageProvenance(thumb.metadata, derived),
             prompt,
             request: job.request,
+            applyRequest: requestForApply(job.request, thumb.metadata?.seed),
             retryCount: job.retryCount,
           });
         });
@@ -275,6 +419,7 @@ export class GenerateResultsPanelComponent {
           metaExport: { request: job.request },
           prompt,
           request: job.request,
+          applyRequest: job.request,
           retryCount: job.retryCount,
         });
       } else {
@@ -287,6 +432,7 @@ export class GenerateResultsPanelComponent {
           metaExport: { request: job.request },
           prompt,
           request: job.request,
+          applyRequest: job.request,
           retryCount: job.retryCount,
         });
       }
@@ -330,6 +476,58 @@ export class GenerateResultsPanelComponent {
   public readonly filteredOut = computed(
     () => this.tiles().length > 0 && this.visibleTiles().length === 0,
   );
+
+  // --- Full-screen viewer --------------------------------------------------
+
+  /** The key of the finished tile the viewer is showing, or null when closed. */
+  public readonly viewerKey = signal<string | null>(null);
+  /**
+   * The viewer's navigation set: the finished images in the order the grid shows
+   * them, so prev/next follow the active sort and filter rather than the raw
+   * job order.
+   */
+  public readonly viewerTiles = computed<ResultTile[]>(() =>
+    this.visibleTiles().filter((tile) => tile.kind === 'done'),
+  );
+  public readonly viewerCount = computed(() => this.viewerTiles().length);
+  public readonly viewerIndex = computed(() => {
+    const key = this.viewerKey();
+    return key === null
+      ? -1
+      : this.viewerTiles().findIndex((tile) => tile.key === key);
+  });
+  public readonly viewerTile = computed<ResultTile | null>(
+    () => this.viewerTiles()[this.viewerIndex()] ?? null,
+  );
+
+  private readonly viewerPanel =
+    viewChild<ElementRef<HTMLElement>>('viewerPanel');
+  /** The element focus returns to when the viewer closes. */
+  private previousActiveElement: HTMLElement | null = null;
+  private viewerKeydown: ((event: KeyboardEvent) => void) | null = null;
+  /** Where a viewer drag started, for the swipe-to-navigate gesture. */
+  private swipeOriginX: number | null = null;
+  /** Whether the last pointer sequence dragged, so a swipe is not a click. */
+  private swipeDragged = false;
+  /** Whether that sequence came from a finger/pen (mouse drags never navigate). */
+  private swipeIsTouch = false;
+
+  /**
+   * The tile the metadata panel describes. Inside the viewer it is always the
+   * image on screen, so a pinned panel simply follows prev/next; outside it is
+   * whichever tile opened it, re-read from the grid so a refreshed tile object
+   * (new thumbnail, new metadata) is picked up.
+   */
+  public readonly metaTile = computed<ResultTile | null>(() => {
+    if (!this.metaOpen()) {
+      return null;
+    }
+    if (this.viewerKey() !== null) {
+      return this.viewerTile();
+    }
+    const key = this.metaKey();
+    return this.visibleTiles().find((tile) => tile.key === key) ?? null;
+  });
 
   /** Readable highlight rows for the open metadata modal (above the raw JSON). */
   public readonly metaHighlights = computed<JsonModalHighlight[]>(() => {
@@ -376,7 +574,30 @@ export class GenerateResultsPanelComponent {
         }
       }
     });
-    this.destroyRef.onDestroy(() => this.revokeAll());
+    // The grid element comes and goes with the empty/filtered states, so the
+    // observer is re-pointed whenever it appears rather than attached once.
+    effect(() => {
+      const grid = this.tileGrid()?.nativeElement ?? null;
+      this.observeGrid(grid);
+    });
+    this.destroyRef.onDestroy(() => {
+      this.revokeAll();
+      this.detachViewerKeys();
+      this.gridObserver?.disconnect();
+    });
+  }
+
+  private observeGrid(grid: HTMLElement | null): void {
+    this.gridObserver?.disconnect();
+    if (!grid || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.gridObserver ??= new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width ?? 0;
+      this.gridWidth.set(width);
+    });
+    this.gridWidth.set(grid.clientWidth);
+    this.gridObserver.observe(grid);
   }
 
   private geometryOf(job: LocalGenerationJob): {
@@ -419,16 +640,6 @@ export class GenerateResultsPanelComponent {
     });
   }
 
-  /** Ask the parent to load this tile's job settings back into the form. */
-  public emitLoadSettings(tile: ResultTile): void {
-    if (tile.request) {
-      this.loadSettings.emit({
-        request: tile.request,
-        localId: tile.jobLocalId,
-      });
-    }
-  }
-
   public async deleteJob(localId: string): Promise<void> {
     this.revokeJob(localId);
     this.loaded.delete(localId);
@@ -439,6 +650,9 @@ export class GenerateResultsPanelComponent {
   public toggleSelectMode(): void {
     const next = !this.selectMode();
     this.selectMode.set(next);
+    // A flipped tile has no selection affordance on its back face, so entering
+    // select mode always returns every tile to its image.
+    this.flippedTile.set(null);
     if (!next) {
       this.selectedJobs.set(new Set());
     }
@@ -487,22 +701,228 @@ export class GenerateResultsPanelComponent {
   public async confirmDelete(): Promise<void> {
     const ids = this.pendingDelete();
     this.pendingDelete.set([]);
+    this.stepViewerPastDeleted(ids);
     for (const id of ids) {
       await this.deleteJob(id);
     }
     this.selectedJobs.set(new Set());
     this.selectMode.set(false);
+    this.flippedTile.set(null);
   }
 
-  public openLightbox(tile: ResultTile): void {
-    if (!tile.url) {
+  /**
+   * Keep an open viewer on a live image: when the image on screen belongs to a
+   * job about to be deleted, move to the next surviving one (falling back to the
+   * previous), and close the viewer when nothing survives. Runs before the
+   * deletion so the pre-delete order is still available to walk.
+   */
+  private stepViewerPastDeleted(deleted: readonly string[]): void {
+    const current = this.viewerTile();
+    if (!current || !deleted.includes(current.jobLocalId)) {
       return;
     }
-    this.lightbox.set({ url: tile.url, seed: tile.seed, model: tile.model });
+    const tiles = this.viewerTiles();
+    const index = this.viewerIndex();
+    const survivor = [
+      ...tiles.slice(index + 1),
+      ...tiles.slice(0, index).reverse(),
+    ].find((tile) => !deleted.includes(tile.jobLocalId));
+    if (survivor) {
+      this.viewerKey.set(survivor.key);
+    } else {
+      this.closeViewer();
+    }
   }
 
-  public closeLightbox(): void {
-    this.lightbox.set(null);
+  // --- Viewer --------------------------------------------------------------
+
+  public openViewer(tile: ResultTile): void {
+    if (tile.kind !== 'done' || !tile.url) {
+      return;
+    }
+    const wasClosed = this.viewerKey() === null;
+    this.viewerKey.set(tile.key);
+    this.flippedTile.set(null);
+    if (wasClosed) {
+      // The pin is an "always show metadata" preference, so honour it on open.
+      if (this.metaPinned()) {
+        this.metaMode.set('replace');
+        this.metaOpen.set(true);
+        this.metaJsonOpen.set(false);
+      }
+      this.attachViewerKeys();
+    }
+  }
+
+  public closeViewer(): void {
+    if (this.viewerKey() === null) {
+      return;
+    }
+    this.viewerKey.set(null);
+    this.closeMeta();
+    this.detachViewerKeys();
+    this.previousActiveElement?.focus();
+    this.previousActiveElement = null;
+  }
+
+  /** Close the viewer only when the press landed on its backdrop. */
+  public onViewerBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeViewer();
+    }
+  }
+
+  public viewerNext(): void {
+    this.stepViewer(1);
+  }
+
+  public viewerPrev(): void {
+    this.stepViewer(-1);
+  }
+
+  /** Move `delta` images along the visible order, wrapping at both ends. */
+  private stepViewer(delta: number): void {
+    const tiles = this.viewerTiles();
+    if (tiles.length < 2) {
+      return;
+    }
+    const index = this.viewerIndex();
+    if (index === -1) {
+      return;
+    }
+    const next = (index + delta + tiles.length) % tiles.length;
+    this.viewerKey.set(tiles[next].key);
+  }
+
+  public onViewerPointerDown(event: PointerEvent): void {
+    this.swipeOriginX = event.clientX;
+    this.swipeDragged = false;
+    this.swipeIsTouch = event.pointerType !== 'mouse';
+  }
+
+  /**
+   * Advance the viewer when a touch drag crosses the swipe threshold, and
+   * remember whether the pointer moved at all so the click that follows can
+   * tell a swipe from a tap on the image.
+   */
+  public onViewerPointerUp(event: PointerEvent): void {
+    const origin = this.swipeOriginX;
+    this.swipeOriginX = null;
+    if (origin === null) {
+      return;
+    }
+    const delta = event.clientX - origin;
+    this.swipeDragged = Math.abs(delta) >= DRAG_SLOP_PX;
+    if (this.swipeIsTouch && Math.abs(delta) >= SWIPE_THRESHOLD_PX) {
+      this.stepViewer(delta < 0 ? 1 : -1);
+    }
+  }
+
+  /**
+   * Tapping the image closes the viewer, the same way tapping outside it does.
+   * A drag that ended on the image was a swipe (or an aborted one), not a tap,
+   * so it must not also dismiss what the user was navigating.
+   */
+  public onViewerImageClick(): void {
+    if (this.swipeDragged) {
+      this.swipeDragged = false;
+      return;
+    }
+    this.closeViewer();
+  }
+
+  private attachViewerKeys(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    this.previousActiveElement =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    this.viewerKeydown = (event: KeyboardEvent) => this.onViewerKeydown(event);
+    document.addEventListener('keydown', this.viewerKeydown, true);
+    // The panel only exists after the template renders the viewer.
+    setTimeout(() => this.viewerPanel()?.nativeElement.focus(), 0);
+  }
+
+  private detachViewerKeys(): void {
+    if (this.viewerKeydown && typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this.viewerKeydown, true);
+    }
+    this.viewerKeydown = null;
+  }
+
+  private onViewerKeydown(event: KeyboardEvent): void {
+    // The delete confirmation opens over the viewer and owns its own keys.
+    if (this.confirmOpen()) {
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      // Unwind one layer at a time: raw JSON, then the metadata panel, then the
+      // viewer itself.
+      if (this.metaJsonOpen()) {
+        this.metaJsonOpen.set(false);
+      } else if (this.metaTile()) {
+        this.closeMeta();
+      } else {
+        this.closeViewer();
+      }
+      return;
+    }
+    if (event.key === 'Tab') {
+      this.trapViewerFocus(event);
+      return;
+    }
+    // Arrow navigation belongs to the images, not to the metadata panel's form
+    // controls, so it is only live while the panel is closed.
+    if (this.metaTile()) {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      this.viewerNext();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      this.viewerPrev();
+    }
+  }
+
+  /** Keep Tab inside the viewer (including its metadata panel). */
+  private trapViewerFocus(event: KeyboardEvent): void {
+    const panel = this.viewerPanel()?.nativeElement;
+    if (!panel) {
+      return;
+    }
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) {
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  // --- Mobile tile flip ----------------------------------------------------
+
+  public isFlipped(tile: ResultTile): boolean {
+    return this.flippedTile() === tile.key;
+  }
+
+  public flipTile(tile: ResultTile): void {
+    this.flippedTile.set(tile.key);
+  }
+
+  public unflip(): void {
+    this.flippedTile.set(null);
   }
 
   public downloadTile(tile: ResultTile): void {
@@ -548,14 +968,102 @@ export class GenerateResultsPanelComponent {
     this.toast.warning('generate.results.reuse_soon', { transloco: true });
   }
 
+  // --- Per-tile actions menu ----------------------------------------------
+
+  /** Primary tap on a result tile: enter/exit selection, or open the viewer. */
+  public activateTile(tile: ResultTile): void {
+    if (this.selectMode()) {
+      this.toggleSelected(tile.jobLocalId);
+    } else {
+      this.openViewer(tile);
+    }
+  }
+
+  /** Open the actions menu from the kebab button. */
+  public openTileMenu(tile: ResultTile, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openTileMenuAt(tile, event.clientX, event.clientY);
+  }
+
+  /** Open the actions menu from a right-click / context-menu gesture. */
+  public onTileContextMenu(tile: ResultTile, event: MouseEvent): void {
+    if (this.selectMode()) {
+      return;
+    }
+    event.preventDefault();
+    this.openTileMenuAt(tile, event.clientX, event.clientY);
+  }
+
+  private openTileMenuAt(
+    tile: ResultTile,
+    clientX: number,
+    clientY: number,
+  ): void {
+    // Clamp to the viewport so the menu is never opened partly off-screen.
+    const menuW = 214;
+    const menuH = 256;
+    const vw =
+      typeof window !== 'undefined' ? window.innerWidth : clientX + menuW;
+    const vh =
+      typeof window !== 'undefined' ? window.innerHeight : clientY + menuH;
+    const x = Math.max(8, Math.min(clientX, vw - menuW - 8));
+    const y = Math.max(8, Math.min(clientY, vh - menuH - 8));
+    this.tileMenu.set({ tile, x, y });
+  }
+
+  public closeTileMenu(): void {
+    this.tileMenu.set(null);
+  }
+
+  /** Close the menu when a press lands outside it. */
+  public onDocumentPointerDown(event: PointerEvent): void {
+    if (!this.tileMenu()) {
+      return;
+    }
+    const target = event.target as Element | null;
+    if (target?.closest('.gs-tile-menu')) {
+      return;
+    }
+    this.closeTileMenu();
+  }
+
+  public onDocumentEscape(): void {
+    if (this.tileMenu()) {
+      this.closeTileMenu();
+    }
+  }
+
   // --- View controls -------------------------------------------------------
 
   private loadPerRow(): number {
     const stored = this.db.get(PER_ROW_KEY);
-    return typeof stored === 'number' &&
+    if (
+      typeof stored === 'number' &&
       (PER_ROW_OPTIONS as readonly number[]).includes(stored)
-      ? stored
-      : DEFAULT_PER_ROW;
+    ) {
+      return stored;
+    }
+    return this.defaultPerRowForViewport();
+  }
+
+  /**
+   * Column count to seed the grid with when the user has no stored preference.
+   * Narrow viewports start with fewer, larger tiles rather than cramped ones;
+   * this only affects the first load — any later choice is persisted and wins.
+   */
+  private defaultPerRowForViewport(): number {
+    if (typeof window === 'undefined') {
+      return DEFAULT_PER_ROW;
+    }
+    const width = window.innerWidth;
+    if (width < 640) {
+      return 2;
+    }
+    if (width < 1024) {
+      return 3;
+    }
+    return DEFAULT_PER_ROW;
   }
 
   public setImagesPerRow(count: number): void {
@@ -576,6 +1084,13 @@ export class GenerateResultsPanelComponent {
     );
   }
 
+  /** Whether the tile's top-right tag stack has anything in it. */
+  public hasTags(tile: ResultTile): boolean {
+    return (
+      tile.aesthetic != null || tile.nsfw === true || !!tile.errors?.length
+    );
+  }
+
   public revealNsfw(tile: ResultTile): void {
     this.revealedNsfw.update((current) => new Set(current).add(tile.key));
   }
@@ -590,12 +1105,77 @@ export class GenerateResultsPanelComponent {
     this.errorsOnly.update((value) => !value);
   }
 
+  public toggleShowPrompts(): void {
+    const next = !this.showPrompts();
+    this.showPrompts.set(next);
+    this.db.store(SHOW_PROMPTS_KEY, next);
+  }
+
   public openMeta(tile: ResultTile): void {
-    this.metaTile.set(tile);
+    this.metaKey.set(tile.key);
+    this.metaOpen.set(true);
+    this.metaJsonOpen.set(false);
+    this.flippedTile.set(null);
+  }
+
+  /**
+   * "Load settings" is now the metadata panel in replace mode with everything
+   * checked (its default state): the same operation as the old confirm dialog,
+   * but reviewable and partially undoable before it is applied.
+   */
+  public openLoadSettings(tile: ResultTile): void {
+    this.metaMode.set('replace');
+    this.openMeta(tile);
+  }
+
+  /** The viewer's Metadata button: toggles the docked/sheet panel. */
+  public toggleMeta(tile: ResultTile): void {
+    if (this.metaOpen()) {
+      this.closeMeta();
+    } else {
+      this.openMeta(tile);
+    }
   }
 
   public closeMeta(): void {
-    this.metaTile.set(null);
+    this.metaOpen.set(false);
+    this.metaJsonOpen.set(false);
+  }
+
+  /**
+   * Pin/unpin the panel. Pinning is the "always show metadata" preference the
+   * viewer honours on open; unpinning takes the panel away again, so the pin
+   * doubles as the way back to a bare viewer.
+   */
+  public toggleMetaPin(): void {
+    const next = !this.metaPinned();
+    this.metaPinned.set(next);
+    this.db.store(META_PINNED_KEY, next);
+    if (!next) {
+      this.closeMeta();
+    }
+  }
+
+  /** Close the metadata panel only when the press landed on its backdrop. */
+  public onMetaBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeMeta();
+    }
+  }
+
+  /**
+   * Forward the panel's selection to the parent, which owns the form. The panel
+   * is deliberately ignorant of the request it describes, so the tile's own
+   * (seed-resolved) request rides along.
+   */
+  public onMetaApply(event: MetaApplyEvent): void {
+    const request = this.metaTile()?.applyRequest;
+    if (!request) {
+      return;
+    }
+    this.applyMeta.emit({ ...event, request });
+    this.closeMeta();
+    this.closeViewer();
   }
 
   /** Filename for a single image's downloaded metadata sidecar. */

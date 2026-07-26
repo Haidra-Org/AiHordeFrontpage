@@ -45,6 +45,7 @@ import {
   GenerateSourceState,
 } from './generate-source-image/generate-source-image.component';
 import {
+  DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
   PanelSize,
   buildStyledImageRequest,
@@ -53,6 +54,7 @@ import {
   requestToFormValue,
   simpleModeValue,
 } from './generate-form.model';
+import { MetaApplyMode } from './image-meta-panel/image-meta-panel.component';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -63,6 +65,19 @@ const DEFAULT_SOURCE_STATE: GenerateSourceState = {
 
 const STORAGE_KEY = 'aihorde.generate.form';
 const KUDOS_DEBOUNCE_MS = 1000;
+
+/**
+ * Form fields that only mean anything with a source image attached. Applying any
+ * of them from a past generation has to re-attach that generation's stored
+ * source, exactly as loading its full settings does.
+ */
+const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
+  'sourceMode',
+  'denoising_strength',
+  'control_type',
+  'image_is_control',
+  'return_control_map',
+];
 
 /**
  * The `/generate` page. Owns the request form, drives a debounced dry-run kudos
@@ -133,15 +148,20 @@ export class GenerateComponent {
   public readonly previewRequest = signal<unknown>(null);
 
   /**
-   * A pending "load these settings into the form" request awaiting the user's
-   * confirmation. `sourceLocalId` is set when a stored source image can be
-   * re-attached (loading from a past generation rather than a preset).
+   * A pending "load this preset into the form" request awaiting the user's
+   * confirmation. Past generations no longer come through here: their settings
+   * are reviewed and applied in the results grid's metadata panel.
    */
-  public readonly pendingLoad = signal<{
-    value: GenerateFormValue;
-    sourceLocalId?: string;
-  } | null>(null);
+  public readonly pendingLoad = signal<GenerateFormValue | null>(null);
   public readonly loadConfirmOpen = computed(() => this.pendingLoad() !== null);
+
+  /**
+   * The current form value as a signal, so the results grid's metadata panel can
+   * mark the parameters that differ from it.
+   */
+  public readonly formValue = signal<GenerateFormValue>(
+    this.form.getRawValue(),
+  );
 
   /** Monotonic guard so a slow estimate cannot overwrite a newer one. */
   private estimateSeq = 0;
@@ -190,6 +210,7 @@ export class GenerateComponent {
    * can never carry a source the (now-hidden) source section still remembers.
    */
   private onFormChanged(): void {
+    this.formValue.set(this.form.getRawValue());
     this.refreshForcedParams();
     if (
       this.form.controls.mode.value === 'simple' &&
@@ -257,18 +278,7 @@ export class GenerateComponent {
 
   /** Load a saved/recent preset (from the form's presets menu) into the form. */
   public onApplyPreset(value: GenerateFormValue): void {
-    this.pendingLoad.set({ value });
-  }
-
-  /** Load a past generation's settings (from the results grid) into the form. */
-  public onLoadSettings(event: {
-    request: ImageGenerationRequest;
-    localId: string;
-  }): void {
-    this.pendingLoad.set({
-      value: requestToFormValue(event.request),
-      sourceLocalId: event.localId,
-    });
+    this.pendingLoad.set(value);
   }
 
   public cancelLoad(): void {
@@ -281,12 +291,8 @@ export class GenerateComponent {
     }
   }
 
-  /**
-   * Replace the form with the pending settings, clearing the current source
-   * first and re-attaching the past generation's stored source image when one is
-   * available and the loaded mode uses it.
-   */
-  public async confirmLoad(): Promise<void> {
+  /** Replace the form with the pending preset, clearing any current source. */
+  public confirmLoad(): void {
     const pending = this.pendingLoad();
     this.pendingLoad.set(null);
     if (!pending) {
@@ -295,11 +301,57 @@ export class GenerateComponent {
     this.sourceState.set(DEFAULT_SOURCE_STATE);
     this.cachedSourceBlob = null;
     this.sourceBase64 = null;
-    this.form.setValue(pending.value);
+    this.form.setValue(pending);
     this.form.markAsDirty();
-    if (pending.sourceLocalId && pending.value.sourceMode !== 'none') {
-      await this.reattachSource(pending.sourceLocalId);
+  }
+
+  /**
+   * Write a selection of one past image's parameters into the form. `replace`
+   * starts from the form defaults so unchecked parameters reset; `overlay` starts
+   * from the current form so they are left alone. Unlike "Load settings" this is
+   * an explicit, itemised choice the user just made in the metadata panel, so it
+   * applies without a second confirmation.
+   */
+  public async onApplyMeta(event: {
+    request: ImageGenerationRequest;
+    localId: string;
+    keys: (keyof GenerateFormValue)[];
+    mode: MetaApplyMode;
+  }): Promise<void> {
+    if (event.keys.length === 0) {
+      return;
     }
+    const source = requestToFormValue(event.request);
+    const next: GenerateFormValue =
+      event.mode === 'replace'
+        ? { ...DEFAULT_GENERATE_FORM_VALUE }
+        : { ...this.form.getRawValue() };
+    for (const key of event.keys) {
+      // Index assignment is sound: source and next share the field's type.
+      (next as Record<keyof GenerateFormValue, unknown>)[key] = source[key];
+    }
+    // The applied parameters are advanced ones, and a selected style would force
+    // its own values over the top of them, so neither survives an apply.
+    next.mode = 'advanced';
+    next.styleName = '';
+
+    const usesSource = event.keys.some((key) =>
+      SOURCE_DEPENDENT_KEYS.includes(key),
+    );
+    if (usesSource) {
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.cachedSourceBlob = null;
+      this.sourceBase64 = null;
+    }
+    this.form.setValue(next);
+    this.form.markAsDirty();
+    if (usesSource && next.sourceMode !== 'none') {
+      await this.reattachSource(event.localId);
+    }
+    this.toast.success('generate.results.meta_applied', {
+      transloco: true,
+      messageParams: { count: event.keys.length },
+    });
   }
 
   private async reattachSource(localId: string): Promise<void> {

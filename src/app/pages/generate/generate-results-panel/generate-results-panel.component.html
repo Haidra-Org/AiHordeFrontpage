@@ -80,15 +80,27 @@
         </span>
         <select
           class="gs-view-select"
-          [value]="imagesPerRow()"
           (change)="setImagesPerRow(+$any($event.target).value)"
           [attr.aria-label]="'generate.results.per_row' | transloco"
         >
           @for (n of perRowOptions; track n) {
-            <option [value]="n">{{ n }}</option>
+            <option [value]="n" [selected]="n === imagesPerRow()">
+              {{ n }}
+            </option>
           }
         </select>
       </label>
+
+      <button
+        type="button"
+        class="gs-view-toggle"
+        [class.gs-view-toggle--on]="showPrompts()"
+        [attr.aria-pressed]="showPrompts()"
+        (click)="toggleShowPrompts()"
+      >
+        <app-icon name="document-text" class="gs-ico-sm" />
+        {{ "generate.results.show_prompts" | transloco }}
+      </button>
 
       @if (hasNsfw()) {
         <button
@@ -159,11 +171,13 @@
         </div>
       </div>
     } @else {
-      <!-- Prompt header + retry badge, shared by every tile kind. -->
-      <ng-template #tileTop let-t>
-        @if (t.prompt || t.retryCount) {
+      <!-- Prompt header + retry badge, shared by every tile kind. `hidePrompt`
+           drops the collapsible header when the grid-wide prompt overlay is on,
+           which supersedes it; the retry badge stays either way. -->
+      <ng-template #tileTop let-t let-hidePrompt="hidePrompt">
+        @if ((t.prompt && !hidePrompt) || t.retryCount) {
           <div class="gs-tile-top">
-            @if (t.prompt) {
+            @if (t.prompt && !hidePrompt) {
               <button
                 type="button"
                 class="gs-tile-prompt-btn"
@@ -194,187 +208,269 @@
           </div>
         }
       </ng-template>
-      <div class="gs-tile-grid" [style.gridTemplateColumns]="gridColumns()">
+      <div
+        #tileGrid
+        class="gs-tile-grid"
+        [class.gs-tile-grid--compact]="compactTiles()"
+        [style.gridTemplateColumns]="gridColumns()"
+        [style.--gs-tile-w]="tileWidthVar()"
+      >
         @for (tile of visibleTiles(); track tile.key) {
           @switch (tile.kind) {
             @case ("done") {
+              <!-- Below 1024px the face is image-only and its actions live on a
+                   flip-over back face; from 1024px up the flip machinery is
+                   switched off in CSS and the prompt header / seed bar / kebab
+                   are the actions surface. -->
               <div
-                class="gs-tile"
+                class="gs-tile gs-tile--flip"
+                [class.gs-tile--flipped]="isFlipped(tile)"
                 [class.gs-tile--selectable]="selectMode()"
                 [class.gs-tile--selected]="
                   selectMode() && isSelected(tile.jobLocalId)
                 "
                 [style.aspectRatio]="tile.aspect"
               >
-                @if (!selectMode()) {
-                  <ng-container
-                    [ngTemplateOutlet]="tileTop"
-                    [ngTemplateOutletContext]="{ $implicit: tile }"
-                  />
-                }
-                <button
-                  type="button"
-                  class="gs-tile-imgbtn"
-                  (click)="
-                    selectMode()
-                      ? toggleSelected(tile.jobLocalId)
-                      : openLightbox(tile)
-                  "
-                  [attr.aria-label]="
-                    (selectMode()
-                      ? 'generate.results.select_image'
-                      : 'generate.results.open_preview'
-                    ) | transloco
-                  "
-                >
-                  <img
-                    class="gs-tile-img"
-                    [class.gs-tile-img--blur]="isNsfwHidden(tile)"
-                    [src]="tile.url"
-                    alt=""
-                    loading="lazy"
-                  />
-                </button>
-                @if (selectMode()) {
-                  <span
-                    class="gs-tile-check"
-                    [class.gs-tile-check--on]="isSelected(tile.jobLocalId)"
-                    aria-hidden="true"
-                  >
-                    <app-icon name="check" />
-                  </span>
-                }
-                @if (tile.dims) {
-                  <span class="gs-tile-badge">{{ tile.dims }}</span>
-                }
-                @if (!selectMode()) {
-                  <div class="gs-tile-tags">
-                    @if (
-                      tile.aesthetic !== null && tile.aesthetic !== undefined
-                    ) {
-                      <span
-                        class="gs-tile-tag gs-tile-tag--score"
-                        [title]="'generate.results.meta_aesthetic' | transloco"
+                <div class="gs-flip-inner">
+                  <div class="gs-flip-face gs-flip-face--front">
+                    @if (!selectMode()) {
+                      <!-- Top-left stack: prompt header, then the size badge
+                           below it so the two no longer overlap. -->
+                      <div class="gs-tile-corner">
+                        <ng-container
+                          [ngTemplateOutlet]="tileTop"
+                          [ngTemplateOutletContext]="{
+                            $implicit: tile,
+                            hidePrompt: showPrompts(),
+                          }"
+                        />
+                        @if (tile.dims) {
+                          <span class="gs-tile-badge">{{ tile.dims }}</span>
+                        }
+                      </div>
+                    }
+                    <button
+                      type="button"
+                      class="gs-tile-imgbtn"
+                      (click)="activateTile(tile)"
+                      (contextmenu)="onTileContextMenu(tile, $event)"
+                      [attr.aria-label]="
+                        (selectMode()
+                          ? 'generate.results.select_image'
+                          : 'generate.results.open_preview'
+                        ) | transloco
+                      "
+                    >
+                      <img
+                        class="gs-tile-img"
+                        [class.gs-tile-img--blur]="isNsfwHidden(tile)"
+                        [src]="tile.url"
+                        alt=""
+                        loading="lazy"
+                      />
+                    </button>
+                    @if (showPrompts() && tile.prompt && !selectMode()) {
+                      <!-- Inset so the text starts under the size badge and stops
+                           short of the tag stack instead of running beneath them. -->
+                      <div
+                        class="gs-prompt-overlay"
+                        [class.gs-prompt-overlay--below-badge]="!!tile.dims"
+                        [class.gs-prompt-overlay--clear-tags]="hasTags(tile)"
+                        aria-hidden="true"
                       >
-                        <app-icon name="star" />
-                        {{ tile.aesthetic | number: "1.1-1" }}
+                        {{ tile.prompt }}
+                      </div>
+                    }
+                    @if (selectMode()) {
+                      <span
+                        class="gs-tile-check"
+                        [class.gs-tile-check--on]="isSelected(tile.jobLocalId)"
+                        aria-hidden="true"
+                      >
+                        <app-icon name="check" />
                       </span>
                     }
-                    @if (tile.nsfw) {
-                      <span
-                        class="gs-tile-tag gs-tile-tag--nsfw"
-                        [class.gs-tile-tag--csam]="tile.censorReason === 'csam'"
-                        [title]="
-                          (tile.censorReason
-                            ? 'generate.results.censor_' + tile.censorReason
-                            : 'generate.results.meta_flagged'
-                          ) | transloco
+                    @if (!selectMode()) {
+                      <div class="gs-tile-tags">
+                        @if (
+                          tile.aesthetic !== null &&
+                          tile.aesthetic !== undefined
+                        ) {
+                          <span
+                            class="gs-tile-tag gs-tile-tag--score"
+                            [title]="
+                              'generate.results.meta_aesthetic' | transloco
+                            "
+                          >
+                            <app-icon name="star" />
+                            {{ tile.aesthetic | number: "1.1-1" }}
+                          </span>
+                        }
+                        @if (tile.nsfw) {
+                          <span
+                            class="gs-tile-tag gs-tile-tag--nsfw"
+                            [class.gs-tile-tag--csam]="
+                              tile.censorReason === 'csam'
+                            "
+                            [title]="
+                              (tile.censorReason
+                                ? 'generate.results.censor_' + tile.censorReason
+                                : 'generate.results.meta_flagged'
+                              ) | transloco
+                            "
+                          >
+                            {{ "generate.results.nsfw_badge" | transloco }}
+                          </span>
+                        }
+                        @if (tile.errors?.length; as errCount) {
+                          <span
+                            class="gs-tile-tag gs-tile-tag--error"
+                            [title]="
+                              'generate.results.errors_count'
+                                | transloco: { count: errCount }
+                            "
+                          >
+                            <app-icon name="warning-triangle" />
+                            {{ errCount }}
+                          </span>
+                        }
+                      </div>
+                    }
+                    @if (isNsfwHidden(tile)) {
+                      <button
+                        type="button"
+                        class="gs-tile-veil"
+                        (click)="revealNsfw(tile)"
+                      >
+                        <app-icon name="lock-closed" class="gs-ico-sm" />
+                        <span class="gs-tile-veil-title">
+                          {{ "generate.results.nsfw_badge" | transloco }}
+                        </span>
+                        @if (tile.censorReason) {
+                          <span class="gs-tile-veil-sub">
+                            {{
+                              "generate.results.censor_" + tile.censorReason
+                                | transloco
+                            }}
+                          </span>
+                        }
+                        <span class="gs-tile-veil-reveal">
+                          {{ "generate.results.nsfw_reveal" | transloco }}
+                        </span>
+                      </button>
+                    }
+                    <div class="gs-tile-bar">
+                      <span class="gs-tile-seed">
+                        @if (tile.seed) {
+                          {{
+                            "generate.results.seed"
+                              | transloco: { seed: tile.seed }
+                          }}
+                        }
+                      </span>
+                      <button
+                        type="button"
+                        class="gs-icobtn"
+                        (click)="openTileMenu(tile, $event)"
+                        [attr.aria-label]="
+                          'generate.results.actions' | transloco
+                        "
+                        [title]="'generate.results.actions' | transloco"
+                      >
+                        <app-icon name="ellipsis-vertical" />
+                      </button>
+                    </div>
+                    @if (!selectMode()) {
+                      <button
+                        type="button"
+                        class="gs-flip-zone"
+                        (click)="flipTile(tile)"
+                        [attr.aria-label]="
+                          'generate.results.flip_actions_aria' | transloco
                         "
                       >
-                        {{ "generate.results.nsfw_badge" | transloco }}
-                      </span>
-                    }
-                    @if (tile.errors?.length; as errCount) {
-                      <span
-                        class="gs-tile-tag gs-tile-tag--error"
-                        [title]="
-                          'generate.results.errors_count'
-                            | transloco: { count: errCount }
-                        "
-                      >
-                        <app-icon name="warning-triangle" />
-                        {{ errCount }}
-                      </span>
+                        <span class="gs-flip-hint">
+                          <app-icon name="ellipsis-vertical" />
+                          <!-- Dropped on small tiles, where the glyph alone is
+                               the only thing that still fits. -->
+                          <span class="gs-flip-label">
+                            {{ "generate.results.actions" | transloco }}
+                          </span>
+                        </span>
+                      </button>
                     }
                   </div>
-                }
-                @if (isNsfwHidden(tile)) {
-                  <button
-                    type="button"
-                    class="gs-tile-veil"
-                    (click)="revealNsfw(tile)"
-                  >
-                    <app-icon name="lock-closed" class="gs-ico-sm" />
-                    <span class="gs-tile-veil-title">
-                      {{ "generate.results.nsfw_badge" | transloco }}
-                    </span>
-                    @if (tile.censorReason) {
-                      <span class="gs-tile-veil-sub">
-                        {{
-                          "generate.results.censor_" + tile.censorReason
-                            | transloco
-                        }}
-                      </span>
-                    }
-                    <span class="gs-tile-veil-reveal">
-                      {{ "generate.results.nsfw_reveal" | transloco }}
-                    </span>
-                  </button>
-                }
-                <div class="gs-tile-bar">
-                  <span class="gs-tile-seed">
-                    @if (tile.seed) {
-                      {{
-                        "generate.results.seed" | transloco: { seed: tile.seed }
-                      }}
-                    }
-                  </span>
-                  <div class="gs-tile-btnrow">
-                    <button
-                      type="button"
-                      class="gs-icobtn"
-                      (click)="downloadTile(tile)"
-                      [attr.aria-label]="
-                        'generate.results.download' | transloco
-                      "
-                      [title]="'generate.results.download' | transloco"
-                    >
-                      <app-icon name="arrow-down-tray" />
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-icobtn"
-                      (click)="reuseAsSource()"
-                      [attr.aria-label]="'generate.results.reuse' | transloco"
-                      [title]="'generate.results.reuse' | transloco"
-                    >
-                      <app-icon name="refresh-alt" />
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-icobtn"
-                      (click)="copySeed(tile)"
-                      [disabled]="!tile.seed"
-                      [attr.aria-label]="
-                        'generate.results.copy_seed' | transloco
-                      "
-                      [title]="'generate.results.copy_seed' | transloco"
-                    >
-                      <app-icon name="copy" />
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-icobtn"
-                      (click)="openMeta(tile)"
-                      [attr.aria-label]="
-                        'generate.results.metadata' | transloco
-                      "
-                      [title]="'generate.results.metadata' | transloco"
-                    >
-                      <app-icon name="code-bracket" />
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-icobtn"
-                      (click)="emitLoadSettings(tile)"
-                      [attr.aria-label]="
-                        'generate.results.load_settings' | transloco
-                      "
-                      [title]="'generate.results.load_settings' | transloco"
-                    >
-                      <app-icon name="adjustments-horizontal" />
-                    </button>
-                  </div>
+                  @if (!selectMode()) {
+                    <div class="gs-flip-face gs-flip-face--back">
+                      <div class="gs-flip-menu" role="menu">
+                        <button
+                          type="button"
+                          class="gs-flip-item gs-flip-item--back"
+                          role="menuitem"
+                          (click)="unflip()"
+                        >
+                          <app-icon name="arrow-left" />
+                          {{ "generate.results.back_to_image" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          [disabled]="!tile.thumb"
+                          (click)="downloadTile(tile); unflip()"
+                        >
+                          <app-icon name="arrow-down-tray" />
+                          {{ "generate.results.download" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="reuseAsSource(); unflip()"
+                        >
+                          <app-icon name="refresh-alt" />
+                          {{ "generate.results.reuse" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          [disabled]="!tile.seed"
+                          (click)="copySeed(tile); unflip()"
+                        >
+                          <app-icon name="copy" />
+                          {{ "generate.results.copy_seed" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="openMeta(tile)"
+                        >
+                          <app-icon name="bars-4" />
+                          {{ "generate.results.metadata" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="openLoadSettings(tile)"
+                        >
+                          <app-icon name="adjustments-horizontal" />
+                          {{ "generate.results.menu_load" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item gs-flip-item--danger"
+                          role="menuitem"
+                          (click)="requestDelete([tile.jobLocalId]); unflip()"
+                        >
+                          <app-icon name="trash-modern" />
+                          {{ "generate.results.delete" | transloco }}
+                        </button>
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
             }
@@ -464,7 +560,9 @@
                         ("generate.results.errored" | transloco)
                     }}
                   </span>
-                  <div class="gs-tile-btnrow gs-tile-btnrow--wrap">
+                  <div
+                    class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
+                  >
                     <button
                       type="button"
                       class="gs-tile-btn"
@@ -476,18 +574,10 @@
                     <button
                       type="button"
                       class="gs-tile-btn"
-                      (click)="openMeta(tile)"
+                      (click)="openLoadSettings(tile)"
                     >
-                      <app-icon name="code-bracket" />
+                      <app-icon name="bars-4" />
                       {{ "generate.results.view_settings" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="emitLoadSettings(tile)"
-                    >
-                      <app-icon name="adjustments-horizontal" />
-                      {{ "generate.results.load" | transloco }}
                     </button>
                     <button
                       type="button"
@@ -510,22 +600,16 @@
                   <span class="gs-tile-msg">
                     {{ "generate.status.cancelled" | transloco }}
                   </span>
-                  <div class="gs-tile-btnrow gs-tile-btnrow--wrap">
+                  <div
+                    class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
+                  >
                     <button
                       type="button"
                       class="gs-tile-btn"
-                      (click)="openMeta(tile)"
+                      (click)="openLoadSettings(tile)"
                     >
-                      <app-icon name="code-bracket" />
+                      <app-icon name="bars-4" />
                       {{ "generate.results.view_settings" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="emitLoadSettings(tile)"
-                    >
-                      <app-icon name="adjustments-horizontal" />
-                      {{ "generate.results.load" | transloco }}
                     </button>
                     <button
                       type="button"
@@ -550,40 +634,216 @@
   </div>
 </div>
 
-@if (lightbox(); as view) {
+@if (viewerTile(); as view) {
   <div
-    class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
-    (click)="closeLightbox()"
-    (keydown.escape)="closeLightbox()"
+    class="gs-viewer"
+    (click)="onViewerBackdrop($event)"
+    (keydown.escape)="closeViewer()"
     tabindex="0"
-    role="dialog"
-    aria-modal="true"
+  >
+    <div
+      #viewerPanel
+      class="gs-viewer-body"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      [attr.aria-label]="'generate.results.viewer' | transloco"
+    >
+      <div class="gs-viewer-main">
+        <div class="gs-viewer-top">
+          <span
+            class="gs-viewer-counter gs-mono"
+            [attr.aria-label]="
+              'generate.results.viewer_counter'
+                | transloco: { index: viewerIndex() + 1, total: viewerCount() }
+            "
+          >
+            {{ viewerIndex() + 1 }} / {{ viewerCount() }}
+          </span>
+          <button
+            type="button"
+            class="gs-viewer-x"
+            (click)="closeViewer()"
+            [attr.aria-label]="'generate.results.close' | transloco"
+          >
+            <app-icon name="x-mark" />
+          </button>
+        </div>
+        <div
+          class="gs-viewer-stage"
+          (pointerdown)="onViewerPointerDown($event)"
+          (pointerup)="onViewerPointerUp($event)"
+          (pointercancel)="onViewerPointerUp($event)"
+        >
+          @if (viewerCount() > 1) {
+            <button
+              type="button"
+              class="gs-viewer-nav gs-viewer-nav--prev"
+              (click)="viewerPrev()"
+              [attr.aria-label]="'generate.results.viewer_prev' | transloco"
+            >
+              <app-icon name="chevron-right" class="gs-viewer-nav-ico--flip" />
+            </button>
+          }
+          <button
+            type="button"
+            class="gs-viewer-imgbtn"
+            (click)="onViewerImageClick()"
+            [attr.aria-label]="'generate.results.close' | transloco"
+          >
+            <img class="gs-viewer-img" [src]="view.url" alt="" />
+          </button>
+          @if (viewerCount() > 1) {
+            <button
+              type="button"
+              class="gs-viewer-nav gs-viewer-nav--next"
+              (click)="viewerNext()"
+              [attr.aria-label]="'generate.results.viewer_next' | transloco"
+            >
+              <app-icon name="chevron-right" />
+            </button>
+          }
+        </div>
+        @if (view.model || view.seed) {
+          <div class="gs-viewer-caption gs-mono">
+            @if (view.model) {
+              {{ view.model }}
+            }
+            @if (view.seed) {
+              · {{ "generate.results.seed" | transloco: { seed: view.seed } }}
+            }
+          </div>
+        }
+        <div class="gs-viewer-actions">
+          <button
+            type="button"
+            class="gs-viewer-act gs-viewer-act--primary"
+            [disabled]="!view.thumb"
+            (click)="downloadTile(view)"
+          >
+            <app-icon name="arrow-down-tray" />
+            {{ "generate.results.download" | transloco }}
+          </button>
+          <button type="button" class="gs-viewer-act" (click)="reuseAsSource()">
+            <app-icon name="refresh-alt" />
+            {{ "generate.results.reuse" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-viewer-act"
+            [disabled]="!view.seed"
+            (click)="copySeed(view)"
+          >
+            <app-icon name="copy" />
+            {{ "generate.results.copy_seed" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-viewer-act"
+            [class.gs-viewer-act--on]="metaOpen()"
+            (click)="toggleMeta(view)"
+          >
+            <app-icon name="bars-4" />
+            {{ "generate.results.metadata" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-viewer-act"
+            (click)="openLoadSettings(view)"
+          >
+            <app-icon name="adjustments-horizontal" />
+            {{ "generate.results.menu_load" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-viewer-act gs-viewer-act--danger"
+            (click)="requestDelete([view.jobLocalId])"
+          >
+            <app-icon name="trash-modern" />
+            {{ "generate.results.delete" | transloco }}
+          </button>
+        </div>
+      </div>
+      @if (metaTile(); as tile) {
+        <!-- Bottom sheet on phones, docked beside the image from 1024px up. -->
+        <button
+          type="button"
+          class="gs-viewer-metascrim"
+          (click)="closeMeta()"
+          [attr.aria-label]="'generate.results.close' | transloco"
+        ></button>
+        <app-image-meta-panel
+          class="gs-viewer-meta"
+          [request]="tile.applyRequest ?? null"
+          [provenance]="tile.provenance ?? null"
+          [localId]="tile.jobLocalId"
+          [currentValue]="formValue()"
+          [defaultMode]="metaMode()"
+          [pinned]="metaPinned()"
+          (apply)="onMetaApply($event)"
+          (rawJson)="metaJsonOpen.set(true)"
+          (pinToggle)="toggleMetaPin()"
+          (closed)="closeMeta()"
+        />
+      }
+    </div>
+  </div>
+}
+
+@if (tileMenu(); as menu) {
+  <div
+    class="gs-tile-menu gs-fadeup"
+    role="menu"
+    [style.left.px]="menu.x"
+    [style.top.px]="menu.y"
   >
     <button
       type="button"
-      class="btn-icon absolute right-4 top-4 text-white"
-      (click)="closeLightbox()"
-      [attr.aria-label]="'generate.results.close' | transloco"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      [disabled]="!menu.tile.thumb"
+      (click)="downloadTile(menu.tile); closeTileMenu()"
     >
-      <app-icon name="x-mark" />
+      <app-icon name="arrow-down-tray" />
+      {{ "generate.results.download" | transloco }}
     </button>
-    <figure class="flex max-h-full max-w-full flex-col items-center gap-2">
-      <img
-        [src]="view.url"
-        alt=""
-        class="max-h-[80vh] max-w-full rounded-md object-contain"
-      />
-      @if (view.seed || view.model) {
-        <figcaption class="text-xs text-white/80">
-          @if (view.model) {
-            {{ view.model }}
-          }
-          @if (view.seed) {
-            · {{ "generate.results.seed" | transloco: { seed: view.seed } }}
-          }
-        </figcaption>
-      }
-    </figure>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="reuseAsSource(); closeTileMenu()"
+    >
+      <app-icon name="refresh-alt" />
+      {{ "generate.results.reuse" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      [disabled]="!menu.tile.seed"
+      (click)="copySeed(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="copy" />
+      {{ "generate.results.copy_seed" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="openMeta(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="bars-4" />
+      {{ "generate.results.metadata" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="openLoadSettings(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="adjustments-horizontal" />
+      {{ "generate.results.menu_load" | transloco }}
+    </button>
   </div>
 }
 
@@ -631,11 +891,36 @@
 }
 
 @if (metaTile(); as tile) {
-  <app-studio-json-modal
-    [title]="'generate.results.metadata_title' | transloco"
-    [data]="tile.metaExport"
-    [highlights]="metaHighlights()"
-    [downloadName]="metaDownloadName(tile)"
-    (closed)="closeMeta()"
-  />
+  @if (viewerKey() === null) {
+    <!-- Opened straight from a tile: a sheet on phones, a centred panel on
+         desktop. Inside the viewer the same panel is hosted by the viewer. -->
+    <div
+      class="gs-meta-host"
+      (click)="onMetaBackdrop($event)"
+      (keydown.escape)="closeMeta()"
+      tabindex="0"
+    >
+      <app-image-meta-panel
+        [request]="tile.applyRequest ?? null"
+        [provenance]="tile.provenance ?? null"
+        [localId]="tile.jobLocalId"
+        [currentValue]="formValue()"
+        [defaultMode]="metaMode()"
+        [pinned]="metaPinned()"
+        (apply)="onMetaApply($event)"
+        (rawJson)="metaJsonOpen.set(true)"
+        (pinToggle)="toggleMetaPin()"
+        (closed)="closeMeta()"
+      />
+    </div>
+  }
+  @if (metaJsonOpen()) {
+    <app-studio-json-modal
+      [title]="'generate.results.metadata_title' | transloco"
+      [data]="tile.metaExport"
+      [highlights]="metaHighlights()"
+      [downloadName]="metaDownloadName(tile)"
+      (closed)="metaJsonOpen.set(false)"
+    />
+  }
 }

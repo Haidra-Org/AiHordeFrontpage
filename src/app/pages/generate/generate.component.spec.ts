@@ -289,6 +289,123 @@ describe('GenerateComponent', () => {
     expect(component.forcedParams()?.model).toBe('flux');
   });
 
+  describe('applying a metadata selection', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a lighthouse ### blurry',
+      models: ['flux'],
+      params: {
+        steps: 30,
+        cfg_scale: 6.5,
+        seed: '4242',
+        width: 832,
+        height: 1216,
+      },
+    };
+
+    it('resets unchecked parameters to their defaults in replace mode', async () => {
+      component.form.patchValue({
+        mode: 'advanced',
+        prompt: 'something else',
+        steps: 12,
+        width: 512,
+        height: 512,
+      });
+
+      await component.onApplyMeta({
+        request,
+        localId: 'job-1',
+        keys: ['prompt', 'steps'],
+        mode: 'replace',
+      });
+
+      const value = component.form.getRawValue();
+      expect(value.prompt).toBe('a lighthouse');
+      expect(value.steps).toBe(30);
+      // Unchecked: back to the form defaults, not the request's 832x1216.
+      expect(value.width).toBe(1024);
+      expect(value.height).toBe(1024);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.results.meta_applied',
+        expect.objectContaining({ messageParams: { count: 2 } }),
+      );
+    });
+
+    it('leaves unchecked parameters on their current values in overlay mode', async () => {
+      component.form.patchValue({
+        mode: 'advanced',
+        prompt: 'keep me',
+        steps: 12,
+        width: 512,
+        height: 512,
+      });
+
+      await component.onApplyMeta({
+        request,
+        localId: 'job-1',
+        keys: ['width', 'height'],
+        mode: 'overlay',
+      });
+
+      const value = component.form.getRawValue();
+      expect(value.width).toBe(832);
+      expect(value.height).toBe(1216);
+      expect(value.prompt).toBe('keep me');
+      expect(value.steps).toBe(12);
+    });
+
+    it('opens the form in advanced mode and drops any selected style', async () => {
+      component.form.patchValue({ mode: 'simple', styleName: 'Test' });
+
+      await component.onApplyMeta({
+        request,
+        localId: 'job-1',
+        keys: ['prompt'],
+        mode: 'overlay',
+      });
+
+      expect(component.form.controls.mode.value).toBe('advanced');
+      expect(component.form.controls.styleName.value).toBe('');
+    });
+
+    it('does nothing when the selection is empty', async () => {
+      component.form.controls.prompt.setValue('untouched');
+
+      await component.onApplyMeta({
+        request,
+        localId: 'job-1',
+        keys: [],
+        mode: 'replace',
+      });
+
+      expect(component.form.controls.prompt.value).toBe('untouched');
+      expect(toastSuccess).not.toHaveBeenCalled();
+    });
+
+    it('clears the current source when a source-dependent key is applied', async () => {
+      component.sourceState.set({
+        mode: 'img2img',
+        sourceBlob: new Blob([new Uint8Array([1])], { type: 'image/webp' }),
+        maskBlob: null,
+        valid: true,
+      });
+
+      await component.onApplyMeta({
+        request: {
+          ...request,
+          source_processing: 'img2img',
+          params: { ...request.params, denoising_strength: 0.4 },
+        },
+        localId: 'job-1',
+        keys: ['sourceMode', 'denoising_strength'],
+        mode: 'overlay',
+      });
+
+      expect(component.sourceState().sourceBlob).toBeNull();
+      expect(component.form.controls.sourceMode.value).toBe('img2img');
+      expect(component.form.controls.denoising_strength.value).toBe(0.4);
+    });
+  });
+
   it('sorts fetched models by worker count, descending', () => {
     const aiHorde = TestBed.inject(AiHordeService) as unknown as {
       getImageModels: () => unknown;

@@ -70,6 +70,40 @@ export function deriveImageMeta(
 }
 
 /**
+ * What the horde reported about a finished image, as read-only rows for the
+ * metadata panel. It is the same set of facts {@link buildImageMetadataExport}
+ * serialises, minus the request (which the panel reads from the request itself).
+ */
+export interface ImageMetaProvenance {
+  seed: string | null;
+  model: string | null;
+  workerName: string | null;
+  workerId: string | null;
+  state: string | null;
+  censored: boolean;
+  censorReason: string | null;
+  aesthetic: number | null;
+  errors: ImageMetaError[];
+}
+
+export function buildImageProvenance(
+  metadata: StoredJobImageMetadata | undefined,
+  derived: DerivedImageMeta,
+): ImageMetaProvenance {
+  return {
+    seed: metadata?.seed ?? null,
+    model: metadata?.model ?? null,
+    workerName: metadata?.workerName ?? null,
+    workerId: metadata?.workerId ?? null,
+    state: metadata?.state ?? null,
+    censored: derived.censored,
+    censorReason: derived.censorReason,
+    aesthetic: derived.aesthetic,
+    errors: derived.errors,
+  };
+}
+
+/**
  * A serialisable metadata record for one image: its input parameters (the
  * submitted request) plus everything the horde returned about it. Used both by
  * the per-image metadata modal and the sidecar JSON written into Download All.

@@ -1,0 +1,139 @@
+<div
+  class="gs-meta-panel gs-fadeup"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'generate.results.metadata_title' | transloco"
+>
+  <button
+    type="button"
+    class="gs-meta-grab"
+    (click)="close()"
+    [attr.aria-label]="'generate.results.close' | transloco"
+  ></button>
+  <div class="gs-meta-head">
+    <span class="gs-meta-title">
+      {{ "generate.results.metadata_title" | transloco }}
+    </span>
+    <button type="button" class="gs-meta-raw" (click)="rawJson.emit()">
+      <app-icon name="code-bracket" />
+      {{ "generate.results.raw_json" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-meta-pin"
+      [class.gs-meta-pin--on]="pinned()"
+      [attr.aria-pressed]="pinned()"
+      (click)="pinToggle.emit()"
+      [attr.aria-label]="'generate.results.meta_pin' | transloco"
+      [title]="'generate.results.meta_pin' | transloco"
+    >
+      <app-icon name="flag" />
+    </button>
+    <button
+      type="button"
+      class="gs-modal-close"
+      (click)="close()"
+      [attr.aria-label]="'generate.results.close' | transloco"
+    >
+      <app-icon name="x-mark" />
+    </button>
+  </div>
+
+  <div class="gs-meta-body">
+    @for (group of groups(); track group.id) {
+      <div class="gs-meta-group">
+        <label class="gs-meta-group-head">
+          <input
+            type="checkbox"
+            [checked]="groupState(group) === 'all'"
+            [indeterminate]="groupState(group) === 'some'"
+            (change)="toggleGroup(group)"
+            [attr.aria-label]="'generate.results.meta_group_toggle' | transloco"
+          />
+          <span class="gs-meta-group-title">{{
+            group.titleKey | transloco
+          }}</span>
+        </label>
+        @for (row of group.rows; track row.id) {
+          <label class="gs-meta-row" [class.gs-meta-row--off]="!isChecked(row)">
+            <input
+              type="checkbox"
+              [checked]="isChecked(row)"
+              (change)="toggleRow(row)"
+            />
+            @if (isDifferent(row)) {
+              <span
+                class="gs-meta-delta"
+                [attr.aria-label]="'generate.results.meta_delta' | transloco"
+                >*</span
+              >
+            }
+            <span class="gs-meta-key">{{ row.labelKey | transloco }}</span>
+            <span class="gs-meta-val">{{ row.value }}</span>
+          </label>
+        }
+      </div>
+    }
+    @if (infoRows().length > 0) {
+      <div class="gs-meta-group">
+        <div class="gs-meta-group-head gs-meta-group-head--info">
+          <span class="gs-meta-group-title">
+            {{ "generate.results.meta_group_provenance" | transloco }}
+          </span>
+        </div>
+        @for (row of infoRows(); track $index) {
+          <div class="gs-meta-row gs-meta-row--info">
+            <span class="gs-meta-key">{{ row.label }}</span>
+            <span
+              class="gs-meta-val"
+              [class.gs-meta-val--good]="row.tone === 'good'"
+              [class.gs-meta-val--warn]="row.tone === 'warn'"
+              [class.gs-meta-val--danger]="row.tone === 'danger'"
+            >
+              {{ row.value }}
+            </span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="gs-meta-foot">
+    <div class="gs-meta-seg" role="group">
+      <button
+        type="button"
+        class="gs-meta-seg-opt"
+        [class.gs-meta-seg-opt--on]="mode() === 'replace'"
+        [attr.aria-pressed]="mode() === 'replace'"
+        (click)="setMode('replace')"
+      >
+        {{ "generate.results.mode_replace" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="gs-meta-seg-opt"
+        [class.gs-meta-seg-opt--on]="mode() === 'overlay'"
+        [attr.aria-pressed]="mode() === 'overlay'"
+        (click)="setMode('overlay')"
+      >
+        {{ "generate.results.mode_overlay" | transloco }}
+      </button>
+    </div>
+    <button
+      type="button"
+      class="gs-meta-apply"
+      [disabled]="selectedCount() === 0"
+      (click)="emitApply()"
+    >
+      {{ "generate.results.apply_n" | transloco: { count: selectedCount() } }}
+    </button>
+    <p class="gs-meta-note">
+      {{ "generate.results.mode_explain" | transloco }}
+      @if (hasDifferences()) {
+        <span class="gs-meta-note-delta">
+          {{ "generate.results.meta_delta_legend" | transloco }}
+        </span>
+      }
+    </p>
+  </div>
+</div>

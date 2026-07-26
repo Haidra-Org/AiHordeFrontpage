@@ -4,7 +4,7 @@ import {
   HttpErrorResponse,
   HttpParams,
 } from '@angular/common/http';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, shareReplay } from 'rxjs';
 import { HordeApiError } from '../types/generation';
 
 const CIVITAI_API_BASE = 'https://civitai.com/api/v1';
@@ -97,6 +97,13 @@ interface RawCivitaiModel {
   modelVersions?: RawCivitaiModelVersion[];
 }
 
+/** The single-resource shape shared by `/models/{id}` and `/model-versions/{id}`. */
+interface RawCivitaiNamed {
+  name?: string;
+  /** Only present on a version response: the model the version belongs to. */
+  model?: { name?: string };
+}
+
 interface RawCivitaiResponse {
   items?: RawCivitaiModel[];
   metadata?: {
@@ -180,6 +187,9 @@ function mapModel(
 export class CivitaiService {
   private readonly httpClient = inject(HttpClient);
 
+  /** Memoised id -> display-name lookups; see {@link resolveName}. */
+  private readonly nameCache = new Map<string, Observable<string | null>>();
+
   /**
    * Search the public CivitAI model catalogue for LoRAs or textual inversions.
    * NSFW results are excluded unless `nsfw` is set. Failures resolve to a typed
@@ -219,6 +229,58 @@ export class CivitaiService {
           }),
         ),
       );
+  }
+
+  /**
+   * Resolve a bare CivitAI identifier to a display name. A horde request only
+   * stores the id it was given, so past generations have nothing readable to
+   * show until the catalogue is asked. `isVersion` selects the version endpoint
+   * (matching the horde's `is_version` flag) over the model one.
+   *
+   * Results (including failures, as `null`) are memoised for the app's lifetime
+   * and shared between subscribers, so re-opening the same metadata repeatedly
+   * issues at most one request per id.
+   */
+  public resolveName(
+    id: string,
+    isVersion: boolean,
+  ): Observable<string | null> {
+    const key = `${isVersion ? 'v' : 'm'}:${id}`;
+    const cached = this.nameCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const path = isVersion ? 'model-versions' : 'models';
+    const request = this.httpClient
+      .get<RawCivitaiNamed>(
+        `${CIVITAI_API_BASE}/${path}/${encodeURIComponent(id)}`,
+      )
+      .pipe(
+        map((response) => this.readName(response, isVersion)),
+        catchError(() => of(null)),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
+    this.nameCache.set(key, request);
+    return request;
+  }
+
+  /**
+   * A version response names the version (e.g. "v2.0"), which only means
+   * something alongside its model, so the two are joined when both are known.
+   */
+  private readName(
+    response: RawCivitaiNamed,
+    isVersion: boolean,
+  ): string | null {
+    const own = response.name?.trim();
+    if (!isVersion) {
+      return own || null;
+    }
+    const model = response.model?.name?.trim();
+    if (model && own) {
+      return `${model} · ${own}`;
+    }
+    return model || own || null;
   }
 
   private buildParams(

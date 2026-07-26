@@ -34,7 +34,8 @@
   <section class="gs-results">
     <app-generate-results-panel
       class="gs-fill"
-      (loadSettings)="onLoadSettings($event)"
+      [formValue]="formValue()"
+      (applyMeta)="onApplyMeta($event)"
     />
   </section>
 
