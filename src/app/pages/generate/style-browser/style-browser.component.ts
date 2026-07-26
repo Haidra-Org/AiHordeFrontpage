@@ -92,6 +92,17 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     ...STYLE_PREVIEW_VARIANTS,
   ];
   public readonly query = signal('');
+
+  /**
+   * Whether the mobile control bar is folded away. The bar is pinned at the
+   * bottom on small screens, so folding lets the results reclaim that space;
+   * desktop ignores this (the bar lives in the header there).
+   */
+  public readonly barFolded = signal(false);
+
+  public toggleBarFolded(): void {
+    this.barFolded.update((v) => !v);
+  }
   public readonly variant = signal<StyleBrowserVariantOption>('all');
   public readonly sort = signal<StyleBrowserSort>('category');
   /** Whether cards are showing every subject, which widens the grid. */

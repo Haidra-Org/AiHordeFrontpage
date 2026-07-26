@@ -71,8 +71,13 @@
 }
 
 .gen-studio {
-  --gs-canvas: #f9fafb;
+  /* Elevation ladder: canvas (page floor) -> panel (workspace) -> card
+     (grouped controls). Deepening the canvas is what lets the white panels
+     read as raised planes instead of dissolving into the page. */
+  --gs-canvas: #f1f2f5;
   --gs-panel: #ffffff;
+  --gs-card: #f7f8fa;
+  --gs-card-border: #e2e5ea;
   --gs-border: #e5e7eb;
   --gs-border-soft: #f0f1f3;
   --gs-border-results: #eceef1;
@@ -107,7 +112,11 @@
 
 .dark .gen-studio {
   --gs-canvas: #0f1115;
-  --gs-panel: #16181d;
+  /* One visible step above the canvas; cards take a second step so grouped
+     controls read as objects on the workspace rather than outlines in it. */
+  --gs-panel: #1a1d24;
+  --gs-card: #21252d;
+  --gs-card-border: #313743;
   --gs-border: #2a2e37;
   --gs-border-soft: #23262d;
   --gs-border-results: #23262d;
@@ -116,15 +125,15 @@
   --gs-label: #9ca3af;
   /* 5.4:1 on the dark panel: the old #7c828d sat below AA for small text. */
   --gs-muted: #98a0ac;
-  --gs-field: #1b1e24;
-  --gs-field-soft: #1b1e24;
+  --gs-field: #14171d;
+  --gs-field-soft: #14171d;
   --gs-field-border: #313640;
   --gs-blue-tint: rgba(29, 78, 216, 0.16);
   --gs-blue-tint-border: rgba(59, 130, 246, 0.35);
   --gs-purple-tint: rgba(147, 51, 234, 0.16);
   --gs-purple-tint-border: rgba(147, 51, 234, 0.4);
   --gs-green-tint: rgba(22, 163, 74, 0.18);
-  --gs-seg-track: #23262d;
+  --gs-seg-track: #272c35;
   --gs-seg-active: #f3f4f6;
   --gs-seg-active-ink: #111827;
   --gs-switch-off: #3a3f47;
@@ -665,17 +674,30 @@
 
 /* ------- cards ------------------------------------------------------ */
 .gen-studio .gs-card {
-  border: 1px solid var(--gs-border);
+  border: 1px solid var(--gs-card-border);
   border-radius: 10px;
   padding: 12px 13px;
-  background: var(--gs-panel);
+  background: var(--gs-card);
 }
 .gen-studio .gs-card--pad-sm {
   padding: 11px 12px;
 }
 .gen-studio .gs-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 11.5px;
   font-weight: 700;
+}
+/* Every section title carries the same small accent tick: one repeated device
+   that marks "a section starts here" while the eye scans the column. */
+.gen-studio .gs-card-title::before {
+  content: "";
+  width: 3px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--gs-blue);
+  flex: none;
 }
 .gen-studio .gs-card-title--sm {
   font-size: 11px;
@@ -4303,6 +4325,11 @@
 .gen-studio .gs-sb-bar {
   flex-wrap: wrap;
 }
+/* The fold handle is a mobile-only affordance; the desktop bar lives in the
+   header where space is not contended. */
+.gen-studio .gs-sb-fold {
+  display: none;
+}
 .gen-studio .gs-sb-bar .gs-modal-search {
   flex: 1 1 200px;
   min-width: 0;
@@ -4446,10 +4473,11 @@
     gap: 10px;
   }
   /* Thumb-scale controls: search + sort share the first row, the subject
-     switch stretches across its own row, every target >= 44px tall. */
+     switch stretches across its own row, every target >= 40px tall. The fold
+     handle collapses everything but itself so results reclaim the space. */
   .gen-studio .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
     flex: 1 1 200px;
-    min-height: 44px;
+    min-height: 40px;
   }
   .gen-studio .gs-modal-panel--browser .gs-sb-sort {
     flex: 1 1 auto;
@@ -4463,8 +4491,26 @@
   .gen-studio .gs-modal-panel--browser .gs-sb-variant .gs-seg-opt,
   .gen-studio .gs-modal-panel--browser .gs-sb-sort .gs-seg-opt {
     flex: 1 1 0;
-    min-height: 44px;
-    font-size: 13px;
+    min-height: 40px;
+    font-size: 12.5px;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-fold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 100%;
+    order: -1;
+    min-height: 26px;
+    margin: -6px 0 -2px;
+    border: 0;
+    background: none;
+    color: var(--gs-muted);
+    cursor: pointer;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-modal-search,
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-sort,
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-variant {
+    display: none;
   }
   .gen-studio .gs-modal-panel--browser .gs-modal-body {
     order: 2;

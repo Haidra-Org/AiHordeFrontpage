@@ -134,6 +134,7 @@
   "generate.form.browse_close": "Close style browser",
   "generate.form.browser_title": "Browse styles",
   "generate.form.style_search": "Search styles",
+  "generate.form.style_controls_toggle": "Show or hide search and filters",
   "generate.form.variant_label": "Preview subject",
   "generate.form.variant_all": "All",
   "generate.form.variant_person": "Person",

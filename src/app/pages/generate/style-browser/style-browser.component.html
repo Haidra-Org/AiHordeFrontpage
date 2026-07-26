@@ -38,7 +38,22 @@
       </button>
     </div>
 
-    <div class="gs-modal-search-bar gs-sb-bar">
+    <div
+      class="gs-modal-search-bar gs-sb-bar"
+      [class.gs-sb-bar--folded]="barFolded()"
+    >
+      <button
+        type="button"
+        class="gs-sb-fold"
+        (click)="toggleBarFolded()"
+        [attr.aria-expanded]="!barFolded()"
+        [attr.aria-label]="'generate.form.style_controls_toggle' | transloco"
+      >
+        <app-icon
+          [name]="barFolded() ? 'chevron-up' : 'chevron-down'"
+          class="gs-ico-sm"
+        />
+      </button>
       <div class="gs-modal-search">
         <app-icon name="search" class="gs-ico-sm gs-muted" />
         <input
