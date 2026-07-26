@@ -51,3 +51,6 @@ venv/
 *-1*.json
 **/__pycache__/
 
+
+# local secrets
+.env
