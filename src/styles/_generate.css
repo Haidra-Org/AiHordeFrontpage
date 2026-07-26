@@ -6023,9 +6023,21 @@
   color: var(--gs-ink);
 }
 .gen-studio .gs-tut-flow-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
   font-size: 16px;
   font-weight: 700;
   color: var(--gs-ink);
+}
+/* The technique behind the task, set quietly beside it. */
+.gen-studio .gs-tut-technique {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
 }
 .gen-studio .gs-tut-lead {
   margin: 6px 0 0;

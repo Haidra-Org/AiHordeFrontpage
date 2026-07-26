@@ -103,9 +103,9 @@ const LIFECYCLE = ['submit', 'check', 'status'] as const;
 const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
 
 /**
- * Worked examples for the image studio: for each flow, the request that was
- * actually submitted, the image that came back, and the steps that produce the
- * same thing from the control panel. Everything shown is read from the
+ * The learning surface for the image studio: for each flow, the request that
+ * was actually submitted, the image that came back, and the steps that produce
+ * the same thing from the control panel. Everything shown is read from the
  * committed asset set, so the page cannot describe a request that was never
  * sent.
  */
@@ -204,6 +204,15 @@ export class GenerateTutorialsComponent {
 
   public setMode(mode: 'user' | 'developer'): void {
     this.mode.set(mode);
+  }
+
+  /**
+   * The key naming a flow by what it makes. The manifest's own title names the
+   * technique instead, which is the wrong thing to lead a reader with, so it is
+   * kept as a second line rather than as the name.
+   */
+  public taskNameKey(flow: TutorialFlow): string {
+    return `generate.tutorials.flows.${flow.id}.task_name`;
   }
 
   public isActive(flow: TutorialFlow): boolean {

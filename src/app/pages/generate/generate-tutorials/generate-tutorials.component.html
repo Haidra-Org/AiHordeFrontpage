@@ -25,7 +25,7 @@
           [routerLink]="['/generate/tutorials', flow.id]"
           [attr.aria-current]="isActive(flow) ? 'page' : null"
         >
-          {{ flow.title }}
+          {{ taskNameKey(flow) | transloco }}
           @if (flow.status === "skipped") {
             <span class="gs-tut-chip-tag">
               {{ "generate.tutorials.unavailable_tag" | transloco }}
@@ -37,7 +37,12 @@
 
     @if (activeFlow(); as flow) {
       <article class="gs-tut-flow">
-        <h2 class="gs-tut-flow-title">{{ flow.title }}</h2>
+        <!-- Named by what it makes; the technique it uses rides along behind,
+             where it tells a reader who wants it what to go and look up. -->
+        <h2 class="gs-tut-flow-title">
+          {{ taskNameKey(flow) | transloco }}
+          <span class="gs-tut-technique">{{ flow.title }}</span>
+        </h2>
         <p class="gs-tut-lead">{{ flow.summary }}</p>
 
         @if (flow.status === "skipped") {

@@ -59,7 +59,7 @@ export const routes: Routes = [
             (c) => c.AlchemyComponent,
           ),
       },
-      // One route for every worked example; `:flow` deep-links a single one and
+      // One route for every example; `:flow` deep-links a single one and
       // the bare path falls back to the first in the manifest.
       {
         path: 'tutorials/:flow',

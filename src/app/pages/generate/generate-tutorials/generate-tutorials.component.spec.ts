@@ -184,6 +184,21 @@ describe('GenerateTutorialsComponent', () => {
     expect(harness.query('.gs-tut-img')).toHaveLength(3);
   });
 
+  it('leads with the task name and keeps the technique behind it', async () => {
+    harness = await createPage('inpainting');
+    flushAll(harness);
+
+    const translations = en as Record<string, string>;
+    const title = harness.query<HTMLElement>('.gs-tut-flow-title')[0];
+
+    expect(title.textContent).toContain(
+      translations['generate.tutorials.flows.inpainting.task_name'],
+    );
+    expect(title.querySelector('.gs-tut-technique')?.textContent?.trim()).toBe(
+      MANIFEST.flows.find((flow) => flow.id === 'inpainting')?.title,
+    );
+  });
+
   it('falls back to the first flow for an unknown deep link', async () => {
     harness = await createPage('no-such-flow');
     flushAll(harness);
@@ -252,6 +267,11 @@ describe('GenerateTutorialsComponent', () => {
     for (const call of ['submit', 'check', 'status']) {
       expected.add(`generate.tutorials.dev_call_${call}.route`);
       expected.add(`generate.tutorials.dev_call_${call}.desc`);
+    }
+    // Every flow is named by its task, the skipped one included: the chip has
+    // to say what it would have made.
+    for (const flow of MANIFEST.flows) {
+      expected.add(`generate.tutorials.flows.${flow.id}.task_name`);
     }
     for (const flow of AVAILABLE) {
       const steps = TUTORIAL_FLOW_STEPS[flow.id];
