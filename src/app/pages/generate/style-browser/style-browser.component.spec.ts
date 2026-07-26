@@ -232,15 +232,35 @@ describe('StyleBrowserComponent', () => {
     expect(cardNames(el)).toEqual(['Watercolor', 'Anime', 'Cinematic']);
   });
 
-  it('selects a style through the form control and closes', async () => {
+  it('selects a style through the card Use button and closes', async () => {
     const { fixture, el, form, closeCount } = await createBrowser();
-    const anime = [...el.querySelectorAll<HTMLButtonElement>('.gs-sb-card')][1];
+    const anime = [...el.querySelectorAll<HTMLButtonElement>('.gs-sb-use')][1];
     anime.click();
     fixture.detectChanges();
 
     expect(form.controls.styleName.value).toBe('Anime');
     expect(form.controls.styleName.dirty).toBe(true);
     expect(closeCount()).toBe(1);
+  });
+
+  it('opens the preview from a card click rather than selecting', async () => {
+    const { fixture, el, form, closeCount } = await createBrowser();
+    [...el.querySelectorAll<HTMLButtonElement>('.gs-sb-card')][1].click();
+    fixture.detectChanges();
+
+    expect(el.querySelector('.gs-sb-viewer')).not.toBeNull();
+    expect(form.controls.styleName.value).toBe('');
+    expect(closeCount()).toBe(0);
+  });
+
+  it('carries the selected state on the Use button, not the card', async () => {
+    const { el } = await createBrowser({ styleName: 'Watercolor' });
+    const pressed = [
+      ...el.querySelectorAll<HTMLButtonElement>('.gs-sb-use'),
+    ].filter((node) => node.getAttribute('aria-pressed') === 'true');
+    expect(pressed.length).toBe(1);
+    // The card is the preview target now, so it carries no pressed state.
+    expect(el.querySelector('.gs-sb-card[aria-pressed]')).toBeNull();
   });
 
   it('marks the selected style card as active', async () => {
@@ -314,19 +334,49 @@ describe('StyleBrowserComponent', () => {
   });
 
   describe('mature filter', () => {
-    it('flags mature style names case-insensitively and leaves the rest alone', () => {
+    it('flags a style by the categories it is filed under', () => {
+      expect(isMatureStyle('dreadhorror', ['horrors'])).toBe(true);
+      expect(isMatureStyle('bb95 furry', ['Furries'])).toBe(true);
+      expect(isMatureStyle('blendermix', ['ponies'])).toBe(true);
+      // Membership counts wherever it appears, not only in the first category.
+      expect(isMatureStyle('nova furry pony', ['new', 'furries'])).toBe(true);
+      expect(isMatureStyle('blendermix', ['anime'])).toBe(false);
+    });
+
+    it('flags unambiguous name markers wherever the style is filed', () => {
+      for (const name of ['hentai_raw', 'wai-nsfw-illustrious', 'yiffy']) {
+        expect(isMatureStyle(name, [])).toBe(true);
+      }
+    });
+
+    it('no longer takes the judgment-call name keywords', () => {
+      // These were collateral of the old name-only heuristic: none of them is
+      // mature by anything but a word in its title.
       for (const name of [
-        'dreadhorror',
-        'Nova Furry XL',
-        'hentai_raw',
-        'wai-nsfw-illustrious',
-        'yiffy',
+        'impressionist horror comic',
+        'spooky horror',
+        'terror ink',
+        'nightmare fairytale',
+        'babes',
       ]) {
-        expect(isMatureStyle(name)).toBe(true);
+        expect(isMatureStyle(name, ['mediums'])).toBe(false);
       }
       for (const name of ['Cinematic', 'Anime', 'Watercolor', 'steampunk']) {
-        expect(isMatureStyle(name)).toBe(false);
+        expect(isMatureStyle(name, [])).toBe(false);
       }
+    });
+
+    it('lets a _raw variant inherit its base style categories', async () => {
+      const { component, el } = await createBrowser({
+        groups: [
+          ...GROUPS,
+          { category: 'furries', names: ['nova furry pony'] },
+          // The catalogue files the raw variant outside the category.
+          { category: 'anime', names: ['nova furry pony_raw'] },
+        ],
+      });
+      expect(cardNames(el)).not.toContain('nova furry pony_raw');
+      expect(component.visibleNames()).not.toContain('nova furry pony_raw');
     });
 
     it('hides mature styles by default and restores them when toggled on', async () => {
@@ -466,26 +516,97 @@ describe('StyleBrowserComponent', () => {
 
   describe('enlarged preview', () => {
     const openFirst = (harness: Harness): void => {
-      harness.el.querySelector<HTMLButtonElement>('.gs-sb-expand')?.click();
+      harness.el.querySelector<HTMLButtonElement>('.gs-sb-card')?.click();
       harness.fixture.detectChanges();
     };
 
-    it('offers an expand button only on cards that have a preview', async () => {
-      const { el } = await createBrowser();
-      // Watercolor has no render at all, so it has nothing to enlarge.
-      expect(el.querySelectorAll('.gs-sb-expand').length).toBe(2);
-    });
+    const sheetSources = (harness: Harness): (string | null)[] =>
+      [
+        ...harness.el.querySelectorAll<HTMLImageElement>(
+          '.gs-sb-viewer-shot img',
+        ),
+      ].map((img) => img.getAttribute('src'));
 
-    it('opens the enlarged layer without selecting the style', async () => {
+    it('opens on the contact sheet showing every subject the style has', async () => {
       const harness = await createBrowser();
       openFirst(harness);
 
       expect(harness.el.querySelector('.gs-sb-viewer')).not.toBeNull();
-      expect(
-        harness.el.querySelector<HTMLImageElement>('.gs-sb-viewer-img')?.src,
-      ).toBe('https://img/cine-person.webp');
+      expect(harness.component.expandedVariant()).toBe('all');
+      expect(sheetSources(harness)).toEqual([
+        'https://img/cine-person.webp',
+        'https://img/cine-place.webp',
+        'https://img/cine-thing.webp',
+      ]);
+      // The sheet lists real renders only, with no fallback substitution.
+      expect(harness.el.querySelector('.gs-sb-viewer-img')).toBeNull();
       expect(harness.form.controls.styleName.value).toBe('');
       expect(harness.closeCount()).toBe(0);
+    });
+
+    it('jumps to a single subject when its sheet image is clicked', async () => {
+      const harness = await createBrowser();
+      openFirst(harness);
+      harness.el
+        .querySelectorAll<HTMLButtonElement>('.gs-sb-viewer-shot')[1]
+        .click();
+      harness.fixture.detectChanges();
+
+      expect(harness.component.expandedVariant()).toBe('place');
+      expect(harness.el.querySelectorAll('.gs-sb-viewer-shot').length).toBe(0);
+      expect(
+        harness.el.querySelector<HTMLImageElement>('.gs-sb-viewer-img')?.src,
+      ).toBe('https://img/cine-place.webp');
+    });
+
+    it('offers All alongside the three subjects and returns to it', async () => {
+      const harness = await createBrowser();
+      openFirst(harness);
+      const options = [
+        ...harness.el.querySelectorAll('.gs-sb-viewer-variant .gs-seg-opt'),
+      ].map((node) => (node.textContent ?? '').trim());
+      expect(options.length).toBe(4);
+
+      harness.component.setExpandedVariant('thing');
+      harness.fixture.detectChanges();
+      expect(harness.el.querySelector('.gs-sb-viewer-img')).not.toBeNull();
+
+      harness.component.setExpandedVariant('all');
+      harness.fixture.detectChanges();
+      expect(harness.el.querySelectorAll('.gs-sb-viewer-shot').length).toBe(3);
+    });
+
+    it('always opens on All, whatever the grid and the last visit were', async () => {
+      const harness = await createBrowser();
+      harness.component.setVariant('place');
+      harness.fixture.detectChanges();
+      openFirst(harness);
+      expect(harness.component.expandedVariant()).toBe('all');
+
+      harness.component.setExpandedVariant('thing');
+      harness.fixture.detectChanges();
+      harness.component.closeExpanded();
+      harness.fixture.detectChanges();
+      openFirst(harness);
+      expect(harness.component.expandedVariant()).toBe('all');
+    });
+
+    it('shows a style with one render as a one-up sheet', async () => {
+      const harness = await createBrowser();
+      // Anime has only a "thing" render.
+      harness.el.querySelectorAll<HTMLButtonElement>('.gs-sb-card')[1].click();
+      harness.fixture.detectChanges();
+      expect(sheetSources(harness)).toEqual(['https://img/anime-thing.webp']);
+    });
+
+    it('says so when a style has no render at all', async () => {
+      const harness = await createBrowser();
+      // Watercolor has no preview; the card still opens the layer, which keeps
+      // prev/next and Use reachable rather than making it a dead end.
+      harness.el.querySelectorAll<HTMLButtonElement>('.gs-sb-card')[2].click();
+      harness.fixture.detectChanges();
+      expect(harness.el.querySelector('.gs-sb-viewer-empty')).not.toBeNull();
+      expect(harness.el.querySelector('.gs-sb-viewer-use')).not.toBeNull();
     });
 
     it('steps through the visible order with the arrow keys, wrapping', async () => {
@@ -524,6 +645,28 @@ describe('StyleBrowserComponent', () => {
       ).toBe('https://img/cine-place.webp');
       // The grid behind is untouched: it is still showing every subject.
       expect(harness.component.variant()).toBe('all');
+    });
+
+    it('keeps the chosen subject while stepping, and All while in All', async () => {
+      const harness = await createBrowser();
+      openFirst(harness);
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight' }),
+      );
+      harness.fixture.detectChanges();
+      // Stepping out of Cinematic stays on the sheet.
+      expect(harness.component.expandedVariant()).toBe('all');
+
+      harness.component.setExpandedVariant('thing');
+      harness.fixture.detectChanges();
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowLeft' }),
+      );
+      harness.fixture.detectChanges();
+      expect(harness.component.expandedVariant()).toBe('thing');
+      expect(
+        harness.el.querySelector<HTMLImageElement>('.gs-sb-viewer-img')?.src,
+      ).toBe('https://img/cine-thing.webp');
     });
 
     it('closes only the enlarged layer on Escape', async () => {

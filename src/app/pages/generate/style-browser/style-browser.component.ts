@@ -48,14 +48,23 @@ export interface StyleBrowserSection {
   cards: StyleBrowserCard[];
 }
 
+/** One render on show in the enlarged layer, tagged with the subject it is. */
+export interface StyleBrowserShot {
+  variant: StylePreviewVariant;
+  url: string;
+}
+
 /** The style shown in the enlarged preview layer, with its place in the list. */
 export interface StyleBrowserExpanded {
   name: string;
   /** Position in {@link StyleBrowserComponent.visibleNames}, for the counter. */
   index: number;
   total: number;
-  /** The preview at the enlarged layer's subject, or null when none exists. */
-  url: string | null;
+  /**
+   * Every subject in `all`, or the single chosen one otherwise. Empty when the
+   * style has no render at all.
+   */
+  shots: StyleBrowserShot[];
 }
 
 /** How many favourites the pinned strip shows at most. */
@@ -68,37 +77,50 @@ const MATURE_PREF_KEY = 'aihorde.generate.style_browser_mature';
 const FULLSCREEN_PREF_KEY = 'aihorde.generate.style_browser_fullscreen';
 
 /**
- * Name fragments that mark a style as mature. Matched case-insensitively as
- * substrings, which is why the entries are stems rather than whole words
- * ("furry" also catches "nova furry xl", "yiff" catches "yiffy"). A few carry no
- * match in today's catalogue but are kept because that catalogue is fetched from
- * a repository that keeps growing.
+ * Curated categories whose members are mature as a body. The catalogue already
+ * groups these deliberately, which makes membership a far better signal than
+ * anything a style's name can be read for.
+ */
+const MATURE_CATEGORIES = new Set(['furries', 'horrors', 'ponies']);
+
+/**
+ * Name fragments that mark a style as mature wherever it is filed. Kept to
+ * unambiguous markers only, because a name is weak evidence: "horror" would also
+ * take "impressionist horror comic", which is why the categories carry that
+ * judgement now. Matched case-insensitively as substrings, so the entries are
+ * stems rather than whole words ("yiff" catches "yiffy"). Several have no match
+ * in today's catalogue and are kept because it is fetched from a repository that
+ * keeps growing.
  */
 const MATURE_NAME_KEYWORDS = [
-  'furry',
-  'scalie',
-  'yiff',
-  'horror',
-  'terror',
-  'nightmare',
   'nsfw',
   'hentai',
   'lewd',
   'nude',
   'gore',
   'erotic',
-  'babes',
+  'yiff',
 ] as const;
 
 /**
  * Whether a style should be hidden while the mature toggle is off.
  *
- * The catalogue carries no maturity flag of any kind, so this reads the style's
- * name for known-mature subject matter. It is a heuristic and knowingly coarse
- * in both directions; it is a single function so that a real discriminator, once
- * the catalogue offers one, replaces it here and nowhere else.
+ * The catalogue carries no maturity flag, so this stands in for one: primarily
+ * the curated categories the style is filed under, with a name check for the few
+ * unambiguous markers that turn up outside them. `categories` should be every
+ * category the style belongs to, not just the one it is being rendered under.
+ * A single function, so that a real discriminator, once the catalogue offers
+ * one, replaces it here and nowhere else.
  */
-export function isMatureStyle(name: string): boolean {
+export function isMatureStyle(
+  name: string,
+  categories: readonly string[],
+): boolean {
+  if (
+    categories.some((category) => MATURE_CATEGORIES.has(category.toLowerCase()))
+  ) {
+    return true;
+  }
   const lower = name.toLowerCase();
   return MATURE_NAME_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
@@ -150,11 +172,6 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     'all',
     ...STYLE_PREVIEW_VARIANTS,
   ];
-  /**
-   * The enlarged layer shows one image at a time, so it offers the three real
-   * subjects without the grid's "all" option.
-   */
-  public readonly previewVariants = STYLE_PREVIEW_VARIANTS;
   public readonly query = signal('');
 
   /**
@@ -294,11 +311,18 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
 
   /** The style open in the enlarged preview layer, or null when it is closed. */
   private readonly expandedName = signal<string | null>(null);
-  /** The enlarged layer's own subject, kept while stepping between styles. */
-  private readonly expandedVariantSignal = signal<StylePreviewVariant>(
-    STYLE_PREVIEW_VARIANTS[0],
-  );
+  /**
+   * The enlarged layer's own subject, kept while stepping between styles. Always
+   * `all` on open rather than remembered: the contact sheet is the useful first
+   * look at a style, and one tap gets to any single subject from there.
+   */
+  private readonly expandedVariantSignal =
+    signal<StyleBrowserVariantOption>('all');
   public readonly expandedVariant = this.expandedVariantSignal.asReadonly();
+  /** Whether the layer is showing the three-up contact sheet. */
+  public readonly isExpandedAll = computed(
+    () => this.expandedVariantSignal() === 'all',
+  );
 
   public readonly expanded = computed<StyleBrowserExpanded | null>(() => {
     const name = this.expandedName();
@@ -310,9 +334,33 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       name,
       index: names.indexOf(name),
       total: names.length,
-      url: this.previewsSvc.previewUrl(name, this.expandedVariantSignal()),
+      shots: this.shots(name, this.expandedVariantSignal()),
     };
   });
+
+  /**
+   * The renders to show for `name`. `all` lists every subject the repo actually
+   * has, without substitution, so the sheet never shows one render twice; a
+   * single subject falls back to whatever the style does have, so choosing one
+   * never empties the layer.
+   */
+  private shots(
+    name: string,
+    variant: StyleBrowserVariantOption,
+  ): StyleBrowserShot[] {
+    if (variant !== 'all') {
+      const url = this.previewsSvc.previewUrl(name, variant);
+      return url === null ? [] : [{ variant, url }];
+    }
+    const preview = this.previewsSvc.previews()?.[name];
+    if (!preview) {
+      return [];
+    }
+    return STYLE_PREVIEW_VARIANTS.flatMap((subject) => {
+      const url = preview[subject];
+      return url === null ? [] : [{ variant: subject, url }];
+    });
+  }
 
   /** Whether the search filter left nothing to show in the current sort. */
   public readonly isEmpty = computed(() =>
@@ -408,17 +456,14 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Open the enlarged preview for `name`. The subject starts from the grid's
-   * setting when that names a real subject; "all" has no single counterpart, so
-   * it falls back to the first one (per-style fallback then fills any gap).
+   * Open the enlarged preview for `name`, always on the three-up contact sheet
+   * regardless of what the grid behind is set to. Stepping between styles keeps
+   * whatever subject the user then chose; reopening starts from `all` again.
    */
   public openExpanded(name: string, event?: Event): void {
     const target = event?.currentTarget;
     this.expandedFrom = target instanceof HTMLElement ? target : null;
-    const variant = this.variant();
-    this.expandedVariantSignal.set(
-      variant === 'all' ? STYLE_PREVIEW_VARIANTS[0] : variant,
-    );
+    this.expandedVariantSignal.set('all');
     this.expandedName.set(name);
     this.preloadNeighbours(name);
     // The layer renders in this same change detection pass, so focus moves on
@@ -437,7 +482,7 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     this.expandedFrom = null;
   }
 
-  public setExpandedVariant(variant: StylePreviewVariant): void {
+  public setExpandedVariant(variant: StyleBrowserVariantOption): void {
     this.expandedVariantSignal.set(variant);
   }
 
@@ -488,9 +533,8 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     const variant = this.expandedVariantSignal();
     for (const delta of [-1, 1]) {
       const neighbour = names[(index + delta + names.length) % names.length];
-      const url = this.previewsSvc.previewUrl(neighbour, variant);
-      if (url) {
-        new Image().src = url;
+      for (const shot of this.shots(neighbour, variant)) {
+        new Image().src = shot.url;
       }
     }
   }
@@ -556,7 +600,13 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
    * any of its style names.
    */
   private matches(name: string, categories: readonly string[]): boolean {
-    if (!this.showMature() && isMatureStyle(name)) {
+    // Maturity is judged against every category the style belongs to, not the
+    // one section it happens to be rendered under: a style filed in `furries`
+    // stays hidden wherever else it is also listed.
+    if (
+      !this.showMature() &&
+      isMatureStyle(name, this.matureCategories(name))
+    ) {
       return false;
     }
     const query = this.query().trim().toLowerCase();
@@ -567,6 +617,20 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       name.toLowerCase().includes(query) ||
       categories.some((category) => category.toLowerCase().includes(query))
     );
+  }
+
+  /**
+   * The categories maturity is judged against. The catalogue files a style's
+   * `_raw` variant separately from the style itself and often leaves it out of
+   * the category lists, so the variant inherits its base style's categories
+   * rather than reading as uncategorised.
+   */
+  private matureCategories(name: string): string[] {
+    const index = this.categoriesByName();
+    const base = name.endsWith('_raw')
+      ? (index.get(name.slice(0, -'_raw'.length)) ?? [])
+      : [];
+    return [...(index.get(name) ?? []), ...base];
   }
 
   /** The flat lists have no section to sit under, so they match on all of them. */

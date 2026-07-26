@@ -5203,9 +5203,10 @@
   color: #fbbf24;
 }
 
-/* ------- style browser: expand, contents row, mature toggle ---------- */
-/* The card stays the select target; the expand button is layered over it as a
-   separate one so a tap never has to be guessed at. */
+/* ------- style browser: use button, contents row, mature toggle ------ */
+/* The card opens the preview, which is what clicking a thumbnail is taken to
+   mean everywhere else; committing to the style is this button, layered over
+   the card so the two outcomes are never guessed at from one tap. */
 .gen-studio .gs-sb-card-wrap {
   position: relative;
   display: flex;
@@ -5215,37 +5216,43 @@
   flex: 1;
   min-width: 0;
 }
-.gen-studio .gs-sb-expand {
+.gen-studio .gs-sb-use {
   position: absolute;
   top: 4px;
   right: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
   border: 0;
   border-radius: 10px;
-  background: rgba(17, 24, 39, 0.55);
+  background: rgba(17, 24, 39, 0.72);
   color: #fff;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s;
 }
-.gen-studio .gs-sb-card-wrap:hover .gs-sb-expand,
-.gen-studio .gs-sb-expand:focus-visible {
+.gen-studio .gs-sb-use:hover {
+  background: var(--gs-blue);
+}
+.gen-studio .gs-sb-card-wrap:hover .gs-sb-use,
+.gen-studio .gs-sb-use:focus-visible {
   opacity: 1;
 }
 /* Pointers that cannot hover have no way to reveal the button, so it is always
    on for them. */
 @media (hover: none) {
-  .gen-studio .gs-sb-expand {
+  .gen-studio .gs-sb-use {
     opacity: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gen-studio .gs-sb-expand {
+  .gen-studio .gs-sb-use {
     transition: none;
   }
 }
@@ -5383,8 +5390,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  padding: 12px;
+  /* Wrapping the contact sheet scrolls here rather than growing the layer. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* Inline gutters wide enough for the overlaid prev/next, so neither the sheet
+     nor the single render sits under them. */
+  padding: 12px 56px;
   background: var(--gs-seg-track);
 }
 .gen-studio .gs-sb-viewer-img {
@@ -5400,6 +5411,59 @@
   padding: 48px 16px;
   font-size: 12px;
   color: var(--gs-muted);
+}
+/* The contact sheet. Three across wherever they fit, wrapping to two and then
+   one as the stage narrows. The stage's height stays fixed by its flex context,
+   so a wrap scrolls the sheet rather than growing the layer: the subject switch
+   and the use action can never be pushed off the bottom. */
+.gen-studio .gs-sb-viewer-sheet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-height: 100%;
+}
+.gen-studio .gs-sb-viewer-shot {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 132px;
+  max-width: 100%;
+  /* Every render is square, so the tile can hold its own shape and the sheet
+     stays a tidy row instead of three differently-sized boxes. */
+  aspect-ratio: 1 / 1;
+  max-height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: none;
+  cursor: zoom-in;
+}
+.gen-studio .gs-sb-viewer-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.gen-studio .gs-sb-viewer-shot-tag {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.72);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.gen-studio .gs-sb-viewer-shot:hover .gs-sb-viewer-shot-tag,
+.gen-studio .gs-sb-viewer-shot:focus-visible .gs-sb-viewer-shot-tag {
+  background: var(--gs-blue);
 }
 .gen-studio .gs-sb-viewer-nav {
   position: absolute;

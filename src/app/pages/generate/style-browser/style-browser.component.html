@@ -199,16 +199,18 @@
 </div>
 
 <!-- One style card: preview (or placeholder), name, and usage badge. The card
-     itself selects the style; enlarging is a separate target so the two
-     outcomes are never guessed at from one tap. -->
+     opens the preview, which is what a thumbnail invites; committing to the
+     style is the overlaid Use button, so the two outcomes stay distinct. -->
 <ng-template #styleCard let-card="card">
   <div class="gs-sb-card-wrap">
     <button
       type="button"
       class="gs-sb-card"
       [class.gs-sb-card--active]="selectedStyle() === card.name"
-      [attr.aria-pressed]="selectedStyle() === card.name"
-      (click)="select(card.name)"
+      (click)="openExpanded(card.name, $event)"
+      [attr.aria-label]="
+        'generate.form.style_expand' | transloco: { style: card.name }
+      "
       [title]="card.name"
     >
       <span class="gs-sb-thumbs">
@@ -243,19 +245,17 @@
         }
       </span>
     </button>
-    @if (card.previewUrls.length > 0) {
-      <button
-        type="button"
-        class="gs-sb-expand"
-        (click)="openExpanded(card.name, $event)"
-        [attr.aria-label]="
-          'generate.form.style_expand' | transloco: { style: card.name }
-        "
-        [title]="'generate.form.style_expand' | transloco: { style: card.name }"
-      >
-        <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-      </button>
-    }
+    <button
+      type="button"
+      class="gs-sb-use"
+      [attr.aria-pressed]="selectedStyle() === card.name"
+      (click)="select(card.name)"
+      [attr.aria-label]="
+        'generate.form.style_use_named' | transloco: { style: card.name }
+      "
+    >
+      {{ "generate.form.style_use" | transloco }}
+    </button>
   </div>
 </ng-template>
 
@@ -311,17 +311,45 @@
             <app-icon name="chevron-right" class="gs-viewer-nav-ico--flip" />
           </button>
         }
-        @if (view.url) {
-          <img
-            class="gs-sb-viewer-img"
-            [src]="view.url"
-            [alt]="view.name"
-            decoding="async"
-          />
-        } @else {
+        @if (view.shots.length === 0) {
           <p class="gs-sb-viewer-empty">
             {{ "generate.form.expand_no_preview" | transloco }}
           </p>
+        } @else if (isExpandedAll()) {
+          <!-- Contact sheet: every subject at once, each one a way into itself. -->
+          <div class="gs-sb-viewer-sheet">
+            @for (shot of view.shots; track shot.url) {
+              <button
+                type="button"
+                class="gs-sb-viewer-shot"
+                (click)="setExpandedVariant(shot.variant)"
+                [attr.aria-label]="
+                  'generate.form.expand_show_variant'
+                    | transloco
+                      : {
+                          subject:
+                            'generate.form.variant_' + shot.variant | transloco,
+                        }
+                "
+              >
+                <img
+                  [src]="shot.url"
+                  [alt]="view.name + ' — ' + shot.variant"
+                  decoding="async"
+                />
+                <span class="gs-sb-viewer-shot-tag">
+                  {{ "generate.form.variant_" + shot.variant | transloco }}
+                </span>
+              </button>
+            }
+          </div>
+        } @else {
+          <img
+            class="gs-sb-viewer-img"
+            [src]="view.shots[0].url"
+            [alt]="view.name"
+            decoding="async"
+          />
         }
         @if (view.total > 1) {
           <button
@@ -340,7 +368,7 @@
           role="group"
           [attr.aria-label]="'generate.form.variant_label' | transloco"
         >
-          @for (option of previewVariants; track option) {
+          @for (option of variantOptions; track option) {
             <button
               type="button"
               class="gs-seg-opt"
