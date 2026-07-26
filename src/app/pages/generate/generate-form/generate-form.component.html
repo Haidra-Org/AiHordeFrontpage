@@ -163,95 +163,105 @@
       <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
-      <div class="gs-prompt-wrap" #historyContainer>
-        <textarea
-          #promptInput
-          class="gs-textarea gs-textarea--resize"
-          [class.gs-textarea--history]="promptHistory().length > 0"
-          formControlName="prompt"
-          rows="2"
-          [placeholder]="'generate.form.prompt_placeholder' | transloco"
-          [attr.aria-label]="'generate.form.prompt_label' | transloco"
-          (keydown.control.enter)="onSubmitShortcut()"
-          (keydown.meta.enter)="onSubmitShortcut()"
-        ></textarea>
-        @if (promptHistory().length > 0) {
-          <button
-            #historyBtn
-            type="button"
-            class="gs-prompt-hist-btn"
-            (click)="toggleHistory()"
-            [attr.aria-expanded]="historyOpen()"
-            [attr.aria-label]="'generate.form.history' | transloco"
-            [title]="'generate.form.history' | transloco"
-          >
-            <app-icon name="clock" class="gs-ico-sm" />
-          </button>
-          @if (historyOpen()) {
-            <div
-              class="gs-hist-menu"
-              role="group"
+      <div class="flex flex-col gap-2.5">
+        <div class="gs-sec-head">
+          <span class="gs-card-title">
+            {{ "generate.form.prompt_section" | transloco }}
+          </span>
+        </div>
+        <div class="gs-prompt-wrap" #historyContainer>
+          <textarea
+            #promptInput
+            class="gs-textarea gs-textarea--resize"
+            [class.gs-textarea--history]="promptHistory().length > 0"
+            formControlName="prompt"
+            rows="2"
+            [placeholder]="'generate.form.prompt_placeholder' | transloco"
+            [attr.aria-label]="'generate.form.prompt_label' | transloco"
+            (keydown.control.enter)="onSubmitShortcut()"
+            (keydown.meta.enter)="onSubmitShortcut()"
+          ></textarea>
+          @if (promptHistory().length > 0) {
+            <button
+              #historyBtn
+              type="button"
+              class="gs-prompt-hist-btn"
+              (click)="toggleHistory()"
+              [attr.aria-expanded]="historyOpen()"
               [attr.aria-label]="'generate.form.history' | transloco"
+              [title]="'generate.form.history' | transloco"
             >
-              <div class="gs-presets-label">
-                {{ "generate.form.history" | transloco }}
-              </div>
-              @for (entry of promptHistory(); track $index) {
-                <div
-                  class="gs-hist-row"
-                  [class.gs-hist-row--open]="historyDetail() === $index"
-                >
-                  <button
-                    type="button"
-                    class="gs-hist-item"
-                    (click)="pickHistory(entry)"
+              <app-icon name="clock" class="gs-ico-sm" />
+            </button>
+            @if (historyOpen()) {
+              <div
+                class="gs-hist-menu"
+                role="group"
+                [attr.aria-label]="'generate.form.history' | transloco"
+              >
+                <div class="gs-presets-label">
+                  {{ "generate.form.history" | transloco }}
+                </div>
+                @for (entry of promptHistory(); track $index) {
+                  <div
+                    class="gs-hist-row"
+                    [class.gs-hist-row--open]="historyDetail() === $index"
                   >
-                    <span class="gs-hist-text">{{ entry.prompt }}</span>
-                    @if (entry.negativePrompt) {
-                      <span class="gs-hist-neg">
-                        {{
-                          "generate.form.history_negative"
-                            | transloco: { negative: entry.negativePrompt }
-                        }}
-                      </span>
-                    }
-                  </button>
-                  <button
-                    type="button"
-                    class="gs-hist-expand"
-                    (click)="toggleHistoryDetail($index)"
-                    [attr.aria-expanded]="historyDetail() === $index"
-                    [attr.aria-controls]="'gs-hist-detail-' + $index"
-                    [attr.aria-label]="
-                      'generate.form.history_expand' | transloco
-                    "
-                    [title]="'generate.form.history_expand' | transloco"
-                  >
-                    <app-icon name="chevron-down" class="gs-ico-sm" />
-                  </button>
-                  <div class="gs-hist-detail" [id]="'gs-hist-detail-' + $index">
-                    <div class="gs-hist-detail-inner">
-                      <p class="gs-hist-detail-label">
-                        {{ "generate.form.prompt_label" | transloco }}
-                      </p>
-                      <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
+                    <button
+                      type="button"
+                      class="gs-hist-item"
+                      (click)="pickHistory(entry)"
+                    >
+                      <span class="gs-hist-text">{{ entry.prompt }}</span>
                       @if (entry.negativePrompt) {
-                        <p class="gs-hist-detail-label">
+                        <span class="gs-hist-neg">
                           {{
-                            "generate.form.negative_prompt_label" | transloco
+                            "generate.form.history_negative"
+                              | transloco: { negative: entry.negativePrompt }
                           }}
-                        </p>
-                        <p class="gs-hist-detail-neg">
-                          {{ entry.negativePrompt }}
-                        </p>
+                        </span>
                       }
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-hist-expand"
+                      (click)="toggleHistoryDetail($index)"
+                      [attr.aria-expanded]="historyDetail() === $index"
+                      [attr.aria-controls]="'gs-hist-detail-' + $index"
+                      [attr.aria-label]="
+                        'generate.form.history_expand' | transloco
+                      "
+                      [title]="'generate.form.history_expand' | transloco"
+                    >
+                      <app-icon name="chevron-down" class="gs-ico-sm" />
+                    </button>
+                    <div
+                      class="gs-hist-detail"
+                      [id]="'gs-hist-detail-' + $index"
+                    >
+                      <div class="gs-hist-detail-inner">
+                        <p class="gs-hist-detail-label">
+                          {{ "generate.form.prompt_label" | transloco }}
+                        </p>
+                        <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
+                        @if (entry.negativePrompt) {
+                          <p class="gs-hist-detail-label">
+                            {{
+                              "generate.form.negative_prompt_label" | transloco
+                            }}
+                          </p>
+                          <p class="gs-hist-detail-neg">
+                            {{ entry.negativePrompt }}
+                          </p>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
-              }
-            </div>
+                }
+              </div>
+            }
           }
-        }
+        </div>
       </div>
 
       <!-- Negative prompt (one row by default; drag the grip to grow it) -->
@@ -269,99 +279,106 @@
            independent masonry columns; the prompt + negative above stay full
            width so growing them never shuffles the cards. -->
       <div class="gs-body-cards flex flex-col gap-[14px]">
-        <!-- Style -->
-        <div>
-          <label class="gs-label" for="generate-style">
-            {{ "generate.form.style_label" | transloco }}
-          </label>
-          <div class="mt-1.5 flex items-center gap-1.5">
-            <select
-              #styleSelect
-              id="generate-style"
-              class="gs-native-select min-w-0 flex-1"
-              formControlName="styleName"
-            >
-              <option value="">
-                {{ "generate.form.style_none" | transloco }}
-              </option>
-              @for (group of styleGroups(); track group.category) {
-                <optgroup [label]="group.category">
-                  @for (name of group.names; track name) {
-                    <option [value]="name">{{ name }}</option>
-                  }
-                </optgroup>
+        <!-- Model & style -->
+        <div class="flex flex-col gap-2.5">
+          <div class="gs-sec-head">
+            <span class="gs-card-title">
+              {{ "generate.form.model_style_section" | transloco }}
+            </span>
+          </div>
+          <div>
+            <label class="gs-label" for="generate-style">
+              {{ "generate.form.style_label" | transloco }}
+            </label>
+            <div class="mt-1.5 flex items-center gap-1.5">
+              <select
+                #styleSelect
+                id="generate-style"
+                class="gs-native-select min-w-0 flex-1"
+                formControlName="styleName"
+              >
+                <option value="">
+                  {{ "generate.form.style_none" | transloco }}
+                </option>
+                @for (group of styleGroups(); track group.category) {
+                  <optgroup [label]="group.category">
+                    @for (name of group.names; track name) {
+                      <option [value]="name">{{ name }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+              @if (selectedStyleName()) {
+                <button
+                  type="button"
+                  class="gs-clear-style"
+                  (click)="clearStyle()"
+                  [attr.aria-label]="'generate.form.clear_style' | transloco"
+                  [title]="'generate.form.clear_style' | transloco"
+                >
+                  <app-icon name="x-mark" class="gs-ico-sm" />
+                </button>
               }
-            </select>
-            @if (selectedStyleName()) {
               <button
                 type="button"
-                class="gs-clear-style"
-                (click)="clearStyle()"
-                [attr.aria-label]="'generate.form.clear_style' | transloco"
-                [title]="'generate.form.clear_style' | transloco"
+                class="gs-browse-btn"
+                (click)="openStyleBrowser()"
+                [title]="'generate.form.browse_styles' | transloco"
               >
-                <app-icon name="x-mark" class="gs-ico-sm" />
+                <app-icon name="squares-2x2" class="gs-ico-sm" />
+                {{ "generate.form.browse_styles" | transloco }}
               </button>
-            }
-            <button
-              type="button"
-              class="gs-browse-btn"
-              (click)="openStyleBrowser()"
-              [title]="'generate.form.browse_styles' | transloco"
-            >
-              <app-icon name="squares-2x2" class="gs-ico-sm" />
-              {{ "generate.form.browse_styles" | transloco }}
-            </button>
+            </div>
+            <p class="gs-sublabel mt-1">
+              {{ "generate.form.style_hint" | transloco }}
+            </p>
           </div>
-          <p class="gs-sublabel mt-1">
-            {{ "generate.form.style_hint" | transloco }}
-          </p>
-        </div>
 
-        <!-- Model -->
-        <div>
-          <label
-            class="gs-label flex flex-wrap items-center gap-2"
-            for="generate-model"
-          >
-            {{ "generate.form.model_label" | transloco }}
-            @if (stylePins("model")) {
-              <ng-container
-                *ngTemplateOutlet="
-                  styleLock;
-                  context: { section: 'model', value: styleModelText() }
-                "
-              />
-            }
-          </label>
-          <app-model-autocomplete
-            class="mt-1.5 block"
-            formControlName="model"
-            inputId="generate-model"
-            [models]="models()"
-            [allowMultiple]="false"
-            placeholderKey="generate.form.model_placeholder"
-            listAriaLabelKey="generate.form.model_list_label"
-            toggleAriaLabelKey="generate.form.model_toggle_label"
-            hiddenCountKey="generate.form.model_hidden_count"
-            emptyKey="generate.form.model_empty"
-          />
-          <p class="gs-sublabel mt-1">
-            @if (selectedModelCount() !== null) {
-              {{
-                "generate.form.model_workers"
-                  | transloco: { count: selectedModelCount() }
-              }}
-            } @else {
-              {{ "generate.form.model_hint" | transloco }}
-            }
-          </p>
+          <!-- Model -->
+          <div>
+            <label
+              class="gs-label flex flex-wrap items-center gap-2"
+              for="generate-model"
+            >
+              {{ "generate.form.model_label" | transloco }}
+              @if (stylePins("model")) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    styleLock;
+                    context: { section: 'model', value: styleModelText() }
+                  "
+                />
+              }
+            </label>
+            <app-model-autocomplete
+              class="mt-1.5 block"
+              formControlName="model"
+              inputId="generate-model"
+              [models]="models()"
+              [allowMultiple]="false"
+              placeholderKey="generate.form.model_placeholder"
+              listAriaLabelKey="generate.form.model_list_label"
+              toggleAriaLabelKey="generate.form.model_toggle_label"
+              hiddenCountKey="generate.form.model_hidden_count"
+              emptyKey="generate.form.model_empty"
+            />
+            <p class="gs-sublabel mt-1">
+              @if (selectedModelCount() !== null) {
+                {{
+                  "generate.form.model_workers"
+                    | transloco: { count: selectedModelCount() }
+                }}
+              } @else {
+                {{ "generate.form.model_hint" | transloco }}
+              }
+            </p>
+          </div>
         </div>
 
         <!-- Aspect + resolution -->
         <div class="gs-card gs-card--pad-sm flex flex-col gap-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="gs-card-title--sm font-bold">
+          <div class="gs-sec-head">
+            <span class="gs-card-title--sm">
               {{ "generate.form.dimensions_section" | transloco }}
             </span>
             @if (stylePins("dimensions")) {
@@ -511,10 +528,11 @@
 
           <!-- Sampling -->
           <div class="gs-card flex flex-col gap-3">
-            <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="gs-sec-head">
               <span class="gs-card-title">
                 {{ "generate.form.sampling_section" | transloco }}
               </span>
+              <app-gs-help topic="requirements" />
               @if (stylePins("sampling")) {
                 <ng-container
                   *ngTemplateOutlet="
@@ -526,9 +544,12 @@
             </div>
             <div class="gs-grid-sampling">
               <div [class.gs-locked]="isSectionLocked('sampling')">
-                <div class="gs-slabel">
-                  {{ "generate.form.steps_short" | transloco }}
-                  <span class="gs-mono gs-ink float-right">
+                <div class="gs-field-head">
+                  <span class="gs-slabel">
+                    {{ "generate.form.steps_short" | transloco }}
+                  </span>
+                  <app-gs-help topic="steps" />
+                  <span class="gs-mono gs-ink ml-auto">
                     {{ form().controls.steps.value }}
                   </span>
                 </div>
@@ -546,9 +567,12 @@
                 />
               </div>
               <div [class.gs-locked]="isSectionLocked('sampling')">
-                <div class="gs-slabel">
-                  {{ "generate.form.cfg_short" | transloco }}
-                  <span class="gs-mono gs-ink float-right">
+                <div class="gs-field-head">
+                  <span class="gs-slabel">
+                    {{ "generate.form.cfg_short" | transloco }}
+                  </span>
+                  <app-gs-help topic="cfg" />
+                  <span class="gs-mono gs-ink ml-auto">
                     {{ form().controls.cfg_scale.value | number: "1.1-1" }}
                   </span>
                 </div>
@@ -566,9 +590,11 @@
                 />
               </div>
               <div [class.gs-locked]="isSectionLocked('sampling')">
-                <label class="gs-slabel" for="generate-sampler">
-                  {{ "generate.form.sampler_label" | transloco }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-sampler">
+                    {{ "generate.form.sampler_label" | transloco }} </label
+                  ><app-gs-help topic="sampler" />
+                </div>
                 <select
                   id="generate-sampler"
                   class="gs-native-select gs-native-select--sm mt-1.5"
@@ -590,9 +616,11 @@
                 />
               </div>
               <div>
-                <label class="gs-slabel" for="generate-seed">
-                  {{ "generate.form.seed_label" | transloco }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-seed">
+                    {{ "generate.form.seed_label" | transloco }} </label
+                  ><app-gs-help topic="seed" />
+                </div>
                 <div class="mt-1.5 flex gap-1.5">
                   <input
                     id="generate-seed"
@@ -614,12 +642,14 @@
               </div>
             </div>
             <div [class.gs-locked]="isSectionLocked('sampling')">
-              <label class="gs-slabel" for="generate-clip">
-                {{
-                  "generate.form.clip_skip_label"
-                    | transloco: { value: form().controls.clip_skip.value }
-                }}
-              </label>
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-clip">
+                  {{
+                    "generate.form.clip_skip_label"
+                      | transloco: { value: form().controls.clip_skip.value }
+                  }} </label
+                ><app-gs-help topic="clip_skip" />
+              </div>
               <input
                 id="generate-clip"
                 class="gs-range mt-1.5"
@@ -633,33 +663,42 @@
                 *ngTemplateOutlet="reqHint; context: { hint: clipSkipHint() }"
               />
             </div>
-            <div class="gs-hairline flex flex-wrap gap-4 pt-3">
-              <label
-                class="gs-switch"
-                [class.gs-locked]="isSectionLocked('sampling')"
-              >
-                <input type="checkbox" formControlName="karras" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-                {{ "generate.form.karras_label" | transloco }}
-              </label>
-              <label
-                class="gs-switch"
-                [class.gs-locked]="isSectionLocked('sampling')"
-              >
-                <input type="checkbox" formControlName="hires_fix" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-                {{ "generate.form.hires_fix_label" | transloco }}
-              </label>
-              <label class="gs-switch">
+            <!-- Stacked rather than side by side: each toggle carries a help
+                 trigger, and a shared row would leave it unclear which label a
+                 glyph belongs to. -->
+            <div class="gs-hairline flex flex-col gap-2.5 pt-3">
+              <div class="gs-opt">
+                <label
+                  class="gs-switch gs-switch-row"
+                  [class.gs-locked]="isSectionLocked('sampling')"
+                >
+                  <span>{{ "generate.form.karras_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="karras" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
+                </label>
+                <app-gs-help topic="karras" />
+              </div>
+              <div class="gs-opt">
+                <label
+                  class="gs-switch gs-switch-row"
+                  [class.gs-locked]="isSectionLocked('sampling')"
+                >
+                  <span>{{ "generate.form.hires_fix_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="hires_fix" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
+                </label>
+                <app-gs-help topic="hires_fix" />
+              </div>
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.tiling_label" | transloco }}</span>
                 <input type="checkbox" formControlName="tiling" />
                 <span class="gs-switch-track"
                   ><span class="gs-switch-knob"></span
                 ></span>
-                {{ "generate.form.tiling_label" | transloco }}
               </label>
             </div>
             <ng-container
@@ -667,17 +706,19 @@
             />
             @if (form().controls.hires_fix.value) {
               <div>
-                <label class="gs-slabel" for="generate-hires-denoise">
-                  {{
-                    "generate.form.hires_denoise_label"
-                      | transloco
-                        : {
-                            value:
-                              form().controls.hires_fix_denoising_strength
-                                .value,
-                          }
-                  }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-hires-denoise">
+                    {{
+                      "generate.form.hires_denoise_label"
+                        | transloco
+                          : {
+                              value:
+                                form().controls.hires_fix_denoising_strength
+                                  .value,
+                            }
+                    }} </label
+                  ><app-gs-help topic="hires_denoise" />
+                </div>
                 <input
                   id="generate-hires-denoise"
                   class="gs-range mt-1.5"
@@ -693,10 +734,11 @@
 
           <!-- LoRAs & embeddings -->
           <div class="gs-card flex flex-col gap-2">
-            <div class="flex items-center justify-between gap-2">
+            <div class="gs-sec-head">
               <span class="gs-card-title">
                 {{ "generate.form.loras_section" | transloco }}
               </span>
+              <app-gs-help topic="loras" />
               <button type="button" class="gs-civit-link" (click)="openCivit()">
                 {{ "generate.form.add_from_civitai" | transloco }}
               </button>
@@ -835,13 +877,15 @@
           <!-- Post-process + Output -->
           <div class="gs-grid-2">
             <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
-              <span class="gs-card-title--sm font-bold">
+              <span class="gs-card-title--sm">
                 {{ "generate.form.post_processing_section" | transloco }}
               </span>
               <div>
-                <label class="gs-slabel" for="generate-upscaler">
-                  {{ "generate.form.upscaler_label" | transloco }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-upscaler">
+                    {{ "generate.form.upscaler_label" | transloco }} </label
+                  ><app-gs-help topic="upscaler" />
+                </div>
                 <select
                   id="generate-upscaler"
                   class="gs-native-select gs-native-select--sm mt-1"
@@ -857,9 +901,11 @@
                 </select>
               </div>
               <div>
-                <label class="gs-slabel" for="generate-facefixer">
-                  {{ "generate.form.facefixer_label" | transloco }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-facefixer">
+                    {{ "generate.form.facefixer_label" | transloco }} </label
+                  ><app-gs-help topic="facefixer" />
+                </div>
                 <select
                   id="generate-facefixer"
                   class="gs-native-select gs-native-select--sm mt-1"
@@ -876,13 +922,17 @@
               </div>
               @if (usesFaceFixer()) {
                 <div>
-                  <label class="gs-slabel" for="generate-facefixer-strength">
-                    {{
-                      "generate.form.facefixer_strength_label"
-                        | transloco
-                          : { value: form().controls.facefixer_strength.value }
-                    }}
-                  </label>
+                  <div class="gs-field-head">
+                    <label class="gs-slabel" for="generate-facefixer-strength">
+                      {{
+                        "generate.form.facefixer_strength_label"
+                          | transloco
+                            : {
+                                value: form().controls.facefixer_strength.value,
+                              }
+                      }} </label
+                    ><app-gs-help topic="facefixer_strength" />
+                  </div>
                   <input
                     id="generate-facefixer-strength"
                     class="gs-range mt-1"
@@ -910,23 +960,29 @@
             </div>
 
             <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
-              <span class="gs-card-title--sm font-bold">
+              <span class="gs-card-title--sm">
                 {{ "generate.form.output_section" | transloco }}
               </span>
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.nsfw_label" | transloco }}</span>
-                <input type="checkbox" formControlName="nsfw" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.censor_nsfw_label" | transloco }}</span>
-                <input type="checkbox" formControlName="censor_nsfw" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.nsfw_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="nsfw" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="nsfw" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.censor_nsfw_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="censor_nsfw" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="censor_nsfw" />
+              </div>
               <label class="gs-switch gs-switch-row">
                 <span>{{ "generate.form.shared_label" | transloco }}</span>
                 <input type="checkbox" formControlName="shared" />
@@ -942,62 +998,76 @@
             <span class="gs-card-title">
               {{ "generate.form.horde_section" | transloco }}
             </span>
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.trusted_workers_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="trusted_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.slow_workers_label" | transloco }}</span>
-              <input type="checkbox" formControlName="slow_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.extra_slow_workers_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="extra_slow_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.allow_downgrade_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="allow_downgrade" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.replacement_filter_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="replacement_filter" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.trusted_workers_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="trusted_workers" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="trusted_workers" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.slow_workers_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="slow_workers" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="slow_workers" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.extra_slow_workers_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="extra_slow_workers" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="extra_slow_workers" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.allow_downgrade_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="allow_downgrade" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="allow_downgrade" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.replacement_filter_label" | transloco
+                }}</span>
+                <input type="checkbox" formControlName="replacement_filter" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="replacement_filter" />
+            </div>
 
             <!-- Delivery and routing: still horde-side choices about who runs
                  the job and where the result goes, so they share the card with
                  the worker preferences above under a hairline. -->
             <div class="gs-hairline flex flex-col gap-2.5 pt-3">
-              <span class="gs-card-title--sm font-bold">
+              <span class="gs-card-title--sm">
                 {{ "generate.form.delivery_subsection" | transloco }}
               </span>
 
               <div>
-                <label class="gs-slabel" for="generate-webhook">
-                  {{ "generate.form.webhook_label" | transloco }}
-                </label>
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-webhook">
+                    {{ "generate.form.webhook_label" | transloco }} </label
+                  ><app-gs-help topic="webhook" />
+                </div>
                 <input
                   id="generate-webhook"
                   class="gs-seed-input mt-1.5"
@@ -1027,13 +1097,16 @@
               </div>
 
               <div class="flex flex-col gap-1.5">
-                <span class="gs-slabel">
-                  {{
-                    "generate.form.workers_label"
-                      | transloco
-                        : { count: workerList().length, max: maxWorkers }
-                  }}
-                </span>
+                <div class="gs-field-head">
+                  <span class="gs-slabel">
+                    {{
+                      "generate.form.workers_label"
+                        | transloco
+                          : { count: workerList().length, max: maxWorkers }
+                    }}
+                  </span>
+                  <app-gs-help topic="workers" />
+                </div>
                 <div
                   class="gs-seg gs-seg--xs"
                   role="group"
@@ -1115,15 +1188,17 @@
                 }
               </div>
 
-              <label class="gs-switch gs-switch-row">
-                <span>{{
-                  "generate.form.remember_extras_label" | transloco
-                }}</span>
-                <input type="checkbox" formControlName="rememberExtras" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.remember_extras_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="rememberExtras" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="remember_extras" />
+              </div>
               <p class="gs-sublabel">
                 {{ "generate.form.remember_extras_hint" | transloco }}
               </p>
@@ -1140,18 +1215,22 @@
               {{ "generate.form.workflows_hint" | transloco }}
             </p>
 
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.transparent_label" | transloco }}</span>
-              <input type="checkbox" formControlName="transparent" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.transparent_label" | transloco }}</span>
+                <input type="checkbox" formControlName="transparent" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="transparent" />
+            </div>
 
             <div>
-              <label class="gs-slabel" for="generate-qr-text">
-                {{ "generate.form.qr_label" | transloco }}
-              </label>
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-qr-text">
+                  {{ "generate.form.qr_label" | transloco }} </label
+                ><app-gs-help topic="qr" />
+              </div>
               <input
                 id="generate-qr-text"
                 class="gs-seed-input mt-1.5"
@@ -1186,8 +1265,9 @@
   <!-- Sticky footer: batch stepper, dimensions, kudos, Generate -->
   <footer class="gs-footer">
     <div class="mb-2.5 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
+      <div class="flex w-full flex-wrap items-center gap-2">
         <span class="gs-label">{{ "generate.footer.batch" | transloco }}</span>
+        <app-gs-help topic="batch" />
         <div class="gs-batch">
           <button
             type="button"

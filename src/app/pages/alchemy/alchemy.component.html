@@ -2,6 +2,7 @@
   class="gen-studio gs-alchemy gs-workspace gs-workspace--full"
   [class.gs-workspace--wide]="panelSize() === 'double'"
   [class.gs-workspace--max]="panelSize() === 'full'"
+  [class.gs-workspace--docs]="activeTab() === 'developers'"
   appStudioImageDrop
   #imageDrop="studioImageDrop"
   (imageFile)="onDroppedImage($event)"
@@ -16,6 +17,38 @@
   >
     {{ "alchemy.skip_to_results" | transloco }}
   </a>
+
+  <!-- ============ SURFACE SWITCH ============ -->
+  <!-- A segmented control rather than a tab widget: the tool surface is two
+       sibling panes (builder + results), so there is no single element that
+       could honestly carry role="tabpanel". Pressed-state toggles describe the
+       same choice without lying about the structure underneath. -->
+  <div
+    class="gs-devtabs"
+    role="group"
+    [attr.aria-label]="'alchemy.tabs.label' | transloco"
+  >
+    <button
+      type="button"
+      class="gs-devtab"
+      [class.gs-devtab--on]="activeTab() === 'tool'"
+      [attr.aria-pressed]="activeTab() === 'tool'"
+      (click)="setTab('tool')"
+    >
+      <app-icon name="beaker" class="gs-ico-sm" />
+      {{ "alchemy.tabs.tool" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-devtab"
+      [class.gs-devtab--on]="activeTab() === 'developers'"
+      [attr.aria-pressed]="activeTab() === 'developers'"
+      (click)="setTab('developers')"
+    >
+      <app-icon name="code-bracket" class="gs-ico-sm" />
+      {{ "alchemy.tabs.developers" | transloco }}
+    </button>
+  </div>
 
   <!-- ============ CONTROL PANEL ============ -->
   <section class="gs-panel">
@@ -508,6 +541,232 @@
       </div>
     </div>
   </section>
+
+  <!-- ============ DEVELOPER SURFACE ============ -->
+  <!-- Created on demand: unlike the tool panes it holds no live state, so
+       there is nothing to preserve while it is off screen. -->
+  @if (activeTab() === "developers") {
+    <div class="gs-devdoc">
+      <div class="gs-devdoc-inner">
+        <p class="gs-devdoc-lead">{{ "alchemy.dev.lead" | transloco }}</p>
+
+        <!-- The protocol, numbered to echo the builder's step spine. -->
+        <section class="gs-card gs-devdoc-sec" aria-labelledby="gs-dev-flow">
+          <h2 id="gs-dev-flow" class="gs-card-title">
+            {{ "alchemy.dev.flow.heading" | transloco }}
+          </h2>
+          <ol class="gs-devdoc-steps">
+            <li class="gs-devdoc-step">
+              <span class="gs-step-num" aria-hidden="true">1</span>
+              <div>
+                <h3 class="gs-devdoc-step-title">
+                  {{ "alchemy.dev.flow.submit_title" | transloco }}
+                </h3>
+                <p class="gs-devdoc-body">
+                  {{ "alchemy.dev.flow.submit_desc" | transloco }}
+                </p>
+              </div>
+            </li>
+            <li class="gs-devdoc-step">
+              <span class="gs-step-num" aria-hidden="true">2</span>
+              <div>
+                <h3 class="gs-devdoc-step-title">
+                  {{ "alchemy.dev.flow.poll_title" | transloco }}
+                </h3>
+                <p class="gs-devdoc-body">
+                  {{ "alchemy.dev.flow.poll_desc" | transloco }}
+                </p>
+              </div>
+            </li>
+            <li class="gs-devdoc-step">
+              <span class="gs-step-num" aria-hidden="true">3</span>
+              <div>
+                <h3 class="gs-devdoc-step-title">
+                  {{ "alchemy.dev.flow.read_title" | transloco }}
+                </h3>
+                <p class="gs-devdoc-body">
+                  {{ "alchemy.dev.flow.read_desc" | transloco }}
+                </p>
+              </div>
+            </li>
+            <li class="gs-devdoc-step">
+              <span class="gs-step-num" aria-hidden="true">4</span>
+              <div>
+                <h3 class="gs-devdoc-step-title">
+                  {{ "alchemy.dev.flow.cancel_title" | transloco }}
+                </h3>
+                <p class="gs-devdoc-body">
+                  {{ "alchemy.dev.flow.cancel_desc" | transloco }}
+                </p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <!-- Endpoints -->
+        <section
+          class="gs-card gs-devdoc-sec"
+          aria-labelledby="gs-dev-endpoints"
+        >
+          <h2 id="gs-dev-endpoints" class="gs-card-title">
+            {{ "alchemy.dev.endpoints.heading" | transloco }}
+          </h2>
+          <p class="gs-devdoc-base">
+            {{ "alchemy.dev.endpoints.base_label" | transloco }}
+            <code class="gs-mono">{{ apiBaseUrl }}</code>
+          </p>
+          <div class="gs-devdoc-tablewrap">
+            <table class="gs-devdoc-table">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    {{ "alchemy.dev.endpoints.col_method" | transloco }}
+                  </th>
+                  <th scope="col">
+                    {{ "alchemy.dev.endpoints.col_path" | transloco }}
+                  </th>
+                  <th scope="col">
+                    {{ "alchemy.dev.endpoints.col_purpose" | transloco }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <span class="gs-api-verb gs-api-verb--post">POST</span>
+                  </td>
+                  <td><code class="gs-mono">/interrogate/async</code></td>
+                  <td>{{ "alchemy.dev.endpoints.submit" | transloco }}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <span class="gs-api-verb gs-api-verb--get">GET</span>
+                  </td>
+                  <td><code class="gs-mono">/interrogate/status/:id</code></td>
+                  <td>{{ "alchemy.dev.endpoints.status" | transloco }}</td>
+                </tr>
+                <tr>
+                  <td>
+                    <span class="gs-api-verb gs-api-verb--del">DELETE</span>
+                  </td>
+                  <td><code class="gs-mono">/interrogate/status/:id</code></td>
+                  <td>{{ "alchemy.dev.endpoints.cancel" | transloco }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="gs-info-note gs-devdoc-note">
+            <app-icon name="key" class="gs-ico-sm" />
+            <span>{{ "alchemy.dev.endpoints.auth_note" | transloco }}</span>
+          </p>
+        </section>
+
+        <!-- Request -->
+        <section class="gs-card gs-devdoc-sec" aria-labelledby="gs-dev-request">
+          <h2 id="gs-dev-request" class="gs-card-title">
+            {{ "alchemy.dev.request.heading" | transloco }}
+          </h2>
+          <p class="gs-devdoc-body">
+            {{ "alchemy.dev.request.desc" | transloco }}
+          </p>
+          <figure class="gs-devdoc-code">
+            <figcaption class="gs-devdoc-code-head">
+              <span class="gs-api-verb gs-api-verb--post">POST</span>
+              <code class="gs-mono">{{ submitEndpointUrl }}</code>
+            </figcaption>
+            <pre class="gs-api-code"><code>{{ devRequestSample() }}</code></pre>
+          </figure>
+          <p class="gs-info-note gs-devdoc-note">
+            <app-icon name="info-circle" class="gs-ico-sm" />
+            <span>{{ "alchemy.dev.request.source_note" | transloco }}</span>
+          </p>
+
+          <h3 class="gs-card-title--sm gs-devdoc-subtitle">
+            {{ "alchemy.dev.request.forms_heading" | transloco }}
+          </h3>
+          <div class="gs-devdoc-forms">
+            <span class="gs-devdoc-forms-label">
+              <app-icon name="document-text" class="gs-ico-sm" />
+              {{ "alchemy.dev.request.data_forms" | transloco }}
+            </span>
+            <ul class="gs-devdoc-chips">
+              @for (form of dataForms; track form) {
+                <li>
+                  <code class="gs-mono">{{ form }}</code>
+                </li>
+              }
+            </ul>
+          </div>
+          <div class="gs-devdoc-forms">
+            <span class="gs-devdoc-forms-label">
+              <app-icon name="photo" class="gs-ico-sm" />
+              {{ "alchemy.dev.request.pp_forms" | transloco }}
+            </span>
+            <ul class="gs-devdoc-chips">
+              @for (form of postProcessorForms; track form) {
+                <li>
+                  <code class="gs-mono">{{ form }}</code>
+                </li>
+              }
+            </ul>
+          </div>
+        </section>
+
+        <!-- Status -->
+        <section class="gs-card gs-devdoc-sec" aria-labelledby="gs-dev-status">
+          <h2 id="gs-dev-status" class="gs-card-title">
+            {{ "alchemy.dev.status.heading" | transloco }}
+          </h2>
+          <p class="gs-devdoc-body">
+            {{ "alchemy.dev.status.desc" | transloco }}
+          </p>
+          <figure class="gs-devdoc-code">
+            <figcaption class="gs-devdoc-code-head">
+              <span class="gs-api-verb gs-api-verb--get">GET</span>
+              <code class="gs-mono">/interrogate/status/:id</code>
+            </figcaption>
+            <pre class="gs-api-code"><code>{{ statusSample }}</code></pre>
+          </figure>
+          <p class="gs-info-note gs-devdoc-note">
+            <app-icon name="clock" class="gs-ico-sm" />
+            <span>{{ "alchemy.dev.status.result_note" | transloco }}</span>
+          </p>
+        </section>
+
+        <!-- SDK -->
+        <section class="gs-card gs-devdoc-sec" aria-labelledby="gs-dev-sdk">
+          <h2 id="gs-dev-sdk" class="gs-card-title">
+            {{ "alchemy.dev.sdk.heading" | transloco }}
+          </h2>
+          <p class="gs-devdoc-body">
+            {{ "alchemy.dev.sdk.desc" | transloco }}
+          </p>
+          <div class="gs-devdoc-links">
+            <a
+              href="https://github.com/Haidra-Org/horde-sdk"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gs-devdoc-link"
+            >
+              <app-icon name="github" class="gs-ico-sm" />
+              {{ "alchemy.dev.sdk.repo_link" | transloco }}
+              <app-icon name="arrow-top-right-on-square" class="gs-ico-sm" />
+            </a>
+            <a
+              href="https://github.com/Haidra-Org/horde-sdk/blob/main/examples/ai_horde_client/image/alchemy_example.py"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="gs-devdoc-link"
+            >
+              <app-icon name="code-bracket" class="gs-ico-sm" />
+              {{ "alchemy.dev.sdk.example_link" | transloco }}
+              <app-icon name="arrow-top-right-on-square" class="gs-ico-sm" />
+            </a>
+          </div>
+        </section>
+      </div>
+    </div>
+  }
 
   <!-- ============ API PREVIEW MODAL ============ -->
   @if (apiModalOpen()) {

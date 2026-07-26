@@ -1,7 +1,10 @@
 <div class="gs-card flex flex-col gap-3">
-  <span class="gs-card-title">
-    {{ "generate.source.section" | transloco }}
-  </span>
+  <div class="gs-sec-head">
+    <span class="gs-card-title">
+      {{ "generate.source.section" | transloco }}
+    </span>
+    <app-gs-help topic="source_modes" />
+  </div>
 
   <div class="flex flex-wrap gap-1.5" role="group">
     @for (m of modes; track m) {
@@ -108,12 +111,15 @@
 
     @if (mode() === "img2img" || mode() === "controlnet") {
       <div>
-        <label class="gs-slabel" for="generate-denoise">
-          {{
-            "generate.source.denoise_label"
-              | transloco: { value: form().controls.denoising_strength.value }
-          }}
-        </label>
+        <div class="gs-field-head">
+          <label class="gs-slabel" for="generate-denoise">
+            {{
+              "generate.source.denoise_label"
+                | transloco: { value: form().controls.denoising_strength.value }
+            }}
+          </label>
+          <app-gs-help topic="denoise" />
+        </div>
         <input
           id="generate-denoise"
           class="gs-range mt-1.5"

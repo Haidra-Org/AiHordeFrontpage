@@ -22,6 +22,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
 import { ToastService } from '../../../services/toast.service';
@@ -105,6 +106,7 @@ export type { StylePickerGroup } from '../generate-form.model';
     ReactiveFormsModule,
     TranslocoPipe,
     IconComponent,
+    GsHelpComponent,
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
     StyleBrowserComponent,

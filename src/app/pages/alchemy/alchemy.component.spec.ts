@@ -5,6 +5,9 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AlchemyComponent } from './alchemy.component';
 import { AuthService } from '../../services/auth.service';
@@ -65,6 +68,26 @@ describe('AlchemyComponent', () => {
   const select = (...forms: AlchemyFormName[]): void => {
     for (const f of forms) component.toggleForm(f);
   };
+
+  describe('developer surface', () => {
+    it('starts on the tool and switches between surfaces', () => {
+      expect(component.activeTab()).toBe('tool');
+      component.setTab('developers');
+      expect(component.activeTab()).toBe('developers');
+      component.setTab('tool');
+      expect(component.activeTab()).toBe('tool');
+    });
+
+    it('documents the live request body under the required headers', () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('caption');
+
+      const sample = component.devRequestSample();
+      expect(sample).toContain('apikey: 0000000000');
+      expect(sample).toContain('Content-Type: application/json');
+      expect(sample).toContain(component.apiPayload());
+    });
+  });
 
   describe('api modal', () => {
     it('opens and closes the API request preview', () => {
@@ -453,5 +476,95 @@ describe('AlchemyComponent', () => {
       expect(job.cancelled).toBe(true);
       expect(isJobSettled(job)).toBe(true);
     });
+  });
+});
+
+describe('AlchemyComponent developer surface (rendered)', () => {
+  let fixture: ComponentFixture<AlchemyComponent>;
+  let component: AlchemyComponent;
+
+  beforeEach(async () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+
+    await TestBed.configureTestingModule({
+      imports: [
+        AlchemyComponent,
+        // No translations loaded, so the pipe echoes its key — enough to prove
+        // which copy each section is wired to.
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([clientAgentInterceptor])),
+        provideHttpClientTesting(),
+        {
+          provide: AuthService,
+          useValue: { getStoredApiKey: () => null, isLoggedIn: signal(false) },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), error: vi.fn() },
+        },
+        // Rendering runs the page-title effect, which needs a real stream.
+        { provide: TranslatorService, useValue: { get: () => of('') } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(AlchemyComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  const text = (): string => fixture.nativeElement.textContent ?? '';
+
+  it('offers both surfaces from the switch, with the tool pressed', () => {
+    const tabs: HTMLButtonElement[] = [
+      ...fixture.nativeElement.querySelectorAll('.gs-devtab'),
+    ];
+
+    expect(tabs).toHaveLength(2);
+    expect(tabs.map((t) => t.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
+    ]);
+    expect(fixture.nativeElement.querySelector('.gs-devdoc')).toBeNull();
+  });
+
+  it('renders the documentation sections once the developer surface is chosen', () => {
+    component.setTab('developers');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.gs-devdoc')).not.toBeNull();
+    for (const key of [
+      'alchemy.dev.lead',
+      'alchemy.dev.flow.heading',
+      'alchemy.dev.flow.cancel_desc',
+      'alchemy.dev.endpoints.col_purpose',
+      'alchemy.dev.endpoints.auth_note',
+      'alchemy.dev.request.forms_heading',
+      'alchemy.dev.request.source_note',
+      'alchemy.dev.status.result_note',
+      'alchemy.dev.sdk.example_link',
+    ]) {
+      expect(text()).toContain(key);
+    }
+  });
+
+  it('lists every valid form name from the shared constants', () => {
+    component.setTab('developers');
+    fixture.detectChanges();
+
+    const chips = [
+      ...fixture.nativeElement.querySelectorAll('.gs-devdoc-chips code'),
+    ].map((el) => (el as HTMLElement).textContent);
+
+    expect(chips).toEqual([
+      ...component.dataForms,
+      ...component.postProcessorForms,
+    ]);
   });
 });

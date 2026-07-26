@@ -62,6 +62,12 @@ const VIEW_MODE_DEFAULT: AlchemyViewMode = 'detail';
 
 type AlchemyViewMode = (typeof VIEW_MODE_OPTIONS)[number];
 
+/** The two surfaces of the page: the tool itself, and the API documentation. */
+type AlchemyTab = 'tool' | 'developers';
+
+/** Public base URL of the Horde REST API, as quoted in the developer surface. */
+const API_BASE_URL = 'https://aihorde.net/api/v2';
+
 /**
  * A thumbnail larger than this (bytes) is dropped from the persisted payload
  * (kept in memory for the session only) so a pathological source can't grow the
@@ -295,6 +301,21 @@ export class AlchemyComponent {
   }
 
   /**
+   * Which surface is on screen. The docs are a reference detour taken while a
+   * request may still be running, so the tool is hidden rather than torn down,
+   * and the choice is not persisted or reflected in the URL: the studio's own
+   * tabs are routes, and this page has no query-parameter state of its own.
+   */
+  public readonly activeTab = signal<AlchemyTab>('tool');
+
+  public readonly apiBaseUrl = API_BASE_URL;
+  public readonly submitEndpointUrl = `${API_BASE_URL}/interrogate/async`;
+
+  public setTab(tab: AlchemyTab): void {
+    this.activeTab.set(tab);
+  }
+
+  /**
    * Static API status sample for the request-preview modal. Kept as a component
    * string because its JSON braces would otherwise collide with Angular's
    * control-flow block syntax in the template.
@@ -475,6 +496,17 @@ export class AlchemyComponent {
     };
     return JSON.stringify(payload, null, 2);
   });
+
+  /**
+   * The documented request for the developer surface: the same live body the
+   * preview modal shows, under the two headers a caller has to send. Sharing
+   * the builder keeps the documentation from drifting away from what the tool
+   * actually submits.
+   */
+  public readonly devRequestSample = computed(
+    () =>
+      `apikey: ${ANONYMOUS_API_KEY}\nContent-Type: application/json\n\n${this.apiPayload()}`,
+  );
 
   /** Copy the previewed request body to the clipboard, then close the modal. */
   public async copyApiPayload(): Promise<void> {

@@ -2976,3 +2976,259 @@
   color: var(--color-text-secondary);
   text-transform: capitalize;
 }
+
+/* ====================================================================
+   Alchemy developer surface (studio-scoped)
+   --------------------------------------------------------------------
+   The tool/developers switch and the API documentation plane. These are
+   `.gen-studio` classes, but they live here rather than in _generate.css
+   because nothing outside the alchemy page uses them.
+   ==================================================================== */
+
+/* The switch is a grid child of the workspace, spanning both panes so the
+   page reads as one surface with a chooser above it. */
+.gen-studio .gs-devtabs {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: var(--gs-panel);
+  border-bottom: 1px solid var(--gs-border);
+}
+.gen-studio .gs-devtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  /* Full thumb target: this is the only route to the documentation. */
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-devtab:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-devtab.gs-devtab--on {
+  color: var(--gs-purple);
+  background: var(--gs-purple-tint);
+  border-color: var(--gs-purple-tint-border);
+}
+.gen-studio .gs-devtab:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+
+/* The tool panes are hidden rather than destroyed while the documentation is
+   open, so a request in flight keeps polling and the builder keeps its state. */
+.gen-studio.gs-workspace--docs .gs-panel,
+.gen-studio.gs-workspace--docs .gs-results {
+  display: none;
+}
+
+/* Documentation plane. Blue is the studio's technical/input hue; the purple
+   tool panel and green results pane keep their own. */
+.gen-studio .gs-devdoc {
+  grid-column: 1 / -1;
+  --gs-zone: var(--gs-blue);
+  --gs-zone-tint: var(--gs-blue-tint);
+  --gs-zone-tint-border: var(--gs-blue-tint-border);
+  background: var(--gs-canvas);
+  padding: 18px 16px 40px;
+}
+.gen-studio .gs-devdoc-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.gen-studio .gs-devdoc-lead {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-devdoc-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 15px 16px;
+}
+.gen-studio .gs-devdoc-body,
+.gen-studio .gs-devdoc-base {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--gs-label);
+}
+.gen-studio .gs-devdoc-base code {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-devdoc-subtitle {
+  margin-top: 4px;
+}
+
+/* Protocol steps: the builder's numbered spine, one level down. */
+.gen-studio .gs-devdoc-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.gen-studio .gs-devdoc-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.gen-studio .gs-devdoc-step-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gs-ink);
+  margin-bottom: 2px;
+}
+
+/* A three-column reference table has no useful narrow layout, so it scrolls
+   inside its own wrapper instead of widening the page. */
+.gen-studio .gs-devdoc-tablewrap {
+  overflow-x: auto;
+}
+.gen-studio .gs-devdoc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.gen-studio .gs-devdoc-table th {
+  text-align: left;
+  padding: 0 10px 7px 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+  border-bottom: 1px solid var(--gs-border-soft);
+  white-space: nowrap;
+}
+.gen-studio .gs-devdoc-table td {
+  padding: 9px 10px 9px 0;
+  vertical-align: top;
+  color: var(--gs-label);
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-devdoc-table td code {
+  color: var(--gs-ink);
+  white-space: nowrap;
+}
+.gen-studio .gs-devdoc-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.gen-studio .gs-devdoc-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.gen-studio .gs-devdoc-note app-icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+.gen-studio .gs-devdoc-code {
+  margin: 0;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.gen-studio .gs-devdoc-code-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  background: var(--gs-field-soft);
+  border-bottom: 1px solid var(--gs-border);
+  font-size: 11.5px;
+  color: var(--gs-label);
+}
+.gen-studio .gs-devdoc-code .gs-api-code {
+  border-radius: 0;
+}
+
+.gen-studio .gs-devdoc-forms {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.gen-studio .gs-devdoc-forms-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-devdoc-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gen-studio .gs-devdoc-chips code {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 6px;
+  background: var(--gs-field);
+  font-size: 11px;
+  color: var(--gs-ink);
+}
+
+.gen-studio .gs-devdoc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.gen-studio .gs-devdoc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--gs-border);
+  border-radius: 9px;
+  background: var(--gs-field);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gs-ink);
+  text-decoration: none;
+}
+.gen-studio .gs-devdoc-link:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-devdoc-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  /* The switch takes a row of its own above the panes. */
+  .gen-studio.gs-alchemy.gs-workspace {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  /* Its own body scrolls, like every other pane in the studio. */
+  .gen-studio .gs-devdoc {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 24px 24px 48px;
+  }
+}

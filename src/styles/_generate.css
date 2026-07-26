@@ -548,6 +548,93 @@
   color: var(--gs-label);
 }
 
+/* ------- field heads + help notes ----------------------------------- */
+/* A field's label line, and a switch's row, both become wrapping flex rows so a
+   help trigger can sit after the label and its note can claim the next line
+   without disturbing the control. */
+.gen-studio .gs-field-head,
+.gen-studio .gs-opt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.gen-studio .gs-field-head > .gs-slabel {
+  min-width: 0;
+}
+.gen-studio .gs-opt > .gs-switch-row {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+}
+
+/* The trigger is a glyph, not a button-shaped object: it marks individual
+   fields and must stay quieter than the section landmarks above it. */
+.gen-studio .gs-help {
+  display: contents;
+}
+.gen-studio .gs-help-btn {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gs-label);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.12s,
+    border-color 0.12s,
+    background 0.12s;
+}
+.gen-studio .gs-help-btn:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-zone, var(--gs-blue));
+}
+.gen-studio .gs-help-btn[aria-expanded="true"] {
+  color: var(--gs-zone, var(--gs-blue));
+  border-color: var(--gs-zone, var(--gs-blue));
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+}
+.gen-studio .gs-help-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  /* The 44px target is an overlay rather than a size: the glyph has to stay
+     small beside an 11px label, and growing it would loosen every label row on
+     touch. */
+  .gen-studio .gs-help-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+/* Full-width so the note lands under the whole row it explains, whichever of
+   the wrapping rows above holds it. */
+.gen-studio .gs-help-note {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
+  border-radius: 8px;
+  background: var(--gs-zone-tint, var(--gs-card));
+  color: var(--gs-ink-2);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
 /* select-like chips (model row, sampler, control type) */
 .gen-studio .gs-select-row {
   display: flex;
@@ -732,23 +819,53 @@
 .gen-studio .gs-card--pad-sm {
   padding: 11px 12px;
 }
-.gen-studio .gs-card-title {
-  display: inline-flex;
+/* Every section title is the same landmark: an uppercase eyebrow followed by a
+   hairline in the zone hue, running out to the end of its row. That is the
+   pane header's underline and the card's top edge one step further down the
+   hierarchy, so the concept hue keeps reading as a horizontal rule at every
+   scale. The change of register (uppercase, tracked, ink) rather than of colour
+   is what separates a section title from the field labels packed around it, so
+   a long column of settings stays scannable without gaining any new hues. */
+.gen-studio .gs-card-title,
+.gen-studio .gs-card-title--sm {
+  display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
+  gap: 8px;
+  min-width: 0;
+  font-size: 10px;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-ink);
 }
-/* Every section title carries the same small accent tick: one repeated device
-   that marks "a section starts here" while the eye scans the column. */
+.gen-studio .gs-card-title::after,
+.gen-studio .gs-card-title--sm::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--gs-zone-tint-border, var(--gs-border));
+}
 .gen-studio .gs-title,
 .gen-studio .gs-results-title {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
-.gen-studio .gs-card-title--sm {
-  font-size: 11px;
+/* The row a section title shares with anything else (a help trigger, a style
+   lock badge, an action link). Wrapping so an expanded help note takes a line
+   of its own beneath the title. */
+.gen-studio .gs-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+/* Only in a row does the title take the free space, pushing whatever shares the
+   row (a lock badge, an action link) to the far end. On its own in a column
+   card it is already full width, and growing there would stretch it vertically. */
+.gen-studio .gs-sec-head > .gs-card-title,
+.gen-studio .gs-sec-head > .gs-card-title--sm {
+  flex: 1 1 auto;
 }
 .gen-studio .gs-hairline {
   border-top: 1px solid var(--gs-border-soft);
@@ -4301,6 +4418,7 @@
   .gen-studio .gs-switch-track,
   .gen-studio .gs-switch-knob,
   .gen-studio .gs-chip,
+  .gen-studio .gs-help-btn,
   .gen-studio .gs-genbtn {
     transition: none;
   }
