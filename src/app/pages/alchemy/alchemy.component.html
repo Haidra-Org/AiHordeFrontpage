@@ -183,7 +183,7 @@
                       }
                     </div>
                   } @else {
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       @for (form of group.forms; track form) {
                         <ng-container
                           *ngTemplateOutlet="
@@ -224,11 +224,24 @@
           <span class="gs-op-name">
             {{ "alchemy.form_names." + form | transloco }}
           </span>
-          @if (isUpscalerForm(form)) {
-            <span class="gs-op-badge">
-              {{ "alchemy.form_meta." + form + ".badge" | transloco }}
-            </span>
-          }
+          <!-- Factor badge + info button, grouped and right-justified so they
+               line up across rows regardless of how long the name is. -->
+          <span class="gs-op-meta">
+            @if (isUpscalerForm(form)) {
+              <span class="gs-op-badge">
+                {{ "alchemy.form_meta." + form + ".badge" | transloco }}
+              </span>
+            }
+            <button
+              type="button"
+              class="gs-op-info"
+              (click)="openInfo(form, $event)"
+              [attr.aria-label]="'alchemy.op_info' | transloco"
+              [title]="'alchemy.op_info' | transloco"
+            >
+              <app-icon name="info-circle" class="gs-ico-sm" />
+            </button>
+          </span>
         </label>
       </ng-template>
 
@@ -334,6 +347,62 @@
                 {{ "alchemy.jobs.select_done" | transloco }}
               </button>
             } @else {
+              @if (viewMode() === "gallery") {
+                <div
+                  class="gs-density"
+                  role="group"
+                  [attr.aria-label]="'alchemy.jobs.gallery_density' | transloco"
+                >
+                  <button
+                    type="button"
+                    class="gs-density-btn"
+                    (click)="setGalleryColumns(galleryColumns() - 1)"
+                    [disabled]="galleryColumns() <= galleryPerRowOptions[0]"
+                    [attr.aria-label]="'alchemy.jobs.density_fewer' | transloco"
+                  >
+                    <app-icon name="minus" class="gs-ico-sm" />
+                  </button>
+                  <span class="gs-density-val gs-mono">
+                    {{ galleryColumns() }}
+                  </span>
+                  <button
+                    type="button"
+                    class="gs-density-btn"
+                    (click)="setGalleryColumns(galleryColumns() + 1)"
+                    [disabled]="
+                      galleryColumns() >=
+                      galleryPerRowOptions[galleryPerRowOptions.length - 1]
+                    "
+                    [attr.aria-label]="'alchemy.jobs.density_more' | transloco"
+                  >
+                    <app-icon name="plus" class="gs-ico-sm" />
+                  </button>
+                </div>
+              }
+              <div
+                class="gs-seg"
+                role="group"
+                [attr.aria-label]="'alchemy.jobs.view_label' | transloco"
+              >
+                <button
+                  type="button"
+                  class="gs-seg-btn"
+                  [class.gs-seg-btn--on]="viewMode() === 'detail'"
+                  [attr.aria-pressed]="viewMode() === 'detail'"
+                  (click)="setViewMode('detail')"
+                >
+                  {{ "alchemy.jobs.view_detail" | transloco }}
+                </button>
+                <button
+                  type="button"
+                  class="gs-seg-btn"
+                  [class.gs-seg-btn--on]="viewMode() === 'gallery'"
+                  [attr.aria-pressed]="viewMode() === 'gallery'"
+                  (click)="setViewMode('gallery')"
+                >
+                  {{ "alchemy.jobs.view_gallery" | transloco }}
+                </button>
+              </div>
               <button
                 type="button"
                 class="gs-download-all"
@@ -342,25 +411,21 @@
                 <app-icon name="check-circle" class="gs-ico-sm" />
                 {{ "alchemy.jobs.select" | transloco }}
               </button>
-              <button
-                type="button"
-                class="gs-download-all"
-                (click)="expandAllJobs()"
-              >
-                {{ "alchemy.jobs.expand_all" | transloco }}
-              </button>
             }
           }
         </div>
       </header>
 
-      <div class="gs-results-body">
-        <div class="gs-retention gs-retention--amber">
-          <app-icon name="clock" class="gs-ico-sm" />
-          <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
-        </div>
-
+      <div
+        id="alchemy-results"
+        class="gs-results-body"
+        [class.gs-results-body--browser]="hasAnyJobs()"
+      >
         @if (!hasAnyJobs()) {
+          <div class="gs-retention gs-retention--amber">
+            <app-icon name="clock" class="gs-ico-sm" />
+            <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
+          </div>
           <div class="gs-empty">
             <app-icon name="beaker" />
             <div>
@@ -373,156 +438,30 @@
             </div>
           </div>
         } @else {
-          <div class="gs-job-list">
-            @for (job of jobs(); track job.id) {
-              @let expanded = isJobExpanded(job.id);
-              @let chips = jobFormChips(job);
-              @let age = jobAge(job);
-              @let stateView = jobStateView(job);
-              <article
-                class="gs-job"
-                [id]="'alchemy-job-' + job.id"
-                tabindex="-1"
-                [class.gs-job--new]="justAddedJobId() === job.id"
-                [class.gs-job--selected]="selectMode() && isJobSelected(job.id)"
-              >
-                <div class="gs-job-head-row">
-                  @if (selectMode()) {
-                    <span
-                      class="gs-job-check"
-                      [class.gs-job-check--on]="isJobSelected(job.id)"
-                      aria-hidden="true"
-                    >
-                      <app-icon name="check" />
-                    </span>
-                  }
-                  <button
-                    type="button"
-                    class="gs-job-toggle"
-                    [attr.aria-expanded]="selectMode() ? null : expanded"
-                    [attr.aria-pressed]="
-                      selectMode() ? isJobSelected(job.id) : null
-                    "
-                    [attr.aria-label]="'alchemy.jobs.toggle_label' | transloco"
-                    (click)="
-                      selectMode()
-                        ? toggleJobSelected(job.id)
-                        : toggleJob(job.id)
-                    "
-                  >
-                    @if (!selectMode()) {
-                      <app-icon
-                        name="chevron-right"
-                        class="gs-job-chev"
-                        [class.gs-job-chev--open]="expanded"
-                      />
-                    }
-                    <span
-                      class="gs-job-state gs-job-state--{{
-                        stateView.modifier
-                      }}"
-                    >
-                      {{ stateView.key | transloco }}
-                    </span>
-                    <span class="gs-job-chips">
-                      @for (form of chips.shown; track form) {
-                        <span class="gs-job-chip">
-                          {{ "alchemy.form_names." + form | transloco }}
-                        </span>
-                      }
-                      @if (chips.extra > 0) {
-                        <span class="gs-job-chip gs-job-chip--more">
-                          +{{ chips.extra }}
-                        </span>
-                      }
-                    </span>
-                    <span class="gs-job-count gs-mono">
-                      {{ formsProgressLabel(job) }}
-                    </span>
-                    <span class="gs-job-age">
-                      {{ age.key | transloco: { count: age.count } }}
-                    </span>
-                  </button>
-                  @if (!selectMode()) {
-                    <div class="gs-job-actions">
-                      @if (!isJobSettled(job)) {
-                        <button
-                          type="button"
-                          class="gs-tile-btn gs-tile-btn--danger"
-                          (click)="cancelJob(job.id)"
-                        >
-                          {{ "alchemy.jobs.cancel" | transloco }}
-                        </button>
-                      } @else if (jobHasResults(job)) {
-                        <button
-                          type="button"
-                          class="gs-tile-btn"
-                          [disabled]="downloadingJobId() === job.id"
-                          (click)="downloadJobResults(job)"
-                        >
-                          @if (downloadingJobId() === job.id) {
-                            <app-icon name="spinner" class="gs-spin" />
-                            {{ "alchemy.jobs.download_busy" | transloco }}
-                          } @else {
-                            <app-icon name="arrow-down-tray" />
-                            {{ "alchemy.jobs.download" | transloco }}
-                          }
-                        </button>
-                      }
-                    </div>
-                  }
-                </div>
-
-                @if (expanded) {
-                  <div class="gs-job-body">
-                    @if (job.notFound) {
-                      <p class="gs-warn">
-                        <app-icon name="warning-triangle" class="gs-ico-sm" />
-                        {{ "alchemy.jobs.not_found" | transloco }}
-                      </p>
-                    }
-                    @if (job.faulted) {
-                      <p class="gs-warn">
-                        <app-icon name="warning-triangle" class="gs-ico-sm" />
-                        {{ "alchemy.jobs.faulted" | transloco }}
-                      </p>
-                    }
-
-                    <ul class="gs-checklist">
-                      @for (row of jobFormRows(job); track row.form) {
-                        @let view = formStatusView(row.state);
-                        <li
-                          class="gs-checkrow gs-checkrow--{{ view.modifier }}"
-                        >
-                          <app-icon
-                            [name]="view.icon"
-                            [class.gs-spin]="view.spin"
-                            class="gs-checkrow-ico gs-ico-sm"
-                          />
-                          <span class="gs-checkrow-name">
-                            {{ "alchemy.form_names." + row.form | transloco }}
-                          </span>
-                          <span class="gs-checkrow-state">
-                            {{ "alchemy.state." + row.state | transloco }}
-                          </span>
-                        </li>
-                      }
-                    </ul>
-
-                    @for (form of job.status?.forms ?? []; track form.form) {
-                      @if (form.state === "done" && form.result) {
-                        <app-alchemy-result [form]="form" />
-                      }
-                    }
-                  </div>
-                }
-              </article>
-            }
+          <div class="gs-retention gs-retention--amber gs-retention--flush">
+            <app-icon name="clock" class="gs-ico-sm" />
+            <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
           </div>
+
+          <app-alchemy-results-browser
+            [jobs]="jobs()"
+            [selectedJobId]="selectedJobId()"
+            [viewMode]="viewMode()"
+            [galleryColumns]="galleryColumns()"
+            [selectMode]="selectMode()"
+            [selectedJobIds]="selectedJobIds()"
+            [isNarrow]="isNarrow()"
+            [justAddedJobId]="justAddedJobId()"
+            [downloadingJobId]="downloadingJobId()"
+            (activateJob)="selectJob($event)"
+            (toggleSelected)="toggleJobSelected($event)"
+            (download)="downloadJobResults($event)"
+            (cancelRequest)="cancelJob($event)"
+          />
 
           <!-- volunteer strip -->
           <aside
-            class="gs-volunteer"
+            class="gs-volunteer gs-volunteer--flush"
             [class.gs-volunteer--needs-help]="ns.alchemyNeedsHelp()"
           >
             <span class="gs-volunteer-ico">
@@ -704,6 +643,49 @@
                 | transloco: { count: pendingDeleteCount() }
             }}
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ============ OPERATION INFO MODAL (mobile / on-demand) ============ -->
+  @if (infoForm(); as form) {
+    <div
+      class="gs-modal-overlay"
+      (click)="onInfoBackdrop($event)"
+      (keydown.escape)="closeInfo()"
+      role="dialog"
+      aria-modal="true"
+      tabindex="0"
+    >
+      <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
+        <div class="gs-modal-header">
+          <div class="gs-modal-title">
+            {{ "alchemy.form_names." + form | transloco }}
+            @if (isUpscalerForm(form)) {
+              <span class="gs-focus-badge">
+                {{ "alchemy.form_meta." + form + ".badge" | transloco }}
+              </span>
+            }
+          </div>
+          <button
+            type="button"
+            class="gs-modal-close"
+            (click)="closeInfo()"
+            [attr.aria-label]="'generate.civitai.close' | transloco"
+          >
+            <app-icon name="x-mark" class="gs-ico-sm" />
+          </button>
+        </div>
+        <div class="gs-modal-body">
+          <p class="gs-focus-desc">
+            {{ "alchemy.form_meta." + form + ".desc" | transloco }}
+          </p>
+          @if (hasExample(form)) {
+            <p class="gs-focus-example mt-2">
+              {{ "alchemy.form_meta." + form + ".example" | transloco }}
+            </p>
+          }
         </div>
       </div>
     </div>

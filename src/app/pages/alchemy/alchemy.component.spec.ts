@@ -13,6 +13,10 @@ import { TranslatorService } from '../../services/translator.service';
 import { clientAgentInterceptor } from '../../services/interceptors/client-agent.interceptor';
 import { API_BASE } from '../../testing/api-test-helpers';
 import { AlchemyFormName } from '../../types/generation';
+import {
+  formsProgressLabel,
+  isJobSettled,
+} from '../../helper/alchemy-job-view';
 
 describe('AlchemyComponent', () => {
   let fixture: ComponentFixture<AlchemyComponent>;
@@ -23,6 +27,9 @@ describe('AlchemyComponent', () => {
   let getStoredApiKey: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    // The component reads persisted UI preferences during construction, so no
+    // test may inherit another's stored view mode / density.
+    localStorage.clear();
     toastSuccess = vi.fn();
     toastError = vi.fn();
     getStoredApiKey = vi.fn(() => 'my-key');
@@ -209,8 +216,8 @@ describe('AlchemyComponent', () => {
 
       const job = component.jobs()[0];
       expect(job.done).toBe(true);
-      expect(component.isJobSettled(job)).toBe(true);
-      expect(component.formsProgressLabel(job)).toBe('1/1');
+      expect(isJobSettled(job)).toBe(true);
+      expect(formsProgressLabel(job)).toBe('1/1');
     });
 
     it('marks a job not found on 404', () => {
@@ -239,7 +246,7 @@ describe('AlchemyComponent', () => {
     });
   });
 
-  describe('job accordion', () => {
+  describe('results browser', () => {
     function track(id: string): void {
       component.onSourceImage('https://example.com/i.png');
       select('caption');
@@ -248,56 +255,91 @@ describe('AlchemyComponent', () => {
       select('caption');
     }
 
-    it('auto-opens the newest job and folds earlier ones', () => {
+    it('auto-selects the newest tracked request', () => {
       track('job-a');
-      expect(component.isJobExpanded('job-a')).toBe(true);
-
+      expect(component.selectedJobId()).toBe('job-a');
       track('job-b');
-      expect(component.isJobExpanded('job-b')).toBe(true);
-      expect(component.isJobExpanded('job-a')).toBe(false);
+      expect(component.selectedJobId()).toBe('job-b');
     });
 
-    it('leaves new jobs collapsed when auto-open is off', () => {
-      component.toggleAutoOpen();
-      track('job-c');
-      expect(component.isJobExpanded('job-c')).toBe(false);
+    it('shows a picked job in place on wide viewports', () => {
+      track('job-a');
+      track('job-b');
+      component.selectJob('job-a');
+      expect(component.selectedJobId()).toBe('job-a');
+      expect(component.viewMode()).toBe('detail');
     });
 
-    it('toggles, expands all, and collapses all', () => {
-      track('job-d');
-      track('job-e');
-
-      component.expandAllJobs();
-      expect(component.isJobExpanded('job-d')).toBe(true);
-      expect(component.isJobExpanded('job-e')).toBe(true);
-
-      component.toggleJob('job-d');
-      expect(component.isJobExpanded('job-d')).toBe(false);
-
-      component.collapseAllJobs();
-      expect(component.isJobExpanded('job-e')).toBe(false);
+    it('only changes the selection when a job is picked on narrow viewports', () => {
+      track('job-a');
+      track('job-b');
+      component.isNarrow.set(true);
+      component.selectJob('job-a');
+      expect(component.selectedJobId()).toBe('job-a');
+      expect(component.viewMode()).toBe('detail');
     });
 
-    it('summarizes forms with an overflow count', () => {
-      const job = {
-        id: 'x',
-        forms: [
-          'caption',
-          'nsfw',
-          'interrogation',
-          'GFPGAN',
-          'strip_background',
-        ] as AlchemyFormName[],
-        status: null,
-        done: false,
-        faulted: false,
-        cancelled: false,
-        notFound: false,
-        firstSeenAt: Date.now(),
+    it.each([true, false])(
+      'leaves the gallery for the detail view on a tile pick (narrow: %s)',
+      (narrow) => {
+        track('job-a');
+        component.isNarrow.set(narrow);
+        component.setViewMode('gallery');
+
+        component.selectJob('job-a');
+
+        expect(component.viewMode()).toBe('detail');
+        expect(component.selectedJobId()).toBe('job-a');
+      },
+    );
+
+    it('toggles between detail and gallery view', () => {
+      expect(component.viewMode()).toBe('detail');
+      component.setViewMode('gallery');
+      expect(component.viewMode()).toBe('gallery');
+      component.setViewMode('detail');
+      expect(component.viewMode()).toBe('detail');
+    });
+
+    it('persists the view mode and restores a valid stored value', () => {
+      component.setViewMode('gallery');
+      expect(localStorage.getItem('aihorde.alchemy.view')).toContain('gallery');
+
+      const internals = component as unknown as {
+        loadViewMode(): 'detail' | 'gallery';
       };
-      const chips = component.jobFormChips(job);
-      expect(chips.shown).toEqual(['caption', 'nsfw', 'interrogation']);
-      expect(chips.extra).toBe(2);
+      expect(internals.loadViewMode()).toBe('gallery');
+    });
+
+    it('falls back to the detail view for a bogus stored value', () => {
+      localStorage.setItem('aihorde.alchemy.view', JSON.stringify('nonsense'));
+      const internals = component as unknown as {
+        loadViewMode(): 'detail' | 'gallery';
+      };
+      expect(internals.loadViewMode()).toBe('detail');
+    });
+
+    it('persists and clamps gallery column density', () => {
+      component.setGalleryColumns(5);
+      expect(component.galleryColumns()).toBe(5);
+      component.setGalleryColumns(99);
+      expect(component.galleryColumns()).toBe(6);
+      component.setGalleryColumns(0);
+      expect(component.galleryColumns()).toBe(2);
+    });
+
+    it('reassigns the shown job after the selected one is deleted', () => {
+      track('job-a');
+      track('job-b');
+      expect(component.selectedJobId()).toBe('job-b');
+
+      component.toggleSelectMode();
+      component.toggleJobSelected('job-b');
+      component.requestDeleteSelected();
+      component.confirmDelete();
+
+      expect(component.jobs().map((j) => j.id)).toEqual(['job-a']);
+      expect(component.selectedJobId()).toBe('job-a');
     });
   });
 
@@ -328,7 +370,7 @@ describe('AlchemyComponent', () => {
       localStorage.clear();
     });
 
-    it('restores fresh jobs, drops stale ones, and opens the newest', () => {
+    it('restores fresh jobs, drops stale ones, and selects the newest', () => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify([makeJob('fresh', 1000), makeJob('stale', 41 * 60_000)]),
@@ -337,7 +379,19 @@ describe('AlchemyComponent', () => {
       internals().restoreJobs();
 
       expect(component.jobs().map((j) => j.id)).toEqual(['fresh']);
-      expect(component.isJobExpanded('fresh')).toBe(true);
+      expect(component.selectedJobId()).toBe('fresh');
+    });
+
+    it('normalizes a legacy job with no source thumbnail to null', () => {
+      // makeJob() omits sourceThumb, mimicking a job stored before the field.
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([makeJob('legacy', 1000)]),
+      );
+
+      internals().restoreJobs();
+
+      expect(component.jobs()[0].sourceThumb).toBeNull();
     });
 
     it('does not persist before a restore has run', () => {
@@ -397,7 +451,7 @@ describe('AlchemyComponent', () => {
 
       const job = component.jobs()[0];
       expect(job.cancelled).toBe(true);
-      expect(component.isJobSettled(job)).toBe(true);
+      expect(isJobSettled(job)).toBe(true);
     });
   });
 });

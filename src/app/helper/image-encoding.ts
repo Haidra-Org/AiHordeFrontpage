@@ -8,8 +8,22 @@
  * while preserving enough detail for captioning/interrogation.
  */
 
+import {
+  isLikelyImageFileLink,
+  toRenderableImageSource,
+} from './generation-image';
+
 export const DEFAULT_MAX_EDGE = 1024;
 export const DEFAULT_WEBP_QUALITY = 0.9;
+
+/**
+ * Longest edge (px) for a persisted source thumbnail. Sized for the widest
+ * consumer (a gallery tile runs 300-500px on desktop) rather than the 72px rail
+ * thumb, because a rail-sized image visibly upscales in a tile.
+ */
+export const THUMB_MAX_EDGE = 256;
+/** webp quality for source thumbnails: small enough to persist many of them. */
+export const THUMB_WEBP_QUALITY = 0.55;
 
 export interface EncodeImageOptions {
   /** Longest edge (px) the image is scaled down to. Never upscales. */
@@ -106,4 +120,55 @@ export function stripDataUrlPrefix(value: string): string {
 export function base64ByteLength(base64: string): number {
   const normalized = base64.replace(/=+$/, '');
   return Math.floor((normalized.length * 3) / 4);
+}
+
+/**
+ * Downscale an already-resolved alchemy source (a remote/root-relative URL, a
+ * `data:` URL, or a bare base64 payload) into a tiny `data:image/webp` URL for
+ * the results rail/gallery thumbnails.
+ *
+ * A remote URL is returned verbatim: it renders directly in an `<img>`, costs no
+ * localStorage, and re-encoding it via canvas would taint on cross-origin reads
+ * anyway. A base64/data source is decoded and redrawn at `THUMB_MAX_EDGE`.
+ *
+ * The result is the *persistable* thumbnail; callers that can show something
+ * larger should prefer the full source they already hold in memory.
+ *
+ * Browser-only (needs `<canvas>`); returns `null` on any failure (SSR, no
+ * canvas, decode error) so callers fall back to a placeholder rather than throw.
+ */
+export async function sourceToThumbnailDataUrl(
+  source: string,
+): Promise<string | null> {
+  if (!source) return null;
+  if (isLikelyImageFileLink(source)) return source;
+  if (typeof document === 'undefined') return null;
+
+  try {
+    const image = await loadImageElement(toRenderableImageSource(source));
+    const target = computeTargetSize(
+      image.naturalWidth,
+      image.naturalHeight,
+      THUMB_MAX_EDGE,
+    );
+    const canvas = document.createElement('canvas');
+    canvas.width = target.width;
+    canvas.height = target.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(image, 0, 0, target.width, target.height);
+    return canvas.toDataURL('image/webp', THUMB_WEBP_QUALITY);
+  } catch {
+    return null;
+  }
+}
+
+function loadImageElement(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = (): void => resolve(image);
+    image.onerror = (): void =>
+      reject(new ImageEncodingError('Could not decode image for thumbnail.'));
+    image.src = src;
+  });
 }

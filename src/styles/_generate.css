@@ -148,7 +148,12 @@
 /* ------- workspace shell -------------------------------------------- */
 .gen-studio.gs-workspace {
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, 1fr) (not a bare 1fr) so the single mobile column keeps a
+     min-width of 0: a wide result (long caption, code block, tag grid) is
+     then contained/scrolled within the column instead of stretching the
+     whole workspace past the viewport, where the shell's overflow-x clip
+     would silently crop it. */
+  grid-template-columns: minmax(0, 1fr);
   background: var(--gs-canvas);
 }
 @media (min-width: 1024px) {
@@ -266,19 +271,25 @@
   .gen-studio.gs-workspace--max .gs-panel {
     border-right: 0;
   }
-  .gen-studio.gs-workspace--wide .gs-body-flow,
-  .gen-studio.gs-workspace--max .gs-body-flow {
+  /* Expanded panels lay the setting cards out as independent masonry columns.
+     The prompt and negative prompt stay full-width above them (direct children
+     of .gs-body-flow), so dragging the prompt taller never disturbs the cards.
+     Each card is kept whole with break-inside, so a tall card (e.g. one holding
+     a loaded source image) only grows ITS own column — a row-aligned grid would
+     instead force matching dead space into the neighbouring column. */
+  .gen-studio.gs-workspace--wide .gs-body-cards,
+  .gen-studio.gs-workspace--max .gs-body-cards {
     display: block;
     column-gap: 14px;
   }
-  .gen-studio.gs-workspace--wide .gs-body-flow {
+  .gen-studio.gs-workspace--wide .gs-body-cards {
     column-count: 2;
   }
-  .gen-studio.gs-workspace--max .gs-body-flow {
+  .gen-studio.gs-workspace--max .gs-body-cards {
     column-count: 3;
   }
-  .gen-studio.gs-workspace--wide .gs-body-flow > *,
-  .gen-studio.gs-workspace--max .gs-body-flow > * {
+  .gen-studio.gs-workspace--wide .gs-body-cards > *,
+  .gen-studio.gs-workspace--max .gs-body-cards > * {
     break-inside: avoid;
     margin-bottom: 14px;
   }
@@ -286,6 +297,11 @@
   .gen-studio.gs-workspace--wide .gs-adv-divider,
   .gen-studio.gs-workspace--max .gs-adv-divider {
     display: none;
+  }
+  /* The projected source-image card must be block-level so its image can't
+     fragment across a masonry column boundary mid-card. */
+  .gen-studio .gs-body-cards > app-generate-source-image {
+    display: block;
   }
 }
 
@@ -319,6 +335,21 @@
 }
 
 /* ------- panel header + segmented ----------------------------------- */
+
+/* Neutralise the site-wide `header { z-index: 50 }` rule (see _navigation.css,
+   meant only for the fixed nav shell) on EVERY <header> inside the studio.
+   These are flex items, and flex items honour z-index even while
+   `position: static` — so the inherited z-50 gave them a stacking context level
+   with the nav. Scrolling one up into the nav band then painted it OVER the
+   fixed nav and the sticky subtab bar instead of beneath them. This bites the
+   panel/results headers AND each result card's own <header class="alchemy-result__head">
+   (a flex item of the result column), so the reset is blanket rather than a
+   fragile per-class list. The studio has no header that legitimately stacks;
+   the sticky subtab bar is a <nav>, not a <header>, so it keeps its z-index. */
+.gen-studio header {
+  z-index: auto;
+}
+
 .gen-studio .gs-panel-header {
   flex: none;
   display: flex;
@@ -423,6 +454,15 @@
   font-size: 12.5px;
   background: var(--gs-field-soft);
   color: var(--gs-label);
+}
+/* A one-row-tall textarea so the negative prompt can be dragged taller the same
+   way the main prompt can, without claiming vertical space by default. */
+.gen-studio textarea.gs-neg-input {
+  display: block;
+  min-height: 38px;
+  max-height: 220px;
+  line-height: 1.45;
+  resize: vertical;
 }
 .gen-studio .gs-textarea:focus,
 .gen-studio .gs-input:focus,
@@ -1011,7 +1051,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  /* Wrap when the pane is narrow (mobile, or a shrunken results column in
+     "double" panel mode): the title + status stay on line one and the
+     online readout / job controls drop to the next line rather than
+     overrunning the edge. */
+  flex-wrap: wrap;
+  gap: 10px 12px;
   padding: 15px 22px;
   border-bottom: 1px solid var(--gs-border-results);
 }
@@ -1136,10 +1181,11 @@
   object-fit: cover;
   display: block;
 }
+/* The size badge now flows inside .gs-tile-corner, stacked under the prompt
+   header (it used to be absolutely pinned to the same top-left spot as the
+   prompt, so the prompt covered it). */
 .gen-studio .gs-tile-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
+  align-self: flex-start;
   font-size: 10px;
   font-weight: 600;
   color: #fff;
@@ -1163,6 +1209,64 @@
   font-size: 10px;
   color: #fff;
   font-family: "JetBrains Mono", ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* On small screens the seed crowds the tile bar; its value stays reachable via
+   the actions menu (Copy seed), the metadata modal, and the lightbox caption. */
+@media (max-width: 640px) {
+  .gen-studio .gs-tile-seed {
+    display: none;
+  }
+}
+
+/* ------- per-tile actions menu (kebab / long-press / right-click) ---- */
+.gen-studio .gs-tile-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 196px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 11px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+}
+.gen-studio .gs-tile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--gs-ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gen-studio .gs-tile-menu-item:hover {
+  background: var(--gs-seg-track);
+}
+.gen-studio .gs-tile-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.gen-studio .gs-tile-menu-item app-icon {
+  color: var(--gs-label);
+}
+.gen-studio .gs-tile-menu-item app-icon,
+.gen-studio .gs-tile-menu-item app-icon svg {
+  width: 15px;
+  height: 15px;
+  display: inline-flex;
+  flex: none;
 }
 .gen-studio .gs-icobtn {
   width: 26px;
@@ -1449,6 +1553,24 @@
 }
 
 /* ------- per-tile prompt header (expandable, contained) ------------- */
+
+/* Top-left overlay stack for a finished tile: the prompt header, then the size
+   badge beneath it. Being a flow column means the badge always sits just below
+   the prompt (however tall it grows) instead of hiding behind it. */
+.gen-studio .gs-tile-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Leave the top-right corner free for the tags / cancel affordances. */
+  max-width: calc(100% - 44px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 6px;
+}
+
 .gen-studio .gs-tile-top {
   position: absolute;
   top: 0;
@@ -1460,6 +1582,14 @@
   align-items: flex-start;
   gap: 6px;
   padding: 6px;
+}
+/* Inside the corner stack the prompt header is a flow row (the corner owns the
+   absolute placement); on the other tile kinds it stays the absolute overlay. */
+.gen-studio .gs-tile-corner .gs-tile-top {
+  position: static;
+  max-width: 100%;
+  z-index: auto;
+  padding: 0;
 }
 .gen-studio .gs-tile-prompt-btn {
   flex: 1 1 auto;
@@ -1533,7 +1663,11 @@
 .gen-studio .gs-presets-menu {
   position: absolute;
   top: calc(100% + 6px);
-  right: 0;
+  /* The trigger sits near the left of the panel header, so open the menu
+     rightward from it. Anchoring `right: 0` (its old value) pushed the 262px
+     panel off the left edge — even on the narrow 426px desktop panel. */
+  left: 0;
+  right: auto;
   z-index: 30;
   width: 262px;
   max-height: 360px;
@@ -1546,6 +1680,24 @@
   border: 1px solid var(--gs-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+/* On phones the panel is full-bleed and the trigger is mid-header, so neither
+   edge has room for the menu. Detach it from the trigger and pin it to the
+   viewport as a sheet under the studio subtab bar, where it's always fully on
+   screen. (It stays a DOM descendant of .gs-presets, so click-outside logic and
+   focus order are unaffected.) */
+@media (max-width: 640px) {
+  .gen-studio .gs-presets-menu {
+    position: fixed;
+    top: calc(var(--nav-height-mobile) + var(--gs-subtab-height) + 8px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: min(
+      360px,
+      calc(100dvh - var(--nav-height-mobile) - var(--gs-subtab-height) - 24px)
+    );
+  }
 }
 .gen-studio .gs-presets-save {
   display: flex;
@@ -2325,6 +2477,89 @@
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* Factor badge + info button, grouped and right-justified so both stay aligned
+   across rows no matter how long the operation name is (the name truncates,
+   this group holds its place at the right edge). */
+.gen-studio .gs-op-meta {
+  flex: none;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Per-operation (i): opens the description + example in a modal. Desktop already
+   explains the hovered operation in the docked panel, so the button only shows
+   on mobile — where hover is absent and that dock is off-screen. */
+.gen-studio .gs-op-info {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-op-info:hover {
+  color: var(--gs-blue);
+}
+.gen-studio .gs-op-info:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+  border-radius: 5px;
+}
+/* Mobile: touch-first sizing. The operation rows double as the selection
+   control, so they get a comfortable ≥48px hit height, the names get room to
+   wrap rather than truncate, and the (i) becomes a proper ~40px circular target
+   instead of a hairline icon. The hover/focus description dock (useless without
+   hover and off-screen once the list scrolls) is dropped in favour of the (i)
+   modal. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-op {
+    min-height: 48px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .gen-studio .gs-op-check {
+    width: 20px;
+    height: 20px;
+  }
+  .gen-studio .gs-op-check app-icon,
+  .gen-studio .gs-op-check app-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+  .gen-studio .gs-op-name {
+    font-size: 13.5px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .gen-studio .gs-op-info {
+    display: inline-flex;
+    width: 40px;
+    height: 40px;
+    /* Pull the larger target back into the row's padding so the bigger hit area
+       doesn't visibly inflate the row. */
+    margin: -6px -6px -6px 0;
+    padding: 0;
+    border: 1px solid var(--gs-border);
+    border-radius: 50%;
+    background: var(--gs-field);
+    color: var(--gs-label);
+  }
+  .gen-studio .gs-op-info app-icon,
+  .gen-studio .gs-op-info app-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+  .gen-studio .gs-focus-dock {
+    display: none;
+  }
+}
+
 /* collapsible operation-group header */
 .gen-studio .gs-opgroup-head {
   display: flex;
@@ -2665,6 +2900,318 @@
   text-decoration: none;
 }
 
+/* ======= Alchemy results browser: rail / carousel / detail / gallery =======
+   Replaces the old vertical job accordion. Every request is a source-image
+   thumbnail: a vertical rail beside a detail pane on desktop, a sticky
+   horizontal carousel that opens a pull-up sheet on mobile, plus a full-pane
+   tiled gallery. The rail/detail bars are <nav>/<div> (never <header>) so the
+   `.gen-studio header { z-index: auto }` reset stays out of the picture. */
+
+/* With jobs present, the body hands its whole area to the browser: no padding
+   (the rail sits flush and, on mobile, sticks) and, on desktop, a non-scrolling
+   flex column so the rail and detail scroll on their own rather than the page.
+   The retention + volunteer strips ride along as flush flex-none children. */
+.gen-studio .gs-results-body--browser {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-results-body--browser {
+    overflow: hidden;
+  }
+}
+.gen-studio .gs-retention--flush {
+  flex: none;
+  margin: 14px 16px 0;
+}
+.gen-studio .gs-volunteer--flush {
+  flex: none;
+  margin: 14px 16px;
+}
+
+.gen-studio .gs-browser {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-browser {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+  }
+}
+
+/* Rail (desktop vertical) ↔ carousel (mobile sticky horizontal): one element. */
+.gen-studio .gs-rail {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  position: sticky;
+  /* Pin below the fixed nav + the subtab bar (mirrors .gs-presets-menu). */
+  top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
+  z-index: 5;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  background: var(--gs-panel);
+  border-bottom: 1px solid var(--gs-border);
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-rail {
+    position: static;
+    flex-direction: column;
+    overflow-x: visible;
+    overflow-y: auto;
+    scroll-snap-type: none;
+    border-bottom: 0;
+    border-right: 1px solid var(--gs-border);
+  }
+}
+
+.gen-studio .gs-rail-thumb {
+  position: relative;
+  flex: none;
+  width: 72px;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--gs-border);
+  background: #f3f4f6;
+  padding: 0;
+  cursor: pointer;
+  scroll-snap-align: start;
+  font-family: inherit;
+}
+.dark .gen-studio .gs-rail-thumb {
+  background: #1b1e24;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-rail-thumb {
+    width: 100%;
+  }
+}
+.gen-studio .gs-rail-thumb--active {
+  border-color: var(--gs-blue);
+  box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
+}
+.gen-studio .gs-rail-thumb:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-rail-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gen-studio .gs-rail-thumb-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-rail-thumb-ph app-icon,
+.gen-studio .gs-rail-thumb-ph app-icon svg {
+  width: 42%;
+  height: 42%;
+}
+.gen-studio .gs-rail-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  min-width: 16px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.55);
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.gen-studio .gs-rail-time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 9px 5px 4px;
+  font-size: 9.5px;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(transparent, rgba(17, 24, 39, 0.62));
+}
+.gen-studio .gs-rail-spin {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.55);
+}
+.gen-studio .gs-rail-spin .gs-spin-dot {
+  width: 6px;
+  height: 6px;
+  background: #fff;
+}
+.gen-studio .gs-rail-thumb--new {
+  animation: gs-pulse-ring 1.4s ease-out 2;
+}
+.gen-studio .gs-rail-check {
+  inset: auto 4px 4px auto;
+  width: 18px;
+  height: 18px;
+}
+
+/* Detail region: a scrollable column beside the rail when wide, an inline block
+   under the sticky carousel when narrow. Same inner markup either way. */
+.gen-studio .gs-detail {
+  min-height: 0;
+  padding: 16px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-detail {
+    overflow-y: auto;
+    padding: 20px 22px;
+  }
+}
+.gen-studio .gs-detail-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.gen-studio .gs-detail-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+.gen-studio .gs-detail-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px;
+  font-size: 12.5px;
+  color: var(--gs-muted);
+}
+
+/* Results card grid: multi-column when wide, one column when narrow. */
+.gen-studio .gs-result-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* Full-pane tiled gallery (one tile per request). */
+.gen-studio .gs-gallery {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-gallery {
+    overflow-y: auto;
+    padding: 20px 22px;
+  }
+}
+.gen-studio .gs-gtile {
+  display: block;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.gen-studio .gs-gtile--active {
+  border-color: var(--gs-blue);
+  box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
+}
+.gen-studio .gs-gtile:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-gtile .gs-tile-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+}
+.gen-studio .gs-gtile-ph {
+  position: absolute;
+  inset: 0;
+}
+
+/* View toggle + gallery density controls (results header). */
+.gen-studio .gs-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--gs-seg-track);
+  border-radius: 8px;
+}
+.gen-studio .gs-seg-btn {
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-label);
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.gen-studio .gs-seg-btn--on {
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.gen-studio .gs-density {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gen-studio .gs-density-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--gs-border);
+  border-radius: 6px;
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-density-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.gen-studio .gs-density-val {
+  min-width: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--gs-ink);
+}
+
+@keyframes gs-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 var(--gs-blue-tint-border);
+  }
+  100% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
 /* API preview modal chrome */
 .gen-studio .gs-api-endpoint {
   flex: none;
@@ -2813,11 +3360,52 @@
   background: #3a3f47;
 }
 
+/* ---- Alchemy results / jobs pane: responsive-first (mobile & tablet) ----
+   The jobs pane packs several single-line flex rows (the header controls,
+   each job's summary row, the volunteer strip). On narrow viewports these
+   have to reflow onto multiple lines: the studio shell clips horizontal
+   overflow (`.wrapper--flush { overflow-x: clip }`), so anything that ran
+   past the edge would be silently cropped rather than scrollable. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-results-header {
+    padding: 13px 16px;
+  }
+  /* Both header groups (title+status, and online + view/density/select
+     controls) wrap internally so nothing pushes off-screen. */
+  .gen-studio .gs-results-header > div {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .gen-studio .gs-results-body {
+    padding: 16px;
+  }
+  /* The browser owns its full area (sticky carousel + detail); the flush
+     retention/volunteer strips carry their own margins, so drop body padding
+     here — it would otherwise win over the base --browser rule by source order. */
+  .gen-studio .gs-results-body--browser {
+    padding: 0;
+  }
+  /* Detail head actions drop to their own line rather than crushing the pills. */
+  .gen-studio .gs-detail-head {
+    row-gap: 8px;
+  }
+  /* Volunteer strip stacks: glyph + copy on top, a full-width CTA beneath. */
+  .gen-studio .gs-volunteer {
+    flex-wrap: wrap;
+  }
+  .gen-studio .gs-volunteer-cta {
+    width: 100%;
+    justify-content: center;
+    margin-top: 2px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gen-studio .gs-shimmer,
   .gen-studio .gs-spin,
   .gen-studio .gs-fadeup,
-  .gen-studio .gs-pulse {
+  .gen-studio .gs-pulse,
+  .gen-studio .gs-rail-thumb--new {
     animation: none;
   }
   .gen-studio .gs-seg-opt,

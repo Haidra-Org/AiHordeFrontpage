@@ -3,6 +3,7 @@ import {
   base64ByteLength,
   fileToResizedBase64,
   ImageEncodingError,
+  sourceToThumbnailDataUrl,
   stripDataUrlPrefix,
 } from './image-encoding';
 
@@ -109,5 +110,40 @@ describe('fileToResizedBase64', () => {
     await expect(fileToResizedBase64(makeFile('image/png'))).rejects.toThrow(
       ImageEncodingError,
     );
+  });
+});
+
+describe('sourceToThumbnailDataUrl', () => {
+  it('returns null for an empty source', async () => {
+    expect(await sourceToThumbnailDataUrl('')).toBeNull();
+  });
+
+  it('passes a remote image URL through unchanged', async () => {
+    const url = 'https://example.com/pic.png';
+    expect(await sourceToThumbnailDataUrl(url)).toBe(url);
+  });
+
+  it('passes a root-relative image URL through unchanged', async () => {
+    expect(await sourceToThumbnailDataUrl('/assets/pic.webp')).toBe(
+      '/assets/pic.webp',
+    );
+  });
+
+  it('returns null when a base64 source cannot be decoded', async () => {
+    // Deterministically fail the decode: a real jsdom image never fires
+    // load/error for a data URL, so stub one that errors on src assignment.
+    class FailingImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      set src(_value: string) {
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal('Image', FailingImage);
+
+    const bareBase64 = 'UklGRhoAAABXRUJQ';
+    await expect(sourceToThumbnailDataUrl(bareBase64)).resolves.toBeNull();
+
+    vi.unstubAllGlobals();
   });
 });

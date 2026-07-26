@@ -2,6 +2,10 @@
 
 .github/*-instructions.md
 
+tmp*.png
+tmp*.log
+tmp*/**
+
 # Compiled output
 /dist
 /tmp
@@ -46,3 +50,4 @@ venv/
 .venv/
 *-1*.json
 **/__pycache__/
+

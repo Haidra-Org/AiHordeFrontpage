@@ -1,0 +1,168 @@
+import { Component, signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AlchemyResultsBrowserComponent } from './alchemy-results-browser.component';
+import { AlchemyJob } from '../../../helper/alchemy-job-view';
+
+const makeJob = (
+  id: string,
+  thumb: string | null,
+  full: string | null = null,
+): AlchemyJob => ({
+  id,
+  forms: ['caption', 'nsfw'],
+  status: null,
+  done: false,
+  faulted: false,
+  cancelled: false,
+  notFound: false,
+  firstSeenAt: Date.now(),
+  sourceThumb: thumb,
+  sourceFull: full,
+});
+
+@Component({
+  imports: [AlchemyResultsBrowserComponent],
+  template: `<app-alchemy-results-browser
+    [jobs]="jobs()"
+    [selectedJobId]="selectedJobId()"
+    [viewMode]="viewMode()"
+    [galleryColumns]="galleryColumns()"
+    [selectMode]="selectMode()"
+    [selectedJobIds]="selectedJobIds()"
+    [isNarrow]="isNarrow()"
+    (activateJob)="selected = $event"
+    (toggleSelected)="toggled = $event"
+  />`,
+})
+class HostComponent {
+  jobs = signal<AlchemyJob[]>([
+    makeJob('job-a', 'https://example.com/a.png'),
+    makeJob('job-b', null),
+  ]);
+  selectedJobId = signal<string | null>('job-a');
+  viewMode = signal<'detail' | 'gallery'>('detail');
+  galleryColumns = signal(4);
+  selectMode = signal(false);
+  selectedJobIds = signal<ReadonlySet<string>>(new Set());
+  isNarrow = signal(false);
+  selected: string | null = null;
+  toggled: string | null = null;
+}
+
+describe('AlchemyResultsBrowserComponent', () => {
+  let fixture: ComponentFixture<HostComponent>;
+  let host: HostComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [
+        HostComponent,
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { defaultLang: 'en' },
+        }),
+      ],
+    });
+    fixture = TestBed.createComponent(HostComponent);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  const railThumbs = (): HTMLButtonElement[] => [
+    ...fixture.nativeElement.querySelectorAll('.gs-rail-thumb'),
+  ];
+
+  it('renders one rail thumbnail per request', () => {
+    expect(railThumbs().length).toBe(2);
+  });
+
+  it('renders an image for a thumb and a placeholder when none exists', () => {
+    const [a, b] = railThumbs();
+    expect(a.querySelector('.gs-rail-thumb-img')).not.toBeNull();
+    expect(b.querySelector('.gs-rail-thumb-img')).toBeNull();
+    expect(b.querySelector('.gs-rail-thumb-ph')).not.toBeNull();
+  });
+
+  it('marks the selected thumb active', () => {
+    const [a] = railThumbs();
+    expect(a.classList.contains('gs-rail-thumb--active')).toBe(true);
+    expect(a.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('emits select when a thumb is clicked outside select mode', () => {
+    railThumbs()[1].click();
+    expect(host.selected).toBe('job-b');
+    expect(host.toggled).toBeNull();
+  });
+
+  it('emits toggleSelected when a thumb is clicked in select mode', () => {
+    host.selectMode.set(true);
+    fixture.detectChanges();
+    railThumbs()[1].click();
+    expect(host.toggled).toBe('job-b');
+    expect(host.selected).toBeNull();
+  });
+
+  it('renders the gallery grid with the requested column density', () => {
+    host.viewMode.set('gallery');
+    host.galleryColumns.set(3);
+    fixture.detectChanges();
+    const grid = fixture.nativeElement.querySelector(
+      '.gs-gallery .gs-tile-grid',
+    ) as HTMLElement;
+    expect(grid).not.toBeNull();
+    expect(grid.style.gridTemplateColumns).toContain('repeat(3');
+    expect(fixture.nativeElement.querySelectorAll('.gs-gtile').length).toBe(2);
+  });
+
+  it('prefers the full source over the small thumb for gallery tiles', () => {
+    host.jobs.set([
+      makeJob('job-a', '/assets/thumb.webp', '/assets/full.webp'),
+      makeJob('job-b', '/assets/thumb.webp'),
+      makeJob('job-c', null),
+    ]);
+    host.viewMode.set('gallery');
+    fixture.detectChanges();
+
+    const sources = [
+      ...fixture.nativeElement.querySelectorAll<HTMLImageElement>(
+        '.gs-gtile .gs-tile-img',
+      ),
+    ].map((img) => img.getAttribute('src'));
+    expect(sources).toEqual(['/assets/full.webp', '/assets/thumb.webp']);
+    expect(fixture.nativeElement.querySelectorAll('.gs-gtile-ph').length).toBe(
+      1,
+    );
+  });
+
+  it('renders the selected job inline on narrow viewports', () => {
+    host.isNarrow.set(true);
+    fixture.detectChanges();
+
+    const detail = fixture.nativeElement.querySelector(
+      '.gs-detail',
+    ) as HTMLElement;
+    expect(detail.getAttribute('aria-live')).toBe('polite');
+    expect(detail.querySelector('.gs-detail-head')).not.toBeNull();
+    expect(detail.querySelector('.gs-detail-hint')).toBeNull();
+  });
+
+  it('shows the empty hint when nothing is selected', () => {
+    host.selectedJobId.set(null);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('.gs-detail .gs-detail-hint'),
+    ).not.toBeNull();
+  });
+
+  it('includes the request age in a thumb label', () => {
+    // Transloco has no translations loaded here, so the pipe echoes the keys —
+    // enough to prove both pieces are composed into the one label.
+    const label = railThumbs()[0].getAttribute('aria-label') ?? '';
+    expect(label).toContain('alchemy.jobs.thumb_label');
+    expect(label).toContain('alchemy.jobs.time_now');
+  });
+});

@@ -21,6 +21,7 @@ import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { AuthService } from '../../services/auth.service';
+import { DatabaseService } from '../../services/database.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
@@ -29,24 +30,41 @@ import {
   ALCHEMY_DATA_FORMS,
   ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
-  AlchemyStatusResponse,
   GENERATION_NOT_FOUND,
   InterrogationRequest,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
-import { AlchemyResultComponent } from '../../components/alchemy/alchemy-result/alchemy-result.component';
+import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy-results-browser/alchemy-results-browser.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
+import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
+import { toRenderableImageSource } from '../../helper/generation-image';
+import {
+  base64ByteLength,
+  sourceToThumbnailDataUrl,
+} from '../../helper/image-encoding';
 import { PanelSize, cyclePanelSize } from '../generate/generate-form.model';
 
 const ANONYMOUS_API_KEY = '0000000000';
 
-/** How a single form's state reads in the per-form checklist. */
-interface FormStatusView {
-  icon: string;
-  spin: boolean;
-  modifier: string;
-}
+/** Gallery density (columns per row), persisted so it sticks across sessions. */
+const GALLERY_PER_ROW_OPTIONS = [2, 3, 4, 5, 6] as const;
+const GALLERY_PER_ROW_KEY = 'aihorde.alchemy.gallery.perRow';
+const GALLERY_DEFAULT_PER_ROW = 4;
+
+/** Results presentation (thumb rail + detail, or tiled gallery), persisted. */
+const VIEW_MODE_OPTIONS = ['detail', 'gallery'] as const;
+const VIEW_MODE_KEY = 'aihorde.alchemy.view';
+const VIEW_MODE_DEFAULT: AlchemyViewMode = 'detail';
+
+type AlchemyViewMode = (typeof VIEW_MODE_OPTIONS)[number];
+
+/**
+ * A thumbnail larger than this (bytes) is dropped from the persisted payload
+ * (kept in memory for the session only) so a pathological source can't grow the
+ * jobs blob toward the localStorage quota. A 256px webp is normally ~8-25 KB.
+ */
+const MAX_PERSISTED_THUMB_BYTES = 40_000;
 
 /** A labelled slice of a group's forms, for use-case sub-grouping. */
 interface AlchemyOperationSubGroup {
@@ -69,29 +87,6 @@ interface AlchemyOperationGroup {
   subGroups?: readonly AlchemyOperationSubGroup[];
 }
 
-const FORM_STATUS_VIEWS: Record<string, FormStatusView> = {
-  waiting: { icon: 'clock', spin: false, modifier: 'waiting' },
-  processing: { icon: 'spinner', spin: true, modifier: 'processing' },
-  done: { icon: 'check-circle-filled', spin: false, modifier: 'done' },
-  cancelled: { icon: 'x-circle', spin: false, modifier: 'cancelled' },
-  faulted: {
-    icon: 'warning-triangle-filled',
-    spin: false,
-    modifier: 'faulted',
-  },
-};
-
-interface AlchemyJob {
-  id: string;
-  forms: AlchemyFormName[];
-  status: AlchemyStatusResponse | null;
-  done: boolean;
-  faulted: boolean;
-  cancelled: boolean;
-  notFound: boolean;
-  firstSeenAt: number;
-}
-
 @Component({
   selector: 'app-alchemy',
   imports: [
@@ -100,7 +95,7 @@ interface AlchemyJob {
     NgTemplateOutlet,
     RouterLink,
     AlchemyImageInputComponent,
-    AlchemyResultComponent,
+    AlchemyResultsBrowserComponent,
     IconComponent,
   ],
   templateUrl: './alchemy.component.html',
@@ -116,6 +111,7 @@ export class AlchemyComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly db = inject(DatabaseService);
 
   private static readonly POLL_MS = 10_000;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -234,6 +230,32 @@ export class AlchemyComponent {
   public readonly apiModalOpen = signal(false);
   public readonly activeOperation = signal<AlchemyFormName>('caption');
 
+  /**
+   * The operation whose info modal is open, or null. On mobile there is no
+   * hover and the description dock is off-screen, so each operation row's (i)
+   * button opens its description + example here instead.
+   */
+  public readonly infoForm = signal<AlchemyFormName | null>(null);
+
+  public openInfo(form: AlchemyFormName, event: Event): void {
+    // The (i) lives inside the operation's <label>; stop the click from also
+    // toggling that operation's checkbox.
+    event.preventDefault();
+    event.stopPropagation();
+    this.infoForm.set(form);
+  }
+
+  public closeInfo(): void {
+    this.infoForm.set(null);
+  }
+
+  /** Close the info modal only when its backdrop (not the panel) is clicked. */
+  public onInfoBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeInfo();
+    }
+  }
+
   /** How wide the control panel is expanded (normal/double/full). UI-only. */
   public readonly panelSize = signal<PanelSize>('normal');
 
@@ -287,8 +309,30 @@ export class AlchemyComponent {
   public readonly jobs = signal<AlchemyJob[]>([]);
   public readonly downloadingJobId = signal<string | null>(null);
 
-  /** Which job cards are expanded. Collapsed jobs show only their summary line. */
-  public readonly expandedJobs = signal<ReadonlySet<string>>(new Set());
+  /**
+   * The job whose results are shown in the detail region. Distinct from
+   * `selectedJobIds` below (the delete set): this is a single "which job am I
+   * looking at", that one is "which jobs are marked for removal".
+   */
+  public readonly selectedJobId = signal<string | null>(null);
+  public readonly selectedJob = computed(
+    () => this.jobs().find((j) => j.id === this.selectedJobId()) ?? null,
+  );
+
+  /**
+   * How the results pane presents jobs: `detail` is the source-thumbnail rail
+   * (vertical desktop / sticky carousel mobile) beside the selected job's
+   * results; `gallery` is a full-pane tile grid of every request. Persisted
+   * across sessions.
+   */
+  public readonly viewMode = signal<AlchemyViewMode>(this.loadViewMode());
+
+  /** Gallery density (columns per row), persisted across sessions. */
+  public readonly galleryPerRowOptions = GALLERY_PER_ROW_OPTIONS;
+  public readonly galleryColumns = signal<number>(this.loadGalleryColumns());
+  public readonly galleryGridColumns = computed(
+    () => `repeat(${this.galleryColumns()}, minmax(0, 1fr))`,
+  );
 
   /**
    * Select-to-delete for tracked job cards, mirroring the image results grid.
@@ -316,19 +360,17 @@ export class AlchemyComponent {
 
   /** Jobs still in flight, for the flow connector's live status line. */
   public readonly pendingJobsCount = computed(
-    () => this.jobs().filter((j) => !this.isJobSettled(j)).length,
+    () => this.jobs().filter((j) => !isJobSettled(j)).length,
   );
 
   public readonly hasAnyJobs = computed(() => this.jobs().length > 0);
 
   /**
-   * When on, a newly tracked request opens on its own and earlier ones fold
-   * away, so the list stays roughly one screen instead of growing without
-   * bound. Manual toggles and expand/collapse-all always win over this.
+   * True below the studio's tablet breakpoint. Drives the responsive split
+   * between the desktop rail beside a detail pane and the mobile sticky carousel
+   * above an inline detail block. Kept in sync with a media query.
    */
-  public readonly autoOpenResults = signal(true);
-
-  private static readonly SUMMARY_CHIP_LIMIT = 3;
+  public readonly isNarrow = signal(false);
 
   public readonly isLoggedIn = this.auth.isLoggedIn;
 
@@ -374,7 +416,20 @@ export class AlchemyComponent {
       );
       this.restoreJobs();
       this.startPolling();
+      this.watchViewport();
     });
+  }
+
+  /** Track the narrow-viewport breakpoint (matches the CSS mobile breakpoint)
+      so signal-driven trimming stays in sync as the window is resized. */
+  private watchViewport(): void {
+    const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');
+    if (!mq) return;
+    this.isNarrow.set(mq.matches);
+    const onChange = (event: MediaQueryListEvent): void =>
+      this.isNarrow.set(event.matches);
+    mq.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
   }
 
   public openApi(): void {
@@ -490,9 +545,61 @@ export class AlchemyComponent {
           this.toast.error('alchemy.submit.error', { transloco: true });
           return;
         }
-        this.addJob(response.id, forms);
+        this.addJob(response.id, forms, toRenderableImageSource(source));
+        // Derive the rail/gallery thumbnail off the request thread: the source
+        // is already in hand, and a slow canvas encode shouldn't hold up the
+        // toast or the job appearing. A URL source resolves synchronously.
+        void sourceToThumbnailDataUrl(source).then((thumb) =>
+          this.updateJob(response.id, { sourceThumb: thumb }),
+        );
         this.toast.success('alchemy.submit.success', { transloco: true });
       });
+  }
+
+  /** Rail/carousel/tile activation: show the picked job's results. */
+  public selectJob(id: string): void {
+    this.selectedJobId.set(id);
+    if (this.viewMode() === 'gallery') {
+      // The gallery has no results area of its own, so a tile tap has to drop
+      // back to the detail view or the pick would appear to do nothing.
+      this.setViewMode('detail');
+    }
+  }
+
+  public setViewMode(mode: AlchemyViewMode): void {
+    this.viewMode.set(mode);
+    this.db.store(VIEW_MODE_KEY, mode);
+  }
+
+  private loadViewMode(): AlchemyViewMode {
+    const stored = this.db.get(VIEW_MODE_KEY);
+    for (const mode of VIEW_MODE_OPTIONS) {
+      if (stored === mode) return mode;
+    }
+    return VIEW_MODE_DEFAULT;
+  }
+
+  public setGalleryColumns(count: number): void {
+    const min = GALLERY_PER_ROW_OPTIONS[0];
+    const max = GALLERY_PER_ROW_OPTIONS[GALLERY_PER_ROW_OPTIONS.length - 1];
+    const clamped = Math.min(max, Math.max(min, count));
+    this.galleryColumns.set(clamped);
+    this.db.store(GALLERY_PER_ROW_KEY, clamped);
+  }
+
+  private loadGalleryColumns(): number {
+    const stored = this.db.get(GALLERY_PER_ROW_KEY);
+    if (
+      typeof stored === 'number' &&
+      (GALLERY_PER_ROW_OPTIONS as readonly number[]).includes(stored)
+    ) {
+      return stored;
+    }
+    if (typeof window === 'undefined') return GALLERY_DEFAULT_PER_ROW;
+    const width = window.innerWidth;
+    if (width < 640) return 2;
+    if (width < 1024) return 3;
+    return GALLERY_DEFAULT_PER_ROW;
   }
 
   /**
@@ -519,13 +626,6 @@ export class AlchemyComponent {
           status: status ?? undefined,
         });
       });
-  }
-
-  /** A job is worth archiving once any form has produced a result. */
-  public jobHasResults(job: AlchemyJob): boolean {
-    return (job.status?.forms ?? []).some(
-      (form) => form.state === 'done' && form.result,
-    );
   }
 
   public async downloadJobResults(job: AlchemyJob): Promise<void> {
@@ -567,30 +667,6 @@ export class AlchemyComponent {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-  }
-
-  public isJobExpanded(id: string): boolean {
-    return this.expandedJobs().has(id);
-  }
-
-  public toggleJob(id: string): void {
-    this.expandedJobs.update((current) => {
-      const next = new Set(current);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }
-
-  public expandAllJobs(): void {
-    this.expandedJobs.set(new Set(this.jobs().map((j) => j.id)));
-  }
-
-  public collapseAllJobs(): void {
-    this.expandedJobs.set(new Set());
   }
 
   /** Enter/leave select mode, dropping any marks when leaving. */
@@ -649,116 +725,26 @@ export class AlchemyComponent {
       return;
     }
     this.jobs.update((jobs) => jobs.filter((job) => !ids.has(job.id)));
-    this.expandedJobs.update((current) => {
-      const next = new Set(current);
-      for (const id of ids) {
-        next.delete(id);
-      }
-      return next;
-    });
+    this.reconcileSelectedJob();
     this.selectedJobIds.set(new Set());
     this.selectMode.set(false);
   }
 
-  public toggleAutoOpen(): void {
-    this.autoOpenResults.update((v) => !v);
-  }
-
   /**
-   * The form chips shown on a collapsed job's summary line: the first few
-   * operations, plus an overflow count so the rest are accounted for without
-   * wrapping the row.
+   * Keep `selectedJobId` pointing at a job that still exists: after a delete or
+   * prune, fall back to the newest remaining job (or nothing).
    */
-  public jobFormChips(job: AlchemyJob): {
-    shown: AlchemyFormName[];
-    extra: number;
-  } {
-    const shown = job.forms.slice(0, AlchemyComponent.SUMMARY_CHIP_LIMIT);
-    return { shown, extra: job.forms.length - shown.length };
+  private reconcileSelectedJob(): void {
+    const current = this.selectedJobId();
+    if (current !== null && this.jobs().some((j) => j.id === current)) return;
+    this.selectedJobId.set(this.jobs()[0]?.id ?? null);
   }
 
-  /** Relative age of a job for its summary line, as a transloco key + count. */
-  public jobAge(job: AlchemyJob): { key: string; count: number } {
-    const minutes = Math.floor((Date.now() - job.firstSeenAt) / 60_000);
-    if (minutes < 1) return { key: 'alchemy.jobs.time_now', count: 0 };
-    if (minutes < 60) return { key: 'alchemy.jobs.time_min', count: minutes };
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return { key: 'alchemy.jobs.time_hr', count: hours };
-    return { key: 'alchemy.jobs.time_day', count: Math.floor(hours / 24) };
-  }
-
-  public formsProgressLabel(job: AlchemyJob): string {
-    const total = job.forms.length;
-    const completed = (job.status?.forms ?? []).filter(
-      (f) => f.state === 'done',
-    ).length;
-    return `${completed}/${total}`;
-  }
-
-  /**
-   * Per-form status rows. Seeded from the requested forms so every operation
-   * shows (as `waiting`) the instant a job is tracked, then each row advances
-   * independently as the status poll reports it.
-   */
-  public jobFormRows(
-    job: AlchemyJob,
-  ): { form: AlchemyFormName; state: string }[] {
-    const states = new Map(
-      (job.status?.forms ?? []).map((f) => [f.form, f.state]),
-    );
-    return job.forms.map((form) => ({
-      form,
-      state: states.get(form) ?? 'waiting',
-    }));
-  }
-
-  public formStatusView(state: string): FormStatusView {
-    return FORM_STATUS_VIEWS[state] ?? FORM_STATUS_VIEWS['waiting'];
-  }
-
-  /**
-   * The job's overall state, as an i18n key plus a colour modifier for its
-   * pill: faulted → done (settled) → processing (any form started) → waiting.
-   */
-  public jobStateView(job: AlchemyJob): { key: string; modifier: string } {
-    if (job.faulted || job.status?.state === 'faulted') {
-      return { key: 'alchemy.state.faulted', modifier: 'faulted' };
-    }
-    if (this.isJobSettled(job)) {
-      return { key: 'alchemy.state.done', modifier: 'done' };
-    }
-    const forms = job.status?.forms ?? [];
-    const started = forms.some(
-      (f) => f.state === 'processing' || f.state === 'done',
-    );
-    return started
-      ? { key: 'alchemy.state.processing', modifier: 'processing' }
-      : { key: 'alchemy.state.waiting', modifier: 'waiting' };
-  }
-
-  private static readonly TERMINAL_FORM_STATES = new Set([
-    'done',
-    'cancelled',
-    'faulted',
-  ]);
-
-  public isJobSettled(job: AlchemyJob): boolean {
-    if (job.notFound || job.cancelled) return true;
-    const status = job.status;
-    if (!status) return false;
-    if (status.state === 'faulted') return true;
-    // The overall state can report `done` while a slower form (e.g.
-    // interrogation) is still processing, so keep polling until every form has
-    // reached a terminal state and its result is in hand.
-    if (status.state === 'done') {
-      return (status.forms ?? []).every((f) =>
-        AlchemyComponent.TERMINAL_FORM_STATES.has(f.state),
-      );
-    }
-    return false;
-  }
-
-  private addJob(id: string, forms: AlchemyFormName[]): void {
+  private addJob(
+    id: string,
+    forms: AlchemyFormName[],
+    sourceFull: string,
+  ): void {
     if (this.jobs().some((j) => j.id === id)) return;
     this.jobs.update((jobs) => [
       {
@@ -770,24 +756,22 @@ export class AlchemyComponent {
         cancelled: false,
         notFound: false,
         firstSeenAt: Date.now(),
+        sourceThumb: null,
+        sourceFull,
       },
       ...jobs,
     ]);
-    // Auto-open keeps the newest request open and folds the rest away so the
-    // list never grows past a screen; otherwise the new card joins collapsed.
-    if (this.autoOpenResults()) {
-      this.expandedJobs.set(new Set([id]));
-    }
+    // The newest request becomes the shown one, so its results fill the detail
+    // region as they arrive without the user having to pick it.
+    this.selectedJobId.set(id);
 
-    // Carry the user straight to their new job instead of leaving the result
-    // to appear off-screen: the card pulses briefly and scroll/focus follow.
     this.justAddedJobId.set(id);
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => {
         if (this.justAddedJobId() === id) this.justAddedJobId.set(null);
       }, 2500);
     }
-    this.focusElementById(`alchemy-job-${id}`);
+    this.focusElementById(`alchemy-rail-${id}`);
   }
 
   /**
@@ -818,7 +802,7 @@ export class AlchemyComponent {
   }
 
   private pollJobs(): void {
-    const pending = this.jobs().filter((j) => !this.isJobSettled(j));
+    const pending = this.jobs().filter((j) => !isJobSettled(j));
     for (const job of pending) {
       this.aiHorde
         .getAlchemyStatus(job.id)
@@ -866,10 +850,14 @@ export class AlchemyComponent {
   }
 
   private pruneStaleJobs(): void {
+    let pruned = false;
     this.jobs.update((jobs) => {
       const fresh = jobs.filter((job) => this.isJobFresh(job));
-      return fresh.length === jobs.length ? jobs : fresh;
+      if (fresh.length === jobs.length) return jobs;
+      pruned = true;
+      return fresh;
     });
+    if (pruned) this.reconcileSelectedJob();
   }
 
   /**
@@ -883,9 +871,8 @@ export class AlchemyComponent {
     if (stored.length === 0) return;
 
     this.jobs.set(stored);
-    if (this.autoOpenResults()) {
-      this.expandedJobs.set(new Set([stored[0].id]));
-    }
+    // Rehydrate onto the newest restored job so its results are shown at once.
+    this.selectedJobId.set(stored[0].id);
   }
 
   private loadJobs(): AlchemyJob[] {
@@ -895,7 +882,16 @@ export class AlchemyComponent {
       if (!raw) return [];
       const parsed = JSON.parse(raw) as unknown;
       if (!Array.isArray(parsed)) return [];
-      return (parsed as AlchemyJob[]).filter((job) => this.isJobFresh(job));
+      // Jobs stored before source thumbnails existed lack the field, and
+      // `sourceFull` is deliberately never written, so both are normalized here
+      // to hold the `string | null` invariant the rail/gallery render against.
+      return (parsed as AlchemyJob[])
+        .filter((job) => this.isJobFresh(job))
+        .map((job) => ({
+          ...job,
+          sourceThumb: job.sourceThumb ?? null,
+          sourceFull: null,
+        }));
     } catch {
       return [];
     }
@@ -904,7 +900,14 @@ export class AlchemyComponent {
   private persistJobs(jobs: AlchemyJob[]): void {
     if (!this.restored || !isPlatformBrowser(this.platformId)) return;
     try {
-      const fresh = jobs.filter((job) => this.isJobFresh(job));
+      const fresh = jobs
+        .filter((job) => this.isJobFresh(job))
+        // `sourceFull` is session-only (see `AlchemyJob`): a full-size base64
+        // source would blow the storage quota on the first request.
+        .map((job) => ({
+          ...this.withPersistableThumb(job),
+          sourceFull: null,
+        }));
       if (fresh.length === 0) {
         localStorage.removeItem(AlchemyComponent.STORAGE_KEY);
         return;
@@ -914,5 +917,22 @@ export class AlchemyComponent {
       // Storage may be full or unavailable; tracking across reloads is a
       // best-effort nicety, never a correctness requirement.
     }
+  }
+
+  /**
+   * Drop an oversized base64 thumbnail from the persisted copy (the in-memory
+   * job keeps it for the session) so the jobs blob stays small. URL thumbnails
+   * are strings of trivial length and always persist.
+   */
+  private withPersistableThumb(job: AlchemyJob): AlchemyJob {
+    const thumb = job.sourceThumb;
+    if (
+      typeof thumb === 'string' &&
+      thumb.startsWith('data:') &&
+      base64ByteLength(thumb) > MAX_PERSISTED_THUMB_BYTES
+    ) {
+      return { ...job, sourceThumb: null };
+    }
+    return job;
   }
 }

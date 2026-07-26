@@ -1,0 +1,214 @@
+@if (viewMode() === "gallery") {
+  <!-- ============ TILED GALLERY: one tile per request ============ -->
+  <div class="gs-gallery">
+    <div
+      class="gs-tile-grid"
+      [style.gridTemplateColumns]="galleryGridColumns()"
+    >
+      @for (job of jobs(); track job.id) {
+        <button
+          type="button"
+          class="gs-tile gs-gtile"
+          [class.gs-gtile--active]="job.id === selectedJobId() && !selectMode()"
+          [class.gs-gtile--sel]="selectMode() && isMarked(job.id)"
+          [attr.aria-pressed]="selectMode() ? isMarked(job.id) : null"
+          [attr.aria-label]="
+            ('alchemy.jobs.thumb_label'
+              | transloco: { count: job.forms.length }) +
+            ', ' +
+            (age(job).key | transloco: { count: age(job).count })
+          "
+          (click)="activate(job)"
+        >
+          @if (tileImage(job); as tileSrc) {
+            <img class="gs-tile-img" [src]="tileSrc" alt="" />
+          } @else {
+            <span class="gs-rail-thumb-ph gs-gtile-ph">
+              <app-icon name="beaker" />
+            </span>
+          }
+          @if (!settled(job)) {
+            <span class="gs-rail-spin" aria-hidden="true">
+              <span class="gs-spin-dot gs-spin"></span>
+            </span>
+          }
+          <span class="gs-tile-badge">
+            {{
+              "alchemy.jobs.forms_badge"
+                | transloco: { count: job.forms.length }
+            }}
+          </span>
+          <span class="gs-tile-bar">
+            <span class="gs-tile-seed">
+              {{ age(job).key | transloco: { count: age(job).count } }}
+            </span>
+          </span>
+          @if (selectMode()) {
+            <span
+              class="gs-tile-check"
+              [class.gs-tile-check--on]="isMarked(job.id)"
+              aria-hidden="true"
+            >
+              <app-icon name="check" />
+            </span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+} @else {
+  <!-- ============ RAIL / CAROUSEL + DETAIL ============ -->
+  <div class="gs-browser">
+    <nav
+      class="gs-rail"
+      role="listbox"
+      [attr.aria-orientation]="isNarrow() ? 'horizontal' : 'vertical'"
+      [attr.aria-label]="'alchemy.jobs.rail_label' | transloco"
+    >
+      @for (job of jobs(); track job.id; let i = $index) {
+        <button
+          type="button"
+          class="gs-rail-thumb"
+          [id]="'alchemy-rail-' + job.id"
+          role="option"
+          [attr.aria-selected]="job.id === selectedJobId()"
+          [attr.aria-pressed]="selectMode() ? isMarked(job.id) : null"
+          [attr.tabindex]="isTabStop(job, i) ? 0 : -1"
+          [class.gs-rail-thumb--active]="
+            job.id === selectedJobId() && !selectMode()
+          "
+          [class.gs-rail-thumb--new]="justAddedJobId() === job.id"
+          [class.gs-rail-thumb--sel]="selectMode() && isMarked(job.id)"
+          [attr.aria-label]="
+            ('alchemy.jobs.thumb_label'
+              | transloco: { count: job.forms.length }) +
+            ', ' +
+            (age(job).key | transloco: { count: age(job).count })
+          "
+          (click)="activate(job)"
+          (keydown)="onThumbKeydown($event, i)"
+        >
+          @if (job.sourceThumb) {
+            <img class="gs-rail-thumb-img" [src]="job.sourceThumb" alt="" />
+          } @else {
+            <span class="gs-rail-thumb-ph">
+              <app-icon name="beaker" />
+            </span>
+          }
+          @if (!settled(job)) {
+            <span class="gs-rail-spin" aria-hidden="true">
+              <span class="gs-spin-dot gs-spin"></span>
+            </span>
+          }
+          <span class="gs-rail-badge">{{ job.forms.length }}</span>
+          <span class="gs-rail-time">
+            {{ age(job).key | transloco: { count: age(job).count } }}
+          </span>
+          @if (selectMode()) {
+            <span
+              class="gs-tile-check gs-rail-check"
+              [class.gs-tile-check--on]="isMarked(job.id)"
+              aria-hidden="true"
+            >
+              <app-icon name="check" />
+            </span>
+          }
+        </button>
+      }
+    </nav>
+
+    <!-- Selection swaps this region's contents in place on every viewport, so
+         announce it politely rather than leaving the change silent. -->
+    <div class="gs-detail" aria-live="polite">
+      @if (selectedJob(); as job) {
+        <ng-container
+          *ngTemplateOutlet="detailBody; context: { $implicit: job }"
+        />
+      } @else {
+        <p class="gs-detail-hint">
+          <app-icon name="beaker" class="gs-ico-sm" />
+          {{ "alchemy.jobs.detail_empty" | transloco }}
+        </p>
+      }
+    </div>
+  </div>
+}
+
+<!-- ============ SHARED DETAIL BODY (desktop pane + mobile inline) ============ -->
+<ng-template #detailBody let-job>
+  <div class="gs-detail-head">
+    <span class="gs-job-state gs-job-state--{{ stateView(job).modifier }}">
+      {{ stateView(job).key | transloco }}
+    </span>
+    <span class="gs-job-count gs-mono">{{ progress(job) }}</span>
+    <span class="gs-job-age">
+      {{ age(job).key | transloco: { count: age(job).count } }}
+    </span>
+    <div class="gs-detail-actions">
+      @if (!settled(job)) {
+        <button
+          type="button"
+          class="gs-tile-btn gs-tile-btn--danger"
+          (click)="cancelRequest.emit(job.id)"
+        >
+          {{ "alchemy.jobs.cancel" | transloco }}
+        </button>
+      } @else if (hasResults(job)) {
+        <button
+          type="button"
+          class="gs-tile-btn"
+          [disabled]="downloadingJobId() === job.id"
+          (click)="download.emit(job)"
+        >
+          @if (downloadingJobId() === job.id) {
+            <app-icon name="spinner" class="gs-spin" />
+            {{ "alchemy.jobs.download_busy" | transloco }}
+          } @else {
+            <app-icon name="arrow-down-tray" />
+            {{ "alchemy.jobs.download" | transloco }}
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (job.notFound) {
+    <p class="gs-warn">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ "alchemy.jobs.not_found" | transloco }}
+    </p>
+  }
+  @if (job.faulted) {
+    <p class="gs-warn">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ "alchemy.jobs.faulted" | transloco }}
+    </p>
+  }
+
+  <ul class="gs-checklist">
+    @for (row of formRows(job); track row.form) {
+      @let view = statusView(row.state);
+      <li class="gs-checkrow gs-checkrow--{{ view.modifier }}">
+        <app-icon
+          [name]="view.icon"
+          [class.gs-spin]="view.spin"
+          class="gs-checkrow-ico gs-ico-sm"
+        />
+        <span class="gs-checkrow-name">
+          {{ "alchemy.form_names." + row.form | transloco }}
+        </span>
+        <span class="gs-checkrow-state">
+          {{ "alchemy.state." + row.state | transloco }}
+        </span>
+      </li>
+    }
+  </ul>
+
+  @if (doneResults(job).length > 0) {
+    <div class="gs-result-cards">
+      @for (form of doneResults(job); track form.form) {
+        <app-alchemy-result [form]="form" />
+      }
+    </div>
+  }
+</ng-template>
