@@ -230,7 +230,7 @@ describe('TutorialEngineService', () => {
       expect(host.applied).toEqual([]);
     });
 
-    it('rings the current step field and expands its help note', () => {
+    it('marks the current step field and expands its help note', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       const help = TestBed.inject(GsHelpService);
       const element = document.createElement('div');
@@ -245,7 +245,7 @@ describe('TutorialEngineService', () => {
       expect(help.requestedTopic()).toBe('steps');
     });
 
-    it('takes the ring off the field it has moved on from', () => {
+    it('takes the mark off the field it has moved on from', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       const steps = document.createElement('div');
       const seed = document.createElement('div');

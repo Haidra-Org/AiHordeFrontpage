@@ -18,7 +18,9 @@ import {
   GenerateMode,
   GenerateSourceMode,
 } from '../generate-form.model';
+import { environment } from '../../../../environments/environment';
 import en from '../../../../assets/i18n/en.json';
+import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
 import request from '../../../../assets/tutorials/txt2img/request.json';
 
@@ -180,6 +182,60 @@ describe('GenerateLearnPanelComponent', () => {
         expect(TRANSLATIONS[`${base}.body.${level}`]).toBeTruthy();
       }
     }
+  });
+
+  describe('parameter sweeps', () => {
+    const SWEEP_INDEX = `${environment.sweepLibraryBaseUrl}/index.json`;
+
+    /** Answer the one index fetch a rendered scrubber makes. */
+    async function serveLibrary(body: unknown): Promise<void> {
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne(SWEEP_INDEX).flush(body);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+    }
+
+    it('offers the sweep under a step a newcomer is reading', async () => {
+      // Step 4 is `steps`, which carries a sweep parameter.
+      engine.goTo(3);
+      fixture.detectChanges();
+      await serveLibrary(stubIndex);
+
+      expect(query('.gs-sweep-offer')).toHaveLength(1);
+      expect(text()).toContain(TRANSLATIONS['generate.sweeps.expand']);
+    });
+
+    it('offers nothing to the registers that are past needing it', () => {
+      fixture.componentInstance.setLevel('comfortable');
+      engine.goTo(3);
+      fixture.detectChanges();
+
+      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
+    });
+
+    it('offers nothing on a step with no strip published for it', () => {
+      // Step 6 is `sampler`, which carries no sweep parameter at all, so
+      // nothing is even asked of the library.
+      engine.goTo(5);
+      fixture.detectChanges();
+
+      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
+    });
+
+    it('leaves no residue when the library cannot be reached', async () => {
+      engine.goTo(3);
+      fixture.detectChanges();
+      TestBed.inject(HttpTestingController)
+        .expectOne(SWEEP_INDEX)
+        .error(new ProgressEvent('offline'), { status: 0, statusText: '' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+
+      expect(query('.gs-sweep')).toHaveLength(0);
+      expect(text()).not.toContain(TRANSLATIONS['generate.sweeps.expand']);
+    });
   });
 
   it('names each register and the reveal it can narrate', () => {

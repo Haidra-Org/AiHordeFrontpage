@@ -49,6 +49,13 @@
             {{ bodyKey(current) | transloco: copyParams() }}
           </p>
 
+          <!-- Only the newcomer register gets the sweep: the other two are
+               reading a number they already have a feel for, and the offer
+               would be one more thing between them and the next step. -->
+          @if (level() === "new_to_this" && current.sweepParameter) {
+            <app-gs-sweep-scrub [parameter]="current.sweepParameter" />
+          }
+
           @if (revealNote()) {
             <!-- The panel just moved under the reader; saying so is the
                  difference between a guide and a poltergeist. -->

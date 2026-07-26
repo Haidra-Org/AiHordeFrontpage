@@ -498,6 +498,13 @@
   "generate.learn.done.queue": "Without an account you sit at the back of the queue on the horde's goodwill, so this can take a few minutes; registering earns kudos and moves you up it.",
   "generate.learn.done.dismiss": "Got it",
 
+  "generate.sweeps.expand": "See what changing this does",
+  "generate.sweeps.collapse": "Hide these examples",
+  "generate.sweeps.loading": "Fetching the example images.",
+  "generate.sweeps.value": "Set to {{ value }}",
+  "generate.sweeps.slider_label": "Drag to compare the same picture at each setting",
+  "generate.sweeps.frame_alt": "The same picture rendered at {{ value }}",
+
   "generate.learn.flows.txt2img.steps.prompt.title": "Describe the picture",
   "generate.learn.flows.txt2img.steps.prompt.body.new_to_this": "The prompt box is where you say what you want to see. Write it as a plain description: what the subject is, where they are, and what the light and the mood are like. This example asked for “{{ prompt }}”. Press Set this for me and it goes into the box.",
   "generate.learn.flows.txt2img.steps.prompt.body.comfortable": "A plain description of subject, setting and light. This example asked for “{{ prompt }}”, with the negative prompt left empty.",

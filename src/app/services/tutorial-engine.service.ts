@@ -58,6 +58,12 @@ export interface TutorialStepDef {
   helpTopic?: string;
   reveal?: TutorialReveal;
   /**
+   * The parameter-sweep strip that shows this step's setting changing, if one is
+   * published for it. Only set on steps whose value is a number a reader has no
+   * intuition for; a step without one simply offers no images.
+   */
+  sweepParameter?: string;
+  /**
    * The fields this step's Apply writes, read off the committed request rather
    * than restated here, so a step can never set something the example did not.
    */
@@ -93,6 +99,7 @@ export const TUTORIAL_STEPS: Readonly<
       id: 'steps',
       anchorId: 'steps',
       helpTopic: 'steps',
+      sweepParameter: 'steps',
       reveal: { mode: 'advanced' },
       apply: (example) => ({ steps: example.steps }),
     },
@@ -100,6 +107,7 @@ export const TUTORIAL_STEPS: Readonly<
       id: 'cfg',
       anchorId: 'cfg',
       helpTopic: 'cfg',
+      sweepParameter: 'cfg_scale',
       reveal: { mode: 'advanced' },
       apply: (example) => ({ cfg_scale: example.cfg_scale }),
     },

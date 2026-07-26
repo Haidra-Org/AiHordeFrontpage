@@ -1,9 +1,16 @@
+import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GsHelpComponent } from './gs-help.component';
 import { GsHelpService } from '../../services/gs-help.service';
+import { environment } from '../../../environments/environment';
+import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 @Component({
   template: `
@@ -38,6 +45,7 @@ describe('GsHelpComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     TestBed.inject(GsHelpService).close();
   });
@@ -93,6 +101,54 @@ describe('GsHelpComponent', () => {
     expect(triggers()[0].getAttribute('aria-controls')).not.toBe(
       triggers()[1].getAttribute('aria-controls'),
     );
+  });
+
+  describe('parameter sweeps', () => {
+    const SWEEP_INDEX = `${environment.sweepLibraryBaseUrl}/index.json`;
+
+    it('offers the sweep inside a note whose field has one', async () => {
+      const { fixture, click } = setup();
+
+      // The first trigger is `steps`, which a strip covers.
+      click(0);
+      TestBed.inject(HttpTestingController)
+        .expectOne(SWEEP_INDEX)
+        .flush(stubIndex);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+
+      expect(
+        fixture.nativeElement.querySelectorAll('.gs-sweep-offer'),
+      ).toHaveLength(1);
+    });
+
+    it('offers nothing inside a note whose field has no strip', () => {
+      const { fixture, click } = setup();
+
+      // The second trigger is `seed`, which nothing sweeps.
+      click(1);
+
+      expect(
+        fixture.nativeElement.querySelectorAll('.gs-sweep-offer'),
+      ).toHaveLength(0);
+      TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
+    });
+
+    it('leaves the note intact when the library cannot be reached', async () => {
+      const { fixture, notes, click } = setup();
+
+      click(0);
+      TestBed.inject(HttpTestingController)
+        .expectOne(SWEEP_INDEX)
+        .error(new ProgressEvent('offline'), { status: 0, statusText: '' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+
+      expect(notes()).toHaveLength(1);
+      expect(fixture.nativeElement.querySelectorAll('.gs-sweep')).toHaveLength(
+        0,
+      );
+    });
   });
 
   it('closes on Escape and hands focus back to the trigger', () => {

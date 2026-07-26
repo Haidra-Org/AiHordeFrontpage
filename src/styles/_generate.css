@@ -6240,36 +6240,127 @@
 
 /* ------- follow-along tutorial ---------------------------------------- */
 
-/* The ring a tutorial step puts around the field it is talking about. It is a
-   ring plus a tinted wash rather than colour alone, because the fields it lands
-   on already carry colour of their own (style locks, requirement warnings), and
-   a second hue there would read as another warning. */
+/* What a tutorial step puts on the field it is talking about. It borrows the
+   section-landmark grammar rather than inventing an alert of its own: the zone
+   tint washes the anchored row and the zone hairline runs down its leading
+   edge, the same pairing the card titles use one step up the hierarchy. Static
+   and hue-matched, so a field that already carries colour (a style lock, a
+   requirement warning) is not overlaid with something that reads as a second
+   warning, and nothing on the page moves when the step changes. */
 .gen-studio .gs-tut-target {
   position: relative;
-  border-radius: 10px;
-  outline: 2px solid var(--gs-blue);
-  outline-offset: 3px;
-  background: var(--gs-blue-tint);
-  animation: gs-tut-pulse 1.4s ease-out 2;
+  border-radius: 8px;
+  padding-left: 9px;
+  border-left: 2px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
 }
-.dark .gen-studio .gs-tut-target {
-  outline-color: #60a5fa;
+
+/* ------- parameter sweeps ------------------------------------------- */
+
+/* The sweep sits inside prose (a tutorial step, a field's help note), so
+   collapsed it has to read as one more line of that prose rather than as a
+   widget parked in it: hairline edge, zone tint, no fill of its own. */
+app-gs-sweep-scrub {
+  display: block;
 }
-@keyframes gs-tut-pulse {
-  0% {
-    box-shadow: 0 0 0 0 var(--gs-blue-tint-border);
-  }
-  70% {
-    box-shadow: 0 0 0 9px transparent;
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
+.gen-studio .gs-sweep {
+  margin-top: 9px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .gen-studio .gs-tut-target {
-    animation: none;
-  }
+.gen-studio .gs-sweep-offer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
+  border-radius: 9px;
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  color: var(--gs-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-offer:hover {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-sweep-preview {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.gen-studio .gs-sweep-offer-label {
+  min-width: 0;
+}
+.gen-studio .gs-sweep-open {
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
+  border-radius: 9px;
+  padding: 9px;
+  background: var(--gs-card);
+}
+.gen-studio .gs-sweep-figure {
+  margin: 0;
+}
+.gen-studio .gs-sweep-frame {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 7px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-sweep-caption {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sweep-value {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-sweep-loading {
+  font-size: 12px;
+  color: var(--gs-muted);
+}
+/* The track keeps the studio's 4px line while the control keeps a 44px band to
+   put a thumb on: the slider is the whole point of the expanded state, and it is
+   most often reached with a thumb rather than a mouse. */
+.gen-studio .gs-sweep-range {
+  height: 44px;
+  border-radius: 0;
+  background: transparent;
+}
+.gen-studio .gs-sweep-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gs-switch-off);
+}
+.gen-studio .gs-sweep-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--gs-switch-off);
+}
+.gen-studio .gs-sweep-range::-webkit-slider-thumb {
+  margin-top: -6px;
+}
+.gen-studio .gs-sweep-collapse {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-blue);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dark .gen-studio .gs-sweep-collapse {
+  color: var(--gs-pop-accent);
 }
 
 /* The host carries `.gs-results-body` for the pane's padding and scrolling, as

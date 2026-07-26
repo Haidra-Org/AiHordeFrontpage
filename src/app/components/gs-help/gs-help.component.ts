@@ -10,6 +10,8 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsHelpService } from '../../services/gs-help.service';
+import { SWEEP_PARAMETER_BY_HELP_TOPIC } from '../../services/sweep-library.service';
+import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 
 /**
  * The studio's per-field help affordance: a small circled "?" beside a label
@@ -29,7 +31,7 @@ import { GsHelpService } from '../../services/gs-help.service';
  */
 @Component({
   selector: 'app-gs-help',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, GsSweepScrubComponent],
   template: `
     <button
       #trigger
@@ -50,6 +52,11 @@ import { GsHelpService } from '../../services/gs-help.service';
       <p class="gs-help-note gs-fadeup" role="note" [id]="noteId()">
         {{ bodyKey() | transloco }}
       </p>
+      <!-- Anyone who opened the note gets the pictures if there are any: a
+           reader who says "expert" is still allowed to want to see it. -->
+      @if (sweepParameter(); as parameter) {
+        <app-gs-sweep-scrub [parameter]="parameter" />
+      }
     }
   `,
   host: {
@@ -78,6 +85,10 @@ export class GsHelpComponent {
   );
   public readonly bodyKey = computed(
     () => `generate.help.${this.topic()}.body`,
+  );
+  /** The sweep this field has pictures for, or null when it has none. */
+  public readonly sweepParameter = computed(
+    () => SWEEP_PARAMETER_BY_HELP_TOPIC[this.topic()] ?? null,
   );
 
   constructor() {

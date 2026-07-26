@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-07-26T00:00:00Z",
+  "strips": [
+    {
+      "parameter": "steps",
+      "model": "AlbedoBase XL (SDXL)",
+      "scene": "portrait",
+      "stops": [
+        {
+          "value": "4 steps",
+          "file": "004.webp",
+          "caption": "Barely resolved: the shapes are there and nothing else is."
+        },
+        {
+          "value": "12 steps",
+          "file": "012.webp",
+          "caption": "The face and the light have settled."
+        },
+        {
+          "value": "30 steps",
+          "file": "030.webp",
+          "caption": "Past here the picture stops changing and only costs more."
+        }
+      ]
+    },
+    {
+      "parameter": "steps",
+      "model": "Deliberate",
+      "scene": "landscape",
+      "stops": [
+        {
+          "value": "8 steps",
+          "file": "008.webp",
+          "caption": "A second model, for testing the model-specific lookup."
+        }
+      ]
+    },
+    {
+      "parameter": "cfg_scale",
+      "model": "AlbedoBase XL (SDXL)",
+      "scene": "portrait",
+      "stops": [
+        {
+          "value": "cfg 2",
+          "file": "02.webp",
+          "caption": "Loose: the model wanders away from what you asked for."
+        },
+        {
+          "value": "cfg 7",
+          "file": "07.webp",
+          "caption": "The usual middle, following the prompt without straining."
+        }
+      ]
+    }
+  ]
+}
