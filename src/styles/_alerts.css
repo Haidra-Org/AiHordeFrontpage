@@ -78,6 +78,13 @@
     @apply p-1 rounded text-xs font-medium hover:bg-white/20 transition-colors underline;
   }
 
+  /* An action offered only while the toast is up (Undo). Bordered rather than
+     underlined, so it reads as the thing to press and not as a detail link. */
+  .toast-action-btn {
+    @apply shrink-0 px-2 py-1 rounded text-xs font-bold uppercase tracking-wide;
+    @apply border border-current/40 hover:bg-white/20 transition-colors;
+  }
+
   .toast-details {
     @apply text-xs px-4 py-2 overflow-x-auto whitespace-pre-wrap break-words;
     background: rgb(0 0 0 / 0.2);

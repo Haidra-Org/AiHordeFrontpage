@@ -9,6 +9,7 @@ import {
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import {
   DecimalPipe,
@@ -34,6 +35,7 @@ import {
   InterrogationRequest,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
+import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy-results-browser/alchemy-results-browser.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
@@ -112,6 +114,10 @@ export class AlchemyComponent {
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly db = inject(DatabaseService);
+  private readonly handoff = inject(StudioHandoffService);
+
+  /** The source picker, so an image handed over from /generate can be applied. */
+  private readonly imageInput = viewChild(AlchemyImageInputComponent);
 
   private static readonly POLL_MS = 10_000;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -417,6 +423,7 @@ export class AlchemyComponent {
       this.restoreJobs();
       this.startPolling();
       this.watchViewport();
+      void this.consumeHandoff();
     });
   }
 
@@ -481,6 +488,19 @@ export class AlchemyComponent {
       }
     }
     this.closeApi();
+  }
+
+  /**
+   * Pick up an image sent here from the image studio, if one is waiting. It is
+   * consumed unconditionally so a later visit never re-applies a stale image.
+   */
+  private async consumeHandoff(): Promise<void> {
+    const pending = this.handoff.consume();
+    const input = this.imageInput();
+    if (!pending || !input) {
+      return;
+    }
+    await input.applyBlob(pending.blob, pending.mimeType);
   }
 
   public onSourceImage(value: string | null): void {

@@ -204,6 +204,7 @@ export const APP_ICONS: Record<string, string> = {
   // ── Layout ───────────────────────────────────────────────────────────
   'bars-4':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
+  pin: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21v-6m0 0 4.5-3V6.75A1.75 1.75 0 0 0 14.75 5h-5.5A1.75 1.75 0 0 0 7.5 6.75V12l4.5 3Zm-6.5-9.25h13"/>',
   'ellipsis-vertical':
     '<path fill="currentColor" d="M12 5a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Zm0 5.4a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Zm0 5.4a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Z"/>',
   'squares-2x2':

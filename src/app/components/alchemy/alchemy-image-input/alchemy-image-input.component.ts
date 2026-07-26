@@ -115,6 +115,18 @@ export class AlchemyImageInputComponent {
     this.urlValue.set('');
   }
 
+  /**
+   * Adopt an image handed over from elsewhere in the studio (a generation result
+   * sent to alchemy), taking the same encode/preview path as a local file pick so
+   * the size guard and error handling apply identically.
+   */
+  public async applyBlob(blob: Blob, mimeType: string): Promise<void> {
+    this.setMode('upload');
+    const type = blob.type || mimeType;
+    const extension = type.split('/')[1] ?? 'webp';
+    await this.encodeFile(new File([blob], `handoff.${extension}`, { type }));
+  }
+
   private reset(): void {
     this.previewSrc.set(null);
     this.error.set(null);

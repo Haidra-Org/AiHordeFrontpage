@@ -77,6 +77,12 @@ export interface LocalGenerationJob {
   errorMessage?: string;
   /** How many times this job has been re-submitted via Retry (0/undefined = original). */
   retryCount?: number;
+  /**
+   * The style preset selected when this was submitted, when any. A request
+   * carries no trace of the style that shaped it, so it is recorded alongside;
+   * absent on jobs stored before this field existed.
+   */
+  styleName?: string;
   resultImageIds: string[];
   /**
    * Epoch ms of the last poll, used by the engine to throttle check calls.

@@ -38,6 +38,7 @@ const PROVENANCE: ImageMetaProvenance = {
   censorReason: null,
   aesthetic: 7.1,
   errors: [],
+  styleName: 'Anime',
 };
 
 describe('ImageMetaPanelComponent', () => {
@@ -116,9 +117,20 @@ describe('ImageMetaPanelComponent', () => {
     const rows = component.infoRows();
 
     expect(rows.map((row) => row.value)).toContain('StableNode-07');
+    expect(rows.map((row) => row.value)).toContain('Anime');
     expect(rows.find((row) => row.value === '7.10')?.tone).toBe('good');
     const html: string = fixture.nativeElement.innerHTML;
     expect(html).toContain('gs-meta-row--info');
+  });
+
+  it('omits the style row when the job recorded none', () => {
+    fixture.componentRef.setInput('provenance', {
+      ...PROVENANCE,
+      styleName: null,
+    } satisfies ImageMetaProvenance);
+    fixture.detectChanges();
+
+    expect(component.infoRows().map((row) => row.value)).not.toContain('Anime');
   });
 
   it('starts with every row checked', () => {

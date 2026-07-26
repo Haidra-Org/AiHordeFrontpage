@@ -84,11 +84,14 @@ export interface ImageMetaProvenance {
   censorReason: string | null;
   aesthetic: number | null;
   errors: ImageMetaError[];
+  /** The style preset the job was submitted with, when it recorded one. */
+  styleName: string | null;
 }
 
 export function buildImageProvenance(
   metadata: StoredJobImageMetadata | undefined,
   derived: DerivedImageMeta,
+  styleName: string | null = null,
 ): ImageMetaProvenance {
   return {
     seed: metadata?.seed ?? null,
@@ -100,6 +103,7 @@ export function buildImageProvenance(
     censorReason: derived.censorReason,
     aesthetic: derived.aesthetic,
     errors: derived.errors,
+    styleName,
   };
 }
 

@@ -6,6 +6,8 @@ import { GenerateResultsPanelComponent } from './generate-results-panel.componen
 import { GenerationQueueService } from '../../../services/generation-queue.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
+import { Router } from '@angular/router';
+import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -67,6 +69,8 @@ describe('GenerateResultsPanelComponent', () => {
   let getJobImages: ReturnType<typeof vi.fn>;
   let dbGet: ReturnType<typeof vi.fn>;
   let dbStore: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn>;
+  let handoff: { set: ReturnType<typeof vi.fn> };
 
   /**
    * Let the thumbnail effect run and its stored-image read resolve, so the
@@ -88,6 +92,8 @@ describe('GenerateResultsPanelComponent', () => {
     getJobImages = vi.fn().mockResolvedValue([]);
     dbGet = vi.fn().mockReturnValue(undefined);
     dbStore = vi.fn();
+    navigate = vi.fn().mockResolvedValue(true);
+    handoff = { set: vi.fn() };
     // jsdom has no object-URL support and the grid makes one per thumbnail.
     URL.createObjectURL = vi.fn(() => 'blob:test');
     URL.revokeObjectURL = vi.fn();
@@ -114,6 +120,8 @@ describe('GenerateResultsPanelComponent', () => {
           provide: DatabaseService,
           useValue: { get: dbGet, store: dbStore },
         },
+        { provide: Router, useValue: { navigate } },
+        { provide: StudioHandoffService, useValue: handoff },
         {
           provide: TranslocoService,
           useValue: { translate: (key: string) => key },
@@ -381,32 +389,274 @@ describe('GenerateResultsPanelComponent', () => {
       await loadThumbnails();
     });
 
-    it('advances to the next surviving image', async () => {
+    it('advances to the next surviving image immediately', () => {
       component.openViewer(component.viewerTiles()[0]);
+
       component.requestDelete(['a']);
 
-      await component.confirmDelete();
-
-      expect(deleteJob).toHaveBeenCalledWith('a');
       expect(component.viewerKey()).toBe('b-b-img');
+      // Still recoverable: nothing has reached the queue yet.
+      expect(deleteJob).not.toHaveBeenCalled();
     });
 
-    it('closes the viewer when nothing survives', async () => {
+    it('closes the viewer when nothing survives', () => {
       component.openViewer(component.viewerTiles()[0]);
-      component.requestDelete(['a', 'b']);
 
-      await component.confirmDelete();
+      component.requestDelete(['a', 'b']);
 
       expect(component.viewerKey()).toBeNull();
     });
 
-    it('leaves the viewer alone when another job is deleted', async () => {
+    it('leaves the viewer alone when another job is deleted', () => {
       component.openViewer(component.viewerTiles()[0]);
+
       component.requestDelete(['b']);
 
-      await component.confirmDelete();
-
       expect(component.viewerKey()).toBe('a-a-img');
+    });
+  });
+
+  describe('soft delete and undo', () => {
+    beforeEach(async () => {
+      getJobImages
+        .mockResolvedValueOnce([resultImage('a', 'a-img')])
+        .mockResolvedValueOnce([resultImage('b', 'b-img')]);
+      finishedJobs.set([job('a', 'done'), job('b', 'done')]);
+      await loadThumbnails();
+    });
+
+    it('removes the tiles at once and offers an undo', () => {
+      component.requestDelete(['a']);
+
+      expect(component.tiles().map((t) => t.jobLocalId)).toEqual(['b']);
+      expect(component.undoPending()).toBe(true);
+      expect(deleteJob).not.toHaveBeenCalled();
+      const [key, options] = toastSuccess.mock.calls[0] as [
+        string,
+        { action?: { label: string; run: () => void } },
+      ];
+      expect(key).toBe('generate.results.deleted_undo');
+      expect(options.action?.label).toBe('generate.results.undo');
+    });
+
+    it('restores exactly what was removed when undone', () => {
+      component.requestDelete(['a']);
+
+      component.undoDelete();
+
+      expect(component.tiles().map((t) => t.jobLocalId)).toEqual(['a', 'b']);
+      expect(component.undoPending()).toBe(false);
+      expect(deleteJob).not.toHaveBeenCalled();
+    });
+
+    it('restores through the toast action', () => {
+      component.requestDelete(['a']);
+      const [, options] = toastSuccess.mock.calls[0] as [
+        string,
+        { action: { run: () => void } },
+      ];
+
+      options.action.run();
+
+      expect(component.undoPending()).toBe(false);
+      expect(component.tiles()).toHaveLength(2);
+    });
+
+    it('commits the deletion when the undo window lapses', async () => {
+      vi.useFakeTimers();
+      component.requestDelete(['a', 'b']);
+
+      await vi.advanceTimersByTimeAsync(6000);
+
+      expect(deleteJob).toHaveBeenCalledWith('a');
+      expect(deleteJob).toHaveBeenCalledWith('b');
+      expect(component.undoPending()).toBe(false);
+      vi.useRealTimers();
+    });
+
+    it('commits the previous deletion when a new one starts', async () => {
+      component.requestDelete(['a']);
+
+      component.requestDelete(['b']);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(deleteJob).toHaveBeenCalledWith('a');
+      expect(deleteJob).not.toHaveBeenCalledWith('b');
+      expect(component.undoPending()).toBe(true);
+    });
+
+    it('leaves select mode and clears the marks', () => {
+      component.toggleSelectMode();
+      component.toggleSelected('a');
+
+      component.requestDeleteSelected();
+
+      expect(component.selectMode()).toBe(false);
+      expect(component.selectedCount()).toBe(0);
+      expect(component.undoPending()).toBe(true);
+    });
+
+    it('ignores an empty delete request', () => {
+      component.requestDelete([]);
+
+      expect(component.undoPending()).toBe(false);
+      expect(toastSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('download selected', () => {
+    beforeEach(async () => {
+      getJobImages
+        .mockResolvedValueOnce([resultImage('a', 'a-img')])
+        .mockResolvedValueOnce([resultImage('b', 'b-img')]);
+      finishedJobs.set([job('a', 'done'), job('b', 'done')]);
+      await loadThumbnails();
+    });
+
+    it('reports whether the selection holds anything downloadable', () => {
+      expect(component.hasSelectedResults()).toBe(false);
+
+      component.toggleSelected('a');
+
+      expect(component.hasSelectedResults()).toBe(true);
+    });
+
+    it('zips only the selected jobs', async () => {
+      component.toggleSelected('b');
+      getJobImages.mockResolvedValue([resultImage('b', 'b-img')]);
+      getJobImages.mockClear();
+
+      await component.downloadSelected();
+
+      expect(getJobImages.mock.calls.map((call) => call[0])).toEqual(['b']);
+    });
+  });
+
+  describe('image copy and share availability', () => {
+    it('hides both when the platform offers neither', () => {
+      // jsdom has no ClipboardItem and no navigator.share.
+      expect(component.canCopyImage).toBe(false);
+      expect(component.canShareImage).toBe(false);
+    });
+
+    it('does nothing when copy is unsupported', async () => {
+      await component.copyImage({
+        key: 'k',
+        kind: 'done',
+        jobLocalId: 'a',
+        aspect: '1/1',
+        dims: '',
+      });
+
+      expect(getJobImages).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handing an image on', () => {
+    beforeEach(async () => {
+      getJobImages.mockResolvedValue([resultImage('f', 'img')]);
+      finishedJobs.set([job('f', 'done')]);
+      await loadThumbnails();
+    });
+
+    it('asks the parent to attach a result as the source image', () => {
+      const emitted: { localId: string; imageId: string }[] = [];
+      component.useAsSource.subscribe((event) => emitted.push(event));
+      component.openViewer(component.viewerTiles()[0]);
+
+      component.reuseAsSource(component.viewerTiles()[0]);
+
+      expect(emitted).toEqual([{ localId: 'f', imageId: 'img' }]);
+      expect(component.viewerKey()).toBeNull();
+    });
+
+    it('parks the blob and navigates when sending to alchemy', async () => {
+      component.openViewer(component.viewerTiles()[0]);
+
+      await component.sendToAlchemy(component.viewerTiles()[0]);
+
+      expect(handoff.set).toHaveBeenCalledTimes(1);
+      expect(navigate).toHaveBeenCalledWith(['/generate/alchemy']);
+      expect(component.viewerKey()).toBeNull();
+    });
+  });
+
+  describe('style provenance', () => {
+    beforeEach(async () => {
+      getJobImages
+        .mockResolvedValueOnce([resultImage('a', 'a-img')])
+        .mockResolvedValueOnce([resultImage('b', 'b-img')])
+        .mockResolvedValueOnce([resultImage('c', 'c-img')]);
+      finishedJobs.set([
+        { ...job('a', 'done'), styleName: 'Anime' },
+        { ...job('b', 'done'), styleName: 'Anime' },
+        { ...job('c', 'done'), styleName: 'Photo' },
+      ]);
+      await loadThumbnails();
+    });
+
+    it('lists the styles on screen with their tile counts', () => {
+      expect(component.styleOptions()).toEqual([
+        { name: 'Anime', count: 2 },
+        { name: 'Photo', count: 1 },
+      ]);
+    });
+
+    it('filters the grid to one style', () => {
+      component.styleFilter.set('Anime');
+
+      expect(component.visibleTiles().map((t) => t.jobLocalId)).toEqual([
+        'a',
+        'b',
+      ]);
+      expect(component.filteredOut()).toBe(false);
+    });
+
+    it('reports an empty filter result like the other filters do', () => {
+      component.styleFilter.set('Nothing');
+
+      expect(component.visibleTiles()).toHaveLength(0);
+      expect(component.filteredOut()).toBe(true);
+    });
+
+    it('carries the style into the metadata provenance', () => {
+      expect(component.viewerTiles()[0].provenance?.styleName).toBe('Anime');
+    });
+
+    it('offers no style control when no job recorded one', async () => {
+      finishedJobs.set([job('z', 'done')]);
+      await loadThumbnails();
+
+      expect(component.styleOptions()).toEqual([]);
+    });
+  });
+
+  describe('completion announcement', () => {
+    it('announces newly finished images once the count settles', async () => {
+      vi.useFakeTimers();
+      getJobImages.mockResolvedValue([
+        resultImage('f', 'one'),
+        resultImage('f', 'two'),
+      ]);
+      finishedJobs.set([job('f', 'done')]);
+      fixture.detectChanges();
+      await vi.advanceTimersByTimeAsync(0);
+      fixture.detectChanges();
+
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(component.readyAnnouncement()).toBe(
+        'generate.results.announce_ready',
+      );
+      vi.useRealTimers();
+    });
+
+    it('says nothing for history restored on load', async () => {
+      fixture.detectChanges();
+      await Promise.resolve();
+
+      expect(component.readyAnnouncement()).toBe('');
     });
   });
 

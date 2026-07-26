@@ -79,7 +79,8 @@
   --gs-ink: #111827;
   --gs-ink-2: #374151;
   --gs-label: #6b7280;
-  --gs-muted: #9ca3af;
+  /* 4.6:1 on the white panel: muted text stays AA-legible at small sizes. */
+  --gs-muted: #737b88;
   --gs-field: #ffffff;
   --gs-field-soft: #fafafa;
   --gs-field-border: #d1d5db;
@@ -113,7 +114,8 @@
   --gs-ink: #e5e7eb;
   --gs-ink-2: #cbd5e1;
   --gs-label: #9ca3af;
-  --gs-muted: #7c828d;
+  /* 5.4:1 on the dark panel: the old #7c828d sat below AA for small text. */
+  --gs-muted: #98a0ac;
   --gs-field: #1b1e24;
   --gs-field-soft: #1b1e24;
   --gs-field-border: #313640;
@@ -1554,7 +1556,10 @@
 .gen-studio .gs-tile-veil {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  /* Above the prompt overlay (2) and the tag stack (4): a censored image must
+     not leak its prompt through the scrim. The prompt header in .gs-tile-corner
+     stays above the veil, as it always has on desktop. */
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1598,13 +1603,15 @@
 /* Top-left overlay stack for a finished tile: the prompt header, then the size
    badge beneath it. Being a flow column means the badge always sits just below
    the prompt (however tall it grows) instead of hiding behind it. */
+/* Above the censor veil (5), which is where this corner has always sat relative
+   to it; the veil covers the prompt overlay and the tag stack instead. */
 .gen-studio .gs-tile-corner {
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 6;
   /* Leave the top-right corner free for the tags / cancel affordances. */
   max-width: calc(100% - 44px);
-  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -4436,6 +4443,28 @@
     border-top: 1px solid var(--gs-border-soft);
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     background: var(--gs-panel);
+    gap: 10px;
+  }
+  /* Thumb-scale controls: search + sort share the first row, the subject
+     switch stretches across its own row, every target >= 44px tall. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    flex: 1 1 200px;
+    min-height: 44px;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-sort {
+    flex: 1 1 auto;
+    display: flex;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-variant {
+    flex: 1 1 100%;
+    display: flex;
+    order: 4;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-variant .gs-seg-opt,
+  .gen-studio .gs-modal-panel--browser .gs-sb-sort .gs-seg-opt {
+    flex: 1 1 0;
+    min-height: 44px;
+    font-size: 13px;
   }
   .gen-studio .gs-modal-panel--browser .gs-modal-body {
     order: 2;

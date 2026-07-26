@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
-import { ToastService } from '../../services/toast.service';
+import { ToastAction, ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-toast-bar',
@@ -41,6 +41,19 @@ import { ToastService } from '../../services/toast.service';
                   {{ toast.message }}
                 }
               </span>
+              @if (toast.action; as action) {
+                <button
+                  class="toast-action-btn"
+                  type="button"
+                  (click)="runAction(toast.id, action)"
+                >
+                  @if (toast.transloco) {
+                    {{ action.label | transloco }}
+                  } @else {
+                    {{ action.label }}
+                  }
+                </button>
+              }
               @if (toast.details) {
                 <button
                   class="toast-details-btn"
@@ -72,6 +85,12 @@ import { ToastService } from '../../services/toast.service';
 export class ToastBarComponent {
   public readonly toastService = inject(ToastService);
   public readonly expandedIds = signal(new Set<string>());
+
+  /** Run a toast's action, then take the toast away: the offer is spent. */
+  public runAction(id: string, action: ToastAction): void {
+    action.run();
+    this.toastService.dismiss(id);
+  }
 
   public toggleDetails(id: string): void {
     this.expandedIds.update((ids) => {

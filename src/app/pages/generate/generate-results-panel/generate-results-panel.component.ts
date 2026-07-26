@@ -23,6 +23,8 @@ import {
   StoredJobImage,
   StoredJobImageMetadata,
 } from '../../../types/generation-job';
+import { Router } from '@angular/router';
+import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive } from '../generate-archive';
 import {
   ImageMetaError,
@@ -68,6 +70,10 @@ const GRID_GAP_PX = 16;
 const SWIPE_THRESHOLD_PX = 40;
 /** Movement above this is a drag, so the click that follows is not a tap. */
 const DRAG_SLOP_PX = 10;
+/** How long a soft-deleted batch can be restored before it is really removed. */
+const UNDO_WINDOW_MS = 6000;
+/** How long the done-count has to settle before the a11y announcement fires. */
+const ANNOUNCE_DEBOUNCE_MS = 600;
 
 interface JobThumbnail {
   imageId: string;
@@ -126,6 +132,8 @@ interface ResultTile {
   applyRequest?: ImageGenerationRequest;
   /** Which Retry attempt produced this job (0/undefined = original). */
   retryCount?: number;
+  /** The style preset this generation was submitted with, when recorded. */
+  styleName?: string;
 }
 
 /**
@@ -141,6 +149,30 @@ function requestForApply(
     return request;
   }
   return { ...request, params: { ...request.params, seed } };
+}
+
+/**
+ * Re-encode an image blob as PNG by way of a canvas. Clipboard implementations
+ * only reliably accept PNG, and horde results are webp.
+ */
+async function toPngBlob(blob: Blob): Promise<Blob> {
+  const bitmap = await createImageBitmap(blob);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('Canvas 2D context unavailable');
+  }
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const png = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/png'),
+  );
+  if (!png) {
+    throw new Error('PNG encoding failed');
+  }
+  return png;
 }
 
 /** The positive half of a combined `positive ### negative` prompt. */
@@ -180,6 +212,8 @@ export class GenerateResultsPanelComponent {
   private readonly db = inject(DatabaseService);
   private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly handoff = inject(StudioHandoffService);
+  private readonly router = inject(Router);
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
 
@@ -188,6 +222,9 @@ export class GenerateResultsPanelComponent {
    * would actually change. Null (the default) turns the markers off.
    */
   public readonly formValue = input<GenerateFormValue | null>(null);
+
+  /** Ask the parent to attach one stored result as the form's source image. */
+  public readonly useAsSource = output<{ localId: string; imageId: string }>();
 
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
@@ -236,19 +273,20 @@ export class GenerateResultsPanelComponent {
    * Select-to-delete state. Deletion used to be a single hover-revealed button
    * on every tile — trivial to hit by accident (and, on touch, an invisible
    * tap target sitting over the image). Instead the user enters a select mode,
-   * marks jobs, then confirms a permanent delete. Selection is tracked at the
-   * job level (a job's whole batch of tiles is removed together).
+   * marks jobs, then deletes them. Selection is tracked at the job level (a
+   * job's whole batch of tiles is removed together).
    */
   public readonly selectMode = signal(false);
   public readonly selectedJobs = signal<ReadonlySet<string>>(new Set());
   public readonly selectedCount = computed(() => this.selectedJobs().size);
 
-  /** Jobs queued for deletion behind the confirm dialog; empty = dialog closed. */
-  private readonly pendingDelete = signal<readonly string[]>([]);
-  public readonly confirmOpen = computed(() => this.pendingDelete().length > 0);
-  public readonly pendingDeleteCount = computed(
-    () => this.pendingDelete().length,
-  );
+  /**
+   * Jobs soft-deleted and awaiting the Undo window: gone from the grid, still on
+   * disk. See {@link requestDelete}.
+   */
+  private readonly hiddenJobs = signal<ReadonlySet<string>>(new Set());
+  private undoTimer: ReturnType<typeof setTimeout> | null = null;
+  private undoToastId: string | null = null;
 
   // --- View controls -------------------------------------------------------
 
@@ -351,7 +389,11 @@ export class GenerateResultsPanelComponent {
    */
   public readonly tiles = computed<ResultTile[]>(() => {
     const tiles: ResultTile[] = [];
+    const hidden = this.hiddenJobs();
     for (const job of this.pendingJobs()) {
+      if (hidden.has(job.localId)) {
+        continue;
+      }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
       const kind = job.status === 'processing' ? 'generating' : 'queued';
@@ -368,11 +410,15 @@ export class GenerateResultsPanelComponent {
           prompt,
           request: job.request,
           retryCount: job.retryCount,
+          styleName: job.styleName,
         });
       }
     }
     const thumbnails = this.thumbnails();
     for (const job of this.finishedJobs()) {
+      if (hidden.has(job.localId)) {
+        continue;
+      }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
       if (job.status === 'done') {
@@ -401,11 +447,16 @@ export class GenerateResultsPanelComponent {
               job.request,
               derived,
             ),
-            provenance: buildImageProvenance(thumb.metadata, derived),
+            provenance: buildImageProvenance(
+              thumb.metadata,
+              derived,
+              job.styleName ?? null,
+            ),
             prompt,
             request: job.request,
             applyRequest: requestForApply(job.request, thumb.metadata?.seed),
             retryCount: job.retryCount,
+            styleName: job.styleName,
           });
         });
       } else if (job.status === 'error') {
@@ -421,6 +472,7 @@ export class GenerateResultsPanelComponent {
           request: job.request,
           applyRequest: job.request,
           retryCount: job.retryCount,
+          styleName: job.styleName,
         });
       } else {
         tiles.push({
@@ -434,6 +486,7 @@ export class GenerateResultsPanelComponent {
           request: job.request,
           applyRequest: job.request,
           retryCount: job.retryCount,
+          styleName: job.styleName,
         });
       }
     }
@@ -452,12 +505,37 @@ export class GenerateResultsPanelComponent {
   );
 
   /**
+   * The styles represented among the current tiles, with how many tiles each
+   * accounts for. Only styles actually on screen are offered, so the filter can
+   * never select an empty result.
+   */
+  public readonly styleOptions = computed<{ name: string; count: number }[]>(
+    () => {
+      const counts = new Map<string, number>();
+      for (const tile of this.tiles()) {
+        if (tile.styleName) {
+          counts.set(tile.styleName, (counts.get(tile.styleName) ?? 0) + 1);
+        }
+      }
+      return [...counts.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    },
+  );
+  /** The selected style filter; '' means every style (and styleless jobs). */
+  public readonly styleFilter = signal('');
+
+  /**
    * The tiles actually rendered, after applying the error filter and aesthetic
    * sort. Pending/status tiles keep their leading position; only finished images
    * are reordered when sorting by score.
    */
   public readonly visibleTiles = computed<ResultTile[]>(() => {
     let list = this.tiles();
+    const style = this.styleFilter();
+    if (style) {
+      list = list.filter((tile) => tile.styleName === style);
+    }
     if (this.errorsOnly()) {
       list = list.filter(
         (tile) => tile.kind === 'done' && (tile.errors?.length ?? 0) > 0,
@@ -580,10 +658,14 @@ export class GenerateResultsPanelComponent {
       const grid = this.tileGrid()?.nativeElement ?? null;
       this.observeGrid(grid);
     });
+    // A soft delete the user walked away from still means "delete".
+    effect(() => this.announceReady(this.readyImageCount()));
     this.destroyRef.onDestroy(() => {
+      void this.commitPendingDelete();
       this.revokeAll();
       this.detachViewerKeys();
       this.gridObserver?.disconnect();
+      this.clearAnnounceTimer();
     });
   }
 
@@ -674,40 +756,79 @@ export class GenerateResultsPanelComponent {
     });
   }
 
-  /** Open the permanent-delete confirmation for a specific set of jobs. */
+  /**
+   * Delete a set of jobs the reversible way: they leave the grid at once and the
+   * records stay put behind an Undo toast. Nothing is actually removed until the
+   * offer lapses (or another delete starts), which is what makes a confirmation
+   * dialog unnecessary — the recovery is the affordance.
+   */
   public requestDelete(localIds: readonly string[]): void {
     const ids = localIds.filter((id) => id.length > 0);
-    if (ids.length > 0) {
-      this.pendingDelete.set(ids);
+    if (ids.length === 0) {
+      return;
     }
+    // Only one Undo can be outstanding, so a new delete settles the previous one.
+    void this.commitPendingDelete();
+    this.stepViewerPastDeleted(ids);
+    this.hiddenJobs.set(new Set(ids));
+    this.selectedJobs.set(new Set());
+    this.selectMode.set(false);
+    this.flippedTile.set(null);
+    // A panel opened from the grid described a tile that is now gone; one opened
+    // in the viewer follows the image the viewer advanced to.
+    if (this.viewerKey() === null) {
+      this.closeMeta();
+    }
+    this.undoToastId = this.toast.success('generate.results.deleted_undo', {
+      transloco: true,
+      messageParams: { count: ids.length },
+      autoDismissMs: UNDO_WINDOW_MS,
+      action: {
+        label: 'generate.results.undo',
+        run: () => this.undoDelete(),
+      },
+    });
+    this.undoTimer = setTimeout(
+      () => void this.commitPendingDelete(),
+      UNDO_WINDOW_MS,
+    );
   }
 
   public requestDeleteSelected(): void {
     this.requestDelete([...this.selectedJobs()]);
   }
 
-  public cancelDelete(): void {
-    this.pendingDelete.set([]);
+  /** Whether an Undo is currently on offer (drives the specs and the grid). */
+  public readonly undoPending = computed(() => this.hiddenJobs().size > 0);
+
+  /** Put the soft-deleted jobs back exactly as they were. */
+  public undoDelete(): void {
+    this.clearUndoTimer();
+    this.hiddenJobs.set(new Set());
   }
 
-  /** Close the confirm dialog only when its backdrop (not the panel) is clicked. */
-  public onConfirmBackdrop(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.cancelDelete();
+  /** Make the pending deletion real, removing the records for good. */
+  public async commitPendingDelete(): Promise<void> {
+    const ids = [...this.hiddenJobs()];
+    if (ids.length === 0) {
+      return;
     }
-  }
-
-  /** Delete the confirmed jobs, then leave select mode. */
-  public async confirmDelete(): Promise<void> {
-    const ids = this.pendingDelete();
-    this.pendingDelete.set([]);
-    this.stepViewerPastDeleted(ids);
+    this.clearUndoTimer();
+    this.hiddenJobs.set(new Set());
+    if (this.undoToastId) {
+      this.toast.dismiss(this.undoToastId);
+      this.undoToastId = null;
+    }
     for (const id of ids) {
       await this.deleteJob(id);
     }
-    this.selectedJobs.set(new Set());
-    this.selectMode.set(false);
-    this.flippedTile.set(null);
+  }
+
+  private clearUndoTimer(): void {
+    if (this.undoTimer !== null) {
+      clearTimeout(this.undoTimer);
+      this.undoTimer = null;
+    }
   }
 
   /**
@@ -853,10 +974,6 @@ export class GenerateResultsPanelComponent {
   }
 
   private onViewerKeydown(event: KeyboardEvent): void {
-    // The delete confirmation opens over the viewer and owns its own keys.
-    if (this.confirmOpen()) {
-      return;
-    }
     if (event.key === 'Escape') {
       event.preventDefault();
       // Unwind one layer at a time: raw JSON, then the metadata panel, then the
@@ -960,12 +1077,114 @@ export class GenerateResultsPanelComponent {
   }
 
   /**
-   * "Use as source" is mocked in the design but not yet wired to the source
-   * section (which lives in the sibling panel). Surface the affordance and tell
-   * the user it is coming rather than silently doing nothing.
+   * Hand a result to the form's source-image section. The blob lives in the
+   * image store, and the source section belongs to the parent page, so the
+   * parent does the attaching; this only says which image.
    */
-  public reuseAsSource(): void {
-    this.toast.warning('generate.results.reuse_soon', { transloco: true });
+  public reuseAsSource(tile: ResultTile): void {
+    if (!tile.thumb) {
+      return;
+    }
+    this.useAsSource.emit({
+      localId: tile.jobLocalId,
+      imageId: tile.thumb.imageId,
+    });
+    this.closeViewer();
+    this.unflip();
+  }
+
+  /** Whether this browser can put an image on the clipboard at all. */
+  public readonly canCopyImage =
+    typeof navigator !== 'undefined' &&
+    !!navigator.clipboard &&
+    typeof ClipboardItem !== 'undefined';
+
+  /** Whether the platform offers a native share sheet for files. */
+  public readonly canShareImage =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function';
+
+  /**
+   * Copy the image itself to the clipboard. Results are webp, which no major
+   * clipboard accepts, so the bitmap is re-encoded as PNG through a canvas
+   * first — the one format `ClipboardItem` is reliably allowed to carry.
+   */
+  public async copyImage(tile: ResultTile): Promise<void> {
+    if (!this.canCopyImage) {
+      return;
+    }
+    try {
+      const blob = await this.resultBlob(tile);
+      if (!blob) {
+        return;
+      }
+      const png = await toPngBlob(blob);
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': png }),
+      ]);
+      this.toast.success('generate.results.image_copied', { transloco: true });
+    } catch {
+      this.toast.error('generate.results.image_copy_failed', {
+        transloco: true,
+      });
+    }
+  }
+
+  /** Offer the image to the platform's share sheet. */
+  public async shareImage(tile: ResultTile): Promise<void> {
+    if (!this.canShareImage) {
+      return;
+    }
+    const blob = await this.resultBlob(tile);
+    if (!blob) {
+      return;
+    }
+    const extension = blob.type.includes('png') ? 'png' : 'webp';
+    const file = new File(
+      [blob],
+      `horde-${tile.seed ?? 'image'}.${extension}`,
+      {
+        type: blob.type || 'image/webp',
+      },
+    );
+    if (!navigator.canShare({ files: [file] })) {
+      return;
+    }
+    try {
+      await navigator.share({ files: [file] });
+    } catch {
+      // A cancelled share sheet is the normal way out; nothing to report.
+    }
+  }
+
+  /**
+   * Send the image to the alchemy tab: park it in the handoff service and
+   * navigate, leaving alchemy to pick it up on arrival.
+   */
+  public async sendToAlchemy(tile: ResultTile): Promise<void> {
+    const blob = await this.resultBlob(tile);
+    if (!blob) {
+      return;
+    }
+    this.handoff.set({ blob, mimeType: blob.type || 'image/webp' });
+    this.closeViewer();
+    this.unflip();
+    await this.router.navigate(['/generate/alchemy']);
+  }
+
+  /** The stored blob behind a result tile, or null when it is not a result. */
+  private async resultBlob(tile: ResultTile): Promise<Blob | null> {
+    if (!tile.thumb) {
+      return null;
+    }
+    const images = await this.queue.getJobImages(tile.jobLocalId);
+    return (
+      images.find(
+        (image) =>
+          image.kind === 'result' && image.imageId === tile.thumb?.imageId,
+      )?.blob ?? null
+    );
   }
 
   // --- Per-tile actions menu ----------------------------------------------
@@ -1084,6 +1303,63 @@ export class GenerateResultsPanelComponent {
     );
   }
 
+  // --- Completion announcement --------------------------------------------
+
+  /** How many finished result images exist right now. */
+  private readonly readyImageCount = computed(
+    () => this.tiles().filter((tile) => tile.kind === 'done').length,
+  );
+
+  /**
+   * Politely announced count of newly finished images. Generation finishes while
+   * the user is elsewhere on the page (or not looking at all), so completion is
+   * announced rather than only drawn.
+   */
+  public readonly readyAnnouncement = signal('');
+  private announcedCount = 0;
+  /** Images finished since the last announcement actually went out. */
+  private pendingAnnounce = 0;
+  /** Restored history must not be announced as if it had just arrived. */
+  private announceBaselined = false;
+  private announceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Debounced so a batch that lands image by image is announced once, and so a
+   * screen reader is not interrupted mid-sentence by the next arrival.
+   */
+  private announceReady(count: number): void {
+    if (!this.announceBaselined) {
+      this.announceBaselined = true;
+      this.announcedCount = count;
+      return;
+    }
+    if (count <= this.announcedCount) {
+      // Deletions and filters lower the count; re-baseline without announcing.
+      this.announcedCount = count;
+      return;
+    }
+    this.pendingAnnounce += count - this.announcedCount;
+    this.announcedCount = count;
+    this.clearAnnounceTimer();
+    this.announceTimer = setTimeout(() => {
+      this.announceTimer = null;
+      const added = this.pendingAnnounce;
+      this.pendingAnnounce = 0;
+      this.readyAnnouncement.set(
+        this.transloco.translate('generate.results.announce_ready', {
+          count: added,
+        }),
+      );
+    }, ANNOUNCE_DEBOUNCE_MS);
+  }
+
+  private clearAnnounceTimer(): void {
+    if (this.announceTimer !== null) {
+      clearTimeout(this.announceTimer);
+      this.announceTimer = null;
+    }
+  }
+
   /** Whether the tile's top-right tag stack has anything in it. */
   public hasTags(tile: ResultTile): boolean {
     return (
@@ -1190,7 +1466,35 @@ export class GenerateResultsPanelComponent {
   }
 
   public async downloadAllFinished(): Promise<void> {
-    const done = this.finishedJobs().filter((job) => job.status === 'done');
+    await this.downloadJobs(
+      this.finishedJobs().filter((job) => job.status === 'done'),
+      'generations.zip',
+    );
+  }
+
+  /** Zip up just the marked generations, from select mode. */
+  public async downloadSelected(): Promise<void> {
+    const selected = this.selectedJobs();
+    await this.downloadJobs(
+      this.finishedJobs().filter(
+        (job) => job.status === 'done' && selected.has(job.localId),
+      ),
+      'generations-selected.zip',
+    );
+  }
+
+  /** Whether the current selection contains anything downloadable. */
+  public readonly hasSelectedResults = computed(() => {
+    const selected = this.selectedJobs();
+    return this.finishedJobs().some(
+      (job) => job.status === 'done' && selected.has(job.localId),
+    );
+  });
+
+  private async downloadJobs(
+    done: readonly LocalGenerationJob[],
+    filename: string,
+  ): Promise<void> {
     const images: StoredJobImage[] = [];
     const metaByImageId = new Map<string, string>();
     for (const job of done) {
@@ -1214,7 +1518,7 @@ export class GenerateResultsPanelComponent {
     const bytes = await buildJobImageArchive(images, metaByImageId);
     const blob = new Blob([bytes as BlobPart], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
-    this.triggerDownload(url, 'generations.zip', true);
+    this.triggerDownload(url, filename, true);
   }
 
   private async loadThumbnails(localId: string): Promise<void> {

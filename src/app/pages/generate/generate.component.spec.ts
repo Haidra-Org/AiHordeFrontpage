@@ -8,6 +8,7 @@ import { GenerationQueueService } from '../../services/generation-queue.service'
 import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
+import { StyleUsageService } from '../../services/style-usage.service';
 import { ImageGenerationRequest } from '../../types/generation';
 
 describe('GenerateComponent', () => {
@@ -17,12 +18,16 @@ describe('GenerateComponent', () => {
   let enqueue: ReturnType<typeof vi.fn>;
   let toastSuccess: ReturnType<typeof vi.fn>;
   let toastError: ReturnType<typeof vi.fn>;
+  let styleIncrement: ReturnType<typeof vi.fn>;
+  let getJobImages: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
     enqueue = vi.fn().mockResolvedValue('local-1');
     toastSuccess = vi.fn();
     toastError = vi.fn();
+    styleIncrement = vi.fn();
+    getJobImages = vi.fn().mockResolvedValue([]);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -36,8 +41,10 @@ describe('GenerateComponent', () => {
             enqueue,
             pendingJobs: signal([]),
             finishedJobs: signal([]),
+            getJobImages,
           },
         },
+        { provide: StyleUsageService, useValue: { increment: styleIncrement } },
         {
           provide: ToastService,
           useValue: { success: toastSuccess, error: toastError },
@@ -403,6 +410,83 @@ describe('GenerateComponent', () => {
       expect(component.sourceState().sourceBlob).toBeNull();
       expect(component.form.controls.sourceMode.value).toBe('img2img');
       expect(component.form.controls.denoising_strength.value).toBe(0.4);
+    });
+  });
+
+  describe('style provenance', () => {
+    it('records the selected style on the job and counts the use', async () => {
+      component.form.patchValue({
+        mode: 'advanced',
+        prompt: 'a cat',
+        styleName: 'Test',
+      });
+
+      await component.onCreate();
+
+      const opts = enqueue.mock.calls[0][2] as { styleName?: string };
+      expect(opts.styleName).toBe('Test');
+      expect(styleIncrement).toHaveBeenCalledTimes(1);
+      expect(styleIncrement).toHaveBeenCalledWith('Test');
+    });
+
+    it('records nothing when no style is selected', async () => {
+      component.form.patchValue({ mode: 'advanced', prompt: 'a cat' });
+
+      await component.onCreate();
+
+      expect(enqueue.mock.calls[0][2]).toBeUndefined();
+      expect(styleIncrement).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('use as source', () => {
+    it('switches to advanced img2img and attaches the stored result', async () => {
+      const blob = new Blob(['x'], { type: 'image/webp' });
+      getJobImages.mockResolvedValue([
+        { imageId: 'img-1', kind: 'result', blob, mimeType: 'image/webp' },
+      ]);
+      const applySource = vi.fn().mockResolvedValue(undefined);
+      // The source section lives in the projected template, absent under the
+      // stubbed one, so stand in for the view query.
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applySource }),
+      });
+
+      await component.onUseAsSource({ localId: 'job-1', imageId: 'img-1' });
+
+      expect(component.form.controls.mode.value).toBe('advanced');
+      expect(component.form.controls.sourceMode.value).toBe('img2img');
+      expect(applySource).toHaveBeenCalledWith(blob);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.results.reuse_done',
+        expect.anything(),
+      );
+    });
+
+    it('keeps an existing source mode rather than forcing img2img', async () => {
+      const blob = new Blob(['x'], { type: 'image/webp' });
+      getJobImages.mockResolvedValue([
+        { imageId: 'img-1', kind: 'result', blob, mimeType: 'image/webp' },
+      ]);
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applySource: vi.fn().mockResolvedValue(undefined) }),
+      });
+      component.form.patchValue({ mode: 'advanced', sourceMode: 'inpainting' });
+
+      await component.onUseAsSource({ localId: 'job-1', imageId: 'img-1' });
+
+      expect(component.form.controls.sourceMode.value).toBe('inpainting');
+    });
+
+    it('reports when the stored image is gone', async () => {
+      getJobImages.mockResolvedValue([]);
+
+      await component.onUseAsSource({ localId: 'job-1', imageId: 'img-1' });
+
+      expect(toastError).toHaveBeenCalledWith(
+        'generate.results.reuse_failed',
+        expect.anything(),
+      );
     });
   });
 

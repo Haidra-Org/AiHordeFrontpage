@@ -1,6 +1,16 @@
 import { Injectable, signal } from '@angular/core';
 import { serializeErrorDetails } from '../helper/extract-api-error';
 
+/**
+ * An inline button on a toast, for an action that only makes sense while the
+ * toast is up (undoing what it announces, typically).
+ */
+export interface ToastAction {
+  /** Button label; translated when the toast's `transloco` flag is set. */
+  label: string;
+  run: () => void;
+}
+
 export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning';
@@ -8,6 +18,7 @@ export interface Toast {
   messageParams?: Record<string, unknown>;
   details?: string;
   transloco?: boolean;
+  action?: ToastAction;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +33,7 @@ export class ToastService {
       transloco?: boolean;
       messageParams?: Record<string, unknown>;
       details?: string;
+      action?: ToastAction;
     },
   ): string {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -37,6 +49,7 @@ export class ToastService {
         transloco: options?.transloco ?? false,
         messageParams: options?.messageParams,
         details: options?.details,
+        action: options?.action,
       },
     ]);
 
@@ -52,9 +65,14 @@ export class ToastService {
     options?: {
       transloco?: boolean;
       messageParams?: Record<string, unknown>;
+      action?: ToastAction;
+      autoDismissMs?: number;
     },
   ): string {
-    return this.show('success', message, { ...options, autoDismissMs: 5000 });
+    return this.show('success', message, {
+      autoDismissMs: 5000,
+      ...options,
+    });
   }
 
   public error(

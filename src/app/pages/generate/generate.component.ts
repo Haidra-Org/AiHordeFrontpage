@@ -32,6 +32,7 @@ import { ActiveModel } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
 import { ImageGenerationRequest } from '../../types/generation';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
+import { StyleUsageService } from '../../services/style-usage.service';
 import { blobToBase64 } from '../../helper/blob-base64';
 import {
   GenerateFormComponent,
@@ -108,6 +109,7 @@ export class GenerateComponent {
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
   private readonly presets = inject(GeneratePresetsService);
+  private readonly styleUsage = inject(StyleUsageService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
@@ -354,6 +356,44 @@ export class GenerateComponent {
     });
   }
 
+  /**
+   * Attach a past result as the form's source image, exactly as a manual upload
+   * would: the form is switched into advanced img2img first (the source section
+   * only exists there, and simple mode drops any source), then the stored blob is
+   * handed to the section itself.
+   */
+  public async onUseAsSource(event: {
+    localId: string;
+    imageId: string;
+  }): Promise<void> {
+    const images = await this.queue.getJobImages(event.localId);
+    const image = images.find(
+      (candidate) =>
+        candidate.kind === 'result' && candidate.imageId === event.imageId,
+    );
+    if (!image) {
+      this.toast.error('generate.results.reuse_failed', { transloco: true });
+      return;
+    }
+    this.form.patchValue({
+      mode: 'advanced',
+      sourceMode:
+        this.form.controls.sourceMode.value === 'none'
+          ? 'img2img'
+          : this.form.controls.sourceMode.value,
+    });
+    // The source section is rendered inside the advanced block, so it may only
+    // exist after the change above has been rendered.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    const ref = this.sourceImageRef();
+    if (!ref) {
+      this.toast.error('generate.results.reuse_failed', { transloco: true });
+      return;
+    }
+    await ref.applySource(image.blob);
+    this.toast.success('generate.results.reuse_done', { transloco: true });
+  }
+
   private async reattachSource(localId: string): Promise<void> {
     const ref = this.sourceImageRef();
     if (!ref) {
@@ -390,7 +430,14 @@ export class GenerateComponent {
       await this.queue.enqueue(
         request,
         sourceImages.length > 0 ? sourceImages : undefined,
+        // The request itself keeps no trace of the style that shaped it, so the
+        // selection is recorded on the job for the results grid to group by.
+        effective.styleName ? { styleName: effective.styleName } : undefined,
       );
+      // One submit is one use of the style, however many images it asks for.
+      if (effective.styleName) {
+        this.styleUsage.increment(effective.styleName);
+      }
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
       this.toast.success('generate.form.enqueued', { transloco: true });

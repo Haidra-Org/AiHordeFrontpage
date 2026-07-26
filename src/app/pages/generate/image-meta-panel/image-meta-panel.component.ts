@@ -385,6 +385,13 @@ export class ImageMetaPanelComponent {
     const t = (key: string, params?: Record<string, unknown>): string =>
       this.transloco.translate(key, params);
     const rows: MetaInfoRow[] = [];
+    if (provenance.styleName) {
+      rows.push({
+        label: t('generate.results.meta_row_style'),
+        value: provenance.styleName,
+        tone: 'default',
+      });
+    }
     const worker = provenance.workerName ?? provenance.workerId;
     if (worker) {
       rows.push({
