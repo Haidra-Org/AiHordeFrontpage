@@ -1,0 +1,185 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+  [attr.aria-label]="'generate.form.browser_title' | transloco"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-modal-panel--browser gs-fadeup"
+    tabindex="-1"
+  >
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        {{ "generate.form.browser_title" | transloco }}
+        @if (selectedStyle()) {
+          <span class="gs-modal-badge">{{ selectedStyle() }}</span>
+          <button
+            type="button"
+            class="gs-clear-style"
+            (click)="select('')"
+            [attr.aria-label]="'generate.form.clear_style' | transloco"
+            [title]="'generate.form.clear_style' | transloco"
+          >
+            <app-icon name="x-mark" class="gs-ico-sm" />
+          </button>
+        }
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="onClose()"
+        [attr.aria-label]="'generate.form.browse_close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-search-bar gs-sb-bar">
+      <div class="gs-modal-search">
+        <app-icon name="search" class="gs-ico-sm gs-muted" />
+        <input
+          #searchInput
+          type="text"
+          [value]="query()"
+          (input)="setQuery($any($event.target).value)"
+          [placeholder]="'generate.form.style_search' | transloco"
+          [attr.aria-label]="'generate.form.style_search' | transloco"
+        />
+      </div>
+      <div
+        class="gs-seg gs-seg--xs"
+        role="group"
+        [attr.aria-label]="'generate.form.variant_label' | transloco"
+      >
+        @for (option of variantOptions; track option) {
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="variant() === option"
+            (click)="setVariant(option)"
+          >
+            {{ "generate.form.variant_" + option | transloco }}
+          </button>
+        }
+      </div>
+      <div
+        class="gs-seg gs-seg--xs"
+        role="group"
+        [attr.aria-label]="'generate.form.sort_label' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="sort() === 'category'"
+          (click)="setSort('category')"
+        >
+          {{ "generate.form.sort_by_category" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="sort() === 'used'"
+          (click)="setSort('used')"
+        >
+          {{ "generate.form.sort_by_used" | transloco }}
+        </button>
+      </div>
+    </div>
+
+    <div class="gs-modal-body">
+      @if (previewsFailed()) {
+        <p class="gs-sb-note">
+          {{ "generate.form.previews_unavailable" | transloco }}
+        </p>
+      }
+      @if (isEmpty()) {
+        <div class="gs-modal-state">
+          {{ "generate.form.styles_empty" | transloco }}
+        </div>
+      } @else if (sort() === "used") {
+        <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+          @for (card of usedOrder(); track card.name) {
+            <ng-container
+              *ngTemplateOutlet="styleCard; context: { card: card }"
+            />
+          }
+        </div>
+      } @else {
+        @if (mostUsed().length > 0) {
+          <section class="gs-sb-section">
+            <h3 class="gs-sb-section-title">
+              <app-icon name="star" class="gs-ico-sm" />
+              {{ "generate.form.most_used" | transloco }}
+            </h3>
+            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+              @for (card of mostUsed(); track card.name) {
+                <ng-container
+                  *ngTemplateOutlet="styleCard; context: { card: card }"
+                />
+              }
+            </div>
+          </section>
+        }
+        @for (section of sections(); track section.category) {
+          <section class="gs-sb-section">
+            <h3 class="gs-sb-section-title">{{ section.category }}</h3>
+            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+              @for (card of section.cards; track card.name) {
+                <ng-container
+                  *ngTemplateOutlet="styleCard; context: { card: card }"
+                />
+              }
+            </div>
+          </section>
+        }
+      }
+    </div>
+  </div>
+</div>
+
+<!-- One style card: preview (or placeholder), name, and usage badge. -->
+<ng-template #styleCard let-card="card">
+  <button
+    type="button"
+    class="gs-sb-card"
+    [class.gs-sb-card--active]="selectedStyle() === card.name"
+    [attr.aria-pressed]="selectedStyle() === card.name"
+    (click)="select(card.name)"
+    [title]="card.name"
+  >
+    <span class="gs-sb-thumbs">
+      @if (card.previewUrls.length === 0) {
+        <span class="gs-sb-thumb">
+          <span class="gs-sb-thumb-empty">
+            <app-icon name="photo" class="gs-ico-sm" />
+          </span>
+        </span>
+      } @else {
+        @for (url of card.previewUrls; track url) {
+          <span class="gs-sb-thumb">
+            <img
+              [src]="url"
+              [alt]="card.name"
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+        }
+      }
+    </span>
+    <span class="gs-sb-meta">
+      <span class="gs-sb-name">{{ card.name }}</span>
+      @if (card.count > 0) {
+        <span class="gs-sb-badge">
+          {{
+            "generate.form.style_used_count" | transloco: { count: card.count }
+          }}
+        </span>
+      }
+    </span>
+  </button>
+</ng-template>

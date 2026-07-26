@@ -92,6 +92,8 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
 | `StyleService`         | CRUD over the horde's native `/v2/styles` user styles and collections           |
 | `HordeStylesService`   | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (with `applyStyle` `{p}`/`{np}` merge) |
+| `StylePreviewsService` | Lazy, stale-while-revalidate style preview renders from the AI-Horde-Styles-Previews GitHub JSONs |
+| `StyleUsageService`    | Per-style generation counts, backing the style browser's "most used" ordering   |
 | `CivitaiService`       | Typed public CivitAI model search for LoRAs and textual inversions              |
 | `AuthService`          | User authentication, session state, API key management, kudos balance signal    |
 | `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |

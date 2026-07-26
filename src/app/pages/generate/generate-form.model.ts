@@ -226,6 +226,12 @@ export function buildAspectPresets(
   return ASPECT_PRESETS[base];
 }
 
+/** A style category paired with the style names under it, for the picker. */
+export interface StylePickerGroup {
+  category: string;
+  names: string[];
+}
+
 /** The groups of form controls a style can pin, each lockable as a unit. */
 export const STYLE_LOCK_SECTIONS = ['model', 'dimensions', 'sampling'] as const;
 

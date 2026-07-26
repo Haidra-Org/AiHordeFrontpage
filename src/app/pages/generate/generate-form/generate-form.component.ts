@@ -28,6 +28,7 @@ import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
 import { StyleForcedParams } from '../../../services/horde-styles.service';
 import { CivitaiPickerComponent } from '../civitai-picker/civitai-picker.component';
+import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import {
   FACE_FIXERS,
   FormLoraEntry,
@@ -54,17 +55,17 @@ import {
   SAMPLERS,
   STRIP_BACKGROUND,
   StyleLockSection,
+  StylePickerGroup,
   UPSCALERS,
   buildAspectPresets,
   cyclePanelSize,
   detachedStyleSections,
 } from '../generate-form.model';
 
-/** A style category paired with the style names under it, for the picker. */
-export interface StylePickerGroup {
-  category: string;
-  names: string[];
-}
+// Re-exported for the parent page, which has always imported the picker group
+// type from here; it lives in the form model so the style browser can use it
+// without importing this component (which imports the browser in turn).
+export type { StylePickerGroup } from '../generate-form.model';
 
 /**
  * The /generate left control panel. Presentational: every control binds to the
@@ -86,6 +87,7 @@ export interface StylePickerGroup {
     IconComponent,
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
+    StyleBrowserComponent,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -125,6 +127,9 @@ export class GenerateFormComponent implements OnInit {
   /** The presets popover's anchor, used to detect click-away dismissals. */
   private readonly presetsRef =
     viewChild<ElementRef<HTMLElement>>('presetsContainer');
+  /** The style select, so clearing the style can hand focus back to it. */
+  private readonly styleSelect =
+    viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
 
   public readonly samplers = SAMPLERS;
   public readonly upscalers = UPSCALERS;
@@ -149,6 +154,8 @@ export class GenerateFormComponent implements OnInit {
   public readonly customSizeOpen = signal(false);
   /** Whether the CivitAI browse-and-add modal is open. */
   public readonly civitOpen = signal(false);
+  /** Whether the style preview browser is open. */
+  public readonly styleBrowserOpen = signal(false);
 
   /** Transloco keys for the planned-but-unavailable extras, one badge each. */
   public readonly plannedExtras = [
@@ -386,6 +393,29 @@ export class GenerateFormComponent implements OnInit {
     this.civitOpen.set(false);
   }
 
+  public openStyleBrowser(): void {
+    this.styleBrowserOpen.set(true);
+  }
+
+  public closeStyleBrowser(): void {
+    this.styleBrowserOpen.set(false);
+  }
+
+  /**
+   * Clear the selected style. The catalogue select is long enough that scrolling
+   * back to "None" is a chore, so this writes the control directly; going
+   * through it keeps the lock/detach state resetting as it would for any manual
+   * style change. Focus returns to the select the button sits beside.
+   */
+  public clearStyle(): void {
+    const control = this.form().controls.styleName;
+    if (control.value !== '') {
+      control.setValue('');
+      control.markAsDirty();
+    }
+    this.styleSelect()?.nativeElement.focus();
+  }
+
   /** Read a range/number input's value as a float, for slider change handlers. */
   public rangeValue(event: Event): number {
     return +(event.target as HTMLInputElement).value;
@@ -620,6 +650,17 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public onCreate(): void {
+    this.create.emit();
+  }
+
+  /**
+   * Ctrl/Cmd+Enter from either prompt box submits, gated on the same condition
+   * as the Generate button so the shortcut can never bypass its disabled state.
+   */
+  public onSubmitShortcut(): void {
+    if (this.form().controls.prompt.invalid) {
+      return;
+    }
     this.create.emit();
   }
 

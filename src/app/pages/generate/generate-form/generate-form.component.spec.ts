@@ -31,6 +31,7 @@ async function createComponent(
   fixture: ComponentFixture<GenerateFormComponent>;
   component: GenerateFormComponent;
   form: GenerateFormGroup;
+  submits: () => number;
 }> {
   await TestBed.configureTestingModule({
     imports: [GenerateFormComponent],
@@ -51,8 +52,15 @@ async function createComponent(
   });
   fixture.componentRef.setInput('form', form);
   fixture.componentRef.setInput('forcedParams', forced);
+  let submits = 0;
+  fixture.componentInstance.create.subscribe(() => submits++);
   fixture.detectChanges();
-  return { fixture, component: fixture.componentInstance, form };
+  return {
+    fixture,
+    component: fixture.componentInstance,
+    form,
+    submits: () => submits,
+  };
 }
 
 /** The request the parent would submit for the form's current raw value. */
@@ -178,6 +186,23 @@ describe('GenerateFormComponent style locks', () => {
     expect(submitted(form, FORCED).models).toEqual([FORCED.model]);
   });
 
+  it('clears the style and every lock through the control', async () => {
+    const { fixture, component, form } = await createComponent(FORCED);
+    component.detachSection('dimensions');
+    fixture.detectChanges();
+
+    component.clearStyle();
+    fixture.detectChanges();
+
+    expect(form.controls.styleName.value).toBe('');
+    expect(component.selectedStyleName()).toBe('');
+    expect(component.detachedSections()).toEqual([]);
+    expect(component.stylePins('model')).toBe(true);
+    // With no style selected the parent clears forcedParams; until then nothing
+    // is detached, so the pinned controls are locked again rather than stranded.
+    expect(form.controls.width.disabled).toBe(true);
+  });
+
   it('drops detachments when the style is cleared', async () => {
     const { fixture, component, form } = await createComponent(FORCED);
     component.detachSection('sampling');
@@ -188,5 +213,34 @@ describe('GenerateFormComponent style locks', () => {
 
     expect(component.detachedSections()).toEqual([]);
     expect(form.controls.styleDetach.value.sections).toEqual([]);
+  });
+});
+
+describe('GenerateFormComponent shortcuts', () => {
+  it('submits on the Ctrl/Cmd+Enter shortcut', async () => {
+    const { component, submits } = await createComponent(null);
+    component.onSubmitShortcut();
+    expect(submits()).toBe(1);
+  });
+
+  it('does not submit while the form is not submittable', async () => {
+    const { component, form, submits } = await createComponent(null);
+    // Mirrors the Generate button's own disabled binding.
+    form.controls.prompt.setErrors({ required: true });
+    component.onSubmitShortcut();
+    expect(submits()).toBe(0);
+
+    form.controls.prompt.setErrors(null);
+    component.onSubmitShortcut();
+    expect(submits()).toBe(1);
+  });
+
+  it('opens and closes the style browser', async () => {
+    const { component } = await createComponent(null);
+    expect(component.styleBrowserOpen()).toBe(false);
+    component.openStyleBrowser();
+    expect(component.styleBrowserOpen()).toBe(true);
+    component.closeStyleBrowser();
+    expect(component.styleBrowserOpen()).toBe(false);
   });
 });

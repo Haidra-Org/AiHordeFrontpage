@@ -166,6 +166,8 @@
         rows="2"
         [placeholder]="'generate.form.prompt_placeholder' | transloco"
         [attr.aria-label]="'generate.form.prompt_label' | transloco"
+        (keydown.control.enter)="onSubmitShortcut()"
+        (keydown.meta.enter)="onSubmitShortcut()"
       ></textarea>
 
       <!-- Negative prompt (one row by default; drag the grip to grow it) -->
@@ -175,6 +177,8 @@
         rows="1"
         [placeholder]="'generate.form.negative_prompt_placeholder' | transloco"
         [attr.aria-label]="'generate.form.negative_prompt_label' | transloco"
+        (keydown.control.enter)="onSubmitShortcut()"
+        (keydown.meta.enter)="onSubmitShortcut()"
       ></textarea>
 
       <!-- Setting cards. When the panel is expanded these reflow into
@@ -186,22 +190,45 @@
           <label class="gs-label" for="generate-style">
             {{ "generate.form.style_label" | transloco }}
           </label>
-          <select
-            id="generate-style"
-            class="gs-native-select mt-1.5"
-            formControlName="styleName"
-          >
-            <option value="">
-              {{ "generate.form.style_none" | transloco }}
-            </option>
-            @for (group of styleGroups(); track group.category) {
-              <optgroup [label]="group.category">
-                @for (name of group.names; track name) {
-                  <option [value]="name">{{ name }}</option>
-                }
-              </optgroup>
+          <div class="mt-1.5 flex items-center gap-1.5">
+            <select
+              #styleSelect
+              id="generate-style"
+              class="gs-native-select min-w-0 flex-1"
+              formControlName="styleName"
+            >
+              <option value="">
+                {{ "generate.form.style_none" | transloco }}
+              </option>
+              @for (group of styleGroups(); track group.category) {
+                <optgroup [label]="group.category">
+                  @for (name of group.names; track name) {
+                    <option [value]="name">{{ name }}</option>
+                  }
+                </optgroup>
+              }
+            </select>
+            @if (selectedStyleName()) {
+              <button
+                type="button"
+                class="gs-clear-style"
+                (click)="clearStyle()"
+                [attr.aria-label]="'generate.form.clear_style' | transloco"
+                [title]="'generate.form.clear_style' | transloco"
+              >
+                <app-icon name="x-mark" class="gs-ico-sm" />
+              </button>
             }
-          </select>
+            <button
+              type="button"
+              class="gs-browse-btn"
+              (click)="openStyleBrowser()"
+              [title]="'generate.form.browse_styles' | transloco"
+            >
+              <app-icon name="squares-2x2" class="gs-ico-sm" />
+              {{ "generate.form.browse_styles" | transloco }}
+            </button>
+          </div>
           <p class="gs-sublabel mt-1">
             {{ "generate.form.style_hint" | transloco }}
           </p>
@@ -930,6 +957,7 @@
       type="submit"
       class="gs-genbtn"
       [disabled]="form().controls.prompt.invalid"
+      [title]="'generate.form.ctrl_enter_hint' | transloco"
     >
       <app-icon name="star" class="gs-ico-sm" />
       {{
@@ -944,6 +972,14 @@
 
 @if (civitOpen()) {
   <app-civitai-picker [form]="form()" (closed)="closeCivit()" />
+}
+
+@if (styleBrowserOpen()) {
+  <app-style-browser
+    [form]="form()"
+    [styleGroups]="styleGroups()"
+    (closed)="closeStyleBrowser()"
+  />
 }
 
 <!-- Lock badge for one style-pinned section: names the value the style pins and

@@ -4247,3 +4247,202 @@
     transition: none;
   }
 }
+
+/* ------- style row adornments -------------------------------------- */
+/* Clears the selected style without hunting for "None" in the long select. */
+.gen-studio .gs-clear-style {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 8px;
+  background: var(--gs-field);
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-clear-style:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-border);
+}
+.gen-studio .gs-browse-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--gs-blue);
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 8px;
+  background: var(--gs-blue-tint);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gen-studio .gs-browse-btn:hover {
+  color: var(--gs-blue-hover);
+}
+
+/* ------- style preview browser modal -------------------------------- */
+.gen-studio .gs-modal-panel--browser {
+  width: 980px;
+}
+/* The search row carries three controls, so it wraps before it squeezes them. */
+.gen-studio .gs-sb-bar {
+  flex-wrap: wrap;
+}
+.gen-studio .gs-sb-bar .gs-modal-search {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.gen-studio .gs-sb-note {
+  margin: 0 0 12px;
+  font-size: 11.5px;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-sb-section + .gs-sb-section {
+  margin-top: 18px;
+}
+.gen-studio .gs-sb-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-sb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  align-content: start;
+}
+/* "All subjects" cards carry up to three previews side by side, so they need
+   roughly triple the width of a single-thumb card. */
+.gen-studio .gs-sb-grid--all {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.gen-studio .gs-sb-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  font-family: inherit;
+  border: 1px solid var(--gs-border);
+  border-radius: 11px;
+  background: var(--gs-panel);
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
+}
+.gen-studio .gs-sb-card:hover {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-sb-card--active {
+  border-color: var(--gs-blue);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18);
+}
+/* The previews of one card: a single box in a single-subject mode, an equal-width
+   triptych in "all". Equal columns keep every subject the same size whether a
+   style has one, two, or three renders. */
+.gen-studio .gs-sb-thumbs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 1px;
+}
+/* Fixed aspect box: previews arrive lazily, and the grid must not jump as
+   each one decodes. */
+.gen-studio .gs-sb-thumb {
+  display: block;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--gs-seg-track);
+}
+.gen-studio .gs-sb-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gen-studio .gs-sb-thumb-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-sb-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px 9px;
+}
+.gen-studio .gs-sb-name {
+  min-width: 0;
+  flex: 1;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-sb-badge {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--gs-purple-tint);
+  color: var(--gs-purple);
+}
+@media (max-width: 1023.98px) {
+  /* Near-full-screen sheet: the grid needs the room on small screens. */
+  .gen-studio .gs-modal-panel--browser {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 12px;
+  }
+  .gen-studio .gs-sb-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  /* One card per row so the subjects are showcased large rather than as three
+     tiny thumbs. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-grid--all {
+    grid-template-columns: 1fr;
+  }
+  /* Search, subject, and sort move within thumb reach at the bottom of the
+     sheet. Reordering the same flex children keeps one copy in the DOM, so
+     tab order still follows the source (controls before results) while the
+     visual order is reversed. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar {
+    order: 3;
+    border-bottom: 0;
+    border-top: 1px solid var(--gs-border-soft);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    background: var(--gs-panel);
+  }
+  .gen-studio .gs-modal-panel--browser .gs-modal-body {
+    order: 2;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-sb-card {
+    transition: none;
+  }
+}
