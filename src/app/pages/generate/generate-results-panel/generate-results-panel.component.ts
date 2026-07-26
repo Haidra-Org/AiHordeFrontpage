@@ -39,6 +39,7 @@ import {
   MetaApplyMode,
 } from '../image-meta-panel/image-meta-panel.component';
 import { GenerateFormValue } from '../generate-form.model';
+import { GenerateGuideComponent } from '../generate-guide/generate-guide.component';
 import {
   JsonModalHighlight,
   StudioJsonModalComponent,
@@ -197,6 +198,7 @@ function positivePrompt(prompt: string): string {
     IconComponent,
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
+    GenerateGuideComponent,
   ],
   templateUrl: './generate-results-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -247,6 +249,13 @@ export class GenerateResultsPanelComponent {
     'texture',
     'pixel',
   ];
+
+  /**
+   * Whether the written guide stands in for the results list. Neither persisted
+   * nor routed: it is a detour taken while filling the panel in, and a reload
+   * (or a finished generation) should land on the results.
+   */
+  public readonly guideOpen = signal(false);
 
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
@@ -1401,6 +1410,18 @@ export class GenerateResultsPanelComponent {
 
   public toggleErrorsOnly(): void {
     this.errorsOnly.update((value) => !value);
+  }
+
+  public openGuide(): void {
+    this.guideOpen.set(true);
+  }
+
+  public closeGuide(): void {
+    this.guideOpen.set(false);
+  }
+
+  public toggleGuide(): void {
+    this.guideOpen.update((open) => !open);
   }
 
   public toggleShowPrompts(): void {

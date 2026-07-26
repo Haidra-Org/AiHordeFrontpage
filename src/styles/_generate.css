@@ -5787,3 +5787,205 @@
 .dark .gen-studio ::-webkit-scrollbar-thumb {
   background: var(--gs-scroll-thumb);
 }
+
+/* ------- written guide (stands in for the results list) -------------- */
+/* The host carries `.gs-results-body` for the pane's padding and scrolling, so
+   only the block display it lacks as a custom element is set here. */
+.gen-studio .gs-guide {
+  display: block;
+}
+.gen-studio .gs-guide-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gen-studio .gs-guide-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-guide-close {
+  min-height: 32px;
+  padding: 5px 11px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-field);
+  color: var(--gs-label);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-guide-close:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-zone, var(--gs-blue));
+}
+
+/* Same single scrolling rail as the style browser's contents row, for the same
+   reason: wrapped, the section list would cost several lines of the pane. */
+.gen-studio .gs-guide-toc {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-top: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--gs-border-soft);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-padding-inline: 4px;
+}
+.gen-studio .gs-guide-toc-chip {
+  flex: none;
+  min-height: 32px;
+  white-space: nowrap;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--gs-label);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  cursor: pointer;
+}
+.gen-studio .gs-guide-toc-chip:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+
+.gen-studio .gs-guide-lead {
+  margin: 14px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 12.5px;
+  line-height: 1.65;
+  max-width: 68ch;
+}
+.gen-studio .gs-guide-card {
+  margin-top: 12px;
+  scroll-margin-top: 8px;
+}
+/* The same landmark the panel's section titles use (uppercase eyebrow, hairline
+   to the end of the row), one step up in size because here it heads a page of
+   prose rather than a column of controls. */
+.gen-studio .gs-guide-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-guide-head::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--gs-zone-tint-border, var(--gs-border));
+}
+.gen-studio .gs-guide-head--major {
+  margin-top: 26px;
+}
+
+.gen-studio .gs-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-guide-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.gen-studio .gs-guide-step-n {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
+  color: var(--gs-ink);
+  font-size: 11px;
+  font-weight: 700;
+}
+.gen-studio .gs-guide-step-text {
+  min-width: 0;
+}
+.gen-studio .gs-guide-step-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-guide-step-body {
+  margin: 4px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  line-height: 1.65;
+  max-width: 68ch;
+}
+
+.gen-studio .gs-guide-terms {
+  margin: 12px 0 0;
+}
+.gen-studio .gs-guide-term {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-guide-def {
+  margin: 3px 0 12px;
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  line-height: 1.65;
+  max-width: 68ch;
+}
+.gen-studio .gs-guide-def:last-child {
+  margin-bottom: 0;
+}
+.gen-studio .gs-guide-note {
+  margin: 18px 0 0;
+  color: var(--gs-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* The empty state's way in, before any result exists to put a toggle beside. */
+.gen-studio .gs-guide-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 999px;
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-guide-cta:hover {
+  border-color: var(--gs-blue);
+}
+.dark .gen-studio .gs-guide-cta {
+  color: #bfdbfe;
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-guide-close,
+  .gen-studio .gs-guide-toc-chip,
+  .gen-studio .gs-guide-cta {
+    min-height: 44px;
+  }
+}

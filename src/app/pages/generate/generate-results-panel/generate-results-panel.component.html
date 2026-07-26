@@ -168,6 +168,19 @@
           {{ "generate.results.sort_aesthetic" | transloco }}
         </button>
       }
+      <!-- Kept in the bar rather than in the empty state alone, so the guide is
+           still one press away once results exist. -->
+      <button
+        type="button"
+        class="gs-view-toggle"
+        [class.gs-view-toggle--on]="guideOpen()"
+        [attr.aria-pressed]="guideOpen()"
+        (click)="toggleGuide()"
+      >
+        <app-icon name="question-mark-circle" class="gs-ico-sm" />
+        {{ "generate.guide.open" | transloco }}
+      </button>
+
       @if (hasErrors()) {
         <button
           type="button"
@@ -189,7 +202,13 @@
     {{ readyAnnouncement() }}
   </p>
 
-  <div class="gs-results-body">
+  @if (guideOpen()) {
+    <app-generate-guide (closed)="closeGuide()" />
+  }
+
+  <!-- Hidden rather than removed: generations continue while the guide is read,
+       and rebuilding the grid would drop its thumbnails and scroll position. -->
+  <div class="gs-results-body" [class.hidden]="guideOpen()">
     @if (showStarters()) {
       <div class="gs-empty">
         <app-icon name="photo" />
@@ -200,6 +219,10 @@
           <div class="gs-empty-sub">
             {{ "generate.results.empty_sub" | transloco }}
           </div>
+          <button type="button" class="gs-guide-cta" (click)="openGuide()">
+            <app-icon name="question-mark-circle" class="gs-ico-sm" />
+            {{ "generate.guide.open_empty" | transloco }}
+          </button>
           <!-- Starting from nothing is the hardest part of a prompt box, so the
                empty state offers a few prompts to depart from. -->
           <div class="gs-starters">

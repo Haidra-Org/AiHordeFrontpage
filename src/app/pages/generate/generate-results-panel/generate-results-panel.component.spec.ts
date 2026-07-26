@@ -839,4 +839,18 @@ describe('GenerateResultsPanelComponent', () => {
 
     expect(used).toEqual(['a misty mountain lake']);
   });
+
+  it('shows the guide in place of the results and gives it back', () => {
+    expect(component.guideOpen()).toBe(false);
+
+    component.openGuide();
+    expect(component.guideOpen()).toBe(true);
+
+    component.toggleGuide();
+    expect(component.guideOpen()).toBe(false);
+
+    component.toggleGuide();
+    component.closeGuide();
+    expect(component.guideOpen()).toBe(false);
+  });
 });
