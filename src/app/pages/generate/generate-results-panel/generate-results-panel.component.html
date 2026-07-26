@@ -202,13 +202,39 @@
     {{ readyAnnouncement() }}
   </p>
 
-  @if (guideOpen()) {
+  @if (tutorialOpen()) {
+    <app-generate-learn-panel />
+  } @else if (guideOpen()) {
     <app-generate-guide (closed)="closeGuide()" />
   }
 
   <!-- Hidden rather than removed: generations continue while the guide is read,
        and rebuilding the grid would drop its thumbnails and scroll position. -->
-  <div class="gs-results-body" [class.hidden]="guideOpen()">
+  <div class="gs-results-body" [class.hidden]="guideOpen() || tutorialOpen()">
+    @if (tutorialCompleted()) {
+      <!-- The tutorial stood down so the image could land here; this is the
+           only thing it has left to say, and it says it once. -->
+      <div class="gs-learn-done" role="status">
+        <div class="gs-learn-done-text">
+          <p class="gs-learn-done-title">
+            {{ "generate.learn.done.title" | transloco }}
+          </p>
+          <p class="gs-learn-done-body">
+            {{ "generate.learn.done.body" | transloco }}
+          </p>
+          <p class="gs-learn-done-body">
+            {{ "generate.learn.done.queue" | transloco }}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="gs-guide-close"
+          (click)="dismissTutorialNote()"
+        >
+          {{ "generate.learn.done.dismiss" | transloco }}
+        </button>
+      </div>
+    }
     @if (showStarters()) {
       <div class="gs-empty">
         <app-icon name="photo" />

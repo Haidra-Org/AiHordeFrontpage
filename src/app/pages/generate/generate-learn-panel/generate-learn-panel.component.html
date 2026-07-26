@@ -1,0 +1,151 @@
+<div class="gs-learn-top">
+  <div class="gs-learn-heading">
+    <h2 class="gs-learn-title">
+      {{ taskNameKey() | transloco }}
+      @if (flow(); as meta) {
+        <span class="gs-tut-technique">{{ meta.title }}</span>
+      }
+    </h2>
+  </div>
+  <button type="button" class="gs-guide-close gs-learn-exit" (click)="exit()">
+    {{ "generate.learn.exit" | transloco }}
+  </button>
+</div>
+
+<!-- Register picker. It rewrites the prose and nothing else, so it sits in the
+     header rather than beside the step it happens to be read on. -->
+<div
+  class="gs-seg gs-seg--xs gs-learn-levels"
+  role="group"
+  [attr.aria-label]="'generate.learn.level_label' | transloco"
+>
+  @for (option of levels; track option) {
+    <button
+      type="button"
+      class="gs-seg-opt"
+      [attr.aria-pressed]="level() === option"
+      (click)="setLevel(option)"
+    >
+      {{ levelKey(option) | transloco }}
+    </button>
+  }
+</div>
+
+@if (loadFailed()) {
+  <p class="gs-info-note">{{ "generate.learn.load_error" | transloco }}</p>
+} @else if (loading()) {
+  <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
+} @else {
+  <div class="gs-learn-body">
+    <div class="gs-learn-main">
+      <p class="gs-learn-progress" role="status" aria-live="polite">
+        {{ "generate.learn.progress" | transloco: progressParams() }}
+      </p>
+
+      @if (step(); as current) {
+        <section class="gs-card gs-learn-card">
+          <h3 class="gs-guide-head">{{ titleKey(current) | transloco }}</h3>
+          <p class="gs-guide-step-body">
+            {{ bodyKey(current) | transloco: copyParams() }}
+          </p>
+
+          @if (revealNote()) {
+            <!-- The panel just moved under the reader; saying so is the
+                 difference between a guide and a poltergeist. -->
+            <p class="gs-learn-reveal">
+              <app-icon name="star" class="gs-ico-sm" />
+              {{ revealKey() | transloco }}
+            </p>
+          }
+
+          <div class="gs-learn-actions">
+            @if (canApply()) {
+              <button type="button" class="gs-learn-apply" (click)="apply()">
+                {{ "generate.learn.apply" | transloco }}
+              </button>
+            }
+            @if (current.anchorId) {
+              <button type="button" class="gs-learn-show" (click)="showMe()">
+                {{ "generate.learn.show_me" | transloco }}
+              </button>
+            }
+          </div>
+
+          @if (onFinale()) {
+            <p class="gs-info-note gs-learn-finale">
+              {{ "generate.learn.finale_hint" | transloco }}
+            </p>
+          }
+        </section>
+
+        <div class="gs-learn-nav">
+          <button
+            type="button"
+            class="gs-guide-close"
+            [disabled]="stepIndex() === 0"
+            (click)="back()"
+          >
+            {{ "generate.learn.back" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-learn-next"
+            [disabled]="onFinale()"
+            (click)="next()"
+          >
+            {{ "generate.learn.next" | transloco }}
+          </button>
+        </div>
+      }
+
+      <!-- The bulk route goes through the same review panel a past generation's
+           settings do, so a tutorial can never silently rewrite the form. -->
+      <div class="gs-learn-bulk">
+        <button type="button" class="gs-learn-all" (click)="applyAll()">
+          {{ "generate.learn.apply_all" | transloco }}
+        </button>
+        <p class="gs-learn-bulk-note">
+          {{ "generate.learn.apply_all_hint" | transloco }}
+        </p>
+      </div>
+
+      <ol
+        class="gs-learn-steps"
+        [attr.aria-label]="'generate.learn.steps_label' | transloco"
+      >
+        @for (entry of steps(); track entry.id; let i = $index) {
+          <li>
+            <button
+              type="button"
+              class="gs-learn-step"
+              [class.gs-learn-step--on]="isCurrent(i)"
+              [attr.aria-current]="isCurrent(i) ? 'step' : null"
+              (click)="goTo(i)"
+            >
+              <span class="gs-guide-step-n" aria-hidden="true">{{
+                i + 1
+              }}</span>
+              <span class="gs-learn-step-title">
+                {{ titleKey(entry) | transloco }}
+              </span>
+            </button>
+          </li>
+        }
+      </ol>
+    </div>
+
+    @if (exampleImage()) {
+      <figure class="gs-learn-example">
+        <img
+          class="gs-learn-thumb"
+          [src]="exampleImage()"
+          [alt]="'generate.learn.example_alt' | transloco"
+          loading="lazy"
+        />
+        <figcaption class="gs-learn-example-cap">
+          {{ "generate.learn.example_caption" | transloco }}
+        </figcaption>
+      </figure>
+    }
+  </div>
+}

@@ -9,11 +9,15 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map, of } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { highlightJson } from '../../../helper/json-formatter';
+import {
+  TutorialEngineService,
+  tutorialAvailable,
+} from '../../../services/tutorial-engine.service';
 
 /** Where the committed example set lives, relative to the served root. */
 const TUTORIALS_ROOT = '/assets/tutorials';
@@ -122,6 +126,9 @@ export class GenerateTutorialsComponent {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
+  private readonly tutorial = inject(TutorialEngineService);
 
   public readonly manifest = signal<TutorialManifest | null>(null);
   public readonly loadFailed = signal(false);
@@ -217,6 +224,33 @@ export class GenerateTutorialsComponent {
 
   public isActive(flow: TutorialFlow): boolean {
     return flow.id === this.activeFlow()?.id;
+  }
+
+  /**
+   * The flow's one-line description in the page's own plain voice, falling back
+   * to the manifest's when a flow has no override. The manifest is generated
+   * from the example run and is written for someone who already knows the
+   * technique, which is the wrong register for the first thing a reader reads.
+   */
+  public summaryFor(flow: TutorialFlow): string {
+    const key = `generate.tutorials.flows.${flow.id}.summary`;
+    const text = this.transloco.translate(key);
+    return !text || text === key ? flow.summary : text;
+  }
+
+  /** Whether the studio can walk a reader through this flow field by field. */
+  public canStart(flow: TutorialFlow): boolean {
+    return flow.status === 'available' && tutorialAvailable(flow.id);
+  }
+
+  /**
+   * Arm the flow and go to the studio. The arming is held in memory rather than
+   * put in the URL, so reloading the studio lands on an ordinary studio instead
+   * of restarting a tutorial the reader has moved past.
+   */
+  public startTutorial(flow: TutorialFlow): void {
+    this.tutorial.arm(flow.id);
+    void this.router.navigate(['/generate/image']);
   }
 
   /**

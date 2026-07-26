@@ -23,6 +23,7 @@ import { merge } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
+import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
 import { ToastService } from '../../../services/toast.service';
@@ -107,6 +108,7 @@ export type { StylePickerGroup } from '../generate-form.model';
     TranslocoPipe,
     IconComponent,
     GsHelpComponent,
+    TutorialAnchorDirective,
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
     StyleBrowserComponent,

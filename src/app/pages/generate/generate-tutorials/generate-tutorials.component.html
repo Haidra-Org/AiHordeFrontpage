@@ -43,7 +43,27 @@
           {{ taskNameKey(flow) | transloco }}
           <span class="gs-tut-technique">{{ flow.title }}</span>
         </h2>
-        <p class="gs-tut-lead">{{ flow.summary }}</p>
+        <p class="gs-tut-lead">{{ summaryFor(flow) }}</p>
+
+        <!-- The page shows what was made; this is the way to go and make it.
+             Flows without authored steps say so rather than disappearing, so a
+             reader can see what is coming. -->
+        <div class="gs-tut-start">
+          <button
+            type="button"
+            class="gs-tut-start-btn"
+            [disabled]="!canStart(flow)"
+            (click)="startTutorial(flow)"
+          >
+            <app-icon name="star" class="gs-ico-sm" />
+            {{ "generate.learn.start" | transloco }}
+          </button>
+          @if (!canStart(flow)) {
+            <span class="gs-tut-start-note">
+              {{ "generate.learn.start_soon" | transloco }}
+            </span>
+          }
+        </div>
 
         @if (flow.status === "skipped") {
           <!-- Shown rather than hidden: a flow the studio still offers but the

@@ -35,6 +35,10 @@ import { ImageGenerationRequest } from '../../types/generation';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
+import {
+  TutorialEngineService,
+  TutorialStudioHost,
+} from '../../services/tutorial-engine.service';
 import { blobToBase64 } from '../../helper/blob-base64';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
@@ -51,6 +55,8 @@ import {
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  GenerateMode,
+  GenerateSourceMode,
   PanelSize,
   buildImageRequest,
   buildStyledImageRequest,
@@ -111,7 +117,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
   templateUrl: './generate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateComponent {
+export class GenerateComponent implements TutorialStudioHost {
   private readonly aiHorde = inject(AiHordeService);
   private readonly queue = inject(GenerationQueueService);
   private readonly toast = inject(ToastService);
@@ -123,6 +129,7 @@ export class GenerateComponent {
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
+  private readonly tutorial = inject(TutorialEngineService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
@@ -166,6 +173,13 @@ export class GenerateComponent {
 
   /** The built request shown in the pre-submit preview modal, or null. */
   public readonly previewRequest = signal<unknown>(null);
+
+  /**
+   * What the review-and-apply panel calls the settings it is showing. A preset
+   * and a tutorial's example are reviewed through the same panel and are not the
+   * same thing to the reader, so the heading follows whichever opened it.
+   */
+  public readonly loadTitleKey = signal('generate.form.load_title');
 
   /**
    * The preset the user picked from the control panel's presets menu, held while
@@ -278,6 +292,44 @@ export class GenerateComponent {
       this.refreshForcedParams();
       void this.updateKudos();
     }
+
+    this.tutorial.registerHost(this);
+    this.destroyRef.onDestroy(() => this.tutorial.unregisterHost(this));
+    const armed = this.tutorial.consumeArmed();
+    if (armed && this.isBrowser) {
+      void this.tutorial.start(armed);
+    }
+  }
+
+  // --- Follow-along tutorial host ------------------------------------------
+  // The tutorial renders in the results pane and never touches the form group
+  // itself; everything it asks for arrives through these four methods.
+
+  public applyFields(fields: Partial<GenerateFormValue>): void {
+    this.form.patchValue(fields);
+    this.form.markAsDirty();
+  }
+
+  public currentMode(): GenerateMode {
+    return this.form.controls.mode.value;
+  }
+
+  public setMode(mode: GenerateMode): void {
+    this.form.controls.mode.setValue(mode);
+  }
+
+  public setSourceMode(mode: GenerateSourceMode): void {
+    this.form.controls.sourceMode.setValue(mode);
+  }
+
+  /**
+   * Offer a tutorial's whole example through the same review panel a saved
+   * preset goes through, so a bulk write is always something the reader ticked
+   * their way through rather than something a tutorial did to them.
+   */
+  public openBulkApply(example: GenerateFormValue): void {
+    this.loadTitleKey.set('generate.learn.bulk_title');
+    this.pendingLoad.set(example);
   }
 
   /**
@@ -383,6 +435,7 @@ export class GenerateComponent {
 
   public cancelLoad(): void {
     this.pendingLoad.set(null);
+    this.loadTitleKey.set('generate.form.load_title');
     this.formRef()?.focusPresetsButton();
   }
 
@@ -409,6 +462,7 @@ export class GenerateComponent {
   ): void {
     const pending = this.pendingLoad();
     this.pendingLoad.set(null);
+    this.loadTitleKey.set('generate.form.load_title');
     this.formRef()?.focusPresetsButton();
     if (!pending || event.keys.length === 0) {
       return;
@@ -634,6 +688,9 @@ export class GenerateComponent {
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
       this.toast.success('generate.form.enqueued', { transloco: true });
+      // The submit itself is the signal a follow-along tutorial is finished, so
+      // nothing has to watch the queue for one.
+      this.tutorial.notifySubmitted();
     } catch (error) {
       console.error('Failed to enqueue generation:', error);
       this.toast.error('generate.form.enqueue_error', {

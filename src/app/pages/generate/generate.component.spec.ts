@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
 import { of } from 'rxjs';
@@ -9,6 +11,7 @@ import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import { StyleUsageService } from '../../services/style-usage.service';
+import { TutorialEngineService } from '../../services/tutorial-engine.service';
 import {
   ModelBaselineMap,
   ModelReferenceService,
@@ -48,6 +51,8 @@ describe('GenerateComponent', () => {
     await TestBed.configureTestingModule({
       imports: [GenerateComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
         {
           provide: GenerationQueueService,
@@ -752,6 +757,65 @@ describe('GenerateComponent', () => {
         { prompt: 'a castle', negativePrompt: 'blurry' },
         { prompt: 'a fox', negativePrompt: '' },
       ]);
+    });
+  });
+
+  describe('follow-along tutorial host', () => {
+    it('writes only the fields a step names', () => {
+      component.applyFields({ steps: 30 });
+
+      const value = component.form.getRawValue();
+      expect(value.steps).toBe(30);
+      expect(value.prompt).toBe(DEFAULT_GENERATE_FORM_VALUE.prompt);
+      expect(value.cfg_scale).toBe(DEFAULT_GENERATE_FORM_VALUE.cfg_scale);
+    });
+
+    it('reports and sets the panel mode a step needs revealed', () => {
+      expect(component.currentMode()).toBe(DEFAULT_GENERATE_FORM_VALUE.mode);
+
+      component.setMode('advanced');
+
+      expect(component.currentMode()).toBe('advanced');
+      expect(component.form.controls.mode.value).toBe('advanced');
+    });
+
+    it('opens a bulk apply through the same review panel a preset uses', () => {
+      component.openBulkApply({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        prompt: 'a lighthouse keeper',
+        steps: 30,
+      });
+
+      expect(component.pendingLoadRequest()?.prompt).toBe(
+        'a lighthouse keeper',
+      );
+      expect(component.pendingLoadRequest()?.params?.steps).toBe(30);
+      // Named for what it is, so the panel does not claim to be loading a preset.
+      expect(component.loadTitleKey()).toBe('generate.learn.bulk_title');
+      // And nothing is written until the reader ticks it through.
+      expect(component.form.getRawValue().prompt).toBe(
+        DEFAULT_GENERATE_FORM_VALUE.prompt,
+      );
+    });
+
+    it('restores the preset heading once the review panel is dismissed', () => {
+      component.openBulkApply({ ...DEFAULT_GENERATE_FORM_VALUE });
+
+      component.cancelLoad();
+
+      expect(component.loadTitleKey()).toBe('generate.form.load_title');
+    });
+
+    it('tells the tutorial a generation was submitted', async () => {
+      const engine = TestBed.inject(TutorialEngineService);
+      void engine.start('txt2img');
+      engine.goTo(engine.total() - 1);
+      component.form.controls.prompt.setValue('a lighthouse keeper');
+
+      await component.onCreate();
+
+      expect(engine.active()).toBe(false);
+      expect(engine.completed()).toBe(true);
     });
   });
 

@@ -94,7 +94,7 @@
         #presetMeta
         [request]="request"
         [currentValue]="formValue()"
-        [titleKey]="'generate.form.load_title'"
+        [titleKey]="loadTitleKey()"
         [pinnable]="false"
         [defaultMode]="'replace'"
         (apply)="onApplyPresetSelection($event, presetMeta.offeredKeys())"

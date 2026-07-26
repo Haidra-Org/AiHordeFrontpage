@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import { Router } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
+import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -101,6 +104,8 @@ describe('GenerateResultsPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [GenerateResultsPanelComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: GenerationQueueService,
           useValue: {
@@ -838,6 +843,41 @@ describe('GenerateResultsPanelComponent', () => {
     component.usePrompt.emit('a misty mountain lake');
 
     expect(used).toEqual(['a misty mountain lake']);
+  });
+
+  it('stands the guide down when a tutorial takes the pane', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    component.openGuide();
+
+    void engine.start('txt2img');
+    fixture.detectChanges();
+
+    expect(component.tutorialOpen()).toBe(true);
+    expect(component.guideOpen()).toBe(false);
+  });
+
+  it('stands a tutorial down when the guide is opened over it', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('txt2img');
+    fixture.detectChanges();
+
+    component.openGuide();
+
+    expect(component.tutorialOpen()).toBe(false);
+    expect(component.guideOpen()).toBe(true);
+  });
+
+  it('carries the tutorial completion note until it is dismissed', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('txt2img');
+    engine.goTo(engine.total() - 1);
+    engine.notifySubmitted();
+
+    expect(component.tutorialCompleted()).toBe(true);
+
+    component.dismissTutorialNote();
+
+    expect(component.tutorialCompleted()).toBe(false);
   });
 
   it('shows the guide in place of the results and gives it back', () => {

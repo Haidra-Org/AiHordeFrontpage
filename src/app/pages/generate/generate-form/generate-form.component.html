@@ -163,7 +163,7 @@
       <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
-      <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-2.5" appTutAnchor="prompt">
         <div class="gs-sec-head">
           <span class="gs-card-title">
             {{ "generate.form.prompt_section" | transloco }}
@@ -267,6 +267,7 @@
       <!-- Negative prompt (one row by default; drag the grip to grow it) -->
       <textarea
         class="gs-neg-input"
+        appTutAnchor="negative_prompt"
         formControlName="negativePrompt"
         rows="1"
         [placeholder]="'generate.form.negative_prompt_placeholder' | transloco"
@@ -286,7 +287,7 @@
               {{ "generate.form.model_style_section" | transloco }}
             </span>
           </div>
-          <div>
+          <div appTutAnchor="style">
             <label class="gs-label" for="generate-style">
               {{ "generate.form.style_label" | transloco }}
             </label>
@@ -335,7 +336,7 @@
           </div>
 
           <!-- Model -->
-          <div>
+          <div appTutAnchor="model">
             <label
               class="gs-label flex flex-wrap items-center gap-2"
               for="generate-model"
@@ -376,7 +377,10 @@
         </div>
 
         <!-- Aspect + resolution -->
-        <div class="gs-card gs-card--pad-sm flex flex-col gap-3">
+        <div
+          class="gs-card gs-card--pad-sm flex flex-col gap-3"
+          appTutAnchor="size"
+        >
           <div class="gs-sec-head">
             <span class="gs-card-title--sm">
               {{ "generate.form.dimensions_section" | transloco }}
@@ -543,7 +547,10 @@
               }
             </div>
             <div class="gs-grid-sampling">
-              <div [class.gs-locked]="isSectionLocked('sampling')">
+              <div
+                appTutAnchor="steps"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
                 <div class="gs-field-head">
                   <span class="gs-slabel">
                     {{ "generate.form.steps_short" | transloco }}
@@ -566,7 +573,10 @@
                   *ngTemplateOutlet="reqHint; context: { hint: stepsHint() }"
                 />
               </div>
-              <div [class.gs-locked]="isSectionLocked('sampling')">
+              <div
+                appTutAnchor="cfg"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
                 <div class="gs-field-head">
                   <span class="gs-slabel">
                     {{ "generate.form.cfg_short" | transloco }}
@@ -589,7 +599,10 @@
                   *ngTemplateOutlet="reqHint; context: { hint: cfgHint() }"
                 />
               </div>
-              <div [class.gs-locked]="isSectionLocked('sampling')">
+              <div
+                appTutAnchor="sampler"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-sampler">
                     {{ "generate.form.sampler_label" | transloco }} </label
@@ -615,7 +628,7 @@
                   *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"
                 />
               </div>
-              <div>
+              <div appTutAnchor="seed">
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-seed">
                     {{ "generate.form.seed_label" | transloco }} </label
@@ -1305,6 +1318,7 @@
     <button
       type="submit"
       class="gs-genbtn"
+      appTutAnchor="generate"
       [disabled]="form().controls.prompt.invalid"
       [title]="'generate.form.ctrl_enter_hint' | transloco"
     >

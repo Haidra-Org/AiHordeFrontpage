@@ -19,6 +19,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
+import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { ImageControlType } from '../../../types/generation';
 import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
 import {
@@ -89,7 +90,13 @@ const MAX_BRUSH = 200;
  */
 @Component({
   selector: 'app-generate-source-image',
-  imports: [ReactiveFormsModule, TranslocoPipe, IconComponent, GsHelpComponent],
+  imports: [
+    ReactiveFormsModule,
+    TranslocoPipe,
+    IconComponent,
+    GsHelpComponent,
+    TutorialAnchorDirective,
+  ],
   templateUrl: './generate-source-image.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

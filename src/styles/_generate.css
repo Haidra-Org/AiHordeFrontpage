@@ -6237,3 +6237,312 @@
     min-height: 44px;
   }
 }
+
+/* ------- follow-along tutorial ---------------------------------------- */
+
+/* The ring a tutorial step puts around the field it is talking about. It is a
+   ring plus a tinted wash rather than colour alone, because the fields it lands
+   on already carry colour of their own (style locks, requirement warnings), and
+   a second hue there would read as another warning. */
+.gen-studio .gs-tut-target {
+  position: relative;
+  border-radius: 10px;
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 3px;
+  background: var(--gs-blue-tint);
+  animation: gs-tut-pulse 1.4s ease-out 2;
+}
+.dark .gen-studio .gs-tut-target {
+  outline-color: #60a5fa;
+}
+@keyframes gs-tut-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--gs-blue-tint-border);
+  }
+  70% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-tut-target {
+    animation: none;
+  }
+}
+
+/* The host carries `.gs-results-body` for the pane's padding and scrolling, as
+   the written guide does; only the block display is missing from a custom
+   element. */
+.gen-studio .gs-learn {
+  display: block;
+}
+.gen-studio .gs-learn-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gen-studio .gs-learn-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-learn-levels {
+  margin-top: 12px;
+}
+.gen-studio .gs-learn-progress {
+  margin: 14px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+
+/* Prose column first, example beside it where there is room: the image is what
+   the reader is working towards, not what they are reading. */
+.gen-studio .gs-learn-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 4px;
+}
+.gen-studio .gs-learn-main {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.gen-studio .gs-learn-example {
+  flex: 0 1 220px;
+  margin: 26px 0 0;
+}
+.gen-studio .gs-learn-thumb {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--gs-card-border);
+}
+.gen-studio .gs-learn-example-cap {
+  margin-top: 6px;
+  color: var(--gs-muted);
+  font-size: 11px;
+}
+
+.gen-studio .gs-learn-card {
+  margin-top: 10px;
+}
+.gen-studio .gs-learn-reveal {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 8px;
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink-2);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.gen-studio .gs-learn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.gen-studio .gs-learn-apply,
+.gen-studio .gs-learn-next,
+.gen-studio .gs-learn-all {
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--gs-blue);
+  border-radius: 8px;
+  background: var(--gs-blue);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-learn-apply:hover,
+.gen-studio .gs-learn-next:hover,
+.gen-studio .gs-learn-all:hover {
+  background: var(--gs-blue-hover);
+}
+.gen-studio .gs-learn-next:disabled,
+.gen-studio .gs-guide-close:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.gen-studio .gs-learn-show {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: var(--gs-field);
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-learn-show:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-learn-finale {
+  margin-top: 12px;
+}
+.gen-studio .gs-learn-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gen-studio .gs-learn-bulk {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-learn-all {
+  border-color: var(--gs-card-border);
+  background: var(--gs-card);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-learn-all:hover {
+  background: var(--gs-pop-hover);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-learn-bulk-note {
+  margin: 7px 0 0;
+  color: var(--gs-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+.gen-studio .gs-learn-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-learn-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-learn-step:hover {
+  background: var(--gs-card);
+}
+.gen-studio .gs-learn-step--on {
+  border-color: var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink);
+  font-weight: 700;
+}
+.gen-studio .gs-learn-step-title {
+  min-width: 0;
+}
+
+/* The tutorial's parting note, over the results it stood aside for. */
+.gen-studio .gs-learn-done {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--gs-green-tint-border);
+  border-radius: 10px;
+  background: var(--gs-green-tint);
+}
+.gen-studio .gs-learn-done-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.gen-studio .gs-learn-done-title {
+  margin: 0;
+  color: var(--gs-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.gen-studio .gs-learn-done-body {
+  margin: 5px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 11.5px;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+/* The Learn page's way into the studio. */
+.gs-tut .gs-tut-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.gs-tut .gs-tut-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid var(--gs-blue);
+  border-radius: 999px;
+  background: var(--gs-blue);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gs-tut .gs-tut-start-btn:hover:not(:disabled) {
+  background: var(--gs-blue-hover);
+}
+.gs-tut .gs-tut-start-btn:disabled {
+  border-color: var(--gs-border);
+  background: var(--gs-field-soft);
+  color: var(--gs-muted);
+  cursor: default;
+}
+.gs-tut .gs-tut-start-note {
+  color: var(--gs-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+  max-width: 46ch;
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-learn-apply,
+  .gen-studio .gs-learn-next,
+  .gen-studio .gs-learn-show,
+  .gen-studio .gs-learn-all,
+  .gen-studio .gs-learn-step,
+  .gen-studio .gs-learn-exit,
+  .gs-tut .gs-tut-start-btn {
+    min-height: 44px;
+  }
+}

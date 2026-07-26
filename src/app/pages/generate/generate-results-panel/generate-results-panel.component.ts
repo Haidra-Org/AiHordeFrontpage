@@ -40,6 +40,8 @@ import {
 } from '../image-meta-panel/image-meta-panel.component';
 import { GenerateFormValue } from '../generate-form.model';
 import { GenerateGuideComponent } from '../generate-guide/generate-guide.component';
+import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
+import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import {
   JsonModalHighlight,
   StudioJsonModalComponent,
@@ -199,6 +201,7 @@ function positivePrompt(prompt: string): string {
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     GenerateGuideComponent,
+    GenerateLearnPanelComponent,
   ],
   templateUrl: './generate-results-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -216,6 +219,7 @@ export class GenerateResultsPanelComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly handoff = inject(StudioHandoffService);
   private readonly router = inject(Router);
+  private readonly tutorial = inject(TutorialEngineService);
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
 
@@ -256,6 +260,15 @@ export class GenerateResultsPanelComponent {
    * (or a finished generation) should land on the results.
    */
   public readonly guideOpen = signal(false);
+
+  /**
+   * Whether the follow-along tutorial has the pane instead. It and the guide are
+   * the same surface, so opening either stands the other down: two walkthroughs
+   * of the same panel, one of which the reader cannot see, is worse than none.
+   */
+  public readonly tutorialOpen = this.tutorial.active;
+  /** The tutorial's parting note, shown over the results it just made room for. */
+  public readonly tutorialCompleted = this.tutorial.completed;
 
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
@@ -675,6 +688,14 @@ export class GenerateResultsPanelComponent {
   });
 
   constructor() {
+    // A tutorial started from the Learn page arrives without going through
+    // openGuide, so the guide is stood down here rather than at every entrance.
+    effect(() => {
+      if (this.tutorialOpen()) {
+        this.guideOpen.set(false);
+      }
+    });
+
     effect(() => {
       for (const job of this.finishedJobs()) {
         if (job.status === 'done' && !this.loaded.has(job.localId)) {
@@ -1413,6 +1434,7 @@ export class GenerateResultsPanelComponent {
   }
 
   public openGuide(): void {
+    this.tutorial.stop();
     this.guideOpen.set(true);
   }
 
@@ -1421,7 +1443,15 @@ export class GenerateResultsPanelComponent {
   }
 
   public toggleGuide(): void {
-    this.guideOpen.update((open) => !open);
+    if (this.guideOpen()) {
+      this.guideOpen.set(false);
+      return;
+    }
+    this.openGuide();
+  }
+
+  public dismissTutorialNote(): void {
+    this.tutorial.dismissCompletion();
   }
 
   public toggleShowPrompts(): void {

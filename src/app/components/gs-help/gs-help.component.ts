@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   viewChild,
@@ -78,6 +79,14 @@ export class GsHelpComponent {
   public readonly bodyKey = computed(
     () => `generate.help.${this.topic()}.body`,
   );
+
+  constructor() {
+    effect(() => {
+      if (this.help.requestedTopic() === this.topic()) {
+        this.help.claimTopic(this.noteId());
+      }
+    });
+  }
 
   public isOpen(): boolean {
     return this.help.isOpen(this.noteId());

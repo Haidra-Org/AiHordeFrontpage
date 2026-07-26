@@ -6,12 +6,13 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   ActivatedRoute,
+  Router,
   convertToParamMap,
   provideRouter,
 } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GenerateTutorialsComponent,
   TUTORIAL_FLOW_STEPS,
@@ -19,6 +20,7 @@ import {
 } from './generate-tutorials.component';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
+import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 
 // The real committed manifest is the fixture: a page describing examples that
 // do not exist is exactly what these tests are for.
@@ -272,6 +274,9 @@ describe('GenerateTutorialsComponent', () => {
     // to say what it would have made.
     for (const flow of MANIFEST.flows) {
       expected.add(`generate.tutorials.flows.${flow.id}.task_name`);
+      // Every flow overrides the manifest's own summary, which is written for
+      // someone who already knows the technique.
+      expected.add(`generate.tutorials.flows.${flow.id}.summary`);
     }
     for (const flow of AVAILABLE) {
       const steps = TUTORIAL_FLOW_STEPS[flow.id];
@@ -291,6 +296,59 @@ describe('GenerateTutorialsComponent', () => {
       key.startsWith('generate.tutorials.'),
     );
     expect(present.filter((key) => !expected.has(key))).toEqual([]);
+  });
+
+  it('prefers its own summary over the manifest phrasing', () => {
+    const translations = en as Record<string, string>;
+    const flow = MANIFEST.flows[0];
+
+    expect(harness.component.summaryFor(flow)).toBe(
+      translations[`generate.tutorials.flows.${flow.id}.summary`],
+    );
+    expect(harness.component.summaryFor(flow)).not.toBe(flow.summary);
+  });
+
+  it('falls back to the manifest summary for a flow with no override', () => {
+    const invented = { ...MANIFEST.flows[0], id: 'not-a-flow' };
+
+    expect(harness.component.summaryFor(invented)).toBe(invented.summary);
+  });
+
+  it('offers a studio walkthrough only where steps have been written', () => {
+    flushAll(harness);
+
+    const start = harness.query<HTMLButtonElement>('.gs-tut-start-btn')[0];
+
+    expect(harness.component.canStart(MANIFEST.flows[0])).toBe(true);
+    expect(start.disabled).toBe(false);
+    expect(harness.text()).not.toContain(
+      (en as Record<string, string>)['generate.learn.start_soon'],
+    );
+  });
+
+  it('disables the walkthrough, with a note, for a flow still being written', async () => {
+    const other = await createPage('img2img');
+    flushAll(other);
+
+    const start = other.query<HTMLButtonElement>('.gs-tut-start-btn')[0];
+
+    expect(start.disabled).toBe(true);
+    expect(other.text()).toContain(
+      (en as Record<string, string>)['generate.learn.start_soon'],
+    );
+  });
+
+  it('arms the flow and goes to the studio when the walkthrough is started', () => {
+    flushAll(harness);
+    const engine = TestBed.inject(TutorialEngineService);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    harness.query<HTMLButtonElement>('.gs-tut-start-btn')[0].click();
+
+    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    // Held in memory rather than routed, so a reload lands on a plain studio.
+    expect(engine.consumeArmed()).toBe('txt2img');
   });
 
   it('links the guide entry point at the studio shell', () => {
