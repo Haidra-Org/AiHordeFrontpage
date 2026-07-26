@@ -2,15 +2,22 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
+  effect,
   inject,
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import {
+  AbstractControl,
+  FormControl,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -46,9 +53,11 @@ import {
   PIXEL_WARN_THRESHOLD,
   SAMPLERS,
   STRIP_BACKGROUND,
+  StyleLockSection,
   UPSCALERS,
   buildAspectPresets,
   cyclePanelSize,
+  detachedStyleSections,
 } from '../generate-form.model';
 
 /** A style category paired with the style names under it, for the picker. */
@@ -71,6 +80,7 @@ export interface StylePickerGroup {
   selector: 'app-generate-form',
   imports: [
     DecimalPipe,
+    NgTemplateOutlet,
     ReactiveFormsModule,
     TranslocoPipe,
     IconComponent,
@@ -79,6 +89,10 @@ export interface StylePickerGroup {
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:pointerdown)': 'onDocumentPointerDown($event)',
+    '(document:keydown.escape)': 'onDocumentEscape()',
+  },
 })
 export class GenerateFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
@@ -108,6 +122,9 @@ export class GenerateFormComponent implements OnInit {
   /** Whether the header presets menu is open, and the pending save-as name. */
   public readonly presetsOpen = signal(false);
   public readonly saveName = signal('');
+  /** The presets popover's anchor, used to detect click-away dismissals. */
+  private readonly presetsRef =
+    viewChild<ElementRef<HTMLElement>>('presetsContainer');
 
   public readonly samplers = SAMPLERS;
   public readonly upscalers = UPSCALERS;
@@ -181,6 +198,16 @@ export class GenerateFormComponent implements OnInit {
     modeControl.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => this.mode.set(mode));
+
+    const controls = this.form().controls;
+    controls.styleName.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onStyleNameChanged());
+    // A loaded preset can carry detachments, so mirror the control itself too.
+    controls.styleDetach.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.syncDetachedSections());
+    this.syncDetachedSections();
   }
 
   public setMode(mode: GenerateMode): void {
@@ -385,6 +412,168 @@ export class GenerateFormComponent implements OnInit {
     }
   }
 
+  // --- Style locks ---------------------------------------------------------
+
+  /**
+   * Sections the user has taken back from the selected style for this request,
+   * mirrored from the form's `styleDetach` control: form controls are not
+   * signals, so the template cannot depend on the control directly here.
+   */
+  public readonly detachedSections = signal<readonly StyleLockSection[]>([]);
+
+  /**
+   * Keep every style-pinned control disabled while its section is locked. The
+   * submitted request is built from `getRawValue()`, so disabling changes
+   * nothing about what is sent; it only stops the user editing a value the
+   * style would silently override.
+   */
+  private readonly lockedControlSync = effect(() => {
+    const forced = this.forcedParams();
+    const detached = this.detachedSections();
+    const controls = this.form().controls;
+    const pins = (section: StyleLockSection, value: unknown): boolean =>
+      value !== undefined && !detached.includes(section);
+    this.setDisabled(controls.model, pins('model', forced?.model));
+    this.setDisabled(controls.width, pins('dimensions', forced?.width));
+    this.setDisabled(controls.height, pins('dimensions', forced?.height));
+    this.setDisabled(controls.steps, pins('sampling', forced?.steps));
+    this.setDisabled(controls.cfg_scale, pins('sampling', forced?.cfg_scale));
+    this.setDisabled(
+      controls.sampler_name,
+      pins('sampling', forced?.sampler_name),
+    );
+    this.setDisabled(controls.clip_skip, pins('sampling', forced?.clip_skip));
+    this.setDisabled(controls.karras, pins('sampling', forced?.karras));
+    this.setDisabled(controls.hires_fix, pins('sampling', forced?.hires_fix));
+  });
+
+  private setDisabled(control: AbstractControl, disabled: boolean): void {
+    if (control.disabled === disabled) {
+      return;
+    }
+    // Silent: the value never changes here, so re-running the kudos estimate and
+    // the style resolution would be wasted work (and would re-enter this sync).
+    if (disabled) {
+      control.disable({ emitEvent: false });
+    } else {
+      control.enable({ emitEvent: false });
+    }
+  }
+
+  /** The style the form currently selects, or '' when none is selected. */
+  public selectedStyleName(): string {
+    return this.form().controls.styleName.value;
+  }
+
+  /** Whether the selected style pins any of `section`'s values. */
+  public stylePins(section: StyleLockSection): boolean {
+    const forced = this.forcedParams();
+    if (!forced) {
+      return false;
+    }
+    switch (section) {
+      case 'model':
+        return forced.model !== undefined;
+      case 'dimensions':
+        return forced.width !== undefined || forced.height !== undefined;
+      case 'sampling':
+        return this.styleSamplingText() !== null;
+    }
+  }
+
+  public isSectionDetached(section: StyleLockSection): boolean {
+    return this.detachedSections().includes(section);
+  }
+
+  /** A pinned section the user has not detached: its controls are frozen. */
+  public isSectionLocked(section: StyleLockSection): boolean {
+    return this.stylePins(section) && !this.isSectionDetached(section);
+  }
+
+  /**
+   * Take `section` back from the style for this request. The style's own values
+   * are written into the controls first so the user edits from what the style
+   * chose rather than from whatever the form held before the style was picked.
+   */
+  public detachSection(section: StyleLockSection): void {
+    this.applyStyleValues(section);
+    this.setDetachedSections([...this.detachedSections(), section]);
+  }
+
+  /** Hand `section` back to the style, restoring the values it pins. */
+  public reattachSection(section: StyleLockSection): void {
+    this.applyStyleValues(section);
+    this.setDetachedSections(
+      this.detachedSections().filter((entry) => entry !== section),
+    );
+  }
+
+  private setDetachedSections(sections: readonly StyleLockSection[]): void {
+    const control = this.form().controls.styleDetach;
+    control.setValue({
+      style: this.selectedStyleName(),
+      sections: [...new Set(sections)],
+    });
+    control.markAsDirty();
+    this.syncDetachedSections();
+  }
+
+  private applyStyleValues(section: StyleLockSection): void {
+    const forced = this.forcedParams();
+    if (!forced) {
+      return;
+    }
+    const controls = this.form().controls;
+    const set = <T>(control: FormControl<T>, value: T | undefined): void => {
+      if (value !== undefined) {
+        control.setValue(value);
+        control.markAsDirty();
+      }
+    };
+    if (section === 'model') {
+      set(controls.model, forced.model);
+    }
+    if (section === 'dimensions') {
+      set(controls.width, forced.width);
+      set(controls.height, forced.height);
+    }
+    if (section === 'sampling') {
+      set(controls.steps, forced.steps);
+      set(controls.cfg_scale, forced.cfg_scale);
+      set(controls.sampler_name, forced.sampler_name);
+      set(controls.clip_skip, forced.clip_skip);
+      set(controls.karras, forced.karras);
+      set(controls.hires_fix, forced.hires_fix);
+    }
+  }
+
+  private syncDetachedSections(): void {
+    const next = detachedStyleSections(this.form().getRawValue());
+    const current = this.detachedSections();
+    if (
+      next.length === current.length &&
+      next.every((entry, index) => entry === current[index])
+    ) {
+      return;
+    }
+    this.detachedSections.set([...next]);
+  }
+
+  /**
+   * Drop detachments recorded against a style that is no longer selected, so
+   * picking another style (or clearing it) always starts from its own values.
+   */
+  private onStyleNameChanged(): void {
+    const control = this.form().controls.styleDetach;
+    if (
+      control.value.sections.length > 0 &&
+      control.value.style !== this.selectedStyleName()
+    ) {
+      control.setValue({ style: '', sections: [] }, { emitEvent: false });
+    }
+    this.syncDetachedSections();
+  }
+
   // --- Style "set by style" hints -----------------------------------------
 
   /**
@@ -446,6 +635,23 @@ export class GenerateFormComponent implements OnInit {
 
   public closePresets(): void {
     this.presetsOpen.set(false);
+  }
+
+  /** Dismiss the presets popover when a press lands anywhere outside it. */
+  public onDocumentPointerDown(event: PointerEvent): void {
+    if (!this.presetsOpen()) {
+      return;
+    }
+    const anchor = this.presetsRef()?.nativeElement;
+    if (anchor && !anchor.contains(event.target as Node)) {
+      this.closePresets();
+    }
+  }
+
+  public onDocumentEscape(): void {
+    if (this.presetsOpen()) {
+      this.closePresets();
+    }
   }
 
   public setSaveName(value: string): void {

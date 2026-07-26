@@ -226,6 +226,22 @@ export function buildAspectPresets(
   return ASPECT_PRESETS[base];
 }
 
+/** The groups of form controls a style can pin, each lockable as a unit. */
+export const STYLE_LOCK_SECTIONS = ['model', 'dimensions', 'sampling'] as const;
+
+export type StyleLockSection = (typeof STYLE_LOCK_SECTIONS)[number];
+
+/**
+ * Which sections the user has taken back from the selected style. `style` names
+ * the style the detachments were made against, so switching style (or clearing
+ * it) makes them inert without any coordinated reset: a detachment only counts
+ * while `style` still matches the form's `styleName`.
+ */
+export interface StyleDetachState {
+  style: string;
+  sections: StyleLockSection[];
+}
+
 /**
  * Flat, serialisable snapshot of the form. This is what is persisted to local
  * storage and what {@link buildImageRequest} maps into a horde request.
@@ -235,6 +251,8 @@ export interface GenerateFormValue {
   mode: GenerateMode;
   /** Selected style-preset name; '' means no style. */
   styleName: string;
+  /** Sections the user opted out of the style for; see {@link StyleDetachState}. */
+  styleDetach: StyleDetachState;
   prompt: string;
   negativePrompt: string;
   n: number;
@@ -290,6 +308,7 @@ export type GenerateFormGroup = FormGroup<GenerateFormControls>;
 export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   mode: 'simple',
   styleName: '',
+  styleDetach: { style: '', sections: [] },
   prompt: '',
   negativePrompt: '',
   n: 1,
@@ -409,6 +428,40 @@ function coerceTiEntry(raw: unknown): FormTiEntry | null {
   return entry;
 }
 
+/** Validate a persisted style-detach snapshot, falling back to "nothing detached". */
+function coerceStyleDetach(raw: unknown): StyleDetachState {
+  if (typeof raw !== 'object' || raw === null) {
+    return { style: '', sections: [] };
+  }
+  const source = raw as Record<string, unknown>;
+  if (
+    typeof source['style'] !== 'string' ||
+    !Array.isArray(source['sections'])
+  ) {
+    return { style: '', sections: [] };
+  }
+  return {
+    style: source['style'],
+    sections: source['sections'].filter((item): item is StyleLockSection =>
+      (STYLE_LOCK_SECTIONS as readonly string[]).includes(item as string),
+    ),
+  };
+}
+
+/**
+ * The sections the user has detached from the style the form currently selects.
+ * A detachment recorded against another style (or left over after the style was
+ * cleared) is ignored, so it can never leak into an unrelated request.
+ */
+export function detachedStyleSections(
+  value: GenerateFormValue,
+): readonly StyleLockSection[] {
+  if (!value.styleName || value.styleDetach.style !== value.styleName) {
+    return [];
+  }
+  return value.styleDetach.sections;
+}
+
 /**
  * Merge a possibly-partial persisted snapshot onto the defaults, dropping any
  * unknown or wrongly-typed fields so a stale local-storage payload can never
@@ -456,6 +509,10 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
           Math.max(MIN_DENOISE, value),
         );
       }
+      continue;
+    }
+    if (key === 'styleDetach') {
+      merged.styleDetach = coerceStyleDetach(value);
       continue;
     }
     if (key === 'mode') {
@@ -525,6 +582,7 @@ export function createGenerateForm(
   return new FormGroup<GenerateFormControls>({
     mode: control(value.mode),
     styleName: control(value.styleName),
+    styleDetach: control(value.styleDetach),
     prompt: control(value.prompt),
     negativePrompt: control(value.negativePrompt),
     n: control(value.n),
@@ -566,11 +624,13 @@ export function createGenerateForm(
 /**
  * The fields the simple-mode UI exposes to the user. Width/height are included
  * because the aspect-ratio presets set them in simple mode; the rest are the
- * prompt, negative prompt, model, batch count, and selected style.
+ * prompt, negative prompt, model, batch count, and selected style (plus any
+ * per-section opt-outs from it, which the model and dimension locks offer here).
  */
 export const SIMPLE_MODE_FIELDS = [
   'mode',
   'styleName',
+  'styleDetach',
   'prompt',
   'negativePrompt',
   'n',
@@ -784,6 +844,10 @@ export function buildImageRequest(
  * cfg, sampler, clip_skip, karras, hires_fix, loras, tis) override the form's,
  * matching the horde behaviour where a style pins those fields.
  *
+ * Sections the user detached from the style (see {@link detachedStyleSections})
+ * keep the form's own values, which is what the per-section "use my values"
+ * escape hatch in the control panel relies on.
+ *
  * `applied` is produced by the styles service's `applyStyle(preset, positive,
  * negative)`, keeping preset resolution out of the form model.
  */
@@ -800,35 +864,42 @@ export function buildStyledImageRequest(
   request.prompt = applied.prompt;
   const params: ImageGenerationParams = request.params ?? {};
   const forced = applied.forcedParams;
+  const detached = detachedStyleSections(value);
+  const pinned = (section: StyleLockSection): boolean =>
+    !detached.includes(section);
 
-  if (forced.width !== undefined) params.width = forced.width;
-  if (forced.height !== undefined) params.height = forced.height;
-  if (forced.steps !== undefined) params.steps = forced.steps;
-  if (forced.cfg_scale !== undefined) params.cfg_scale = forced.cfg_scale;
-  if (forced.sampler_name !== undefined) {
-    params.sampler_name = forced.sampler_name;
+  if (pinned('dimensions')) {
+    if (forced.width !== undefined) params.width = forced.width;
+    if (forced.height !== undefined) params.height = forced.height;
   }
-  if (forced.clip_skip !== undefined) params.clip_skip = forced.clip_skip;
-  if (forced.karras !== undefined) {
-    if (forced.karras) {
-      params.karras = true;
-    } else {
-      delete params.karras;
+  if (pinned('sampling')) {
+    if (forced.steps !== undefined) params.steps = forced.steps;
+    if (forced.cfg_scale !== undefined) params.cfg_scale = forced.cfg_scale;
+    if (forced.sampler_name !== undefined) {
+      params.sampler_name = forced.sampler_name;
     }
-  }
-  if (forced.hires_fix !== undefined) {
-    if (forced.hires_fix) {
-      params.hires_fix = true;
-    } else {
-      delete params.hires_fix;
-      delete params.hires_fix_denoising_strength;
+    if (forced.clip_skip !== undefined) params.clip_skip = forced.clip_skip;
+    if (forced.karras !== undefined) {
+      if (forced.karras) {
+        params.karras = true;
+      } else {
+        delete params.karras;
+      }
+    }
+    if (forced.hires_fix !== undefined) {
+      if (forced.hires_fix) {
+        params.hires_fix = true;
+      } else {
+        delete params.hires_fix;
+        delete params.hires_fix_denoising_strength;
+      }
     }
   }
   if (forced.loras) params.loras = forced.loras;
   if (forced.tis) params.tis = forced.tis;
 
   request.params = params;
-  if (forced.model !== undefined) {
+  if (pinned('model') && forced.model !== undefined) {
     request.models = [forced.model];
   }
   return request;

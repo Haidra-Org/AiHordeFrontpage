@@ -9,7 +9,7 @@
       "generate.panel.create_title" | transloco
     }}</span>
     <div class="flex items-center gap-2">
-      <div class="gs-presets">
+      <div class="gs-presets" #presetsContainer>
         <button
           type="button"
           class="gs-mini-btn"
@@ -168,675 +168,712 @@
         [attr.aria-label]="'generate.form.prompt_label' | transloco"
       ></textarea>
 
-      <!-- Negative prompt (single line, always visible) -->
-      <input
-        type="text"
+      <!-- Negative prompt (one row by default; drag the grip to grow it) -->
+      <textarea
         class="gs-neg-input"
         formControlName="negativePrompt"
+        rows="1"
         [placeholder]="'generate.form.negative_prompt_placeholder' | transloco"
         [attr.aria-label]="'generate.form.negative_prompt_label' | transloco"
-      />
+      ></textarea>
 
-      <!-- Style -->
-      <div>
-        <label class="gs-label" for="generate-style">
-          {{ "generate.form.style_label" | transloco }}
-        </label>
-        <select
-          id="generate-style"
-          class="gs-native-select mt-1.5"
-          formControlName="styleName"
-        >
-          <option value="">{{ "generate.form.style_none" | transloco }}</option>
-          @for (group of styleGroups(); track group.category) {
-            <optgroup [label]="group.category">
-              @for (name of group.names; track name) {
-                <option [value]="name">{{ name }}</option>
-              }
-            </optgroup>
-          }
-        </select>
-        <p class="gs-sublabel mt-1">
-          {{ "generate.form.style_hint" | transloco }}
-        </p>
-      </div>
-
-      <!-- Model -->
-      <div>
-        <label class="gs-label flex items-center gap-2" for="generate-model">
-          {{ "generate.form.model_label" | transloco }}
-          @if (styleModelText(); as model) {
-            <span
-              class="gs-style-val"
-              [title]="'generate.form.set_by_style' | transloco"
-            >
-              {{ model }}
-            </span>
-          }
-        </label>
-        <app-model-autocomplete
-          class="mt-1.5 block"
-          formControlName="model"
-          inputId="generate-model"
-          [models]="models()"
-          [allowMultiple]="false"
-          placeholderKey="generate.form.model_placeholder"
-          listAriaLabelKey="generate.form.model_list_label"
-          toggleAriaLabelKey="generate.form.model_toggle_label"
-          hiddenCountKey="generate.form.model_hidden_count"
-          emptyKey="generate.form.model_empty"
-        />
-        <p class="gs-sublabel mt-1">
-          @if (selectedModelCount() !== null) {
-            {{
-              "generate.form.model_workers"
-                | transloco: { count: selectedModelCount() }
-            }}
-          } @else {
-            {{ "generate.form.model_hint" | transloco }}
-          }
-        </p>
-      </div>
-
-      <!-- Aspect + resolution -->
-      <div class="gs-card gs-card--pad-sm flex flex-col gap-3">
-        <div class="flex items-center justify-between gap-2">
-          <span class="gs-card-title--sm font-bold">
-            {{ "generate.form.dimensions_section" | transloco }}
-          </span>
-          @if (styleDimensionsText(); as dims) {
-            <span
-              class="gs-style-val"
-              [title]="'generate.form.set_by_style' | transloco"
-            >
-              {{ dims }}
-            </span>
-          }
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="gs-seg gs-seg--xs" role="group">
-            <button
-              type="button"
-              class="gs-seg-opt"
-              [attr.aria-pressed]="sizeBase() === 512"
-              (click)="setSizeBase(512)"
-            >
-              {{ "generate.form.base_sd15" | transloco }}
-            </button>
-            <button
-              type="button"
-              class="gs-seg-opt"
-              [attr.aria-pressed]="sizeBase() === 1024"
-              (click)="setSizeBase(1024)"
-            >
-              {{ "generate.form.base_sdxl" | transloco }}
-            </button>
-          </div>
-          <span class="gs-sublabel gs-mono ml-auto">
-            {{
-              "generate.footer.dimensions"
-                | transloco
-                  : {
-                      width: form().controls.width.value,
-                      height: form().controls.height.value,
-                    }
-            }}
-          </span>
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          @for (preset of presets(); track preset.labelKey) {
-            <button
-              type="button"
-              class="gs-chip"
-              [class.gs-chip--active]="
-                isPresetActive(preset.width, preset.height)
-              "
-              (click)="applyPreset(preset.width, preset.height)"
-            >
-              {{ preset.labelKey | transloco }}
-            </button>
-          }
-        </div>
+      <!-- Setting cards. When the panel is expanded these reflow into
+           independent masonry columns; the prompt + negative above stay full
+           width so growing them never shuffles the cards. -->
+      <div class="gs-body-cards flex flex-col gap-[14px]">
+        <!-- Style -->
         <div>
-          <button
-            type="button"
-            class="gs-textlink flex items-center gap-1"
-            (click)="toggleCustomSize()"
-            [attr.aria-expanded]="customSizeOpen()"
+          <label class="gs-label" for="generate-style">
+            {{ "generate.form.style_label" | transloco }}
+          </label>
+          <select
+            id="generate-style"
+            class="gs-native-select mt-1.5"
+            formControlName="styleName"
           >
-            <app-icon
-              class="gs-chev"
-              [name]="customSizeOpen() ? 'chevron-down' : 'chevron-right'"
-            />
-            {{ "generate.form.custom_size_toggle" | transloco }}
-          </button>
-          @if (customSizeOpen()) {
-            <div class="mt-2 flex flex-col gap-3">
-              <div>
-                <label class="gs-slabel" for="generate-width">
-                  {{
-                    "generate.form.width_label"
-                      | transloco: { value: form().controls.width.value }
-                  }}
-                </label>
-                <input
-                  id="generate-width"
-                  class="gs-range mt-1.5"
-                  type="range"
-                  formControlName="width"
-                  [min]="minDimension"
-                  [max]="maxDimension"
-                  [step]="dimensionStep"
-                />
-              </div>
-              <div>
-                <label class="gs-slabel" for="generate-height">
-                  {{
-                    "generate.form.height_label"
-                      | transloco: { value: form().controls.height.value }
-                  }}
-                </label>
-                <input
-                  id="generate-height"
-                  class="gs-range mt-1.5"
-                  type="range"
-                  formControlName="height"
-                  [min]="minDimension"
-                  [max]="maxDimension"
-                  [step]="dimensionStep"
-                />
-              </div>
-            </div>
-          }
-        </div>
-        @if (totalPixels() > pixelWarnThreshold) {
-          <p class="gs-warn">
-            <app-icon name="warning-triangle" class="gs-ico-sm" />
-            {{ "generate.form.pixel_warning" | transloco }}
+            <option value="">
+              {{ "generate.form.style_none" | transloco }}
+            </option>
+            @for (group of styleGroups(); track group.category) {
+              <optgroup [label]="group.category">
+                @for (name of group.names; track name) {
+                  <option [value]="name">{{ name }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+          <p class="gs-sublabel mt-1">
+            {{ "generate.form.style_hint" | transloco }}
           </p>
-        }
-      </div>
-
-      @if (isAdvanced()) {
-        <!-- Advanced divider -->
-        <div class="gs-adv-divider gs-fadeup">
-          <span class="gs-adv-line"></span>
-          <span class="gs-adv-label">
-            <app-icon name="star" class="gs-ico-sm" />
-            {{ "generate.form.advanced_divider" | transloco }}
-          </span>
-          <span class="gs-adv-line"></span>
         </div>
 
-        <!-- Source image / ControlNet (projected by the parent page) -->
-        <ng-content select="[generateSourceImage]" />
+        <!-- Model -->
+        <div>
+          <label
+            class="gs-label flex flex-wrap items-center gap-2"
+            for="generate-model"
+          >
+            {{ "generate.form.model_label" | transloco }}
+            @if (stylePins("model")) {
+              <ng-container
+                *ngTemplateOutlet="
+                  styleLock;
+                  context: { section: 'model', value: styleModelText() }
+                "
+              />
+            }
+          </label>
+          <app-model-autocomplete
+            class="mt-1.5 block"
+            formControlName="model"
+            inputId="generate-model"
+            [models]="models()"
+            [allowMultiple]="false"
+            placeholderKey="generate.form.model_placeholder"
+            listAriaLabelKey="generate.form.model_list_label"
+            toggleAriaLabelKey="generate.form.model_toggle_label"
+            hiddenCountKey="generate.form.model_hidden_count"
+            emptyKey="generate.form.model_empty"
+          />
+          <p class="gs-sublabel mt-1">
+            @if (selectedModelCount() !== null) {
+              {{
+                "generate.form.model_workers"
+                  | transloco: { count: selectedModelCount() }
+              }}
+            } @else {
+              {{ "generate.form.model_hint" | transloco }}
+            }
+          </p>
+        </div>
 
-        <!-- Sampling -->
-        <div class="gs-card flex flex-col gap-3">
-          <div class="flex items-center justify-between gap-2">
-            <span class="gs-card-title">
-              {{ "generate.form.sampling_section" | transloco }}
+        <!-- Aspect + resolution -->
+        <div class="gs-card gs-card--pad-sm flex flex-col gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="gs-card-title--sm font-bold">
+              {{ "generate.form.dimensions_section" | transloco }}
             </span>
-            @if (styleSamplingText(); as sampling) {
-              <span
-                class="gs-style-val"
-                [title]="'generate.form.set_by_style' | transloco"
-              >
-                {{ sampling }}
-              </span>
+            @if (stylePins("dimensions")) {
+              <ng-container
+                *ngTemplateOutlet="
+                  styleLock;
+                  context: {
+                    section: 'dimensions',
+                    value: styleDimensionsText(),
+                  }
+                "
+              />
             }
           </div>
-          <div class="gs-grid-sampling">
-            <div>
-              <div class="gs-slabel">
-                {{ "generate.form.steps_short" | transloco }}
-                <span class="gs-mono gs-ink float-right">
-                  {{ form().controls.steps.value }}
-                </span>
-              </div>
-              <input
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="steps"
-                min="1"
-                max="500"
-                step="1"
-                [attr.aria-label]="'generate.form.steps_short' | transloco"
-              />
-            </div>
-            <div>
-              <div class="gs-slabel">
-                {{ "generate.form.cfg_short" | transloco }}
-                <span class="gs-mono gs-ink float-right">
-                  {{ form().controls.cfg_scale.value | number: "1.1-1" }}
-                </span>
-              </div>
-              <input
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="cfg_scale"
-                min="0"
-                max="100"
-                step="0.5"
-                [attr.aria-label]="'generate.form.cfg_short' | transloco"
-              />
-            </div>
-            <div>
-              <label class="gs-slabel" for="generate-sampler">
-                {{ "generate.form.sampler_label" | transloco }}
-              </label>
-              <select
-                id="generate-sampler"
-                class="gs-native-select gs-native-select--sm mt-1.5"
-                formControlName="sampler_name"
+          <div
+            class="flex items-center gap-2"
+            [class.gs-locked]="isSectionLocked('dimensions')"
+          >
+            <div class="gs-seg gs-seg--xs" role="group">
+              <button
+                type="button"
+                class="gs-seg-opt"
+                [attr.aria-pressed]="sizeBase() === 512"
+                [disabled]="isSectionLocked('dimensions')"
+                (click)="setSizeBase(512)"
               >
-                @for (sampler of samplers; track sampler) {
-                  <option [value]="sampler">{{ sampler }}</option>
-                }
-              </select>
+                {{ "generate.form.base_sd15" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-seg-opt"
+                [attr.aria-pressed]="sizeBase() === 1024"
+                [disabled]="isSectionLocked('dimensions')"
+                (click)="setSizeBase(1024)"
+              >
+                {{ "generate.form.base_sdxl" | transloco }}
+              </button>
             </div>
-            <div>
-              <label class="gs-slabel" for="generate-seed">
-                {{ "generate.form.seed_label" | transloco }}
-              </label>
-              <div class="mt-1.5 flex gap-1.5">
-                <input
-                  id="generate-seed"
-                  class="gs-seed-input"
-                  type="text"
-                  formControlName="seed"
-                  [placeholder]="'generate.form.seed_placeholder' | transloco"
-                />
-                <button
-                  type="button"
-                  class="gs-mini-btn"
-                  (click)="clearSeed()"
-                  [attr.aria-label]="'generate.form.seed_random' | transloco"
-                  [title]="'generate.form.seed_random' | transloco"
-                >
-                  <app-icon name="refresh-alt" class="gs-ico-sm" />
-                </button>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="gs-slabel" for="generate-clip">
+            <span class="gs-sublabel gs-mono ml-auto">
               {{
-                "generate.form.clip_skip_label"
-                  | transloco: { value: form().controls.clip_skip.value }
+                "generate.footer.dimensions"
+                  | transloco
+                    : {
+                        width: form().controls.width.value,
+                        height: form().controls.height.value,
+                      }
               }}
-            </label>
-            <input
-              id="generate-clip"
-              class="gs-range mt-1.5"
-              type="range"
-              formControlName="clip_skip"
-              min="1"
-              max="12"
-              step="1"
-            />
-          </div>
-          <div class="gs-hairline flex flex-wrap gap-4 pt-3">
-            <label class="gs-switch">
-              <input type="checkbox" formControlName="karras" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-              {{ "generate.form.karras_label" | transloco }}
-            </label>
-            <label class="gs-switch">
-              <input type="checkbox" formControlName="hires_fix" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-              {{ "generate.form.hires_fix_label" | transloco }}
-            </label>
-            <label class="gs-switch">
-              <input type="checkbox" formControlName="tiling" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-              {{ "generate.form.tiling_label" | transloco }}
-            </label>
-          </div>
-          @if (form().controls.hires_fix.value) {
-            <div>
-              <label class="gs-slabel" for="generate-hires-denoise">
-                {{
-                  "generate.form.hires_denoise_label"
-                    | transloco
-                      : {
-                          value:
-                            form().controls.hires_fix_denoising_strength.value,
-                        }
-                }}
-              </label>
-              <input
-                id="generate-hires-denoise"
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="hires_fix_denoising_strength"
-                [min]="minHiresDenoise"
-                [max]="maxHiresDenoise"
-                step="0.01"
-              />
-            </div>
-          }
-        </div>
-
-        <!-- LoRAs & embeddings -->
-        <div class="gs-card flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-2">
-            <span class="gs-card-title">
-              {{ "generate.form.loras_section" | transloco }}
             </span>
-            <button type="button" class="gs-civit-link" (click)="openCivit()">
-              {{ "generate.form.add_from_civitai" | transloco }}
-            </button>
           </div>
-          @for (lora of loras(); track lora.name; let i = $index) {
-            <div class="gs-addon">
-              <div class="mb-2 flex items-center gap-2">
-                <span
-                  class="gs-addon-chip"
-                  [style.background]="addonGradient(i)"
-                ></span>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-1.5 text-xs font-semibold">
-                    <span class="truncate">{{ addonLabel(lora) }}</span>
-                    <span class="gs-tag gs-tag--lora">
-                      {{ "generate.form.tag_lora" | transloco }}
-                    </span>
-                  </div>
-                  <div class="gs-addon-sub truncate">{{ loraSub(lora) }}</div>
-                </div>
-                <button
-                  type="button"
-                  class="gs-addon-remove"
-                  (click)="removeLora(i)"
-                  [attr.aria-label]="'generate.form.remove' | transloco"
-                  [title]="'generate.form.remove' | transloco"
-                >
-                  &#10005;
-                </button>
-              </div>
-              <div class="flex gap-3.5">
-                <div class="flex-1">
-                  <div class="gs-slabel">
-                    {{ "generate.form.lora_model_short" | transloco }}
-                    <span class="gs-mono gs-purple float-right">
-                      {{ lora.model | number: "1.2-2" }}
-                    </span>
-                  </div>
+          <div
+            class="flex flex-wrap gap-1.5"
+            [class.gs-locked]="isSectionLocked('dimensions')"
+          >
+            @for (preset of presets(); track preset.labelKey) {
+              <button
+                type="button"
+                class="gs-chip"
+                [class.gs-chip--active]="
+                  isPresetActive(preset.width, preset.height)
+                "
+                [disabled]="isSectionLocked('dimensions')"
+                (click)="applyPreset(preset.width, preset.height)"
+              >
+                {{ preset.labelKey | transloco }}
+              </button>
+            }
+          </div>
+          <div [class.gs-locked]="isSectionLocked('dimensions')">
+            <button
+              type="button"
+              class="gs-textlink flex items-center gap-1"
+              (click)="toggleCustomSize()"
+              [attr.aria-expanded]="customSizeOpen()"
+            >
+              <app-icon
+                class="gs-chev"
+                [name]="customSizeOpen() ? 'chevron-down' : 'chevron-right'"
+              />
+              {{ "generate.form.custom_size_toggle" | transloco }}
+            </button>
+            @if (customSizeOpen()) {
+              <div class="mt-2 flex flex-col gap-3">
+                <div>
+                  <label class="gs-slabel" for="generate-width">
+                    {{
+                      "generate.form.width_label"
+                        | transloco: { value: form().controls.width.value }
+                    }}
+                  </label>
                   <input
-                    class="gs-range gs-range--purple mt-1"
+                    id="generate-width"
+                    class="gs-range mt-1.5"
                     type="range"
-                    [min]="minLoraStrength"
-                    [max]="maxLoraStrength"
-                    step="0.05"
-                    [value]="lora.model"
-                    (input)="setLoraStrength(i, 'model', rangeValue($event))"
-                    [attr.aria-label]="
-                      'generate.form.lora_model_short' | transloco
-                    "
+                    formControlName="width"
+                    [min]="minDimension"
+                    [max]="maxDimension"
+                    [step]="dimensionStep"
                   />
                 </div>
-                <div class="flex-1">
-                  <div class="gs-slabel">
-                    {{ "generate.form.lora_clip_short" | transloco }}
-                    <span class="gs-mono gs-purple float-right">
-                      {{ lora.clip | number: "1.2-2" }}
-                    </span>
-                  </div>
+                <div>
+                  <label class="gs-slabel" for="generate-height">
+                    {{
+                      "generate.form.height_label"
+                        | transloco: { value: form().controls.height.value }
+                    }}
+                  </label>
                   <input
-                    class="gs-range gs-range--purple mt-1"
+                    id="generate-height"
+                    class="gs-range mt-1.5"
                     type="range"
-                    [min]="minLoraStrength"
-                    [max]="maxLoraStrength"
-                    step="0.05"
-                    [value]="lora.clip"
-                    (input)="setLoraStrength(i, 'clip', rangeValue($event))"
-                    [attr.aria-label]="
-                      'generate.form.lora_clip_short' | transloco
-                    "
+                    formControlName="height"
+                    [min]="minDimension"
+                    [max]="maxDimension"
+                    [step]="dimensionStep"
                   />
                 </div>
               </div>
-            </div>
-          }
-          @for (ti of tis(); track ti.name; let i = $index) {
-            <div class="gs-addon">
-              <div class="mb-2 flex items-center gap-2">
-                <span
-                  class="gs-addon-chip"
-                  [style.background]="addonGradient(i + loras().length)"
-                ></span>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-1.5 text-xs font-semibold">
-                    <span class="truncate">{{ addonLabel(ti) }}</span>
-                    <span class="gs-tag gs-tag--ti">
-                      {{ "generate.form.tag_ti" | transloco }}
-                    </span>
-                  </div>
-                  <div class="gs-addon-sub truncate">
-                    {{ "generate.form.ti_embedding" | transloco }}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  class="gs-addon-remove"
-                  (click)="removeTi(i)"
-                  [attr.aria-label]="'generate.form.remove' | transloco"
-                  [title]="'generate.form.remove' | transloco"
-                >
-                  &#10005;
-                </button>
-              </div>
-              <div>
-                <div class="gs-slabel">
-                  {{ "generate.form.ti_strength_short" | transloco }}
-                  <span class="gs-mono gs-purple float-right">
-                    {{ ti.strength | number: "1.2-2" }}
-                  </span>
-                </div>
-                <input
-                  class="gs-range gs-range--purple mt-1"
-                  type="range"
-                  [min]="minLoraStrength"
-                  [max]="maxLoraStrength"
-                  step="0.05"
-                  [value]="ti.strength"
-                  (input)="setTiStrength(i, rangeValue($event))"
-                  [attr.aria-label]="
-                    'generate.form.ti_strength_short' | transloco
-                  "
-                />
-              </div>
-            </div>
-          }
-          @if (loras().length === 0 && tis().length === 0) {
-            <p class="gs-empty-line">
-              {{ "generate.form.loras_empty" | transloco }}
+            }
+          </div>
+          @if (totalPixels() > pixelWarnThreshold) {
+            <p class="gs-warn">
+              <app-icon name="warning-triangle" class="gs-ico-sm" />
+              {{ "generate.form.pixel_warning" | transloco }}
             </p>
           }
         </div>
 
-        <!-- Post-process + Output -->
-        <div class="gs-grid-2">
-          <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
-            <span class="gs-card-title--sm font-bold">
-              {{ "generate.form.post_processing_section" | transloco }}
+        @if (isAdvanced()) {
+          <!-- Advanced divider -->
+          <div class="gs-adv-divider gs-fadeup">
+            <span class="gs-adv-line"></span>
+            <span class="gs-adv-label">
+              <app-icon name="star" class="gs-ico-sm" />
+              {{ "generate.form.advanced_divider" | transloco }}
             </span>
-            <div>
-              <label class="gs-slabel" for="generate-upscaler">
-                {{ "generate.form.upscaler_label" | transloco }}
-              </label>
-              <select
-                id="generate-upscaler"
-                class="gs-native-select gs-native-select--sm mt-1"
-                [value]="selectedUpscaler()"
-                (change)="onUpscalerChange($event)"
-              >
-                <option value="">
-                  {{ "generate.form.upscaler_none" | transloco }}
-                </option>
-                @for (upscaler of upscalers; track upscaler) {
-                  <option [value]="upscaler">{{ upscaler }}</option>
-                }
-              </select>
+            <span class="gs-adv-line"></span>
+          </div>
+
+          <!-- Source image / ControlNet (projected by the parent page) -->
+          <ng-content select="[generateSourceImage]" />
+
+          <!-- Sampling -->
+          <div class="gs-card flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="gs-card-title">
+                {{ "generate.form.sampling_section" | transloco }}
+              </span>
+              @if (stylePins("sampling")) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    styleLock;
+                    context: { section: 'sampling', value: styleSamplingText() }
+                  "
+                />
+              }
             </div>
-            <div>
-              <label class="gs-slabel" for="generate-facefixer">
-                {{ "generate.form.facefixer_label" | transloco }}
-              </label>
-              <select
-                id="generate-facefixer"
-                class="gs-native-select gs-native-select--sm mt-1"
-                [value]="selectedFaceFixer()"
-                (change)="onFaceFixerChange($event)"
-              >
-                <option value="">
-                  {{ "generate.form.facefixer_none" | transloco }}
-                </option>
-                @for (fixer of faceFixers; track fixer) {
-                  <option [value]="fixer">{{ fixer }}</option>
-                }
-              </select>
-            </div>
-            @if (usesFaceFixer()) {
+            <div class="gs-grid-sampling">
+              <div [class.gs-locked]="isSectionLocked('sampling')">
+                <div class="gs-slabel">
+                  {{ "generate.form.steps_short" | transloco }}
+                  <span class="gs-mono gs-ink float-right">
+                    {{ form().controls.steps.value }}
+                  </span>
+                </div>
+                <input
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="steps"
+                  min="1"
+                  max="500"
+                  step="1"
+                  [attr.aria-label]="'generate.form.steps_short' | transloco"
+                />
+              </div>
+              <div [class.gs-locked]="isSectionLocked('sampling')">
+                <div class="gs-slabel">
+                  {{ "generate.form.cfg_short" | transloco }}
+                  <span class="gs-mono gs-ink float-right">
+                    {{ form().controls.cfg_scale.value | number: "1.1-1" }}
+                  </span>
+                </div>
+                <input
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="cfg_scale"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  [attr.aria-label]="'generate.form.cfg_short' | transloco"
+                />
+              </div>
+              <div [class.gs-locked]="isSectionLocked('sampling')">
+                <label class="gs-slabel" for="generate-sampler">
+                  {{ "generate.form.sampler_label" | transloco }}
+                </label>
+                <select
+                  id="generate-sampler"
+                  class="gs-native-select gs-native-select--sm mt-1.5"
+                  formControlName="sampler_name"
+                >
+                  @for (sampler of samplers; track sampler) {
+                    <option [value]="sampler">{{ sampler }}</option>
+                  }
+                </select>
+              </div>
               <div>
-                <label class="gs-slabel" for="generate-facefixer-strength">
+                <label class="gs-slabel" for="generate-seed">
+                  {{ "generate.form.seed_label" | transloco }}
+                </label>
+                <div class="mt-1.5 flex gap-1.5">
+                  <input
+                    id="generate-seed"
+                    class="gs-seed-input"
+                    type="text"
+                    formControlName="seed"
+                    [placeholder]="'generate.form.seed_placeholder' | transloco"
+                  />
+                  <button
+                    type="button"
+                    class="gs-mini-btn"
+                    (click)="clearSeed()"
+                    [attr.aria-label]="'generate.form.seed_random' | transloco"
+                    [title]="'generate.form.seed_random' | transloco"
+                  >
+                    <app-icon name="refresh-alt" class="gs-ico-sm" />
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div [class.gs-locked]="isSectionLocked('sampling')">
+              <label class="gs-slabel" for="generate-clip">
+                {{
+                  "generate.form.clip_skip_label"
+                    | transloco: { value: form().controls.clip_skip.value }
+                }}
+              </label>
+              <input
+                id="generate-clip"
+                class="gs-range mt-1.5"
+                type="range"
+                formControlName="clip_skip"
+                min="1"
+                max="12"
+                step="1"
+              />
+            </div>
+            <div class="gs-hairline flex flex-wrap gap-4 pt-3">
+              <label
+                class="gs-switch"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <input type="checkbox" formControlName="karras" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+                {{ "generate.form.karras_label" | transloco }}
+              </label>
+              <label
+                class="gs-switch"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <input type="checkbox" formControlName="hires_fix" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+                {{ "generate.form.hires_fix_label" | transloco }}
+              </label>
+              <label class="gs-switch">
+                <input type="checkbox" formControlName="tiling" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+                {{ "generate.form.tiling_label" | transloco }}
+              </label>
+            </div>
+            @if (form().controls.hires_fix.value) {
+              <div>
+                <label class="gs-slabel" for="generate-hires-denoise">
                   {{
-                    "generate.form.facefixer_strength_label"
+                    "generate.form.hires_denoise_label"
                       | transloco
-                        : { value: form().controls.facefixer_strength.value }
+                        : {
+                            value:
+                              form().controls.hires_fix_denoising_strength
+                                .value,
+                          }
                   }}
                 </label>
                 <input
-                  id="generate-facefixer-strength"
-                  class="gs-range mt-1"
+                  id="generate-hires-denoise"
+                  class="gs-range mt-1.5"
                   type="range"
-                  formControlName="facefixer_strength"
-                  [min]="minFacefixer"
-                  [max]="maxFacefixer"
-                  step="0.05"
+                  formControlName="hires_fix_denoising_strength"
+                  [min]="minHiresDenoise"
+                  [max]="maxHiresDenoise"
+                  step="0.01"
                 />
               </div>
             }
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.strip_background_label" | transloco
-              }}</span>
-              <input
-                type="checkbox"
-                [checked]="stripBackground()"
-                (change)="onStripBackgroundChange($event)"
-              />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
           </div>
 
-          <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
-            <span class="gs-card-title--sm font-bold">
-              {{ "generate.form.output_section" | transloco }}
+          <!-- LoRAs & embeddings -->
+          <div class="gs-card flex flex-col gap-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="gs-card-title">
+                {{ "generate.form.loras_section" | transloco }}
+              </span>
+              <button type="button" class="gs-civit-link" (click)="openCivit()">
+                {{ "generate.form.add_from_civitai" | transloco }}
+              </button>
+            </div>
+            @for (lora of loras(); track lora.name; let i = $index) {
+              <div class="gs-addon">
+                <div class="mb-2 flex items-center gap-2">
+                  <span
+                    class="gs-addon-chip"
+                    [style.background]="addonGradient(i)"
+                  ></span>
+                  <div class="min-w-0 flex-1">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold"
+                    >
+                      <span class="truncate">{{ addonLabel(lora) }}</span>
+                      <span class="gs-tag gs-tag--lora">
+                        {{ "generate.form.tag_lora" | transloco }}
+                      </span>
+                    </div>
+                    <div class="gs-addon-sub truncate">{{ loraSub(lora) }}</div>
+                  </div>
+                  <button
+                    type="button"
+                    class="gs-addon-remove"
+                    (click)="removeLora(i)"
+                    [attr.aria-label]="'generate.form.remove' | transloco"
+                    [title]="'generate.form.remove' | transloco"
+                  >
+                    &#10005;
+                  </button>
+                </div>
+                <div class="flex gap-3.5">
+                  <div class="flex-1">
+                    <div class="gs-slabel">
+                      {{ "generate.form.lora_model_short" | transloco }}
+                      <span class="gs-mono gs-purple float-right">
+                        {{ lora.model | number: "1.2-2" }}
+                      </span>
+                    </div>
+                    <input
+                      class="gs-range gs-range--purple mt-1"
+                      type="range"
+                      [min]="minLoraStrength"
+                      [max]="maxLoraStrength"
+                      step="0.05"
+                      [value]="lora.model"
+                      (input)="setLoraStrength(i, 'model', rangeValue($event))"
+                      [attr.aria-label]="
+                        'generate.form.lora_model_short' | transloco
+                      "
+                    />
+                  </div>
+                  <div class="flex-1">
+                    <div class="gs-slabel">
+                      {{ "generate.form.lora_clip_short" | transloco }}
+                      <span class="gs-mono gs-purple float-right">
+                        {{ lora.clip | number: "1.2-2" }}
+                      </span>
+                    </div>
+                    <input
+                      class="gs-range gs-range--purple mt-1"
+                      type="range"
+                      [min]="minLoraStrength"
+                      [max]="maxLoraStrength"
+                      step="0.05"
+                      [value]="lora.clip"
+                      (input)="setLoraStrength(i, 'clip', rangeValue($event))"
+                      [attr.aria-label]="
+                        'generate.form.lora_clip_short' | transloco
+                      "
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+            @for (ti of tis(); track ti.name; let i = $index) {
+              <div class="gs-addon">
+                <div class="mb-2 flex items-center gap-2">
+                  <span
+                    class="gs-addon-chip"
+                    [style.background]="addonGradient(i + loras().length)"
+                  ></span>
+                  <div class="min-w-0 flex-1">
+                    <div
+                      class="flex items-center gap-1.5 text-xs font-semibold"
+                    >
+                      <span class="truncate">{{ addonLabel(ti) }}</span>
+                      <span class="gs-tag gs-tag--ti">
+                        {{ "generate.form.tag_ti" | transloco }}
+                      </span>
+                    </div>
+                    <div class="gs-addon-sub truncate">
+                      {{ "generate.form.ti_embedding" | transloco }}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="gs-addon-remove"
+                    (click)="removeTi(i)"
+                    [attr.aria-label]="'generate.form.remove' | transloco"
+                    [title]="'generate.form.remove' | transloco"
+                  >
+                    &#10005;
+                  </button>
+                </div>
+                <div>
+                  <div class="gs-slabel">
+                    {{ "generate.form.ti_strength_short" | transloco }}
+                    <span class="gs-mono gs-purple float-right">
+                      {{ ti.strength | number: "1.2-2" }}
+                    </span>
+                  </div>
+                  <input
+                    class="gs-range gs-range--purple mt-1"
+                    type="range"
+                    [min]="minLoraStrength"
+                    [max]="maxLoraStrength"
+                    step="0.05"
+                    [value]="ti.strength"
+                    (input)="setTiStrength(i, rangeValue($event))"
+                    [attr.aria-label]="
+                      'generate.form.ti_strength_short' | transloco
+                    "
+                  />
+                </div>
+              </div>
+            }
+            @if (loras().length === 0 && tis().length === 0) {
+              <p class="gs-empty-line">
+                {{ "generate.form.loras_empty" | transloco }}
+              </p>
+            }
+          </div>
+
+          <!-- Post-process + Output -->
+          <div class="gs-grid-2">
+            <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
+              <span class="gs-card-title--sm font-bold">
+                {{ "generate.form.post_processing_section" | transloco }}
+              </span>
+              <div>
+                <label class="gs-slabel" for="generate-upscaler">
+                  {{ "generate.form.upscaler_label" | transloco }}
+                </label>
+                <select
+                  id="generate-upscaler"
+                  class="gs-native-select gs-native-select--sm mt-1"
+                  [value]="selectedUpscaler()"
+                  (change)="onUpscalerChange($event)"
+                >
+                  <option value="">
+                    {{ "generate.form.upscaler_none" | transloco }}
+                  </option>
+                  @for (upscaler of upscalers; track upscaler) {
+                    <option [value]="upscaler">{{ upscaler }}</option>
+                  }
+                </select>
+              </div>
+              <div>
+                <label class="gs-slabel" for="generate-facefixer">
+                  {{ "generate.form.facefixer_label" | transloco }}
+                </label>
+                <select
+                  id="generate-facefixer"
+                  class="gs-native-select gs-native-select--sm mt-1"
+                  [value]="selectedFaceFixer()"
+                  (change)="onFaceFixerChange($event)"
+                >
+                  <option value="">
+                    {{ "generate.form.facefixer_none" | transloco }}
+                  </option>
+                  @for (fixer of faceFixers; track fixer) {
+                    <option [value]="fixer">{{ fixer }}</option>
+                  }
+                </select>
+              </div>
+              @if (usesFaceFixer()) {
+                <div>
+                  <label class="gs-slabel" for="generate-facefixer-strength">
+                    {{
+                      "generate.form.facefixer_strength_label"
+                        | transloco
+                          : { value: form().controls.facefixer_strength.value }
+                    }}
+                  </label>
+                  <input
+                    id="generate-facefixer-strength"
+                    class="gs-range mt-1"
+                    type="range"
+                    formControlName="facefixer_strength"
+                    [min]="minFacefixer"
+                    [max]="maxFacefixer"
+                    step="0.05"
+                  />
+                </div>
+              }
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.strip_background_label" | transloco
+                }}</span>
+                <input
+                  type="checkbox"
+                  [checked]="stripBackground()"
+                  (change)="onStripBackgroundChange($event)"
+                />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+            </div>
+
+            <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
+              <span class="gs-card-title--sm font-bold">
+                {{ "generate.form.output_section" | transloco }}
+              </span>
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.nsfw_label" | transloco }}</span>
+                <input type="checkbox" formControlName="nsfw" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.censor_nsfw_label" | transloco }}</span>
+                <input type="checkbox" formControlName="censor_nsfw" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.shared_label" | transloco }}</span>
+                <input type="checkbox" formControlName="shared" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.transparent_label" | transloco }}</span>
+                <input type="checkbox" formControlName="transparent" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Workers & filters -->
+          <div class="gs-card flex flex-col gap-2.5">
+            <span class="gs-card-title">
+              {{ "generate.form.horde_section" | transloco }}
             </span>
             <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.nsfw_label" | transloco }}</span>
-              <input type="checkbox" formControlName="nsfw" />
+              <span>{{
+                "generate.form.trusted_workers_label" | transloco
+              }}</span>
+              <input type="checkbox" formControlName="trusted_workers" />
               <span class="gs-switch-track"
                 ><span class="gs-switch-knob"></span
               ></span>
             </label>
             <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.censor_nsfw_label" | transloco }}</span>
-              <input type="checkbox" formControlName="censor_nsfw" />
+              <span>{{ "generate.form.slow_workers_label" | transloco }}</span>
+              <input type="checkbox" formControlName="slow_workers" />
               <span class="gs-switch-track"
                 ><span class="gs-switch-knob"></span
               ></span>
             </label>
             <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.shared_label" | transloco }}</span>
-              <input type="checkbox" formControlName="shared" />
+              <span>{{
+                "generate.form.extra_slow_workers_label" | transloco
+              }}</span>
+              <input type="checkbox" formControlName="extra_slow_workers" />
               <span class="gs-switch-track"
                 ><span class="gs-switch-knob"></span
               ></span>
             </label>
             <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.transparent_label" | transloco }}</span>
-              <input type="checkbox" formControlName="transparent" />
+              <span>{{
+                "generate.form.allow_downgrade_label" | transloco
+              }}</span>
+              <input type="checkbox" formControlName="allow_downgrade" />
+              <span class="gs-switch-track"
+                ><span class="gs-switch-knob"></span
+              ></span>
+            </label>
+            <label class="gs-switch gs-switch-row">
+              <span>{{
+                "generate.form.replacement_filter_label" | transloco
+              }}</span>
+              <input type="checkbox" formControlName="replacement_filter" />
               <span class="gs-switch-track"
                 ><span class="gs-switch-knob"></span
               ></span>
             </label>
           </div>
-        </div>
 
-        <!-- Workers & filters -->
-        <div class="gs-card flex flex-col gap-2.5">
-          <span class="gs-card-title">
-            {{ "generate.form.horde_section" | transloco }}
-          </span>
-          <label class="gs-switch gs-switch-row">
-            <span>{{ "generate.form.trusted_workers_label" | transloco }}</span>
-            <input type="checkbox" formControlName="trusted_workers" />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-          <label class="gs-switch gs-switch-row">
-            <span>{{ "generate.form.slow_workers_label" | transloco }}</span>
-            <input type="checkbox" formControlName="slow_workers" />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-          <label class="gs-switch gs-switch-row">
-            <span>{{
-              "generate.form.extra_slow_workers_label" | transloco
-            }}</span>
-            <input type="checkbox" formControlName="extra_slow_workers" />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-          <label class="gs-switch gs-switch-row">
-            <span>{{ "generate.form.allow_downgrade_label" | transloco }}</span>
-            <input type="checkbox" formControlName="allow_downgrade" />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-          <label class="gs-switch gs-switch-row">
-            <span>{{
-              "generate.form.replacement_filter_label" | transloco
-            }}</span>
-            <input type="checkbox" formControlName="replacement_filter" />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-        </div>
-
-        <!-- Extras (planned, not yet available) -->
-        <div class="gs-card flex flex-col gap-2">
-          <span class="gs-card-title">
-            {{ "generate.form.extras_section" | transloco }}
-          </span>
-          <p class="gs-sublabel">
-            {{ "generate.form.extras_hint" | transloco }}
-          </p>
-          @for (extra of plannedExtras; track extra) {
-            <div class="gs-planned-row" aria-disabled="true">
-              <span class="text-xs">{{ extra | transloco }}</span>
-              <span class="gs-planned-badge">
-                {{ "generate.form.planned_badge" | transloco }}
-              </span>
-            </div>
-          }
-        </div>
-      }
+          <!-- Extras (planned, not yet available) -->
+          <div class="gs-card flex flex-col gap-2">
+            <span class="gs-card-title">
+              {{ "generate.form.extras_section" | transloco }}
+            </span>
+            <p class="gs-sublabel">
+              {{ "generate.form.extras_hint" | transloco }}
+            </p>
+            @for (extra of plannedExtras; track extra) {
+              <div class="gs-planned-row" aria-disabled="true">
+                <span class="text-xs">{{ extra | transloco }}</span>
+                <span class="gs-planned-badge">
+                  {{ "generate.form.planned_badge" | transloco }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
     </div>
   </div>
 
@@ -908,3 +945,44 @@
 @if (civitOpen()) {
   <app-civitai-picker [form]="form()" (closed)="closeCivit()" />
 }
+
+<!-- Lock badge for one style-pinned section: names the value the style pins and
+     offers the per-section escape hatch (and the way back to the style). -->
+<ng-template #styleLock let-section="section" let-value="value">
+  <span class="gs-lock">
+    @if (isSectionDetached(section)) {
+      <span class="gs-lock-own">
+        {{ "generate.form.following_your_values" | transloco }}
+      </span>
+      <button
+        type="button"
+        class="gs-lock-action"
+        (click)="reattachSection(section)"
+      >
+        {{ "generate.form.restore_style" | transloco }}
+      </button>
+    } @else {
+      <span
+        class="gs-lock-badge"
+        [title]="
+          'generate.form.locked_by_style'
+            | transloco: { style: selectedStyleName() }
+        "
+        [attr.aria-label]="
+          'generate.form.locked_by_style'
+            | transloco: { style: selectedStyleName() }
+        "
+      >
+        <app-icon name="lock-closed" class="gs-ico-sm" />
+        <span class="gs-lock-val">{{ value }}</span>
+      </span>
+      <button
+        type="button"
+        class="gs-lock-action"
+        (click)="detachSection(section)"
+      >
+        {{ "generate.form.use_my_values" | transloco }}
+      </button>
+    }
+  </span>
+</ng-template>
