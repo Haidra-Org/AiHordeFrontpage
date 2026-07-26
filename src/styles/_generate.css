@@ -5989,3 +5989,239 @@
     min-height: 44px;
   }
 }
+
+/* ------- worked examples (/generate/tutorials) ----------------------- */
+/* A reading surface rather than a workspace: one centred column on the canvas,
+   scrolling in the pane on desktop and with the page on mobile, the way the
+   studio's own panels do. Blue is the studio's technical hue, so the page
+   borrows the documentation plane's zone tokens. */
+.gen-studio .gs-tut {
+  display: block;
+  --gs-zone: var(--gs-blue);
+  --gs-zone-tint: var(--gs-blue-tint);
+  --gs-zone-tint-border: var(--gs-blue-tint-border);
+  background: var(--gs-canvas);
+  padding: 18px 16px 48px;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-shell-outlet > .gs-tut {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+.gen-studio .gs-tut-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.gen-studio .gs-tut-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-flow-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-lead {
+  margin: 6px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 13px;
+  line-height: 1.65;
+  max-width: 72ch;
+}
+.gen-studio .gs-tut-body {
+  color: var(--gs-ink-2);
+  font-size: 12.5px;
+  line-height: 1.65;
+  max-width: 72ch;
+}
+
+/* The flow picker, on the guide's contents rail: one scrolling row, because
+   wrapped it would cost several lines above every example. */
+.gen-studio .gs-tut-rail {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--gs-border-soft);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-padding-inline: 4px;
+}
+.gen-studio .gs-tut-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 13px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-label);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  text-decoration: none;
+}
+.gen-studio .gs-tut-chip:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-tut-chip.gs-tut-chip--on {
+  color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+  border-color: var(--gs-blue-tint-border);
+}
+.dark .gen-studio .gs-tut-chip.gs-tut-chip--on {
+  color: #bfdbfe;
+}
+/* A flow with no example behind it still gets a chip, just a quieter one. */
+.gen-studio .gs-tut-chip.gs-tut-chip--off {
+  border-style: dashed;
+}
+.gen-studio .gs-tut-chip-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-tut-modes {
+  padding: 0;
+}
+
+.gen-studio .gs-tut-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gen-studio .gs-tut-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 15px 16px;
+}
+.gen-studio .gs-tut-subhead {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+
+/* Inputs and result side by side where there is room, stacked where there is
+   not; each image keeps its own aspect and never outgrows the column. */
+.gen-studio .gs-tut-shots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.gen-studio .gs-tut-shot {
+  margin: 0;
+  min-width: 0;
+}
+.gen-studio .gs-tut-img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--gs-card-border);
+  background: var(--gs-field-soft);
+}
+/* The alpha example has to be seen through: a checkerboard is the only backdrop
+   that reads as "nothing here" in both themes. */
+.gen-studio .gs-tut-img--alpha {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(-45deg, #cbd5e1 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #cbd5e1 75%),
+    linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+  background-size: 18px 18px;
+  background-position:
+    0 0,
+    0 9px,
+    9px -9px,
+    -9px 0;
+}
+.gen-studio .gs-tut-shot-cap {
+  margin-top: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gs-label);
+}
+
+.gen-studio .gs-tut-meta,
+.gen-studio .gs-tut-headers {
+  margin: 0;
+}
+.gen-studio .gs-tut-meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--gs-border-soft);
+  font-size: 12px;
+}
+.gen-studio .gs-tut-meta-row:last-child {
+  border-bottom: 0;
+}
+.gen-studio .gs-tut-meta-row dt {
+  flex: none;
+  font-weight: 700;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-tut-meta-row dd {
+  margin: 0;
+  min-width: 0;
+  text-align: right;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-headers .gs-tut-meta-row dd {
+  color: var(--gs-label);
+  line-height: 1.55;
+}
+.gen-studio .gs-tut-deviation-label {
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+
+.gen-studio .gs-tut-endpoint {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  font-size: 12px;
+}
+/* The payload sits on the card rather than on the API modal's fixed dark slab,
+   so the shared .json-* token colours land on a surface they were picked for
+   in both themes. */
+.gen-studio .gs-tut-code {
+  margin: 0;
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--gs-card-border);
+  background: var(--gs-field-soft);
+  color: var(--gs-ink);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-tut-chip {
+    min-height: 44px;
+  }
+}

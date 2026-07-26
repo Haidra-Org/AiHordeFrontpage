@@ -59,6 +59,22 @@ export const routes: Routes = [
             (c) => c.AlchemyComponent,
           ),
       },
+      // One route for every worked example; `:flow` deep-links a single one and
+      // the bare path falls back to the first in the manifest.
+      {
+        path: 'tutorials/:flow',
+        loadComponent: () =>
+          import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
+            (c) => c.GenerateTutorialsComponent,
+          ),
+      },
+      {
+        path: 'tutorials',
+        loadComponent: () =>
+          import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
+            (c) => c.GenerateTutorialsComponent,
+          ),
+      },
       { path: '', redirectTo: 'image', pathMatch: 'full' },
     ],
   },

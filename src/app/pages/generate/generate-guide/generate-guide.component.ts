@@ -8,7 +8,9 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../../components/icon/icon.component';
 
 /** One card of the control panel, and the help topics that card carries. */
 interface GuideSection {
@@ -105,7 +107,7 @@ const GUIDE_STEPS = [
  */
 @Component({
   selector: 'app-generate-guide',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, RouterLink, IconComponent],
   templateUrl: './generate-guide.component.html',
   host: {
     class: 'gs-results-body gs-guide',

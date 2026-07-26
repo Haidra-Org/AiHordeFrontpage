@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateGuideComponent } from './generate-guide.component';
@@ -20,6 +21,7 @@ describe('GenerateGuideComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GenerateGuideComponent);
