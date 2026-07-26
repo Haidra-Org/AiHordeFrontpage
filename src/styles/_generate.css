@@ -700,7 +700,9 @@
 /* ------- cards ------------------------------------------------------ */
 .gen-studio .gs-card {
   border: 1px solid var(--gs-card-border);
-  border-left: 3px solid var(--gs-zone-tint-border, var(--gs-card-border));
+  /* Cards echo the pane header's zone underline as a top edge: the zone hue
+     always reads as a horizontal rule, at pane scope and at card scope. */
+  border-top: 2px solid var(--gs-zone-tint-border, var(--gs-card-border));
   border-radius: 10px;
   padding: 12px 13px;
   background: var(--gs-card);
@@ -717,30 +719,11 @@
 }
 /* Every section title carries the same small accent tick: one repeated device
    that marks "a section starts here" while the eye scans the column. */
-.gen-studio .gs-card-title::before {
-  content: "";
-  width: 3px;
-  height: 12px;
-  border-radius: 2px;
-  background: var(--gs-zone, var(--gs-blue));
-  flex: none;
-}
-/* Pane titles carry a taller tick in their zone hue, echoing the card device
-   one level up the hierarchy. */
 .gen-studio .gs-title,
 .gen-studio .gs-results-title {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-}
-.gen-studio .gs-title::before,
-.gen-studio .gs-results-title::before {
-  content: "";
-  width: 4px;
-  height: 16px;
-  border-radius: 2px;
-  background: var(--gs-zone, var(--gs-blue));
-  flex: none;
 }
 .gen-studio .gs-card-title--sm {
   font-size: 11px;
