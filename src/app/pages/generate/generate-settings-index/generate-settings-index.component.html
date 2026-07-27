@@ -1,0 +1,55 @@
+<div class="gs-ref-index-inner">
+  <header class="gs-ref-index-top">
+    <h1 class="gs-ref-index-title">
+      {{ "generate.reference.head" | transloco }}
+    </h1>
+    <p class="gs-ref-index-lead">
+      {{ "generate.reference.lead" | transloco }}
+    </p>
+  </header>
+
+  @for (group of groups(); track group.section) {
+    <section class="gs-ref-group" [class]="group.className">
+      <h2 class="gs-guide-head">
+        <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+          ><app-icon [name]="group.icon"
+        /></span>
+        {{ group.labelKey | transloco }}
+      </h2>
+
+      <div class="gs-ref-cards">
+        @for (card of group.cards; track card.id) {
+          <a class="gs-ref-card" [routerLink]="card.link">
+            <!-- The middle frame of the setting's own strip, where it has one.
+                 A setting nobody can be shown changing is simply text. -->
+            @if (card.thumb; as thumb) {
+              <img
+                class="gs-ref-card-img"
+                [src]="thumb"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            }
+            <span class="gs-ref-card-text">
+              <span class="gs-ref-card-title">
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon [name]="card.icon"
+                /></span>
+                {{ card.titleKey | transloco }}
+              </span>
+              <!-- Missing prose reads as the key coming back, which is what
+                   the service answers with; a card with no lead is quieter
+                   than a card showing a translation key. -->
+              @let leadKey = "generate.reference." + card.id + ".lead";
+              @let leadText = leadKey | transloco;
+              @if (leadText && leadText !== leadKey) {
+                <span class="gs-ref-card-lead">{{ leadText }}</span>
+              }
+            </span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+</div>

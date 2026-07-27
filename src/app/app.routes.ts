@@ -86,6 +86,24 @@ export const routes: Routes = [
               ),
           },
           { path: 'tutorials', redirectTo: '', pathMatch: 'full' },
+          // The settings reference: an index of every setting the panel
+          // explains, and a page per setting. A `:param` naming no setting is
+          // sent back to the index by the page itself, which is the only place
+          // that knows what the reference has.
+          {
+            path: 'settings',
+            loadComponent: () =>
+              import('./pages/generate/generate-settings-index/generate-settings-index.component').then(
+                (c) => c.GenerateSettingsIndexComponent,
+              ),
+          },
+          {
+            path: 'settings/:param',
+            loadComponent: () =>
+              import('./pages/generate/generate-settings-entry/generate-settings-entry.component').then(
+                (c) => c.GenerateSettingsEntryComponent,
+              ),
+          },
           {
             path: 'guide',
             loadComponent: () =>

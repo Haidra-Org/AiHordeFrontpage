@@ -46,6 +46,11 @@ describe('GenerateLearnShellComponent', () => {
             path: 'generate/learn/tutorials/:flow',
             component: StubPageComponent,
           },
+          { path: 'generate/learn/settings', component: StubPageComponent },
+          {
+            path: 'generate/learn/settings/:param',
+            component: StubPageComponent,
+          },
           { path: 'generate/learn/guide', component: StubPageComponent },
         ]),
       ],
@@ -98,6 +103,24 @@ describe('GenerateLearnShellComponent', () => {
     // The entry deep-links txt2img, so its own href is not the URL on screen.
     expect(current()).toBe(translations['generate.learn.nav_tutorials']);
     expect(links()[0].getAttribute('aria-current')).toBeNull();
+  });
+
+  it('offers the settings reference between the examples and the guide', () => {
+    expect(LEARN_NAV.map((entry) => entry.labelKey)).toEqual([
+      'generate.learn.nav_overview',
+      'generate.learn.nav_tutorials',
+      'generate.learn.nav_settings',
+      'generate.learn.nav_guide',
+    ]);
+  });
+
+  it('keeps the settings entry marked on one setting page', async () => {
+    const translations = en as Record<string, string>;
+
+    await router.navigateByUrl('/generate/learn/settings/steps');
+    fixture.detectChanges();
+
+    expect(current()).toBe(translations['generate.learn.nav_settings']);
   });
 
   it('marks the guide entry on the guide page', async () => {

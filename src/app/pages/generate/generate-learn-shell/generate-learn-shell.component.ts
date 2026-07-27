@@ -55,6 +55,13 @@ export const LEARN_NAV: readonly LearnNavEntry[] = [
     exact: false,
   },
   {
+    labelKey: 'generate.learn.nav_settings',
+    link: '/generate/learn/settings',
+    activePath: '/generate/learn/settings',
+    icon: 'adjustments-horizontal',
+    exact: false,
+  },
+  {
     labelKey: 'generate.learn.nav_guide',
     link: '/generate/learn/guide',
     activePath: '/generate/learn/guide',

@@ -7682,3 +7682,323 @@ app-gs-sweep-scrub {
     min-height: 44px;
   }
 }
+
+/* ------- settings reference ------------------------------------------ */
+/* The canonical long form of every `?` note in the panel: an index of the eight
+   areas, and a page per setting. The same reading surface and measure as the
+   rest of the Learn area, so moving between its pages does not move the column.
+
+   The entry component is mounted here and, later, in the results pane; nothing
+   in its own rules assumes a page's width, so a narrower dock reflows rather
+   than needing a second set. */
+.gen-studio .gs-ref-index,
+.gen-studio .gs-ref-page {
+  display: block;
+  --gs-zone: var(--gs-blue);
+  --gs-zone-tint: var(--gs-blue-tint);
+  --gs-zone-tint-border: var(--gs-blue-tint-border);
+  background: var(--gs-canvas);
+  padding: 18px 16px 48px;
+}
+.gen-studio .gs-ref-index-inner,
+.gen-studio .gs-ref-page-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+.gen-studio .gs-ref-index-top {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gen-studio .gs-ref-index-title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ref-index-lead {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gs-ink-2);
+  max-width: 68ch;
+}
+
+/* One band per panel area, headed by the same eyebrow and hairline the guide
+   uses. The identity class sits on the band, so the head's hairline, the chips
+   and every card under it take the area's hue from one place. */
+.gen-studio .gs-ref-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gen-studio .gs-ref-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px;
+}
+/* Deliberately quiet: this is a list to scan, and thirty cards each shouting
+   their hue would be a colour chart rather than an index. The hue is carried by
+   the chip alone until the card is pointed at. */
+.gen-studio .gs-ref-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 44px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 12px;
+  background: var(--gs-card);
+  text-decoration: none;
+}
+.gen-studio .gs-ref-card:hover {
+  border-color: var(--gs-sec, var(--gs-blue));
+  text-decoration: none;
+}
+.gen-studio .gs-ref-card:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: 2px;
+}
+.gen-studio .gs-ref-card-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--gs-field-soft);
+  border-bottom: 1px solid var(--gs-card-border);
+}
+.gen-studio .gs-ref-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 13px 13px;
+  min-width: 0;
+}
+.gen-studio .gs-ref-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ref-card-lead {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+
+/* ------- settings reference: one entry ------------------------------- */
+.gen-studio .gs-ref-entry {
+  display: block;
+}
+.gen-studio .gs-ref-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.gen-studio .gs-ref-title {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--gs-ink);
+}
+/* The lead is set larger than the body: it is the sentence a reader who has
+   never met the setting needs, and everything under it is optional. */
+.gen-studio .gs-ref-lead {
+  margin: 12px 0 0;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--gs-ink);
+  max-width: 68ch;
+}
+.gen-studio .gs-ref-body {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--gs-ink-2);
+  max-width: 68ch;
+}
+
+/* What the setting costs, on one line. Glyph-coded rather than colour-coded:
+   "costs time" is not a warning, and painting it amber would say it was. */
+.gen-studio .gs-ref-costs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+}
+.gen-studio .gs-ref-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ref-cost .icon {
+  flex: none;
+  color: var(--gs-muted);
+}
+
+.gen-studio .gs-ref-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 0;
+}
+.gen-studio .gs-ref-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: var(--gs-label);
+  background: var(--gs-field);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+}
+
+/* The ways onward from an entry. Siblings wear their own area's chip, because
+   half of them are in another area and the hue is the only thing that says so
+   before the reader arrives. */
+.gen-studio .gs-ref-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+.gen-studio .gs-ref-related-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-ref-related-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-ink-2);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-field);
+  text-decoration: none;
+}
+.gen-studio .gs-ref-related-link:hover {
+  color: var(--gs-sec, var(--gs-blue));
+  border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
+  text-decoration: none;
+}
+.gen-studio .gs-ref-related-link:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: 2px;
+}
+
+.gen-studio .gs-ref-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0 0;
+}
+.gen-studio .gs-ref-link,
+.gen-studio .gs-ref-full,
+.gen-studio .gs-ref-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-ref-link:hover,
+.gen-studio .gs-ref-full:hover,
+.gen-studio .gs-ref-back:hover {
+  text-decoration: underline;
+}
+.gen-studio .gs-ref-link:focus-visible,
+.gen-studio .gs-ref-full:focus-visible,
+.gen-studio .gs-ref-back:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-ref-back {
+  align-self: flex-start;
+}
+/* Only the docked entry has a footer: the routed page is already the full
+   reference and would be pointing at itself. */
+.gen-studio .gs-ref-foot {
+  display: flex;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gs-border);
+}
+
+.gen-studio .gs-ref-onwards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid var(--gs-border);
+}
+.gen-studio .gs-ref-onward {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1 1 200px;
+  min-height: 44px;
+  padding: 8px 13px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 12px;
+  background: var(--gs-card);
+  text-decoration: none;
+}
+.gen-studio .gs-ref-onward--next {
+  justify-content: flex-end;
+  text-align: right;
+}
+.gen-studio .gs-ref-onward:hover {
+  border-color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-ref-onward:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-ref-onward-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.gen-studio .gs-ref-onward-rel {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-ref-onward-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-ref-related-link,
+  .gen-studio .gs-ref-link,
+  .gen-studio .gs-ref-full,
+  .gen-studio .gs-ref-back {
+    min-height: 44px;
+  }
+}
