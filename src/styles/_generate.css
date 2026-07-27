@@ -8002,3 +8002,218 @@ app-gs-sweep-scrub {
     min-height: 44px;
   }
 }
+
+/* ------- help: the way from a note to the entry --------------------- */
+
+/* The note is `flex: 1 0 100%` in the label row it belongs to, so the offer
+   below it starts a line of its own rather than trailing the prose. */
+.gen-studio .gs-help-see {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-top: 4px;
+  padding: 4px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--gs-zone, var(--gs-blue));
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
+  border-radius: 999px;
+  cursor: pointer;
+}
+.gen-studio .gs-help-see:hover {
+  border-color: var(--gs-zone, var(--gs-blue));
+}
+.gen-studio .gs-help-see:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-help-see {
+    min-height: 44px;
+  }
+}
+
+/* ------- the docked reference entry --------------------------------- */
+
+/* Only the side-by-side layout has a pane to dock into. Below that width the
+   same entry is in the bottom sheet, so the dock renders nothing and the
+   results it would have replaced stay where they are. */
+.gen-studio .gs-help-dock {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-help-dock {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 18px 24px;
+  }
+  /* What the dock displaced, displaced by the same query that shows it. */
+  .gen-studio .gs-results-body--docked,
+  .gen-studio .gs-learn-pane--yield {
+    display: none;
+  }
+}
+
+/* ------- try-it chips ------------------------------------------------ */
+
+/* A try chip is the same object as the chip beside it saying what the typical
+   value is, with the one difference that pressing it does something. */
+.gen-studio .gs-ref-chip--try {
+  min-height: 32px;
+  color: var(--gs-sec, var(--gs-blue));
+  background: var(--gs-sec-tint, var(--gs-blue-tint));
+  border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
+  cursor: pointer;
+}
+.gen-studio .gs-ref-chip--try:hover {
+  border-color: var(--gs-sec, var(--gs-blue));
+}
+.gen-studio .gs-ref-chip--try:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-ref-chip--try {
+    min-height: 44px;
+  }
+}
+
+/* ------- bottom sheet chassis ---------------------------------------- */
+
+/* Above the sticky tool-tab bar (z-index 5) and below the modal surfaces
+   (60+): the sheet is page furniture that covers the foot of the studio, not a
+   dialog that takes it. */
+.gen-studio .gs-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 45;
+  display: block;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--gs-card);
+  border-top: 1px solid var(--gs-card-border);
+  box-shadow: 0 -10px 28px -14px rgb(0 0 0 / 0.5);
+}
+/* From here up the studio has a pane, and the pane is the better place. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-sheet {
+    display: none;
+  }
+}
+.gen-studio .gs-sheet-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: min(70dvh, 640px);
+  transition: transform 0.18s ease;
+}
+/* A dragged sheet is already following the finger; easing it as well would put
+   the surface behind the touch that is moving it. */
+.gen-studio .gs-sheet--dragging .gs-sheet-panel {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-sheet-panel {
+    transition: none;
+  }
+}
+.gen-studio .gs-sheet-grab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 26px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  /* The gesture is vertical and so is the page under it, so the browser is told
+     which of the two the pointer belongs to rather than left to guess. */
+  touch-action: none;
+}
+.gen-studio .gs-sheet--dragging .gs-sheet-grab {
+  cursor: grabbing;
+}
+.gen-studio .gs-sheet-grip {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gs-border);
+}
+.gen-studio .gs-sheet-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 0 10px 8px;
+}
+.gen-studio .gs-sheet-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gen-studio .gs-sheet-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--gs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-sheet-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--gs-ink-2);
+  cursor: pointer;
+}
+.gen-studio .gs-sheet-btn:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-border);
+}
+.gen-studio .gs-sheet-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-sheet-chev {
+  transition: transform 0.18s ease;
+}
+.gen-studio .gs-sheet-chev--up {
+  transform: rotate(-90deg);
+}
+.gen-studio .gs-sheet-chev:not(.gs-sheet-chev--up) {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-sheet-chev {
+    transition: none;
+  }
+}
+.gen-studio .gs-sheet-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 14px 16px;
+}
+.gen-studio .gs-sheet-body:focus-visible {
+  outline: none;
+}
+
+/* Let the page scroll clear of whatever the sheet is covering. Progressive
+   enhancement: where `:has` is not understood the rule is dropped and the sheet
+   simply overlaps the foot of the page, as it did before it could say so. */
+html:has(app-gs-sheet) {
+  scroll-padding-bottom: var(--gs-sheet-clearance, 96px);
+}

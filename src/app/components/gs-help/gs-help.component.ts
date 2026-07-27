@@ -9,13 +9,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsHelpService } from '../../services/gs-help.service';
-import {
-  SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
-  SWEEP_PARAMETER_BY_HELP_TOPIC,
-} from '../../services/sweep-library.service';
-import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
-import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
+import { referenceEntry } from '../../pages/generate/reference-data';
+import { IconComponent } from '../icon/icon.component';
 
 /**
  * The studio's per-field help affordance: a small circled "?" beside a label
@@ -30,12 +27,18 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
  * expanding on hover or on tab-focus would shift the rest of the form under the
  * pointer while the reader is aiming at something else.
  *
+ * The note is prose and nothing else. It used to mount the parameter sweeps
+ * under itself, which pushed the field it was describing off the screen the
+ * moment anyone asked what the field was; the pictures, the numbers and the
+ * depth now live in the setting's reference entry, and the note offers the way
+ * to it rather than becoming it.
+ *
  * Content lives under `generate.help.<topic>.title` (a short field name, used
  * for the trigger's accessible name) and `generate.help.<topic>.body`.
  */
 @Component({
   selector: 'app-gs-help',
-  imports: [TranslocoPipe, GsSweepScrubComponent, GsSweepGridComponent],
+  imports: [TranslocoPipe, IconComponent],
   template: `
     <button
       #trigger
@@ -56,15 +59,13 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
       <p class="gs-help-note gs-fadeup" role="note" [id]="noteId()">
         {{ bodyKey() | transloco }}
       </p>
-      <!-- Anyone who opened the note gets the pictures if there are any: a
-           reader who says "expert" is still allowed to want to see it. -->
-      @if (sweepParameter(); as parameter) {
-        <app-gs-sweep-scrub [parameter]="parameter" />
-      }
-      <!-- Second line, under the strip: the plate is the follow-up question,
-           and a reader who has not asked the first one is not looking for it. -->
-      @if (sweepGridParameter(); as parameter) {
-        <app-gs-sweep-grid [parameter]="parameter" />
+      <!-- Only where there is something to see: a setting the reference has not
+           reached yet would be offering a door onto an empty room. -->
+      @if (hasEntry()) {
+        <button type="button" class="gs-help-see" (click)="seeIt($event)">
+          <app-icon name="photo" class="gs-ico-sm" />
+          {{ 'generate.help.see_it' | transloco }}
+        </button>
       }
     }
   `,
@@ -76,6 +77,7 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
 })
 export class GsHelpComponent {
   private readonly help = inject(GsHelpService);
+  private readonly dock = inject(GsHelpDockService);
 
   /** The `generate.help.<topic>` content this trigger explains. */
   public readonly topic = input.required<string>();
@@ -95,13 +97,10 @@ export class GsHelpComponent {
   public readonly bodyKey = computed(
     () => `generate.help.${this.topic()}.body`,
   );
-  /** The sweep this field has pictures for, or null when it has none. */
-  public readonly sweepParameter = computed(
-    () => SWEEP_PARAMETER_BY_HELP_TOPIC[this.topic()] ?? null,
-  );
-  /** The two-axis plate this field shares with the one beside it, if any. */
-  public readonly sweepGridParameter = computed(
-    () => SWEEP_GRID_PARAMETER_BY_HELP_TOPIC[this.topic()] ?? null,
+
+  /** Whether the reference has an entry this note can send a reader on to. */
+  public readonly hasEntry = computed(
+    () => referenceEntry(this.topic()) !== undefined,
   );
 
   constructor() {
@@ -124,6 +123,17 @@ export class GsHelpComponent {
     event.preventDefault();
     event.stopPropagation();
     this.help.toggle(this.noteId());
+  }
+
+  /**
+   * Open the setting's reference entry, docked beside the results or in the
+   * mobile sheet. The note is left expanded: it is the thing that said the
+   * entry existed, and collapsing it would take the way back with it.
+   */
+  public seeIt(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.dock.open(this.topic());
   }
 
   public onEscape(): void {

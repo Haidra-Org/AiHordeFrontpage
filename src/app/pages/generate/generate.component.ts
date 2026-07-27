@@ -41,6 +41,10 @@ import {
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../services/tutorial-engine.service';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { GsTryItService, TryItHost } from '../../services/gs-try-it.service';
+import { GsParamEntryComponent } from '../../components/gs-param-entry/gs-param-entry.component';
+import { GsSheetComponent } from '../../components/gs-sheet/gs-sheet.component';
 import { blobToBase64 } from '../../helper/blob-base64';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
@@ -113,13 +117,15 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     StudioImageDropDirective,
+    GsSheetComponent,
+    GsParamEntryComponent,
     IconComponent,
     TranslocoPipe,
   ],
   templateUrl: './generate.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateComponent implements TutorialStudioHost {
+export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly aiHorde = inject(AiHordeService);
   private readonly queue = inject(GenerationQueueService);
   private readonly toast = inject(ToastService);
@@ -132,7 +138,10 @@ export class GenerateComponent implements TutorialStudioHost {
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly tutorial = inject(TutorialEngineService);
+  private readonly tryIt = inject(GsTryItService);
   private readonly sweeps = inject(SweepLibraryService);
+  /** The reference entry the mobile sheet is showing, if any. */
+  public readonly helpDock = inject(GsHelpDockService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
@@ -310,6 +319,16 @@ export class GenerateComponent implements TutorialStudioHost {
 
     this.tutorial.registerHost(this);
     this.destroyRef.onDestroy(() => this.tutorial.unregisterHost(this));
+
+    // A value picked on the routed reference page arrives armed rather than
+    // applied: the page had no form to write to, and this is the form.
+    this.tryIt.registerHost(this);
+    this.destroyRef.onDestroy(() => this.tryIt.unregisterHost(this));
+    const armedApply = this.tryIt.consumeArmed();
+    if (armedApply && this.isBrowser) {
+      afterNextRender(() => this.tryIt.apply(armedApply));
+    }
+
     const armed = this.tutorial.consumeArmed();
     if (armed && this.isBrowser) {
       void this.tutorial.start(armed);

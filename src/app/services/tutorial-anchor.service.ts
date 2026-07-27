@@ -1,6 +1,16 @@
 import { Injectable, signal, untracked } from '@angular/core';
 
 /**
+ * The CSS hook an addressed anchor wears while something is pointing at it.
+ *
+ * It lives beside the registry rather than with either of the things that set
+ * it: the follow-along tutorial holds it for as long as a step is current, and
+ * a try-it chip holds it for a couple of seconds after writing a value, and the
+ * reader is meant to read both as the same gesture.
+ */
+export const HIGHLIGHT_CLASS = 'gs-tut-target';
+
+/**
  * Where the studio's tutorial-addressable controls are on the page.
  *
  * The follow-along tutorial has to point at a field the control panel owns, and

@@ -11,6 +11,7 @@ import { DatabaseService } from '../../../services/database.service';
 import { Router } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -952,5 +953,60 @@ describe('GenerateResultsPanelComponent', () => {
 
     pendingJobs.set([job('p', 'processing')]);
     expect(component.showWelcome()).toBe(false);
+  });
+
+  describe('the docked reference entry', () => {
+    let dock: GsHelpDockService;
+
+    beforeEach(() => {
+      dock = TestBed.inject(GsHelpDockService);
+      dock.close();
+    });
+
+    it('takes the pane for the setting a note sent it, and gives it back', () => {
+      expect(component.helpDockTopic()).toBeNull();
+
+      dock.open('steps');
+
+      expect(component.helpDockTopic()).toBe('steps');
+      expect(component.helpDockOpen()).toBe(true);
+
+      component.closeHelpDock();
+
+      expect(component.helpDockTopic()).toBeNull();
+    });
+
+    it('keeps the welcome card out of a pane the entry has', () => {
+      dock.open('steps');
+
+      expect(component.showWelcome()).toBe(false);
+    });
+
+    it('leaves a running tutorial running behind it', () => {
+      const engine = TestBed.inject(TutorialEngineService);
+      void engine.start('txt2img');
+
+      dock.open('cfg');
+
+      // The pane yields, the flow does not: closing the entry puts the steps
+      // back where the reader left them.
+      expect(engine.active()).toBe(true);
+      expect(component.tutorialOpen()).toBe(true);
+
+      component.closeHelpDock();
+
+      expect(engine.active()).toBe(true);
+      engine.stop();
+    });
+
+    it('stands down when a tutorial starts behind it', () => {
+      const engine = TestBed.inject(TutorialEngineService);
+      dock.open('steps');
+
+      void engine.start('txt2img');
+
+      expect(component.helpDockTopic()).toBeNull();
+      engine.stop();
+    });
   });
 });

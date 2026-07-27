@@ -12,7 +12,11 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { DatabaseService } from './database.service';
 import { GsHelpService } from './gs-help.service';
-import { TutorialAnchorService } from './tutorial-anchor.service';
+import {
+  HIGHLIGHT_CLASS,
+  TutorialAnchorService,
+} from './tutorial-anchor.service';
+import { GsHelpDockService } from './gs-help-dock.service';
 import {
   GenerateFormValue,
   GenerateMode,
@@ -153,9 +157,6 @@ export interface TutorialStudioHost {
   openBulkApply(example: GenerateFormValue): void;
 }
 
-/** The CSS hook the current step's anchor wears while it is current. */
-const HIGHLIGHT_CLASS = 'gs-tut-target';
-
 /**
  * The animation the step card and the field it points at both run. They are
  * separate elements in separate panes, so what ties them together is the phase:
@@ -178,6 +179,7 @@ export class TutorialEngineService {
   private readonly db = inject(DatabaseService);
   private readonly anchors = inject(TutorialAnchorService);
   private readonly help = inject(GsHelpService);
+  private readonly dock = inject(GsHelpDockService);
   private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -296,6 +298,10 @@ export class TutorialEngineService {
     if (!tutorialAvailable(flowId)) {
       return;
     }
+    // The dock and the follow-along pane are the same surface, and the dock is
+    // the one gated above: a tutorial starting behind an open reference entry
+    // would run its whole length where the reader cannot see it.
+    this.dock.close();
     this.finished.set(false);
     this.failed.set(false);
     this.flowId.set(flowId);

@@ -12,6 +12,8 @@ import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { TutorialEngineService } from '../../services/tutorial-engine.service';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { GsTryItService } from '../../services/gs-try-it.service';
 import {
   ModelBaselineMap,
   ModelReferenceService,
@@ -816,6 +818,42 @@ describe('GenerateComponent', () => {
 
       expect(engine.active()).toBe(false);
       expect(engine.completed()).toBe(true);
+    });
+  });
+
+  describe('the reference entry on a phone', () => {
+    // The sheet itself is exercised in the chassis's own spec; what belongs
+    // here is that the studio reads the same topic the note wrote, which is
+    // what puts the sheet on screen. (The template is blanked in this suite.)
+    it('follows the setting a note asked to see', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+      expect(component.helpDock.topic()).toBeNull();
+
+      dock.open('steps');
+      expect(component.helpDock.topic()).toBe('steps');
+
+      component.helpDock.close();
+      expect(component.helpDock.topic()).toBeNull();
+    });
+  });
+
+  describe('try-it host', () => {
+    it('applies a value armed by the routed reference page on arrival', async () => {
+      Element.prototype.scrollIntoView = vi.fn();
+      TestBed.inject(GsTryItService).arm({
+        display: '40',
+        anchorId: 'steps',
+        fields: { steps: 40 },
+      });
+
+      const arrived = TestBed.createComponent(GenerateComponent);
+      arrived.detectChanges();
+      await arrived.whenStable();
+
+      expect(arrived.componentInstance.form.getRawValue().steps).toBe(40);
+      // The field lives in the advanced panel, so the panel is showing it.
+      expect(arrived.componentInstance.currentMode()).toBe('advanced');
+      arrived.destroy();
     });
   });
 

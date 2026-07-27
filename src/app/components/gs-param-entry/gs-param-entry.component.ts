@@ -2,15 +2,19 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
+  output,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { GsTryItService } from '../../services/gs-try-it.service';
 import {
   SECTION_IDENTITIES,
   SectionIdentity,
 } from '../../pages/generate/section-identity';
 import {
+  ReferenceApply,
   ReferenceEntry,
   ReferenceRange,
   ReferenceTradeoffs,
@@ -25,6 +29,9 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
 
 /** Where the routed reference lives, for the way out of a docked entry. */
 const REFERENCE_ROOT = '/generate/learn/settings';
+
+/** Where a value offered by the routed page has to be taken to be tried. */
+const STUDIO_ROUTE = '/generate/image';
 
 /** How the meta-line marks each kind of cost. */
 const TRADEOFF_ICONS = {
@@ -111,16 +118,31 @@ const TRADEOFF_ICONS = {
       </p>
     }
 
-    @if (range(); as bounds) {
+    @if (range() || applies().length > 0) {
       <p class="gs-ref-range">
-        <span class="gs-ref-chip">{{
-          'generate.reference.range_typical'
-            | transloco: { value: bounds.typical }
-        }}</span>
-        @if (bounds.default; as fallback) {
+        @if (range(); as bounds) {
           <span class="gs-ref-chip">{{
-            'generate.reference.range_default' | transloco: { value: fallback }
+            'generate.reference.range_typical'
+              | transloco: { value: bounds.typical }
           }}</span>
+          @if (bounds.default; as fallback) {
+            <span class="gs-ref-chip">{{
+              'generate.reference.range_default'
+                | transloco: { value: fallback }
+            }}</span>
+          }
+        }
+        <!-- The numbers the entry argues for, offered rather than only stated.
+             The routed page has no form to write to, so its chips say where
+             they would land and take the reader there with the value in hand. -->
+        @for (option of applies(); track option.display) {
+          <button
+            type="button"
+            class="gs-ref-chip gs-ref-chip--try"
+            (click)="runApply(option)"
+          >
+            {{ tryKey() | transloco: { value: option.display } }}
+          </button>
         }
       </p>
     }
@@ -192,13 +214,23 @@ const TRADEOFF_ICONS = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GsParamEntryComponent {
+  private readonly tryIt = inject(GsTryItService);
+  private readonly router = inject(Router);
+
   /** The `generate.help.<topic>` setting this entry is the long form of. */
   public readonly topic = input.required<string>();
   /**
    * Where the entry is mounted. The routed page is the reference; the dock is a
-   * borrowed copy of it beside the results, and says so in its footer.
+   * borrowed copy of it beside the results (and, on a phone, in the sheet), and
+   * says so in its footer.
    */
   public readonly mode = input<'page' | 'dock'>('page');
+
+  /**
+   * A value was written into the form from here. The mobile sheet listens so it
+   * can get out of the way of the field it just changed.
+   */
+  public readonly applied = output<void>();
 
   public readonly icons = TRADEOFF_ICONS;
 
@@ -236,6 +268,17 @@ export class GsParamEntryComponent {
   );
   public readonly links = computed(() => this.entry()?.links ?? []);
 
+  public readonly applies = computed<readonly ReferenceApply[]>(
+    () => this.entry()?.applies ?? [],
+  );
+
+  /** How a try-it chip reads, which depends on whether the form is reachable. */
+  public readonly tryKey = computed(() =>
+    this.mode() === 'page'
+      ? 'generate.reference.try_in_studio'
+      : 'generate.reference.try_value',
+  );
+
   public readonly sweepParameter = computed(() => referenceSweep(this.topic()));
   public readonly sweepGridParameter = computed(() =>
     referenceSweepGrid(this.topic()),
@@ -260,4 +303,20 @@ export class GsParamEntryComponent {
   public readonly fullLink = computed(
     () => `${REFERENCE_ROOT}/${this.topic()}`,
   );
+
+  /**
+   * Put one of the offered values in the form. Beside the studio that is the
+   * write itself; from the routed page the value is armed and the studio
+   * applies it on arrival, because a reference page has no form to write to and
+   * saying "go and set it to 30 yourself" is not an offer.
+   */
+  public runApply(option: ReferenceApply): void {
+    if (this.mode() === 'page') {
+      this.tryIt.arm(option);
+      void this.router.navigateByUrl(STUDIO_ROUTE);
+      return;
+    }
+    this.tryIt.apply(option);
+    this.applied.emit();
+  }
 }

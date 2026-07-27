@@ -2,6 +2,7 @@ import {
   SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
   SWEEP_PARAMETER_BY_HELP_TOPIC,
 } from '../../services/sweep-library.service';
+import { GenerateFormValue } from './generate-form.model';
 import {
   SECTION_BY_HELP_TOPIC,
   SectionId,
@@ -43,6 +44,21 @@ export interface ReferenceRange {
   default?: string;
 }
 
+/**
+ * A value the reference offers to put in the form on the reader's say-so.
+ *
+ * `fields` is written exactly as the form holds it, so a chip can never offer
+ * something the panel would reject and no code has to translate between the two
+ * vocabularies. `display` is the number the chip reads back, and `anchorId` the
+ * {@link TutorialAnchorService} id of the row that lights up when it lands: the
+ * whole point of a try-it chip is seeing where the value went.
+ */
+export interface ReferenceApply {
+  display: string;
+  anchorId: string;
+  fields: Partial<GenerateFormValue>;
+}
+
 /** A way out of the reference to somewhere else in the site. */
 export interface ReferenceLink {
   labelKey: string;
@@ -62,6 +78,12 @@ export interface ReferenceEntry {
   id: string;
   tradeoffs?: ReferenceTradeoffs;
   range?: ReferenceRange;
+  /**
+   * Values the reader can put in the form from the entry. Only authored where
+   * the prose already names a number: a chip offering a value the reference
+   * never argued for would be the reference guessing on the reader's behalf.
+   */
+  applies?: readonly ReferenceApply[];
   /** Other entries worth reading next, by id. */
   related?: readonly string[];
   links?: readonly ReferenceLink[];
@@ -95,6 +117,13 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
   {
     id: 'denoise',
     range: { min: 0.01, max: 1, typical: '0.75' },
+    applies: [
+      {
+        display: '0.75',
+        anchorId: 'denoise',
+        fields: { denoising_strength: 0.75 },
+      },
+    ],
     related: ['source_modes', 'hires_denoise'],
   },
 
@@ -107,12 +136,22 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
       quality: 'generate.reference.quality_steps',
     },
     range: { min: 1, max: 500, typical: '20-40', default: '25' },
+    // The ends of the band the prose names, rather than a midpoint nothing
+    // states: the useful comparison is the cheap setting against the dear one.
+    applies: [
+      { display: '20', anchorId: 'steps', fields: { steps: 20 } },
+      { display: '40', anchorId: 'steps', fields: { steps: 40 } },
+    ],
     related: ['cfg', 'sampler', 'requirements'],
   },
   {
     id: 'cfg',
     tradeoffs: { quality: 'generate.reference.quality_cfg' },
     range: { min: 0, max: 100, typical: '5-10', default: '7.5' },
+    applies: [
+      { display: '5', anchorId: 'cfg', fields: { cfg_scale: 5 } },
+      { display: '10', anchorId: 'cfg', fields: { cfg_scale: 10 } },
+    ],
     related: ['steps', 'sampler', 'requirements'],
   },
   {
@@ -127,6 +166,10 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
   {
     id: 'clip_skip',
     range: { min: 1, max: 12, typical: '1-2', default: '1' },
+    applies: [
+      { display: '1', anchorId: 'clip_skip', fields: { clip_skip: 1 } },
+      { display: '2', anchorId: 'clip_skip', fields: { clip_skip: 2 } },
+    ],
     related: ['requirements'],
   },
   {
@@ -146,6 +189,15 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
   {
     id: 'hires_denoise',
     range: { min: 0.01, max: 1, typical: '0.65' },
+    // The slider only exists while hires fix is on, so the chip turns it on:
+    // writing a value into a control the reader cannot see is not an offer.
+    applies: [
+      {
+        display: '0.65',
+        anchorId: 'hires_denoise',
+        fields: { hires_fix: true, hires_fix_denoising_strength: 0.65 },
+      },
+    ],
     related: ['hires_fix', 'denoise'],
   },
   { id: 'tiling' },
@@ -177,6 +229,13 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
   {
     id: 'facefixer_strength',
     range: { min: 0, max: 1, typical: '0.75' },
+    applies: [
+      {
+        display: '0.75',
+        anchorId: 'facefixer_strength',
+        fields: { facefixer_strength: 0.75 },
+      },
+    ],
     related: ['facefixer'],
   },
   {

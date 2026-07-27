@@ -45,6 +45,8 @@ import {
 } from '../image-meta-panel/image-meta-panel.component';
 import { GenerateFormValue } from '../generate-form.model';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
+import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
+import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import {
   TutorialEngineService,
   TutorialLevel,
@@ -220,6 +222,7 @@ function positivePrompt(prompt: string): string {
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     GenerateLearnPanelComponent,
+    GsParamEntryComponent,
     RouterLink,
   ],
   templateUrl: './generate-results-panel.component.html',
@@ -239,6 +242,7 @@ export class GenerateResultsPanelComponent {
   private readonly handoff = inject(StudioHandoffService);
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
+  private readonly helpDock = inject(GsHelpDockService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
@@ -277,6 +281,15 @@ export class GenerateResultsPanelComponent {
   /** Where both of the panel's ways into the written guide point. */
   public readonly guideLink = '/generate/learn/guide';
 
+  /**
+   * The setting whose reference entry has the pane, or null. It is gated above
+   * the follow-along tutorial rather than beside it: a reader mid-tutorial who
+   * asks what a field is has asked for the entry, and the steps are still there
+   * when they close it.
+   */
+  public readonly helpDockTopic = this.helpDock.topic;
+  public readonly helpDockOpen = this.helpDock.isOpen;
+
   /** Whether the follow-along tutorial has the pane instead of the results. */
   public readonly tutorialOpen = this.tutorial.active;
   /** The tutorial's parting note, shown over the results it just made room for. */
@@ -310,6 +323,7 @@ export class GenerateResultsPanelComponent {
       this.isBrowser &&
       !this.welcomed() &&
       this.showStarters() &&
+      !this.helpDockOpen() &&
       !this.tutorialOpen(),
   );
 
@@ -1486,6 +1500,11 @@ export class GenerateResultsPanelComponent {
   public dismissWelcome(): void {
     this.welcomed.set(true);
     this.db.store(WELCOMED_KEY, true);
+  }
+
+  /** Put the reference entry away and give the pane back to the results. */
+  public closeHelpDock(): void {
+    this.helpDock.close();
   }
 
   public dismissTutorialNote(): void {

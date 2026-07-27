@@ -666,7 +666,10 @@
                 </div>
               </div>
             </div>
-            <div [class.gs-locked]="isSectionLocked('sampling')">
+            <div
+              appTutAnchor="clip_skip"
+              [class.gs-locked]="isSectionLocked('sampling')"
+            >
               <div class="gs-field-head">
                 <label class="gs-slabel" for="generate-clip">
                   {{
@@ -733,7 +736,7 @@
               *ngTemplateOutlet="reqHint; context: { hint: karrasHint() }"
             />
             @if (form().controls.hires_fix.value) {
-              <div>
+              <div appTutAnchor="hires_denoise">
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-hires-denoise">
                     {{
@@ -957,7 +960,7 @@
                 </select>
               </div>
               @if (usesFaceFixer()) {
-                <div>
+                <div appTutAnchor="facefixer_strength">
                   <div class="gs-field-head">
                     <label class="gs-slabel" for="generate-facefixer-strength">
                       {{

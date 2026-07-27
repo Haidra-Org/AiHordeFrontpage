@@ -9,13 +9,14 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GsHelpComponent } from './gs-help.component';
 import { GsHelpService } from '../../services/gs-help.service';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { referenceEntry } from '../../pages/generate/reference-data';
 import { environment } from '../../../environments/environment';
-import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 @Component({
   template: `
     <app-gs-help topic="steps" />
-    <app-gs-help topic="batch" />
+    <app-gs-help topic="sampling" />
   `,
   imports: [GsHelpComponent],
 })
@@ -48,6 +49,7 @@ describe('GsHelpComponent', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     TestBed.inject(GsHelpService).close();
+    TestBed.inject(GsHelpDockService).close();
   });
 
   it('starts collapsed with no note rendered', () => {
@@ -103,51 +105,52 @@ describe('GsHelpComponent', () => {
     );
   });
 
-  describe('parameter sweeps', () => {
-    const SWEEP_INDEX = `${environment.sweepLibraryBaseUrl}/index.json`;
-
-    it('offers the sweep inside a note whose field has one', async () => {
+  describe('the way on to the entry', () => {
+    it('keeps the note to prose, mounting no media of its own', () => {
       const { fixture, click } = setup();
 
-      // The first trigger is `steps`, which a strip covers.
       click(0);
-      TestBed.inject(HttpTestingController)
-        .expectOne(SWEEP_INDEX)
-        .flush(stubIndex);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      fixture.detectChanges();
 
       expect(
-        fixture.nativeElement.querySelectorAll('.gs-sweep-offer'),
+        fixture.nativeElement.querySelector('app-gs-sweep-scrub'),
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('app-gs-sweep-grid'),
+      ).toBeNull();
+      // Nothing under the note went looking for the sweep library either.
+      TestBed.inject(HttpTestingController).expectNone(
+        `${environment.sweepLibraryBaseUrl}/index.json`,
+      );
+    });
+
+    it('offers the entry from a note whose setting has one', () => {
+      const { fixture, click } = setup();
+
+      // The first trigger is `steps`, which the reference has written up.
+      click(0);
+
+      const see = fixture.nativeElement.querySelector('.gs-help-see');
+      expect(see).not.toBeNull();
+      expect(referenceEntry('steps')).toBeDefined();
+
+      see.click();
+      fixture.detectChanges();
+
+      expect(TestBed.inject(GsHelpDockService).topic()).toBe('steps');
+      // The note stays put: it is what said the entry was there.
+      expect(
+        fixture.nativeElement.querySelectorAll('[role="note"]'),
       ).toHaveLength(1);
     });
 
-    it('offers nothing inside a note whose field has no strip', () => {
+    it('offers nothing from a note the reference has not reached', () => {
       const { fixture, click } = setup();
 
-      // The second trigger is `batch`, which nothing sweeps.
+      // The second trigger is `sampling`, which carries no reference entry.
       click(1);
 
-      expect(
-        fixture.nativeElement.querySelectorAll('.gs-sweep-offer'),
-      ).toHaveLength(0);
-      TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
-    });
-
-    it('leaves the note intact when the library cannot be reached', async () => {
-      const { fixture, notes, click } = setup();
-
-      click(0);
-      TestBed.inject(HttpTestingController)
-        .expectOne(SWEEP_INDEX)
-        .error(new ProgressEvent('offline'), { status: 0, statusText: '' });
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      fixture.detectChanges();
-
-      expect(notes()).toHaveLength(1);
-      expect(fixture.nativeElement.querySelectorAll('.gs-sweep')).toHaveLength(
-        0,
-      );
+      expect(referenceEntry('sampling')).toBeUndefined();
+      expect(fixture.nativeElement.querySelector('.gs-help-see')).toBeNull();
     });
   });
 

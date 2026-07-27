@@ -73,6 +73,28 @@
     </div>
   }
 
+  <!-- The mobile half of the reference entry. The docked half lives in the
+       results pane and the two are mounted separately, because one element
+       cannot be both a pane child and a fixed sheet; CSS shows exactly one of
+       them, so the reader never meets the entry twice. -->
+  @if (helpDock.topic(); as topic) {
+    <app-gs-sheet
+      #helpSheet
+      [startExpanded]="true"
+      [label]="'generate.help.sheet_label' | transloco"
+      (closed)="helpDock.close()"
+    >
+      <span sheet-bar class="gs-sheet-title">
+        {{ "generate.help." + topic + ".title" | transloco }}
+      </span>
+      <app-gs-param-entry
+        [topic]="topic"
+        mode="dock"
+        (applied)="helpSheet.collapse()"
+      />
+    </app-gs-sheet>
+  }
+
   @if (previewRequest(); as request) {
     <app-studio-json-modal
       [title]="'generate.form.preview_title' | transloco"

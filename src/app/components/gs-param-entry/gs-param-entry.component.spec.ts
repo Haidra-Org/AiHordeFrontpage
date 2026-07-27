@@ -5,10 +5,11 @@ import {
 } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GsParamEntryComponent } from './gs-param-entry.component';
+import { GsTryItService } from '../../services/gs-try-it.service';
 import { environment } from '../../../environments/environment';
 import {
   referenceEntry,
@@ -130,16 +131,68 @@ describe('GsParamEntryComponent', () => {
   it('shows the typical and default values as quiet chips', async () => {
     await setUp({ topic: 'steps' });
 
-    expect(all('.gs-ref-chip').map((node) => node.textContent?.trim())).toEqual(
-      ['Typical 20-40', 'Default 25'],
-    );
+    expect(
+      all('.gs-ref-chip:not(.gs-ref-chip--try)').map((node) =>
+        node.textContent?.trim(),
+      ),
+    ).toEqual(['Typical 20-40', 'Default 25']);
 
     // A range whose typical value is the form's default carries one chip only.
     await setUp({ topic: 'denoise' });
-    expect(all('.gs-ref-chip')).toHaveLength(1);
+    expect(all('.gs-ref-chip:not(.gs-ref-chip--try)')).toHaveLength(1);
 
     await setUp({ topic: 'seed' });
     expect(find('.gs-ref-range')).toBeNull();
+  });
+
+  describe('try-it chips', () => {
+    it('writes the value and flashes the field when the studio is beside it', async () => {
+      await setUp({ topic: 'steps', mode: 'dock' });
+      const host = {
+        applyFields: vi.fn(),
+        currentMode: vi.fn().mockReturnValue('advanced'),
+        setMode: vi.fn(),
+      };
+      TestBed.inject(GsTryItService).registerHost(host);
+
+      const chips = all<HTMLButtonElement>('.gs-ref-chip--try');
+      expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+        'Try 20',
+        'Try 40',
+      ]);
+
+      chips[1].click();
+
+      expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 });
+    });
+
+    it('arms the value and goes to the studio from the routed page', async () => {
+      await setUp({ topic: 'steps', mode: 'page' });
+      const router = TestBed.inject(Router);
+      const navigate = vi
+        .spyOn(router, 'navigateByUrl')
+        .mockResolvedValue(true);
+
+      const chips = all<HTMLButtonElement>('.gs-ref-chip--try');
+      expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+        'Try 20 in the studio',
+        'Try 40 in the studio',
+      ]);
+
+      chips[0].click();
+
+      expect(navigate).toHaveBeenCalledWith('/generate/image');
+      expect(TestBed.inject(GsTryItService).consumeArmed()?.fields).toEqual({
+        steps: 20,
+      });
+    });
+
+    it('offers nothing on an entry with no value worth naming', async () => {
+      await setUp({ topic: 'seed', mode: 'dock' });
+
+      expect(referenceEntry('seed')?.applies).toBeUndefined();
+      expect(all('.gs-ref-chip--try')).toHaveLength(0);
+    });
   });
 
   it('offers the strip and the plate the library published for the setting', async () => {
