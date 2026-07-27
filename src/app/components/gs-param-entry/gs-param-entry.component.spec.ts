@@ -10,6 +10,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
 import { GsParamEntryComponent } from './gs-param-entry.component';
 import { GsTryItService } from '../../services/gs-try-it.service';
+import { GlossaryService } from '../../services/glossary.service';
 import { environment } from '../../../environments/environment';
 import {
   referenceEntry,
@@ -229,6 +230,32 @@ describe('GsParamEntryComponent', () => {
 
     await setUp({ topic: 'steps' });
     expect(find('.gs-ref-link')).toBeNull();
+  });
+
+  it('offers the horde words an entry leans on, and opens the dictionary at them', async () => {
+    await setUp({ topic: 'trusted_workers' });
+    const chips = all<HTMLButtonElement>('.gs-ref-term');
+
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+      translations['help.glossary.terms.worker.title'],
+      translations['help.glossary.terms.trusted.title'],
+    ]);
+    expect(el().querySelector('.gs-ref-terms-head')?.textContent?.trim()).toBe(
+      translations['generate.reference.terms_head'],
+    );
+
+    chips[1].click();
+    const glossary = TestBed.inject(GlossaryService);
+
+    expect(glossary.isOpen()).toBe(true);
+    expect(glossary.activeTermId()).toBe('trusted');
+  });
+
+  it('says nothing about the glossary on an entry that needs none', async () => {
+    await setUp({ topic: 'steps' });
+
+    expect(referenceEntry('steps')?.glossaryTerms).toBeUndefined();
+    expect(find('.gs-ref-terms')).toBeNull();
   });
 
   it('says where the rest of the reference is only when it is docked', async () => {

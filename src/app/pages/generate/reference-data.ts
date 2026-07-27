@@ -87,6 +87,13 @@ export interface ReferenceEntry {
   /** Other entries worth reading next, by id. */
   related?: readonly string[];
   links?: readonly ReferenceLink[];
+  /**
+   * Dictionary terms this entry leans on, by {@link GLOSSARY_TERMS} id. Only the
+   * horde's own vocabulary: a setting explained in ordinary words needs no
+   * glossary, and a reader sent to a definition of what they are already reading
+   * has been sent in a circle.
+   */
+  glossaryTerms?: readonly string[];
 }
 
 /** Where a reader goes to see what a model is and what it suggests. */
@@ -243,23 +250,38 @@ export const REFERENCE_ENTRIES: readonly ReferenceEntry[] = [
     tradeoffs: { speed: 'slower', kudos: 'costlier' },
     range: { min: 1, max: 10, typical: '1' },
     related: ['seed', 'qr'],
+    glossaryTerms: ['kudos'],
   },
-  { id: 'nsfw', related: ['censor_nsfw', 'replacement_filter'] },
-  { id: 'censor_nsfw', related: ['nsfw'] },
+  {
+    id: 'nsfw',
+    related: ['censor_nsfw', 'replacement_filter'],
+    glossaryTerms: ['nsfw'],
+  },
+  { id: 'censor_nsfw', related: ['nsfw'], glossaryTerms: ['nsfw'] },
 
   // --- horde ---
   {
     id: 'trusted_workers',
     tradeoffs: { speed: 'slower' },
     related: ['slow_workers', 'workers'],
+    glossaryTerms: ['worker', 'trusted'],
   },
-  { id: 'slow_workers', related: ['extra_slow_workers', 'trusted_workers'] },
+  {
+    id: 'slow_workers',
+    related: ['extra_slow_workers', 'trusted_workers'],
+    glossaryTerms: ['worker', 'queue'],
+  },
   {
     id: 'extra_slow_workers',
     tradeoffs: { speed: 'slower' },
     related: ['slow_workers', 'allow_downgrade'],
+    glossaryTerms: ['worker', 'queue'],
   },
-  { id: 'allow_downgrade', related: ['steps', 'extra_slow_workers'] },
+  {
+    id: 'allow_downgrade',
+    related: ['steps', 'extra_slow_workers'],
+    glossaryTerms: ['worker', 'kudos'],
+  },
   { id: 'replacement_filter', related: ['nsfw'] },
   { id: 'webhook', related: ['remember_extras'] },
   { id: 'workers', related: ['trusted_workers', 'remember_extras'] },

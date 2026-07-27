@@ -15,13 +15,7 @@ import {
   SECTION_IDENTITIES,
   sectionFor,
 } from '../pages/generate/section-identity';
-import {
-  HIGHLIGHT_CLASS,
-  TutorialAnchorService,
-} from './tutorial-anchor.service';
-
-/** How long an applied field wears the highlight before it is taken off. */
-const FLASH_MS = 2500;
+import { TutorialAnchorService } from './tutorial-anchor.service';
 
 /**
  * What a try-it chip needs the studio to do on its behalf. The studio page
@@ -54,11 +48,6 @@ export class GsTryItService {
 
   /** The value the reference page asked for, consumed once by the studio. */
   private armedApply: ReferenceApply | null = null;
-
-  private flashed: HTMLElement | null = null;
-  /** The `gs-sec--*` class put on {@link flashed}, to take off again. */
-  private flashedSection: string | null = null;
-  private timer: ReturnType<typeof setTimeout> | null = null;
 
   public registerHost(host: TryItHost): void {
     this.host = host;
@@ -110,55 +99,20 @@ export class GsTryItService {
   }
 
   /**
-   * Ring the row a value landed in, then let it go again. Short-lived on
-   * purpose: this is a receipt for something the reader just did, not a step
-   * they are being held at.
+   * Ring the row a value landed in. Short-lived on purpose: this is a receipt
+   * for something the reader just did, not a step they are being held at. The
+   * ringing itself lives with the anchor registry, so a try-it chip and the
+   * glossary point at a control the same way and for the same length of time.
    */
   private flash(anchorId: string): void {
-    this.clearFlash();
     const element = this.anchors.element(anchorId);
     if (!element) {
       return;
     }
-    element.scrollIntoView({
-      behavior: this.scrollBehavior(),
-      block: 'center',
-    });
-    // A running tutorial may already be pointing at this very row. Its
-    // highlight outlives the flash, so the flash leaves it alone rather than
-    // taking it down on its way out.
-    if (element.classList.contains(HIGHLIGHT_CLASS)) {
-      return;
-    }
-    element.classList.add(HIGHLIGHT_CLASS);
     const section = sectionFor('help', anchorId);
-    if (section) {
-      this.flashedSection = SECTION_IDENTITIES[section].className;
-      element.classList.add(this.flashedSection);
-    }
-    this.flashed = element;
-    this.timer = setTimeout(() => this.clearFlash(), FLASH_MS);
-  }
-
-  /** Take the highlight off, and cancel a pending removal of an earlier one. */
-  private clearFlash(): void {
-    if (this.timer !== null) {
-      clearTimeout(this.timer);
-      this.timer = null;
-    }
-    this.flashed?.classList.remove(HIGHLIGHT_CLASS);
-    if (this.flashedSection) {
-      this.flashed?.classList.remove(this.flashedSection);
-      this.flashedSection = null;
-    }
-    this.flashed = null;
-  }
-
-  private scrollBehavior(): ScrollBehavior {
-    const reduced =
-      this.isBrowser &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return reduced ? 'auto' : 'smooth';
+    this.anchors.flash(
+      element,
+      section ? SECTION_IDENTITIES[section].className : undefined,
+    );
   }
 }

@@ -6,8 +6,10 @@ import {
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GenerateSettingsIndexComponent } from './generate-settings-index.component';
+import { GlossaryService } from '../../../services/glossary.service';
+import { HIGHLIGHT_CLASS } from '../../../services/tutorial-anchor.service';
 import { environment } from '../../../../environments/environment';
 import { REFERENCE_ENTRIES, REFERENCE_INDEX } from '../reference-data';
 import { SECTION_IDENTITIES } from '../section-identity';
@@ -123,6 +125,43 @@ describe('GenerateSettingsIndexComponent', () => {
 
     expect(all('.gs-ref-card-img')).toHaveLength(0);
     expect(all('.gs-ref-card')).toHaveLength(REFERENCE_ENTRIES.length);
+  });
+
+  describe('glossary: what this page is made of', () => {
+    it('offers the index its own bands, and takes them back on the way out', async () => {
+      await setUp();
+      const glossary = TestBed.inject(GlossaryService);
+      const context = glossary.pageContexts().get('learn-settings');
+
+      expect(context?.entries.map((entry) => entry.id)).toEqual(
+        REFERENCE_INDEX.map((group) => group.section),
+      );
+      expect(context?.entries[0].titleKey).toBe(
+        SECTION_IDENTITIES[REFERENCE_INDEX[0].section].labelKey,
+      );
+
+      fixture.destroy();
+
+      expect(glossary.pageContexts().has('learn-settings')).toBe(false);
+    });
+
+    it('jumps down the page to the band an entry names', async () => {
+      await setUp();
+      const band = el().querySelector(
+        `#gs-ref-group-${REFERENCE_INDEX[0].section}`,
+      );
+      const scrollIntoView = vi.fn();
+      (band as HTMLElement).scrollIntoView = scrollIntoView;
+
+      TestBed.inject(GlossaryService)
+        .pageContexts()
+        .get('learn-settings')
+        ?.entries[0].action?.();
+
+      expect(scrollIntoView).toHaveBeenCalled();
+      // Nothing changed on the page, so nothing is rung.
+      expect(band?.classList.contains(HIGHLIGHT_CLASS)).toBe(false);
+    });
   });
 
   it('has an English heading and lead of its own', async () => {

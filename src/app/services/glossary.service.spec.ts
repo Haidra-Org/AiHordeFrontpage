@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import {
   GlossaryService,
   PageGlossaryContext,
   GLOSSARY_TERMS,
   GLOSSARY_CATEGORIES,
 } from './glossary.service';
+import { referenceEntry } from '../pages/generate/reference-data';
 
 describe('GlossaryService', () => {
   let service: GlossaryService;
@@ -174,6 +176,74 @@ describe('GlossaryService', () => {
         const terms = GLOSSARY_TERMS.filter((t) => t.category === cat.id);
         expect(terms.length).toBeGreaterThan(0);
       }
+    });
+
+    it('files the panel parameters under their own category', () => {
+      const parameters = GLOSSARY_TERMS.filter(
+        (t) => t.category === 'generation_settings',
+      ).map((t) => t.id);
+
+      expect(parameters).toEqual([
+        'steps',
+        'cfg',
+        'sampler',
+        'seed',
+        'clip_skip',
+        'karras',
+        'hires_fix',
+        'denoise',
+        'tiling',
+      ]);
+    });
+
+    it('sends every term that links to the reference at a setting that exists', () => {
+      const settingLinks = GLOSSARY_TERMS.flatMap((term) =>
+        (term.links ?? [])
+          .map((link) => link.routerLink)
+          .filter((link) => link.startsWith('/generate/learn/settings/')),
+      );
+
+      // Every parameter term carries one, and the terms that predate the
+      // reference (LoRA, ControlNet, img2img, inpainting, post-processing) too.
+      expect(settingLinks.length).toBeGreaterThan(9);
+      for (const link of settingLinks) {
+        const topic = link.slice('/generate/learn/settings/'.length);
+        expect(referenceEntry(topic)?.id).toBe(topic);
+      }
+    });
+  });
+
+  // ===========================================================================
+  // Actionable this-page entries
+  // ===========================================================================
+
+  describe('page entry actions', () => {
+    it('hands an entry action back to the modal untouched', () => {
+      const action = vi.fn();
+      service.registerPageContext({
+        ...makePage('studio'),
+        entries: [
+          {
+            id: 'sampling',
+            titleKey: 'title',
+            descriptionKey: 'desc',
+            action,
+          },
+        ],
+      });
+
+      service.pageContext()?.entries[0].action?.();
+
+      expect(action).toHaveBeenCalledOnce();
+    });
+
+    it('leaves an entry without one alone', () => {
+      service.registerPageContext({
+        ...makePage('static'),
+        entries: [{ id: 'a', titleKey: 'title', descriptionKey: 'desc' }],
+      });
+
+      expect(service.pageContext()?.entries[0].action).toBeUndefined();
     });
   });
 });

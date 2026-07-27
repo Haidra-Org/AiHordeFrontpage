@@ -17,6 +17,8 @@ import { StyleUsageService } from '../../services/style-usage.service';
 import { TutorialEngineService } from '../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsTryItService } from '../../services/gs-try-it.service';
+import { GlossaryService } from '../../services/glossary.service';
+import { HIGHLIGHT_CLASS } from '../../services/tutorial-anchor.service';
 import {
   ModelBaselineMap,
   ModelReferenceService,
@@ -926,6 +928,56 @@ describe('GenerateComponent', () => {
 
       expect(component.pendingLoadRequest()).toBeNull();
       expect(component.form.getRawValue().prompt).toBe('a fox');
+    });
+  });
+
+  describe('glossary: what this page is made of', () => {
+    it('offers the eight areas of the panel for as long as the studio is up', () => {
+      const glossary = TestBed.inject(GlossaryService);
+      const context = glossary.pageContexts().get('generate-image');
+
+      expect(context?.entries.map((entry) => entry.id)).toEqual([
+        'prompt',
+        'model',
+        'size',
+        'source',
+        'sampling',
+        'finishing',
+        'horde',
+        'workflows',
+      ]);
+      // The area's own mark and name, taken from the section identity.
+      expect(context?.entries[4].iconName).toBe('sec-sampling');
+      expect(context?.entries[4].titleKey).toBe('generate.sections.sampling');
+      expect(context?.relevantTermIds).toEqual(
+        expect.arrayContaining(['steps', 'kudos', 'worker', 'model']),
+      );
+
+      fixture.destroy();
+
+      expect(glossary.pageContexts().has('generate-image')).toBe(false);
+    });
+
+    it('takes the reader to the card an entry names, and rings it', () => {
+      const panel = document.createElement('div');
+      panel.className = 'gs-panel';
+      const card = document.createElement('div');
+      card.className = 'gs-card gs-sec--sampling';
+      card.scrollIntoView = vi.fn();
+      panel.appendChild(card);
+      document.body.appendChild(panel);
+
+      const entry = TestBed.inject(GlossaryService)
+        .pageContexts()
+        .get('generate-image')
+        ?.entries.find((candidate) => candidate.id === 'sampling');
+      entry?.action?.();
+
+      expect(card.scrollIntoView).toHaveBeenCalled();
+      // The card is already wearing its own hue, so only the ring is added.
+      expect(card.classList.contains(HIGHLIGHT_CLASS)).toBe(true);
+
+      panel.remove();
     });
   });
 });

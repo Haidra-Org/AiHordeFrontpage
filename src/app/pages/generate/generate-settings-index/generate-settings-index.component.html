@@ -9,7 +9,12 @@
   </header>
 
   @for (group of groups(); track group.section) {
-    <section class="gs-ref-group" [class]="group.className">
+    <!-- Named so the glossary's this-page list can send a reader to a band. -->
+    <section
+      class="gs-ref-group"
+      [class]="group.className"
+      [id]="'gs-ref-group-' + group.section"
+    >
       <h2 class="gs-guide-head">
         <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
           ><app-icon [name]="group.icon"

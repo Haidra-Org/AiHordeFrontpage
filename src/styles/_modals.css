@@ -309,6 +309,35 @@
     @apply text-gray-400;
   }
 
+  /* An entry the page offers to take the reader to is a control rather than a
+     line to read: it fills the row, states its own hit target, and rings when
+     it is reached by keyboard. Its title and description are spans, because a
+     button may hold nothing but phrasing content. */
+  .glossary-page-entry-action {
+    @apply w-full min-h-[44px] text-left cursor-pointer transition-colors;
+  }
+
+  .glossary-page-entry-action .glossary-page-entry-title,
+  .glossary-page-entry-action .glossary-page-entry-desc {
+    @apply block;
+  }
+
+  .glossary-page-entry-action:hover {
+    @apply bg-gray-50 border-gray-300;
+  }
+
+  .dark .glossary-page-entry-action:hover {
+    @apply bg-gray-800 border-gray-600;
+  }
+
+  .glossary-page-entry-action:focus-visible {
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+  }
+
+  .dark .glossary-page-entry-action:focus-visible {
+    @apply ring-offset-gray-900;
+  }
+
   /* Related terms section */
   .glossary-related-section {
     @apply mt-6 pt-4 border-t border-gray-200;

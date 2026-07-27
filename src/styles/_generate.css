@@ -8386,3 +8386,102 @@ html:has(app-gs-sheet) {
   border-color: var(--gs-blue);
   color: var(--gs-blue);
 }
+
+/* ------- glossary integration --------------------------------------- */
+
+/* The dictionary words an entry leans on, offered under the ways onward. A
+   quieter row than the siblings above it: these lead out of the reference into
+   a definition rather than on to another setting. */
+.gen-studio .gs-ref-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.gen-studio .gs-ref-terms-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-ref-term {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-ink-2);
+  background: none;
+  border: 1px dashed var(--gs-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.gen-studio .gs-ref-term:hover {
+  color: var(--gs-blue);
+  border-color: var(--gs-blue-tint-border);
+}
+.gen-studio .gs-ref-term:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-ref-term {
+    min-height: 44px;
+  }
+}
+
+/* The eight section hues, for the glossary modal. The identity variables at the
+   top of this file are declared on `.gen-studio` and the modal is mounted at the
+   document root, so the studio's this-page entries cannot inherit them; the two
+   sets of values are the light and dark ones declared there. */
+.glossary-sec--prompt {
+  color: #4f46e5;
+}
+.glossary-sec--model {
+  color: #a21caf;
+}
+.glossary-sec--size {
+  color: #0d9488;
+}
+.glossary-sec--source {
+  color: #b45309;
+}
+.glossary-sec--sampling {
+  color: #be123c;
+}
+.glossary-sec--finishing {
+  color: #0e7490;
+}
+.glossary-sec--horde {
+  color: #475569;
+}
+.glossary-sec--workflows {
+  color: #4d7c0f;
+}
+.dark .glossary-sec--prompt {
+  color: #a5b4fc;
+}
+.dark .glossary-sec--model {
+  color: #e879f9;
+}
+.dark .glossary-sec--size {
+  color: #5eead4;
+}
+.dark .glossary-sec--source {
+  color: #fbbf24;
+}
+.dark .glossary-sec--sampling {
+  color: #fda4af;
+}
+.dark .glossary-sec--finishing {
+  color: #67e8f9;
+}
+.dark .glossary-sec--horde {
+  color: #94a3b8;
+}
+.dark .glossary-sec--workflows {
+  color: #bef264;
+}

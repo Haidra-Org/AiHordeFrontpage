@@ -1,15 +1,25 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  PLATFORM_ID,
   computed,
   inject,
 } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import {
+  GLOSSARY_TERMS,
+  GlossaryService,
+} from '../../../services/glossary.service';
 import { SweepLibraryService } from '../../../services/sweep-library.service';
 import { REFERENCE_INDEX, referenceSweep } from '../reference-data';
 import { SECTION_IDENTITIES } from '../section-identity';
+
+/** What the glossary files the reference index's this-page entries under. */
+const GLOSSARY_PAGE_ID = 'learn-settings';
 
 /** One card of the index: a setting, said in as few words as it can be. */
 interface IndexCard {
@@ -55,6 +65,10 @@ interface IndexGroup {
 })
 export class GenerateSettingsIndexComponent {
   private readonly sweeps = inject(SweepLibraryService);
+  private readonly glossary = inject(GlossaryService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly groups = computed<readonly IndexGroup[]>(() =>
     REFERENCE_INDEX.map((group) => {
@@ -71,6 +85,50 @@ export class GenerateSettingsIndexComponent {
 
   constructor() {
     void this.sweeps.ensureLoaded();
+    this.registerGlossaryContext();
+  }
+
+  /**
+   * Offer the index's own bands as the glossary's this-page list. The reader is
+   * already looking at the page the entries describe, so pressing one is a jump
+   * down the page rather than a journey, and it is not flashed on arrival:
+   * nothing changed, and a ring would say something did.
+   */
+  private registerGlossaryContext(): void {
+    this.glossary.registerPageContext({
+      pageId: GLOSSARY_PAGE_ID,
+      pageTitleKey: 'help.glossary.page.learn_settings',
+      relevantTermIds: GLOSSARY_TERMS.filter(
+        (term) => term.category === 'generation_settings',
+      ).map((term) => term.id),
+      entries: REFERENCE_INDEX.map((group) => {
+        const identity = SECTION_IDENTITIES[group.section];
+        return {
+          id: group.section,
+          titleKey: identity.labelKey,
+          descriptionKey: `generate.reference.section_hint.${group.section}`,
+          iconName: identity.icon,
+          iconColorClass: `glossary-sec--${group.section}`,
+          action: () => this.showGroup(group.section),
+        };
+      }),
+    });
+    this.destroyRef.onDestroy(() =>
+      this.glossary.clearPageContext(GLOSSARY_PAGE_ID),
+    );
+  }
+
+  private showGroup(section: string): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    const reduced = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    this.document.getElementById(`gs-ref-group-${section}`)?.scrollIntoView({
+      behavior: reduced ? 'auto' : 'smooth',
+      block: 'start',
+    });
   }
 
   private cardFor(id: string, icon: string): IndexCard {

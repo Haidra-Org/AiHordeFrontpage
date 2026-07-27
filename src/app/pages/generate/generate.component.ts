@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   computed,
   effect,
   inject,
@@ -12,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -41,6 +42,11 @@ import {
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../services/tutorial-engine.service';
+import {
+  GLOSSARY_TERMS,
+  GlossaryService,
+} from '../../services/glossary.service';
+import { TutorialAnchorService } from '../../services/tutorial-anchor.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsTryItService, TryItHost } from '../../services/gs-try-it.service';
 import { GsParamEntryComponent } from '../../components/gs-param-entry/gs-param-entry.component';
@@ -79,6 +85,7 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from './image-meta-panel/image-meta-panel.component';
+import { SECTION_IDENTITIES } from './section-identity';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -88,6 +95,23 @@ const DEFAULT_SOURCE_STATE: GenerateSourceState = {
 };
 
 const STORAGE_KEY = 'aihorde.generate.form';
+
+/** What the glossary files the studio's this-page entries under. */
+const STUDIO_GLOSSARY_PAGE_ID = 'generate-image';
+
+/**
+ * The dictionary entries worth putting in front of someone standing at the
+ * panel: every setting it has a word for, and the three things those settings
+ * are spent on.
+ */
+const STUDIO_GLOSSARY_TERM_IDS: readonly string[] = [
+  ...GLOSSARY_TERMS.filter(
+    (term) => term.category === 'generation_settings',
+  ).map((term) => term.id),
+  'kudos',
+  'worker',
+  'model',
+];
 const KUDOS_DEBOUNCE_MS = 1000;
 
 /**
@@ -329,6 +353,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     // applied: the page had no form to write to, and this is the form.
     this.tryIt.registerHost(this);
     this.destroyRef.onDestroy(() => this.tryIt.unregisterHost(this));
+
+    this.registerGlossaryContext();
     const armedApply = this.tryIt.consumeArmed();
     if (armedApply && this.isBrowser) {
       afterNextRender(() => this.tryIt.apply(armedApply));
@@ -928,5 +954,75 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         this.estimating.set(false);
       }
     }
+  }
+
+  // --- Glossary: what this page is made of ---------------------------------
+
+  private readonly glossary = inject(GlossaryService);
+  private readonly anchors = inject(TutorialAnchorService);
+  private readonly injector = inject(Injector);
+  private readonly document = inject(DOCUMENT);
+
+  /**
+   * Tell the site-wide glossary what the studio is made of, so a reader who
+   * opens it here is offered the eight areas of the control panel rather than
+   * only the dictionary. Each area is a control: pressing it closes the glossary
+   * and points at the card, which is the answer to "where is that?" that a list
+   * of definitions cannot give.
+   */
+  private registerGlossaryContext(): void {
+    this.glossary.registerPageContext({
+      pageId: STUDIO_GLOSSARY_PAGE_ID,
+      pageTitleKey: 'help.glossary.page.generate_image',
+      relevantTermIds: [...STUDIO_GLOSSARY_TERM_IDS],
+      entries: Object.entries(SECTION_IDENTITIES).map(([id, identity]) => ({
+        id,
+        titleKey: identity.labelKey,
+        descriptionKey: `generate.reference.section_hint.${id}`,
+        iconName: identity.icon,
+        // The panel's hue classes are declared inside `.gen-studio` and the
+        // glossary is mounted outside it, so the modal has its own set.
+        iconColorClass: `glossary-sec--${id}`,
+        action: () => this.showSection(identity.className),
+      })),
+    });
+    this.destroyRef.onDestroy(() =>
+      this.glossary.clearPageContext(STUDIO_GLOSSARY_PAGE_ID),
+    );
+  }
+
+  /**
+   * Bring one of the panel's cards onto the screen and ring it, in the same
+   * gesture a try-it chip uses. A card the reader cannot currently see is one
+   * the simple panel does not draw, so the panel is opened out and the pointing
+   * waits for the card to exist; no hue is passed, because the card is already
+   * wearing its own.
+   */
+  private showSection(className: string): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    const card = this.document.querySelector<HTMLElement>(
+      `.gs-panel .${className}`,
+    );
+    if (card) {
+      this.anchors.flash(card);
+      return;
+    }
+    if (this.currentMode() === 'advanced') {
+      return;
+    }
+    this.setMode('advanced');
+    afterNextRender(
+      () => {
+        const revealed = this.document.querySelector<HTMLElement>(
+          `.gs-panel .${className}`,
+        );
+        if (revealed) {
+          this.anchors.flash(revealed);
+        }
+      },
+      { injector: this.injector },
+    );
   }
 }

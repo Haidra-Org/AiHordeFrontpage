@@ -22,6 +22,12 @@ export interface PageGlossaryEntry {
   iconName?: string;
   iconColorClass?: string;
   colorSwatch?: string;
+  /**
+   * What pressing the entry does on the page that registered it, where the
+   * entry names something the reader can be taken to. An entry without one is
+   * read rather than pressed, and renders as static text.
+   */
+  action?: () => void;
 }
 
 export interface PageGlossaryContext {
@@ -37,6 +43,7 @@ export type GlossaryCategory =
   | 'core'
   | 'worker_types'
   | 'generation'
+  | 'generation_settings'
   | 'capabilities'
   | 'units'
   | 'tools';
@@ -48,10 +55,33 @@ export const GLOSSARY_CATEGORIES: {
   { id: 'core', labelKey: 'help.glossary.category.core' },
   { id: 'worker_types', labelKey: 'help.glossary.category.worker_types' },
   { id: 'generation', labelKey: 'help.glossary.category.generation' },
+  {
+    id: 'generation_settings',
+    labelKey: 'help.glossary.category.generation_settings',
+  },
   { id: 'capabilities', labelKey: 'help.glossary.category.capabilities' },
   { id: 'units', labelKey: 'help.glossary.category.units' },
   { id: 'tools', labelKey: 'help.glossary.category.tools' },
 ];
+
+/**
+ * Where a setting is written out in full. The dictionary says what a word means
+ * to someone who has just met it; the settings reference is what the site says
+ * about the setting itself, so every term that names one points there rather
+ * than restating it at length.
+ */
+function referenceLink(topic: string): GlossaryLink {
+  return {
+    labelKey: 'help.glossary.link.full_reference',
+    routerLink: `/generate/learn/settings/${topic}`,
+  };
+}
+
+/** Where the numbers behind a wait are, for the terms that are about waiting. */
+const STATUS_LINK: GlossaryLink = {
+  labelKey: 'help.glossary.link.view_status',
+  routerLink: '/status',
+};
 
 export const GLOSSARY_TERMS: GlossaryTerm[] = [
   // Core Concepts
@@ -85,6 +115,12 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.model.title',
     bodyKey: 'help.glossary.terms.model.body',
     category: 'core',
+    links: [
+      {
+        labelKey: 'help.glossary.link.view_models',
+        routerLink: '/details/models',
+      },
+    ],
   },
   {
     id: 'team',
@@ -116,6 +152,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.queue.title',
     bodyKey: 'help.glossary.terms.queue.body',
     category: 'core',
+    links: [STATUS_LINK],
   },
 
   // Tools & GUIs
@@ -244,12 +281,81 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.img2img.title',
     bodyKey: 'help.glossary.terms.img2img.body',
     category: 'generation',
+    links: [referenceLink('source_modes')],
   },
   {
     id: 'inpainting',
     titleKey: 'help.glossary.terms.inpainting.title',
     bodyKey: 'help.glossary.terms.inpainting.body',
     category: 'generation',
+    links: [referenceLink('source_modes')],
+  },
+
+  // Generation settings. The dictionary's half of the settings reference: one
+  // sentence for a reader who met the word somewhere else on the site, and the
+  // way to the page that argues about the value.
+  {
+    id: 'steps',
+    titleKey: 'help.glossary.terms.steps.title',
+    bodyKey: 'help.glossary.terms.steps.body',
+    category: 'generation_settings',
+    links: [referenceLink('steps')],
+  },
+  {
+    id: 'cfg',
+    titleKey: 'help.glossary.terms.cfg.title',
+    bodyKey: 'help.glossary.terms.cfg.body',
+    category: 'generation_settings',
+    links: [referenceLink('cfg')],
+  },
+  {
+    id: 'sampler',
+    titleKey: 'help.glossary.terms.sampler.title',
+    bodyKey: 'help.glossary.terms.sampler.body',
+    category: 'generation_settings',
+    links: [referenceLink('sampler')],
+  },
+  {
+    id: 'seed',
+    titleKey: 'help.glossary.terms.seed.title',
+    bodyKey: 'help.glossary.terms.seed.body',
+    category: 'generation_settings',
+    links: [referenceLink('seed')],
+  },
+  {
+    id: 'clip_skip',
+    titleKey: 'help.glossary.terms.clip_skip.title',
+    bodyKey: 'help.glossary.terms.clip_skip.body',
+    category: 'generation_settings',
+    links: [referenceLink('clip_skip')],
+  },
+  {
+    id: 'karras',
+    titleKey: 'help.glossary.terms.karras.title',
+    bodyKey: 'help.glossary.terms.karras.body',
+    category: 'generation_settings',
+    links: [referenceLink('karras')],
+  },
+  {
+    id: 'hires_fix',
+    titleKey: 'help.glossary.terms.hires_fix.title',
+    bodyKey: 'help.glossary.terms.hires_fix.body',
+    category: 'generation_settings',
+    links: [referenceLink('hires_fix')],
+  },
+  {
+    id: 'denoise',
+    titleKey: 'help.glossary.terms.denoise.title',
+    bodyKey: 'help.glossary.terms.denoise.body',
+    category: 'generation_settings',
+    links: [referenceLink('denoise')],
+  },
+  {
+    id: 'tiling',
+    titleKey: 'help.glossary.terms.tiling.title',
+    bodyKey: 'help.glossary.terms.tiling.body',
+    category: 'generation_settings',
+    links: [referenceLink('tiling')],
   },
 
   // Capabilities
@@ -258,18 +364,21 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.lora.title',
     bodyKey: 'help.glossary.terms.lora.body',
     category: 'capabilities',
+    links: [referenceLink('loras')],
   },
   {
     id: 'controlnet',
     titleKey: 'help.glossary.terms.controlnet.title',
     bodyKey: 'help.glossary.terms.controlnet.body',
     category: 'capabilities',
+    links: [referenceLink('source_modes')],
   },
   {
     id: 'post_processing',
     titleKey: 'help.glossary.terms.post_processing.title',
     bodyKey: 'help.glossary.terms.post_processing.body',
     category: 'capabilities',
+    links: [referenceLink('upscaler')],
   },
   {
     id: 'maintenance',
@@ -314,6 +423,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.eta.title',
     bodyKey: 'help.glossary.terms.eta.body',
     category: 'units',
+    links: [STATUS_LINK],
   },
   {
     id: 'uptime',

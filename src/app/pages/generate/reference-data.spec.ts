@@ -14,6 +14,7 @@ import {
   SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
   SWEEP_PARAMETER_BY_HELP_TOPIC,
 } from '../../services/sweep-library.service';
+import { GLOSSARY_TERMS } from '../../services/glossary.service';
 import en from '../../../assets/i18n/en.json';
 
 const translations = en as Record<string, string>;
@@ -122,6 +123,22 @@ describe('reference registry', () => {
     );
 
     expect(problems).toEqual([]);
+  });
+
+  it('names glossary terms the dictionary actually holds', () => {
+    const known = new Set(GLOSSARY_TERMS.map((term) => term.id));
+    const problems = REFERENCE_ENTRIES.flatMap((entry) =>
+      (entry.glossaryTerms ?? [])
+        .filter((id) => !known.has(id))
+        .map((id) => `${entry.id} -> ${id}`),
+    );
+
+    expect(problems).toEqual([]);
+    // The horde's own vocabulary is the point of the row, so at least the
+    // worker settings carry one.
+    expect(referenceEntry('trusted_workers')?.glossaryTerms).toContain(
+      'worker',
+    );
   });
 
   it('gives every tradeoff line and every link an English label', () => {

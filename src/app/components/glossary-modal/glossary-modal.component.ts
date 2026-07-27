@@ -19,6 +19,7 @@ import {
   GlossaryTab,
   GlossaryTerm,
   PageGlossaryContext,
+  PageGlossaryEntry,
   GLOSSARY_CATEGORIES,
   GLOSSARY_TERMS,
 } from '../../services/glossary.service';
@@ -197,33 +198,67 @@ import {
               role="tabpanel"
             >
               <div class="modal-scroll glossary-terms-list">
-                <!-- Page-specific entries -->
+                <!-- Page-specific entries. An entry the page gave an action to
+                     is a control and is pressed; one without it is read. The
+                     two are written out separately because a button may only
+                     hold phrasing content, and the entry a reader cannot press
+                     keeps the headed markup it has always had. -->
                 @for (entry of activePageContext()!.entries; track entry.id) {
-                  <div
-                    class="glossary-page-entry"
-                    [id]="'glossary-entry-' + entry.id"
-                  >
-                    @if (entry.iconName) {
-                      <app-icon
-                        [name]="entry.iconName"
-                        class="glossary-page-entry-icon"
-                        [class]="entry.iconColorClass ?? ''"
-                      />
-                    } @else if (entry.colorSwatch) {
-                      <span
-                        class="glossary-page-entry-swatch"
-                        [style.background-color]="entry.colorSwatch"
-                      ></span>
-                    }
-                    <div class="glossary-page-entry-content">
-                      <h4 class="glossary-page-entry-title">
-                        {{ entry.titleKey | transloco }}
-                      </h4>
-                      <p class="glossary-page-entry-desc">
-                        {{ entry.descriptionKey | transloco }}
-                      </p>
+                  @if (entry.action) {
+                    <button
+                      type="button"
+                      class="glossary-page-entry glossary-page-entry-action"
+                      [id]="'glossary-entry-' + entry.id"
+                      (click)="runEntry(entry)"
+                    >
+                      @if (entry.iconName) {
+                        <app-icon
+                          [name]="entry.iconName"
+                          class="glossary-page-entry-icon"
+                          [class]="entry.iconColorClass ?? ''"
+                        />
+                      } @else if (entry.colorSwatch) {
+                        <span
+                          class="glossary-page-entry-swatch"
+                          [style.background-color]="entry.colorSwatch"
+                        ></span>
+                      }
+                      <span class="glossary-page-entry-content">
+                        <span class="glossary-page-entry-title">
+                          {{ entry.titleKey | transloco }}
+                        </span>
+                        <span class="glossary-page-entry-desc">
+                          {{ entry.descriptionKey | transloco }}
+                        </span>
+                      </span>
+                    </button>
+                  } @else {
+                    <div
+                      class="glossary-page-entry"
+                      [id]="'glossary-entry-' + entry.id"
+                    >
+                      @if (entry.iconName) {
+                        <app-icon
+                          [name]="entry.iconName"
+                          class="glossary-page-entry-icon"
+                          [class]="entry.iconColorClass ?? ''"
+                        />
+                      } @else if (entry.colorSwatch) {
+                        <span
+                          class="glossary-page-entry-swatch"
+                          [style.background-color]="entry.colorSwatch"
+                        ></span>
+                      }
+                      <div class="glossary-page-entry-content">
+                        <h4 class="glossary-page-entry-title">
+                          {{ entry.titleKey | transloco }}
+                        </h4>
+                        <p class="glossary-page-entry-desc">
+                          {{ entry.descriptionKey | transloco }}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  }
                 }
 
                 <!-- Related Terms subsection -->
@@ -383,6 +418,16 @@ export class GlossaryModalComponent {
 
   public toggleRelevantOnly(): void {
     this.showRelevantOnly.update((v) => !v);
+  }
+
+  /**
+   * Do what a this-page entry offers. The modal gets out of the way first: the
+   * page is where the action happens, and a reader who has just been taken to a
+   * control should be looking at it rather than at the dialog that sent them.
+   */
+  public runEntry(entry: PageGlossaryEntry): void {
+    this.close();
+    entry.action?.();
   }
 
   public goToTerm(termId: string): void {

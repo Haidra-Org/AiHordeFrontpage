@@ -10,6 +10,10 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsTryItService } from '../../services/gs-try-it.service';
 import {
+  GLOSSARY_TERMS,
+  GlossaryService,
+} from '../../services/glossary.service';
+import {
   SECTION_IDENTITIES,
   SectionIdentity,
 } from '../../pages/generate/section-identity';
@@ -183,6 +187,19 @@ const TRADEOFF_ICONS = {
       </nav>
     }
 
+    @if (terms().length > 0) {
+      <p class="gs-ref-terms">
+        <span class="gs-ref-terms-head">{{
+          'generate.reference.terms_head' | transloco
+        }}</span>
+        @for (term of terms(); track term.id) {
+          <button type="button" class="gs-ref-term" (click)="openTerm(term.id)">
+            {{ term.titleKey | transloco }}
+          </button>
+        }
+      </p>
+    }
+
     @if (links(); as external) {
       @if (external.length > 0) {
         <p class="gs-ref-links">
@@ -215,6 +232,7 @@ const TRADEOFF_ICONS = {
 })
 export class GsParamEntryComponent {
   private readonly tryIt = inject(GsTryItService);
+  private readonly glossary = inject(GlossaryService);
   private readonly router = inject(Router);
 
   /** The `generate.help.<topic>` setting this entry is the long form of. */
@@ -299,6 +317,19 @@ export class GsParamEntryComponent {
     }),
   );
 
+  /**
+   * The horde's own words this entry uses, as the dictionary holds them. Named
+   * by the registry rather than found in the prose: a page that parsed its own
+   * sentences for known words would light up "model" in the middle of a
+   * paragraph about something else.
+   */
+  public readonly terms = computed(() =>
+    (this.entry()?.glossaryTerms ?? []).flatMap((id) => {
+      const term = GLOSSARY_TERMS.find((candidate) => candidate.id === id);
+      return term ? [{ id: term.id, titleKey: term.titleKey }] : [];
+    }),
+  );
+
   /** Where the docked entry sends a reader who wants the whole page. */
   public readonly fullLink = computed(
     () => `${REFERENCE_ROOT}/${this.topic()}`,
@@ -318,5 +349,10 @@ export class GsParamEntryComponent {
     }
     this.tryIt.apply(option);
     this.applied.emit();
+  }
+
+  /** Open the dictionary at one of the words the entry leans on. */
+  public openTerm(termId: string): void {
+    this.glossary.open(termId);
   }
 }
