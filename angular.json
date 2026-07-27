@@ -75,6 +75,21 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.local.ts"
                 }
+              ],
+              "assets": [
+                "src/assets",
+                "src/404.html",
+                "src/.nojekyll",
+                {
+                  "glob": "*",
+                  "output": "/",
+                  "input": "src/favicon"
+                },
+                {
+                  "glob": "**/*",
+                  "output": "/assets/param-sweeps",
+                  "input": "docs/haidra-assets/assets/param-sweeps"
+                }
               ]
             }
           },

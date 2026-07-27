@@ -706,13 +706,16 @@
                 </label>
                 <app-gs-help topic="hires_fix" />
               </div>
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.tiling_label" | transloco }}</span>
-                <input type="checkbox" formControlName="tiling" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.tiling_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="tiling" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
+                </label>
+                <app-gs-help topic="tiling" />
+              </div>
             </div>
             <ng-container
               *ngTemplateOutlet="reqHint; context: { hint: karrasHint() }"

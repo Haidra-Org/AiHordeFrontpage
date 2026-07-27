@@ -358,12 +358,26 @@
             "denoising_strength": 0.75,
             "seed": 1312
           }
+        },
+        {
+          "value": "30x2",
+          "label": "s30_c2",
+          "caption": "30 steps at guidance 2.",
+          "file": "steps-cfg-grid/albedobase-xl/person/003_s30_c2.webp",
+          "sidecar": "steps-cfg-grid/albedobase-xl/person/003_s30_c2.json"
+        },
+        {
+          "value": "30x7",
+          "label": "s30_c7",
+          "caption": "30 steps at guidance 7.",
+          "file": "steps-cfg-grid/albedobase-xl/person/004_s30_c7.webp",
+          "sidecar": "steps-cfg-grid/albedobase-xl/person/004_s30_c7.json"
         }
       ],
       "grid": {
         "rows": {
           "parameter": "steps",
-          "values": [8],
+          "values": [8, 30],
           "caption": "Rows are steps."
         },
         "columns": {
@@ -372,6 +386,311 @@
           "caption": "Columns are guidance."
         }
       }
+    },
+    {
+      "strip_id": "steps-converging/albedobase-xl/person",
+      "parameter": "steps_converging",
+      "presentation": "strip",
+      "caption": "The same sweep on a sampler that settles instead of re-rolling.",
+      "rationale": "Steps read differently depending on which kind of sampler is in use.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "varying": ["steps"],
+      "stops": [
+        {
+          "value": 4,
+          "label": "4",
+          "caption": "Settling from a long way out.",
+          "file": "steps-converging/albedobase-xl/person/001_4.webp",
+          "sidecar": "steps-converging/albedobase-xl/person/001_4.json"
+        },
+        {
+          "value": 12,
+          "label": "12",
+          "caption": "Nearly where it is going to end up.",
+          "file": "steps-converging/albedobase-xl/person/002_12.webp",
+          "sidecar": "steps-converging/albedobase-xl/person/002_12.json"
+        },
+        {
+          "value": 30,
+          "label": "30",
+          "caption": "Settled, and the same picture from here on.",
+          "file": "steps-converging/albedobase-xl/person/003_30.webp",
+          "sidecar": "steps-converging/albedobase-xl/person/003_30.json"
+        }
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "tiling/deliberate/texture",
+      "parameter": "tiling",
+      "presentation": "tile_repeat_2x2",
+      "caption": "Whether the edges are made to wrap.",
+      "rationale": "A seam only exists where one copy meets the next.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "texture",
+        "label": "A texture",
+        "prompt": "weathered stone paving"
+      },
+      "varying": ["tiling"],
+      "stops": [
+        {
+          "value": false,
+          "label": "off",
+          "caption": "Every join is a hard line.",
+          "file": "tiling/deliberate/texture/001_off.webp",
+          "sidecar": "tiling/deliberate/texture/001_off.json"
+        },
+        {
+          "value": true,
+          "label": "on",
+          "caption": "The grain runs on across each join.",
+          "file": "tiling/deliberate/texture/002_on.webp",
+          "sidecar": "tiling/deliberate/texture/002_on.json"
+        }
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "denoising-strength/deliberate/place",
+      "parameter": "denoising_strength",
+      "presentation": "strip",
+      "caption": "How much of the starting image is painted over.",
+      "rationale": "The one setting whose low end looks like a failure until the source is beside it.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "place",
+        "label": "A place",
+        "prompt": "a wide valley under a low sun"
+      },
+      "varying": ["denoising_strength"],
+      "source_image": "denoising-strength/deliberate/place/source.webp",
+      "stops": [
+        {
+          "value": 0.15,
+          "label": "0_15",
+          "caption": "Barely touched.",
+          "file": "denoising-strength/deliberate/place/001_0_15.webp",
+          "sidecar": "denoising-strength/deliberate/place/001_0_15.json"
+        },
+        {
+          "value": 0.5,
+          "label": "0_5",
+          "caption": "Half repainted.",
+          "file": "denoising-strength/deliberate/place/002_0_5.webp",
+          "sidecar": "denoising-strength/deliberate/place/002_0_5.json"
+        },
+        {
+          "value": 1.0,
+          "label": "1_0",
+          "caption": "Nothing of the source is left.",
+          "file": "denoising-strength/deliberate/place/003_1_0.webp",
+          "sidecar": "denoising-strength/deliberate/place/003_1_0.json"
+        }
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "sampler-steps-grid/deliberate/person",
+      "parameter": "sampler_steps_grid",
+      "presentation": "grid",
+      "caption": "Samplers against steps, as a plate.",
+      "rationale": "A plate whose rows are named rather than numbered.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "varying": ["sampler_name", "steps"],
+      "stops": [
+        {
+          "value": "k_eulerx8",
+          "label": "k_euler_s08",
+          "caption": "k_euler at 8 steps.",
+          "file": "sampler-steps-grid/deliberate/person/001_k_euler_s08.webp",
+          "sidecar": "sampler-steps-grid/deliberate/person/001_k_euler_s08.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "k_eulerx30",
+          "label": "k_euler_s30",
+          "caption": "k_euler at 30 steps.",
+          "file": "sampler-steps-grid/deliberate/person/002_k_euler_s30.webp",
+          "sidecar": "sampler-steps-grid/deliberate/person/002_k_euler_s30.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "k_dpmpp_2mx8",
+          "label": "k_dpmpp_2m_s08",
+          "caption": "k_dpmpp_2m at 8 steps.",
+          "file": "sampler-steps-grid/deliberate/person/003_k_dpmpp_2m_s08.webp",
+          "sidecar": "sampler-steps-grid/deliberate/person/003_k_dpmpp_2m_s08.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "k_dpmpp_2mx30",
+          "label": "k_dpmpp_2m_s30",
+          "caption": "k_dpmpp_2m at 30 steps.",
+          "file": "sampler-steps-grid/deliberate/person/004_k_dpmpp_2m_s30.webp",
+          "sidecar": "sampler-steps-grid/deliberate/person/004_k_dpmpp_2m_s30.json",
+          "prompt_fragment": null
+        }
+      ],
+      "grid": {
+        "rows": {
+          "parameter": "sampler",
+          "values": ["k_euler", "k_dpmpp_2m"],
+          "caption": "Sampler, top to bottom."
+        },
+        "columns": {
+          "parameter": "steps",
+          "values": [8, 30],
+          "caption": "Steps, left to right."
+        }
+      }
+    },
+    {
+      "strip_id": "hires-grid/deliberate/person",
+      "parameter": "hires_grid",
+      "presentation": "grid",
+      "caption": "Requested size against hires fix, as a plate.",
+      "rationale": "A plate one of whose axes is a switch rather than a range.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "varying": ["width", "height", "hires_fix"],
+      "stops": [
+        {
+          "value": "768xoff",
+          "label": "r768_off",
+          "caption": "768 px, hires-fix off.",
+          "file": "hires-grid/deliberate/person/001_r768_off.webp",
+          "sidecar": "hires-grid/deliberate/person/001_r768_off.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "768xon",
+          "label": "r768_on",
+          "caption": "768 px, hires-fix on.",
+          "file": "hires-grid/deliberate/person/002_r768_on.webp",
+          "sidecar": "hires-grid/deliberate/person/002_r768_on.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "1024xoff",
+          "label": "r1024_off",
+          "caption": "1024 px, hires-fix off.",
+          "file": "hires-grid/deliberate/person/003_r1024_off.webp",
+          "sidecar": "hires-grid/deliberate/person/003_r1024_off.json",
+          "prompt_fragment": null
+        },
+        {
+          "value": "1024xon",
+          "label": "r1024_on",
+          "caption": "1024 px, hires-fix on.",
+          "file": "hires-grid/deliberate/person/004_r1024_on.webp",
+          "sidecar": "hires-grid/deliberate/person/004_r1024_on.json",
+          "prompt_fragment": null
+        }
+      ],
+      "grid": {
+        "rows": {
+          "parameter": "resolution",
+          "values": [768, 1024],
+          "caption": "Requested size, top to bottom."
+        },
+        "columns": {
+          "parameter": "hires_fix",
+          "values": [false, true],
+          "caption": "Hires-fix off, then on."
+        }
+      }
+    },
+    {
+      "strip_id": "prompt-emphasis/deliberate/place",
+      "parameter": "prompt_emphasis",
+      "presentation": "strip",
+      "caption": "How hard a weighted phrase pulls on the picture.",
+      "rationale": "A strip whose stops vary the wording rather than a field.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "A widely available SD1.5 checkpoint."
+      },
+      "scene": {
+        "scene_id": "place",
+        "label": "A place",
+        "prompt": "a wide valley under a low sun"
+      },
+      "varying": ["prompt"],
+      "stops": [
+        {
+          "value": 0.5,
+          "label": "0_5",
+          "caption": "Half weight: a hint of the style over an ordinary render.",
+          "file": "prompt-emphasis/deliberate/place/001_0_5.webp",
+          "sidecar": "prompt-emphasis/deliberate/place/001_0_5.json",
+          "prompt_fragment": "(watercolor painting:0.5)"
+        },
+        {
+          "value": 1.0,
+          "label": "1_0",
+          "caption": "Plain weight, which is what writing the phrase alone does.",
+          "file": "prompt-emphasis/deliberate/place/002_1_0.webp",
+          "sidecar": "prompt-emphasis/deliberate/place/002_1_0.json",
+          "prompt_fragment": "(watercolor painting:1.0)"
+        },
+        {
+          "value": 1.5,
+          "label": "1_5",
+          "caption": "Past here the phrase starts taking the picture apart.",
+          "file": "prompt-emphasis/deliberate/place/003_1_5.webp",
+          "sidecar": "prompt-emphasis/deliberate/place/003_1_5.json",
+          "prompt_fragment": "(watercolor painting:1.5)"
+        }
+      ],
+      "grid": null
     }
   ]
 }

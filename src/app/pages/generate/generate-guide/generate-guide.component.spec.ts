@@ -44,6 +44,29 @@ describe('GenerateGuideComponent', () => {
     ).toEqual(component.steps.map((_, index) => String(index + 1)));
   });
 
+  it('carries each walkthrough step its own copy and its own strips', () => {
+    const translations = en as Record<string, string>;
+    const steps = query<HTMLElement>('.gs-guide-step');
+
+    component.steps.forEach((step, index) => {
+      expect(
+        translations[`generate.guide.steps.${step.id}.title`],
+      ).toBeTruthy();
+      expect(translations[`generate.guide.steps.${step.id}.body`]).toBeTruthy();
+      expect(steps[index].querySelectorAll('app-gs-sweep-scrub')).toHaveLength(
+        step.sweeps.length,
+      );
+    });
+
+    // Prompt and size carry no `?` glyph, so the reference half below has no
+    // entry for them and the walkthrough is where their pictures live.
+    expect(component.steps.flatMap((step) => step.sweeps)).toEqual([
+      'prompt_emphasis',
+      'negative_prompt',
+      'resolution',
+    ]);
+  });
+
   it('reuses the panel help topics without repeating one', () => {
     const topics = component.sections.flatMap((section) => section.topics);
 

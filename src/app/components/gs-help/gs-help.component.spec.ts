@@ -15,7 +15,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 @Component({
   template: `
     <app-gs-help topic="steps" />
-    <app-gs-help topic="seed" />
+    <app-gs-help topic="batch" />
   `,
   imports: [GsHelpComponent],
 })
@@ -125,7 +125,7 @@ describe('GsHelpComponent', () => {
     it('offers nothing inside a note whose field has no strip', () => {
       const { fixture, click } = setup();
 
-      // The second trigger is `seed`, which nothing sweeps.
+      // The second trigger is `batch`, which nothing sweeps.
       click(1);
 
       expect(

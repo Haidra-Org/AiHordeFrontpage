@@ -11,6 +11,12 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsSweepGridComponent } from '../../../components/gs-sweep-grid/gs-sweep-grid.component';
+import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
+import {
+  SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
+  SWEEP_PARAMETER_BY_HELP_TOPIC,
+} from '../../../services/sweep-library.service';
 
 /** One card of the control panel, and the help topics that card carries. */
 interface GuideSection {
@@ -47,6 +53,7 @@ const GUIDE_SECTIONS: readonly GuideSection[] = [
       'clip_skip',
       'karras',
       'hires_fix',
+      'tiling',
       'hires_denoise',
       'requirements',
     ],
@@ -87,14 +94,31 @@ const GUIDE_SECTIONS: readonly GuideSection[] = [
   },
 ];
 
+/** One step of the walkthrough, and the strips it can show under its copy. */
+interface GuideStep {
+  /** Suffix of the step's `generate.guide.steps.<id>` copy. */
+  id: string;
+  /**
+   * Sweep parameters the step offers, in the order they are read. These are
+   * the settings the walkthrough covers instead of the reference half, so the
+   * pictures have nowhere else to hang: the panel cards they belong to carry no
+   * `?` glyph of their own.
+   */
+  sweeps: readonly string[];
+}
+
 /** The walkthrough, in the order a first image is actually made. */
-const GUIDE_STEPS = [
-  'prompt',
-  'model',
-  'generate',
-  'results',
-  'advanced',
-] as const;
+const GUIDE_STEPS: readonly GuideStep[] = [
+  { id: 'prompt', sweeps: ['prompt_emphasis', 'negative_prompt'] },
+  { id: 'model', sweeps: [] },
+  { id: 'dimensions', sweeps: ['resolution'] },
+  { id: 'generate', sweeps: [] },
+  { id: 'results', sweeps: [] },
+  { id: 'advanced', sweeps: [] },
+];
+
+/** What a topic with no strip published for it offers, without allocating. */
+const NO_SWEEPS: readonly string[] = [];
 
 /**
  * The studio's written guide: a short walkthrough of a first generation,
@@ -107,7 +131,13 @@ const GUIDE_STEPS = [
  */
 @Component({
   selector: 'app-generate-guide',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    IconComponent,
+    GsSweepScrubComponent,
+    GsSweepGridComponent,
+  ],
   templateUrl: './generate-guide.component.html',
   host: {
     class: 'gs-results-body gs-guide',
@@ -124,6 +154,17 @@ export class GenerateGuideComponent {
 
   public readonly sections = GUIDE_SECTIONS;
   public readonly steps = GUIDE_STEPS;
+
+  /** The strips a reference entry has pictures for, in the order they read. */
+  public sweepFor(topic: string): readonly string[] {
+    const parameter = SWEEP_PARAMETER_BY_HELP_TOPIC[topic];
+    return parameter ? [parameter] : NO_SWEEPS;
+  }
+
+  /** The two-axis plate a reference entry can offer beside its strip. */
+  public sweepGridFor(topic: string): string | null {
+    return SWEEP_GRID_PARAMETER_BY_HELP_TOPIC[topic] ?? null;
+  }
 
   /** The DOM id of a section, so the contents rail can target it. */
   public sectionId(id: string): string {

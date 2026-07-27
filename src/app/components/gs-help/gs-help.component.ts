@@ -10,7 +10,11 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsHelpService } from '../../services/gs-help.service';
-import { SWEEP_PARAMETER_BY_HELP_TOPIC } from '../../services/sweep-library.service';
+import {
+  SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
+  SWEEP_PARAMETER_BY_HELP_TOPIC,
+} from '../../services/sweep-library.service';
+import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 
 /**
@@ -31,7 +35,7 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
  */
 @Component({
   selector: 'app-gs-help',
-  imports: [TranslocoPipe, GsSweepScrubComponent],
+  imports: [TranslocoPipe, GsSweepScrubComponent, GsSweepGridComponent],
   template: `
     <button
       #trigger
@@ -56,6 +60,11 @@ import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.componen
            reader who says "expert" is still allowed to want to see it. -->
       @if (sweepParameter(); as parameter) {
         <app-gs-sweep-scrub [parameter]="parameter" />
+      }
+      <!-- Second line, under the strip: the plate is the follow-up question,
+           and a reader who has not asked the first one is not looking for it. -->
+      @if (sweepGridParameter(); as parameter) {
+        <app-gs-sweep-grid [parameter]="parameter" />
       }
     }
   `,
@@ -89,6 +98,10 @@ export class GsHelpComponent {
   /** The sweep this field has pictures for, or null when it has none. */
   public readonly sweepParameter = computed(
     () => SWEEP_PARAMETER_BY_HELP_TOPIC[this.topic()] ?? null,
+  );
+  /** The two-axis plate this field shares with the one beside it, if any. */
+  public readonly sweepGridParameter = computed(
+    () => SWEEP_GRID_PARAMETER_BY_HELP_TOPIC[this.topic()] ?? null,
   );
 
   constructor() {

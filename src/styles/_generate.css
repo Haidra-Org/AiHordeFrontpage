@@ -6301,7 +6301,8 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep {
   margin-top: 9px;
 }
-.gen-studio .gs-sweep-offer {
+.gen-studio .gs-sweep-offer,
+.gen-studio .gs-sweep-grid-offer {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -6317,7 +6318,8 @@ app-gs-sweep-scrub {
   text-align: left;
   cursor: pointer;
 }
-.gen-studio .gs-sweep-offer:hover {
+.gen-studio .gs-sweep-offer:hover,
+.gen-studio .gs-sweep-grid-offer:hover {
   border-color: var(--gs-blue);
 }
 /* Large enough that the thumbnail is a picture rather than a swatch, and still
@@ -6477,11 +6479,223 @@ app-gs-sweep-scrub {
   object-fit: contain;
   border-radius: 10px;
 }
+.gen-studio .gs-sweep-viewer-stage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 0 16px;
+}
 .gen-studio .gs-sweep-viewer-cap {
   flex: none;
   margin: 10px 16px 0;
   font-size: 12px;
   color: var(--gs-ink-2);
+}
+
+/* ------- sweeps: pairs, tiles, sources ------------------------------- */
+
+/* Two frames are a before and an after, so they are shown as one: a slider
+   between two positions asks the reader to flick back and forth to hold a
+   comparison they can simply be given. */
+.gen-studio .gs-sweep-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+.gen-studio .gs-sweep-pair-item {
+  margin: 0;
+  min-width: 0;
+}
+.gen-studio .gs-sweep-pair-name {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-sweep-pair-cap {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+
+/* A tiling frame is one tile, and a seam only exists where one copy meets the
+   next, so the frame is drawn as the four copies the index asks for. */
+.gen-studio .gs-sweep-tiled {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-sweep-tile {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.gen-studio .gs-sweep-source {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 9px;
+}
+.gen-studio .gs-sweep-source-img {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--gs-field);
+}
+.gen-studio .gs-sweep-source-cap {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-sweep-viewer-source {
+  flex: 0 0 auto;
+  margin: 12px 0 0;
+  text-align: center;
+}
+.gen-studio .gs-sweep-viewer-source-img {
+  display: block;
+  width: 120px;
+  max-width: 100%;
+  border-radius: 8px;
+  background: var(--gs-field);
+}
+
+/* The two readings of one number, offered as a choice rather than as a second
+   strip: subtle enough to be read past by anyone who does not want it. */
+.gen-studio .gs-sweep-variants {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 9px;
+}
+.gen-studio .gs-sweep-variant {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: none;
+  color: var(--gs-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-variant.is-on {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink);
+}
+
+/* ------- sweeps: the two-axis plate ---------------------------------- */
+
+.gen-studio .gs-sweep-grid-body {
+  width: 1100px;
+}
+.gen-studio .gs-sweep-grid-scroll {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 0;
+}
+.gen-studio .gs-sweep-plate {
+  border-collapse: separate;
+  border-spacing: 4px;
+}
+.gen-studio .gs-sweep-plate-corner {
+  padding: 0;
+}
+.gen-studio .gs-sweep-plate-head {
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gs-label);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.gen-studio .gs-sweep-plate-td {
+  padding: 0;
+}
+/* A cell is a picture and a 44px target at once: the plate is most often read
+   on the same touch screen the studio is filled in on. */
+.gen-studio .gs-sweep-plate-cell {
+  display: block;
+  width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: var(--gs-field);
+  cursor: zoom-in;
+}
+.gen-studio .gs-sweep-plate-cell:hover,
+.gen-studio .gs-sweep-plate-cell.is-at {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-sweep-plate-img {
+  display: block;
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+  border-radius: 6px;
+}
+.gen-studio .gs-sweep-plate-legend {
+  flex: none;
+  margin: 8px 16px 0;
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sweep-grid-cell-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 16px;
+}
+/* The way between neighbouring cells for anyone without arrow keys. Sized to
+   the viewer's own 44px controls rather than to the caption beside it: it is
+   reached with a thumb on the surfaces that need it at all. */
+.gen-studio .gs-sweep-cell-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+.gen-studio .gs-sweep-cell-step {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--gs-ink-2);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-cell-step:hover:not(:disabled) {
+  color: var(--gs-ink);
+  background: var(--gs-field);
+}
+.gen-studio .gs-sweep-cell-step:disabled {
+  color: var(--gs-muted);
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* The host carries `.gs-results-body` for the pane's padding and scrolling, as

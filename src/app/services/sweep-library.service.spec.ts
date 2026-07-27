@@ -103,6 +103,47 @@ describe('SweepLibraryService', () => {
     expect(sweeps.studioModelSlug()).toBeUndefined();
   });
 
+  it('prefers the reader own model over the family standing for it', () => {
+    // The library rendered this one by name, so it beats the baseline map.
+    sweeps.setStudioModel('Anything Diffusion', 'stable_diffusion_1');
+    expect(sweeps.studioModelSlug()).toBe('anything-diffusion');
+
+    sweeps.setStudioModel('  deliberate  ', 'stable_diffusion_xl');
+    expect(sweeps.studioModelSlug()).toBe('deliberate');
+
+    // A checkpoint the library never rendered falls back to its family.
+    sweeps.setStudioModel('Some Other SDXL', 'stable_diffusion_xl');
+    expect(sweeps.studioModelSlug()).toBe('albedobase-xl');
+
+    sweeps.setStudioModel(null, null);
+    expect(sweeps.studioModelSlug()).toBeUndefined();
+  });
+
+  it('hands out grid plates separately from scrubbable strips', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    const plate = sweeps.grid('steps_cfg_grid')!;
+    expect(plate.strip_id).toBe('steps-cfg-grid/albedobase-xl/person');
+    expect(plate.grid?.rows.values).toEqual([8, 30]);
+    expect(plate.grid?.columns.values).toEqual([2, 7]);
+    // A strip is never a plate and a plate is never a strip.
+    expect(sweeps.grid('steps')).toBeNull();
+    expect(sweeps.strip('steps_cfg_grid')).toBeNull();
+  });
+
+  it('builds urls for the files a strip names beside its stops', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    const strip = sweeps.strip('denoising_strength')!;
+    expect(sweeps.assetUrl(strip.source_image!)).toBe(
+      `${environment.sweepLibraryBaseUrl}/denoising-strength/deliberate/place/source.webp`,
+    );
+  });
+
   it('builds frame urls from the stop path verbatim', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);

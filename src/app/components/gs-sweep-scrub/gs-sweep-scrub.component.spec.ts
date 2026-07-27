@@ -47,6 +47,8 @@ describe('GsSweepScrubComponent', () => {
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const find = <T extends Element>(selector: string): T | null =>
     el().querySelector<T>(selector);
+  const all = <T extends Element>(selector: string): T[] =>
+    Array.from(el().querySelectorAll<T>(selector));
 
   async function setUp(options?: {
     reducedData?: boolean;
@@ -55,6 +57,8 @@ describe('GsSweepScrubComponent', () => {
     studioBaseline?: string;
     /** What the surface hosting the scrubber names, if it names anything. */
     modelSlug?: string;
+    /** Which sweep to put on show; the steps strip unless said otherwise. */
+    parameter?: string;
   }): Promise<void> {
     stubReducedData(options?.reducedData ?? false);
     TestBed.resetTestingModule();
@@ -77,6 +81,7 @@ describe('GsSweepScrubComponent', () => {
     }
     fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.modelSlug = options?.modelSlug;
+    fixture.componentInstance.parameter = options?.parameter ?? 'steps';
     fixture.detectChanges();
 
     const request = http.expectOne(
@@ -260,6 +265,141 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(find('.gs-sweep-viewer')).not.toBeNull();
+  });
+
+  describe('two-frame strips', () => {
+    it('shows both frames at once, named and captioned, with no slider', async () => {
+      await setUp({ parameter: 'tiling' });
+
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      const frames = all<HTMLElement>('.gs-sweep-pair-item');
+      expect(frames).toHaveLength(2);
+      expect(find('.gs-sweep-range')).toBeNull();
+      // The index labels these `off`/`on`, which is a filename, not a heading.
+      expect(
+        all('.gs-sweep-pair-name').map((n) => n.textContent?.trim()),
+      ).toEqual([
+        en['generate.sweeps.state_off'],
+        en['generate.sweeps.state_on'],
+      ]);
+      expect(el().textContent).toContain('Every join is a hard line.');
+      expect(el().textContent).toContain('The grain runs on across each join.');
+    });
+
+    it('enlarges the side that was pressed and gives focus back to it', async () => {
+      await setUp({ parameter: 'tiling' });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      all<HTMLButtonElement>('.gs-sweep-zoom')[1].click();
+      fixture.detectChanges();
+
+      expect(
+        find<HTMLElement>('.gs-sweep-viewer-body')!.getAttribute('aria-label'),
+      ).toContain('on');
+      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(all('.gs-sweep-zoom')[1]);
+    });
+  });
+
+  it('lays a tiled strip out as four copies of the one tile', async () => {
+    await setUp({ parameter: 'tiling' });
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    const [first] = all<HTMLElement>('.gs-sweep-tiled');
+    expect(first.getAttribute('role')).toBe('img');
+    expect(first.getAttribute('aria-label')).toContain('repeated four times');
+    const copies = Array.from(first.querySelectorAll<HTMLImageElement>('img'));
+    expect(copies).toHaveLength(4);
+    for (const copy of copies) {
+      expect(copy.getAttribute('src')).toBe(
+        `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/001_off.webp`,
+      );
+      expect(copy.getAttribute('loading')).toBe('lazy');
+    }
+  });
+
+  it('names a strip that varies the wording by the wording, not by a setting', async () => {
+    await setUp({ parameter: 'prompt_emphasis' });
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    // The label on these stops is a filename token, so it is never read out.
+    expect(find('.gs-sweep-value')?.textContent?.trim()).toBe(
+      'Prompted with (watercolor painting:1.0)',
+    );
+    expect(
+      find<HTMLInputElement>('.gs-sweep-range')!.getAttribute('aria-valuetext'),
+    ).toBe('1');
+    expect(find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('alt')).toBe(
+      'The same picture rendered at 1',
+    );
+
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer-name')?.textContent?.trim()).toBe(
+      'Prompted with (watercolor painting:1.0)',
+    );
+  });
+
+  it('shows the image a denoising strip was painted over', async () => {
+    await setUp({ parameter: 'denoising_strength' });
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    expect(
+      find<HTMLImageElement>('.gs-sweep-source-img')!.getAttribute('src'),
+    ).toBe(
+      `${environment.sweepLibraryBaseUrl}/denoising-strength/deliberate/place/source.webp`,
+    );
+    expect(el().textContent).toContain(en['generate.sweeps.source_label']);
+
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer-source-img')).not.toBeNull();
+  });
+
+  describe('the second reading of steps', () => {
+    it('swaps to the converging strip and keeps the slider where it was', async () => {
+      await setUp();
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      const range = find<HTMLInputElement>('.gs-sweep-range')!;
+      range.value = '2';
+      range.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      const [base, alternate] = all<HTMLButtonElement>('.gs-sweep-variant');
+      expect(base.getAttribute('aria-pressed')).toBe('true');
+
+      alternate.click();
+      fixture.detectChanges();
+
+      expect(alternate.getAttribute('aria-pressed')).toBe('true');
+      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('2');
+      expect(
+        find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
+      ).toBe(
+        `${environment.sweepLibraryBaseUrl}/steps-converging/albedobase-xl/person/003_30.webp`,
+      );
+      expect(el().textContent).toContain('Settled, and the same picture');
+    });
+
+    it('offers no choice on a parameter with only one reading published', async () => {
+      await setUp({ parameter: 'cfg_scale' });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      expect(all('.gs-sweep-variant')).toHaveLength(0);
+    });
   });
 
   it('collapses back to the offer', async () => {

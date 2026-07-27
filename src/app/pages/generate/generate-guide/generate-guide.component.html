@@ -46,16 +46,22 @@
       {{ "generate.guide.walkthrough_head" | transloco }}
     </h3>
     <ol class="gs-guide-steps">
-      @for (step of steps; track step; let i = $index) {
+      @for (step of steps; track step.id; let i = $index) {
         <li class="gs-guide-step">
           <span class="gs-guide-step-n" aria-hidden="true">{{ i + 1 }}</span>
           <div class="gs-guide-step-text">
             <h4 class="gs-guide-step-title">
-              {{ "generate.guide.steps." + step + ".title" | transloco }}
+              {{ "generate.guide.steps." + step.id + ".title" | transloco }}
             </h4>
             <p class="gs-guide-step-body">
-              {{ "generate.guide.steps." + step + ".body" | transloco }}
+              {{ "generate.guide.steps." + step.id + ".body" | transloco }}
             </p>
+            <!-- Prompt and size have no `?` glyph in the panel and so no entry
+                 in the reference half below; the walkthrough is the only place
+                 their pictures can be offered. -->
+            @for (parameter of step.sweeps; track parameter) {
+              <app-gs-sweep-scrub [parameter]="parameter" />
+            }
           </div>
         </li>
       }
@@ -77,6 +83,15 @@
           </dt>
           <dd class="gs-guide-def">
             {{ "generate.help." + topic + ".body" | transloco }}
+            <!-- The same offers the field's own `?` note carries. A reader in
+                 the guide is reading about the setting without the panel row in
+                 front of them, which is where the pictures do the most work. -->
+            @for (parameter of sweepFor(topic); track parameter) {
+              <app-gs-sweep-scrub [parameter]="parameter" />
+            }
+            @if (sweepGridFor(topic); as parameter) {
+              <app-gs-sweep-grid [parameter]="parameter" />
+            }
           </dd>
         }
       </dl>

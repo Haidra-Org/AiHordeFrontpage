@@ -297,9 +297,16 @@ export class GenerateComponent implements TutorialStudioHost {
     }
 
     // The sweep strips a field's `?` note offers should be of the model the
-    // reader has picked, and the note has no way to know which that is.
-    effect(() => this.sweeps.setStudioBaseline(this.modelBaseline()));
-    this.destroyRef.onDestroy(() => this.sweeps.setStudioBaseline(null));
+    // reader has picked, and the note has no way to know which that is. The name
+    // goes with the baseline because the library rendered a few of these models
+    // by name, and those readers get their own model rather than its family's.
+    effect(() =>
+      this.sweeps.setStudioModel(
+        this.formValue().model.trim(),
+        this.modelBaseline(),
+      ),
+    );
+    this.destroyRef.onDestroy(() => this.sweeps.setStudioModel(null, null));
 
     this.tutorial.registerHost(this);
     this.destroyRef.onDestroy(() => this.tutorial.unregisterHost(this));

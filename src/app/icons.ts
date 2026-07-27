@@ -15,6 +15,8 @@ export const APP_ICONS: Record<string, string> = {
   // ── Navigation & Chrome ──────────────────────────────────────────────
   'chevron-down':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>',
+  'chevron-left':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5l-7 7 7 7"/>',
   'chevron-right':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>',
   'chevron-up':
