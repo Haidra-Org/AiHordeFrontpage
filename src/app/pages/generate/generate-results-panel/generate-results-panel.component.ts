@@ -28,7 +28,7 @@ import {
   StoredJobImage,
   StoredJobImageMetadata,
 } from '../../../types/generation-job';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive } from '../generate-archive';
 import {
@@ -44,7 +44,6 @@ import {
   MetaApplyMode,
 } from '../image-meta-panel/image-meta-panel.component';
 import { GenerateFormValue } from '../generate-form.model';
-import { GenerateGuideComponent } from '../generate-guide/generate-guide.component';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import {
   TutorialEngineService,
@@ -220,8 +219,8 @@ function positivePrompt(prompt: string): string {
     IconComponent,
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
-    GenerateGuideComponent,
     GenerateLearnPanelComponent,
+    RouterLink,
   ],
   templateUrl: './generate-results-panel.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -275,18 +274,10 @@ export class GenerateResultsPanelComponent {
     'pixel',
   ];
 
-  /**
-   * Whether the written guide stands in for the results list. Neither persisted
-   * nor routed: it is a detour taken while filling the panel in, and a reload
-   * (or a finished generation) should land on the results.
-   */
-  public readonly guideOpen = signal(false);
+  /** Where both of the panel's ways into the written guide point. */
+  public readonly guideLink = '/generate/learn/guide';
 
-  /**
-   * Whether the follow-along tutorial has the pane instead. It and the guide are
-   * the same surface, so opening either stands the other down: two walkthroughs
-   * of the same panel, one of which the reader cannot see, is worse than none.
-   */
+  /** Whether the follow-along tutorial has the pane instead of the results. */
   public readonly tutorialOpen = this.tutorial.active;
   /** The tutorial's parting note, shown over the results it just made room for. */
   public readonly tutorialCompleted = this.tutorial.completed;
@@ -319,7 +310,6 @@ export class GenerateResultsPanelComponent {
       this.isBrowser &&
       !this.welcomed() &&
       this.showStarters() &&
-      !this.guideOpen() &&
       !this.tutorialOpen(),
   );
 
@@ -741,14 +731,6 @@ export class GenerateResultsPanelComponent {
   });
 
   constructor() {
-    // A tutorial started from the Learn page arrives without going through
-    // openGuide, so the guide is stood down here rather than at every entrance.
-    effect(() => {
-      if (this.tutorialOpen()) {
-        this.guideOpen.set(false);
-      }
-    });
-
     effect(() => {
       for (const job of this.finishedJobs()) {
         if (job.status === 'done' && !this.loaded.has(job.localId)) {
@@ -1484,23 +1466,6 @@ export class GenerateResultsPanelComponent {
 
   public toggleErrorsOnly(): void {
     this.errorsOnly.update((value) => !value);
-  }
-
-  public openGuide(): void {
-    this.tutorial.stop();
-    this.guideOpen.set(true);
-  }
-
-  public closeGuide(): void {
-    this.guideOpen.set(false);
-  }
-
-  public toggleGuide(): void {
-    if (this.guideOpen()) {
-      this.guideOpen.set(false);
-      return;
-    }
-    this.openGuide();
   }
 
   /**

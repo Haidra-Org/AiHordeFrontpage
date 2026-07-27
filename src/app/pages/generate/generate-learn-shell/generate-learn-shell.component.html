@@ -1,0 +1,22 @@
+<!-- One scrolling row rather than a wrapping one: the Learn area is a short
+     list of pages and it should cost one line of every page it sits on. -->
+<nav
+  class="gs-learn-nav"
+  [attr.aria-label]="'generate.learn.nav_label' | transloco"
+>
+  @for (entry of entries; track entry.activePath) {
+    <a
+      class="gs-learn-nav-link"
+      [class.gs-learn-nav-link--on]="isActive(entry)"
+      [routerLink]="entry.link"
+      [attr.aria-current]="isActive(entry) ? 'page' : null"
+    >
+      <app-icon [name]="entry.icon" class="gs-ico-sm" />
+      {{ entry.labelKey | transloco }}
+    </a>
+  }
+</nav>
+
+<div class="gs-learn-outlet">
+  <router-outlet />
+</div>

@@ -5,7 +5,6 @@ import {
   ElementRef,
   PLATFORM_ID,
   inject,
-  output,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -130,9 +129,10 @@ const NO_SWEEPS: readonly string[] = [];
  * followed by every field note the panel's `?` glyphs carry, gathered under the
  * card each field belongs to.
  *
- * It renders in place of the results list rather than as a modal or a separate
- * route: the guide is read while the panel beside it is being filled in, and a
- * dialog would cover the very controls it describes.
+ * It is a page of the Learn area rather than a pane of the studio: the
+ * reference half runs to a screen and a half of prose, which the results pane
+ * could only offer a column of, and a reader sent here from the studio wants
+ * to read rather than to keep half an eye on a queue.
  */
 @Component({
   selector: 'app-generate-guide',
@@ -145,7 +145,7 @@ const NO_SWEEPS: readonly string[] = [];
   ],
   templateUrl: './generate-guide.component.html',
   host: {
-    class: 'gs-results-body gs-guide',
+    class: 'gs-guide',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -153,9 +153,6 @@ export class GenerateGuideComponent {
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly flow = viewChild<ElementRef<HTMLElement>>('flow');
-
-  /** The reader is done with the guide and wants the results back. */
-  public readonly closed = output<void>();
 
   public readonly sections = GUIDE_SECTIONS;
   public readonly steps = GUIDE_STEPS;

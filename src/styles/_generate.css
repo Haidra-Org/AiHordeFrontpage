@@ -6097,11 +6097,18 @@
   background: var(--gs-scroll-thumb);
 }
 
-/* ------- written guide (stands in for the results list) -------------- */
-/* The host carries `.gs-results-body` for the pane's padding and scrolling, so
-   only the block display it lacks as a custom element is set here. */
+/* ------- written guide (a page of the Learn area) -------------------- */
+/* A reading surface on the canvas, on the same measure as the worked examples:
+   the prose blocks below keep their own ~68ch line length, and this is only the
+   column they and the full-width contents rail sit in. */
 .gen-studio .gs-guide {
   display: block;
+  background: var(--gs-canvas);
+  padding: 18px 16px 48px;
+}
+.gen-studio .gs-guide > * {
+  max-width: 880px;
+  margin-inline: auto;
 }
 .gen-studio .gs-guide-top {
   display: flex;
@@ -6110,9 +6117,10 @@
   justify-content: space-between;
   gap: 10px;
 }
+/* The page's own title, on the same step as the worked examples' heading. */
 .gen-studio .gs-guide-title {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   color: var(--gs-ink);
 }
 .gen-studio .gs-guide-close {
@@ -7361,6 +7369,316 @@ app-gs-sweep-scrub {
   .gen-studio .gs-learn-step,
   .gen-studio .gs-learn-exit,
   .gs-tut .gs-tut-start-btn {
+    min-height: 44px;
+  }
+}
+
+/* ------- learn hub (subnav + outlet) --------------------------------- */
+/* The Learn area's own shell, one level in from the studio's tool tabs. The
+   pages beneath it (landing, worked examples, written guide) each own their
+   padding and their reading measure; this sets only the frame they scroll in
+   and the row of pages above it. */
+.gen-studio .gs-learn-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--gs-canvas);
+}
+.gen-studio .gs-learn-outlet {
+  display: block;
+}
+/* On desktop the studio is pinned to the viewport, so the area scrolls inside
+   its own frame and the subnav simply never moves. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-shell-outlet > .gs-learn-shell {
+    height: 100%;
+  }
+  .gen-studio .gs-learn-outlet {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    position: relative;
+  }
+}
+
+/* One scrolling row rather than a wrapping one: the list is short and should
+   cost one line of every page it sits on, at any width. */
+.gen-studio .gs-learn-nav {
+  flex: none;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--gs-panel);
+  border-bottom: 1px solid var(--gs-border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  scroll-padding-inline: 4px;
+}
+.gen-studio .gs-learn-nav::-webkit-scrollbar {
+  height: 0;
+}
+/* Neutral chips: none of these pages is one of the panel's eight areas, so
+   none of them borrows a section identity's hue. */
+.gen-studio .gs-learn-nav-link {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 13px;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-label);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-field);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-nav-link:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-nav-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-learn-nav-link--on {
+  color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+  border-color: var(--gs-blue-tint-border);
+}
+.dark .gen-studio .gs-learn-nav-link--on {
+  color: #bfdbfe;
+}
+
+/* On mobile the studio scrolls with the page, so the subnav is pinned under
+   the tool tab bar the same way that bar is pinned under the site nav. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-learn-nav {
+    position: sticky;
+    top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
+    z-index: 4;
+  }
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-learn-nav-link {
+    min-height: 44px;
+  }
+}
+
+/* ------- learn landing ----------------------------------------------- */
+/* Same reading surface and measure as the worked examples, so moving between
+   the two pages does not move the column. */
+.gen-studio .gs-learn-home {
+  display: block;
+  --gs-zone: var(--gs-blue);
+  --gs-zone-tint: var(--gs-blue-tint);
+  --gs-zone-tint-border: var(--gs-blue-tint-border);
+  background: var(--gs-canvas);
+  padding: 18px 16px 48px;
+}
+.gen-studio .gs-learn-home-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* The hero door. Its backdrop is a real generated image, so the copy sits on a
+   gradient scrim rather than on the picture: the scrim is what carries the
+   contrast, and it is dark enough at the text edge to hold in both themes
+   whatever the image underneath happens to be. Nothing here moves. */
+.gen-studio .gs-learn-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--gs-card-border);
+  background: #0b1220;
+  min-height: 260px;
+  display: flex;
+  align-items: flex-end;
+}
+.gen-studio .gs-learn-hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  z-index: -2;
+}
+.gen-studio .gs-learn-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    to top,
+    rgba(3, 7, 18, 0.94) 0%,
+    rgba(3, 7, 18, 0.88) 42%,
+    rgba(3, 7, 18, 0.6) 72%,
+    rgba(3, 7, 18, 0.4) 100%
+  );
+}
+.gen-studio .gs-learn-hero-text {
+  position: relative;
+  padding: 22px 22px 24px;
+  max-width: 62ch;
+}
+.gen-studio .gs-learn-hero-title {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #ffffff;
+}
+.gen-studio .gs-learn-hero-sub {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+  /* Clears AA against the scrim above at this size; do not lighten the scrim
+     without darkening this in step. */
+  color: #e2e8f0;
+}
+.gen-studio .gs-learn-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid var(--gs-blue);
+  border-radius: 999px;
+  background: var(--gs-blue);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-learn-hero-cta:hover {
+  background: var(--gs-blue-hover);
+}
+.gen-studio .gs-learn-hero-cta:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.gen-studio .gs-learn-band {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* A list rather than a single card: the band is meant to grow a door per
+   concept track without changing shape. */
+.gen-studio .gs-learn-doors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.gen-studio .gs-learn-door {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px 16px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 12px;
+  background: var(--gs-card);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-door:hover {
+  border-color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-door:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-learn-door-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.gen-studio .gs-learn-door-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-learn-door-hint {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+
+/* The shelf of techniques: each card is its own worked example, led by the
+   image that example actually produced. */
+.gen-studio .gs-learn-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+.gen-studio .gs-learn-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 12px;
+  background: var(--gs-card);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-card:hover {
+  border-color: var(--gs-blue);
+  text-decoration: none;
+}
+.gen-studio .gs-learn-card:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-learn-card-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--gs-field-soft);
+  border-bottom: 1px solid var(--gs-card-border);
+}
+.gen-studio .gs-learn-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px 14px;
+  min-width: 0;
+}
+.gen-studio .gs-learn-card-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-learn-card-hint {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-learn-card-note {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--gs-muted);
+}
+
+@media (pointer: coarse) {
+  .gen-studio .gs-learn-hero-cta {
     min-height: 44px;
   }
 }

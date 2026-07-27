@@ -23,7 +23,7 @@
           class="gs-tut-chip"
           [class.gs-tut-chip--on]="isActive(flow)"
           [class.gs-tut-chip--off]="flow.status === 'skipped'"
-          [routerLink]="['/generate/tutorials', flow.id]"
+          [routerLink]="['/generate/learn/tutorials', flow.id]"
           [attr.aria-current]="isActive(flow) ? 'page' : null"
         >
           {{ taskNameKey(flow) | transloco }}

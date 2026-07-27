@@ -1,8 +1,5 @@
 <div class="gs-guide-top">
-  <h2 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h2>
-  <button type="button" class="gs-guide-close" (click)="closed.emit()">
-    {{ "generate.guide.close" | transloco }}
-  </button>
+  <h1 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h1>
 </div>
 
 <!-- Single scrolling rail, as in the style browser's contents row: the section
@@ -42,7 +39,7 @@
        the way into Learn sits past a pane's worth of scrolling, where a reader
        deciding how to start has already stopped looking. -->
   <p class="gs-guide-note">{{ "generate.guide.tutorials_note" | transloco }}</p>
-  <a class="gs-guide-cta" routerLink="/generate/tutorials">
+  <a class="gs-guide-cta" routerLink="/generate/learn">
     <app-icon name="document-text" class="gs-ico-sm" />
     {{ "generate.guide.tutorials_link" | transloco }}
   </a>

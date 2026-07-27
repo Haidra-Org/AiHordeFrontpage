@@ -125,26 +125,32 @@ describe('GenerateGuideComponent', () => {
     const link = query<HTMLAnchorElement>('.gs-guide-cta')[0];
     const firstSection = query<HTMLElement>('.gs-guide-card')[0];
 
-    expect(link.getAttribute('href')).toBe('/generate/tutorials');
+    expect(link.getAttribute('href')).toBe('/generate/learn');
     expect(link.textContent).toContain(
       translations['generate.guide.tutorials_link'],
     );
     expect(query<HTMLElement>('.gs-guide-note')[0].textContent).toContain(
       translations['generate.guide.tutorials_note'],
     );
-    // Above the reference, not a pane's worth of scrolling below it.
+    // Above the reference, not a page's worth of scrolling below it.
     expect(
       link.compareDocumentPosition(firstSection) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
-  it('emits closed from the back-to-results button', () => {
-    const closed = vi.fn();
-    component.closed.subscribe(closed);
+  it('reads as a page of its own rather than a pane of the studio', () => {
+    const translations = en as Record<string, string>;
 
-    query<HTMLButtonElement>('.gs-guide-close')[0].click();
-
-    expect(closed).toHaveBeenCalledTimes(1);
+    expect(query('h1.gs-guide-title')[0].textContent).toContain(
+      translations['generate.guide.title'],
+    );
+    // Nothing to close: leaving is the subnav's job now.
+    expect(query('.gs-guide-close')).toHaveLength(0);
+    expect(
+      (fixture.nativeElement as HTMLElement).classList.contains(
+        'gs-results-body',
+      ),
+    ).toBe(false);
   });
 });

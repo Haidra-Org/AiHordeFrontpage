@@ -170,16 +170,10 @@
       }
       <!-- Kept in the bar rather than in the empty state alone, so the guide is
            still one press away once results exist. -->
-      <button
-        type="button"
-        class="gs-view-toggle"
-        [class.gs-view-toggle--on]="guideOpen()"
-        [attr.aria-pressed]="guideOpen()"
-        (click)="toggleGuide()"
-      >
+      <a class="gs-view-toggle" [routerLink]="guideLink">
         <app-icon name="question-mark-circle" class="gs-ico-sm" />
         {{ "generate.guide.open" | transloco }}
-      </button>
+      </a>
 
       @if (hasErrors()) {
         <button
@@ -204,13 +198,12 @@
 
   @if (tutorialOpen()) {
     <app-generate-learn-panel />
-  } @else if (guideOpen()) {
-    <app-generate-guide (closed)="closeGuide()" />
   }
 
-  <!-- Hidden rather than removed: generations continue while the guide is read,
-       and rebuilding the grid would drop its thumbnails and scroll position. -->
-  <div class="gs-results-body" [class.hidden]="guideOpen() || tutorialOpen()">
+  <!-- Hidden rather than removed: generations continue while a tutorial has the
+       pane, and rebuilding the grid would drop its thumbnails and scroll
+       position. -->
+  <div class="gs-results-body" [class.hidden]="tutorialOpen()">
     @if (tutorialCompleted()) {
       <!-- The tutorial stood down so the image could land here; this is the
            only thing it has left to say, and it says it once. -->
@@ -285,10 +278,10 @@
           <div class="gs-empty-sub">
             {{ "generate.results.empty_sub" | transloco }}
           </div>
-          <button type="button" class="gs-guide-cta" (click)="openGuide()">
+          <a class="gs-guide-cta" [routerLink]="guideLink">
             <app-icon name="question-mark-circle" class="gs-ico-sm" />
             {{ "generate.guide.open_empty" | transloco }}
-          </button>
+          </a>
           <!-- Starting from nothing is the hardest part of a prompt box, so the
                empty state offers a few prompts to depart from. -->
           <div class="gs-starters">

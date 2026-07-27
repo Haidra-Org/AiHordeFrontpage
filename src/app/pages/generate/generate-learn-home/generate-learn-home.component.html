@@ -1,0 +1,88 @@
+<div class="gs-learn-home-inner">
+  <!-- The one door most readers need. Its backdrop is the image the
+       walkthrough behind it actually produced, not an illustration. -->
+  <section class="gs-learn-hero">
+    @if (heroImage(); as image) {
+      <img class="gs-learn-hero-bg" [src]="image" alt="" aria-hidden="true" />
+    }
+    <div class="gs-learn-hero-text">
+      <h1 class="gs-learn-hero-title">
+        {{ "generate.learn.hero_title" | transloco }}
+      </h1>
+      <p class="gs-learn-hero-sub">
+        {{ "generate.learn.hero_sub" | transloco }}
+      </p>
+      <button type="button" class="gs-learn-hero-cta" (click)="startHero()">
+        <app-icon name="star" class="gs-ico-sm" />
+        {{ "generate.learn.hero_cta" | transloco }}
+      </button>
+    </div>
+  </section>
+
+  <section class="gs-learn-band">
+    <h2 class="gs-guide-head">
+      {{ "generate.learn.understand_head" | transloco }}
+    </h2>
+    <div class="gs-learn-doors">
+      @for (door of understandDoors; track door.link) {
+        <a class="gs-learn-door" [routerLink]="door.link">
+          <app-icon [name]="door.icon" class="gs-ico-sm" />
+          <span class="gs-learn-door-text">
+            <span class="gs-learn-door-title">
+              {{ door.titleKey | transloco }}
+            </span>
+            <span class="gs-learn-door-hint">
+              {{ door.hintKey | transloco }}
+            </span>
+          </span>
+        </a>
+      }
+    </div>
+  </section>
+
+  <section class="gs-learn-band">
+    <h2 class="gs-guide-head">
+      {{ "generate.learn.further_head" | transloco }}
+    </h2>
+
+    @if (loadFailed()) {
+      <p class="gs-info-note">
+        {{ "generate.tutorials.load_error" | transloco }}
+      </p>
+    } @else {
+      <div class="gs-learn-shelf">
+        @for (flow of shelf(); track flow.id) {
+          <a class="gs-learn-card" [routerLink]="flowLink(flow)">
+            @if (resultUrl(flow); as image) {
+              <img
+                class="gs-learn-card-img"
+                [class.gs-tut-img--alpha]="flow.id === 'transparent'"
+                [src]="image"
+                [alt]="'generate.learn.example_alt' | transloco"
+                loading="lazy"
+              />
+            }
+            <span class="gs-learn-card-text">
+              <span class="gs-learn-card-title">
+                {{ taskNameKey(flow) | transloco }}
+                @if (flow.status === "skipped") {
+                  <span class="gs-tut-chip-tag">
+                    {{ "generate.tutorials.unavailable_tag" | transloco }}
+                  </span>
+                }
+              </span>
+              <span class="gs-learn-card-hint">{{ summaryFor(flow) }}</span>
+              <!-- A technique the horde could not serve when the examples were
+                   made says so here rather than quietly going missing. -->
+              @if (flow.status === "skipped" && flow.skipped_reason) {
+                <span class="gs-learn-card-note">{{
+                  flow.skipped_reason
+                }}</span>
+              }
+            </span>
+          </a>
+        }
+      </div>
+    }
+  </section>
+</div>

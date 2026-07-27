@@ -59,22 +59,50 @@ export const routes: Routes = [
             (c) => c.AlchemyComponent,
           ),
       },
-      // One route for every example; `:flow` deep-links a single one and
-      // the bare path falls back to the first in the manifest.
+      // The learning area is its own little site under the studio shell: a
+      // landing page, the worked examples and the written guide, all sharing a
+      // subnav the shell knows nothing about.
+      {
+        path: 'learn',
+        loadComponent: () =>
+          import('./pages/generate/generate-learn-shell/generate-learn-shell.component').then(
+            (c) => c.GenerateLearnShellComponent,
+          ),
+        children: [
+          {
+            path: '',
+            loadComponent: () =>
+              import('./pages/generate/generate-learn-home/generate-learn-home.component').then(
+                (c) => c.GenerateLearnHomeComponent,
+              ),
+          },
+          // One route per example; the landing page is what a bare
+          // `tutorials` would otherwise have to invent an index for.
+          {
+            path: 'tutorials/:flow',
+            loadComponent: () =>
+              import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
+                (c) => c.GenerateTutorialsComponent,
+              ),
+          },
+          { path: 'tutorials', redirectTo: '', pathMatch: 'full' },
+          {
+            path: 'guide',
+            loadComponent: () =>
+              import('./pages/generate/generate-guide/generate-guide.component').then(
+                (c) => c.GenerateGuideComponent,
+              ),
+          },
+        ],
+      },
+      // The old flat tutorial URLs, which are in the wild. A plain string
+      // `redirectTo` would drop `:flow`, so the deep link is rebuilt by hand.
       {
         path: 'tutorials/:flow',
-        loadComponent: () =>
-          import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
-            (c) => c.GenerateTutorialsComponent,
-          ),
+        redirectTo: ({ params }) =>
+          `/generate/learn/tutorials/${params['flow']}`,
       },
-      {
-        path: 'tutorials',
-        loadComponent: () =>
-          import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
-            (c) => c.GenerateTutorialsComponent,
-          ),
-      },
+      { path: 'tutorials', redirectTo: 'learn', pathMatch: 'full' },
       { path: '', redirectTo: 'image', pathMatch: 'full' },
     ],
   },

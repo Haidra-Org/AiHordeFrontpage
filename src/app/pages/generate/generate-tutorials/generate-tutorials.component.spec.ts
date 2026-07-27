@@ -69,12 +69,19 @@ interface Harness {
   fixture: ComponentFixture<GenerateTutorialsComponent>;
   component: GenerateTutorialsComponent;
   http: HttpTestingController;
+  navigate: ReturnType<typeof vi.spyOn>;
   query: <T extends Element>(selector: string) => T[];
   text: () => string;
 }
 
-/** Builds the page for a `:flow` deep link (or for the bare route when null). */
-async function createPage(flowId: string | null = null): Promise<Harness> {
+/**
+ * Builds the page for a `:flow` deep link, defaulting to the first example.
+ * Passing null builds it for a URL naming no flow, which the route no longer
+ * produces but which the page still has to answer for.
+ */
+async function createPage(
+  flowId: string | null = MANIFEST.flows[0].id,
+): Promise<Harness> {
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [
@@ -99,12 +106,18 @@ async function createPage(flowId: string | null = null): Promise<Harness> {
 
   const fixture = TestBed.createComponent(GenerateTutorialsComponent);
   const http = TestBed.inject(HttpTestingController);
+  // The page sends a URL naming no known flow to the Learn landing page, and
+  // a real navigation would tear the fixture down mid-test.
+  const navigate = vi
+    .spyOn(TestBed.inject(Router), 'navigate')
+    .mockResolvedValue(true);
   fixture.detectChanges();
 
   return {
     fixture,
     component: fixture.componentInstance,
     http,
+    navigate,
     query: <T extends Element>(selector: string) =>
       Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll<T>(selector),
@@ -160,10 +173,14 @@ describe('GenerateTutorialsComponent', () => {
     expect(harness.component.flows()).toHaveLength(MANIFEST.flows.length);
   });
 
-  it('falls back to the first flow when the route names none', () => {
-    flushAll(harness);
+  it('sends a URL naming no flow to the Learn landing page', async () => {
+    const bare = await createPage(null);
+    flushAll(bare);
 
-    expect(harness.component.activeFlow()?.id).toBe(MANIFEST.flows[0].id);
+    expect(bare.component.activeFlow()).toBeNull();
+    expect(bare.navigate).toHaveBeenCalledWith(['/generate/learn']);
+    // No stand-in flow is shown on the way out.
+    expect(bare.query('.gs-tut-flow')).toHaveLength(0);
   });
 
   it('reports a failed manifest fetch instead of rendering an empty page', () => {
@@ -204,11 +221,23 @@ describe('GenerateTutorialsComponent', () => {
     );
   });
 
-  it('falls back to the first flow for an unknown deep link', async () => {
+  it('sends an unknown deep link to the Learn landing page', async () => {
     harness = await createPage('no-such-flow');
     flushAll(harness);
 
-    expect(harness.component.activeFlow()?.id).toBe(MANIFEST.flows[0].id);
+    expect(harness.component.activeFlow()).toBeNull();
+    expect(harness.navigate).toHaveBeenCalledWith(['/generate/learn']);
+  });
+
+  it('waits for the manifest before deciding a URL names nothing', async () => {
+    const late = await createPage('inpainting');
+
+    expect(late.navigate).not.toHaveBeenCalled();
+
+    flushAll(late);
+
+    expect(late.component.activeFlow()?.id).toBe('inpainting');
+    expect(late.navigate).not.toHaveBeenCalled();
   });
 
   it('brings the chip of a deep-linked flow into the rail', async () => {
@@ -373,14 +402,24 @@ describe('GenerateTutorialsComponent', () => {
   it('arms the flow and goes to the studio when the walkthrough is started', () => {
     flushAll(harness);
     const engine = TestBed.inject(TutorialEngineService);
-    const router = TestBed.inject(Router);
-    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     harness.query<HTMLButtonElement>('.gs-tut-start-btn')[0].click();
 
-    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(harness.navigate).toHaveBeenCalledWith(['/generate/image']);
     // Held in memory rather than routed, so a reload lands on a plain studio.
     expect(engine.consumeArmed()).toBe('txt2img');
+  });
+
+  it('points every chip at the canonical Learn URL for its flow', () => {
+    flushAll(harness);
+
+    expect(
+      harness
+        .query<HTMLAnchorElement>('.gs-tut-chip')
+        .map((chip) => chip.getAttribute('href')),
+    ).toEqual(
+      MANIFEST.flows.map((flow) => `/generate/learn/tutorials/${flow.id}`),
+    );
   });
 
   it('links the guide entry point at the studio shell', () => {

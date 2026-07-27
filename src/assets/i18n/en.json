@@ -311,7 +311,6 @@
   "generate.help.requirements.body": "Lines marked “Suggested” come from the selected model's own reference entry. They are recommendations rather than limits: a value the model was not tuned for is flagged, but the request is still sent as you set it.",
   "generate.guide.open": "Guide",
   "generate.guide.open_empty": "How does this work?",
-  "generate.guide.close": "Back to results",
   "generate.guide.title": "How this page works",
   "generate.guide.toc_label": "Guide sections",
   "generate.guide.toc_walkthrough": "Your first image",
@@ -481,6 +480,19 @@
   "generate.tutorials.flows.qr_code.summary": "Make a piece of artwork that a phone camera still reads as a QR code.",
   "generate.tutorials.flows.transparent.summary": "Get your subject on a real transparent background, ready to drop onto anything.",
   "generate.tutorials.flows.facefix.summary": "Run the same seed twice, once with a face-repair pass, and see exactly what it fixes.",
+
+  "generate.learn.nav_label": "Learn pages",
+  "generate.learn.nav_overview": "Overview",
+  "generate.learn.nav_tutorials": "Tutorials",
+  "generate.learn.nav_guide": "Guide",
+
+  "generate.learn.hero_title": "Make your first image",
+  "generate.learn.hero_sub": "The studio walks you through one image, field by field, and you press Generate at the end. It takes about two minutes and costs nothing. You do not need an account, though without one you wait longer in the queue.",
+  "generate.learn.hero_cta": "Start the walkthrough",
+  "generate.learn.understand_head": "Understand what you're doing",
+  "generate.learn.understand_guide_title": "The written guide",
+  "generate.learn.understand_guide_hint": "What every control in the panel does, and what changes when you move it.",
+  "generate.learn.further_head": "Go further",
 
   "generate.learn.start": "Start this tutorial",
   "generate.learn.start_soon": "The studio walkthrough for this one is still being written.",

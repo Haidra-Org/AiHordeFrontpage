@@ -848,26 +848,13 @@ describe('GenerateResultsPanelComponent', () => {
     expect(used).toEqual(['a misty mountain lake']);
   });
 
-  it('stands the guide down when a tutorial takes the pane', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-    component.openGuide();
-
-    void engine.start('txt2img');
-    fixture.detectChanges();
-
-    expect(component.tutorialOpen()).toBe(true);
-    expect(component.guideOpen()).toBe(false);
-  });
-
-  it('stands a tutorial down when the guide is opened over it', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-    void engine.start('txt2img');
-    fixture.detectChanges();
-
-    component.openGuide();
-
-    expect(component.tutorialOpen()).toBe(false);
-    expect(component.guideOpen()).toBe(true);
+  it('sends both of its guide affordances to the guide page', () => {
+    // The guide left the pane for a routed page of the Learn area, so the bar
+    // button and the empty state's way in are links rather than pane state.
+    expect(component.guideLink).toBe('/generate/learn/guide');
+    expect(TRANSLATIONS['generate.guide.open']).toBeTruthy();
+    expect(TRANSLATIONS['generate.guide.open_empty']).toBeTruthy();
+    expect('guideOpen' in component).toBe(false);
   });
 
   it('carries the tutorial completion note until it is dismissed', () => {
@@ -959,29 +946,11 @@ describe('GenerateResultsPanelComponent', () => {
   it('keeps the welcome card out of a pane with anything else in it', () => {
     const engine = TestBed.inject(TutorialEngineService);
 
-    component.openGuide();
-    expect(component.showWelcome()).toBe(false);
-    component.closeGuide();
-
     void engine.start('txt2img');
     expect(component.showWelcome()).toBe(false);
     engine.stop();
 
     pendingJobs.set([job('p', 'processing')]);
     expect(component.showWelcome()).toBe(false);
-  });
-
-  it('shows the guide in place of the results and gives it back', () => {
-    expect(component.guideOpen()).toBe(false);
-
-    component.openGuide();
-    expect(component.guideOpen()).toBe(true);
-
-    component.toggleGuide();
-    expect(component.guideOpen()).toBe(false);
-
-    component.toggleGuide();
-    component.closeGuide();
-    expect(component.guideOpen()).toBe(false);
   });
 });

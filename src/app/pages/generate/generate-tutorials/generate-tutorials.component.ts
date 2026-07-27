@@ -157,13 +157,13 @@ export class GenerateTutorialsComponent {
   public readonly flows = computed(() => this.manifest()?.flows ?? []);
 
   /**
-   * The flow on screen. An unknown or absent `:flow` segment falls back to the
-   * first entry rather than erroring: the picker is always usable from here.
+   * The flow on screen, and only ever the one the URL names. An unknown or
+   * absent `:flow` resolves to nothing and is sent to the Learn landing page,
+   * which is the index this page used to stand in for.
    */
   public readonly activeFlow = computed<TutorialFlow | null>(() => {
-    const flows = this.flows();
     const id = this.routeFlowId();
-    return flows.find((flow) => flow.id === id) ?? flows[0] ?? null;
+    return this.flows().find((flow) => flow.id === id) ?? null;
   });
 
   public readonly activeDetail = computed<TutorialDetail | null>(() => {
@@ -201,6 +201,15 @@ export class GenerateTutorialsComponent {
       const flow = this.activeFlow();
       if (flow && flow.status === 'available' && !this.details()[flow.id]) {
         this.loadDetail(flow);
+      }
+    });
+
+    // Waits for the manifest: until it has arrived there is nothing to say a
+    // URL is wrong with, and a reader who deep-linked a real flow would be
+    // thrown off it.
+    effect(() => {
+      if (this.manifest() && !this.activeFlow()) {
+        void this.router.navigate(['/generate/learn']);
       }
     });
 
