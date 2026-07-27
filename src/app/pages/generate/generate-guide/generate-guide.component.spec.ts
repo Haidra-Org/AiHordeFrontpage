@@ -96,6 +96,21 @@ describe('GenerateGuideComponent', () => {
     }
   });
 
+  it('marks each reference section with the panel area it stands for', () => {
+    const cards = query<HTMLElement>('.gs-guide-card').slice(1);
+
+    component.sections.forEach((section, index) => {
+      const identity = component.identityFor(section.id);
+
+      expect(identity).toBeTruthy();
+      expect(cards[index].classList).toContain('gs-guide-card');
+      expect(cards[index].classList).toContain(identity?.className);
+      expect(
+        cards[index].querySelector('.gs-guide-head .gs-sec-chip'),
+      ).toBeTruthy();
+    });
+  });
+
   it('scrolls the pane to a section when its chip is pressed', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;

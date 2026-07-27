@@ -17,9 +17,14 @@ import {
   SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
   SWEEP_PARAMETER_BY_HELP_TOPIC,
 } from '../../../services/sweep-library.service';
+import {
+  SECTION_IDENTITIES,
+  SectionIdentity,
+  sectionFor,
+} from '../section-identity';
 
 /** One card of the control panel, and the help topics that card carries. */
-interface GuideSection {
+export interface GuideSection {
   /** Suffix of the section's anchor id, and of nothing else. */
   id: string;
   /**
@@ -36,7 +41,7 @@ interface GuideSection {
  * Cards that carry no help topics of their own (prompt, dimensions) are covered
  * by the walkthrough instead, so they would list nothing here.
  */
-const GUIDE_SECTIONS: readonly GuideSection[] = [
+export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
     id: 'source',
     labelKey: 'generate.source.section',
@@ -154,6 +159,15 @@ export class GenerateGuideComponent {
 
   public readonly sections = GUIDE_SECTIONS;
   public readonly steps = GUIDE_STEPS;
+
+  /**
+   * The panel area a reference section stands for, so the guide names it with
+   * the same glyph and hue the card carries.
+   */
+  public identityFor(id: string): SectionIdentity | null {
+    const section = sectionFor('guide', id);
+    return section ? SECTION_IDENTITIES[section] : null;
+  }
 
   /** The strips a reference entry has pictures for, in the order they read. */
   public sweepFor(topic: string): readonly string[] {

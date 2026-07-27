@@ -43,8 +43,18 @@
       </p>
 
       @if (step(); as current) {
-        <section class="gs-card gs-learn-card">
-          <h3 class="gs-guide-head">{{ titleKey(current) | transloco }}</h3>
+        <section
+          class="gs-card gs-learn-card"
+          [class]="identityFor(current)?.className"
+        >
+          <h3 class="gs-guide-head">
+            @if (identityFor(current); as identity) {
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon [name]="identity.icon"
+              /></span>
+            }
+            {{ titleKey(current) | transloco }}
+          </h3>
           <p class="gs-guide-step-body">
             {{ bodyKey(current) | transloco: copyParams() }}
           </p>
@@ -125,6 +135,7 @@
             <button
               type="button"
               class="gs-learn-step"
+              [class]="identityFor(entry)?.className"
               [class.gs-learn-step--on]="isCurrent(i)"
               [attr.aria-current]="isCurrent(i) ? 'step' : null"
               (click)="goTo(i)"

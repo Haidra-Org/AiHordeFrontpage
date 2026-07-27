@@ -163,9 +163,12 @@
       <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
-      <div class="flex flex-col gap-2.5" appTutAnchor="prompt">
+      <div class="gs-sec--prompt flex flex-col gap-2.5" appTutAnchor="prompt">
         <div class="gs-sec-head">
           <span class="gs-card-title">
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon name="sec-prompt"
+            /></span>
             {{ "generate.form.prompt_section" | transloco }}
           </span>
         </div>
@@ -281,9 +284,12 @@
            width so growing them never shuffles the cards. -->
       <div class="gs-body-cards flex flex-col gap-[14px]">
         <!-- Model & style -->
-        <div class="flex flex-col gap-2.5">
+        <div class="gs-sec--model flex flex-col gap-2.5">
           <div class="gs-sec-head">
             <span class="gs-card-title">
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon name="sec-model"
+              /></span>
               {{ "generate.form.model_style_section" | transloco }}
             </span>
           </div>
@@ -378,11 +384,14 @@
 
         <!-- Aspect + resolution -->
         <div
-          class="gs-card gs-card--pad-sm flex flex-col gap-3"
+          class="gs-card gs-card--pad-sm gs-sec--size flex flex-col gap-3"
           appTutAnchor="size"
         >
           <div class="gs-sec-head">
             <span class="gs-card-title--sm">
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon name="sec-size"
+              /></span>
               {{ "generate.form.dimensions_section" | transloco }}
             </span>
             @if (stylePins("dimensions")) {
@@ -531,9 +540,12 @@
           <ng-content select="[generateSourceImage]" />
 
           <!-- Sampling -->
-          <div class="gs-card flex flex-col gap-3">
+          <div class="gs-card gs-sec--sampling flex flex-col gap-3">
             <div class="gs-sec-head">
               <span class="gs-card-title">
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon name="sec-sampling"
+                /></span>
                 {{ "generate.form.sampling_section" | transloco }}
               </span>
               <app-gs-help topic="requirements" />
@@ -749,9 +761,12 @@
           </div>
 
           <!-- LoRAs & embeddings -->
-          <div class="gs-card flex flex-col gap-2">
+          <div class="gs-card gs-sec--model flex flex-col gap-2">
             <div class="gs-sec-head">
               <span class="gs-card-title">
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon name="sec-model"
+                /></span>
                 {{ "generate.form.loras_section" | transloco }}
               </span>
               <app-gs-help topic="loras" />
@@ -892,8 +907,13 @@
 
           <!-- Post-process + Output -->
           <div class="gs-grid-2">
-            <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
+            <div
+              class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+            >
               <span class="gs-card-title--sm">
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon name="sec-finishing"
+                /></span>
                 {{ "generate.form.post_processing_section" | transloco }}
               </span>
               <div>
@@ -975,8 +995,13 @@
               </label>
             </div>
 
-            <div class="gs-card gs-card--pad-sm flex flex-col gap-2.5">
+            <div
+              class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+            >
               <span class="gs-card-title--sm">
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon name="sec-finishing"
+                /></span>
                 {{ "generate.form.output_section" | transloco }}
               </span>
               <div class="gs-opt">
@@ -1010,8 +1035,11 @@
           </div>
 
           <!-- Workers & filters -->
-          <div class="gs-card flex flex-col gap-2.5">
+          <div class="gs-card gs-sec--horde flex flex-col gap-2.5">
             <span class="gs-card-title">
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon name="sec-horde"
+              /></span>
               {{ "generate.form.horde_section" | transloco }}
             </span>
             <div class="gs-opt">
@@ -1223,8 +1251,11 @@
 
           <!-- Workflows: output modes that need a model or a worker feature
                behind them, rather than plain request settings. -->
-          <div class="gs-card flex flex-col gap-3">
+          <div class="gs-card gs-sec--workflows flex flex-col gap-3">
             <span class="gs-card-title">
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon name="sec-workflows"
+              /></span>
               {{ "generate.form.workflows_section" | transloco }}
             </span>
             <p class="gs-sublabel">

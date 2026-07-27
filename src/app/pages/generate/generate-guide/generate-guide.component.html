@@ -22,8 +22,14 @@
     <button
       type="button"
       class="gs-guide-toc-chip"
+      [class]="identityFor(section.id)?.className"
       (click)="jumpToSection(section.id)"
     >
+      @if (identityFor(section.id); as identity) {
+        <span class="gs-sec-chip" aria-hidden="true"
+          ><app-icon [name]="identity.icon"
+        /></span>
+      }
       {{ section.labelKey | transloco }}
     </button>
   }
@@ -74,8 +80,19 @@
   <p class="gs-guide-lead">{{ "generate.guide.reference_lead" | transloco }}</p>
 
   @for (section of sections; track section.id) {
-    <section class="gs-card gs-guide-card" [id]="sectionId(section.id)">
-      <h4 class="gs-guide-head">{{ section.labelKey | transloco }}</h4>
+    <section
+      class="gs-card gs-guide-card"
+      [class]="identityFor(section.id)?.className"
+      [id]="sectionId(section.id)"
+    >
+      <h4 class="gs-guide-head">
+        @if (identityFor(section.id); as identity) {
+          <span class="gs-sec-chip" aria-hidden="true"
+            ><app-icon [name]="identity.icon"
+          /></span>
+        }
+        {{ section.labelKey | transloco }}
+      </h4>
       <dl class="gs-guide-terms">
         @for (topic of section.topics; track topic) {
           <dt class="gs-guide-term">

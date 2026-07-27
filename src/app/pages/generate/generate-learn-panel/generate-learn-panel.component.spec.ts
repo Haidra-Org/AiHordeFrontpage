@@ -97,6 +97,18 @@ describe('GenerateLearnPanelComponent', () => {
     expect(steps[1].getAttribute('aria-current')).toBeNull();
   });
 
+  it('marks a step with the panel area it points at, current or not', () => {
+    const steps = query<HTMLButtonElement>('.gs-learn-step');
+
+    // The first step is the prompt; the last is pressing Generate, which
+    // belongs to no card and so takes no hue.
+    expect(steps[0].classList).toContain('gs-learn-step');
+    expect(steps[0].classList).toContain('gs-sec--prompt');
+    expect(steps[0].classList).toContain('gs-learn-step--on');
+    expect(steps[steps.length - 1].className).not.toContain('gs-sec--');
+    expect(query('.gs-learn-card .gs-guide-head .gs-sec-chip')).toHaveLength(1);
+  });
+
   it('says where in the flow the reader is', () => {
     engine.goTo(2);
     fixture.detectChanges();

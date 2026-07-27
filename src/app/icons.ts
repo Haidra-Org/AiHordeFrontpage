@@ -255,4 +255,22 @@ export const APP_ICONS: Record<string, string> = {
   // ── Refresh variant (HI v1) ──────────────────────────────────────────
   'refresh-alt':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>',
+
+  // ── Section identities (duotone) ─────────────────────────────────────
+  'sec-prompt':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M4.75 5.75h14.5c.83 0 1.5.67 1.5 1.5v7c0 .83-.67 1.5-1.5 1.5h-8l-4.5 3.75V15.75h-2c-.83 0-1.5-.67-1.5-1.5v-7c0-.83.67-1.5 1.5-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.75 5.75h14.5c.83 0 1.5.67 1.5 1.5v7c0 .83-.67 1.5-1.5 1.5h-8l-4.5 3.75V15.75h-2c-.83 0-1.5-.67-1.5-1.5v-7c0-.83.67-1.5 1.5-1.5z"/><path stroke-linecap="round" stroke-width="2" d="M12 8.25v4.5M9.75 10.5h4.5"/>',
+  'sec-model':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M12 3.25 19 7.25l-7 4-7-4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3.25l7 4v8.5l-7 4-7-4v-8.5l7-4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 7.25l7 4 7-4M12 11.25v8.5"/>',
+  'sec-size':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M4.75 12.5v4.75c0 1.1.9 2 2 2h4.75V12.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 4.75h10.5c1.1 0 2 .9 2 2v10.5c0 1.1-.9 2-2 2H6.75c-1.1 0-2-.9-2-2V6.75c0-1.1.9-2 2-2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.5 12.5 16 8m0 0h-3.25M16 8v3.25"/>',
+  'sec-source':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M4.75 16.5l4.25-4.75 3 3.25 3.25-3.75 4 5v1c0 1.1-.9 2-2 2H6.75c-1.1 0-2-.9-2-2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 4.75h10.5c1.1 0 2 .9 2 2v10.5c0 1.1-.9 2-2 2H6.75c-1.1 0-2-.9-2-2V6.75c0-1.1.9-2 2-2z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.75 16.5 9 11.75l3 3.25 3.25-3.75 4 5"/><circle cx="9.25" cy="8.5" r="1.25" fill="currentColor" stroke="none"/>',
+  'sec-sampling':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M12 12V4.9a7.25 7.25 0 0 1 5.13 2.12z"/><circle cx="12" cy="12" r="7.25" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M12 12l3.6-3.6"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  'sec-finishing':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M12.25 12.25h5.5c.83 0 1.5.67 1.5 1.5v4c0 .83-.67 1.5-1.5 1.5h-4c-.83 0-1.5-.67-1.5-1.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.25 12.25h5.5c.83 0 1.5.67 1.5 1.5v4c0 .83-.67 1.5-1.5 1.5h-4c-.83 0-1.5-.67-1.5-1.5v-5.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 4.75l1.1 2.65L12.75 8.5l-2.65 1.1L9 12.25 7.9 9.6 5.25 8.5 7.9 7.4 9 4.75z"/>',
+  'sec-horde':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M12 19.25a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><circle cx="6.5" cy="7" r="2.25" stroke-width="2"/><circle cx="17.5" cy="7" r="2.25" stroke-width="2"/><circle cx="12" cy="16.75" r="2.5" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M8.75 7h6.5M7.6 9l3.15 5.5M16.4 9l-3.15 5.5"/>',
+  'sec-workflows':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M18.25 9.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.75 12h4.5c2.2 0 3.2-1.2 4.4-2.7l1.1-1.3M9.25 12c2.2 0 3.2 1.2 4.4 2.7l1.1 1.3"/><circle cx="18.25" cy="7" r="2.25" stroke-width="2"/><circle cx="18.25" cy="17" r="2.25" stroke-width="2"/><circle cx="4.75" cy="12" r="1" fill="currentColor" stroke="none"/>',
 };

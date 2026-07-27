@@ -115,6 +115,77 @@
   --gs-seg-active: #111827;
   --gs-seg-active-ink: #ffffff;
   --gs-switch-off: #e5e7eb;
+  /* Section identity hues. Audited as graphic/border colour only: every one
+     clears 3:1 against --gs-panel and --gs-card, but --gs-sec-size falls under
+     4.5:1, so these may tint glyphs and edges and must never colour text. */
+  --gs-sec-prompt: #4f46e5;
+  --gs-sec-prompt-tint: color-mix(in srgb, var(--gs-sec-prompt) 8%, #ffffff);
+  --gs-sec-prompt-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-prompt) 24%,
+    #ffffff
+  );
+  --gs-sec-model: #a21caf;
+  --gs-sec-model-tint: color-mix(in srgb, var(--gs-sec-model) 8%, #ffffff);
+  --gs-sec-model-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-model) 24%,
+    #ffffff
+  );
+  --gs-sec-size: #0d9488;
+  --gs-sec-size-tint: color-mix(in srgb, var(--gs-sec-size) 8%, #ffffff);
+  --gs-sec-size-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-size) 24%,
+    #ffffff
+  );
+  --gs-sec-source: #b45309;
+  --gs-sec-source-tint: color-mix(in srgb, var(--gs-sec-source) 8%, #ffffff);
+  --gs-sec-source-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-source) 24%,
+    #ffffff
+  );
+  --gs-sec-sampling: #be123c;
+  --gs-sec-sampling-tint: color-mix(
+    in srgb,
+    var(--gs-sec-sampling) 8%,
+    #ffffff
+  );
+  --gs-sec-sampling-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-sampling) 24%,
+    #ffffff
+  );
+  --gs-sec-finishing: #0e7490;
+  --gs-sec-finishing-tint: color-mix(
+    in srgb,
+    var(--gs-sec-finishing) 8%,
+    #ffffff
+  );
+  --gs-sec-finishing-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-finishing) 24%,
+    #ffffff
+  );
+  --gs-sec-horde: #475569;
+  --gs-sec-horde-tint: color-mix(in srgb, var(--gs-sec-horde) 8%, #ffffff);
+  --gs-sec-horde-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-horde) 24%,
+    #ffffff
+  );
+  --gs-sec-workflows: #4d7c0f;
+  --gs-sec-workflows-tint: color-mix(
+    in srgb,
+    var(--gs-sec-workflows) 8%,
+    #ffffff
+  );
+  --gs-sec-workflows-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-workflows) 24%,
+    #ffffff
+  );
   --gs-subtab-height: 45px;
 
   font-family: "Inter", system-ui, sans-serif;
@@ -161,6 +232,84 @@
   --gs-seg-active: #f3f4f6;
   --gs-seg-active-ink: #111827;
   --gs-switch-off: #3a3f47;
+  /* The dark half of the identity hues, lightened to clear 3:1 on the dark
+     panel and card. Same constraint as the light set: glyphs and edges only. */
+  --gs-sec-prompt: #a5b4fc;
+  --gs-sec-prompt-tint: color-mix(
+    in srgb,
+    var(--gs-sec-prompt) 14%,
+    transparent
+  );
+  --gs-sec-prompt-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-prompt) 38%,
+    transparent
+  );
+  --gs-sec-model: #e879f9;
+  --gs-sec-model-tint: color-mix(in srgb, var(--gs-sec-model) 14%, transparent);
+  --gs-sec-model-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-model) 38%,
+    transparent
+  );
+  --gs-sec-size: #5eead4;
+  --gs-sec-size-tint: color-mix(in srgb, var(--gs-sec-size) 14%, transparent);
+  --gs-sec-size-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-size) 38%,
+    transparent
+  );
+  --gs-sec-source: #fbbf24;
+  --gs-sec-source-tint: color-mix(
+    in srgb,
+    var(--gs-sec-source) 14%,
+    transparent
+  );
+  --gs-sec-source-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-source) 38%,
+    transparent
+  );
+  --gs-sec-sampling: #fda4af;
+  --gs-sec-sampling-tint: color-mix(
+    in srgb,
+    var(--gs-sec-sampling) 14%,
+    transparent
+  );
+  --gs-sec-sampling-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-sampling) 38%,
+    transparent
+  );
+  --gs-sec-finishing: #67e8f9;
+  --gs-sec-finishing-tint: color-mix(
+    in srgb,
+    var(--gs-sec-finishing) 14%,
+    transparent
+  );
+  --gs-sec-finishing-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-finishing) 38%,
+    transparent
+  );
+  --gs-sec-horde: #94a3b8;
+  --gs-sec-horde-tint: color-mix(in srgb, var(--gs-sec-horde) 14%, transparent);
+  --gs-sec-horde-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-horde) 38%,
+    transparent
+  );
+  --gs-sec-workflows: #bef264;
+  --gs-sec-workflows-tint: color-mix(
+    in srgb,
+    var(--gs-sec-workflows) 14%,
+    transparent
+  );
+  --gs-sec-workflows-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-workflows) 38%,
+    transparent
+  );
 }
 
 /* ------- concept zones ---------------------------------------------- */
@@ -184,6 +333,80 @@
   --gs-zone: var(--gs-purple);
   --gs-zone-tint: var(--gs-purple-tint);
   --gs-zone-tint-border: var(--gs-purple-tint-border);
+}
+
+/* ------- section identities ----------------------------------------- */
+/* One step below the zone hues: within the create plane, each of the eight
+   panel areas carries its own hue, set on the card and inherited by whatever
+   inside it asks for --gs-sec. The mark is a small chip beside the section's
+   title and the hairline that title already draws, so the coding is carried by
+   devices the layout has anyway. */
+.gen-studio .gs-sec--prompt {
+  --gs-sec: var(--gs-sec-prompt);
+  --gs-sec-tint: var(--gs-sec-prompt-tint);
+  --gs-sec-tint-border: var(--gs-sec-prompt-tint-border);
+}
+.gen-studio .gs-sec--model {
+  --gs-sec: var(--gs-sec-model);
+  --gs-sec-tint: var(--gs-sec-model-tint);
+  --gs-sec-tint-border: var(--gs-sec-model-tint-border);
+}
+.gen-studio .gs-sec--size {
+  --gs-sec: var(--gs-sec-size);
+  --gs-sec-tint: var(--gs-sec-size-tint);
+  --gs-sec-tint-border: var(--gs-sec-size-tint-border);
+}
+.gen-studio .gs-sec--source {
+  --gs-sec: var(--gs-sec-source);
+  --gs-sec-tint: var(--gs-sec-source-tint);
+  --gs-sec-tint-border: var(--gs-sec-source-tint-border);
+}
+.gen-studio .gs-sec--sampling {
+  --gs-sec: var(--gs-sec-sampling);
+  --gs-sec-tint: var(--gs-sec-sampling-tint);
+  --gs-sec-tint-border: var(--gs-sec-sampling-tint-border);
+}
+.gen-studio .gs-sec--finishing {
+  --gs-sec: var(--gs-sec-finishing);
+  --gs-sec-tint: var(--gs-sec-finishing-tint);
+  --gs-sec-tint-border: var(--gs-sec-finishing-tint-border);
+}
+.gen-studio .gs-sec--horde {
+  --gs-sec: var(--gs-sec-horde);
+  --gs-sec-tint: var(--gs-sec-horde-tint);
+  --gs-sec-tint-border: var(--gs-sec-horde-tint-border);
+}
+.gen-studio .gs-sec--workflows {
+  --gs-sec: var(--gs-sec-workflows);
+  --gs-sec-tint: var(--gs-sec-workflows-tint);
+  --gs-sec-tint-border: var(--gs-sec-workflows-tint-border);
+}
+
+.gen-studio .gs-sec-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--gs-sec);
+  background: var(--gs-sec-tint);
+  border: 1px solid var(--gs-sec-tint-border);
+}
+.gen-studio .gs-sec-chip svg {
+  width: 12px;
+  height: 12px;
+}
+/* The page and section heads the panel's cards sit under, where the chip is
+   read at arm's length rather than beside a 10px eyebrow. */
+.gen-studio .gs-sec-chip--lg {
+  width: 22px;
+  height: 22px;
+}
+.gen-studio .gs-sec-chip--lg svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ------- mono / numeric readouts ------------------------------------ */
@@ -843,7 +1066,12 @@
   content: "";
   flex: 1 1 auto;
   height: 1px;
-  background: var(--gs-zone-tint-border, var(--gs-border));
+  /* A card carrying a section identity draws its hairline in that section's
+     hue; anything else (alchemy's forms) keeps the plane's zone hue. */
+  background: var(
+    --gs-sec-tint-border,
+    var(--gs-zone-tint-border, var(--gs-border))
+  );
 }
 .gen-studio .gs-title,
 .gen-studio .gs-results-title {
@@ -5919,6 +6147,9 @@
   scroll-padding-inline: 4px;
 }
 .gen-studio .gs-guide-toc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex: none;
   min-height: 32px;
   white-space: nowrap;

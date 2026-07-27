@@ -78,7 +78,7 @@ interface TutorialDetail {
  */
 export const TUTORIAL_FLOW_STEPS: Readonly<Record<string, readonly string[]>> =
   {
-    txt2img: ['prompt', 'model', 'dimensions', 'sampling', 'seed', 'generate'],
+    txt2img: ['prompt', 'model', 'size', 'sampling', 'seed', 'generate'],
     img2img: ['source', 'mode', 'denoise', 'prompt', 'model', 'generate'],
     controlnet: [
       'source',
@@ -87,16 +87,16 @@ export const TUTORIAL_FLOW_STEPS: Readonly<Record<string, readonly string[]>> =
       'denoise',
       'prompt',
       'model',
-      'dimensions',
+      'size',
       'generate',
     ],
     inpainting: ['source', 'mode', 'mask', 'prompt', 'model', 'generate'],
-    qr_code: ['prompt', 'qr', 'model', 'dimensions', 'cfg', 'generate'],
-    transparent: ['prompt', 'transparent', 'model', 'dimensions', 'generate'],
+    qr_code: ['prompt', 'qr', 'model', 'size', 'cfg', 'generate'],
+    transparent: ['prompt', 'transparent', 'model', 'size', 'generate'],
     facefix: [
       'prompt',
       'model',
-      'dimensions',
+      'size',
       'generate_before',
       'facefixer',
       'regenerate',

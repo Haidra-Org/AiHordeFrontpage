@@ -12,6 +12,11 @@ import {
   TutorialLevel,
   TutorialStepDef,
 } from '../../../services/tutorial-engine.service';
+import {
+  SECTION_IDENTITIES,
+  SectionIdentity,
+  sectionFor,
+} from '../section-identity';
 
 /**
  * The follow-along tutorial, rendered in the results pane beside the control
@@ -73,6 +78,16 @@ export class GenerateLearnPanelComponent {
    */
   public bodyKey(step: TutorialStepDef): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.body.${this.level()}`;
+  }
+
+  /**
+   * The panel area a step is about, so the tutorial wears the same glyph and
+   * hue as the card it is pointing at. Steps that are about the page rather
+   * than a card (pressing Generate) belong to no area and take no mark.
+   */
+  public identityFor(step: TutorialStepDef): SectionIdentity | null {
+    const section = sectionFor('step', step.id);
+    return section ? SECTION_IDENTITIES[section] : null;
   }
 
   public revealKey(): string {
