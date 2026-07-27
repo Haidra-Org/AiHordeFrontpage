@@ -52,18 +52,18 @@
     } @else {
       <div class="gs-learn-shelf">
         @for (flow of shelf(); track flow.id) {
-          <a class="gs-learn-card" [routerLink]="flowLink(flow)">
+          <a class="gs-home-card" [routerLink]="flowLink(flow)">
             @if (resultUrl(flow); as image) {
               <img
-                class="gs-learn-card-img"
+                class="gs-home-card-img"
                 [class.gs-tut-img--alpha]="flow.id === 'transparent'"
                 [src]="image"
                 [alt]="'generate.learn.example_alt' | transloco"
                 loading="lazy"
               />
             }
-            <span class="gs-learn-card-text">
-              <span class="gs-learn-card-title">
+            <span class="gs-home-card-text">
+              <span class="gs-home-card-title">
                 {{ taskNameKey(flow) | transloco }}
                 @if (flow.status === "skipped") {
                   <span class="gs-tut-chip-tag">
@@ -71,13 +71,11 @@
                   </span>
                 }
               </span>
-              <span class="gs-learn-card-hint">{{ summaryFor(flow) }}</span>
+              <span class="gs-home-card-hint">{{ summaryFor(flow) }}</span>
               <!-- A technique the horde could not serve when the examples were
                    made says so here rather than quietly going missing. -->
               @if (flow.status === "skipped" && flow.skipped_reason) {
-                <span class="gs-learn-card-note">{{
-                  flow.skipped_reason
-                }}</span>
+                <span class="gs-home-card-note">{{ flow.skipped_reason }}</span>
               }
             </span>
           </a>

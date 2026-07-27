@@ -21,7 +21,7 @@ describe('GenerateLearnShellComponent', () => {
     Array.from(
       (
         fixture.nativeElement as HTMLElement
-      ).querySelectorAll<HTMLAnchorElement>('.gs-learn-nav-link'),
+      ).querySelectorAll<HTMLAnchorElement>('.gs-hub-nav-link'),
     );
 
   /** The entry the subnav is currently marking as the page on screen. */
@@ -80,7 +80,7 @@ describe('GenerateLearnShellComponent', () => {
     }
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.gs-learn-nav')
+        .querySelector('.gs-hub-nav')
         ?.getAttribute('aria-label'),
     ).toBe(translations['generate.learn.nav_label']);
   });

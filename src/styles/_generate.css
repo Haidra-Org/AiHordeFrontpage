@@ -7403,7 +7403,7 @@ app-gs-sweep-scrub {
 
 /* One scrolling row rather than a wrapping one: the list is short and should
    cost one line of every page it sits on, at any width. */
-.gen-studio .gs-learn-nav {
+.gen-studio .gs-hub-nav {
   flex: none;
   display: flex;
   flex-wrap: nowrap;
@@ -7416,12 +7416,12 @@ app-gs-sweep-scrub {
   scrollbar-width: none;
   scroll-padding-inline: 4px;
 }
-.gen-studio .gs-learn-nav::-webkit-scrollbar {
+.gen-studio .gs-hub-nav::-webkit-scrollbar {
   height: 0;
 }
 /* Neutral chips: none of these pages is one of the panel's eight areas, so
    none of them borrows a section identity's hue. */
-.gen-studio .gs-learn-nav-link {
+.gen-studio .gs-hub-nav-link {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -7437,28 +7437,28 @@ app-gs-sweep-scrub {
   background: var(--gs-field);
   text-decoration: none;
 }
-.gen-studio .gs-learn-nav-link:hover {
+.gen-studio .gs-hub-nav-link:hover {
   border-color: var(--gs-blue);
   color: var(--gs-blue);
   text-decoration: none;
 }
-.gen-studio .gs-learn-nav-link:focus-visible {
+.gen-studio .gs-hub-nav-link:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
-.gen-studio .gs-learn-nav-link--on {
+.gen-studio .gs-hub-nav-link--on {
   color: var(--gs-blue);
   background: var(--gs-blue-tint);
   border-color: var(--gs-blue-tint-border);
 }
-.dark .gen-studio .gs-learn-nav-link--on {
+.dark .gen-studio .gs-hub-nav-link--on {
   color: #bfdbfe;
 }
 
 /* On mobile the studio scrolls with the page, so the subnav is pinned under
    the tool tab bar the same way that bar is pinned under the site nav. */
 @media (max-width: 1023.98px) {
-  .gen-studio .gs-learn-nav {
+  .gen-studio .gs-hub-nav {
     position: sticky;
     top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
     z-index: 4;
@@ -7466,7 +7466,7 @@ app-gs-sweep-scrub {
 }
 
 @media (pointer: coarse) {
-  .gen-studio .gs-learn-nav-link {
+  .gen-studio .gs-hub-nav-link {
     min-height: 44px;
   }
 }
@@ -7625,7 +7625,7 @@ app-gs-sweep-scrub {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 14px;
 }
-.gen-studio .gs-learn-card {
+.gen-studio .gs-home-card {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -7634,15 +7634,15 @@ app-gs-sweep-scrub {
   background: var(--gs-card);
   text-decoration: none;
 }
-.gen-studio .gs-learn-card:hover {
+.gen-studio .gs-home-card:hover {
   border-color: var(--gs-blue);
   text-decoration: none;
 }
-.gen-studio .gs-learn-card:focus-visible {
+.gen-studio .gs-home-card:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
-.gen-studio .gs-learn-card-img {
+.gen-studio .gs-home-card-img {
   display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
@@ -7650,14 +7650,14 @@ app-gs-sweep-scrub {
   background: var(--gs-field-soft);
   border-bottom: 1px solid var(--gs-card-border);
 }
-.gen-studio .gs-learn-card-text {
+.gen-studio .gs-home-card-text {
   display: flex;
   flex-direction: column;
   gap: 5px;
   padding: 12px 14px 14px;
   min-width: 0;
 }
-.gen-studio .gs-learn-card-title {
+.gen-studio .gs-home-card-title {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -7666,12 +7666,12 @@ app-gs-sweep-scrub {
   font-weight: 700;
   color: var(--gs-ink);
 }
-.gen-studio .gs-learn-card-hint {
+.gen-studio .gs-home-card-hint {
   font-size: 12px;
   line-height: 1.6;
   color: var(--gs-ink-2);
 }
-.gen-studio .gs-learn-card-note {
+.gen-studio .gs-home-card-note {
   font-size: 11.5px;
   line-height: 1.55;
   color: var(--gs-muted);

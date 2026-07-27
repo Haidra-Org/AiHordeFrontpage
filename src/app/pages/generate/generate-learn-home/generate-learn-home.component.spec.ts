@@ -115,7 +115,7 @@ describe('GenerateLearnHomeComponent', () => {
   it('shelves every technique but the one the hero already offers', () => {
     flush();
 
-    const cards = query<HTMLAnchorElement>('.gs-learn-card');
+    const cards = query<HTMLAnchorElement>('.gs-home-card');
 
     expect(cards).toHaveLength(MANIFEST.flows.length - 1);
     expect(component.shelf().map((flow) => flow.id)).toEqual([
@@ -135,7 +135,7 @@ describe('GenerateLearnHomeComponent', () => {
   it('names each card by what it makes, over the image it made', () => {
     flush();
 
-    const cards = query<HTMLAnchorElement>('.gs-learn-card');
+    const cards = query<HTMLAnchorElement>('.gs-home-card');
 
     const shelf = component.shelf();
 
@@ -150,7 +150,7 @@ describe('GenerateLearnHomeComponent', () => {
     expect(
       cards.map(
         (card) =>
-          card.querySelector('.gs-learn-card-img')?.getAttribute('loading') ??
+          card.querySelector('.gs-home-card-img')?.getAttribute('loading') ??
           null,
       ),
     ).toEqual(shelf.map((flow) => (flow.result ? 'lazy' : null)));
@@ -160,7 +160,7 @@ describe('GenerateLearnHomeComponent', () => {
     flush();
 
     const skipped = MANIFEST.flows.find((flow) => flow.status === 'skipped');
-    const card = query<HTMLAnchorElement>('.gs-learn-card').at(-1);
+    const card = query<HTMLAnchorElement>('.gs-home-card').at(-1);
 
     expect(component.shelf().at(-1)?.id).toBe(skipped?.id);
     expect(card?.textContent).toContain(
@@ -168,7 +168,7 @@ describe('GenerateLearnHomeComponent', () => {
     );
     expect(card?.textContent).toContain(skipped?.skipped_reason ?? '');
     // Nothing is shown for a run that never happened.
-    expect(card?.querySelector('.gs-learn-card-img')).toBeNull();
+    expect(card?.querySelector('.gs-home-card-img')).toBeNull();
   });
 
   it('says the shelf could not be loaded rather than showing an empty one', () => {
@@ -178,7 +178,7 @@ describe('GenerateLearnHomeComponent', () => {
     fixture.detectChanges();
 
     expect(component.loadFailed()).toBe(true);
-    expect(query('.gs-learn-card')).toHaveLength(0);
+    expect(query('.gs-home-card')).toHaveLength(0);
     expect(text()).toContain(TRANSLATIONS['generate.tutorials.load_error']);
   });
 
