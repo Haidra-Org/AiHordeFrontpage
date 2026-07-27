@@ -263,6 +263,35 @@ describe('TutorialEngineService', () => {
       expect(seed.classList.contains('gs-tut-target')).toBe(true);
     });
 
+    it('closes the note it opened when the next step describes no field', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const help = TestBed.inject(GsHelpService);
+      const steps = document.createElement('div');
+      steps.scrollIntoView = vi.fn();
+      anchors.register('steps', steps);
+
+      engine.goTo(3);
+      engine.focusStep();
+      help.claimTopic('gs-help-steps-0');
+      expect(help.isOpen('gs-help-steps-0')).toBe(true);
+
+      engine.goTo(engine.total() - 1);
+      engine.focusStep();
+
+      expect(help.isOpen('gs-help-steps-0')).toBe(false);
+      expect(help.requestedTopic()).toBeNull();
+    });
+
+    it('leaves a note the reader opened themselves alone', () => {
+      const help = TestBed.inject(GsHelpService);
+      help.toggle('gs-help-seed-1');
+
+      engine.goTo(engine.total() - 1);
+      engine.focusStep();
+
+      expect(help.isOpen('gs-help-seed-1')).toBe(true);
+    });
+
     it('stands down and leaves a note when a generation is submitted on the finale', () => {
       engine.goTo(engine.total() - 1);
 

@@ -889,50 +889,54 @@ describe('GenerateComponent', () => {
   });
 });
 
+/**
+ * The results pane has to be a real element for the scrolling and focusing that
+ * targets it, so these stand the studio up with a template holding just that
+ * pane (with the tabindex the real one carries).
+ */
+async function createPaneOnlyStudio(): Promise<void> {
+  await TestBed.configureTestingModule({
+    imports: [GenerateComponent],
+    providers: [
+      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: GenerationQueueService,
+        useValue: {
+          estimateKudos: vi.fn().mockResolvedValue(1),
+          enqueue: vi.fn(),
+          jobs: signal([]),
+          pendingJobs: signal([]),
+          finishedJobs: signal([]),
+          getJobImages: vi.fn().mockResolvedValue([]),
+        },
+      },
+      { provide: StyleUsageService, useValue: { increment: vi.fn() } },
+      {
+        provide: ToastService,
+        useValue: { success: vi.fn(), error: vi.fn() },
+      },
+      { provide: TranslatorService, useValue: { get: () => of('') } },
+      {
+        provide: HordeStylesService,
+        useValue: {
+          getStyles: () => of([]),
+          getCategoryGroups: () => of([]),
+        },
+      },
+    ],
+  })
+    .overrideComponent(GenerateComponent, {
+      set: {
+        template: '<section #resultsPane tabindex="-1">results</section>',
+      },
+    })
+    .compileComponents();
+}
+
 describe('GenerateComponent skip link', () => {
-  /**
-   * The skip link's only job is to land accessibility focus on the results pane,
-   * which needs a real element, so this stands in a template holding just that
-   * pane (with the tabindex the real one carries).
-   */
   it('moves focus to the results pane', async () => {
     Element.prototype.scrollIntoView = vi.fn();
-    await TestBed.configureTestingModule({
-      imports: [GenerateComponent],
-      providers: [
-        { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
-        {
-          provide: GenerationQueueService,
-          useValue: {
-            estimateKudos: vi.fn().mockResolvedValue(1),
-            enqueue: vi.fn(),
-            jobs: signal([]),
-            pendingJobs: signal([]),
-            finishedJobs: signal([]),
-            getJobImages: vi.fn().mockResolvedValue([]),
-          },
-        },
-        { provide: StyleUsageService, useValue: { increment: vi.fn() } },
-        {
-          provide: ToastService,
-          useValue: { success: vi.fn(), error: vi.fn() },
-        },
-        { provide: TranslatorService, useValue: { get: () => of('') } },
-        {
-          provide: HordeStylesService,
-          useValue: {
-            getStyles: () => of([]),
-            getCategoryGroups: () => of([]),
-          },
-        },
-      ],
-    })
-      .overrideComponent(GenerateComponent, {
-        set: {
-          template: '<section #resultsPane tabindex="-1">results</section>',
-        },
-      })
-      .compileComponents();
+    await createPaneOnlyStudio();
 
     const fixture = TestBed.createComponent(GenerateComponent);
     fixture.detectChanges();
@@ -941,6 +945,40 @@ describe('GenerateComponent skip link', () => {
     fixture.componentInstance.skipToResults(new MouseEvent('click'));
 
     expect(document.activeElement).toBe(pane);
+    fixture.destroy();
+  });
+});
+
+describe('GenerateComponent arrival with a tutorial armed', () => {
+  /**
+   * The pane the tutorial renders in is below the fold on a stacked layout, and
+   * the test DOM reports every element as having no box at all, which is the
+   * same answer.
+   */
+  it('brings the learn pane on screen', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    await createPaneOnlyStudio();
+    TestBed.inject(TutorialEngineService).arm('txt2img');
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollIntoView).toHaveBeenCalled();
+    fixture.destroy();
+  });
+
+  it('leaves the page where it is when nothing is armed', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    await createPaneOnlyStudio();
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
     fixture.destroy();
   });
 });

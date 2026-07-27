@@ -5,6 +5,7 @@ import {
   DestroyRef,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   PLATFORM_ID,
@@ -35,6 +36,7 @@ import { ImageGenerationRequest } from '../../types/generation';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
+import { SweepLibraryService } from '../../services/sweep-library.service';
 import {
   TutorialEngineService,
   TutorialStudioHost,
@@ -130,6 +132,7 @@ export class GenerateComponent implements TutorialStudioHost {
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly tutorial = inject(TutorialEngineService);
+  private readonly sweeps = inject(SweepLibraryService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
@@ -293,12 +296,52 @@ export class GenerateComponent implements TutorialStudioHost {
       void this.updateKudos();
     }
 
+    // The sweep strips a field's `?` note offers should be of the model the
+    // reader has picked, and the note has no way to know which that is.
+    effect(() => this.sweeps.setStudioBaseline(this.modelBaseline()));
+    this.destroyRef.onDestroy(() => this.sweeps.setStudioBaseline(null));
+
     this.tutorial.registerHost(this);
     this.destroyRef.onDestroy(() => this.tutorial.unregisterHost(this));
     const armed = this.tutorial.consumeArmed();
     if (armed && this.isBrowser) {
       void this.tutorial.start(armed);
+      // Once immediately, and once after late-arriving content (translations,
+      // images) has expanded the form above the pane and pushed it back below
+      // the fold; the in-view guard makes the second pass a no-op otherwise.
+      afterNextRender(() => {
+        this.revealLearnPane();
+        const settle = setTimeout(() => this.revealLearnPane(), 600);
+        this.destroyRef.onDestroy(() => clearTimeout(settle));
+      });
     }
+  }
+
+  /**
+   * Bring the results pane, where the tutorial renders, onto the screen. On
+   * narrow viewports the panes stack and a reader arriving from the Learn page
+   * lands at the top of the form with the pane they asked for below the fold and
+   * nothing saying it is there. Where the pane is already in view (the side by
+   * side layout) nothing moves: the arrival should not yank the page.
+   */
+  private revealLearnPane(): void {
+    const pane = this.resultsRef()?.nativeElement;
+    if (!pane) {
+      return;
+    }
+    const box = pane.getBoundingClientRect();
+    const viewport =
+      globalThis.innerHeight || document.documentElement.clientHeight;
+    if (box.top < viewport && box.bottom > 0) {
+      return;
+    }
+    const reduceMotion = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    pane.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
   }
 
   // --- Follow-along tutorial host ------------------------------------------

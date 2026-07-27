@@ -6054,7 +6054,11 @@
 }
 
 /* The flow picker, on the guide's contents rail: one scrolling row, because
-   wrapped it would cost several lines above every example. */
+   wrapped it would cost several lines above every example. The bar itself is
+   taken off the rail: on a desktop viewport the row is a hair wider than the
+   column and the reserved bar read as a stray rule under the picker. Wheel and
+   keyboard scrolling are untouched, and the page scrolls the active chip into
+   the window itself, which is what the bar was there to make possible. */
 .gen-studio .gs-tut-rail {
   display: flex;
   flex-wrap: nowrap;
@@ -6063,8 +6067,11 @@
   border-bottom: 1px solid var(--gs-border-soft);
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
+  scrollbar-width: none;
   scroll-padding-inline: 4px;
+}
+.gen-studio .gs-tut-rail::-webkit-scrollbar {
+  height: 0;
 }
 .gen-studio .gs-tut-chip {
   flex: none;
@@ -6232,6 +6239,34 @@
   overflow-x: auto;
 }
 
+/* Wide viewports put what went in and what came out beside the walkthrough
+   rather than a screen below it: the walkthrough keeps its reading measure and
+   the evidence takes the gutter that was otherwise dead. Only a flow that has
+   images gets the second column, so a skipped flow keeps the single column it
+   fills. Everything narrower than this is the stacked column, untouched. */
+@media (min-width: 1200px) {
+  .gen-studio .gs-tut-inner {
+    max-width: 1200px;
+  }
+  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+    column-gap: 16px;
+    align-items: start;
+  }
+  /* Header rows span both columns; the walkthrough wrapper and the media card
+     then share one row, so neither column's height opens a gap in the other. */
+  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > * {
+    grid-column: 1 / -1;
+  }
+  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > .gs-tut-flow-main {
+    grid-column: 1;
+  }
+  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > .gs-tut-card--media {
+    grid-column: 2;
+  }
+}
+
 @media (pointer: coarse) {
   .gen-studio .gs-tut-chip {
     min-height: 44px;
@@ -6285,10 +6320,12 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep-offer:hover {
   border-color: var(--gs-blue);
 }
+/* Large enough that the thumbnail is a picture rather than a swatch, and still
+   short enough for the offer to stay the one line of prose it is. */
 .gen-studio .gs-sweep-preview {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 52px;
+  height: 52px;
   border-radius: 6px;
   object-fit: cover;
 }
@@ -6303,6 +6340,17 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-sweep-figure {
   margin: 0;
+}
+/* The frame is the affordance, so the button around it adds nothing but the
+   cursor and the focus ring the image cannot carry itself. */
+.gen-studio .gs-sweep-zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  cursor: zoom-in;
 }
 .gen-studio .gs-sweep-frame {
   display: block;
@@ -6361,6 +6409,79 @@ app-gs-sweep-scrub {
 }
 .dark .gen-studio .gs-sweep-collapse {
   color: var(--gs-pop-accent);
+}
+
+/* The enlarged frame. Its own layer on the style browser's viewer grammar, kept
+   here rather than borrowed from it: that viewer steps between styles and is
+   built into the browser modal, and a sweep frame needs none of it. */
+.gen-studio .gs-sweep-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 5, 10, 0.82);
+}
+.gen-studio .gs-sweep-viewer-body {
+  display: flex;
+  flex-direction: column;
+  width: 900px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding-bottom: 12px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  outline: none;
+}
+.gen-studio .gs-sweep-viewer-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 16px;
+  border-bottom: 1px solid var(--gs-border-results);
+}
+.gen-studio .gs-sweep-viewer-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-sweep-viewer-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-viewer-x:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-sweep-viewer-img {
+  min-height: 0;
+  max-width: 100%;
+  margin: 12px auto 0;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.gen-studio .gs-sweep-viewer-cap {
+  flex: none;
+  margin: 10px 16px 0;
+  font-size: 12px;
+  color: var(--gs-ink-2);
 }
 
 /* The host carries `.gs-results-body` for the pane's padding and scrolling, as

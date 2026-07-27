@@ -1,12 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
+  afterRenderEffect,
   computed,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../icon/icon.component';
 import {
   SweepLibraryService,
   SweepStop,
@@ -29,19 +33,30 @@ import {
  */
 @Component({
   selector: 'app-gs-sweep-scrub',
-  imports: [TranslocoPipe],
+  imports: [TranslocoPipe, IconComponent],
   template: `
     @if (strip()) {
       <div class="gs-sweep">
         @if (expanded()) {
           <div class="gs-sweep-open">
             <figure class="gs-sweep-figure">
-              <img
-                class="gs-sweep-frame"
-                [src]="frameUrl(stop())"
-                [alt]="'generate.sweeps.frame_alt' | transloco: valueParams()"
-                (load)="onFrameLoad()"
-              />
+              <!-- The frame is as wide as the column it sits in, which in the
+                   form is narrow enough to lose the detail the sweep is about,
+                   so the frame is itself the way to a full-size look. -->
+              <button
+                #zoomTrigger
+                type="button"
+                class="gs-sweep-zoom"
+                [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
+                (click)="openZoom()"
+              >
+                <img
+                  class="gs-sweep-frame"
+                  [src]="frameUrl(stop())"
+                  [alt]="'generate.sweeps.frame_alt' | transloco: valueParams()"
+                  (load)="onFrameLoad()"
+                />
+              </button>
               <figcaption class="gs-sweep-caption">
                 {{ stop().caption }}
               </figcaption>
@@ -97,6 +112,53 @@ import {
             </span>
           </button>
         }
+
+        @if (zoomed()) {
+          <!-- Focusable backdrop on the style browser's viewer idiom: it gives
+               the press outside a keyboard equivalent rather than leaving one
+               way out of the layer that only a pointer has. -->
+          <div
+            class="gs-sweep-viewer"
+            tabindex="0"
+            (click)="onViewerBackdrop($event)"
+            (keydown.escape)="closeZoom()"
+          >
+            <div
+              #zoomPanel
+              class="gs-sweep-viewer-body"
+              role="dialog"
+              aria-modal="true"
+              tabindex="-1"
+              [attr.aria-label]="
+                'generate.sweeps.enlarged_title' | transloco: valueParams()
+              "
+              (keydown)="onViewerKeydown($event)"
+            >
+              <div class="gs-sweep-viewer-top">
+                <span class="gs-sweep-viewer-name">
+                  {{ 'generate.sweeps.value' | transloco: valueParams() }}
+                </span>
+                <button
+                  #zoomClose
+                  type="button"
+                  class="gs-sweep-viewer-x"
+                  [attr.aria-label]="
+                    'generate.sweeps.enlarge_close' | transloco
+                  "
+                  (click)="closeZoom()"
+                >
+                  <app-icon name="x-mark" class="gs-ico-sm" />
+                </button>
+              </div>
+              <img
+                class="gs-sweep-viewer-img"
+                [src]="frameUrl(stop())"
+                [alt]="'generate.sweeps.frame_alt' | transloco: valueParams()"
+              />
+              <p class="gs-sweep-viewer-cap">{{ stop().caption }}</p>
+            </div>
+          </div>
+        }
       </div>
     }
   `,
@@ -107,7 +169,11 @@ export class GsSweepScrubComponent {
 
   /** API field name the sweep varies, e.g. `steps`. */
   public readonly parameter = input.required<string>();
-  /** Narrow the strip to one model, when the surface knows which is in play. */
+  /**
+   * Narrow the strip to one model, when the surface knows which is in play. A
+   * surface that does not (a field's `?` note) leaves it unset and gets the
+   * model the studio is set to.
+   */
   public readonly modelSlug = input<string | undefined>(undefined);
   /** Narrow the strip to one scene. */
   public readonly sceneId = input<string | undefined>(undefined);
@@ -115,12 +181,28 @@ export class GsSweepScrubComponent {
   private readonly cursor = signal<number | null>(null);
   private readonly open = signal(false);
   private readonly loaded = signal(false);
+  private readonly zoom = signal(false);
 
   public readonly expanded = this.open.asReadonly();
   public readonly frameLoaded = this.loaded.asReadonly();
+  /** Whether the frame is also on show full size, over everything else. */
+  public readonly zoomed = this.zoom.asReadonly();
+
+  private readonly zoomTrigger =
+    viewChild<ElementRef<HTMLButtonElement>>('zoomTrigger');
+  private readonly zoomPanel = viewChild<ElementRef<HTMLElement>>('zoomPanel');
+  private readonly zoomClose =
+    viewChild<ElementRef<HTMLButtonElement>>('zoomClose');
+
+  /** The panel focus was last moved to, so an unrelated render cannot re-take it. */
+  private focusedPanel: HTMLElement | null = null;
 
   public readonly strip = computed(() =>
-    this.sweeps.strip(this.parameter(), this.modelSlug(), this.sceneId()),
+    this.sweeps.strip(
+      this.parameter(),
+      this.modelSlug() ?? this.sweeps.studioModelSlug(),
+      this.sceneId(),
+    ),
   );
 
   public readonly lastIndex = computed(
@@ -159,6 +241,16 @@ export class GsSweepScrubComponent {
 
   constructor() {
     void this.sweeps.ensureLoaded();
+
+    // The enlarged frame takes focus as it opens, so the keys that close it and
+    // the button that dismisses it are where the reader already is.
+    afterRenderEffect(() => {
+      const panel = this.zoomPanel()?.nativeElement ?? null;
+      if (panel && panel !== this.focusedPanel) {
+        panel.focus();
+      }
+      this.focusedPanel = panel;
+    });
   }
 
   public frameUrl(stop: SweepStop): string {
@@ -173,6 +265,40 @@ export class GsSweepScrubComponent {
 
   public collapse(): void {
     this.open.set(false);
+    this.zoom.set(false);
+  }
+
+  public openZoom(): void {
+    this.zoom.set(true);
+  }
+
+  /** Closing hands focus back to the frame that opened the enlarged view. */
+  public closeZoom(): void {
+    this.zoom.set(false);
+    this.zoomTrigger()?.nativeElement.focus();
+  }
+
+  /** The backdrop closes; a press that landed on the panel itself does not. */
+  public onViewerBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeZoom();
+    }
+  }
+
+  /**
+   * Escape closes. Tab is held inside the layer by hand: the panel carries one
+   * control, so keeping focus on it is the whole trap.
+   */
+  public onViewerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      this.closeZoom();
+      return;
+    }
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      this.zoomClose()?.nativeElement.focus();
+    }
   }
 
   public onFrameLoad(): void {

@@ -82,6 +82,25 @@ describe('GenerateGuideComponent', () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
+  it('offers the way into the Learn tutorials with the intro', () => {
+    const translations = en as Record<string, string>;
+    const link = query<HTMLAnchorElement>('.gs-guide-cta')[0];
+    const firstSection = query<HTMLElement>('.gs-guide-card')[0];
+
+    expect(link.getAttribute('href')).toBe('/generate/tutorials');
+    expect(link.textContent).toContain(
+      translations['generate.guide.tutorials_link'],
+    );
+    expect(query<HTMLElement>('.gs-guide-note')[0].textContent).toContain(
+      translations['generate.guide.tutorials_note'],
+    );
+    // Above the reference, not a pane's worth of scrolling below it.
+    expect(
+      link.compareDocumentPosition(firstSection) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('emits closed from the back-to-results button', () => {
     const closed = vi.fn();
     component.closed.subscribe(closed);

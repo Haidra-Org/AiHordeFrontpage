@@ -14,6 +14,7 @@
     <!-- One rail rather than a wrapped grid, on the guide's contents idiom: the
          eight flows are a single row of choices, not a page of cards. -->
     <nav
+      #rail
       class="gs-tut-rail"
       [attr.aria-label]="'generate.tutorials.picker_label' | transloco"
     >
@@ -78,69 +79,184 @@
             </p>
           </section>
         } @else {
-          <div
-            class="gs-devtabs gs-tut-modes"
-            role="group"
-            [attr.aria-label]="'generate.tutorials.mode_label' | transloco"
-          >
-            <button
-              type="button"
-              class="gs-devtab"
-              [class.gs-devtab--on]="isMode('user')"
-              [attr.aria-pressed]="isMode('user')"
-              (click)="setMode('user')"
+          <!-- One wrapper for the toggle and whichever card it names, so the
+               wide layout can set the walkthrough and the media evidence side
+               by side as two columns of one row. -->
+          <div class="gs-tut-flow-main">
+            <div
+              class="gs-devtabs gs-tut-modes"
+              role="group"
+              [attr.aria-label]="'generate.tutorials.mode_label' | transloco"
             >
-              <app-icon name="user-circle" class="gs-ico-sm" />
-              {{ "generate.tutorials.mode_user" | transloco }}
-            </button>
-            <button
-              type="button"
-              class="gs-devtab"
-              [class.gs-devtab--on]="isMode('developer')"
-              [attr.aria-pressed]="isMode('developer')"
-              (click)="setMode('developer')"
-            >
-              <app-icon name="code-bracket" class="gs-ico-sm" />
-              {{ "generate.tutorials.mode_developer" | transloco }}
-            </button>
-          </div>
+              <button
+                type="button"
+                class="gs-devtab"
+                [class.gs-devtab--on]="isMode('user')"
+                [attr.aria-pressed]="isMode('user')"
+                (click)="setMode('user')"
+              >
+                <app-icon name="user-circle" class="gs-ico-sm" />
+                {{ "generate.tutorials.mode_user" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-devtab"
+                [class.gs-devtab--on]="isMode('developer')"
+                [attr.aria-pressed]="isMode('developer')"
+                (click)="setMode('developer')"
+              >
+                <app-icon name="code-bracket" class="gs-ico-sm" />
+                {{ "generate.tutorials.mode_developer" | transloco }}
+              </button>
+            </div>
 
-          <section class="gs-card gs-tut-card">
-            <h3 class="gs-guide-head">
-              {{ "generate.tutorials.steps_head" | transloco }}
-            </h3>
-            <ol class="gs-guide-steps">
-              @for (step of steps(); track step; let i = $index) {
-                <li class="gs-guide-step">
-                  <span class="gs-guide-step-n" aria-hidden="true">
-                    {{ i + 1 }}
-                  </span>
-                  <div class="gs-guide-step-text">
-                    <h4 class="gs-guide-step-title">
+            <!-- The card under the toggle is the one the toggle names. The media
+               section below it belongs to neither tab: what went in and what
+               came out is the same evidence whoever is reading. -->
+            @if (isMode("user")) {
+              <section class="gs-card gs-tut-card">
+                <h3 class="gs-guide-head">
+                  {{ "generate.tutorials.steps_head" | transloco }}
+                </h3>
+                <ol class="gs-guide-steps">
+                  @for (step of steps(); track step; let i = $index) {
+                    <li class="gs-guide-step">
+                      <span class="gs-guide-step-n" aria-hidden="true">
+                        {{ i + 1 }}
+                      </span>
+                      <div class="gs-guide-step-text">
+                        <h4 class="gs-guide-step-title">
+                          {{
+                            "generate.tutorials.flows." +
+                              flow.id +
+                              ".steps." +
+                              step +
+                              ".title" | transloco
+                          }}
+                        </h4>
+                        <p class="gs-guide-step-body">
+                          {{
+                            "generate.tutorials.flows." +
+                              flow.id +
+                              ".steps." +
+                              step +
+                              ".body" | transloco
+                          }}
+                        </p>
+                      </div>
+                    </li>
+                  }
+                </ol>
+              </section>
+            }
+
+            @if (isMode("developer")) {
+              <section class="gs-card gs-tut-card">
+                <h3 class="gs-guide-head">
+                  {{ "generate.tutorials.dev_head" | transloco }}
+                </h3>
+                <p class="gs-tut-body">
+                  {{ "generate.tutorials.dev_lead" | transloco }}
+                </p>
+
+                <div class="gs-tut-endpoint">
+                  <span class="gs-api-verb gs-api-verb--post">POST</span>
+                  <code class="gs-mono">{{ submitUrl() }}</code>
+                </div>
+
+                <h4 class="gs-tut-subhead">
+                  {{ "generate.tutorials.dev_headers_head" | transloco }}
+                </h4>
+                <dl class="gs-tut-headers">
+                  @for (header of requestHeaders; track header) {
+                    <div class="gs-tut-meta-row">
+                      <dt class="gs-mono">
+                        {{
+                          "generate.tutorials.dev_header_" + header + ".name"
+                            | transloco
+                        }}
+                      </dt>
+                      <dd>
+                        {{
+                          "generate.tutorials.dev_header_" + header + ".desc"
+                            | transloco
+                        }}
+                      </dd>
+                    </div>
+                  }
+                </dl>
+
+                <h4 class="gs-tut-subhead">
+                  {{ "generate.tutorials.dev_lifecycle_head" | transloco }}
+                </h4>
+                <ol class="gs-guide-steps">
+                  @for (call of lifecycle; track call; let i = $index) {
+                    <li class="gs-guide-step">
+                      <span class="gs-guide-step-n" aria-hidden="true">
+                        {{ i + 1 }}
+                      </span>
+                      <div class="gs-guide-step-text">
+                        <h5 class="gs-guide-step-title gs-mono">
+                          {{
+                            "generate.tutorials.dev_call_" + call + ".route"
+                              | transloco
+                          }}
+                        </h5>
+                        <p class="gs-guide-step-body">
+                          {{
+                            "generate.tutorials.dev_call_" + call + ".desc"
+                              | transloco
+                          }}
+                        </p>
+                      </div>
+                    </li>
+                  }
+                </ol>
+
+                @if (activeDetail(); as detail) {
+                  @if (detail.requestBefore) {
+                    <!-- facefix: the pair is the lesson, so both payloads are
+                       shown and the one changed field speaks for itself. -->
+                    <h4 class="gs-tut-subhead">
                       {{
-                        "generate.tutorials.flows." +
-                          flow.id +
-                          ".steps." +
-                          step +
-                          ".title" | transloco
+                        "generate.tutorials.dev_payload_before_head" | transloco
                       }}
                     </h4>
-                    <p class="gs-guide-step-body">
+                    <pre
+                      class="gs-tut-code"
+                      [innerHTML]="requestBeforeJson()"
+                    ></pre>
+                    <h4 class="gs-tut-subhead">
                       {{
-                        "generate.tutorials.flows." +
-                          flow.id +
-                          ".steps." +
-                          step +
-                          ".body" | transloco
+                        "generate.tutorials.dev_payload_after_head" | transloco
+                      }}
+                    </h4>
+                  } @else {
+                    <h4 class="gs-tut-subhead">
+                      {{ "generate.tutorials.dev_payload_head" | transloco }}
+                    </h4>
+                  }
+                  <pre class="gs-tut-code" [innerHTML]="requestJson()"></pre>
+                  @if (detail.requestBefore) {
+                    <p class="gs-info-note">
+                      {{
+                        "generate.tutorials.dev_payload_diff_note" | transloco
                       }}
                     </p>
-                  </div>
-                </li>
-              }
-            </ol>
-          </section>
+                  }
+                  @if (hasImagePlaceholder()) {
+                    <p class="gs-info-note">
+                      {{
+                        "generate.tutorials.dev_payload_base64_note" | transloco
+                      }}
+                    </p>
+                  }
+                }
+              </section>
+            }
+          </div>
 
-          <section class="gs-card gs-tut-card">
+          <section class="gs-card gs-tut-card gs-tut-card--media">
             <h3 class="gs-guide-head">
               {{ "generate.tutorials.images_head" | transloco }}
             </h3>
@@ -239,109 +355,6 @@
               }
             }
           </section>
-
-          @if (isMode("developer")) {
-            <section class="gs-card gs-tut-card">
-              <h3 class="gs-guide-head">
-                {{ "generate.tutorials.dev_head" | transloco }}
-              </h3>
-              <p class="gs-tut-body">
-                {{ "generate.tutorials.dev_lead" | transloco }}
-              </p>
-
-              <div class="gs-tut-endpoint">
-                <span class="gs-api-verb gs-api-verb--post">POST</span>
-                <code class="gs-mono">{{ submitUrl() }}</code>
-              </div>
-
-              <h4 class="gs-tut-subhead">
-                {{ "generate.tutorials.dev_headers_head" | transloco }}
-              </h4>
-              <dl class="gs-tut-headers">
-                @for (header of requestHeaders; track header) {
-                  <div class="gs-tut-meta-row">
-                    <dt class="gs-mono">
-                      {{
-                        "generate.tutorials.dev_header_" + header + ".name"
-                          | transloco
-                      }}
-                    </dt>
-                    <dd>
-                      {{
-                        "generate.tutorials.dev_header_" + header + ".desc"
-                          | transloco
-                      }}
-                    </dd>
-                  </div>
-                }
-              </dl>
-
-              <h4 class="gs-tut-subhead">
-                {{ "generate.tutorials.dev_lifecycle_head" | transloco }}
-              </h4>
-              <ol class="gs-guide-steps">
-                @for (call of lifecycle; track call; let i = $index) {
-                  <li class="gs-guide-step">
-                    <span class="gs-guide-step-n" aria-hidden="true">
-                      {{ i + 1 }}
-                    </span>
-                    <div class="gs-guide-step-text">
-                      <h5 class="gs-guide-step-title gs-mono">
-                        {{
-                          "generate.tutorials.dev_call_" + call + ".route"
-                            | transloco
-                        }}
-                      </h5>
-                      <p class="gs-guide-step-body">
-                        {{
-                          "generate.tutorials.dev_call_" + call + ".desc"
-                            | transloco
-                        }}
-                      </p>
-                    </div>
-                  </li>
-                }
-              </ol>
-
-              @if (activeDetail(); as detail) {
-                @if (detail.requestBefore) {
-                  <!-- facefix: the pair is the lesson, so both payloads are
-                       shown and the one changed field speaks for itself. -->
-                  <h4 class="gs-tut-subhead">
-                    {{
-                      "generate.tutorials.dev_payload_before_head" | transloco
-                    }}
-                  </h4>
-                  <pre
-                    class="gs-tut-code"
-                    [innerHTML]="requestBeforeJson()"
-                  ></pre>
-                  <h4 class="gs-tut-subhead">
-                    {{
-                      "generate.tutorials.dev_payload_after_head" | transloco
-                    }}
-                  </h4>
-                } @else {
-                  <h4 class="gs-tut-subhead">
-                    {{ "generate.tutorials.dev_payload_head" | transloco }}
-                  </h4>
-                }
-                <pre class="gs-tut-code" [innerHTML]="requestJson()"></pre>
-                @if (detail.requestBefore) {
-                  <p class="gs-info-note">
-                    {{ "generate.tutorials.dev_payload_diff_note" | transloco }}
-                  </p>
-                }
-                @if (hasImagePlaceholder()) {
-                  <p class="gs-info-note">
-                    {{
-                      "generate.tutorials.dev_payload_base64_note" | transloco
-                    }}
-                  </p>
-                }
-              }
-            </section>
-          }
         }
       </article>
     }

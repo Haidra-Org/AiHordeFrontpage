@@ -306,6 +306,7 @@ export class TutorialEngineService {
     this.index.set(0);
     this.revealed.set(null);
     this.clearHighlight();
+    this.help.releaseRequested();
   }
 
   public next(): void {
@@ -423,6 +424,11 @@ export class TutorialEngineService {
   public focusStep(): void {
     const step = this.step();
     this.clearHighlight();
+    if (!step?.helpTopic) {
+      // A step that names no note takes the last one down with it: leaving the
+      // previous field's note expanded would describe the wrong field.
+      this.help.releaseRequested();
+    }
     if (!step?.anchorId) {
       return;
     }

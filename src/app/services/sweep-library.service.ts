@@ -64,6 +64,24 @@ export const SWEEP_PARAMETER_BY_HELP_TOPIC: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Which published strip stands for a model baseline. The library holds one strip
+ * per family rather than per model, so every SDXL checkpoint is shown the SDXL
+ * strip; a baseline with nothing published falls through to whatever the strip's
+ * parameter has, which is the behaviour of a surface that names no model at all.
+ */
+const SWEEP_SLUG_BY_BASELINE: Readonly<Record<string, string>> = {
+  stable_diffusion_1: 'deliberate',
+  stable_diffusion_xl: 'albedobase-xl',
+};
+
+/** The library slug standing for a normalised model baseline, if any does. */
+export function sweepSlugForBaseline(
+  baseline: string | null | undefined,
+): string | undefined {
+  return baseline ? SWEEP_SLUG_BY_BASELINE[baseline] : undefined;
+}
+
+/**
  * The parameter-sweep image library: strips of the same scene rendered across a
  * range of one setting, so a reader can see what a number does instead of being
  * told.
@@ -88,8 +106,18 @@ export class SweepLibraryService {
 
   private pending: Promise<void> | null = null;
 
+  private readonly studioModel = signal<string | undefined>(undefined);
+
   /** True once a fetch has finished, whether it found anything or not. */
   public readonly isSettled = this.settled.asReadonly();
+
+  /**
+   * The strip family matching the model the studio currently has selected, or
+   * undefined when nothing is selected or its baseline has no strips. Surfaces
+   * that sit inside the studio without knowing what it is set to (a field's `?`
+   * note) read this so the pictures are of the model the reader is using.
+   */
+  public readonly studioModelSlug = this.studioModel.asReadonly();
   public readonly hasStrips = computed(() => this.strips().length > 0);
 
   /**
@@ -100,6 +128,11 @@ export class SweepLibraryService {
   public ensureLoaded(): Promise<void> {
     this.pending ??= this.fetchIndex();
     return this.pending;
+  }
+
+  /** Tell the library which model the studio is set to, by its baseline. */
+  public setStudioBaseline(baseline: string | null | undefined): void {
+    this.studioModel.set(sweepSlugForBaseline(baseline));
   }
 
   /**

@@ -23,6 +23,13 @@ export class GsHelpService {
    */
   public readonly requestedTopic = this.requested.asReadonly();
 
+  /**
+   * The note opened by a request rather than by the reader, so it can be closed
+   * again without ever closing one the reader opened themselves. Cleared as soon
+   * as the reader touches any note: from then on the open note is theirs.
+   */
+  private claimed: string | null = null;
+
   public requestTopic(topic: string): void {
     this.requested.set(topic);
   }
@@ -30,7 +37,21 @@ export class GsHelpService {
   /** Take an outstanding request, expanding this note in its place. */
   public claimTopic(noteId: string): void {
     this.requested.set(null);
+    this.claimed = noteId;
     this.open.set(noteId);
+  }
+
+  /**
+   * Withdraw a request and close the note it opened. Used when whatever asked
+   * for the note has moved on to something that describes no field; a note the
+   * reader opened is left where it is.
+   */
+  public releaseRequested(): void {
+    this.requested.set(null);
+    if (this.claimed !== null && this.open() === this.claimed) {
+      this.open.set(null);
+    }
+    this.claimed = null;
   }
 
   public isOpen(id: string): boolean {
@@ -39,10 +60,12 @@ export class GsHelpService {
 
   /** Expand this note, closing whichever other note was open. */
   public toggle(id: string): void {
+    this.claimed = null;
     this.open.update((current) => (current === id ? null : id));
   }
 
   public close(): void {
+    this.claimed = null;
     this.open.set(null);
     this.requested.set(null);
   }

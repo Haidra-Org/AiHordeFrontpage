@@ -32,6 +32,15 @@
 <div #flow>
   <p class="gs-guide-lead">{{ "generate.guide.lead" | transloco }}</p>
 
+  <!-- Kept with the intro rather than after the reference sections: below them
+       the way into Learn sits past a pane's worth of scrolling, where a reader
+       deciding how to start has already stopped looking. -->
+  <p class="gs-guide-note">{{ "generate.guide.tutorials_note" | transloco }}</p>
+  <a class="gs-guide-cta" routerLink="/generate/tutorials">
+    <app-icon name="document-text" class="gs-ico-sm" />
+    {{ "generate.guide.tutorials_link" | transloco }}
+  </a>
+
   <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
     <h3 class="gs-guide-head">
       {{ "generate.guide.walkthrough_head" | transloco }}
@@ -73,10 +82,4 @@
       </dl>
     </section>
   }
-
-  <p class="gs-guide-note">{{ "generate.guide.tutorials_note" | transloco }}</p>
-  <a class="gs-guide-cta" routerLink="/generate/tutorials">
-    <app-icon name="document-text" class="gs-ico-sm" />
-    {{ "generate.guide.tutorials_link" | transloco }}
-  </a>
 </div>

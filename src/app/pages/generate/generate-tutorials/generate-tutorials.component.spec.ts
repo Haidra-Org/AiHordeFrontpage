@@ -147,6 +147,9 @@ describe('GenerateTutorialsComponent', () => {
   let harness: Harness;
 
   beforeEach(async () => {
+    // The rail keeps the active chip in its window on every render, and jsdom
+    // has no implementation of its own to do it with.
+    Element.prototype.scrollIntoView = vi.fn();
     harness = await createPage();
   });
 
@@ -208,18 +211,38 @@ describe('GenerateTutorialsComponent', () => {
     expect(harness.component.activeFlow()?.id).toBe(MANIFEST.flows[0].id);
   });
 
+  it('brings the chip of a deep-linked flow into the rail', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const late = MANIFEST.flows[MANIFEST.flows.length - 1];
+
+    harness = await createPage(late.id);
+    flushAll(harness);
+
+    expect(harness.query('.gs-tut-chip--on')).toHaveLength(1);
+    expect(scrollIntoView).toHaveBeenCalled();
+    // Only as far as it has to move, and along the rail rather than the page.
+    expect(scrollIntoView.mock.calls.at(-1)?.[0]).toMatchObject({
+      block: 'nearest',
+      inline: 'nearest',
+    });
+  });
+
   it('reports what the run deviated from', () => {
     flushAll(harness);
 
     expect(harness.text()).toContain('the requested model was swapped');
   });
 
-  it('adds the wire detail in developer mode and nothing else', async () => {
+  it('swaps the walkthrough for the wire detail in developer mode', async () => {
     harness = await createPage('txt2img');
     flushAll(harness);
 
-    const userSteps = harness.query('.gs-guide-step').length;
+    const translations = en as Record<string, string>;
     expect(harness.query('.gs-tut-code')).toHaveLength(0);
+    expect(harness.query('.gs-tut-card')[0].textContent).toContain(
+      translations['generate.tutorials.steps_head'],
+    );
 
     harness.query<HTMLButtonElement>('.gs-devtab')[1].click();
     harness.fixture.detectChanges();
@@ -229,10 +252,19 @@ describe('GenerateTutorialsComponent', () => {
     expect(harness.text()).toContain('/generate/async');
     expect(harness.text()).toContain('/generate/check/:id');
     expect(harness.text()).toContain('/generate/status/:id');
-    // The walkthrough is the same in both modes; developer only adds to it.
-    expect(harness.query('.gs-guide-step').length).toBe(
-      userSteps + harness.component.lifecycle.length,
+    // The card under the toggle is the one the toggle names, and the user
+    // walkthrough is not left above it.
+    expect(harness.query('.gs-tut-card')[0].textContent).toContain(
+      translations['generate.tutorials.dev_head'],
     );
+    expect(harness.text()).not.toContain(
+      translations['generate.tutorials.steps_head'],
+    );
+    expect(harness.query('.gs-guide-step').length).toBe(
+      harness.component.lifecycle.length,
+    );
+    // What went in and what came out belongs to neither tab.
+    expect(harness.query('.gs-tut-img').length).toBeGreaterThan(0);
   });
 
   it('shows both payloads for the flow that is a pair', async () => {

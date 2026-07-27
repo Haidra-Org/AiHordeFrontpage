@@ -8,16 +8,21 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GsSweepScrubComponent } from './gs-sweep-scrub.component';
+import { SweepLibraryService } from '../../services/sweep-library.service';
 import { environment } from '../../../environments/environment';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 @Component({
   imports: [GsSweepScrubComponent],
-  template: `<app-gs-sweep-scrub [parameter]="parameter" />`,
+  template: `<app-gs-sweep-scrub
+    [parameter]="parameter"
+    [modelSlug]="modelSlug"
+  />`,
 })
 class HostComponent {
   public parameter = 'steps';
+  public modelSlug: string | undefined = undefined;
 }
 
 /** The test DOM has no media queries at all, so the flag is installed. */
@@ -46,6 +51,10 @@ describe('GsSweepScrubComponent', () => {
   async function setUp(options?: {
     reducedData?: boolean;
     empty?: boolean;
+    /** What the studio is set to, as the baseline the library maps. */
+    studioBaseline?: string;
+    /** What the surface hosting the scrubber names, if it names anything. */
+    modelSlug?: string;
   }): Promise<void> {
     stubReducedData(options?.reducedData ?? false);
     TestBed.resetTestingModule();
@@ -61,7 +70,13 @@ describe('GsSweepScrubComponent', () => {
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
+    if (options?.studioBaseline) {
+      TestBed.inject(SweepLibraryService).setStudioBaseline(
+        options.studioBaseline,
+      );
+    }
     fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.modelSlug = options?.modelSlug;
     fixture.detectChanges();
 
     const request = http.expectOne(
@@ -120,7 +135,7 @@ describe('GsSweepScrubComponent', () => {
       `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
     expect(el().textContent).toContain('The face and the light have settled.');
-    expect(el().textContent).toContain('Set to 12');
+    expect(el().textContent).toContain('Rendered at 12');
     expect(find('.gs-sweep-range')).not.toBeNull();
   });
 
@@ -145,8 +160,106 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(range.getAttribute('aria-valuetext')).toBe('30');
-    expect(el().textContent).toContain('Set to 30');
+    expect(el().textContent).toContain('Rendered at 30');
     expect(el().textContent).toContain('Past here the picture stops changing');
+  });
+
+  it('shows the strip for the model the studio is set to', async () => {
+    await setUp({ studioBaseline: 'stable_diffusion_1' });
+
+    expect(
+      find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
+    ).toBe(
+      `${environment.sweepLibraryBaseUrl}/steps/deliberate/landscape/001_8.webp`,
+    );
+  });
+
+  it('lets a surface that names a model override the studio', async () => {
+    await setUp({
+      studioBaseline: 'stable_diffusion_1',
+      modelSlug: 'albedobase-xl',
+    });
+
+    expect(
+      find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
+    ).toBe(
+      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+    );
+  });
+
+  it('opens the frame full size, focused, and closes on Escape', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    const trigger = find<HTMLButtonElement>('.gs-sweep-zoom')!;
+    trigger.click();
+    fixture.detectChanges();
+
+    const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(
+      find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+    ).toBe(
+      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+    );
+    expect(document.activeElement).toBe(panel);
+
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer')).toBeNull();
+    // Focus comes back where it was, not to the top of the document.
+    expect(document.activeElement).toBe(find('.gs-sweep-zoom'));
+  });
+
+  it('keeps Tab inside the enlarged view', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+
+    const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
+    const tab = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      bubbles: true,
+      cancelable: true,
+    });
+    panel.dispatchEvent(tab);
+    fixture.detectChanges();
+
+    expect(tab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(find('.gs-sweep-viewer-x'));
+  });
+
+  it('closes the enlarged view from its backdrop and its close button', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+
+    find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+    fixture.detectChanges();
+    expect(find('.gs-sweep-viewer')).toBeNull();
+
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+    find<HTMLElement>('.gs-sweep-viewer')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer')).toBeNull();
+    // A press that lands on the panel itself is not a press outside it.
+    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+    fixture.detectChanges();
+    find<HTMLElement>('.gs-sweep-viewer-body')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer')).not.toBeNull();
   });
 
   it('collapses back to the offer', async () => {

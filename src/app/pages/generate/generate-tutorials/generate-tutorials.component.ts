@@ -3,10 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  afterRenderEffect,
   computed,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -143,6 +146,9 @@ export class GenerateTutorialsComponent {
     {},
   );
 
+  /** The picker rail, so the flow on screen can be kept inside its window. */
+  private readonly rail = viewChild<ElementRef<HTMLElement>>('rail');
+
   private readonly routeFlowId = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('flow'))),
     { initialValue: null },
@@ -196,6 +202,26 @@ export class GenerateTutorialsComponent {
       if (flow && flow.status === 'available' && !this.details()[flow.id]) {
         this.loadDetail(flow);
       }
+    });
+
+    // The rail scrolls, so a flow late in the manifest is reached by a deep
+    // link with its chip outside the scrolled window or clipped by its edge.
+    // Runs after render so the chip carrying the active class is the one that
+    // exists, and only ever moves the rail as far as it has to.
+    afterRenderEffect(() => {
+      this.activeFlow();
+      const chip =
+        this.rail()?.nativeElement.querySelector<HTMLElement>(
+          '.gs-tut-chip--on',
+        );
+      chip?.scrollIntoView({
+        behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')
+          .matches
+          ? 'auto'
+          : 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
     });
   }
 

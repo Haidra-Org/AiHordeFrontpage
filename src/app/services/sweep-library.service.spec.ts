@@ -87,6 +87,22 @@ describe('SweepLibraryService', () => {
     expect(sweeps.strip('steps_cfg_grid')).toBeNull();
   });
 
+  it('maps the studio baseline onto the strip family it stands for', () => {
+    sweeps.setStudioBaseline('stable_diffusion_xl');
+    expect(sweeps.studioModelSlug()).toBe('albedobase-xl');
+
+    sweeps.setStudioBaseline('stable_diffusion_1');
+    expect(sweeps.studioModelSlug()).toBe('deliberate');
+
+    // A baseline with nothing published, and no model at all, both answer
+    // "no preference" rather than a wrong strip.
+    sweeps.setStudioBaseline('flux_1');
+    expect(sweeps.studioModelSlug()).toBeUndefined();
+
+    sweeps.setStudioBaseline(null);
+    expect(sweeps.studioModelSlug()).toBeUndefined();
+  });
+
   it('builds frame urls from the stop path verbatim', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);
