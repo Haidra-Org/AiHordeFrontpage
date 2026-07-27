@@ -90,6 +90,17 @@ export class GenerateLearnPanelComponent {
     return section ? SECTION_IDENTITIES[section] : null;
   }
 
+  /**
+   * Whether the step card should breathe. It does so only while the step is
+   * pointing at a field it shares a section hue with: with nothing highlighted
+   * in the panel there is no pair for the glow to be half of, and a target
+   * without a section (the finale's Generate button) would pair a blue field
+   * glow with a green card glow across the two zones.
+   */
+  public breathes(step: TutorialStepDef): boolean {
+    return !!step.anchorId && this.identityFor(step) !== null;
+  }
+
   public revealKey(): string {
     return `generate.learn.reveal.${this.revealNote()}`;
   }

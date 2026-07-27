@@ -6588,18 +6588,71 @@
 /* ------- follow-along tutorial ---------------------------------------- */
 
 /* What a tutorial step puts on the field it is talking about. It borrows the
-   section-landmark grammar rather than inventing an alert of its own: the zone
-   tint washes the anchored row and the zone hairline runs down its leading
-   edge, the same pairing the card titles use one step up the hierarchy. Static
-   and hue-matched, so a field that already carries colour (a style lock, a
+   section-landmark grammar rather than inventing an alert of its own: the
+   section tint washes the anchored row and the section hairline runs down its
+   leading edge, the same pairing the card titles use one step up the hierarchy.
+   Hue-matched, so a field that already carries colour (a style lock, a
    requirement warning) is not overlaid with something that reads as a second
-   warning, and nothing on the page moves when the step changes. */
+   warning. The engine sets the step's `gs-sec--*` class on the same element, so
+   the wash is the hue of the area the step is about; a step in no area inherits
+   the zone tint from the card it sits in. */
 .gen-studio .gs-tut-target {
   position: relative;
   border-radius: 8px;
   padding-left: 9px;
-  border-left: 2px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
-  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  border-left: 2px solid
+    var(
+      --gs-sec-tint-border,
+      var(--gs-zone-tint-border, var(--gs-blue-tint-border))
+    );
+  background: var(--gs-sec-tint, var(--gs-zone-tint, var(--gs-blue-tint)));
+}
+
+/* The tie between the step and the field it is about. Both wear the same
+   overlay in the same hue and, because the engine resets every one of these
+   animations to the same start time whenever the step changes, they brighten
+   and dim together: the pairing is read off the shared rhythm rather than off a
+   line drawn across the pane. Slow and shallow enough to sit under prose, and
+   opacity-only on an overlay so it costs a composite and never a layout. */
+@keyframes gs-breathe {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+.gen-studio .gs-tut-target::after,
+.gen-studio .gs-learn-card.gs-tut-breathe::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px var(--gs-sec-tint-border, var(--gs-zone-tint-border)),
+    0 0 14px color-mix(in srgb, var(--gs-sec, var(--gs-zone)) 35%, transparent);
+  animation: gs-breathe 3s ease-in-out infinite;
+}
+.gen-studio .gs-tut-target::after {
+  border-radius: 10px;
+}
+.gen-studio .gs-learn-card.gs-tut-breathe::after {
+  border-radius: 12px;
+}
+
+/* Reduced motion keeps the tie and drops the rhythm: the pair still shares one
+   hue and one overlay, held at a steady middle of the range it would breathe
+   through. */
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-tut-target::after,
+  .gen-studio .gs-learn-card.gs-tut-breathe::after {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 /* ------- parameter sweeps ------------------------------------------- */
@@ -7076,7 +7129,10 @@ app-gs-sweep-scrub {
   font-size: 11px;
 }
 
+/* Positioned for the breathing overlay it wears while its step is pointing at a
+   field; see the follow-along section. */
 .gen-studio .gs-learn-card {
+  position: relative;
   margin-top: 10px;
 }
 .gen-studio .gs-learn-reveal {

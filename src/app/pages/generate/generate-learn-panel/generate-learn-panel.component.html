@@ -46,6 +46,7 @@
         <section
           class="gs-card gs-learn-card"
           [class]="identityFor(current)?.className"
+          [class.gs-tut-breathe]="breathes(current)"
         >
           <h3 class="gs-guide-head">
             @if (identityFor(current); as identity) {

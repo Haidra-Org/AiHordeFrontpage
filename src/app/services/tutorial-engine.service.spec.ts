@@ -49,6 +49,24 @@ class HostSpy implements TutorialStudioHost {
   }
 }
 
+/**
+ * Run `body` with `document.getAnimations` answering the given stand-ins. jsdom
+ * implements no part of the animation API, so the method has to be put on the
+ * document for the duration and taken off again after.
+ */
+function withAnimations(
+  animations: { animationName: string; startTime: number }[],
+  body: () => void,
+): void {
+  const doc = document as Document & { getAnimations?: () => Animation[] };
+  doc.getAnimations = () => animations as unknown as Animation[];
+  try {
+    body();
+  } finally {
+    delete doc.getAnimations;
+  }
+}
+
 /** Let the engine's two chained fetches settle around their flushes. */
 async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
@@ -261,6 +279,65 @@ describe('TutorialEngineService', () => {
 
       expect(steps.classList.contains('gs-tut-target')).toBe(false);
       expect(seed.classList.contains('gs-tut-target')).toBe(true);
+    });
+
+    it('tints the marked field with the area the step is about', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const prompt = document.createElement('div');
+      const steps = document.createElement('div');
+      prompt.scrollIntoView = vi.fn();
+      steps.scrollIntoView = vi.fn();
+      anchors.register('prompt', prompt);
+      anchors.register('steps', steps);
+
+      engine.focusStep();
+      expect(prompt.classList.contains('gs-sec--prompt')).toBe(true);
+
+      engine.goTo(3);
+      engine.focusStep();
+
+      expect(prompt.classList.contains('gs-sec--prompt')).toBe(false);
+      expect(steps.classList.contains('gs-sec--sampling')).toBe(true);
+    });
+
+    it('puts every breathing glow back to the same phase on the next frame', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const element = document.createElement('div');
+      element.scrollIntoView = vi.fn();
+      anchors.register('steps', element);
+
+      const frames: FrameRequestCallback[] = [];
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+        frames.push(cb);
+        return frames.length;
+      });
+      const paired = { animationName: 'gs-breathe', startTime: 1200 };
+      const unrelated = { animationName: 'gs-shimmer', startTime: 340 };
+      withAnimations([paired, unrelated], () => {
+        engine.goTo(3);
+        engine.focusStep();
+
+        // Nothing is touched until the frame the new overlays exist in.
+        expect(paired.startTime).toBe(1200);
+        for (const frame of frames) {
+          frame(0);
+        }
+
+        expect(paired.startTime).toBe(0);
+        expect(unrelated.startTime).toBe(340);
+      });
+    });
+
+    it('marks the field as usual where the animation API is missing', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const element = document.createElement('div');
+      element.scrollIntoView = vi.fn();
+      anchors.register('steps', element);
+      engine.goTo(3);
+
+      expect((document as Partial<Document>).getAnimations).toBeUndefined();
+      expect(() => engine.focusStep()).not.toThrow();
+      expect(element.classList.contains('gs-tut-target')).toBe(true);
     });
 
     it('closes the note it opened when the next step describes no field', () => {

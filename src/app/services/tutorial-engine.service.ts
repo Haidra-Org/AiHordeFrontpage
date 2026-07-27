@@ -20,6 +20,10 @@ import {
   requestToFormValue,
 } from '../pages/generate/generate-form.model';
 import { ImageGenerationRequest } from '../types/generation';
+import {
+  SECTION_IDENTITIES,
+  sectionFor,
+} from '../pages/generate/section-identity';
 import type {
   TutorialFlow,
   TutorialManifest,
@@ -153,6 +157,14 @@ export interface TutorialStudioHost {
 const HIGHLIGHT_CLASS = 'gs-tut-target';
 
 /**
+ * The animation the step card and the field it points at both run. They are
+ * separate elements in separate panes, so what ties them together is the phase:
+ * every one of these animations is restarted from the same time whenever the
+ * step changes.
+ */
+const BREATHE_ANIMATION = 'gs-breathe';
+
+/**
  * The in-pane follow-along tutorial: which flow is running, which step is
  * current, and how talkative the prose should be.
  *
@@ -184,6 +196,8 @@ export class TutorialEngineService {
   private armed: string | null = null;
 
   private highlighted: HTMLElement | null = null;
+  /** The `gs-sec--*` class put on {@link highlighted}, to take off again. */
+  private highlightSection: string | null = null;
 
   public readonly level = signal<TutorialLevel>(this.loadLevel());
   public readonly levels = TUTORIAL_LEVELS;
@@ -437,6 +451,13 @@ export class TutorialEngineService {
       return;
     }
     element.classList.add(HIGHLIGHT_CLASS);
+    // The field takes the hue of the area the step is about, so the glow it
+    // shares with the step card is one colour rather than two.
+    const section = sectionFor('step', step.id);
+    if (section) {
+      this.highlightSection = SECTION_IDENTITIES[section].className;
+      element.classList.add(this.highlightSection);
+    }
     this.highlighted = element;
     element.scrollIntoView({
       behavior: this.scrollBehavior(),
@@ -445,11 +466,35 @@ export class TutorialEngineService {
     if (step.helpTopic) {
       this.help.requestTopic(step.helpTopic);
     }
+    this.syncBreathing();
   }
 
   private clearHighlight(): void {
     this.highlighted?.classList.remove(HIGHLIGHT_CLASS);
+    if (this.highlightSection) {
+      this.highlighted?.classList.remove(this.highlightSection);
+      this.highlightSection = null;
+    }
     this.highlighted = null;
+  }
+
+  /**
+   * Put every breathing glow on the page back to the same phase, a frame after
+   * the classes that create them are set: the field's overlay is made by the
+   * class just added and the step card's by the panel's own re-render, so
+   * neither animation exists to be reset until the browser has drawn once.
+   */
+  private syncBreathing(): void {
+    if (!this.isBrowser || typeof document.getAnimations !== 'function') {
+      return;
+    }
+    requestAnimationFrame(() => {
+      for (const animation of document.getAnimations()) {
+        if ((animation as CSSAnimation).animationName === BREATHE_ANIMATION) {
+          animation.startTime = 0;
+        }
+      }
+    });
   }
 
   private scrollBehavior(): ScrollBehavior {

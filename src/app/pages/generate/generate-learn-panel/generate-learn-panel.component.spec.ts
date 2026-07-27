@@ -109,6 +109,25 @@ describe('GenerateLearnPanelComponent', () => {
     expect(query('.gs-learn-card .gs-guide-head .gs-sec-chip')).toHaveLength(1);
   });
 
+  it('breathes with the field its step is pointing at, and only then', () => {
+    const card = (): HTMLElement => query<HTMLElement>('.gs-learn-card')[0];
+
+    expect(card().classList).toContain('gs-tut-breathe');
+    expect(card().classList).toContain('gs-sec--prompt');
+
+    engine.goTo(3);
+    fixture.detectChanges();
+    expect(card().classList).toContain('gs-tut-breathe');
+
+    // The finale points at the Generate button, which belongs to no section:
+    // the card must not answer it with a differently-hued glow.
+    engine.goTo(engine.steps().length - 1);
+    fixture.detectChanges();
+    expect(card().classList).not.toContain('gs-tut-breathe');
+
+    expect(fixture.componentInstance.breathes({ id: 'nowhere' })).toBe(false);
+  });
+
   it('says where in the flow the reader is', () => {
     engine.goTo(2);
     fixture.detectChanges();
