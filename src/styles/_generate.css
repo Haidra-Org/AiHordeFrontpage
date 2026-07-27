@@ -6660,7 +6660,8 @@
 
 /* The step card is already a padded, bordered surface, so its half of the pair
    is a ring and bloom on its own edge rather than a second plate. */
-.gen-studio .gs-learn-card.gs-tut-breathe::after {
+.gen-studio .gs-learn-card.gs-tut-breathe::after,
+.gen-studio .gs-learn-sheet-card.gs-tut-breathe::after {
   content: "";
   position: absolute;
   inset: -2px;
@@ -6678,7 +6679,8 @@
    through. */
 @media (prefers-reduced-motion: reduce) {
   .gen-studio .gs-tut-target::before,
-  .gen-studio .gs-learn-card.gs-tut-breathe::after {
+  .gen-studio .gs-learn-card.gs-tut-breathe::after,
+  .gen-studio .gs-learn-sheet-card.gs-tut-breathe::after {
     animation: none;
     opacity: 0.7;
   }
@@ -8216,4 +8218,171 @@ app-gs-sweep-scrub {
    simply overlaps the foot of the page, as it did before it could say so. */
 html:has(app-gs-sheet) {
   scroll-padding-bottom: var(--gs-sheet-clearance, 96px);
+}
+
+/* ------- the follow-along tutorial on a phone ------------------------ */
+
+/* The sheet is fixed by the chassis, so the component element itself is only a
+   place for the engine's view to live and takes no room in the flow. */
+.gen-studio .gs-learn-sheet {
+  display: contents;
+}
+
+/* Two presentations of the same tutorial, and only ever one of them. Below the
+   width where the studio has a pane to read the steps beside, the pane's copy
+   is behind the whole form and the sheet is the one that works. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-learn-pane {
+    display: none;
+  }
+}
+
+.gen-studio .gs-tut-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* One target per step, laid across the bar rather than sized to the mark in it:
+   a dot big enough to read is not a dot big enough to hit, so the pressable
+   area takes the full height of the row and an equal share of its width. */
+.gen-studio .gs-tut-dots {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-tut-dots > li {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.gen-studio .gs-tut-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.gen-studio .gs-tut-dot:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: -4px;
+  border-radius: 8px;
+}
+.gen-studio .gs-tut-dot-mark {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gs-border);
+}
+.gen-studio .gs-tut-dot--done .gs-tut-dot-mark {
+  background: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
+}
+/* The step being read is a bar rather than a brighter dot: at four pixels tall
+   a colour change alone is not something a thumb can find at arm's length. */
+.gen-studio .gs-tut-dot--on .gs-tut-dot-mark {
+  height: 8px;
+  background: var(--gs-sec, var(--gs-blue));
+}
+
+.gen-studio .gs-tut-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.gen-studio .gs-tut-bar-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-bar-do,
+.gen-studio .gs-tut-bar-next {
+  flex: none;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-tut-bar-do {
+  border: 1px solid var(--gs-blue);
+  background: var(--gs-blue);
+  color: #ffffff;
+}
+.gen-studio .gs-tut-bar-do:hover {
+  background: var(--gs-blue-hover);
+}
+.gen-studio .gs-tut-bar-next {
+  border: 1px solid var(--gs-border);
+  background: var(--gs-field);
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-tut-bar-next:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-tut-bar-do:focus-visible,
+.gen-studio .gs-tut-bar-next:focus-visible,
+.gen-studio .gs-tut-sheet-exit:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-tut-bar-do,
+  .gen-studio .gs-tut-bar-next,
+  .gen-studio .gs-tut-sheet-exit {
+    min-height: 44px;
+  }
+}
+
+/* Its own card rather than the pane panel's, so the breathing ring has an edge
+   to sit on that nothing clips; see the follow-along section for the pair. */
+.gen-studio .gs-learn-sheet-card {
+  position: relative;
+  margin-top: 10px;
+}
+.gen-studio .gs-learn-sheet-card .gs-guide-head:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: 4px;
+}
+
+.gen-studio .gs-tut-sheet-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* The only way out, and set apart from the step's own buttons for it: leaving
+   is not one of the things this step is asking to be done. */
+.gen-studio .gs-tut-sheet-exit {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 16px;
+  padding: 9px 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-tut-sheet-exit:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
 }

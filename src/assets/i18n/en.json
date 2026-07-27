@@ -615,6 +615,12 @@
   "generate.learn.done.queue": "Without an account you sit at the back of the queue on the horde's goodwill, so this can take a few minutes; registering earns kudos and moves you up it.",
   "generate.learn.done.dismiss": "Got it",
 
+  "generate.learn.sheet_label": "Tutorial steps",
+  "generate.learn.sheet_steps_label": "Jump to a step",
+  "generate.learn.sheet_step": "Step {{ n }}: {{ title }}",
+  "generate.learn.sheet_progress": "Step {{ current }} of {{ total }}",
+  "generate.learn.sheet_exit": "Leave this tutorial",
+
   "generate.welcome.heading": "Where would you like to start?",
   "generate.welcome.sub": "Pick whichever sounds like you. It only sets how much gets explained, and you can change that whenever you like.",
   "generate.welcome.door1.title": "I'm new to AI images",

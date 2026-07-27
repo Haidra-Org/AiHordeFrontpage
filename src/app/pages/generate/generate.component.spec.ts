@@ -2,7 +2,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
+import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
 import { AiHordeService } from '../../services/ai-horde.service';
@@ -971,6 +974,93 @@ async function createPaneOnlyStudio(): Promise<void> {
     .compileComponents();
 }
 
+/**
+ * The two bottom sheets are mounted by the real template, so this stands the
+ * studio up with it rather than the blanked one the unit suites use.
+ */
+async function createWholeStudio(): Promise<void> {
+  await TestBed.configureTestingModule({
+    imports: [
+      GenerateComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      provideRouter([]),
+      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: GenerationQueueService,
+        useValue: {
+          estimateKudos: vi.fn().mockResolvedValue(1),
+          enqueue: vi.fn(),
+          jobs: signal([]),
+          pendingJobs: signal([]),
+          finishedJobs: signal([]),
+          getJobImages: vi.fn().mockResolvedValue([]),
+        },
+      },
+      { provide: StyleUsageService, useValue: { increment: vi.fn() } },
+      {
+        provide: ModelReferenceService,
+        useValue: {
+          baselines: signal(null),
+          requirements: signal(null),
+          load: () => undefined,
+          baselineFor: () => null,
+          requirementsFor: () => null,
+          supportsRemix: () => true,
+          supportsQrCode: () => true,
+        },
+      },
+      {
+        provide: ToastService,
+        useValue: { success: vi.fn(), error: vi.fn() },
+      },
+      { provide: TranslatorService, useValue: { get: () => of('') } },
+      {
+        provide: HordeStylesService,
+        useValue: {
+          getStyles: () => of([]),
+          getCategoryGroups: () => of([]),
+        },
+      },
+    ],
+  }).compileComponents();
+}
+
+describe('GenerateComponent bottom sheets', () => {
+  it('puts the tutorial steps in a sheet, and stands them down for a reference entry', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    await createWholeStudio();
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+
+    expect(el().querySelector('app-generate-learn-sheet')).toBeNull();
+
+    void TestBed.inject(TutorialEngineService).start('txt2img');
+    fixture.detectChanges();
+    expect(el().querySelector('app-generate-learn-sheet')).not.toBeNull();
+
+    // Both are sheets at the foot of one screen: the entry the reader just
+    // asked for wins, and the steps come back when it closes.
+    TestBed.inject(GsHelpDockService).open('steps');
+    fixture.detectChanges();
+    expect(el().querySelector('app-generate-learn-sheet')).toBeNull();
+
+    TestBed.inject(GsHelpDockService).close();
+    fixture.detectChanges();
+    expect(el().querySelector('app-generate-learn-sheet')).not.toBeNull();
+
+    fixture.destroy();
+  });
+});
+
 describe('GenerateComponent skip link', () => {
   it('moves focus to the results pane', async () => {
     Element.prototype.scrollIntoView = vi.fn();
@@ -1017,6 +1107,33 @@ describe('GenerateComponent arrival with a tutorial armed', () => {
     await fixture.whenStable();
 
     expect(scrollIntoView).not.toHaveBeenCalled();
+    fixture.destroy();
+  });
+
+  it('leaves the page alone where the steps arrive as a sheet over the form', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    // The environment defines no matchMedia at all, which is the answer the
+    // guard reads as "no sheet"; the narrow viewport has to be stood up.
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string) =>
+        ({
+          matches: query.includes('max-width'),
+          media: query,
+        }) as MediaQueryList,
+    );
+    await createPaneOnlyStudio();
+    TestBed.inject(TutorialEngineService).arm('txt2img');
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // The sheet is already over the field the first step names; scrolling the
+    // pane up would take it off the screen the steps were put there to share.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
     fixture.destroy();
   });
 });

@@ -92,14 +92,16 @@ let nextInstance = 0;
             [class.gs-sheet-chev--up]="!expanded()"
           />
         </button>
-        <button
-          type="button"
-          class="gs-sheet-btn"
-          [attr.aria-label]="'generate.sheet.close' | transloco"
-          (click)="close()"
-        >
-          <app-icon name="x-mark" />
-        </button>
+        @if (dismissible()) {
+          <button
+            type="button"
+            class="gs-sheet-btn"
+            [attr.aria-label]="'generate.sheet.close' | transloco"
+            (click)="close()"
+          >
+            <app-icon name="x-mark" />
+          </button>
+        }
       </div>
       <div
         #sheetBody
@@ -136,6 +138,13 @@ export class GsSheetComponent {
    * should not have taken the screen before they looked at it.
    */
   public readonly startExpanded = input(false);
+  /**
+   * Whether the chassis offers a way out of itself. Content the reader is
+   * part-way through has no safe dismissal here: a close button and the Escape
+   * that follows a collapse would both end that content rather than the sheet
+   * around it, so such a sheet hides both and carries its own exit instead.
+   */
+  public readonly dismissible = input(true);
 
   /** The reader dismissed the sheet; the caller decides what that means. */
   public readonly closed = output<void>();
@@ -211,10 +220,14 @@ export class GsSheetComponent {
    * Escape unwinds one layer at a time: an expanded sheet collapses to its bar,
    * and a sheet already at its bar is dismissed. Two presses is the shortest
    * way out that never takes away what the reader was looking at by surprise.
+   * The second press does nothing where the sheet is not dismissible.
    */
   public onEscape(): void {
     if (this.open()) {
       this.collapse();
+      return;
+    }
+    if (!this.dismissible()) {
       return;
     }
     this.close();

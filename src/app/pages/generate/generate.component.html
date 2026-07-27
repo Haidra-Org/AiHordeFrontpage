@@ -95,6 +95,15 @@
     </app-gs-sheet>
   }
 
+  <!-- The mobile half of the follow-along tutorial, mounted beside the entry's
+       for the same reason. It stands down while a reference entry is open: both
+       are sheets at the foot of one screen and both publish the clearance the
+       page scrolls by, so only one can be up. The steps come back unchanged
+       when the entry closes, because the engine holds them, not this. -->
+  @if (tutorialActive() && !helpDock.topic()) {
+    <app-generate-learn-sheet />
+  }
+
   @if (previewRequest(); as request) {
     <app-studio-json-modal
       [title]="'generate.form.preview_title' | transloco"

@@ -51,6 +51,7 @@ import {
   GenerateFormComponent,
   StylePickerGroup,
 } from './generate-form/generate-form.component';
+import { GenerateLearnSheetComponent } from './generate-learn-sheet/generate-learn-sheet.component';
 import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
@@ -119,6 +120,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     StudioImageDropDirective,
     GsSheetComponent,
     GsParamEntryComponent,
+    GenerateLearnSheetComponent,
     IconComponent,
     TranslocoPipe,
   ],
@@ -143,6 +145,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** The reference entry the mobile sheet is showing, if any. */
   public readonly helpDock = inject(GsHelpDockService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  /** Whether a follow-along tutorial is running, for the mobile sheet's mount. */
+  public readonly tutorialActive = this.tutorial.active;
 
   /** The projected source-image section, so a loaded source blob can re-attach. */
   private readonly sourceImageRef = viewChild(GenerateSourceImageComponent);
@@ -349,8 +354,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * lands at the top of the form with the pane they asked for below the fold and
    * nothing saying it is there. Where the pane is already in view (the side by
    * side layout) nothing moves: the arrival should not yank the page.
+   *
+   * Where the sheet is the presentation there is nothing to reveal: the steps
+   * are already over the form, and scrolling the pane up would drag the reader
+   * away from the field the first step is pointing at.
    */
   private revealLearnPane(): void {
+    if (this.tutorialInSheet()) {
+      return;
+    }
     const pane = this.resultsRef()?.nativeElement;
     if (!pane) {
       return;
@@ -368,6 +380,19 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       behavior: reduceMotion ? 'auto' : 'smooth',
       block: 'start',
     });
+  }
+
+  /**
+   * Whether the tutorial is showing as the bottom sheet rather than in the
+   * results pane. The same width the stylesheet switches presentations at,
+   * asked of the same viewport, so the two cannot disagree about which surface
+   * the reader is looking at.
+   */
+  private tutorialInSheet(): boolean {
+    return (
+      this.isBrowser &&
+      globalThis.matchMedia?.('(max-width: 1023.98px)').matches === true
+    );
   }
 
   // --- Follow-along tutorial host ------------------------------------------

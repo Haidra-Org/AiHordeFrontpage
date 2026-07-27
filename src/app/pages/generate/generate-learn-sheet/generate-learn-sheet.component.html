@@ -1,0 +1,165 @@
+<!-- Not dismissible: an accidental Escape or a mistaken tap on a close button
+     would end a tutorial the reader is part-way through, and getting back costs
+     them the whole flow. Leaving is the Exit button inside, and nothing else. -->
+<app-gs-sheet
+  [label]="'generate.learn.sheet_label' | transloco"
+  [dismissible]="false"
+>
+  <div sheet-bar class="gs-tut-bar">
+    <ol
+      class="gs-tut-dots"
+      [attr.aria-label]="'generate.learn.sheet_steps_label' | transloco"
+    >
+      @for (entry of steps(); track entry.id; let i = $index) {
+        <li>
+          <button
+            type="button"
+            class="gs-tut-dot"
+            [class]="identityFor(entry)?.className"
+            [class.gs-tut-dot--on]="isCurrent(i)"
+            [class.gs-tut-dot--done]="i < stepIndex()"
+            [attr.aria-current]="isCurrent(i) ? 'step' : null"
+            [attr.aria-label]="
+              'generate.learn.sheet_step'
+                | transloco: { n: i + 1, title: titleKey(entry) | transloco }
+            "
+            (click)="goTo(i)"
+          >
+            <span class="gs-tut-dot-mark" aria-hidden="true"></span>
+          </button>
+        </li>
+      }
+    </ol>
+
+    @if (step(); as current) {
+      <div class="gs-tut-bar-row">
+        <span class="gs-tut-bar-title">{{
+          titleKey(current) | transloco
+        }}</span>
+        <!-- One press-worthy thing per step, and never a disabled one: a step
+             that writes something offers that, the finale offers the button it
+             is asking to be pressed, and everything else moves on. -->
+        @if (canApply()) {
+          <button type="button" class="gs-tut-bar-do" (click)="apply()">
+            {{ "generate.learn.apply" | transloco }}
+          </button>
+        }
+        @if (!onFinale()) {
+          <button
+            type="button"
+            class="gs-tut-bar-next"
+            [class.gs-tut-bar-do]="!canApply()"
+            (click)="next()"
+          >
+            {{ "generate.learn.next" | transloco }}
+          </button>
+        } @else if (current.anchorId) {
+          <button type="button" class="gs-tut-bar-do" (click)="showMe()">
+            {{ "generate.learn.show_me" | transloco }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (loadFailed()) {
+    <p class="gs-info-note">{{ "generate.learn.load_error" | transloco }}</p>
+  } @else if (loading()) {
+    <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
+  } @else if (step(); as current) {
+    <p class="gs-learn-progress" role="status" aria-live="polite">
+      {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
+    </p>
+
+    <!-- The card wears the hue of the area its step is about and breathes in
+         step with the field it points at, so the pair reads as one thing on a
+         phone as it does beside the panel. -->
+    <section
+      class="gs-card gs-learn-sheet-card"
+      [class]="identityFor(current)?.className"
+      [class.gs-tut-breathe]="breathes(current)"
+    >
+      <h2 class="gs-guide-head">
+        @if (identityFor(current); as identity) {
+          <span class="gs-sec-chip" aria-hidden="true"
+            ><app-icon [name]="identity.icon"
+          /></span>
+        }
+        {{ titleKey(current) | transloco }}
+      </h2>
+      <p class="gs-guide-step-body">
+        {{ bodyKey(current) | transloco: copyParams() }}
+      </p>
+
+      @if (level() === "new_to_this" && current.sweepParameter) {
+        <app-gs-sweep-scrub [parameter]="current.sweepParameter" />
+      }
+
+      @if (revealNote()) {
+        <p class="gs-learn-reveal">
+          <app-icon name="star" class="gs-ico-sm" />
+          {{ revealKey() | transloco }}
+        </p>
+      }
+
+      @if (onFinale()) {
+        <p class="gs-info-note gs-learn-finale">
+          {{ "generate.learn.finale_hint" | transloco }}
+        </p>
+      }
+    </section>
+
+    <div class="gs-learn-actions">
+      @if (canApply()) {
+        <button type="button" class="gs-learn-apply" (click)="apply()">
+          {{ "generate.learn.apply" | transloco }}
+        </button>
+      }
+      @if (current.anchorId) {
+        <button type="button" class="gs-learn-show" (click)="showMe()">
+          {{ "generate.learn.show_me" | transloco }}
+        </button>
+      }
+    </div>
+
+    <div class="gs-tut-sheet-nav">
+      <button
+        type="button"
+        class="gs-guide-close"
+        [disabled]="stepIndex() === 0"
+        (click)="back()"
+      >
+        {{ "generate.learn.back" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="gs-learn-next"
+        [disabled]="onFinale()"
+        (click)="next()"
+      >
+        {{ "generate.learn.next" | transloco }}
+      </button>
+    </div>
+
+    <div
+      class="gs-seg gs-seg--xs gs-learn-levels"
+      role="group"
+      [attr.aria-label]="'generate.learn.level_label' | transloco"
+    >
+      @for (option of levels; track option) {
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="level() === option"
+          (click)="setLevel(option)"
+        >
+          {{ levelKey(option) | transloco }}
+        </button>
+      }
+    </div>
+
+    <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
+      {{ "generate.learn.sheet_exit" | transloco }}
+    </button>
+  }
+</app-gs-sheet>
