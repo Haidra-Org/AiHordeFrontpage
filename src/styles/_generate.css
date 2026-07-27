@@ -4870,6 +4870,87 @@
   color: #bfdbfe;
 }
 
+/* ------- first-visit welcome card (results empty state) -------------- */
+/* Takes the empty state's place, so it keeps its centred column and borrows the
+   documentation plane's blue zone tokens: the doors lead to the same explanatory
+   material the guide CTA below them does. Column-stacked doors at every width;
+   three side by side would be unreadable in a pane this narrow. */
+.gen-studio .gs-welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 56px 2px 0;
+  animation: gs-fadeup 0.24s ease both;
+}
+.gen-studio .gs-welcome-title {
+  margin: 0;
+  color: var(--gs-ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+.gen-studio .gs-welcome-sub {
+  margin: 6px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+.gen-studio .gs-welcome-doors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gen-studio .gs-welcome-door {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 44px;
+  padding: 11px 14px;
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 10px;
+  background: var(--gs-blue-tint);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-welcome-door:hover {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-welcome-door-title {
+  color: var(--gs-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.gen-studio .gs-welcome-door-hint {
+  color: var(--gs-ink-2);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.gen-studio .gs-welcome-skip {
+  align-self: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.gen-studio .gs-welcome-skip:hover {
+  color: var(--gs-ink-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-welcome {
+    animation: none;
+  }
+}
+
 /* ------- kudos estimate on the Generate button ---------------------- */
 /* A light tint chip on the blue fill: white text over the blended surface holds
    ~5:1 in both themes (the fill is the same blue either way), where the
@@ -6372,7 +6453,9 @@ app-gs-sweep-scrub {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--gs-label);
+  /* --gs-label lands a hair under 4.5:1 on the note's tinted plate in the
+     light theme at this size; the secondary ink clears it in both themes. */
+  color: var(--gs-ink-2);
 }
 .gen-studio .gs-sweep-loading {
   font-size: 12px;
@@ -6515,7 +6598,8 @@ app-gs-sweep-scrub {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--gs-label);
+  /* Same AA constraint as .gs-sweep-value: --gs-label misses on this plate. */
+  color: var(--gs-ink-2);
 }
 .gen-studio .gs-sweep-pair-cap {
   display: block;

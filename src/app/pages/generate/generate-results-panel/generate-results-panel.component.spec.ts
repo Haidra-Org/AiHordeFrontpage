@@ -16,6 +16,9 @@ import {
   LocalGenerationJobStatus,
   StoredJobImage,
 } from '../../../types/generation-job';
+import en from '../../../../assets/i18n/en.json';
+
+const TRANSLATIONS = en as Record<string, string>;
 
 function job(
   localId: string,
@@ -878,6 +881,94 @@ describe('GenerateResultsPanelComponent', () => {
     component.dismissTutorialNote();
 
     expect(component.tutorialCompleted()).toBe(false);
+  });
+
+  it('welcomes a reader who has not been here before', () => {
+    expect(component.showWelcome()).toBe(true);
+    // Three doors, each standing for a different level, and none repeated.
+    expect(component.welcomeDoors.map((door) => door.level)).toEqual([
+      'new_to_this',
+      'comfortable',
+      'expert',
+    ]);
+    for (const door of component.welcomeDoors) {
+      expect(TRANSLATIONS[`generate.welcome.${door.id}.title`]).toBeTruthy();
+      expect(TRANSLATIONS[`generate.welcome.${door.id}.hint`]).toBeTruthy();
+    }
+  });
+
+  it('seeds the level and starts the tutorial behind a guided door', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+
+    for (const door of component.welcomeDoors.filter((d) => d.flowId)) {
+      engine.stop();
+      component.enterVia(door);
+
+      expect(engine.level()).toBe(door.level);
+      expect(engine.activeFlowId()).toBe(door.flowId);
+    }
+  });
+
+  it('seeds the level and leaves the studio alone behind the last door', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    const door = component.welcomeDoors[2];
+
+    component.enterVia(door);
+
+    expect(engine.level()).toBe('expert');
+    expect(engine.active()).toBe(false);
+    expect(component.showStarters()).toBe(true);
+  });
+
+  it('remembers that the welcome card was answered', () => {
+    component.enterVia(component.welcomeDoors[2]);
+
+    expect(dbStore).toHaveBeenCalledWith(
+      'aihorde.generate.learn.welcomed',
+      true,
+    );
+    expect(component.showWelcome()).toBe(false);
+  });
+
+  it('lets the welcome card be skipped without settling on a level', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    const before = engine.level();
+
+    component.dismissWelcome();
+
+    expect(component.showWelcome()).toBe(false);
+    expect(engine.level()).toBe(before);
+    expect(dbStore).not.toHaveBeenCalledWith(
+      'aihorde.generate.learn.level',
+      expect.anything(),
+    );
+  });
+
+  it('leaves the welcome card away once it has been answered before', () => {
+    dbGet.mockImplementation((key: string) =>
+      key === 'aihorde.generate.learn.welcomed' ? true : undefined,
+    );
+
+    const returning = TestBed.createComponent(GenerateResultsPanelComponent);
+
+    expect(returning.componentInstance.showWelcome()).toBe(false);
+    expect(returning.componentInstance.showStarters()).toBe(true);
+    returning.destroy();
+  });
+
+  it('keeps the welcome card out of a pane with anything else in it', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+
+    component.openGuide();
+    expect(component.showWelcome()).toBe(false);
+    component.closeGuide();
+
+    void engine.start('txt2img');
+    expect(component.showWelcome()).toBe(false);
+    engine.stop();
+
+    pendingJobs.set([job('p', 'processing')]);
+    expect(component.showWelcome()).toBe(false);
   });
 
   it('shows the guide in place of the results and gives it back', () => {

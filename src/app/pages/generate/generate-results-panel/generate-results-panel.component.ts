@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  PLATFORM_ID,
   computed,
   effect,
   inject,
@@ -11,7 +12,11 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import {
+  DecimalPipe,
+  NgTemplateOutlet,
+  isPlatformBrowser,
+} from '@angular/common';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -41,7 +46,10 @@ import {
 import { GenerateFormValue } from '../generate-form.model';
 import { GenerateGuideComponent } from '../generate-guide/generate-guide.component';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
-import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import {
+  TutorialEngineService,
+  TutorialLevel,
+} from '../../../services/tutorial-engine.service';
 import {
   JsonModalHighlight,
   StudioJsonModalComponent,
@@ -56,6 +64,8 @@ const PER_ROW_KEY = 'aihorde.generate.results.perRow';
 const DEFAULT_PER_ROW = 4;
 const SHOW_PROMPTS_KEY = 'aihorde.generate.show_prompts';
 const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
+/** Set once the welcome card has been answered, dismissed or otherwise. */
+const WELCOMED_KEY = 'aihorde.generate.learn.welcomed';
 
 /**
  * Narrowest tile the grid will render. A per-row preference chosen on a wide
@@ -84,6 +94,16 @@ interface JobThumbnail {
   url: string;
   mimeType: string;
   metadata?: StoredJobImageMetadata;
+}
+
+/** One of the ways in offered by the first-visit welcome card. */
+export interface WelcomeDoor {
+  /** Suffix of the door's `generate.welcome.*` keys, and of nothing else. */
+  id: string;
+  /** The Learn level taking this door settles on. */
+  level: TutorialLevel;
+  /** The tutorial to start, or null to leave the reader in a bare studio. */
+  flowId: string | null;
 }
 
 /** An open per-tile actions menu, anchored at viewport coordinates. */
@@ -220,6 +240,7 @@ export class GenerateResultsPanelComponent {
   private readonly handoff = inject(StudioHandoffService);
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
 
@@ -269,6 +290,38 @@ export class GenerateResultsPanelComponent {
   public readonly tutorialOpen = this.tutorial.active;
   /** The tutorial's parting note, shown over the results it just made room for. */
   public readonly tutorialCompleted = this.tutorial.completed;
+
+  /**
+   * The ways in offered to a reader who has not been here before. Both guided
+   * doors run the txt2img walkthrough: its Comfortable register is where the
+   * horde's own specifics are told, which is what the second door promises.
+   * Pointing a door at another track is this list's `flowId` and nothing else.
+   */
+  public readonly welcomeDoors: readonly WelcomeDoor[] = [
+    { id: 'door1', level: 'new_to_this', flowId: 'txt2img' },
+    { id: 'door2', level: 'comfortable', flowId: 'txt2img' },
+    { id: 'door3', level: 'expert', flowId: null },
+  ];
+
+  /** Whether the welcome card has been answered, in this visit or an earlier one. */
+  private readonly welcomed = signal<boolean>(
+    this.db.get(WELCOMED_KEY) === true,
+  );
+
+  /**
+   * Whether the welcome card stands in for the empty state. Browser-only: the
+   * flag lives in local storage, which a server render cannot read, and showing
+   * a first-visit card to a reader who answered it long ago is worse than having
+   * it arrive with hydration.
+   */
+  public readonly showWelcome = computed(
+    () =>
+      this.isBrowser &&
+      !this.welcomed() &&
+      this.showStarters() &&
+      !this.guideOpen() &&
+      !this.tutorialOpen(),
+  );
 
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
@@ -1448,6 +1501,26 @@ export class GenerateResultsPanelComponent {
       return;
     }
     this.openGuide();
+  }
+
+  /**
+   * Take one of the welcome card's doors: settle the Learn level it stands for
+   * and start its tutorial, if it has one. Only a door sets a level, so the card
+   * can be dismissed without committing the reader to a register they never
+   * chose.
+   */
+  public enterVia(door: WelcomeDoor): void {
+    this.tutorial.setLevel(door.level);
+    this.dismissWelcome();
+    if (door.flowId) {
+      void this.tutorial.start(door.flowId);
+    }
+  }
+
+  /** Put the welcome card away for good, leaving the level as it was. */
+  public dismissWelcome(): void {
+    this.welcomed.set(true);
+    this.db.store(WELCOMED_KEY, true);
   }
 
   public dismissTutorialNote(): void {
