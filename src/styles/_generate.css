@@ -6196,7 +6196,10 @@
   content: "";
   flex: 1 1 auto;
   height: 1px;
-  background: var(--gs-zone-tint-border, var(--gs-border));
+  background: var(
+    --gs-sec-tint-border,
+    var(--gs-zone-tint-border, var(--gs-border))
+  );
 }
 .gen-studio .gs-guide-head--major {
   margin-top: 26px;
@@ -6587,25 +6590,46 @@
 
 /* ------- follow-along tutorial ---------------------------------------- */
 
-/* What a tutorial step puts on the field it is talking about. It borrows the
-   section-landmark grammar rather than inventing an alert of its own: the
-   section tint washes the anchored row and the section hairline runs down its
-   leading edge, the same pairing the card titles use one step up the hierarchy.
-   Hue-matched, so a field that already carries colour (a style lock, a
-   requirement warning) is not overlaid with something that reads as a second
-   warning. The engine sets the step's `gs-sec--*` class on the same element, so
-   the wash is the hue of the area the step is about; a step in no area inherits
-   the zone tint from the card it sits in. */
+/* What a tutorial step puts on the field it is talking about. The anchored
+   element itself is left untouched — no padding, border or background of its
+   own, so a highlighted row or button never shifts and never loses its shape.
+   Everything is drawn on a halo plate behind it, overhanging the content by a
+   step of breathing room so the wash frames the field instead of hugging its
+   text. The plate borrows the section-landmark grammar rather than inventing
+   an alert of its own: section tint for the wash, section hairline for its
+   edge and leading bar, the same pairing the card titles use one step up the
+   hierarchy. The engine sets the step's `gs-sec--*` class on the same element,
+   so the wash is the hue of the area the step is about; a step in no area
+   inherits the zone tint from the card it sits in. */
 .gen-studio .gs-tut-target {
   position: relative;
-  border-radius: 8px;
-  padding-left: 9px;
-  border-left: 2px solid
-    var(
-      --gs-sec-tint-border,
-      var(--gs-zone-tint-border, var(--gs-blue-tint-border))
-    );
+  /* The halo carries a negative z-index; isolating keeps it above this
+     element's own surface (a highlighted card, the Generate button) instead of
+     letting it drop behind an ancestor's background. */
+  isolation: isolate;
+}
+.gen-studio .gs-tut-target::before {
+  content: "";
+  position: absolute;
+  inset: -6px -8px;
+  z-index: -1;
+  border-radius: 12px;
+  pointer-events: none;
   background: var(--gs-sec-tint, var(--gs-zone-tint, var(--gs-blue-tint)));
+  box-shadow:
+    0 0 0 1px
+      var(
+        --gs-sec-tint-border,
+        var(--gs-zone-tint-border, var(--gs-blue-tint-border))
+      ),
+    inset 2px 0 0 0
+      var(
+        --gs-sec-tint-border,
+        var(--gs-zone-tint-border, var(--gs-blue-tint-border))
+      ),
+    0 0 18px -4px
+      color-mix(in srgb, var(--gs-sec, var(--gs-zone)) 45%, transparent);
+  animation: gs-breathe 3s ease-in-out infinite;
 }
 
 /* The tie between the step and the field it is about. Both wear the same
@@ -6626,32 +6650,29 @@
   }
 }
 
-.gen-studio .gs-tut-target::after,
+/* The step card is already a padded, bordered surface, so its half of the pair
+   is a ring and bloom on its own edge rather than a second plate. */
 .gen-studio .gs-learn-card.gs-tut-breathe::after {
   content: "";
   position: absolute;
   inset: -2px;
+  border-radius: 12px;
   pointer-events: none;
   box-shadow:
     0 0 0 1px var(--gs-sec-tint-border, var(--gs-zone-tint-border)),
-    0 0 14px color-mix(in srgb, var(--gs-sec, var(--gs-zone)) 35%, transparent);
+    0 0 18px -4px
+      color-mix(in srgb, var(--gs-sec, var(--gs-zone)) 45%, transparent);
   animation: gs-breathe 3s ease-in-out infinite;
-}
-.gen-studio .gs-tut-target::after {
-  border-radius: 10px;
-}
-.gen-studio .gs-learn-card.gs-tut-breathe::after {
-  border-radius: 12px;
 }
 
 /* Reduced motion keeps the tie and drops the rhythm: the pair still shares one
    hue and one overlay, held at a steady middle of the range it would breathe
    through. */
 @media (prefers-reduced-motion: reduce) {
-  .gen-studio .gs-tut-target::after,
+  .gen-studio .gs-tut-target::before,
   .gen-studio .gs-learn-card.gs-tut-breathe::after {
     animation: none;
-    opacity: 0.6;
+    opacity: 0.7;
   }
 }
 
