@@ -50,8 +50,22 @@ const CHROME_KEYS = [
   'meta_model',
   'meta_seed',
   'meta_kudos',
-  'meta_worker',
   'meta_time',
+  'recipe_label',
+  'recipe_model',
+  'recipe_size',
+  'recipe_steps',
+  'recipe_cfg',
+  'recipe_sampler',
+  'recipe_seed',
+  'recipe_denoise',
+  'recipe_karras',
+  'recipe_hires',
+  'recipe_post',
+  'recipe_batch',
+  'recipe_on',
+  'recipe_off',
+  'raw_show',
   'meta_time_value',
   'deviation_label',
   'dev_head',
@@ -126,6 +140,31 @@ async function createPage(
   };
 }
 
+/**
+ * The payload every flow is answered with, in the shape the committed examples
+ * are really in: the recipe chips are read off this and nothing else, so it has
+ * to be a request rather than a stub.
+ */
+const REQUEST_TEXT = JSON.stringify(
+  {
+    prompt: 'hello',
+    source_image: '<base64>',
+    models: ['AlbedoBase XL (SDXL)'],
+    params: {
+      sampler_name: 'k_euler_a',
+      cfg_scale: 7.5,
+      width: 1024,
+      height: 1024,
+      steps: 30,
+      seed: '1234567890',
+      karras: true,
+      n: 1,
+    },
+  },
+  null,
+  2,
+);
+
 /** Answers the manifest request and the companion files it then triggers. */
 function flushAll(harness: Harness): void {
   harness.http.expectOne('/assets/tutorials/manifest.json').flush(MANIFEST);
@@ -145,9 +184,7 @@ function flushAll(harness: Harness): void {
     wall_time_seconds: 41.7,
     deviations: 'the requested model was swapped',
   });
-  harness.http
-    .expectOne(`${base}/${flow.request}`)
-    .flush('{\n  "prompt": "hello",\n  "source_image": "<base64>"\n}');
+  harness.http.expectOne(`${base}/${flow.request}`).flush(REQUEST_TEXT);
   if (flow.files.includes('request-before.json')) {
     harness.http
       .expectOne(`${base}/request-before.json`)
@@ -255,6 +292,59 @@ describe('GenerateTutorialsComponent', () => {
       block: 'nearest',
       inline: 'nearest',
     });
+  });
+
+  it('reads the recipe off the request the example was submitted with', () => {
+    flushAll(harness);
+
+    const chips = harness
+      .query<HTMLElement>('.gs-recipe-chip')
+      .map((chip) => chip.textContent?.replace(/\s+/g, ' ').trim());
+
+    // Model, size, steps, guidance, sampler, seed and the sigmas: every field
+    // the payload sets, and nothing the studio would only have defaulted to.
+    expect(chips).toHaveLength(7);
+    expect(chips).toContain('Model AlbedoBase XL (SDXL)');
+    expect(chips).toContain('Size 1024×1024');
+    expect(chips).toContain('Karras on');
+    // One image is what an unbatched request makes, so it is not a setting.
+    expect(chips.join(' ')).not.toContain('Images');
+  });
+
+  it('leaves the worker that ran the example out of the card', () => {
+    flushAll(harness);
+
+    expect(harness.text()).not.toContain('a-worker');
+    expect(
+      (en as Record<string, string>)['generate.tutorials.meta_worker'],
+    ).toBeUndefined();
+  });
+
+  it('keeps the payload behind an expander in the studio tab', () => {
+    flushAll(harness);
+
+    const toggle = harness.query<HTMLButtonElement>('.gs-tut-raw-toggle')[0];
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(harness.query('.gs-tut-code')).toHaveLength(0);
+
+    toggle.click();
+    harness.fixture.detectChanges();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(harness.query('.gs-tut-code')).toHaveLength(1);
+    expect(toggle.getAttribute('aria-controls')).toBe(
+      harness.query('.gs-tut-code')[0].id,
+    );
+  });
+
+  it('leaves the chips and the expander to the studio tab', () => {
+    flushAll(harness);
+    harness.component.setMode('developer');
+    harness.fixture.detectChanges();
+
+    expect(harness.query('.gs-recipe-chip')).toHaveLength(0);
+    expect(harness.query('.gs-tut-raw-toggle')).toHaveLength(0);
   });
 
   it('reports what the run deviated from', () => {

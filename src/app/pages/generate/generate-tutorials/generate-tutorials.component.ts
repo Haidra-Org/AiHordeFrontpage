@@ -16,6 +16,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map, of } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
+import {
+  GsRecipeChipsComponent,
+  RecipeRequest,
+} from '../../../components/gs-recipe-chips/gs-recipe-chips.component';
 import { highlightJson } from '../../../helper/json-formatter';
 import {
   TutorialEngineService,
@@ -53,7 +57,6 @@ export interface TutorialManifest {
 interface TutorialMeta {
   model?: string;
   seed?: string;
-  worker_name?: string;
   kudos_charged?: number;
   wall_time_seconds?: number;
   deviations?: string;
@@ -118,7 +121,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
  */
 @Component({
   selector: 'app-generate-tutorials',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, GsRecipeChipsComponent],
   templateUrl: './generate-tutorials.component.html',
   host: {
     class: 'gs-tut',
@@ -188,6 +191,26 @@ export class GenerateTutorialsComponent {
     highlightJson(this.activeDetail()?.requestBefore ?? ''),
   );
 
+  /**
+   * The same payload parsed, for the recipe chips. The text stays the thing
+   * that is shown; this is only read from, and a file that will not parse
+   * renders no chips rather than taking the page down with it.
+   */
+  public readonly requestObject = computed<RecipeRequest | null>(() => {
+    const text = this.activeDetail()?.request;
+    if (!text) {
+      return null;
+    }
+    try {
+      return JSON.parse(text) as RecipeRequest;
+    } catch {
+      return null;
+    }
+  });
+
+  /** Whether the recipe card has the payload itself open under the chips. */
+  public readonly rawOpen = signal(false);
+
   constructor() {
     this.http
       .get<TutorialManifest>(`${TUTORIALS_ROOT}/manifest.json`)
@@ -202,6 +225,13 @@ export class GenerateTutorialsComponent {
       if (flow && flow.status === 'available' && !this.details()[flow.id]) {
         this.loadDetail(flow);
       }
+    });
+
+    // A reader who opened one example's payload has not asked to be shown the
+    // next one's.
+    effect(() => {
+      this.activeFlow();
+      this.rawOpen.set(false);
     });
 
     // Waits for the manifest: until it has arrived there is nothing to say a
@@ -238,6 +268,10 @@ export class GenerateTutorialsComponent {
   public assetUrl(file: string | undefined): string {
     const flow = this.activeFlow();
     return flow && file ? `${TUTORIALS_ROOT}/${flow.directory}/${file}` : '';
+  }
+
+  public toggleRaw(): void {
+    this.rawOpen.update((open) => !open);
   }
 
   public isMode(mode: 'user' | 'developer'): boolean {

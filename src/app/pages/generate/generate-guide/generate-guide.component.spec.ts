@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateGuideComponent } from './generate-guide.component';
 import en from '../../../../assets/i18n/en.json';
+import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 
 describe('GenerateGuideComponent', () => {
   let fixture: ComponentFixture<GenerateGuideComponent>;
@@ -137,6 +138,37 @@ describe('GenerateGuideComponent', () => {
       link.compareDocumentPosition(firstSection) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('offers practice only on the sections a worked example exercises', () => {
+    const translations = en as Record<string, string>;
+    const cards = query<HTMLElement>('.gs-guide-card').slice(1);
+    const withPractice = component.sections.filter(
+      (section) => section.practiceFlow,
+    );
+
+    expect(withPractice.map((section) => section.id)).toEqual(['sampling']);
+    expect(query('.gs-guide-practice')).toHaveLength(withPractice.length);
+    component.sections.forEach((section, index) => {
+      expect(
+        cards[index].querySelector('.gs-guide-practice') !== null,
+        `practice on ${section.id}`,
+      ).toBe(Boolean(section.practiceFlow));
+    });
+    expect(translations['generate.guide.practice_link']).toBeTruthy();
+  });
+
+  it('arms the section example and goes to the studio', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    const navigate = vi
+      .spyOn(TestBed.inject(Router), 'navigate')
+      .mockResolvedValue(true);
+
+    query<HTMLButtonElement>('.gs-guide-practice')[0].click();
+
+    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    // Held in memory rather than routed, as every other handoff is.
+    expect(engine.consumeArmed()).toBe('txt2img');
   });
 
   it('reads as a page of its own rather than a pane of the studio', () => {

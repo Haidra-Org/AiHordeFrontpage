@@ -7,7 +7,7 @@ import {
   inject,
   viewChild,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsSweepGridComponent } from '../../../components/gs-sweep-grid/gs-sweep-grid.component';
@@ -16,6 +16,7 @@ import {
   SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
   SWEEP_PARAMETER_BY_HELP_TOPIC,
 } from '../../../services/sweep-library.service';
+import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
   SectionIdentity,
@@ -33,6 +34,13 @@ export interface GuideSection {
   labelKey: string;
   /** `generate.help.<topic>` entries, in the order the panel shows them. */
   topics: readonly string[];
+  /**
+   * The worked example that puts this section's settings to work, where one
+   * covers them. Set only where the walkthrough really is about the section:
+   * reading about a dial and then being handed an example that never touches it
+   * is worse than being offered nothing.
+   */
+  practiceFlow?: string;
 }
 
 /**
@@ -61,6 +69,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
       'hires_denoise',
       'requirements',
     ],
+    practiceFlow: 'txt2img',
   },
   {
     id: 'loras',
@@ -151,6 +160,8 @@ const NO_SWEEPS: readonly string[] = [];
 })
 export class GenerateGuideComponent {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
+  private readonly tutorial = inject(TutorialEngineService);
 
   private readonly flow = viewChild<ElementRef<HTMLElement>>('flow');
 
@@ -180,6 +191,19 @@ export class GenerateGuideComponent {
   /** The DOM id of a section, so the contents rail can target it. */
   public sectionId(id: string): string {
     return `gs-guide-sec-${id}`;
+  }
+
+  /**
+   * Arm the section's worked example and go to the studio, the same handoff the
+   * Learn pages make: held in memory rather than in the URL, so reloading the
+   * studio lands on an ordinary studio rather than restarting the walkthrough.
+   */
+  public startPractice(section: GuideSection): void {
+    if (!section.practiceFlow) {
+      return;
+    }
+    this.tutorial.arm(section.practiceFlow);
+    void this.router.navigate(['/generate/image']);
   }
 
   /** Scroll the pane to a section of the guide. */

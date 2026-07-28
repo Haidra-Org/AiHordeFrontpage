@@ -885,6 +885,13 @@ describe('GenerateResultsPanelComponent', () => {
     }
   });
 
+  it('offers the Learn section beside the way past the welcome card', () => {
+    // The card's third door and its skip line are where a reader who wants
+    // neither a walkthrough nor a blank panel ends up, so the way to read
+    // about it first is offered there.
+    expect(TRANSLATIONS['generate.welcome.browse_learn']).toBeTruthy();
+  });
+
   it('seeds the level and starts the tutorial behind a guided door', () => {
     const engine = TestBed.inject(TutorialEngineService);
 

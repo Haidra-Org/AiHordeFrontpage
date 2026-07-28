@@ -90,6 +90,18 @@
         }
         {{ section.labelKey | transloco }}
       </h4>
+      <!-- Reading about the dials is half of it; the other half is turning
+           them, which is a page away and needs saying where the reading is. -->
+      @if (section.practiceFlow) {
+        <button
+          type="button"
+          class="gs-guide-practice"
+          (click)="startPractice(section)"
+        >
+          <app-icon name="star" class="gs-ico-sm" />
+          {{ "generate.guide.practice_link" | transloco }}
+        </button>
+      }
       <dl class="gs-guide-terms">
         @for (topic of section.topics; track topic) {
           <dt class="gs-guide-term">

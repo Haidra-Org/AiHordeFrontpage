@@ -8514,3 +8514,137 @@ html:has(app-gs-sheet) {
 .dark .glossary-sec--workflows {
   color: #bef264;
 }
+
+/* ------- the recipe card (worked examples) --------------------------- */
+/* The settings behind an example, read off the request it was submitted with.
+   Each chip wears the mark of the panel card its field lives on, so a reader
+   can take one and know where to go and set it. The hue is on the glyph and
+   the edge only: the section identities are graphic colours and never carry
+   text. */
+.gen-studio .gs-recipe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-recipe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--gs-sec-tint-border);
+  border-radius: 999px;
+  background: var(--gs-card);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.gen-studio .gs-recipe-chip-label {
+  color: var(--gs-ink-2);
+  font-weight: 600;
+}
+.gen-studio .gs-recipe-chip-value {
+  min-width: 0;
+  color: var(--gs-ink);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  word-break: break-word;
+}
+
+/* The payload under the chips: closed by default, because the chips are the
+   answer for the reader this tab is for and the developer tab already leads
+   with the file. */
+.gen-studio .gs-tut-raw {
+  margin-bottom: 14px;
+}
+.gen-studio .gs-tut-raw-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 999px;
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .gs-tut-raw-toggle:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-raw-toggle[aria-expanded="true"] {
+  margin-bottom: 8px;
+}
+
+/* ------- practice handoff (written guide) ---------------------------- */
+/* A section that a worked example really exercises says so where it is being
+   read, rather than at the foot of a page and a half of reference. */
+.gen-studio .gs-guide-practice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 999px;
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .gs-guide-practice:hover {
+  border-color: var(--gs-blue);
+}
+.dark .gen-studio .gs-guide-practice {
+  color: #bfdbfe;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-guide-practice {
+    min-height: 44px;
+  }
+}
+
+/* ------- welcome card foot ------------------------------------------- */
+/* The way past the card and the way to read about it first, on one line under
+   the doors. */
+.gen-studio .gs-welcome-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+}
+.gen-studio .gs-welcome-learn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  color: var(--gs-blue);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.gen-studio .gs-welcome-learn:hover {
+  color: var(--gs-blue-hover);
+}
+.dark .gen-studio .gs-welcome-learn {
+  color: #bfdbfe;
+}
+
+/* ------- tutorial completion note ------------------------------------ */
+/* The identity system's chip, in the note's own green rather than a section
+   hue: nothing about finishing a walkthrough belongs to one card of the
+   panel. */
+.gen-studio .gs-learn-done-mark {
+  margin-top: 1px;
+  color: var(--gs-green);
+  background: var(--gs-panel);
+  border-color: var(--gs-green-tint-border);
+}

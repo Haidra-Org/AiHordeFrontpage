@@ -260,6 +260,37 @@
             <h3 class="gs-guide-head">
               {{ "generate.tutorials.images_head" | transloco }}
             </h3>
+            <!-- The settings that made it, read off the request itself, and the
+                 request underneath for a reader who wants to check them. The
+                 developer tab already leads with the payload, so the chips
+                 stand in for it here rather than being shown twice. -->
+            @if (isMode("user")) {
+              <app-gs-recipe-chips [request]="requestObject()" />
+              <div class="gs-tut-raw">
+                <button
+                  type="button"
+                  class="gs-tut-raw-toggle"
+                  id="gs-tut-raw-toggle"
+                  aria-controls="gs-tut-raw-body"
+                  [attr.aria-expanded]="rawOpen()"
+                  (click)="toggleRaw()"
+                >
+                  <app-icon
+                    [name]="rawOpen() ? 'chevron-up' : 'chevron-down'"
+                    class="gs-ico-sm"
+                  />
+                  {{ "generate.tutorials.raw_show" | transloco }}
+                </button>
+                @if (rawOpen()) {
+                  <pre
+                    id="gs-tut-raw-body"
+                    class="gs-tut-code"
+                    [innerHTML]="requestJson()"
+                  ></pre>
+                }
+              </div>
+            }
+
             <div class="gs-tut-shots">
               @if (flow.source) {
                 <figure class="gs-tut-shot">
@@ -329,10 +360,6 @@
                 <div class="gs-tut-meta-row">
                   <dt>{{ "generate.tutorials.meta_kudos" | transloco }}</dt>
                   <dd>{{ detail.meta.kudos_charged }}</dd>
-                </div>
-                <div class="gs-tut-meta-row">
-                  <dt>{{ "generate.tutorials.meta_worker" | transloco }}</dt>
-                  <dd>{{ detail.meta.worker_name }}</dd>
                 </div>
                 <div class="gs-tut-meta-row">
                   <dt>{{ "generate.tutorials.meta_time" | transloco }}</dt>

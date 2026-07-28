@@ -231,6 +231,9 @@
       <!-- The tutorial stood down so the image could land here; this is the
            only thing it has left to say, and it says it once. -->
       <div class="gs-learn-done" role="status">
+        <span class="gs-sec-chip gs-learn-done-mark" aria-hidden="true">
+          <app-icon name="check" />
+        </span>
         <div class="gs-learn-done-text">
           <p class="gs-learn-done-title">
             {{ "generate.learn.done.title" | transloco }}
@@ -283,13 +286,21 @@
             </button>
           }
         </div>
-        <button
-          type="button"
-          class="gs-welcome-skip"
-          (click)="dismissWelcome()"
-        >
-          {{ "generate.welcome.skip" | transloco }}
-        </button>
+        <!-- The way past the card sits beside the way to read about it first:
+             the last door and the skip line are where a reader who wants
+             neither a walkthrough nor a blank panel ends up. -->
+        <div class="gs-welcome-foot">
+          <button
+            type="button"
+            class="gs-welcome-skip"
+            (click)="dismissWelcome()"
+          >
+            {{ "generate.welcome.skip" | transloco }}
+          </button>
+          <a class="gs-welcome-learn" routerLink="/generate/learn">
+            {{ "generate.welcome.browse_learn" | transloco }}
+          </a>
+        </div>
       </div>
     } @else if (showStarters()) {
       <div class="gs-empty">
