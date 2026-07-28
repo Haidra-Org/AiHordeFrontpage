@@ -11,9 +11,12 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import {
+  SWEEP_PARAMETER_FALLBACK_LABEL_KEY,
+  SWEEP_PARAMETER_LABEL_KEY,
   SWEEP_VARIANT_PARAMETER,
   SweepLibraryService,
   SweepStop,
@@ -21,6 +24,9 @@ import {
 
 /** The four copies a `tile_repeat_2x2` frame is laid out as. */
 const TILE_CELLS = [0, 1, 2, 3] as const;
+
+/** Where the whole answer about samplers lives, for the folded note's last line. */
+const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
 
 /**
  * A parameter sweep the reader can scrub: the same scene rendered across a range
@@ -45,7 +51,7 @@ const TILE_CELLS = [0, 1, 2, 3] as const;
  */
 @Component({
   selector: 'app-gs-sweep-scrub',
-  imports: [TranslocoPipe, IconComponent, NgTemplateOutlet],
+  imports: [TranslocoPipe, IconComponent, NgTemplateOutlet, RouterLink],
   template: `
     <!-- One frame, however this strip's frames have to be drawn. A tiled strip
          has no single image to hang alt text on, so the four copies are one
@@ -115,6 +121,33 @@ const TILE_CELLS = [0, 1, 2, 3] as const;
                   {{ 'generate.sweeps.variant_alt' | transloco }}
                 </button>
               </div>
+
+              <!-- The toggle names two kinds of sampler and assumes the reader
+                   knows which theirs is. Answering that is more than a label can
+                   carry and less than a trip to the reference is worth, so it
+                   sits here, folded, with the two lists in full. -->
+              <button
+                type="button"
+                class="gs-sweep-why"
+                [attr.aria-expanded]="variantWhyOpen()"
+                (click)="toggleVariantWhy()"
+              >
+                {{ 'generate.sweeps.variant_why' | transloco }}
+              </button>
+              @if (variantWhyOpen()) {
+                <div class="gs-sweep-why-body">
+                  <p>{{ 'generate.sweeps.variant_why_body' | transloco }}</p>
+                  <p class="gs-sweep-why-list">
+                    {{ 'generate.sweeps.variant_why_rerollers' | transloco }}
+                  </p>
+                  <p class="gs-sweep-why-list">
+                    {{ 'generate.sweeps.variant_why_settlers' | transloco }}
+                  </p>
+                  <a class="gs-sweep-why-link" [routerLink]="samplerReference">
+                    {{ 'generate.sweeps.variant_why_link' | transloco }}
+                  </a>
+                </div>
+              }
             }
 
             @if (sourceUrl(); as source) {
@@ -243,7 +276,10 @@ const TILE_CELLS = [0, 1, 2, 3] as const;
               />
             }
             <span class="gs-sweep-offer-label">
-              {{ 'generate.sweeps.expand' | transloco }}
+              {{
+                'generate.sweeps.expand'
+                  | transloco: { setting: parameterLabelKey() | transloco }
+              }}
             </span>
           </button>
         }
@@ -335,14 +371,18 @@ export class GsSweepScrubComponent {
   private readonly loaded = signal(false);
   private readonly zoom = signal<number | null>(null);
   private readonly variant = signal(false);
+  private readonly variantWhy = signal(false);
 
   /** The four copies of a tiled frame, as something the template can repeat. */
   public readonly tileCells = TILE_CELLS;
+  public readonly samplerReference = SAMPLER_REFERENCE;
 
   public readonly expanded = this.open.asReadonly();
   public readonly frameLoaded = this.loaded.asReadonly();
   /** Whether the reader asked for the second strip of a pair of strips. */
   public readonly onVariant = this.variant.asReadonly();
+  /** Whether the note under the variant toggle is unfolded. */
+  public readonly variantWhyOpen = this.variantWhy.asReadonly();
 
   private readonly zoomTriggers =
     viewChildren<ElementRef<HTMLButtonElement>>('zoomTrigger');
@@ -355,6 +395,17 @@ export class GsSweepScrubComponent {
 
   /** The panel focus was last moved to, so an unrelated render cannot re-take it. */
   private focusedPanel: HTMLElement | null = null;
+
+  /**
+   * What the collapsed offer calls the setting. Naming it is what separates one
+   * offer from the next where a step or a reference entry carries more than one:
+   * "See what changing this does" twice on a page answers neither.
+   */
+  public readonly parameterLabelKey = computed(
+    () =>
+      SWEEP_PARAMETER_LABEL_KEY[this.parameter()] ??
+      SWEEP_PARAMETER_FALLBACK_LABEL_KEY,
+  );
 
   /** The strip a pair of strips offers as its second reading, if there is one. */
   public readonly variantParameter = computed(
@@ -513,6 +564,10 @@ export class GsSweepScrubComponent {
   public collapse(): void {
     this.open.set(false);
     this.zoom.set(null);
+  }
+
+  public toggleVariantWhy(): void {
+    this.variantWhy.update((open) => !open);
   }
 
   /** Swap between the two readings of a parameter, holding the slider position. */

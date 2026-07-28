@@ -1,15 +1,11 @@
-import { isPlatformBrowser } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  PLATFORM_ID,
-  inject,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
 import { GsSweepGridComponent } from '../../../components/gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import {
@@ -133,6 +129,35 @@ const GUIDE_STEPS: readonly GuideStep[] = [
 /** What a topic with no strip published for it offers, without allocating. */
 const NO_SWEEPS: readonly string[] = [];
 
+/** The DOM id of a part of the guide, which is what the rail aims at. */
+function guideSectionId(id: string): string {
+  return `gs-guide-sec-${id}`;
+}
+
+/**
+ * The contents of the page: the walkthrough, then the reference sections in the
+ * panel's own order. The walkthrough belongs to no card of the panel, so it
+ * takes the page's own glyph and no hue rather than borrowing a section's.
+ */
+const RAIL_ENTRIES: readonly GsIndexRailEntry[] = [
+  {
+    id: 'walkthrough',
+    labelKey: 'generate.guide.toc_walkthrough',
+    icon: 'document-text',
+    targetId: guideSectionId('walkthrough'),
+  },
+  ...GUIDE_SECTIONS.map((section) => {
+    const identity = sectionFor('guide', section.id);
+    return {
+      id: section.id,
+      labelKey: section.labelKey,
+      icon: identity ? SECTION_IDENTITIES[identity].icon : undefined,
+      hueClass: identity ? SECTION_IDENTITIES[identity].className : undefined,
+      targetId: guideSectionId(section.id),
+    };
+  }),
+];
+
 /**
  * The studio's written guide: a short walkthrough of a first generation,
  * followed by every field note the panel's `?` glyphs carry, gathered under the
@@ -149,6 +174,7 @@ const NO_SWEEPS: readonly string[] = [];
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsIndexRailComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
   ],
@@ -159,14 +185,12 @@ const NO_SWEEPS: readonly string[] = [];
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerateGuideComponent {
-  private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
 
-  private readonly flow = viewChild<ElementRef<HTMLElement>>('flow');
-
   public readonly sections = GUIDE_SECTIONS;
   public readonly steps = GUIDE_STEPS;
+  public readonly railEntries = RAIL_ENTRIES;
 
   /**
    * The panel area a reference section stands for, so the guide names it with
@@ -190,7 +214,7 @@ export class GenerateGuideComponent {
 
   /** The DOM id of a section, so the contents rail can target it. */
   public sectionId(id: string): string {
-    return `gs-guide-sec-${id}`;
+    return guideSectionId(id);
   }
 
   /**
@@ -204,21 +228,5 @@ export class GenerateGuideComponent {
     }
     this.tutorial.arm(section.practiceFlow);
     void this.router.navigate(['/generate/image']);
-  }
-
-  /** Scroll the pane to a section of the guide. */
-  public jumpToSection(id: string): void {
-    const target = this.flow()?.nativeElement.querySelector<HTMLElement>(
-      `#${this.sectionId(id)}`,
-    );
-    target?.scrollIntoView({ behavior: this.scrollBehavior(), block: 'start' });
-  }
-
-  private scrollBehavior(): ScrollBehavior {
-    const reduced =
-      isPlatformBrowser(this.platformId) &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return reduced ? 'auto' : 'smooth';
   }
 }

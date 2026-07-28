@@ -179,6 +179,25 @@ export const TUTORIAL_STEPS: Readonly<
   ],
 };
 
+/**
+ * What a step's field is called above its title. Anchors reuse the panel's own
+ * vocabulary, so most of them are named by the `?` note they share an id with;
+ * the handful the panel labels rather than explains are listed here, and the
+ * Generate button is named by the tutorial because it is not a setting anything
+ * else has a name for.
+ */
+const STEP_FIELD_LABEL_KEY: Readonly<Record<string, string>> = {
+  prompt: 'generate.form.prompt_label',
+  model: 'generate.form.model_label',
+  size: 'generate.sections.size',
+  generate: 'generate.learn.fields.generate',
+};
+
+/** The line naming the field a step points at, in the panel's own words. */
+export function stepFieldLabelKey(anchorId: string): string {
+  return STEP_FIELD_LABEL_KEY[anchorId] ?? `generate.help.${anchorId}.title`;
+}
+
 /** Whether a flow has follow-along steps at all. */
 export function tutorialAvailable(flowId: string): boolean {
   return (TUTORIAL_STEPS[flowId]?.length ?? 0) > 0;
@@ -205,6 +224,14 @@ export interface TutorialStudioHost {
  * step changes.
  */
 const BREATHE_ANIMATION = 'gs-breathe';
+
+/**
+ * The one-shot ring a "Show me where" press draws on the field, and how long it
+ * is worn for. The class outlives the 700ms animation by a margin so a press
+ * that lands mid-ping still gets a whole ring rather than a clipped one.
+ */
+const PING_CLASS = 'gs-tut-ping';
+const PING_MS = 800;
 
 /**
  * The in-pane follow-along tutorial: which flow is running, which step is
@@ -241,6 +268,9 @@ export class TutorialEngineService {
   private highlighted: HTMLElement | null = null;
   /** The `gs-sec--*` class put on {@link highlighted}, to take off again. */
   private highlightSection: string | null = null;
+  /** The element wearing {@link PING_CLASS}, and the removal it is waiting on. */
+  private pinged: HTMLElement | null = null;
+  private pingTimer: ReturnType<typeof setTimeout> | null = null;
 
   public readonly level = signal<TutorialLevel>(this.loadLevel());
   public readonly levels = TUTORIAL_LEVELS;
@@ -491,8 +521,12 @@ export class TutorialEngineService {
   /**
    * Scroll the current step's field into view, ring it, and expand its `?` note.
    * Public so the pane can re-point at the field without moving the step.
+   *
+   * `ping` is the difference between the step arriving and the reader asking
+   * where it went: only the ask gets the one-shot ring, because on a step change
+   * the highlight is already news and a second gesture on top of it is noise.
    */
-  public focusStep(): void {
+  public focusStep(ping = false): void {
     const step = this.step();
     this.clearHighlight();
     if (!step?.helpTopic) {
@@ -523,10 +557,37 @@ export class TutorialEngineService {
     if (step.helpTopic) {
       this.help.requestTopic(step.helpTopic);
     }
+    if (ping) {
+      this.ping(element);
+    }
     this.syncBreathing();
   }
 
+  /**
+   * Send one ring out from the field's halo. Re-adding a class the element is
+   * already wearing restarts nothing, so the removal is forced through the
+   * layout before the class goes back on: pressing "Show me where" twice has to
+   * answer twice.
+   */
+  private ping(element: HTMLElement): void {
+    this.clearPing();
+    void element.offsetWidth;
+    element.classList.add(PING_CLASS);
+    this.pinged = element;
+    this.pingTimer = setTimeout(() => this.clearPing(), PING_MS);
+  }
+
+  private clearPing(): void {
+    if (this.pingTimer !== null) {
+      clearTimeout(this.pingTimer);
+      this.pingTimer = null;
+    }
+    this.pinged?.classList.remove(PING_CLASS);
+    this.pinged = null;
+  }
+
   private clearHighlight(): void {
+    this.clearPing();
     this.highlighted?.classList.remove(HIGHLIGHT_CLASS);
     if (this.highlightSection) {
       this.highlighted?.classList.remove(this.highlightSection);

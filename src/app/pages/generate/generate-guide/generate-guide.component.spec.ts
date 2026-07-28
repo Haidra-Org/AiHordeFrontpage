@@ -30,10 +30,18 @@ describe('GenerateGuideComponent', () => {
     fixture.detectChanges();
   });
 
-  it('offers a contents chip for the walkthrough and every section', () => {
-    expect(query('.gs-guide-toc-chip')).toHaveLength(
-      component.sections.length + 1,
+  it('indexes the walkthrough and every section, each aimed at its anchor', () => {
+    const lines = query<HTMLButtonElement>('.gs-index-entry');
+
+    expect(lines).toHaveLength(component.sections.length + 1);
+    expect(component.railEntries.map((entry) => entry.targetId)).toEqual(
+      ['walkthrough', ...component.sections.map((section) => section.id)].map(
+        (id) => component.sectionId(id),
+      ),
     );
+    for (const entry of component.railEntries) {
+      expect(query(`#${entry.targetId}`)).toHaveLength(1);
+    }
   });
 
   it('renders the walkthrough steps in order, numbered', () => {
@@ -112,11 +120,11 @@ describe('GenerateGuideComponent', () => {
     });
   });
 
-  it('scrolls the pane to a section when its chip is pressed', () => {
+  it('scrolls the pane to a section when its rail entry is pressed', () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
 
-    query<HTMLButtonElement>('.gs-guide-toc-chip')[1].click();
+    query<HTMLButtonElement>('.gs-index-entry')[1].click();
 
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });

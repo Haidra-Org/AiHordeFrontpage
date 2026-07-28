@@ -48,13 +48,29 @@
           [class]="identityFor(current)?.className"
           [class.gs-tut-breathe]="breathes(current)"
         >
+          <!-- A step is read while looking for the thing it is about, so the
+               field it points at is named before the step is: the landmark
+               eyebrow and its hairline, in the area's hue, over a numbered
+               title. A step that points at nothing has no eyebrow to draw. -->
+          @if (fieldLabelKey(current); as fieldKey) {
+            <p class="gs-learn-eyebrow">
+              @if (identityFor(current); as identity) {
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon [name]="identity.icon"
+                /></span>
+              }
+              {{ fieldKey | transloco }}
+            </p>
+          }
           <h3 class="gs-guide-head">
-            @if (identityFor(current); as identity) {
-              <span class="gs-sec-chip" aria-hidden="true"
-                ><app-icon [name]="identity.icon"
-              /></span>
-            }
-            {{ titleKey(current) | transloco }}
+            {{
+              "generate.learn.step_heading"
+                | transloco
+                  : {
+                      n: stepIndex() + 1,
+                      title: titleKey(current) | transloco,
+                    }
+            }}
           </h3>
           <p class="gs-guide-step-body">
             {{ bodyKey(current) | transloco: copyParams() }}

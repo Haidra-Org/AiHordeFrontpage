@@ -87,13 +87,24 @@
       [class]="identityFor(current)?.className"
       [class.gs-tut-breathe]="breathes(current)"
     >
+      <!-- The panel's step heading, unchanged: the field named first in the
+           area's hue, then the numbered title. -->
+      @if (fieldLabelKey(current); as fieldKey) {
+        <p class="gs-learn-eyebrow">
+          @if (identityFor(current); as identity) {
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon [name]="identity.icon"
+            /></span>
+          }
+          {{ fieldKey | transloco }}
+        </p>
+      }
       <h2 class="gs-guide-head">
-        @if (identityFor(current); as identity) {
-          <span class="gs-sec-chip" aria-hidden="true"
-            ><app-icon [name]="identity.icon"
-          /></span>
-        }
-        {{ titleKey(current) | transloco }}
+        {{
+          "generate.learn.step_heading"
+            | transloco
+              : { n: stepIndex() + 1, title: titleKey(current) | transloco }
+        }}
       </h2>
       <p class="gs-guide-step-body">
         {{ bodyKey(current) | transloco: copyParams() }}

@@ -6169,42 +6169,6 @@
   border-color: var(--gs-zone, var(--gs-blue));
 }
 
-/* Same single scrolling rail as the style browser's contents row, for the same
-   reason: wrapped, the section list would cost several lines of the pane. */
-.gen-studio .gs-guide-toc {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  margin-top: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--gs-border-soft);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  scroll-padding-inline: 4px;
-}
-.gen-studio .gs-guide-toc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-  min-height: 32px;
-  white-space: nowrap;
-  padding: 4px 11px;
-  font-size: 11.5px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--gs-label);
-  border: 1px solid var(--gs-border);
-  border-radius: 999px;
-  background: var(--gs-panel);
-  cursor: pointer;
-}
-.gen-studio .gs-guide-toc-chip:hover {
-  border-color: var(--gs-blue);
-  color: var(--gs-blue);
-}
-
 .gen-studio .gs-guide-lead {
   margin: 14px 0 0;
   color: var(--gs-ink-2);
@@ -6336,7 +6300,6 @@
 
 @media (pointer: coarse) {
   .gen-studio .gs-guide-close,
-  .gen-studio .gs-guide-toc-chip,
   .gen-studio .gs-guide-cta {
     min-height: 44px;
   }
@@ -6677,13 +6640,13 @@
    opacity-only on an overlay so it costs a composite and never a layout. */
 @keyframes gs-breathe {
   0% {
-    opacity: 0.35;
+    opacity: 0;
   }
   50% {
-    opacity: 0.85;
+    opacity: 0.95;
   }
   100% {
-    opacity: 0.35;
+    opacity: 0;
   }
 }
 
@@ -6703,9 +6666,36 @@
   animation: gs-breathe 3s ease-in-out infinite;
 }
 
+/* The answer to "show me where". The steady breathe says which field a step is
+   about for as long as the step is up, which makes it useless as a reply to a
+   press: it was already doing that. One ring leaving the halo plate is the
+   reply, in the same hue, over before it can be mistaken for a state. */
+.gen-studio .gs-tut-target.gs-tut-ping::after {
+  content: "";
+  position: absolute;
+  inset: -6px -8px;
+  z-index: -1;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--gs-sec, var(--gs-zone, var(--gs-blue)));
+  animation: gs-tut-ping 700ms ease-out 1;
+}
+@keyframes gs-tut-ping {
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
 /* Reduced motion keeps the tie and drops the rhythm: the pair still shares one
    hue and one overlay, held at a steady middle of the range it would breathe
-   through. */
+   through. The ping is dropped outright rather than held still: a ring that
+   does not travel says nothing the highlight underneath it has not already
+   said. */
 @media (prefers-reduced-motion: reduce) {
   .gen-studio .gs-tut-target::before,
   .gen-studio .gs-learn-card.gs-tut-breathe::after,
@@ -6713,6 +6703,37 @@
     animation: none;
     opacity: 0.7;
   }
+  .gen-studio .gs-tut-target.gs-tut-ping::after {
+    content: none;
+  }
+}
+
+/* The line above a step's title, naming the field the step points at. It is the
+   card-title landmark grammar one step further in: uppercase, tracked, a chip
+   in front and a hairline running out to the end of the row, so a step reads as
+   a heading over a part of the panel rather than as a paragraph with a picture
+   beside it. The hue is the section's, which is the same hue the field it names
+   is wearing at that moment. */
+.gen-studio .gs-learn-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-sec, var(--gs-zone, var(--gs-label)));
+}
+.gen-studio .gs-learn-eyebrow::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(
+    --gs-sec-tint-border,
+    var(--gs-zone-tint-border, var(--gs-border))
+  );
 }
 
 /* ------- parameter sweeps ------------------------------------------- */
@@ -6786,6 +6807,17 @@ app-gs-sweep-scrub {
   border-radius: 7px;
   background: var(--gs-field);
 }
+/* A frame is as wide as the column it sits in, and a portrait one at that width
+   is taller than the pane it opened in: the step that offered it would be
+   scrolled off the top before the picture ended. Capped to a fraction of the
+   viewport and letterboxed on the field tone, so the strip stays a figure inside
+   the prose in the panel, in the sheet and in a reference entry alike. The tiled
+   frame is a grid of four copies rather than one image, and is left alone: a cap
+   on it would crop the seam it exists to show. */
+.gen-studio img.gs-sweep-frame {
+  max-height: min(42vh, 460px);
+  object-fit: contain;
+}
 .gen-studio .gs-sweep-caption {
   margin-top: 6px;
   font-size: 12px;
@@ -6837,6 +6869,52 @@ app-gs-sweep-scrub {
   cursor: pointer;
 }
 .dark .gen-studio .gs-sweep-collapse {
+  color: var(--gs-pop-accent);
+}
+
+/* The note the variant toggle folds away. It answers a question about the
+   reader's own sampler rather than about the pictures, so it keeps the quiet
+   register of a caption and never competes with the strip above it. */
+.gen-studio .gs-sweep-why {
+  display: block;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--gs-blue);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dark .gen-studio .gs-sweep-why {
+  color: var(--gs-pop-accent);
+}
+.gen-studio .gs-sweep-why-body {
+  margin: 0 0 9px;
+  padding: 7px 9px;
+  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
+  border-radius: 9px;
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sweep-why-body p {
+  margin: 0 0 6px;
+}
+.gen-studio .gs-sweep-why-list {
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-sweep-why-link {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  font-weight: 600;
+  color: var(--gs-blue);
+}
+.dark .gen-studio .gs-sweep-why-link {
   color: var(--gs-pop-accent);
 }
 
@@ -8657,4 +8735,163 @@ html:has(app-gs-sheet) {
   text-align: left;
   width: 100%;
   cursor: pointer;
+}
+
+/* ------- anchored index rail ----------------------------------------- */
+/* The Learn area's one contents idiom, replacing the pill rows the guide and
+   the style browser used to carry. Two shapes of the same list: a column
+   beside the prose where there is room for one, and a slim scrolling bar over
+   it where there is not. The line being read carries its area's hue as a
+   leading bar, which is the device the follow-along highlight already uses to
+   say "here", so the rail and the studio point the same way.
+
+   Hue is graphic only: the bar and the glyph take --gs-sec, the label never
+   does, because several of the section hues fall under 4.5:1 as text. */
+.gen-studio .gs-index-rail {
+  display: block;
+  min-width: 0;
+}
+.gen-studio .gs-index-rail-nav {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scroll-padding-inline: 4px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-index-entry {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 7px;
+  /* The bar form is the one a thumb uses. */
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--gs-label);
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+/* Hairlines between entries rather than around them: the rail is a list, and
+   an outline per line would read as eight buttons. */
+.gen-studio .gs-index-entry + .gs-index-entry {
+  border-left: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-index-entry:hover {
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-index-entry:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gen-studio .gs-index-entry[aria-current] {
+  color: var(--gs-ink);
+}
+/* The mark of the current entry: an underline in the bar, a leading bar in the
+   column. Drawn on a pseudo-element so nothing shifts when it appears. */
+.gen-studio .gs-index-entry::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: transparent;
+}
+.gen-studio .gs-index-entry[aria-current]::before {
+  background: var(--gs-sec, var(--gs-blue));
+}
+.gen-studio app-icon.gs-index-entry-mark {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--gs-sec, var(--gs-label));
+  opacity: 0.75;
+}
+.gen-studio app-icon.gs-index-entry-mark svg {
+  width: 14px;
+  height: 14px;
+}
+.gen-studio .gs-index-entry[aria-current] .gs-index-entry-mark {
+  opacity: 1;
+}
+
+/* The page around the rail. Below the wide step the rail is a bar above the
+   prose and the layout is a plain column; above it, a sticky contents column
+   beside a reading column of the width the pages already use. */
+.gen-studio .gs-index-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.gen-studio .gs-index-layout-main {
+  min-width: 0;
+}
+.gen-studio .gs-index-layout-main--bands {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+@media (min-width: 1200px) {
+  /* Both pages centre one 880px reading column; the rail is paid for out of
+     the margins rather than out of the measure. */
+  .gen-studio .gs-guide > *,
+  .gen-studio .gs-ref-index-inner {
+    max-width: 1120px;
+  }
+  .gen-studio .gs-index-layout {
+    display: grid;
+    grid-template-columns: 208px minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+  }
+  .gen-studio .gs-index-rail {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .gen-studio .gs-index-rail-nav {
+    flex-direction: column;
+    overflow: visible;
+    border-bottom: 0;
+  }
+  .gen-studio .gs-index-entry {
+    min-height: 0;
+    padding: 8px 10px 8px 12px;
+    white-space: normal;
+  }
+  .gen-studio .gs-index-entry + .gs-index-entry {
+    border-left: 0;
+    border-top: 1px solid var(--gs-border-soft);
+  }
+  .gen-studio .gs-index-entry::before {
+    left: 0;
+    right: auto;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    height: auto;
+  }
+}
+
+/* The column form packs its lines tighter than a finger can pick them apart,
+   which only meets a touch device on a large tablet. */
+@media (min-width: 1200px) and (pointer: coarse) {
+  .gen-studio .gs-index-entry {
+    min-height: 44px;
+  }
 }

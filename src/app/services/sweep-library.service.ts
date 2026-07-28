@@ -133,6 +133,32 @@ export const SWEEP_VARIANT_PARAMETER: Readonly<Record<string, string>> = {
 };
 
 /**
+ * What a strip's parameter is called in the offer that opens it. The names are
+ * the ones the panel and the reference already use, borrowed rather than
+ * restated, so a setting is called the same thing wherever a reader meets it.
+ * A parameter with no entry here falls back to
+ * {@link SWEEP_PARAMETER_FALLBACK_LABEL_KEY}, which reads "this": the offer is
+ * beside the control either way.
+ */
+export const SWEEP_PARAMETER_LABEL_KEY: Readonly<Record<string, string>> = {
+  steps: 'generate.help.steps.title',
+  steps_converging: 'generate.help.steps.title',
+  cfg_scale: 'generate.help.cfg.title',
+  sampler: 'generate.help.sampler.title',
+  clip_skip: 'generate.help.clip_skip.title',
+  karras: 'generate.help.karras.title',
+  seed: 'generate.help.seed.title',
+  hires_fix: 'generate.help.hires_fix.title',
+  tiling: 'generate.help.tiling.title',
+  denoising_strength: 'generate.help.denoise.title',
+  negative_prompt: 'generate.form.negative_prompt_label',
+  resolution: 'generate.sections.size',
+  prompt_emphasis: 'generate.sweeps.param_prompt_emphasis',
+};
+
+export const SWEEP_PARAMETER_FALLBACK_LABEL_KEY = 'generate.sweeps.param_this';
+
+/**
  * Which published strip stands for a model baseline. The library holds one strip
  * per family rather than per model, so every SDXL checkpoint is shown the SDXL
  * strip; a baseline with nothing published falls through to whatever the strip's

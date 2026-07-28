@@ -272,6 +272,20 @@ describe('TutorialEngineService', () => {
       expect(help.requestedTopic()).toBe('steps');
     });
 
+    it('rings the field only when the reader asks where it is', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const element = document.createElement('div');
+      element.scrollIntoView = vi.fn();
+      anchors.register('steps', element);
+
+      engine.goTo(3);
+      engine.focusStep();
+      expect(element.classList.contains('gs-tut-ping')).toBe(false);
+
+      engine.focusStep(true);
+      expect(element.classList.contains('gs-tut-ping')).toBe(true);
+    });
+
     it('takes the mark off the field it has moved on from', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       const steps = document.createElement('div');

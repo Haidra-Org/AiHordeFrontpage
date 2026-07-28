@@ -12,6 +12,7 @@ import {
   TutorialLevel,
   TutorialStepDef,
   isConceptFlow,
+  stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
@@ -85,6 +86,15 @@ export class GenerateLearnPanelComponent {
 
   public titleKey(step: TutorialStepDef): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.title`;
+  }
+
+  /**
+   * The field the step is about, named above its title. Null on a step that
+   * points at nothing, which is every step of a concept track: an eyebrow there
+   * would name a control the reader is not being sent to.
+   */
+  public fieldLabelKey(step: TutorialStepDef): string | null {
+    return step.anchorId ? stepFieldLabelKey(step.anchorId) : null;
   }
 
   /**
@@ -166,7 +176,7 @@ export class GenerateLearnPanelComponent {
 
   /** Point at the current field again, for a reader who has scrolled away. */
   public showMe(): void {
-    this.engine.focusStep();
+    this.engine.focusStep(true);
   }
 
   public exit(): void {

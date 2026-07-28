@@ -79,6 +79,23 @@ describe('GenerateSettingsIndexComponent', () => {
     );
   });
 
+  it('indexes the bands in a rail, aimed at the ids they already carry', async () => {
+    await setUp();
+    const lines = all<HTMLButtonElement>('.gs-index-entry');
+
+    expect(lines).toHaveLength(REFERENCE_INDEX.length);
+    expect(lines.map((line) => line.textContent?.trim())).toEqual(
+      REFERENCE_INDEX.map(
+        (group) => translations[SECTION_IDENTITIES[group.section].labelKey],
+      ),
+    );
+    for (const group of REFERENCE_INDEX) {
+      expect(
+        el().querySelector(`#gs-ref-group-${group.section}`),
+      ).not.toBeNull();
+    }
+  });
+
   it('offers a card per setting, linking to that setting page', async () => {
     await setUp();
     const cards = all<HTMLAnchorElement>('.gs-ref-card');

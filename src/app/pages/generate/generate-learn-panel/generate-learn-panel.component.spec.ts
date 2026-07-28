@@ -107,7 +107,9 @@ describe('GenerateLearnPanelComponent', () => {
     expect(steps[0].classList).toContain('gs-sec--prompt');
     expect(steps[0].classList).toContain('gs-learn-step--on');
     expect(steps[steps.length - 1].className).not.toContain('gs-sec--');
-    expect(query('.gs-learn-card .gs-guide-head .gs-sec-chip')).toHaveLength(1);
+    expect(query('.gs-learn-card .gs-learn-eyebrow .gs-sec-chip')).toHaveLength(
+      1,
+    );
   });
 
   it('breathes with the field its step is pointing at, and only then', () => {
@@ -321,7 +323,9 @@ describe('GenerateLearnPanelComponent', () => {
       await serveLibrary(stubIndex);
 
       expect(query('.gs-sweep-offer')).toHaveLength(1);
-      expect(text()).toContain(TRANSLATIONS['generate.sweeps.expand']);
+      // The offer names the setting it is about, so the assertion is on the
+      // interpolated line rather than on the key's raw placeholder.
+      expect(text()).toContain('See what changing Steps does');
     });
 
     it('offers nothing to the registers that are past needing it', () => {
@@ -353,7 +357,7 @@ describe('GenerateLearnPanelComponent', () => {
       fixture.detectChanges();
 
       expect(query('.gs-sweep')).toHaveLength(0);
-      expect(text()).not.toContain(TRANSLATIONS['generate.sweeps.expand']);
+      expect(text()).not.toContain('See what changing');
     });
   });
 

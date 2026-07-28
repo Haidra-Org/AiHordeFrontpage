@@ -85,34 +85,40 @@
 
   @if (hasFinished() && !selectMode()) {
     <div class="gs-view-bar">
-      <label class="gs-view-ctl">
-        <app-icon name="squares-2x2" class="gs-ico-sm" />
-        <span class="gs-view-ctl-label">
-          {{ "generate.results.per_row" | transloco }}
-        </span>
-        <select
-          class="gs-view-select"
-          (change)="setImagesPerRow(+$any($event.target).value)"
-          [attr.aria-label]="'generate.results.per_row' | transloco"
-        >
-          @for (n of perRowOptions; track n) {
-            <option [value]="n" [selected]="n === imagesPerRow()">
-              {{ n }}
-            </option>
-          }
-        </select>
-      </label>
+      <!-- While a tutorial has the pane, the gallery is a strip under it rather
+           than the thing being looked at: laying it out and captioning it are
+           choices about a view the reader is not in. The filters stay, because
+           they change what is there rather than how it is arranged. -->
+      @if (!tutorialOpen()) {
+        <label class="gs-view-ctl">
+          <app-icon name="squares-2x2" class="gs-ico-sm" />
+          <span class="gs-view-ctl-label">
+            {{ "generate.results.per_row" | transloco }}
+          </span>
+          <select
+            class="gs-view-select"
+            (change)="setImagesPerRow(+$any($event.target).value)"
+            [attr.aria-label]="'generate.results.per_row' | transloco"
+          >
+            @for (n of perRowOptions; track n) {
+              <option [value]="n" [selected]="n === imagesPerRow()">
+                {{ n }}
+              </option>
+            }
+          </select>
+        </label>
 
-      <button
-        type="button"
-        class="gs-view-toggle"
-        [class.gs-view-toggle--on]="showPrompts()"
-        [attr.aria-pressed]="showPrompts()"
-        (click)="toggleShowPrompts()"
-      >
-        <app-icon name="document-text" class="gs-ico-sm" />
-        {{ "generate.results.show_prompts" | transloco }}
-      </button>
+        <button
+          type="button"
+          class="gs-view-toggle"
+          [class.gs-view-toggle--on]="showPrompts()"
+          [attr.aria-pressed]="showPrompts()"
+          (click)="toggleShowPrompts()"
+        >
+          <app-icon name="document-text" class="gs-ico-sm" />
+          {{ "generate.results.show_prompts" | transloco }}
+        </button>
+      }
 
       @if (styleOptions().length > 0) {
         <label class="gs-view-ctl">

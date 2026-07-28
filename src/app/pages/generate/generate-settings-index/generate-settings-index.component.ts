@@ -11,6 +11,10 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
+import {
   GLOSSARY_TERMS,
   GlossaryService,
 } from '../../../services/glossary.service';
@@ -56,7 +60,7 @@ interface IndexGroup {
  */
 @Component({
   selector: 'app-generate-settings-index',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, GsIndexRailComponent],
   templateUrl: './generate-settings-index.component.html',
   host: {
     class: 'gs-ref-index',
@@ -81,6 +85,20 @@ export class GenerateSettingsIndexComponent {
         cards: group.ids.map((id) => this.cardFor(id, identity.icon)),
       };
     }),
+  );
+
+  /**
+   * The bands as the contents rail names them: the same areas, in the same
+   * order, aimed at the ids the bands already carry for the glossary.
+   */
+  public readonly railEntries = computed<readonly GsIndexRailEntry[]>(() =>
+    this.groups().map((group) => ({
+      id: group.section,
+      labelKey: group.labelKey,
+      icon: group.icon,
+      hueClass: group.className,
+      targetId: `gs-ref-group-${group.section}`,
+    })),
   );
 
   constructor() {

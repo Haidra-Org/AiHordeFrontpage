@@ -8,53 +8,62 @@
     </p>
   </header>
 
-  @for (group of groups(); track group.section) {
-    <!-- Named so the glossary's this-page list can send a reader to a band. -->
-    <section
-      class="gs-ref-group"
-      [class]="group.className"
-      [id]="'gs-ref-group-' + group.section"
-    >
-      <h2 class="gs-guide-head">
-        <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
-          ><app-icon [name]="group.icon"
-        /></span>
-        {{ group.labelKey | transloco }}
-      </h2>
+  <div class="gs-index-layout">
+    <app-gs-index-rail
+      [entries]="railEntries()"
+      labelKey="generate.learn.settings_rail_label"
+    />
 
-      <div class="gs-ref-cards">
-        @for (card of group.cards; track card.id) {
-          <a class="gs-ref-card" [routerLink]="card.link">
-            <!-- The middle frame of the setting's own strip, where it has one.
+    <div class="gs-index-layout-main gs-index-layout-main--bands">
+      @for (group of groups(); track group.section) {
+        <!-- Named so the glossary's this-page list can send a reader to a band. -->
+        <section
+          class="gs-ref-group"
+          [class]="group.className"
+          [id]="'gs-ref-group-' + group.section"
+        >
+          <h2 class="gs-guide-head">
+            <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+              ><app-icon [name]="group.icon"
+            /></span>
+            {{ group.labelKey | transloco }}
+          </h2>
+
+          <div class="gs-ref-cards">
+            @for (card of group.cards; track card.id) {
+              <a class="gs-ref-card" [routerLink]="card.link">
+                <!-- The middle frame of the setting's own strip, where it has one.
                  A setting nobody can be shown changing is simply text. -->
-            @if (card.thumb; as thumb) {
-              <img
-                class="gs-ref-card-img"
-                [src]="thumb"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            }
-            <span class="gs-ref-card-text">
-              <span class="gs-ref-card-title">
-                <span class="gs-sec-chip" aria-hidden="true"
-                  ><app-icon [name]="card.icon"
-                /></span>
-                {{ card.titleKey | transloco }}
-              </span>
-              <!-- Missing prose reads as the key coming back, which is what
+                @if (card.thumb; as thumb) {
+                  <img
+                    class="gs-ref-card-img"
+                    [src]="thumb"
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                  />
+                }
+                <span class="gs-ref-card-text">
+                  <span class="gs-ref-card-title">
+                    <span class="gs-sec-chip" aria-hidden="true"
+                      ><app-icon [name]="card.icon"
+                    /></span>
+                    {{ card.titleKey | transloco }}
+                  </span>
+                  <!-- Missing prose reads as the key coming back, which is what
                    the service answers with; a card with no lead is quieter
                    than a card showing a translation key. -->
-              @let leadKey = "generate.reference." + card.id + ".lead";
-              @let leadText = leadKey | transloco;
-              @if (leadText && leadText !== leadKey) {
-                <span class="gs-ref-card-lead">{{ leadText }}</span>
-              }
-            </span>
-          </a>
-        }
-      </div>
-    </section>
-  }
+                  @let leadKey = "generate.reference." + card.id + ".lead";
+                  @let leadText = leadKey | transloco;
+                  @if (leadText && leadText !== leadKey) {
+                    <span class="gs-ref-card-lead">{{ leadText }}</span>
+                  }
+                </span>
+              </a>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
 </div>

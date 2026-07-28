@@ -12,6 +12,7 @@ import {
   TutorialEngineService,
   TutorialLevel,
   TutorialStepDef,
+  stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
@@ -76,6 +77,11 @@ export class GenerateLearnSheetComponent {
 
   public titleKey(step: TutorialStepDef): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.title`;
+  }
+
+  /** The field the step is about; null on a step that points at nothing. */
+  public fieldLabelKey(step: TutorialStepDef): string | null {
+    return step.anchorId ? stepFieldLabelKey(step.anchorId) : null;
   }
 
   /** The step's prose in the chosen register; the panel's key, unchanged. */
@@ -148,7 +154,7 @@ export class GenerateLearnSheetComponent {
 
   /** Point at the current field again, for a reader who has scrolled away. */
   public showMe(): void {
-    this.engine.focusStep();
+    this.engine.focusStep(true);
   }
 
   public exit(): void {

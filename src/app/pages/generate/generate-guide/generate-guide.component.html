@@ -2,125 +2,106 @@
   <h1 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h1>
 </div>
 
-<!-- Single scrolling rail, as in the style browser's contents row: the section
-     list is long enough to cost several lines of the pane if it wrapped. -->
-<nav
-  class="gs-guide-toc"
-  [attr.aria-label]="'generate.guide.toc_label' | transloco"
->
-  <button
-    type="button"
-    class="gs-guide-toc-chip"
-    (click)="jumpToSection('walkthrough')"
-  >
-    {{ "generate.guide.toc_walkthrough" | transloco }}
-  </button>
-  @for (section of sections; track section.id) {
-    <button
-      type="button"
-      class="gs-guide-toc-chip"
-      [class]="identityFor(section.id)?.className"
-      (click)="jumpToSection(section.id)"
-    >
-      @if (identityFor(section.id); as identity) {
-        <span class="gs-sec-chip" aria-hidden="true"
-          ><app-icon [name]="identity.icon"
-        /></span>
-      }
-      {{ section.labelKey | transloco }}
-    </button>
-  }
-</nav>
+<div class="gs-index-layout">
+  <app-gs-index-rail
+    [entries]="railEntries"
+    labelKey="generate.guide.toc_label"
+  />
 
-<div #flow>
-  <p class="gs-guide-lead">{{ "generate.guide.lead" | transloco }}</p>
+  <div class="gs-index-layout-main">
+    <p class="gs-guide-lead">{{ "generate.guide.lead" | transloco }}</p>
 
-  <!-- Kept with the intro rather than after the reference sections: below them
+    <!-- Kept with the intro rather than after the reference sections: below them
        the way into Learn sits past a pane's worth of scrolling, where a reader
        deciding how to start has already stopped looking. -->
-  <p class="gs-guide-note">{{ "generate.guide.tutorials_note" | transloco }}</p>
-  <a class="gs-guide-cta" routerLink="/generate/learn">
-    <app-icon name="document-text" class="gs-ico-sm" />
-    {{ "generate.guide.tutorials_link" | transloco }}
-  </a>
+    <p class="gs-guide-note">
+      {{ "generate.guide.tutorials_note" | transloco }}
+    </p>
+    <a class="gs-guide-cta" routerLink="/generate/learn">
+      <app-icon name="document-text" class="gs-ico-sm" />
+      {{ "generate.guide.tutorials_link" | transloco }}
+    </a>
 
-  <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
-    <h3 class="gs-guide-head">
-      {{ "generate.guide.walkthrough_head" | transloco }}
-    </h3>
-    <ol class="gs-guide-steps">
-      @for (step of steps; track step.id; let i = $index) {
-        <li class="gs-guide-step">
-          <span class="gs-guide-step-n" aria-hidden="true">{{ i + 1 }}</span>
-          <div class="gs-guide-step-text">
-            <h4 class="gs-guide-step-title">
-              {{ "generate.guide.steps." + step.id + ".title" | transloco }}
-            </h4>
-            <p class="gs-guide-step-body">
-              {{ "generate.guide.steps." + step.id + ".body" | transloco }}
-            </p>
-            <!-- Prompt and size have no `?` glyph in the panel and so no entry
+    <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
+      <h3 class="gs-guide-head">
+        {{ "generate.guide.walkthrough_head" | transloco }}
+      </h3>
+      <ol class="gs-guide-steps">
+        @for (step of steps; track step.id; let i = $index) {
+          <li class="gs-guide-step">
+            <span class="gs-guide-step-n" aria-hidden="true">{{ i + 1 }}</span>
+            <div class="gs-guide-step-text">
+              <h4 class="gs-guide-step-title">
+                {{ "generate.guide.steps." + step.id + ".title" | transloco }}
+              </h4>
+              <p class="gs-guide-step-body">
+                {{ "generate.guide.steps." + step.id + ".body" | transloco }}
+              </p>
+              <!-- Prompt and size have no `?` glyph in the panel and so no entry
                  in the reference half below; the walkthrough is the only place
                  their pictures can be offered. -->
-            @for (parameter of step.sweeps; track parameter) {
-              <app-gs-sweep-scrub [parameter]="parameter" />
-            }
-          </div>
-        </li>
-      }
-    </ol>
-  </section>
-
-  <h3 class="gs-guide-head gs-guide-head--major">
-    {{ "generate.guide.reference_head" | transloco }}
-  </h3>
-  <p class="gs-guide-lead">{{ "generate.guide.reference_lead" | transloco }}</p>
-
-  @for (section of sections; track section.id) {
-    <section
-      class="gs-card gs-guide-card"
-      [class]="identityFor(section.id)?.className"
-      [id]="sectionId(section.id)"
-    >
-      <h4 class="gs-guide-head">
-        @if (identityFor(section.id); as identity) {
-          <span class="gs-sec-chip" aria-hidden="true"
-            ><app-icon [name]="identity.icon"
-          /></span>
+              @for (parameter of step.sweeps; track parameter) {
+                <app-gs-sweep-scrub [parameter]="parameter" />
+              }
+            </div>
+          </li>
         }
-        {{ section.labelKey | transloco }}
-      </h4>
-      <!-- Reading about the dials is half of it; the other half is turning
+      </ol>
+    </section>
+
+    <h3 class="gs-guide-head gs-guide-head--major">
+      {{ "generate.guide.reference_head" | transloco }}
+    </h3>
+    <p class="gs-guide-lead">
+      {{ "generate.guide.reference_lead" | transloco }}
+    </p>
+
+    @for (section of sections; track section.id) {
+      <section
+        class="gs-card gs-guide-card"
+        [class]="identityFor(section.id)?.className"
+        [id]="sectionId(section.id)"
+      >
+        <h4 class="gs-guide-head">
+          @if (identityFor(section.id); as identity) {
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon [name]="identity.icon"
+            /></span>
+          }
+          {{ section.labelKey | transloco }}
+        </h4>
+        <!-- Reading about the dials is half of it; the other half is turning
            them, which is a page away and needs saying where the reading is. -->
-      @if (section.practiceFlow) {
-        <button
-          type="button"
-          class="gs-guide-practice"
-          (click)="startPractice(section)"
-        >
-          <app-icon name="star" class="gs-ico-sm" />
-          {{ "generate.guide.practice_link" | transloco }}
-        </button>
-      }
-      <dl class="gs-guide-terms">
-        @for (topic of section.topics; track topic) {
-          <dt class="gs-guide-term">
-            {{ "generate.help." + topic + ".title" | transloco }}
-          </dt>
-          <dd class="gs-guide-def">
-            {{ "generate.help." + topic + ".body" | transloco }}
-            <!-- The same offers the field's own `?` note carries. A reader in
+        @if (section.practiceFlow) {
+          <button
+            type="button"
+            class="gs-guide-practice"
+            (click)="startPractice(section)"
+          >
+            <app-icon name="star" class="gs-ico-sm" />
+            {{ "generate.guide.practice_link" | transloco }}
+          </button>
+        }
+        <dl class="gs-guide-terms">
+          @for (topic of section.topics; track topic) {
+            <dt class="gs-guide-term">
+              {{ "generate.help." + topic + ".title" | transloco }}
+            </dt>
+            <dd class="gs-guide-def">
+              {{ "generate.help." + topic + ".body" | transloco }}
+              <!-- The same offers the field's own `?` note carries. A reader in
                  the guide is reading about the setting without the panel row in
                  front of them, which is where the pictures do the most work. -->
-            @for (parameter of sweepFor(topic); track parameter) {
-              <app-gs-sweep-scrub [parameter]="parameter" />
-            }
-            @if (sweepGridFor(topic); as parameter) {
-              <app-gs-sweep-grid [parameter]="parameter" />
-            }
-          </dd>
-        }
-      </dl>
-    </section>
-  }
+              @for (parameter of sweepFor(topic); track parameter) {
+                <app-gs-sweep-scrub [parameter]="parameter" />
+              }
+              @if (sweepGridFor(topic); as parameter) {
+                <app-gs-sweep-grid [parameter]="parameter" />
+              }
+            </dd>
+          }
+        </dl>
+      </section>
+    }
+  </div>
 </div>
