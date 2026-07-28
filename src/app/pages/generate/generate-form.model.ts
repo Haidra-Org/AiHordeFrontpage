@@ -1367,13 +1367,20 @@ export function buildStyledImageRequest(
   return request;
 }
 
-/** Split a combined horde prompt back into its positive/negative halves. */
-function splitCombinedPrompt(prompt: string): [string, string] {
-  const index = prompt.indexOf(' ### ');
+/**
+ * Split a combined horde prompt back into its positive/negative halves.
+ *
+ * The separator is matched on the marker alone rather than on ` ### `, because
+ * a payload written by anything other than {@link combinePrompt} spaces it
+ * however it likes; both halves are trimmed so the spacing never reaches the
+ * form. A prompt with no marker is entirely positive.
+ */
+export function splitCombinedPrompt(prompt: string): [string, string] {
+  const index = prompt.indexOf('###');
   if (index === -1) {
     return [prompt, ''];
   }
-  return [prompt.slice(0, index).trim(), prompt.slice(index + 5).trim()];
+  return [prompt.slice(0, index).trim(), prompt.slice(index + 3).trim()];
 }
 
 function loraConfigToForm(lora: StyleLoraConfig): FormLoraEntry {

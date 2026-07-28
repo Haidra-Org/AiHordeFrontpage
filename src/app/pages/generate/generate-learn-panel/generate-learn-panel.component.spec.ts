@@ -24,8 +24,13 @@ import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
 import request from '../../../../assets/tutorials/txt2img/request.json';
+import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
+
+// The committed payload spells the negative inline, so the halves the panel
+// renders apart are recovered from it rather than restated here.
+const [PROMPT, NEGATIVE] = splitCombinedPrompt(request.prompt);
 
 class HostStub implements TutorialStudioHost {
   public readonly applied: Partial<GenerateFormValue>[] = [];
@@ -158,7 +163,10 @@ describe('GenerateLearnPanelComponent', () => {
     fixture.detectChanges();
 
     expect(body()).not.toBe(novice);
-    expect(body()).toContain(request.prompt);
+    // Both halves are named, and neither carries the separator across.
+    expect(body()).toContain(PROMPT);
+    expect(body()).toContain(NEGATIVE);
+    expect(body()).not.toContain('###');
     // A step is called the same thing however much explanation goes with it.
     expect(title()).toBe(noviceTitle);
     // The step itself never moves when the register does.
@@ -176,7 +184,11 @@ describe('GenerateLearnPanelComponent', () => {
   it('applies only the current step from its own button', () => {
     query<HTMLButtonElement>('.gs-learn-apply')[0].click();
 
-    expect(host.applied).toEqual([{ prompt: request.prompt }]);
+    // Both halves: the picture the walkthrough is reproducing was made with
+    // the pair, so the step's own button has to write the pair.
+    expect(host.applied).toEqual([
+      { prompt: PROMPT, negativePrompt: NEGATIVE },
+    ]);
   });
 
   it('offers no apply button on the finale, only the submit prompt', () => {
@@ -191,7 +203,8 @@ describe('GenerateLearnPanelComponent', () => {
     query<HTMLButtonElement>('.gs-learn-all')[0].click();
 
     expect(host.bulk).toHaveLength(1);
-    expect(host.bulk[0].prompt).toBe(request.prompt);
+    expect(host.bulk[0].prompt).toBe(PROMPT);
+    expect(host.bulk[0].negativePrompt).toBe(NEGATIVE);
     expect(host.applied).toEqual([]);
   });
 

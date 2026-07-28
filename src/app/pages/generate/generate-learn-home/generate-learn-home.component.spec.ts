@@ -11,12 +11,27 @@ import { GenerateLearnHomeComponent } from './generate-learn-home.component';
 import { TutorialManifest } from '../generate-tutorials/generate-tutorials.component';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
-import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import {
+  TutorialEngineService,
+  canonicalFlowId,
+  resolveFlowId,
+} from '../../../services/tutorial-engine.service';
 
 // The real committed manifest is the fixture: a landing page offering a
 // technique there is no worked example of is exactly what this guards.
 const MANIFEST = manifest as unknown as TutorialManifest;
 const TRANSLATIONS = en as Record<string, string>;
+
+/** The ids the page enumerates: a world variant is not a card of its own. */
+const CANONICAL = MANIFEST.flows.filter(
+  (flow) => canonicalFlowId(flow.id) === flow.id,
+);
+const PUBLISHED = MANIFEST.flows
+  .filter((flow) => flow.status === 'available')
+  .map((flow) => flow.id);
+
+/** The committed set with every world but the first taken back out again. */
+const NO_VARIANTS: TutorialManifest = { ...MANIFEST, flows: CANONICAL };
 
 /** The keys the page writes out itself rather than deriving from a flow. */
 const OWN_KEYS = [
@@ -35,6 +50,11 @@ const OWN_KEYS = [
   'understand_read',
   'further_head',
   'further_kind',
+  'world_label',
+  'world_note',
+  'world.w1',
+  'world.w2',
+  'world.w3',
 ];
 
 describe('GenerateLearnHomeComponent', () => {
@@ -51,12 +71,15 @@ describe('GenerateLearnHomeComponent', () => {
     (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   /** Answers the manifest request the page makes on construction. */
-  function flush(): void {
-    http.expectOne('/assets/tutorials/manifest.json').flush(MANIFEST);
+  function flush(manifestData: TutorialManifest = MANIFEST): void {
+    http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
     fixture.detectChanges();
   }
 
   beforeEach(async () => {
+    // The world preference is global and persisted; one test's choice must not
+    // reach the next one.
+    localStorage.clear();
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -196,7 +219,7 @@ describe('GenerateLearnHomeComponent', () => {
 
     const cards = query<HTMLAnchorElement>('.gs-home-card');
 
-    expect(cards).toHaveLength(MANIFEST.flows.length - 1);
+    expect(cards).toHaveLength(CANONICAL.length - 1);
     expect(component.shelf().map((flow) => flow.id)).toEqual([
       'img2img',
       'inpainting',
@@ -267,6 +290,72 @@ describe('GenerateLearnHomeComponent', () => {
     expect(component.loadFailed()).toBe(true);
     expect(query('.gs-home-card')).toHaveLength(0);
     expect(text()).toContain(TRANSLATIONS['generate.tutorials.load_error']);
+  });
+
+  describe('the world the examples are drawn from', () => {
+    it('offers no switcher while every example is drawn once', () => {
+      flush(NO_VARIANTS);
+
+      expect(component.worldChoice()).toBe(false);
+      expect(query('.gs-learn-worlds')).toHaveLength(0);
+    });
+
+    it('offers the three worlds once any of them has been drawn', () => {
+      flush();
+
+      const options = query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt');
+
+      expect(component.worldChoice()).toBe(true);
+      expect(options.map((option) => option.textContent?.trim())).toEqual([
+        TRANSLATIONS['generate.learn.world.w1'],
+        TRANSLATIONS['generate.learn.world.w2'],
+        TRANSLATIONS['generate.learn.world.w3'],
+      ]);
+      expect(
+        options.map((option) => option.getAttribute('aria-pressed')),
+      ).toEqual(['true', 'false', 'false']);
+    });
+
+    it('re-draws the hero and the shelf from the chosen world', () => {
+      flush();
+
+      const before = query<HTMLAnchorElement>('.gs-home-card').map((card) =>
+        card.getAttribute('href'),
+      );
+
+      query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt')[1].click();
+      fixture.detectChanges();
+
+      // Every card takes the second world's pictures where it has them and
+      // keeps the first world's where it has not, and no card's URL moves,
+      // because a variant is not a technique of its own.
+      const canonical = before.map((href) => href!.split('/').pop()!);
+
+      expect(component.heroImage()).toContain('/txt2img--w2/');
+      expect(component.shelf().map((flow) => flow.id)).toEqual(
+        canonical.map((id) => resolveFlowId(id, 'w2', PUBLISHED)),
+      );
+      expect(component.shelf().map((flow) => canonicalFlowId(flow.id))).toEqual(
+        canonical,
+      );
+      expect(
+        query<HTMLAnchorElement>('.gs-home-card').map((card) =>
+          card.getAttribute('href'),
+        ),
+      ).toEqual(before);
+      expect(before.join(' ')).not.toContain('--w');
+    });
+
+    it('keeps the choice for the tutorial the studio then runs', () => {
+      flush();
+
+      query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt')[2].click();
+
+      expect(TestBed.inject(TutorialEngineService).world()).toBe('w3');
+      expect(localStorage.getItem('aihorde.generate.learn.world')).toContain(
+        'w3',
+      );
+    });
   });
 
   it('has an English string for every key the page asks for', () => {

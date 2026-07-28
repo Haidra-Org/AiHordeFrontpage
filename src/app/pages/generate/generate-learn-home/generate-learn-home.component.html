@@ -81,6 +81,33 @@
       {{ "generate.learn.further_head" | transloco }}
     </h2>
 
+    <!-- Which cast the worked examples are drawn from, offered here because
+         this is where they are first met. The choice is kept, so every Learn
+         surface answers with the same one afterwards. -->
+    @if (worldChoice()) {
+      <div class="gs-learn-worlds">
+        <div
+          class="gs-seg gs-seg--xs"
+          role="group"
+          [attr.aria-label]="'generate.learn.world_label' | transloco"
+        >
+          @for (option of worlds; track option) {
+            <button
+              type="button"
+              class="gs-seg-opt"
+              [attr.aria-pressed]="world() === option"
+              (click)="setWorld(option)"
+            >
+              {{ worldKey(option) | transloco }}
+            </button>
+          }
+        </div>
+        <p class="gs-info-note gs-learn-worlds-note">
+          {{ "generate.learn.world_note" | transloco }}
+        </p>
+      </div>
+    }
+
     @if (loadFailed()) {
       <p class="gs-info-note">
         {{ "generate.tutorials.load_error" | transloco }}
@@ -92,7 +119,7 @@
             @if (resultUrl(flow); as image) {
               <img
                 class="gs-home-card-img"
-                [class.gs-tut-img--alpha]="flow.id === 'transparent'"
+                [class.gs-tut-img--alpha]="isTransparent(flow)"
                 [src]="image"
                 [alt]="'generate.learn.example_alt' | transloco"
                 loading="lazy"

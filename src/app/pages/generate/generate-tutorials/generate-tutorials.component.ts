@@ -34,6 +34,10 @@ import {
 } from '../section-identity';
 import {
   TutorialEngineService,
+  TutorialWorld,
+  canonicalFlowId,
+  hasWorldVariants,
+  resolveFlowId,
   tutorialAvailable,
 } from '../../../services/tutorial-engine.service';
 
@@ -217,17 +221,65 @@ export class GenerateTutorialsComponent {
     { initialValue: null },
   );
 
-  public readonly flows = computed(() => this.manifest()?.flows ?? []);
+  /** Every manifest entry, world variants included. */
+  private readonly allFlows = computed(() => this.manifest()?.flows ?? []);
+
+  /** The ids an example has actually been published under. */
+  private readonly published = computed<readonly string[]>(() =>
+    this.allFlows()
+      .filter((flow) => flow.status === 'available')
+      .map((flow) => flow.id),
+  );
 
   /**
-   * The flow on screen, and only ever the one the URL names. An unknown or
-   * absent `:flow` resolves to nothing and is sent to the Learn landing page,
-   * which is the index this page used to stand in for.
+   * The flows the page enumerates. A world variant is another set of pictures
+   * for a flow already on this list rather than a flow of its own, so it never
+   * takes a line of the picker or a URL: the world settles which assets a
+   * canonical id opens with, at the moment it is opened.
+   */
+  public readonly flows = computed(() =>
+    this.allFlows().filter((flow) => canonicalFlowId(flow.id) === flow.id),
+  );
+
+  /** The flow the URL names, as the rest of the page's vocabulary knows it. */
+  public readonly activeId = computed<string | null>(() => {
+    const id = this.routeFlowId();
+    const canonical = id === null ? null : canonicalFlowId(id);
+    return this.flows().some((flow) => flow.id === canonical)
+      ? canonical
+      : null;
+  });
+
+  /**
+   * The flow on screen, and only ever the one the URL names, in the world the
+   * reader has asked for. An unknown or absent `:flow` resolves to nothing and
+   * is sent to the Learn landing page, which is the index this page used to
+   * stand in for.
    */
   public readonly activeFlow = computed<TutorialFlow | null>(() => {
-    const id = this.routeFlowId();
-    return this.flows().find((flow) => flow.id === id) ?? null;
+    const canonical = this.activeId();
+    if (canonical === null) {
+      return null;
+    }
+    const id = resolveFlowId(
+      canonical,
+      this.tutorial.world(),
+      this.published(),
+    );
+    return this.allFlows().find((flow) => flow.id === id) ?? null;
   });
+
+  /**
+   * Whether this flow was drawn in more than one world. A flow pinned to the
+   * first one offers no choice rather than an inert control.
+   */
+  public readonly worldChoice = computed(() => {
+    const canonical = this.activeId();
+    return canonical !== null && hasWorldVariants(canonical, this.published());
+  });
+
+  public readonly worlds = this.tutorial.worlds;
+  public readonly world = this.tutorial.world;
 
   public readonly activeDetail = computed<TutorialDetail | null>(() => {
     const flow = this.activeFlow();
@@ -271,7 +323,7 @@ export class GenerateTutorialsComponent {
       src: this.assetUrl(flow.result),
       // The transparent flow's whole point is the alpha channel, so its result
       // is shown through a checkerboard rather than on the card.
-      alpha: flow.id === 'transparent',
+      alpha: canonicalFlowId(flow.id) === 'transparent',
     });
     return shots;
   });
@@ -283,7 +335,7 @@ export class GenerateTutorialsComponent {
   });
 
   public readonly steps = computed<readonly string[]>(
-    () => TUTORIAL_FLOW_STEPS[this.activeFlow()?.id ?? ''] ?? [],
+    () => TUTORIAL_FLOW_STEPS[this.activeId() ?? ''] ?? [],
   );
 
   /** The submit endpoint, named against the API the examples were run on. */
@@ -467,13 +519,22 @@ export class GenerateTutorialsComponent {
    * kept as a second line rather than as the name.
    */
   public taskNameKey(flow: TutorialFlow): string {
-    return `generate.tutorials.flows.${flow.id}.task_name`;
+    return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
   }
 
   /** The mark and hue a flow is read by, where its technique has one. */
   public flowIdentity(flow: TutorialFlow): SectionIdentity | null {
-    const section = FLOW_SECTIONS[flow.id];
+    const section = FLOW_SECTIONS[canonicalFlowId(flow.id)];
     return section ? SECTION_IDENTITIES[section] : null;
+  }
+
+  /** The name a world is offered under in the switcher. */
+  public worldKey(world: TutorialWorld): string {
+    return `generate.learn.world.${world}`;
+  }
+
+  public setWorld(world: TutorialWorld): void {
+    this.tutorial.setWorld(world);
   }
 
   /**
@@ -488,7 +549,8 @@ export class GenerateTutorialsComponent {
 
   /** A step's prose, which is written per flow rather than shared. */
   public stepKey(flow: TutorialFlow, step: string, part: string): string {
-    return `generate.tutorials.flows.${flow.id}.steps.${step}.${part}`;
+    const id = canonicalFlowId(flow.id);
+    return `generate.tutorials.flows.${id}.steps.${step}.${part}`;
   }
 
   /**
@@ -498,14 +560,16 @@ export class GenerateTutorialsComponent {
    * technique, which is the wrong register for the first thing a reader reads.
    */
   public summaryFor(flow: TutorialFlow): string {
-    const key = `generate.tutorials.flows.${flow.id}.summary`;
+    const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
     const text = this.transloco.translate(key);
     return !text || text === key ? flow.summary : text;
   }
 
   /** Whether the studio can walk a reader through this flow field by field. */
   public canStart(flow: TutorialFlow): boolean {
-    return flow.status === 'available' && tutorialAvailable(flow.id);
+    return (
+      flow.status === 'available' && tutorialAvailable(canonicalFlowId(flow.id))
+    );
   }
 
   /**

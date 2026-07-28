@@ -13,7 +13,7 @@
     <div class="gs-tut-picker" #rail>
       <app-gs-index-rail
         [entries]="pickerEntries()"
-        [currentId]="activeFlow()?.id ?? null"
+        [currentId]="activeId()"
         [barForm]="true"
         labelKey="generate.tutorials.picker_label"
       />
@@ -29,6 +29,33 @@
             <span class="gs-tut-technique">{{ flow.title }}</span>
           </h1>
           <p class="gs-tut-lead">{{ summaryFor(flow) }}</p>
+
+          <!-- Which cast the pictures are drawn from. Only offered where this
+               flow was drawn more than once: a technique that exists in one
+               world has no choice to put in front of a reader. -->
+          @if (worldChoice()) {
+            <div class="gs-tut-worlds">
+              <div
+                class="gs-seg gs-seg--xs"
+                role="group"
+                [attr.aria-label]="'generate.learn.world_label' | transloco"
+              >
+                @for (option of worlds; track option) {
+                  <button
+                    type="button"
+                    class="gs-seg-opt"
+                    [attr.aria-pressed]="world() === option"
+                    (click)="setWorld(option)"
+                  >
+                    {{ worldKey(option) | transloco }}
+                  </button>
+                }
+              </div>
+              <p class="gs-info-note gs-tut-worlds-note">
+                {{ "generate.learn.world_note" | transloco }}
+              </p>
+            </div>
+          }
         </header>
 
         @if (flow.status === "skipped") {

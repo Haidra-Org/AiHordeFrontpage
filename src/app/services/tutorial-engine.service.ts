@@ -38,6 +38,63 @@ const TUTORIALS_ROOT = '/assets/tutorials';
 
 const LEVEL_KEY = 'aihorde.generate.learn.level';
 
+const WORLD_KEY = 'aihorde.generate.learn.world';
+
+/**
+ * Which cast the worked examples are drawn from. The three tell the same lesson
+ * about the same settings with different subject matter, so the choice is the
+ * reader's taste and nothing more; it is held globally because a reader who has
+ * said which one they want has said it for every surface at once.
+ */
+export const TUTORIAL_WORLDS = ['w1', 'w2', 'w3'] as const;
+export type TutorialWorld = (typeof TUTORIAL_WORLDS)[number];
+
+/**
+ * The naming contract between the asset generator and this app, written here
+ * and nowhere else: the first world's flow ids are bare, and every other world
+ * suffixes the same id. Only flows whose subject survives the change are
+ * generated in more than one world, so most ids have no variant at all.
+ */
+const WORLD_SUFFIX = /--w[23]$/;
+
+/** The flow a variant id belongs to, which is the id itself when it is one. */
+export function canonicalFlowId(flowId: string): string {
+  return flowId.replace(WORLD_SUFFIX, '');
+}
+
+/** The id a flow's assets are published under in the given world. */
+export function worldFlowId(flowId: string, world: TutorialWorld): string {
+  const canonical = canonicalFlowId(flowId);
+  return world === 'w1' ? canonical : `${canonical}--${world}`;
+}
+
+/**
+ * The id a surface should actually open for a canonical flow: the active
+ * world's variant where one has been published, and the canonical flow where
+ * one has not. A world is never a dead end, because a flow with no variant in
+ * it simply keeps the example it already had.
+ */
+export function resolveFlowId(
+  flowId: string,
+  world: TutorialWorld,
+  published: readonly string[],
+): string {
+  const wanted = worldFlowId(flowId, world);
+  return published.includes(wanted) ? wanted : canonicalFlowId(flowId);
+}
+
+/** Whether more than one world's example has been published for a flow. */
+export function hasWorldVariants(
+  flowId: string,
+  published: readonly string[],
+): boolean {
+  const canonical = canonicalFlowId(flowId);
+  return TUTORIAL_WORLDS.some(
+    (world) =>
+      world !== 'w1' && published.includes(worldFlowId(canonical, world)),
+  );
+}
+
 /**
  * How much the reader wants told to them. The three registers change the prose
  * of a step and nothing else: the same steps run, in the same order, writing the
@@ -110,9 +167,17 @@ export const TUTORIAL_STEPS: Readonly<
 > = {
   txt2img: [
     {
+      // Both halves, because the payload carries them as one field and the
+      // finale is a real generation: applying the description without the
+      // negative it was written against would land the reader on a different
+      // picture from the one the step is standing next to. An example with no
+      // negative writes an empty one, which is what the form already holds.
       id: 'prompt',
       anchorId: 'prompt',
-      apply: (example) => ({ prompt: example.prompt }),
+      apply: (example) => ({
+        prompt: example.prompt,
+        negativePrompt: example.negativePrompt,
+      }),
     },
     {
       id: 'model',
@@ -272,8 +337,14 @@ export class TutorialEngineService {
   private pinged: HTMLElement | null = null;
   private pingTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The world {@link flowMeta} was resolved under, so a change reloads it. */
+  private loadedWorld: TutorialWorld | null = null;
+
   public readonly level = signal<TutorialLevel>(this.loadLevel());
   public readonly levels = TUTORIAL_LEVELS;
+
+  public readonly world = signal<TutorialWorld>(this.loadWorld());
+  public readonly worlds = TUTORIAL_WORLDS;
 
   public readonly activeFlowId = this.flowId.asReadonly();
   public readonly flow = this.flowMeta.asReadonly();
@@ -291,7 +362,7 @@ export class TutorialEngineService {
   public readonly active = computed(() => this.flowId() !== null);
 
   public readonly steps = computed<readonly TutorialStepDef[]>(
-    () => TUTORIAL_STEPS[this.flowId() ?? ''] ?? [],
+    () => TUTORIAL_STEPS[canonicalFlowId(this.flowId() ?? '')] ?? [],
   );
 
   public readonly step = computed<TutorialStepDef | null>(
@@ -321,6 +392,9 @@ export class TutorialEngineService {
       return params;
     }
     params['prompt'] = example.prompt;
+    // The payload carries both halves in one string; the prose names them
+    // apart, as the panel does, so a step can talk about either one.
+    params['negative'] = example.negativePrompt;
     params['model'] = example.model;
     params['width'] = example.width;
     params['height'] = example.height;
@@ -355,7 +429,7 @@ export class TutorialEngineService {
    * tutorial the reader has since navigated away from.
    */
   public arm(flowId: string): void {
-    this.armed = flowId;
+    this.armed = canonicalFlowId(flowId);
   }
 
   public consumeArmed(): string | null {
@@ -365,7 +439,10 @@ export class TutorialEngineService {
   }
 
   /** Begin a flow, fetching the example it teaches from. */
-  public async start(flowId: string): Promise<void> {
+  public async start(requestedId: string): Promise<void> {
+    // Steps, prose and section marks are all written against the canonical
+    // flow; which world's assets stand behind them is settled at load time.
+    const flowId = canonicalFlowId(requestedId);
     if (!tutorialAvailable(flowId)) {
       return;
     }
@@ -384,7 +461,12 @@ export class TutorialEngineService {
       // none, instead of offering the last technique's values under this one.
       this.flowMeta.set(null);
       this.request.set(null);
-    } else if (this.request() === null || this.flowMeta()?.id !== flowId) {
+      this.loadedWorld = null;
+    } else if (
+      this.request() === null ||
+      canonicalFlowId(this.flowMeta()?.id ?? '') !== flowId ||
+      this.loadedWorld !== this.world()
+    ) {
       this.loading.set(true);
       try {
         await this.load(flowId);
@@ -426,6 +508,16 @@ export class TutorialEngineService {
   public setLevel(level: TutorialLevel): void {
     this.level.set(level);
     this.db.store(LEVEL_KEY, level);
+  }
+
+  /**
+   * Choose the cast the worked examples are drawn from. Global and persisted:
+   * every surface that has a variant to offer reads the same answer, and the
+   * next flow started picks its assets up from here.
+   */
+  public setWorld(world: TutorialWorld): void {
+    this.world.set(world);
+    this.db.store(WORLD_KEY, world);
   }
 
   /** Whether the current step has anything to write. */
@@ -627,10 +719,16 @@ export class TutorialEngineService {
     const manifest = await firstValueFrom(
       this.http.get<TutorialManifest>(`${TUTORIALS_ROOT}/manifest.json`),
     );
-    const flow = manifest.flows.find((entry) => entry.id === flowId);
+    const world = this.world();
+    const published = manifest.flows
+      .filter((entry) => entry.status === 'available')
+      .map((entry) => entry.id);
+    const resolved = resolveFlowId(flowId, world, published);
+    const flow = manifest.flows.find((entry) => entry.id === resolved);
     if (!flow) {
       throw new Error(`Unknown tutorial flow: ${flowId}`);
     }
+    this.loadedWorld = world;
     const request = await firstValueFrom(
       this.http.get<ImageGenerationRequest>(
         `${TUTORIALS_ROOT}/${flow.directory}/${flow.request ?? 'request.json'}`,
@@ -645,5 +743,12 @@ export class TutorialEngineService {
     return TUTORIAL_LEVELS.includes(stored as TutorialLevel)
       ? (stored as TutorialLevel)
       : 'new_to_this';
+  }
+
+  private loadWorld(): TutorialWorld {
+    const stored = this.db.get(WORLD_KEY);
+    return TUTORIAL_WORLDS.includes(stored as TutorialWorld)
+      ? (stored as TutorialWorld)
+      : 'w1';
   }
 }

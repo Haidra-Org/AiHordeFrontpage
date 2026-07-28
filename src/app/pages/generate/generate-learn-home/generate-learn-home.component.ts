@@ -10,7 +10,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import {
+  TutorialEngineService,
+  TutorialWorld,
+  canonicalFlowId,
+  hasWorldVariants,
+  resolveFlowId,
+} from '../../../services/tutorial-engine.service';
 import {
   TutorialFlow,
   TutorialManifest,
@@ -105,21 +111,48 @@ export class GenerateLearnHomeComponent {
     },
   ];
 
-  /** The shelf's flows, in the page's order, as far as the manifest has them. */
+  /** The ids an example has actually been published under. */
+  private readonly published = computed<readonly string[]>(() =>
+    (this.manifest()?.flows ?? [])
+      .filter((flow) => flow.status === 'available')
+      .map((flow) => flow.id),
+  );
+
+  /**
+   * The shelf's flows, in the page's order, as far as the manifest has them,
+   * each one shown in the world the reader has chosen. The order is written in
+   * canonical ids: a world variant is another set of pictures for a card that
+   * is already here rather than a card of its own.
+   */
   public readonly shelf = computed<readonly TutorialFlow[]>(() => {
     const flows = this.manifest()?.flows ?? [];
-    return SHELF_FLOWS.map((id) => flows.find((flow) => flow.id === id)).filter(
+    return SHELF_FLOWS.map((id) => this.inWorld(id, flows)).filter(
       (flow): flow is TutorialFlow => flow !== undefined,
     );
   });
 
   /** The hero's backdrop: the image the walkthrough it starts actually made. */
   public readonly heroImage = computed(() => {
-    const flow = this.manifest()?.flows.find((entry) => entry.id === HERO_FLOW);
+    const flow = this.inWorld(HERO_FLOW, this.manifest()?.flows ?? []);
     return flow?.result
       ? `${TUTORIALS_ROOT}/${flow.directory}/${flow.result}`
       : '';
   });
+
+  /**
+   * Whether anything the page offers was drawn in more than one world. With
+   * nothing to switch between, the control would be a preference with no
+   * visible effect, so it is not put on the page at all.
+   */
+  public readonly worldChoice = computed(() => {
+    const published = this.published();
+    return [HERO_FLOW, ...SHELF_FLOWS].some((id) =>
+      hasWorldVariants(id, published),
+    );
+  });
+
+  public readonly worlds = this.tutorial.worlds;
+  public readonly world = this.tutorial.world;
 
   constructor() {
     this.http
@@ -150,12 +183,38 @@ export class GenerateLearnHomeComponent {
   }
 
   public flowLink(flow: TutorialFlow): string[] {
-    return ['/generate/learn/tutorials', flow.id];
+    return ['/generate/learn/tutorials', canonicalFlowId(flow.id)];
   }
 
   /** The key naming a flow by what it makes, as the examples page names it. */
   public taskNameKey(flow: TutorialFlow): string {
-    return `generate.tutorials.flows.${flow.id}.task_name`;
+    return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
+  }
+
+  /** Whether a card is the alpha-channel example, in whichever world. */
+  public isTransparent(flow: TutorialFlow): boolean {
+    return canonicalFlowId(flow.id) === 'transparent';
+  }
+
+  /** The name a world is offered under in the switcher. */
+  public worldKey(world: TutorialWorld): string {
+    return `generate.learn.world.${world}`;
+  }
+
+  public setWorld(world: TutorialWorld): void {
+    this.tutorial.setWorld(world);
+  }
+
+  /**
+   * A canonical flow's manifest entry for the world in play, falling back to
+   * the canonical entry where that world has no example of it.
+   */
+  private inWorld(
+    flowId: string,
+    flows: readonly TutorialFlow[],
+  ): TutorialFlow | undefined {
+    const id = resolveFlowId(flowId, this.tutorial.world(), this.published());
+    return flows.find((flow) => flow.id === id);
   }
 
   /**
@@ -164,7 +223,7 @@ export class GenerateLearnHomeComponent {
    * does: the manifest is written for someone who already knows the technique.
    */
   public summaryFor(flow: TutorialFlow): string {
-    const key = `generate.tutorials.flows.${flow.id}.summary`;
+    const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
     const text = this.transloco.translate(key);
     return !text || text === key ? flow.summary : text;
   }

@@ -6513,6 +6513,22 @@
   line-height: 1.65;
   max-width: 72ch;
 }
+/* The world switcher, on both Learn surfaces that offer one. It is a quiet
+   preference rather than a step of the page, so it sits under the lead in the
+   segmented idiom the register picker already uses. */
+.gen-studio .gs-tut-worlds,
+.gen-studio .gs-learn-worlds {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.gen-studio .gs-tut-worlds-note,
+.gen-studio .gs-learn-worlds-note {
+  margin: 0;
+  max-width: 52ch;
+}
 
 /* The flow picker, on the Learn area's contents rail. It keeps the rail's bar
    form at every width rather than taking the column form the wide step would

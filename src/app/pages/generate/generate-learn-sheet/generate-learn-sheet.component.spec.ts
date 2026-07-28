@@ -20,8 +20,12 @@ import {
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
 import request from '../../../../assets/tutorials/txt2img/request.json';
+import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
+
+// The payload carries the negative inline; the sheet writes the halves apart.
+const [PROMPT, NEGATIVE] = splitCombinedPrompt(request.prompt);
 
 class HostStub implements TutorialStudioHost {
   public readonly applied: Partial<GenerateFormValue>[] = [];
@@ -136,7 +140,12 @@ describe('GenerateLearnSheetComponent', () => {
   it('writes only the current step, and stays on it', () => {
     first<HTMLButtonElement>('.gs-tut-bar-do').click();
 
-    expect(host.applied).toEqual([{ prompt: request.prompt }]);
+    // The prompt step writes both halves the payload folds into one field,
+    // and the separator it folds them with never reaches the form.
+    expect(NEGATIVE).toBeTruthy();
+    expect(host.applied).toEqual([
+      { prompt: PROMPT, negativePrompt: NEGATIVE },
+    ]);
     expect(engine.stepIndex()).toBe(0);
   });
 

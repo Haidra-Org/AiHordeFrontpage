@@ -20,13 +20,40 @@ import {
 } from './generate-tutorials.component';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
-import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import {
+  TutorialEngineService,
+  TutorialWorld,
+  canonicalFlowId,
+  hasWorldVariants,
+  resolveFlowId,
+} from '../../../services/tutorial-engine.service';
 
 // The real committed manifest is the fixture: a page describing examples that
 // do not exist is exactly what these tests are for.
 const MANIFEST = manifest as unknown as TutorialManifest;
-const AVAILABLE = MANIFEST.flows.filter((flow) => flow.status === 'available');
-const SKIPPED = MANIFEST.flows.filter((flow) => flow.status === 'skipped');
+// Every id the page enumerates. A world variant is another set of pictures for
+// a flow already on the list, so it is deliberately not one of these.
+const CANONICAL = MANIFEST.flows.filter(
+  (flow) => canonicalFlowId(flow.id) === flow.id,
+);
+const AVAILABLE = CANONICAL.filter((flow) => flow.status === 'available');
+const SKIPPED = CANONICAL.filter((flow) => flow.status === 'skipped');
+
+/** The ids an example has actually been published under. */
+const PUBLISHED = MANIFEST.flows
+  .filter((flow) => flow.status === 'available')
+  .map((flow) => flow.id);
+
+// Which flows were drawn more than once is the generator's business and grows
+// over time, so the world tests read it off the committed set rather than
+// naming a flow that may be pinned tomorrow.
+const VARIANT_FLOW = CANONICAL.find((flow) =>
+  hasWorldVariants(flow.id, PUBLISHED),
+)!;
+const PINNED_FLOW = CANONICAL.find(
+  (flow) =>
+    flow.status === 'available' && !hasWorldVariants(flow.id, PUBLISHED),
+)!;
 
 /** Page chrome keys, which are written out in the template rather than built. */
 const CHROME_KEYS = [
@@ -95,7 +122,15 @@ interface Harness {
  */
 async function createPage(
   flowId: string | null = MANIFEST.flows[0].id,
+  world: TutorialWorld | null = null,
 ): Promise<Harness> {
+  // The world preference is global and persisted; a page built for one test
+  // must not inherit the choice another one made, and a test that needs one
+  // already chosen seeds it the way the store holds it.
+  localStorage.clear();
+  if (world) {
+    localStorage.setItem('aihorde.generate.learn.world', JSON.stringify(world));
+  }
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [
@@ -166,10 +201,18 @@ const REQUEST_TEXT = JSON.stringify(
 );
 
 /** Answers the manifest request and the companion files it then triggers. */
-function flushAll(harness: Harness): void {
-  harness.http.expectOne('/assets/tutorials/manifest.json').flush(MANIFEST);
+function flushAll(
+  harness: Harness,
+  manifestData: TutorialManifest = MANIFEST,
+): void {
+  harness.http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
   harness.fixture.detectChanges();
 
+  flushDetail(harness);
+}
+
+/** Answers the companion files of whichever flow is on screen. */
+function flushDetail(harness: Harness): void {
   const flow = harness.component.activeFlow();
   if (!flow || flow.status !== 'available') {
     return;
@@ -209,15 +252,15 @@ describe('GenerateTutorialsComponent', () => {
     const translations = en as Record<string, string>;
     const lines = harness.query<HTMLElement>('.gs-index-entry');
 
-    expect(lines).toHaveLength(MANIFEST.flows.length);
-    expect(harness.component.flows()).toHaveLength(MANIFEST.flows.length);
+    expect(lines).toHaveLength(CANONICAL.length);
+    expect(harness.component.flows()).toHaveLength(CANONICAL.length);
     // Named by what each one makes, not by the technique behind it.
     expect(
       lines.map((line) =>
         line.querySelector('.gs-index-entry-label')?.textContent?.trim(),
       ),
     ).toEqual(
-      MANIFEST.flows.map(
+      CANONICAL.map(
         (flow) => translations[`generate.tutorials.flows.${flow.id}.task_name`],
       ),
     );
@@ -316,7 +359,7 @@ describe('GenerateTutorialsComponent', () => {
   it('brings the line of a deep-linked flow into the rail', async () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
-    const late = MANIFEST.flows[MANIFEST.flows.length - 1];
+    const late = CANONICAL[CANONICAL.length - 1];
 
     harness = await createPage(late.id);
     flushAll(harness);
@@ -524,7 +567,7 @@ describe('GenerateTutorialsComponent', () => {
     }
     // Every flow is named by its task, the skipped one included: the chip has
     // to say what it would have made.
-    for (const flow of MANIFEST.flows) {
+    for (const flow of CANONICAL) {
       expected.add(`generate.tutorials.flows.${flow.id}.task_name`);
       // Every flow overrides the manifest's own summary, which is written for
       // someone who already knows the technique.
@@ -608,9 +651,102 @@ describe('GenerateTutorialsComponent', () => {
       harness
         .query<HTMLAnchorElement>('.gs-index-entry')
         .map((line) => line.getAttribute('href')),
-    ).toEqual(
-      MANIFEST.flows.map((flow) => `/generate/learn/tutorials/${flow.id}`),
-    );
+    ).toEqual(CANONICAL.map((flow) => `/generate/learn/tutorials/${flow.id}`));
+  });
+
+  describe('the world the pictures are drawn from', () => {
+    const VARIANT_ID = `${VARIANT_FLOW.id}--w2`;
+
+    it('keeps world variants out of the picker and out of the URLs', () => {
+      flushAll(harness);
+
+      const hrefs = harness
+        .query<HTMLAnchorElement>('.gs-index-entry')
+        .map((line) => line.getAttribute('href'));
+
+      // The committed set really does carry variants, so this is a filter
+      // being exercised rather than a manifest with nothing to leave out.
+      expect(MANIFEST.flows.length).toBeGreaterThan(CANONICAL.length);
+      expect(hrefs).toHaveLength(CANONICAL.length);
+      expect(hrefs.join(' ')).not.toContain('--w');
+      expect(harness.component.flows().map((flow) => flow.id)).toEqual(
+        CANONICAL.map((flow) => flow.id),
+      );
+    });
+
+    it('offers the switcher only where the flow was drawn more than once', async () => {
+      harness = await createPage(VARIANT_FLOW.id);
+      flushAll(harness);
+
+      const options = harness.query<HTMLButtonElement>(
+        '.gs-tut-worlds .gs-seg-opt',
+      );
+      const translations = en as Record<string, string>;
+
+      expect(harness.component.worldChoice()).toBe(true);
+      expect(options.map((option) => option.textContent?.trim())).toEqual([
+        translations['generate.learn.world.w1'],
+        translations['generate.learn.world.w2'],
+        translations['generate.learn.world.w3'],
+      ]);
+      // The one in play is marked, and no world is offered as unavailable.
+      expect(
+        options.map((option) => option.getAttribute('aria-pressed')),
+      ).toEqual(['true', 'false', 'false']);
+      expect(options.some((option) => option.disabled)).toBe(false);
+    });
+
+    it('shows no switcher on a flow pinned to the first world', async () => {
+      harness = await createPage(PINNED_FLOW.id);
+      flushAll(harness);
+
+      expect(harness.component.worldChoice()).toBe(false);
+      expect(harness.query('.gs-tut-worlds')).toHaveLength(0);
+    });
+
+    it('re-resolves the page onto the chosen world, under the same URL', async () => {
+      harness = await createPage(VARIANT_FLOW.id);
+      flushAll(harness);
+
+      const translations = en as Record<string, string>;
+      const taskName =
+        translations[`generate.tutorials.flows.${VARIANT_FLOW.id}.task_name`];
+      const variant = MANIFEST.flows.find((flow) => flow.id === VARIANT_ID)!;
+
+      harness.query<HTMLButtonElement>('.gs-tut-worlds .gs-seg-opt')[1].click();
+      harness.fixture.detectChanges();
+      flushDetail(harness);
+
+      const title = harness.query<HTMLElement>('.gs-tut-flow-title')[0];
+
+      expect(harness.component.activeFlow()?.id).toBe(VARIANT_ID);
+      expect(
+        harness.query<HTMLImageElement>('.gs-tut-img')[0].getAttribute('src'),
+      ).toContain(`/${VARIANT_ID}/`);
+      // The task, its URL and its steps are the flow's; only the pictures and
+      // the technique line behind them belong to the world.
+      expect(harness.component.activeId()).toBe(VARIANT_FLOW.id);
+      expect(harness.query('.gs-tut-step')).toHaveLength(
+        TUTORIAL_FLOW_STEPS[VARIANT_FLOW.id].length,
+      );
+      expect(title.textContent).toContain(taskName);
+      expect(
+        title.querySelector('.gs-tut-technique')?.textContent?.trim(),
+      ).toBe(variant.title);
+    });
+
+    it('falls back to the canonical example where the world has none', async () => {
+      harness = await createPage(PINNED_FLOW.id, 'w2');
+      flushAll(harness);
+
+      // A world nothing was drawn in for this flow is honoured by showing what
+      // there is, rather than by refusing or by offering an empty page.
+      expect(resolveFlowId(PINNED_FLOW.id, 'w2', PUBLISHED)).toBe(
+        PINNED_FLOW.id,
+      );
+      expect(harness.component.activeFlow()?.id).toBe(PINNED_FLOW.id);
+      expect(harness.query('.gs-tut-img').length).toBeGreaterThan(0);
+    });
   });
 
   it('links the guide entry point at the studio shell', () => {
