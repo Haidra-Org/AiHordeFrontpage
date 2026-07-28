@@ -76,11 +76,34 @@ export interface TutorialStepDef {
    * than restated here, so a step can never set something the example did not.
    */
   apply?: (example: GenerateFormValue) => Partial<GenerateFormValue>;
+  /**
+   * The flow this step offers to start instead of anything of its own. A step
+   * that carries one is the end of a track that has taught an idea and has
+   * somewhere to send the reader next; its button is labelled by the step's own
+   * `.cta` key, so each track words the handoff in its own voice.
+   */
+  startsFlow?: string;
 }
 
 /**
- * The follow-along steps, per flow. Only `txt2img` is authored: the remaining
- * flows are listed on the Learn page with their tutorial offer disabled.
+ * The tracks that teach an idea rather than a technique. They run in the same
+ * step UI as a follow-along, but there is no committed request behind them: no
+ * example image, no manifest entry, no step that writes a field.
+ */
+export const CONCEPT_FLOWS: readonly string[] = [
+  'concepts_images',
+  'concepts_horde',
+];
+
+/** Whether a flow teaches an idea rather than following a worked example. */
+export function isConceptFlow(flowId: string | null): boolean {
+  return flowId !== null && CONCEPT_FLOWS.includes(flowId);
+}
+
+/**
+ * The follow-along steps, per flow. `txt2img` is the one technique authored:
+ * the remaining manifest flows are listed on the Learn page with their tutorial
+ * offer disabled. The two concept tracks are authored here and nowhere else.
  */
 export const TUTORIAL_STEPS: Readonly<
   Record<string, readonly TutorialStepDef[]>
@@ -135,6 +158,24 @@ export const TUTORIAL_STEPS: Readonly<
     },
     // The finale offers nothing to apply: pressing Generate is the step.
     { id: 'generate', anchorId: 'generate' },
+  ],
+  // Neither track points at a field, so no step carries an anchor, an apply or
+  // a help topic: they are read straight through, in whichever register suits.
+  concepts_images: [
+    { id: 'noise_to_picture' },
+    { id: 'what_a_model_is' },
+    { id: 'prompt_as_conditioning' },
+    { id: 'the_knobs' },
+    { id: 'why_it_differs' },
+    { id: 'try_it', startsFlow: 'txt2img' },
+  ],
+  concepts_horde: [
+    { id: 'volunteers' },
+    { id: 'lifecycle' },
+    { id: 'kudos' },
+    { id: 'trust_safety' },
+    { id: 'waiting' },
+    { id: 'where_next', startsFlow: 'txt2img' },
   ],
 };
 
@@ -306,7 +347,14 @@ export class TutorialEngineService {
     this.failed.set(false);
     this.flowId.set(flowId);
     this.index.set(0);
-    if (this.request() === null || this.flowMeta()?.id !== flowId) {
+    if (isConceptFlow(flowId)) {
+      // A concept track has no committed request behind it. Clearing both
+      // rather than leaving a previous flow's is what makes every surface that
+      // keys off an example (Apply, the bulk offer, the result figure) find
+      // none, instead of offering the last technique's values under this one.
+      this.flowMeta.set(null);
+      this.request.set(null);
+    } else if (this.request() === null || this.flowMeta()?.id !== flowId) {
       this.loading.set(true);
       try {
         await this.load(flowId);
@@ -385,7 +433,10 @@ export class TutorialEngineService {
    * nothing has to watch the queue.
    */
   public notifySubmitted(): void {
-    if (!this.active() || !this.onFinale()) {
+    // A concept track is not finished by a generation: the reader submitting
+    // one while reading about how the horde works has not reached the end of
+    // anything the track was asking for, so the pane stays where it is.
+    if (!this.active() || !this.onFinale() || isConceptFlow(this.flowId())) {
       return;
     }
     this.finished.set(true);

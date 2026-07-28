@@ -24,6 +24,10 @@ const OWN_KEYS = [
   'hero_sub',
   'hero_cta',
   'understand_head',
+  'understand_images_title',
+  'understand_images_hint',
+  'understand_horde_title',
+  'understand_horde_hint',
   'understand_guide_title',
   'understand_guide_hint',
   'further_head',
@@ -103,13 +107,50 @@ describe('GenerateLearnHomeComponent', () => {
   it('offers the written guide as a door of its own', () => {
     flush();
 
-    const doors = query<HTMLAnchorElement>('.gs-learn-door');
+    const routed = query<HTMLAnchorElement>('a.gs-learn-door');
 
-    expect(doors).toHaveLength(component.understandDoors.length);
-    expect(doors[0].getAttribute('href')).toBe('/generate/learn/guide');
-    expect(doors[0].textContent).toContain(
+    expect(query('.gs-learn-door')).toHaveLength(
+      component.understandDoors.length,
+    );
+    expect(routed).toHaveLength(1);
+    expect(routed[0].getAttribute('href')).toBe('/generate/learn/guide');
+    expect(routed[0].textContent).toContain(
       TRANSLATIONS['generate.learn.understand_guide_title'],
     );
+  });
+
+  it('leads the band with the two concept tracks', () => {
+    flush();
+
+    const tracks = query<HTMLButtonElement>('button.gs-learn-door');
+
+    expect(component.understandDoors.map((door) => door.flow)).toEqual([
+      'concepts_images',
+      'concepts_horde',
+      undefined,
+    ]);
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0].textContent).toContain(
+      TRANSLATIONS['generate.learn.understand_images_title'],
+    );
+    expect(tracks[0].textContent).toContain(
+      TRANSLATIONS['generate.learn.understand_images_hint'],
+    );
+    expect(tracks[1].textContent).toContain(
+      TRANSLATIONS['generate.learn.understand_horde_title'],
+    );
+  });
+
+  it('arms a track and goes to the studio, as the hero does', () => {
+    flush();
+    const engine = TestBed.inject(TutorialEngineService);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+    query<HTMLButtonElement>('button.gs-learn-door')[1].click();
+
+    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(engine.consumeArmed()).toBe('concepts_horde');
   });
 
   it('shelves every technique but the one the hero already offers', () => {

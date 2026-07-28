@@ -11,6 +11,7 @@ import {
   TutorialEngineService,
   TutorialLevel,
   TutorialStepDef,
+  isConceptFlow,
 } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
@@ -56,12 +57,26 @@ export class GenerateLearnPanelComponent {
   public readonly flow = this.engine.flow;
   public readonly copyParams = this.engine.copyParams;
 
-  /** The flow's outcome name, shared with the Learn page's own listing. */
-  public readonly taskNameKey = computed(
-    () => `generate.tutorials.flows.${this.engine.activeFlowId()}.task_name`,
-  );
+  /**
+   * The flow's outcome name. A technique's is shared with the Learn page's own
+   * listing of worked examples; a concept track has no example to be listed
+   * among them, so its name lives with the rest of its prose.
+   */
+  public readonly taskNameKey = computed(() => {
+    const flowId = this.engine.activeFlowId();
+    return isConceptFlow(flowId)
+      ? `generate.learn.flows.${flowId}.task_name`
+      : `generate.tutorials.flows.${flowId}.task_name`;
+  });
 
   public readonly canApply = computed(() => this.engine.canApply());
+
+  /**
+   * Whether there is a committed request behind the flow. Everything that
+   * offers the reader the example's values, and the finale's ask to press
+   * Generate, is only meaningful when there is one.
+   */
+  public readonly hasExample = computed(() => this.engine.example() !== null);
 
   public readonly progressParams = computed(() => ({
     current: this.stepIndex() + 1,
@@ -99,6 +114,18 @@ export class GenerateLearnPanelComponent {
    */
   public breathes(step: TutorialStepDef): boolean {
     return !!step.anchorId && this.identityFor(step) !== null;
+  }
+
+  /** The label of a closing step's handoff, in that track's own words. */
+  public ctaKey(step: TutorialStepDef): string {
+    return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.cta`;
+  }
+
+  /** Leave this track for the one its closing step offers. */
+  public startOffered(step: TutorialStepDef): void {
+    if (step.startsFlow) {
+      void this.engine.start(step.startsFlow);
+    }
   }
 
   public revealKey(): string {

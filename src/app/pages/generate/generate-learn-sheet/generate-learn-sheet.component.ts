@@ -63,6 +63,12 @@ export class GenerateLearnSheetComponent {
 
   public readonly canApply = computed(() => this.engine.canApply());
 
+  /**
+   * Whether there is a committed request behind the flow, which is what makes
+   * the finale's ask to press Generate mean anything.
+   */
+  public readonly hasExample = computed(() => this.engine.example() !== null);
+
   public readonly progressParams = computed(() => ({
     current: this.stepIndex() + 1,
     total: this.total(),
@@ -89,6 +95,18 @@ export class GenerateLearnSheetComponent {
    */
   public breathes(step: TutorialStepDef): boolean {
     return !!step.anchorId && this.identityFor(step) !== null;
+  }
+
+  /** The label of a closing step's handoff, in that track's own words. */
+  public ctaKey(step: TutorialStepDef): string {
+    return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.cta`;
+  }
+
+  /** Leave this track for the one its closing step offers. */
+  public startOffered(step: TutorialStepDef): void {
+    if (step.startsFlow) {
+      void this.engine.start(step.startsFlow);
+    }
   }
 
   public revealKey(): string {

@@ -8648,3 +8648,13 @@ html:has(app-gs-sheet) {
   background: var(--gs-panel);
   border-color: var(--gs-green-tint-border);
 }
+
+/* The concept-track doors start a track in the studio rather than routing, so
+   they are buttons standing in a band of links and have to shed the type's own
+   defaults to sit level with the one beside them. */
+.gen-studio button.gs-learn-door {
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}

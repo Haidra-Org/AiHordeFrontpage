@@ -8,6 +8,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnPanelComponent } from './generate-learn-panel.component';
 import {
+  CONCEPT_FLOWS,
   TUTORIAL_LEVELS,
   TUTORIAL_STEPS,
   TutorialEngineService,
@@ -205,14 +206,101 @@ describe('GenerateLearnPanelComponent', () => {
     expect(text()).toContain('Text to image');
   });
 
-  it('has prose for every step in all three registers', () => {
-    for (const step of TUTORIAL_STEPS['txt2img']) {
-      const base = `generate.learn.flows.txt2img.steps.${step.id}`;
-      expect(TRANSLATIONS[`${base}.title`]).toBeTruthy();
-      for (const level of TUTORIAL_LEVELS) {
-        expect(TRANSLATIONS[`${base}.body.${level}`]).toBeTruthy();
+  it('has prose for every step of every flow, in all three registers', () => {
+    for (const [flowId, steps] of Object.entries(TUTORIAL_STEPS)) {
+      for (const step of steps) {
+        const base = `generate.learn.flows.${flowId}.steps.${step.id}`;
+        expect(
+          TRANSLATIONS[`${base}.title`],
+          `missing translation ${base}.title`,
+        ).toBeTruthy();
+        for (const level of TUTORIAL_LEVELS) {
+          expect(
+            TRANSLATIONS[`${base}.body.${level}`],
+            `missing translation ${base}.body.${level}`,
+          ).toBeTruthy();
+        }
       }
     }
+    // The closing step of a track labels its own handoff.
+    const handoffs = Object.entries(TUTORIAL_STEPS).flatMap(([flowId, steps]) =>
+      steps
+        .filter((step) => step.startsFlow)
+        .map((step) => `generate.learn.flows.${flowId}.steps.${step.id}.cta`),
+    );
+    expect(handoffs).toHaveLength(CONCEPT_FLOWS.length);
+    for (const key of handoffs) {
+      expect(TRANSLATIONS[key], `missing translation ${key}`).toBeTruthy();
+    }
+    // A track is named where the rest of its prose lives: it has no worked
+    // example to be listed among the ones the examples page names.
+    for (const flowId of CONCEPT_FLOWS) {
+      expect(
+        TRANSLATIONS[`generate.learn.flows.${flowId}.task_name`],
+      ).toBeTruthy();
+    }
+  });
+
+  describe('a concept track', () => {
+    beforeEach(async () => {
+      await engine.start('concepts_images');
+      fixture.detectChanges();
+    });
+
+    it('lists its steps and names itself from its own prose', () => {
+      expect(query('.gs-learn-step')).toHaveLength(
+        TUTORIAL_STEPS['concepts_images'].length,
+      );
+      expect(text()).toContain(
+        TRANSLATIONS['generate.learn.flows.concepts_images.task_name'],
+      );
+      expect(text()).toContain(
+        TRANSLATIONS[
+          'generate.learn.flows.concepts_images.steps.noise_to_picture.title'
+        ],
+      );
+    });
+
+    it('offers nothing to apply, point at, or load', () => {
+      expect(query('.gs-learn-apply')).toHaveLength(0);
+      expect(query('.gs-learn-show')).toHaveLength(0);
+      expect(query('.gs-learn-all')).toHaveLength(0);
+      expect(query('.gs-learn-example')).toHaveLength(0);
+    });
+
+    it('takes no section hue, since no step is about a card', () => {
+      for (const step of query<HTMLElement>('.gs-learn-step')) {
+        expect(step.className).not.toContain('gs-sec--');
+      }
+      expect(query<HTMLElement>('.gs-learn-card')[0].className).not.toContain(
+        'gs-tut-breathe',
+      );
+    });
+
+    it('closes with the walkthrough rather than an ask to press Generate', async () => {
+      engine.goTo(engine.total() - 1);
+      fixture.detectChanges();
+
+      expect(text()).not.toContain(TRANSLATIONS['generate.learn.finale_hint']);
+      const cta = query<HTMLButtonElement>('.gs-learn-cta');
+      expect(cta).toHaveLength(1);
+      expect(cta[0].textContent?.trim()).toBe(
+        TRANSLATIONS['generate.learn.flows.concepts_images.steps.try_it.cta'],
+      );
+
+      cta[0].click();
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      http
+        .expectOne('/assets/tutorials/txt2img/request.json')
+        .flush(structuredClone(request));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+
+      expect(engine.step()?.id).toBe('prompt');
+      expect(query('.gs-learn-apply')).toHaveLength(1);
+    });
   });
 
   describe('parameter sweeps', () => {

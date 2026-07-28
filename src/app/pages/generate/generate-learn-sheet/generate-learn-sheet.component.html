@@ -53,6 +53,14 @@
           >
             {{ "generate.learn.next" | transloco }}
           </button>
+        } @else if (current.startsFlow) {
+          <button
+            type="button"
+            class="gs-tut-bar-do"
+            (click)="startOffered(current)"
+          >
+            {{ ctaKey(current) | transloco }}
+          </button>
         } @else if (current.anchorId) {
           <button type="button" class="gs-tut-bar-do" (click)="showMe()">
             {{ "generate.learn.show_me" | transloco }}
@@ -102,7 +110,7 @@
         </p>
       }
 
-      @if (onFinale()) {
+      @if (onFinale() && hasExample()) {
         <p class="gs-info-note gs-learn-finale">
           {{ "generate.learn.finale_hint" | transloco }}
         </p>
@@ -118,6 +126,15 @@
       @if (current.anchorId) {
         <button type="button" class="gs-learn-show" (click)="showMe()">
           {{ "generate.learn.show_me" | transloco }}
+        </button>
+      }
+      @if (current.startsFlow) {
+        <button
+          type="button"
+          class="gs-learn-apply gs-learn-cta"
+          (click)="startOffered(current)"
+        >
+          {{ ctaKey(current) | transloco }}
         </button>
       }
     </div>

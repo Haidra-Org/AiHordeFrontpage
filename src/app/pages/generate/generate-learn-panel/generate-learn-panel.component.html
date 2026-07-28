@@ -87,9 +87,20 @@
                 {{ "generate.learn.show_me" | transloco }}
               </button>
             }
+            <!-- A track that has finished explaining something has one thing
+                 left to offer: the walkthrough that does it for real. -->
+            @if (current.startsFlow) {
+              <button
+                type="button"
+                class="gs-learn-apply gs-learn-cta"
+                (click)="startOffered(current)"
+              >
+                {{ ctaKey(current) | transloco }}
+              </button>
+            }
           </div>
 
-          @if (onFinale()) {
+          @if (onFinale() && hasExample()) {
             <p class="gs-info-note gs-learn-finale">
               {{ "generate.learn.finale_hint" | transloco }}
             </p>
@@ -117,15 +128,18 @@
       }
 
       <!-- The bulk route goes through the same review panel a past generation's
-           settings do, so a tutorial can never silently rewrite the form. -->
-      <div class="gs-learn-bulk">
-        <button type="button" class="gs-learn-all" (click)="applyAll()">
-          {{ "generate.learn.apply_all" | transloco }}
-        </button>
-        <p class="gs-learn-bulk-note">
-          {{ "generate.learn.apply_all_hint" | transloco }}
-        </p>
-      </div>
+           settings do, so a tutorial can never silently rewrite the form. It is
+           absent from a track with no example: there would be nothing to load. -->
+      @if (hasExample()) {
+        <div class="gs-learn-bulk">
+          <button type="button" class="gs-learn-all" (click)="applyAll()">
+            {{ "generate.learn.apply_all" | transloco }}
+          </button>
+          <p class="gs-learn-bulk-note">
+            {{ "generate.learn.apply_all_hint" | transloco }}
+          </p>
+        </div>
+      }
 
       <ol
         class="gs-learn-steps"

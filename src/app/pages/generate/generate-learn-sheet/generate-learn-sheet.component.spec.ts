@@ -202,6 +202,56 @@ describe('GenerateLearnSheetComponent', () => {
     expect(engine.active()).toBe(true);
   });
 
+  describe('a concept track', () => {
+    beforeEach(async () => {
+      await engine.start('concepts_horde');
+      await settle();
+      first<HTMLButtonElement>('.gs-sheet-btn').click();
+      await settle();
+    });
+
+    it('docks as a bar of its steps, with nothing to apply or point at', () => {
+      expect(dots()).toHaveLength(TUTORIAL_STEPS['concepts_horde'].length);
+      // Next is the whole of the bar's offer, promoted as it is on any step
+      // with nothing of its own to write.
+      expect(query('.gs-tut-bar-next')).toHaveLength(1);
+      expect(first<HTMLElement>('.gs-tut-bar-next').textContent?.trim()).toBe(
+        TRANSLATIONS['generate.learn.next'],
+      );
+      expect(query('.gs-learn-apply')).toHaveLength(0);
+      expect(query('.gs-learn-show')).toHaveLength(0);
+      expect(dots()[0].className).not.toContain('gs-sec--');
+    });
+
+    it('closes with the walkthrough rather than an ask to press Generate', async () => {
+      engine.goTo(engine.total() - 1);
+      await settle();
+
+      expect(body().textContent).not.toContain(
+        TRANSLATIONS['generate.learn.finale_hint'],
+      );
+      const cta =
+        TRANSLATIONS[
+          'generate.learn.flows.concepts_horde.steps.where_next.cta'
+        ];
+      expect(first<HTMLElement>('.gs-tut-bar-do').textContent?.trim()).toBe(
+        cta,
+      );
+      expect(query('.gs-tut-bar-next')).toHaveLength(0);
+
+      first<HTMLButtonElement>('.gs-learn-cta').click();
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      http
+        .expectOne('/assets/tutorials/txt2img/request.json')
+        .flush(structuredClone(request));
+      await settle();
+
+      expect(engine.step()?.id).toBe('prompt');
+    });
+  });
+
   it('names its own chrome', () => {
     expect(first<HTMLElement>('app-gs-sheet').getAttribute('aria-label')).toBe(
       TRANSLATIONS['generate.learn.sheet_label'],

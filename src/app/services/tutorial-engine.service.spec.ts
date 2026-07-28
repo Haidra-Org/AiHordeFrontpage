@@ -6,11 +6,14 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  CONCEPT_FLOWS,
   TUTORIAL_STEPS,
   TutorialEngineService,
   TutorialStudioHost,
+  isConceptFlow,
   tutorialAvailable,
 } from './tutorial-engine.service';
+import { sectionFor } from '../pages/generate/section-identity';
 import { GsHelpService } from './gs-help.service';
 import { TutorialAnchorService } from './tutorial-anchor.service';
 import {
@@ -103,11 +106,17 @@ describe('TutorialEngineService', () => {
     http.verify();
   });
 
-  it('offers follow-along steps for txt2img only', () => {
+  it('offers steps for txt2img and the concept tracks, and nothing else', () => {
     expect(tutorialAvailable('txt2img')).toBe(true);
+    for (const flow of CONCEPT_FLOWS) {
+      expect(tutorialAvailable(flow)).toBe(true);
+      expect(isConceptFlow(flow)).toBe(true);
+    }
     for (const flow of ['img2img', 'controlnet', 'inpainting', 'facefix']) {
       expect(tutorialAvailable(flow)).toBe(false);
+      expect(isConceptFlow(flow)).toBe(false);
     }
+    expect(isConceptFlow(null)).toBe(false);
   });
 
   it('holds an armed flow in memory and hands it over exactly once', () => {
@@ -403,6 +412,82 @@ describe('TutorialEngineService', () => {
 
       expect(engine.active()).toBe(false);
       expect(engine.stepIndex()).toBe(0);
+    });
+  });
+
+  describe('the concept tracks', () => {
+    it('teaches from prose alone, asking the network for nothing', async () => {
+      await engine.start('concepts_images');
+
+      expect(engine.active()).toBe(true);
+      expect(engine.total()).toBe(TUTORIAL_STEPS['concepts_images'].length);
+      expect(engine.step()?.id).toBe('noise_to_picture');
+      expect(engine.example()).toBeNull();
+      expect(engine.exampleImage()).toBe('');
+      expect(engine.loadFailed()).toBe(false);
+      // The verify in afterEach is the assertion: a track fetches nothing.
+    });
+
+    it('points at no field and writes none', async () => {
+      for (const flowId of CONCEPT_FLOWS) {
+        await engine.start(flowId);
+        for (const step of TUTORIAL_STEPS[flowId]) {
+          expect(step.anchorId).toBeUndefined();
+          expect(step.apply).toBeUndefined();
+          expect(step.helpTopic).toBeUndefined();
+          // A concept step belongs to no card, so no surface gives it a hue.
+          expect(sectionFor('step', step.id)).toBeUndefined();
+        }
+        expect(engine.canApply()).toBe(false);
+      }
+    });
+
+    it('walks through and finishes without touching the studio', async () => {
+      await engine.start('concepts_horde');
+
+      while (!engine.onFinale()) {
+        engine.next();
+      }
+
+      expect(engine.step()?.id).toBe('where_next');
+      expect(engine.step()?.startsFlow).toBe('txt2img');
+      expect(host.applied).toEqual([]);
+      expect(host.modes).toEqual([]);
+
+      engine.stop();
+      expect(engine.active()).toBe(false);
+    });
+
+    it('focuses nothing and leaves no note open on a step with no anchor', async () => {
+      const help = TestBed.inject(GsHelpService);
+      await engine.start('concepts_images');
+      help.requestTopic('steps');
+      help.claimTopic('gs-help-steps-0');
+
+      expect(() => engine.focusStep()).not.toThrow();
+
+      expect(help.requestedTopic()).toBeNull();
+      expect(help.isOpen('gs-help-steps-0')).toBe(false);
+    });
+
+    it('is not finished by a generation submitted while it is read', async () => {
+      await engine.start('concepts_horde');
+      engine.goTo(engine.total() - 1);
+
+      engine.notifySubmitted();
+
+      expect(engine.active()).toBe(true);
+      expect(engine.completed()).toBe(false);
+    });
+
+    it('drops the example of a previous flow rather than showing it here', async () => {
+      await startTxt2img();
+      expect(engine.example()).not.toBeNull();
+
+      await engine.start('concepts_images');
+
+      expect(engine.example()).toBeNull();
+      expect(engine.flow()).toBeNull();
     });
   });
 

@@ -24,18 +24,38 @@
       {{ "generate.learn.understand_head" | transloco }}
     </h2>
     <div class="gs-learn-doors">
-      @for (door of understandDoors; track door.link) {
-        <a class="gs-learn-door" [routerLink]="door.link">
-          <app-icon [name]="door.icon" class="gs-ico-sm" />
-          <span class="gs-learn-door-text">
-            <span class="gs-learn-door-title">
-              {{ door.titleKey | transloco }}
+      @for (door of understandDoors; track door.titleKey) {
+        <!-- A track has no page to route to: it runs in the studio's pane, so
+             its door arms the flow and goes there, as the hero does. -->
+        @if (door.flow) {
+          <button
+            type="button"
+            class="gs-learn-door"
+            (click)="startTrack(door)"
+          >
+            <app-icon [name]="door.icon" class="gs-ico-sm" />
+            <span class="gs-learn-door-text">
+              <span class="gs-learn-door-title">
+                {{ door.titleKey | transloco }}
+              </span>
+              <span class="gs-learn-door-hint">
+                {{ door.hintKey | transloco }}
+              </span>
             </span>
-            <span class="gs-learn-door-hint">
-              {{ door.hintKey | transloco }}
+          </button>
+        } @else {
+          <a class="gs-learn-door" [routerLink]="door.link">
+            <app-icon [name]="door.icon" class="gs-ico-sm" />
+            <span class="gs-learn-door-text">
+              <span class="gs-learn-door-title">
+                {{ door.titleKey | transloco }}
+              </span>
+              <span class="gs-learn-door-hint">
+                {{ door.hintKey | transloco }}
+              </span>
             </span>
-          </span>
-        </a>
+          </a>
+        }
       }
     </div>
   </section>

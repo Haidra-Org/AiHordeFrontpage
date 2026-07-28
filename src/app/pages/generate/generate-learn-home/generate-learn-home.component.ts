@@ -39,11 +39,16 @@ const SHELF_FLOWS: readonly string[] = [
   'remix',
 ];
 
-/** One door of the "understand it" band. */
+/**
+ * One door of the "understand it" band. A door either routes to a page of its
+ * own or starts a concept track in the studio, and carries whichever of the two
+ * it is: nothing on the page has both.
+ */
 interface UnderstandDoor {
   titleKey: string;
   hintKey: string;
-  link: string;
+  link?: string;
+  flow?: string;
   icon: string;
 }
 
@@ -74,8 +79,24 @@ export class GenerateLearnHomeComponent {
   private readonly manifest = signal<TutorialManifest | null>(null);
   public readonly loadFailed = signal(false);
 
-  /** The single door of the "understand it" band, as a list it can grow into. */
+  /**
+   * The doors of the "understand it" band: the two concept tracks first, since
+   * a reader who does not know what a model is has no use for a list of what
+   * each control does, and the written reference last.
+   */
   public readonly understandDoors: readonly UnderstandDoor[] = [
+    {
+      titleKey: 'generate.learn.understand_images_title',
+      hintKey: 'generate.learn.understand_images_hint',
+      flow: 'concepts_images',
+      icon: 'photo-simple',
+    },
+    {
+      titleKey: 'generate.learn.understand_horde_title',
+      hintKey: 'generate.learn.understand_horde_hint',
+      flow: 'concepts_horde',
+      icon: 'user-group',
+    },
     {
       titleKey: 'generate.learn.understand_guide_title',
       hintKey: 'generate.learn.understand_guide_hint',
@@ -143,7 +164,22 @@ export class GenerateLearnHomeComponent {
    * the studio lands on an ordinary studio.
    */
   public startHero(): void {
-    this.tutorial.arm(HERO_FLOW);
+    this.start(HERO_FLOW);
+  }
+
+  /**
+   * A concept track's door, which makes the same handoff the hero does: the
+   * tracks run in the studio's follow-along pane like everything else, so there
+   * is no page of their own to route to.
+   */
+  public startTrack(door: UnderstandDoor): void {
+    if (door.flow) {
+      this.start(door.flow);
+    }
+  }
+
+  private start(flowId: string): void {
+    this.tutorial.arm(flowId);
     void this.router.navigate(['/generate/image']);
   }
 }
