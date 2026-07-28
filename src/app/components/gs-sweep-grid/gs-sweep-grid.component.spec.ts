@@ -14,10 +14,14 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 @Component({
   imports: [GsSweepGridComponent],
-  template: `<app-gs-sweep-grid [parameter]="parameter" />`,
+  template: `<app-gs-sweep-grid
+    [parameter]="parameter"
+    [startExpanded]="startExpanded"
+  />`,
 })
 class HostComponent {
   public parameter = 'steps_cfg_grid';
+  public startExpanded = false;
 }
 
 describe('GsSweepGridComponent', () => {
@@ -29,6 +33,11 @@ describe('GsSweepGridComponent', () => {
     el().querySelector<T>(selector);
   const all = <T extends Element>(selector: string): T[] =>
     Array.from(el().querySelectorAll<T>(selector));
+  /** The words in a set of cells, with the template's own whitespace out. */
+  const words = (selector: string): string[] =>
+    all(selector).map(
+      (cell) => cell.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+    );
   const press = (key: string): KeyboardEvent => {
     const event = new KeyboardEvent('keydown', {
       key,
@@ -43,6 +52,8 @@ describe('GsSweepGridComponent', () => {
   async function setUp(options?: {
     parameter?: string;
     empty?: boolean;
+    /** Whether the surface lays the plate out on the page rather than over it. */
+    startExpanded?: boolean;
   }): Promise<void> {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -60,6 +71,7 @@ describe('GsSweepGridComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.parameter =
       options?.parameter ?? 'steps_cfg_grid';
+    fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
     fixture.detectChanges();
 
     const request = http.expectOne(
@@ -97,9 +109,10 @@ describe('GsSweepGridComponent', () => {
   it('offers the plate in one line and fetches no frame until it is taken', async () => {
     await setUp();
 
-    expect(find('.gs-sweep-grid-offer')?.textContent).toContain(
-      en['generate.sweeps.grid_expand'],
-    );
+    // The offer names both settings, so two offers on one page are told apart.
+    expect(
+      find('.gs-sweep-grid-offer')?.textContent?.replace(/\s+/g, ' ').trim(),
+    ).toBe('See the full grid: Steps × Guidance (CFG)');
     expect(all('img')).toHaveLength(0);
   });
 
@@ -107,14 +120,16 @@ describe('GsSweepGridComponent', () => {
     await setUp();
     open();
 
-    expect(all('th[scope="col"]').map((h) => h.textContent?.trim())).toEqual([
-      '2',
-      '7',
+    // Every head is a setting chip: a bare 8 over a bare 2 says nothing about
+    // which of the two settings the column is.
+    expect(words('th[scope="col"]')).toEqual(['Guidance 2', 'Guidance 7']);
+    expect(words('th[scope="row"]')).toEqual(['Steps 8', 'Steps 30']);
+    expect(words('.gs-sweep-plate-corner')).toEqual([
+      'Steps down × Guidance (CFG) across',
     ]);
-    expect(all('th[scope="row"]').map((h) => h.textContent?.trim())).toEqual([
-      '8',
-      '30',
-    ]);
+    // The heads carry no glyph: two marks repeated down and across a plate are
+    // noise, and the chip's own label already names the axis.
+    expect(all('th[scope="col"] .gs-sec-chip')).toHaveLength(0);
     const cells = all<HTMLButtonElement>('.gs-sweep-plate-cell');
     expect(cells).toHaveLength(4);
     // Row by row, as the index publishes the stops.
@@ -166,28 +181,22 @@ describe('GsSweepGridComponent', () => {
     await setUp({ parameter: 'sampler_steps_grid' });
     open();
 
-    expect(all('th[scope="row"]').map((h) => h.textContent?.trim())).toEqual([
-      'k_euler',
-      'k_dpmpp_2m',
+    expect(words('th[scope="row"]')).toEqual([
+      'Sampler k_euler',
+      'Sampler k_dpmpp_2m',
     ]);
-    expect(all('th[scope="col"]').map((h) => h.textContent?.trim())).toEqual([
-      '8',
-      '30',
-    ]);
+    expect(words('th[scope="col"]')).toEqual(['Steps 8', 'Steps 30']);
   });
 
   it('heads an axis of flags as switch positions, not as true and false', async () => {
     await setUp({ parameter: 'hires_grid' });
     open();
 
-    expect(all('th[scope="col"]').map((h) => h.textContent?.trim())).toEqual([
-      en['generate.sweeps.state_off'],
-      en['generate.sweeps.state_on'],
+    expect(words('th[scope="col"]')).toEqual([
+      `Hires fix ${en['generate.sweeps.state_off']}`,
+      `Hires fix ${en['generate.sweeps.state_on']}`,
     ]);
-    expect(all('th[scope="row"]').map((h) => h.textContent?.trim())).toEqual([
-      '768',
-      '1024',
-    ]);
+    expect(words('th[scope="row"]')).toEqual(['Size 768', 'Size 1024']);
   });
 
   it('moves between cells from the buttons in the zoomed view', async () => {
@@ -237,6 +246,38 @@ describe('GsSweepGridComponent', () => {
     press('Escape');
     expect(find('.gs-sweep-viewer')).toBeNull();
     expect(find('.gs-sweep-grid-offer')).not.toBeNull();
+  });
+
+  describe('laid out on the page', () => {
+    it('shows the plate with no offer, no dialog and no stolen focus', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(find('.gs-sweep-grid-offer')).toBeNull();
+      expect(all('.gs-sweep-plate-cell')).toHaveLength(4);
+      const body = find<HTMLElement>('.gs-sweep-viewer-body')!;
+      expect(body.getAttribute('role')).toBeNull();
+      expect(body.getAttribute('aria-modal')).toBeNull();
+      expect(document.activeElement).not.toBe(body);
+      // Nothing to close, so nothing offers to.
+      expect(find('.gs-sweep-viewer-x')).toBeNull();
+      expect(find('.gs-sweep-viewer')?.className).toContain(
+        'gs-sweep-viewer--inline',
+      );
+    });
+
+    it('still opens a cell, and Escape steps back to the plate rather than out', async () => {
+      await setUp({ startExpanded: true });
+
+      all<HTMLButtonElement>('.gs-sweep-plate-cell')[1].click();
+      fixture.detectChanges();
+      expect(el().textContent).toContain('8 steps at guidance 7.');
+
+      press('Escape');
+      expect(all('.gs-sweep-plate-cell')).toHaveLength(4);
+
+      press('Escape');
+      expect(all('.gs-sweep-plate-cell')).toHaveLength(4);
+    });
   });
 
   it('holds Tab inside the layer and closes from its backdrop', async () => {

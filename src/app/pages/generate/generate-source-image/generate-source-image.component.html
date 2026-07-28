@@ -28,7 +28,10 @@
     }
   </div>
 
-  @if (!remixAllowed()) {
+  <!-- The standing note for the mode chip this disables. It stands down once
+       remix is actually selected, because the compatibility rule then renders
+       the same sentence below as a warning. -->
+  @if (!remixAllowed() && !hasWarning("remix_baseline")) {
     <p class="gs-sublabel">
       {{ "generate.source.remix_unsupported" | transloco }}
     </p>
@@ -313,5 +316,15 @@
         {{ message | transloco }}
       </p>
     }
+  }
+
+  <!-- This card's share of the request's warnings, from the shared lint table:
+       the same objects the count beside Generate reads, so the card and the
+       popover can never word a combination differently. Advisory only. -->
+  @for (warning of lintWarnings(); track warning.id) {
+    <p class="gs-req gs-req--warn">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ warning.key | transloco: warning.params }}
+    </p>
   }
 </div>

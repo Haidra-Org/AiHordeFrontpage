@@ -25,13 +25,20 @@ const CACHE_VERSION = 2;
 export const MODEL_REFERENCE_TTL_MS = 60 * 60 * 1000;
 
 /** Baselines whose models can serve a `remix` request (Stable Cascade). */
-const REMIX_BASELINES: readonly string[] = ['stable_cascade'];
+export const REMIX_BASELINES: readonly string[] = ['stable_cascade'];
 
 /** Baselines whose models can serve the `qr_code` workflow (SD 1.5 and SDXL). */
-const QR_CODE_BASELINES: readonly string[] = [
+export const QR_CODE_BASELINES: readonly string[] = [
   'stable_diffusion_1',
   'stable_diffusion_xl',
 ];
+
+/**
+ * Baselines the horde has ControlNet annotators for. The models are SD 1.5
+ * ControlNets, so a control_type asked of any other family is dropped or
+ * refused rather than guiding the image.
+ */
+export const CONTROLNET_BASELINES: readonly string[] = ['stable_diffusion_1'];
 
 /** Model name -> normalised baseline. */
 export type ModelBaselineMap = Record<string, string>;
@@ -217,6 +224,10 @@ export function baselineSupportsRemix(baseline: string | null): boolean {
 
 export function baselineSupportsQrCode(baseline: string | null): boolean {
   return baselineSupports(baseline, QR_CODE_BASELINES);
+}
+
+export function baselineSupportsControlNet(baseline: string | null): boolean {
+  return baselineSupports(baseline, CONTROLNET_BASELINES);
 }
 
 /**

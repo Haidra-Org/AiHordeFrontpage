@@ -35,6 +35,7 @@ import {
   MIN_EXTRA_SOURCE_STRENGTH,
   SOURCE_MODES,
 } from '../generate-form.model';
+import type { FeatureCompatRuleId, RequestWarning } from '../request-lint';
 import {
   SourceImage,
   blobToSourceImage,
@@ -115,8 +116,18 @@ export class GenerateSourceImageComponent implements OnInit {
    * unknown baseline must not lock the user out of it.
    */
   public readonly remixSupported = input<boolean | null>(null);
+  /**
+   * This section's share of the request's warnings, evaluated by the page from
+   * the shared lint table. Advisory: nothing here gates the mode or the submit.
+   */
+  public readonly lintWarnings = input<readonly RequestWarning[]>([]);
 
   public readonly stateChange = output<GenerateSourceState>();
+
+  /** Whether a named compatibility rule is currently firing for this section. */
+  public hasWarning(id: FeatureCompatRuleId): boolean {
+    return this.lintWarnings().some((warning) => warning.id === id);
+  }
 
   public readonly modes = SOURCE_MODES;
   public readonly controlTypes = CONTROL_TYPES;

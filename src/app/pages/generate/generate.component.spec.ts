@@ -1030,7 +1030,9 @@ async function createPaneOnlyStudio(): Promise<void> {
  * The two bottom sheets are mounted by the real template, so this stands the
  * studio up with it rather than the blanked one the unit suites use.
  */
-async function createWholeStudio(): Promise<void> {
+async function createWholeStudio(
+  baselines: ModelBaselineMap | null = null,
+): Promise<void> {
   await TestBed.configureTestingModule({
     imports: [
       GenerateComponent,
@@ -1059,13 +1061,15 @@ async function createWholeStudio(): Promise<void> {
       {
         provide: ModelReferenceService,
         useValue: {
-          baselines: signal(null),
+          baselines: signal(baselines),
           requirements: signal(null),
           load: () => undefined,
-          baselineFor: () => null,
+          baselineFor: (model: string) => baselines?.[model] ?? null,
           requirementsFor: () => null,
-          supportsRemix: () => true,
-          supportsQrCode: () => true,
+          supportsRemix: (model: string) =>
+            baselineSupportsRemix(baselines?.[model] ?? null),
+          supportsQrCode: (model: string) =>
+            baselineSupportsQrCode(baselines?.[model] ?? null),
         },
       },
       {
@@ -1108,6 +1112,51 @@ describe('GenerateComponent bottom sheets', () => {
     TestBed.inject(GsHelpDockService).close();
     fixture.detectChanges();
     expect(el().querySelector('app-generate-learn-sheet')).not.toBeNull();
+
+    fixture.destroy();
+  });
+});
+
+describe('GenerateComponent request warnings', () => {
+  it('is absent for a clean request and counts the warnings once one is earned', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    await createWholeStudio({ 'sdxl model': 'stable_diffusion_xl' });
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+    const indicator = (): HTMLButtonElement | null =>
+      el().querySelector('.gs-lint-btn');
+
+    expect(fixture.componentInstance.lintWarnings()).toEqual([]);
+    expect(indicator()).toBeNull();
+
+    // ControlNet on an SDXL model, with no image attached: two rules fire.
+    fixture.componentInstance.form.patchValue({
+      mode: 'advanced',
+      model: 'sdxl model',
+      sourceMode: 'controlnet',
+    });
+    fixture.detectChanges();
+
+    expect(
+      fixture.componentInstance.lintWarnings().map((warning) => warning.id),
+    ).toEqual(['controlnet_baseline', 'source_required']);
+    expect(indicator()?.textContent?.trim()).toBe('2');
+    expect(indicator()?.getAttribute('aria-label')).toContain('2');
+    expect(indicator()?.getAttribute('aria-expanded')).toBe('false');
+    // The Generate button is never touched by any of this.
+    const generate = el().querySelector('.gs-genbtn') as HTMLButtonElement;
+    expect(generate.querySelector('.gs-lint-btn')).toBeNull();
+    expect(generate.disabled).toBe(false);
+
+    indicator()?.click();
+    fixture.detectChanges();
+
+    const popover = el().querySelector('.gs-lint-pop');
+    expect(popover).not.toBeNull();
+    expect(popover?.querySelectorAll('.gs-lint-item')).toHaveLength(2);
+    expect(indicator()?.getAttribute('aria-expanded')).toBe('true');
 
     fixture.destroy();
   });

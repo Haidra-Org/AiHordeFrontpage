@@ -46,6 +46,7 @@ import {
 import { GenerateFormValue } from '../generate-form.model';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
+import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import {
   TutorialEngineService,
@@ -223,6 +224,7 @@ function positivePrompt(prompt: string): string {
     StudioJsonModalComponent,
     GenerateLearnPanelComponent,
     GsParamEntryComponent,
+    GsSettingChipComponent,
     RouterLink,
   ],
   templateUrl: './generate-results-panel.component.html',

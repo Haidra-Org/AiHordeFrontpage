@@ -18,11 +18,13 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
   template: `<app-gs-sweep-scrub
     [parameter]="parameter"
     [modelSlug]="modelSlug"
+    [startExpanded]="startExpanded"
   />`,
 })
 class HostComponent {
   public parameter = 'steps';
   public modelSlug: string | undefined = undefined;
+  public startExpanded = false;
 }
 
 /** The test DOM has no media queries at all, so the flag is installed. */
@@ -49,6 +51,9 @@ describe('GsSweepScrubComponent', () => {
     el().querySelector<T>(selector);
   const all = <T extends Element>(selector: string): T[] =>
     Array.from(el().querySelectorAll<T>(selector));
+  /** The rendered words, with the template's own whitespace collapsed out. */
+  const text = (): string =>
+    el().textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
   async function setUp(options?: {
     reducedData?: boolean;
@@ -59,6 +64,8 @@ describe('GsSweepScrubComponent', () => {
     modelSlug?: string;
     /** Which sweep to put on show; the steps strip unless said otherwise. */
     parameter?: string;
+    /** Whether the surface opens the strip without waiting to be asked. */
+    startExpanded?: boolean;
   }): Promise<void> {
     stubReducedData(options?.reducedData ?? false);
     TestBed.resetTestingModule();
@@ -82,6 +89,7 @@ describe('GsSweepScrubComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.modelSlug = options?.modelSlug;
     fixture.componentInstance.parameter = options?.parameter ?? 'steps';
+    fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
     fixture.detectChanges();
 
     const request = http.expectOne(
@@ -140,7 +148,7 @@ describe('GsSweepScrubComponent', () => {
       `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
     expect(el().textContent).toContain('The face and the light have settled.');
-    expect(el().textContent).toContain('Rendered at 12');
+    expect(text()).toContain('Steps 12');
     expect(find('.gs-sweep-range')).not.toBeNull();
   });
 
@@ -165,7 +173,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(range.getAttribute('aria-valuetext')).toBe('30');
-    expect(el().textContent).toContain('Rendered at 30');
+    expect(text()).toContain('Steps 30');
     expect(el().textContent).toContain('Past here the picture stops changing');
   });
 
@@ -298,7 +306,7 @@ describe('GsSweepScrubComponent', () => {
 
       expect(
         find<HTMLElement>('.gs-sweep-viewer-body')!.getAttribute('aria-label'),
-      ).toContain('on');
+      ).toContain('On');
       find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
       fixture.detectChanges();
 
@@ -330,7 +338,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     // The label on these stops is a filename token, so it is never read out.
-    expect(find('.gs-sweep-value')?.textContent?.trim()).toBe(
+    expect(find('.gs-sweep-caption-value')?.textContent?.trim()).toBe(
       'Prompted with (watercolor painting:1.0)',
     );
     expect(
@@ -400,6 +408,116 @@ describe('GsSweepScrubComponent', () => {
 
       expect(all('.gs-sweep-variant')).toHaveLength(0);
     });
+  });
+
+  describe('the full-size view', () => {
+    const openZoom = (): void => {
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+      find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+      fixture.detectChanges();
+    };
+
+    const arrow = (key: string): void => {
+      find<HTMLElement>('.gs-sweep-viewer-body')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+    };
+
+    it('carries the scrubber with it and steps with the arrow keys', async () => {
+      await setUp();
+      openZoom();
+
+      const range = (): HTMLInputElement =>
+        find<HTMLInputElement>('.gs-sweep-viewer-foot .gs-sweep-range')!;
+      expect(range().value).toBe('1');
+      expect(range().max).toBe('2');
+
+      arrow('ArrowRight');
+      expect(range().value).toBe('2');
+      expect(range().getAttribute('aria-valuetext')).toBe('30');
+      expect(
+        find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+      ).toBe(
+        `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
+      );
+
+      // The edge holds rather than wrapping round to the other end.
+      arrow('ArrowRight');
+      expect(range().value).toBe('2');
+
+      arrow('ArrowLeft');
+      arrow('ArrowLeft');
+      expect(range().value).toBe('0');
+    });
+
+    it('leaves the strip on the stop the reader scrubbed to', async () => {
+      await setUp();
+      openZoom();
+      arrow('ArrowRight');
+      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+      fixture.detectChanges();
+
+      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('2');
+      expect(text()).toContain('Steps 30');
+    });
+
+    it('scrubs from the slider inside the layer', async () => {
+      await setUp();
+      openZoom();
+
+      const range = find<HTMLInputElement>(
+        '.gs-sweep-viewer-foot .gs-sweep-range',
+      )!;
+      range.value = '0';
+      range.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(text()).toContain('Barely resolved');
+    });
+
+    it('offers the pair of readings inside the layer, without closing it', async () => {
+      await setUp();
+      openZoom();
+
+      const variants = all<HTMLButtonElement>(
+        '.gs-sweep-viewer-body .gs-sweep-variant',
+      );
+      expect(variants).toHaveLength(2);
+
+      variants[1].click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-viewer')).not.toBeNull();
+      expect(
+        find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+      ).toBe(
+        `${environment.sweepLibraryBaseUrl}/steps-converging/albedobase-xl/person/002_12.webp`,
+      );
+    });
+
+    it('names the frame by its value rather than by its filename token', async () => {
+      // The denoising strip labels 0.15 as `0_15`, which is a filename.
+      await setUp({ parameter: 'denoising_strength' });
+      openZoom();
+
+      expect(
+        find('.gs-sweep-viewer-name')?.textContent?.replace(/\s+/g, ' ').trim(),
+      ).toBe('Denoise 0.5');
+      arrow('ArrowLeft');
+      expect(
+        find('.gs-sweep-viewer-name')?.textContent?.replace(/\s+/g, ' ').trim(),
+      ).toBe('Denoise 0.15');
+    });
+  });
+
+  it('opens already expanded where the page is about the one setting', async () => {
+    await setUp({ startExpanded: true });
+
+    expect(find('.gs-sweep-offer')).toBeNull();
+    expect(find('.gs-sweep-frame')).not.toBeNull();
+    expect(find('.gs-sweep-range')).not.toBeNull();
   });
 
   it('collapses back to the offer', async () => {

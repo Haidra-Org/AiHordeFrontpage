@@ -65,8 +65,6 @@ const CHROME_KEYS = [
   'recipe_hires',
   'recipe_post',
   'recipe_batch',
-  'recipe_on',
-  'recipe_off',
   'raw_show',
   'meta_time_value',
   'deviation_label',
@@ -401,7 +399,7 @@ describe('GenerateTutorialsComponent', () => {
     flushAll(harness);
 
     const chips = harness
-      .query<HTMLElement>('.gs-recipe-chip')
+      .query<HTMLElement>('.gs-setting-chip')
       .map((chip) => chip.textContent?.replace(/\s+/g, ' ').trim());
 
     // Model, size, steps, guidance, sampler, seed and the sigmas: every field
@@ -409,7 +407,7 @@ describe('GenerateTutorialsComponent', () => {
     expect(chips).toHaveLength(7);
     expect(chips).toContain('Model AlbedoBase XL (SDXL)');
     expect(chips).toContain('Size 1024×1024');
-    expect(chips).toContain('Karras on');
+    expect(chips).toContain('Karras On');
     // One image is what an unbatched request makes, so it is not a setting.
     expect(chips.join(' ')).not.toContain('Images');
   });

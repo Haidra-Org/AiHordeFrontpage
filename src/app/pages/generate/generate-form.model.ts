@@ -1029,6 +1029,35 @@ export function simpleModeValue(value: GenerateFormValue): GenerateFormValue {
 }
 
 /**
+ * The fields a "reset all settings" leaves alone. The two prompts are the work
+ * rather than a setting; `mode` is the panel's own detail level; `sourceMode`
+ * stays because dropping it back to `none` would detach the image the reset
+ * promises to keep (and, in simple mode, discard it outright).
+ */
+export const RESET_KEPT_FIELDS = [
+  'prompt',
+  'negativePrompt',
+  'mode',
+  'sourceMode',
+] as const satisfies readonly (keyof GenerateFormValue)[];
+
+/**
+ * Every generation setting back to its default, keeping only the
+ * {@link RESET_KEPT_FIELDS}. Style selection, LoRAs and embeddings,
+ * post-processing, the workflow toggles and the worker routing all go with the
+ * rest: they are settings, and a reset that spared them would leave the request
+ * carrying choices the user just asked to be rid of.
+ */
+export function resetFormValue(value: GenerateFormValue): GenerateFormValue {
+  const result: GenerateFormValue = { ...DEFAULT_GENERATE_FORM_VALUE };
+  for (const key of RESET_KEPT_FIELDS) {
+    // Index assignment is sound: each key copies the same-typed field across.
+    (result as Record<keyof GenerateFormValue, unknown>)[key] = value[key];
+  }
+  return result;
+}
+
+/**
  * Join a positive and negative prompt using the horde's `###` separator. An
  * empty negative prompt yields the positive prompt unchanged.
  */

@@ -76,12 +76,19 @@ import {
   nativeSizeHint,
   nativeSquareFor,
   normalizeWorkers,
+  resetFormValue,
   samplerRequirementHint,
   sd15HiresHint,
   sizeBaseFor,
   stepsRequirementHint,
   suggestedSamplers,
 } from '../generate-form.model';
+import {
+  FeatureCompatRuleId,
+  RequestWarning,
+  warningsInSection,
+} from '../request-lint';
+import type { SectionId } from '../section-identity';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 
 // Re-exported for the parent page, which has always imported the picker group
@@ -156,6 +163,12 @@ export class GenerateFormComponent implements OnInit {
    * (or none is selected), in which case no guidance is shown.
    */
   public readonly modelRequirements = input<ModelRequirements | null>(null);
+  /**
+   * Everything the request as it stands would earn a warning for, evaluated by
+   * the parent across the whole request. Nothing here gates submission: the
+   * count beside Generate is an offer to look, and the horde decides.
+   */
+  public readonly lintWarnings = input<readonly RequestWarning[]>([]);
 
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
@@ -191,6 +204,15 @@ export class GenerateFormComponent implements OnInit {
   /** The history toggle, so dismissing with a key hands focus back to it. */
   private readonly historyBtn =
     viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
+  /** Whether the request-warnings popover beside Generate is open. */
+  public readonly lintOpen = signal(false);
+  /** The warnings popover's anchor, used to detect click-away dismissals. */
+  private readonly lintRef =
+    viewChild<ElementRef<HTMLElement>>('lintContainer');
+  /** The warnings toggle, so dismissing with a key hands focus back to it. */
+  private readonly lintBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('lintBtn');
+
   /** The prompt box, so a picked history entry or starter prompt can focus it. */
   private readonly promptInput =
     viewChild<ElementRef<HTMLTextAreaElement>>('promptInput');
@@ -934,11 +956,21 @@ export class GenerateFormComponent implements OnInit {
         this.closeHistory();
       }
     }
+    if (this.lintOpen()) {
+      const anchor = this.lintRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeLint();
+      }
+    }
   }
 
   public onDocumentEscape(): void {
     if (this.presetsOpen()) {
       this.closePresets();
+    }
+    if (this.lintOpen()) {
+      this.closeLint();
+      this.lintBtn()?.nativeElement.focus();
     }
     if (!this.historyOpen()) {
       return;
@@ -1038,6 +1070,55 @@ export class GenerateFormComponent implements OnInit {
   public deletePreset(id: string, event: Event): void {
     event.stopPropagation();
     this.presetsSvc.deletePreset(id);
+  }
+
+  // --- Reset all settings --------------------------------------------------
+
+  /**
+   * Put every generation setting back to its default, keeping the prompts and
+   * whatever source image is attached (see {@link resetFormValue}). There is no
+   * confirmation: the undo the toast offers is the affordance, the same bargain
+   * the results grid makes for a deletion.
+   */
+  public resetSettings(): void {
+    const previous = this.form().getRawValue();
+    this.writeSettings(resetFormValue(previous));
+    this.toast.success('generate.form.reset_done', {
+      transloco: true,
+      action: {
+        label: 'generate.form.reset_undo',
+        run: () => this.writeSettings(previous),
+      },
+    });
+  }
+
+  private writeSettings(value: GenerateFormValue): void {
+    this.form().setValue(value);
+    this.form().markAsDirty();
+  }
+
+  // --- Request warnings ----------------------------------------------------
+
+  public toggleLint(): void {
+    this.lintOpen.update((open) => !open);
+  }
+
+  public closeLint(): void {
+    this.lintOpen.set(false);
+  }
+
+  /** The warnings belonging to one card, for its own inline lines. */
+  public warningsFor(section: SectionId): readonly RequestWarning[] {
+    return warningsInSection(this.lintWarnings(), section);
+  }
+
+  /**
+   * Whether a named compatibility rule is currently firing. Cards that already
+   * carry the rule's sentence as a standing note beside the control it disables
+   * read this so the reader is never shown the same line twice.
+   */
+  public hasWarning(id: FeatureCompatRuleId): boolean {
+    return this.lintWarnings().some((warning) => warning.id === id);
   }
 
   /**

@@ -5,6 +5,10 @@ import {
   GsRecipeChipsComponent,
   RecipeRequest,
 } from './gs-recipe-chips.component';
+import {
+  SETTING_FALLBACK_LABEL_KEY,
+  settingLabelKey,
+} from '../../pages/generate/setting-vocabulary';
 import en from '../../../assets/i18n/en.json';
 
 const TRANSLATIONS = en as Record<string, string>;
@@ -33,7 +37,7 @@ describe('GsRecipeChipsComponent', () => {
   const chips = (): HTMLElement[] =>
     Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll(
-        '.gs-recipe-chip',
+        '.gs-setting-chip',
       ),
     );
 
@@ -100,10 +104,10 @@ describe('GsRecipeChipsComponent', () => {
 
   it('reports the sigmas being turned off as much as being turned on', () => {
     render({ params: { karras: false } });
-    expect(texts()).toEqual(['Karras off']);
+    expect(texts()).toEqual(['Karras Off']);
 
     render({ params: { karras: true } });
-    expect(texts()).toEqual(['Karras on']);
+    expect(texts()).toEqual(['Karras On']);
   });
 
   it('keeps a single image out of the recipe', () => {
@@ -142,10 +146,14 @@ describe('GsRecipeChipsComponent', () => {
 
     const keys = fixture.componentInstance
       .chips()
-      .flatMap((chip) => [chip.labelKey, chip.valueKey ?? []])
-      .flat();
+      .map((chip) => settingLabelKey(chip.id));
 
     expect(TRANSLATIONS['generate.tutorials.recipe_label']).toBeTruthy();
     expect(keys.filter((key) => !TRANSLATIONS[key])).toEqual([]);
+    // Every field the chips can read is a setting the vocabulary knows about;
+    // a chip falling back to "this" would be a chip with no name on it.
+    expect(keys.filter((key) => key === SETTING_FALLBACK_LABEL_KEY)).toEqual(
+      [],
+    );
   });
 });

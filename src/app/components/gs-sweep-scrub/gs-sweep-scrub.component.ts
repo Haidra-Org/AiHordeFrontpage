@@ -7,16 +7,17 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   signal,
   viewChild,
   viewChildren,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
+import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
+import { settingProseLabelKey } from '../../pages/generate/setting-vocabulary';
 import {
-  SWEEP_PARAMETER_FALLBACK_LABEL_KEY,
-  SWEEP_PARAMETER_LABEL_KEY,
   SWEEP_VARIANT_PARAMETER,
   SweepLibraryService,
   SweepStop,
@@ -28,6 +29,17 @@ const TILE_CELLS = [0, 1, 2, 3] as const;
 /** Where the whole answer about samplers lives, for the folded note's last line. */
 const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
 
+/** Which way each arrow key steps through the stops in the full-size view. */
+const VIEWER_STEPS: Readonly<Record<string, number>> = {
+  ArrowLeft: -1,
+  ArrowRight: 1,
+  ArrowUp: -1,
+  ArrowDown: 1,
+};
+
+/** What Tab may land on inside the full-size view. */
+const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
+
 /**
  * A parameter sweep the reader can scrub: the same scene rendered across a range
  * of one setting, so "more steps means more detail, up to a point" is something
@@ -37,7 +49,14 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
  * reader is already reading and a strip of images opening under every field
  * would bury the prose. Nothing is fetched until they ask for it, and under
  * `prefers-reduced-data` even the single preview frame waits for the tap: a
- * reader on a metered connection gets the offer, not the images.
+ * reader on a metered connection gets the offer, not the images. A page whose
+ * whole subject is the one setting has no prose to bury and opens the strip
+ * itself, through `startExpanded`.
+ *
+ * Pressing a frame hands the whole scrubber to a full-size layer rather than
+ * lifting one picture out of it: at the size the strip is drawn on a page the
+ * differences between neighbouring stops are exactly what is hardest to see, so
+ * the slider, the captions and the pair toggle all come with it.
  *
  * A strip of two frames is a before and an after rather than a range, and gets
  * them side by side: a slider between two positions asks the reader to flick
@@ -51,7 +70,13 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
  */
 @Component({
   selector: 'app-gs-sweep-scrub',
-  imports: [TranslocoPipe, IconComponent, NgTemplateOutlet, RouterLink],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    NgTemplateOutlet,
+    RouterLink,
+    GsSettingChipComponent,
+  ],
   template: `
     <!-- One frame, however this strip's frames have to be drawn. A tiled strip
          has no single image to hang alt text on, so the four copies are one
@@ -63,7 +88,8 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
           class="gs-sweep-tiled"
           role="img"
           [attr.aria-label]="
-            'generate.sweeps.tiled_alt' | transloco: { value: labelOf(stop) }
+            'generate.sweeps.tiled_alt'
+              | transloco: { value: valueTextOf(stop) }
           "
         >
           @for (cell of tileCells; track cell) {
@@ -81,7 +107,8 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
           [class]="cls"
           [src]="frameUrl(stop)"
           [alt]="
-            'generate.sweeps.frame_alt' | transloco: { value: labelOf(stop) }
+            'generate.sweeps.frame_alt'
+              | transloco: { value: valueTextOf(stop) }
           "
           loading="lazy"
           (load)="onFrameLoad()"
@@ -89,38 +116,43 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
       }
     </ng-template>
 
+    <!-- Steps read differently depending on whether the sampler re-rolls the
+         detail or settles towards one picture, and one strip can only be of one
+         of them. The choice belongs wherever the frames are, which is the strip
+         and, once it is open, the full-size view as well. -->
+    <ng-template #variants>
+      <div
+        class="gs-sweep-variants"
+        role="group"
+        [attr.aria-label]="'generate.sweeps.variant_label' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-sweep-variant"
+          [class.is-on]="!onVariant()"
+          [attr.aria-pressed]="!onVariant()"
+          (click)="useVariant(false)"
+        >
+          {{ 'generate.sweeps.variant_base' | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-sweep-variant"
+          [class.is-on]="onVariant()"
+          [attr.aria-pressed]="onVariant()"
+          (click)="useVariant(true)"
+        >
+          {{ 'generate.sweeps.variant_alt' | transloco }}
+        </button>
+      </div>
+    </ng-template>
+
     @if (strip()) {
       <div class="gs-sweep">
         @if (expanded()) {
           <div class="gs-sweep-open">
             @if (hasVariant()) {
-              <!-- Steps read differently depending on whether the sampler
-                   re-rolls the detail or settles towards one picture, and one
-                   strip can only be of one of them. -->
-              <div
-                class="gs-sweep-variants"
-                role="group"
-                [attr.aria-label]="'generate.sweeps.variant_label' | transloco"
-              >
-                <button
-                  type="button"
-                  class="gs-sweep-variant"
-                  [class.is-on]="!onVariant()"
-                  [attr.aria-pressed]="!onVariant()"
-                  (click)="useVariant(false)"
-                >
-                  {{ 'generate.sweeps.variant_base' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="gs-sweep-variant"
-                  [class.is-on]="onVariant()"
-                  [attr.aria-pressed]="onVariant()"
-                  (click)="useVariant(true)"
-                >
-                  {{ 'generate.sweeps.variant_alt' | transloco }}
-                </button>
-              </div>
+              <ng-container [ngTemplateOutlet]="variants" />
 
               <!-- The toggle names two kinds of sampler and assumes the reader
                    knows which theirs is. Answering that is more than a label can
@@ -191,11 +223,7 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
                     </button>
                     <figcaption>
                       <span class="gs-sweep-pair-name">
-                        @if (stateKey(side); as key) {
-                          {{ key | transloco }}
-                        } @else {
-                          {{ labelOf(side) }}
-                        }
+                        {{ valueTextOf(side) }}
                       </span>
                       <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
                     </figcaption>
@@ -222,14 +250,33 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
                     }"
                   />
                 </button>
-                <figcaption class="gs-sweep-caption">
-                  {{ stop().caption }}
+                <!-- The setting and its value lead, as the one token the reader
+                     is here to read; the sentence about what it did to the
+                     picture follows it. The caption is the live region, so a
+                     scrub announces both together rather than a bare number. -->
+                <figcaption
+                  class="gs-sweep-caption"
+                  role="status"
+                  aria-live="polite"
+                >
+                  @if (stop().prompt_fragment) {
+                    <span class="gs-sweep-caption-value">
+                      {{
+                        'generate.sweeps.value_prompt'
+                          | transloco: valueParamsOf(stop())
+                      }}
+                    </span>
+                  } @else {
+                    <app-gs-setting-chip
+                      [settingId]="activeParameter()"
+                      [value]="stop().value"
+                    />
+                  }
+                  <span class="gs-sweep-caption-text">{{
+                    stop().caption
+                  }}</span>
                 </figcaption>
               </figure>
-
-              <p class="gs-sweep-value" role="status" aria-live="polite">
-                {{ valueKeyOf(stop()) | transloco: valueParamsOf(stop()) }}
-              </p>
             }
 
             @if (!frameLoaded()) {
@@ -302,16 +349,25 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
               tabindex="-1"
               [attr.aria-label]="
                 'generate.sweeps.enlarged_title'
-                  | transloco: { value: labelOf(shown) }
+                  | transloco: { value: valueTextOf(shown) }
               "
               (keydown)="onViewerKeydown($event)"
             >
               <div class="gs-sweep-viewer-top">
                 <span class="gs-sweep-viewer-name">
-                  {{ valueKeyOf(shown) | transloco: valueParamsOf(shown) }}
+                  @if (shown.prompt_fragment) {
+                    {{
+                      'generate.sweeps.value_prompt'
+                        | transloco: valueParamsOf(shown)
+                    }}
+                  } @else {
+                    <app-gs-setting-chip
+                      [settingId]="activeParameter()"
+                      [value]="shown.value"
+                    />
+                  }
                 </span>
                 <button
-                  #zoomClose
                   type="button"
                   class="gs-sweep-viewer-x"
                   [attr.aria-label]="
@@ -344,6 +400,30 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
                 />
               </div>
               <p class="gs-sweep-viewer-cap">{{ shown.caption }}</p>
+
+              <!-- Full size is where the differences between stops are actually
+                   readable, so the scrubber comes with it rather than being left
+                   behind on the page: stepping here is the point of opening it. -->
+              <div class="gs-sweep-viewer-foot">
+                @if (hasVariant()) {
+                  <ng-container [ngTemplateOutlet]="variants" />
+                }
+                @if (!paired()) {
+                  <input
+                    class="gs-range gs-sweep-range"
+                    type="range"
+                    min="0"
+                    step="1"
+                    [max]="lastIndex()"
+                    [value]="zoomIndex()"
+                    [attr.aria-label]="
+                      'generate.sweeps.slider_label' | transloco
+                    "
+                    [attr.aria-valuetext]="valueTextOf(shown)"
+                    (input)="onZoomScrub($event)"
+                  />
+                }
+              </div>
             </div>
           </div>
         }
@@ -354,6 +434,7 @@ const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
 })
 export class GsSweepScrubComponent {
   private readonly sweeps = inject(SweepLibraryService);
+  private readonly transloco = inject(TranslocoService);
 
   /** API field name the sweep varies, e.g. `steps`. */
   public readonly parameter = input.required<string>();
@@ -365,9 +446,15 @@ export class GsSweepScrubComponent {
   public readonly modelSlug = input<string | undefined>(undefined);
   /** Narrow the strip to one scene. */
   public readonly sceneId = input<string | undefined>(undefined);
+  /**
+   * Open the strip without waiting to be asked. A page whose whole subject is
+   * one setting has nothing to bury the pictures under, so it shows them; every
+   * other surface sits inside prose and keeps the offer.
+   */
+  public readonly startExpanded = input(false);
 
   private readonly cursor = signal<number | null>(null);
-  private readonly open = signal(false);
+  private readonly open = linkedSignal(() => this.startExpanded());
   private readonly loaded = signal(false);
   private readonly zoom = signal<number | null>(null);
   private readonly variant = signal(false);
@@ -387,8 +474,6 @@ export class GsSweepScrubComponent {
   private readonly zoomTriggers =
     viewChildren<ElementRef<HTMLButtonElement>>('zoomTrigger');
   private readonly zoomPanel = viewChild<ElementRef<HTMLElement>>('zoomPanel');
-  private readonly zoomClose =
-    viewChild<ElementRef<HTMLButtonElement>>('zoomClose');
 
   /** Which frame opened the enlarged view, so closing hands focus back to it. */
   private opener = 0;
@@ -401,10 +486,8 @@ export class GsSweepScrubComponent {
    * offer from the next where a step or a reference entry carries more than one:
    * "See what changing this does" twice on a page answers neither.
    */
-  public readonly parameterLabelKey = computed(
-    () =>
-      SWEEP_PARAMETER_LABEL_KEY[this.parameter()] ??
-      SWEEP_PARAMETER_FALLBACK_LABEL_KEY,
+  public readonly parameterLabelKey = computed(() =>
+    settingProseLabelKey(this.parameter()),
   );
 
   /** The strip a pair of strips offers as its second reading, if there is one. */
@@ -474,6 +557,9 @@ export class GsSweepScrubComponent {
     () => this.strip()!.stops[this.index()],
   );
 
+  /** Which stop the full-size view is on, before it has been moved off. */
+  public readonly zoomIndex = computed(() => this.zoom() ?? 0);
+
   /** The frame on show full size, or null when nothing is. */
   public readonly zoomStop = computed<SweepStop | null>(() => {
     const at = this.zoom();
@@ -483,12 +569,8 @@ export class GsSweepScrubComponent {
   /** Whether the frame is also on show full size, over everything else. */
   public readonly zoomed = computed(() => this.zoomStop() !== null);
 
-  /**
-   * How the stop is read out. The index labels every stop, including the ones
-   * whose value is a flag rather than a number, so the label is preferred over
-   * the raw value wherever there is one.
-   */
-  public readonly valueLabel = computed(() => this.labelOf(this.stop()));
+  /** How the stop on the strip is read out, for the slider's own voice. */
+  public readonly valueLabel = computed(() => this.valueTextOf(this.stop()));
 
   /**
    * A reader on a metered connection is offered the sweep in words and fetches
@@ -515,44 +597,29 @@ export class GsSweepScrubComponent {
   }
 
   /**
-   * The token a stop is read out by, e.g. `12` or `off`. A stop that carries a
-   * piece of prompt text is read out by its value instead: on those strips the
-   * label is a filename token (`w1_5`) and the value is the wording written to
-   * be read.
+   * The value a stop was rendered at, as it reads: digits for a number, a state
+   * the page has words for on a flag, and the text itself for anything else.
+   *
+   * Never the stop's own label, which is a token safe to put in a filename and
+   * says so: the denoising strip labels 0.15 as `0_15`, which is the name of a
+   * file rather than a setting anybody set.
    */
-  public labelOf(stop: SweepStop): string {
-    if (stop.prompt_fragment) {
-      return String(stop.value);
+  public valueTextOf(stop: SweepStop): string {
+    if (typeof stop.value === 'boolean') {
+      return this.transloco.translate(
+        stop.value ? 'generate.sweeps.state_on' : 'generate.sweeps.state_off',
+      );
     }
-    return stop.label || String(stop.value);
+    return String(stop.value);
   }
 
   /**
-   * Which line names the frame. A strip that varies the wording is named by the
-   * text it was rendered with: the number in it is a weight inside a prompt
-   * rather than a setting the panel has a field for.
+   * What names a frame that varies the wording rather than a field: the text it
+   * was rendered with, the number in it being a weight inside a prompt rather
+   * than a setting the panel has a field for.
    */
-  public valueKeyOf(stop: SweepStop): string {
-    return stop.prompt_fragment
-      ? 'generate.sweeps.value_prompt'
-      : 'generate.sweeps.value';
-  }
-
   public valueParamsOf(stop: SweepStop): { value: string } {
-    return { value: stop.prompt_fragment || this.labelOf(stop) };
-  }
-
-  /**
-   * The heading a side of a pair is named by, when the pair varies a switch: the
-   * label the index carries for those is `off`/`on`, which reads as a filename
-   * rather than as a heading. Null on anything else, which is headed by its
-   * label.
-   */
-  public stateKey(stop: SweepStop): string | null {
-    if (stop.value === true) {
-      return 'generate.sweeps.state_on';
-    }
-    return stop.value === false ? 'generate.sweeps.state_off' : null;
+    return { value: stop.prompt_fragment || this.valueTextOf(stop) };
   }
 
   public expand(): void {
@@ -570,11 +637,17 @@ export class GsSweepScrubComponent {
     this.variantWhy.update((open) => !open);
   }
 
-  /** Swap between the two readings of a parameter, holding the slider position. */
+  /**
+   * Swap between the two readings of a parameter, holding the slider position.
+   * The full-size view holds its position too rather than closing: the toggle is
+   * offered inside it, and a swap that threw the reader back to the page would
+   * be answering the comparison by ending it.
+   */
   public useVariant(on: boolean): void {
     this.variant.set(on);
     this.loaded.set(false);
-    this.zoom.set(null);
+    const last = this.lastIndex();
+    this.zoom.update((at) => (at === null ? null : Math.min(at, last)));
   }
 
   public openZoom(stopIndex: number, trigger: number): void {
@@ -596,8 +669,10 @@ export class GsSweepScrubComponent {
   }
 
   /**
-   * Escape closes. Tab is held inside the layer by hand: the panel carries one
-   * control, so keeping focus on it is the whole trap.
+   * Escape closes, the arrows step between stops, and Tab is held inside the
+   * layer by hand: the panel is the scrubber now, so the trap has to cycle its
+   * controls rather than parking focus on the way out. Arrows pressed on the
+   * slider itself are the slider's own, and reach here already answered.
    */
   public onViewerKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
@@ -607,8 +682,65 @@ export class GsSweepScrubComponent {
     }
     if (event.key === 'Tab') {
       event.preventDefault();
-      this.zoomClose()?.nativeElement.focus();
+      this.cycleViewerFocus(event.shiftKey);
+      return;
     }
+    const step = VIEWER_STEPS[event.key];
+    if (step === undefined || event.target instanceof HTMLInputElement) {
+      return;
+    }
+    event.preventDefault();
+    this.stepZoom(step);
+  }
+
+  /** Move the full-size view one stop along, and the strip under it with it. */
+  public stepZoom(delta: number): void {
+    const at = this.zoom();
+    if (at === null) {
+      return;
+    }
+    this.moveZoom(at + delta);
+  }
+
+  public onZoomScrub(event: Event): void {
+    const next = Number((event.target as HTMLInputElement).value);
+    if (!Number.isNaN(next)) {
+      this.moveZoom(next);
+    }
+  }
+
+  /**
+   * Where the enlarged view is, and where the strip behind it is: closing on a
+   * stop the reader scrubbed to and finding the page still on the old one would
+   * undo the comparison they just made.
+   */
+  private moveZoom(to: number): void {
+    const at = Math.min(Math.max(to, 0), this.lastIndex());
+    this.zoom.set(at);
+    this.cursor.set(at);
+    this.prefetchNeighbours();
+  }
+
+  /** Tab and Shift+Tab, around whatever controls the layer currently carries. */
+  private cycleViewerFocus(backwards: boolean): void {
+    const panel = this.zoomPanel()?.nativeElement;
+    if (!panel) {
+      return;
+    }
+    const stops = Array.from(
+      panel.querySelectorAll<HTMLElement>(VIEWER_FOCUSABLE),
+    );
+    if (stops.length === 0) {
+      return;
+    }
+    const at = stops.indexOf(document.activeElement as HTMLElement);
+    const next =
+      at === -1
+        ? backwards
+          ? stops.length - 1
+          : 0
+        : (at + (backwards ? -1 : 1) + stops.length) % stops.length;
+    stops[next].focus();
   }
 
   public onFrameLoad(): void {

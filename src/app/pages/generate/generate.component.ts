@@ -86,6 +86,11 @@ import {
   MetaApplyMode,
 } from './image-meta-panel/image-meta-panel.component';
 import { SECTION_IDENTITIES } from './section-identity';
+import {
+  RequestWarning,
+  evaluateRequestLint,
+  warningsInSection,
+} from './request-lint';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -292,6 +297,34 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       ? null
       : this.modelReference.requirementsFor(model);
   });
+
+  /**
+   * Everything the request as it stands would earn a warning for. Evaluated
+   * once, here, because it spans the whole request: the model's recommendations,
+   * the resolution notes and the feature-compatibility table all read fields
+   * that live in different cards. The count beside Generate, the popover and
+   * each card's inline line are three views of this one list.
+   *
+   * The value linted is the one that would actually be submitted, so simple
+   * mode is linted against the defaults it sends rather than whatever an
+   * earlier advanced session left in the hidden controls.
+   */
+  public readonly lintWarnings = computed<readonly RequestWarning[]>(() => {
+    const raw = this.formValue();
+    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    const state = this.sourceState();
+    return evaluateRequestLint({
+      value,
+      baseline: this.modelBaseline(),
+      requirements: this.modelRequirements(),
+      hasSourceImage: state.sourceBlob !== null,
+    });
+  });
+
+  /** The source section's share of {@link lintWarnings}, for its inline lines. */
+  public readonly sourceLintWarnings = computed(() =>
+    warningsInSection(this.lintWarnings(), 'source'),
+  );
 
   /** Monotonic guard so a slow estimate cannot overwrite a newer one. */
   private estimateSeq = 0;

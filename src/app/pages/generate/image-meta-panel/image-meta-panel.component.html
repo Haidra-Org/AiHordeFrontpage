@@ -70,7 +70,19 @@
                 >*</span
               >
             }
-            <span class="gs-meta-key">{{ row.labelKey | transloco }}</span>
+            <!-- The same reading as a setting chip, at the density this panel
+                 works at: the mark says which card the field lives on, and the
+                 value is the studio's numeric face. A chip apiece would be two
+                 dozen pills in a column, so the row wears the grammar instead
+                 of the whole token. -->
+            <span class="gs-meta-key" [class]="row.identity?.className ?? ''">
+              @if (row.identity; as identity) {
+                <span class="gs-sec-chip gs-sec-chip--sm" aria-hidden="true"
+                  ><app-icon [name]="identity.icon"
+                /></span>
+              }
+              {{ row.labelKey | transloco }}
+            </span>
             <span class="gs-meta-val">{{ row.value }}</span>
           </label>
         }

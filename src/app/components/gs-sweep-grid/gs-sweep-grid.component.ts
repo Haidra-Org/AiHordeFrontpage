@@ -12,6 +12,8 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
+import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
+import { settingProseLabelKey } from '../../pages/generate/setting-vocabulary';
 import {
   SweepLibraryService,
   SweepStop,
@@ -32,54 +34,71 @@ import {
  * Opened, it is the enlarged layer directly, on the same viewer grammar the
  * scrubber's full-size frame uses. Cells are reached with the arrow keys and
  * open to their own full-size look; Escape steps back out of a cell, then out
- * of the plate.
+ * of the plate. A page about one of the two settings lays the same plate out on
+ * the page instead, through `startExpanded`, and drops the parts of the layer
+ * that only a layer needs.
  */
 @Component({
   selector: 'app-gs-sweep-grid',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, IconComponent, GsSettingChipComponent],
   template: `
     @if (strip(); as plate) {
-      <div class="gs-sweep">
-        <button
-          type="button"
-          class="gs-sweep-grid-offer"
-          [attr.aria-expanded]="opened()"
-          (click)="open()"
-        >
-          <span class="gs-sweep-offer-label">
-            {{ 'generate.sweeps.grid_expand' | transloco }}
-          </span>
-        </button>
+      <!-- The two settings the plate is of, named as the panel names them, so
+           the offer says which pair of numbers is about to be argued about. -->
+      @let rowsName = rowsLabelKey() | transloco;
+      @let columnsName = columnsLabelKey() | transloco;
 
-        @if (opened()) {
+      <div class="gs-sweep">
+        @if (!inline()) {
+          <button
+            type="button"
+            class="gs-sweep-grid-offer"
+            [attr.aria-expanded]="opened()"
+            (click)="open()"
+          >
+            <span class="gs-sweep-offer-label">
+              {{
+                'generate.sweeps.grid_expand'
+                  | transloco: { rows: rowsName, columns: columnsName }
+              }}
+            </span>
+          </button>
+        }
+
+        @if (opened() || inline()) {
           <div
             class="gs-sweep-viewer"
-            tabindex="0"
+            [class.gs-sweep-viewer--inline]="inline()"
+            [attr.tabindex]="inline() ? null : 0"
             (click)="onBackdrop($event)"
             (keydown.escape)="close()"
           >
             <div
               #panel
               class="gs-sweep-viewer-body gs-sweep-grid-body"
-              role="dialog"
-              aria-modal="true"
-              tabindex="-1"
-              [attr.aria-label]="'generate.sweeps.grid_title' | transloco"
+              [attr.role]="inline() ? null : 'dialog'"
+              [attr.aria-modal]="inline() ? null : 'true'"
+              [attr.tabindex]="inline() ? null : -1"
+              [attr.aria-label]="
+                inline() ? null : ('generate.sweeps.grid_title' | transloco)
+              "
               (keydown)="onKeydown($event)"
             >
               <div class="gs-sweep-viewer-top">
                 <span class="gs-sweep-viewer-name">
                   {{ 'generate.sweeps.grid_title' | transloco }}
                 </span>
-                <button
-                  #closeButton
-                  type="button"
-                  class="gs-sweep-viewer-x"
-                  [attr.aria-label]="'generate.sweeps.grid_close' | transloco"
-                  (click)="close()"
-                >
-                  <app-icon name="x-mark" class="gs-ico-sm" />
-                </button>
+                @if (!inline()) {
+                  <button
+                    #closeButton
+                    type="button"
+                    class="gs-sweep-viewer-x"
+                    [attr.aria-label]="'generate.sweeps.grid_close' | transloco"
+                    (click)="close()"
+                  >
+                    <app-icon name="x-mark" class="gs-ico-sm" />
+                  </button>
+                }
               </div>
 
               @if (cell(); as shown) {
@@ -140,17 +159,26 @@ import {
                     </caption>
                     <thead>
                       <tr>
-                        <td class="gs-sweep-plate-corner"></td>
+                        <!-- The corner is the one cell that can say which way
+                             round the plate is read, and the only place the two
+                             settings appear together without a value. -->
+                        <td class="gs-sweep-plate-corner">
+                          {{
+                            'generate.sweeps.grid_corner'
+                              | transloco
+                                : { rows: rowsName, columns: columnsName }
+                          }}
+                        </td>
                         @for (
                           column of plate.grid!.columns.values;
                           track $index
                         ) {
                           <th scope="col" class="gs-sweep-plate-head">
-                            @if (stateKey(column); as key) {
-                              {{ key | transloco }}
-                            } @else {
-                              {{ column }}
-                            }
+                            <app-gs-setting-chip
+                              [glyph]="false"
+                              [settingId]="plate.grid!.columns.parameter"
+                              [value]="column"
+                            />
                           </th>
                         }
                       </tr>
@@ -163,11 +191,11 @@ import {
                       ) {
                         <tr>
                           <th scope="row" class="gs-sweep-plate-head">
-                            @if (stateKey(row); as key) {
-                              {{ key | transloco }}
-                            } @else {
-                              {{ row }}
-                            }
+                            <app-gs-setting-chip
+                              [glyph]="false"
+                              [settingId]="plate.grid!.rows.parameter"
+                              [value]="row"
+                            />
                           </th>
                           @for (
                             column of plate.grid!.columns.values;
@@ -224,6 +252,14 @@ export class GsSweepGridComponent {
   public readonly modelSlug = input<string | undefined>(undefined);
   /** Narrow the plate to one scene. */
   public readonly sceneId = input<string | undefined>(undefined);
+  /**
+   * Lay the plate out on the page rather than behind an offer. A page about one
+   * setting is where a reader has come to look at pictures of it, so the plate
+   * is part of the page: it keeps the same chassis and the same cell view, and
+   * drops the parts that only a layer over the page needs, which is the way out
+   * of it and the focus it would have taken.
+   */
+  public readonly startExpanded = input(false);
 
   private readonly isOpen = signal(false);
   private readonly cursor = signal<number | null>(null);
@@ -233,8 +269,18 @@ export class GsSweepGridComponent {
   public readonly cellMoves = CELL_MOVES;
 
   public readonly opened = this.isOpen.asReadonly();
+  /** Whether the plate is part of the page rather than a layer over it. */
+  public readonly inline = computed(() => this.startExpanded());
   /** Which cell the arrow keys are on, or null before they have been used. */
   public readonly at = this.cursor.asReadonly();
+
+  /** What the panel calls each axis, for the offer and the plate's corner. */
+  public readonly rowsLabelKey = computed(() =>
+    settingProseLabelKey(this.strip()?.grid?.rows.parameter ?? ''),
+  );
+  public readonly columnsLabelKey = computed(() =>
+    settingProseLabelKey(this.strip()?.grid?.columns.parameter ?? ''),
+  );
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly closeButton =
@@ -274,7 +320,9 @@ export class GsSweepGridComponent {
 
     afterRenderEffect(() => {
       const panel = this.panel()?.nativeElement ?? null;
-      if (panel && panel !== this.focusedPanel) {
+      // A plate laid out on the page is part of the page, and taking focus on
+      // arrival would move a reader who never asked to be moved.
+      if (panel && panel !== this.focusedPanel && !this.inline()) {
         panel.focus();
       }
       this.focusedPanel = panel;
@@ -295,14 +343,6 @@ export class GsSweepGridComponent {
     return this.sweeps.imageUrl(stop);
   }
 
-  /** Axis values that are flags read as switch positions, not as `true`. */
-  public stateKey(value: string | number | boolean): string | null {
-    if (value === true) {
-      return 'generate.sweeps.state_on';
-    }
-    return value === false ? 'generate.sweeps.state_off' : null;
-  }
-
   /** The frame at one row and column, the plate being laid out row by row. */
   public stopAt(row: number, column: number): SweepStop | null {
     return this.strip()?.stops[row * this.columnCount() + column] ?? null;
@@ -312,7 +352,11 @@ export class GsSweepGridComponent {
     this.isOpen.set(true);
   }
 
+  /** Fold the plate away. There is nothing to fold away when it is the page. */
   public close(): void {
+    if (this.inline()) {
+      return;
+    }
     this.isOpen.set(false);
     this.zoomed.set(false);
     this.cursor.set(null);
@@ -353,7 +397,9 @@ export class GsSweepGridComponent {
       }
       return;
     }
-    if (event.key === 'Tab') {
+    // Tab is only held in when there is a layer to hold it in; on the page the
+    // plate is one more thing to tab past.
+    if (event.key === 'Tab' && !this.inline()) {
       event.preventDefault();
       this.closeButton()?.nativeElement.focus();
       return;

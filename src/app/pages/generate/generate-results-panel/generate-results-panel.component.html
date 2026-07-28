@@ -906,12 +906,12 @@
           }
         </div>
         @if (view.model || view.seed) {
-          <div class="gs-viewer-caption gs-mono">
+          <div class="gs-viewer-caption">
             @if (view.model) {
-              {{ view.model }}
+              <app-gs-setting-chip settingId="model" [value]="view.model" />
             }
             @if (view.seed) {
-              · {{ "generate.results.seed" | transloco: { seed: view.seed } }}
+              <app-gs-setting-chip settingId="seed" [value]="view.seed" />
             }
           </div>
         }

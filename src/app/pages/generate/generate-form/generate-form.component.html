@@ -99,6 +99,18 @@
           </div>
         }
       </div>
+      <!-- Quiet by design: it undoes a session's worth of choices, so it sits
+           with the other header tools rather than beside anything it clears,
+           and the toast's undo stands in for a confirmation. -->
+      <button
+        type="button"
+        class="gs-mini-btn gs-reset-btn"
+        (click)="resetSettings()"
+        [attr.aria-label]="'generate.form.reset' | transloco"
+        [title]="'generate.form.reset_title' | transloco"
+      >
+        <app-icon name="refresh-alt" class="gs-ico-sm" />
+      </button>
       <button
         type="button"
         class="gs-mini-btn"
@@ -1291,15 +1303,28 @@
                 [placeholder]="'generate.form.qr_placeholder' | transloco"
                 aria-describedby="generate-qr-hint"
               />
-              @if (qrAllowed()) {
-                <p id="generate-qr-hint" class="gs-sublabel mt-1.5">
-                  {{ "generate.form.qr_hint" | transloco }}
-                </p>
-              } @else {
-                <p id="generate-qr-hint" class="gs-warn mt-1.5">
-                  {{ "generate.form.qr_unsupported" | transloco }}
-                </p>
-              }
+              <!-- The standing note beside the disabled input stands down once
+                   text is typed, because the compatibility rule then renders the
+                   same sentence below from the rule itself. Both live under the
+                   one id the input is described by, so exactly one note is ever
+                   announced with it. -->
+              <div id="generate-qr-hint">
+                @if (qrAllowed()) {
+                  <p class="gs-sublabel mt-1.5">
+                    {{ "generate.form.qr_hint" | transloco }}
+                  </p>
+                } @else if (!hasWarning("qr_code_baseline")) {
+                  <p class="gs-warn mt-1.5">
+                    {{ "generate.form.qr_unsupported" | transloco }}
+                  </p>
+                }
+                <ng-container
+                  *ngTemplateOutlet="
+                    lintLines;
+                    context: { warnings: warningsFor('workflows') }
+                  "
+                />
+              </div>
               @if (qrBatchNoteVisible()) {
                 <p class="gs-sublabel mt-1.5">
                   {{ "generate.form.qr_batch_note" | transloco }}
@@ -1351,6 +1376,53 @@
           }}
         </span>
       </div>
+      <!-- The request's warnings, beside the button rather than on it: the
+           button must stay one unambiguous action, and nothing here ever stops
+           it. Absent entirely when the request earns none. -->
+      @if (lintWarnings().length > 0) {
+        <div class="gs-lint" #lintContainer>
+          <button
+            #lintBtn
+            type="button"
+            class="gs-lint-btn"
+            (click)="toggleLint()"
+            [attr.aria-expanded]="lintOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="
+              'generate.lint.indicator_label'
+                | transloco: { count: lintWarnings().length }
+            "
+            [title]="
+              'generate.lint.indicator_label'
+                | transloco: { count: lintWarnings().length }
+            "
+          >
+            <app-icon name="warning-triangle" class="gs-ico-sm" />
+            <span class="gs-lint-count" aria-hidden="true">{{
+              lintWarnings().length
+            }}</span>
+          </button>
+          @if (lintOpen()) {
+            <div
+              class="gs-lint-pop"
+              role="dialog"
+              [attr.aria-label]="'generate.lint.popover_title' | transloco"
+            >
+              <p class="gs-lint-note">
+                {{ "generate.lint.horde_decides" | transloco }}
+              </p>
+              <ul class="gs-lint-list">
+                @for (warning of lintWarnings(); track warning.id) {
+                  <li class="gs-lint-item gs-sec--{{ warning.section }}">
+                    <app-icon name="warning-triangle" class="gs-ico-sm" />
+                    <span>{{ warning.key | transloco: warning.params }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+      }
     </div>
     <button
       type="submit"
@@ -1421,6 +1493,18 @@
         <app-icon name="warning-triangle" class="gs-ico-sm" />
       }
       {{ hint.key | transloco: hint.params }}
+    </p>
+  }
+</ng-template>
+
+<!-- One card's share of the request's warnings, in the same line grammar the
+     model-reference advice uses. The objects come from the shared lint table, so
+     a card and the count beside Generate can never disagree. -->
+<ng-template #lintLines let-warnings="warnings">
+  @for (warning of warnings; track warning.id) {
+    <p class="gs-req gs-req--warn">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ warning.key | transloco: warning.params }}
     </p>
   }
 </ng-template>

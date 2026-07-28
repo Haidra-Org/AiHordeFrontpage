@@ -22,6 +22,8 @@ import {
   requestToFormValue,
 } from '../generate-form.model';
 import { ImageMetaProvenance } from '../image-metadata';
+import { SECTION_IDENTITIES, SectionIdentity } from '../section-identity';
+import { settingSection } from '../setting-vocabulary';
 
 /** How unchecked parameters are treated when the selection is applied. */
 export type MetaApplyMode = 'replace' | 'overlay';
@@ -39,12 +41,32 @@ interface MetaRow {
   labelKey: string;
   value: string;
   keys: readonly (keyof GenerateFormValue)[];
+  /** The panel card the field lives on, or null where it lives on none. */
+  identity: SectionIdentity | null;
 }
+
+/** A row as it is written out, before the vocabulary says where its field is. */
+type MetaRowSeed = Omit<MetaRow, 'identity'>;
 
 interface MetaGroup {
   id: string;
   titleKey: string;
   rows: MetaRow[];
+}
+
+/**
+ * Put each row on the card its field belongs to. Row ids are the studio's own
+ * setting ids, so the vocabulary answers for them directly; a row it has no
+ * answer for takes no mark rather than a neutral one.
+ */
+function placed(rows: MetaRowSeed[]): MetaRow[] {
+  return rows.map((row) => {
+    const section = settingSection(row.id);
+    return {
+      ...row,
+      identity: section ? SECTION_IDENTITIES[section] : null,
+    };
+  });
 }
 
 /** A read-only provenance row: reported by the horde, never applicable. */
@@ -133,7 +155,7 @@ export class ImageMetaPanelComponent {
     const off = t('generate.results.meta_off');
     const label = (id: string): string => `generate.results.meta_row_${id}`;
 
-    const prompt: MetaRow[] = [
+    const prompt: MetaRowSeed[] = [
       {
         id: 'prompt',
         labelKey: label('prompt'),
@@ -150,7 +172,7 @@ export class ImageMetaPanelComponent {
       });
     }
 
-    const sampling: MetaRow[] = [
+    const sampling: MetaRowSeed[] = [
       {
         id: 'model',
         labelKey: label('model'),
@@ -242,17 +264,17 @@ export class ImageMetaPanelComponent {
       {
         id: 'prompt',
         titleKey: 'generate.results.meta_group_prompt',
-        rows: prompt,
+        rows: placed(prompt),
       },
       {
         id: 'sampling',
         titleKey: 'generate.results.meta_group_sampling',
-        rows: sampling,
+        rows: placed(sampling),
       },
       {
         id: 'size',
         titleKey: 'generate.results.meta_group_size',
-        rows: [
+        rows: placed([
           {
             // Width and height are one row: nobody wants half a resolution.
             id: 'size',
@@ -260,7 +282,7 @@ export class ImageMetaPanelComponent {
             value: `${value.width} × ${value.height}`,
             keys: ['width', 'height'],
           },
-        ],
+        ]),
       },
     ];
   });

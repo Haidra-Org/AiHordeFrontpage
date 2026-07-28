@@ -13,6 +13,8 @@ import {
   StyleForcedParams,
 } from '../../../services/horde-styles.service';
 import type { ModelRequirements } from '../../../services/model-reference.service';
+import type { RequestWarning } from '../request-lint';
+import { ToastService } from '../../../services/toast.service';
 
 const FORCED: StyleForcedParams = {
   model: 'Flux.1-Schnell fp8',
@@ -618,5 +620,147 @@ describe('GenerateFormComponent model recommendations', () => {
 
     form.controls.hires_fix.setValue(true);
     expect(component.hiresHint()).toBeNull();
+  });
+});
+
+describe('GenerateFormComponent reset', () => {
+  /** A form carrying a session's worth of choices, in advanced img2img. */
+  async function createDirty(): Promise<{
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+    toast: ToastService;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [GenerateFormComponent],
+    })
+      .overrideComponent(GenerateFormComponent, { set: { template: '' } })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox in the snow',
+      negativePrompt: 'blurry',
+      sourceMode: 'img2img',
+      styleName: 'Cinematic',
+      styleDetach: { style: 'Cinematic', sections: ['sampling'] },
+      model: 'my model',
+      steps: 40,
+      cfg_scale: 12,
+      width: 1216,
+      height: 832,
+      hires_fix: true,
+      tiling: true,
+      post_processing: ['GFPGAN'],
+      loras: [{ name: 'detail', model: 1, clip: 1 }],
+      tis: [{ name: 'embedding', strength: 1 }],
+      qrText: 'https://aihorde.net',
+      workers: ['worker-a'],
+      webhook: 'https://example.invalid/hook',
+      n: 4,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.detectChanges();
+    return {
+      component: fixture.componentInstance,
+      form,
+      toast: TestBed.inject(ToastService),
+    };
+  }
+
+  it('puts every setting back to its default', async () => {
+    const { component, form } = await createDirty();
+
+    component.resetSettings();
+
+    const value = form.getRawValue();
+    expect(value.styleName).toBe('');
+    expect(value.styleDetach).toEqual({ style: '', sections: [] });
+    expect(value.model).toBe('');
+    expect(value.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+    expect(value.cfg_scale).toBe(DEFAULT_GENERATE_FORM_VALUE.cfg_scale);
+    expect(value.width).toBe(DEFAULT_GENERATE_FORM_VALUE.width);
+    expect(value.hires_fix).toBe(false);
+    expect(value.tiling).toBe(false);
+    expect(value.post_processing).toEqual([]);
+    expect(value.loras).toEqual([]);
+    expect(value.tis).toEqual([]);
+    expect(value.qrText).toBe('');
+    expect(value.workers).toEqual([]);
+    expect(value.webhook).toBe('');
+    expect(value.n).toBe(DEFAULT_GENERATE_FORM_VALUE.n);
+  });
+
+  it('keeps the prompts, the detail level and the attached source mode', async () => {
+    const { component, form } = await createDirty();
+
+    component.resetSettings();
+
+    const value = form.getRawValue();
+    expect(value.prompt).toBe('a fox in the snow');
+    expect(value.negativePrompt).toBe('blurry');
+    expect(value.mode).toBe('advanced');
+    expect(value.sourceMode).toBe('img2img');
+  });
+
+  it('offers an undo that restores exactly what was there', async () => {
+    const { component, form, toast } = await createDirty();
+    const before = form.getRawValue();
+
+    component.resetSettings();
+    expect(form.getRawValue()).not.toEqual(before);
+
+    const [entry] = toast.toasts();
+    expect(entry.message).toBe('generate.form.reset_done');
+    expect(entry.action?.label).toBe('generate.form.reset_undo');
+    entry.action?.run();
+
+    expect(form.getRawValue()).toEqual(before);
+  });
+});
+
+describe('GenerateFormComponent request warnings', () => {
+  const WARNINGS: RequestWarning[] = [
+    {
+      id: 'controlnet_baseline',
+      section: 'source',
+      key: 'generate.lint.controlnet_baseline',
+      params: {},
+    },
+    {
+      id: 'qr_code_baseline',
+      section: 'workflows',
+      key: 'generate.form.qr_unsupported',
+      params: {},
+    },
+  ];
+
+  it('hands each card only its own warnings, and answers for a named rule', async () => {
+    const { fixture, component } = await createComponent(null);
+    fixture.componentRef.setInput('lintWarnings', WARNINGS);
+    fixture.detectChanges();
+
+    expect(component.warningsFor('source').map((w) => w.id)).toEqual([
+      'controlnet_baseline',
+    ]);
+    expect(component.warningsFor('workflows').map((w) => w.id)).toEqual([
+      'qr_code_baseline',
+    ]);
+    expect(component.warningsFor('sampling')).toEqual([]);
+    expect(component.hasWarning('qr_code_baseline')).toBe(true);
+    expect(component.hasWarning('remix_baseline')).toBe(false);
+  });
+
+  it('closes the popover on Escape', async () => {
+    const { fixture, component } = await createComponent(null);
+    fixture.componentRef.setInput('lintWarnings', WARNINGS);
+    fixture.detectChanges();
+
+    component.toggleLint();
+    expect(component.lintOpen()).toBe(true);
+
+    component.onDocumentEscape();
+    expect(component.lintOpen()).toBe(false);
   });
 });

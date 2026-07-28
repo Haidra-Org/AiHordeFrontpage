@@ -155,11 +155,14 @@ const TRADEOFF_ICONS = {
       <p class="gs-ref-body">{{ bodyText }}</p>
     }
 
+    <!-- The routed page is about this one setting and has no prose for the
+         pictures to bury, so they are already open on it; the dock and the sheet
+         sit beside something else the reader is doing and keep the offer. -->
     @if (sweepParameter(); as parameter) {
-      <app-gs-sweep-scrub [parameter]="parameter" />
+      <app-gs-sweep-scrub [parameter]="parameter" [startExpanded]="onPage()" />
     }
     @if (sweepGridParameter(); as parameter) {
-      <app-gs-sweep-grid [parameter]="parameter" />
+      <app-gs-sweep-grid [parameter]="parameter" [startExpanded]="onPage()" />
     }
 
     @if (related().length > 0) {
@@ -262,8 +265,21 @@ export class GsParamEntryComponent {
     return section ? SECTION_IDENTITIES[section] : null;
   });
 
-  public readonly identityClass = computed(
-    () => this.identity()?.className ?? '',
+  /** Whether this is the reference itself rather than a copy of it beside something. */
+  public readonly onPage = computed(() => this.mode() === 'page');
+
+  /**
+   * The hue the entry tints from, plus the mark of being the page rather than a
+   * dock: the page is a wide column, and the figures in it are given a measure
+   * of their own rather than being allowed to run its full width.
+   */
+  public readonly identityClass = computed(() =>
+    [
+      this.identity()?.className ?? '',
+      this.onPage() ? 'gs-ref-entry--page' : '',
+    ]
+      .filter(Boolean)
+      .join(' '),
   );
 
   public readonly titleKey = computed(

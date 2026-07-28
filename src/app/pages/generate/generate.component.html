@@ -30,6 +30,7 @@
       [qrSupported]="qrSupported()"
       [modelBaseline]="modelBaseline()"
       [modelRequirements]="modelRequirements()"
+      [lintWarnings]="lintWarnings()"
       (panelSizeChange)="panelSize.set($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
@@ -40,6 +41,7 @@
         [form]="form"
         [showValidation]="sourceValidationVisible()"
         [remixSupported]="remixSupported()"
+        [lintWarnings]="sourceLintWarnings()"
         (stateChange)="onSourceState($event)"
       />
     </app-generate-form>

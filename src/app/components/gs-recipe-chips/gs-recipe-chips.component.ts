@@ -5,13 +5,8 @@ import {
   input,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import {
-  SECTION_BY_HELP_TOPIC,
-  SECTION_IDENTITIES,
-  SectionId,
-  SectionIdentity,
-} from '../../pages/generate/section-identity';
-import { IconComponent } from '../icon/icon.component';
+import { SettingValue } from '../../pages/generate/setting-vocabulary';
+import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 
 /** The params block of a submitted request, as far as the chips read it. */
 export interface RecipeParams {
@@ -40,35 +35,11 @@ export interface RecipeRequest {
 
 /** One field of the request, ready to render. */
 export interface RecipeChip {
-  /** The field the chip stands for, and what it is tracked and tested by. */
+  /** The setting the chip stands for, in the studio's own vocabulary. */
   id: string;
-  identity: SectionIdentity;
-  labelKey: string;
-  /** The value as it reads, for fields whose value is data rather than a state. */
-  value: string;
-  /** Set instead of `value` where the value is a state the page has words for. */
-  valueKey?: string;
+  /** What the request set it to, in the type the payload carries it in. */
+  value: SettingValue;
 }
-
-/**
- * The panel area each field belongs to. Fields the panel carries a `?` note for
- * are read through the help-topic map, so a chip cannot come to wear a
- * different glyph from the note about the same setting. `model` and `size` have
- * no help topic of their own and name their area directly.
- */
-const FIELD_SECTIONS: Record<string, SectionId> = {
-  model: 'model',
-  size: 'size',
-  steps: SECTION_BY_HELP_TOPIC['steps'],
-  cfg: SECTION_BY_HELP_TOPIC['cfg'],
-  sampler: SECTION_BY_HELP_TOPIC['sampler'],
-  seed: SECTION_BY_HELP_TOPIC['seed'],
-  denoise: SECTION_BY_HELP_TOPIC['denoise'],
-  karras: SECTION_BY_HELP_TOPIC['karras'],
-  post: SECTION_BY_HELP_TOPIC['upscaler'],
-  hires: SECTION_BY_HELP_TOPIC['hires_fix'],
-  batch: SECTION_BY_HELP_TOPIC['batch'],
-};
 
 /** What a request with nothing to say renders, without allocating. */
 const NO_CHIPS: readonly RecipeChip[] = [];
@@ -82,12 +53,13 @@ const NO_CHIPS: readonly RecipeChip[] = [];
  * request below them has to find the same set of settings in both, and a chip
  * for a field the example never set would be the page inventing evidence.
  *
- * Copy lives under `generate.tutorials.recipe_*`, with the rest of the worked
- * examples page this card belongs to.
+ * Reading the request is this component's whole job; what a setting is called
+ * and which card it lives on belongs to the shared vocabulary, and drawing it
+ * belongs to the setting chip.
  */
 @Component({
   selector: 'app-gs-recipe-chips',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, GsSettingChipComponent],
   template: `
     @if (chips().length) {
       <ul
@@ -95,20 +67,8 @@ const NO_CHIPS: readonly RecipeChip[] = [];
         [attr.aria-label]="'generate.tutorials.recipe_label' | transloco"
       >
         @for (chip of chips(); track chip.id + chip.value) {
-          <li class="gs-recipe-chip" [class]="chip.identity.className">
-            <span class="gs-sec-chip" aria-hidden="true"
-              ><app-icon [name]="chip.identity.icon"
-            /></span>
-            <span class="gs-recipe-chip-label">
-              {{ chip.labelKey | transloco }}
-            </span>
-            <span class="gs-recipe-chip-value">
-              @if (chip.valueKey) {
-                {{ chip.valueKey | transloco }}
-              } @else {
-                {{ chip.value }}
-              }
-            </span>
+          <li>
+            <app-gs-setting-chip [settingId]="chip.id" [value]="chip.value" />
           </li>
         }
       </ul>
@@ -130,61 +90,43 @@ export class GsRecipeChipsComponent {
 
     const model = request.models?.[0];
     if (model) {
-      chips.push(chipFor('model', model));
+      chips.push({ id: 'model', value: model });
     }
     if (params.width !== undefined && params.height !== undefined) {
-      chips.push(chipFor('size', `${params.width}×${params.height}`));
+      chips.push({ id: 'size', value: `${params.width}×${params.height}` });
     }
     if (params.steps !== undefined) {
-      chips.push(chipFor('steps', String(params.steps)));
+      chips.push({ id: 'steps', value: params.steps });
     }
     if (params.cfg_scale !== undefined) {
-      chips.push(chipFor('cfg', String(params.cfg_scale)));
+      chips.push({ id: 'cfg', value: params.cfg_scale });
     }
     if (params.sampler_name) {
-      chips.push(chipFor('sampler', params.sampler_name));
+      chips.push({ id: 'sampler', value: params.sampler_name });
     }
     if (params.seed !== undefined && params.seed !== '') {
-      chips.push(chipFor('seed', String(params.seed)));
+      chips.push({ id: 'seed', value: String(params.seed) });
     }
     if (params.denoising_strength !== undefined) {
-      chips.push(chipFor('denoise', String(params.denoising_strength)));
+      chips.push({ id: 'denoise', value: params.denoising_strength });
     }
     // Present rather than true: a request that turned the sigmas off said so,
     // and that is as much a choice as turning them on.
     if (params.karras !== undefined) {
-      chips.push(stateChipFor('karras', params.karras));
+      chips.push({ id: 'karras', value: params.karras });
     }
     if (params.hires_fix !== undefined) {
-      chips.push(stateChipFor('hires', params.hires_fix));
+      chips.push({ id: 'hires', value: params.hires_fix });
     }
     for (const processor of params.post_processing ?? []) {
-      chips.push(chipFor('post', processor));
+      chips.push({ id: 'post', value: processor });
     }
     // One image is what a request that never mentions a batch would have made,
     // so it is only worth a chip once it is more than that.
     if (params.n !== undefined && params.n > 1) {
-      chips.push(chipFor('batch', String(params.n)));
+      chips.push({ id: 'batch', value: params.n });
     }
 
     return chips;
   });
-}
-
-function chipFor(id: string, value: string): RecipeChip {
-  return {
-    id,
-    identity: SECTION_IDENTITIES[FIELD_SECTIONS[id]],
-    labelKey: `generate.tutorials.recipe_${id}`,
-    value,
-  };
-}
-
-function stateChipFor(id: string, on: boolean): RecipeChip {
-  return {
-    ...chipFor(id, ''),
-    valueKey: on
-      ? 'generate.tutorials.recipe_on'
-      : 'generate.tutorials.recipe_off',
-  };
 }
