@@ -131,6 +131,17 @@ export class GenerateLearnHomeComponent {
       });
   }
 
+  /**
+   * The word a door's affordance is read by. A track is started rather than
+   * opened, and the written guide is a page rather than something that runs, so
+   * the two say different things about what pressing them costs.
+   */
+  public goKey(door: UnderstandDoor): string {
+    return door.flow
+      ? 'generate.learn.understand_start'
+      : 'generate.learn.understand_read';
+  }
+
   /** A flow's result image, where it has one. */
   public resultUrl(flow: TutorialFlow): string {
     return flow.result

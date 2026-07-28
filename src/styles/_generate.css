@@ -6274,7 +6274,9 @@
   line-height: 1.6;
 }
 
-/* The empty state's way in, before any result exists to put a toggle beside. */
+/* The empty state's way in, before any result exists to put a toggle beside.
+   Squared with the studio's other controls: the pill no longer says "press
+   me" anywhere in the area. */
 .gen-studio .gs-guide-cta {
   display: inline-flex;
   align-items: center;
@@ -6283,7 +6285,7 @@
   min-height: 34px;
   padding: 7px 14px;
   border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gs-blue-tint);
   color: var(--gs-blue);
   font-size: 12px;
@@ -6332,17 +6334,38 @@
   max-width: 880px;
   margin: 0 auto;
 }
-.gen-studio .gs-tut-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--gs-ink);
+/* The flow is the page's subject, so its name is the page's heading and the
+   header is a masthead rather than a line of prose: the area's hue as a leading
+   bar down the side of it, and a hairline under the whole thing separating the
+   claim from the evidence for it. */
+.gen-studio .gs-tut-head {
+  position: relative;
+  padding: 2px 0 14px 14px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-head::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 15px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--gs-sec, var(--gs-zone));
 }
 .gen-studio .gs-tut-flow-title {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: var(--gs-ink);
+}
+/* The heads inside the dossier, one step under the flow's own name. */
+.gen-studio .gs-tut-head-2 {
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -6368,59 +6391,16 @@
   max-width: 72ch;
 }
 
-/* The flow picker, on the guide's contents rail: one scrolling row, because
-   wrapped it would cost several lines above every example. The bar itself is
-   taken off the rail: on a desktop viewport the row is a hair wider than the
-   column and the reserved bar read as a stray rule under the picker. Wheel and
-   keyboard scrolling are untouched, and the page scrolls the active chip into
-   the window itself, which is what the bar was there to make possible. */
-.gen-studio .gs-tut-rail {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--gs-border-soft);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  scroll-padding-inline: 4px;
+/* The flow picker, on the Learn area's contents rail. It keeps the rail's bar
+   form at every width rather than taking the column form the wide step would
+   otherwise give it: the dossier below already spends both gutters, and a
+   third column of flows beside it would leave neither the walkthrough nor the
+   evidence a readable width. */
+.gen-studio .gs-tut-picker {
+  min-width: 0;
 }
-.gen-studio .gs-tut-rail::-webkit-scrollbar {
-  height: 0;
-}
-.gen-studio .gs-tut-chip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 5px 13px;
-  white-space: nowrap;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--gs-label);
-  border: 1px solid var(--gs-border);
-  border-radius: 999px;
-  background: var(--gs-panel);
-  text-decoration: none;
-}
-.gen-studio .gs-tut-chip:hover {
-  border-color: var(--gs-blue);
-  color: var(--gs-blue);
-  text-decoration: none;
-}
-.gen-studio .gs-tut-chip.gs-tut-chip--on {
-  color: var(--gs-blue);
-  background: var(--gs-blue-tint);
-  border-color: var(--gs-blue-tint-border);
-}
-.dark .gen-studio .gs-tut-chip.gs-tut-chip--on {
-  color: #bfdbfe;
-}
-/* A flow with no example behind it still gets a chip, just a quieter one. */
-.gen-studio .gs-tut-chip.gs-tut-chip--off {
-  border-style: dashed;
-}
+/* The tag a flow with no example behind it is annotated with, here and on the
+   Learn landing shelf. */
 .gen-studio .gs-tut-chip-tag {
   font-size: 10px;
   font-weight: 700;
@@ -6428,15 +6408,121 @@
   text-transform: uppercase;
   color: var(--gs-muted);
 }
+
+/* How much detail the walkthrough goes into, as a line of the dossier: the
+   underline tabs the index rail's bar form already reads as, rather than the
+   alchemy page's panel-wide switch this borrows its markup from. */
 .gen-studio .gs-tut-modes {
+  grid-column: auto;
+  gap: 2px;
   padding: 0;
+  background: none;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-modes .gs-devtab {
+  position: relative;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+.gen-studio .gs-tut-modes .gs-devtab.gs-devtab--on {
+  color: var(--gs-ink);
+  background: none;
+}
+.gen-studio .gs-tut-modes .gs-devtab.gs-devtab--on::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--gs-blue);
 }
 
 .gen-studio .gs-tut-flow {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
+  min-width: 0;
 }
+/* The two panes: how it was made down the reading column, what it was made of
+   beside it. One column below the wide step, in the order it is read. */
+.gen-studio .gs-tut-panes {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+.gen-studio .gs-tut-main,
+.gen-studio .gs-tut-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* The walkthrough as a spine rather than as a list of cards: one hued segment
+   per step, meeting the segments above and below it, so the column of marks is
+   continuous and changes colour where the reader moves to another part of the
+   panel. */
+.gen-studio .gs-tut-spine {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.gen-studio .gs-tut-step {
+  position: relative;
+  min-width: 0;
+  padding: 11px 0 11px 15px;
+}
+.gen-studio .gs-tut-step + .gs-tut-step {
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gs-sec-tint-border, var(--gs-border));
+}
+.gen-studio .gs-tut-step-title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-tut-step-body {
+  margin: 5px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 12.5px;
+  line-height: 1.65;
+  max-width: 66ch;
+}
+
+/* The evidence: the images, the settings read off the request, and what the
+   run cost. A quiet surface of its own, because it is a different kind of
+   claim from the prose beside it. */
+.gen-studio .gs-tut-evidence {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 14px 15px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 12px;
+  background: var(--gs-card);
+}
+
 .gen-studio .gs-tut-card {
   display: flex;
   flex-direction: column;
@@ -6451,24 +6537,48 @@
 }
 
 /* Inputs and result side by side where there is room, stacked where there is
-   not; each image keeps its own aspect and never outgrows the column. */
+   not, and on stages of one height either way: a before and an after read as a
+   pair only if the same picture size means the same thing on both. */
 .gen-studio .gs-tut-shots {
+  /* One cap for every picture in the rail, on the sweep frame's reasoning: a
+     portrait example at column width is taller than the pane it was opened in,
+     and the caption under it would be scrolled off before the picture ended. */
+  --gs-tut-stage: min(34vh, 300px);
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
 .gen-studio .gs-tut-shot {
   margin: 0;
   min-width: 0;
 }
-.gen-studio .gs-tut-img {
+/* The stage is the affordance, so the button around it adds the cursor and the
+   focus ring the image cannot carry itself, and nothing else. */
+.gen-studio .gs-tut-stage {
   display: block;
   width: 100%;
-  max-width: 100%;
-  height: auto;
+  height: var(--gs-tut-stage);
+  padding: 0;
+  overflow: hidden;
   border-radius: 10px;
   border: 1px solid var(--gs-card-border);
   background: var(--gs-field-soft);
+  cursor: zoom-in;
+}
+.gen-studio .gs-tut-stage:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+/* Contained rather than covered: what these pictures are evidence of is what
+   they contain at their edges, so they are letterboxed on the field tone and
+   never trimmed to the stage. */
+.gen-studio .gs-tut-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 9px;
 }
 /* The alpha example has to be seen through: a checkerboard is the only backdrop
    that reads as "nothing here" in both themes. */
@@ -6491,6 +6601,95 @@
   font-size: 11.5px;
   font-weight: 600;
   color: var(--gs-label);
+}
+
+/* The enlarged picture. Its own layer on the sweep viewer's grammar, kept here
+   rather than borrowed from it: that viewer knows about strips and stops, and
+   one evidence picture needs none of it. Bounded the same way, so a portrait
+   example is a whole picture on screen instead of a scrolled one. */
+.gen-studio .gs-tut-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 61;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(3, 5, 10, 0.82);
+}
+.gen-studio .gs-tut-viewer-body {
+  display: flex;
+  flex-direction: column;
+  width: 900px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding-bottom: 14px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  outline: none;
+}
+.gen-studio .gs-tut-viewer-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 16px;
+  border-bottom: 1px solid var(--gs-border-results);
+}
+.gen-studio .gs-tut-viewer-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-tut-viewer-x {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-tut-viewer-x:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tut-viewer-x:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gen-studio .gs-tut-viewer-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 14px 16px 0;
+}
+.gen-studio .gs-tut-viewer-img {
+  min-height: 0;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+/* The claim the rail rests on, set as a footnote to it: quiet enough not to
+   compete with the evidence, attached closely enough to be read as part of it. */
+.gen-studio .gs-tut-evidence-note {
+  margin: 2px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--gs-border-soft);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--gs-muted);
 }
 
 .gen-studio .gs-tut-meta,
@@ -6556,34 +6755,60 @@
 
 /* Wide viewports put what went in and what came out beside the walkthrough
    rather than a screen below it: the walkthrough keeps its reading measure and
-   the evidence takes the gutter that was otherwise dead. Only a flow that has
-   images gets the second column, so a skipped flow keeps the single column it
-   fills. Everything narrower than this is the stacked column, untouched. */
+   the evidence takes the gutter that was otherwise dead, and stays beside the
+   step being read rather than scrolling away from it. Everything narrower than
+   this is the stacked column, in the same order. */
 @media (min-width: 1200px) {
   .gen-studio .gs-tut-inner {
     max-width: 1200px;
   }
-  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) {
+  .gen-studio .gs-tut-panes {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
-    column-gap: 16px;
+    column-gap: 24px;
     align-items: start;
   }
-  /* Header rows span both columns; the walkthrough wrapper and the media card
-     then share one row, so neither column's height opens a gap in the other. */
-  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > * {
-    grid-column: 1 / -1;
+  .gen-studio .gs-tut-evidence {
+    position: sticky;
+    top: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
-  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > .gs-tut-flow-main {
-    grid-column: 1;
+
+  /* The picker holds its bar form here, against the rail's own wide-step
+     rules, which would otherwise stand it up as a third column. */
+  .gen-studio .gs-tut-picker .gs-index-rail {
+    position: static;
+    max-height: none;
+    overflow: visible;
   }
-  .gen-studio .gs-tut-flow:has(> .gs-tut-card--media) > .gs-tut-card--media {
-    grid-column: 2;
+  .gen-studio .gs-tut-picker .gs-index-rail-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--gs-border-soft);
+  }
+  .gen-studio .gs-tut-picker .gs-index-entry {
+    min-height: 44px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .gen-studio .gs-tut-picker .gs-index-entry + .gs-index-entry {
+    border-top: 0;
+    border-left: 1px solid var(--gs-border-soft);
+  }
+  .gen-studio .gs-tut-picker .gs-index-entry::before {
+    left: 6px;
+    right: 6px;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    height: 2px;
   }
 }
 
 @media (pointer: coarse) {
-  .gen-studio .gs-tut-chip {
+  .gen-studio .gs-tut-modes .gs-devtab {
     min-height: 44px;
   }
 }
@@ -7516,8 +7741,7 @@ app-gs-sweep-scrub {
   flex: none;
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
-  padding: 8px 16px;
+  padding: 0 16px;
   background: var(--gs-panel);
   border-bottom: 1px solid var(--gs-border);
   overflow-x: auto;
@@ -7528,40 +7752,75 @@ app-gs-sweep-scrub {
 .gen-studio .gs-hub-nav::-webkit-scrollbar {
   height: 0;
 }
-/* Neutral chips: none of these pages is one of the panel's eight areas, so
-   none of them borrows a section identity's hue. */
+/* The index rail's bar form, one level up: hairline-separated lines under one
+   hairline, and a 2px underline on the page being read. Neutral throughout,
+   because none of these pages is one of the panel's eight areas and borrowing
+   an identity's hue would say it was; the mark takes the studio's own blue,
+   which is what everything unowned here is drawn in. */
 .gen-studio .gs-hub-nav-link {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 5px 13px;
+  gap: 7px;
+  /* The bar form is the one a thumb uses, at every pointer type. */
+  min-height: 44px;
+  padding: 0 12px;
   white-space: nowrap;
   font-size: 12px;
   font-weight: 600;
   color: var(--gs-label);
-  border: 1px solid var(--gs-border);
-  border-radius: 999px;
-  background: var(--gs-field);
+  border: 0;
+  border-radius: 0;
+  background: none;
   text-decoration: none;
 }
+/* Hairlines between entries rather than around them: the subnav is a list, and
+   an outline per line would read as four buttons. */
+.gen-studio .gs-hub-nav-link + .gs-hub-nav-link {
+  border-left: 1px solid var(--gs-border-soft);
+}
 .gen-studio .gs-hub-nav-link:hover {
-  border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-ink-2);
   text-decoration: none;
 }
 .gen-studio .gs-hub-nav-link:focus-visible {
   outline: 2px solid var(--gs-blue);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
-.gen-studio .gs-hub-nav-link--on {
+.gen-studio .gs-hub-nav-link[aria-current] {
+  color: var(--gs-ink);
+}
+/* Drawn on a pseudo-element so nothing shifts as the mark moves between
+   entries. */
+.gen-studio .gs-hub-nav-link::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: transparent;
+}
+.gen-studio .gs-hub-nav-link[aria-current]::before {
+  background: var(--gs-blue);
+}
+.gen-studio app-icon.gs-hub-nav-mark {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--gs-label);
+  opacity: 0.75;
+}
+.gen-studio app-icon.gs-hub-nav-mark svg {
+  width: 14px;
+  height: 14px;
+}
+.gen-studio .gs-hub-nav-link[aria-current] .gs-hub-nav-mark {
   color: var(--gs-blue);
-  background: var(--gs-blue-tint);
-  border-color: var(--gs-blue-tint-border);
-}
-.dark .gen-studio .gs-hub-nav-link--on {
-  color: #bfdbfe;
+  opacity: 1;
 }
 
 /* On mobile the studio scrolls with the page, so the subnav is pinned under
@@ -7571,12 +7830,6 @@ app-gs-sweep-scrub {
     position: sticky;
     top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
     z-index: 4;
-  }
-}
-
-@media (pointer: coarse) {
-  .gen-studio .gs-hub-nav-link {
-    min-height: 44px;
   }
 }
 
@@ -7599,10 +7852,12 @@ app-gs-sweep-scrub {
   margin: 0 auto;
 }
 
-/* The hero door. Its backdrop is a real generated image, so the copy sits on a
-   gradient scrim rather than on the picture: the scrim is what carries the
-   contrast, and it is dark enough at the text edge to hold in both themes
-   whatever the image underneath happens to be. Nothing here moves. */
+/* The hero door, and the Learn area's one display moment. Its backdrop is a
+   real generated image, so the copy sits on a gradient scrim rather than on the
+   picture: the scrim is what carries the contrast, and it is opaque enough
+   under the text to hold whatever the image underneath happens to be. The whole
+   block is dark in both themes, which is why its inks are literal rather than
+   tokens. Nothing here moves. */
 .gen-studio .gs-learn-hero {
   position: relative;
   isolation: isolate;
@@ -7610,7 +7865,7 @@ app-gs-sweep-scrub {
   border-radius: 14px;
   border: 1px solid var(--gs-card-border);
   background: #0b1220;
-  min-height: 260px;
+  min-height: clamp(280px, 34vw, 360px);
   display: flex;
   align-items: flex-end;
 }
@@ -7623,6 +7878,11 @@ app-gs-sweep-scrub {
   object-position: center 30%;
   z-index: -2;
 }
+/* The text sits over the bottom two thirds of the scrim, where it never sees
+   less than 0.9 of #030712. Against the worst case the image can offer (pure
+   white under it) that composites to roughly #1c1f27, which holds #ffffff at
+   about 14:1 and #e2e8f0 at about 12:1. Do not lighten these stops without
+   darkening the inks below in step. */
 .gen-studio .gs-learn-hero::before {
   content: "";
   position: absolute;
@@ -7630,43 +7890,64 @@ app-gs-sweep-scrub {
   z-index: -1;
   background: linear-gradient(
     to top,
-    rgba(3, 7, 18, 0.94) 0%,
-    rgba(3, 7, 18, 0.88) 42%,
-    rgba(3, 7, 18, 0.6) 72%,
-    rgba(3, 7, 18, 0.4) 100%
+    rgba(3, 7, 18, 0.96) 0%,
+    rgba(3, 7, 18, 0.92) 55%,
+    rgba(3, 7, 18, 0.72) 80%,
+    rgba(3, 7, 18, 0.5) 100%
   );
 }
 .gen-studio .gs-learn-hero-text {
   position: relative;
-  padding: 22px 22px 24px;
+  padding: 26px 26px 28px;
   max-width: 62ch;
 }
+/* The area's eyebrow grammar, in the one place it has to be drawn in literal
+   inks: the hairline carries the hue, the word never does. */
+.gen-studio .gs-learn-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+.gen-studio .gs-learn-hero-eyebrow::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(147, 197, 253, 0.5);
+}
 .gen-studio .gs-learn-hero-title {
-  font-size: 24px;
+  font-size: clamp(28px, 4.6vw, 40px);
   font-weight: 800;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   color: #ffffff;
 }
 .gen-studio .gs-learn-hero-sub {
-  margin: 10px 0 0;
-  font-size: 13px;
-  line-height: 1.65;
-  /* Clears AA against the scrim above at this size; do not lighten the scrim
-     without darkening this in step. */
+  margin: 12px 0 0;
+  max-width: 52ch;
+  font-size: 14px;
+  line-height: 1.7;
   color: #e2e8f0;
 }
+/* Squared, like every other control in the studio: the pill is retired as a
+   way of saying "press me". */
 .gen-studio .gs-learn-hero-cta {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin-top: 16px;
-  min-height: 38px;
-  padding: 8px 16px;
+  margin-top: 20px;
+  min-height: 40px;
+  padding: 9px 18px;
   border: 1px solid var(--gs-blue);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gs-blue);
   color: #ffffff;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -7685,39 +7966,80 @@ app-gs-sweep-scrub {
   gap: 14px;
 }
 
-/* A list rather than a single card: the band is meant to grow a door per
-   concept track without changing shape. */
+/* The rail's grammar at reading size: hairline-separated lines, each led by its
+   own bar and glyph, rather than a row of outlined cards. The band is meant to
+   grow a line per concept track without changing shape.
+
+   The hue is the documentation plane's blue rather than a section identity:
+   none of these three is one of the panel's eight areas, and borrowing an
+   identity would say it was. */
 .gen-studio .gs-learn-doors {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--gs-border-soft);
 }
 .gen-studio .gs-learn-door {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 11px;
-  padding: 14px 16px;
-  border: 1px solid var(--gs-card-border);
-  border-radius: 12px;
-  background: var(--gs-card);
+  gap: 6px 12px;
+  min-height: 44px;
+  padding: 14px 4px 14px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--gs-border-soft);
+  border-radius: 0;
+  background: none;
   text-decoration: none;
 }
+/* The leading bar, which is the same device the rail and the follow-along
+   highlight use to say "this line". Quiet until the line is pointed at. */
+.gen-studio .gs-learn-door::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--gs-sec, var(--gs-zone, var(--gs-blue)));
+  opacity: 0.45;
+}
 .gen-studio .gs-learn-door:hover {
-  border-color: var(--gs-blue);
   text-decoration: none;
+}
+.gen-studio .gs-learn-door:hover::before {
+  opacity: 1;
 }
 .gen-studio .gs-learn-door:focus-visible {
   outline: 2px solid var(--gs-blue);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+.gen-studio app-icon.gs-learn-door-mark {
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  color: var(--gs-sec, var(--gs-zone, var(--gs-blue)));
+  opacity: 0.8;
+}
+.gen-studio app-icon.gs-learn-door-mark svg {
+  width: 16px;
+  height: 16px;
+}
+.gen-studio .gs-learn-door:hover .gs-learn-door-mark {
+  opacity: 1;
 }
 .gen-studio .gs-learn-door-text {
   display: flex;
+  flex: 1 1 240px;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
 .gen-studio .gs-learn-door-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -7725,6 +8047,36 @@ app-gs-sweep-scrub {
   font-size: 12px;
   line-height: 1.6;
   color: var(--gs-ink-2);
+  max-width: 62ch;
+}
+/* What pressing the line does, said in words rather than left to the chevron:
+   two of these start something in the studio and one opens a page, and the
+   difference is worth a word before the press. */
+.gen-studio .gs-learn-door-go {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-right: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio app-icon.gs-learn-door-chev {
+  display: inline-flex;
+  flex: none;
+  width: 12px;
+  height: 12px;
+}
+.gen-studio app-icon.gs-learn-door-chev svg {
+  width: 12px;
+  height: 12px;
+}
+.gen-studio .gs-learn-door:hover .gs-learn-door-go {
+  color: var(--gs-blue);
 }
 
 /* The shelf of techniques: each card is its own worked example, led by the
@@ -7763,15 +8115,16 @@ app-gs-sweep-scrub {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 12px 14px 14px;
+  padding: 11px 14px 14px;
   min-width: 0;
 }
+/* The eyebrow already owns the space under itself; the card's own gap is what
+   sets the rest of the stack apart. */
+.gen-studio .gs-home-card-text .gs-learn-eyebrow {
+  margin: 0;
+}
 .gen-studio .gs-home-card-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 7px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -8060,6 +8413,9 @@ app-gs-sweep-scrub {
   padding-top: 16px;
   border-top: 1px solid var(--gs-border);
 }
+/* The leading bar takes the hue of the entry the link leads to and sits on the
+   edge the link travels towards, so a step that changes area is visible before
+   the annotation is read. The hue is graphic only: every word here is ink. */
 .gen-studio .gs-ref-onward {
   display: inline-flex;
   align-items: center;
@@ -8068,6 +8424,7 @@ app-gs-sweep-scrub {
   min-height: 44px;
   padding: 8px 13px;
   border: 1px solid var(--gs-card-border);
+  border-inline-start: 3px solid var(--gs-sec, var(--gs-card-border));
   border-radius: 12px;
   background: var(--gs-card);
   text-decoration: none;
@@ -8075,13 +8432,15 @@ app-gs-sweep-scrub {
 .gen-studio .gs-ref-onward--next {
   justify-content: flex-end;
   text-align: right;
+  border-inline-start: 1px solid var(--gs-card-border);
+  border-inline-end: 3px solid var(--gs-sec, var(--gs-card-border));
 }
 .gen-studio .gs-ref-onward:hover {
-  border-color: var(--gs-blue);
+  border-color: var(--gs-sec, var(--gs-blue));
   text-decoration: none;
 }
 .gen-studio .gs-ref-onward:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
   outline-offset: 2px;
 }
 .gen-studio .gs-ref-onward-text {
@@ -8090,12 +8449,21 @@ app-gs-sweep-scrub {
   gap: 2px;
   min-width: 0;
 }
-.gen-studio .gs-ref-onward-rel {
+.gen-studio .gs-ref-onward-rel,
+.gen-studio .gs-ref-onward-sec {
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gs-muted);
+}
+.gen-studio .gs-ref-onward-sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gen-studio .gs-ref-onward--next .gs-ref-onward-sec {
+  justify-content: flex-end;
 }
 .gen-studio .gs-ref-onward-name {
   font-size: 13px;
@@ -8605,28 +8973,43 @@ html:has(app-gs-sheet) {
   gap: 6px;
   margin: 0 0 12px;
   padding: 0;
+  min-width: 0;
+  max-width: 100%;
   list-style: none;
 }
+/* A value can be a model filename or a ten-digit seed, which is one unbroken
+   token wider than the card carrying it on a phone. The chip wraps internally
+   and breaks the token rather than growing: nothing here is allowed to set the
+   width of the page. */
 .gen-studio .gs-recipe-chip {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  min-width: 0;
+  max-width: 100%;
   padding: 5px 10px;
   border: 1px solid var(--gs-sec-tint-border);
   border-radius: 999px;
   background: var(--gs-card);
   font-size: 11.5px;
   line-height: 1.4;
+  overflow: hidden;
+}
+.gen-studio .gs-recipe-chip-label,
+.gen-studio .gs-recipe-chip-value {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .gen-studio .gs-recipe-chip-label {
   color: var(--gs-ink-2);
   font-weight: 600;
 }
 .gen-studio .gs-recipe-chip-value {
-  min-width: 0;
   color: var(--gs-ink);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  word-break: break-word;
 }
 
 /* The payload under the chips: closed by default, because the chips are the
@@ -8728,7 +9111,7 @@ html:has(app-gs-sheet) {
 }
 
 /* The concept-track doors start a track in the studio rather than routing, so
-   they are buttons standing in a band of links and have to shed the type's own
+   they are buttons standing in a list of links and have to shed the type's own
    defaults to sit level with the one beside them. */
 .gen-studio button.gs-learn-door {
   font: inherit;
@@ -8786,8 +9169,31 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-index-entry + .gs-index-entry {
   border-left: 1px solid var(--gs-border-soft);
 }
+/* The link form is the same line, and says so: no underline of its own, since
+   the rail already draws one under the entry the reader is on. */
+.gen-studio a.gs-index-entry {
+  text-decoration: none;
+}
 .gen-studio .gs-index-entry:hover {
   color: var(--gs-ink-2);
+  text-decoration: none;
+}
+/* An entry offered with something to say about it: the note is set after the
+   name, and the name itself is dropped to the muted ink so the rail reads the
+   difference before the note is. */
+.gen-studio .gs-index-entry-note {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-index-entry--muted .gs-index-entry-label {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-index-entry--muted .gs-index-entry-mark {
+  opacity: 0.5;
 }
 .gen-studio .gs-index-entry:focus-visible {
   outline: 2px solid var(--gs-blue);

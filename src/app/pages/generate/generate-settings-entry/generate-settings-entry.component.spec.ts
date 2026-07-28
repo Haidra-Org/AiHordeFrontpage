@@ -11,7 +11,8 @@ import { describe, expect, it } from 'vitest';
 import { GenerateSettingsEntryComponent } from './generate-settings-entry.component';
 import { GenerateSettingsIndexComponent } from '../generate-settings-index/generate-settings-index.component';
 import { environment } from '../../../../environments/environment';
-import { referenceNeighbours } from '../reference-data';
+import { REFERENCE_INDEX, referenceNeighbours } from '../reference-data';
+import { SECTION_IDENTITIES } from '../section-identity';
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
@@ -117,16 +118,52 @@ describe('GenerateSettingsEntryComponent', () => {
       `/generate/learn/settings/${previous}`,
       `/generate/learn/settings/${next}`,
     ]);
+    // Neighbours in the area being read are named, not annotated.
+    expect(all('.gs-ref-onward-sec')).toHaveLength(0);
+    for (const link of all<HTMLAnchorElement>('.gs-ref-onward')) {
+      expect(link.classList).toContain(
+        SECTION_IDENTITIES['sampling'].className,
+      );
+    }
   });
 
-  it('offers no way on where the area holds one setting', async () => {
-    await setUp('loras');
+  it('names the area a link crosses into, and takes its hue', async () => {
+    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
+    // The last entry of the first area: its way on leaves that area.
+    const edge = REFERENCE_INDEX[0].ids[REFERENCE_INDEX[0].ids.length - 1];
+    const next = sequence[sequence.indexOf(edge) + 1];
+    const crossed = REFERENCE_INDEX[1].section;
 
-    expect(referenceNeighbours('loras')).toEqual({
-      previous: null,
-      next: null,
-    });
-    expect(all('.gs-ref-onward')).toHaveLength(0);
+    await setUp(edge);
+
+    const link = find<HTMLAnchorElement>('.gs-ref-onward--next');
+    expect(link?.getAttribute('href')).toBe(`/generate/learn/settings/${next}`);
+    expect(link?.classList).toContain(SECTION_IDENTITIES[crossed].className);
+    expect(
+      link?.querySelector('.gs-ref-onward-sec')?.textContent?.trim(),
+    ).toContain(translations[SECTION_IDENTITIES[crossed].labelKey]);
+    expect(
+      link?.querySelector('.gs-ref-onward-name')?.textContent?.trim(),
+    ).toBe(translations[`generate.help.${next}.title`]);
+  });
+
+  it('has no way back from the first setting in the reference', async () => {
+    const first = REFERENCE_INDEX[0].ids[0];
+    await setUp(first);
+
+    expect(referenceNeighbours(first).previous).toBeNull();
+    expect(all('.gs-ref-onward')).toHaveLength(1);
+    expect(find('.gs-ref-onward--next')).not.toBeNull();
+  });
+
+  it('has no way on from the last setting in the reference', async () => {
+    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
+    const last = sequence[sequence.length - 1];
+    await setUp(last);
+
+    expect(referenceNeighbours(last).next).toBeNull();
+    expect(all('.gs-ref-onward')).toHaveLength(1);
+    expect(find('.gs-ref-onward--next')).toBeNull();
   });
 
   it('sends a URL naming no setting back to the index', async () => {

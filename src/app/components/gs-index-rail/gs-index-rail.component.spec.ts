@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -208,5 +209,113 @@ describe('GsIndexRailComponent', () => {
     fixture.destroy();
 
     expect(instance.disconnected).toBe(true);
+  });
+});
+
+/** The link form: entries that route, with the page saying which one is on. */
+const LINK_ENTRIES: readonly GsIndexRailEntry[] = [
+  {
+    id: 'txt2img',
+    labelKey: 'generate.tutorials.flows.txt2img.task_name',
+    icon: 'sec-prompt',
+    hueClass: 'gs-sec--prompt',
+    link: ['/generate/learn/tutorials', 'txt2img'],
+  },
+  {
+    id: 'remix',
+    labelKey: 'generate.tutorials.flows.remix.task_name',
+    hueClass: 'gs-sec--source',
+    link: ['/generate/learn/tutorials', 'remix'],
+    noteKey: 'generate.tutorials.unavailable_tag',
+  },
+];
+
+@Component({
+  imports: [GsIndexRailComponent],
+  template: `
+    <app-gs-index-rail [entries]="entries" [currentId]="currentId()" />
+  `,
+})
+class LinkHostComponent {
+  public readonly entries = LINK_ENTRIES;
+  public readonly currentId = signal<string | null>(null);
+}
+
+describe('GsIndexRailComponent (link mode)', () => {
+  let fixture: ComponentFixture<LinkHostComponent>;
+
+  const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const entries = (): HTMLAnchorElement[] =>
+    Array.from(el().querySelectorAll<HTMLAnchorElement>('.gs-index-entry'));
+
+  beforeEach(async () => {
+    FakeIntersectionObserver.last = null;
+    Element.prototype.scrollIntoView = vi.fn();
+    globalThis.IntersectionObserver =
+      FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+    await TestBed.configureTestingModule({
+      imports: [
+        LinkHostComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(LinkHostComponent);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('offers each entry as a link to where it goes', () => {
+    const lines = entries();
+
+    expect(lines.map((line) => line.tagName)).toEqual(['A', 'A']);
+    expect(lines.map((line) => line.getAttribute('href'))).toEqual([
+      '/generate/learn/tutorials/txt2img',
+      '/generate/learn/tutorials/remix',
+    ]);
+    expect(lines[0].classList).toContain('gs-sec--prompt');
+    expect(
+      lines[0].querySelector('app-icon.gs-index-entry-mark'),
+    ).not.toBeNull();
+  });
+
+  it('marks the entry the page says it is on, and guesses at none', () => {
+    expect(entries().map((line) => line.getAttribute('aria-current'))).toEqual([
+      null,
+      null,
+    ]);
+
+    fixture.componentInstance.currentId.set('remix');
+    fixture.detectChanges();
+
+    expect(entries().map((line) => line.getAttribute('aria-current'))).toEqual([
+      null,
+      'page',
+    ]);
+  });
+
+  it('mutes and annotates an entry that comes with a caveat', () => {
+    const [plain, noted] = entries();
+
+    expect(plain.classList).not.toContain('gs-index-entry--muted');
+    expect(plain.querySelector('.gs-index-entry-note')).toBeNull();
+    expect(noted.classList).toContain('gs-index-entry--muted');
+    expect(
+      noted.querySelector('.gs-index-entry-note')?.textContent?.trim(),
+    ).toBe(translations['generate.tutorials.unavailable_tag']);
+    // Still a way in: what is missing is worth reading before it is clicked.
+    expect(noted.getAttribute('href')).toBe('/generate/learn/tutorials/remix');
+  });
+
+  it('watches nothing, having no section on the page to follow', () => {
+    expect(FakeIntersectionObserver.last?.observed ?? []).toHaveLength(0);
   });
 });

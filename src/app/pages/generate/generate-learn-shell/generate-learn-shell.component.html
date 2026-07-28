@@ -5,14 +5,16 @@
   [attr.aria-label]="'generate.learn.nav_label' | transloco"
 >
   @for (entry of entries; track entry.activePath) {
+    <!-- The entry the reader is on is said once, by `aria-current`, and the
+         underline is drawn from it: a second class saying the same thing is a
+         second place for the two to disagree. -->
     <a
       class="gs-hub-nav-link"
-      [class.gs-hub-nav-link--on]="isActive(entry)"
       [routerLink]="entry.link"
       [attr.aria-current]="isActive(entry) ? 'page' : null"
     >
-      <app-icon [name]="entry.icon" class="gs-ico-sm" />
-      {{ entry.labelKey | transloco }}
+      <app-icon [name]="entry.icon" class="gs-hub-nav-mark" />
+      <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
     </a>
   }
 </nav>

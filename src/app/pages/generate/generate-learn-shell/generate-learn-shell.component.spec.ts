@@ -68,6 +68,31 @@ describe('GenerateLearnShellComponent', () => {
     );
   });
 
+  it('carries the entry glyph beside a label of its own', () => {
+    expect(
+      links().every(
+        (link) =>
+          link.querySelector('.gs-hub-nav-mark') !== null &&
+          link.querySelector('.gs-hub-nav-label') !== null,
+      ),
+    ).toBe(true);
+  });
+
+  it('says which page is on screen once, through aria-current alone', async () => {
+    await router.navigateByUrl('/generate/learn/settings');
+    fixture.detectChanges();
+
+    // The underline is drawn from `aria-current`, so a second state class
+    // would be a second place for the two to disagree.
+    expect(links().map((link) => link.getAttribute('aria-current'))).toEqual([
+      null,
+      null,
+      'page',
+      null,
+    ]);
+    expect(links().some((link) => link.className.includes('--on'))).toBe(false);
+  });
+
   it('has an English label for every entry and for the nav itself', () => {
     const translations = en as Record<string, string>;
 

@@ -20,6 +20,7 @@ const TRANSLATIONS = en as Record<string, string>;
 
 /** The keys the page writes out itself rather than deriving from a flow. */
 const OWN_KEYS = [
+  'hero_eyebrow',
   'hero_title',
   'hero_sub',
   'hero_cta',
@@ -30,7 +31,10 @@ const OWN_KEYS = [
   'understand_horde_hint',
   'understand_guide_title',
   'understand_guide_hint',
+  'understand_start',
+  'understand_read',
   'further_head',
+  'further_kind',
 ];
 
 describe('GenerateLearnHomeComponent', () => {
@@ -89,6 +93,17 @@ describe('GenerateLearnHomeComponent', () => {
     expect(query('.gs-learn-hero-title')[0].textContent).toContain(
       TRANSLATIONS['generate.learn.hero_title'],
     );
+    // The title is the page's only h1: everything under it is a band.
+    expect(query('h1')).toHaveLength(1);
+    expect(query('.gs-learn-hero-title')[0].tagName).toBe('H1');
+  });
+
+  it('sets the area landmark over the title', () => {
+    flush();
+
+    expect(query('.gs-learn-hero-eyebrow')[0].textContent).toContain(
+      TRANSLATIONS['generate.learn.hero_eyebrow'],
+    );
   });
 
   it('arms the first walkthrough and goes to the studio from the hero', () => {
@@ -117,6 +132,29 @@ describe('GenerateLearnHomeComponent', () => {
     expect(routed[0].textContent).toContain(
       TRANSLATIONS['generate.learn.understand_guide_title'],
     );
+    // A page is read; only the two tracks are started.
+    expect(routed[0].querySelector('.gs-learn-door-go')?.textContent).toContain(
+      TRANSLATIONS['generate.learn.understand_read'],
+    );
+  });
+
+  it('carries a mark and an affordance on every entry of the band', () => {
+    flush();
+
+    const doors = query<HTMLElement>('.gs-learn-door');
+
+    expect(
+      doors.every((door) => door.querySelector('.gs-learn-door-mark') !== null),
+    ).toBe(true);
+    expect(
+      doors.map((door) =>
+        door.querySelector('.gs-learn-door-go')?.textContent?.trim(),
+      ),
+    ).toEqual([
+      TRANSLATIONS['generate.learn.understand_start'],
+      TRANSLATIONS['generate.learn.understand_start'],
+      TRANSLATIONS['generate.learn.understand_read'],
+    ]);
   });
 
   it('leads the band with the two concept tracks', () => {
@@ -181,10 +219,16 @@ describe('GenerateLearnHomeComponent', () => {
     const shelf = component.shelf();
 
     shelf.forEach((flow, index) => {
-      expect(cards[index].textContent).toContain(
+      expect(
+        cards[index].querySelector('.gs-home-card-title')?.textContent,
+      ).toContain(
         TRANSLATIONS[`generate.tutorials.flows.${flow.id}.task_name`],
       );
       expect(cards[index].textContent).toContain(component.summaryFor(flow));
+      // Every card says what kind of thing it is before it says which one.
+      expect(
+        cards[index].querySelector('.gs-learn-eyebrow')?.textContent,
+      ).toContain(TRANSLATIONS['generate.learn.further_kind']);
     });
     // A card carries an image exactly when its example produced one, and never
     // eagerly: the shelf is a screen below where the page opens.
@@ -204,9 +248,11 @@ describe('GenerateLearnHomeComponent', () => {
     const card = query<HTMLAnchorElement>('.gs-home-card').at(-1);
 
     expect(component.shelf().at(-1)?.id).toBe(skipped?.id);
-    expect(card?.textContent).toContain(
-      TRANSLATIONS['generate.tutorials.unavailable_tag'],
-    );
+    // A passive badge qualifying the example, so it rides the card's eyebrow
+    // rather than the title of the technique itself.
+    expect(
+      card?.querySelector('.gs-learn-eyebrow .gs-tut-chip-tag')?.textContent,
+    ).toContain(TRANSLATIONS['generate.tutorials.unavailable_tag']);
     expect(card?.textContent).toContain(skipped?.skipped_reason ?? '');
     // Nothing is shown for a run that never happened.
     expect(card?.querySelector('.gs-home-card-img')).toBeNull();

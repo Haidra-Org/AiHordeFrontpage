@@ -7,21 +7,35 @@
   @if (topic(); as id) {
     <app-gs-param-entry [topic]="id" mode="page" />
 
-    <!-- Onwards within the same area only: the reference is eight short lists,
-         and running the end of one into the start of the next would say it was
-         one long one. -->
+    <!-- Onwards through the whole reference in index order, so it reads as one
+         book. A link takes the hue of the entry it leads to, and names that
+         entry's area when the step crosses out of the one being read. -->
     @if (previous() || next()) {
       <nav
         class="gs-ref-onwards"
         [attr.aria-label]="'generate.reference.onwards_label' | transloco"
       >
         @if (previous(); as entry) {
-          <a class="gs-ref-onward" [routerLink]="entry.link">
+          <a
+            class="gs-ref-onward"
+            [class]="entry.className"
+            [routerLink]="entry.link"
+          >
             <app-icon name="chevron-left" class="gs-ico-sm" />
             <span class="gs-ref-onward-text">
               <span class="gs-ref-onward-rel">{{
                 "generate.reference.previous" | transloco
               }}</span>
+              @if (entry.sectionLabelKey; as labelKey) {
+                <span class="gs-ref-onward-sec">
+                  @if (entry.icon; as icon) {
+                    <span class="gs-sec-chip" aria-hidden="true"
+                      ><app-icon [name]="icon"
+                    /></span>
+                  }
+                  {{ labelKey | transloco }}
+                </span>
+              }
               <span class="gs-ref-onward-name">{{
                 entry.titleKey | transloco
               }}</span>
@@ -31,12 +45,23 @@
         @if (next(); as entry) {
           <a
             class="gs-ref-onward gs-ref-onward--next"
+            [class]="entry.className"
             [routerLink]="entry.link"
           >
             <span class="gs-ref-onward-text">
               <span class="gs-ref-onward-rel">{{
                 "generate.reference.next" | transloco
               }}</span>
+              @if (entry.sectionLabelKey; as labelKey) {
+                <span class="gs-ref-onward-sec">
+                  @if (entry.icon; as icon) {
+                    <span class="gs-sec-chip" aria-hidden="true"
+                      ><app-icon [name]="icon"
+                    /></span>
+                  }
+                  {{ labelKey | transloco }}
+                </span>
+              }
               <span class="gs-ref-onward-name">{{
                 entry.titleKey | transloco
               }}</span>

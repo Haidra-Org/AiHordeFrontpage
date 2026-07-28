@@ -206,17 +206,55 @@ describe('reference index', () => {
     expect(misfiled).toEqual([]);
   });
 
-  it('walks neighbours within a section and stops at its ends', () => {
+  it('walks neighbours in index order within a section', () => {
+    const sampling =
+      REFERENCE_INDEX.find((group) => group.section === 'sampling')?.ids ?? [];
+
+    expect(referenceNeighbours(sampling[1])).toEqual({
+      previous: sampling[0],
+      next: sampling[2],
+    });
+  });
+
+  it('walks on across a section boundary rather than stopping at it', () => {
+    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
     const sampling =
       REFERENCE_INDEX.find((group) => group.section === 'sampling')?.ids ?? [];
     const first = sampling[0];
     const last = sampling[sampling.length - 1];
 
-    expect(referenceNeighbours(first)).toEqual({
+    // The entry before Sampling's first and after its last are both in other
+    // areas, which is exactly the join the reader is walked over.
+    expect(referenceNeighbours(first).previous).toBe(
+      sequence[sequence.indexOf(first) - 1],
+    );
+    expect(
+      referenceSection(referenceNeighbours(first).previous ?? ''),
+    ).not.toBe('sampling');
+    expect(referenceNeighbours(last).next).toBe(
+      sequence[sequence.indexOf(last) + 1],
+    );
+    expect(referenceSection(referenceNeighbours(last).next ?? '')).not.toBe(
+      'sampling',
+    );
+  });
+
+  it('stops only at the two ends of the whole reference', () => {
+    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
+
+    expect(referenceNeighbours(sequence[0])).toEqual({
       previous: null,
-      next: sampling[1],
+      next: sequence[1],
     });
-    expect(referenceNeighbours(last).next).toBeNull();
+    expect(referenceNeighbours(sequence[sequence.length - 1])).toEqual({
+      previous: sequence[sequence.length - 2],
+      next: null,
+    });
+    const dead = sequence.filter((id) => {
+      const { previous, next } = referenceNeighbours(id);
+      return previous === null || next === null;
+    });
+    expect(dead).toEqual([sequence[0], sequence[sequence.length - 1]]);
   });
 
   it('has no neighbours for a setting the reference does not have', () => {

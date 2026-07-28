@@ -1,4 +1,4 @@
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -9,6 +9,7 @@ import {
   input,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 
@@ -22,8 +23,15 @@ export interface GsIndexRailEntry {
   icon?: string;
   /** `gs-sec--<section>`, the hue the bar and glyph are tinted from. */
   hueClass?: string;
-  /** DOM id of the element the entry scrolls to and watches. */
-  targetId: string;
+  /** DOM id of the element the entry scrolls to and watches. Anchor mode. */
+  targetId?: string;
+  /** Where the entry goes instead of scrolling. Link mode. */
+  link?: string | (string | number)[];
+  /**
+   * A word set quietly after the label, for an entry that is offered with
+   * something to say about it. The entry stays reachable; it reads muted.
+   */
+  noteKey?: string;
 }
 
 /**
@@ -42,32 +50,58 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
  * section's hue as a leading bar (an underline in the bar form), which is the
  * same device the follow-along highlight uses to say "here".
  *
- * Anchor mode only: an entry names an element on the page, and pressing it
- * scrolls there. Nothing routes, so the rail never needs to know what page it
- * is on.
+ * Two modes, one idiom. In anchor mode an entry names an element on the page
+ * and pressing it scrolls there, with scrollspy saying which is being read; the
+ * rail never needs to know what page it is on. In link mode an entry names a
+ * route instead, and the page — which is what reads the URL — says which entry
+ * is current through `currentId`. An entry carries a link or a target, and a
+ * rail is one or the other throughout.
  */
 @Component({
   selector: 'app-gs-index-rail',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, IconComponent, RouterLink, NgTemplateOutlet],
   template: `
     <nav class="gs-index-rail-nav" [attr.aria-label]="labelKey() | transloco">
       @for (entry of entries(); track entry.id) {
-        <button
-          type="button"
-          class="gs-index-entry"
-          [class]="entry.hueClass"
-          [attr.aria-current]="entry.id === activeId() ? 'true' : null"
-          (click)="jumpTo(entry)"
-        >
-          @if (entry.icon; as icon) {
-            <app-icon class="gs-index-entry-mark" [name]="icon" />
-          }
-          <span class="gs-index-entry-label">{{
-            entry.labelKey | transloco
-          }}</span>
-        </button>
+        @if (entry.link; as link) {
+          <a
+            class="gs-index-entry"
+            [class]="entry.hueClass"
+            [class.gs-index-entry--muted]="!!entry.noteKey"
+            [routerLink]="link"
+            [attr.aria-current]="entry.id === activeId() ? 'page' : null"
+          >
+            <ng-container
+              [ngTemplateOutlet]="line"
+              [ngTemplateOutletContext]="{ $implicit: entry }"
+            />
+          </a>
+        } @else {
+          <button
+            type="button"
+            class="gs-index-entry"
+            [class]="entry.hueClass"
+            [attr.aria-current]="entry.id === activeId() ? 'true' : null"
+            (click)="jumpTo(entry)"
+          >
+            <ng-container
+              [ngTemplateOutlet]="line"
+              [ngTemplateOutletContext]="{ $implicit: entry }"
+            />
+          </button>
+        }
       }
     </nav>
+
+    <ng-template #line let-entry>
+      @if (entry.icon; as icon) {
+        <app-icon class="gs-index-entry-mark" [name]="icon" />
+      }
+      <span class="gs-index-entry-label">{{ entry.labelKey | transloco }}</span>
+      @if (entry.noteKey; as noteKey) {
+        <span class="gs-index-entry-note">{{ noteKey | transloco }}</span>
+      }
+    </ng-template>
   `,
   host: {
     class: 'gs-index-rail',
@@ -82,17 +116,28 @@ export class GsIndexRailComponent {
   public readonly entries = input.required<readonly GsIndexRailEntry[]>();
   /** What the rail is called to a reader who cannot see it. */
   public readonly labelKey = input<string>('generate.learn.rail_label');
+  /** Link mode: the entry the page is on. Ignored where entries scroll. */
+  public readonly currentId = input<string | null>(null);
 
   /** The entry scrollspy last put under the reader, before any has been seen. */
   private readonly seen = signal<string | null>(null);
 
+  /** Whether the entries route rather than scroll, which the entries say. */
+  private readonly linkMode = computed(() =>
+    this.entries().some((entry) => entry.link),
+  );
+
   /**
-   * The entry the rail marks as current. Nothing has been scrolled past on
-   * arrival, so the first entry stands for the top of the page rather than the
-   * rail starting with no line marked at all.
+   * The entry the rail marks as current. In anchor mode nothing has been
+   * scrolled past on arrival, so the first entry stands for the top of the page
+   * rather than the rail starting with no line marked at all; in link mode the
+   * page is somewhere definite, and a guess at it would be wrong as often as
+   * not.
    */
-  public readonly activeId = computed(
-    () => this.seen() ?? this.entries()[0]?.id ?? null,
+  public readonly activeId = computed(() =>
+    this.linkMode()
+      ? this.currentId()
+      : (this.seen() ?? this.entries()[0]?.id ?? null),
   );
 
   constructor() {
@@ -130,7 +175,9 @@ export class GsIndexRailComponent {
       );
 
       for (const entry of entries) {
-        const target = this.document.getElementById(entry.targetId);
+        const target = entry.targetId
+          ? this.document.getElementById(entry.targetId)
+          : null;
         if (target) {
           observer.observe(target);
         }
@@ -146,7 +193,7 @@ export class GsIndexRailComponent {
    */
   public jumpTo(entry: GsIndexRailEntry): void {
     this.seen.set(entry.id);
-    if (!this.isBrowser) {
+    if (!this.isBrowser || !entry.targetId) {
       return;
     }
     this.document.getElementById(entry.targetId)?.scrollIntoView({

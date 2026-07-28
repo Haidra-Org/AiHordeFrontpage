@@ -352,23 +352,31 @@ export const REFERENCE_INDEX: readonly ReferenceGroup[] = SECTION_ORDER.map(
 ).filter((group) => group.ids.length > 0);
 
 /**
- * The entries either side of `id` within its own section, for the way onwards
- * at the foot of a detail page. Null at either end of a section: the reference
- * is eight short lists rather than one long one, and running the end of Sampling
- * into the start of Finishing would say otherwise.
+ * Every entry in index order: the sections in panel order, and within each the
+ * order the index lists them. This is the order a reader walking the detail
+ * pages passes through, so it is the order the way onwards follows.
+ */
+const REFERENCE_SEQUENCE: readonly string[] = REFERENCE_INDEX.flatMap(
+  (group) => group.ids,
+);
+
+/**
+ * The entries either side of `id` across the whole reference, for the way
+ * onwards at the foot of a detail page. Null only at the two ends of the
+ * sequence: the reference reads as one book, and a section boundary is
+ * something the link says out loud rather than something it stops at.
  */
 export function referenceNeighbours(id: string): {
   previous: string | null;
   next: string | null;
 } {
-  const group = REFERENCE_INDEX.find((entry) => entry.ids.includes(id));
-  const at = group?.ids.indexOf(id) ?? -1;
-  if (!group || at === -1) {
+  const at = REFERENCE_SEQUENCE.indexOf(id);
+  if (at === -1) {
     return { previous: null, next: null };
   }
   return {
-    previous: group.ids[at - 1] ?? null,
-    next: group.ids[at + 1] ?? null,
+    previous: REFERENCE_SEQUENCE[at - 1] ?? null,
+    next: REFERENCE_SEQUENCE[at + 1] ?? null,
   };
 }
 

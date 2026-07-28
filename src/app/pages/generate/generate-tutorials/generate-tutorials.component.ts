@@ -10,17 +10,28 @@ import {
   inject,
   signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map, of } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
+import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
 import {
   GsRecipeChipsComponent,
   RecipeRequest,
 } from '../../../components/gs-recipe-chips/gs-recipe-chips.component';
 import { highlightJson } from '../../../helper/json-formatter';
+import {
+  SECTION_BY_STEP_ID,
+  SECTION_IDENTITIES,
+  SectionId,
+  SectionIdentity,
+} from '../section-identity';
 import {
   TutorialEngineService,
   tutorialAvailable,
@@ -60,6 +71,18 @@ interface TutorialMeta {
   kudos_charged?: number;
   wall_time_seconds?: number;
   deviations?: string;
+}
+
+/**
+ * One picture in a flow's evidence rail, in the order the run produced it:
+ * what went in, then what came back.
+ */
+export interface TutorialShot {
+  /** The key naming the picture, which is both its caption and its alt text. */
+  labelKey: string;
+  src: string;
+  /** Whether the picture is read through rather than read on the card. */
+  alpha: boolean;
 }
 
 /** A flow's fetched companion files, once they have arrived. */
@@ -106,6 +129,22 @@ export const TUTORIAL_FLOW_STEPS: Readonly<Record<string, readonly string[]>> =
     ],
   };
 
+/**
+ * The panel area each flow's defining setting lives in, which is the mark and
+ * hue its line of the picker is read by. A flow the manifest grows that is not
+ * listed here takes no mark rather than a wrong one.
+ */
+const FLOW_SECTIONS: Readonly<Record<string, SectionId>> = {
+  txt2img: 'prompt',
+  img2img: 'source',
+  controlnet: 'source',
+  inpainting: 'source',
+  remix: 'source',
+  qr_code: 'workflows',
+  transparent: 'workflows',
+  facefix: 'finishing',
+};
+
 /** The three calls every image request makes, in order. */
 const LIFECYCLE = ['submit', 'check', 'status'] as const;
 
@@ -121,7 +160,12 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
  */
 @Component({
   selector: 'app-generate-tutorials',
-  imports: [TranslocoPipe, RouterLink, IconComponent, GsRecipeChipsComponent],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    GsIndexRailComponent,
+    GsRecipeChipsComponent,
+  ],
   templateUrl: './generate-tutorials.component.html',
   host: {
     class: 'gs-tut',
@@ -152,6 +196,22 @@ export class GenerateTutorialsComponent {
   /** The picker rail, so the flow on screen can be kept inside its window. */
   private readonly rail = viewChild<ElementRef<HTMLElement>>('rail');
 
+  private readonly shotTriggers =
+    viewChildren<ElementRef<HTMLButtonElement>>('shotTrigger');
+  private readonly viewerPanel =
+    viewChild<ElementRef<HTMLElement>>('viewerPanel');
+  private readonly viewerClose =
+    viewChild<ElementRef<HTMLButtonElement>>('viewerClose');
+
+  /** The panel focus was last moved to, so a later render cannot re-take it. */
+  private focusedPanel: HTMLElement | null = null;
+
+  /** Which stage the enlarged view was opened from, or null while it is shut. */
+  private readonly enlargedAt = signal<number | null>(null);
+
+  /** Whether the evidence rail has the payload itself open under the chips. */
+  public readonly rawOpen = signal(false);
+
   private readonly routeFlowId = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('flow'))),
     { initialValue: null },
@@ -172,6 +232,54 @@ export class GenerateTutorialsComponent {
   public readonly activeDetail = computed<TutorialDetail | null>(() => {
     const flow = this.activeFlow();
     return flow ? (this.details()[flow.id] ?? null) : null;
+  });
+
+  /**
+   * The pictures the evidence rail stands on. Built here rather than written
+   * out four times in the template so every one of them lands on the same
+   * bounded stage and carries the same way into the enlarged view.
+   */
+  public readonly shots = computed<readonly TutorialShot[]>(() => {
+    const flow = this.activeFlow();
+    if (!flow || flow.status !== 'available') {
+      return [];
+    }
+    const shots: TutorialShot[] = [];
+    if (flow.source) {
+      shots.push({
+        labelKey: 'generate.tutorials.shot_source',
+        src: this.assetUrl(flow.source),
+        alpha: false,
+      });
+    }
+    if (flow.mask) {
+      shots.push({
+        labelKey: 'generate.tutorials.shot_mask',
+        src: this.assetUrl(flow.mask),
+        alpha: false,
+      });
+    }
+    if (flow.before) {
+      shots.push({
+        labelKey: 'generate.tutorials.shot_before',
+        src: this.assetUrl(flow.before),
+        alpha: false,
+      });
+    }
+    shots.push({
+      labelKey: 'generate.tutorials.shot_result',
+      src: this.assetUrl(flow.result),
+      // The transparent flow's whole point is the alpha channel, so its result
+      // is shown through a checkerboard rather than on the card.
+      alpha: flow.id === 'transparent',
+    });
+    return shots;
+  });
+
+  /** The picture the enlarged view is showing, if it is open. */
+  public readonly enlargedShot = computed<TutorialShot | null>(() => {
+    const at = this.enlargedAt();
+    return at === null ? null : (this.shots()[at] ?? null);
   });
 
   public readonly steps = computed<readonly string[]>(
@@ -208,8 +316,28 @@ export class GenerateTutorialsComponent {
     }
   });
 
-  /** Whether the recipe card has the payload itself open under the chips. */
-  public readonly rawOpen = signal(false);
+  /**
+   * The flows as lines of the picker: the same contents idiom the guide and the
+   * settings reference use, routing rather than scrolling. A flow the horde
+   * could not serve is offered all the same, muted and annotated, because what
+   * is missing is worth reading before it is clicked.
+   */
+  public readonly pickerEntries = computed<readonly GsIndexRailEntry[]>(() =>
+    this.flows().map((flow) => {
+      const identity = this.flowIdentity(flow);
+      return {
+        id: flow.id,
+        labelKey: this.taskNameKey(flow),
+        icon: identity?.icon,
+        hueClass: identity?.className,
+        link: ['/generate/learn/tutorials', flow.id],
+        noteKey:
+          flow.status === 'skipped'
+            ? 'generate.tutorials.unavailable_tag'
+            : undefined,
+      };
+    }),
+  );
 
   constructor() {
     this.http
@@ -228,10 +356,21 @@ export class GenerateTutorialsComponent {
     });
 
     // A reader who opened one example's payload has not asked to be shown the
-    // next one's.
+    // next one's, and an enlarged picture belongs to the flow it came from.
     effect(() => {
       this.activeFlow();
       this.rawOpen.set(false);
+      this.enlargedAt.set(null);
+    });
+
+    // The enlarged picture takes focus as it opens, so the key that closes it
+    // and the button that dismisses it are where the reader already is.
+    afterRenderEffect(() => {
+      const panel = this.viewerPanel()?.nativeElement ?? null;
+      if (panel && panel !== this.focusedPanel) {
+        panel.focus();
+      }
+      this.focusedPanel = panel;
     });
 
     // Waits for the manifest: until it has arrived there is nothing to say a
@@ -244,16 +383,15 @@ export class GenerateTutorialsComponent {
     });
 
     // The rail scrolls, so a flow late in the manifest is reached by a deep
-    // link with its chip outside the scrolled window or clipped by its edge.
-    // Runs after render so the chip carrying the active class is the one that
-    // exists, and only ever moves the rail as far as it has to.
+    // link with its line outside the scrolled window or clipped by its edge.
+    // Runs after render so the line carrying the mark is the one that exists,
+    // and only ever moves the rail as far as it has to.
     afterRenderEffect(() => {
       this.activeFlow();
-      const chip =
-        this.rail()?.nativeElement.querySelector<HTMLElement>(
-          '.gs-tut-chip--on',
-        );
-      chip?.scrollIntoView({
+      const line = this.rail()?.nativeElement.querySelector<HTMLElement>(
+        '.gs-index-entry[aria-current]',
+      );
+      line?.scrollIntoView({
         behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')
           .matches
           ? 'auto'
@@ -268,6 +406,47 @@ export class GenerateTutorialsComponent {
   public assetUrl(file: string | undefined): string {
     const flow = this.activeFlow();
     return flow && file ? `${TUTORIALS_ROOT}/${flow.directory}/${file}` : '';
+  }
+
+  /**
+   * Open one picture at the size the bounded stage cannot give it. Single
+   * image, no stepping: the rail is three pictures at most and each one is
+   * already a click away.
+   */
+  public openEnlarged(index: number): void {
+    this.enlargedAt.set(index);
+  }
+
+  /** Closing hands focus back to the stage that opened the enlarged view. */
+  public closeEnlarged(): void {
+    const at = this.enlargedAt();
+    this.enlargedAt.set(null);
+    if (at !== null) {
+      this.shotTriggers()[at]?.nativeElement.focus();
+    }
+  }
+
+  /** The backdrop closes; a press that landed on the panel itself does not. */
+  public onViewerBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeEnlarged();
+    }
+  }
+
+  /**
+   * Escape closes. Tab is held inside the layer by hand: the panel carries one
+   * control, so keeping focus on it is the whole trap.
+   */
+  public onViewerKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      this.closeEnlarged();
+      return;
+    }
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      this.viewerClose()?.nativeElement.focus();
+    }
   }
 
   public toggleRaw(): void {
@@ -291,8 +470,25 @@ export class GenerateTutorialsComponent {
     return `generate.tutorials.flows.${flow.id}.task_name`;
   }
 
-  public isActive(flow: TutorialFlow): boolean {
-    return flow.id === this.activeFlow()?.id;
+  /** The mark and hue a flow is read by, where its technique has one. */
+  public flowIdentity(flow: TutorialFlow): SectionIdentity | null {
+    const section = FLOW_SECTIONS[flow.id];
+    return section ? SECTION_IDENTITIES[section] : null;
+  }
+
+  /**
+   * The panel area a walkthrough step sets a field in, which is what the step's
+   * eyebrow is marked and hued from. Pressing Generate is a step about the page
+   * rather than about a card, so it takes no mark and carries no eyebrow.
+   */
+  public stepIdentity(step: string): SectionIdentity | null {
+    const section = SECTION_BY_STEP_ID[step];
+    return section ? SECTION_IDENTITIES[section] : null;
+  }
+
+  /** A step's prose, which is written per flow rather than shared. */
+  public stepKey(flow: TutorialFlow, step: string, part: string): string {
+    return `generate.tutorials.flows.${flow.id}.steps.${step}.${part}`;
   }
 
   /**

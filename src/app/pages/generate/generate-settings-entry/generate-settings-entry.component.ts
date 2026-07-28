@@ -11,15 +11,33 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { referenceEntry, referenceNeighbours } from '../reference-data';
+import {
+  referenceEntry,
+  referenceNeighbours,
+  referenceSection,
+} from '../reference-data';
+import { SECTION_IDENTITIES } from '../section-identity';
 
 /** Where the index lives, and what an unknown setting falls back to. */
 const REFERENCE_ROOT = '/generate/learn/settings';
 
+/** One way onwards, carrying the identity of the entry it leads to. */
+interface OnwardLink {
+  id: string;
+  titleKey: string;
+  link: string;
+  /** Hue class of the target's section, so the link is tinted by where it goes. */
+  className: string;
+  /** The target section's glyph, rendered only when the link crosses into it. */
+  icon: string | null;
+  /** The target section's name, set only when it is not the one being read. */
+  sectionLabelKey: string | null;
+}
+
 /**
  * One setting's page. It is deliberately thin: the entry itself is the shared
  * component, and this adds only the frame a routed page needs, which is the way
- * back to the index and the way on to the next setting in the same area.
+ * back to the index and the way on to the next setting in reading order.
  *
  * A URL naming a setting the reference has no entry for lands on the index
  * rather than on an empty page. Those URLs are worth typing at (`.../steps`),
@@ -51,6 +69,12 @@ export class GenerateSettingsEntryComponent {
     referenceEntry(this.param()) ? this.param() : null,
   );
 
+  /** The area the entry on screen belongs to, to tell a crossing from a step. */
+  private readonly section = computed(() => {
+    const id = this.topic();
+    return id ? referenceSection(id) : undefined;
+  });
+
   private readonly neighbours = computed(() => {
     const id = this.topic();
     return id
@@ -71,15 +95,20 @@ export class GenerateSettingsEntryComponent {
     });
   }
 
-  private link(
-    id: string | null,
-  ): { id: string; titleKey: string; link: string } | null {
-    return id
-      ? {
-          id,
-          titleKey: `generate.help.${id}.title`,
-          link: `${REFERENCE_ROOT}/${id}`,
-        }
-      : null;
+  private link(id: string | null): OnwardLink | null {
+    if (!id) {
+      return null;
+    }
+    const section = referenceSection(id);
+    const identity = section ? SECTION_IDENTITIES[section] : null;
+    const crosses = section !== undefined && section !== this.section();
+    return {
+      id,
+      titleKey: `generate.help.${id}.title`,
+      link: `${REFERENCE_ROOT}/${id}`,
+      className: identity?.className ?? '',
+      icon: crosses ? (identity?.icon ?? null) : null,
+      sectionLabelKey: crosses ? (identity?.labelKey ?? null) : null,
+    };
   }
 }

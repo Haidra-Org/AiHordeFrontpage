@@ -1,11 +1,15 @@
 <div class="gs-learn-home-inner">
-  <!-- The one door most readers need. Its backdrop is the image the
-       walkthrough behind it actually produced, not an illustration. -->
+  <!-- The one door most readers need, and the Learn area's display moment. Its
+       backdrop is the image the walkthrough behind it actually produced, not an
+       illustration, so the copy sits on a scrim rather than on the picture. -->
   <section class="gs-learn-hero">
     @if (heroImage(); as image) {
       <img class="gs-learn-hero-bg" [src]="image" alt="" aria-hidden="true" />
     }
     <div class="gs-learn-hero-text">
+      <p class="gs-learn-hero-eyebrow">
+        {{ "generate.learn.hero_eyebrow" | transloco }}
+      </p>
       <h1 class="gs-learn-hero-title">
         {{ "generate.learn.hero_title" | transloco }}
       </h1>
@@ -23,6 +27,10 @@
     <h2 class="gs-guide-head">
       {{ "generate.learn.understand_head" | transloco }}
     </h2>
+    <!-- A hairlined list in the rail's grammar rather than a row of cards: the
+         three ways in are one list of the same kind of thing, and the leading
+         bar is the device the rest of the area already reads as "a line you can
+         go down". -->
     <div class="gs-learn-doors">
       @for (door of understandDoors; track door.titleKey) {
         <!-- A track has no page to route to: it runs in the studio's pane, so
@@ -33,7 +41,7 @@
             class="gs-learn-door"
             (click)="startTrack(door)"
           >
-            <app-icon [name]="door.icon" class="gs-ico-sm" />
+            <app-icon [name]="door.icon" class="gs-learn-door-mark" />
             <span class="gs-learn-door-text">
               <span class="gs-learn-door-title">
                 {{ door.titleKey | transloco }}
@@ -42,10 +50,14 @@
                 {{ door.hintKey | transloco }}
               </span>
             </span>
+            <span class="gs-learn-door-go">
+              {{ goKey(door) | transloco }}
+              <app-icon name="chevron-right" class="gs-learn-door-chev" />
+            </span>
           </button>
         } @else {
           <a class="gs-learn-door" [routerLink]="door.link">
-            <app-icon [name]="door.icon" class="gs-ico-sm" />
+            <app-icon [name]="door.icon" class="gs-learn-door-mark" />
             <span class="gs-learn-door-text">
               <span class="gs-learn-door-title">
                 {{ door.titleKey | transloco }}
@@ -53,6 +65,10 @@
               <span class="gs-learn-door-hint">
                 {{ door.hintKey | transloco }}
               </span>
+            </span>
+            <span class="gs-learn-door-go">
+              {{ goKey(door) | transloco }}
+              <app-icon name="chevron-right" class="gs-learn-door-chev" />
             </span>
           </a>
         }
@@ -83,13 +99,19 @@
               />
             }
             <span class="gs-home-card-text">
-              <span class="gs-home-card-title">
-                {{ taskNameKey(flow) | transloco }}
+              <!-- The eyebrow says what kind of thing the card is, which is
+                   also where the unavailable badge belongs: it qualifies the
+                   example, not the technique the title names. -->
+              <span class="gs-learn-eyebrow">
+                {{ "generate.learn.further_kind" | transloco }}
                 @if (flow.status === "skipped") {
                   <span class="gs-tut-chip-tag">
                     {{ "generate.tutorials.unavailable_tag" | transloco }}
                   </span>
                 }
+              </span>
+              <span class="gs-home-card-title">
+                {{ taskNameKey(flow) | transloco }}
               </span>
               <span class="gs-home-card-hint">{{ summaryFor(flow) }}</span>
               <!-- A technique the horde could not serve when the examples were

@@ -30,8 +30,6 @@ const SKIPPED = MANIFEST.flows.filter((flow) => flow.status === 'skipped');
 
 /** Page chrome keys, which are written out in the template rather than built. */
 const CHROME_KEYS = [
-  'title',
-  'lead',
   'loading',
   'load_error',
   'picker_label',
@@ -47,6 +45,10 @@ const CHROME_KEYS = [
   'shot_mask',
   'shot_before',
   'shot_result',
+  'enlarge',
+  'enlarge_close',
+  'enlarged_title',
+  'evidence_note',
   'meta_model',
   'meta_seed',
   'meta_kudos',
@@ -203,11 +205,47 @@ describe('GenerateTutorialsComponent', () => {
     harness = await createPage();
   });
 
-  it('loads the manifest and offers a chip for every flow', () => {
+  it('loads the manifest and offers a picker line for every flow', () => {
     flushAll(harness);
 
-    expect(harness.query('.gs-tut-chip')).toHaveLength(MANIFEST.flows.length);
+    const translations = en as Record<string, string>;
+    const lines = harness.query<HTMLElement>('.gs-index-entry');
+
+    expect(lines).toHaveLength(MANIFEST.flows.length);
     expect(harness.component.flows()).toHaveLength(MANIFEST.flows.length);
+    // Named by what each one makes, not by the technique behind it.
+    expect(
+      lines.map((line) =>
+        line.querySelector('.gs-index-entry-label')?.textContent?.trim(),
+      ),
+    ).toEqual(
+      MANIFEST.flows.map(
+        (flow) => translations[`generate.tutorials.flows.${flow.id}.task_name`],
+      ),
+    );
+  });
+
+  it('keeps a flow with no example in the picker, muted and annotated', () => {
+    flushAll(harness);
+
+    const translations = en as Record<string, string>;
+    const lines = harness.query<HTMLElement>('.gs-index-entry');
+    const muted = lines.filter((line) =>
+      line.classList.contains('gs-index-entry--muted'),
+    );
+
+    expect(muted).toHaveLength(SKIPPED.length);
+    expect(
+      muted.map((line) =>
+        line.querySelector('.gs-index-entry-note')?.textContent?.trim(),
+      ),
+    ).toEqual(
+      SKIPPED.map(() => translations['generate.tutorials.unavailable_tag']),
+    );
+    // Muted, not withheld: the flow is still a place a reader can go.
+    expect(muted[0].getAttribute('href')).toBe(
+      `/generate/learn/tutorials/${SKIPPED[0].id}`,
+    );
   });
 
   it('sends a URL naming no flow to the Learn landing page', async () => {
@@ -227,7 +265,7 @@ describe('GenerateTutorialsComponent', () => {
     harness.fixture.detectChanges();
 
     expect(harness.component.loadFailed()).toBe(true);
-    expect(harness.query('.gs-tut-chip')).toHaveLength(0);
+    expect(harness.query('.gs-index-entry')).toHaveLength(0);
   });
 
   it('shows the flow named by a deep link, with its steps and images', async () => {
@@ -236,7 +274,7 @@ describe('GenerateTutorialsComponent', () => {
 
     const flow = harness.component.activeFlow();
     expect(flow?.id).toBe('inpainting');
-    expect(harness.query('.gs-guide-step')).toHaveLength(
+    expect(harness.query('.gs-tut-step')).toHaveLength(
       TUTORIAL_FLOW_STEPS['inpainting'].length,
     );
     // Source, mask and result: the inputs are shown, not only the outcome.
@@ -277,7 +315,7 @@ describe('GenerateTutorialsComponent', () => {
     expect(late.navigate).not.toHaveBeenCalled();
   });
 
-  it('brings the chip of a deep-linked flow into the rail', async () => {
+  it('brings the line of a deep-linked flow into the rail', async () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     const late = MANIFEST.flows[MANIFEST.flows.length - 1];
@@ -285,13 +323,78 @@ describe('GenerateTutorialsComponent', () => {
     harness = await createPage(late.id);
     flushAll(harness);
 
-    expect(harness.query('.gs-tut-chip--on')).toHaveLength(1);
+    expect(harness.query('.gs-index-entry[aria-current]')).toHaveLength(1);
     expect(scrollIntoView).toHaveBeenCalled();
     // Only as far as it has to move, and along the rail rather than the page.
     expect(scrollIntoView.mock.calls.at(-1)?.[0]).toMatchObject({
       block: 'nearest',
       inline: 'nearest',
     });
+  });
+
+  it('puts every picture on a bounded stage that is its own way in', async () => {
+    harness = await createPage('inpainting');
+    flushAll(harness);
+
+    const stages = harness.query<HTMLButtonElement>('.gs-tut-stage');
+
+    // Source, mask and result: one stage each, and no bare image beside them.
+    expect(stages).toHaveLength(3);
+    expect(harness.query('.gs-tut-img')).toHaveLength(3);
+    for (const stage of stages) {
+      expect(stage.querySelector('.gs-tut-img')).toBeTruthy();
+      expect(stage.getAttribute('aria-label')).toBeTruthy();
+    }
+  });
+
+  it('opens one picture enlarged and closes it on Escape', () => {
+    flushAll(harness);
+
+    const stage = harness.query<HTMLButtonElement>('.gs-tut-stage')[0];
+    stage.click();
+    harness.fixture.detectChanges();
+
+    const panel = harness.query<HTMLElement>('.gs-tut-viewer-body')[0];
+    expect(panel.getAttribute('role')).toBe('dialog');
+    expect(panel.getAttribute('aria-modal')).toBe('true');
+    expect(harness.query<HTMLImageElement>('.gs-tut-viewer-img')[0].src).toBe(
+      (stage.querySelector('.gs-tut-img') as HTMLImageElement).src,
+    );
+
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    harness.fixture.detectChanges();
+
+    expect(harness.query('.gs-tut-viewer')).toHaveLength(0);
+    // Closing hands focus back to the stage the reader opened it from.
+    expect(document.activeElement).toBe(stage);
+  });
+
+  it('closes the enlarged picture on the backdrop but not on the panel', () => {
+    flushAll(harness);
+
+    harness.query<HTMLButtonElement>('.gs-tut-stage')[0].click();
+    harness.fixture.detectChanges();
+
+    harness.query<HTMLElement>('.gs-tut-viewer-body')[0].click();
+    harness.fixture.detectChanges();
+    expect(harness.query('.gs-tut-viewer')).toHaveLength(1);
+
+    harness.query<HTMLElement>('.gs-tut-viewer')[0].click();
+    harness.fixture.detectChanges();
+    expect(harness.query('.gs-tut-viewer')).toHaveLength(0);
+  });
+
+  it('keeps the provenance note at the foot of the evidence', () => {
+    flushAll(harness);
+
+    const note = harness.query<HTMLElement>('.gs-tut-evidence-note')[0];
+
+    expect(note.textContent?.trim()).toBe(
+      (en as Record<string, string>)['generate.tutorials.evidence_note'],
+    );
+    expect(note.closest('.gs-tut-evidence')).toBeTruthy();
   });
 
   it('reads the recipe off the request the example was submitted with', () => {
@@ -359,7 +462,7 @@ describe('GenerateTutorialsComponent', () => {
 
     const translations = en as Record<string, string>;
     expect(harness.query('.gs-tut-code')).toHaveLength(0);
-    expect(harness.query('.gs-tut-card')[0].textContent).toContain(
+    expect(harness.query('.gs-tut-section')[0].textContent).toContain(
       translations['generate.tutorials.steps_head'],
     );
 
@@ -371,15 +474,15 @@ describe('GenerateTutorialsComponent', () => {
     expect(harness.text()).toContain('/generate/async');
     expect(harness.text()).toContain('/generate/check/:id');
     expect(harness.text()).toContain('/generate/status/:id');
-    // The card under the toggle is the one the toggle names, and the user
+    // The section under the toggle is the one the toggle names, and the user
     // walkthrough is not left above it.
-    expect(harness.query('.gs-tut-card')[0].textContent).toContain(
+    expect(harness.query('.gs-tut-section')[0].textContent).toContain(
       translations['generate.tutorials.dev_head'],
     );
     expect(harness.text()).not.toContain(
       translations['generate.tutorials.steps_head'],
     );
-    expect(harness.query('.gs-guide-step').length).toBe(
+    expect(harness.query('.gs-tut-step').length).toBe(
       harness.component.lifecycle.length,
     );
     // What went in and what came out belongs to neither tab.
@@ -500,13 +603,13 @@ describe('GenerateTutorialsComponent', () => {
     expect(engine.consumeArmed()).toBe('txt2img');
   });
 
-  it('points every chip at the canonical Learn URL for its flow', () => {
+  it('points every picker line at the canonical Learn URL for its flow', () => {
     flushAll(harness);
 
     expect(
       harness
-        .query<HTMLAnchorElement>('.gs-tut-chip')
-        .map((chip) => chip.getAttribute('href')),
+        .query<HTMLAnchorElement>('.gs-index-entry')
+        .map((line) => line.getAttribute('href')),
     ).toEqual(
       MANIFEST.flows.map((flow) => `/generate/learn/tutorials/${flow.id}`),
     );
