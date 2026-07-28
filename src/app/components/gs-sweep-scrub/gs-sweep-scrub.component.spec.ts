@@ -27,6 +27,32 @@ class HostComponent {
   public startExpanded = false;
 }
 
+/**
+ * Minimal fake ResizeObserver: the wipe decides between its two presentations
+ * on the width it is given, and jsdom lays nothing out to give it one.
+ */
+class FakeResizeObserver {
+  public static instances: FakeResizeObserver[] = [];
+  public readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    FakeResizeObserver.instances.push(this);
+  }
+
+  public observe(): void {
+    // The test decides when a measurement arrives.
+  }
+
+  public unobserve(): void {
+    // Nothing to stop watching.
+  }
+
+  public disconnect(): void {
+    // Nothing to stop watching.
+  }
+}
+
 /** The test DOM has no media queries at all, so the flag is installed. */
 function stubReducedData(reduced: boolean): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -55,6 +81,17 @@ describe('GsSweepScrubComponent', () => {
   const text = (): string =>
     el().textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
+  /** Tell whatever the wipe is watching how much room the pair has. */
+  const reportWidth = (width: number): void => {
+    for (const observer of FakeResizeObserver.instances) {
+      observer.callback(
+        [{ contentRect: { width } } as unknown as ResizeObserverEntry],
+        observer as unknown as ResizeObserver,
+      );
+    }
+    fixture.detectChanges();
+  };
+
   async function setUp(options?: {
     reducedData?: boolean;
     empty?: boolean;
@@ -68,6 +105,11 @@ describe('GsSweepScrubComponent', () => {
     startExpanded?: boolean;
   }): Promise<void> {
     stubReducedData(options?.reducedData ?? false);
+    FakeResizeObserver.instances = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      FakeResizeObserver as unknown as typeof ResizeObserver,
+    );
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -109,6 +151,7 @@ describe('GsSweepScrubComponent', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     Reflect.deleteProperty(window, 'matchMedia');
   });
 
@@ -276,41 +319,95 @@ describe('GsSweepScrubComponent', () => {
   });
 
   describe('two-frame strips', () => {
-    it('shows both frames at once, named and captioned, with no slider', async () => {
+    // These used to be laid out side by side with a heading each. The pair is
+    // now handed to the wipe, which carries both sides and their names itself
+    // and falls back to that same side-by-side layout on a narrow column.
+    it('hands both frames to the wipe, named by their chips, with no slider', async () => {
       await setUp({ parameter: 'tiling' });
 
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();
       fixture.detectChanges();
 
-      const frames = all<HTMLElement>('.gs-sweep-pair-item');
-      expect(frames).toHaveLength(2);
+      expect(find('.gs-wipe')).not.toBeNull();
       expect(find('.gs-sweep-range')).toBeNull();
       // The index labels these `off`/`on`, which is a filename, not a heading.
       expect(
-        all('.gs-sweep-pair-name').map((n) => n.textContent?.trim()),
+        all('.gs-wipe-tag').map((n) =>
+          n.textContent?.replace(/\s+/g, ' ').trim(),
+        ),
       ).toEqual([
-        en['generate.sweeps.state_off'],
-        en['generate.sweeps.state_on'],
+        `Tiling ${en['generate.sweeps.state_off']}`,
+        `Tiling ${en['generate.sweeps.state_on']}`,
       ]);
+      expect(all('.gs-wipe-tag app-gs-setting-chip')).toHaveLength(2);
       expect(el().textContent).toContain('Every join is a hard line.');
       expect(el().textContent).toContain('The grain runs on across each join.');
     });
 
-    it('enlarges the side that was pressed and gives focus back to it', async () => {
+    it('lays the pair side by side where the wipe would be too narrow', async () => {
       await setUp({ parameter: 'tiling' });
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();
       fixture.detectChanges();
 
-      all<HTMLButtonElement>('.gs-sweep-zoom')[1].click();
+      reportWidth(200);
+
+      expect(find('.gs-wipe')!.classList.contains('is-wiping')).toBe(false);
+      expect(find('.gs-wipe-divider')).toBeNull();
+      expect(all('.gs-wipe-tag')).toHaveLength(2);
+      expect(all('.gs-wipe-tiled')).toHaveLength(2);
+    });
+
+    it('enlarges the pair as one wipe and gives focus back to the control', async () => {
+      await setUp({ parameter: 'tiling' });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
       fixture.detectChanges();
 
       expect(
         find<HTMLElement>('.gs-sweep-viewer-body')!.getAttribute('aria-label'),
-      ).toContain('On');
+      ).toBe(en['generate.sweeps.enlarged_pair_title']);
+      // The layer shows the comparison, not one side lifted out of it.
+      expect(find('.gs-sweep-viewer-wipe .gs-wipe')).not.toBeNull();
+      expect(find('.gs-sweep-viewer-img')).toBeNull();
+
       find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
       fixture.detectChanges();
 
-      expect(document.activeElement).toBe(all('.gs-sweep-zoom')[1]);
+      expect(document.activeElement).toBe(find('.gs-sweep-pair-enlarge'));
+    });
+
+    it('keeps the wipe divider in the Tab cycle of the enlarged view', async () => {
+      await setUp({ parameter: 'tiling' });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+      find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
+      fixture.detectChanges();
+
+      const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
+      panel.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(find('.gs-sweep-viewer-x'));
+      panel.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Tab',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(
+        find('.gs-sweep-viewer-body .gs-wipe-divider'),
+      );
     });
   });
 
@@ -319,7 +416,7 @@ describe('GsSweepScrubComponent', () => {
     find<HTMLButtonElement>('.gs-sweep-offer')!.click();
     fixture.detectChanges();
 
-    const [first] = all<HTMLElement>('.gs-sweep-tiled');
+    const [first] = all<HTMLElement>('.gs-wipe-tiled');
     expect(first.getAttribute('role')).toBe('img');
     expect(first.getAttribute('aria-label')).toContain('repeated four times');
     const copies = Array.from(first.querySelectorAll<HTMLImageElement>('img'));

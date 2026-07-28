@@ -15,6 +15,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
+import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 import { settingProseLabelKey } from '../../pages/generate/setting-vocabulary';
 import {
@@ -37,8 +38,13 @@ const VIEWER_STEPS: Readonly<Record<string, number>> = {
   ArrowDown: 1,
 };
 
-/** What Tab may land on inside the full-size view. */
-const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
+/**
+ * What Tab may land on inside the full-size view. The wipe's divider is a
+ * slider built out of a div rather than an input, and leaving it out of the
+ * cycle would make the one control a pair strip has unreachable in the layer.
+ */
+const VIEWER_FOCUSABLE =
+  'button:not([disabled]), input:not([disabled]), [role="slider"][tabindex="0"]';
 
 /**
  * A parameter sweep the reader can scrub: the same scene rendered across a range
@@ -58,11 +64,14 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
  * differences between neighbouring stops are exactly what is hardest to see, so
  * the slider, the captions and the pair toggle all come with it.
  *
- * A strip of two frames is a before and an after rather than a range, and gets
- * them side by side: a slider between two positions asks the reader to flick
- * back and forth to hold a comparison they could simply be shown. Frames the
- * index marks `tile_repeat_2x2` are single tiles, and are laid out as four
- * copies, because a seam only exists where one copy meets the next.
+ * A strip of two frames is a before and an after rather than a range, and is
+ * handed to the wipe: a slider between two positions asks the reader to flick
+ * back and forth to hold a comparison they could simply be shown, and two
+ * copies set apart asks them to carry half the picture across the gap. Where
+ * the halves would be too small to read the wipe shows the pair side by side
+ * itself. Frames the index marks `tile_repeat_2x2` are single tiles, and are
+ * laid out as four copies, because a seam only exists where one copy meets the
+ * next.
  *
  * When the library has no strip for the parameter, the component renders
  * nothing at all. That is the state the app is in before the library is
@@ -75,6 +84,7 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
     IconComponent,
     NgTemplateOutlet,
     RouterLink,
+    GsCompareWipeComponent,
     GsSettingChipComponent,
   ],
   template: `
@@ -114,6 +124,31 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
           (load)="onFrameLoad()"
         />
       }
+    </ng-template>
+
+    <!-- The two sides of a before-and-after strip, wiped over each other. The
+         chips are the sides' labels: the same token the caption under a range
+         strip carries, so "Tiling On" reads the same wherever it is said. -->
+    <ng-template #wipe let-sides="sides">
+      <app-gs-compare-wipe
+        [beforeSrc]="frameUrl(sides[0])"
+        [afterSrc]="frameUrl(sides[1])"
+        [beforeAlt]="frameAlt(sides[0])"
+        [afterAlt]="frameAlt(sides[1])"
+        [tiled]="tiled()"
+        (imageLoad)="onFrameLoad()"
+      >
+        <app-gs-setting-chip
+          wipe-before
+          [settingId]="activeParameter()"
+          [value]="sides[0].value"
+        />
+        <app-gs-setting-chip
+          wipe-after
+          [settingId]="activeParameter()"
+          [value]="sides[1].value"
+        />
+      </app-gs-compare-wipe>
     </ng-template>
 
     <!-- Steps read differently depending on whether the sampler re-rolls the
@@ -199,37 +234,36 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
               </figure>
             }
 
-            @if (paired()) {
-              <div
+            @if (pairSides(); as sides) {
+              <!-- A before and an after of one scene, wiped rather than set
+                   apart: the difference is in one place, and a gap between two
+                   copies is exactly the distance the reader would have to carry
+                   it across. The wipe drops back to the pair itself where the
+                   halves would be too small to read. -->
+              <figure
                 class="gs-sweep-pair"
                 [attr.aria-label]="'generate.sweeps.pair_label' | transloco"
               >
-                @for (side of strip()!.stops; track side.file; let i = $index) {
-                  <figure class="gs-sweep-pair-item">
-                    <button
-                      #zoomTrigger
-                      type="button"
-                      class="gs-sweep-zoom"
-                      [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
-                      (click)="openZoom(i, i)"
-                    >
-                      <ng-container
-                        [ngTemplateOutlet]="frame"
-                        [ngTemplateOutletContext]="{
-                          stop: side,
-                          cls: 'gs-sweep-frame',
-                        }"
-                      />
-                    </button>
-                    <figcaption>
-                      <span class="gs-sweep-pair-name">
-                        {{ valueTextOf(side) }}
-                      </span>
-                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
-                    </figcaption>
-                  </figure>
-                }
-              </div>
+                <ng-container
+                  [ngTemplateOutlet]="wipe"
+                  [ngTemplateOutletContext]="{ sides: sides }"
+                />
+                <figcaption class="gs-sweep-pair-caps">
+                  @for (side of sides; track side.file) {
+                    <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+                  }
+                </figcaption>
+                <!-- The picture is the divider's now, so the way to full size
+                     is a control of its own rather than a press on the frame. -->
+                <button
+                  #zoomTrigger
+                  type="button"
+                  class="gs-sweep-pair-enlarge"
+                  (click)="openZoom(0, 0)"
+                >
+                  {{ 'generate.sweeps.pair_enlarge' | transloco }}
+                </button>
+              </figure>
             } @else {
               <figure class="gs-sweep-figure">
                 <!-- The frame is as wide as the column it sits in, which in the
@@ -348,14 +382,18 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
               aria-modal="true"
               tabindex="-1"
               [attr.aria-label]="
-                'generate.sweeps.enlarged_title'
-                  | transloco: { value: valueTextOf(shown) }
+                paired()
+                  ? ('generate.sweeps.enlarged_pair_title' | transloco)
+                  : ('generate.sweeps.enlarged_title'
+                    | transloco: { value: valueTextOf(shown) })
               "
               (keydown)="onViewerKeydown($event)"
             >
               <div class="gs-sweep-viewer-top">
                 <span class="gs-sweep-viewer-name">
-                  @if (shown.prompt_fragment) {
+                  @if (paired()) {
+                    {{ 'generate.sweeps.pair_label' | transloco }}
+                  } @else if (shown.prompt_fragment) {
                     {{
                       'generate.sweeps.value_prompt'
                         | transloco: valueParamsOf(shown)
@@ -391,15 +429,36 @@ const VIEWER_FOCUSABLE = 'button:not([disabled]), input:not([disabled])';
                     </figcaption>
                   </figure>
                 }
-                <ng-container
-                  [ngTemplateOutlet]="frame"
-                  [ngTemplateOutletContext]="{
-                    stop: shown,
-                    cls: 'gs-sweep-viewer-img',
-                  }"
-                />
+                <!-- Full size is where a wipe is worth the most, so a pair is
+                     the same wipe here rather than one side lifted out of it. -->
+                @if (pairSides(); as sides) {
+                  <div class="gs-sweep-viewer-wipe">
+                    <ng-container
+                      [ngTemplateOutlet]="wipe"
+                      [ngTemplateOutletContext]="{ sides: sides }"
+                    />
+                  </div>
+                } @else {
+                  <ng-container
+                    [ngTemplateOutlet]="frame"
+                    [ngTemplateOutletContext]="{
+                      stop: shown,
+                      cls: 'gs-sweep-viewer-img',
+                    }"
+                  />
+                }
               </div>
-              <p class="gs-sweep-viewer-cap">{{ shown.caption }}</p>
+              <p class="gs-sweep-viewer-cap">
+                @if (pairSides(); as sides) {
+                  <span class="gs-sweep-pair-caps">
+                    @for (side of sides; track side.file) {
+                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+                    }
+                  </span>
+                } @else {
+                  {{ shown.caption }}
+                }
+              </p>
 
               <!-- Full size is where the differences between stops are actually
                    readable, so the scrubber comes with it rather than being left
@@ -525,6 +584,12 @@ export class GsSweepScrubComponent {
   /** A strip of two frames is a before and an after, not a range. */
   public readonly paired = computed(() => this.strip()?.stops.length === 2);
 
+  /** Those two frames, in the order they read, or null on a range strip. */
+  public readonly pairSides = computed<SweepStop[] | null>(() => {
+    const stops = this.strip()?.stops;
+    return stops?.length === 2 ? stops : null;
+  });
+
   /** Whether the frames are single tiles that only read once repeated. */
   public readonly tiled = computed(
     () => this.strip()?.presentation === 'tile_repeat_2x2',
@@ -611,6 +676,18 @@ export class GsSweepScrubComponent {
       );
     }
     return String(stop.value);
+  }
+
+  /**
+   * How a frame describes itself to a reader who cannot see it, in the words
+   * the template uses on the frames it draws itself: a tiled frame is the one
+   * tile four times over, and everything else is the scene at this value.
+   */
+  public frameAlt(stop: SweepStop): string {
+    return this.transloco.translate(
+      this.tiled() ? 'generate.sweeps.tiled_alt' : 'generate.sweeps.frame_alt',
+      { value: this.valueTextOf(stop) },
+    );
   }
 
   /**

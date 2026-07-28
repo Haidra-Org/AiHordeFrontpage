@@ -5086,7 +5086,10 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 30;
+  /* Above the model autocomplete panel (z 30): both are absolute in the same
+     stacking context, and at a tie the model area wins on DOM order, putting
+     an open dropdown over this menu where the two overlap. */
+  z-index: 40;
   width: min(360px, calc(100vw - 24px));
   max-height: min(64vh, 420px);
   overflow-y: auto;
@@ -7371,33 +7374,220 @@ app-gs-sweep-scrub {
 
 /* ------- sweeps: pairs, tiles, sources ------------------------------- */
 
-/* Two frames are a before and an after, so they are shown as one: a slider
-   between two positions asks the reader to flick back and forth to hold a
-   comparison they can simply be given. */
+/* Two frames are a before and an after, so they are shown as one picture with a
+   divider through it rather than as two pictures with a gap between them. */
 .gen-studio .gs-sweep-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-}
-.gen-studio .gs-sweep-pair-item {
   margin: 0;
   min-width: 0;
 }
-.gen-studio .gs-sweep-pair-name {
-  display: block;
+/* One sentence per side, under the half it belongs to. They stay two columns in
+   both presentations: the wipe's halves are left and right, and so are the
+   frames the fallback lays out. */
+.gen-studio .gs-sweep-pair-caps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
   margin-top: 6px;
+}
+.gen-studio .gs-sweep-pair-cap {
+  display: block;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+/* The frame is the divider's now, so the way to full size is a line of its own,
+   in the same quiet register as the control that folds the strip away. */
+.gen-studio .gs-sweep-pair-enlarge {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-blue);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dark .gen-studio .gs-sweep-pair-enlarge {
+  color: var(--gs-pop-accent);
+}
+.gen-studio .gs-sweep-viewer-wipe {
+  min-width: 0;
+  max-width: 100%;
+  margin: 12px auto 0;
+}
+
+/* ------- the before/after wipe --------------------------------------- */
+
+/* Two states of one picture, stacked, with a divider the reader wipes across
+   them. Below the width at which a half stops being legible the same markup
+   lays the two out side by side, which is the whole reason the tags and the
+   frames are one flat grid: nothing moves in the DOM between the two, only
+   where the grid puts it. */
+app-gs-compare-wipe {
+  display: block;
+  min-width: 0;
+}
+.gen-studio .gs-wipe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 9px;
+  min-width: 0;
+}
+.gen-studio .gs-wipe-media {
+  grid-row: 1;
+  min-width: 0;
+}
+.gen-studio .gs-wipe-media--before {
+  grid-column: 1;
+}
+.gen-studio .gs-wipe-media--after {
+  grid-column: 2;
+}
+.gen-studio .gs-wipe-tag {
+  grid-row: 2;
+  min-width: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  /* Same AA constraint as the caption: --gs-label misses on this plate. */
+  /* Same AA constraint as the sweep caption: --gs-label misses on this plate. */
   color: var(--gs-ink-2);
 }
-.gen-studio .gs-sweep-pair-cap {
+.gen-studio .gs-wipe-tag--before {
+  grid-column: 1;
+}
+.gen-studio .gs-wipe-tag--after {
+  grid-column: 2;
+}
+.gen-studio .gs-wipe-img {
   display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  color: var(--gs-ink-2);
+  width: 100%;
+  max-width: 100%;
+  /* The same cap the sweep frames keep: a portrait pair at column width is
+     taller than the pane it opened in. */
+  max-height: min(42vh, 460px);
+  object-fit: contain;
+  border-radius: 7px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-wipe-tiled {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-wipe-tile {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Wiping: the two sides share one cell, the after side is clipped back to the
+   divider, and the tags become corner marks so a still of the pair still says
+   which half is which. */
+.gen-studio .gs-wipe.is-wiping {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 7px;
+  /* The divider is dragged across the picture, so the picture cannot also be a
+     surface the browser pans and selects under the same finger. */
+  touch-action: none;
+  user-select: none;
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 var(--gs-wipe-at, 50%));
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-img,
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tiled {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tiled {
+  grid-template-rows: 1fr 1fr;
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tile {
+  height: 100%;
+  object-fit: cover;
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-img,
+.gen-studio .gs-wipe.is-wiping .gs-wipe-tile {
+  -webkit-user-drag: none;
+}
+/* The tag sits on the card tone rather than on a wash of the picture: it has to
+   clear AA over whatever the render happens to be, in both themes. */
+.gen-studio .gs-wipe.is-wiping .gs-wipe-tag {
+  position: absolute;
+  bottom: 7px;
+  z-index: 2;
+  padding: 3px 7px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  background: var(--gs-card);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-tag--before {
+  left: 7px;
+}
+.gen-studio .gs-wipe.is-wiping .gs-wipe-tag--after {
+  right: 7px;
+}
+/* A 2px leading bar with a quiet grip on it, in a band wide enough to put a
+   thumb on: the bar is the drawing, the band is the control. */
+.gen-studio .gs-wipe-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--gs-wipe-at, 50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  transform: translateX(-50%);
+  cursor: ew-resize;
+}
+.gen-studio .gs-wipe-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gs-card);
+}
+.gen-studio .gs-wipe-grip {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-card);
+}
+.gen-studio .gs-wipe-divider:focus-visible {
+  outline: none;
+}
+.gen-studio .gs-wipe-divider:focus-visible .gs-wipe-grip {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+/* The wipe itself is the reader's hand, and never animates. Only the grip's own
+   answer to being pointed at does, and it stands down where motion is not
+   wanted. */
+@media (prefers-reduced-motion: no-preference) {
+  .gen-studio .gs-wipe-grip {
+    transition:
+      border-color 120ms ease,
+      transform 120ms ease;
+  }
+}
+.gen-studio .gs-wipe-divider:hover .gs-wipe-grip,
+.gen-studio .gs-wipe-divider:focus-visible .gs-wipe-grip {
+  border-color: var(--gs-blue);
 }
 
 /* A tiling frame is one tile, and a seam only exists where one copy meets the

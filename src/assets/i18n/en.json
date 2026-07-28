@@ -714,6 +714,13 @@
   "generate.sweeps.cell_next_column": "The picture to the right",
   "generate.sweeps.cell_prev_row": "The picture above",
   "generate.sweeps.cell_next_row": "The picture below",
+  "generate.sweeps.pair_enlarge": "See both of these larger",
+  "generate.sweeps.enlarged_pair_title": "The same picture both ways, full size",
+
+  "generate.compare.before": "Before",
+  "generate.compare.after": "After",
+  "generate.compare.slider_label": "Drag across the picture to compare the two",
+  "generate.compare.value_text": "{{ percent }}% of the second picture shown",
 
   "generate.learn.flows.txt2img.steps.prompt.title": "Describe the picture",
   "generate.learn.flows.txt2img.steps.prompt.body.new_to_this": "The prompt box is where you say what you want to see. Write it as a plain description: what the subject is, where they are, and what the light and the mood are like. This example asked for “{{ prompt }}”. Press Set this for me and it goes into the box.",
