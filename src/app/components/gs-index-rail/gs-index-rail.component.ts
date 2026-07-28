@@ -18,7 +18,13 @@ export interface GsIndexRailEntry {
   /** Identifies the entry to the rail; need not be the target's DOM id. */
   id: string;
   /** The name the entry is read by, resolved through transloco. */
-  labelKey: string;
+  labelKey?: string;
+  /**
+   * The name the entry is read by, already in the reader's words. For a rail
+   * over data the page did not author, such as the style catalogue's category
+   * names, which have no key to resolve. An entry carries this or a `labelKey`.
+   */
+  label?: string;
   /** Registry name of the entry's duotone glyph, where it has one. */
   icon?: string;
   /** `gs-sec--<section>`, the hue the bar and glyph are tinted from. */
@@ -97,7 +103,13 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
       @if (entry.icon; as icon) {
         <app-icon class="gs-index-entry-mark" [name]="icon" />
       }
-      <span class="gs-index-entry-label">{{ entry.labelKey | transloco }}</span>
+      @if (entry.label; as label) {
+        <span class="gs-index-entry-label">{{ label }}</span>
+      } @else {
+        <span class="gs-index-entry-label">{{
+          entry.labelKey | transloco
+        }}</span>
+      }
       @if (entry.noteKey; as noteKey) {
         <span class="gs-index-entry-note">{{ noteKey | transloco }}</span>
       }
@@ -105,6 +117,7 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
   `,
   host: {
     class: 'gs-index-rail',
+    '[class.gs-index-rail--bar]': 'barForm()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -118,6 +131,12 @@ export class GsIndexRailComponent {
   public readonly labelKey = input<string>('generate.learn.rail_label');
   /** Link mode: the entry the page is on. Ignored where entries scroll. */
   public readonly currentId = input<string | null>(null);
+  /**
+   * Hold the slim bar form at every width, for a rail whose page has no margin
+   * to stand a contents column up in: inside a modal, or beside a wide layout
+   * that already spends both gutters.
+   */
+  public readonly barForm = input<boolean>(false);
 
   /** The entry scrollspy last put under the reader, before any has been seen. */
   private readonly seen = signal<string | null>(null);

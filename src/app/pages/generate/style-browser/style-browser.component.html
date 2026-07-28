@@ -131,23 +131,15 @@
     </div>
 
     @if (sort() === "category" && sections().length > 1) {
-      <nav
+      <app-gs-index-rail
         class="gs-sb-toc"
-        [attr.aria-label]="'generate.form.toc_label' | transloco"
-      >
-        @for (section of sections(); track section.category) {
-          <button
-            type="button"
-            class="gs-sb-toc-chip"
-            (click)="jumpToSection(section.category)"
-          >
-            {{ section.category }}
-          </button>
-        }
-      </nav>
+        [entries]="tocEntries()"
+        [barForm]="true"
+        labelKey="generate.form.toc_label"
+      />
     }
 
-    <div #body class="gs-modal-body">
+    <div class="gs-modal-body">
       @if (previewsFailed()) {
         <p class="gs-sb-note">
           {{ "generate.form.previews_unavailable" | transloco }}

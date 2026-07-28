@@ -423,24 +423,26 @@ describe('StyleBrowserComponent', () => {
 
     it('lists only the categories that still have cards', async () => {
       const { component, fixture, el } = await createBrowser();
-      const chips = (): string[] =>
-        [...el.querySelectorAll('.gs-sb-toc-chip')].map((node) =>
-          (node.textContent ?? '').trim(),
+      const lines = (): string[] =>
+        [...el.querySelectorAll('.gs-sb-toc .gs-index-entry-label')].map(
+          (node) => (node.textContent ?? '').trim(),
         );
-      expect(chips()).toEqual(['featured', 'artistic']);
+      expect(lines()).toEqual(['featured', 'artistic']);
 
       component.setQuery('water');
       fixture.detectChanges();
-      // One section left, so the contents row has nothing to navigate.
+      // One section left, so the contents rail has nothing to navigate.
       expect(el.querySelector('.gs-sb-toc')).toBeNull();
     });
 
-    it('scrolls to the section a contents chip names', async () => {
+    it('scrolls to the section a contents entry names', async () => {
       const { el } = await createBrowser();
       const scrollIntoView = vi.fn();
       Element.prototype.scrollIntoView = scrollIntoView;
 
-      el.querySelectorAll<HTMLButtonElement>('.gs-sb-toc-chip')[1].click();
+      el.querySelectorAll<HTMLButtonElement>(
+        '.gs-sb-toc .gs-index-entry',
+      )[1].click();
       expect(scrollIntoView).toHaveBeenCalledTimes(1);
       expect(
         el.querySelector('#gs-sb-sec-artistic .gs-sb-section-title')

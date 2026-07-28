@@ -5713,39 +5713,17 @@
   }
 }
 
-/* A single scrolling rail at every width. Wrapping the ~40 curated categories
-   cost four rows of the modal's height, which is space the grid needs more. */
+/* The contents on the Learn area's index-rail grammar, held in its bar form: a
+   single scrolling line at every width. Wrapping the ~40 curated categories
+   cost four rows of the modal's height, which is space the grid needs more.
+   The rail draws its own rule under the row; the panel's inset sits on the nav
+   so that rule still spans the full width of the modal. */
 .gen-studio .gs-sb-toc {
   flex: none;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  padding: 8px 20px;
-  border-bottom: 1px solid var(--gs-border-soft);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  /* Focus rings must not be clipped by the rail, so the overflowed chip scrolls
-     into view with room around it. */
-  scroll-padding-inline: 20px;
 }
-.gen-studio .gs-sb-toc-chip {
-  flex: none;
-  min-height: 32px;
-  white-space: nowrap;
-  padding: 4px 11px;
-  font-size: 11.5px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--gs-label);
-  border: 1px solid var(--gs-border);
-  border-radius: 999px;
-  background: var(--gs-panel);
-  cursor: pointer;
-}
-.gen-studio .gs-sb-toc-chip:hover {
-  border-color: var(--gs-blue);
-  color: var(--gs-blue);
+.gen-studio .gs-sb-toc .gs-index-rail-nav {
+  padding-inline: 8px;
+  scroll-padding-inline: 8px;
 }
 
 .gen-studio .gs-sb-mature {
@@ -6012,11 +5990,9 @@
   .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-mature {
     display: none;
   }
-  .gen-studio .gs-sb-toc {
-    padding: 8px 14px;
-  }
-  .gen-studio .gs-sb-toc-chip {
-    min-height: 44px;
+  .gen-studio .gs-sb-toc .gs-index-rail-nav {
+    padding-inline: 2px;
+    scroll-padding-inline: 2px;
   }
   /* The subject switch used to be ordered last; it now follows the source, so
      the stack reads search, mature, subject, sort at both breakpoints. */
@@ -6775,36 +6751,6 @@
     overflow-y: auto;
     scrollbar-width: thin;
   }
-
-  /* The picker holds its bar form here, against the rail's own wide-step
-     rules, which would otherwise stand it up as a third column. */
-  .gen-studio .gs-tut-picker .gs-index-rail {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-  .gen-studio .gs-tut-picker .gs-index-rail-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    border-bottom: 1px solid var(--gs-border-soft);
-  }
-  .gen-studio .gs-tut-picker .gs-index-entry {
-    min-height: 44px;
-    padding: 0 12px;
-    white-space: nowrap;
-  }
-  .gen-studio .gs-tut-picker .gs-index-entry + .gs-index-entry {
-    border-top: 0;
-    border-left: 1px solid var(--gs-border-soft);
-  }
-  .gen-studio .gs-tut-picker .gs-index-entry::before {
-    left: 6px;
-    right: 6px;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    height: 2px;
-  }
 }
 
 @media (pointer: coarse) {
@@ -6959,6 +6905,19 @@
     --gs-sec-tint-border,
     var(--gs-zone-tint-border, var(--gs-border))
   );
+}
+/* With the eyebrow carrying the landmark voice (uppercase, hairline), the step
+   title under it goes back to being a heading: two tracked-caps lines in a row
+   would be the landmark said twice. */
+.gen-studio .gs-learn-card .gs-guide-head,
+.gen-studio .gs-learn-sheet-card .gs-guide-head {
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.gen-studio .gs-learn-card .gs-guide-head::after,
+.gen-studio .gs-learn-sheet-card .gs-guide-head::after {
+  content: none;
 }
 
 /* ------- parameter sweeps ------------------------------------------- */
@@ -7671,7 +7630,7 @@ app-gs-sweep-scrub {
   min-height: 38px;
   padding: 8px 16px;
   border: 1px solid var(--gs-blue);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gs-blue);
   color: #ffffff;
   font-size: 12.5px;
@@ -8340,6 +8299,9 @@ app-gs-sweep-scrub {
   text-transform: uppercase;
   color: var(--gs-muted);
 }
+/* Squared on the studio's control radius: these navigate, and a pill no longer
+   says so anywhere in the area. The hue stays, as border and text on hover, so
+   the link still names the section it crosses into. */
 .gen-studio .gs-ref-related-link {
   display: inline-flex;
   align-items: center;
@@ -8350,7 +8312,7 @@ app-gs-sweep-scrub {
   font-weight: 600;
   color: var(--gs-ink-2);
   border: 1px solid var(--gs-border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gs-field);
   text-decoration: none;
 }
@@ -8881,6 +8843,9 @@ html:has(app-gs-sheet) {
   text-transform: uppercase;
   color: var(--gs-muted);
 }
+/* Squared like the links above it, but the border stays dashed: it is the one
+   mark separating a word that opens a definition in place from a name that
+   takes the reader off the page. */
 .gen-studio .gs-ref-term {
   display: inline-flex;
   align-items: center;
@@ -8891,7 +8856,7 @@ html:has(app-gs-sheet) {
   color: var(--gs-ink-2);
   background: none;
   border: 1px dashed var(--gs-border);
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
 }
 .gen-studio .gs-ref-term:hover {
@@ -9052,7 +9017,7 @@ html:has(app-gs-sheet) {
   min-height: 34px;
   padding: 7px 14px;
   border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--gs-blue-tint);
   color: var(--gs-blue);
   font-family: inherit;
@@ -9299,5 +9264,38 @@ html:has(app-gs-sheet) {
 @media (min-width: 1200px) and (pointer: coarse) {
   .gen-studio .gs-index-entry {
     min-height: 44px;
+  }
+}
+
+/* The bar form held at every width, for a rail with no margin to stand up in:
+   inside a modal, or beside a page whose wide layout already spends both
+   gutters. Written after the wide step so it wins on order at equal weight. */
+@media (min-width: 1200px) {
+  .gen-studio .gs-index-rail--bar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .gen-studio .gs-index-rail--bar .gs-index-rail-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--gs-border-soft);
+  }
+  .gen-studio .gs-index-rail--bar .gs-index-entry {
+    min-height: 44px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+  .gen-studio .gs-index-rail--bar .gs-index-entry + .gs-index-entry {
+    border-top: 0;
+    border-left: 1px solid var(--gs-border-soft);
+  }
+  .gen-studio .gs-index-rail--bar .gs-index-entry::before {
+    left: 6px;
+    right: 6px;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    height: 2px;
   }
 }

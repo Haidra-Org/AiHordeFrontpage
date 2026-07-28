@@ -672,7 +672,7 @@
 
   "generate.sweeps.expand": "See what changing {{ setting }} does",
   "generate.sweeps.param_this": "this",
-  "generate.sweeps.param_prompt_emphasis": "how hard a word is pushed",
+  "generate.sweeps.param_prompt_emphasis": "word emphasis",
   "generate.sweeps.collapse": "Hide these examples",
   "generate.sweeps.loading": "Fetching the example images.",
   "generate.sweeps.value": "Rendered at {{ value }}",

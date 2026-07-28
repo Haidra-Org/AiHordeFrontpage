@@ -16,6 +16,10 @@ import { NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
+import {
   STYLE_PREVIEW_VARIANTS,
   StylePreviewVariant,
   StylePreviewsService,
@@ -136,7 +140,12 @@ export function isMatureStyle(
  */
 @Component({
   selector: 'app-style-browser',
-  imports: [NgTemplateOutlet, TranslocoPipe, IconComponent],
+  imports: [
+    NgTemplateOutlet,
+    TranslocoPipe,
+    IconComponent,
+    GsIndexRailComponent,
+  ],
   templateUrl: './style-browser.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -160,7 +169,6 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly expandedPanel =
     viewChild<ElementRef<HTMLElement>>('expandedPanel');
-  private readonly body = viewChild<ElementRef<HTMLElement>>('body');
 
   /** The element focused before the modal opened, restored when it closes. */
   private previousActiveElement: HTMLElement | null = null;
@@ -275,6 +283,20 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
           .map((name) => this.card(name)),
       }))
       .filter((section) => section.cards.length > 0),
+  );
+
+  /**
+   * The sections as the contents rail reads them. Category names are catalogue
+   * data rather than anything this app has words for, so they are given as
+   * literal labels; they name no area of the studio either, so the rail takes
+   * the neutral hue and no glyph.
+   */
+  public readonly tocEntries = computed<GsIndexRailEntry[]>(() =>
+    this.sections().map((section) => ({
+      id: this.sectionId(section.category),
+      targetId: this.sectionId(section.category),
+      label: section.category,
+    })),
   );
 
   /** The flat "most used" ordering: usage desc, then name, unused styles last. */
@@ -403,27 +425,9 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     this.sort.set(sort);
   }
 
-  /** The DOM id of a section, so the contents row can target it. */
+  /** The DOM id of a section, so the contents rail can target it. */
   public sectionId(category: string): string {
     return `gs-sb-sec-${category.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
-  }
-
-  /** Scroll the body to a category's section. */
-  public jumpToSection(category: string): void {
-    // The id is sanitised to `[a-z0-9-]` with a leading letter, so it needs no
-    // further escaping as a selector.
-    const target = this.body()?.nativeElement.querySelector<HTMLElement>(
-      `#${this.sectionId(category)}`,
-    );
-    target?.scrollIntoView({ behavior: this.scrollBehavior(), block: 'start' });
-  }
-
-  private scrollBehavior(): ScrollBehavior {
-    const reduced =
-      isPlatformBrowser(this.platformId) &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    return reduced ? 'auto' : 'smooth';
   }
 
   /** The style the form currently selects, so its card can show as active. */
