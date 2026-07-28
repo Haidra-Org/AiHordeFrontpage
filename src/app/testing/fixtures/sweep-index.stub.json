@@ -59,6 +59,7 @@
           "value": 12,
           "label": "12",
           "caption": "The face and the light have settled.",
+          "batch_size": 4,
           "file": "steps/albedobase-xl/person/002_12.webp",
           "sidecar": "steps/albedobase-xl/person/002_12.json",
           "params": {
@@ -434,7 +435,7 @@
     {
       "strip_id": "tiling/deliberate/texture",
       "parameter": "tiling",
-      "presentation": "tile_repeat_2x2",
+      "presentation": "tile_repeat_3x3",
       "caption": "Whether the edges are made to wrap.",
       "rationale": "A seam only exists where one copy meets the next.",
       "complete": true,

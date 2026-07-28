@@ -24,8 +24,12 @@ import {
   SweepStop,
 } from '../../services/sweep-library.service';
 
-/** The four copies a `tile_repeat_2x2` frame is laid out as. */
-const TILE_CELLS = [0, 1, 2, 3] as const;
+/**
+ * The nine copies a `tile_repeat_3x3` frame is laid out as. Three across rather
+ * than two puts whole joins inside the plate instead of only at the point where
+ * four corners meet, which is where a seam is easiest to see.
+ */
+const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /** Where the whole answer about samplers lives, for the folded note's last line. */
 const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
@@ -69,9 +73,10 @@ const VIEWER_FOCUSABLE =
  * back and forth to hold a comparison they could simply be shown, and two
  * copies set apart asks them to carry half the picture across the gap. Where
  * the halves would be too small to read the wipe shows the pair side by side
- * itself. Frames the index marks `tile_repeat_2x2` are single tiles, and are
- * laid out as four copies, because a seam only exists where one copy meets the
- * next.
+ * itself. Frames the index marks `tile_repeat_3x3` are single tiles, and are
+ * laid out as a three-by-three plate beside the tile on its own: a seam only
+ * exists where one copy meets the next, and only the isolated tile says what was
+ * actually rendered.
  *
  * When the library has no strip for the parameter, the component renders
  * nothing at all. That is the state the app is in before the library is
@@ -88,29 +93,55 @@ const VIEWER_FOCUSABLE =
     GsSettingChipComponent,
   ],
   template: `
+    <!-- The tile a repeated plate is made of, on its own. The plate answers
+         "do the joins show"; only the single image answers "what was actually
+         rendered", and a tiling strip has to say both at once rather than make
+         the reader toggle between the two readings of one picture. -->
+    <ng-template #solo let-stop="stop">
+      <span class="gs-sweep-solo">
+        <img
+          class="gs-sweep-solo-img"
+          [src]="frameUrl(stop)"
+          [alt]="
+            'generate.sweeps.tile_solo_alt'
+              | transloco: { value: valueTextOf(stop) }
+          "
+          loading="lazy"
+        />
+        <span class="gs-sweep-solo-cap">
+          {{ 'generate.sweeps.tile_solo_label' | transloco }}
+        </span>
+      </span>
+    </ng-template>
+
     <!-- One frame, however this strip's frames have to be drawn. A tiled strip
-         has no single image to hang alt text on, so the four copies are one
+         has no single image to hang alt text on, so the nine copies are one
          labelled group and the copies themselves are decoration. -->
     <ng-template #frame let-stop="stop" let-cls="cls">
       @if (tiled()) {
-        <span
-          [class]="cls"
-          class="gs-sweep-tiled"
-          role="img"
-          [attr.aria-label]="
-            'generate.sweeps.tiled_alt'
-              | transloco: { value: valueTextOf(stop) }
-          "
-        >
-          @for (cell of tileCells; track cell) {
-            <img
-              class="gs-sweep-tile"
-              [src]="frameUrl(stop)"
-              alt=""
-              loading="lazy"
-              (load)="onFrameLoad()"
-            />
-          }
+        <span [class]="cls" class="gs-sweep-tileset">
+          <span
+            class="gs-sweep-tiled"
+            role="img"
+            [attr.aria-label]="
+              'generate.sweeps.tiled_alt'
+                | transloco: { value: valueTextOf(stop) }
+            "
+          >
+            @for (cell of tileCells; track cell) {
+              <img
+                class="gs-sweep-tile"
+                [src]="frameUrl(stop)"
+                alt=""
+                loading="lazy"
+                (load)="onFrameLoad()"
+              />
+            }
+          </span>
+          <ng-container
+            [ngTemplateOutlet]="solo"
+            [ngTemplateOutletContext]="{ stop: stop }"
+          />
         </span>
       } @else {
         <img
@@ -248,6 +279,18 @@ const VIEWER_FOCUSABLE =
                   [ngTemplateOutlet]="wipe"
                   [ngTemplateOutletContext]="{ sides: sides }"
                 />
+                <!-- The wipe carries the plates, so the two tiles themselves go
+                     under it, in the columns the captions already read in. -->
+                @if (tiled()) {
+                  <div class="gs-sweep-solos">
+                    @for (side of sides; track side.file) {
+                      <ng-container
+                        [ngTemplateOutlet]="solo"
+                        [ngTemplateOutletContext]="{ stop: side }"
+                      />
+                    }
+                  </div>
+                }
                 <figcaption class="gs-sweep-pair-caps">
                   @for (side of sides; track side.file) {
                     <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
@@ -309,6 +352,16 @@ const VIEWER_FOCUSABLE =
                   <span class="gs-sweep-caption-text">{{
                     stop().caption
                   }}</span>
+                  <!-- Curation is disclosed rather than hidden: a frame picked
+                       from a batch says so, because generation is stochastic
+                       and pretending the first roll looked like this would
+                       teach the wrong lesson. -->
+                  @if ((stop().batch_size ?? 1) > 1) {
+                    <span class="gs-sweep-caption-batch">{{
+                      'generate.sweeps.batch_note'
+                        | transloco: { n: stop().batch_size }
+                    }}</span>
+                  }
                 </figcaption>
               </figure>
             }
@@ -437,6 +490,16 @@ const VIEWER_FOCUSABLE =
                       [ngTemplateOutlet]="wipe"
                       [ngTemplateOutletContext]="{ sides: sides }"
                     />
+                    @if (tiled()) {
+                      <div class="gs-sweep-solos">
+                        @for (side of sides; track side.file) {
+                          <ng-container
+                            [ngTemplateOutlet]="solo"
+                            [ngTemplateOutletContext]="{ stop: side }"
+                          />
+                        }
+                      </div>
+                    }
                   </div>
                 } @else {
                   <ng-container
@@ -519,7 +582,7 @@ export class GsSweepScrubComponent {
   private readonly variant = signal(false);
   private readonly variantWhy = signal(false);
 
-  /** The four copies of a tiled frame, as something the template can repeat. */
+  /** The nine copies of a tiled frame, as something the template can repeat. */
   public readonly tileCells = TILE_CELLS;
   public readonly samplerReference = SAMPLER_REFERENCE;
 
@@ -592,7 +655,7 @@ export class GsSweepScrubComponent {
 
   /** Whether the frames are single tiles that only read once repeated. */
   public readonly tiled = computed(
-    () => this.strip()?.presentation === 'tile_repeat_2x2',
+    () => this.strip()?.presentation === 'tile_repeat_3x3',
   );
 
   /** The image the strip was painted over, on the strips that start from one. */
@@ -681,7 +744,7 @@ export class GsSweepScrubComponent {
   /**
    * How a frame describes itself to a reader who cannot see it, in the words
    * the template uses on the frames it draws itself: a tiled frame is the one
-   * tile four times over, and everything else is the scene at this value.
+   * tile nine times over, and everything else is the scene at this value.
    */
   public frameAlt(stop: SweepStop): string {
     return this.transloco.translate(

@@ -193,6 +193,11 @@ describe('GsSweepScrubComponent', () => {
     expect(el().textContent).toContain('The face and the light have settled.');
     expect(text()).toContain('Steps 12');
     expect(find('.gs-sweep-range')).not.toBeNull();
+    // The stub marks this stop as picked from a batch of 4, and curation is
+    // disclosed rather than hidden.
+    expect(find('.gs-sweep-caption-batch')?.textContent).toContain(
+      'Picked from a batch of 4.',
+    );
   });
 
   it('carries slider semantics and moves with the keyboard', async () => {
@@ -411,22 +416,31 @@ describe('GsSweepScrubComponent', () => {
     });
   });
 
-  it('lays a tiled strip out as four copies of the one tile', async () => {
+  it('lays a tiled strip out as a plate of nine beside the tile itself', async () => {
     await setUp({ parameter: 'tiling' });
     find<HTMLButtonElement>('.gs-sweep-offer')!.click();
     fixture.detectChanges();
 
     const [first] = all<HTMLElement>('.gs-wipe-tiled');
     expect(first.getAttribute('role')).toBe('img');
-    expect(first.getAttribute('aria-label')).toContain('repeated four times');
+    expect(first.getAttribute('aria-label')).toContain('repeated nine times');
     const copies = Array.from(first.querySelectorAll<HTMLImageElement>('img'));
-    expect(copies).toHaveLength(4);
+    expect(copies).toHaveLength(9);
     for (const copy of copies) {
       expect(copy.getAttribute('src')).toBe(
         `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/001_off.webp`,
       );
       expect(copy.getAttribute('loading')).toBe('lazy');
     }
+
+    // The plate says whether the joins show; the tile on its own says what was
+    // rendered. Both stops carry one, and neither is behind a toggle.
+    const solos = all<HTMLImageElement>('.gs-sweep-solo-img');
+    expect(solos.map((solo) => solo.getAttribute('src'))).toEqual([
+      `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/001_off.webp`,
+      `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/002_on.webp`,
+    ]);
+    expect(solos[0].getAttribute('alt')).toContain('single tile');
   });
 
   it('names a strip that varies the wording by the wording, not by a setting', async () => {

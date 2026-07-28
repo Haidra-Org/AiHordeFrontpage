@@ -18,6 +18,12 @@ export interface SweepStop {
    * the wording rather than a number. Null on every other strip.
    */
   prompt_fragment?: string | null;
+  /**
+   * How many candidates this frame was picked from, where the library curated
+   * a batch rather than publishing a single render. Absent or 1 means the one
+   * render is the one shown; anything higher is disclosed to the reader.
+   */
+  batch_size?: number;
 }
 
 /** One side of a grid plate: what it varies, and the values it varies it over. */
@@ -62,7 +68,7 @@ export interface SweepStrip {
   parameter: string;
   /**
    * How the generator asks the strip to be laid out. `strip` is the scrubber,
-   * `grid` is a two-axis plate, and `tile_repeat_2x2` is a strip whose frames
+   * `grid` is a two-axis plate, and `tile_repeat_3x3` is a strip whose frames
    * are single tiles that only read once they are repeated.
    */
   presentation: string;

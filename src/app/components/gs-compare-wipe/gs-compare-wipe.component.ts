@@ -32,8 +32,12 @@ const KEY_MOVES: Readonly<Record<string, number>> = {
   ArrowUp: KEY_STEP,
 };
 
-/** The four copies a repeated frame is laid out as. */
-const TILE_CELLS = [0, 1, 2, 3] as const;
+/**
+ * The nine copies a repeated frame is laid out as. Three across rather than two
+ * puts whole joins inside the plate instead of only at the point where the four
+ * corners meet, which is where a seam is easiest to see.
+ */
+const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /**
  * Two renders of one scene, one over the other, with a divider the reader wipes
@@ -61,7 +65,7 @@ const TILE_CELLS = [0, 1, 2, 3] as const;
   imports: [TranslocoPipe, NgTemplateOutlet],
   template: `
     <!-- One side, however this pair has to be drawn. A repeated frame has no
-         single image to hang alt text on, so the four copies are one labelled
+         single image to hang alt text on, so the nine copies are one labelled
          group and the copies themselves are decoration. -->
     <ng-template #media let-src="src" let-alt="alt">
       @if (tiled()) {
@@ -160,9 +164,9 @@ export class GsCompareWipeComponent {
   public readonly beforeAlt = input('');
   public readonly afterAlt = input('');
   /**
-   * Draw each side as four copies of the one frame. A tile only shows its seams
-   * where one copy meets the next, so a pair of tiles has to be repeated before
-   * there is anything to compare.
+   * Draw each side as a three-by-three plate of the one frame. A tile only shows
+   * its seams where one copy meets the next, so a pair of tiles has to be
+   * repeated before there is anything to compare.
    */
   public readonly tiled = input(false);
 

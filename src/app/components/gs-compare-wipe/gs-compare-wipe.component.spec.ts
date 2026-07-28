@@ -273,7 +273,7 @@ describe('GsCompareWipeComponent', () => {
     expect(divider()).not.toBeNull();
   });
 
-  it('draws a repeated pair as four copies of each side', () => {
+  it('draws a repeated pair as a three-by-three plate of each side', () => {
     fixture.componentInstance.tiled = true;
     render();
 
@@ -281,7 +281,7 @@ describe('GsCompareWipeComponent', () => {
     expect(sides).toHaveLength(2);
     expect(sides[0].getAttribute('role')).toBe('img');
     expect(sides[0].getAttribute('aria-label')).toBe('The scene before');
-    expect(sides[0].querySelectorAll('img')).toHaveLength(4);
+    expect(sides[0].querySelectorAll('img')).toHaveLength(9);
     expect(all('.gs-wipe-img')).toHaveLength(0);
   });
 

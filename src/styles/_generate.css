@@ -7159,8 +7159,8 @@ app-gs-sweep-scrub {
    scrolled off the top before the picture ended. Capped to a fraction of the
    viewport and letterboxed on the field tone, so the strip stays a figure inside
    the prose in the panel, in the sheet and in a reference entry alike. The tiled
-   frame is a grid of four copies rather than one image, and is left alone: a cap
-   on it would crop the seam it exists to show. */
+   frame is a plate of nine copies beside the tile itself rather than one image,
+   and is left alone: a cap on it would crop the seam it exists to show. */
 .gen-studio img.gs-sweep-frame {
   max-height: min(42vh, 460px);
   object-fit: contain;
@@ -7178,6 +7178,13 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-sweep-caption-text {
   min-width: 0;
+}
+/* The best-of-N disclosure. Muted and last: it qualifies the frame rather than
+   describes it. */
+.gen-studio .gs-sweep-caption-batch {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--gs-muted);
 }
 /* The strips that vary a piece of prompt text have no field to name, so they
    keep the eyebrow the chip replaced everywhere else. */
@@ -7488,7 +7495,7 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-wipe-tiled {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   width: 100%;
   overflow: hidden;
   border-radius: 7px;
@@ -7526,7 +7533,7 @@ app-gs-compare-wipe {
   border-radius: 0;
 }
 .gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tiled {
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: repeat(3, 1fr);
 }
 .gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tile {
   height: 100%;
@@ -7607,11 +7614,20 @@ app-gs-compare-wipe {
 }
 
 /* A tiling frame is one tile, and a seam only exists where one copy meets the
-   next, so the frame is drawn as the four copies the index asks for. */
+   next, so the frame is drawn as the three-by-three plate the index asks for.
+   Three across rather than two puts whole joins inside the plate instead of only
+   at the point where four corners meet. */
+.gen-studio .gs-sweep-tileset {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
 .gen-studio .gs-sweep-tiled {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  width: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   border-radius: 7px;
   background: var(--gs-field);
@@ -7620,6 +7636,45 @@ app-gs-compare-wipe {
   display: block;
   width: 100%;
   height: auto;
+}
+
+/* The plate says whether the joins show; only the tile on its own says what was
+   rendered, so both are on show at once rather than behind a toggle. Beside the
+   plate where one frame is drawn, and in the caption columns under a pair. */
+.gen-studio .gs-sweep-solo {
+  display: block;
+  flex: 0 0 auto;
+  width: 84px;
+  max-width: 30%;
+  min-width: 0;
+}
+.gen-studio .gs-sweep-solos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 6px;
+}
+.gen-studio .gs-sweep-solos .gs-sweep-solo {
+  width: 84px;
+  max-width: 100%;
+}
+.gen-studio .gs-sweep-solo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-sweep-solo-cap {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  /* Same AA constraint as the sweep caption's own eyebrow: --gs-label lands
+     under 4.5:1 on the tinted note plate at this size in the light theme. */
+  color: var(--gs-ink-2);
 }
 
 .gen-studio .gs-sweep-source {
