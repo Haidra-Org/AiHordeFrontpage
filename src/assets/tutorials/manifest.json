@@ -7,11 +7,35 @@
       "title": "Text to image",
       "summary": "A prompt, a model and a seed: the smallest complete request the Horde accepts.",
       "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
       "model": "AlbedoBase XL (SDXL)",
       "seed": "1234567890",
       "result": "result.webp",
-      "request": "request.json",
-      "files": ["meta.json", "request.json", "result.webp"]
+      "request": "request.json"
+    },
+    {
+      "id": "txt2img--w2",
+      "directory": "txt2img--w2",
+      "title": "Text to image, fox shrine",
+      "summary": "A prompt, a model and a seed: the smallest complete request the Horde accepts. The fox shrine rendition, on an anime model in booru tags.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
+      "model": "Nova Anime XL",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json"
+    },
+    {
+      "id": "txt2img--w3",
+      "directory": "txt2img--w3",
+      "title": "Text to image, robot gardener",
+      "summary": "A prompt, a model and a seed: the smallest complete request the Horde accepts. The robot gardener rendition, whose subject is not a person.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json"
     },
     {
       "id": "img2img",
@@ -19,12 +43,38 @@
       "title": "Image to image",
       "summary": "Re-render an existing image and control how far it may drift with one slider.",
       "status": "available",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"],
       "model": "AlbedoBase XL (SDXL)",
       "seed": "1234567890",
       "result": "result.webp",
       "source": "source.webp",
-      "request": "request.json",
-      "files": ["meta.json", "request.json", "result.webp", "source.webp"]
+      "request": "request.json"
+    },
+    {
+      "id": "img2img--w2",
+      "directory": "img2img--w2",
+      "title": "Image to image, fox shrine",
+      "summary": "Re-render an existing image and control how far it may drift with one slider. The fox shrine rendition, where the drift is a change of season.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"],
+      "model": "Nova Anime XL",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "request": "request.json"
+    },
+    {
+      "id": "img2img--w3",
+      "directory": "img2img--w3",
+      "title": "Image to image, robot gardener",
+      "summary": "Re-render an existing image and control how far it may drift with one slider. The robot gardener rendition, where the drift is golden hour into a wet night.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"],
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "request": "request.json"
     },
     {
       "id": "controlnet",
@@ -32,12 +82,12 @@
       "title": "ControlNet (canny)",
       "summary": "Hold a composition with a canny edge map while the prompt changes the style entirely.",
       "status": "available",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"],
       "model": "Deliberate",
       "seed": "1234567890",
       "result": "result.webp",
       "source": "source.webp",
-      "request": "request.json",
-      "files": ["meta.json", "request.json", "result.webp", "source.webp"]
+      "request": "request.json"
     },
     {
       "id": "inpainting",
@@ -45,20 +95,21 @@
       "title": "Inpainting",
       "summary": "Repaint only the masked region of an image, leaving the rest untouched.",
       "status": "available",
-      "model": "Deliberate Inpainting",
-      "seed": "1234567890",
-      "result": "result.webp",
-      "source": "source.webp",
-      "mask": "mask.png",
-      "request": "request.json",
       "files": [
         "mask.png",
         "mask.webp",
         "meta.json",
         "request.json",
         "result.webp",
-        "source.webp"
-      ]
+        "source.webp",
+        "tutorial-inpaint-mask.png"
+      ],
+      "model": "Deliberate Inpainting",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "mask": "mask.png",
+      "request": "request.json"
     },
     {
       "id": "remix",
@@ -66,8 +117,8 @@
       "title": "Remix",
       "summary": "Blend a source image with extra reference images on Stable Cascade.",
       "status": "skipped",
-      "skipped_reason": "No workers were serving Stable Cascade 1.0 when the examples were generated.",
-      "files": ["SKIPPED.md"]
+      "files": ["SKIPPED.md"],
+      "skipped_reason": "No workers were serving Stable Cascade 1.0 when the examples were generated."
     },
     {
       "id": "qr_code",
@@ -75,11 +126,11 @@
       "title": "Scannable QR code",
       "summary": "Hide a scannable QR code inside a piece of artwork.",
       "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
       "model": "AlbedoBase XL (SDXL)",
-      "seed": "1234567890",
+      "seed": "1234567895",
       "result": "result.webp",
-      "request": "request.json",
-      "files": ["meta.json", "request.json", "result.webp"]
+      "request": "request.json"
     },
     {
       "id": "transparent",
@@ -87,11 +138,35 @@
       "title": "Transparent background",
       "summary": "Cut a subject out onto a real alpha channel with Layer Diffuse.",
       "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
       "model": "AlbedoBase XL (SDXL)",
       "seed": "1234567890",
       "result": "result.webp",
-      "request": "request.json",
-      "files": ["meta.json", "request.json", "result.webp"]
+      "request": "request.json"
+    },
+    {
+      "id": "transparent--w2",
+      "directory": "transparent--w2",
+      "title": "Transparent background, fox shrine",
+      "summary": "Cut a subject out onto a real alpha channel with Layer Diffuse. The fox shrine rendition, cutting out its companion animal.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
+      "model": "Nova Anime XL",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json"
+    },
+    {
+      "id": "transparent--w3",
+      "directory": "transparent--w3",
+      "title": "Transparent background, robot gardener",
+      "summary": "Cut a subject out onto a real alpha channel with Layer Diffuse. The robot gardener rendition, cutting out the world's own subject.",
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp"],
+      "model": "AlbedoBase XL (SDXL)",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "request": "request.json"
     },
     {
       "id": "facefix",
@@ -99,18 +174,18 @@
       "title": "Face fixing with GFPGAN",
       "summary": "The same seed with and without the GFPGAN post-processor, side by side.",
       "status": "available",
-      "model": "Deliberate",
-      "seed": "1234567890",
-      "result": "result.webp",
-      "before": "before.webp",
-      "request": "request.json",
       "files": [
         "before.webp",
         "meta.json",
         "request-before.json",
         "request.json",
         "result.webp"
-      ]
+      ],
+      "model": "ICBINP - I Can't Believe It's Not Photography",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "before": "before.webp",
+      "request": "request.json"
     }
   ]
 }

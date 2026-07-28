@@ -1,22 +1,14 @@
 {
   "flow": "txt2img",
+  "title": "Text to image",
   "model": "AlbedoBase XL (SDXL)",
   "seed": "1234567890",
   "requested_seed": "1234567890",
-  "worker_name": "justsomepcthatgenerating1mages",
-  "worker_id": "9027cc0d-ff79-4056-a616-84c39be134b1",
-  "generation_id": "dc3b3fe0-e447-4f70-9a3a-0b3a43fc0917",
-  "job_id": "b39136af-68a9-44a1-a5f7-dbeb5c616227",
-  "kudos_estimate": 21,
-  "kudos_charged": 45,
-  "wall_time_seconds": 41.7,
+  "generation_id": "7172ef21-a5ab-4ff0-bd08-0dc1f6270434",
+  "kudos_estimate": 21.0,
+  "kudos_charged": 45.0,
+  "wall_time_seconds": 20.4,
   "censored": false,
-  "gen_metadata": [
-    {
-      "type": "source_image",
-      "value": "parse_failed"
-    }
-  ],
-  "title": "Text to image",
-  "notes": "Anchor example. Its output image is reused as the source for img2img, controlnet, inpainting and remix, and is the before-image for facefix."
+  "gen_metadata": [],
+  "notes": "Anchor example, in world 1: the skyharbor courier. Its output image is the source the img2img, controlnet and inpainting flows start from, and the before-image for facefix. Those flows read it from inputs/, so regenerating this one means re-staging inputs/tutorial-anchor-1024.webp and inputs/tutorial-anchor-512.webp before they are regenerated. The subject descriptor block is byte-identical to the batch's w1 block wherever the courier appears."
 }

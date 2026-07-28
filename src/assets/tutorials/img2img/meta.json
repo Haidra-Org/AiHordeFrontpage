@@ -1,19 +1,15 @@
 {
   "flow": "img2img",
+  "title": "Image to image",
   "model": "AlbedoBase XL (SDXL)",
   "seed": "1234567890",
   "requested_seed": "1234567890",
-  "worker_name": "justsomepcthatgenerating1mages",
-  "worker_id": "9027cc0d-ff79-4056-a616-84c39be134b1",
-  "generation_id": "6cfa125c-9002-41ca-97dd-c63a7789458e",
-  "job_id": "4ade3850-e91e-4c93-9382-217c86bad1cf",
-  "kudos_estimate": 20,
-  "kudos_charged": 56,
-  "wall_time_seconds": 35,
+  "generation_id": "857b5401-2359-4c78-83d8-21c637889d40",
+  "kudos_estimate": 20.0,
+  "kudos_charged": 56.0,
+  "wall_time_seconds": 25.1,
   "censored": false,
   "gen_metadata": [],
-  "title": "Image to image",
-  "source": "txt2img/result.webp",
-  "denoising_strength": 0.55,
-  "notes": "source_image is the base64 of the txt2img result (webp, no data: prefix). request.json substitutes a placeholder for that base64 blob."
+  "source": "txt2img/result.webp at its native 1024x1024",
+  "notes": "The only difference from a text-to-image request is the source image and the denoising strength that says how far the render may travel from it. The world 1 courier's descriptor block is unchanged between the two renders, so what moves is the weather and nothing else."
 }

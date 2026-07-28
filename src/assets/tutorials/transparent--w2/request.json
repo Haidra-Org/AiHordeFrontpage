@@ -1,0 +1,24 @@
+{
+  "prompt": "masterpiece, best quality, very aesthetic, absurdres, rating_safe, no humans, a silver fox with amber eyes mid-leap, flying fur, isolated subject, plain background, full body ### background, scenery, lowres, worst quality, watermark, signature",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "width": 1024,
+    "height": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "hires_fix": false,
+    "tiling": false,
+    "clip_skip": 2,
+    "denoising_strength": 1.0,
+    "n": 1,
+    "transparent": true
+  },
+  "models": ["Nova Anime XL"],
+  "nsfw": false,
+  "censor_nsfw": true,
+  "r2": true,
+  "trusted_workers": false,
+  "slow_workers": true
+}

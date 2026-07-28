@@ -1,0 +1,14 @@
+{
+  "flow": "txt2img--w2",
+  "title": "Text to image, fox shrine",
+  "model": "Nova Anime XL",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "generation_id": "b3dbef63-35e3-4b2c-9746-b4540bc8f1b2",
+  "kudos_estimate": 21.0,
+  "kudos_charged": 45.0,
+  "wall_time_seconds": 50.1,
+  "censored": false,
+  "gen_metadata": [],
+  "notes": "World 2: the fox shrine, on the anime model, in the booru tag dialect its model reference is written for. The quality header, rating_safe and clip skip 2 are what that dialect is; they are not decoration. Its output image is staged as inputs/tutorial-anchor-w2-1024.webp for the world 2 img2img flow."
+}

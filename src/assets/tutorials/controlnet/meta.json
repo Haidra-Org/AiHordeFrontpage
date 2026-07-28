@@ -1,19 +1,15 @@
 {
   "flow": "controlnet",
+  "title": "ControlNet (canny)",
   "model": "Deliberate",
   "seed": "1234567890",
   "requested_seed": "1234567890",
-  "worker_name": "Zepharock Dreamer",
-  "worker_id": "846ccd2f-f908-4155-a6d9-14634068784f",
-  "generation_id": "226afd0e-4335-4222-bb33-2414b724d779",
-  "job_id": "5029dc62-38d3-4dcc-b5a0-5fcb2cba11d2",
-  "kudos_estimate": 15,
-  "kudos_charged": 23,
-  "wall_time_seconds": 68.5,
+  "generation_id": "edfff32f-4ea0-419b-8ea0-adededc5fd3b",
+  "kudos_estimate": 15.0,
+  "kudos_charged": 23.0,
+  "wall_time_seconds": 89.3,
   "censored": false,
   "gen_metadata": [],
-  "title": "ControlNet (canny)",
   "source": "txt2img/result.webp, downscaled to 512x512",
-  "control_type": "canny",
-  "notes": "ControlNet is selected by params.control_type; source_processing stays \"img2img\". The canny edge map keeps the anchor composition while the prompt re-themes the render."
+  "notes": "ControlNet is selected by params.control_type; source_processing stays \"img2img\". The canny edge map keeps the anchor composition while the prompt re-themes the render. Pinned to world 1: canny is demonstrated on the photoreal courier, where an edge map has a recognisable subject to hold, and Deliberate is the SD1.5 model this recipe is known good on."
 }

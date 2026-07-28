@@ -1,17 +1,23 @@
 {
-  "prompt": "a lighthouse keeper standing on a cliffside path at golden hour, facing the viewer, weathered kindly face, coastal village below, dramatic sky, sweeping ocean view, cinematic lighting, highly detailed",
+  "prompt": "a woman in her 30s with a sleek silver bob haircut, round copper goggles resting up in her silver hair, a patched teal canvas coat, a small brass compass on a cord around her neck, standing at the wooden railing of a zeppelin airship's open gondola deck at sunset, the vast canvas envelope of the airship curving overhead, brass fittings and taut rigging, wind pulling at her coat, a sea of clouds below, cinematic lighting, rich detail, professional photography, high dynamic range ### lowres, blurry, deformed, extra limbs, watermark, text, jpeg artifacts, ocean, sea, water surface, sailing ship, boat, cruise ship, sunglasses",
   "params": {
     "sampler_name": "k_euler_a",
     "cfg_scale": 7.5,
-    "height": 1024,
     "width": 1024,
+    "height": 1024,
     "steps": 30,
     "seed": "1234567890",
     "karras": true,
+    "hires_fix": false,
+    "tiling": false,
+    "clip_skip": 1,
+    "denoising_strength": 1.0,
     "n": 1
   },
+  "models": ["AlbedoBase XL (SDXL)"],
   "nsfw": false,
   "censor_nsfw": true,
-  "models": ["AlbedoBase XL (SDXL)"],
-  "r2": true
+  "r2": true,
+  "trusted_workers": false,
+  "slow_workers": true
 }

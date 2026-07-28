@@ -1,21 +1,26 @@
 {
-  "prompt": "ink and watercolor illustration of a lighthouse keeper on a cliffside path, coastal village below, loose brush strokes, soft washes of colour, visible paper texture",
+  "prompt": "ink and watercolour illustration of a woman in her 30s with a sleek silver bob haircut, round copper goggles resting up in her silver hair, a patched teal canvas coat, a small brass compass on a cord around her neck, at the wooden railing of a zeppelin airship's open gondola deck, the canvas envelope curving overhead, a sea of clouds below, loose brush strokes, soft washes of colour, visible paper texture ### photograph, 3d render, lowres, blurry, deformed hands, extra fingers, watermark, text",
   "params": {
     "sampler_name": "k_euler_a",
     "cfg_scale": 7.5,
-    "denoising_strength": 0.75,
-    "control_type": "canny",
-    "height": 512,
     "width": 512,
+    "height": 512,
     "steps": 30,
     "seed": "1234567890",
     "karras": true,
-    "n": 1
+    "hires_fix": false,
+    "tiling": false,
+    "clip_skip": 1,
+    "denoising_strength": 0.75,
+    "n": 1,
+    "control_type": "canny"
   },
+  "models": ["Deliberate"],
   "nsfw": false,
   "censor_nsfw": true,
-  "models": ["Deliberate"],
+  "r2": true,
+  "trusted_workers": false,
+  "slow_workers": true,
   "source_image": "<base64 of source.webp>",
-  "source_processing": "img2img",
-  "r2": true
+  "source_processing": "img2img"
 }

@@ -1,37 +1,18 @@
 {
   "flow": "facefix",
-  "model": "Deliberate",
+  "title": "Face fixing with GFPGAN",
+  "model": "ICBINP - I Can't Believe It's Not Photography",
   "seed": "1234567890",
   "requested_seed": "1234567890",
-  "worker_name": "Zepharock Dreamer",
-  "worker_id": "846ccd2f-f908-4155-a6d9-14634068784f",
-  "generation_id": "31a0bb99-6164-48c3-8c34-3de5b63fa2a0",
-  "job_id": "014a4a84-9eb0-44a0-8d22-0b5fbf75d8ab",
-  "kudos_estimate": 9,
-  "kudos_charged": 13,
-  "wall_time_seconds": 50.8,
+  "generation_id": "d3a718b1-2071-49b2-9c93-dc0b14bc9927",
+  "kudos_estimate": 11.0,
+  "kudos_charged": 15.0,
+  "wall_time_seconds": 36.2,
   "censored": false,
   "gen_metadata": [],
-  "title": "Face fixing with GFPGAN",
-  "before_image": "before.webp",
-  "before_request": "request-before.json",
+  "notes": "The two requests are identical apart from params.post_processing and params.facefixer_strength, so the pair isolates what the face fixer does. Face fixing is a post-processor, not a sampler setting: it runs on the finished image, so the composition is unchanged and only facial detail is redrawn. Pinned to world 1 on the photoreal SD1.5 model, because GFPGAN is trained on photographic faces: the anime world would be a mismatch to publish and the robot has no face to fix.",
+  "before_generation_id": "68d1f214-a85e-44f1-aac7-504e50f9f8b4",
   "before_seed": "1234567890",
-  "before_worker_name": "squeeko",
-  "before_generation_id": "6b19f54e-0840-4358-99f8-31cec26d59d9",
-  "before_job_id": "4f8ddbbc-39eb-4327-bbdb-9161b6c445f2",
-  "before_kudos_charged": 12,
-  "before_gen_metadata": [
-    {
-      "type": "source_image",
-      "value": "parse_failed"
-    },
-    {
-      "type": "aesthetic_score",
-      "value": "see_ref",
-      "ref": "6.2962"
-    }
-  ],
-  "pair_rmse": "6676.39 (0.101875)",
-  "notes": "The two requests are identical apart from params.post_processing and params.facefixer_strength, so the pair isolates what the face fixer does. Face fixing is a post-processor, not a sampler setting: it runs on the finished image, so the composition is unchanged and only facial detail is redrawn. facefixer_strength blends the restored face back over the original.",
-  "deviations": "The two halves were served by different workers, so beyond the face fixer there is a small amount of backend drift in fine background detail; pair_rmse records the whole-frame difference. Pinning both requests to one worker id via the top-level workers field was attempted first, but the pinned request sat at queue position 1 for the full 20-minute timeout without being picked up, so the pin was dropped."
+  "before_kudos_charged": 12.0,
+  "before_wall_time_seconds": 19.3
 }

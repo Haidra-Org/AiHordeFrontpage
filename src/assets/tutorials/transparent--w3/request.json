@@ -1,0 +1,24 @@
+{
+  "prompt": "a small rounded gardening robot with weathered orange paint, a single round blue lens for a head, a hand-painted daisy decal on its chest plate, young ivy curling around its left arm, standing upright holding a watering can, full body, isolated subject, plain background, studio product photography, sharp focus, even lighting ### background, scenery, lowres, blurry, watermark, text",
+  "params": {
+    "sampler_name": "k_euler_a",
+    "cfg_scale": 7.5,
+    "width": 1024,
+    "height": 1024,
+    "steps": 30,
+    "seed": "1234567890",
+    "karras": true,
+    "hires_fix": false,
+    "tiling": false,
+    "clip_skip": 1,
+    "denoising_strength": 1.0,
+    "n": 1,
+    "transparent": true
+  },
+  "models": ["AlbedoBase XL (SDXL)"],
+  "nsfw": false,
+  "censor_nsfw": true,
+  "r2": true,
+  "trusted_workers": false,
+  "slow_workers": true
+}

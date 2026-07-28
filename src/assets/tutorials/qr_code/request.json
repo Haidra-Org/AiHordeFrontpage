@@ -1,14 +1,19 @@
 {
-  "prompt": "circuit-board city seen from above, isometric, teal and copper, glowing traces, dense square blocks, flat graphic design, stark black background, very high contrast",
+  "prompt": "an aerial view straight down onto a skyharbor floating high in the sky, bright timber platforms and mooring gantries in stark white sunlight, deep black shadowed gaps between them, dense square blocks of decking, surrounded on every side by brilliant white sunlit cumulus cloud tops far below, flat graphic design, very high contrast ### water, sea, ocean, river, lake, waves, pier, jetty, harbour, boat, ship, ground, fields, dark background, green background, teal background, olive, flat empty background, worst quality, low contrast, flat lighting, soft focus, haze",
   "params": {
-    "sampler_name": "k_euler_a",
-    "cfg_scale": 7,
-    "height": 1024,
+    "sampler_name": "k_euler",
+    "cfg_scale": 4.0,
     "width": 1024,
-    "steps": 30,
-    "seed": "1234567890",
-    "karras": true,
+    "height": 1024,
+    "steps": 25,
+    "seed": "1234567895",
+    "karras": false,
+    "hires_fix": false,
+    "tiling": false,
+    "clip_skip": 1,
+    "denoising_strength": 1.0,
     "n": 1,
+    "control_strength": 1.2,
     "workflow": "qr_code",
     "extra_texts": [
       {
@@ -17,8 +22,10 @@
       }
     ]
   },
+  "models": ["AlbedoBase XL (SDXL)"],
   "nsfw": false,
   "censor_nsfw": true,
-  "models": ["AlbedoBase XL (SDXL)"],
-  "r2": true
+  "r2": true,
+  "trusted_workers": false,
+  "slow_workers": true
 }

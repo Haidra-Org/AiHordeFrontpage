@@ -1,0 +1,14 @@
+{
+  "flow": "transparent--w2",
+  "title": "Transparent background, fox shrine",
+  "model": "Nova Anime XL",
+  "seed": "1234567890",
+  "requested_seed": "1234567890",
+  "generation_id": "ce20c64a-249e-4ceb-a8fc-888a9a9e54cd",
+  "kudos_estimate": 21.0,
+  "kudos_charged": 45.0,
+  "wall_time_seconds": 74.3,
+  "censored": false,
+  "gen_metadata": [],
+  "notes": "World 2's companion animal, alone, in the booru dialect at clip skip 2. \"no humans\" is doing the isolating work a booru-trained model responds to."
+}
