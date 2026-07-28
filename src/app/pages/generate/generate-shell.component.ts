@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../components/icon/icon.component';
+import { GlossaryService } from '../../services/glossary.service';
 
 /**
  * The shared `/generate` workspace shell. Hosts the two studio tools — image
@@ -22,4 +23,9 @@ import { IconComponent } from '../../components/icon/icon.component';
   templateUrl: './generate-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateShellComponent {}
+export class GenerateShellComponent {
+  /* The site's floating glossary controls are hidden on /generate (they overlap
+     the studio's own on-canvas controls), so the shell carries the studio's
+     only way into the glossary and its this-page map. */
+  public readonly glossary = inject(GlossaryService);
+}

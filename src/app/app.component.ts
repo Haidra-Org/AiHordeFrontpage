@@ -19,6 +19,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map, startWith } from 'rxjs';
 import { FooterColorService } from './services/footer-color.service';
 import { FloatingControlsComponent } from './components/floating-controls/floating-controls.component';
+import { GlossaryModalComponent } from './components/glossary-modal/glossary-modal.component';
 import { NetworkStatusComponent } from './components/network-status/network-status.component';
 import { StickyRegistryService } from './services/sticky-registry.service';
 import { NeedWorkersNotifierService } from './services/need-workers-notifier.service';
@@ -34,6 +35,7 @@ import { scrollToAnchorWhenReady } from './helper/scroll-utils';
     NgOptimizedImage,
     TranslocoPipe,
     FloatingControlsComponent,
+    GlossaryModalComponent,
     NetworkStatusComponent,
     NavBarComponent,
     ToastBarComponent,

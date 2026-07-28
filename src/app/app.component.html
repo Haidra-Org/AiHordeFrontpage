@@ -212,3 +212,7 @@
 @if (!hideFloatingControls()) {
   <app-floating-controls />
 }
+
+<!-- The modal lives at the root rather than inside the floating controls so
+     the studio (which hides those controls) can still open the glossary. -->
+<app-glossary-modal />

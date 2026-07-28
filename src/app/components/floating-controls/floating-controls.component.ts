@@ -10,14 +10,13 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { GlossaryModalComponent } from '../glossary-modal/glossary-modal.component';
 import { GlossaryService } from '../../services/glossary.service';
 import { FloatingActionService } from '../../services/floating-action.service';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-floating-controls',
-  imports: [TranslocoPipe, GlossaryModalComponent, IconComponent],
+  imports: [TranslocoPipe, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="floating-controls">
@@ -59,9 +58,6 @@ import { IconComponent } from '../icon/icon.component';
         }
       }
     </div>
-
-    <!-- Glossary Modal -->
-    <app-glossary-modal />
   `,
 })
 export class FloatingControlsComponent implements OnDestroy {

@@ -31,6 +31,14 @@
       <app-icon name="document-text" class="gs-ico-sm" />
       {{ "generate.shell.tab_tutorials" | transloco }}
     </a>
+    <button
+      type="button"
+      class="gs-subtab-glossary"
+      (click)="glossary.open()"
+      [attr.aria-label]="'help.open_glossary' | transloco"
+    >
+      <app-icon name="question-mark-circle" class="gs-ico-sm" />
+    </button>
   </nav>
 
   <div class="gs-shell-outlet">

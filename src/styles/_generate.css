@@ -513,6 +513,35 @@
   outline: 2px solid var(--gs-blue);
   outline-offset: -2px;
 }
+/* The studio's only door into the glossary: the site's floating "?" is hidden
+   on /generate, so the tab bar's far edge carries a quiet stand-in. */
+.gen-studio .gs-subtab-glossary {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--gs-label);
+  border: 1px solid transparent;
+}
+.gen-studio .gs-subtab-glossary:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-border);
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-subtab-glossary:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-subtab-glossary {
+    width: 44px;
+    height: 44px;
+  }
+}
 .gen-studio .gs-shell-outlet {
   flex: 1;
   min-height: 0;
