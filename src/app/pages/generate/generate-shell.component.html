@@ -1,14 +1,18 @@
 <div class="gen-studio gs-shell">
+  <!-- These are page links, not tabs: each one navigates, and the third leaves
+       the studio entirely for the documentation. `aria-current` says which page
+       is on screen, which is the same thing `routerLinkActive` draws, so the
+       state is stated once and rendered once. -->
   <nav
     class="gs-subtabs"
-    role="tablist"
     [attr.aria-label]="'generate.shell.tabs_label' | transloco"
   >
     <a
       class="gs-subtab gs-subtab--image"
       routerLink="/generate/image"
       routerLinkActive="gs-subtab--active"
-      role="tab"
+      #imageActive="routerLinkActive"
+      [attr.aria-current]="imageActive.isActive ? 'page' : null"
     >
       <app-icon name="photo" class="gs-ico-sm" />
       {{ "generate.shell.tab_image" | transloco }}
@@ -17,19 +21,17 @@
       class="gs-subtab gs-subtab--alchemy"
       routerLink="/generate/alchemy"
       routerLinkActive="gs-subtab--active"
-      role="tab"
+      #alchemyActive="routerLinkActive"
+      [attr.aria-current]="alchemyActive.isActive ? 'page' : null"
     >
       <app-icon name="beaker" class="gs-ico-sm" />
       {{ "generate.shell.tab_alchemy" | transloco }}
     </a>
-    <a
-      class="gs-subtab gs-subtab--tutorials"
-      [routerLink]="docsLink"
-      routerLinkActive="gs-subtab--active"
-      role="tab"
-    >
+    <!-- The way out to the documentation. It never marks itself as the page on
+         screen, because reaching it means leaving this shell behind. -->
+    <a class="gs-subtab gs-subtab--docs" [routerLink]="docsLink">
       <app-icon name="document-text" class="gs-ico-sm" />
-      {{ "generate.shell.tab_tutorials" | transloco }}
+      {{ "generate.shell.tab_docs" | transloco }}
     </a>
     <button
       type="button"

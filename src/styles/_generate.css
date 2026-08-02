@@ -70,6 +70,38 @@
   src: url("/assets/fonts/jetbrains-mono-600.woff2") format("woff2");
 }
 
+/* The eight section identity hues, declared at the document root because the
+   surfaces that use them are not all inside the studio: the glossary modal is
+   mounted at the root and would otherwise have to restate every value, which is
+   two sets of hexes to keep in agreement. The studio derives its tints from
+   these; nothing else redeclares them.
+
+   Audited as graphic colour only: every one clears 3:1 against the studio's
+   panel and card, but `size` falls under 4.5:1, so these may tint glyphs and
+   edges and must never colour text. */
+:root {
+  --gs-sec-prompt: #4f46e5;
+  --gs-sec-model: #a21caf;
+  --gs-sec-size: #0d9488;
+  --gs-sec-source: #b45309;
+  --gs-sec-sampling: #be123c;
+  --gs-sec-finishing: #0e7490;
+  --gs-sec-horde: #475569;
+  --gs-sec-workflows: #4d7c0f;
+}
+
+/* The dark half, lightened to clear 3:1 on the dark panel and card. */
+.dark {
+  --gs-sec-prompt: #a5b4fc;
+  --gs-sec-model: #e879f9;
+  --gs-sec-size: #5eead4;
+  --gs-sec-source: #fbbf24;
+  --gs-sec-sampling: #fda4af;
+  --gs-sec-finishing: #67e8f9;
+  --gs-sec-horde: #94a3b8;
+  --gs-sec-workflows: #bef264;
+}
+
 .gen-studio {
   /* Elevation ladder: canvas (page floor) -> panel (workspace) -> card
      (grouped controls). Deepening the canvas is what lets the white panels
@@ -118,35 +150,30 @@
   /* Section identity hues. Audited as graphic/border colour only: every one
      clears 3:1 against --gs-panel and --gs-card, but --gs-sec-size falls under
      4.5:1, so these may tint glyphs and edges and must never colour text. */
-  --gs-sec-prompt: #4f46e5;
   --gs-sec-prompt-tint: color-mix(in srgb, var(--gs-sec-prompt) 8%, #ffffff);
   --gs-sec-prompt-tint-border: color-mix(
     in srgb,
     var(--gs-sec-prompt) 24%,
     #ffffff
   );
-  --gs-sec-model: #a21caf;
   --gs-sec-model-tint: color-mix(in srgb, var(--gs-sec-model) 8%, #ffffff);
   --gs-sec-model-tint-border: color-mix(
     in srgb,
     var(--gs-sec-model) 24%,
     #ffffff
   );
-  --gs-sec-size: #0d9488;
   --gs-sec-size-tint: color-mix(in srgb, var(--gs-sec-size) 8%, #ffffff);
   --gs-sec-size-tint-border: color-mix(
     in srgb,
     var(--gs-sec-size) 24%,
     #ffffff
   );
-  --gs-sec-source: #b45309;
   --gs-sec-source-tint: color-mix(in srgb, var(--gs-sec-source) 8%, #ffffff);
   --gs-sec-source-tint-border: color-mix(
     in srgb,
     var(--gs-sec-source) 24%,
     #ffffff
   );
-  --gs-sec-sampling: #be123c;
   --gs-sec-sampling-tint: color-mix(
     in srgb,
     var(--gs-sec-sampling) 8%,
@@ -157,7 +184,6 @@
     var(--gs-sec-sampling) 24%,
     #ffffff
   );
-  --gs-sec-finishing: #0e7490;
   --gs-sec-finishing-tint: color-mix(
     in srgb,
     var(--gs-sec-finishing) 8%,
@@ -168,14 +194,12 @@
     var(--gs-sec-finishing) 24%,
     #ffffff
   );
-  --gs-sec-horde: #475569;
   --gs-sec-horde-tint: color-mix(in srgb, var(--gs-sec-horde) 8%, #ffffff);
   --gs-sec-horde-tint-border: color-mix(
     in srgb,
     var(--gs-sec-horde) 24%,
     #ffffff
   );
-  --gs-sec-workflows: #4d7c0f;
   --gs-sec-workflows-tint: color-mix(
     in srgb,
     var(--gs-sec-workflows) 8%,
@@ -234,7 +258,6 @@
   --gs-switch-off: #3a3f47;
   /* The dark half of the identity hues, lightened to clear 3:1 on the dark
      panel and card. Same constraint as the light set: glyphs and edges only. */
-  --gs-sec-prompt: #a5b4fc;
   --gs-sec-prompt-tint: color-mix(
     in srgb,
     var(--gs-sec-prompt) 14%,
@@ -245,21 +268,18 @@
     var(--gs-sec-prompt) 38%,
     transparent
   );
-  --gs-sec-model: #e879f9;
   --gs-sec-model-tint: color-mix(in srgb, var(--gs-sec-model) 14%, transparent);
   --gs-sec-model-tint-border: color-mix(
     in srgb,
     var(--gs-sec-model) 38%,
     transparent
   );
-  --gs-sec-size: #5eead4;
   --gs-sec-size-tint: color-mix(in srgb, var(--gs-sec-size) 14%, transparent);
   --gs-sec-size-tint-border: color-mix(
     in srgb,
     var(--gs-sec-size) 38%,
     transparent
   );
-  --gs-sec-source: #fbbf24;
   --gs-sec-source-tint: color-mix(
     in srgb,
     var(--gs-sec-source) 14%,
@@ -270,7 +290,6 @@
     var(--gs-sec-source) 38%,
     transparent
   );
-  --gs-sec-sampling: #fda4af;
   --gs-sec-sampling-tint: color-mix(
     in srgb,
     var(--gs-sec-sampling) 14%,
@@ -281,7 +300,6 @@
     var(--gs-sec-sampling) 38%,
     transparent
   );
-  --gs-sec-finishing: #67e8f9;
   --gs-sec-finishing-tint: color-mix(
     in srgb,
     var(--gs-sec-finishing) 14%,
@@ -292,14 +310,12 @@
     var(--gs-sec-finishing) 38%,
     transparent
   );
-  --gs-sec-horde: #94a3b8;
   --gs-sec-horde-tint: color-mix(in srgb, var(--gs-sec-horde) 14%, transparent);
   --gs-sec-horde-tint-border: color-mix(
     in srgb,
     var(--gs-sec-horde) 38%,
     transparent
   );
-  --gs-sec-workflows: #bef264;
   --gs-sec-workflows-tint: color-mix(
     in srgb,
     var(--gs-sec-workflows) 14%,
@@ -9383,57 +9399,31 @@ html:has(app-gs-sheet) {
   }
 }
 
-/* The eight section hues, for the glossary modal. The identity variables at the
-   top of this file are declared on `.gen-studio` and the modal is mounted at the
-   document root, so the studio's this-page entries cannot inherit them; the two
-   sets of values are the light and dark ones declared there. */
+/* The section hues, for the glossary modal. It is mounted at the document root
+   rather than inside the studio, and reads the same variables the studio does. */
 .glossary-sec--prompt {
-  color: #4f46e5;
+  color: var(--gs-sec-prompt);
 }
 .glossary-sec--model {
-  color: #a21caf;
+  color: var(--gs-sec-model);
 }
 .glossary-sec--size {
-  color: #0d9488;
+  color: var(--gs-sec-size);
 }
 .glossary-sec--source {
-  color: #b45309;
+  color: var(--gs-sec-source);
 }
 .glossary-sec--sampling {
-  color: #be123c;
+  color: var(--gs-sec-sampling);
 }
 .glossary-sec--finishing {
-  color: #0e7490;
+  color: var(--gs-sec-finishing);
 }
 .glossary-sec--horde {
-  color: #475569;
+  color: var(--gs-sec-horde);
 }
 .glossary-sec--workflows {
-  color: #4d7c0f;
-}
-.dark .glossary-sec--prompt {
-  color: #a5b4fc;
-}
-.dark .glossary-sec--model {
-  color: #e879f9;
-}
-.dark .glossary-sec--size {
-  color: #5eead4;
-}
-.dark .glossary-sec--source {
-  color: #fbbf24;
-}
-.dark .glossary-sec--sampling {
-  color: #fda4af;
-}
-.dark .glossary-sec--finishing {
-  color: #67e8f9;
-}
-.dark .glossary-sec--horde {
-  color: #94a3b8;
-}
-.dark .glossary-sec--workflows {
-  color: #bef264;
+  color: var(--gs-sec-workflows);
 }
 
 /* ------- the recipe card (worked examples) --------------------------- */

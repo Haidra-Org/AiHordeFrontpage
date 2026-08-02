@@ -2,9 +2,9 @@
   <!-- Pane header: title, live status pill, download-all -->
   <header class="gs-results-header">
     <div class="flex items-center gap-2.5">
-      <span class="gs-results-title">
+      <h2 id="gs-results-heading" class="gs-results-title">
         {{ "generate.results.heading" | transloco }}
-      </span>
+      </h2>
       @if (isBusy()) {
         <span class="gs-status gs-status--busy">
           <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>

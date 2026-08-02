@@ -8,6 +8,12 @@
   (imageFile)="onDroppedImage($event)"
   (rejected)="onRejectedImage()"
 >
+  <!-- The page's own name. It is not drawn: the studio is the whole screen and
+       a visible title would spend a line saying what the tab bar already says.
+       It is here so the panel's cards and the results pane have a heading to sit
+       beneath rather than starting the document's outline at level two. -->
+  <h1 class="sr-only">{{ "generate.title" | transloco }}</h1>
+
   <!-- Keyboard users land in the control panel first; the results pane is a long
        scroll away past every setting, so it gets a skip link. -->
   <a class="gs-skip" href="#generate-results" (click)="skipToResults($event)">
@@ -53,7 +59,7 @@
     id="generate-results"
     class="gs-results"
     tabindex="-1"
-    [attr.aria-label]="'generate.results.heading' | transloco"
+    aria-labelledby="gs-results-heading"
   >
     <app-generate-results-panel
       class="gs-fill"

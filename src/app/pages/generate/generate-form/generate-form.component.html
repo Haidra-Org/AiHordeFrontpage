@@ -175,14 +175,18 @@
       <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
-      <div class="gs-sec--prompt flex flex-col gap-2.5" appTutAnchor="prompt">
+      <section
+        class="gs-sec--prompt flex flex-col gap-2.5"
+        appTutAnchor="prompt"
+        aria-labelledby="gs-card-prompt"
+      >
         <div class="gs-sec-head">
-          <span class="gs-card-title">
+          <h2 id="gs-card-prompt" class="gs-card-title">
             <span class="gs-sec-chip" aria-hidden="true"
               ><app-icon name="sec-prompt"
             /></span>
             {{ "generate.form.prompt_section" | transloco }}
-          </span>
+          </h2>
         </div>
         <div class="gs-prompt-wrap" #historyContainer>
           <textarea
@@ -277,7 +281,7 @@
             }
           }
         </div>
-      </div>
+      </section>
 
       <!-- Negative prompt (one row by default; drag the grip to grow it) -->
       <textarea
@@ -296,14 +300,17 @@
            width so growing them never shuffles the cards. -->
       <div class="gs-body-cards flex flex-col gap-[14px]">
         <!-- Model & style -->
-        <div class="gs-sec--model flex flex-col gap-2.5">
+        <section
+          class="gs-sec--model flex flex-col gap-2.5"
+          aria-labelledby="gs-card-model"
+        >
           <div class="gs-sec-head">
-            <span class="gs-card-title">
+            <h2 id="gs-card-model" class="gs-card-title">
               <span class="gs-sec-chip" aria-hidden="true"
                 ><app-icon name="sec-model"
               /></span>
               {{ "generate.form.model_style_section" | transloco }}
-            </span>
+            </h2>
           </div>
           <div appTutAnchor="style">
             <label class="gs-label" for="generate-style">
@@ -392,20 +399,21 @@
               }
             </p>
           </div>
-        </div>
+        </section>
 
         <!-- Aspect + resolution -->
-        <div
+        <section
           class="gs-card gs-card--pad-sm gs-sec--size flex flex-col gap-3"
           appTutAnchor="size"
+          aria-labelledby="gs-card-size"
         >
           <div class="gs-sec-head">
-            <span class="gs-card-title--sm">
+            <h2 id="gs-card-size" class="gs-card-title--sm">
               <span class="gs-sec-chip" aria-hidden="true"
                 ><app-icon name="sec-size"
               /></span>
               {{ "generate.form.dimensions_section" | transloco }}
-            </span>
+            </h2>
             @if (stylePins("dimensions")) {
               <ng-container
                 *ngTemplateOutlet="
@@ -535,7 +543,7 @@
           <ng-container
             *ngTemplateOutlet="reqHint; context: { hint: hiresHint() }"
           />
-        </div>
+        </section>
 
         @if (isAdvanced()) {
           <!-- Advanced divider -->
@@ -552,14 +560,17 @@
           <ng-content select="[generateSourceImage]" />
 
           <!-- Sampling -->
-          <div class="gs-card gs-sec--sampling flex flex-col gap-3">
+          <section
+            class="gs-card gs-sec--sampling flex flex-col gap-3"
+            aria-labelledby="gs-card-sampling"
+          >
             <div class="gs-sec-head">
-              <span class="gs-card-title">
+              <h2 id="gs-card-sampling" class="gs-card-title">
                 <span class="gs-sec-chip" aria-hidden="true"
                   ><app-icon name="sec-sampling"
                 /></span>
                 {{ "generate.form.sampling_section" | transloco }}
-              </span>
+              </h2>
               <app-gs-help topic="requirements" />
               @if (stylePins("sampling")) {
                 <ng-container
@@ -773,17 +784,20 @@
                 />
               </div>
             }
-          </div>
+          </section>
 
           <!-- LoRAs & embeddings -->
-          <div class="gs-card gs-sec--model flex flex-col gap-2">
+          <section
+            class="gs-card gs-sec--model flex flex-col gap-2"
+            aria-labelledby="gs-card-loras"
+          >
             <div class="gs-sec-head">
-              <span class="gs-card-title">
+              <h2 id="gs-card-loras" class="gs-card-title">
                 <span class="gs-sec-chip" aria-hidden="true"
                   ><app-icon name="sec-model"
                 /></span>
                 {{ "generate.form.loras_section" | transloco }}
-              </span>
+              </h2>
               <app-gs-help topic="loras" />
               <button type="button" class="gs-civit-link" (click)="openCivit()">
                 {{ "generate.form.add_from_civitai" | transloco }}
@@ -918,19 +932,20 @@
                 {{ "generate.form.loras_empty" | transloco }}
               </p>
             }
-          </div>
+          </section>
 
           <!-- Post-process + Output -->
           <div class="gs-grid-2">
-            <div
+            <section
               class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+              aria-labelledby="gs-card-post"
             >
-              <span class="gs-card-title--sm">
+              <h2 id="gs-card-post" class="gs-card-title--sm">
                 <span class="gs-sec-chip" aria-hidden="true"
                   ><app-icon name="sec-finishing"
                 /></span>
                 {{ "generate.form.post_processing_section" | transloco }}
-              </span>
+              </h2>
               <div>
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-upscaler">
@@ -1008,17 +1023,18 @@
                   ><span class="gs-switch-knob"></span
                 ></span>
               </label>
-            </div>
+            </section>
 
-            <div
+            <section
               class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+              aria-labelledby="gs-card-output"
             >
-              <span class="gs-card-title--sm">
+              <h2 id="gs-card-output" class="gs-card-title--sm">
                 <span class="gs-sec-chip" aria-hidden="true"
                   ><app-icon name="sec-finishing"
                 /></span>
                 {{ "generate.form.output_section" | transloco }}
-              </span>
+              </h2>
               <div class="gs-opt">
                 <label class="gs-switch gs-switch-row">
                   <span>{{ "generate.form.nsfw_label" | transloco }}</span>
@@ -1046,17 +1062,20 @@
                   ><span class="gs-switch-knob"></span
                 ></span>
               </label>
-            </div>
+            </section>
           </div>
 
           <!-- Workers & filters -->
-          <div class="gs-card gs-sec--horde flex flex-col gap-2.5">
-            <span class="gs-card-title">
+          <section
+            class="gs-card gs-sec--horde flex flex-col gap-2.5"
+            aria-labelledby="gs-card-horde"
+          >
+            <h2 id="gs-card-horde" class="gs-card-title">
               <span class="gs-sec-chip" aria-hidden="true"
                 ><app-icon name="sec-horde"
               /></span>
               {{ "generate.form.horde_section" | transloco }}
-            </span>
+            </h2>
             <div class="gs-opt">
               <label class="gs-switch gs-switch-row">
                 <span>{{
@@ -1117,9 +1136,9 @@
                  the job and where the result goes, so they share the card with
                  the worker preferences above under a hairline. -->
             <div class="gs-hairline flex flex-col gap-2.5 pt-3">
-              <span class="gs-card-title--sm">
+              <h3 class="gs-card-title--sm">
                 {{ "generate.form.delivery_subsection" | transloco }}
-              </span>
+              </h3>
 
               <div>
                 <div class="gs-field-head">
@@ -1262,17 +1281,20 @@
                 {{ "generate.form.remember_extras_hint" | transloco }}
               </p>
             </div>
-          </div>
+          </section>
 
           <!-- Workflows: output modes that need a model or a worker feature
                behind them, rather than plain request settings. -->
-          <div class="gs-card gs-sec--workflows flex flex-col gap-3">
-            <span class="gs-card-title">
+          <section
+            class="gs-card gs-sec--workflows flex flex-col gap-3"
+            aria-labelledby="gs-card-workflows"
+          >
+            <h2 id="gs-card-workflows" class="gs-card-title">
               <span class="gs-sec-chip" aria-hidden="true"
                 ><app-icon name="sec-workflows"
               /></span>
               {{ "generate.form.workflows_section" | transloco }}
-            </span>
+            </h2>
             <p class="gs-sublabel">
               {{ "generate.form.workflows_hint" | transloco }}
             </p>
@@ -1331,7 +1353,7 @@
                 </p>
               }
             </div>
-          </div>
+          </section>
         }
       </div>
     </div>
@@ -1376,6 +1398,19 @@
           }}
         </span>
       </div>
+      <!-- A warning appearing is a change to the request that nobody announced,
+           and the indicator beside Generate is silent to a reader who cannot see
+           it. This region is always in the document, so that when it fills the
+           change is spoken; putting it inside the block below would insert the
+           region and its content together, which is not announced at all. -->
+      <p class="sr-only" role="status">
+        @if (lintWarnings().length > 0) {
+          {{
+            "generate.lint.indicator_label"
+              | transloco: { count: lintWarnings().length }
+          }}
+        }
+      </p>
       <!-- The request's warnings, beside the button rather than on it: the
            button must stay one unambiguous action, and nothing here ever stops
            it. Absent entirely when the request earns none. -->

@@ -757,6 +757,6 @@ describe('DocsImageExampleComponent', () => {
     const translations = en as Record<string, string>;
 
     expect(translations['generate.guide.tutorials_link']).toBeTruthy();
-    expect(translations['generate.shell.tab_tutorials']).toBeTruthy();
+    expect(translations['generate.shell.tab_docs']).toBeTruthy();
   });
 });

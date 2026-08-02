@@ -15,6 +15,9 @@ import {
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import type { RequestWarning } from '../request-lint';
 import { ToastService } from '../../../services/toast.service';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { provideRouter } from '@angular/router';
+import en from '../../../../assets/i18n/en.json';
 
 const FORCED: StyleForcedParams = {
   model: 'Flux.1-Schnell fp8',
@@ -762,5 +765,74 @@ describe('GenerateFormComponent request warnings', () => {
 
     component.onDocumentEscape();
     expect(component.lintOpen()).toBe(false);
+  });
+});
+
+/**
+ * The control panel is the longest, densest surface in the app, and a reader
+ * moving through it by heading is the only one who can skip a card they do not
+ * want. These assertions render the real template rather than stubbing it: the
+ * structure is the thing being guaranteed.
+ */
+describe('GenerateFormComponent structure', () => {
+  async function render(): Promise<HTMLElement> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        mode: 'advanced',
+        prompt: 'a fox',
+      }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('gives every card of the panel a heading, and names the card by it', async () => {
+    const host = await render();
+    const sections = Array.from(
+      host.querySelectorAll<HTMLElement>('section[aria-labelledby]'),
+    );
+
+    expect(sections.length).toBeGreaterThanOrEqual(9);
+    for (const section of sections) {
+      const id = section.getAttribute('aria-labelledby')!;
+      const heading = host.querySelector(`#${id}`);
+      expect(heading, `no heading for ${id}`).not.toBeNull();
+      expect(heading!.tagName).toBe('H2');
+      expect(heading!.textContent?.trim()).toBeTruthy();
+    }
+  });
+
+  it('names each card once, so two never claim the same heading', async () => {
+    const host = await render();
+    const ids = Array.from(
+      host.querySelectorAll<HTMLElement>('section[aria-labelledby]'),
+    ).map((section) => section.getAttribute('aria-labelledby'));
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('keeps the warnings region in the document before it has anything to say', async () => {
+    const host = await render();
+    // A live region inserted at the same moment as its content is not
+    // announced, so the region has to outlast the warnings it reports.
+    const region = host.querySelector('[role="status"].sr-only');
+
+    expect(region).not.toBeNull();
+    expect(region!.textContent?.trim()).toBe('');
   });
 });
