@@ -13,7 +13,6 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import {
   TutorialEngineService,
   TutorialWorld,
-  canonicalFlowId,
   hasWorldVariants,
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
@@ -55,6 +54,20 @@ const SHELF_FLOWS: readonly string[] = [
  * own or starts a concept track in the studio, and carries whichever of the two
  * it is: nothing on the page has both.
  */
+/**
+ * One card of the shelf: the technique it names, and whatever the library has
+ * published about it. A card with nothing published is still a card.
+ */
+export interface ShelfCard {
+  /** The canonical flow id, which is the card's identity and its URL. */
+  id: string;
+  published: ExampleFlow | null;
+  /** The result image, or '' before the library has answered. */
+  image: string;
+  unavailable: boolean;
+  skippedReason: string;
+}
+
 interface UnderstandDoor {
   titleKey: string;
   hintKey: string;
@@ -124,16 +137,27 @@ export class DocsImageHomeComponent {
   );
 
   /**
-   * The shelf's flows, in the page's order, as far as the manifest has them,
-   * each one shown in the world the reader has chosen. The order is written in
-   * canonical ids: a world variant is another set of pictures for a card that
-   * is already here rather than a card of its own.
+   * The shelf, in the page's order: every technique the documentation teaches,
+   * whether or not its pictures have arrived. The order is written in canonical
+   * ids, and a world variant is another set of pictures for a card already here
+   * rather than a card of its own.
+   *
+   * The cards come from the app rather than from the library so the shelf is a
+   * complete list of what there is to read, and so the links to those pages
+   * exist in the page as built rather than only after a fetch.
    */
-  public readonly shelf = computed<readonly ExampleFlow[]>(() => {
+  public readonly shelf = computed<readonly ShelfCard[]>(() => {
     const flows = this.manifest()?.flows ?? [];
-    return SHELF_FLOWS.map((id) => this.inWorld(id, flows)).filter(
-      (flow): flow is ExampleFlow => flow !== undefined,
-    );
+    return SHELF_FLOWS.map((id) => {
+      const published = this.inWorld(id, flows);
+      return {
+        id,
+        published: published ?? null,
+        image: published ? exampleResultUrl(published) : '',
+        unavailable: published?.status === 'skipped',
+        skippedReason: published?.skipped_reason ?? '',
+      };
+    });
   });
 
   /** The hero's backdrop: the image the walkthrough it starts actually made. */
@@ -182,23 +206,18 @@ export class DocsImageHomeComponent {
       : 'generate.learn.understand_read';
   }
 
-  /** A flow's result image, where it has one. */
-  public resultUrl(flow: ExampleFlow): string {
-    return exampleResultUrl(flow);
+  public flowLink(card: ShelfCard): string {
+    return docsExampleLink(card.id);
   }
 
-  public flowLink(flow: ExampleFlow): string {
-    return docsExampleLink(canonicalFlowId(flow.id));
-  }
-
-  /** The key naming a flow by what it makes, as the examples page names it. */
-  public taskNameKey(flow: ExampleFlow): string {
-    return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
+  /** The key naming a technique by what it makes, as its own page names it. */
+  public taskNameKey(card: ShelfCard): string {
+    return `generate.tutorials.flows.${card.id}.task_name`;
   }
 
   /** Whether a card is the alpha-channel example, in whichever world. */
-  public isTransparent(flow: ExampleFlow): boolean {
-    return canonicalFlowId(flow.id) === 'transparent';
+  public isTransparent(card: ShelfCard): boolean {
+    return card.id === 'transparent';
   }
 
   /** The name a world is offered under in the switcher. */
@@ -227,10 +246,13 @@ export class DocsImageHomeComponent {
    * the manifest's where a flow has no override, exactly as the examples page
    * does: the manifest is written for someone who already knows the technique.
    */
-  public summaryFor(flow: ExampleFlow): string {
-    const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
+  public summaryFor(card: ShelfCard): string {
+    const key = `generate.tutorials.flows.${card.id}.summary`;
     const text = this.transloco.translate(key);
-    return !text || text === key ? flow.summary : text;
+    if (text && text !== key) {
+      return text;
+    }
+    return card.published?.summary ?? '';
   }
 
   /**

@@ -26,8 +26,9 @@ import {
 import { environment } from '../../../../environments/environment';
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
-import manifest from '../../../../assets/tutorials/manifest.json';
-import request from '../../../../assets/tutorials/txt2img/request.json';
+import manifest from '../../../testing/fixtures/example-manifest.stub.json';
+import { EXAMPLES_ROOT } from '../../../content/examples';
+import request from '../../../testing/fixtures/example-request.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
@@ -88,10 +89,10 @@ describe('GenerateLearnPanelComponent', () => {
 
     const http = TestBed.inject(HttpTestingController);
     const started = engine.start('txt2img');
-    http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await new Promise((resolve) => setTimeout(resolve, 0));
     http
-      .expectOne('/assets/tutorials/txt2img/request.json')
+      .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
       .flush(structuredClone(request));
     await started;
 
@@ -313,10 +314,10 @@ describe('GenerateLearnPanelComponent', () => {
 
       cta[0].click();
       const http = TestBed.inject(HttpTestingController);
-      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await new Promise((resolve) => setTimeout(resolve, 0));
       http
-        .expectOne('/assets/tutorials/txt2img/request.json')
+        .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
         .flush(structuredClone(request));
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
@@ -327,7 +328,7 @@ describe('GenerateLearnPanelComponent', () => {
   });
 
   describe('parameter sweeps', () => {
-    const SWEEP_INDEX = `${environment.sweepLibraryBaseUrl}/index.json`;
+    const SWEEP_INDEX = `${environment.evidenceBaseUrl}/index.json`;
 
     /** Answer the one index fetch a rendered scrubber makes. */
     async function serveLibrary(body: unknown): Promise<void> {

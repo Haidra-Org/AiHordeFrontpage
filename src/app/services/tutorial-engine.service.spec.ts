@@ -27,8 +27,9 @@ import {
   GenerateMode,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
-import manifest from '../../assets/tutorials/manifest.json';
-import request from '../../assets/tutorials/txt2img/request.json';
+import manifest from '../testing/fixtures/example-manifest.stub.json';
+import { EXAMPLES_ROOT } from '../content/examples';
+import request from '../testing/fixtures/example-request.stub.json';
 import { splitCombinedPrompt } from '../pages/generate/generate-form.model';
 import type { ExampleManifest } from '../content/examples';
 
@@ -96,10 +97,10 @@ describe('TutorialEngineService', () => {
 
   async function startTxt2img(): Promise<void> {
     const started = engine.start('txt2img');
-    http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await settle();
     http
-      .expectOne('/assets/tutorials/txt2img/request.json')
+      .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
       .flush(structuredClone(request));
     await started;
   }
@@ -538,9 +539,9 @@ describe('TutorialEngineService', () => {
   it('writes an empty negative for an example that carries none', async () => {
     const plain = { ...structuredClone(request), prompt: 'a lighthouse' };
     const started = engine.start('txt2img');
-    http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await settle();
-    http.expectOne('/assets/tutorials/txt2img/request.json').flush(plain);
+    http.expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`).flush(plain);
     await started;
 
     engine.applyStep();
@@ -556,7 +557,7 @@ describe('TutorialEngineService', () => {
   it('reports a failure to fetch the example rather than running blind', async () => {
     const started = engine.start('txt2img');
     http
-      .expectOne('/assets/tutorials/manifest.json')
+      .expectOne(`${EXAMPLES_ROOT}/manifest.json`)
       .error(new ProgressEvent('failed'));
     await started;
 
@@ -635,10 +636,10 @@ describe('TutorialEngineService', () => {
       engine.setWorld('w2');
 
       const started = engine.start('txt2img');
-      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
       http
-        .expectOne('/assets/tutorials/txt2img--w2/request.json')
+        .expectOne(`${EXAMPLES_ROOT}/txt2img--w2/request.json`)
         .flush(structuredClone(request));
       await started;
 
@@ -656,10 +657,10 @@ describe('TutorialEngineService', () => {
 
       engine.setWorld('w2');
       const restarted = engine.start('txt2img');
-      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
       http
-        .expectOne('/assets/tutorials/txt2img--w2/request.json')
+        .expectOne(`${EXAMPLES_ROOT}/txt2img--w2/request.json`)
         .flush(structuredClone(request));
       await restarted;
 

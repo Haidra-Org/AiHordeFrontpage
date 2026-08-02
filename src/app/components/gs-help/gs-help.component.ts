@@ -14,8 +14,11 @@ import { GsHelpService } from '../../services/gs-help.service';
 import {
   hasReference,
   settingNoteKey,
+  settingSweepGrid,
+  settingSweepStrip,
   settingTitleKey,
 } from '../../content/settings';
+import { SweepLibraryService } from '../../services/sweep-library.service';
 import { IconComponent } from '../icon/icon.component';
 
 /**
@@ -63,9 +66,11 @@ import { IconComponent } from '../icon/icon.component';
       <p class="gs-help-note gs-fadeup" role="note" [id]="noteId()">
         {{ bodyKey() | transloco }}
       </p>
-      <!-- Only where there is something to see: a setting the reference has not
-           reached yet would be offering a door onto an empty room. -->
-      @if (hasEntry()) {
+      <!-- Only where there is something to see. The reference has to have a
+           page for the setting, and the library has to have published a picture
+           of it changing: "See it in action" is a promise, and an entry with
+           nothing but prose in it does not keep it. -->
+      @if (canSeeIt()) {
         <button type="button" class="gs-help-see" (click)="seeIt($event)">
           <app-icon name="photo" class="gs-ico-sm" />
           {{ 'generate.help.see_it' | transloco }}
@@ -82,6 +87,7 @@ import { IconComponent } from '../icon/icon.component';
 export class GsHelpComponent {
   private readonly help = inject(GsHelpService);
   private readonly dock = inject(GsHelpDockService);
+  private readonly sweeps = inject(SweepLibraryService);
 
   /** The `generate.help.<topic>` content this trigger explains. */
   public readonly topic = input.required<string>();
@@ -101,7 +107,32 @@ export class GsHelpComponent {
   /** Whether the reference has an entry this note can send a reader on to. */
   public readonly hasEntry = computed(() => hasReference(this.topic()));
 
+  /**
+   * Whether the offer can be kept: an entry to open, and a strip or a plate the
+   * library has actually published for it. Before the library has answered the
+   * offer is withheld rather than shown and then taken away.
+   */
+  public readonly canSeeIt = computed(() => {
+    if (!this.hasEntry()) {
+      return false;
+    }
+    const topic = this.topic();
+    const strip = settingSweepStrip(topic);
+    const grid = settingSweepGrid(topic);
+    if (!strip && !grid) {
+      return false;
+    }
+    return (
+      this.sweeps.isSettled() &&
+      ((!!strip && !!this.sweeps.strip(strip)) ||
+        (!!grid && !!this.sweeps.grid(grid)))
+    );
+  });
+
   constructor() {
+    // The note is the first surface in the studio that asks whether there are
+    // pictures, so it is the one that starts the library fetching.
+    void this.sweeps.ensureLoaded();
     effect(() => {
       if (this.help.requestedTopic() === this.topic()) {
         this.help.claimTopic(this.noteId());

@@ -9,7 +9,11 @@ import {
 } from './flows';
 import { SECTION_IDENTITIES } from './sections';
 import { DEFAULT_GENERATE_FORM_VALUE } from '../pages/generate/generate-form.model';
-import manifest from '../../assets/tutorials/manifest.json';
+import { existsSync, readFileSync } from 'node:fs';
+
+/** Where the evidence library's example manifest sits in a working checkout. */
+const LIBRARY_MANIFEST =
+  'docs/haidra-assets/assets/param-sweeps/tutorials/manifest.json';
 
 /** The techniques, which are every flow that is not a concept track. */
 const techniques = FLOWS.filter((flow) => !flow.concept);
@@ -38,17 +42,24 @@ describe('flow registry', () => {
   });
 
   it('has a flow for every technique the published examples cover', () => {
-    // The manifest is what was actually generated; a worked example with no
-    // steps written for it would be a page with nothing to read down.
-    const published = new Set(
-      manifest.flows
-        .map((flow) => flow.id)
-        .map((id) => id.replace(/--w[23]$/, '')),
+    // Read from the evidence library on disk rather than from a fixture: the
+    // question is whether the app describes something that was never generated,
+    // and a fixture would only ever agree with itself. The library is published
+    // rather than committed, so on a checkout without it there is nothing to
+    // check and the invariant is the publish step's; the machine that renders
+    // the assets is where this drifts and where this runs.
+    const published = existsSync(LIBRARY_MANIFEST)
+      ? (
+          JSON.parse(readFileSync(LIBRARY_MANIFEST, 'utf8')) as {
+            flows: { id: string }[];
+          }
+        ).flows.map((flow) => flow.id.replace(/--w[23]$/, ''))
+      : [];
+    const unauthored = [...new Set(published)].filter(
+      (id) => flowDef(id) === undefined,
     );
 
-    for (const id of published) {
-      expect(flowDef(id), `no flow authored for ${id}`).toBeTruthy();
-    }
+    expect(unauthored).toEqual([]);
   });
 
   it('writes only fields the form actually holds', () => {

@@ -134,9 +134,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
     fixture.detectChanges();
 
-    const request = http.expectOne(
-      `${environment.sweepLibraryBaseUrl}/index.json`,
-    );
+    const request = http.expectOne(`${environment.evidenceBaseUrl}/index.json`);
     if (options?.empty) {
       request.error(new ProgressEvent('offline'), {
         status: 0,
@@ -170,7 +168,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
   });
 
@@ -188,7 +186,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(find<HTMLImageElement>('.gs-sweep-frame')?.getAttribute('src')).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
     expect(el().textContent).toContain('The face and the light have settled.');
     expect(text()).toContain('Steps 12');
@@ -231,7 +229,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/deliberate/landscape/001_8.webp`,
+      `${environment.evidenceBaseUrl}/steps/deliberate/landscape/001_8.webp`,
     );
   });
 
@@ -244,7 +242,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
   });
 
@@ -263,7 +261,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
     expect(document.activeElement).toBe(panel);
 
@@ -428,7 +426,7 @@ describe('GsSweepScrubComponent', () => {
     expect(copies).toHaveLength(9);
     for (const copy of copies) {
       expect(copy.getAttribute('src')).toBe(
-        `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/001_off.webp`,
+        `${environment.evidenceBaseUrl}/tiling/deliberate/texture/001_off.webp`,
       );
       expect(copy.getAttribute('loading')).toBe('lazy');
     }
@@ -437,8 +435,8 @@ describe('GsSweepScrubComponent', () => {
     // rendered. Both stops carry one, and neither is behind a toggle.
     const solos = all<HTMLImageElement>('.gs-sweep-solo-img');
     expect(solos.map((solo) => solo.getAttribute('src'))).toEqual([
-      `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/001_off.webp`,
-      `${environment.sweepLibraryBaseUrl}/tiling/deliberate/texture/002_on.webp`,
+      `${environment.evidenceBaseUrl}/tiling/deliberate/texture/001_off.webp`,
+      `${environment.evidenceBaseUrl}/tiling/deliberate/texture/002_on.webp`,
     ]);
     expect(solos[0].getAttribute('alt')).toContain('single tile');
   });
@@ -475,7 +473,7 @@ describe('GsSweepScrubComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-source-img')!.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/denoising-strength/deliberate/place/source.webp`,
+      `${environment.evidenceBaseUrl}/denoising-strength/deliberate/place/source.webp`,
     );
     expect(el().textContent).toContain(en['generate.sweeps.source_label']);
 
@@ -507,7 +505,7 @@ describe('GsSweepScrubComponent', () => {
       expect(
         find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
       ).toBe(
-        `${environment.sweepLibraryBaseUrl}/steps-converging/albedobase-xl/person/003_30.webp`,
+        `${environment.evidenceBaseUrl}/steps-converging/albedobase-xl/person/003_30.webp`,
       );
       expect(el().textContent).toContain('Settled, and the same picture');
     });
@@ -551,7 +549,7 @@ describe('GsSweepScrubComponent', () => {
       expect(
         find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
       ).toBe(
-        `${environment.sweepLibraryBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
       );
 
       // The edge holds rather than wrapping round to the other end.
@@ -604,7 +602,7 @@ describe('GsSweepScrubComponent', () => {
       expect(
         find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
       ).toBe(
-        `${environment.sweepLibraryBaseUrl}/steps-converging/albedobase-xl/person/002_12.webp`,
+        `${environment.evidenceBaseUrl}/steps-converging/albedobase-xl/person/002_12.webp`,
       );
     });
 

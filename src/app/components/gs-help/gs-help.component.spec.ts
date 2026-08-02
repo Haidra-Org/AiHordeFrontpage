@@ -11,7 +11,9 @@ import { GsHelpComponent } from './gs-help.component';
 import { GsHelpService } from '../../services/gs-help.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { hasReference } from '../../content/settings';
+import { SweepLibraryService } from '../../services/sweep-library.service';
 import { environment } from '../../../environments/environment';
+import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 @Component({
   template: `
@@ -21,6 +23,21 @@ import { environment } from '../../../environments/environment';
   imports: [GsHelpComponent],
 })
 class TestHostComponent {}
+
+/**
+ * Answer the library's one fetch. Passing nothing publishes nothing, which is
+ * the state the app is in before the library exists and the state every offer
+ * has to survive.
+ */
+async function publish(strips: unknown = stubIndex): Promise<void> {
+  const http = TestBed.inject(HttpTestingController);
+  http
+    .expectOne(`${environment.evidenceBaseUrl}/index.json`)
+    .flush(strips ?? { schema_version: 1, seed: 0, strips: [] });
+  // The service settles on a promise, so the answer has landed only once that
+  // promise has: a synchronous render after `flush` still sees nothing.
+  await TestBed.inject(SweepLibraryService).ensureLoaded();
+}
 
 function setup() {
   const fixture = TestBed.createComponent(TestHostComponent);
@@ -106,28 +123,42 @@ describe('GsHelpComponent', () => {
   });
 
   describe('the way on to the entry', () => {
-    it('keeps the note to prose, mounting no media of its own', () => {
+    it('keeps the note to prose, mounting no media of its own', async () => {
       const { fixture, click } = setup();
+      await publish();
 
       click(0);
 
+      // The note asks the library whether there is anything to see, but it
+      // never becomes the place the pictures are shown.
       expect(
         fixture.nativeElement.querySelector('app-gs-sweep-scrub'),
       ).toBeNull();
       expect(
         fixture.nativeElement.querySelector('app-gs-sweep-grid'),
       ).toBeNull();
-      // Nothing under the note went looking for the sweep library either.
-      TestBed.inject(HttpTestingController).expectNone(
-        `${environment.sweepLibraryBaseUrl}/index.json`,
-      );
     });
 
-    it('offers the entry from a note whose setting has one', () => {
+    it('withholds the offer while the library has published nothing', async () => {
+      // "See it in action" is a promise. Until the library answers, and unless
+      // it answers with a picture of this setting, the promise is not made.
       const { fixture, click } = setup();
+      await publish(null);
+
+      click(0);
+      fixture.detectChanges();
+
+      expect(hasReference('steps')).toBe(true);
+      expect(fixture.nativeElement.querySelector('.gs-help-see')).toBeNull();
+    });
+
+    it('offers the entry from a note whose setting has one', async () => {
+      const { fixture, click } = setup();
+      await publish();
 
       // The first trigger is `steps`, which the reference has written up.
       click(0);
+      fixture.detectChanges();
 
       const see = fixture.nativeElement.querySelector('.gs-help-see');
       expect(see).not.toBeNull();
@@ -143,9 +174,10 @@ describe('GsHelpComponent', () => {
       ).toHaveLength(1);
     });
 
-    it('offers nothing from a note the reference has not reached', () => {
+    it('offers nothing from a note the reference has not reached', async () => {
       const { fixture, click } = setup();
 
+      await publish();
       // The second trigger is `sampling`, which carries no reference entry.
       click(1);
 

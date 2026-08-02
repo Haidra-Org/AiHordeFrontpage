@@ -74,9 +74,7 @@ describe('GsSweepGridComponent', () => {
     fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
     fixture.detectChanges();
 
-    const request = http.expectOne(
-      `${environment.sweepLibraryBaseUrl}/index.json`,
-    );
+    const request = http.expectOne(`${environment.evidenceBaseUrl}/index.json`);
     if (options?.empty) {
       request.error(new ProgressEvent('offline'), {
         status: 0,
@@ -147,7 +145,7 @@ describe('GsSweepGridComponent', () => {
     expect(
       find<HTMLImageElement>('.gs-sweep-viewer-img')?.getAttribute('src'),
     ).toBe(
-      `${environment.sweepLibraryBaseUrl}/steps-cfg-grid/albedobase-xl/person/003_s30_c2.webp`,
+      `${environment.evidenceBaseUrl}/steps-cfg-grid/albedobase-xl/person/003_s30_c2.webp`,
     );
     expect(el().textContent).toContain('30 steps at guidance 2.');
 

@@ -71,7 +71,7 @@ describe('GsParamEntryComponent', () => {
 
     // A setting with no strip mounts no sweep, so the library is never fetched.
     for (const request of http.match(
-      `${environment.sweepLibraryBaseUrl}/index.json`,
+      `${environment.evidenceBaseUrl}/index.json`,
     )) {
       request.flush(stubIndex);
     }

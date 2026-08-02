@@ -18,8 +18,9 @@ import {
   GenerateSourceMode,
 } from '../generate-form.model';
 import en from '../../../../assets/i18n/en.json';
-import manifest from '../../../../assets/tutorials/manifest.json';
-import request from '../../../../assets/tutorials/txt2img/request.json';
+import manifest from '../../../testing/fixtures/example-manifest.stub.json';
+import { EXAMPLES_ROOT } from '../../../content/examples';
+import request from '../../../testing/fixtures/example-request.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
@@ -88,10 +89,10 @@ describe('GenerateLearnSheetComponent', () => {
 
     const http = TestBed.inject(HttpTestingController);
     const started = engine.start('txt2img');
-    http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await new Promise((resolve) => setTimeout(resolve, 0));
     http
-      .expectOne('/assets/tutorials/txt2img/request.json')
+      .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
       .flush(structuredClone(request));
     await started;
 
@@ -250,10 +251,10 @@ describe('GenerateLearnSheetComponent', () => {
 
       first<HTMLButtonElement>('.gs-learn-cta').click();
       const http = TestBed.inject(HttpTestingController);
-      http.expectOne('/assets/tutorials/manifest.json').flush(manifest);
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await new Promise((resolve) => setTimeout(resolve, 0));
       http
-        .expectOne('/assets/tutorials/txt2img/request.json')
+        .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
         .flush(structuredClone(request));
       await settle();
 

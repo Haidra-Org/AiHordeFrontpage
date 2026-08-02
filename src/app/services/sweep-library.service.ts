@@ -160,7 +160,7 @@ export class SweepLibraryService {
   private readonly http = inject(HttpClient);
 
   /** Where the published strips live, without a trailing slash. */
-  public readonly baseUrl = environment.sweepLibraryBaseUrl.replace(/\/+$/, '');
+  public readonly baseUrl = environment.evidenceBaseUrl.replace(/\/+$/, '');
 
   private readonly strips = signal<readonly SweepStrip[]>([]);
   private readonly settled = signal(false);

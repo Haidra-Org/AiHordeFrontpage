@@ -108,48 +108,50 @@
       </div>
     }
 
+    <!-- Every technique the documentation teaches, whether or not its pictures
+         have arrived: the shelf is the list of what there is to read, and a
+         card without its image is still a way in. -->
+    <div class="gs-learn-shelf">
+      @for (card of shelf(); track card.id) {
+        <a class="gs-home-card" [routerLink]="flowLink(card)">
+          @if (card.image) {
+            <img
+              class="gs-home-card-img"
+              [class.gs-tut-img--alpha]="isTransparent(card)"
+              [src]="card.image"
+              [alt]="'generate.learn.example_alt' | transloco"
+              loading="lazy"
+            />
+          }
+          <span class="gs-home-card-text">
+            <!-- The eyebrow says what kind of thing the card is, which is
+                 also where the unavailable badge belongs: it qualifies the
+                 example, not the technique the title names. -->
+            <span class="gs-learn-eyebrow">
+              {{ "generate.learn.further_kind" | transloco }}
+              @if (card.unavailable) {
+                <span class="gs-tut-chip-tag">
+                  {{ "generate.tutorials.unavailable_tag" | transloco }}
+                </span>
+              }
+            </span>
+            <span class="gs-home-card-title">
+              {{ taskNameKey(card) | transloco }}
+            </span>
+            <span class="gs-home-card-hint">{{ summaryFor(card) }}</span>
+            <!-- A technique the horde could not serve when the examples were
+                 made says so here rather than quietly going missing. -->
+            @if (card.skippedReason) {
+              <span class="gs-home-card-note">{{ card.skippedReason }}</span>
+            }
+          </span>
+        </a>
+      }
+    </div>
     @if (loadFailed()) {
       <p class="gs-info-note">
         {{ "generate.tutorials.load_error" | transloco }}
       </p>
-    } @else {
-      <div class="gs-learn-shelf">
-        @for (flow of shelf(); track flow.id) {
-          <a class="gs-home-card" [routerLink]="flowLink(flow)">
-            @if (resultUrl(flow); as image) {
-              <img
-                class="gs-home-card-img"
-                [class.gs-tut-img--alpha]="isTransparent(flow)"
-                [src]="image"
-                [alt]="'generate.learn.example_alt' | transloco"
-                loading="lazy"
-              />
-            }
-            <span class="gs-home-card-text">
-              <!-- The eyebrow says what kind of thing the card is, which is
-                   also where the unavailable badge belongs: it qualifies the
-                   example, not the technique the title names. -->
-              <span class="gs-learn-eyebrow">
-                {{ "generate.learn.further_kind" | transloco }}
-                @if (flow.status === "skipped") {
-                  <span class="gs-tut-chip-tag">
-                    {{ "generate.tutorials.unavailable_tag" | transloco }}
-                  </span>
-                }
-              </span>
-              <span class="gs-home-card-title">
-                {{ taskNameKey(flow) | transloco }}
-              </span>
-              <span class="gs-home-card-hint">{{ summaryFor(flow) }}</span>
-              <!-- A technique the horde could not serve when the examples were
-                   made says so here rather than quietly going missing. -->
-              @if (flow.status === "skipped" && flow.skipped_reason) {
-                <span class="gs-home-card-note">{{ flow.skipped_reason }}</span>
-              }
-            </span>
-          </a>
-        }
-      </div>
     }
   </section>
 </div>

@@ -1,454 +1,457 @@
 <div class="gs-tut-inner">
-  @if (loadFailed()) {
-    <p class="gs-info-note">
-      {{ "generate.tutorials.load_error" | transloco }}
-    </p>
-  } @else if (!manifest()) {
-    <p class="gs-tut-body">{{ "generate.tutorials.loading" | transloco }}</p>
-  } @else {
-    <!-- The flows on the Learn area's one contents idiom. It keeps the bar form
-         at every width here: the page's own wide layout already spends both
-         gutters on the dossier, so a sticky column of flows would be a third
-         one. -->
-    <div class="gs-tut-picker" #rail>
-      <app-gs-index-rail
-        [entries]="pickerEntries()"
-        [currentId]="activeId()"
-        [barForm]="true"
-        labelKey="generate.tutorials.picker_label"
-      />
-    </div>
+  <!-- The techniques on the documentation's one contents idiom. It keeps the bar
+       form at every width here: the page's own wide layout already spends both
+       gutters on the dossier, so a sticky column would be a third one. -->
+  <div class="gs-tut-picker" #rail>
+    <app-gs-index-rail
+      [entries]="pickerEntries()"
+      [currentId]="activeId()"
+      [barForm]="true"
+      labelKey="generate.tutorials.picker_label"
+    />
+  </div>
 
-    @if (activeFlow(); as flow) {
-      <article class="gs-tut-flow" [class]="flowIdentity(flow)?.className">
-        <!-- Named by what it makes; the technique it uses rides along behind,
-             where it tells a reader who wants it what to go and look up. -->
-        <header class="gs-tut-head">
-          <h1 class="gs-tut-flow-title">
-            {{ taskNameKey(flow) | transloco }}
+  @if (activeId(); as flowId) {
+    <article class="gs-tut-flow" [class]="activeIdentity()?.className">
+      <!-- Named by what it makes; the technique it uses rides along behind,
+           where it tells a reader who wants it what to go and look up. The name
+           and the lead come from the app rather than from the library, so the
+           page is itself before its pictures arrive and can be built ahead of
+           any of them existing. -->
+      <header class="gs-tut-head">
+        <h1 class="gs-tut-flow-title">
+          {{ "generate.tutorials.flows." + flowId + ".task_name" | transloco }}
+          @if (activeFlow(); as flow) {
             <span class="gs-tut-technique">{{ flow.title }}</span>
-          </h1>
-          <p class="gs-tut-lead">{{ summaryFor(flow) }}</p>
+          }
+        </h1>
+        <p class="gs-tut-lead">{{ activeSummary() }}</p>
 
-          <!-- Which cast the pictures are drawn from. Only offered where this
+        <!-- Which cast the pictures are drawn from. Only offered where this
                flow was drawn more than once: a technique that exists in one
                world has no choice to put in front of a reader. -->
-          @if (worldChoice()) {
-            <div class="gs-tut-worlds">
-              <div
-                class="gs-seg gs-seg--xs"
-                role="group"
-                [attr.aria-label]="'generate.learn.world_label' | transloco"
-              >
-                @for (option of worlds; track option) {
-                  <button
-                    type="button"
-                    class="gs-seg-opt"
-                    [attr.aria-pressed]="world() === option"
-                    (click)="setWorld(option)"
-                  >
-                    {{ worldKey(option) | transloco }}
-                  </button>
-                }
-              </div>
-              <p class="gs-info-note gs-tut-worlds-note">
-                {{ "generate.learn.world_note" | transloco }}
-              </p>
+        @if (worldChoice()) {
+          <div class="gs-tut-worlds">
+            <div
+              class="gs-seg gs-seg--xs"
+              role="group"
+              [attr.aria-label]="'generate.learn.world_label' | transloco"
+            >
+              @for (option of worlds; track option) {
+                <button
+                  type="button"
+                  class="gs-seg-opt"
+                  [attr.aria-pressed]="world() === option"
+                  (click)="setWorld(option)"
+                >
+                  {{ worldKey(option) | transloco }}
+                </button>
+              }
             </div>
-          }
-        </header>
-
-        @if (flow.status === "skipped") {
-          <!-- Shown rather than hidden: a flow the studio still offers but the
-               horde could not serve is itself worth knowing about. -->
-          <section class="gs-card gs-tut-card">
-            <h2 class="gs-tut-head-2">
-              {{ "generate.tutorials.unavailable_head" | transloco }}
-            </h2>
-            <p class="gs-tut-body">{{ flow.skipped_reason }}</p>
-            <p class="gs-info-note">
-              {{ "generate.tutorials.unavailable_note" | transloco }}
+            <p class="gs-info-note gs-tut-worlds-note">
+              {{ "generate.learn.world_note" | transloco }}
             </p>
-          </section>
-        } @else {
-          <!-- The dossier: how it was made down the reading column, what it was
+          </div>
+        }
+      </header>
+
+      @if (skippedReason(); as reason) {
+        <!-- Shown rather than hidden: a technique the studio still offers but
+             the horde could not serve is itself worth knowing about. -->
+        <section class="gs-card gs-tut-card">
+          <h2 class="gs-tut-head-2">
+            {{ "generate.tutorials.unavailable_head" | transloco }}
+          </h2>
+          <p class="gs-tut-body">{{ reason }}</p>
+          <p class="gs-info-note">
+            {{ "generate.tutorials.unavailable_note" | transloco }}
+          </p>
+        </section>
+      } @else {
+        <!-- The dossier: how it was made down the reading column, what it was
                made of beside it. Below the wide step the evidence folds in
                under the walkthrough, which is the order it is read in. -->
-          <div class="gs-tut-panes">
-            <div class="gs-tut-main">
-              <!-- The page shows what was made; this is the way to go and make
+        <div class="gs-tut-panes">
+          <div class="gs-tut-main">
+            <!-- The page shows what was made; this is the way to go and make
                    it. Flows without authored steps say so rather than
                    disappearing, so a reader can see what is coming. -->
-              <div class="gs-tut-start">
-                <button
-                  type="button"
-                  class="gs-tut-start-btn"
-                  [disabled]="!canStart(flow)"
-                  (click)="startTutorial(flow)"
-                >
-                  <app-icon name="star" class="gs-ico-sm" />
-                  {{ "generate.learn.start" | transloco }}
-                </button>
-                @if (!canStart(flow)) {
-                  <span class="gs-tut-start-note">
-                    {{ "generate.learn.start_soon" | transloco }}
-                  </span>
-                }
-              </div>
-
-              <!-- How much detail the walkthrough goes into, as a line of the
-                   dossier rather than as a control parked over it. -->
-              <div
-                class="gs-devtabs gs-tut-modes"
-                role="group"
-                [attr.aria-label]="'generate.tutorials.mode_label' | transloco"
+            <div class="gs-tut-start">
+              <button
+                type="button"
+                class="gs-tut-start-btn"
+                [disabled]="!canStart()"
+                (click)="startTutorial()"
               >
-                <button
-                  type="button"
-                  class="gs-devtab"
-                  [class.gs-devtab--on]="isMode('user')"
-                  [attr.aria-pressed]="isMode('user')"
-                  (click)="setMode('user')"
-                >
-                  <app-icon name="user-circle" class="gs-ico-sm" />
-                  {{ "generate.tutorials.mode_user" | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="gs-devtab"
-                  [class.gs-devtab--on]="isMode('developer')"
-                  [attr.aria-pressed]="isMode('developer')"
-                  (click)="setMode('developer')"
-                >
-                  <app-icon name="code-bracket" class="gs-ico-sm" />
-                  {{ "generate.tutorials.mode_developer" | transloco }}
-                </button>
-              </div>
+                <app-icon name="star" class="gs-ico-sm" />
+                {{ "generate.learn.start" | transloco }}
+              </button>
+              @if (!canStart()) {
+                <span class="gs-tut-start-note">
+                  {{ "generate.learn.start_soon" | transloco }}
+                </span>
+              }
+            </div>
 
-              @if (isMode("user")) {
-                <section class="gs-tut-section">
-                  <h2 class="gs-tut-head-2">
-                    {{ "generate.tutorials.steps_head" | transloco }}
-                  </h2>
-                  <!-- A step names the part of the panel it is about before it
+            <!-- How much detail the walkthrough goes into, as a line of the
+                   dossier rather than as a control parked over it. -->
+            <div
+              class="gs-devtabs gs-tut-modes"
+              role="group"
+              [attr.aria-label]="'generate.tutorials.mode_label' | transloco"
+            >
+              <button
+                type="button"
+                class="gs-devtab"
+                [class.gs-devtab--on]="isMode('user')"
+                [attr.aria-pressed]="isMode('user')"
+                (click)="setMode('user')"
+              >
+                <app-icon name="user-circle" class="gs-ico-sm" />
+                {{ "generate.tutorials.mode_user" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-devtab"
+                [class.gs-devtab--on]="isMode('developer')"
+                [attr.aria-pressed]="isMode('developer')"
+                (click)="setMode('developer')"
+              >
+                <app-icon name="code-bracket" class="gs-ico-sm" />
+                {{ "generate.tutorials.mode_developer" | transloco }}
+              </button>
+            </div>
+
+            @if (isMode("user")) {
+              <section class="gs-tut-section">
+                <h2 class="gs-tut-head-2">
+                  {{ "generate.tutorials.steps_head" | transloco }}
+                </h2>
+                <!-- A step names the part of the panel it is about before it
                        says what to do there, in that area's hue and mark: the
                        same eyebrow the follow-along card carries, so a reader
                        who starts the walkthrough meets what they just read. -->
-                  <ol class="gs-tut-spine">
-                    @for (step of steps(); track step; let i = $index) {
-                      <li
-                        class="gs-tut-step"
-                        [class]="stepIdentity(step)?.className"
-                      >
-                        @if (stepIdentity(step); as identity) {
-                          <p class="gs-learn-eyebrow">
-                            <span class="gs-sec-chip" aria-hidden="true"
-                              ><app-icon [name]="identity.icon"
-                            /></span>
-                            {{ identity.labelKey | transloco }}
-                          </p>
-                        }
-                        <h3 class="gs-tut-step-title">
-                          {{
-                            "generate.learn.step_heading"
-                              | transloco
-                                : {
-                                    n: i + 1,
-                                    title:
-                                      stepKey(flow, step, "title") | transloco,
-                                  }
-                          }}
-                        </h3>
-                        <p class="gs-tut-step-body">
-                          {{ stepKey(flow, step, "body") | transloco }}
+                <ol class="gs-tut-spine">
+                  @for (step of steps(); track step; let i = $index) {
+                    <li
+                      class="gs-tut-step"
+                      [class]="stepIdentity(step)?.className"
+                    >
+                      @if (stepIdentity(step); as identity) {
+                        <p class="gs-learn-eyebrow">
+                          <span class="gs-sec-chip" aria-hidden="true"
+                            ><app-icon [name]="identity.icon"
+                          /></span>
+                          {{ identity.labelKey | transloco }}
                         </p>
-                      </li>
-                    }
-                  </ol>
-                </section>
-              }
-
-              @if (isMode("developer")) {
-                <section class="gs-tut-section">
-                  <h2 class="gs-tut-head-2">
-                    {{ "generate.tutorials.dev_head" | transloco }}
-                  </h2>
-                  <p class="gs-tut-body">
-                    {{ "generate.tutorials.dev_lead" | transloco }}
-                  </p>
-
-                  <div class="gs-tut-endpoint">
-                    <span class="gs-api-verb gs-api-verb--post">POST</span>
-                    <code class="gs-mono">{{ submitUrl() }}</code>
-                  </div>
-
-                  <h3 class="gs-tut-subhead">
-                    {{ "generate.tutorials.dev_headers_head" | transloco }}
-                  </h3>
-                  <dl class="gs-tut-headers">
-                    @for (header of requestHeaders; track header) {
-                      <div class="gs-tut-meta-row">
-                        <dt class="gs-mono">
-                          {{
-                            "generate.tutorials.dev_header_" + header + ".name"
-                              | transloco
-                          }}
-                        </dt>
-                        <dd>
-                          {{
-                            "generate.tutorials.dev_header_" + header + ".desc"
-                              | transloco
-                          }}
-                        </dd>
-                      </div>
-                    }
-                  </dl>
-
-                  <h3 class="gs-tut-subhead">
-                    {{ "generate.tutorials.dev_lifecycle_head" | transloco }}
-                  </h3>
-                  <!-- The same spine the walkthrough is read down, because the
-                       three calls are the developer's version of the steps. -->
-                  <ol class="gs-tut-spine">
-                    @for (call of lifecycle; track call; let i = $index) {
-                      <li class="gs-tut-step gs-tut-step--call">
-                        <h4 class="gs-tut-step-title gs-mono">
-                          {{
-                            "generate.learn.step_heading"
-                              | transloco
-                                : {
-                                    n: i + 1,
-                                    title:
-                                      "generate.tutorials.dev_call_" +
-                                        call +
-                                        ".route" | transloco,
-                                  }
-                          }}
-                        </h4>
-                        <p class="gs-tut-step-body">
-                          {{
-                            "generate.tutorials.dev_call_" + call + ".desc"
-                              | transloco
-                          }}
-                        </p>
-                      </li>
-                    }
-                  </ol>
-
-                  @if (activeDetail(); as detail) {
-                    @if (detail.requestBefore) {
-                      <!-- facefix: the pair is the lesson, so both payloads are
-                           shown and the one changed field speaks for itself. -->
-                      <h3 class="gs-tut-subhead">
+                      }
+                      <h3 class="gs-tut-step-title">
                         {{
-                          "generate.tutorials.dev_payload_before_head"
+                          "generate.learn.step_heading"
                             | transloco
+                              : {
+                                  n: i + 1,
+                                  title:
+                                    stepKey(flowId, step, "title") | transloco,
+                                }
                         }}
                       </h3>
-                      <pre
-                        class="gs-tut-code"
-                        [innerHTML]="requestBeforeJson()"
-                      ></pre>
-                      <h3 class="gs-tut-subhead">
-                        {{
-                          "generate.tutorials.dev_payload_after_head"
-                            | transloco
-                        }}
-                      </h3>
-                    } @else {
-                      <h3 class="gs-tut-subhead">
-                        {{ "generate.tutorials.dev_payload_head" | transloco }}
-                      </h3>
-                    }
-                    <pre class="gs-tut-code" [innerHTML]="requestJson()"></pre>
-                    @if (detail.requestBefore) {
-                      <p class="gs-info-note">
-                        {{
-                          "generate.tutorials.dev_payload_diff_note" | transloco
-                        }}
+                      <p class="gs-tut-step-body">
+                        {{ stepKey(flowId, step, "body") | transloco }}
                       </p>
-                    }
-                    @if (hasImagePlaceholder()) {
-                      <p class="gs-info-note">
-                        {{
-                          "generate.tutorials.dev_payload_base64_note"
-                            | transloco
-                        }}
-                      </p>
-                    }
+                    </li>
                   }
-                </section>
-              }
-            </div>
+                </ol>
+              </section>
+            }
 
-            <!-- What went in, what came out, and what it cost. This belongs to
+            @if (isMode("developer")) {
+              <section class="gs-tut-section">
+                <h2 class="gs-tut-head-2">
+                  {{ "generate.tutorials.dev_head" | transloco }}
+                </h2>
+                <p class="gs-tut-body">
+                  {{ "generate.tutorials.dev_lead" | transloco }}
+                </p>
+
+                <div class="gs-tut-endpoint">
+                  <span class="gs-api-verb gs-api-verb--post">POST</span>
+                  <code class="gs-mono">{{ submitUrl() }}</code>
+                </div>
+
+                <h3 class="gs-tut-subhead">
+                  {{ "generate.tutorials.dev_headers_head" | transloco }}
+                </h3>
+                <dl class="gs-tut-headers">
+                  @for (header of requestHeaders; track header) {
+                    <div class="gs-tut-meta-row">
+                      <dt class="gs-mono">
+                        {{
+                          "generate.tutorials.dev_header_" + header + ".name"
+                            | transloco
+                        }}
+                      </dt>
+                      <dd>
+                        {{
+                          "generate.tutorials.dev_header_" + header + ".desc"
+                            | transloco
+                        }}
+                      </dd>
+                    </div>
+                  }
+                </dl>
+
+                <h3 class="gs-tut-subhead">
+                  {{ "generate.tutorials.dev_lifecycle_head" | transloco }}
+                </h3>
+                <!-- The same spine the walkthrough is read down, because the
+                       three calls are the developer's version of the steps. -->
+                <ol class="gs-tut-spine">
+                  @for (call of lifecycle; track call; let i = $index) {
+                    <li class="gs-tut-step gs-tut-step--call">
+                      <h4 class="gs-tut-step-title gs-mono">
+                        {{
+                          "generate.learn.step_heading"
+                            | transloco
+                              : {
+                                  n: i + 1,
+                                  title:
+                                    "generate.tutorials.dev_call_" +
+                                      call +
+                                      ".route" | transloco,
+                                }
+                        }}
+                      </h4>
+                      <p class="gs-tut-step-body">
+                        {{
+                          "generate.tutorials.dev_call_" + call + ".desc"
+                            | transloco
+                        }}
+                      </p>
+                    </li>
+                  }
+                </ol>
+
+                @if (activeDetail(); as detail) {
+                  @if (detail.requestBefore) {
+                    <!-- facefix: the pair is the lesson, so both payloads are
+                           shown and the one changed field speaks for itself. -->
+                    <h3 class="gs-tut-subhead">
+                      {{
+                        "generate.tutorials.dev_payload_before_head" | transloco
+                      }}
+                    </h3>
+                    <pre
+                      class="gs-tut-code"
+                      [innerHTML]="requestBeforeJson()"
+                    ></pre>
+                    <h3 class="gs-tut-subhead">
+                      {{
+                        "generate.tutorials.dev_payload_after_head" | transloco
+                      }}
+                    </h3>
+                  } @else {
+                    <h3 class="gs-tut-subhead">
+                      {{ "generate.tutorials.dev_payload_head" | transloco }}
+                    </h3>
+                  }
+                  <pre class="gs-tut-code" [innerHTML]="requestJson()"></pre>
+                  @if (detail.requestBefore) {
+                    <p class="gs-info-note">
+                      {{
+                        "generate.tutorials.dev_payload_diff_note" | transloco
+                      }}
+                    </p>
+                  }
+                  @if (hasImagePlaceholder()) {
+                    <p class="gs-info-note">
+                      {{
+                        "generate.tutorials.dev_payload_base64_note" | transloco
+                      }}
+                    </p>
+                  }
+                }
+              </section>
+            }
+          </div>
+
+          <!-- What went in, what came out, and what it cost. This belongs to
                  neither tab: the evidence is the same whoever is reading. -->
-            <aside class="gs-tut-evidence">
-              <h2 class="gs-tut-head-2">
-                {{ "generate.tutorials.images_head" | transloco }}
-              </h2>
+          <aside class="gs-tut-evidence">
+            <h2 class="gs-tut-head-2">
+              {{ "generate.tutorials.images_head" | transloco }}
+            </h2>
 
-              <!-- Every picture sits on the same bounded stage and is
+            <!-- The pictures are published rather than shipped, so this is the
+                   one part of the page that can be waiting or missing. The
+                   walkthrough beside it is complete either way. -->
+            @if (loadFailed()) {
+              <p class="gs-info-note">
+                {{ "generate.tutorials.load_error" | transloco }}
+              </p>
+            } @else if (!manifest()) {
+              <p class="gs-tut-body">
+                {{ "generate.tutorials.loading" | transloco }}
+              </p>
+            }
+
+            <!-- Every picture sits on the same bounded stage and is
                    letterboxed rather than cropped: a before and an after are
                    only worth reading side by side if neither one is trimmed to
                    fit, and no picture is allowed to set the page's height. The
                    stage is itself the way to a full-size look. -->
-              <div class="gs-tut-shots">
-                @for (shot of shots(); track shot.labelKey; let i = $index) {
-                  <figure class="gs-tut-shot">
-                    <button
-                      #shotTrigger
-                      type="button"
-                      class="gs-tut-stage"
-                      [attr.aria-label]="
-                        'generate.tutorials.enlarge'
-                          | transloco: { name: shot.labelKey | transloco }
-                      "
-                      (click)="openEnlarged(i)"
-                    >
-                      <img
-                        class="gs-tut-img"
-                        [class.gs-tut-img--alpha]="shot.alpha"
-                        [src]="shot.src"
-                        alt=""
-                        loading="lazy"
-                      />
-                    </button>
-                    <figcaption class="gs-tut-shot-cap">
-                      {{ shot.labelKey | transloco }}
-                    </figcaption>
-                  </figure>
-                }
-              </div>
+            <div class="gs-tut-shots">
+              @for (shot of shots(); track shot.labelKey; let i = $index) {
+                <figure class="gs-tut-shot">
+                  <button
+                    #shotTrigger
+                    type="button"
+                    class="gs-tut-stage"
+                    [attr.aria-label]="
+                      'generate.tutorials.enlarge'
+                        | transloco: { name: shot.labelKey | transloco }
+                    "
+                    (click)="openEnlarged(i)"
+                  >
+                    <img
+                      class="gs-tut-img"
+                      [class.gs-tut-img--alpha]="shot.alpha"
+                      [src]="shot.src"
+                      alt=""
+                      loading="lazy"
+                    />
+                  </button>
+                  <figcaption class="gs-tut-shot-cap">
+                    {{ shot.labelKey | transloco }}
+                  </figcaption>
+                </figure>
+              }
+            </div>
 
-              <!-- The settings that made it, read off the request itself, and
+            <!-- The settings that made it, read off the request itself, and
                    the request underneath for a reader who wants to check them.
                    The developer tab already leads with the payload, so the
                    chips stand in for it here rather than being shown twice. -->
-              @if (isMode("user")) {
-                <app-gs-recipe-chips [request]="requestObject()" />
-                <div class="gs-tut-raw">
-                  <button
-                    type="button"
-                    class="gs-tut-raw-toggle"
-                    id="gs-tut-raw-toggle"
-                    aria-controls="gs-tut-raw-body"
-                    [attr.aria-expanded]="rawOpen()"
-                    (click)="toggleRaw()"
-                  >
-                    <app-icon
-                      [name]="rawOpen() ? 'chevron-up' : 'chevron-down'"
-                      class="gs-ico-sm"
-                    />
-                    {{ "generate.tutorials.raw_show" | transloco }}
-                  </button>
-                  @if (rawOpen()) {
-                    <pre
-                      id="gs-tut-raw-body"
-                      class="gs-tut-code"
-                      [innerHTML]="requestJson()"
-                    ></pre>
-                  }
-                </div>
-              }
-
-              @if (activeDetail(); as detail) {
-                <dl class="gs-tut-meta">
-                  <div class="gs-tut-meta-row">
-                    <dt>{{ "generate.tutorials.meta_model" | transloco }}</dt>
-                    <dd>{{ detail.meta.model }}</dd>
-                  </div>
-                  <div class="gs-tut-meta-row">
-                    <dt>{{ "generate.tutorials.meta_seed" | transloco }}</dt>
-                    <dd class="gs-mono">{{ detail.meta.seed }}</dd>
-                  </div>
-                  <div class="gs-tut-meta-row">
-                    <dt>{{ "generate.tutorials.meta_kudos" | transloco }}</dt>
-                    <dd>{{ detail.meta.kudos_charged }}</dd>
-                  </div>
-                  <div class="gs-tut-meta-row">
-                    <dt>{{ "generate.tutorials.meta_time" | transloco }}</dt>
-                    <dd>
-                      {{
-                        "generate.tutorials.meta_time_value"
-                          | transloco
-                            : { seconds: detail.meta.wall_time_seconds }
-                      }}
-                    </dd>
-                  </div>
-                </dl>
-
-                @if (detail.meta.deviations) {
-                  <p class="gs-info-note gs-tut-deviation">
-                    <span class="gs-tut-deviation-label">
-                      {{ "generate.tutorials.deviation_label" | transloco }}
-                    </span>
-                    {{ detail.meta.deviations }}
-                  </p>
+            @if (isMode("user")) {
+              <app-gs-recipe-chips [request]="requestObject()" />
+              <div class="gs-tut-raw">
+                <button
+                  type="button"
+                  class="gs-tut-raw-toggle"
+                  id="gs-tut-raw-toggle"
+                  aria-controls="gs-tut-raw-body"
+                  [attr.aria-expanded]="rawOpen()"
+                  (click)="toggleRaw()"
+                >
+                  <app-icon
+                    [name]="rawOpen() ? 'chevron-up' : 'chevron-down'"
+                    class="gs-ico-sm"
+                  />
+                  {{ "generate.tutorials.raw_show" | transloco }}
+                </button>
+                @if (rawOpen()) {
+                  <pre
+                    id="gs-tut-raw-body"
+                    class="gs-tut-code"
+                    [innerHTML]="requestJson()"
+                  ></pre>
                 }
+              </div>
+            }
+
+            @if (activeDetail(); as detail) {
+              <dl class="gs-tut-meta">
+                <div class="gs-tut-meta-row">
+                  <dt>{{ "generate.tutorials.meta_model" | transloco }}</dt>
+                  <dd>{{ detail.meta.model }}</dd>
+                </div>
+                <div class="gs-tut-meta-row">
+                  <dt>{{ "generate.tutorials.meta_seed" | transloco }}</dt>
+                  <dd class="gs-mono">{{ detail.meta.seed }}</dd>
+                </div>
+                <div class="gs-tut-meta-row">
+                  <dt>{{ "generate.tutorials.meta_kudos" | transloco }}</dt>
+                  <dd>{{ detail.meta.kudos_charged }}</dd>
+                </div>
+                <div class="gs-tut-meta-row">
+                  <dt>{{ "generate.tutorials.meta_time" | transloco }}</dt>
+                  <dd>
+                    {{
+                      "generate.tutorials.meta_time_value"
+                        | transloco: { seconds: detail.meta.wall_time_seconds }
+                    }}
+                  </dd>
+                </div>
+              </dl>
+
+              @if (detail.meta.deviations) {
+                <p class="gs-info-note gs-tut-deviation">
+                  <span class="gs-tut-deviation-label">
+                    {{ "generate.tutorials.deviation_label" | transloco }}
+                  </span>
+                  {{ detail.meta.deviations }}
+                </p>
               }
+            }
 
-              <!-- The claim the whole rail rests on, said once and quietly at
+            <!-- The claim the whole rail rests on, said once and quietly at
                    the foot of the evidence it is about. -->
-              <p class="gs-tut-evidence-note">
-                {{ "generate.tutorials.evidence_note" | transloco }}
-              </p>
-            </aside>
-          </div>
-        }
-      </article>
-
-      <!-- The enlarged picture, on the sweep viewer's grammar. It sits outside
-           the evidence rail rather than in it: that rail is a sticky scrolling
-           column at the wide step, and this layer belongs to the page. -->
-      @if (enlargedShot(); as shot) {
-        <!-- Focusable backdrop, so the press outside has a keyboard equivalent
-             rather than leaving one way out that only a pointer has. -->
-        <div
-          class="gs-tut-viewer"
-          tabindex="0"
-          (click)="onViewerBackdrop($event)"
-          (keydown.escape)="closeEnlarged()"
-        >
-          <div
-            #viewerPanel
-            class="gs-tut-viewer-body"
-            role="dialog"
-            aria-modal="true"
-            tabindex="-1"
-            [attr.aria-label]="
-              'generate.tutorials.enlarged_title'
-                | transloco: { name: shot.labelKey | transloco }
-            "
-            (keydown)="onViewerKeydown($event)"
-          >
-            <div class="gs-tut-viewer-top">
-              <span class="gs-tut-viewer-name">
-                {{ shot.labelKey | transloco }}
-              </span>
-              <button
-                #viewerClose
-                type="button"
-                class="gs-tut-viewer-x"
-                [attr.aria-label]="
-                  'generate.tutorials.enlarge_close' | transloco
-                "
-                (click)="closeEnlarged()"
-              >
-                <app-icon name="x-mark" class="gs-ico-sm" />
-              </button>
-            </div>
-            <div class="gs-tut-viewer-stage">
-              <img
-                class="gs-tut-viewer-img"
-                [class.gs-tut-img--alpha]="shot.alpha"
-                [src]="shot.src"
-                alt=""
-              />
-            </div>
-          </div>
+            <p class="gs-tut-evidence-note">
+              {{ "generate.tutorials.evidence_note" | transloco }}
+            </p>
+          </aside>
         </div>
       }
+    </article>
+
+    <!-- The enlarged picture, on the sweep viewer's grammar. It sits outside
+           the evidence rail rather than in it: that rail is a sticky scrolling
+           column at the wide step, and this layer belongs to the page. -->
+    @if (enlargedShot(); as shot) {
+      <!-- Focusable backdrop, so the press outside has a keyboard equivalent
+             rather than leaving one way out that only a pointer has. -->
+      <div
+        class="gs-tut-viewer"
+        tabindex="0"
+        (click)="onViewerBackdrop($event)"
+        (keydown.escape)="closeEnlarged()"
+      >
+        <div
+          #viewerPanel
+          class="gs-tut-viewer-body"
+          role="dialog"
+          aria-modal="true"
+          tabindex="-1"
+          [attr.aria-label]="
+            'generate.tutorials.enlarged_title'
+              | transloco: { name: shot.labelKey | transloco }
+          "
+          (keydown)="onViewerKeydown($event)"
+        >
+          <div class="gs-tut-viewer-top">
+            <span class="gs-tut-viewer-name">
+              {{ shot.labelKey | transloco }}
+            </span>
+            <button
+              #viewerClose
+              type="button"
+              class="gs-tut-viewer-x"
+              [attr.aria-label]="'generate.tutorials.enlarge_close' | transloco"
+              (click)="closeEnlarged()"
+            >
+              <app-icon name="x-mark" class="gs-ico-sm" />
+            </button>
+          </div>
+          <div class="gs-tut-viewer-stage">
+            <img
+              class="gs-tut-viewer-img"
+              [class.gs-tut-img--alpha]="shot.alpha"
+              [src]="shot.src"
+              alt=""
+            />
+          </div>
+        </div>
+      </div>
     }
   }
 </div>

@@ -11,7 +11,7 @@ export const environment = {
   apiBaseUrl: 'https://aihorde.net/api/v2',
   ratingsApiBaseUrl: 'https://ratings.aihorde.net/api/v1',
   statusApiBaseUrl: '/status-api/api/v1',
-  sweepLibraryBaseUrl: '/assets/param-sweeps',
+  evidenceBaseUrl: '/assets/param-sweeps',
   features: {
     ratingsPage: false,
   },

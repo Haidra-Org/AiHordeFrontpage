@@ -13,7 +13,7 @@ describe('SweepLibraryService', () => {
   let sweeps: SweepLibraryService;
   let http: HttpTestingController;
 
-  const indexUrl = `${environment.sweepLibraryBaseUrl}/index.json`;
+  const indexUrl = `${environment.evidenceBaseUrl}/index.json`;
 
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -140,7 +140,7 @@ describe('SweepLibraryService', () => {
 
     const strip = sweeps.strip('denoising_strength')!;
     expect(sweeps.assetUrl(strip.source_image!)).toBe(
-      `${environment.sweepLibraryBaseUrl}/denoising-strength/deliberate/place/source.webp`,
+      `${environment.evidenceBaseUrl}/denoising-strength/deliberate/place/source.webp`,
     );
   });
 
@@ -154,7 +154,7 @@ describe('SweepLibraryService', () => {
       'cfg-scale/albedobase-xl/person/001_2.webp',
     );
     expect(sweeps.imageUrl(strip.stops[0])).toBe(
-      `${environment.sweepLibraryBaseUrl}/cfg-scale/albedobase-xl/person/001_2.webp`,
+      `${environment.evidenceBaseUrl}/cfg-scale/albedobase-xl/person/001_2.webp`,
     );
   });
 });

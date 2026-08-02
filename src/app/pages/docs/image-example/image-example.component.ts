@@ -38,7 +38,13 @@ import {
   hasWorldVariants,
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
-import { flowDef, flowFollowable, flowSteps } from '../../../content/flows';
+import {
+  FLOWS,
+  FlowDef,
+  flowDef,
+  flowFollowable,
+  flowSteps,
+} from '../../../content/flows';
 import {
   DOCS_IMAGE,
   STUDIO_IMAGE,
@@ -160,20 +166,28 @@ export class DocsImageExampleComponent {
   );
 
   /**
-   * The flows the page enumerates. A world variant is another set of pictures
-   * for a flow already on this list rather than a flow of its own, so it never
-   * takes a line of the picker or a URL: the world settles which assets a
-   * canonical id opens with, at the moment it is opened.
+   * The techniques the page enumerates, which is what the app teaches rather
+   * than what happens to have been published. A world variant is another set of
+   * pictures for a technique already on this list rather than one of its own, so
+   * it never takes a line of the picker or a URL: the world settles which assets
+   * a canonical id opens with, at the moment it is opened.
    */
-  public readonly flows = computed(() =>
-    this.allFlows().filter((flow) => canonicalFlowId(flow.id) === flow.id),
+  public readonly flows = computed<readonly FlowDef[]>(() =>
+    FLOWS.filter((flow) => !flow.concept),
   );
 
-  /** The flow the URL names, as the rest of the page's vocabulary knows it. */
+  /**
+   * The technique the URL names.
+   *
+   * Answered from the registry rather than from the manifest, so the page knows
+   * what it is about before, and without, the evidence library. That is what
+   * lets it be built ahead of time: a page whose own identity waited on a fetch
+   * would be published as the state it is in while waiting.
+   */
   public readonly activeId = computed<string | null>(() => {
     const id = this.routeFlowId();
     const canonical = id === null ? null : canonicalFlowId(id);
-    return this.flows().some((flow) => flow.id === canonical)
+    return canonical !== null && flowDef(canonical) !== undefined
       ? canonical
       : null;
   });
@@ -302,22 +316,26 @@ export class DocsImageExampleComponent {
    * could not serve is offered all the same, muted and annotated, because what
    * is missing is worth reading before it is clicked.
    */
-  public readonly pickerEntries = computed<readonly GsIndexRailEntry[]>(() =>
-    this.flows().map((flow) => {
-      const identity = this.flowIdentity(flow);
+  public readonly pickerEntries = computed<readonly GsIndexRailEntry[]>(() => {
+    const unavailable = new Set(
+      this.allFlows()
+        .filter((flow) => flow.status === 'skipped')
+        .map((flow) => canonicalFlowId(flow.id)),
+    );
+    return this.flows().map((flow) => {
+      const identity = sectionIdentity(flow.section);
       return {
         id: flow.id,
-        labelKey: this.taskNameKey(flow),
+        labelKey: `generate.tutorials.flows.${flow.id}.task_name`,
         icon: identity?.icon,
         hueClass: identity?.className,
         link: docsExampleLink(flow.id),
-        noteKey:
-          flow.status === 'skipped'
-            ? 'generate.tutorials.unavailable_tag'
-            : undefined,
+        noteKey: unavailable.has(flow.id)
+          ? 'generate.tutorials.unavailable_tag'
+          : undefined,
       };
-    }),
-  );
+    });
+  });
 
   constructor() {
     // The technique the URL names, so a shared link previews as the thing it is
@@ -459,14 +477,15 @@ export class DocsImageExampleComponent {
    * technique instead, which is the wrong thing to lead a reader with, so it is
    * kept as a second line rather than as the name.
    */
-  public taskNameKey(flow: ExampleFlow): string {
-    return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
+  public taskNameKey(flowId: string): string {
+    return `generate.tutorials.flows.${canonicalFlowId(flowId)}.task_name`;
   }
 
-  /** The mark and hue a flow is read by, where its technique has one. */
-  public flowIdentity(flow: ExampleFlow): SectionIdentity | null {
-    return sectionIdentity(flowDef(canonicalFlowId(flow.id))?.section);
-  }
+  /** The mark and hue the technique on screen is read by. */
+  public readonly activeIdentity = computed<SectionIdentity | null>(() => {
+    const id = this.activeId();
+    return id ? sectionIdentity(flowDef(id)?.section) : null;
+  });
 
   /** The name a world is offered under in the switcher. */
   public worldKey(world: TutorialWorld): string {
@@ -487,8 +506,8 @@ export class DocsImageExampleComponent {
   }
 
   /** A step's prose, which is written per flow rather than shared. */
-  public stepKey(flow: ExampleFlow, step: string, part: string): string {
-    const id = canonicalFlowId(flow.id);
+  public stepKey(flowId: string, step: string, part: string): string {
+    const id = canonicalFlowId(flowId);
     return `generate.tutorials.flows.${id}.steps.${step}.${part}`;
   }
 
@@ -498,17 +517,34 @@ export class DocsImageExampleComponent {
    * from the example run and is written for someone who already knows the
    * technique, which is the wrong register for the first thing a reader reads.
    */
-  public summaryFor(flow: ExampleFlow): string {
-    const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
+  public readonly activeSummary = computed<string>(() => {
+    const id = this.activeId();
+    if (!id) {
+      return '';
+    }
+    const key = `generate.tutorials.flows.${id}.summary`;
     const text = this.transloco.translate(key);
-    return !text || text === key ? flow.summary : text;
-  }
+    if (text && text !== key) {
+      return text;
+    }
+    return this.activeFlow()?.summary ?? '';
+  });
 
-  /** Whether the studio can walk a reader through this flow field by field. */
-  public canStart(flow: ExampleFlow): boolean {
-    return (
-      flow.status === 'available' && flowFollowable(canonicalFlowId(flow.id))
-    );
+  /**
+   * Why the horde could not serve this technique when the examples were made,
+   * or null where it could. Read from the manifest, so it is only known once the
+   * library has answered; until then the page reads as an ordinary one, which
+   * is what it is for every technique but the one exception.
+   */
+  public readonly skippedReason = computed<string | null>(() => {
+    const flow = this.activeFlow();
+    return flow?.status === 'skipped' ? (flow.skipped_reason ?? '') : null;
+  });
+
+  /** Whether the studio can walk a reader through this technique field by field. */
+  public canStart(): boolean {
+    const id = this.activeId();
+    return id !== null && this.skippedReason() === null && flowFollowable(id);
   }
 
   /**
@@ -516,8 +552,12 @@ export class DocsImageExampleComponent {
    * put in the URL, so reloading the studio lands on an ordinary studio instead
    * of restarting a tutorial the reader has moved past.
    */
-  public startTutorial(flow: ExampleFlow): void {
-    this.tutorial.arm(flow.id);
+  public startTutorial(): void {
+    const id = this.activeId();
+    if (id === null) {
+      return;
+    }
+    this.tutorial.arm(id);
     void this.router.navigateByUrl(STUDIO_IMAGE);
   }
 

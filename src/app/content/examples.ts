@@ -1,3 +1,5 @@
+import { environment } from '../../environments/environment';
+
 /**
  * The published worked examples: what was actually submitted to the horde, what
  * came back, and what it cost.
@@ -8,8 +10,13 @@
  * says only what was published.
  */
 
-/** Where the published example set is served from. */
-export const EXAMPLES_ROOT = '/assets/tutorials';
+/**
+ * Where the published example set is served from: a directory of the evidence
+ * library, beside the parameter sweeps, rather than an asset of this repository.
+ * Nothing generated is committed here; the library is published once and the
+ * base URL is configuration.
+ */
+export const EXAMPLES_ROOT = `${environment.evidenceBaseUrl.replace(/\/+$/, '')}/tutorials`;
 
 /** One entry of the manifest. */
 export interface ExampleFlow {

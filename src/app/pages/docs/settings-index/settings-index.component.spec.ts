@@ -50,9 +50,7 @@ describe('DocsSettingsIndexComponent', () => {
     fixture = TestBed.createComponent(DocsSettingsIndexComponent);
     fixture.detectChanges();
 
-    const request = http.expectOne(
-      `${environment.sweepLibraryBaseUrl}/index.json`,
-    );
+    const request = http.expectOne(`${environment.evidenceBaseUrl}/index.json`);
     if (options?.empty) {
       request.error(new ProgressEvent('offline'), {
         status: 0,
@@ -132,9 +130,7 @@ describe('DocsSettingsIndexComponent', () => {
     expect(thumbs.length).toBeGreaterThan(0);
     for (const thumb of thumbs) {
       expect(thumb.getAttribute('loading')).toBe('lazy');
-      expect(thumb.getAttribute('src')).toContain(
-        environment.sweepLibraryBaseUrl,
-      );
+      expect(thumb.getAttribute('src')).toContain(environment.evidenceBaseUrl);
       // Decoration beside a named link, so it takes no alt text of its own.
       expect(thumb.getAttribute('alt')).toBe('');
     }

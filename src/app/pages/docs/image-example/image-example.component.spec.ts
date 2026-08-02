@@ -17,7 +17,8 @@ import { DocsImageExampleComponent } from './image-example.component';
 import { ExampleManifest } from '../../../content/examples';
 import { flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
-import manifest from '../../../../assets/tutorials/manifest.json';
+import manifest from '../../../testing/fixtures/example-manifest.stub.json';
+import { EXAMPLES_ROOT } from '../../../content/examples';
 import {
   TutorialEngineService,
   TutorialWorld,
@@ -203,7 +204,7 @@ function flushAll(
   harness: Harness,
   manifestData: ExampleManifest = MANIFEST,
 ): void {
-  harness.http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
+  harness.http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifestData);
   harness.fixture.detectChanges();
 
   flushDetail(harness);
@@ -216,7 +217,7 @@ function flushDetail(harness: Harness): void {
     return;
   }
 
-  const base = `/assets/tutorials/${flow.directory}`;
+  const base = `${EXAMPLES_ROOT}/${flow.directory}`;
   harness.http.expectOne(`${base}/meta.json`).flush({
     model: flow.model,
     seed: flow.seed,
@@ -297,14 +298,25 @@ describe('DocsImageExampleComponent', () => {
     expect(bare.query('.gs-tut-flow')).toHaveLength(0);
   });
 
-  it('reports a failed manifest fetch instead of rendering an empty page', () => {
+  it('is still the page it is when the evidence library cannot be reached', () => {
+    // The pictures are published rather than shipped. Losing them costs the
+    // page its evidence, not its identity: the technique it is about, the steps
+    // that make it and the way to the other techniques are all the app's own.
+    const translations = en as Record<string, string>;
     harness.http
-      .expectOne('/assets/tutorials/manifest.json')
+      .expectOne(`${EXAMPLES_ROOT}/manifest.json`)
       .error(new ProgressEvent('failed'));
     harness.fixture.detectChanges();
 
     expect(harness.component.loadFailed()).toBe(true);
-    expect(harness.query('.gs-index-entry')).toHaveLength(0);
+    expect(harness.query('.gs-index-entry').length).toBeGreaterThan(0);
+    expect(harness.query('.gs-tut-step').length).toBeGreaterThan(0);
+    expect(harness.text()).toContain(
+      translations['generate.tutorials.flows.txt2img.task_name'],
+    );
+    expect(harness.text()).toContain(
+      translations['generate.tutorials.load_error'],
+    );
   });
 
   it('shows the flow named by a deep link, with its steps and images', async () => {
@@ -600,17 +612,22 @@ describe('DocsImageExampleComponent', () => {
   it('prefers its own summary over the manifest phrasing', () => {
     const translations = en as Record<string, string>;
     const flow = MANIFEST.flows[0];
+    flushAll(harness);
 
-    expect(harness.component.summaryFor(flow)).toBe(
+    expect(harness.component.activeSummary()).toBe(
       translations[`generate.tutorials.flows.${flow.id}.summary`],
     );
-    expect(harness.component.summaryFor(flow)).not.toBe(flow.summary);
+    expect(harness.component.activeSummary()).not.toBe(flow.summary);
   });
 
-  it('falls back to the manifest summary for a flow with no override', () => {
-    const invented = { ...MANIFEST.flows[0], id: 'not-a-flow' };
+  it('leads with its own summary before the library has answered', () => {
+    // Written in the app, so it is there to be read and to be previewed by a
+    // link long before the manifest arrives.
+    const translations = en as Record<string, string>;
 
-    expect(harness.component.summaryFor(invented)).toBe(invented.summary);
+    expect(harness.component.activeSummary()).toBe(
+      translations['generate.tutorials.flows.txt2img.summary'],
+    );
   });
 
   it('offers a studio walkthrough only where steps have been written', () => {
@@ -618,7 +635,7 @@ describe('DocsImageExampleComponent', () => {
 
     const start = harness.query<HTMLButtonElement>('.gs-tut-start-btn')[0];
 
-    expect(harness.component.canStart(MANIFEST.flows[0])).toBe(true);
+    expect(harness.component.canStart()).toBe(true);
     expect(start.disabled).toBe(false);
     expect(harness.text()).not.toContain(
       (en as Record<string, string>)['generate.learn.start_soon'],

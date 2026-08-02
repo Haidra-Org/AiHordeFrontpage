@@ -10,7 +10,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageHomeComponent } from './image-home.component';
 import { ExampleManifest } from '../../../content/examples';
 import en from '../../../../assets/i18n/en.json';
-import manifest from '../../../../assets/tutorials/manifest.json';
+import manifest from '../../../testing/fixtures/example-manifest.stub.json';
+import { EXAMPLES_ROOT } from '../../../content/examples';
 import {
   TutorialEngineService,
   canonicalFlowId,
@@ -72,7 +73,7 @@ describe('DocsImageHomeComponent', () => {
 
   /** Answers the manifest request the page makes on construction. */
   function flush(manifestData: ExampleManifest = MANIFEST): void {
-    http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifestData);
     fixture.detectChanges();
   }
 
@@ -109,7 +110,7 @@ describe('DocsImageHomeComponent', () => {
     const txt2img = MANIFEST.flows.find((flow) => flow.id === 'txt2img');
 
     expect(hero.getAttribute('src')).toBe(
-      `/assets/tutorials/${txt2img?.directory}/${txt2img?.result}`,
+      `${EXAMPLES_ROOT}/${txt2img?.directory}/${txt2img?.result}`,
     );
     // A backdrop, not content: the copy over it says everything it says.
     expect(hero.getAttribute('alt')).toBe('');
@@ -241,13 +242,13 @@ describe('DocsImageHomeComponent', () => {
 
     const shelf = component.shelf();
 
-    shelf.forEach((flow, index) => {
+    shelf.forEach((card, index) => {
       expect(
         cards[index].querySelector('.gs-home-card-title')?.textContent,
       ).toContain(
-        TRANSLATIONS[`generate.tutorials.flows.${flow.id}.task_name`],
+        TRANSLATIONS[`generate.tutorials.flows.${card.id}.task_name`],
       );
-      expect(cards[index].textContent).toContain(component.summaryFor(flow));
+      expect(cards[index].textContent).toContain(component.summaryFor(card));
       // Every card says what kind of thing it is before it says which one.
       expect(
         cards[index].querySelector('.gs-learn-eyebrow')?.textContent,
@@ -261,7 +262,7 @@ describe('DocsImageHomeComponent', () => {
           card.querySelector('.gs-home-card-img')?.getAttribute('loading') ??
           null,
       ),
-    ).toEqual(shelf.map((flow) => (flow.result ? 'lazy' : null)));
+    ).toEqual(shelf.map((card) => (card.image ? 'lazy' : null)));
   });
 
   it('keeps the unserved technique on the shelf, saying why', () => {
@@ -281,14 +282,18 @@ describe('DocsImageHomeComponent', () => {
     expect(card?.querySelector('.gs-home-card-img')).toBeNull();
   });
 
-  it('says the shelf could not be loaded rather than showing an empty one', () => {
+  it('still shelves every technique when the library cannot be reached', () => {
+    // The shelf is the list of what there is to read, which the app knows on
+    // its own. Losing the library costs the cards their pictures and their
+    // one-line summaries, not their place on the shelf or their link.
     http
-      .expectOne('/assets/tutorials/manifest.json')
+      .expectOne(`${EXAMPLES_ROOT}/manifest.json`)
       .error(new ProgressEvent('failed'));
     fixture.detectChanges();
 
     expect(component.loadFailed()).toBe(true);
-    expect(query('.gs-home-card')).toHaveLength(0);
+    expect(query('.gs-home-card').length).toBeGreaterThan(0);
+    expect(query('.gs-home-card-img')).toHaveLength(0);
     expect(text()).toContain(TRANSLATIONS['generate.tutorials.load_error']);
   });
 

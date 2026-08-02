@@ -36,7 +36,7 @@ describe('DocsSettingsEntryComponent', () => {
   /** Answer whatever sweep fetches the mounted page happens to make. */
   const flushLibrary = (): void => {
     for (const request of http.match(
-      `${environment.sweepLibraryBaseUrl}/index.json`,
+      `${environment.evidenceBaseUrl}/index.json`,
     )) {
       request.flush(stubIndex);
     }
