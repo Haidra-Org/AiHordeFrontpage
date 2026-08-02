@@ -15,9 +15,9 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   GenerateTutorialsComponent,
-  TUTORIAL_FLOW_STEPS,
   TutorialManifest,
 } from './generate-tutorials.component';
+import { flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
 import {
@@ -316,7 +316,7 @@ describe('GenerateTutorialsComponent', () => {
     const flow = harness.component.activeFlow();
     expect(flow?.id).toBe('inpainting');
     expect(harness.query('.gs-tut-step')).toHaveLength(
-      TUTORIAL_FLOW_STEPS['inpainting'].length,
+      flowSteps('inpainting').length,
     );
     // Source, mask and result: the inputs are shown, not only the outcome.
     expect(harness.query('.gs-tut-img')).toHaveLength(3);
@@ -574,11 +574,17 @@ describe('GenerateTutorialsComponent', () => {
       expected.add(`generate.tutorials.flows.${flow.id}.summary`);
     }
     for (const flow of AVAILABLE) {
-      const steps = TUTORIAL_FLOW_STEPS[flow.id];
-      expect(steps, `no steps written for ${flow.id}`).toBeTruthy();
+      const steps = flowSteps(flow.id);
+      expect(steps.length, `no steps written for ${flow.id}`).toBeGreaterThan(
+        0,
+      );
       for (const step of steps) {
-        expected.add(`generate.tutorials.flows.${flow.id}.steps.${step}.title`);
-        expected.add(`generate.tutorials.flows.${flow.id}.steps.${step}.body`);
+        expected.add(
+          `generate.tutorials.flows.${flow.id}.steps.${step.id}.title`,
+        );
+        expected.add(
+          `generate.tutorials.flows.${flow.id}.steps.${step.id}.body`,
+        );
       }
     }
 
@@ -727,7 +733,7 @@ describe('GenerateTutorialsComponent', () => {
       // the technique line behind them belong to the world.
       expect(harness.component.activeId()).toBe(VARIANT_FLOW.id);
       expect(harness.query('.gs-tut-step')).toHaveLength(
-        TUTORIAL_FLOW_STEPS[VARIANT_FLOW.id].length,
+        flowSteps(VARIANT_FLOW.id).length,
       );
       expect(title.textContent).toContain(taskName);
       expect(

@@ -10,10 +10,9 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import {
   TutorialEngineService,
   TutorialLevel,
-  TutorialStepDef,
-  isConceptFlow,
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
+import { FlowStep, isConceptFlow } from '../../../content/flows';
 import {
   SectionIdentity,
   sectionIdentity,
@@ -84,7 +83,7 @@ export class GenerateLearnPanelComponent {
     total: this.total(),
   }));
 
-  public titleKey(step: TutorialStepDef): string {
+  public titleKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.title`;
   }
 
@@ -93,7 +92,7 @@ export class GenerateLearnPanelComponent {
    * points at nothing, which is every step of a concept track: an eyebrow there
    * would name a control the reader is not being sent to.
    */
-  public fieldLabelKey(step: TutorialStepDef): string | null {
+  public fieldLabelKey(step: FlowStep): string | null {
     return step.anchorId ? stepFieldLabelKey(step.anchorId) : null;
   }
 
@@ -101,7 +100,7 @@ export class GenerateLearnPanelComponent {
    * The step's prose in the chosen register. Only the body varies: a step is
    * named the same thing however much explanation goes with it.
    */
-  public bodyKey(step: TutorialStepDef): string {
+  public bodyKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.body.${this.level()}`;
   }
 
@@ -110,7 +109,7 @@ export class GenerateLearnPanelComponent {
    * hue as the card it is pointing at. Steps that are about the page rather
    * than a card (pressing Generate) belong to no area and take no mark.
    */
-  public identityFor(step: TutorialStepDef): SectionIdentity | null {
+  public identityFor(step: FlowStep): SectionIdentity | null {
     return sectionIdentity(sectionFor('step', step.id));
   }
 
@@ -121,17 +120,17 @@ export class GenerateLearnPanelComponent {
    * without a section (the finale's Generate button) would pair a blue field
    * glow with a green card glow across the two zones.
    */
-  public breathes(step: TutorialStepDef): boolean {
+  public breathes(step: FlowStep): boolean {
     return !!step.anchorId && this.identityFor(step) !== null;
   }
 
   /** The label of a closing step's handoff, in that track's own words. */
-  public ctaKey(step: TutorialStepDef): string {
+  public ctaKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.cta`;
   }
 
   /** Leave this track for the one its closing step offers. */
-  public startOffered(step: TutorialStepDef): void {
+  public startOffered(step: FlowStep): void {
     if (step.startsFlow) {
       void this.engine.start(step.startsFlow);
     }

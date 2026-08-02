@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { APP_ICONS } from '../icons';
-import { TUTORIAL_STEPS } from '../services/tutorial-engine.service';
+import { FLOWS } from './flows';
 import { GUIDE_SECTIONS } from '../pages/generate/generate-guide/generate-guide.component';
-import { TUTORIAL_FLOW_STEPS } from '../pages/generate/generate-tutorials/generate-tutorials.component';
 import {
   SECTION_BY_GUIDE_ID,
   SECTION_BY_STEP_ID,
@@ -39,13 +38,10 @@ describe('section identities', () => {
     }
   });
 
-  it('resolves every claimed step id, in both step authorings', () => {
-    const authored = new Set([
-      ...Object.values(TUTORIAL_FLOW_STEPS).flat(),
-      ...Object.values(TUTORIAL_STEPS).flatMap((steps) =>
-        steps.map((step) => step.id),
-      ),
-    ]);
+  it('resolves every claimed step id against the one step authoring', () => {
+    const authored = new Set(
+      FLOWS.flatMap((flow) => flow.steps.map((step) => step.id)),
+    );
 
     for (const id of Object.keys(SECTION_BY_STEP_ID)) {
       expect(authored.has(id)).toBe(true);

@@ -28,7 +28,6 @@ import {
 import { highlightJson } from '../../../helper/json-formatter';
 import {
   SECTION_BY_STEP_ID,
-  SectionId,
   SectionIdentity,
   sectionIdentity,
 } from '../../../content/sections';
@@ -38,8 +37,8 @@ import {
   canonicalFlowId,
   hasWorldVariants,
   resolveFlowId,
-  tutorialAvailable,
 } from '../../../services/tutorial-engine.service';
+import { flowDef, flowFollowable, flowSteps } from '../../../content/flows';
 
 /** Where the committed example set lives, relative to the served root. */
 const TUTORIALS_ROOT = '/assets/tutorials';
@@ -100,54 +99,6 @@ interface TutorialDetail {
   /** facefix only: the same request without the post-processor. */
   requestBefore: string | null;
 }
-
-/**
- * The walkthrough each flow gets, in the order the control panel presents the
- * fields being set. Written per flow rather than shared, because the point of
- * each example is the one or two fields that make it that flow.
- */
-export const TUTORIAL_FLOW_STEPS: Readonly<Record<string, readonly string[]>> =
-  {
-    txt2img: ['prompt', 'model', 'size', 'sampling', 'seed', 'generate'],
-    img2img: ['source', 'mode', 'denoise', 'prompt', 'model', 'generate'],
-    controlnet: [
-      'source',
-      'mode',
-      'control_type',
-      'denoise',
-      'prompt',
-      'model',
-      'size',
-      'generate',
-    ],
-    inpainting: ['source', 'mode', 'mask', 'prompt', 'model', 'generate'],
-    qr_code: ['prompt', 'qr', 'model', 'size', 'cfg', 'generate'],
-    transparent: ['prompt', 'transparent', 'model', 'size', 'generate'],
-    facefix: [
-      'prompt',
-      'model',
-      'size',
-      'generate_before',
-      'facefixer',
-      'regenerate',
-    ],
-  };
-
-/**
- * The panel area each flow's defining setting lives in, which is the mark and
- * hue its line of the picker is read by. A flow the manifest grows that is not
- * listed here takes no mark rather than a wrong one.
- */
-const FLOW_SECTIONS: Readonly<Record<string, SectionId>> = {
-  txt2img: 'prompt',
-  img2img: 'source',
-  controlnet: 'source',
-  inpainting: 'source',
-  remix: 'source',
-  qr_code: 'workflows',
-  transparent: 'workflows',
-  facefix: 'finishing',
-};
 
 /** The three calls every image request makes, in order. */
 const LIFECYCLE = ['submit', 'check', 'status'] as const;
@@ -334,8 +285,8 @@ export class GenerateTutorialsComponent {
     return at === null ? null : (this.shots()[at] ?? null);
   });
 
-  public readonly steps = computed<readonly string[]>(
-    () => TUTORIAL_FLOW_STEPS[this.activeId() ?? ''] ?? [],
+  public readonly steps = computed<readonly string[]>(() =>
+    flowSteps(this.activeId() ?? '').map((step) => step.id),
   );
 
   /** The submit endpoint, named against the API the examples were run on. */
@@ -524,7 +475,7 @@ export class GenerateTutorialsComponent {
 
   /** The mark and hue a flow is read by, where its technique has one. */
   public flowIdentity(flow: TutorialFlow): SectionIdentity | null {
-    return sectionIdentity(FLOW_SECTIONS[canonicalFlowId(flow.id)]);
+    return sectionIdentity(flowDef(canonicalFlowId(flow.id))?.section);
   }
 
   /** The name a world is offered under in the switcher. */
@@ -566,7 +517,7 @@ export class GenerateTutorialsComponent {
   /** Whether the studio can walk a reader through this flow field by field. */
   public canStart(flow: TutorialFlow): boolean {
     return (
-      flow.status === 'available' && tutorialAvailable(canonicalFlowId(flow.id))
+      flow.status === 'available' && flowFollowable(canonicalFlowId(flow.id))
     );
   }
 

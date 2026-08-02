@@ -25,6 +25,13 @@ import {
 } from '../pages/generate/generate-form.model';
 import { ImageGenerationRequest } from '../types/generation';
 import { sectionFor, sectionIdentity } from '../content/sections';
+import {
+  FlowReveal,
+  FlowStep,
+  flowFollowable,
+  flowSteps,
+  isConceptFlow,
+} from '../content/flows';
 import type {
   TutorialFlow,
   TutorialManifest,
@@ -104,143 +111,6 @@ export const TUTORIAL_LEVELS = [
 ] as const;
 export type TutorialLevel = (typeof TUTORIAL_LEVELS)[number];
 
-/** What a step needs shown before it can point at anything. */
-export interface TutorialReveal {
-  mode?: GenerateMode;
-  sourceMode?: GenerateSourceMode;
-}
-
-/** One step of a flow, as authored. */
-export interface TutorialStepDef {
-  /** Suffix of the step's i18n keys, and of nothing else. */
-  id: string;
-  /** The {@link TutorialAnchorService} id this step points at. */
-  anchorId?: string;
-  /** The `generate.help.<topic>` note to expand when the step becomes current. */
-  helpTopic?: string;
-  reveal?: TutorialReveal;
-  /**
-   * The parameter-sweep strip that shows this step's setting changing, if one is
-   * published for it. Only set on steps whose value is a number a reader has no
-   * intuition for; a step without one simply offers no images.
-   */
-  sweepParameter?: string;
-  /**
-   * The fields this step's Apply writes, read off the committed request rather
-   * than restated here, so a step can never set something the example did not.
-   */
-  apply?: (example: GenerateFormValue) => Partial<GenerateFormValue>;
-  /**
-   * The flow this step offers to start instead of anything of its own. A step
-   * that carries one is the end of a track that has taught an idea and has
-   * somewhere to send the reader next; its button is labelled by the step's own
-   * `.cta` key, so each track words the handoff in its own voice.
-   */
-  startsFlow?: string;
-}
-
-/**
- * The tracks that teach an idea rather than a technique. They run in the same
- * step UI as a follow-along, but there is no committed request behind them: no
- * example image, no manifest entry, no step that writes a field.
- */
-export const CONCEPT_FLOWS: readonly string[] = [
-  'concepts_images',
-  'concepts_horde',
-];
-
-/** Whether a flow teaches an idea rather than following a worked example. */
-export function isConceptFlow(flowId: string | null): boolean {
-  return flowId !== null && CONCEPT_FLOWS.includes(flowId);
-}
-
-/**
- * The follow-along steps, per flow. `txt2img` is the one technique authored:
- * the remaining manifest flows are listed on the Learn page with their tutorial
- * offer disabled. The two concept tracks are authored here and nowhere else.
- */
-export const TUTORIAL_STEPS: Readonly<
-  Record<string, readonly TutorialStepDef[]>
-> = {
-  txt2img: [
-    {
-      // Both halves, because the payload carries them as one field and the
-      // finale is a real generation: applying the description without the
-      // negative it was written against would land the reader on a different
-      // picture from the one the step is standing next to. An example with no
-      // negative writes an empty one, which is what the form already holds.
-      id: 'prompt',
-      anchorId: 'prompt',
-      apply: (example) => ({
-        prompt: example.prompt,
-        negativePrompt: example.negativePrompt,
-      }),
-    },
-    {
-      id: 'model',
-      anchorId: 'model',
-      apply: (example) => ({ model: example.model }),
-    },
-    {
-      // The panel sets width and height from one control (the size presets), so
-      // this step writes the pair the reader would have set with one press.
-      id: 'size',
-      anchorId: 'size',
-      apply: (example) => ({ width: example.width, height: example.height }),
-    },
-    {
-      id: 'steps',
-      anchorId: 'steps',
-      helpTopic: 'steps',
-      sweepParameter: 'steps',
-      reveal: { mode: 'advanced' },
-      apply: (example) => ({ steps: example.steps }),
-    },
-    {
-      id: 'cfg',
-      anchorId: 'cfg',
-      helpTopic: 'cfg',
-      sweepParameter: 'cfg_scale',
-      reveal: { mode: 'advanced' },
-      apply: (example) => ({ cfg_scale: example.cfg_scale }),
-    },
-    {
-      id: 'sampler',
-      anchorId: 'sampler',
-      helpTopic: 'sampler',
-      reveal: { mode: 'advanced' },
-      apply: (example) => ({ sampler_name: example.sampler_name }),
-    },
-    {
-      id: 'seed',
-      anchorId: 'seed',
-      helpTopic: 'seed',
-      reveal: { mode: 'advanced' },
-      apply: (example) => ({ seed: example.seed }),
-    },
-    // The finale offers nothing to apply: pressing Generate is the step.
-    { id: 'generate', anchorId: 'generate' },
-  ],
-  // Neither track points at a field, so no step carries an anchor, an apply or
-  // a help topic: they are read straight through, in whichever register suits.
-  concepts_images: [
-    { id: 'noise_to_picture' },
-    { id: 'what_a_model_is' },
-    { id: 'prompt_as_conditioning' },
-    { id: 'the_knobs' },
-    { id: 'why_it_differs' },
-    { id: 'try_it', startsFlow: 'txt2img' },
-  ],
-  concepts_horde: [
-    { id: 'volunteers' },
-    { id: 'lifecycle' },
-    { id: 'kudos' },
-    { id: 'trust_safety' },
-    { id: 'waiting' },
-    { id: 'where_next', startsFlow: 'txt2img' },
-  ],
-};
-
 /**
  * What a step's field is called above its title. Anchors reuse the panel's own
  * vocabulary, so most of them are named by the `?` note they share an id with;
@@ -258,11 +128,6 @@ const STEP_FIELD_LABEL_KEY: Readonly<Record<string, string>> = {
 /** The line naming the field a step points at, in the panel's own words. */
 export function stepFieldLabelKey(anchorId: string): string {
   return STEP_FIELD_LABEL_KEY[anchorId] ?? `generate.help.${anchorId}.title`;
-}
-
-/** Whether a flow has follow-along steps at all. */
-export function tutorialAvailable(flowId: string): boolean {
-  return (TUTORIAL_STEPS[flowId]?.length ?? 0) > 0;
 }
 
 /**
@@ -358,11 +223,11 @@ export class TutorialEngineService {
 
   public readonly active = computed(() => this.flowId() !== null);
 
-  public readonly steps = computed<readonly TutorialStepDef[]>(
-    () => TUTORIAL_STEPS[canonicalFlowId(this.flowId() ?? '')] ?? [],
+  public readonly steps = computed<readonly FlowStep[]>(() =>
+    flowSteps(canonicalFlowId(this.flowId() ?? '')),
   );
 
-  public readonly step = computed<TutorialStepDef | null>(
+  public readonly step = computed<FlowStep | null>(
     () => this.steps()[this.index()] ?? null,
   );
 
@@ -440,7 +305,7 @@ export class TutorialEngineService {
     // Steps, prose and section marks are all written against the canonical
     // flow; which world's assets stand behind them is settled at load time.
     const flowId = canonicalFlowId(requestedId);
-    if (!tutorialAvailable(flowId)) {
+    if (!flowFollowable(flowId)) {
       return;
     }
     // The dock and the follow-along pane are the same surface, and the dock is
@@ -519,17 +384,27 @@ export class TutorialEngineService {
 
   /** Whether the current step has anything to write. */
   public canApply(): boolean {
-    return this.step()?.apply !== undefined && this.example() !== null;
+    return (
+      (this.step()?.applyFields?.length ?? 0) > 0 && this.example() !== null
+    );
   }
 
-  /** Write the current step's fields, and only those. */
+  /**
+   * Write the current step's fields, and only those. The values come out of the
+   * committed request the whole walkthrough is standing next to, so a step can
+   * only ever set what the example was actually generated with.
+   */
   public applyStep(): void {
-    const step = this.step();
+    const fields = this.step()?.applyFields;
     const example = this.example();
-    if (!step?.apply || !example || !this.host) {
+    if (!fields?.length || !example || !this.host) {
       return;
     }
-    this.host.applyFields(step.apply(example));
+    const written: Partial<GenerateFormValue> = {};
+    for (const field of fields) {
+      Object.assign(written, { [field]: example[field] });
+    }
+    this.host.applyFields(written);
   }
 
   /**
@@ -587,7 +462,7 @@ export class TutorialEngineService {
    * Show the section the step lives in, returning the `generate.learn.reveal.*`
    * key naming what was opened, or null when nothing had to change.
    */
-  private applyReveal(reveal: TutorialReveal | undefined): string | null {
+  private applyReveal(reveal: FlowReveal | undefined): string | null {
     if (!reveal || !this.host) {
       return null;
     }

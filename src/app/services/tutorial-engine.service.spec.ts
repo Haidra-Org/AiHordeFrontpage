@@ -6,17 +6,19 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  CONCEPT_FLOWS,
-  TUTORIAL_STEPS,
   TutorialEngineService,
   TutorialStudioHost,
   canonicalFlowId,
   hasWorldVariants,
-  isConceptFlow,
   resolveFlowId,
-  tutorialAvailable,
   worldFlowId,
 } from './tutorial-engine.service';
+import {
+  CONCEPT_FLOWS,
+  flowFollowable,
+  flowSteps,
+  isConceptFlow,
+} from '../content/flows';
 import { sectionFor } from '../content/sections';
 import { GsHelpService } from './gs-help.service';
 import { TutorialAnchorService } from './tutorial-anchor.service';
@@ -119,13 +121,13 @@ describe('TutorialEngineService', () => {
   });
 
   it('offers steps for txt2img and the concept tracks, and nothing else', () => {
-    expect(tutorialAvailable('txt2img')).toBe(true);
+    expect(flowFollowable('txt2img')).toBe(true);
     for (const flow of CONCEPT_FLOWS) {
-      expect(tutorialAvailable(flow)).toBe(true);
+      expect(flowFollowable(flow)).toBe(true);
       expect(isConceptFlow(flow)).toBe(true);
     }
     for (const flow of ['img2img', 'controlnet', 'inpainting', 'facefix']) {
-      expect(tutorialAvailable(flow)).toBe(false);
+      expect(flowFollowable(flow)).toBe(false);
       expect(isConceptFlow(flow)).toBe(false);
     }
     expect(isConceptFlow(null)).toBe(false);
@@ -147,7 +149,7 @@ describe('TutorialEngineService', () => {
       expect(engine.active()).toBe(true);
       expect(engine.stepIndex()).toBe(0);
       expect(engine.step()?.id).toBe('prompt');
-      expect(engine.total()).toBe(TUTORIAL_STEPS['txt2img'].length);
+      expect(engine.total()).toBe(flowSteps('txt2img').length);
     });
 
     it('reads its values off the committed request', () => {
@@ -214,11 +216,9 @@ describe('TutorialEngineService', () => {
     });
 
     it('names the fields of one control per step, and no others', () => {
-      const example = engine.example()!;
-
-      const named = TUTORIAL_STEPS['txt2img']
-        .filter((step) => step.apply)
-        .map((step) => [step.id, Object.keys(step.apply!(example))]);
+      const named = flowSteps('txt2img')
+        .filter((step) => step.applyFields?.length)
+        .map((step) => [step.id, [...step.applyFields!]]);
 
       expect(named).toEqual([
         // The payload folds the negative into the prompt field, and the finale
@@ -464,7 +464,7 @@ describe('TutorialEngineService', () => {
       await engine.start('concepts_images');
 
       expect(engine.active()).toBe(true);
-      expect(engine.total()).toBe(TUTORIAL_STEPS['concepts_images'].length);
+      expect(engine.total()).toBe(flowSteps('concepts_images').length);
       expect(engine.step()?.id).toBe('noise_to_picture');
       expect(engine.example()).toBeNull();
       expect(engine.exampleImage()).toBe('');
@@ -475,9 +475,9 @@ describe('TutorialEngineService', () => {
     it('points at no field and writes none', async () => {
       for (const flowId of CONCEPT_FLOWS) {
         await engine.start(flowId);
-        for (const step of TUTORIAL_STEPS[flowId]) {
+        for (const step of flowSteps(flowId)) {
           expect(step.anchorId).toBeUndefined();
-          expect(step.apply).toBeUndefined();
+          expect(step.applyFields).toBeUndefined();
           expect(step.helpTopic).toBeUndefined();
           // A concept step belongs to no card, so no surface gives it a hue.
           expect(sectionFor('step', step.id)).toBeUndefined();
@@ -646,7 +646,7 @@ describe('TutorialEngineService', () => {
       expect(engine.exampleImage()).toContain('/txt2img--w2/');
       // The flow being taught is still txt2img: one set of steps, one set of
       // prose, whichever pictures stand behind them.
-      expect(engine.total()).toBe(TUTORIAL_STEPS['txt2img'].length);
+      expect(engine.total()).toBe(flowSteps('txt2img').length);
       expect(engine.step()?.id).toBe('prompt');
     });
 

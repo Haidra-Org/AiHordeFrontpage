@@ -8,10 +8,10 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnSheetComponent } from './generate-learn-sheet.component';
 import {
-  TUTORIAL_STEPS,
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../../services/tutorial-engine.service';
+import { flowSteps } from '../../../content/flows';
 import {
   GenerateFormValue,
   GenerateMode,
@@ -100,7 +100,7 @@ describe('GenerateLearnSheetComponent', () => {
   });
 
   it('docks as a bar of the flow, one target per step', () => {
-    expect(dots()).toHaveLength(TUTORIAL_STEPS['txt2img'].length);
+    expect(dots()).toHaveLength(flowSteps('txt2img').length);
     expect(dots()[0].getAttribute('aria-current')).toBe('step');
     expect(dots()[1].getAttribute('aria-current')).toBeNull();
     // Named by their place and their step, so the list reads without the marks.
@@ -220,7 +220,7 @@ describe('GenerateLearnSheetComponent', () => {
     });
 
     it('docks as a bar of its steps, with nothing to apply or point at', () => {
-      expect(dots()).toHaveLength(TUTORIAL_STEPS['concepts_horde'].length);
+      expect(dots()).toHaveLength(flowSteps('concepts_horde').length);
       // Next is the whole of the bar's offer, promoted as it is on any step
       // with nothing of its own to write.
       expect(query('.gs-tut-bar-next')).toHaveLength(1);

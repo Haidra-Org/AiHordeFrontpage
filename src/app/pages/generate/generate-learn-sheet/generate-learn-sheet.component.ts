@@ -11,9 +11,9 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import {
   TutorialEngineService,
   TutorialLevel,
-  TutorialStepDef,
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
+import { FlowStep } from '../../../content/flows';
 import {
   SectionIdentity,
   sectionIdentity,
@@ -75,22 +75,22 @@ export class GenerateLearnSheetComponent {
     total: this.total(),
   }));
 
-  public titleKey(step: TutorialStepDef): string {
+  public titleKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.title`;
   }
 
   /** The field the step is about; null on a step that points at nothing. */
-  public fieldLabelKey(step: TutorialStepDef): string | null {
+  public fieldLabelKey(step: FlowStep): string | null {
     return step.anchorId ? stepFieldLabelKey(step.anchorId) : null;
   }
 
   /** The step's prose in the chosen register; the panel's key, unchanged. */
-  public bodyKey(step: TutorialStepDef): string {
+  public bodyKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.body.${this.level()}`;
   }
 
   /** The panel area a step is about, so card and field share one hue. */
-  public identityFor(step: TutorialStepDef): SectionIdentity | null {
+  public identityFor(step: FlowStep): SectionIdentity | null {
     return sectionIdentity(sectionFor('step', step.id));
   }
 
@@ -98,17 +98,17 @@ export class GenerateLearnSheetComponent {
    * Whether the step card should breathe: only while the step points at a field
    * it shares a section hue with, so the glow is always half of a pair.
    */
-  public breathes(step: TutorialStepDef): boolean {
+  public breathes(step: FlowStep): boolean {
     return !!step.anchorId && this.identityFor(step) !== null;
   }
 
   /** The label of a closing step's handoff, in that track's own words. */
-  public ctaKey(step: TutorialStepDef): string {
+  public ctaKey(step: FlowStep): string {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.cta`;
   }
 
   /** Leave this track for the one its closing step offers. */
-  public startOffered(step: TutorialStepDef): void {
+  public startOffered(step: FlowStep): void {
     if (step.startsFlow) {
       void this.engine.start(step.startsFlow);
     }

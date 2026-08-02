@@ -8,12 +8,16 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnPanelComponent } from './generate-learn-panel.component';
 import {
-  CONCEPT_FLOWS,
   TUTORIAL_LEVELS,
-  TUTORIAL_STEPS,
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../../services/tutorial-engine.service';
+import {
+  CONCEPT_FLOWS,
+  FLOWS,
+  flowFollowable,
+  flowSteps,
+} from '../../../content/flows';
 import {
   GenerateFormValue,
   GenerateMode,
@@ -98,7 +102,7 @@ describe('GenerateLearnPanelComponent', () => {
   it('lists every step of the flow, the current one marked', () => {
     const steps = query<HTMLButtonElement>('.gs-learn-step');
 
-    expect(steps).toHaveLength(TUTORIAL_STEPS['txt2img'].length);
+    expect(steps).toHaveLength(flowSteps('txt2img').length);
     expect(steps[0].getAttribute('aria-current')).toBe('step');
     expect(steps[1].getAttribute('aria-current')).toBeNull();
   });
@@ -221,9 +225,13 @@ describe('GenerateLearnPanelComponent', () => {
     expect(text()).toContain('Text to image');
   });
 
-  it('has prose for every step of every flow, in all three registers', () => {
-    for (const [flowId, steps] of Object.entries(TUTORIAL_STEPS)) {
-      for (const step of steps) {
+  it('has prose for every step the pane can run, in all three registers', () => {
+    // Only the flows the pane can actually run: a technique whose steps do not
+    // name their controls yet is a page to read, not a walkthrough to follow,
+    // and it enters this assertion on its own the moment it is wired.
+    for (const flow of FLOWS.filter((entry) => flowFollowable(entry.id))) {
+      for (const step of flow.steps) {
+        const flowId = flow.id;
         const base = `generate.learn.flows.${flowId}.steps.${step.id}`;
         expect(
           TRANSLATIONS[`${base}.title`],
@@ -238,10 +246,10 @@ describe('GenerateLearnPanelComponent', () => {
       }
     }
     // The closing step of a track labels its own handoff.
-    const handoffs = Object.entries(TUTORIAL_STEPS).flatMap(([flowId, steps]) =>
-      steps
+    const handoffs = FLOWS.flatMap((flow) =>
+      flow.steps
         .filter((step) => step.startsFlow)
-        .map((step) => `generate.learn.flows.${flowId}.steps.${step.id}.cta`),
+        .map((step) => `generate.learn.flows.${flow.id}.steps.${step.id}.cta`),
     );
     expect(handoffs).toHaveLength(CONCEPT_FLOWS.length);
     for (const key of handoffs) {
@@ -264,7 +272,7 @@ describe('GenerateLearnPanelComponent', () => {
 
     it('lists its steps and names itself from its own prose', () => {
       expect(query('.gs-learn-step')).toHaveLength(
-        TUTORIAL_STEPS['concepts_images'].length,
+        flowSteps('concepts_images').length,
       );
       expect(text()).toContain(
         TRANSLATIONS['generate.learn.flows.concepts_images.task_name'],
