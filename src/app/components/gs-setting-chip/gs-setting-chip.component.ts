@@ -5,15 +5,12 @@ import {
   input,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import {
-  SECTION_IDENTITIES,
-  SectionIdentity,
-} from '../../pages/generate/section-identity';
+import { SectionIdentity, sectionIdentity } from '../../content/sections';
 import {
   SettingValue,
-  settingEntry,
   settingLabelKey,
-} from '../../pages/generate/setting-vocabulary';
+  settingSection,
+} from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 
 /**
@@ -78,10 +75,9 @@ export class GsSettingChipComponent {
    */
   public readonly glyph = input(true);
 
-  public readonly identity = computed<SectionIdentity | null>(() => {
-    const section = settingEntry(this.settingId())?.section;
-    return section ? SECTION_IDENTITIES[section] : null;
-  });
+  public readonly identity = computed<SectionIdentity | null>(() =>
+    sectionIdentity(settingSection(this.settingId())),
+  );
 
   public readonly identityClass = computed(
     () => this.identity()?.className ?? '',

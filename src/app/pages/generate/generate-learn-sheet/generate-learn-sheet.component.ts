@@ -15,10 +15,10 @@ import {
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import {
-  SECTION_IDENTITIES,
   SectionIdentity,
+  sectionIdentity,
   sectionFor,
-} from '../section-identity';
+} from '../../../content/sections';
 
 /**
  * The follow-along tutorial on a phone, as a bottom sheet.
@@ -91,8 +91,7 @@ export class GenerateLearnSheetComponent {
 
   /** The panel area a step is about, so card and field share one hue. */
   public identityFor(step: TutorialStepDef): SectionIdentity | null {
-    const section = sectionFor('step', step.id);
-    return section ? SECTION_IDENTITIES[section] : null;
+    return sectionIdentity(sectionFor('step', step.id));
   }
 
   /**

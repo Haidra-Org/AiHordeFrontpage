@@ -95,53 +95,12 @@ export interface SweepIndex {
   strips: SweepStrip[];
 }
 
-/**
- * Which sweep a field's `?` note can offer, keyed by the note's help topic.
- * Only topics with a published strip belong here; anything absent simply never
- * offers one.
- */
-export const SWEEP_PARAMETER_BY_HELP_TOPIC: Readonly<Record<string, string>> = {
-  steps: 'steps',
-  cfg: 'cfg_scale',
-  sampler: 'sampler',
-  clip_skip: 'clip_skip',
-  karras: 'karras',
-  seed: 'seed',
-  hires_fix: 'hires_fix',
-  tiling: 'tiling',
-  denoise: 'denoising_strength',
-};
-
-/**
- * The grid plate a field's `?` note can offer beside its strip. A grid answers
- * "how does this interact with the setting next to it", which is a second
- * question rather than a fuller answer to the first, so the two topics that
- * share a plate both offer the same one.
- */
-export const SWEEP_GRID_PARAMETER_BY_HELP_TOPIC: Readonly<
-  Record<string, string>
-> = {
-  steps: 'steps_cfg_grid',
-  cfg: 'steps_cfg_grid',
-  sampler: 'sampler_steps_grid',
-  hires_fix: 'hires_grid',
-  karras: 'karras_grid',
-};
-
-/**
- * The second strip a parameter can be read on, offered beside the first. Steps
- * behave differently depending on whether the sampler re-rolls the detail on
- * every change or settles towards one picture, and one strip can only show one
- * of those, so the pair is offered as a choice rather than as two strips.
- */
-export const SWEEP_VARIANT_PARAMETER: Readonly<Record<string, string>> = {
-  steps: 'steps_converging',
-};
-
-/* What a strip's parameter is called, and which card of the panel it belongs
-   to, live in the studio's shared setting vocabulary rather than here: a sweep
-   is one more surface naming a setting, and it has to call it what every other
-   surface calls it. See `pages/generate/setting-vocabulary`. */
+/* Which strip, grid or variant illustrates a setting is a property of the
+   setting rather than of the library, and lives with everything else the studio
+   knows about it in `content/settings`. So does what a strip's parameter is
+   called and which card of the panel it belongs to: a sweep is one more surface
+   naming a setting, and it has to call it what every other surface calls it.
+   This service knows only what has actually been published. */
 
 /**
  * Which published strip stands for a model baseline. The library holds one strip

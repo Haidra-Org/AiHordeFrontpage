@@ -11,8 +11,11 @@ import { GenerateSettingsIndexComponent } from './generate-settings-index.compon
 import { GlossaryService } from '../../../services/glossary.service';
 import { HIGHLIGHT_CLASS } from '../../../services/tutorial-anchor.service';
 import { environment } from '../../../../environments/environment';
-import { REFERENCE_ENTRIES, REFERENCE_INDEX } from '../reference-data';
-import { SECTION_IDENTITIES } from '../section-identity';
+import { SECTION_IDENTITIES } from '../../../content/sections';
+import { SETTINGS_INDEX } from '../../../content/settings';
+
+/** Every setting the index has a card for: the book's pages, not the registry. */
+const DOCUMENTED = SETTINGS_INDEX.flatMap((group) => group.ids);
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
@@ -66,16 +69,16 @@ describe('GenerateSettingsIndexComponent', () => {
     await setUp();
     const heads = all('.gs-ref-group .gs-guide-head');
 
-    expect(all('.gs-ref-group')).toHaveLength(REFERENCE_INDEX.length);
+    expect(all('.gs-ref-group')).toHaveLength(SETTINGS_INDEX.length);
     expect(heads.map((head) => head.textContent?.trim())).toEqual(
-      REFERENCE_INDEX.map(
+      SETTINGS_INDEX.map(
         (group) => translations[SECTION_IDENTITIES[group.section].labelKey],
       ),
     );
     // The band carries the area's identity, so its hairline and every chip
     // under it are hued from one place.
     expect(all('.gs-ref-group')[0].classList).toContain(
-      SECTION_IDENTITIES[REFERENCE_INDEX[0].section].className,
+      SECTION_IDENTITIES[SETTINGS_INDEX[0].section].className,
     );
   });
 
@@ -83,13 +86,13 @@ describe('GenerateSettingsIndexComponent', () => {
     await setUp();
     const lines = all<HTMLButtonElement>('.gs-index-entry');
 
-    expect(lines).toHaveLength(REFERENCE_INDEX.length);
+    expect(lines).toHaveLength(SETTINGS_INDEX.length);
     expect(lines.map((line) => line.textContent?.trim())).toEqual(
-      REFERENCE_INDEX.map(
+      SETTINGS_INDEX.map(
         (group) => translations[SECTION_IDENTITIES[group.section].labelKey],
       ),
     );
-    for (const group of REFERENCE_INDEX) {
+    for (const group of SETTINGS_INDEX) {
       expect(
         el().querySelector(`#gs-ref-group-${group.section}`),
       ).not.toBeNull();
@@ -100,9 +103,9 @@ describe('GenerateSettingsIndexComponent', () => {
     await setUp();
     const cards = all<HTMLAnchorElement>('.gs-ref-card');
 
-    expect(cards).toHaveLength(REFERENCE_ENTRIES.length);
+    expect(cards).toHaveLength(DOCUMENTED.length);
     expect(cards.map((card) => card.getAttribute('href'))).toEqual(
-      REFERENCE_INDEX.flatMap((group) =>
+      SETTINGS_INDEX.flatMap((group) =>
         group.ids.map((id) => `/generate/learn/settings/${id}`),
       ),
     );
@@ -111,7 +114,7 @@ describe('GenerateSettingsIndexComponent', () => {
   it('names each card and leads it with the entry sentence', async () => {
     await setUp();
     const first = all('.gs-ref-card')[0];
-    const id = REFERENCE_INDEX[0].ids[0];
+    const id = SETTINGS_INDEX[0].ids[0];
 
     expect(first.querySelector('.gs-ref-card-title')?.textContent).toContain(
       translations[`generate.help.${id}.title`],
@@ -141,7 +144,7 @@ describe('GenerateSettingsIndexComponent', () => {
     await setUp({ empty: true });
 
     expect(all('.gs-ref-card-img')).toHaveLength(0);
-    expect(all('.gs-ref-card')).toHaveLength(REFERENCE_ENTRIES.length);
+    expect(all('.gs-ref-card')).toHaveLength(DOCUMENTED.length);
   });
 
   describe('glossary: what this page is made of', () => {
@@ -151,10 +154,10 @@ describe('GenerateSettingsIndexComponent', () => {
       const context = glossary.pageContexts().get('learn-settings');
 
       expect(context?.entries.map((entry) => entry.id)).toEqual(
-        REFERENCE_INDEX.map((group) => group.section),
+        SETTINGS_INDEX.map((group) => group.section),
       );
       expect(context?.entries[0].titleKey).toBe(
-        SECTION_IDENTITIES[REFERENCE_INDEX[0].section].labelKey,
+        SECTION_IDENTITIES[SETTINGS_INDEX[0].section].labelKey,
       );
 
       fixture.destroy();
@@ -165,7 +168,7 @@ describe('GenerateSettingsIndexComponent', () => {
     it('jumps down the page to the band an entry names', async () => {
       await setUp();
       const band = el().querySelector(
-        `#gs-ref-group-${REFERENCE_INDEX[0].section}`,
+        `#gs-ref-group-${SETTINGS_INDEX[0].section}`,
       );
       const scrollIntoView = vi.fn();
       (band as HTMLElement).scrollIntoView = scrollIntoView;

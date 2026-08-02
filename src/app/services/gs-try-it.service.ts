@@ -10,11 +10,8 @@ import {
   GenerateFormValue,
   GenerateMode,
 } from '../pages/generate/generate-form.model';
-import { ReferenceApply } from '../pages/generate/reference-data';
-import {
-  SECTION_IDENTITIES,
-  sectionFor,
-} from '../pages/generate/section-identity';
+import { SettingApply, settingSection } from '../content/settings';
+import { sectionIdentity } from '../content/sections';
 import { TutorialAnchorService } from './tutorial-anchor.service';
 
 /**
@@ -47,7 +44,7 @@ export class GsTryItService {
   private host: TryItHost | null = null;
 
   /** The value the reference page asked for, consumed once by the studio. */
-  private armedApply: ReferenceApply | null = null;
+  private armedApply: SettingApply | null = null;
 
   public registerHost(host: TryItHost): void {
     this.host = host;
@@ -64,11 +61,11 @@ export class GsTryItService {
    * only: a reload should land on the studio the reader left, not on one that
    * silently re-applies a setting they read about days ago.
    */
-  public arm(entry: ReferenceApply): void {
+  public arm(entry: SettingApply): void {
     this.armedApply = entry;
   }
 
-  public consumeArmed(): ReferenceApply | null {
+  public consumeArmed(): SettingApply | null {
     const entry = this.armedApply;
     this.armedApply = null;
     return entry;
@@ -80,7 +77,7 @@ export class GsTryItService {
    * first: applying a setting into a section they cannot see would leave the
    * chip looking broken.
    */
-  public apply(entry: ReferenceApply): void {
+  public apply(entry: SettingApply): void {
     if (!this.host) {
       return;
     }
@@ -109,10 +106,9 @@ export class GsTryItService {
     if (!element) {
       return;
     }
-    const section = sectionFor('help', anchorId);
     this.anchors.flash(
       element,
-      section ? SECTION_IDENTITIES[section].className : undefined,
+      sectionIdentity(settingSection(anchorId))?.className,
     );
   }
 }

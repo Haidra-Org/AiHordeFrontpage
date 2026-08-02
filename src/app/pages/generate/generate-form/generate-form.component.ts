@@ -88,7 +88,7 @@ import {
   RequestWarning,
   warningsInSection,
 } from '../request-lint';
-import type { SectionId } from '../section-identity';
+import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 
 // Re-exported for the parent page, which has always imported the picker group

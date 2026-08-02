@@ -19,8 +19,12 @@ import {
   GlossaryService,
 } from '../../../services/glossary.service';
 import { SweepLibraryService } from '../../../services/sweep-library.service';
-import { REFERENCE_INDEX, referenceSweep } from '../reference-data';
-import { SECTION_IDENTITIES } from '../section-identity';
+import { SECTION_IDENTITIES } from '../../../content/sections';
+import {
+  SETTINGS_INDEX,
+  settingSweepStrip,
+  settingTitleKey,
+} from '../../../content/settings';
 
 /** What the glossary files the reference index's this-page entries under. */
 const GLOSSARY_PAGE_ID = 'learn-settings';
@@ -75,7 +79,7 @@ export class GenerateSettingsIndexComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly groups = computed<readonly IndexGroup[]>(() =>
-    REFERENCE_INDEX.map((group) => {
+    SETTINGS_INDEX.map((group) => {
       const identity = SECTION_IDENTITIES[group.section];
       return {
         section: group.section,
@@ -119,7 +123,7 @@ export class GenerateSettingsIndexComponent {
       relevantTermIds: GLOSSARY_TERMS.filter(
         (term) => term.category === 'generation_settings',
       ).map((term) => term.id),
-      entries: REFERENCE_INDEX.map((group) => {
+      entries: SETTINGS_INDEX.map((group) => {
         const identity = SECTION_IDENTITIES[group.section];
         return {
           id: group.section,
@@ -152,7 +156,7 @@ export class GenerateSettingsIndexComponent {
   private cardFor(id: string, icon: string): IndexCard {
     return {
       id,
-      titleKey: `generate.help.${id}.title`,
+      titleKey: settingTitleKey(id),
       link: `/generate/learn/settings/${id}`,
       icon,
       thumb: this.thumbFor(id),
@@ -165,7 +169,7 @@ export class GenerateSettingsIndexComponent {
    * than the extreme.
    */
   private thumbFor(id: string): string | null {
-    const parameter = referenceSweep(id);
+    const parameter = settingSweepStrip(id);
     if (!parameter) {
       return null;
     }

@@ -13,20 +13,20 @@ import {
   GLOSSARY_TERMS,
   GlossaryService,
 } from '../../services/glossary.service';
+import { SectionIdentity, sectionIdentity } from '../../content/sections';
 import {
-  SECTION_IDENTITIES,
-  SectionIdentity,
-} from '../../pages/generate/section-identity';
-import {
-  ReferenceApply,
-  ReferenceEntry,
-  ReferenceRange,
-  ReferenceTradeoffs,
-  referenceEntry,
-  referenceSection,
-  referenceSweep,
-  referenceSweepGrid,
-} from '../../pages/generate/reference-data';
+  SettingApply,
+  SettingRange,
+  SettingReference,
+  SettingTradeoffs,
+  settingBodyKey,
+  settingLeadKey,
+  settingReference,
+  settingSection,
+  settingSweepGrid,
+  settingSweepStrip,
+  settingTitleKey,
+} from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
@@ -255,15 +255,14 @@ export class GsParamEntryComponent {
 
   public readonly icons = TRADEOFF_ICONS;
 
-  private readonly entry = computed<ReferenceEntry | undefined>(() =>
-    referenceEntry(this.topic()),
+  private readonly entry = computed<SettingReference | undefined>(() =>
+    settingReference(this.topic()),
   );
 
   /** The mark and hue of the panel area this setting sits in. */
-  public readonly identity = computed<SectionIdentity | null>(() => {
-    const section = referenceSection(this.topic());
-    return section ? SECTION_IDENTITIES[section] : null;
-  });
+  public readonly identity = computed<SectionIdentity | null>(() =>
+    sectionIdentity(settingSection(this.topic())),
+  );
 
   /** Whether this is the reference itself rather than a copy of it beside something. */
   public readonly onPage = computed(() => this.mode() === 'page');
@@ -282,27 +281,27 @@ export class GsParamEntryComponent {
       .join(' '),
   );
 
-  public readonly titleKey = computed(
-    () => `generate.help.${this.topic()}.title`,
-  );
+  public readonly titleKey = computed(() => settingTitleKey(this.topic()));
 
   /**
    * Where a piece of the entry's prose lives: `lead` is the one sentence for
    * someone meeting the setting, and `body` the depth beneath it.
    */
   public proseKey(part: 'lead' | 'body'): string {
-    return `generate.reference.${this.topic()}.${part}`;
+    return part === 'lead'
+      ? settingLeadKey(this.topic())
+      : settingBodyKey(this.topic());
   }
 
-  public readonly tradeoffs = computed<ReferenceTradeoffs | null>(
+  public readonly tradeoffs = computed<SettingTradeoffs | null>(
     () => this.entry()?.tradeoffs ?? null,
   );
-  public readonly range = computed<ReferenceRange | null>(
+  public readonly range = computed<SettingRange | null>(
     () => this.entry()?.range ?? null,
   );
   public readonly links = computed(() => this.entry()?.links ?? []);
 
-  public readonly applies = computed<readonly ReferenceApply[]>(
+  public readonly applies = computed<readonly SettingApply[]>(
     () => this.entry()?.applies ?? [],
   );
 
@@ -313,19 +312,20 @@ export class GsParamEntryComponent {
       : 'generate.reference.try_value',
   );
 
-  public readonly sweepParameter = computed(() => referenceSweep(this.topic()));
+  public readonly sweepParameter = computed(() =>
+    settingSweepStrip(this.topic()),
+  );
   public readonly sweepGridParameter = computed(() =>
-    referenceSweepGrid(this.topic()),
+    settingSweepGrid(this.topic()),
   );
 
   /** The siblings this entry points on to, already resolved for the template. */
   public readonly related = computed(() =>
     (this.entry()?.related ?? []).map((id) => {
-      const section = referenceSection(id);
-      const identity = section ? SECTION_IDENTITIES[section] : null;
+      const identity = sectionIdentity(settingSection(id));
       return {
         id,
-        titleKey: `generate.help.${id}.title`,
+        titleKey: settingTitleKey(id),
         link: `${REFERENCE_ROOT}/${id}`,
         icon: identity?.icon ?? '',
         className: identity?.className ?? '',
@@ -357,7 +357,7 @@ export class GsParamEntryComponent {
    * applies it on arrival, because a reference page has no form to write to and
    * saying "go and set it to 30 yourself" is not an offer.
    */
-  public runApply(option: ReferenceApply): void {
+  public runApply(option: SettingApply): void {
     if (this.mode() === 'page') {
       this.tryIt.arm(option);
       void this.router.navigateByUrl(STUDIO_ROUTE);

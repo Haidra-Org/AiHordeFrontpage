@@ -11,8 +11,8 @@ import { describe, expect, it } from 'vitest';
 import { GenerateSettingsEntryComponent } from './generate-settings-entry.component';
 import { GenerateSettingsIndexComponent } from '../generate-settings-index/generate-settings-index.component';
 import { environment } from '../../../../environments/environment';
-import { REFERENCE_INDEX, referenceNeighbours } from '../reference-data';
-import { SECTION_IDENTITIES } from '../section-identity';
+import { SECTION_IDENTITIES } from '../../../content/sections';
+import { SETTINGS_INDEX, settingNeighbours } from '../../../content/settings';
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
@@ -106,7 +106,7 @@ describe('GenerateSettingsEntryComponent', () => {
 
   it('walks on to the neighbouring settings in the same area', async () => {
     await setUp('cfg');
-    const { previous, next } = referenceNeighbours('cfg');
+    const { previous, next } = settingNeighbours('cfg');
 
     expect(previous).toBe('steps');
     expect(next).toBe('sampler');
@@ -128,11 +128,11 @@ describe('GenerateSettingsEntryComponent', () => {
   });
 
   it('names the area a link crosses into, and takes its hue', async () => {
-    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
+    const sequence = SETTINGS_INDEX.flatMap((group) => group.ids);
     // The last entry of the first area: its way on leaves that area.
-    const edge = REFERENCE_INDEX[0].ids[REFERENCE_INDEX[0].ids.length - 1];
+    const edge = SETTINGS_INDEX[0].ids[SETTINGS_INDEX[0].ids.length - 1];
     const next = sequence[sequence.indexOf(edge) + 1];
-    const crossed = REFERENCE_INDEX[1].section;
+    const crossed = SETTINGS_INDEX[1].section;
 
     await setUp(edge);
 
@@ -148,20 +148,20 @@ describe('GenerateSettingsEntryComponent', () => {
   });
 
   it('has no way back from the first setting in the reference', async () => {
-    const first = REFERENCE_INDEX[0].ids[0];
+    const first = SETTINGS_INDEX[0].ids[0];
     await setUp(first);
 
-    expect(referenceNeighbours(first).previous).toBeNull();
+    expect(settingNeighbours(first).previous).toBeNull();
     expect(all('.gs-ref-onward')).toHaveLength(1);
     expect(find('.gs-ref-onward--next')).not.toBeNull();
   });
 
   it('has no way on from the last setting in the reference', async () => {
-    const sequence = REFERENCE_INDEX.flatMap((group) => group.ids);
+    const sequence = SETTINGS_INDEX.flatMap((group) => group.ids);
     const last = sequence[sequence.length - 1];
     await setUp(last);
 
-    expect(referenceNeighbours(last).next).toBeNull();
+    expect(settingNeighbours(last).next).toBeNull();
     expect(all('.gs-ref-onward')).toHaveLength(1);
     expect(find('.gs-ref-onward--next')).toBeNull();
   });

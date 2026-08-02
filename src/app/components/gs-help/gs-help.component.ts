@@ -11,7 +11,11 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsHelpService } from '../../services/gs-help.service';
-import { referenceEntry } from '../../pages/generate/reference-data';
+import {
+  hasReference,
+  settingNoteKey,
+  settingTitleKey,
+} from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 
 /**
@@ -91,17 +95,11 @@ export class GsHelpComponent {
   public readonly noteId = computed(
     () => `gs-help-${this.topic()}-${this.instance}`,
   );
-  public readonly titleKey = computed(
-    () => `generate.help.${this.topic()}.title`,
-  );
-  public readonly bodyKey = computed(
-    () => `generate.help.${this.topic()}.body`,
-  );
+  public readonly titleKey = computed(() => settingTitleKey(this.topic()));
+  public readonly bodyKey = computed(() => settingNoteKey(this.topic()));
 
   /** Whether the reference has an entry this note can send a reader on to. */
-  public readonly hasEntry = computed(
-    () => referenceEntry(this.topic()) !== undefined,
-  );
+  public readonly hasEntry = computed(() => hasReference(this.topic()));
 
   constructor() {
     effect(() => {

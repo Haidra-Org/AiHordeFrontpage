@@ -6,9 +6,9 @@ import {
   HIGHLIGHT_CLASS,
   TutorialAnchorService,
 } from './tutorial-anchor.service';
-import { ReferenceApply } from '../pages/generate/reference-data';
+import { SettingApply } from '../content/settings';
 
-const TRY_STEPS: ReferenceApply = {
+const TRY_STEPS: SettingApply = {
   display: '40',
   anchorId: 'steps',
   fields: { steps: 40 },

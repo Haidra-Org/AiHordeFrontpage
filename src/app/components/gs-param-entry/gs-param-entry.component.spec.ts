@@ -13,10 +13,10 @@ import { GsTryItService } from '../../services/gs-try-it.service';
 import { GlossaryService } from '../../services/glossary.service';
 import { environment } from '../../../environments/environment';
 import {
-  referenceEntry,
-  referenceSweep,
-  referenceSweepGrid,
-} from '../../pages/generate/reference-data';
+  settingReference,
+  settingSweepGrid,
+  settingSweepStrip,
+} from '../../content/settings';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
@@ -125,7 +125,7 @@ describe('GsParamEntryComponent', () => {
     ]);
 
     await setUp({ topic: 'seed' });
-    expect(referenceEntry('seed')?.tradeoffs).toBeUndefined();
+    expect(settingReference('seed')?.tradeoffs).toBeUndefined();
     expect(find('.gs-ref-costs')).toBeNull();
   });
 
@@ -191,7 +191,7 @@ describe('GsParamEntryComponent', () => {
     it('offers nothing on an entry with no value worth naming', async () => {
       await setUp({ topic: 'seed', mode: 'dock' });
 
-      expect(referenceEntry('seed')?.applies).toBeUndefined();
+      expect(settingReference('seed')?.applies).toBeUndefined();
       expect(all('.gs-ref-chip--try')).toHaveLength(0);
     });
   });
@@ -199,8 +199,8 @@ describe('GsParamEntryComponent', () => {
   it('offers the strip and the plate the library published for the setting', async () => {
     await setUp({ topic: 'steps' });
 
-    expect(referenceSweep('steps')).toBe('steps');
-    expect(referenceSweepGrid('steps')).toBe('steps_cfg_grid');
+    expect(settingSweepStrip('steps')).toBe('steps');
+    expect(settingSweepGrid('steps')).toBe('steps_cfg_grid');
     expect(find('app-gs-sweep-scrub')).not.toBeNull();
     expect(find('app-gs-sweep-grid')).not.toBeNull();
 
@@ -254,7 +254,7 @@ describe('GsParamEntryComponent', () => {
   it('says nothing about the glossary on an entry that needs none', async () => {
     await setUp({ topic: 'steps' });
 
-    expect(referenceEntry('steps')?.glossaryTerms).toBeUndefined();
+    expect(settingReference('steps')?.glossaryTerms).toBeUndefined();
     expect(find('.gs-ref-terms')).toBeNull();
   });
 

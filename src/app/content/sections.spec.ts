@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { APP_ICONS } from '../../icons';
-import { TUTORIAL_STEPS } from '../../services/tutorial-engine.service';
-import { GUIDE_SECTIONS } from './generate-guide/generate-guide.component';
-import { TUTORIAL_FLOW_STEPS } from './generate-tutorials/generate-tutorials.component';
+import { APP_ICONS } from '../icons';
+import { TUTORIAL_STEPS } from '../services/tutorial-engine.service';
+import { GUIDE_SECTIONS } from '../pages/generate/generate-guide/generate-guide.component';
+import { TUTORIAL_FLOW_STEPS } from '../pages/generate/generate-tutorials/generate-tutorials.component';
 import {
   SECTION_BY_GUIDE_ID,
-  SECTION_BY_HELP_TOPIC,
   SECTION_BY_STEP_ID,
   SECTION_IDENTITIES,
   SectionId,
   sectionFor,
-} from './section-identity';
+  sectionIdentity,
+} from './sections';
+import { SETTINGS } from './settings';
 
 describe('section identities', () => {
   const identities = Object.entries(SECTION_IDENTITIES) as [
@@ -58,20 +59,12 @@ describe('section identities', () => {
     }
   });
 
-  it('files every help topic the guide lists under a section', () => {
-    for (const section of GUIDE_SECTIONS) {
-      for (const topic of section.topics) {
-        expect(sectionFor('help', topic)).toBeTruthy();
-      }
-    }
-  });
-
   it('points every mapping at an identity that exists', () => {
     const known = new Set(Object.keys(SECTION_IDENTITIES));
     const mapped = [
       ...Object.values(SECTION_BY_GUIDE_ID),
       ...Object.values(SECTION_BY_STEP_ID),
-      ...Object.values(SECTION_BY_HELP_TOPIC),
+      ...SETTINGS.map((entry) => entry.section),
     ];
 
     for (const id of mapped) {
@@ -81,6 +74,12 @@ describe('section identities', () => {
 
   it('returns nothing for an id no surface authors', () => {
     expect(sectionFor('guide', 'nonexistent')).toBeUndefined();
-    expect(sectionFor('help', 'nonexistent')).toBeUndefined();
+    expect(sectionFor('step', 'nonexistent')).toBeUndefined();
+  });
+
+  it('answers with no identity where there is no section', () => {
+    expect(sectionIdentity(undefined)).toBeNull();
+    expect(sectionIdentity(null)).toBeNull();
+    expect(sectionIdentity('sampling')).toBe(SECTION_IDENTITIES.sampling);
   });
 });

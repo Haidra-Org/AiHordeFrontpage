@@ -8,16 +8,14 @@ import {
 } from '../../../components/gs-index-rail/gs-index-rail.component';
 import { GsSweepGridComponent } from '../../../components/gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
-import {
-  SWEEP_GRID_PARAMETER_BY_HELP_TOPIC,
-  SWEEP_PARAMETER_BY_HELP_TOPIC,
-} from '../../../services/sweep-library.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
   SectionIdentity,
   sectionFor,
-} from '../section-identity';
+  sectionIdentity,
+} from '../../../content/sections';
+import { settingSweepGrid, settingSweepStrip } from '../../../content/settings';
 
 /** One card of the control panel, and the help topics that card carries. */
 export interface GuideSection {
@@ -48,7 +46,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
     id: 'source',
     labelKey: 'generate.source.section',
-    topics: ['source_modes', 'denoise'],
+    topics: ['source', 'denoise'],
   },
   {
     id: 'sampling',
@@ -60,7 +58,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
       'seed',
       'clip_skip',
       'karras',
-      'hires_fix',
+      'hires',
       'tiling',
       'hires_denoise',
       'requirements',
@@ -197,19 +195,18 @@ export class GenerateGuideComponent {
    * the same glyph and hue the card carries.
    */
   public identityFor(id: string): SectionIdentity | null {
-    const section = sectionFor('guide', id);
-    return section ? SECTION_IDENTITIES[section] : null;
+    return sectionIdentity(sectionFor('guide', id));
   }
 
   /** The strips a reference entry has pictures for, in the order they read. */
   public sweepFor(topic: string): readonly string[] {
-    const parameter = SWEEP_PARAMETER_BY_HELP_TOPIC[topic];
+    const parameter = settingSweepStrip(topic);
     return parameter ? [parameter] : NO_SWEEPS;
   }
 
   /** The two-axis plate a reference entry can offer beside its strip. */
   public sweepGridFor(topic: string): string | null {
-    return SWEEP_GRID_PARAMETER_BY_HELP_TOPIC[topic] ?? null;
+    return settingSweepGrid(topic);
   }
 
   /** The DOM id of a section, so the contents rail can target it. */

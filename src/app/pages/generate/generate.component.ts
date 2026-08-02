@@ -85,7 +85,7 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from './image-meta-panel/image-meta-panel.component';
-import { SECTION_IDENTITIES } from './section-identity';
+import { SECTION_IDENTITIES } from '../../content/sections';
 import {
   RequestWarning,
   evaluateRequestLint,

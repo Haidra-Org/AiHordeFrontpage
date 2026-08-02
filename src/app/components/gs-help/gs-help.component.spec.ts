@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { GsHelpComponent } from './gs-help.component';
 import { GsHelpService } from '../../services/gs-help.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
-import { referenceEntry } from '../../pages/generate/reference-data';
+import { hasReference } from '../../content/settings';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -131,7 +131,7 @@ describe('GsHelpComponent', () => {
 
       const see = fixture.nativeElement.querySelector('.gs-help-see');
       expect(see).not.toBeNull();
-      expect(referenceEntry('steps')).toBeDefined();
+      expect(hasReference('steps')).toBe(true);
 
       see.click();
       fixture.detectChanges();
@@ -149,7 +149,7 @@ describe('GsHelpComponent', () => {
       // The second trigger is `sampling`, which carries no reference entry.
       click(1);
 
-      expect(referenceEntry('sampling')).toBeUndefined();
+      expect(hasReference('sampling')).toBe(false);
       expect(fixture.nativeElement.querySelector('.gs-help-see')).toBeNull();
     });
   });

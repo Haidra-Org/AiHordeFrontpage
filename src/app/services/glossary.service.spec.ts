@@ -6,7 +6,7 @@ import {
   GLOSSARY_TERMS,
   GLOSSARY_CATEGORIES,
 } from './glossary.service';
-import { referenceEntry } from '../pages/generate/reference-data';
+import { hasReference } from '../content/settings';
 
 describe('GlossaryService', () => {
   let service: GlossaryService;
@@ -208,7 +208,7 @@ describe('GlossaryService', () => {
       expect(settingLinks.length).toBeGreaterThan(9);
       for (const link of settingLinks) {
         const topic = link.slice('/generate/learn/settings/'.length);
-        expect(referenceEntry(topic)?.id).toBe(topic);
+        expect(hasReference(topic)).toBe(true);
       }
     });
   });

@@ -5,7 +5,7 @@ import {
   input,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { SettingValue } from '../../pages/generate/setting-vocabulary';
+import { SettingValue } from '../../content/settings';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 
 /** The params block of a submitted request, as far as the chips read it. */

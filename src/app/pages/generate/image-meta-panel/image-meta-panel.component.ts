@@ -22,8 +22,8 @@ import {
   requestToFormValue,
 } from '../generate-form.model';
 import { ImageMetaProvenance } from '../image-metadata';
-import { SECTION_IDENTITIES, SectionIdentity } from '../section-identity';
-import { settingSection } from '../setting-vocabulary';
+import { SectionIdentity, sectionIdentity } from '../../../content/sections';
+import { settingSection } from '../../../content/settings';
 
 /** How unchecked parameters are treated when the selection is applied. */
 export type MetaApplyMode = 'replace' | 'overlay';
@@ -60,13 +60,10 @@ interface MetaGroup {
  * answer for takes no mark rather than a neutral one.
  */
 function placed(rows: MetaRowSeed[]): MetaRow[] {
-  return rows.map((row) => {
-    const section = settingSection(row.id);
-    return {
-      ...row,
-      identity: section ? SECTION_IDENTITIES[section] : null,
-    };
-  });
+  return rows.map((row) => ({
+    ...row,
+    identity: sectionIdentity(settingSection(row.id)),
+  }));
 }
 
 /** A read-only provenance row: reported by the horde, never applicable. */

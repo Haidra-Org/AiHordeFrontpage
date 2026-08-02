@@ -13,7 +13,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
-import { settingProseLabelKey } from '../../pages/generate/setting-vocabulary';
+import { settingProseLabelKey } from '../../content/settings';
 import {
   SweepLibraryService,
   SweepStop,

@@ -8,7 +8,7 @@ import {
 import {
   SETTING_FALLBACK_LABEL_KEY,
   settingLabelKey,
-} from '../../pages/generate/setting-vocabulary';
+} from '../../content/settings';
 import en from '../../../assets/i18n/en.json';
 
 const TRANSLATIONS = en as Record<string, string>;

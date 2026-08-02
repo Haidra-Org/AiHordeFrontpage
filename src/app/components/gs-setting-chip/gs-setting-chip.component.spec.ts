@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GsSettingChipComponent } from './gs-setting-chip.component';
-import { SettingValue } from '../../pages/generate/setting-vocabulary';
+import { SettingValue } from '../../content/settings';
 import en from '../../../assets/i18n/en.json';
 
 @Component({

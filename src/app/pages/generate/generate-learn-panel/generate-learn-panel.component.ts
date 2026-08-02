@@ -15,10 +15,10 @@ import {
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import {
-  SECTION_IDENTITIES,
   SectionIdentity,
+  sectionIdentity,
   sectionFor,
-} from '../section-identity';
+} from '../../../content/sections';
 
 /**
  * The follow-along tutorial, rendered in the results pane beside the control
@@ -111,8 +111,7 @@ export class GenerateLearnPanelComponent {
    * than a card (pressing Generate) belong to no area and take no mark.
    */
   public identityFor(step: TutorialStepDef): SectionIdentity | null {
-    const section = sectionFor('step', step.id);
-    return section ? SECTION_IDENTITIES[section] : null;
+    return sectionIdentity(sectionFor('step', step.id));
   }
 
   /**

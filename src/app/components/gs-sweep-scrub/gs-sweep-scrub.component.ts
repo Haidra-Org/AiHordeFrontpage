@@ -17,9 +17,11 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
-import { settingProseLabelKey } from '../../pages/generate/setting-vocabulary';
 import {
-  SWEEP_VARIANT_PARAMETER,
+  settingProseLabelKey,
+  settingSweepVariant,
+} from '../../content/settings';
+import {
   SweepLibraryService,
   SweepStop,
 } from '../../services/sweep-library.service';
@@ -613,8 +615,8 @@ export class GsSweepScrubComponent {
   );
 
   /** The strip a pair of strips offers as its second reading, if there is one. */
-  public readonly variantParameter = computed(
-    () => SWEEP_VARIANT_PARAMETER[this.parameter()] ?? null,
+  public readonly variantParameter = computed(() =>
+    settingSweepVariant(this.parameter()),
   );
 
   /** Which of the pair is on show. */

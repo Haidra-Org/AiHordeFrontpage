@@ -17,7 +17,7 @@ import {
   tutorialAvailable,
   worldFlowId,
 } from './tutorial-engine.service';
-import { sectionFor } from '../pages/generate/section-identity';
+import { sectionFor } from '../content/sections';
 import { GsHelpService } from './gs-help.service';
 import { TutorialAnchorService } from './tutorial-anchor.service';
 import {

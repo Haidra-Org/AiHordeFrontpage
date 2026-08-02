@@ -11,12 +11,13 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { sectionIdentity } from '../../../content/sections';
 import {
-  referenceEntry,
-  referenceNeighbours,
-  referenceSection,
-} from '../reference-data';
-import { SECTION_IDENTITIES } from '../section-identity';
+  hasReference,
+  settingNeighbours,
+  settingSection,
+  settingTitleKey,
+} from '../../../content/settings';
 
 /** Where the index lives, and what an unknown setting falls back to. */
 const REFERENCE_ROOT = '/generate/learn/settings';
@@ -66,19 +67,19 @@ export class GenerateSettingsEntryComponent {
 
   /** The setting on screen, or null while the URL names one there is none of. */
   public readonly topic = computed(() =>
-    referenceEntry(this.param()) ? this.param() : null,
+    hasReference(this.param()) ? this.param() : null,
   );
 
   /** The area the entry on screen belongs to, to tell a crossing from a step. */
   private readonly section = computed(() => {
     const id = this.topic();
-    return id ? referenceSection(id) : undefined;
+    return id ? settingSection(id) : undefined;
   });
 
   private readonly neighbours = computed(() => {
     const id = this.topic();
     return id
-      ? referenceNeighbours(id)
+      ? settingNeighbours(id)
       : { previous: null, next: null as string | null };
   });
 
@@ -99,12 +100,12 @@ export class GenerateSettingsEntryComponent {
     if (!id) {
       return null;
     }
-    const section = referenceSection(id);
-    const identity = section ? SECTION_IDENTITIES[section] : null;
+    const section = settingSection(id);
+    const identity = sectionIdentity(section);
     const crosses = section !== undefined && section !== this.section();
     return {
       id,
-      titleKey: `generate.help.${id}.title`,
+      titleKey: settingTitleKey(id),
       link: `${REFERENCE_ROOT}/${id}`,
       className: identity?.className ?? '',
       icon: crosses ? (identity?.icon ?? null) : null,

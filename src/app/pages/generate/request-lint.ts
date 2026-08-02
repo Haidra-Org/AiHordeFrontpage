@@ -18,7 +18,7 @@ import {
   type GenerateFormValue,
   type RequirementHint,
 } from './generate-form.model';
-import type { SectionId } from './section-identity';
+import type { SectionId } from '../../content/sections';
 
 /**
  * A combination the horde may refuse, or serve as something other than what was

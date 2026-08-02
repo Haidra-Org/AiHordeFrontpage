@@ -7,6 +7,9 @@
  * Holding the identity here rather than at each surface is what keeps a reader
  * who learned "Sampling is the crimson dial" in the guide from meeting a
  * different glyph on the card it sent them to.
+ *
+ * Which area a *setting* belongs to is not here: a setting knows its own area,
+ * and the registry in `./settings` is the one place that says so.
  */
 export type SectionId =
   | 'prompt'
@@ -28,7 +31,7 @@ export interface SectionIdentity {
   labelKey: string;
 }
 
-const SECTION_IDS: readonly SectionId[] = [
+export const SECTION_IDS: readonly SectionId[] = [
   'prompt',
   'model',
   'size',
@@ -39,7 +42,7 @@ const SECTION_IDS: readonly SectionId[] = [
   'workflows',
 ];
 
-function identityFor(id: SectionId): SectionIdentity {
+function buildIdentity(id: SectionId): SectionIdentity {
   return {
     icon: `sec-${id}`,
     className: `gs-sec--${id}`,
@@ -48,10 +51,9 @@ function identityFor(id: SectionId): SectionIdentity {
 }
 
 export const SECTION_IDENTITIES: Record<SectionId, SectionIdentity> =
-  Object.fromEntries(SECTION_IDS.map((id) => [id, identityFor(id)])) as Record<
-    SectionId,
-    SectionIdentity
-  >;
+  Object.fromEntries(
+    SECTION_IDS.map((id) => [id, buildIdentity(id)]),
+  ) as Record<SectionId, SectionIdentity>;
 
 /**
  * The guide's reference sections, which are cut by help topic rather than by
@@ -69,8 +71,8 @@ export const SECTION_BY_GUIDE_ID: Record<string, SectionId> = {
 };
 
 /**
- * Tutorial step ids, across both authorings: the Learn page's per-flow step
- * lists and the follow-along engine's steps.
+ * Tutorial step ids, across both authorings: the worked example's step spine and
+ * the follow-along engine's steps.
  *
  * Only steps that set a field in one of the panel's areas are listed. Pressing
  * Generate and reading the result are steps about the page rather than about a
@@ -95,56 +97,32 @@ export const SECTION_BY_STEP_ID: Record<string, SectionId> = {
   qr: 'workflows',
 };
 
-/**
- * Help topics, by the card their `?` glyph sits in. `batch` is the one topic
- * whose control lives in the footer rather than a card; it is filed with the
- * output settings, as the guide already lists it.
- */
-export const SECTION_BY_HELP_TOPIC: Record<string, SectionId> = {
-  loras: 'model',
-  source_modes: 'source',
-  denoise: 'source',
-  requirements: 'sampling',
-  steps: 'sampling',
-  cfg: 'sampling',
-  sampler: 'sampling',
-  seed: 'sampling',
-  clip_skip: 'sampling',
-  karras: 'sampling',
-  hires_fix: 'sampling',
-  tiling: 'sampling',
-  hires_denoise: 'sampling',
-  upscaler: 'finishing',
-  facefixer: 'finishing',
-  facefixer_strength: 'finishing',
-  nsfw: 'finishing',
-  censor_nsfw: 'finishing',
-  batch: 'finishing',
-  trusted_workers: 'horde',
-  slow_workers: 'horde',
-  extra_slow_workers: 'horde',
-  allow_downgrade: 'horde',
-  replacement_filter: 'horde',
-  webhook: 'horde',
-  workers: 'horde',
-  remember_extras: 'horde',
-  transparent: 'workflows',
-  qr: 'workflows',
-};
-
-const LOOKUPS: Record<'guide' | 'step' | 'help', Record<string, SectionId>> = {
+const LOOKUPS: Record<'guide' | 'step', Record<string, SectionId>> = {
   guide: SECTION_BY_GUIDE_ID,
   step: SECTION_BY_STEP_ID,
-  help: SECTION_BY_HELP_TOPIC,
 };
 
 /**
- * The section a guide id, step id or help topic belongs to, or undefined where
- * it belongs to none: a caller renders no mark rather than a neutral one.
+ * The section a guide id or a tutorial step id belongs to, or undefined where it
+ * belongs to none: a caller renders no mark rather than a neutral one.
+ *
+ * Settings are not looked up here. They carry their own section in the settings
+ * registry, so `settingSection` is what asks that question.
  */
 export function sectionFor(
-  kind: 'guide' | 'step' | 'help',
+  kind: 'guide' | 'step',
   id: string,
 ): SectionId | undefined {
   return LOOKUPS[kind][id];
+}
+
+/**
+ * The mark and hue of a section, for the many surfaces that hold a possibly
+ * absent section and want a possibly absent identity. Written once here because
+ * every one of them was writing the same conditional.
+ */
+export function sectionIdentity(
+  section: SectionId | undefined | null,
+): SectionIdentity | null {
+  return section ? SECTION_IDENTITIES[section] : null;
 }

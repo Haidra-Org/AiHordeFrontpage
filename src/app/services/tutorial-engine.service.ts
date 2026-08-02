@@ -24,10 +24,7 @@ import {
   requestToFormValue,
 } from '../pages/generate/generate-form.model';
 import { ImageGenerationRequest } from '../types/generation';
-import {
-  SECTION_IDENTITIES,
-  sectionFor,
-} from '../pages/generate/section-identity';
+import { sectionFor, sectionIdentity } from '../content/sections';
 import type {
   TutorialFlow,
   TutorialManifest,
@@ -636,9 +633,9 @@ export class TutorialEngineService {
     element.classList.add(HIGHLIGHT_CLASS);
     // The field takes the hue of the area the step is about, so the glow it
     // shares with the step card is one colour rather than two.
-    const section = sectionFor('step', step.id);
-    if (section) {
-      this.highlightSection = SECTION_IDENTITIES[section].className;
+    const identity = sectionIdentity(sectionFor('step', step.id));
+    if (identity) {
+      this.highlightSection = identity.className;
       element.classList.add(this.highlightSection);
     }
     this.highlighted = element;

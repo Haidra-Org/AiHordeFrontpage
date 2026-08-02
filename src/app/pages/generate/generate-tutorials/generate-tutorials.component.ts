@@ -28,10 +28,10 @@ import {
 import { highlightJson } from '../../../helper/json-formatter';
 import {
   SECTION_BY_STEP_ID,
-  SECTION_IDENTITIES,
   SectionId,
   SectionIdentity,
-} from '../section-identity';
+  sectionIdentity,
+} from '../../../content/sections';
 import {
   TutorialEngineService,
   TutorialWorld,
@@ -524,8 +524,7 @@ export class GenerateTutorialsComponent {
 
   /** The mark and hue a flow is read by, where its technique has one. */
   public flowIdentity(flow: TutorialFlow): SectionIdentity | null {
-    const section = FLOW_SECTIONS[canonicalFlowId(flow.id)];
-    return section ? SECTION_IDENTITIES[section] : null;
+    return sectionIdentity(FLOW_SECTIONS[canonicalFlowId(flow.id)]);
   }
 
   /** The name a world is offered under in the switcher. */
@@ -543,8 +542,7 @@ export class GenerateTutorialsComponent {
    * rather than about a card, so it takes no mark and carries no eyebrow.
    */
   public stepIdentity(step: string): SectionIdentity | null {
-    const section = SECTION_BY_STEP_ID[step];
-    return section ? SECTION_IDENTITIES[section] : null;
+    return sectionIdentity(SECTION_BY_STEP_ID[step]);
   }
 
   /** A step's prose, which is written per flow rather than shared. */

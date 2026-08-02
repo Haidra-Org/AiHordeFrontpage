@@ -281,14 +281,14 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.img2img.title',
     bodyKey: 'help.glossary.terms.img2img.body',
     category: 'generation',
-    links: [referenceLink('source_modes')],
+    links: [referenceLink('source')],
   },
   {
     id: 'inpainting',
     titleKey: 'help.glossary.terms.inpainting.title',
     bodyKey: 'help.glossary.terms.inpainting.body',
     category: 'generation',
-    links: [referenceLink('source_modes')],
+    links: [referenceLink('source')],
   },
 
   // Generation settings. The dictionary's half of the settings reference: one
@@ -341,7 +341,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.hires_fix.title',
     bodyKey: 'help.glossary.terms.hires_fix.body',
     category: 'generation_settings',
-    links: [referenceLink('hires_fix')],
+    links: [referenceLink('hires')],
   },
   {
     id: 'denoise',
@@ -371,7 +371,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.controlnet.title',
     bodyKey: 'help.glossary.terms.controlnet.body',
     category: 'capabilities',
-    links: [referenceLink('source_modes')],
+    links: [referenceLink('source')],
   },
   {
     id: 'post_processing',
