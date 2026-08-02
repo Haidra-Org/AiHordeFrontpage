@@ -1,0 +1,30 @@
+<div class="gs-docs-home-inner">
+  <header class="gs-docs-home-top">
+    <h1 class="gs-docs-home-title">{{ "docs.title" | transloco }}</h1>
+    <p class="gs-docs-home-lead">{{ "docs.lead" | transloco }}</p>
+  </header>
+
+  <!-- A hairlined list in the leading-bar grammar the rest of the area reads
+       by: the areas are one list of the same kind of thing, and each line is a
+       door rather than a card, because there is nothing to show of a body of
+       writing that a picture would tell the truth about. -->
+  <div class="gs-learn-doors">
+    @for (area of areas; track area.id) {
+      <a class="gs-learn-door" [routerLink]="area.root">
+        <app-icon [name]="area.icon" class="gs-learn-door-mark" />
+        <span class="gs-learn-door-text">
+          <span class="gs-learn-door-title">
+            {{ area.labelKey | transloco }}
+          </span>
+          <span class="gs-learn-door-hint">
+            {{ hintKey(area.id) | transloco }}
+          </span>
+        </span>
+        <span class="gs-learn-door-go">
+          {{ "docs.area_read" | transloco }}
+          <app-icon name="chevron-right" class="gs-learn-door-chev" />
+        </span>
+      </a>
+    }
+  </div>
+</div>

@@ -14,6 +14,7 @@ import {
   GlossaryService,
 } from '../../services/glossary.service';
 import { SectionIdentity, sectionIdentity } from '../../content/sections';
+import { STUDIO_IMAGE, docsSettingLink } from '../../content/docs-links';
 import {
   SettingApply,
   SettingRange,
@@ -30,12 +31,6 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
-
-/** Where the routed reference lives, for the way out of a docked entry. */
-const REFERENCE_ROOT = '/generate/learn/settings';
-
-/** Where a value offered by the routed page has to be taken to be tried. */
-const STUDIO_ROUTE = '/generate/image';
 
 /** How the meta-line marks each kind of cost. */
 const TRADEOFF_ICONS = {
@@ -326,7 +321,7 @@ export class GsParamEntryComponent {
       return {
         id,
         titleKey: settingTitleKey(id),
-        link: `${REFERENCE_ROOT}/${id}`,
+        link: docsSettingLink(id),
         icon: identity?.icon ?? '',
         className: identity?.className ?? '',
       };
@@ -347,9 +342,7 @@ export class GsParamEntryComponent {
   );
 
   /** Where the docked entry sends a reader who wants the whole page. */
-  public readonly fullLink = computed(
-    () => `${REFERENCE_ROOT}/${this.topic()}`,
-  );
+  public readonly fullLink = computed(() => docsSettingLink(this.topic()));
 
   /**
    * Put one of the offered values in the form. Beside the studio that is the
@@ -360,7 +353,7 @@ export class GsParamEntryComponent {
   public runApply(option: SettingApply): void {
     if (this.mode() === 'page') {
       this.tryIt.arm(option);
-      void this.router.navigateByUrl(STUDIO_ROUTE);
+      void this.router.navigateByUrl(STUDIO_IMAGE);
       return;
     }
     this.tryIt.apply(option);

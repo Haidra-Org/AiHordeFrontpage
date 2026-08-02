@@ -39,42 +39,19 @@ import {
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
 import { flowDef, flowFollowable, flowSteps } from '../../../content/flows';
-
-/** Where the committed example set lives, relative to the served root. */
-const TUTORIALS_ROOT = '/assets/tutorials';
-
-/** One entry of `manifest.json`. */
-export interface TutorialFlow {
-  id: string;
-  directory: string;
-  title: string;
-  summary: string;
-  status: 'available' | 'skipped';
-  skipped_reason?: string;
-  model?: string;
-  seed?: string;
-  result?: string;
-  source?: string;
-  mask?: string;
-  before?: string;
-  request?: string;
-  files: string[];
-}
-
-export interface TutorialManifest {
-  /** The API the examples were actually submitted to. */
-  generated_against: string;
-  flows: TutorialFlow[];
-}
-
-/** The subset of a flow's `meta.json` this page reports. */
-interface TutorialMeta {
-  model?: string;
-  seed?: string;
-  kudos_charged?: number;
-  wall_time_seconds?: number;
-  deviations?: string;
-}
+import {
+  DOCS_IMAGE,
+  STUDIO_IMAGE,
+  docsExampleLink,
+} from '../../../content/docs-links';
+import { setPageMeta } from '../../../helper/page-meta';
+import {
+  ExampleFlow,
+  ExampleManifest,
+  ExampleMeta,
+  exampleAssetUrl,
+  exampleManifestUrl,
+} from '../../../content/examples';
 
 /**
  * One picture in a flow's evidence rail, in the order the run produced it:
@@ -89,8 +66,8 @@ export interface TutorialShot {
 }
 
 /** A flow's fetched companion files, once they have arrived. */
-interface TutorialDetail {
-  meta: TutorialMeta;
+interface ExampleDetail {
+  meta: ExampleMeta;
   /**
    * The payload exactly as committed. Kept as text rather than parsed and
    * re-serialised so what a reader copies is the file, byte for byte.
@@ -114,20 +91,20 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
  * sent.
  */
 @Component({
-  selector: 'app-generate-tutorials',
+  selector: 'app-docs-image-example',
   imports: [
     TranslocoPipe,
     IconComponent,
     GsIndexRailComponent,
     GsRecipeChipsComponent,
   ],
-  templateUrl: './generate-tutorials.component.html',
+  templateUrl: './image-example.component.html',
   host: {
     class: 'gs-tut',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateTutorialsComponent {
+export class DocsImageExampleComponent {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -135,7 +112,7 @@ export class GenerateTutorialsComponent {
   private readonly transloco = inject(TranslocoService);
   private readonly tutorial = inject(TutorialEngineService);
 
-  public readonly manifest = signal<TutorialManifest | null>(null);
+  public readonly manifest = signal<ExampleManifest | null>(null);
   public readonly loadFailed = signal(false);
 
   /** Same steps and images either way; developer adds the wire detail. */
@@ -144,7 +121,7 @@ export class GenerateTutorialsComponent {
   public readonly lifecycle = LIFECYCLE;
   public readonly requestHeaders = REQUEST_HEADERS;
 
-  private readonly details = signal<Readonly<Record<string, TutorialDetail>>>(
+  private readonly details = signal<Readonly<Record<string, ExampleDetail>>>(
     {},
   );
 
@@ -207,7 +184,7 @@ export class GenerateTutorialsComponent {
    * is sent to the Learn landing page, which is the index this page used to
    * stand in for.
    */
-  public readonly activeFlow = computed<TutorialFlow | null>(() => {
+  public readonly activeFlow = computed<ExampleFlow | null>(() => {
     const canonical = this.activeId();
     if (canonical === null) {
       return null;
@@ -232,7 +209,7 @@ export class GenerateTutorialsComponent {
   public readonly worlds = this.tutorial.worlds;
   public readonly world = this.tutorial.world;
 
-  public readonly activeDetail = computed<TutorialDetail | null>(() => {
+  public readonly activeDetail = computed<ExampleDetail | null>(() => {
     const flow = this.activeFlow();
     return flow ? (this.details()[flow.id] ?? null) : null;
   });
@@ -333,7 +310,7 @@ export class GenerateTutorialsComponent {
         labelKey: this.taskNameKey(flow),
         icon: identity?.icon,
         hueClass: identity?.className,
-        link: ['/generate/learn/tutorials', flow.id],
+        link: docsExampleLink(flow.id),
         noteKey:
           flow.status === 'skipped'
             ? 'generate.tutorials.unavailable_tag'
@@ -343,8 +320,21 @@ export class GenerateTutorialsComponent {
   );
 
   constructor() {
+    // The technique the URL names, so a shared link previews as the thing it is
+    // about rather than as the area it lives in. The manifest is fetched, so the
+    // task name comes from the flow id, which the URL already carries.
+    setPageMeta({
+      titleKey: () => {
+        const id = this.activeId();
+        return id ? `generate.tutorials.flows.${id}.task_name` : null;
+      },
+      descriptionKey: () => {
+        const id = this.activeId();
+        return id ? `generate.tutorials.flows.${id}.summary` : null;
+      },
+    });
     this.http
-      .get<TutorialManifest>(`${TUTORIALS_ROOT}/manifest.json`)
+      .get<ExampleManifest>(exampleManifestUrl())
       .pipe(takeUntilDestroyed())
       .subscribe({
         next: (manifest) => this.manifest.set(manifest),
@@ -381,7 +371,7 @@ export class GenerateTutorialsComponent {
     // thrown off it.
     effect(() => {
       if (this.manifest() && !this.activeFlow()) {
-        void this.router.navigate(['/generate/learn']);
+        void this.router.navigateByUrl(DOCS_IMAGE);
       }
     });
 
@@ -408,7 +398,7 @@ export class GenerateTutorialsComponent {
   /** An asset of the active flow, by its manifest file name. */
   public assetUrl(file: string | undefined): string {
     const flow = this.activeFlow();
-    return flow && file ? `${TUTORIALS_ROOT}/${flow.directory}/${file}` : '';
+    return flow && file ? exampleAssetUrl(flow, file) : '';
   }
 
   /**
@@ -469,12 +459,12 @@ export class GenerateTutorialsComponent {
    * technique instead, which is the wrong thing to lead a reader with, so it is
    * kept as a second line rather than as the name.
    */
-  public taskNameKey(flow: TutorialFlow): string {
+  public taskNameKey(flow: ExampleFlow): string {
     return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
   }
 
   /** The mark and hue a flow is read by, where its technique has one. */
-  public flowIdentity(flow: TutorialFlow): SectionIdentity | null {
+  public flowIdentity(flow: ExampleFlow): SectionIdentity | null {
     return sectionIdentity(flowDef(canonicalFlowId(flow.id))?.section);
   }
 
@@ -497,7 +487,7 @@ export class GenerateTutorialsComponent {
   }
 
   /** A step's prose, which is written per flow rather than shared. */
-  public stepKey(flow: TutorialFlow, step: string, part: string): string {
+  public stepKey(flow: ExampleFlow, step: string, part: string): string {
     const id = canonicalFlowId(flow.id);
     return `generate.tutorials.flows.${id}.steps.${step}.${part}`;
   }
@@ -508,14 +498,14 @@ export class GenerateTutorialsComponent {
    * from the example run and is written for someone who already knows the
    * technique, which is the wrong register for the first thing a reader reads.
    */
-  public summaryFor(flow: TutorialFlow): string {
+  public summaryFor(flow: ExampleFlow): string {
     const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
     const text = this.transloco.translate(key);
     return !text || text === key ? flow.summary : text;
   }
 
   /** Whether the studio can walk a reader through this flow field by field. */
-  public canStart(flow: TutorialFlow): boolean {
+  public canStart(flow: ExampleFlow): boolean {
     return (
       flow.status === 'available' && flowFollowable(canonicalFlowId(flow.id))
     );
@@ -526,9 +516,9 @@ export class GenerateTutorialsComponent {
    * put in the URL, so reloading the studio lands on an ordinary studio instead
    * of restarting a tutorial the reader has moved past.
    */
-  public startTutorial(flow: TutorialFlow): void {
+  public startTutorial(flow: ExampleFlow): void {
     this.tutorial.arm(flow.id);
-    void this.router.navigate(['/generate/image']);
+    void this.router.navigateByUrl(STUDIO_IMAGE);
   }
 
   /**
@@ -539,21 +529,18 @@ export class GenerateTutorialsComponent {
     return (this.activeDetail()?.request ?? '').includes('<base64');
   }
 
-  private loadDetail(flow: TutorialFlow): void {
+  private loadDetail(flow: ExampleFlow): void {
     const before = flow.files.includes('request-before.json');
     forkJoin({
-      meta: this.http.get<TutorialMeta>(
-        `${TUTORIALS_ROOT}/${flow.directory}/meta.json`,
-      ),
+      meta: this.http.get<ExampleMeta>(exampleAssetUrl(flow, 'meta.json')),
       request: this.http.get(
-        `${TUTORIALS_ROOT}/${flow.directory}/${flow.request ?? 'request.json'}`,
+        exampleAssetUrl(flow, flow.request ?? 'request.json'),
         { responseType: 'text' },
       ),
       requestBefore: before
-        ? this.http.get(
-            `${TUTORIALS_ROOT}/${flow.directory}/request-before.json`,
-            { responseType: 'text' },
-          )
+        ? this.http.get(exampleAssetUrl(flow, 'request-before.json'), {
+            responseType: 'text',
+          })
         : of(null),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))

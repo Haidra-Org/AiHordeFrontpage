@@ -219,13 +219,13 @@ const LINK_ENTRIES: readonly GsIndexRailEntry[] = [
     labelKey: 'generate.tutorials.flows.txt2img.task_name',
     icon: 'sec-prompt',
     hueClass: 'gs-sec--prompt',
-    link: ['/generate/learn/tutorials', 'txt2img'],
+    link: ['/docs/image/learn', 'txt2img'],
   },
   {
     id: 'remix',
     labelKey: 'generate.tutorials.flows.remix.task_name',
     hueClass: 'gs-sec--source',
-    link: ['/generate/learn/tutorials', 'remix'],
+    link: ['/docs/image/learn', 'remix'],
     noteKey: 'generate.tutorials.unavailable_tag',
   },
 ];
@@ -278,8 +278,8 @@ describe('GsIndexRailComponent (link mode)', () => {
 
     expect(lines.map((line) => line.tagName)).toEqual(['A', 'A']);
     expect(lines.map((line) => line.getAttribute('href'))).toEqual([
-      '/generate/learn/tutorials/txt2img',
-      '/generate/learn/tutorials/remix',
+      '/docs/image/learn/txt2img',
+      '/docs/image/learn/remix',
     ]);
     expect(lines[0].classList).toContain('gs-sec--prompt');
     expect(
@@ -312,7 +312,7 @@ describe('GsIndexRailComponent (link mode)', () => {
       noted.querySelector('.gs-index-entry-note')?.textContent?.trim(),
     ).toBe(translations['generate.tutorials.unavailable_tag']);
     // Still a way in: what is missing is worth reading before it is clicked.
-    expect(noted.getAttribute('href')).toBe('/generate/learn/tutorials/remix');
+    expect(noted.getAttribute('href')).toBe('/docs/image/learn/remix');
   });
 
   it('watches nothing, having no section on the page to follow', () => {

@@ -30,7 +30,7 @@ import {
 import manifest from '../../assets/tutorials/manifest.json';
 import request from '../../assets/tutorials/txt2img/request.json';
 import { splitCombinedPrompt } from '../pages/generate/generate-form.model';
-import type { TutorialManifest } from '../pages/generate/generate-tutorials/generate-tutorials.component';
+import type { ExampleManifest } from '../content/examples';
 
 const LEVEL_KEY = 'aihorde.generate.learn.level';
 const WORLD_KEY = 'aihorde.generate.learn.world';
@@ -575,7 +575,7 @@ describe('TutorialEngineService', () => {
   });
 
   describe('the world the examples are drawn from', () => {
-    const MANIFEST = manifest as unknown as TutorialManifest;
+    const MANIFEST = manifest as unknown as ExampleManifest;
     const PUBLISHED = MANIFEST.flows
       .filter((flow) => flow.status === 'available')
       .map((flow) => flow.id);

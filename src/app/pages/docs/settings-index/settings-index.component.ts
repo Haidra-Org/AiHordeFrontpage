@@ -25,6 +25,8 @@ import {
   settingSweepStrip,
   settingTitleKey,
 } from '../../../content/settings';
+import { docsSettingLink } from '../../../content/docs-links';
+import { setPageMeta } from '../../../helper/page-meta';
 
 /** What the glossary files the reference index's this-page entries under. */
 const GLOSSARY_PAGE_ID = 'learn-settings';
@@ -63,15 +65,15 @@ interface IndexGroup {
  * the grid has to look finished that way too.
  */
 @Component({
-  selector: 'app-generate-settings-index',
+  selector: 'app-docs-settings-index',
   imports: [TranslocoPipe, RouterLink, IconComponent, GsIndexRailComponent],
-  templateUrl: './generate-settings-index.component.html',
+  templateUrl: './settings-index.component.html',
   host: {
     class: 'gs-ref-index',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateSettingsIndexComponent {
+export class DocsSettingsIndexComponent {
   private readonly sweeps = inject(SweepLibraryService);
   private readonly glossary = inject(GlossaryService);
   private readonly destroyRef = inject(DestroyRef);
@@ -106,6 +108,10 @@ export class GenerateSettingsIndexComponent {
   );
 
   constructor() {
+    setPageMeta({
+      titleKey: 'generate.reference.head',
+      descriptionKey: 'generate.reference.lead',
+    });
     void this.sweeps.ensureLoaded();
     this.registerGlossaryContext();
   }
@@ -157,7 +163,7 @@ export class GenerateSettingsIndexComponent {
     return {
       id,
       titleKey: settingTitleKey(id),
-      link: `/generate/learn/settings/${id}`,
+      link: docsSettingLink(id),
       icon,
       thumb: this.thumbFor(id),
     };

@@ -200,14 +200,14 @@ describe('GlossaryService', () => {
       const settingLinks = GLOSSARY_TERMS.flatMap((term) =>
         (term.links ?? [])
           .map((link) => link.routerLink)
-          .filter((link) => link.startsWith('/generate/learn/settings/')),
+          .filter((link) => link.startsWith('/docs/image/settings/')),
       );
 
       // Every parameter term carries one, and the terms that predate the
       // reference (LoRA, ControlNet, img2img, inpainting, post-processing) too.
       expect(settingLinks.length).toBeGreaterThan(9);
       for (const link of settingLinks) {
-        const topic = link.slice('/generate/learn/settings/'.length);
+        const topic = link.slice('/docs/image/settings/'.length);
         expect(hasReference(topic)).toBe(true);
       }
     });

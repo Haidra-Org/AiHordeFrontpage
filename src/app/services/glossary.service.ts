@@ -1,4 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
+import { docsSettingLink } from '../content/docs-links';
 
 export interface GlossaryLink {
   labelKey: string;
@@ -73,7 +74,7 @@ export const GLOSSARY_CATEGORIES: {
 function referenceLink(topic: string): GlossaryLink {
   return {
     labelKey: 'help.glossary.link.full_reference',
-    routerLink: `/generate/learn/settings/${topic}`,
+    routerLink: docsSettingLink(topic),
   };
 }
 

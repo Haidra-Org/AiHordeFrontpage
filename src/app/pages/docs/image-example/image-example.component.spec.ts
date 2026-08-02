@@ -13,10 +13,8 @@ import {
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  GenerateTutorialsComponent,
-  TutorialManifest,
-} from './generate-tutorials.component';
+import { DocsImageExampleComponent } from './image-example.component';
+import { ExampleManifest } from '../../../content/examples';
 import { flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
@@ -30,7 +28,7 @@ import {
 
 // The real committed manifest is the fixture: a page describing examples that
 // do not exist is exactly what these tests are for.
-const MANIFEST = manifest as unknown as TutorialManifest;
+const MANIFEST = manifest as unknown as ExampleManifest;
 // Every id the page enumerates. A world variant is another set of pictures for
 // a flow already on the list, so it is deliberately not one of these.
 const CANONICAL = MANIFEST.flows.filter(
@@ -107,8 +105,8 @@ const CHROME_KEYS = [
 ];
 
 interface Harness {
-  fixture: ComponentFixture<GenerateTutorialsComponent>;
-  component: GenerateTutorialsComponent;
+  fixture: ComponentFixture<DocsImageExampleComponent>;
+  component: DocsImageExampleComponent;
   http: HttpTestingController;
   navigate: ReturnType<typeof vi.spyOn>;
   query: <T extends Element>(selector: string) => T[];
@@ -134,7 +132,7 @@ async function createPage(
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
     imports: [
-      GenerateTutorialsComponent,
+      DocsImageExampleComponent,
       TranslocoTestingModule.forRoot({
         langs: { en },
         translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -153,12 +151,12 @@ async function createPage(
     ],
   }).compileComponents();
 
-  const fixture = TestBed.createComponent(GenerateTutorialsComponent);
+  const fixture = TestBed.createComponent(DocsImageExampleComponent);
   const http = TestBed.inject(HttpTestingController);
   // The page sends a URL naming no known flow to the Learn landing page, and
   // a real navigation would tear the fixture down mid-test.
   const navigate = vi
-    .spyOn(TestBed.inject(Router), 'navigate')
+    .spyOn(TestBed.inject(Router), 'navigateByUrl')
     .mockResolvedValue(true);
   fixture.detectChanges();
 
@@ -203,7 +201,7 @@ const REQUEST_TEXT = JSON.stringify(
 /** Answers the manifest request and the companion files it then triggers. */
 function flushAll(
   harness: Harness,
-  manifestData: TutorialManifest = MANIFEST,
+  manifestData: ExampleManifest = MANIFEST,
 ): void {
   harness.http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
   harness.fixture.detectChanges();
@@ -236,7 +234,7 @@ function flushDetail(harness: Harness): void {
   harness.fixture.detectChanges();
 }
 
-describe('GenerateTutorialsComponent', () => {
+describe('DocsImageExampleComponent', () => {
   let harness: Harness;
 
   beforeEach(async () => {
@@ -285,7 +283,7 @@ describe('GenerateTutorialsComponent', () => {
     );
     // Muted, not withheld: the flow is still a place a reader can go.
     expect(muted[0].getAttribute('href')).toBe(
-      `/generate/learn/tutorials/${SKIPPED[0].id}`,
+      `/docs/image/learn/${SKIPPED[0].id}`,
     );
   });
 
@@ -294,7 +292,7 @@ describe('GenerateTutorialsComponent', () => {
     flushAll(bare);
 
     expect(bare.component.activeFlow()).toBeNull();
-    expect(bare.navigate).toHaveBeenCalledWith(['/generate/learn']);
+    expect(bare.navigate).toHaveBeenCalledWith('/docs/image');
     // No stand-in flow is shown on the way out.
     expect(bare.query('.gs-tut-flow')).toHaveLength(0);
   });
@@ -342,7 +340,7 @@ describe('GenerateTutorialsComponent', () => {
     flushAll(harness);
 
     expect(harness.component.activeFlow()).toBeNull();
-    expect(harness.navigate).toHaveBeenCalledWith(['/generate/learn']);
+    expect(harness.navigate).toHaveBeenCalledWith('/docs/image');
   });
 
   it('waits for the manifest before deciding a URL names nothing', async () => {
@@ -645,7 +643,7 @@ describe('GenerateTutorialsComponent', () => {
 
     harness.query<HTMLButtonElement>('.gs-tut-start-btn')[0].click();
 
-    expect(harness.navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(harness.navigate).toHaveBeenCalledWith('/generate/image');
     // Held in memory rather than routed, so a reload lands on a plain studio.
     expect(engine.consumeArmed()).toBe('txt2img');
   });
@@ -657,7 +655,7 @@ describe('GenerateTutorialsComponent', () => {
       harness
         .query<HTMLAnchorElement>('.gs-index-entry')
         .map((line) => line.getAttribute('href')),
-    ).toEqual(CANONICAL.map((flow) => `/generate/learn/tutorials/${flow.id}`));
+    ).toEqual(CANONICAL.map((flow) => `/docs/image/learn/${flow.id}`));
   });
 
   describe('the world the pictures are drawn from', () => {

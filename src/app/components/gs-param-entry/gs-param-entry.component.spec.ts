@@ -214,9 +214,9 @@ describe('GsParamEntryComponent', () => {
     const links = all<HTMLAnchorElement>('.gs-ref-related-link');
 
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/generate/learn/settings/cfg',
-      '/generate/learn/settings/sampler',
-      '/generate/learn/settings/requirements',
+      '/docs/image/settings/cfg',
+      '/docs/image/settings/sampler',
+      '/docs/image/settings/requirements',
     ]);
     expect(links[0].querySelector('.gs-sec-chip')).not.toBeNull();
   });
@@ -264,7 +264,7 @@ describe('GsParamEntryComponent', () => {
 
     await setUp({ topic: 'steps', mode: 'dock' });
     expect(find<HTMLAnchorElement>('.gs-ref-full')?.getAttribute('href')).toBe(
-      '/generate/learn/settings/steps',
+      '/docs/image/settings/steps',
     );
     expect(find('.gs-ref-full')?.textContent?.trim()).toBe(
       translations['generate.reference.open_full'],

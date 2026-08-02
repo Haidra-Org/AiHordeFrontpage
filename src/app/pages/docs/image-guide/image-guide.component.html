@@ -17,7 +17,7 @@
     <p class="gs-guide-note">
       {{ "generate.guide.tutorials_note" | transloco }}
     </p>
-    <a class="gs-guide-cta" routerLink="/generate/learn">
+    <a class="gs-guide-cta" [routerLink]="learnLink">
       <app-icon name="document-text" class="gs-ico-sm" />
       {{ "generate.guide.tutorials_link" | transloco }}
     </a>
@@ -82,13 +82,18 @@
             {{ "generate.guide.practice_link" | transloco }}
           </button>
         }
+        <!-- The panel's own note for each setting, which is a summary and says
+             so by linking on: the setting is written out in full on its own
+             page, and this list is here to be scanned rather than read. -->
         <dl class="gs-guide-terms">
           @for (topic of section.topics; track topic) {
             <dt class="gs-guide-term">
-              {{ "generate.help." + topic + ".title" | transloco }}
+              <a class="gs-guide-term-link" [routerLink]="settingLink(topic)">
+                {{ titleKey(topic) | transloco }}
+              </a>
             </dt>
             <dd class="gs-guide-def">
-              {{ "generate.help." + topic + ".body" | transloco }}
+              {{ noteKey(topic) | transloco }}
               <!-- The same offers the field's own `?` note carries. A reader in
                  the guide is reading about the setting without the panel row in
                  front of them, which is where the pictures do the most work. -->

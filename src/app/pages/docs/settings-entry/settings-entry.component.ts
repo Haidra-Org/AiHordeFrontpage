@@ -13,14 +13,17 @@ import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-par
 import { IconComponent } from '../../../components/icon/icon.component';
 import { sectionIdentity } from '../../../content/sections';
 import {
+  DOCS_IMAGE_SETTINGS,
+  docsSettingLink,
+} from '../../../content/docs-links';
+import { setPageMeta } from '../../../helper/page-meta';
+import {
   hasReference,
   settingNeighbours,
+  settingLeadKey,
   settingSection,
   settingTitleKey,
 } from '../../../content/settings';
-
-/** Where the index lives, and what an unknown setting falls back to. */
-const REFERENCE_ROOT = '/generate/learn/settings';
 
 /** One way onwards, carrying the identity of the entry it leads to. */
 interface OnwardLink {
@@ -45,15 +48,15 @@ interface OnwardLink {
  * so getting one slightly wrong should show a reader the list.
  */
 @Component({
-  selector: 'app-generate-settings-entry',
+  selector: 'app-docs-settings-entry',
   imports: [TranslocoPipe, RouterLink, IconComponent, GsParamEntryComponent],
-  templateUrl: './generate-settings-entry.component.html',
+  templateUrl: './settings-entry.component.html',
   host: {
     class: 'gs-ref-page',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateSettingsEntryComponent {
+export class DocsSettingsEntryComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -63,7 +66,7 @@ export class GenerateSettingsEntryComponent {
     { initialValue: '' },
   );
 
-  public readonly indexLink = REFERENCE_ROOT;
+  public readonly indexLink = DOCS_IMAGE_SETTINGS;
 
   /** The setting on screen, or null while the URL names one there is none of. */
   public readonly topic = computed(() =>
@@ -89,9 +92,21 @@ export class GenerateSettingsEntryComponent {
   public readonly next = computed(() => this.link(this.neighbours().next));
 
   constructor() {
+    // The page's subject comes out of the URL, so its name and its sentence are
+    // read from whichever setting is on screen rather than fixed at mount.
+    setPageMeta({
+      titleKey: () => {
+        const id = this.topic();
+        return id ? settingTitleKey(id) : null;
+      },
+      descriptionKey: () => {
+        const id = this.topic();
+        return id ? settingLeadKey(id) : null;
+      },
+    });
     effect(() => {
       if (this.param() !== '' && this.topic() === null) {
-        void this.router.navigateByUrl(REFERENCE_ROOT);
+        void this.router.navigateByUrl(DOCS_IMAGE_SETTINGS);
       }
     });
   }
@@ -106,7 +121,7 @@ export class GenerateSettingsEntryComponent {
     return {
       id,
       titleKey: settingTitleKey(id),
-      link: `${REFERENCE_ROOT}/${id}`,
+      link: docsSettingLink(id),
       className: identity?.className ?? '',
       icon: crosses ? (identity?.icon ?? null) : null,
       sectionLabelKey: crosses ? (identity?.labelKey ?? null) : null,

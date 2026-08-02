@@ -7,7 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
-import { GenerateSettingsIndexComponent } from './generate-settings-index.component';
+import { DocsSettingsIndexComponent } from './settings-index.component';
 import { GlossaryService } from '../../../services/glossary.service';
 import { HIGHLIGHT_CLASS } from '../../../services/tutorial-anchor.service';
 import { environment } from '../../../../environments/environment';
@@ -21,8 +21,8 @@ import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
 const translations = en as Record<string, string>;
 
-describe('GenerateSettingsIndexComponent', () => {
-  let fixture: ComponentFixture<GenerateSettingsIndexComponent>;
+describe('DocsSettingsIndexComponent', () => {
+  let fixture: ComponentFixture<DocsSettingsIndexComponent>;
   let http: HttpTestingController;
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -33,7 +33,7 @@ describe('GenerateSettingsIndexComponent', () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
-        GenerateSettingsIndexComponent,
+        DocsSettingsIndexComponent,
         TranslocoTestingModule.forRoot({
           langs: { en },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -47,7 +47,7 @@ describe('GenerateSettingsIndexComponent', () => {
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
-    fixture = TestBed.createComponent(GenerateSettingsIndexComponent);
+    fixture = TestBed.createComponent(DocsSettingsIndexComponent);
     fixture.detectChanges();
 
     const request = http.expectOne(
@@ -106,7 +106,7 @@ describe('GenerateSettingsIndexComponent', () => {
     expect(cards).toHaveLength(DOCUMENTED.length);
     expect(cards.map((card) => card.getAttribute('href'))).toEqual(
       SETTINGS_INDEX.flatMap((group) =>
-        group.ids.map((id) => `/generate/learn/settings/${id}`),
+        group.ids.map((id) => `/docs/image/settings/${id}`),
       ),
     );
   });

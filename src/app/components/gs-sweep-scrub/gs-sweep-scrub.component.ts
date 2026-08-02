@@ -25,6 +25,7 @@ import {
   SweepLibraryService,
   SweepStop,
 } from '../../services/sweep-library.service';
+import { docsSettingLink } from '../../content/docs-links';
 
 /**
  * The nine copies a `tile_repeat_3x3` frame is laid out as. Three across rather
@@ -34,7 +35,7 @@ import {
 const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /** Where the whole answer about samplers lives, for the folded note's last line. */
-const SAMPLER_REFERENCE = '/generate/learn/settings/sampler';
+const SAMPLER_REFERENCE = docsSettingLink('sampler');
 
 /** Which way each arrow key steps through the stops in the full-size view. */
 const VIEWER_STEPS: Readonly<Record<string, number>> = {

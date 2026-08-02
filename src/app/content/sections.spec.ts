@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { APP_ICONS } from '../icons';
 import { FLOWS } from './flows';
-import { GUIDE_SECTIONS } from '../pages/generate/generate-guide/generate-guide.component';
+import { GUIDE_SECTIONS } from './guide';
 import {
   SECTION_BY_GUIDE_ID,
   SECTION_BY_STEP_ID,

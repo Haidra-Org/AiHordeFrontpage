@@ -8,8 +8,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, RouterOutlet, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
-import { GenerateSettingsEntryComponent } from './generate-settings-entry.component';
-import { GenerateSettingsIndexComponent } from '../generate-settings-index/generate-settings-index.component';
+import { DocsSettingsEntryComponent } from './settings-entry.component';
+import { DocsSettingsIndexComponent } from '../settings-index/settings-index.component';
 import { environment } from '../../../../environments/environment';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import { SETTINGS_INDEX, settingNeighbours } from '../../../content/settings';
@@ -22,7 +22,7 @@ const translations = en as Record<string, string>;
 @Component({ imports: [RouterOutlet], template: '<router-outlet />' })
 class HostComponent {}
 
-describe('GenerateSettingsEntryComponent', () => {
+describe('DocsSettingsEntryComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
   let http: HttpTestingController;
   let router: Router;
@@ -57,12 +57,12 @@ describe('GenerateSettingsEntryComponent', () => {
         provideHttpClientTesting(),
         provideRouter([
           {
-            path: 'generate/learn/settings',
-            component: GenerateSettingsIndexComponent,
+            path: 'docs/image/settings',
+            component: DocsSettingsIndexComponent,
           },
           {
-            path: 'generate/learn/settings/:param',
-            component: GenerateSettingsEntryComponent,
+            path: 'docs/image/settings/:param',
+            component: DocsSettingsEntryComponent,
           },
         ]),
       ],
@@ -73,7 +73,7 @@ describe('GenerateSettingsEntryComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    await router.navigateByUrl(`/generate/learn/settings/${param}`);
+    await router.navigateByUrl(`/docs/image/settings/${param}`);
     fixture.detectChanges();
     flushLibrary();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -97,7 +97,7 @@ describe('GenerateSettingsEntryComponent', () => {
     await setUp('steps');
 
     expect(find<HTMLAnchorElement>('.gs-ref-back')?.getAttribute('href')).toBe(
-      '/generate/learn/settings',
+      '/docs/image/settings',
     );
     expect(find('.gs-ref-back')?.textContent?.trim()).toBe(
       translations['generate.reference.back'],
@@ -115,8 +115,8 @@ describe('GenerateSettingsEntryComponent', () => {
         link.getAttribute('href'),
       ),
     ).toEqual([
-      `/generate/learn/settings/${previous}`,
-      `/generate/learn/settings/${next}`,
+      `/docs/image/settings/${previous}`,
+      `/docs/image/settings/${next}`,
     ]);
     // Neighbours in the area being read are named, not annotated.
     expect(all('.gs-ref-onward-sec')).toHaveLength(0);
@@ -137,7 +137,7 @@ describe('GenerateSettingsEntryComponent', () => {
     await setUp(edge);
 
     const link = find<HTMLAnchorElement>('.gs-ref-onward--next');
-    expect(link?.getAttribute('href')).toBe(`/generate/learn/settings/${next}`);
+    expect(link?.getAttribute('href')).toBe(`/docs/image/settings/${next}`);
     expect(link?.classList).toContain(SECTION_IDENTITIES[crossed].className);
     expect(
       link?.querySelector('.gs-ref-onward-sec')?.textContent?.trim(),
@@ -169,7 +169,7 @@ describe('GenerateSettingsEntryComponent', () => {
   it('sends a URL naming no setting back to the index', async () => {
     await setUp('not_a_setting');
 
-    expect(router.url).toBe('/generate/learn/settings');
+    expect(router.url).toBe('/docs/image/settings');
     expect(find('app-gs-param-entry')).toBeNull();
     expect(find('.gs-ref-index-title')).not.toBeNull();
   });

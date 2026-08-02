@@ -16,6 +16,16 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    labelKey: 'docs.nav_link',
+    dropdownId: 'docs',
+    activeRoutePrefix: '/docs',
+    children: [
+      { labelKey: 'docs.nav_overview', routerLink: '/docs/' },
+      { labelKey: 'docs.area_image', routerLink: '/docs/image/' },
+      { labelKey: 'docs.nav_settings', routerLink: '/docs/image/settings/' },
+    ],
+  },
+  {
     labelKey: 'joining',
     dropdownId: 'contribute',
     activeRoutePrefix: '/contribute',

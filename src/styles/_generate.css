@@ -8123,32 +8123,79 @@ app-gs-compare-wipe {
   }
 }
 
-/* ------- learn hub (subnav + outlet) --------------------------------- */
-/* The Learn area's own shell, one level in from the studio's tool tabs. The
-   pages beneath it (landing, worked examples, written guide) each own their
-   padding and their reading measure; this sets only the frame they scroll in
-   and the row of pages above it. */
-.gen-studio .gs-learn-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
+/* ------- documentation shell (crumbs + subnav + outlet) --------------- */
+/* The documentation area's own shell. It is a page of the site rather than a
+   pane of the studio, so it scrolls with the document and keeps the site's own
+   header and footer; the pages beneath it (landing, worked examples, written
+   guide, reference) each own their padding and their reading measure, and this
+   sets only the chrome above them.
+
+   The token scope lives on this element rather than an ancestor: the area is
+   written in the studio's visual language without being one. */
+.gs-learn-shell {
+  display: block;
   background: var(--gs-canvas);
+  min-height: 60vh;
 }
-.gen-studio .gs-learn-outlet {
+.gs-learn-outlet {
   display: block;
 }
-/* On desktop the studio is pinned to the viewport, so the area scrolls inside
-   its own frame and the subnav simply never moves. */
-@media (min-width: 1024px) {
-  .gen-studio .gs-shell-outlet > .gs-learn-shell {
-    height: 100%;
-  }
-  .gen-studio .gs-learn-outlet {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    position: relative;
-  }
+
+/* Where the reader is, and the way back out. One line, quiet, above the row of
+   pages: the area's own name is the page's h1 and does not need saying twice. */
+.gs-docs .gs-docs-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 0.8125rem;
+  color: var(--gs-ink-2);
+  border-bottom: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+}
+.gs-docs .gs-docs-crumb {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.gs-docs a.gs-docs-crumb:hover,
+.gs-docs a.gs-docs-crumb:focus-visible {
+  color: var(--gs-ink);
+  border-bottom-color: currentColor;
+}
+.gs-docs .gs-docs-crumb--here {
+  color: var(--gs-ink);
+  font-weight: 600;
+}
+.gs-docs .gs-docs-crumb-sep {
+  color: var(--gs-label);
+}
+
+/* ------- documentation front door ------------------------------------ */
+/* The list of areas. It borrows the leading-bar door grammar the rest of the
+   area reads by rather than inventing a card: there is nothing to show of a
+   body of writing that a picture would tell the truth about. */
+.gs-docs .gs-docs-home-inner {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+.gs-docs .gs-docs-home-top {
+  margin-bottom: 28px;
+}
+.gs-docs .gs-docs-home-title {
+  margin: 0 0 8px;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gs-ink);
+}
+.gs-docs .gs-docs-home-lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gs-ink-2);
 }
 
 /* One scrolling row rather than a wrapping one: the list is short and should

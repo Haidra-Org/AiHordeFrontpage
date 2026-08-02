@@ -2,13 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GenerateGuideComponent } from './generate-guide.component';
+import { DocsImageGuideComponent } from './image-guide.component';
 import en from '../../../../assets/i18n/en.json';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 
-describe('GenerateGuideComponent', () => {
-  let fixture: ComponentFixture<GenerateGuideComponent>;
-  let component: GenerateGuideComponent;
+describe('DocsImageGuideComponent', () => {
+  let fixture: ComponentFixture<DocsImageGuideComponent>;
+  let component: DocsImageGuideComponent;
 
   const query = <T extends Element>(selector: string): T[] =>
     Array.from(fixture.nativeElement.querySelectorAll(selector));
@@ -16,7 +16,7 @@ describe('GenerateGuideComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
-        GenerateGuideComponent,
+        DocsImageGuideComponent,
         TranslocoTestingModule.forRoot({
           langs: { en },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -25,7 +25,7 @@ describe('GenerateGuideComponent', () => {
       providers: [provideRouter([])],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GenerateGuideComponent);
+    fixture = TestBed.createComponent(DocsImageGuideComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -134,7 +134,7 @@ describe('GenerateGuideComponent', () => {
     const link = query<HTMLAnchorElement>('.gs-guide-cta')[0];
     const firstSection = query<HTMLElement>('.gs-guide-card')[0];
 
-    expect(link.getAttribute('href')).toBe('/generate/learn');
+    expect(link.getAttribute('href')).toBe('/docs/image');
     expect(link.textContent).toContain(
       translations['generate.guide.tutorials_link'],
     );
@@ -169,12 +169,12 @@ describe('GenerateGuideComponent', () => {
   it('arms the section example and goes to the studio', () => {
     const engine = TestBed.inject(TutorialEngineService);
     const navigate = vi
-      .spyOn(TestBed.inject(Router), 'navigate')
+      .spyOn(TestBed.inject(Router), 'navigateByUrl')
       .mockResolvedValue(true);
 
     query<HTMLButtonElement>('.gs-guide-practice')[0].click();
 
-    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(navigate).toHaveBeenCalledWith('/generate/image');
     // Held in memory rather than routed, as every other handoff is.
     expect(engine.consumeArmed()).toBe('txt2img');
   });

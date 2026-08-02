@@ -7,8 +7,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GenerateLearnHomeComponent } from './generate-learn-home.component';
-import { TutorialManifest } from '../generate-tutorials/generate-tutorials.component';
+import { DocsImageHomeComponent } from './image-home.component';
+import { ExampleManifest } from '../../../content/examples';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../../assets/tutorials/manifest.json';
 import {
@@ -19,7 +19,7 @@ import {
 
 // The real committed manifest is the fixture: a landing page offering a
 // technique there is no worked example of is exactly what this guards.
-const MANIFEST = manifest as unknown as TutorialManifest;
+const MANIFEST = manifest as unknown as ExampleManifest;
 const TRANSLATIONS = en as Record<string, string>;
 
 /** The ids the page enumerates: a world variant is not a card of its own. */
@@ -31,7 +31,7 @@ const PUBLISHED = MANIFEST.flows
   .map((flow) => flow.id);
 
 /** The committed set with every world but the first taken back out again. */
-const NO_VARIANTS: TutorialManifest = { ...MANIFEST, flows: CANONICAL };
+const NO_VARIANTS: ExampleManifest = { ...MANIFEST, flows: CANONICAL };
 
 /** The keys the page writes out itself rather than deriving from a flow. */
 const OWN_KEYS = [
@@ -57,9 +57,9 @@ const OWN_KEYS = [
   'world.w3',
 ];
 
-describe('GenerateLearnHomeComponent', () => {
-  let fixture: ComponentFixture<GenerateLearnHomeComponent>;
-  let component: GenerateLearnHomeComponent;
+describe('DocsImageHomeComponent', () => {
+  let fixture: ComponentFixture<DocsImageHomeComponent>;
+  let component: DocsImageHomeComponent;
   let http: HttpTestingController;
 
   const query = <T extends Element>(selector: string): T[] =>
@@ -71,7 +71,7 @@ describe('GenerateLearnHomeComponent', () => {
     (fixture.nativeElement as HTMLElement).textContent ?? '';
 
   /** Answers the manifest request the page makes on construction. */
-  function flush(manifestData: TutorialManifest = MANIFEST): void {
+  function flush(manifestData: ExampleManifest = MANIFEST): void {
     http.expectOne('/assets/tutorials/manifest.json').flush(manifestData);
     fixture.detectChanges();
   }
@@ -83,7 +83,7 @@ describe('GenerateLearnHomeComponent', () => {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
-        GenerateLearnHomeComponent,
+        DocsImageHomeComponent,
         TranslocoTestingModule.forRoot({
           langs: { en },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -96,7 +96,7 @@ describe('GenerateLearnHomeComponent', () => {
       ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(GenerateLearnHomeComponent);
+    fixture = TestBed.createComponent(DocsImageHomeComponent);
     component = fixture.componentInstance;
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -133,11 +133,11 @@ describe('GenerateLearnHomeComponent', () => {
     flush();
     const engine = TestBed.inject(TutorialEngineService);
     const router = TestBed.inject(Router);
-    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
     query<HTMLButtonElement>('.gs-learn-hero-cta')[0].click();
 
-    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(navigate).toHaveBeenCalledWith('/generate/image');
     // Held in memory rather than routed, as the examples page hands off too.
     expect(engine.consumeArmed()).toBe('txt2img');
   });
@@ -151,7 +151,7 @@ describe('GenerateLearnHomeComponent', () => {
       component.understandDoors.length,
     );
     expect(routed).toHaveLength(1);
-    expect(routed[0].getAttribute('href')).toBe('/generate/learn/guide');
+    expect(routed[0].getAttribute('href')).toBe('/docs/image/guide');
     expect(routed[0].textContent).toContain(
       TRANSLATIONS['generate.learn.understand_guide_title'],
     );
@@ -206,11 +206,11 @@ describe('GenerateLearnHomeComponent', () => {
     flush();
     const engine = TestBed.inject(TutorialEngineService);
     const router = TestBed.inject(Router);
-    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
     query<HTMLButtonElement>('button.gs-learn-door')[1].click();
 
-    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    expect(navigate).toHaveBeenCalledWith('/generate/image');
     expect(engine.consumeArmed()).toBe('concepts_horde');
   });
 
@@ -230,7 +230,7 @@ describe('GenerateLearnHomeComponent', () => {
       'remix',
     ]);
     expect(cards.map((card) => card.getAttribute('href'))).toEqual(
-      component.shelf().map((flow) => `/generate/learn/tutorials/${flow.id}`),
+      component.shelf().map((flow) => `/docs/image/learn/${flow.id}`),
     );
   });
 

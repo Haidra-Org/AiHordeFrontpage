@@ -19,6 +19,12 @@ export class TranslatorService {
     );
   }
 
+  /** The configured fallback language, or null where none is configured. */
+  private fallbackLanguage(): string | null {
+    const language = this.transloco.config.fallbackLang;
+    return typeof language === 'string' && language !== '' ? language : null;
+  }
+
   private loadCurrentLanguage(): Observable<void> {
     return of(void 0).pipe(
       switchMap(() => {
@@ -37,18 +43,22 @@ export class TranslatorService {
         this.loadedLanguages.push(language);
       }),
       switchMap(() => {
-        const language = this.transloco.config.fallbackLang as string;
-        if (this.loadedLanguages.includes(language)) {
+        // The fallback is configuration and may simply not be set, which a test
+        // harness in particular often leaves out. Asking transloco to load
+        // `undefined` throws from inside its scope resolution, so the absence is
+        // read as "there is no fallback to load" rather than cast away.
+        const language = this.fallbackLanguage();
+        if (language === null || this.loadedLanguages.includes(language)) {
           return of(void 0);
         }
 
         return this.transloco.load(language);
       }),
       tap((result) => {
-        if (result === null) {
+        const language = this.fallbackLanguage();
+        if (result === null || language === null) {
           return;
         }
-        const language = this.transloco.config.fallbackLang as string;
         this.loadedLanguages.push(language);
       }),
       map(() => void 0),

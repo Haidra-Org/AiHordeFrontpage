@@ -26,19 +26,19 @@ import {
 import { ImageGenerationRequest } from '../types/generation';
 import { sectionFor, sectionIdentity } from '../content/sections';
 import {
+  ExampleFlow,
+  ExampleManifest,
+  exampleAssetUrl,
+  exampleManifestUrl,
+  exampleResultUrl,
+} from '../content/examples';
+import {
   FlowReveal,
   FlowStep,
   flowFollowable,
   flowSteps,
   isConceptFlow,
 } from '../content/flows';
-import type {
-  TutorialFlow,
-  TutorialManifest,
-} from '../pages/generate/generate-tutorials/generate-tutorials.component';
-
-/** Where the committed example set lives, relative to the served root. */
-const TUTORIALS_ROOT = '/assets/tutorials';
 
 const LEVEL_KEY = 'aihorde.generate.learn.level';
 
@@ -181,7 +181,7 @@ export class TutorialEngineService {
   private host: TutorialStudioHost | null = null;
 
   private readonly flowId = signal<string | null>(null);
-  private readonly flowMeta = signal<TutorialFlow | null>(null);
+  private readonly flowMeta = signal<ExampleFlow | null>(null);
   private readonly request = signal<ImageGenerationRequest | null>(null);
   private readonly index = signal(0);
   private readonly loading = signal(false);
@@ -270,9 +270,7 @@ export class TutorialEngineService {
   /** The example image the reader is working towards, or '' before it loads. */
   public readonly exampleImage = computed(() => {
     const flow = this.flowMeta();
-    return flow?.result
-      ? `${TUTORIALS_ROOT}/${flow.directory}/${flow.result}`
-      : '';
+    return flow?.result ? exampleResultUrl(flow) : '';
   });
 
   public registerHost(host: TutorialStudioHost): void {
@@ -589,7 +587,7 @@ export class TutorialEngineService {
 
   private async load(flowId: string): Promise<void> {
     const manifest = await firstValueFrom(
-      this.http.get<TutorialManifest>(`${TUTORIALS_ROOT}/manifest.json`),
+      this.http.get<ExampleManifest>(exampleManifestUrl()),
     );
     const world = this.world();
     const published = manifest.flows
@@ -603,7 +601,7 @@ export class TutorialEngineService {
     this.loadedWorld = world;
     const request = await firstValueFrom(
       this.http.get<ImageGenerationRequest>(
-        `${TUTORIALS_ROOT}/${flow.directory}/${flow.request ?? 'request.json'}`,
+        exampleAssetUrl(flow, flow.request ?? 'request.json'),
       ),
     );
     this.flowMeta.set(flow);

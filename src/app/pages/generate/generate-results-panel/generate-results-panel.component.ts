@@ -1,3 +1,4 @@
+import { DOCS_IMAGE, DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -281,7 +282,9 @@ export class GenerateResultsPanelComponent {
   ];
 
   /** Where both of the panel's ways into the written guide point. */
-  public readonly guideLink = '/generate/learn/guide';
+  public readonly guideLink = DOCS_IMAGE_GUIDE;
+  /** The way into the documentation from the first-visit card. */
+  public readonly docsLink = DOCS_IMAGE;
 
   /**
    * The setting whose reference entry has the pane, or null. It is gated above

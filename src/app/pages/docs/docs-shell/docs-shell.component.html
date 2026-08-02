@@ -1,0 +1,42 @@
+<!-- The area being read, and the way back out of it. Both are absent on the
+     front door, which is itself the way back and the page that says which areas
+     there are. -->
+@if (area(); as current) {
+  <nav
+    class="gs-docs-crumbs"
+    [attr.aria-label]="'docs.breadcrumb_label' | transloco"
+  >
+    <a class="gs-docs-crumb" [routerLink]="docsRoot">
+      {{ "docs.title" | transloco }}
+    </a>
+    <span class="gs-docs-crumb-sep" aria-hidden="true">/</span>
+    <span class="gs-docs-crumb gs-docs-crumb--here" aria-current="page">
+      {{ current.labelKey | transloco }}
+    </span>
+  </nav>
+
+  <!-- One scrolling row rather than a wrapping one: an area is a short list of
+       pages and it should cost one line of every page it sits on. -->
+  <nav
+    class="gs-hub-nav"
+    [attr.aria-label]="'generate.learn.nav_label' | transloco"
+  >
+    @for (entry of entries(); track entry.activePath) {
+      <!-- The entry the reader is on is said once, by `aria-current`, and the
+           underline is drawn from it: a second class saying the same thing is a
+           second place for the two to disagree. -->
+      <a
+        class="gs-hub-nav-link"
+        [routerLink]="entry.link"
+        [attr.aria-current]="isActive(entry) ? 'page' : null"
+      >
+        <app-icon [name]="entry.icon" class="gs-hub-nav-mark" />
+        <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
+      </a>
+    }
+  </nav>
+}
+
+<div class="gs-learn-outlet">
+  <router-outlet />
+</div>

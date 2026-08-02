@@ -18,12 +18,17 @@ import {
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
 import {
-  TutorialFlow,
-  TutorialManifest,
-} from '../generate-tutorials/generate-tutorials.component';
-
-/** Where the committed example set lives, relative to the served root. */
-const TUTORIALS_ROOT = '/assets/tutorials';
+  ExampleFlow,
+  ExampleManifest,
+  exampleManifestUrl,
+  exampleResultUrl,
+} from '../../../content/examples';
+import {
+  DOCS_IMAGE_GUIDE,
+  STUDIO_IMAGE,
+  docsExampleLink,
+} from '../../../content/docs-links';
+import { setPageMeta } from '../../../helper/page-meta';
 
 /** The flow the hero door starts, and the one the page is written around. */
 const HERO_FLOW = 'txt2img';
@@ -68,21 +73,21 @@ interface UnderstandDoor {
  * horde could not serve keeps saying so here as it does on its own page.
  */
 @Component({
-  selector: 'app-generate-learn-home',
+  selector: 'app-docs-image-home',
   imports: [TranslocoPipe, RouterLink, IconComponent],
-  templateUrl: './generate-learn-home.component.html',
+  templateUrl: './image-home.component.html',
   host: {
     class: 'gs-learn-home',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GenerateLearnHomeComponent {
+export class DocsImageHomeComponent {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly tutorial = inject(TutorialEngineService);
 
-  private readonly manifest = signal<TutorialManifest | null>(null);
+  private readonly manifest = signal<ExampleManifest | null>(null);
   public readonly loadFailed = signal(false);
 
   /**
@@ -106,7 +111,7 @@ export class GenerateLearnHomeComponent {
     {
       titleKey: 'generate.learn.understand_guide_title',
       hintKey: 'generate.learn.understand_guide_hint',
-      link: '/generate/learn/guide',
+      link: DOCS_IMAGE_GUIDE,
       icon: 'question-mark-circle',
     },
   ];
@@ -124,19 +129,17 @@ export class GenerateLearnHomeComponent {
    * canonical ids: a world variant is another set of pictures for a card that
    * is already here rather than a card of its own.
    */
-  public readonly shelf = computed<readonly TutorialFlow[]>(() => {
+  public readonly shelf = computed<readonly ExampleFlow[]>(() => {
     const flows = this.manifest()?.flows ?? [];
     return SHELF_FLOWS.map((id) => this.inWorld(id, flows)).filter(
-      (flow): flow is TutorialFlow => flow !== undefined,
+      (flow): flow is ExampleFlow => flow !== undefined,
     );
   });
 
   /** The hero's backdrop: the image the walkthrough it starts actually made. */
   public readonly heroImage = computed(() => {
     const flow = this.inWorld(HERO_FLOW, this.manifest()?.flows ?? []);
-    return flow?.result
-      ? `${TUTORIALS_ROOT}/${flow.directory}/${flow.result}`
-      : '';
+    return flow ? exampleResultUrl(flow) : '';
   });
 
   /**
@@ -155,8 +158,12 @@ export class GenerateLearnHomeComponent {
   public readonly world = this.tutorial.world;
 
   constructor() {
+    setPageMeta({
+      titleKey: 'generate.learn.hero_title',
+      descriptionKey: 'generate.learn.hero_sub',
+    });
     this.http
-      .get<TutorialManifest>(`${TUTORIALS_ROOT}/manifest.json`)
+      .get<ExampleManifest>(exampleManifestUrl())
       .pipe(takeUntilDestroyed())
       .subscribe({
         next: (manifest) => this.manifest.set(manifest),
@@ -176,23 +183,21 @@ export class GenerateLearnHomeComponent {
   }
 
   /** A flow's result image, where it has one. */
-  public resultUrl(flow: TutorialFlow): string {
-    return flow.result
-      ? `${TUTORIALS_ROOT}/${flow.directory}/${flow.result}`
-      : '';
+  public resultUrl(flow: ExampleFlow): string {
+    return exampleResultUrl(flow);
   }
 
-  public flowLink(flow: TutorialFlow): string[] {
-    return ['/generate/learn/tutorials', canonicalFlowId(flow.id)];
+  public flowLink(flow: ExampleFlow): string {
+    return docsExampleLink(canonicalFlowId(flow.id));
   }
 
   /** The key naming a flow by what it makes, as the examples page names it. */
-  public taskNameKey(flow: TutorialFlow): string {
+  public taskNameKey(flow: ExampleFlow): string {
     return `generate.tutorials.flows.${canonicalFlowId(flow.id)}.task_name`;
   }
 
   /** Whether a card is the alpha-channel example, in whichever world. */
-  public isTransparent(flow: TutorialFlow): boolean {
+  public isTransparent(flow: ExampleFlow): boolean {
     return canonicalFlowId(flow.id) === 'transparent';
   }
 
@@ -211,8 +216,8 @@ export class GenerateLearnHomeComponent {
    */
   private inWorld(
     flowId: string,
-    flows: readonly TutorialFlow[],
-  ): TutorialFlow | undefined {
+    flows: readonly ExampleFlow[],
+  ): ExampleFlow | undefined {
     const id = resolveFlowId(flowId, this.tutorial.world(), this.published());
     return flows.find((flow) => flow.id === id);
   }
@@ -222,7 +227,7 @@ export class GenerateLearnHomeComponent {
    * the manifest's where a flow has no override, exactly as the examples page
    * does: the manifest is written for someone who already knows the technique.
    */
-  public summaryFor(flow: TutorialFlow): string {
+  public summaryFor(flow: ExampleFlow): string {
     const key = `generate.tutorials.flows.${canonicalFlowId(flow.id)}.summary`;
     const text = this.transloco.translate(key);
     return !text || text === key ? flow.summary : text;
@@ -250,6 +255,6 @@ export class GenerateLearnHomeComponent {
 
   private start(flowId: string): void {
     this.tutorial.arm(flowId);
-    void this.router.navigate(['/generate/image']);
+    void this.router.navigateByUrl(STUDIO_IMAGE);
   }
 }

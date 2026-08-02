@@ -852,7 +852,7 @@ describe('GenerateResultsPanelComponent', () => {
   it('sends both of its guide affordances to the guide page', () => {
     // The guide left the pane for a routed page of the Learn area, so the bar
     // button and the empty state's way in are links rather than pane state.
-    expect(component.guideLink).toBe('/generate/learn/guide');
+    expect(component.guideLink).toBe('/docs/image/guide');
     expect(TRANSLATIONS['generate.guide.open']).toBeTruthy();
     expect(TRANSLATIONS['generate.guide.open_empty']).toBeTruthy();
     expect('guideOpen' in component).toBe(false);

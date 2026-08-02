@@ -59,69 +59,69 @@ export const routes: Routes = [
             (c) => c.AlchemyComponent,
           ),
       },
-      // The learning area is its own little site under the studio shell: a
-      // landing page, the worked examples and the written guide, all sharing a
-      // subnav the shell knows nothing about.
-      {
-        path: 'learn',
-        loadComponent: () =>
-          import('./pages/generate/generate-learn-shell/generate-learn-shell.component').then(
-            (c) => c.GenerateLearnShellComponent,
-          ),
-        children: [
-          {
-            path: '',
-            loadComponent: () =>
-              import('./pages/generate/generate-learn-home/generate-learn-home.component').then(
-                (c) => c.GenerateLearnHomeComponent,
-              ),
-          },
-          // One route per example; the landing page is what a bare
-          // `tutorials` would otherwise have to invent an index for.
-          {
-            path: 'tutorials/:flow',
-            loadComponent: () =>
-              import('./pages/generate/generate-tutorials/generate-tutorials.component').then(
-                (c) => c.GenerateTutorialsComponent,
-              ),
-          },
-          { path: 'tutorials', redirectTo: '', pathMatch: 'full' },
-          // The settings reference: an index of every setting the panel
-          // explains, and a page per setting. A `:param` naming no setting is
-          // sent back to the index by the page itself, which is the only place
-          // that knows what the reference has.
-          {
-            path: 'settings',
-            loadComponent: () =>
-              import('./pages/generate/generate-settings-index/generate-settings-index.component').then(
-                (c) => c.GenerateSettingsIndexComponent,
-              ),
-          },
-          {
-            path: 'settings/:param',
-            loadComponent: () =>
-              import('./pages/generate/generate-settings-entry/generate-settings-entry.component').then(
-                (c) => c.GenerateSettingsEntryComponent,
-              ),
-          },
-          {
-            path: 'guide',
-            loadComponent: () =>
-              import('./pages/generate/generate-guide/generate-guide.component').then(
-                (c) => c.GenerateGuideComponent,
-              ),
-          },
-        ],
-      },
-      // The old flat tutorial URLs, which are in the wild. A plain string
-      // `redirectTo` would drop `:flow`, so the deep link is rebuilt by hand.
-      {
-        path: 'tutorials/:flow',
-        redirectTo: ({ params }) =>
-          `/generate/learn/tutorials/${params['flow']}`,
-      },
-      { path: 'tutorials', redirectTo: 'learn', pathMatch: 'full' },
       { path: '', redirectTo: 'image', pathMatch: 'full' },
+    ],
+  },
+  {
+    // The documentation: its own area of the site rather than a pane of the
+    // studio, because these pages are written to be linked to from outside and
+    // read on their own. The studio still owns the doing; this owns the reading,
+    // and the two render the same components from the same content registry.
+    path: 'docs',
+    loadComponent: () =>
+      import('./pages/docs/docs-shell/docs-shell.component').then(
+        (c) => c.DocsShellComponent,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/docs/docs-home/docs-home.component').then(
+            (c) => c.DocsHomeComponent,
+          ),
+      },
+      {
+        path: 'image',
+        loadComponent: () =>
+          import('./pages/docs/image-home/image-home.component').then(
+            (c) => c.DocsImageHomeComponent,
+          ),
+      },
+      // One route per worked example; the area's landing page is what a bare
+      // `learn` would otherwise have to invent an index for.
+      {
+        path: 'image/learn/:flow',
+        loadComponent: () =>
+          import('./pages/docs/image-example/image-example.component').then(
+            (c) => c.DocsImageExampleComponent,
+          ),
+      },
+      { path: 'image/learn', redirectTo: 'image', pathMatch: 'full' },
+      {
+        path: 'image/guide',
+        loadComponent: () =>
+          import('./pages/docs/image-guide/image-guide.component').then(
+            (c) => c.DocsImageGuideComponent,
+          ),
+      },
+      // The settings reference: an index of every setting the panel explains,
+      // and a page per setting. A `:param` naming no setting is sent back to the
+      // index by the page itself, which is the only place that knows what the
+      // reference has.
+      {
+        path: 'image/settings',
+        loadComponent: () =>
+          import('./pages/docs/settings-index/settings-index.component').then(
+            (c) => c.DocsSettingsIndexComponent,
+          ),
+      },
+      {
+        path: 'image/settings/:param',
+        loadComponent: () =>
+          import('./pages/docs/settings-entry/settings-entry.component').then(
+            (c) => c.DocsSettingsEntryComponent,
+          ),
+      },
     ],
   },
   {

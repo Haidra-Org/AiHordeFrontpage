@@ -1,4 +1,6 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
+import { FLOWS } from './content/flows';
+import { SETTINGS_INDEX } from './content/settings';
 
 /**
  * Server route configuration for hybrid rendering.
@@ -44,6 +46,51 @@ export const serverRoutes: ServerRoute[] = [
   {
     path: 'generate',
     renderMode: RenderMode.Client,
+  },
+  {
+    path: 'generate/**',
+    renderMode: RenderMode.Client,
+  },
+
+  // The documentation is the opposite case: static prose written to be linked
+  // to and found, so every page of it is built at build time. The parameters
+  // come from the content registries themselves, which is what keeps the
+  // prerendered set and the reference in step.
+  {
+    path: 'docs',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'docs/image',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'docs/image/guide',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'docs/image/settings',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'docs/image/settings/:param',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: () =>
+      Promise.resolve(
+        SETTINGS_INDEX.flatMap((group) => group.ids).map((param) => ({
+          param,
+        })),
+      ),
+  },
+  {
+    path: 'docs/image/learn/:flow',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: () =>
+      Promise.resolve(
+        FLOWS.filter((flow) => !flow.concept).map((flow) => ({
+          flow: flow.id,
+        })),
+      ),
   },
   {
     path: 'faq',
