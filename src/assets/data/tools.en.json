@@ -607,15 +607,29 @@
   },
   {
     "name": "Ealain",
-    "description": "A macOS screensaver that displays AI-generated art from AI Horde.",
-    "link": "https://discord.com/channels/781145214752129095/1338432140802658366",
-    "categories": ["macOS", "Image Generation"],
+    "description": "A macOS & Windows screensaver that displays AI-generated art from AI Horde.",
+    "link": "https://github.com/amiantos/ealain",
+    "categories": ["macOS", "Windows", "Image Generation"],
     "itemType": "tool",
     "domain": ["image"],
-    "platform": ["macos"],
+    "platform": ["macos", "windows"],
     "functionKind": "utility",
+    "sourceControlLink": "https://github.com/amiantos/ealain",
     "discordSection": "programs",
     "discordLinks": [],
     "discordNote": "screensaver"
+  },
+  {
+    "name": "AI Horde IRC",
+    "description": "An IRC bot that lets people generate images on AI Horde from any channel. Authenticated users can store their own API key; anonymous users fall back to the horde anonymous key. Status updates are DMed to the requester and the final image is posted back to the channel. Includes a basic-auth-gated web dashboard for tracking logins, request history, and kudos spent.",
+    "link": "https://github.com/amiantos/ai-horde-irc",
+    "categories": ["Bot", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server"],
+    "functionKind": "bot",
+    "sourceControlLink": "https://github.com/amiantos/ai-horde-irc",
+    "discordSection": "programs",
+    "discordNote": "an instance runs as AIHorde on irc.libera.chat — join #aihorde to try it"
   }
 ]
