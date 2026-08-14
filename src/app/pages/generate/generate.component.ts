@@ -497,6 +497,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.form.controls.mode.setValue(mode);
   }
 
+  /**
+   * Read off the tracked value rather than the control, so a surface asking
+   * inside a computed is re-run when the reader changes mode: a try-it chip that
+   * only appears on a sourced request has to appear and disappear with it.
+   */
+  public currentSourceMode(): GenerateSourceMode {
+    return this.formValue().sourceMode;
+  }
+
   public setSourceMode(mode: GenerateSourceMode): void {
     this.form.controls.sourceMode.setValue(mode);
   }

@@ -152,6 +152,7 @@ describe('GsParamEntryComponent', () => {
       const host = {
         applyFields: vi.fn(),
         currentMode: vi.fn().mockReturnValue('advanced'),
+        currentSourceMode: vi.fn().mockReturnValue('img2img'),
         setMode: vi.fn(),
       };
       TestBed.inject(GsTryItService).registerHost(host);

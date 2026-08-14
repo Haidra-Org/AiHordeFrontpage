@@ -169,6 +169,13 @@ export class GsCompareWipeComponent {
    * repeated before there is anything to compare.
    */
   public readonly tiled = input(false);
+  /**
+   * Lay the pair out side by side whatever the room, on the same fallback the
+   * narrow case already uses. A wipe holds a comparison for the reader where the
+   * difference is in one place on one composition; where the two frames are
+   * different pictures the divider reads as a collage, and the caller says so.
+   */
+  public readonly sideBySide = input(false);
 
   /** The first frame to arrive, for callers showing a note until one does. */
   public readonly imageLoad = output<void>();
@@ -196,6 +203,9 @@ export class GsCompareWipeComponent {
    * room: the wipe is the presentation, and the fallback waits to be needed.
    */
   public readonly wiping = computed(() => {
+    if (this.sideBySide()) {
+      return false;
+    }
     const width = this.width();
     return width === 0 || width >= MIN_WIPE_WIDTH_PX;
   });

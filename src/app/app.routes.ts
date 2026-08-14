@@ -73,13 +73,10 @@ export const routes: Routes = [
         (c) => c.DocsShellComponent,
       ),
     children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/docs/docs-home/docs-home.component').then(
-            (c) => c.DocsHomeComponent,
-          ),
-      },
+      // The image area is the whole of the documentation, so a front door over
+      // it would be one page listing one thing. /docs stays as the name of the
+      // area, and lands on what the area actually holds.
+      { path: '', redirectTo: 'image', pathMatch: 'full' },
       {
         path: 'image',
         loadComponent: () =>

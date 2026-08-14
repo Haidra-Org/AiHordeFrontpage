@@ -86,11 +86,13 @@
           <!-- On a technique only the newcomer register gets the sweep; on a
                track the pictures are what the step is about, so they are there
                in every register and already open. The prose points at them. -->
-          @if (showsSweep() && current.sweepParameter) {
-            <app-gs-sweep-scrub
-              [parameter]="current.sweepParameter"
-              [startExpanded]="conceptTrack()"
-            />
+          @if (showsSweep()) {
+            @for (parameter of current.sweepParameters ?? []; track parameter) {
+              <app-gs-sweep-scrub
+                [parameter]="parameter"
+                [startExpanded]="conceptTrack()"
+              />
+            }
           }
 
           @if (revealNote()) {

@@ -524,10 +524,13 @@ describe('GsSweepScrubComponent', () => {
       );
       expect(find('.gs-sweep-why')).toBeNull();
 
-      // The stops are labelled `step_12` for the filename's sake; the chip says
-      // what was actually rendered.
-      expect(text()).toContain('Step 12');
-      expect(text()).not.toContain('step_12');
+      // A timeline opens on its first frame rather than the middle of its
+      // range: the static a render starts from is what the rest of it is read
+      // against. The stops are labelled `step_1` for the filename's sake; the
+      // chip says what was actually rendered.
+      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('0');
+      expect(text()).toContain('Step 1');
+      expect(text()).not.toContain('step_1');
 
       alternate.click();
       fixture.detectChanges();
@@ -535,9 +538,9 @@ describe('GsSweepScrubComponent', () => {
       expect(
         find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
       ).toBe(
-        `${environment.evidenceBaseUrl}/step-preview-guess/albedobase-xl/courier/012_step_12.webp`,
+        `${environment.evidenceBaseUrl}/step-preview-guess/albedobase-xl/courier/001_step_01.webp`,
       );
-      expect(text()).toContain('Step 12');
+      expect(text()).toContain('Step 1');
     });
 
     it('offers no choice on a parameter with only one reading published', async () => {

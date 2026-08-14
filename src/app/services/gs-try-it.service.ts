@@ -9,6 +9,7 @@ import {
 import {
   GenerateFormValue,
   GenerateMode,
+  GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
 import { SettingApply, settingSection } from '../content/settings';
@@ -32,6 +33,12 @@ export interface TryItHost {
   ): void;
   currentMode(): GenerateMode;
   setMode(mode: GenerateMode): void;
+  /**
+   * Which kind of request the panel is currently building. A value that only
+   * survives on a request carrying a source image is withheld rather than
+   * written where there is none, so the studio has to be asked.
+   */
+  currentSourceMode(): GenerateSourceMode;
 }
 
 /**
@@ -81,13 +88,29 @@ export class GsTryItService {
   }
 
   /**
+   * Whether a value is worth offering to the form as it currently stands.
+   *
+   * A denoising strength is stripped on submit unless the request starts from an
+   * image, so beside a studio on a sourceless mode the chip is withheld rather
+   * than offered and silently dropped. Away from the studio there is nothing to
+   * ask, and the offer stands: the chip travels to the studio, and the write is
+   * gated again on arrival.
+   */
+  public offerable(entry: SettingApply): boolean {
+    if (!entry.requiresSource || !this.host) {
+      return true;
+    }
+    return this.host.currentSourceMode() !== 'none';
+  }
+
+  /**
    * Write a value and show where it went. Every field the reference offers
    * lives in the advanced panel, so a reader in simple mode is moved there
    * first: applying a setting into a section they cannot see would leave the
    * chip looking broken.
    */
   public apply(entry: SettingApply): void {
-    if (!this.host) {
+    if (!this.host || !this.offerable(entry)) {
       return;
     }
     if (this.host.currentMode() !== 'advanced') {

@@ -92,13 +92,14 @@ describe('flow registry', () => {
     // A step's strip is captioned with a chip, so a parameter the settings
     // registry cannot name would put "this 12" under the pictures.
     const unnamed = FLOWS.flatMap((flow) =>
-      flow.steps
-        .filter(
-          (step) =>
-            step.sweepParameter &&
-            settingLabelKey(step.sweepParameter) === SETTING_FALLBACK_LABEL_KEY,
-        )
-        .map((step) => `${flow.id}.${step.id} -> ${step.sweepParameter}`),
+      flow.steps.flatMap((step) =>
+        (step.sweepParameters ?? [])
+          .filter(
+            (parameter) =>
+              settingLabelKey(parameter) === SETTING_FALLBACK_LABEL_KEY,
+          )
+          .map((parameter) => `${flow.id}.${step.id} -> ${parameter}`),
+      ),
     );
 
     expect(unnamed).toEqual([]);
@@ -152,12 +153,14 @@ describe('concept tracks', () => {
 
   it('hands the images track the evidence each of its steps is read against', () => {
     const attached = flowSteps('concepts_images')
-      .filter((step) => step.sweepParameter)
-      .map((step) => `${step.id}:${step.sweepParameter}`);
+      .filter((step) => step.sweepParameters?.length)
+      .map((step) => `${step.id}:${step.sweepParameters!.join('+')}`);
 
+    // The knobs step names both of them: a reader being shown what "the knobs"
+    // are learns only half of it from one strip.
     expect(attached).toEqual([
       'noise_to_picture:step_preview',
-      'the_knobs:steps',
+      'the_knobs:steps+cfg_scale',
       'why_it_differs:seed',
     ]);
   });

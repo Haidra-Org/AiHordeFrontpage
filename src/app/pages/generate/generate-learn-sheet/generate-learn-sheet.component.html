@@ -110,11 +110,13 @@
         {{ bodyKey(current) | transloco: copyParams() }}
       </p>
 
-      @if (showsSweep() && current.sweepParameter) {
-        <app-gs-sweep-scrub
-          [parameter]="current.sweepParameter"
-          [startExpanded]="conceptTrack()"
-        />
+      @if (showsSweep()) {
+        @for (parameter of current.sweepParameters ?? []; track parameter) {
+          <app-gs-sweep-scrub
+            [parameter]="parameter"
+            [startExpanded]="conceptTrack()"
+          />
+        }
       }
 
       @if (revealNote()) {

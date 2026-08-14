@@ -280,6 +280,25 @@ export class DocsImageExampleComponent {
     flowSteps(this.activeId() ?? '').map((step) => step.id),
   );
 
+  /**
+   * The spine as it is drawn: each step, the panel area it is about, and whether
+   * it opens that area's run rather than continuing one. Consecutive steps in
+   * one area are a band with a single name over it; every step after the first
+   * carries the name unseen instead, so the reading order is the same whether
+   * the eyebrows are visible or read aloud.
+   */
+  public readonly spine = computed<
+    readonly { id: string; identity: SectionIdentity | null; tucked: boolean }[]
+  >(() => {
+    let running: string | undefined;
+    return this.steps().map((id) => {
+      const section = SECTION_BY_STEP_ID[id];
+      const tucked = section !== undefined && section === running;
+      running = section;
+      return { id, identity: sectionIdentity(section), tucked };
+    });
+  });
+
   /** The submit endpoint, named against the API the examples were run on. */
   public readonly submitUrl = computed(
     () => `${this.manifest()?.generated_against ?? ''}/generate/async`,
@@ -494,15 +513,6 @@ export class DocsImageExampleComponent {
 
   public setWorld(world: TutorialWorld): void {
     this.tutorial.setWorld(world);
-  }
-
-  /**
-   * The panel area a walkthrough step sets a field in, which is what the step's
-   * eyebrow is marked and hued from. Pressing Generate is a step about the page
-   * rather than about a card, so it takes no mark and carries no eyebrow.
-   */
-  public stepIdentity(step: string): SectionIdentity | null {
-    return sectionIdentity(SECTION_BY_STEP_ID[step]);
   }
 
   /** A step's prose, which is written per flow rather than shared. */

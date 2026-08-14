@@ -56,9 +56,12 @@ export const serverRoutes: ServerRoute[] = [
   // to and found, so every page of it is built at build time. The parameters
   // come from the content registries themselves, which is what keeps the
   // prerendered set and the reference in step.
+  // `/docs` is a redirect onto the one area the documentation has rather than a
+  // page, so there is nothing to build at build time: it is answered per request
+  // and the reader arrives at the area itself.
   {
     path: 'docs',
-    renderMode: RenderMode.Prerender,
+    renderMode: RenderMode.Server,
   },
   {
     path: 'docs/image',

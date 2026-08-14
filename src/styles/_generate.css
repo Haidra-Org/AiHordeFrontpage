@@ -1640,7 +1640,10 @@
   flex-wrap: wrap;
   gap: 10px 12px;
   padding: 15px 22px;
-  border-bottom: 2px solid var(--gs-zone-tint-border, var(--gs-border-results));
+  /* The pane's own hairline rather than its zone hue: a full-width green rule
+     under the header reads as a state the pane is in, and the state is already
+     said, once, by the chip beside the title. */
+  border-bottom: 1px solid var(--gs-border-results);
 }
 .gen-studio .gs-results-title {
   font-weight: 700;
@@ -6713,6 +6716,12 @@
   width: 2px;
   background: var(--gs-sec-tint-border, var(--gs-border));
 }
+/* A step continuing the area the step above it named. It keeps its own hairline
+   and its own number and gives up only the repeated eyebrow, so the run reads as
+   one band of the panel rather than as one heading per step. */
+.gen-studio .gs-tut-step--tucked {
+  padding-left: 27px;
+}
 .gen-studio .gs-tut-step-title {
   font-size: 13px;
   font-weight: 700;
@@ -7514,6 +7523,23 @@ app-gs-sweep-scrub {
 .dark .gen-studio .gs-sweep-pair-enlarge {
   color: var(--gs-pop-accent);
 }
+/* The other reading of a pair, offered under it in the same quiet voice as the
+   way to full size: it is a second look at the same two frames rather than a
+   control over what they are. */
+.gen-studio .gs-sweep-pair-mode {
+  display: block;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-blue);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dark .gen-studio .gs-sweep-pair-mode {
+  color: var(--gs-pop-accent);
+}
 .gen-studio .gs-sweep-viewer-wipe {
   min-width: 0;
   max-width: 100%;
@@ -8264,33 +8290,6 @@ app-gs-compare-wipe {
 }
 .gs-docs .gs-docs-crumb-sep {
   color: var(--gs-label);
-}
-
-/* ------- documentation front door ------------------------------------ */
-/* The list of areas. It borrows the leading-bar door grammar the rest of the
-   area reads by rather than inventing a card: there is nothing to show of a
-   body of writing that a picture would tell the truth about. */
-.gs-docs .gs-docs-home-inner {
-  max-width: 880px;
-  margin: 0 auto;
-  padding: 32px 16px 48px;
-}
-.gs-docs .gs-docs-home-top {
-  margin-bottom: 28px;
-}
-.gs-docs .gs-docs-home-title {
-  margin: 0 0 8px;
-  font-size: 1.875rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--gs-ink);
-}
-.gs-docs .gs-docs-home-lead {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: var(--gs-ink-2);
 }
 
 /* One scrolling row rather than a wrapping one: the list is short and should

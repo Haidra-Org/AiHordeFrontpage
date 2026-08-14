@@ -13,7 +13,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
-import { settingProseLabelKey } from '../../content/settings';
+import { settingProseLabelKey, sweepGridNoteKey } from '../../content/settings';
 import {
   SweepLibraryService,
   SweepStop,
@@ -231,6 +231,11 @@ import {
                   {{ plate.grid!.rows.caption }}
                   {{ plate.grid!.columns.caption }}
                 </p>
+                <!-- What the plate is of, where the axes alone would let it be
+                     misread as more than one shoot. -->
+                @if (noteKey(); as note) {
+                  <p class="gs-sweep-plate-legend">{{ note | transloco }}</p>
+                }
                 <p class="gs-sweep-plate-legend">
                   {{ 'generate.sweeps.grid_hint' | transloco }}
                 </p>
@@ -273,6 +278,9 @@ export class GsSweepGridComponent {
   public readonly inline = computed(() => this.startExpanded());
   /** Which cell the arrow keys are on, or null before they have been used. */
   public readonly at = this.cursor.asReadonly();
+
+  /** This plate's own footnote, where it needs a sentence the others do not. */
+  public readonly noteKey = computed(() => sweepGridNoteKey(this.parameter()));
 
   /** What the panel calls each axis, for the offer and the plate's corner. */
   public readonly rowsLabelKey = computed(() =>

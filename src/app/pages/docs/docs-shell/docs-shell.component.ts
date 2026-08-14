@@ -106,13 +106,12 @@ export const DOCS_AREAS: readonly DocsArea[] = [
 ];
 
 /**
- * The documentation area's shell: the way back to its front door, the name of
- * the area being read, and that area's own subnav above the outlet its pages
+ * The documentation area's shell: the name of the area being read, the way back
+ * up to the documentation, and that area's own subnav above the outlet its pages
  * render in.
  *
- * The front door itself carries no subnav. It is the page that says which areas
- * there are, so a nav naming the pages of one of them would be answering a
- * question the reader has not asked yet.
+ * A URL that names no area carries neither. `/docs` itself lands on the one area
+ * there is, so this is the moment before that redirect rather than a page.
  */
 @Component({
   selector: 'app-docs-shell',

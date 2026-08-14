@@ -34,14 +34,18 @@ export interface FlowStep {
   helpTopic?: string;
   reveal?: FlowReveal;
   /**
-   * The parameter-sweep strip this step is read against, if one is published
-   * for it. On a technique it is the setting the step names, shown changing
-   * because its value is a number the reader has no intuition for. On a concept
-   * track it is the evidence the step is about, which is why a track's strips
-   * are shown in every register rather than only to a newcomer. A step without
-   * one simply offers no images.
+   * The parameter-sweep strips this step is read against, if any are published
+   * for it, stacked in the order they are written. On a technique they are the
+   * setting the step names, shown changing because its value is a number the
+   * reader has no intuition for. On a concept track they are the evidence the
+   * step is about, which is why a track's strips are shown in every register
+   * rather than only to a newcomer. A step naming none simply offers no images.
+   *
+   * More than one because a step can be about a pair of knobs rather than one:
+   * the reader is being shown what "the knobs" are, and one strip would name
+   * only half of them.
    */
-  sweepParameter?: string;
+  sweepParameters?: readonly string[];
   /**
    * The form fields this step's Apply writes, picked out of the committed
    * request rather than restated here, so a step can never set something the
@@ -111,7 +115,7 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'steps',
         anchorId: 'steps',
         helpTopic: 'steps',
-        sweepParameter: 'steps',
+        sweepParameters: ['steps'],
         reveal: { mode: 'advanced' },
         applyFields: ['steps'],
       },
@@ -119,7 +123,7 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'cfg',
         anchorId: 'cfg',
         helpTopic: 'cfg',
-        sweepParameter: 'cfg_scale',
+        sweepParameters: ['cfg_scale'],
         reveal: { mode: 'advanced' },
         applyFields: ['cfg_scale'],
       },
@@ -227,11 +231,11 @@ export const FLOWS: readonly FlowDef[] = [
     id: 'concepts_images',
     concept: true,
     steps: [
-      { id: 'noise_to_picture', sweepParameter: 'step_preview' },
+      { id: 'noise_to_picture', sweepParameters: ['step_preview'] },
       { id: 'prompt_as_conditioning' },
       { id: 'what_a_model_is' },
-      { id: 'the_knobs', sweepParameter: 'steps' },
-      { id: 'why_it_differs', sweepParameter: 'seed' },
+      { id: 'the_knobs', sweepParameters: ['steps', 'cfg_scale'] },
+      { id: 'why_it_differs', sweepParameters: ['seed'] },
       { id: 'try_it', startsFlow: 'txt2img' },
     ],
   },

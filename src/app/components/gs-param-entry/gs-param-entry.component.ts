@@ -24,6 +24,7 @@ import {
   settingLeadKey,
   settingReference,
   settingSection,
+  settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
   settingTitleKey,
@@ -154,6 +155,12 @@ const TRADEOFF_ICONS = {
          pictures to bury, so they are already open on it; the dock and the sheet
          sit beside something else the reader is doing and keep the offer. -->
     @if (sweepParameter(); as parameter) {
+      <app-gs-sweep-scrub [parameter]="parameter" [startExpanded]="onPage()" />
+    }
+    <!-- Further evidence about the same setting, under the strip of the setting
+         itself: the reader has met the range before they are shown what one
+         value of it is made of. -->
+    @for (parameter of alsoStrips(); track parameter) {
       <app-gs-sweep-scrub [parameter]="parameter" [startExpanded]="onPage()" />
     }
     @if (sweepGridParameter(); as parameter) {
@@ -296,8 +303,15 @@ export class GsParamEntryComponent {
   );
   public readonly links = computed(() => this.entry()?.links ?? []);
 
-  public readonly applies = computed<readonly SettingApply[]>(
-    () => this.entry()?.applies ?? [],
+  /**
+   * The values on offer here and now. A value the form would strip on submit is
+   * not offered: beside a studio building a request with no source image, the
+   * denoising chip would write a number the request never carries.
+   */
+  public readonly applies = computed<readonly SettingApply[]>(() =>
+    (this.entry()?.applies ?? []).filter((option) =>
+      this.tryIt.offerable(option),
+    ),
   );
 
   /** How a try-it chip reads, which depends on whether the form is reachable. */
@@ -309,6 +323,9 @@ export class GsParamEntryComponent {
 
   public readonly sweepParameter = computed(() =>
     settingSweepStrip(this.topic()),
+  );
+  public readonly alsoStrips = computed(() =>
+    settingSweepAlsoStrips(this.topic()),
   );
   public readonly sweepGridParameter = computed(() =>
     settingSweepGrid(this.topic()),

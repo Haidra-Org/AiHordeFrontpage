@@ -39,6 +39,7 @@ describe('GsTryItService', () => {
       applyFields: vi.fn(),
       setMode: vi.fn(),
       currentMode: vi.fn().mockReturnValue('advanced'),
+      currentSourceMode: vi.fn().mockReturnValue('img2img'),
     };
     row = document.createElement('div');
     document.body.appendChild(row);

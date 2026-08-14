@@ -66,6 +66,13 @@ export interface SettingApply {
    * has to change, and never swaps a processor the reader picked themselves.
    */
   addPostProcessors?: readonly ImagePostProcessor[];
+  /**
+   * The value only survives a submit on a request that starts from an image:
+   * the form strips it otherwise. A chip beside a live form is withheld where
+   * the studio is on a sourceless mode rather than offered and then quietly
+   * dropped, which would teach the reader that the panel ignores them.
+   */
+  requiresSource?: boolean;
 }
 
 /** A way out of the reference to somewhere else in the site. */
@@ -108,6 +115,13 @@ export interface SettingReference {
 export interface SettingSweeps {
   /** The strip that shows the setting changing across its range. */
   strip?: string;
+  /**
+   * Further strips shown under the primary one, in declaration order. A second
+   * strip here is evidence about the same setting from another angle rather
+   * than a second setting: the steps entry carries the per-step canvas of one
+   * real render, which is what a step count is a count of.
+   */
+  alsoStrips?: readonly string[];
   /**
    * The two-axis plate offered beside the strip. A grid answers "how does this
    * interact with the setting next to it", which is a second question rather
@@ -165,6 +179,40 @@ const SWEEP_VARIANTS: Readonly<Record<string, SweepVariantPair>> = {
     baseLabelKey: 'generate.sweeps.preview_variant_base',
     altLabelKey: 'generate.sweeps.preview_variant_alt',
   },
+};
+
+/**
+ * The strips a scrubber opens at their first stop rather than their middle one.
+ *
+ * A range strip's middle stands in for the range, because an end advertises the
+ * extreme. A timeline is not a range: its first frame is the static a render
+ * starts from, and opening half way through skips the one frame that makes the
+ * rest of it mean anything.
+ */
+const SWEEPS_FROM_FIRST_STOP: ReadonlySet<string> = new Set([
+  'step_preview',
+  'step_preview_guess',
+]);
+
+/**
+ * The two-frame strips laid out side by side rather than wiped, by parameter.
+ *
+ * A wipe holds a comparison for the reader where the difference is in one place
+ * on one composition. Where the two frames are different pictures of the same
+ * request the divider reads as a collage instead, and the honest presentation is
+ * the pair itself, with the wipe still there for whoever wants it.
+ */
+const SWEEP_PAIRS_APART: ReadonlySet<string> = new Set(['hires_fix']);
+
+/**
+ * The one sentence a plate needs beyond its own axis captions, by parameter.
+ *
+ * Only where the plate would otherwise be misread: the hires plate's off column
+ * is the same request failing at a size the model was not trained at, and a
+ * reader who takes it for a second photoshoot learns nothing from it.
+ */
+const SWEEP_GRID_NOTES: Readonly<Record<string, string>> = {
+  hires_grid: 'generate.sweeps.grid_note_hires',
 };
 
 /**
@@ -248,6 +296,17 @@ export const SETTINGS: readonly SettingEntry[] = [
     },
   },
   { id: 'tis', section: 'model', labelKey: 'generate.results.meta_row_tis' },
+  {
+    // The suggested lines come out of the selected model's own reference entry,
+    // so the question they answer is "what is this model asking for" rather than
+    // "how do I sample": they are filed with the model that publishes them.
+    id: 'requirements',
+    section: 'model',
+    reference: {
+      related: ['steps', 'cfg', 'sampler', 'clip_skip', 'karras'],
+      links: [MODELS_LINK],
+    },
+  },
 
   // --- size ---
   { id: 'size', section: 'size', labelKey: 'generate.tutorials.recipe_size' },
@@ -271,6 +330,7 @@ export const SETTINGS: readonly SettingEntry[] = [
           display: '0.75',
           anchorId: 'denoise',
           fields: { denoising_strength: 0.75 },
+          requiresSource: true,
         },
       ],
       related: ['source', 'hires_denoise'],
@@ -298,7 +358,13 @@ export const SETTINGS: readonly SettingEntry[] = [
       ],
       related: ['cfg', 'sampler', 'requirements'],
     },
-    sweeps: { strip: 'steps', grid: 'steps_cfg_grid' },
+    sweeps: {
+      strip: 'steps',
+      // What a step count is a count of, under the strip of what changing it
+      // does: the timeline is the same evidence read along the other axis.
+      alsoStrips: ['step_preview'],
+      grid: 'steps_cfg_grid',
+    },
   },
   {
     // Not a control anybody sets: the per-step canvas of one real render, which
@@ -405,14 +471,6 @@ export const SETTINGS: readonly SettingEntry[] = [
     section: 'sampling',
     reference: {},
     sweeps: { strip: 'tiling' },
-  },
-  {
-    id: 'requirements',
-    section: 'sampling',
-    reference: {
-      related: ['steps', 'cfg', 'sampler', 'clip_skip', 'karras'],
-      links: [MODELS_LINK],
-    },
   },
 
   // --- finishing ---
@@ -645,9 +703,29 @@ export function settingSweepStrip(id: string): string | null {
   return settingEntry(id)?.sweeps?.strip ?? null;
 }
 
+/** The further strips shown under a setting's primary one, in reading order. */
+export function settingSweepAlsoStrips(id: string): readonly string[] {
+  return settingEntry(id)?.sweeps?.alsoStrips ?? [];
+}
+
 /** The two-axis plate a setting can offer beside its strip, if there is one. */
 export function settingSweepGrid(id: string): string | null {
   return settingEntry(id)?.sweeps?.grid ?? null;
+}
+
+/** Whether a strip opens on its first frame rather than the middle of its range. */
+export function sweepOpensAtFirstStop(parameter: string): boolean {
+  return SWEEPS_FROM_FIRST_STOP.has(parameter);
+}
+
+/** Whether a two-frame strip is laid out side by side before it is wiped. */
+export function sweepPairStartsApart(parameter: string): boolean {
+  return SWEEP_PAIRS_APART.has(parameter);
+}
+
+/** The plate's own footnote, where one plate needs a sentence the rest do not. */
+export function sweepGridNoteKey(parameter: string): string | null {
+  return SWEEP_GRID_NOTES[parameter] ?? null;
 }
 
 /** How a parameter's two strips are offered, or null where it has only one. */

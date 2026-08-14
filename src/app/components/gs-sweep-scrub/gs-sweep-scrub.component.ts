@@ -20,6 +20,8 @@ import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.compo
 import {
   SweepVariantPair,
   settingProseLabelKey,
+  sweepOpensAtFirstStop,
+  sweepPairStartsApart,
   sweepVariantPair,
 } from '../../content/settings';
 import {
@@ -171,6 +173,7 @@ const VIEWER_FOCUSABLE =
         [beforeAlt]="frameAlt(sides[0])"
         [afterAlt]="frameAlt(sides[1])"
         [tiled]="tiled()"
+        [sideBySide]="!wiped()"
         (imageLoad)="onFrameLoad()"
       >
         <app-gs-setting-chip
@@ -184,6 +187,20 @@ const VIEWER_FOCUSABLE =
           [value]="sides[1].value"
         />
       </app-gs-compare-wipe>
+      <!-- Only where the pair is laid out apart by default. The wipe is still
+           the better reading of a difference in one place, so it stays on
+           offer; it is the pairs whose two frames are different pictures that
+           need asking for. -->
+      @if (offersWipeToggle()) {
+        <button type="button" class="gs-sweep-pair-mode" (click)="toggleWipe()">
+          {{
+            (wiped()
+              ? 'generate.sweeps.pair_show_apart'
+              : 'generate.sweeps.pair_show_wiped'
+            ) | transloco
+          }}
+        </button>
+      }
     </ng-template>
 
     <!-- Some parameters have two readings rather than one fuller one: steps
@@ -595,6 +612,8 @@ export class GsSweepScrubComponent {
   private readonly zoom = signal<number | null>(null);
   private readonly variant = signal(false);
   private readonly variantWhy = signal(false);
+  /** Whether the reader asked for a presentation other than the pair's own. */
+  private readonly wipeAsked = signal<boolean | null>(null);
 
   /** The nine copies of a tiled frame, as something the template can repeat. */
   public readonly tileCells = TILE_CELLS;
@@ -667,6 +686,20 @@ export class GsSweepScrubComponent {
     return stops?.length === 2 ? stops : null;
   });
 
+  /** Whether the pair carries the toggle between the two presentations. */
+  public readonly offersWipeToggle = computed(() =>
+    sweepPairStartsApart(this.activeParameter()),
+  );
+
+  /**
+   * Whether the two frames are wiped over each other rather than set apart.
+   * The reader's own choice wins; before they have made one the pair's own
+   * default stands.
+   */
+  public readonly wiped = computed(
+    () => this.wipeAsked() ?? !sweepPairStartsApart(this.activeParameter()),
+  );
+
   /** Whether the frames are single tiles that only read once repeated. */
   public readonly tiled = computed(
     () => this.strip()?.presentation === 'tile_repeat_3x3',
@@ -684,15 +717,20 @@ export class GsSweepScrubComponent {
 
   /**
    * The middle stop stands in for the strip while it is collapsed: an end of the
-   * range would advertise the extreme rather than the typical. Swapping to the
-   * other reading of a parameter keeps the position, clamped to what the second
-   * strip has, so the reader stays where they were looking.
+   * range would advertise the extreme rather than the typical. A timeline is the
+   * exception, and opens on its first frame: the static a render starts from is
+   * what makes every frame after it mean anything, and half way through is past
+   * it. Swapping to the other reading of a parameter keeps the position, clamped
+   * to what the second strip has, so the reader stays where they were looking.
    */
   public readonly index = computed(() => {
     const held = this.cursor();
-    return held === null
-      ? Math.floor(((this.strip()?.stops.length ?? 1) - 1) / 2)
-      : Math.min(held, this.lastIndex());
+    if (held !== null) {
+      return Math.min(held, this.lastIndex());
+    }
+    return sweepOpensAtFirstStop(this.activeParameter())
+      ? 0
+      : Math.floor(((this.strip()?.stops.length ?? 1) - 1) / 2);
   });
 
   public readonly stop = computed<SweepStop>(
@@ -785,6 +823,11 @@ export class GsSweepScrubComponent {
   public collapse(): void {
     this.open.set(false);
     this.zoom.set(null);
+  }
+
+  /** Swap the pair between wiped and set apart, and remember which was asked for. */
+  public toggleWipe(): void {
+    this.wipeAsked.set(!this.wiped());
   }
 
   public toggleVariantWhy(): void {
