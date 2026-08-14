@@ -51,8 +51,27 @@ describe('GsTryItService', () => {
 
     service.apply(TRY_STEPS);
 
-    expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 });
+    // A value that needs nothing switched on asks for nothing switched on.
+    expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 }, []);
     expect(host.setMode).not.toHaveBeenCalled();
+  });
+
+  it('passes on the post-processors a value needs enabled', () => {
+    service.registerHost(host);
+
+    service.apply({
+      display: '0.75',
+      anchorId: 'facefixer_strength',
+      fields: { facefixer_strength: 0.75 },
+      addPostProcessors: ['GFPGAN'],
+    });
+
+    // The service states the need and no more: whether the fixer is actually
+    // missing is the studio's question, since only it holds the form.
+    expect(host.applyFields).toHaveBeenCalledWith(
+      { facefixer_strength: 0.75 },
+      ['GFPGAN'],
+    );
   });
 
   it('shows the area the field lives in before writing into it', () => {

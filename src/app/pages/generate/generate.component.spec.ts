@@ -777,6 +777,33 @@ describe('GenerateComponent', () => {
       expect(value.cfg_scale).toBe(DEFAULT_GENERATE_FORM_VALUE.cfg_scale);
     });
 
+    it('enables a post-processor a value needs, keeping the rest', () => {
+      component.form.controls.post_processing.setValue([
+        'RealESRGAN_x4plus',
+        'strip_background',
+      ]);
+
+      component.applyFields({ facefixer_strength: 0.75 }, ['GFPGAN']);
+
+      const value = component.form.getRawValue();
+      expect(value.post_processing).toEqual([
+        'RealESRGAN_x4plus',
+        'strip_background',
+        'GFPGAN',
+      ]);
+      expect(value.facefixer_strength).toBe(0.75);
+    });
+
+    it('keeps the face fixer already chosen and only writes the strength', () => {
+      component.form.controls.post_processing.setValue(['CodeFormers']);
+
+      component.applyFields({ facefixer_strength: 0.75 }, ['GFPGAN']);
+
+      const value = component.form.getRawValue();
+      expect(value.post_processing).toEqual(['CodeFormers']);
+      expect(value.facefixer_strength).toBe(0.75);
+    });
+
     it('reports and sets the panel mode a step needs revealed', () => {
       expect(component.currentMode()).toBe(DEFAULT_GENERATE_FORM_VALUE.mode);
 

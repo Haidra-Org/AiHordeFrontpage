@@ -12,6 +12,7 @@ import { Router } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
+import { flowSteps, isConceptFlow } from '../../../content/flows';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -192,6 +193,21 @@ describe('GenerateResultsPanelComponent', () => {
       'cancelled',
     ]);
     expect(tiles[0].aspect).toBe('512/768');
+  });
+
+  it('labels a tile with the positive half of the stored prompt', () => {
+    // The stored prompt is whatever was submitted, and nothing guarantees the
+    // horde separator was written with spaces around it: the tile label has to
+    // split on the marker itself, as the form does when loading a past request.
+    pendingJobs.set([
+      {
+        ...job('spaced', 'processing'),
+        request: { prompt: 'a cat ### blurry' },
+      },
+      { ...job('tight', 'processing'), request: { prompt: 'a cat###blurry' } },
+    ]);
+
+    expect(component.tiles().map((t) => t.prompt)).toEqual(['a cat', 'a cat']);
   });
 
   it('opens and closes the viewer', () => {
@@ -902,6 +918,24 @@ describe('GenerateResultsPanelComponent', () => {
       expect(engine.level()).toBe(door.level);
       expect(engine.activeFlowId()).toBe(door.flowId);
     }
+  });
+
+  it('sends the second door through the concepts before the walkthrough', () => {
+    // Door 1 makes an image by working the panel; door 2 is for the reader who
+    // wants to know what the panel is doing first, so it opens a concept track
+    // rather than a second copy of the same walkthrough.
+    const engine = TestBed.inject(TutorialEngineService);
+    const [door1, door2] = component.welcomeDoors;
+
+    expect(isConceptFlow(door1.flowId)).toBe(false);
+    expect(isConceptFlow(door2.flowId)).toBe(true);
+
+    engine.stop();
+    component.enterVia(door2);
+
+    expect(engine.activeFlowId()).toBe('concepts_images');
+    // The track ends by handing the reader on to the walkthrough door 1 runs.
+    expect(flowSteps('concepts_images').at(-1)?.startsFlow).toBe(door1.flowId);
   });
 
   it('seeds the level and leaves the studio alone behind the last door', () => {

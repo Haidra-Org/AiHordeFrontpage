@@ -18,6 +18,7 @@ import {
   settingSweepVariant,
   settingTitleKey,
 } from './settings';
+import { FACE_FIXERS } from '../pages/generate/generate-form.model';
 import { GLOSSARY_TERMS } from '../services/glossary.service';
 import en from '../../assets/i18n/en.json';
 
@@ -180,6 +181,24 @@ describe('settings registry', () => {
             option.display === '' ||
             option.anchorId === '' ||
             Object.keys(option.fields).length === 0,
+        )
+        .map((option) => `${entry.id} -> ${option.display}`),
+    );
+
+    expect(problems).toEqual([]);
+  });
+
+  it('leaves a face fixer enabled behind any face-fixer strength it offers', () => {
+    // The strength does nothing on its own: the horde only reads it while a
+    // fixer is post-processing, so an entry offering one has to name a fixer.
+    const problems = documented.flatMap((entry) =>
+      (entry.reference?.applies ?? [])
+        .filter(
+          (option) =>
+            option.fields.facefixer_strength !== undefined &&
+            !(option.addPostProcessors ?? []).some((processor) =>
+              FACE_FIXERS.includes(processor),
+            ),
         )
         .map((option) => `${entry.id} -> ${option.display}`),
     );

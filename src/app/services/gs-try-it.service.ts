@@ -10,6 +10,7 @@ import {
   GenerateFormValue,
   GenerateMode,
 } from '../pages/generate/generate-form.model';
+import { ImagePostProcessor } from '../types/style';
 import { SettingApply, settingSection } from '../content/settings';
 import { sectionIdentity } from '../content/sections';
 import { TutorialAnchorService } from './tutorial-anchor.service';
@@ -19,8 +20,16 @@ import { TutorialAnchorService } from './tutorial-anchor.service';
  * registers itself; nothing here reaches into the form.
  */
 export interface TryItHost {
-  /** Write the named fields, leaving everything else alone. */
-  applyFields(fields: Partial<GenerateFormValue>): void;
+  /**
+   * Write the named fields, leaving everything else alone, and switch on any
+   * post-processors the value needs. Those are added to what the form already
+   * runs, never written over it: which of them are genuinely missing is a
+   * question only the studio holding the form can answer.
+   */
+  applyFields(
+    fields: Partial<GenerateFormValue>,
+    addPostProcessors?: readonly ImagePostProcessor[],
+  ): void;
   currentMode(): GenerateMode;
   setMode(mode: GenerateMode): void;
 }
@@ -84,7 +93,7 @@ export class GsTryItService {
     if (this.host.currentMode() !== 'advanced') {
       this.host.setMode('advanced');
     }
-    this.host.applyFields(entry.fields);
+    this.host.applyFields(entry.fields, entry.addPostProcessors ?? []);
     if (!this.isBrowser) {
       return;
     }

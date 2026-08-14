@@ -44,7 +44,7 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from '../image-meta-panel/image-meta-panel.component';
-import { GenerateFormValue } from '../generate-form.model';
+import { GenerateFormValue, splitCombinedPrompt } from '../generate-form.model';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
@@ -203,8 +203,7 @@ async function toPngBlob(blob: Blob): Promise<Blob> {
 
 /** The positive half of a combined `positive ### negative` prompt. */
 function positivePrompt(prompt: string): string {
-  const index = prompt.indexOf(' ### ');
-  return (index === -1 ? prompt : prompt.slice(0, index)).trim();
+  return splitCombinedPrompt(prompt)[0];
 }
 
 /**
@@ -301,14 +300,16 @@ export class GenerateResultsPanelComponent {
   public readonly tutorialCompleted = this.tutorial.completed;
 
   /**
-   * The ways in offered to a reader who has not been here before. Both guided
-   * doors run the txt2img walkthrough: its Comfortable register is where the
-   * horde's own specifics are told, which is what the second door promises.
-   * Pointing a door at another track is this list's `flowId` and nothing else.
+   * The ways in offered to a reader who has not been here before. The first
+   * door runs the txt2img walkthrough, which makes an image by working the
+   * panel; the second starts the understanding-images concept track, which
+   * explains what the panel is doing before handing over to that same
+   * walkthrough. Pointing a door at another track is this list's `flowId` and
+   * nothing else.
    */
   public readonly welcomeDoors: readonly WelcomeDoor[] = [
     { id: 'door1', level: 'new_to_this', flowId: 'txt2img' },
-    { id: 'door2', level: 'comfortable', flowId: 'txt2img' },
+    { id: 'door2', level: 'comfortable', flowId: 'concepts_images' },
     { id: 'door3', level: 'expert', flowId: null },
   ];
 

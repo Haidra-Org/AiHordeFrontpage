@@ -23,9 +23,6 @@ export const DOCS_IMAGE_SETTINGS = `${DOCS_IMAGE}/settings`;
 /** The worked examples, one page per technique. */
 export const DOCS_IMAGE_EXAMPLES = `${DOCS_IMAGE}/learn`;
 
-/** The alchemy studio's documentation. */
-export const DOCS_ALCHEMY = `${DOCS_ROOT}/alchemy`;
-
 /** The studios themselves, which is where reading turns into doing. */
 export const STUDIO_IMAGE = '/generate/image';
 export const STUDIO_ALCHEMY = '/generate/alchemy';

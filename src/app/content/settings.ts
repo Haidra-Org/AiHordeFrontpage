@@ -1,4 +1,5 @@
 import { GenerateFormValue } from '../pages/generate/generate-form.model';
+import { ImagePostProcessor } from '../types/style';
 import { SectionId, SECTION_IDS } from './sections';
 
 /**
@@ -57,6 +58,14 @@ export interface SettingApply {
   display: string;
   anchorId: string;
   fields: Partial<GenerateFormValue>;
+  /**
+   * Post-processors the value needs switched on to mean anything, added to
+   * whatever the form already runs rather than written over it. A strength has
+   * no effect unless its processor is selected, so the entry offering the
+   * strength names the processor beside it; the studio decides what actually
+   * has to change, and never swaps a processor the reader picked themselves.
+   */
+  addPostProcessors?: readonly ImagePostProcessor[];
 }
 
 /** A way out of the reference to somewhere else in the site. */
@@ -397,6 +406,7 @@ export const SETTINGS: readonly SettingEntry[] = [
           display: '0.75',
           anchorId: 'facefixer_strength',
           fields: { facefixer_strength: 0.75 },
+          addPostProcessors: ['GFPGAN'],
         },
       ],
       related: ['facefixer'],

@@ -34,6 +34,7 @@ import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
 import { ImageGenerationRequest } from '../../types/generation';
+import { ImagePostProcessor } from '../../types/style';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
@@ -67,6 +68,7 @@ import {
 } from './generate-source-image/generate-source-image.component';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
+  FACE_FIXERS,
   GenerateFormValue,
   GenerateMode,
   GenerateSourceMode,
@@ -458,8 +460,32 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   // The tutorial renders in the results pane and never touches the form group
   // itself; everything it asks for arrives through these four methods.
 
-  public applyFields(fields: Partial<GenerateFormValue>): void {
+  /**
+   * Write the named fields, and switch on any post-processors they need.
+   *
+   * `addPostProcessors` is a union with what the form already runs, so an
+   * upscaler or a background strip already in the list survives the write. The
+   * face fixers are a single choice between them, so one is only added while
+   * none is selected: a value that needs a fixer enabled has to leave one
+   * enabled, but it is never the thing that replaces the reader's own pick.
+   */
+  public applyFields(
+    fields: Partial<GenerateFormValue>,
+    addPostProcessors: readonly ImagePostProcessor[] = [],
+  ): void {
     this.form.patchValue(fields);
+    const current = this.form.controls.post_processing.value;
+    const hasFaceFixer = current.some((processor) =>
+      FACE_FIXERS.includes(processor),
+    );
+    const additions = addPostProcessors.filter(
+      (processor) =>
+        !current.includes(processor) &&
+        !(hasFaceFixer && FACE_FIXERS.includes(processor)),
+    );
+    if (additions.length > 0) {
+      this.form.controls.post_processing.setValue([...current, ...additions]);
+    }
     this.form.markAsDirty();
   }
 

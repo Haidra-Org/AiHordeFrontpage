@@ -164,7 +164,7 @@ describe('GsParamEntryComponent', () => {
 
       chips[1].click();
 
-      expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 });
+      expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 }, []);
     });
 
     it('arms the value and goes to the studio from the routed page', async () => {
