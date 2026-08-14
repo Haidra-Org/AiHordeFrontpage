@@ -34,9 +34,12 @@ export interface FlowStep {
   helpTopic?: string;
   reveal?: FlowReveal;
   /**
-   * The parameter-sweep strip that shows this step's setting changing, if one is
-   * published for it. Only set on steps whose value is a number a reader has no
-   * intuition for; a step without one simply offers no images.
+   * The parameter-sweep strip this step is read against, if one is published
+   * for it. On a technique it is the setting the step names, shown changing
+   * because its value is a number the reader has no intuition for. On a concept
+   * track it is the evidence the step is about, which is why a track's strips
+   * are shown in every register rather than only to a newcomer. A step without
+   * one simply offers no images.
    */
   sweepParameter?: string;
   /**
@@ -217,14 +220,18 @@ export const FLOWS: readonly FlowDef[] = [
   // field, so no step carries an anchor, an apply or a help topic: they are read
   // straight through, in whichever register suits.
   {
+    // Read in the order the pictures make sense in rather than the order the
+    // ideas were written in: the first step hands the reader a real render they
+    // can scrub back to static, and every step after it points at something
+    // they have already watched happen.
     id: 'concepts_images',
     concept: true,
     steps: [
-      { id: 'noise_to_picture' },
-      { id: 'what_a_model_is' },
+      { id: 'noise_to_picture', sweepParameter: 'step_preview' },
       { id: 'prompt_as_conditioning' },
-      { id: 'the_knobs' },
-      { id: 'why_it_differs' },
+      { id: 'what_a_model_is' },
+      { id: 'the_knobs', sweepParameter: 'steps' },
+      { id: 'why_it_differs', sweepParameter: 'seed' },
       { id: 'try_it', startsFlow: 'txt2img' },
     ],
   },

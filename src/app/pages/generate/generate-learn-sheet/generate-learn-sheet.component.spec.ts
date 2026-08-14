@@ -262,6 +262,15 @@ describe('GenerateLearnSheetComponent', () => {
     });
   });
 
+  it('says what the register picker is, on the screen and not only to a reader', () => {
+    expect(
+      first<HTMLElement>('.gs-learn-levels-label').textContent?.trim(),
+    ).toBe(TRANSLATIONS['generate.learn.level_label']);
+    expect(
+      first<HTMLElement>('.gs-learn-levels .gs-seg').getAttribute('aria-label'),
+    ).toBe(TRANSLATIONS['generate.learn.level_label']);
+  });
+
   it('names its own chrome', () => {
     expect(first<HTMLElement>('app-gs-sheet').getAttribute('aria-label')).toBe(
       TRANSLATIONS['generate.learn.sheet_label'],

@@ -114,14 +114,58 @@ export interface SettingSweeps {
    * than a fuller answer to the first, so two settings can share one plate.
    */
   grid?: string;
-  /**
-   * The second strip the same setting can be read on, offered as a choice.
-   * Steps behave differently depending on whether the sampler re-rolls the
-   * detail on every change or settles towards one picture, and one strip can
-   * only show one of those.
-   */
-  variant?: string;
 }
+
+/**
+ * How a parameter published as two strips offers the choice between them.
+ *
+ * Some things a strip is asked to show have two readings rather than one fuller
+ * one, and the toggle between them belongs wherever the frames are. What the two
+ * sides are called is part of the pairing: "a sampler that re-rolls" and "the
+ * model's guess" are answers to different questions, and one set of words for
+ * both would name neither.
+ */
+export interface SweepVariantPair {
+  /** The parameter of the second strip. */
+  parameter: string;
+  /** What the two buttons are, together. */
+  groupLabelKey: string;
+  /** The strip the parameter itself names, and the one offered beside it. */
+  baseLabelKey: string;
+  altLabelKey: string;
+  /**
+   * Whether the folded note listing the two sampler families sits under the
+   * toggle. It answers "which kind is mine", which only the sampler pair asks.
+   */
+  samplerNote?: boolean;
+}
+
+/**
+ * Every parameter the library publishes two strips for, keyed by the one a
+ * surface asks for. The second strip is never asked for directly: it is reached
+ * through the first, which is what makes the pair one viewer rather than two
+ * offers side by side.
+ */
+const SWEEP_VARIANTS: Readonly<Record<string, SweepVariantPair>> = {
+  // Steps read differently on a sampler that re-rolls the detail than on one
+  // that settles towards a single picture.
+  steps: {
+    parameter: 'steps_converging',
+    groupLabelKey: 'generate.sweeps.variant_label',
+    baseLabelKey: 'generate.sweeps.variant_base',
+    altLabelKey: 'generate.sweeps.variant_alt',
+    samplerNote: true,
+  },
+  // What the canvas actually holds part-way through a render, against what the
+  // model thinks it is heading towards from there. The first is why an
+  // unfinished picture looks like static; the second is why it is not random.
+  step_preview: {
+    parameter: 'step_preview_guess',
+    groupLabelKey: 'generate.sweeps.preview_variant_label',
+    baseLabelKey: 'generate.sweeps.preview_variant_base',
+    altLabelKey: 'generate.sweeps.preview_variant_alt',
+  },
+};
 
 /**
  * One setting, as the whole studio knows it.
@@ -254,11 +298,16 @@ export const SETTINGS: readonly SettingEntry[] = [
       ],
       related: ['cfg', 'sampler', 'requirements'],
     },
-    sweeps: {
-      strip: 'steps',
-      grid: 'steps_cfg_grid',
-      variant: 'steps_converging',
-    },
+    sweeps: { strip: 'steps', grid: 'steps_cfg_grid' },
+  },
+  {
+    // Not a control anybody sets: the per-step canvas of one real render, which
+    // the concept track is read against. It is named here because the chip
+    // under those frames has to say what the number on them is, and because the
+    // sampling card is where a reader who wants to move it would go.
+    id: 'step_preview',
+    section: 'sampling',
+    labelKey: 'generate.sweeps.param_step',
   },
   {
     id: 'cfg',
@@ -521,6 +570,7 @@ const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   post_processing: 'post',
   resolution: 'size',
   sampler_name: 'sampler',
+  step_preview_guess: 'step_preview',
   steps_converging: 'steps',
 };
 
@@ -600,9 +650,9 @@ export function settingSweepGrid(id: string): string | null {
   return settingEntry(id)?.sweeps?.grid ?? null;
 }
 
-/** The second strip a setting can be read on, offered as a choice beside it. */
-export function settingSweepVariant(id: string): string | null {
-  return settingEntry(id)?.sweeps?.variant ?? null;
+/** How a parameter's two strips are offered, or null where it has only one. */
+export function sweepVariantPair(parameter: string): SweepVariantPair | null {
+  return SWEEP_VARIANTS[parameter] ?? null;
 }
 
 /** One section of the reference index, and the settings filed under it. */

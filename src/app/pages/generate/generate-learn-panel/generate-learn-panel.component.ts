@@ -69,6 +69,22 @@ export class GenerateLearnPanelComponent {
       : `generate.tutorials.flows.${flowId}.task_name`;
   });
 
+  /** Whether the track being read teaches an idea rather than a technique. */
+  public readonly conceptTrack = computed(() =>
+    isConceptFlow(this.engine.activeFlowId()),
+  );
+
+  /**
+   * Whether the current step's strip is shown. On a technique it is a newcomer's
+   * aid: the other two registers are reading a number they already have a feel
+   * for, and the offer would be one more thing between them and the next step.
+   * On a concept track the pictures are the lesson rather than a remedy for one,
+   * so every register gets them, and gets them already open.
+   */
+  public readonly showsSweep = computed(
+    () => this.conceptTrack() || this.level() === 'new_to_this',
+  );
+
   public readonly canApply = computed(() => this.engine.canApply());
 
   /**

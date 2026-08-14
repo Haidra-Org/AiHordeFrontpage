@@ -7948,8 +7948,22 @@ app-gs-compare-wipe {
   font-weight: 700;
   color: var(--gs-ink);
 }
+/* The register picker with its name over it. Stacked rather than set beside the
+   control: on a phone the three options already fill the row, and a label on the
+   same line would push them onto a second one. */
 .gen-studio .gs-learn-levels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
   margin-top: 12px;
+}
+.gen-studio .gs-learn-levels-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-label);
 }
 .gen-studio .gs-learn-progress {
   margin: 14px 0 0;

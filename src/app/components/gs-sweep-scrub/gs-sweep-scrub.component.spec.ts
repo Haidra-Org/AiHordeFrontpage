@@ -510,6 +510,36 @@ describe('GsSweepScrubComponent', () => {
       expect(el().textContent).toContain('Settled, and the same picture');
     });
 
+    it('names the two readings of a per-step render in their own words', async () => {
+      // The same toggle, and nothing about samplers on it: the pair is the
+      // canvas against the model's guess, which raises no such question.
+      await setUp({ parameter: 'step_preview', startExpanded: true });
+
+      const [base, alternate] = all<HTMLButtonElement>('.gs-sweep-variant');
+      expect(base.textContent?.trim()).toBe(
+        en['generate.sweeps.preview_variant_base'],
+      );
+      expect(alternate.textContent?.trim()).toBe(
+        en['generate.sweeps.preview_variant_alt'],
+      );
+      expect(find('.gs-sweep-why')).toBeNull();
+
+      // The stops are labelled `step_12` for the filename's sake; the chip says
+      // what was actually rendered.
+      expect(text()).toContain('Step 12');
+      expect(text()).not.toContain('step_12');
+
+      alternate.click();
+      fixture.detectChanges();
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
+      ).toBe(
+        `${environment.evidenceBaseUrl}/step-preview-guess/albedobase-xl/courier/012_step_12.webp`,
+      );
+      expect(text()).toContain('Step 12');
+    });
+
     it('offers no choice on a parameter with only one reading published', async () => {
       await setUp({ parameter: 'cfg_scale' });
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();

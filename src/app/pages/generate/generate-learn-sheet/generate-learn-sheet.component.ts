@@ -13,7 +13,7 @@ import {
   TutorialLevel,
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
-import { FlowStep } from '../../../content/flows';
+import { FlowStep, isConceptFlow } from '../../../content/flows';
 import {
   SectionIdentity,
   sectionIdentity,
@@ -61,6 +61,20 @@ export class GenerateLearnSheetComponent {
   public readonly loadFailed = this.engine.loadFailed;
   public readonly revealNote = this.engine.revealNote;
   public readonly copyParams = this.engine.copyParams;
+
+  /** Whether the track being read teaches an idea rather than a technique. */
+  public readonly conceptTrack = computed(() =>
+    isConceptFlow(this.engine.activeFlowId()),
+  );
+
+  /**
+   * Whether the current step's strip is shown, on the panel's rule: a
+   * newcomer's aid on a technique, and the lesson itself on a track, which is
+   * why a track shows it in every register and shows it already open.
+   */
+  public readonly showsSweep = computed(
+    () => this.conceptTrack() || this.level() === 'new_to_this',
+  );
 
   public readonly canApply = computed(() => this.engine.canApply());
 

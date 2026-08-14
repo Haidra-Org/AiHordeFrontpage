@@ -18,8 +18,9 @@ import { IconComponent } from '../icon/icon.component';
 import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 import {
+  SweepVariantPair,
   settingProseLabelKey,
-  settingSweepVariant,
+  sweepVariantPair,
 } from '../../content/settings';
 import {
   SweepLibraryService,
@@ -185,35 +186,39 @@ const VIEWER_FOCUSABLE =
       </app-gs-compare-wipe>
     </ng-template>
 
-    <!-- Steps read differently depending on whether the sampler re-rolls the
-         detail or settles towards one picture, and one strip can only be of one
-         of them. The choice belongs wherever the frames are, which is the strip
-         and, once it is open, the full-size view as well. -->
+    <!-- Some parameters have two readings rather than one fuller one: steps
+         read differently on a sampler that re-rolls the detail than on one that
+         settles, and a part-finished render can be shown as what the canvas
+         holds or as what the model is heading towards. One strip can only be of
+         one of them, so the pair is one viewer with the choice in it, wherever
+         the frames are: the strip, and the full-size view once it is open. -->
     <ng-template #variants>
-      <div
-        class="gs-sweep-variants"
-        role="group"
-        [attr.aria-label]="'generate.sweeps.variant_label' | transloco"
-      >
-        <button
-          type="button"
-          class="gs-sweep-variant"
-          [class.is-on]="!onVariant()"
-          [attr.aria-pressed]="!onVariant()"
-          (click)="useVariant(false)"
+      @if (variantPair(); as pair) {
+        <div
+          class="gs-sweep-variants"
+          role="group"
+          [attr.aria-label]="pair.groupLabelKey | transloco"
         >
-          {{ 'generate.sweeps.variant_base' | transloco }}
-        </button>
-        <button
-          type="button"
-          class="gs-sweep-variant"
-          [class.is-on]="onVariant()"
-          [attr.aria-pressed]="onVariant()"
-          (click)="useVariant(true)"
-        >
-          {{ 'generate.sweeps.variant_alt' | transloco }}
-        </button>
-      </div>
+          <button
+            type="button"
+            class="gs-sweep-variant"
+            [class.is-on]="!onVariant()"
+            [attr.aria-pressed]="!onVariant()"
+            (click)="useVariant(false)"
+          >
+            {{ pair.baseLabelKey | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-sweep-variant"
+            [class.is-on]="onVariant()"
+            [attr.aria-pressed]="onVariant()"
+            (click)="useVariant(true)"
+          >
+            {{ pair.altLabelKey | transloco }}
+          </button>
+        </div>
+      }
     </ng-template>
 
     @if (strip()) {
@@ -223,31 +228,37 @@ const VIEWER_FOCUSABLE =
             @if (hasVariant()) {
               <ng-container [ngTemplateOutlet]="variants" />
 
-              <!-- The toggle names two kinds of sampler and assumes the reader
-                   knows which theirs is. Answering that is more than a label can
-                   carry and less than a trip to the reference is worth, so it
-                   sits here, folded, with the two lists in full. -->
-              <button
-                type="button"
-                class="gs-sweep-why"
-                [attr.aria-expanded]="variantWhyOpen()"
-                (click)="toggleVariantWhy()"
-              >
-                {{ 'generate.sweeps.variant_why' | transloco }}
-              </button>
-              @if (variantWhyOpen()) {
-                <div class="gs-sweep-why-body">
-                  <p>{{ 'generate.sweeps.variant_why_body' | transloco }}</p>
-                  <p class="gs-sweep-why-list">
-                    {{ 'generate.sweeps.variant_why_rerollers' | transloco }}
-                  </p>
-                  <p class="gs-sweep-why-list">
-                    {{ 'generate.sweeps.variant_why_settlers' | transloco }}
-                  </p>
-                  <a class="gs-sweep-why-link" [routerLink]="samplerReference">
-                    {{ 'generate.sweeps.variant_why_link' | transloco }}
-                  </a>
-                </div>
+              <!-- The sampler toggle names two kinds of sampler and assumes the
+                   reader knows which theirs is. Answering that is more than a
+                   label can carry and less than a trip to the reference is
+                   worth, so it sits here, folded, with the two lists in full.
+                   No other pair raises the question, and none of them carry it. -->
+              @if (variantPair()?.samplerNote) {
+                <button
+                  type="button"
+                  class="gs-sweep-why"
+                  [attr.aria-expanded]="variantWhyOpen()"
+                  (click)="toggleVariantWhy()"
+                >
+                  {{ 'generate.sweeps.variant_why' | transloco }}
+                </button>
+                @if (variantWhyOpen()) {
+                  <div class="gs-sweep-why-body">
+                    <p>{{ 'generate.sweeps.variant_why_body' | transloco }}</p>
+                    <p class="gs-sweep-why-list">
+                      {{ 'generate.sweeps.variant_why_rerollers' | transloco }}
+                    </p>
+                    <p class="gs-sweep-why-list">
+                      {{ 'generate.sweeps.variant_why_settlers' | transloco }}
+                    </p>
+                    <a
+                      class="gs-sweep-why-link"
+                      [routerLink]="samplerReference"
+                    >
+                      {{ 'generate.sweeps.variant_why_link' | transloco }}
+                    </a>
+                  </div>
+                }
               }
             }
 
@@ -615,15 +626,15 @@ export class GsSweepScrubComponent {
     settingProseLabelKey(this.parameter()),
   );
 
-  /** The strip a pair of strips offers as its second reading, if there is one. */
-  public readonly variantParameter = computed(() =>
-    settingSweepVariant(this.parameter()),
+  /** The second reading this parameter is published with, if there is one. */
+  public readonly variantPair = computed<SweepVariantPair | null>(() =>
+    sweepVariantPair(this.parameter()),
   );
 
   /** Which of the pair is on show. */
   public readonly activeParameter = computed(() => {
-    const alternate = this.variantParameter();
-    return this.variant() && alternate ? alternate : this.parameter();
+    const pair = this.variantPair();
+    return this.variant() && pair ? pair.parameter : this.parameter();
   });
 
   public readonly strip = computed(() =>
@@ -636,11 +647,11 @@ export class GsSweepScrubComponent {
 
   /** Whether both readings of this parameter were actually published. */
   public readonly hasVariant = computed(() => {
-    const alternate = this.variantParameter();
+    const pair = this.variantPair();
     return (
-      !!alternate &&
+      !!pair &&
       !!this.sweeps.strip(
-        alternate,
+        pair.parameter,
         this.modelSlug() ?? this.sweeps.studioModelSlug(),
         this.sceneId(),
       )

@@ -369,6 +369,36 @@ describe('GenerateLearnPanelComponent', () => {
       TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
     });
 
+    it('shows a track its evidence in every register, already open', async () => {
+      // On a track the pictures are the lesson rather than a newcomer's aid, so
+      // the register the reader is in does not decide whether they see them.
+      await engine.start('concepts_images');
+      fixture.componentInstance.setLevel('expert');
+      fixture.detectChanges();
+      await serveLibrary(stubIndex);
+
+      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      expect(query('.gs-sweep-open')).toHaveLength(1);
+      // Both readings of the render, as one viewer with a choice in it.
+      const variants = query<HTMLButtonElement>('.gs-sweep-variant');
+      expect(variants.map((button) => button.textContent?.trim())).toEqual([
+        TRANSLATIONS['generate.sweeps.preview_variant_base'],
+        TRANSLATIONS['generate.sweeps.preview_variant_alt'],
+      ]);
+    });
+
+    it('shows a track nothing where the library has no strip for the step', async () => {
+      // The strips are published separately from the app, so a step whose
+      // evidence is not there yet has to read as a finished step.
+      await engine.start('concepts_images');
+      // The step about seeds asks for a strip the stub library never published.
+      engine.goTo(4);
+      fixture.detectChanges();
+      await serveLibrary(stubIndex);
+
+      expect(query('.gs-sweep')).toHaveLength(0);
+    });
+
     it('leaves no residue when the library cannot be reached', async () => {
       engine.goTo(3);
       fixture.detectChanges();
@@ -387,6 +417,16 @@ describe('GenerateLearnPanelComponent', () => {
     for (const level of TUTORIAL_LEVELS) {
       expect(TRANSLATIONS[`generate.learn.level.${level}`]).toBeTruthy();
     }
+    // The picker says what it is on the screen as well as to a screen reader:
+    // three unlabelled words leave a reader guessing what they choose between.
+    expect(
+      query<HTMLElement>('.gs-learn-levels-label')[0].textContent?.trim(),
+    ).toBe(TRANSLATIONS['generate.learn.level_label']);
+    expect(
+      query<HTMLElement>('.gs-learn-levels .gs-seg')[0].getAttribute(
+        'aria-label',
+      ),
+    ).toBe(TRANSLATIONS['generate.learn.level_label']);
     expect(TRANSLATIONS['generate.learn.reveal.advanced']).toBeTruthy();
     expect(TRANSLATIONS['generate.learn.reveal.source']).toBeTruthy();
   });

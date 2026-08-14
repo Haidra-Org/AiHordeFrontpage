@@ -8,6 +8,7 @@ import {
   isConceptFlow,
 } from './flows';
 import { SECTION_IDENTITIES } from './sections';
+import { SETTING_FALLBACK_LABEL_KEY, settingLabelKey } from './settings';
 import { DEFAULT_GENERATE_FORM_VALUE } from '../pages/generate/generate-form.model';
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -87,6 +88,22 @@ describe('flow registry', () => {
     expect(problems).toEqual([]);
   });
 
+  it('names every strip it attaches in the vocabulary the studio uses', () => {
+    // A step's strip is captioned with a chip, so a parameter the settings
+    // registry cannot name would put "this 12" under the pictures.
+    const unnamed = FLOWS.flatMap((flow) =>
+      flow.steps
+        .filter(
+          (step) =>
+            step.sweepParameter &&
+            settingLabelKey(step.sweepParameter) === SETTING_FALLBACK_LABEL_KEY,
+        )
+        .map((step) => `${flow.id}.${step.id} -> ${step.sweepParameter}`),
+    );
+
+    expect(unnamed).toEqual([]);
+  });
+
   it('hands off only to flows that exist', () => {
     const problems = FLOWS.flatMap((flow) =>
       flow.steps
@@ -117,6 +134,32 @@ describe('concept tracks', () => {
         expect(step.helpTopic).toBeUndefined();
       }
     }
+  });
+
+  it('reads the images track in the order its pictures teach it', () => {
+    // The render comes first and everything after it points back at something
+    // the reader has already watched happen, so the order is pinned here rather
+    // than left to whichever step was written first.
+    expect(flowSteps('concepts_images').map((step) => step.id)).toEqual([
+      'noise_to_picture',
+      'prompt_as_conditioning',
+      'what_a_model_is',
+      'the_knobs',
+      'why_it_differs',
+      'try_it',
+    ]);
+  });
+
+  it('hands the images track the evidence each of its steps is read against', () => {
+    const attached = flowSteps('concepts_images')
+      .filter((step) => step.sweepParameter)
+      .map((step) => `${step.id}:${step.sweepParameter}`);
+
+    expect(attached).toEqual([
+      'noise_to_picture:step_preview',
+      'the_knobs:steps',
+      'why_it_differs:seed',
+    ]);
   });
 
   it('ends each track by offering somewhere to go next', () => {

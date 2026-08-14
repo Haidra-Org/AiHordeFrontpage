@@ -110,8 +110,11 @@
         {{ bodyKey(current) | transloco: copyParams() }}
       </p>
 
-      @if (level() === "new_to_this" && current.sweepParameter) {
-        <app-gs-sweep-scrub [parameter]="current.sweepParameter" />
+      @if (showsSweep() && current.sweepParameter) {
+        <app-gs-sweep-scrub
+          [parameter]="current.sweepParameter"
+          [startExpanded]="conceptTrack()"
+        />
       }
 
       @if (revealNote()) {
@@ -169,21 +172,28 @@
       </button>
     </div>
 
-    <div
-      class="gs-seg gs-seg--xs gs-learn-levels"
-      role="group"
-      [attr.aria-label]="'generate.learn.level_label' | transloco"
-    >
-      @for (option of levels; track option) {
-        <button
-          type="button"
-          class="gs-seg-opt"
-          [attr.aria-pressed]="level() === option"
-          (click)="setLevel(option)"
-        >
-          {{ levelKey(option) | transloco }}
-        </button>
-      }
+    <!-- Named on the sheet as it is on the panel: the control is the same one
+         and has to be recognisable as it. -->
+    <div class="gs-learn-levels">
+      <span class="gs-learn-levels-label">{{
+        "generate.learn.level_label" | transloco
+      }}</span>
+      <div
+        class="gs-seg gs-seg--xs"
+        role="group"
+        [attr.aria-label]="'generate.learn.level_label' | transloco"
+      >
+        @for (option of levels; track option) {
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="level() === option"
+            (click)="setLevel(option)"
+          >
+            {{ levelKey(option) | transloco }}
+          </button>
+        }
+      </div>
     </div>
 
     <button type="button" class="gs-tut-sheet-exit" (click)="exit()">

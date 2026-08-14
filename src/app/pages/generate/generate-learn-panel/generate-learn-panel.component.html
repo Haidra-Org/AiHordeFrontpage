@@ -13,22 +13,29 @@
 </div>
 
 <!-- Register picker. It rewrites the prose and nothing else, so it sits in the
-     header rather than beside the step it happens to be read on. -->
-<div
-  class="gs-seg gs-seg--xs gs-learn-levels"
-  role="group"
-  [attr.aria-label]="'generate.learn.level_label' | transloco"
->
-  @for (option of levels; track option) {
-    <button
-      type="button"
-      class="gs-seg-opt"
-      [attr.aria-pressed]="level() === option"
-      (click)="setLevel(option)"
-    >
-      {{ levelKey(option) | transloco }}
-    </button>
-  }
+     header rather than beside the step it happens to be read on. The name is
+     said out loud rather than only to a screen reader: three unlabelled words
+     leave a reader guessing what they are choosing between. -->
+<div class="gs-learn-levels">
+  <span class="gs-learn-levels-label">{{
+    "generate.learn.level_label" | transloco
+  }}</span>
+  <div
+    class="gs-seg gs-seg--xs"
+    role="group"
+    [attr.aria-label]="'generate.learn.level_label' | transloco"
+  >
+    @for (option of levels; track option) {
+      <button
+        type="button"
+        class="gs-seg-opt"
+        [attr.aria-pressed]="level() === option"
+        (click)="setLevel(option)"
+      >
+        {{ levelKey(option) | transloco }}
+      </button>
+    }
+  </div>
 </div>
 
 @if (loadFailed()) {
@@ -76,11 +83,14 @@
             {{ bodyKey(current) | transloco: copyParams() }}
           </p>
 
-          <!-- Only the newcomer register gets the sweep: the other two are
-               reading a number they already have a feel for, and the offer
-               would be one more thing between them and the next step. -->
-          @if (level() === "new_to_this" && current.sweepParameter) {
-            <app-gs-sweep-scrub [parameter]="current.sweepParameter" />
+          <!-- On a technique only the newcomer register gets the sweep; on a
+               track the pictures are what the step is about, so they are there
+               in every register and already open. The prose points at them. -->
+          @if (showsSweep() && current.sweepParameter) {
+            <app-gs-sweep-scrub
+              [parameter]="current.sweepParameter"
+              [startExpanded]="conceptTrack()"
+            />
           }
 
           @if (revealNote()) {

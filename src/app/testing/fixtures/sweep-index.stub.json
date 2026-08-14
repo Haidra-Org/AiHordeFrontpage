@@ -433,6 +433,94 @@
       "grid": null
     },
     {
+      "strip_id": "step-preview/albedobase-xl/courier",
+      "parameter": "step_preview",
+      "presentation": "strip",
+      "caption": "One real render, frame by frame, as the static comes off it.",
+      "rationale": "A newcomer has never seen the middle of a generation, only the end of one.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "courier",
+        "label": "Courier",
+        "prompt": "a courier resting on a bridge at dusk"
+      },
+      "varying": ["steps"],
+      "stops": [
+        {
+          "value": 1,
+          "label": "step_01",
+          "caption": "Pure static: the noise the picture starts as.",
+          "file": "step-preview/albedobase-xl/courier/001_step_01.webp",
+          "sidecar": "step-preview/albedobase-xl/courier/001_step_01.json"
+        },
+        {
+          "value": 12,
+          "label": "step_12",
+          "caption": "Shapes out of the grain, and colour finding its place.",
+          "file": "step-preview/albedobase-xl/courier/012_step_12.webp",
+          "sidecar": "step-preview/albedobase-xl/courier/012_step_12.json"
+        },
+        {
+          "value": 30,
+          "label": "step_30",
+          "caption": "The finished render, with nothing left to take off.",
+          "file": "step-preview/albedobase-xl/courier/030_step_30.webp",
+          "sidecar": "step-preview/albedobase-xl/courier/030_step_30.json"
+        }
+      ],
+      "grid": null
+    },
+    {
+      "strip_id": "step-preview-guess/albedobase-xl/courier",
+      "parameter": "step_preview_guess",
+      "presentation": "strip",
+      "caption": "What the model thinks the finished picture is, from each step of the same render.",
+      "rationale": "The guess resolves long before the canvas does, which is why a preview is not random.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "courier",
+        "label": "Courier",
+        "prompt": "a courier resting on a bridge at dusk"
+      },
+      "varying": ["steps"],
+      "stops": [
+        {
+          "value": 1,
+          "label": "step_01",
+          "caption": "A rough guess from almost nothing, but already the right shape.",
+          "file": "step-preview-guess/albedobase-xl/courier/001_step_01.webp",
+          "sidecar": "step-preview-guess/albedobase-xl/courier/001_step_01.json"
+        },
+        {
+          "value": 12,
+          "label": "step_12",
+          "caption": "Close to the final picture, with the detail still soft.",
+          "file": "step-preview-guess/albedobase-xl/courier/012_step_12.webp",
+          "sidecar": "step-preview-guess/albedobase-xl/courier/012_step_12.json"
+        },
+        {
+          "value": 30,
+          "label": "step_30",
+          "caption": "The same picture the canvas arrives at.",
+          "file": "step-preview-guess/albedobase-xl/courier/030_step_30.webp",
+          "sidecar": "step-preview-guess/albedobase-xl/courier/030_step_30.json"
+        }
+      ],
+      "grid": null
+    },
+    {
       "strip_id": "tiling/deliberate/texture",
       "parameter": "tiling",
       "presentation": "tile_repeat_3x3",

@@ -15,8 +15,8 @@ import {
   settingSection,
   settingSweepGrid,
   settingSweepStrip,
-  settingSweepVariant,
   settingTitleKey,
+  sweepVariantPair,
 } from './settings';
 import { FACE_FIXERS } from '../pages/generate/generate-form.model';
 import { GLOSSARY_TERMS } from '../services/glossary.service';
@@ -208,12 +208,15 @@ describe('settings registry', () => {
 });
 
 describe('settings sweeps', () => {
-  it('answers with the strip, grid and variant the setting declares', () => {
+  it('answers with the strip, grid and second reading a setting declares', () => {
     expect(settingSweepStrip('steps')).toBe('steps');
     expect(settingSweepGrid('steps')).toBe('steps_cfg_grid');
-    expect(settingSweepVariant('steps')).toBe('steps_converging');
+    expect(sweepVariantPair('steps')?.parameter).toBe('steps_converging');
+    expect(sweepVariantPair('step_preview')?.parameter).toBe(
+      'step_preview_guess',
+    );
     expect(settingSweepStrip('cfg')).toBe('cfg_scale');
-    expect(settingSweepVariant('cfg')).toBeNull();
+    expect(sweepVariantPair('cfg')).toBeNull();
   });
 
   it('reaches a setting the same way through its API field name', () => {
@@ -227,10 +230,43 @@ describe('settings sweeps', () => {
     expect(settingSweepGrid('cfg')).toBe(settingSweepGrid('steps'));
   });
 
+  it('gives each pair of strips its own words for the two readings', () => {
+    // One set of labels for every pair would name neither: which sampler a
+    // strip was rendered with and which reading of a part-finished render is
+    // on show are answers to different questions.
+    const pairs = ['steps', 'step_preview'].map((parameter) =>
+      sweepVariantPair(parameter),
+    );
+    const missing = pairs.flatMap((pair) =>
+      [pair?.groupLabelKey, pair?.baseLabelKey, pair?.altLabelKey].filter(
+        (key) => !key || !translations[key],
+      ),
+    );
+
+    expect(missing).toEqual([]);
+    expect(new Set(pairs.map((pair) => pair?.baseLabelKey)).size).toBe(2);
+    // The folded note answers "which kind of sampler is mine", so it belongs to
+    // the sampler pair alone.
+    expect(sweepVariantPair('steps')?.samplerNote).toBe(true);
+    expect(sweepVariantPair('step_preview')?.samplerNote).toBeUndefined();
+  });
+
+  it('reads the second strip of a pair as the setting the first one is', () => {
+    // The chip under the frames has to say "Step 12" whichever of the two is on
+    // show, so both parameters resolve onto the one entry that names them.
+    expect(settingIdFor('step_preview_guess')).toBe('step_preview');
+    expect(settingLabelKey('step_preview_guess')).toBe(
+      settingLabelKey('step_preview'),
+    );
+    expect(settingLabelKey('step_preview')).not.toBe(
+      SETTING_FALLBACK_LABEL_KEY,
+    );
+  });
+
   it('has nothing to show for a setting no strip was rendered for', () => {
     expect(settingSweepStrip('webhook')).toBeNull();
     expect(settingSweepGrid('webhook')).toBeNull();
-    expect(settingSweepVariant('not_a_setting')).toBeNull();
+    expect(sweepVariantPair('not_a_setting')).toBeNull();
   });
 });
 
