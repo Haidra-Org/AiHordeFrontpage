@@ -512,6 +512,35 @@ export class DocsImageExampleComponent {
   }
 
   /**
+   * What the published run cost, rounded for prose, or null where the example
+   * carries no timing. Taken from the run's own manifest rather than written
+   * into the copy, which otherwise goes stale the next time the library is
+   * regenerated. Null is a complete answer: the submitting step reads as a
+   * whole sentence without it.
+   */
+  public readonly runCost = computed<{ time: number; kudos: number } | null>(
+    () => {
+      const meta = this.activeDetail()?.meta;
+      if (
+        !meta ||
+        meta.wall_time_seconds === undefined ||
+        meta.kudos_charged === undefined
+      ) {
+        return null;
+      }
+      return {
+        time: Math.round(meta.wall_time_seconds),
+        kudos: meta.kudos_charged,
+      };
+    },
+  );
+
+  /** The run's cost, for the one step that submits the request. */
+  public runCostFor(step: string): { time: number; kudos: number } | null {
+    return step === 'generate' ? this.runCost() : null;
+  }
+
+  /**
    * The flow's one-line description in the page's own plain voice, falling back
    * to the manifest's when a flow has no override. The manifest is generated
    * from the example run and is written for someone who already knows the

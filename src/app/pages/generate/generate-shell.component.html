@@ -7,32 +7,38 @@
     class="gs-subtabs"
     [attr.aria-label]="'generate.shell.tabs_label' | transloco"
   >
-    <a
-      class="gs-subtab gs-subtab--image"
-      routerLink="/generate/image"
-      routerLinkActive="gs-subtab--active"
-      #imageActive="routerLinkActive"
-      [attr.aria-current]="imageActive.isActive ? 'page' : null"
-    >
-      <app-icon name="photo" class="gs-ico-sm" />
-      {{ "generate.shell.tab_image" | transloco }}
-    </a>
-    <a
-      class="gs-subtab gs-subtab--alchemy"
-      routerLink="/generate/alchemy"
-      routerLinkActive="gs-subtab--active"
-      #alchemyActive="routerLinkActive"
-      [attr.aria-current]="alchemyActive.isActive ? 'page' : null"
-    >
-      <app-icon name="beaker" class="gs-ico-sm" />
-      {{ "generate.shell.tab_alchemy" | transloco }}
-    </a>
-    <!-- The way out to the documentation. It never marks itself as the page on
-         screen, because reaching it means leaving this shell behind. -->
-    <a class="gs-subtab gs-subtab--docs" [routerLink]="docsLink">
-      <app-icon name="document-text" class="gs-ico-sm" />
-      {{ "generate.shell.tab_docs" | transloco }}
-    </a>
+    <!-- The pages scroll on their own so the glossary button beside them keeps
+         its place and its whole width at any viewport: with the button inside
+         the scrolling row, a narrow screen puts it past the right edge and it
+         arrives half drawn. -->
+    <div class="gs-subtabs-scroll">
+      <a
+        class="gs-subtab gs-subtab--image"
+        routerLink="/generate/image"
+        routerLinkActive="gs-subtab--active"
+        #imageActive="routerLinkActive"
+        [attr.aria-current]="imageActive.isActive ? 'page' : null"
+      >
+        <app-icon name="photo" class="gs-ico-sm" />
+        {{ "generate.shell.tab_image" | transloco }}
+      </a>
+      <a
+        class="gs-subtab gs-subtab--alchemy"
+        routerLink="/generate/alchemy"
+        routerLinkActive="gs-subtab--active"
+        #alchemyActive="routerLinkActive"
+        [attr.aria-current]="alchemyActive.isActive ? 'page' : null"
+      >
+        <app-icon name="beaker" class="gs-ico-sm" />
+        {{ "generate.shell.tab_alchemy" | transloco }}
+      </a>
+      <!-- The way out to the documentation. It never marks itself as the page
+           on screen, because reaching it means leaving this shell behind. -->
+      <a class="gs-subtab gs-subtab--docs" [routerLink]="docsLink">
+        <app-icon name="document-text" class="gs-ico-sm" />
+        {{ "generate.shell.tab_docs" | transloco }}
+      </a>
+    </div>
     <button
       type="button"
       class="gs-subtab-glossary"

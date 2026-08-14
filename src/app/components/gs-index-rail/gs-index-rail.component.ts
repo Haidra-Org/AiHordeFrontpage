@@ -2,12 +2,14 @@ import { DOCUMENT, NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   PLATFORM_ID,
   afterRenderEffect,
   computed,
   inject,
   input,
   signal,
+  viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -67,7 +69,11 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
   selector: 'app-gs-index-rail',
   imports: [TranslocoPipe, IconComponent, RouterLink, NgTemplateOutlet],
   template: `
-    <nav class="gs-index-rail-nav" [attr.aria-label]="labelKey() | transloco">
+    <nav
+      #nav
+      class="gs-index-rail-nav"
+      [attr.aria-label]="labelKey() | transloco"
+    >
       @for (entry of entries(); track entry.id) {
         @if (entry.link; as link) {
           <a
@@ -118,6 +124,8 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
   host: {
     class: 'gs-index-rail',
     '[class.gs-index-rail--bar]': 'barForm()',
+    '[class.gs-index-rail--fade-start]': 'fadeStart()',
+    '[class.gs-index-rail--fade-end]': 'fadeEnd()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -140,6 +148,18 @@ export class GsIndexRailComponent {
 
   /** The entry scrollspy last put under the reader, before any has been seen. */
   private readonly seen = signal<string | null>(null);
+
+  private readonly nav = viewChild<ElementRef<HTMLElement>>('nav');
+
+  /**
+   * Whether the row form has entries out of sight to one side. The bar carries
+   * more names than fit on a wide screen as readily as on a narrow one, and a
+   * rail that ends in a half-drawn word looks like the last entry rather than
+   * like there being another after it, so the edge with more behind it is faded
+   * out. Both stay false in the column form, which does not scroll sideways.
+   */
+  public readonly fadeStart = signal(false);
+  public readonly fadeEnd = signal(false);
 
   /** Whether the entries route rather than scroll, which the entries say. */
   private readonly linkMode = computed(() =>
@@ -202,6 +222,37 @@ export class GsIndexRailComponent {
         }
       }
       onCleanup(() => observer.disconnect());
+    });
+
+    // Read from the element rather than from the entries: whether the rail
+    // overflows depends on the width it was given and on how long the names
+    // came out, neither of which the component is told.
+    afterRenderEffect((onCleanup) => {
+      this.entries();
+      const nav = this.nav()?.nativeElement;
+      if (!nav || !this.isBrowser) {
+        return;
+      }
+
+      const measure = (): void => {
+        const slack = nav.scrollWidth - nav.clientWidth;
+        // A sub-pixel remainder is rounding, not an entry out of sight.
+        const overflows = slack > 1;
+        this.fadeStart.set(overflows && nav.scrollLeft > 1);
+        this.fadeEnd.set(overflows && nav.scrollLeft < slack - 1);
+      };
+
+      measure();
+      nav.addEventListener('scroll', measure, { passive: true });
+      const resize =
+        typeof ResizeObserver === 'undefined'
+          ? null
+          : new ResizeObserver(measure);
+      resize?.observe(nav);
+      onCleanup(() => {
+        nav.removeEventListener('scroll', measure);
+        resize?.disconnect();
+      });
     });
   }
 

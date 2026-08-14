@@ -158,6 +158,9 @@
                       </h3>
                       <p class="gs-tut-step-body">
                         {{ stepKey(flowId, step, "body") | transloco }}
+                        @if (runCostFor(step); as cost) {
+                          {{ "generate.tutorials.run_cost" | transloco: cost }}
+                        }
                       </p>
                     </li>
                   }

@@ -79,6 +79,7 @@ const CHROME_KEYS = [
   'meta_seed',
   'meta_kudos',
   'meta_time',
+  'run_cost',
   'recipe_label',
   'recipe_model',
   'recipe_size',
@@ -505,6 +506,36 @@ describe('DocsImageExampleComponent', () => {
     flushAll(harness);
 
     expect(harness.text()).toContain('the requested model was swapped');
+  });
+
+  it('reads the send step time and cost off the run, rounded', async () => {
+    harness = await createPage('txt2img');
+    flushAll(harness);
+
+    // 41.7s in the manifest, whole seconds in the prose.
+    expect(harness.text()).toContain(
+      'This run took about 42 seconds and cost 45 kudos.',
+    );
+  });
+
+  it('leaves the time and cost out where the run recorded neither', async () => {
+    harness = await createPage('txt2img');
+    harness.http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(MANIFEST);
+    harness.fixture.detectChanges();
+
+    const flow = harness.component.activeFlow()!;
+    const base = `${EXAMPLES_ROOT}/${flow.directory}`;
+    harness.http
+      .expectOne(`${base}/meta.json`)
+      .flush({ model: flow.model, seed: flow.seed });
+    harness.http.expectOne(`${base}/${flow.request}`).flush(REQUEST_TEXT);
+    harness.fixture.detectChanges();
+
+    const text = harness.text();
+    expect(harness.component.runCost()).toBeNull();
+    expect(text).not.toContain('This run took');
+    expect(text).not.toContain('undefined');
+    expect(text).not.toContain('{{');
   });
 
   it('swaps the walkthrough for the wire detail in developer mode', async () => {

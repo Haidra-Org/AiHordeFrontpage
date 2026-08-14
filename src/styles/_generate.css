@@ -509,7 +509,21 @@
   padding: 0 14px;
   background: var(--gs-panel);
   border-bottom: 1px solid var(--gs-border);
+}
+/* Only the pages scroll. The glossary button is a sibling of the scrolling row
+   rather than its last child, so a narrow viewport moves the tabs under it
+   instead of pushing it off the edge. */
+.gen-studio .gs-subtabs-scroll {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
   overflow-x: auto;
+  scrollbar-width: none;
+}
+.gen-studio .gs-subtabs-scroll::-webkit-scrollbar {
+  display: none;
 }
 .gen-studio .gs-subtab {
   display: inline-flex;
@@ -545,6 +559,7 @@
 .gen-studio .gs-subtab-glossary {
   margin-left: auto;
   display: inline-flex;
+  flex: none;
   align-items: center;
   justify-content: center;
   align-self: center;
@@ -962,6 +977,56 @@
   border-color: var(--gs-border);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+/* The model picker stands directly beside the style select and has to read as
+   the same control. Outside the studio the widget draws its own glass toggle
+   button beside the input, which here reads as a second element at the far
+   right rather than as the field's own arrow, so the border moves to the row
+   and both the input and the toggle sit inside it. Presentation only: the
+   toggle is still the button it was. */
+.gen-studio .autocomplete-input-row {
+  align-items: stretch;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 8px;
+  background: var(--gs-field);
+}
+.gen-studio .autocomplete-input-row:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+}
+.gen-studio .autocomplete-input {
+  padding: 8px 4px 8px 10px;
+  border: 0;
+  border-radius: 8px 0 0 8px;
+  background: none;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gs-ink);
+}
+.gen-studio .autocomplete-input:focus {
+  outline: none;
+  border: 0;
+  box-shadow: none;
+}
+.gen-studio .autocomplete-toggle {
+  padding: 0 9px;
+  border: 0;
+  border-radius: 0 8px 8px 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--gs-label);
+}
+.gen-studio .autocomplete-toggle:hover {
+  background: none;
+  color: var(--gs-ink);
+}
+.gen-studio .autocomplete-chevron {
+  font-size: 12px;
+  line-height: 1;
 }
 .gen-studio .gs-native-select:focus {
   outline: none;
@@ -9606,6 +9671,9 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-index-rail {
   display: block;
   min-width: 0;
+  /* The hairline is the host's rather than the nav's so that fading the row's
+     scrollable edge does not fade the rule under it away with the names. */
+  border-bottom: 1px solid var(--gs-border-soft);
 }
 .gen-studio .gs-index-rail-nav {
   display: flex;
@@ -9614,7 +9682,36 @@ html:has(app-gs-sheet) {
   overflow-y: hidden;
   scrollbar-width: thin;
   scroll-padding-inline: 4px;
-  border-bottom: 1px solid var(--gs-border-soft);
+}
+/* The bar carries more names than fit at any width, so the edge that has
+   entries behind it is faded out: an edge that stops mid-word reads as the end
+   of the rail rather than as there being more of it. The classes are set from
+   the measured element, so nothing fades where nothing is hidden. */
+.gen-studio .gs-index-rail--fade-start .gs-index-rail-nav {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+.gen-studio .gs-index-rail--fade-end .gs-index-rail-nav {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 28px);
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+.gen-studio
+  .gs-index-rail--fade-start.gs-index-rail--fade-end
+  .gs-index-rail-nav {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
 }
 .gen-studio .gs-index-entry {
   position: relative;
@@ -9742,11 +9839,11 @@ html:has(app-gs-sheet) {
     max-height: calc(100vh - 24px);
     overflow-y: auto;
     scrollbar-width: thin;
+    border-bottom: 0;
   }
   .gen-studio .gs-index-rail-nav {
     flex-direction: column;
     overflow: visible;
-    border-bottom: 0;
   }
   .gen-studio .gs-index-entry {
     min-height: 0;
@@ -9783,11 +9880,11 @@ html:has(app-gs-sheet) {
     position: static;
     max-height: none;
     overflow: visible;
+    border-bottom: 1px solid var(--gs-border-soft);
   }
   .gen-studio .gs-index-rail--bar .gs-index-rail-nav {
     flex-direction: row;
     overflow-x: auto;
-    border-bottom: 1px solid var(--gs-border-soft);
   }
   .gen-studio .gs-index-rail--bar .gs-index-entry {
     min-height: 44px;
