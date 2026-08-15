@@ -233,7 +233,11 @@ describe('GenerateLearnPanelComponent', () => {
   it('has prose for every step the pane can run, in all three registers', () => {
     // Only the flows the pane can actually run: a technique whose steps do not
     // name their controls yet is a page to read, not a walkthrough to follow,
-    // and it enters this assertion on its own the moment it is wired.
+    // and it enters this assertion on its own the moment it is wired. Every
+    // flow is one of those now, which is what the count below holds.
+    expect(FLOWS.filter((entry) => flowFollowable(entry.id))).toHaveLength(
+      FLOWS.length,
+    );
     for (const flow of FLOWS.filter((entry) => flowFollowable(entry.id))) {
       for (const step of flow.steps) {
         const flowId = flow.id;

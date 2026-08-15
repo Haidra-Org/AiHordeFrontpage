@@ -126,6 +126,7 @@ const STEP_FIELD_LABEL_KEY: Readonly<Record<string, string>> = {
   source_mode: 'generate.learn.fields.source_mode',
   control_type: 'generate.source.control_type_label',
   mask: 'generate.learn.fields.mask',
+  remix_extras: 'generate.learn.fields.remix_extras',
   generate: 'generate.learn.fields.generate',
 };
 
@@ -273,6 +274,11 @@ export class TutorialEngineService {
     // source image, and the prose of a flow that has none never names them.
     params['denoise'] = example.denoising_strength;
     params['control'] = example.control_type;
+    // The workflow and finishing flows' values. `post` is a list because the
+    // field is one, and a flow that runs a single processor reads as its name.
+    params['qr'] = example.qrText;
+    params['post'] = example.post_processing.join(', ');
+    params['facefix'] = example.facefixer_strength;
     return params;
   });
 

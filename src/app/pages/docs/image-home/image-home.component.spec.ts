@@ -8,7 +8,7 @@ import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageHomeComponent } from './image-home.component';
-import { ExampleManifest } from '../../../content/examples';
+import { ExampleFlow, ExampleManifest } from '../../../content/examples';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
@@ -33,6 +33,36 @@ const PUBLISHED = MANIFEST.flows
 
 /** The committed set with every world but the first taken back out again. */
 const NO_VARIANTS: ExampleManifest = { ...MANIFEST, flows: CANONICAL };
+
+/**
+ * The same library with one technique unserved. Every published example is
+ * available at the moment, so the state is built here rather than pinned into
+ * the fixture; remix is the flow that really reaches it, being served on Stable
+ * Cascade alone and generated only when a worker is carrying one.
+ */
+const SKIPPED_ID = 'remix';
+const SKIPPED_REASON =
+  'No workers were serving Stable Cascade 1.0 when the examples were generated.';
+const SKIPPED_MANIFEST: ExampleManifest = {
+  ...MANIFEST,
+  flows: MANIFEST.flows.map((flow) =>
+    flow.id === SKIPPED_ID ? skip(flow) : flow,
+  ),
+};
+
+/** One manifest entry as the generator writes it when nothing was produced. */
+function skip(flow: ExampleFlow): ExampleFlow {
+  const { id, directory, title, summary } = flow;
+  return {
+    id,
+    directory,
+    title,
+    summary,
+    status: 'skipped',
+    files: ['SKIPPED.md'],
+    skipped_reason: SKIPPED_REASON,
+  };
+}
 
 /** The keys the page writes out itself rather than deriving from a flow. */
 const OWN_KEYS = [
@@ -265,19 +295,18 @@ describe('DocsImageHomeComponent', () => {
     ).toEqual(shelf.map((card) => (card.image ? 'lazy' : null)));
   });
 
-  it('keeps the unserved technique on the shelf, saying why', () => {
-    flush();
+  it('keeps an unserved technique on the shelf, saying why', () => {
+    flush(SKIPPED_MANIFEST);
 
-    const skipped = MANIFEST.flows.find((flow) => flow.status === 'skipped');
     const card = query<HTMLAnchorElement>('.gs-home-card').at(-1);
 
-    expect(component.shelf().at(-1)?.id).toBe(skipped?.id);
+    expect(component.shelf().at(-1)?.id).toBe(SKIPPED_ID);
     // A passive badge qualifying the example, so it rides the card's eyebrow
     // rather than the title of the technique itself.
     expect(
       card?.querySelector('.gs-learn-eyebrow .gs-tut-chip-tag')?.textContent,
     ).toContain(TRANSLATIONS['generate.tutorials.unavailable_tag']);
-    expect(card?.textContent).toContain(skipped?.skipped_reason ?? '');
+    expect(card?.textContent).toContain(SKIPPED_REASON);
     // Nothing is shown for a run that never happened.
     expect(card?.querySelector('.gs-home-card-img')).toBeNull();
   });

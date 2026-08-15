@@ -14,7 +14,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageExampleComponent } from './image-example.component';
-import { ExampleManifest } from '../../../content/examples';
+import { ExampleFlow, ExampleManifest } from '../../../content/examples';
 import { flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
@@ -27,6 +27,24 @@ import {
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
 
+/**
+ * Flows the registry is asked to call unrunnable for the length of one test.
+ * Every published technique is wired, so the state the Start button's disabled
+ * branch exists for has to be made rather than found; everything else about the
+ * registry stays real.
+ */
+const followability = vi.hoisted(() => ({ unrunnable: new Set<string>() }));
+
+vi.mock('../../../content/flows', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../../content/flows')>();
+  return {
+    ...actual,
+    flowFollowable: (id: string): boolean =>
+      !followability.unrunnable.has(id) && actual.flowFollowable(id),
+  };
+});
+
 // The real committed manifest is the fixture: a page describing examples that
 // do not exist is exactly what these tests are for.
 const MANIFEST = manifest as unknown as ExampleManifest;
@@ -36,7 +54,37 @@ const CANONICAL = MANIFEST.flows.filter(
   (flow) => canonicalFlowId(flow.id) === flow.id,
 );
 const AVAILABLE = CANONICAL.filter((flow) => flow.status === 'available');
-const SKIPPED = CANONICAL.filter((flow) => flow.status === 'skipped');
+
+/**
+ * The same library with one technique unserved. Every published example is
+ * available at the moment, so the state is built here rather than pinned into
+ * the fixture: the committed manifest stays the thing the page is read against,
+ * and remix is the flow that really reaches this state, being served on Stable
+ * Cascade alone and generated only when a worker is carrying one.
+ */
+const SKIPPED_ID = 'remix';
+const SKIPPED_REASON =
+  'No workers were serving Stable Cascade 1.0 when the examples were generated.';
+const SKIPPED_MANIFEST: ExampleManifest = {
+  ...MANIFEST,
+  flows: MANIFEST.flows.map((flow) =>
+    flow.id === SKIPPED_ID ? skip(flow) : flow,
+  ),
+};
+
+/** One manifest entry as the generator writes it when nothing was produced. */
+function skip(flow: ExampleFlow): ExampleFlow {
+  const { id, directory, title, summary } = flow;
+  return {
+    id,
+    directory,
+    title,
+    summary,
+    status: 'skipped',
+    files: ['SKIPPED.md'],
+    skipped_reason: SKIPPED_REASON,
+  };
+}
 
 /** The ids an example has actually been published under. */
 const PUBLISHED = MANIFEST.flows
@@ -267,7 +315,7 @@ describe('DocsImageExampleComponent', () => {
   });
 
   it('keeps a flow with no example in the picker, muted and annotated', () => {
-    flushAll(harness);
+    flushAll(harness, SKIPPED_MANIFEST);
 
     const translations = en as Record<string, string>;
     const lines = harness.query<HTMLElement>('.gs-index-entry');
@@ -275,18 +323,20 @@ describe('DocsImageExampleComponent', () => {
       line.classList.contains('gs-index-entry--muted'),
     );
 
-    expect(muted).toHaveLength(SKIPPED.length);
+    expect(muted).toHaveLength(1);
     expect(
-      muted.map((line) =>
-        line.querySelector('.gs-index-entry-note')?.textContent?.trim(),
-      ),
-    ).toEqual(
-      SKIPPED.map(() => translations['generate.tutorials.unavailable_tag']),
-    );
+      muted[0].querySelector('.gs-index-entry-note')?.textContent?.trim(),
+    ).toBe(translations['generate.tutorials.unavailable_tag']);
     // Muted, not withheld: the flow is still a place a reader can go.
     expect(muted[0].getAttribute('href')).toBe(
-      `/docs/image/learn/${SKIPPED[0].id}`,
+      `/docs/image/learn/${SKIPPED_ID}`,
     );
+  });
+
+  it('leaves every published technique unmuted', () => {
+    flushAll(harness);
+
+    expect(harness.query('.gs-index-entry--muted')).toHaveLength(0);
   });
 
   it('sends a URL naming no flow to the Learn landing page', async () => {
@@ -581,12 +631,11 @@ describe('DocsImageExampleComponent', () => {
   });
 
   it('renders a skipped flow as an unavailable card, not a 404', async () => {
-    const skipped = SKIPPED[0];
-    harness = await createPage(skipped.id);
-    flushAll(harness);
+    harness = await createPage(SKIPPED_ID);
+    flushAll(harness, SKIPPED_MANIFEST);
 
-    expect(harness.component.activeFlow()?.id).toBe(skipped.id);
-    expect(harness.text()).toContain(skipped.skipped_reason ?? '');
+    expect(harness.component.activeFlow()?.id).toBe(SKIPPED_ID);
+    expect(harness.text()).toContain(SKIPPED_REASON);
     // Nothing is claimed about a run that never happened.
     expect(harness.query('.gs-tut-img')).toHaveLength(0);
     expect(harness.query('.gs-devtab')).toHaveLength(0);
@@ -673,18 +722,37 @@ describe('DocsImageExampleComponent', () => {
     );
   });
 
-  it('disables the walkthrough, with a note, for a flow still being written', async () => {
+  it('disables the walkthrough, with a note, for a flow the pane cannot run', async () => {
     // A page whose steps are written but name no control yet: it reads, and its
-    // start button lights up on its own the moment those steps are wired.
-    const other = await createPage('facefix');
-    flushAll(other);
+    // start button lights up on its own the moment those steps are wired. No
+    // published technique is in that state now, so it is staged for one test.
+    followability.unrunnable.add('facefix');
+    try {
+      const other = await createPage('facefix');
+      flushAll(other);
 
-    const start = other.query<HTMLButtonElement>('.gs-tut-start-btn')[0];
+      const start = other.query<HTMLButtonElement>('.gs-tut-start-btn')[0];
 
-    expect(start.disabled).toBe(true);
-    expect(other.text()).toContain(
-      (en as Record<string, string>)['generate.learn.start_soon'],
-    );
+      expect(other.component.canStart()).toBe(false);
+      expect(start.disabled).toBe(true);
+      expect(other.text()).toContain(
+        (en as Record<string, string>)['generate.learn.start_soon'],
+      );
+    } finally {
+      followability.unrunnable.clear();
+    }
+  });
+
+  it('offers the walkthrough on every technique the page enumerates', async () => {
+    for (const flow of CANONICAL) {
+      const page = await createPage(flow.id);
+      flushAll(page);
+
+      expect(page.component.canStart(), `${flow.id}`).toBe(true);
+      expect(page.text()).not.toContain(
+        (en as Record<string, string>)['generate.learn.start_soon'],
+      );
+    }
   });
 
   it('arms the flow and goes to the studio when the walkthrough is started', () => {

@@ -131,17 +131,24 @@ describe('TutorialEngineService', () => {
     http.verify();
   });
 
-  it('offers steps for the wired techniques and the concept tracks', () => {
-    for (const flow of ['txt2img', 'img2img', 'controlnet', 'inpainting']) {
-      expect(flowFollowable(flow)).toBe(true);
+  it('offers steps for every technique and for the concept tracks', () => {
+    for (const flow of [
+      'txt2img',
+      'img2img',
+      'controlnet',
+      'inpainting',
+      'remix',
+      'transparent',
+      'qr_code',
+      'facefix',
+    ]) {
+      expect(flowFollowable(flow), `${flow}`).toBe(true);
       expect(isConceptFlow(flow)).toBe(false);
     }
     for (const flow of CONCEPT_FLOWS) {
       expect(flowFollowable(flow)).toBe(true);
       expect(isConceptFlow(flow)).toBe(true);
     }
-    // Still a page to read: its steps name no control yet.
-    expect(flowFollowable('facefix')).toBe(false);
     expect(isConceptFlow(null)).toBe(false);
   });
 
@@ -562,6 +569,105 @@ describe('TutorialEngineService', () => {
       engine.goTo(2);
 
       expect(engine.revealNote()).toBeNull();
+    });
+  });
+
+  describe('a flow that runs a workflow', () => {
+    // The committed payload with what makes it a QR request: the text the
+    // workflow is selected by, and the sampling recipe it was scan-tested with
+    // rather than the defaults the other examples share.
+    const QR_TEXT = 'https://aihorde.net';
+    const qr = {
+      ...structuredClone(request),
+      params: {
+        ...request.params,
+        sampler_name: 'k_euler',
+        cfg_scale: 4,
+        steps: 25,
+        karras: false,
+        workflow: 'qr_code',
+        extra_texts: [{ text: QR_TEXT, reference: 'qr_code' }],
+      },
+    };
+
+    beforeEach(async () => {
+      const started = engine.start('qr_code');
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await settle();
+      http
+        .expectOne(`${EXAMPLES_ROOT}/qr_code/request.json`)
+        .flush(structuredClone(qr));
+      await started;
+    });
+
+    it('reads the workflow payload back out of extra_texts', () => {
+      expect(engine.example()?.qrText).toBe(QR_TEXT);
+      expect(engine.copyParams()['qr']).toBe(QR_TEXT);
+      expect(engine.copyParams()['sampler']).toBe('k_euler');
+      expect(engine.copyParams()['cfg']).toBe(4);
+    });
+
+    it('walks every step to the finale, writing what each one names', () => {
+      const written: [string, Partial<GenerateFormValue>][] = [];
+      const visited: string[] = [];
+      for (let index = 0; index < engine.total(); index++) {
+        engine.goTo(index);
+        const id = engine.step()!.id;
+        visited.push(id);
+        if (engine.canApply()) {
+          engine.applyStep();
+          written.push([id, host.applied[host.applied.length - 1]]);
+        }
+      }
+
+      expect(visited).toEqual([
+        'prompt',
+        'qr',
+        'model',
+        'size',
+        'cfg',
+        'generate',
+      ]);
+      expect(written).toEqual([
+        ['prompt', { prompt: PROMPT, negativePrompt: NEGATIVE }],
+        // Typing the text is what selects the workflow, so it is the whole of
+        // what this step writes.
+        ['qr', { qrText: QR_TEXT }],
+        ['model', { model: request.models[0] }],
+        [
+          'size',
+          { width: request.params.width, height: request.params.height },
+        ],
+        // One recipe rather than four choices: a code made with three of them
+        // does not scan.
+        [
+          'cfg',
+          {
+            cfg_scale: 4,
+            steps: 25,
+            sampler_name: 'k_euler',
+            karras: false,
+          },
+        ],
+      ]);
+      // The sampling values are the payload's, not the studio's defaults.
+      expect(engine.onFinale()).toBe(true);
+      expect(engine.canApply()).toBe(false);
+      expect(host.modes).toContain('advanced');
+
+      engine.notifySubmitted();
+      expect(engine.completed()).toBe(true);
+    });
+
+    it('opens Advanced for the two controls that live there', () => {
+      // The prompt is on the panel either way, so the first step narrates
+      // nothing; the workflow field is the one that has to open it.
+      expect(engine.revealNote()).toBeNull();
+
+      engine.goTo(1);
+
+      expect(engine.revealNote()).toBe('advanced');
+      expect(host.mode).toBe('advanced');
     });
   });
 

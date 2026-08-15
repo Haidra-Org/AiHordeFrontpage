@@ -66,9 +66,13 @@
       "directory": "remix",
       "title": "Remix",
       "summary": "Blend a source image with extra reference images on Stable Cascade.",
-      "status": "skipped",
-      "files": ["SKIPPED.md"],
-      "skipped_reason": "No workers were serving Stable Cascade 1.0 when the examples were generated."
+      "status": "available",
+      "files": ["meta.json", "request.json", "result.webp", "source.webp"],
+      "model": "Stable Cascade 1.0",
+      "seed": "1234567890",
+      "result": "result.webp",
+      "source": "source.webp",
+      "request": "request.json"
     },
     {
       "id": "transparent",

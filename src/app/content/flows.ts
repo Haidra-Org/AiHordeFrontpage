@@ -266,40 +266,127 @@ export const FLOWS: readonly FlowDef[] = [
       { id: 'generate', anchorId: 'generate' },
     ],
   },
-  { id: 'remix', section: 'source', steps: [] },
+  {
+    id: 'remix',
+    section: 'source',
+    steps: [
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
+        reveal: { mode: 'advanced' },
+      },
+      {
+        id: 'mode',
+        anchorId: 'source_mode',
+        reveal: { mode: 'advanced' },
+        applyFields: ['sourceMode'],
+      },
+      {
+        // The references are blobs with a weight each, and neither half of that
+        // survives into the form value the steps read: `extra_source_images`
+        // lives on the request alone. So this step points at the tiles and says
+        // what to put in them, as the source step above it does.
+        id: 'extras',
+        anchorId: 'remix_extras',
+        reveal: { mode: 'advanced', sourceMode: 'remix' },
+      },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      {
+        // As in img2img, the size follows the pictures rather than being a
+        // choice, so it is written with the model the step names.
+        id: 'model',
+        anchorId: 'model',
+        applyFields: ['model', 'width', 'height'],
+      },
+      { id: 'generate', anchorId: 'generate' },
+    ],
+  },
   {
     id: 'transparent',
     section: 'workflows',
     steps: [
-      { id: 'prompt' },
-      { id: 'transparent' },
-      { id: 'model' },
-      { id: 'size' },
-      { id: 'generate' },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      {
+        id: 'transparent',
+        anchorId: 'transparent',
+        helpTopic: 'transparent',
+        reveal: { mode: 'advanced' },
+        applyFields: ['transparent'],
+      },
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
+      { id: 'generate', anchorId: 'generate' },
     ],
   },
   {
     id: 'qr_code',
     section: 'workflows',
     steps: [
-      { id: 'prompt' },
-      { id: 'qr' },
-      { id: 'model' },
-      { id: 'size' },
-      { id: 'cfg' },
-      { id: 'generate' },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      {
+        // Typing into the QR field is what selects the workflow, so the text is
+        // the whole of what this step writes.
+        id: 'qr',
+        anchorId: 'qr',
+        helpTopic: 'qr',
+        reveal: { mode: 'advanced' },
+        applyFields: ['qrText'],
+      },
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
+      {
+        // The four sampling values are one recipe here rather than four
+        // choices: they were scan-tested together, and a code generated with
+        // three of them does not read. They all live in the card this step
+        // opens, and the prose names every one of them.
+        id: 'cfg',
+        anchorId: 'cfg',
+        helpTopic: 'cfg',
+        sweepParameters: ['cfg_scale'],
+        reveal: { mode: 'advanced' },
+        applyFields: ['cfg_scale', 'steps', 'sampler_name', 'karras'],
+      },
+      { id: 'generate', anchorId: 'generate' },
     ],
   },
   {
     id: 'facefix',
     section: 'finishing',
     steps: [
-      { id: 'prompt' },
-      { id: 'model' },
-      { id: 'size' },
-      { id: 'generate_before' },
-      { id: 'facefixer' },
-      { id: 'regenerate' },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
+      // The first of two runs, which is the same request without the fixer:
+      // there is nothing to write, and pressing Generate is the step.
+      { id: 'generate_before', anchorId: 'generate' },
+      {
+        // The fixer and its strength are one choice: the strength row does not
+        // exist until a fixer is picked, so a step that wrote only the fixer
+        // would leave the reader to find a slider that had just appeared.
+        id: 'facefixer',
+        anchorId: 'facefixer',
+        helpTopic: 'facefixer',
+        reveal: { mode: 'advanced' },
+        applyFields: ['post_processing', 'facefixer_strength'],
+      },
+      { id: 'regenerate', anchorId: 'generate' },
     ],
   },
 

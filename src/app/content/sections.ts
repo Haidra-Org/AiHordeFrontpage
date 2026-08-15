@@ -85,6 +85,7 @@ export const SECTION_BY_STEP_ID: Record<string, SectionId> = {
   source: 'source',
   mode: 'source',
   mask: 'source',
+  extras: 'source',
   denoise: 'source',
   control_type: 'source',
   steps: 'sampling',

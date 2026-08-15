@@ -174,13 +174,14 @@ describe('concept tracks', () => {
 });
 
 describe('the techniques that work from a source image', () => {
-  const SOURCED = ['img2img', 'inpainting', 'controlnet'];
+  const SOURCED = ['img2img', 'inpainting', 'controlnet', 'remix'];
 
   /** The controls the panel only draws under one of the source modes. */
   const GATED_BY: Record<string, readonly string[]> = {
     denoise: ['img2img', 'controlnet'],
     control_type: ['controlnet'],
     mask: ['inpainting'],
+    remix_extras: ['remix'],
   };
 
   it('points every step at a control, so the pane can run them', () => {
@@ -195,7 +196,8 @@ describe('the techniques that work from a source image', () => {
   it('narrates the picture rather than claiming to write it', () => {
     // The source image is a blob the reader attaches; the committed request
     // carries it as base64 the form value never holds. Same for the mask, which
-    // is painted onto a canvas rather than set.
+    // is painted onto a canvas rather than set, and for remix's references,
+    // whose blobs and weights live on the request alone.
     for (const id of SOURCED) {
       const first = flowSteps(id)[0];
       expect(first.id).toBe('source');
@@ -204,6 +206,9 @@ describe('the techniques that work from a source image', () => {
     const mask = flowSteps('inpainting').find((step) => step.id === 'mask');
     expect(mask?.anchorId).toBe('mask');
     expect(mask?.applyFields).toBeUndefined();
+    const extras = flowSteps('remix').find((step) => step.id === 'extras');
+    expect(extras?.anchorId).toBe('remix_extras');
+    expect(extras?.applyFields).toBeUndefined();
   });
 
   it('opens the panel and the mode each control lives under', () => {
@@ -231,6 +236,85 @@ describe('the techniques that work from a source image', () => {
   });
 });
 
+describe('the techniques that live in the workflow and finishing cards', () => {
+  it('runs the transparent flow off the one switch that makes it', () => {
+    expect(flowSteps('transparent').map((step) => step.id)).toEqual([
+      'prompt',
+      'transparent',
+      'model',
+      'size',
+      'generate',
+    ]);
+    const toggle = flowSteps('transparent').find(
+      (step) => step.id === 'transparent',
+    );
+    expect(toggle?.anchorId).toBe('transparent');
+    expect(toggle?.applyFields).toEqual(['transparent']);
+    expect(toggle?.reveal).toEqual({ mode: 'advanced' });
+  });
+
+  it('writes the QR payload, and the sampling recipe as one set', () => {
+    expect(flowSteps('qr_code').map((step) => step.id)).toEqual([
+      'prompt',
+      'qr',
+      'model',
+      'size',
+      'cfg',
+      'generate',
+    ]);
+    const qr = flowSteps('qr_code').find((step) => step.id === 'qr');
+    expect(qr?.anchorId).toBe('qr');
+    // Typing the payload is what selects the workflow, so the text is all there
+    // is to write: control_strength has no control in the panel to point at.
+    expect(qr?.applyFields).toEqual(['qrText']);
+    const recipe = flowSteps('qr_code').find((step) => step.id === 'cfg');
+    expect(recipe?.applyFields).toEqual([
+      'cfg_scale',
+      'steps',
+      'sampler_name',
+      'karras',
+    ]);
+  });
+
+  it('turns the face fixer and its strength on together', () => {
+    expect(flowSteps('facefix').map((step) => step.id)).toEqual([
+      'prompt',
+      'model',
+      'size',
+      'generate_before',
+      'facefixer',
+      'regenerate',
+    ]);
+    const fixer = flowSteps('facefix').find((step) => step.id === 'facefixer');
+    expect(fixer?.anchorId).toBe('facefixer');
+    // The strength row does not exist until a fixer is picked, so one without
+    // the other would send the reader after a slider that had just appeared.
+    expect(fixer?.applyFields).toEqual([
+      'post_processing',
+      'facefixer_strength',
+    ]);
+    // Both runs of the pair press the same button, and neither writes anything.
+    for (const id of ['generate_before', 'regenerate']) {
+      const step = flowSteps('facefix').find((entry) => entry.id === id);
+      expect(step?.anchorId).toBe('generate');
+      expect(step?.applyFields).toBeUndefined();
+    }
+  });
+
+  it('reads remix down the same spine as the other sourced flows', () => {
+    expect(flowSteps('remix').map((step) => step.id)).toEqual([
+      'source',
+      'mode',
+      'extras',
+      'prompt',
+      'model',
+      'generate',
+    ]);
+    const model = flowSteps('remix').find((step) => step.id === 'model');
+    expect(model?.applyFields).toEqual(['model', 'width', 'height']);
+  });
+});
+
 describe('followability', () => {
   it('runs a track, which is read rather than performed', () => {
     for (const id of CONCEPT_FLOWS) {
@@ -238,26 +322,23 @@ describe('followability', () => {
     }
   });
 
-  it('runs a technique once its steps name the controls they are about', () => {
-    for (const id of ['txt2img', 'img2img', 'inpainting', 'controlnet']) {
-      expect(flowFollowable(id)).toBe(true);
-    }
-    // A technique whose steps are written but not yet wired is a page to read.
-    // As each one is wired this list shrinks on its own; it is not a target.
+  it('runs every technique the app teaches', () => {
     const unwired = techniques
       .filter((flow) => !flowFollowable(flow.id))
       .map((flow) => flow.id);
 
-    for (const id of unwired) {
-      expect(flowSteps(id).every((step) => !step.anchorId)).toBe(true);
+    expect(unwired).toEqual([]);
+    // Followability is derived from the steps rather than declared, so this
+    // holds by every technique naming the controls its steps are about.
+    for (const flow of techniques) {
+      for (const step of flow.steps) {
+        expect(step.anchorId, `${flow.id}.${step.id}`).toBeTruthy();
+      }
     }
   });
 
   it('runs nothing for a flow that does not exist or has no steps', () => {
     expect(flowFollowable('not_a_flow')).toBe(false);
     expect(flowSteps('not_a_flow')).toEqual([]);
-    // remix has no worked example: Stable Cascade had no workers when the
-    // examples were made, so there are no steps to follow.
-    expect(flowFollowable('remix')).toBe(false);
   });
 });
