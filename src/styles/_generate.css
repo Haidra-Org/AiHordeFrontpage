@@ -10774,20 +10774,6 @@ app-gs-compare-wipe {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* The stop buttons carry a word as well as a chevron, because a bare chevron
-   on a bar at the foot of a phone is a guess. */
-.gen-studio .gs-sheet-btn--labelled {
-  width: auto;
-  height: 36px;
-  gap: 4px;
-  padding: 0 10px 0 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--gs-ink-2);
-}
-.gen-studio .gs-sheet-btn-text {
-  white-space: nowrap;
-}
 .gen-studio .gs-sheet-btn {
   flex: none;
   display: inline-flex;
@@ -10800,6 +10786,21 @@ app-gs-compare-wipe {
   background: transparent;
   color: var(--gs-ink-2);
   cursor: pointer;
+}
+/* The stop buttons carry a word as well as a chevron, because a bare chevron
+   on a bar at the foot of a phone is a guess. */
+.gen-studio .gs-sheet-btn--labelled {
+  width: auto;
+  min-width: 44px;
+  height: 36px;
+  padding-inline: var(--gs-space-2) var(--gs-space-3);
+  gap: var(--gs-space-1);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sheet-btn-text {
+  white-space: nowrap;
 }
 .gen-studio .gs-sheet-btn:hover {
   color: var(--gs-ink);
