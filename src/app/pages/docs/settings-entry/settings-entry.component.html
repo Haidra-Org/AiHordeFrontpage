@@ -1,8 +1,21 @@
 <div class="gs-ref-page-inner">
-  <a class="gs-ref-back" [routerLink]="indexLink">
-    <app-icon name="arrow-left" class="gs-ico-sm" />
-    {{ "generate.reference.back" | transloco }}
-  </a>
+  <nav
+    class="gs-ref-ways"
+    [attr.aria-label]="'docs.breadcrumb_label' | transloco"
+  >
+    <!-- The page the reader left to read this entry comes first, because it is
+         where they were; the index is always offered as well. -->
+    @if (origin; as from) {
+      <a class="gs-ref-back" [href]="from.url" (click)="returnToOrigin($event)">
+        <app-icon name="arrow-left" class="gs-ico-sm" />
+        {{ "generate.reference.back_to" | transloco: { page: from.title } }}
+      </a>
+    }
+    <a class="gs-ref-back" [routerLink]="indexLink">
+      <app-icon name="arrow-left" class="gs-ico-sm" />
+      {{ "generate.reference.back" | transloco }}
+    </a>
+  </nav>
 
   @if (topic(); as id) {
     <app-gs-param-entry [topic]="id" mode="page" />

@@ -65,7 +65,11 @@ export type ProseParams = Record<string, string | number>;
             <code class="gs-prose-code">{{ run.text }}</code>
           }
           @case ('setting') {
-            <app-gs-setting-chip [settingId]="run.settingId" [inline]="true" />
+            <app-gs-setting-chip
+              [settingId]="run.settingId"
+              [inline]="true"
+              [entry]="true"
+            />
           }
           @default {
             <span>{{ run.text }}</span>

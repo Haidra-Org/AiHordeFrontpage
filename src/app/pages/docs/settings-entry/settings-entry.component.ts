@@ -10,6 +10,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
+import {
+  REFERENCE_ORIGIN_STATE,
+  ReferenceOrigin,
+} from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { sectionIdentity } from '../../../content/sections';
 import {
@@ -24,6 +28,22 @@ import {
   settingSection,
   settingTitleKey,
 } from '../../../content/settings';
+
+/** The origin a setting chip stowed in the navigation state, if it is one. */
+function readOrigin(
+  state: Record<string, unknown> | undefined,
+): ReferenceOrigin | null {
+  const candidate = state?.[REFERENCE_ORIGIN_STATE];
+  if (
+    typeof candidate === 'object' &&
+    candidate !== null &&
+    typeof (candidate as ReferenceOrigin).url === 'string' &&
+    typeof (candidate as ReferenceOrigin).title === 'string'
+  ) {
+    return candidate as ReferenceOrigin;
+  }
+  return null;
+}
 
 /** One way onwards, carrying the identity of the entry it leads to. */
 interface OnwardLink {
@@ -67,6 +87,23 @@ export class DocsSettingsEntryComponent {
   );
 
   public readonly indexLink = DOCS_IMAGE_SETTINGS;
+
+  /**
+   * Where the reader came from, when a setting chip on another page sent them
+   * here. Read once at construction from the navigation that mounted the page:
+   * a link followed from the entry itself, or a reload, has no origin and shows
+   * only the way to the index.
+   */
+  public readonly origin: ReferenceOrigin | null = readOrigin(
+    this.router.getCurrentNavigation()?.extras.state,
+  );
+
+  public returnToOrigin(event: Event): void {
+    event.preventDefault();
+    if (this.origin) {
+      void this.router.navigateByUrl(this.origin.url);
+    }
+  }
 
   /** The setting on screen, or null while the URL names one there is none of. */
   public readonly topic = computed(() =>

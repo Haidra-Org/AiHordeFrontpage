@@ -9643,6 +9643,14 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-back {
   align-self: flex-start;
 }
+/* The ways back off a routed entry: the page the reader left, when a chip sent
+   them, and always the index. */
+.gen-studio .gs-ref-ways {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 18px;
+}
 /* Only the docked entry has a footer: the routed page is already the full
    reference and would be pointing at itself. */
 .gen-studio .gs-ref-foot {
@@ -10283,6 +10291,93 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-setting-chip--inline .gs-sec-chip {
   width: 0.9em;
   height: 0.9em;
+}
+
+/* The chip as an entry point. The button takes the chip's own face, so a chip
+   that opens reads exactly like one that does not; the ring on focus and the
+   pointer are what say it can be pressed. */
+.gen-studio .gs-setting-chip-btn {
+  display: inline-flex;
+  flex-wrap: inherit;
+  align-items: inherit;
+  gap: inherit;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+}
+.gen-studio .gs-setting-chip-btn:hover .gs-setting-chip-label {
+  color: var(--gs-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+.gen-studio .gs-setting-chip-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+
+/* The note a pressed chip opens. Fixed to the viewport and placed by the chip,
+   because the chip sits inside scroll containers that would clip anything
+   positioned within them; sized by its own prose. Above the studio's sticky
+   chrome and below the modal layer. */
+.gen-studio .gs-setting-pop {
+  position: fixed;
+  z-index: 55;
+  padding: 10px 12px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 10px;
+  background: var(--gs-card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  color: var(--gs-ink-2);
+  font-size: 12px;
+  line-height: 1.55;
+  animation: gs-fadeup 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.gen-studio .gs-setting-pop:focus {
+  outline: none;
+}
+.gen-studio .gs-setting-pop:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-setting-pop-title {
+  margin: 0 0 4px;
+  color: var(--gs-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.gen-studio .gs-setting-pop-body {
+  margin: 0;
+}
+.gen-studio .gs-setting-pop-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  margin: 6px 0 -4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gs-blue);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .gs-setting-pop-go:hover {
+  text-decoration: underline;
+}
+.gen-studio .gs-setting-pop-go:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 /* The payload under the chips: closed by default, because the chips are the

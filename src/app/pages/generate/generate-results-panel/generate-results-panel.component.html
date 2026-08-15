@@ -208,9 +208,16 @@
        media query rather than by a viewport signal here. -->
   @if (helpDockTopic(); as topic) {
     <div class="gs-help-dock">
+      <!-- Closing the dock uncovers whatever it displaced: the tutorial while
+           one is open, the results otherwise, and the label says which. -->
       <button type="button" class="gs-ref-back" (click)="closeHelpDock()">
         <app-icon name="arrow-left" class="gs-ico-sm" />
-        {{ "generate.help.dock_close" | transloco }}
+        {{
+          (tutorialOpen()
+            ? "generate.help.dock_close_tutorial"
+            : "generate.help.dock_close"
+          ) | transloco
+        }}
       </button>
       <app-gs-param-entry [topic]="topic" mode="dock" />
     </div>

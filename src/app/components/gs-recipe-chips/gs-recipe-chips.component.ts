@@ -68,7 +68,11 @@ const NO_CHIPS: readonly RecipeChip[] = [];
       >
         @for (chip of chips(); track chip.id + chip.value) {
           <li>
-            <app-gs-setting-chip [settingId]="chip.id" [value]="chip.value" />
+            <app-gs-setting-chip
+              [settingId]="chip.id"
+              [value]="chip.value"
+              [entry]="true"
+            />
           </li>
         }
       </ul>

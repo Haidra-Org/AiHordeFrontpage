@@ -10,6 +10,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
 import { DocsSettingsEntryComponent } from './settings-entry.component';
 import { DocsSettingsIndexComponent } from '../settings-index/settings-index.component';
+import { REFERENCE_ORIGIN_STATE } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { environment } from '../../../../environments/environment';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import { SETTINGS_INDEX, settingNeighbours } from '../../../content/settings';
@@ -42,7 +43,10 @@ describe('DocsSettingsEntryComponent', () => {
     }
   };
 
-  async function setUp(param: string): Promise<void> {
+  async function setUp(
+    param: string,
+    state?: Record<string, unknown>,
+  ): Promise<void> {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -73,7 +77,7 @@ describe('DocsSettingsEntryComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
 
-    await router.navigateByUrl(`/docs/image/settings/${param}`);
+    await router.navigateByUrl(`/docs/image/settings/${param}`, { state });
     fixture.detectChanges();
     flushLibrary();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -102,6 +106,25 @@ describe('DocsSettingsEntryComponent', () => {
     expect(find('.gs-ref-back')?.textContent?.trim()).toBe(
       translations['generate.reference.back'],
     );
+    // Reached by URL, so there is no page to go back to besides the index.
+    expect(all('.gs-ref-back')).toHaveLength(1);
+  });
+
+  it('offers the way back to the page a setting chip sent the reader from', async () => {
+    await setUp('steps', {
+      [REFERENCE_ORIGIN_STATE]: {
+        url: '/docs/image/learn/img2img',
+        title: 'Restyle an image you already have',
+      },
+    });
+
+    const ways = all<HTMLAnchorElement>('.gs-ref-back');
+    expect(ways).toHaveLength(2);
+    expect(ways[0].getAttribute('href')).toBe('/docs/image/learn/img2img');
+    expect(ways[0].textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Back to Restyle an image you already have',
+    );
+    expect(ways[1].getAttribute('href')).toBe('/docs/image/settings');
   });
 
   it('walks on to the neighbouring settings in the same area', async () => {
