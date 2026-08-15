@@ -11414,3 +11414,79 @@ html:has(app-gs-sheet) {
     height: 2px;
   }
 }
+
+/* ------- quiet polish on the shared tokens ------------------------------ */
+/* One pass over the surfaces a reader meets most: form cards, welcome doors,
+   the follow-along card, the docs tabs and the primary buttons. Depth is a soft
+   low shadow, motion is short and eased, and both come off the shared tokens,
+   so a change of taste is one edit and reduced-motion is already honoured. */
+.gen-studio .gs-card {
+  box-shadow: var(--gs-elev-1);
+  transition: box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-card:focus-within {
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-welcome-door,
+.gen-studio .gs-learn-hero-door,
+.gen-studio .gs-tut-step,
+.gen-studio .gs-learn-card {
+  transition:
+    box-shadow var(--gs-dur-fast) var(--gs-ease),
+    transform var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-welcome-door {
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-welcome-door:hover {
+  box-shadow: var(--gs-elev-2);
+  transform: translateY(-1px);
+}
+.gen-studio .gs-welcome-door:active {
+  transform: translateY(0);
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-learn-card {
+  border-radius: 12px;
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-hub-nav-link {
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-hub-nav-link::before {
+  transition:
+    transform var(--gs-dur) var(--gs-ease),
+    opacity var(--gs-dur) var(--gs-ease);
+}
+.gen-studio .gs-learn-apply,
+.gen-studio .gs-tut-bar-do,
+.gen-studio .gs-parked-return {
+  transition:
+    filter var(--gs-dur-fast) var(--gs-ease),
+    transform var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-learn-apply:active,
+.gen-studio .gs-tut-bar-do:active,
+.gen-studio .gs-parked-return:active {
+  transform: translateY(1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-welcome-door:hover,
+  .gen-studio .gs-learn-apply:active,
+  .gen-studio .gs-tut-bar-do:active,
+  .gen-studio .gs-parked-return:active {
+    transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-card,
+  .gen-studio .gs-welcome-door,
+  .gen-studio .gs-learn-card {
+    box-shadow: none;
+    border: 1px solid CanvasText;
+  }
+}
