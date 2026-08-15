@@ -278,10 +278,11 @@ describe('GsSweepScrubComponent', () => {
     expect(rail().getAttribute('aria-valuemax')).toBe('3');
     expect(rail().getAttribute('aria-valuenow')).toBe('2');
     expect(rail().getAttribute('aria-valuetext')).toBe('12');
-    // The ends are labelled with what they were rendered at, not with 0 and 2.
+    // The ends are labelled with what they were rendered at, not with 0 and 2,
+    // and the lane says what it is for between them.
     expect(
       all('.gs-tickrail-ends span').map((end) => end.textContent?.trim()),
-    ).toEqual(['4', '30']);
+    ).toEqual(['4', en['generate.sweeps.rail_hint'], '30']);
 
     railKey('ArrowRight');
 

@@ -7609,6 +7609,23 @@ app-gs-sweep-scrub {
   background: none;
   cursor: pointer;
 }
+/* The lane the slits sit in. A short strip's few ticks read as decoration
+   without it; a visible groove under a thumb is the shape every reader already
+   knows as a control. */
+.gen-studio .gs-tickrail {
+  position: relative;
+}
+.gen-studio .gs-tickrail::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 15px;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--gs-stage-rim) 55%, transparent);
+  pointer-events: none;
+}
 .gen-studio .gs-tickrail-tick {
   position: relative;
   flex: 1;
@@ -7653,6 +7670,12 @@ app-gs-sweep-scrub {
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-tickrail-hint {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--gs-stage-label);
 }
 .gen-studio .gs-tickrail-ends {
   display: flex;

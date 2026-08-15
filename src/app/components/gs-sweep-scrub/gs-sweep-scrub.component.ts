@@ -295,6 +295,12 @@ const VIEWER_FOCUSABLE =
         </div>
         <span class="gs-tickrail-ends">
           <span>{{ endValues().first }}</span>
+          <!-- What the lane is for, said where a reader's eye lands on it: a
+               row of slits between two numbers does not announce itself as a
+               control, and the invitation is the difference. -->
+          <span class="gs-tickrail-hint" aria-hidden="true">{{
+            'generate.sweeps.rail_hint' | transloco
+          }}</span>
           <span>{{ endValues().last }}</span>
         </span>
       </div>
