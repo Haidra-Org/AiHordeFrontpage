@@ -20,6 +20,7 @@ import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
 import {
+  TUTORIAL_LEVELS,
   TutorialEngineService,
   TutorialWorld,
   canonicalFlowId,
@@ -383,6 +384,37 @@ describe('DocsImageExampleComponent', () => {
     expect(harness.query('.gs-tut-img')).toHaveLength(3);
   });
 
+  it('reads its steps from the studio pane’s bodies, filled from the request on screen', async () => {
+    harness = await createPage('txt2img');
+    flushAll(harness);
+
+    const translations = en as Record<string, string>;
+    const engine = TestBed.inject(TutorialEngineService);
+    engine.setLevel('expert');
+    harness.fixture.detectChanges();
+
+    const bodies = harness
+      .query<HTMLElement>('.gs-tut-step-body')
+      .map((el) => el.textContent ?? '');
+    // The prompt step's expert body is "[[set:prompt]]: “{{ prompt }}”…", so
+    // the request's own prompt is what the page shows.
+    expect(bodies[0]).toContain('“hello”');
+    expect(harness.text()).toContain(
+      translations['generate.learn.flows.txt2img.steps.seed.title'],
+    );
+
+    // The register is the engine's, so the page and the walkthrough agree.
+    const seg = harness.query<HTMLButtonElement>('.gs-tut-level .gs-seg-opt');
+    expect(seg.map((b) => b.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'false',
+      'true',
+    ]);
+    seg[0].click();
+    harness.fixture.detectChanges();
+    expect(engine.level()).toBe('new_to_this');
+  });
+
   it('leads with the task name and keeps the technique behind it', async () => {
     harness = await createPage('inpainting');
     flushAll(harness);
@@ -665,22 +697,25 @@ describe('DocsImageExampleComponent', () => {
       // someone who already knows the technique.
       expected.add(`generate.tutorials.flows.${flow.id}.summary`);
     }
+    // The steps are the studio pane's own, in every register, so the page and
+    // the walkthrough teach from one body set.
+    const stepKeys = new Set<string>();
     for (const flow of AVAILABLE) {
       const steps = flowSteps(flow.id);
       expect(steps.length, `no steps written for ${flow.id}`).toBeGreaterThan(
         0,
       );
       for (const step of steps) {
-        expected.add(
-          `generate.tutorials.flows.${flow.id}.steps.${step.id}.title`,
-        );
-        expected.add(
-          `generate.tutorials.flows.${flow.id}.steps.${step.id}.body`,
-        );
+        stepKeys.add(`generate.learn.flows.${flow.id}.steps.${step.id}.title`);
+        for (const level of TUTORIAL_LEVELS) {
+          stepKeys.add(
+            `generate.learn.flows.${flow.id}.steps.${step.id}.body.${level}`,
+          );
+        }
       }
     }
 
-    for (const key of expected) {
+    for (const key of [...expected, ...stepKeys]) {
       expect(translations[key], `missing translation ${key}`).toBeTruthy();
     }
 
@@ -803,12 +838,16 @@ describe('DocsImageExampleComponent', () => {
       flushAll(harness);
 
       const options = harness.query<HTMLButtonElement>(
-        '.gs-tut-worlds .gs-seg-opt',
+        '.gs-tut-worlds .gs-world',
       );
       const translations = en as Record<string, string>;
 
       expect(harness.component.worldChoice()).toBe(true);
-      expect(options.map((option) => option.textContent?.trim())).toEqual([
+      expect(
+        options.map((option) =>
+          option.querySelector('.gs-world-name')?.textContent?.trim(),
+        ),
+      ).toEqual([
         translations['generate.learn.world.w1'],
         translations['generate.learn.world.w2'],
         translations['generate.learn.world.w3'],
@@ -837,7 +876,7 @@ describe('DocsImageExampleComponent', () => {
         translations[`generate.tutorials.flows.${VARIANT_FLOW.id}.task_name`];
       const variant = MANIFEST.flows.find((flow) => flow.id === VARIANT_ID)!;
 
-      harness.query<HTMLButtonElement>('.gs-tut-worlds .gs-seg-opt')[1].click();
+      harness.query<HTMLButtonElement>('.gs-tut-worlds .gs-world')[1].click();
       harness.fixture.detectChanges();
       flushDetail(harness);
 

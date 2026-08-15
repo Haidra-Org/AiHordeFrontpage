@@ -10,9 +10,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import {
   TutorialEngineService,
-  TutorialWorld,
   hasWorldVariants,
   resolveFlowId,
 } from '../../../services/tutorial-engine.service';
@@ -93,7 +93,7 @@ interface LearnDoor {
  */
 @Component({
   selector: 'app-docs-image-home',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, GsWorldPickerComponent],
   templateUrl: './image-home.component.html',
   host: {
     class: 'gs-learn-home',
@@ -204,9 +204,6 @@ export class DocsImageHomeComponent {
     );
   });
 
-  public readonly worlds = this.tutorial.worlds;
-  public readonly world = this.tutorial.world;
-
   constructor() {
     setPageMeta({
       titleKey: 'generate.learn.hero_title',
@@ -244,15 +241,6 @@ export class DocsImageHomeComponent {
   /** Whether a card is the alpha-channel example, in whichever world. */
   public isTransparent(card: ShelfCard): boolean {
     return card.id === 'transparent';
-  }
-
-  /** The name a world is offered under in the switcher. */
-  public worldKey(world: TutorialWorld): string {
-    return `generate.learn.world.${world}`;
-  }
-
-  public setWorld(world: TutorialWorld): void {
-    this.tutorial.setWorld(world);
   }
 
   /**

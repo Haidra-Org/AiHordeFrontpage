@@ -35,18 +35,25 @@ import {
 } from '../../../content/sections';
 import {
   TutorialEngineService,
-  TutorialWorld,
+  TutorialLevel,
   canonicalFlowId,
   hasWorldVariants,
   resolveFlowId,
+  tutorialCopyParams,
+  worldFlowId,
 } from '../../../services/tutorial-engine.service';
 import {
   FLOWS,
   FlowDef,
+  FlowStep,
   flowDef,
   flowFollowable,
   flowSteps,
 } from '../../../content/flows';
+import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
+import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
+import { requestToFormValue } from '../../generate/generate-form.model';
+import { ImageGenerationRequest } from '../../../types/generation';
 import {
   DOCS_IMAGE,
   STUDIO_IMAGE,
@@ -107,6 +114,8 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
     GsDoorComponent,
     GsRecipeChipsComponent,
     GsProseComponent,
+    GsSweepScrubComponent,
+    GsWorldPickerComponent,
   ],
   templateUrl: './image-example.component.html',
   host: {
@@ -224,8 +233,24 @@ export class DocsImageExampleComponent {
     return canonical !== null && hasWorldVariants(canonical, this.published());
   });
 
-  public readonly worlds = this.tutorial.worlds;
-  public readonly world = this.tutorial.world;
+  private readonly world = this.tutorial.world;
+
+  /**
+   * Whether the pictures on screen are the first world's standing in for the
+   * one the reader chose. Said on the page when it happens, and only then: a
+   * note that is always there stops being read.
+   */
+  public readonly worldStandIn = computed(() => {
+    const canonical = this.activeId();
+    const flow = this.activeFlow();
+    const world = this.world();
+    return (
+      canonical !== null &&
+      flow !== null &&
+      world !== 'w1' &&
+      flow.id !== worldFlowId(canonical, world)
+    );
+  });
 
   public readonly activeDetail = computed<ExampleDetail | null>(() => {
     const flow = this.activeFlow();
@@ -280,9 +305,32 @@ export class DocsImageExampleComponent {
     return at === null ? null : (this.shots()[at] ?? null);
   });
 
-  public readonly steps = computed<readonly string[]>(() =>
-    flowSteps(this.activeId() ?? '').map((step) => step.id),
+  public readonly steps = computed<readonly FlowStep[]>(() =>
+    flowSteps(this.activeId() ?? ''),
   );
+
+  /**
+   * How much the reader wants told to them. The same register the studio pane
+   * uses, held by the engine and remembered in this browser, so a reader who
+   * picks a depth on the page meets that depth when they start the walkthrough,
+   * and the other way round.
+   */
+  public readonly levels = this.tutorial.levels;
+  public readonly level = this.tutorial.level;
+
+  /**
+   * The values the step prose interpolates, read off the request on screen: the
+   * page and the studio pane render one body set, and the world's request is
+   * what makes a step read as that world.
+   */
+  public readonly copyParams = computed<Record<string, string | number>>(() => {
+    const request = this.requestObject();
+    return request
+      ? tutorialCopyParams(
+          requestToFormValue(request as ImageGenerationRequest),
+        )
+      : {};
+  });
 
   /**
    * The spine as it is drawn: each step, the panel area it is about, and whether
@@ -292,16 +340,27 @@ export class DocsImageExampleComponent {
    * the eyebrows are visible or read aloud.
    */
   public readonly spine = computed<
-    readonly { id: string; identity: SectionIdentity | null; tucked: boolean }[]
+    readonly {
+      step: FlowStep;
+      identity: SectionIdentity | null;
+      tucked: boolean;
+    }[]
   >(() => {
     let running: string | undefined;
-    return this.steps().map((id) => {
-      const section = SECTION_BY_STEP_ID[id];
+    return this.steps().map((step) => {
+      const section = SECTION_BY_STEP_ID[step.id];
       const tucked = section !== undefined && section === running;
       running = section;
-      return { id, identity: sectionIdentity(section), tucked };
+      return { step, identity: sectionIdentity(section), tucked };
     });
   });
+
+  /**
+   * On a technique only the newcomer register gets the sweep strips, as in the
+   * studio pane: the other registers assume the reader knows what the number
+   * does and want the page shorter.
+   */
+  public readonly showsSweep = computed(() => this.level() === 'new_to_this');
 
   /** The submit endpoint, named against the API the examples were run on. */
   public readonly submitUrl = computed(
@@ -510,19 +569,22 @@ export class DocsImageExampleComponent {
     return id ? sectionIdentity(flowDef(id)?.section) : null;
   });
 
-  /** The name a world is offered under in the switcher. */
-  public worldKey(world: TutorialWorld): string {
-    return `generate.learn.world.${world}`;
+  /** A step's title: the same key the studio pane reads. */
+  public stepTitleKey(flowId: string, step: FlowStep): string {
+    return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.title`;
   }
 
-  public setWorld(world: TutorialWorld): void {
-    this.tutorial.setWorld(world);
+  /** A step's body in the chosen register: the same key the studio pane reads. */
+  public stepBodyKey(flowId: string, step: FlowStep): string {
+    return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.body.${this.level()}`;
   }
 
-  /** A step's prose, which is written per flow rather than shared. */
-  public stepKey(flowId: string, step: string, part: string): string {
-    const id = canonicalFlowId(flowId);
-    return `generate.tutorials.flows.${id}.steps.${step}.${part}`;
+  public levelKey(level: TutorialLevel): string {
+    return `generate.learn.level.${level}`;
+  }
+
+  public setLevel(level: TutorialLevel): void {
+    this.tutorial.setLevel(level);
   }
 
   /**

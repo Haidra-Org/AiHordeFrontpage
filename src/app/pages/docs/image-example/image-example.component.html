@@ -27,31 +27,16 @@
         </h1>
         <p class="gs-tut-lead">{{ activeSummary() }}</p>
 
-        <!-- Which cast the pictures are drawn from. Only offered where this
+        <!-- Which subject the pictures are drawn with. Only offered where this
                flow was drawn more than once: a technique that exists in one
-               world has no choice to put in front of a reader. -->
+               world has no choice to put in front of a reader. Each option
+               says what it varies, because the names alone are scenes and the
+               point is the lesson surviving a change of subject and model. -->
         @if (worldChoice()) {
-          <div class="gs-tut-worlds">
-            <div
-              class="gs-seg gs-seg--xs"
-              role="group"
-              [attr.aria-label]="'generate.learn.world_label' | transloco"
-            >
-              @for (option of worlds; track option) {
-                <button
-                  type="button"
-                  class="gs-seg-opt"
-                  [attr.aria-pressed]="world() === option"
-                  (click)="setWorld(option)"
-                >
-                  {{ worldKey(option) | transloco }}
-                </button>
-              }
-            </div>
-            <p class="gs-info-note gs-tut-worlds-note">
-              {{ "generate.learn.world_note" | transloco }}
-            </p>
-          </div>
+          <app-gs-world-picker
+            class="gs-tut-worlds"
+            [standIn]="worldStandIn()"
+          />
         }
       </header>
 
@@ -123,9 +108,38 @@
 
             @if (isMode("user") && spine().length > 0) {
               <section class="gs-tut-section">
-                <h2 class="gs-tut-head-2">
-                  {{ "generate.tutorials.steps_head" | transloco }}
-                </h2>
+                <div class="gs-tut-steps-head">
+                  <h2 class="gs-tut-head-2">
+                    {{ "generate.tutorials.steps_head" | transloco }}
+                  </h2>
+                  <!-- The same three registers the studio pane offers, and the
+                       same remembered choice, so the depth a reader picks here
+                       is the depth the walkthrough opens at. -->
+                  <div class="gs-tut-level">
+                    <span
+                      class="gs-tut-level-label"
+                      [id]="'gs-tut-level-label'"
+                    >
+                      {{ "generate.learn.level_label" | transloco }}
+                    </span>
+                    <div
+                      class="gs-seg gs-seg--xs"
+                      role="group"
+                      aria-labelledby="gs-tut-level-label"
+                    >
+                      @for (option of levels; track option) {
+                        <button
+                          type="button"
+                          class="gs-seg-opt"
+                          [attr.aria-pressed]="level() === option"
+                          (click)="setLevel(option)"
+                        >
+                          {{ levelKey(option) | transloco }}
+                        </button>
+                      }
+                    </div>
+                  </div>
+                </div>
                 <!-- A step names the part of the panel it is about before it
                        says what to do there, in that area's hue and mark: the
                        same eyebrow the follow-along card carries, so a reader
@@ -136,14 +150,14 @@
                        hide where the area actually changes. The name is still
                        carried, unseen, by every step in the run. -->
                 <ol class="gs-tut-spine">
-                  @for (step of spine(); track step.id; let i = $index) {
+                  @for (entry of spine(); track entry.step.id; let i = $index) {
                     <li
                       class="gs-tut-step"
-                      [class]="step.identity?.className"
-                      [class.gs-tut-step--tucked]="step.tucked"
+                      [class]="entry.identity?.className"
+                      [class.gs-tut-step--tucked]="entry.tucked"
                     >
-                      @if (step.identity; as identity) {
-                        @if (step.tucked) {
+                      @if (entry.identity; as identity) {
+                        @if (entry.tucked) {
                           <span class="sr-only">{{
                             identity.labelKey | transloco
                           }}</span>
@@ -163,19 +177,31 @@
                               : {
                                   n: i + 1,
                                   title:
-                                    stepKey(flowId, step.id, "title")
+                                    stepTitleKey(flowId, entry.step)
                                     | transloco,
                                 }
                         }}
                       </h3>
                       <p class="gs-tut-step-body">
                         <app-gs-prose
-                          [key]="stepKey(flowId, step.id, 'body')"
+                          [key]="stepBodyKey(flowId, entry.step)"
+                          [params]="copyParams()"
                         />
-                        @if (runCostFor(step.id); as cost) {
+                        @if (runCostFor(entry.step.id); as cost) {
                           {{ "generate.tutorials.run_cost" | transloco: cost }}
                         }
                       </p>
+                      <!-- The strips the studio pane shows under the same step,
+                           in the same register, so the page teaches what the
+                           walkthrough teaches. -->
+                      @if (showsSweep()) {
+                        @for (
+                          parameter of entry.step.sweepParameters ?? [];
+                          track parameter
+                        ) {
+                          <app-gs-sweep-scrub [parameter]="parameter" />
+                        }
+                      }
                     </li>
                   }
                 </ol>

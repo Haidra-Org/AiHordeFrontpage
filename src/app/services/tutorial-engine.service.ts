@@ -112,6 +112,39 @@ export const TUTORIAL_LEVELS = [
 export type TutorialLevel = (typeof TUTORIAL_LEVELS)[number];
 
 /**
+ * The values the step prose interpolates, read off a committed request. Named
+ * after the fields rather than after the steps, so one set serves every
+ * register, and shared by every surface that shows a step (the studio pane and
+ * the documentation page), so the same body reads the same wherever it is.
+ */
+export function tutorialCopyParams(
+  example: GenerateFormValue,
+): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  params['prompt'] = example.prompt;
+  // The payload carries both halves in one string; the prose names them
+  // apart, as the panel does, so a step can talk about either one.
+  params['negative'] = example.negativePrompt;
+  params['model'] = example.model;
+  params['width'] = example.width;
+  params['height'] = example.height;
+  params['steps'] = example.steps;
+  params['cfg'] = example.cfg_scale;
+  params['sampler'] = example.sampler_name;
+  params['seed'] = example.seed;
+  // The sourced flows' two numbers. They are meaningless on a request with no
+  // source image, and the prose of a flow that has none never names them.
+  params['denoise'] = example.denoising_strength;
+  params['control'] = example.control_type;
+  // The workflow and finishing flows' values. `post` is a list because the
+  // field is one, and a flow that runs a single processor reads as its name.
+  params['qr'] = example.qrText;
+  params['post'] = example.post_processing.join(', ');
+  params['facefix'] = example.facefixer_strength;
+  return params;
+}
+
+/**
  * What a step's field is called above its title. Anchors reuse the panel's own
  * vocabulary, so most of them are named by the `?` note they share an id with;
  * the handful the panel labels rather than explains are listed here, and the
@@ -249,37 +282,10 @@ export class TutorialEngineService {
     return request ? requestToFormValue(request) : null;
   });
 
-  /**
-   * The values the step prose interpolates. Named after the fields rather than
-   * after the steps, so one set serves every register.
-   */
+  /** The values the step prose interpolates; see {@link tutorialCopyParams}. */
   public readonly copyParams = computed<Record<string, string | number>>(() => {
     const example = this.example();
-    const params: Record<string, string | number> = {};
-    if (!example) {
-      return params;
-    }
-    params['prompt'] = example.prompt;
-    // The payload carries both halves in one string; the prose names them
-    // apart, as the panel does, so a step can talk about either one.
-    params['negative'] = example.negativePrompt;
-    params['model'] = example.model;
-    params['width'] = example.width;
-    params['height'] = example.height;
-    params['steps'] = example.steps;
-    params['cfg'] = example.cfg_scale;
-    params['sampler'] = example.sampler_name;
-    params['seed'] = example.seed;
-    // The sourced flows' two numbers. They are meaningless on a request with no
-    // source image, and the prose of a flow that has none never names them.
-    params['denoise'] = example.denoising_strength;
-    params['control'] = example.control_type;
-    // The workflow and finishing flows' values. `post` is a list because the
-    // field is one, and a flow that runs a single processor reads as its name.
-    params['qr'] = example.qrText;
-    params['post'] = example.post_processing.join(', ');
-    params['facefix'] = example.facefixer_strength;
-    return params;
+    return example ? tutorialCopyParams(example) : {};
   });
 
   /** The example image the reader is working towards, or '' before it loads. */

@@ -6619,21 +6619,97 @@
   line-height: 1.65;
   max-width: 72ch;
 }
-/* The world switcher, on both Learn surfaces that offer one. It is a quiet
-   preference rather than a step of the page, so it sits under the lead in the
-   segmented idiom the register picker already uses. */
+/* The world picker, on both Learn surfaces that offer one. It borrows the
+   sweep capsule's grammar (eyebrow with a dot, then options) so it reads as
+   part of the evidence rather than as a stray control: an eyebrow saying what
+   the choice is for, then one card per world naming its scene and what it
+   varies. The chosen card takes the area's tint, like a pressed chip. */
 .gen-studio .gs-tut-worlds,
 .gen-studio .gs-learn-worlds {
-  margin-top: 12px;
+  display: block;
+  margin-top: 14px;
+}
+.gen-studio .gs-worlds {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gen-studio .gs-worlds-eyebrow {
+  margin: 0;
+}
+.gen-studio .gs-worlds-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gen-studio .gs-world {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: 7px 12px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 10px;
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background-color 0.12s;
+}
+.gen-studio .gs-world:hover {
+  border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
+}
+.gen-studio .gs-world[aria-pressed="true"] {
+  border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
+  background: var(--gs-sec-tint, var(--gs-blue-tint));
+  color: var(--gs-ink);
+}
+.gen-studio .gs-world:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-world-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.gen-studio .gs-world-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-worlds-note {
+  margin: 0;
+  max-width: 60ch;
+}
+
+/* The steps heading and the register beside it, on one line where the width
+   allows and stacked where it does not. */
+.gen-studio .gs-tut-steps-head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  justify-content: space-between;
+  gap: 8px 16px;
 }
-.gen-studio .gs-tut-worlds-note,
-.gen-studio .gs-learn-worlds-note {
+.gen-studio .gs-tut-steps-head .gs-tut-head-2 {
   margin: 0;
-  max-width: 52ch;
+}
+.gen-studio .gs-tut-level {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gen-studio .gs-tut-level-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gs-ink-2);
 }
 
 /* The flow picker, on the Learn area's contents rail. It keeps the rail's bar

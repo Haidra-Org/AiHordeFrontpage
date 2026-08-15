@@ -376,10 +376,14 @@ describe('DocsImageHomeComponent', () => {
     it('offers the three worlds once any of them has been drawn', () => {
       flush();
 
-      const options = query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt');
+      const options = query<HTMLButtonElement>('.gs-learn-worlds .gs-world');
 
       expect(component.worldChoice()).toBe(true);
-      expect(options.map((option) => option.textContent?.trim())).toEqual([
+      expect(
+        options.map((option) =>
+          option.querySelector('.gs-world-name')?.textContent?.trim(),
+        ),
+      ).toEqual([
         TRANSLATIONS['generate.learn.world.w1'],
         TRANSLATIONS['generate.learn.world.w2'],
         TRANSLATIONS['generate.learn.world.w3'],
@@ -396,7 +400,7 @@ describe('DocsImageHomeComponent', () => {
         card.getAttribute('href'),
       );
 
-      query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt')[1].click();
+      query<HTMLButtonElement>('.gs-learn-worlds .gs-world')[1].click();
       fixture.detectChanges();
 
       // Every card takes the second world's pictures where it has them and
@@ -422,7 +426,7 @@ describe('DocsImageHomeComponent', () => {
     it('keeps the choice for the tutorial the studio then runs', () => {
       flush();
 
-      query<HTMLButtonElement>('.gs-learn-worlds .gs-seg-opt')[2].click();
+      query<HTMLButtonElement>('.gs-learn-worlds .gs-world')[2].click();
 
       expect(TestBed.inject(TutorialEngineService).world()).toBe('w3');
       expect(localStorage.getItem('aihorde.generate.learn.world')).toContain(

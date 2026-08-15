@@ -110,27 +110,7 @@
          this is where they are first met. The choice is kept, so every Learn
          surface answers with the same one afterwards. -->
     @if (worldChoice()) {
-      <div class="gs-learn-worlds">
-        <div
-          class="gs-seg gs-seg--xs"
-          role="group"
-          [attr.aria-label]="'generate.learn.world_label' | transloco"
-        >
-          @for (option of worlds; track option) {
-            <button
-              type="button"
-              class="gs-seg-opt"
-              [attr.aria-pressed]="world() === option"
-              (click)="setWorld(option)"
-            >
-              {{ worldKey(option) | transloco }}
-            </button>
-          }
-        </div>
-        <p class="gs-info-note gs-learn-worlds-note">
-          {{ "generate.learn.world_note" | transloco }}
-        </p>
-      </div>
+      <app-gs-world-picker class="gs-learn-worlds" />
     }
 
     <!-- Every technique the documentation teaches, whether or not its pictures
