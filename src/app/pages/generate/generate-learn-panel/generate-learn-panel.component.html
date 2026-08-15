@@ -1,20 +1,6 @@
-<div class="gs-learn-top">
-  <div class="gs-learn-heading">
-    <h2 class="gs-learn-title">
-      {{ taskNameKey() | transloco }}
-      @if (flow(); as meta) {
-        <span class="gs-tut-technique">{{ meta.title }}</span>
-      }
-    </h2>
-  </div>
-  <!-- Leaving parks the flow: the results come back and the step, world and
-       register wait behind them, with the way back offered in the pane. -->
-  <button type="button" class="gs-learn-leave" (click)="exit()">
-    <app-icon name="arrow-left" class="gs-ico-sm" />
-    {{ "generate.learn.leave" | transloco }}
-  </button>
-</div>
-
+<!-- The tutorial's title, step and way out are the pane's header while the
+     tutorial has the pane (see the results panel), so this surface starts at
+     the register picker. -->
 <!-- Register picker. It rewrites the prose and nothing else, so it sits in the
      header rather than beside the step it happens to be read on. The name is
      said out loud rather than only to a screen reader: three unlabelled words

@@ -217,28 +217,6 @@ describe('GenerateLearnPanelComponent', () => {
     expect(host.applied).toEqual([]);
   });
 
-  it('leaves for the results without ending the flow, which waits to be resumed', () => {
-    engine.goTo(2);
-
-    query<HTMLButtonElement>('.gs-learn-leave')[0].click();
-
-    // Parked: off screen but not forgotten, at the step it was left on.
-    expect(engine.active()).toBe(false);
-    expect(engine.parked()).toBe(true);
-    expect(engine.stepIndex()).toBe(2);
-
-    engine.resume();
-    expect(engine.active()).toBe(true);
-    expect(engine.stepIndex()).toBe(2);
-  });
-
-  it('names the flow by its outcome, with the technique behind it', () => {
-    expect(text()).toContain(
-      TRANSLATIONS['generate.tutorials.flows.txt2img.task_name'],
-    );
-    expect(text()).toContain('Text to image');
-  });
-
   it('has prose for every step the pane can run, in all three registers', () => {
     // Only the flows the pane can actually run: a technique whose steps do not
     // name their controls yet is a page to read, not a walkthrough to follow,
@@ -303,9 +281,6 @@ describe('GenerateLearnPanelComponent', () => {
     it('lists its steps and names itself from its own prose', () => {
       expect(query('.gs-learn-step')).toHaveLength(
         flowSteps('concepts_images').length,
-      );
-      expect(text()).toContain(
-        TRANSLATIONS['generate.learn.flows.concepts_images.task_name'],
       );
       expect(text()).toContain(
         TRANSLATIONS[

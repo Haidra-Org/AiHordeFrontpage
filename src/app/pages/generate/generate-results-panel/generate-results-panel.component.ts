@@ -47,13 +47,16 @@ import {
 import { GenerateFormValue, splitCombinedPrompt } from '../generate-form.model';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import { GsTutorialParkedComponent } from '../../../components/gs-tutorial-parked/gs-tutorial-parked.component';
+import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import {
   TutorialEngineService,
   TutorialLevel,
+  canonicalFlowId,
 } from '../../../services/tutorial-engine.service';
+import { isConceptFlow } from '../../../content/flows';
 import {
   JsonModalHighlight,
   StudioJsonModalComponent,
@@ -225,6 +228,7 @@ function positivePrompt(prompt: string): string {
     StudioJsonModalComponent,
     GenerateLearnPanelComponent,
     GsTutorialParkedComponent,
+    GsWorldPickerComponent,
     GsParamEntryComponent,
     GsSettingChipComponent,
     RouterLink,
@@ -298,6 +302,30 @@ export class GenerateResultsPanelComponent {
 
   /** Whether the follow-along tutorial has the pane instead of the results. */
   public readonly tutorialOpen = this.tutorial.active;
+  /** The tutorial's own header, while it has the pane. */
+  public readonly tutorialTaskKey = computed(() => {
+    const flowId = this.tutorial.activeFlowId();
+    if (!flowId) {
+      return '';
+    }
+    return isConceptFlow(flowId)
+      ? `generate.learn.flows.${flowId}.task_name`
+      : `generate.tutorials.flows.${canonicalFlowId(flowId)}.task_name`;
+  });
+  public readonly tutorialTechnique = computed(
+    () => this.tutorial.flow()?.title ?? null,
+  );
+  public readonly tutorialStep = computed(() => this.tutorial.stepIndex() + 1);
+  public readonly tutorialTotal = this.tutorial.total;
+  /** A concept track is not drawn in a world, so it offers no switch. */
+  public readonly tutorialHasWorlds = computed(() => {
+    const flowId = this.tutorial.activeFlowId();
+    return flowId !== null && !isConceptFlow(flowId);
+  });
+
+  public leaveTutorial(): void {
+    this.tutorial.pause();
+  }
   /** The tutorial's parting note, shown over the results it just made room for. */
   public readonly tutorialCompleted = this.tutorial.completed;
   /** The technique the finished tutorial hands on to, offered on the card. */

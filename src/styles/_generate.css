@@ -8878,21 +8878,38 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn {
   display: block;
 }
-.gen-studio .gs-learn-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
+/* The pane's header while a tutorial has it: what is taught, the step, the
+   world switch and the way out, in the header row the results otherwise own.
+   The title takes the area's technique behind it, as the docs page does. */
+.gen-studio .gs-results-header--tutorial {
+  align-items: center;
 }
-.gen-studio .gs-learn-title {
+.gen-studio .gs-tut-pane-title {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--gs-ink);
+  gap: var(--gs-space-2) var(--gs-space-3);
+  min-width: 0;
+}
+.gen-studio .gs-tut-pane-title .gs-results-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-tut-pane-step {
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-tut-pane-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2) var(--gs-space-3);
+  margin-left: auto;
 }
 /* The register picker with its name over it. Stacked rather than set beside the
    control: on a phone the three options already fill the row, and a label on the

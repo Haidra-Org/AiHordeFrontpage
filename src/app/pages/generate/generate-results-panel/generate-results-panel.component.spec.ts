@@ -887,6 +887,37 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.tutorialCompleted()).toBe(false);
   });
 
+  it('gives the pane header to the tutorial while one is open, and takes it back', () => {
+    // The template is stubbed here, so the header's inputs are read off the
+    // component: what it names, where it is, whether it offers worlds.
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('concepts_images');
+    engine.goTo(1);
+
+    expect(component.tutorialOpen()).toBe(true);
+    expect(component.tutorialTaskKey()).toBe(
+      'generate.learn.flows.concepts_images.task_name',
+    );
+    expect(component.tutorialStep()).toBe(2);
+    // A track is not drawn in a world, so it offers no world switch.
+    expect(component.tutorialHasWorlds()).toBe(false);
+
+    component.leaveTutorial();
+
+    expect(component.tutorialOpen()).toBe(false);
+    expect(engine.parked()).toBe(true);
+  });
+
+  it('names a technique tutorial by its task and offers the worlds', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('txt2img');
+
+    expect(component.tutorialTaskKey()).toBe(
+      'generate.tutorials.flows.txt2img.task_name',
+    );
+    expect(component.tutorialHasWorlds()).toBe(true);
+  });
+
   it('welcomes a reader who has not been here before', () => {
     expect(component.showWelcome()).toBe(true);
     // Three doors, each standing for a different level, and none repeated.

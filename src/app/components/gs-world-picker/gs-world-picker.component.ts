@@ -30,33 +30,61 @@ let instance = 0;
   selector: 'app-gs-world-picker',
   imports: [TranslocoPipe],
   template: `
-    <div class="gs-worlds" role="group" [attr.aria-labelledby]="labelId">
-      <p class="gs-cap-eyebrow gs-worlds-eyebrow" [id]="labelId">
-        <span class="gs-cap-dot" aria-hidden="true"></span>
-        {{ 'generate.learn.world_label' | transloco }}
-      </p>
-      <div class="gs-worlds-opts">
+    @if (compact()) {
+      <!-- The same choice with the scene names alone, for a header that has a
+           line to spare rather than a block: what a world varies is a
+           tooltip's worth here, and the full picker on the docs pages says
+           it in words. -->
+      <div
+        class="gs-seg gs-seg--xs gs-worlds-compact"
+        role="group"
+        [attr.aria-label]="'generate.learn.world_label' | transloco"
+      >
         @for (option of worlds; track option) {
           <button
             type="button"
-            class="gs-world"
+            class="gs-seg-opt"
             [attr.aria-pressed]="world() === option"
+            [attr.title]="hintKey(option) | transloco"
             (click)="setWorld(option)"
           >
-            <span class="gs-world-name">{{ nameKey(option) | transloco }}</span>
-            <span class="gs-world-hint">{{ hintKey(option) | transloco }}</span>
+            {{ nameKey(option) | transloco }}
           </button>
         }
       </div>
-      @if (standIn()) {
-        <p class="gs-info-note gs-worlds-note" role="status">
-          {{
-            'generate.learn.world_note'
-              | transloco: { world: nameKey(world()) | transloco }
-          }}
+    } @else {
+      <div class="gs-worlds" role="group" [attr.aria-labelledby]="labelId">
+        <p class="gs-cap-eyebrow gs-worlds-eyebrow" [id]="labelId">
+          <span class="gs-cap-dot" aria-hidden="true"></span>
+          {{ 'generate.learn.world_label' | transloco }}
         </p>
-      }
-    </div>
+        <div class="gs-worlds-opts">
+          @for (option of worlds; track option) {
+            <button
+              type="button"
+              class="gs-world"
+              [attr.aria-pressed]="world() === option"
+              (click)="setWorld(option)"
+            >
+              <span class="gs-world-name">{{
+                nameKey(option) | transloco
+              }}</span>
+              <span class="gs-world-hint">{{
+                hintKey(option) | transloco
+              }}</span>
+            </button>
+          }
+        </div>
+        @if (standIn()) {
+          <p class="gs-info-note gs-worlds-note" role="status">
+            {{
+              'generate.learn.world_note'
+                | transloco: { world: nameKey(world()) | transloco }
+            }}
+          </p>
+        }
+      </div>
+    }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -65,6 +93,8 @@ export class GsWorldPickerComponent {
 
   /** Whether the pictures on screen are the first world's, standing in. */
   public readonly standIn = input(false);
+  /** A one-line segmented form for headers; the block form is the default. */
+  public readonly compact = input(false);
 
   public readonly labelId = `gs-worlds-label-${instance++}`;
   public readonly worlds = this.engine.worlds;

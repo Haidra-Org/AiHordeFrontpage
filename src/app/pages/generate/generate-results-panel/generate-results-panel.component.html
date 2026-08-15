@@ -1,89 +1,131 @@
 <div class="flex h-full min-h-0 flex-col">
-  <!-- Pane header: title, live status pill, download-all -->
-  <header class="gs-results-header">
-    <div class="flex items-center gap-2.5">
-      <h2 id="gs-results-heading" class="gs-results-title">
-        {{ "generate.results.heading" | transloco }}
-      </h2>
-      @if (isBusy()) {
-        <span class="gs-status gs-status--busy">
-          <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
+  <!-- While a tutorial has the pane, the pane's header is the tutorial's: what
+       it teaches, where the reader is in it, which world it is drawn in, and
+       the way out. The results header comes back when the reader leaves; two
+       headers stacked would be the confusion of a pane that is two things. -->
+  @if (tutorialOpen()) {
+    <header class="gs-results-header gs-results-header--tutorial">
+      <div class="gs-tut-pane-title">
+        <h2 id="gs-results-heading" class="gs-results-title">
+          {{ tutorialTaskKey() | transloco }}
+          @if (tutorialTechnique(); as technique) {
+            <span class="gs-tut-technique">{{ technique }}</span>
+          }
+        </h2>
+        <span class="gs-tut-pane-step">
           {{
-            "generate.results.status_generating"
-              | transloco
-                : { generating: generatingCount(), queued: queuedCount() }
+            "generate.learn.progress"
+              | transloco: { current: tutorialStep(), total: tutorialTotal() }
           }}
         </span>
-      } @else if (doneCount() > 0) {
-        <span class="gs-status gs-status--done">
-          {{
-            "generate.results.status_done" | transloco: { count: doneCount() }
-          }}
-        </span>
-      } @else {
-        <span class="gs-status gs-status--ready">
-          {{ "generate.results.status_ready" | transloco }}
-        </span>
-      }
-    </div>
-    <div class="flex items-center gap-2">
-      @if (selectMode()) {
-        <button
-          type="button"
-          class="gs-download-all"
-          (click)="downloadSelected()"
-          [disabled]="!hasSelectedResults()"
-        >
-          <app-icon name="arrow-down-tray" class="gs-ico-sm" />
-          {{
-            "generate.results.download_selected"
-              | transloco: { count: selectedCount() }
-          }}
+        @if (isBusy()) {
+          <span class="gs-status gs-status--busy">
+            <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
+            {{
+              "generate.results.status_generating"
+                | transloco
+                  : { generating: generatingCount(), queued: queuedCount() }
+            }}
+          </span>
+        }
+      </div>
+      <div class="gs-tut-pane-actions">
+        @if (tutorialHasWorlds()) {
+          <app-gs-world-picker [compact]="true" />
+        }
+        <button type="button" class="gs-learn-leave" (click)="leaveTutorial()">
+          <app-icon name="arrow-left" class="gs-ico-sm" />
+          {{ "generate.learn.leave" | transloco }}
         </button>
-        <button
-          type="button"
-          class="gs-download-all gs-download-all--danger"
-          (click)="requestDeleteSelected()"
-          [disabled]="selectedCount() === 0"
-        >
-          <app-icon name="trash-modern" class="gs-ico-sm" />
-          {{
-            "generate.results.delete_selected"
-              | transloco: { count: selectedCount() }
-          }}
-        </button>
-        <button
-          type="button"
-          class="gs-download-all"
-          (click)="toggleSelectMode()"
-        >
-          {{ "generate.results.select_done" | transloco }}
-        </button>
-      } @else {
-        @if (hasFinished()) {
+      </div>
+    </header>
+  } @else {
+    <!-- Pane header: title, live status pill, download-all -->
+    <header class="gs-results-header">
+      <div class="flex items-center gap-2.5">
+        <h2 id="gs-results-heading" class="gs-results-title">
+          {{ "generate.results.heading" | transloco }}
+        </h2>
+        @if (isBusy()) {
+          <span class="gs-status gs-status--busy">
+            <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
+            {{
+              "generate.results.status_generating"
+                | transloco
+                  : { generating: generatingCount(), queued: queuedCount() }
+            }}
+          </span>
+        } @else if (doneCount() > 0) {
+          <span class="gs-status gs-status--done">
+            {{
+              "generate.results.status_done" | transloco: { count: doneCount() }
+            }}
+          </span>
+        } @else {
+          <span class="gs-status gs-status--ready">
+            {{ "generate.results.status_ready" | transloco }}
+          </span>
+        }
+      </div>
+      <div class="flex items-center gap-2">
+        @if (selectMode()) {
+          <button
+            type="button"
+            class="gs-download-all"
+            (click)="downloadSelected()"
+            [disabled]="!hasSelectedResults()"
+          >
+            <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+            {{
+              "generate.results.download_selected"
+                | transloco: { count: selectedCount() }
+            }}
+          </button>
+          <button
+            type="button"
+            class="gs-download-all gs-download-all--danger"
+            (click)="requestDeleteSelected()"
+            [disabled]="selectedCount() === 0"
+          >
+            <app-icon name="trash-modern" class="gs-ico-sm" />
+            {{
+              "generate.results.delete_selected"
+                | transloco: { count: selectedCount() }
+            }}
+          </button>
           <button
             type="button"
             class="gs-download-all"
             (click)="toggleSelectMode()"
           >
-            <app-icon name="check-circle" class="gs-ico-sm" />
-            {{ "generate.results.select" | transloco }}
+            {{ "generate.results.select_done" | transloco }}
+          </button>
+        } @else {
+          @if (hasFinished()) {
+            <button
+              type="button"
+              class="gs-download-all"
+              (click)="toggleSelectMode()"
+            >
+              <app-icon name="check-circle" class="gs-ico-sm" />
+              {{ "generate.results.select" | transloco }}
+            </button>
+          }
+          <button
+            type="button"
+            class="gs-download-all"
+            (click)="downloadAllFinished()"
+            [disabled]="!hasDownloadableResults()"
+          >
+            <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+            {{ "generate.results.download_all" | transloco }}
           </button>
         }
-        <button
-          type="button"
-          class="gs-download-all"
-          (click)="downloadAllFinished()"
-          [disabled]="!hasDownloadableResults()"
-        >
-          <app-icon name="arrow-down-tray" class="gs-ico-sm" />
-          {{ "generate.results.download_all" | transloco }}
-        </button>
-      }
-    </div>
-  </header>
+      </div>
+    </header>
+  }
 
-  @if (hasFinished() && !selectMode()) {
+  @if (hasFinished() && !selectMode() && !tutorialOpen()) {
     <div class="gs-view-bar">
       <!-- While a tutorial has the pane, the gallery is a strip under it rather
            than the thing being looked at: laying it out and captioning it are
