@@ -223,6 +223,18 @@
       </div>
     </div>
 
+    <!-- The world switch, as the pane header has it: the same lesson on
+         another subject, without leaving the step. A concept track is not
+         drawn in a world and offers none. -->
+    @if (!conceptTrack()) {
+      <div class="gs-learn-levels">
+        <span class="gs-learn-levels-label">{{
+          "generate.learn.world_label" | transloco
+        }}</span>
+        <app-gs-world-picker [compact]="true" />
+      </div>
+    }
+
     <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
       {{ "generate.learn.sheet_exit" | transloco }}
     </button>
