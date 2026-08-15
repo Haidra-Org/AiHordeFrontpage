@@ -68,74 +68,81 @@ let nextInstance = 0;
   imports: [TranslocoPipe, IconComponent],
   template: `
     <div class="gs-sheet-panel" [style.transform]="dragTransform()">
-      <!-- Pointer-only, and hidden from assistive technology on purpose:
-           everything the grabber does is also on the chevron beside it, and
-           that is the control a keyboard or a screen reader is given. -->
-      <button
-        type="button"
-        class="gs-sheet-grab"
-        tabindex="-1"
-        aria-hidden="true"
-        (pointerdown)="onPointerDown($event)"
-        (pointermove)="onPointerMove($event)"
-        (pointerup)="onPointerUp($event)"
-        (pointercancel)="onPointerUp($event)"
-        (click)="onGrabClick()"
-      >
-        <span class="gs-sheet-grip"></span>
-      </button>
+      <!-- The grip row: the grabber across the width, and the stop buttons at
+           its end, so the controls that move the sheet sit with the handle
+           that moves it rather than in the row the content's own actions
+           need. The grabber is pointer-only and hidden from assistive
+           technology on purpose: everything it does is on the buttons beside
+           it, and those are what a keyboard or a screen reader is given. -->
+      <div class="gs-sheet-top">
+        <button
+          type="button"
+          class="gs-sheet-grab"
+          tabindex="-1"
+          aria-hidden="true"
+          (pointerdown)="onPointerDown($event)"
+          (pointermove)="onPointerMove($event)"
+          (pointerup)="onPointerUp($event)"
+          (pointercancel)="onPointerUp($event)"
+          (click)="onGrabClick()"
+        >
+          <span class="gs-sheet-grip"></span>
+        </button>
+        <div class="gs-sheet-stops">
+          <!-- One labelled button per direction the sheet can go from where it
+             is: the words say what happens, the chevron says which way. -->
+          @if (stop() !== 'full') {
+            <button
+              type="button"
+              class="gs-sheet-btn gs-sheet-btn--labelled"
+              [attr.aria-expanded]="expanded()"
+              [attr.aria-controls]="bodyId"
+              (click)="up()"
+            >
+              <app-icon
+                name="chevron-right"
+                class="gs-sheet-chev gs-sheet-chev--up"
+              />
+              <span class="gs-sheet-btn-text">{{
+                (stop() === 'peek'
+                  ? 'generate.sheet.show'
+                  : 'generate.sheet.fill'
+                ) | transloco
+              }}</span>
+            </button>
+          }
+          @if (stop() !== 'peek') {
+            <button
+              type="button"
+              class="gs-sheet-btn gs-sheet-btn--labelled"
+              [attr.aria-controls]="bodyId"
+              (click)="down()"
+            >
+              <app-icon name="chevron-right" class="gs-sheet-chev" />
+              <span class="gs-sheet-btn-text">{{
+                (stop() === 'full'
+                  ? 'generate.sheet.shrink'
+                  : 'generate.sheet.hide'
+                ) | transloco
+              }}</span>
+            </button>
+          }
+          @if (dismissible()) {
+            <button
+              type="button"
+              class="gs-sheet-btn"
+              [attr.aria-label]="'generate.sheet.close' | transloco"
+              (click)="close()"
+            >
+              <app-icon name="x-mark" />
+            </button>
+          }
+        </div>
+      </div>
       <div class="gs-sheet-bar">
         <div class="gs-sheet-slot">
           <ng-content select="[sheet-bar]" />
         </div>
-        <!-- One labelled button per direction the sheet can go from where it
-             is: the words say what happens, the chevron says which way. -->
-        @if (stop() !== 'full') {
-          <button
-            type="button"
-            class="gs-sheet-btn gs-sheet-btn--labelled"
-            [attr.aria-expanded]="expanded()"
-            [attr.aria-controls]="bodyId"
-            (click)="up()"
-          >
-            <app-icon
-              name="chevron-right"
-              class="gs-sheet-chev gs-sheet-chev--up"
-            />
-            <span class="gs-sheet-btn-text">{{
-              (stop() === 'peek'
-                ? 'generate.sheet.show'
-                : 'generate.sheet.fill'
-              ) | transloco
-            }}</span>
-          </button>
-        }
-        @if (stop() !== 'peek') {
-          <button
-            type="button"
-            class="gs-sheet-btn gs-sheet-btn--labelled"
-            [attr.aria-controls]="bodyId"
-            (click)="down()"
-          >
-            <app-icon name="chevron-right" class="gs-sheet-chev" />
-            <span class="gs-sheet-btn-text">{{
-              (stop() === 'full'
-                ? 'generate.sheet.shrink'
-                : 'generate.sheet.hide'
-              ) | transloco
-            }}</span>
-          </button>
-        }
-        @if (dismissible()) {
-          <button
-            type="button"
-            class="gs-sheet-btn"
-            [attr.aria-label]="'generate.sheet.close' | transloco"
-            (click)="close()"
-          >
-            <app-icon name="x-mark" />
-          </button>
-        }
       </div>
       <div
         #sheetBody

@@ -9285,12 +9285,24 @@ app-gs-compare-wipe {
 }
 
 /* On mobile the studio scrolls with the page, so the subnav is pinned under
-   the tool tab bar the same way that bar is pinned under the site nav. */
+   the tool tab bar the same way that bar is pinned under the site nav. In the
+   docs area the crumbs and the tabs pin together as one block, under the site
+   nav alone: the docs pages have no tool tab bar above them. */
 @media (max-width: 1023.98px) {
   .gen-studio .gs-hub-nav {
     position: sticky;
     top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
     z-index: 4;
+  }
+  .gs-docs .gs-docs-chrome {
+    position: sticky;
+    top: var(--nav-height-mobile);
+    z-index: 4;
+    background: var(--gs-panel);
+    box-shadow: var(--gs-elev-1);
+  }
+  .gs-docs .gs-docs-chrome .gs-hub-nav {
+    position: static;
   }
 }
 
@@ -9638,11 +9650,21 @@ app-gs-compare-wipe {
   color: var(--gs-muted);
 }
 
-/* Side by side there is no measure left for a hint on the narrowest phones, so
-   the pair stacks rather than shrinking to two words a line. */
-@media (max-width: 390px) {
-  .gen-studio .gs-learn-hero-doors {
-    grid-template-columns: minmax(0, 1fr);
+/* The two doors stay side by side on a phone, so the choice reads as one
+   choice; what gives is the hint, which is dropped under 480px, and the door
+   becomes an icon over its title. */
+@media (max-width: 479.98px) {
+  .gen-studio .gs-learn-hero-door {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .gen-studio .gs-learn-hero-door-hint {
+    display: none;
+  }
+  .gen-studio .gs-learn-hero-door-arrow {
+    display: none;
   }
 }
 
@@ -10350,8 +10372,20 @@ app-gs-compare-wipe {
    until the reader shrinks it, which is what a reader who finds the half too
    small to follow asked for. */
 .gen-studio .gs-sheet--full .gs-sheet-panel {
-  max-height: calc(100dvh - env(safe-area-inset-top, 0px));
-  height: calc(100dvh - env(safe-area-inset-top, 0px));
+  max-height: calc(100dvh - var(--nav-height-mobile, 64px));
+  height: calc(100dvh - var(--nav-height-mobile, 64px));
+}
+.gen-studio .gs-sheet-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 0;
+}
+.gen-studio .gs-sheet-stops {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
 }
 .gen-studio .gs-sheet--full {
   box-shadow: none;
@@ -10370,9 +10404,9 @@ app-gs-compare-wipe {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 26px;
-  flex: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -10414,6 +10448,7 @@ app-gs-compare-wipe {
    on a bar at the foot of a phone is a guess. */
 .gen-studio .gs-sheet-btn--labelled {
   width: auto;
+  height: 36px;
   gap: 4px;
   padding: 0 10px 0 6px;
   font-size: 11.5px;

@@ -2,39 +2,44 @@
      that names no area, which is `/docs` itself on its way to the one area
      there is. -->
 @if (area(); as current) {
-  <nav
-    class="gs-docs-crumbs"
-    [attr.aria-label]="'docs.breadcrumb_label' | transloco"
-  >
-    <a class="gs-docs-crumb" [routerLink]="docsRoot">
-      {{ "docs.title" | transloco }}
-    </a>
-    <span class="gs-docs-crumb-sep" aria-hidden="true">/</span>
-    <span class="gs-docs-crumb gs-docs-crumb--here" aria-current="page">
-      {{ current.labelKey | transloco }}
-    </span>
-  </nav>
+  <!-- Crumbs and tabs are one block of chrome, so on a phone they pin and
+       scroll together: pinning the tabs alone left the crumbs sliding under
+       them, which read as a broken window. -->
+  <div class="gs-docs-chrome">
+    <nav
+      class="gs-docs-crumbs"
+      [attr.aria-label]="'docs.breadcrumb_label' | transloco"
+    >
+      <a class="gs-docs-crumb" [routerLink]="docsRoot">
+        {{ "docs.title" | transloco }}
+      </a>
+      <span class="gs-docs-crumb-sep" aria-hidden="true">/</span>
+      <span class="gs-docs-crumb gs-docs-crumb--here" aria-current="page">
+        {{ current.labelKey | transloco }}
+      </span>
+    </nav>
 
-  <!-- One scrolling row rather than a wrapping one: an area is a short list of
+    <!-- One scrolling row rather than a wrapping one: an area is a short list of
        pages and it should cost one line of every page it sits on. -->
-  <nav
-    class="gs-hub-nav"
-    [attr.aria-label]="'generate.learn.nav_label' | transloco"
-  >
-    @for (entry of entries(); track entry.activePath) {
-      <!-- The entry the reader is on is said once, by `aria-current`, and the
+    <nav
+      class="gs-hub-nav"
+      [attr.aria-label]="'generate.learn.nav_label' | transloco"
+    >
+      @for (entry of entries(); track entry.activePath) {
+        <!-- The entry the reader is on is said once, by `aria-current`, and the
            underline is drawn from it: a second class saying the same thing is a
            second place for the two to disagree. -->
-      <a
-        class="gs-hub-nav-link"
-        [routerLink]="entry.link"
-        [attr.aria-current]="isActive(entry) ? 'page' : null"
-      >
-        <app-icon [name]="entry.icon" class="gs-hub-nav-mark" />
-        <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
-      </a>
-    }
-  </nav>
+        <a
+          class="gs-hub-nav-link"
+          [routerLink]="entry.link"
+          [attr.aria-current]="isActive(entry) ? 'page' : null"
+        >
+          <app-icon [name]="entry.icon" class="gs-hub-nav-mark" />
+          <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
+        </a>
+      }
+    </nav>
+  </div>
 }
 
 <div class="gs-learn-outlet">
