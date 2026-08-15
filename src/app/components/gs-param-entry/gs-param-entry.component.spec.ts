@@ -175,13 +175,21 @@ describe('GsParamEntryComponent', () => {
         .spyOn(router, 'navigateByUrl')
         .mockResolvedValue(true);
 
-      const chips = all<HTMLButtonElement>('.gs-ref-chip--try');
-      expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
-        'Try 20 in the studio',
-        'Try 40 in the studio',
-      ]);
+      // The page has no form to write into, so taking one of these numbers is a
+      // trip to the panel: a door on the evidence chassis rather than a chip,
+      // saying what it is about to do before it does it.
+      const doors = all<HTMLButtonElement>('.gs-ref-try-door');
+      expect(
+        doors.map((door) =>
+          door.querySelector('.gs-cap-title')?.textContent?.trim(),
+        ),
+      ).toEqual(['Try 20 in the studio', 'Try 40 in the studio']);
+      expect(doors[0].querySelector('.gs-cap-meta')?.textContent?.trim()).toBe(
+        translations['generate.sweeps.studio_door_note'],
+      );
+      expect(all('.gs-ref-chip--try')).toHaveLength(0);
 
-      chips[0].click();
+      doors[0].click();
 
       expect(navigate).toHaveBeenCalledWith('/generate/image');
       expect(TestBed.inject(GsTryItService).consumeArmed()?.fields).toEqual({
@@ -208,6 +216,18 @@ describe('GsParamEntryComponent', () => {
     await setUp({ topic: 'webhook' });
     expect(find('app-gs-sweep-scrub')).toBeNull();
     expect(find('app-gs-sweep-grid')).toBeNull();
+  });
+
+  it('gives the page to the setting own strip and folds the rest away', async () => {
+    await setUp({ topic: 'steps' });
+
+    // The setting's own evidence is the page's subject and is already open on
+    // it; the further strips are footnotes to it and take the compact card, so
+    // a second capsule does not read as a second subject.
+    expect(all('.gs-sweep-open')).toHaveLength(1);
+    const folded = all('.gs-sweep-offer');
+    expect(folded).toHaveLength(1);
+    expect(folded[0].classList.contains('gs-cap--film')).toBe(true);
   });
 
   it('points on to its siblings, each wearing its own area mark', async () => {

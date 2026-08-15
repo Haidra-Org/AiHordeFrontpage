@@ -6,6 +6,7 @@ import {
   GsIndexRailComponent,
   GsIndexRailEntry,
 } from '../../../components/gs-index-rail/gs-index-rail.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { GsSweepGridComponent } from '../../../components/gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
@@ -78,6 +79,7 @@ const RAIL_ENTRIES: readonly GsIndexRailEntry[] = [
     RouterLink,
     IconComponent,
     GsIndexRailComponent,
+    GsDoorComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
   ],

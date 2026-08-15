@@ -365,9 +365,10 @@ describe('GenerateLearnPanelComponent', () => {
       await serveLibrary(stubIndex);
 
       expect(query('.gs-sweep-offer')).toHaveLength(1);
-      // The offer names the setting it is about, so the assertion is on the
-      // interpolated line rather than on the key's raw placeholder.
-      expect(text()).toContain('See what changing Steps does');
+      // The capsule names the setting and its payload, so two of them on one
+      // page are told apart before either is opened.
+      expect(text()).toContain('Sampling · Interactive explorer');
+      expect(text()).toContain('3 frames · 4 → 30');
     });
 
     it('offers nothing to the registers that are past needing it', () => {

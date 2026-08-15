@@ -164,6 +164,22 @@ describe('GsHelpComponent', () => {
       expect(see).not.toBeNull();
       expect(hasReference('steps')).toBe(true);
 
+      // The offer wears the evidence family's grammar at the size a field note
+      // has room for: the ends of the strip it is offering, the badge naming
+      // the area, and the chevron that says the pictures open in place.
+      expect(
+        Array.from(
+          see.querySelectorAll<HTMLImageElement>('.gs-cap-peek-frame'),
+        ),
+      ).toHaveLength(2);
+      // This suite renders against an empty table, so the badge is asserted by
+      // the key it resolves and by the area it takes its hue from.
+      expect(see.querySelector('.gs-cap-eyebrow')?.textContent?.trim()).toBe(
+        'generate.sweeps.badge_explorer',
+      );
+      expect(see.classList.contains('gs-sec--sampling')).toBe(true);
+      expect(see.querySelector('.gs-cap-go')).not.toBeNull();
+
       see.click();
       fixture.detectChanges();
 

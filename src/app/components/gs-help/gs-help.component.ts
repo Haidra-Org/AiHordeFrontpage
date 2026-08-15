@@ -14,10 +14,12 @@ import { GsHelpService } from '../../services/gs-help.service';
 import {
   hasReference,
   settingNoteKey,
+  settingSection,
   settingSweepGrid,
   settingSweepStrip,
   settingTitleKey,
 } from '../../content/settings';
+import { sectionIdentity } from '../../content/sections';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -71,9 +73,47 @@ import { IconComponent } from '../icon/icon.component';
            of it changing: "See it in action" is a promise, and an entry with
            nothing but prose in it does not keep it. -->
       @if (canSeeIt()) {
-        <button type="button" class="gs-help-see" (click)="seeIt($event)">
-          <app-icon name="photo" class="gs-ico-sm" />
-          {{ 'generate.help.see_it' | transloco }}
+        <button
+          type="button"
+          class="gs-help-see"
+          [class]="identityClass()"
+          (click)="seeIt($event)"
+        >
+          <!-- The capsule's grammar, at the only size a field note has room
+               for: two of the strip's own frames on the stage, the badge that
+               says what kind of thing this is, and the chevron. A full capsule
+               would be wider than the row it hangs under. -->
+          @if (peek().length > 0) {
+            <span class="gs-cap-peek" aria-hidden="true">
+              @for (frame of peek(); track $index) {
+                <img
+                  class="gs-cap-peek-frame"
+                  [src]="frame"
+                  alt=""
+                  loading="lazy"
+                />
+              }
+            </span>
+          }
+          <span class="gs-cap-text">
+            <span class="gs-cap-eyebrow">
+              <span class="gs-cap-dot" aria-hidden="true"></span>
+              @if (sectionLabelKey(); as key) {
+                {{
+                  'generate.sweeps.badge_explorer'
+                    | transloco: { section: key | transloco }
+                }}
+              } @else {
+                {{ 'generate.sweeps.badge_explorer_plain' | transloco }}
+              }
+            </span>
+            <span class="gs-cap-title">
+              {{ 'generate.help.see_it' | transloco }}
+            </span>
+          </span>
+          <span class="gs-cap-go" aria-hidden="true">
+            <app-icon name="chevron-right" class="gs-ico-sm" />
+          </span>
         </button>
       }
     }
@@ -127,6 +167,36 @@ export class GsHelpComponent {
       ((!!strip && !!this.sweeps.strip(strip)) ||
         (!!grid && !!this.sweeps.grid(grid)))
     );
+  });
+
+  /** The area of the panel this field sits in, for the offer's badge. */
+  private readonly identity = computed(() =>
+    sectionIdentity(settingSection(this.topic())),
+  );
+
+  public readonly sectionLabelKey = computed(
+    () => this.identity()?.labelKey ?? null,
+  );
+  public readonly identityClass = computed(
+    () => this.identity()?.className ?? '',
+  );
+
+  /**
+   * The two frames the offer leads with: the ends of the strip it is offering.
+   * A grid-only topic has no strip to show and gets the badge alone, which is
+   * still the family's grammar without promising a picture there is none of.
+   */
+  public readonly peek = computed<readonly string[]>(() => {
+    if (!this.canSeeIt()) {
+      return [];
+    }
+    const strip = settingSweepStrip(this.topic());
+    const stops = (strip && this.sweeps.strip(strip)?.stops) || [];
+    return stops.length === 0
+      ? []
+      : [stops[0], stops[stops.length - 1]].map((stop) =>
+          this.sweeps.imageUrl(stop),
+        );
   });
 
   constructor() {

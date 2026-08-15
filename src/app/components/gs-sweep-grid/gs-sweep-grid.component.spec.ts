@@ -104,14 +104,34 @@ describe('GsSweepGridComponent', () => {
     expect(find('.gs-sweep-grid-offer')).toBeNull();
   });
 
-  it('offers the plate in one line and fetches no frame until it is taken', async () => {
+  it('offers the plate as a door onto its own frames', async () => {
     await setUp();
 
-    // The offer names both settings, so two offers on one page are told apart.
+    // The door names both settings, so two doors on one page are told apart,
+    // and states the payload rather than describing it.
+    const door = find('.gs-sweep-grid-offer')!;
+    expect(door.querySelector('.gs-cap-title')?.textContent?.trim()).toBe(
+      'Open the Steps × Guidance (CFG) grid',
+    );
+    expect(door.querySelector('.gs-cap-eyebrow')?.textContent?.trim()).toBe(
+      'Sampling · Evidence grid',
+    );
+    expect(door.querySelector('.gs-cap-meta')?.textContent?.trim()).toBe(
+      '4 frames · 2 × 2',
+    );
+    // The contact sheet is the plate's own first stops. Nothing else is
+    // fetched: a grid is dozens of frames and waits to be asked for.
     expect(
-      find('.gs-sweep-grid-offer')?.textContent?.replace(/\s+/g, ' ').trim(),
-    ).toBe('See the full grid: Steps × Guidance (CFG)');
-    expect(all('img')).toHaveLength(0);
+      all<HTMLImageElement>('.gs-door-tile').map((tile) =>
+        tile.getAttribute('src'),
+      ),
+    ).toEqual(
+      ['001_s08_c2', '002_s08_c7', '003_s30_c2', '004_s30_c7'].map(
+        (file) =>
+          `${environment.evidenceBaseUrl}/steps-cfg-grid/albedobase-xl/person/${file}.webp`,
+      ),
+    );
+    expect(all('.gs-sweep-plate-img')).toHaveLength(0);
   });
 
   it('lays the plate out under the headers its axes name', async () => {

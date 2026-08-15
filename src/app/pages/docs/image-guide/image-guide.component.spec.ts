@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageGuideComponent } from './image-guide.component';
 import en from '../../../../assets/i18n/en.json';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
+import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 
 describe('DocsImageGuideComponent', () => {
   let fixture: ComponentFixture<DocsImageGuideComponent>;
@@ -74,6 +76,33 @@ describe('DocsImageGuideComponent', () => {
       'negative_prompt',
       'resolution',
     ]);
+  });
+
+  it('asks every strip on the page for the compact card', () => {
+    // The guide stacks a strip under most of its steps and most of its terms.
+    // At full size that is a page of near-identical cards, which is the state
+    // the compact register exists to answer.
+    const strips = fixture.debugElement.queryAll(
+      By.directive(GsSweepScrubComponent),
+    );
+
+    expect(strips.length).toBeGreaterThan(1);
+    for (const strip of strips) {
+      expect(strip.componentInstance.register()).toBe('filmcard');
+    }
+  });
+
+  it('hands off to the studio through a door rather than a link', () => {
+    const door = query<HTMLButtonElement>('.gs-guide-practice')[0];
+
+    // A press that leaves carries the arrow and the panel's own peek; only
+    // evidence that opens where it stands carries the chevron.
+    expect(door.querySelector('.gs-door-arrow')).not.toBeNull();
+    expect(door.querySelector('.gs-door-panel')).not.toBeNull();
+    expect(door.querySelector('.gs-cap-go')).toBeNull();
+    expect(door.querySelector('.gs-cap-meta')?.textContent?.trim()).toBe(
+      (en as Record<string, string>)['generate.sweeps.studio_door_note'],
+    );
   });
 
   it('reuses the panel help topics without repeating one', () => {

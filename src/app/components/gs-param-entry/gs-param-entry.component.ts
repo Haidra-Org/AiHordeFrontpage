@@ -30,6 +30,7 @@ import {
   settingTitleKey,
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
+import { GsDoorComponent } from '../gs-door/gs-door.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 
@@ -62,6 +63,7 @@ const TRADEOFF_ICONS = {
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsDoorComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
   ],
@@ -118,7 +120,7 @@ const TRADEOFF_ICONS = {
       </p>
     }
 
-    @if (range() || applies().length > 0) {
+    @if (range() || (!onPage() && applies().length > 0)) {
       <p class="gs-ref-range">
         @if (range(); as bounds) {
           <span class="gs-ref-chip">{{
@@ -132,19 +134,36 @@ const TRADEOFF_ICONS = {
             }}</span>
           }
         }
-        <!-- The numbers the entry argues for, offered rather than only stated.
-             The routed page has no form to write to, so its chips say where
-             they would land and take the reader there with the value in hand. -->
-        @for (option of applies(); track option.display) {
-          <button
-            type="button"
-            class="gs-ref-chip gs-ref-chip--try"
-            (click)="runApply(option)"
-          >
-            {{ tryKey() | transloco: { value: option.display } }}
-          </button>
+        <!-- Beside the studio the numbers the entry argues for are written into
+             the form from here, which is a chip's worth of press. -->
+        @if (!onPage()) {
+          @for (option of applies(); track option.display) {
+            <button
+              type="button"
+              class="gs-ref-chip gs-ref-chip--try"
+              (click)="runApply(option)"
+            >
+              {{ tryKey() | transloco: { value: option.display } }}
+            </button>
+          }
         }
       </p>
+    }
+
+    <!-- The routed page has no form to write to: taking one of these numbers is
+         a trip to the panel with the value in hand, which is a door rather than
+         a chip. It carries the arrow every hand-off carries, and says what it
+         will do before it does it. -->
+    @if (onPage()) {
+      @for (option of applies(); track option.display) {
+        <app-gs-door
+          kind="studio"
+          controlClass="gs-ref-try-door"
+          [title]="tryKey() | transloco: { value: option.display }"
+          [meta]="'generate.sweeps.studio_door_note' | transloco"
+          (entered)="runApply(option)"
+        />
+      }
     }
 
     @if (bodyText && bodyText !== bodyKey) {
@@ -159,9 +178,11 @@ const TRADEOFF_ICONS = {
     }
     <!-- Further evidence about the same setting, under the strip of the setting
          itself: the reader has met the range before they are shown what one
-         value of it is made of. -->
+         value of it is made of. The setting's own strip is the page's evidence
+         and stays full size; these are the footnotes to it, and take the
+         compact card so a second capsule does not read as a second subject. -->
     @for (parameter of alsoStrips(); track parameter) {
-      <app-gs-sweep-scrub [parameter]="parameter" [startExpanded]="onPage()" />
+      <app-gs-sweep-scrub [parameter]="parameter" register="filmcard" />
     }
     @if (sweepGridParameter(); as parameter) {
       <app-gs-sweep-grid [parameter]="parameter" [startExpanded]="onPage()" />

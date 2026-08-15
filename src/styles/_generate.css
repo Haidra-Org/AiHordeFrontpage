@@ -90,8 +90,23 @@
   --gs-sec-workflows: #4d7c0f;
 }
 
+/* The lightbox the evidence capsules are drawn on. A rendered frame is judged
+   against a dark ground in every room where pictures are judged, and the plate
+   has to be unmistakably not the page it sits in, so these do not flip with the
+   theme: the stage is the same dark in both. Only the rim moves, because the
+   edge that separates the plate from a white page is not the edge that
+   separates it from a dark one. */
+:root {
+  --gs-stage: #14161c;
+  --gs-stage-rim: #2f3542;
+  --gs-stage-ink: #e7eaf0;
+  /* 4.6:1 on --gs-stage: the quiet ink on the plate still carries meta text. */
+  --gs-stage-label: #9aa1ad;
+}
+
 /* The dark half, lightened to clear 3:1 on the dark panel and card. */
 .dark {
+  --gs-stage-rim: #3b4252;
   --gs-sec-prompt: #a5b4fc;
   --gs-sec-model: #e879f9;
   --gs-sec-size: #5eead4;
@@ -7184,44 +7199,468 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep {
   margin-top: 9px;
 }
-.gen-studio .gs-sweep-offer,
-.gen-studio .gs-sweep-grid-offer {
+/* ------- the evidence capsule ---------------------------------------- */
+
+/* One chassis for every piece of rendered proof: a capsule that opens its own
+   frames in place, and the doors that leave for a grid or for the panel. What
+   separates them is the peek pane on the left and the glyph on the right, and
+   nothing else, so a reader who has learned one has learned all of them.
+
+   Collapsed, the capsule leads with three of its own frames rather than with a
+   sentence about them. A sentence is the same sentence on every setting, which
+   is what made ten of these on one page read as ten copies of one offer; the
+   frames are never the same twice. */
+.gen-studio .gs-cap {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: stretch;
+  gap: 14px;
   width: 100%;
   min-height: 44px;
-  padding: 7px 9px;
-  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
-  border-radius: 9px;
-  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  background: var(--gs-card);
   color: var(--gs-ink);
-  font-size: 12px;
-  font-weight: 600;
   text-align: left;
   cursor: pointer;
 }
-.gen-studio .gs-sweep-offer:hover,
-.gen-studio .gs-sweep-grid-offer:hover {
+.gen-studio .gs-cap:hover {
   border-color: var(--gs-blue);
 }
-/* Large enough that the thumbnail is a picture rather than a swatch, and still
-   short enough for the offer to stay the one line of prose it is. */
-.gen-studio .gs-sweep-preview {
-  flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
-  border-radius: 6px;
+/* The peek pane, on the same dark ground the open plate uses, with the one
+   ornamental note in the whole family: a perforated edge top and bottom. It
+   says "strip of film" faster than any label, and it is the peek's alone. */
+.gen-studio .gs-cap-peek {
+  position: relative;
+  flex: 0 0 118px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--gs-stage);
+}
+.gen-studio .gs-cap-peek::before,
+.gen-studio .gs-cap-peek::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--gs-stage-rim) 0 3px,
+    transparent 3px 9px
+  );
+}
+.gen-studio .gs-cap-peek::before {
+  top: 3px;
+}
+.gen-studio .gs-cap-peek::after {
+  bottom: 3px;
+}
+.gen-studio .gs-cap-peek-frame {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 1;
+  border-radius: 2px;
   object-fit: cover;
 }
-.gen-studio .gs-sweep-offer-label {
+.gen-studio .gs-cap-text {
+  flex: 1;
   min-width: 0;
+  padding: 12px 8px 12px 0;
 }
+/* The section's hue rides on the dash rather than on the words: the identity
+   hues are audited as graphic colour only, and `size` in particular falls under
+   AA as text. The badge still reads as its area at a glance, and the words stay
+   legible in both themes. */
+.gen-studio .gs-cap-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-cap-dot {
+  flex: 0 0 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--gs-sec, var(--gs-blue));
+}
+.gen-studio .gs-cap-title {
+  display: block;
+  margin-top: 3px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-cap-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-cap-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+}
+/* The affordance, and the whole of the difference between staying and leaving:
+   a chevron opens the evidence here, an arrow says the press goes elsewhere. */
+.gen-studio .gs-cap-go {
+  flex: 0 0 auto;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 14px;
+  border: 1px solid var(--gs-border);
+  border-radius: 50%;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-cap:hover .gs-cap-go {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+.dark .gen-studio .gs-cap:hover .gs-cap-go {
+  border-color: var(--gs-pop-accent);
+  color: var(--gs-pop-accent);
+}
+/* The compact register, for the surfaces that carry many of these in a row: the
+   guide's steps and a reference entry's secondary strips. Two frames instead of
+   three, no eyebrow, one line of meta, a third of the height. It is the same
+   card and opens the same plate. */
+.gen-studio .gs-cap--film .gs-cap-peek {
+  flex: 0 0 66px;
+  gap: 1px;
+  padding: 5px 3px;
+}
+.gen-studio .gs-cap--film .gs-cap-peek::before,
+.gen-studio .gs-cap--film .gs-cap-peek::after {
+  display: none;
+}
+.gen-studio .gs-cap--film {
+  align-items: center;
+  gap: 10px;
+  /* Held to a measure of its own: run to the column's full width and the
+     chevron ends up a hand's width from the words it belongs to. */
+  max-width: 440px;
+}
+.gen-studio .gs-cap--film .gs-cap-text {
+  padding: 6px 8px 6px 0;
+}
+.gen-studio .gs-cap--film .gs-cap-title {
+  margin-top: 0;
+  font-size: 12.5px;
+}
+.gen-studio .gs-cap--film .gs-cap-meta {
+  font-size: 11px;
+}
+.gen-studio .gs-cap--film .gs-cap-go {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  margin-right: 10px;
+}
+
+/* ------- the open plate ---------------------------------------------- */
+
+/* Everything the open state has, inside one bounded dark plate: the header, the
+   frame, its caption, the rail, and the way back out. Before this the frame sat
+   on the page with a bare slider and a floating link under it, and neither read
+   as belonging to the pictures. */
 .gen-studio .gs-sweep-open {
-  border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
-  border-radius: 9px;
-  padding: 9px;
-  background: var(--gs-card);
+  overflow: hidden;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: 12px;
+  background: var(--gs-stage);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 6px;
+}
+.gen-studio .gs-plate-head .gs-cap-eyebrow {
+  font-size: 9.5px;
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-plate-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-x {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 10px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: 8px;
+  background: none;
+  color: var(--gs-stage-label);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .gs-plate-x:hover {
+  border-color: var(--gs-stage-label);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-body {
+  padding: 0 14px;
+}
+/* The footer: what this frame is, where in the strip it is, and the way to the
+   full-size view. All three used to be somewhere else. */
+.gen-studio .gs-plate-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 12px;
+}
+.gen-studio .gs-plate-value {
+  padding: 4px 8px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: 7px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--gs-stage-ink);
+  white-space: nowrap;
+}
+.gen-studio .gs-plate-pos {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gs-stage-label);
+  white-space: nowrap;
+}
+.gen-studio .gs-plate-grow {
+  flex: 1;
+}
+.gen-studio .gs-plate-link {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-stage-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.gen-studio .gs-plate-link:hover {
+  color: var(--gs-stage-ink);
+}
+/* The tokens the plate borrows from the page have to survive the change of
+   ground under them. */
+.gen-studio .gs-sweep-open .gs-setting-chip {
+  border-color: var(--gs-stage-rim);
+  background: transparent;
+}
+.gen-studio .gs-sweep-open .gs-setting-chip-label {
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-sweep-open .gs-setting-chip-value {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-open .gs-sweep-caption,
+.gen-studio .gs-sweep-open .gs-sweep-caption-batch,
+.gen-studio .gs-sweep-open .gs-sweep-caption-value,
+.gen-studio .gs-sweep-open .gs-sweep-loading,
+.gen-studio .gs-sweep-open .gs-sweep-pair-cap,
+.gen-studio .gs-sweep-open .gs-sweep-solo-cap,
+.gen-studio .gs-sweep-open .gs-sweep-source-cap {
+  color: var(--gs-stage-label);
+}
+/* The controls that were quiet blue links on the page are quiet plate ink here:
+   an accent picked for contrast on a white card is not the accent that reads on
+   a lightbox, and every one of these is a second look at the frame rather than
+   a way off it. */
+.gen-studio .gs-sweep-open .gs-sweep-why,
+.gen-studio .gs-sweep-open .gs-sweep-why-link,
+.gen-studio .gs-sweep-open .gs-sweep-pair-enlarge,
+.gen-studio .gs-sweep-open .gs-sweep-pair-mode,
+.dark .gen-studio .gs-sweep-open .gs-sweep-why,
+.dark .gen-studio .gs-sweep-open .gs-sweep-why-link,
+.dark .gen-studio .gs-sweep-open .gs-sweep-pair-enlarge,
+.dark .gen-studio .gs-sweep-open .gs-sweep-pair-mode {
+  color: var(--gs-stage-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gen-studio .gs-sweep-open .gs-sweep-why:hover,
+.gen-studio .gs-sweep-open .gs-sweep-why-link:hover,
+.gen-studio .gs-sweep-open .gs-sweep-pair-enlarge:hover,
+.gen-studio .gs-sweep-open .gs-sweep-pair-mode:hover {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-open .gs-sweep-why-body {
+  border-color: var(--gs-stage-rim);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-sweep-open .gs-sweep-why-list {
+  color: var(--gs-stage-ink);
+}
+/* The choice of which reading to show sits in the plate's header band, so it is
+   read as a control over these pictures rather than as prose beside them. */
+.gen-studio .gs-plate-controls {
+  padding: 0 14px 4px;
+}
+.gen-studio .gs-plate-controls .gs-sweep-variants {
+  margin-bottom: 0;
+}
+.gen-studio .gs-plate-head .gs-sweep-pair-mode {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.gen-studio .gs-plate-head .gs-sweep-pair-mode + .gs-plate-x {
+  margin-left: 0;
+}
+.gen-studio .gs-sweep-open .gs-sweep-variant {
+  border-color: var(--gs-stage-rim);
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-sweep-open .gs-sweep-variant.is-on {
+  border-color: var(--gs-stage-label);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--gs-stage-ink);
+}
+
+/* ------- the tick rail ------------------------------------------------ */
+
+/* One slit per frame in place of an anonymous range input. A slider says only
+   "somewhere between two ends"; the rail says how many frames there are, which
+   one this is, and what the ends were rendered at, without being asked. */
+.gen-studio .gs-tickrail-box {
+  padding: 2px 14px 0;
+}
+.gen-studio .gs-tickrail {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.gen-studio .gs-tickrail-tick {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: end center;
+  height: 100%;
+}
+.gen-studio .gs-tickrail-tick::after {
+  content: "";
+  width: 3px;
+  height: 12px;
+  margin-bottom: 11px;
+  border-radius: 2px;
+  /* The rim tone is an edge colour and all but vanishes as a 3px slit, and a
+     rail whose unvisited frames cannot be counted is a slider again. */
+  background: color-mix(in srgb, var(--gs-stage-label) 60%, transparent);
+  transition:
+    height 0.12s,
+    background 0.12s;
+}
+.gen-studio .gs-tickrail:hover .gs-tickrail-tick:hover::after {
+  height: 16px;
+  background: var(--gs-stage-label);
+}
+.gen-studio .gs-tickrail-tick.is-at::after {
+  width: 5px;
+  height: 22px;
+  background: var(--gs-stage-ink);
+}
+.gen-studio .gs-tickrail-ends {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 2px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gs-stage-label);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-tickrail-tick::after {
+    transition: none;
+  }
+}
+
+/* ------- the doors ---------------------------------------------------- */
+
+/* A door leaves. It is the capsule's chassis with the grid's own first stops as
+   a contact sheet, or with the panel's blue in place of film, and an arrow
+   where the capsule has a chevron. */
+.gen-studio .gs-door-sheet {
+  flex: 0 0 118px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  background: var(--gs-stage);
+}
+.gen-studio .gs-door-tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  object-fit: cover;
+}
+.gen-studio .gs-door-panel {
+  flex: 0 0 118px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    135deg,
+    var(--gs-blue) 0%,
+    var(--gs-blue-hover) 100%
+  );
+  color: #ffffff;
+}
+.gen-studio .gs-door-arrow {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-right: 14px;
+  color: var(--gs-blue);
+}
+.dark .gen-studio .gs-door-arrow {
+  color: var(--gs-pop-accent);
+}
+app-gs-door {
+  display: block;
+}
+app-gs-door + app-gs-door,
+app-gs-door + app-gs-sweep-scrub,
+app-gs-sweep-scrub + app-gs-door {
+  margin-top: 8px;
+}
+.gen-studio .gs-cap:focus-visible,
+.gen-studio .gs-tickrail:focus-visible,
+.gen-studio .gs-plate-x:focus-visible,
+.gen-studio .gs-plate-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.dark .gen-studio .gs-tickrail:focus-visible,
+.dark .gen-studio .gs-plate-x:focus-visible,
+.dark .gen-studio .gs-plate-link:focus-visible {
+  outline-color: var(--gs-stage-ink);
+}
+/* The evidence on a reference page is given a measure of its own rather than
+   the page's full width, and the doors under it read as the same column. */
+.gen-studio .gs-ref-entry--page .gs-ref-try-door {
+  max-width: 640px;
 }
 .gen-studio .gs-sweep-figure {
   margin: 0;
@@ -7241,8 +7680,8 @@ app-gs-sweep-scrub {
   display: block;
   width: 100%;
   max-width: 100%;
-  border-radius: 7px;
-  background: var(--gs-field);
+  border-radius: 4px;
+  background: transparent;
 }
 /* A frame is as wide as the column it sits in, and a portrait one at that width
    is taller than the pane it opened in: the step that offered it would be
@@ -7290,27 +7729,6 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep-loading {
   font-size: 12px;
   color: var(--gs-muted);
-}
-/* The track keeps the studio's 4px line while the control keeps a 44px band to
-   put a thumb on: the slider is the whole point of the expanded state, and it is
-   most often reached with a thumb rather than a mouse. */
-.gen-studio .gs-sweep-range {
-  height: 44px;
-  border-radius: 0;
-  background: transparent;
-}
-.gen-studio .gs-sweep-range::-webkit-slider-runnable-track {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gs-switch-off);
-}
-.gen-studio .gs-sweep-range::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gs-switch-off);
-}
-.gen-studio .gs-sweep-range::-webkit-slider-thumb {
-  margin-top: -6px;
 }
 .gen-studio .gs-sweep-collapse {
   min-height: 44px;
@@ -7440,13 +7858,22 @@ app-gs-sweep-scrub {
   text-transform: none;
   font-weight: 400;
 }
-/* The scrubber, carried into the full-size view with the pictures it drives. */
+/* The scrubber, carried into the full-size view with the pictures it drives.
+   The layer's own body is the panel rather than the plate, so the rail's stage
+   tokens are re-pointed at the page's ink for the length of this row: the same
+   rail, drawn for the ground it is actually standing on. */
 .gen-studio .gs-sweep-viewer-foot {
+  --gs-stage-rim: var(--gs-switch-off);
+  --gs-stage-label: var(--gs-label);
+  --gs-stage-ink: var(--gs-ink);
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin: 8px 16px 0;
+}
+.gen-studio .gs-sweep-viewer-foot .gs-tickrail-box {
+  padding: 0;
 }
 .gen-studio .gs-sweep-viewer-x {
   flex: none;
@@ -8201,29 +8628,20 @@ app-gs-compare-wipe {
   gap: 10px;
   margin-top: 12px;
 }
+/* The way into the studio from the dossier is a door like every other: same
+   card, the panel's own blue in the peek, and the arrow that says the press
+   leaves this page. A flow whose steps are not written yet greys the whole card
+   rather than only its label. */
 .gs-tut .gs-tut-start-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 16px;
-  border: 1px solid var(--gs-blue);
-  border-radius: 8px;
-  background: var(--gs-blue);
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-}
-.gs-tut .gs-tut-start-btn:hover:not(:disabled) {
-  background: var(--gs-blue-hover);
+  flex: 1 1 320px;
+  max-width: 480px;
 }
 .gs-tut .gs-tut-start-btn:disabled {
-  border-color: var(--gs-border);
-  background: var(--gs-field-soft);
-  color: var(--gs-muted);
   cursor: default;
+  opacity: 0.55;
+}
+.gs-tut .gs-tut-start-btn:disabled:hover {
+  border-color: var(--gs-border);
 }
 .gs-tut .gs-tut-start-note {
   color: var(--gs-muted);
@@ -8815,7 +9233,8 @@ app-gs-compare-wipe {
 /* The routed page is a reading column, and a figure that ran its whole width
    would be a picture of a setting blown up past the point of being looked at.
    The strip keeps a measure of its own, aligned with the prose it belongs to. */
-.gen-studio .gs-ref-entry--page .gs-sweep-open {
+.gen-studio .gs-ref-entry--page .gs-sweep-open,
+.gen-studio .gs-ref-entry--page .gs-cap {
   max-width: 640px;
 }
 .gen-studio .gs-ref-head {
@@ -9050,33 +9469,54 @@ app-gs-compare-wipe {
 
 /* The note is `flex: 1 0 100%` in the label row it belongs to, so the offer
    below it starts a line of its own rather than trailing the prose. */
+/* The field note's own offer, in the capsule family at the only size a `?` note
+   has room for: two frames on the stage, the badge, the chevron. Wider than
+   this and it would be a card inside a row inside the panel. */
 .gen-studio .gs-help-see {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  margin-top: 4px;
-  padding: 4px 11px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--gs-zone, var(--gs-blue));
-  background: var(--gs-zone-tint, var(--gs-blue-tint));
-  border: 1px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
-  border-radius: 999px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  background: var(--gs-card);
+  color: var(--gs-ink);
+  text-align: left;
   cursor: pointer;
 }
 .gen-studio .gs-help-see:hover {
-  border-color: var(--gs-zone, var(--gs-blue));
+  border-color: var(--gs-blue);
 }
 .gen-studio .gs-help-see:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
-@media (pointer: coarse) {
-  .gen-studio .gs-help-see {
-    min-height: 44px;
-  }
+.gen-studio .gs-help-see .gs-cap-peek {
+  flex: 0 0 56px;
+  gap: 1px;
+  padding: 5px 3px;
+}
+.gen-studio .gs-help-see .gs-cap-peek::before,
+.gen-studio .gs-help-see .gs-cap-peek::after {
+  display: none;
+}
+.gen-studio .gs-help-see .gs-cap-text {
+  align-self: center;
+  padding: 6px 0;
+}
+.gen-studio .gs-help-see .gs-cap-title {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.gen-studio .gs-help-see .gs-cap-go {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  margin-right: 8px;
 }
 
 /* ------- the docked reference entry --------------------------------- */
@@ -9595,32 +10035,12 @@ html:has(app-gs-sheet) {
 /* ------- practice handoff (written guide) ---------------------------- */
 /* A section that a worked example really exercises says so where it is being
    read, rather than at the foot of a page and a half of reference. */
+/* Reading about the dials and turning them are two different acts, and the
+   second one is a page away: a door, on the same chassis as the evidence
+   cards, carrying the arrow rather than the chevron. */
 .gen-studio .gs-guide-practice {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   margin: 0 0 10px;
-  min-height: 34px;
-  padding: 7px 14px;
-  border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 8px;
-  background: var(--gs-blue-tint);
-  color: var(--gs-blue);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.gen-studio .gs-guide-practice:hover {
-  border-color: var(--gs-blue);
-}
-.dark .gen-studio .gs-guide-practice {
-  color: #bfdbfe;
-}
-@media (pointer: coarse) {
-  .gen-studio .gs-guide-practice {
-    min-height: 44px;
-  }
+  max-width: 480px;
 }
 
 /* ------- welcome card foot ------------------------------------------- */

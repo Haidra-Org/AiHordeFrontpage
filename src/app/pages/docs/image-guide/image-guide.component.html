@@ -41,7 +41,10 @@
                  in the reference half below; the walkthrough is the only place
                  their pictures can be offered. -->
               @for (parameter of step.sweeps; track parameter) {
-                <app-gs-sweep-scrub [parameter]="parameter" />
+                <app-gs-sweep-scrub
+                  [parameter]="parameter"
+                  register="filmcard"
+                />
               }
             </div>
           </li>
@@ -73,14 +76,13 @@
         <!-- Reading about the dials is half of it; the other half is turning
            them, which is a page away and needs saying where the reading is. -->
         @if (section.practiceFlow) {
-          <button
-            type="button"
-            class="gs-guide-practice"
-            (click)="startPractice(section)"
-          >
-            <app-icon name="star" class="gs-ico-sm" />
-            {{ "generate.guide.practice_link" | transloco }}
-          </button>
+          <app-gs-door
+            kind="studio"
+            controlClass="gs-guide-practice"
+            [title]="'generate.guide.practice_link' | transloco"
+            [meta]="'generate.sweeps.studio_door_note' | transloco"
+            (entered)="startPractice(section)"
+          />
         }
         <!-- The panel's own note for each setting, which is a summary and says
              so by linking on: the setting is written out in full on its own
@@ -98,7 +100,10 @@
                  the guide is reading about the setting without the panel row in
                  front of them, which is where the pictures do the most work. -->
               @for (parameter of sweepFor(topic); track parameter) {
-                <app-gs-sweep-scrub [parameter]="parameter" />
+                <app-gs-sweep-scrub
+                  [parameter]="parameter"
+                  register="filmcard"
+                />
               }
               @if (sweepGridFor(topic); as parameter) {
                 <app-gs-sweep-grid [parameter]="parameter" />

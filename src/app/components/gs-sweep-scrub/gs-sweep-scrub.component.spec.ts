@@ -19,12 +19,14 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
     [parameter]="parameter"
     [modelSlug]="modelSlug"
     [startExpanded]="startExpanded"
+    [register]="register"
   />`,
 })
 class HostComponent {
   public parameter = 'steps';
   public modelSlug: string | undefined = undefined;
   public startExpanded = false;
+  public register: 'full' | 'filmcard' = 'full';
 }
 
 /**
@@ -81,6 +83,24 @@ describe('GsSweepScrubComponent', () => {
   const text = (): string =>
     el().textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
+  /** The tick rail, of the plate on the page or of the layer over it. */
+  const rail = (scope = ''): HTMLElement =>
+    find<HTMLElement>(`${scope} .gs-tickrail`.trim())!;
+
+  /** A key pressed on a rail, as the browser would deliver it. */
+  const railKey = (key: string, scope = ''): void => {
+    rail(scope).dispatchEvent(
+      new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+  };
+
+  /** A press on one of the rail's slits. */
+  const clickTick = (at: number, scope = ''): void => {
+    all<HTMLElement>(`${scope} .gs-tickrail-tick`.trim())[at].click();
+    fixture.detectChanges();
+  };
+
   /** Tell whatever the wipe is watching how much room the pair has. */
   const reportWidth = (width: number): void => {
     for (const observer of FakeResizeObserver.instances) {
@@ -103,6 +123,8 @@ describe('GsSweepScrubComponent', () => {
     parameter?: string;
     /** Whether the surface opens the strip without waiting to be asked. */
     startExpanded?: boolean;
+    /** Which collapsed card the surface asks for. */
+    register?: 'full' | 'filmcard';
   }): Promise<void> {
     stubReducedData(options?.reducedData ?? false);
     FakeResizeObserver.instances = [];
@@ -132,6 +154,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.componentInstance.modelSlug = options?.modelSlug;
     fixture.componentInstance.parameter = options?.parameter ?? 'steps';
     fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
+    fixture.componentInstance.register = options?.register ?? 'full';
     fixture.detectChanges();
 
     const request = http.expectOne(`${environment.evidenceBaseUrl}/index.json`);
@@ -160,23 +183,60 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-sweep')).toBeNull();
   });
 
-  it('offers the sweep collapsed, with the middle stop as its preview', async () => {
+  it('offers the sweep collapsed, leading with three of its own frames', async () => {
     await setUp();
 
     expect(find('.gs-sweep-offer')).not.toBeNull();
     expect(find('.gs-sweep-frame')).toBeNull();
-    expect(
-      find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
-    ).toBe(
+    // The two ends and the middle: the card advertises the range it holds
+    // rather than one arbitrary picture out of it.
+    const peek = all<HTMLImageElement>('.gs-cap-peek-frame');
+    expect(peek.map((frame) => frame.getAttribute('src'))).toEqual([
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
       `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
+    ]);
+    for (const frame of peek) {
+      expect(frame.getAttribute('loading')).toBe('lazy');
+    }
+    // The badge names the area of the panel, and the meta states the payload in
+    // numbers rather than describing it in a sentence.
+    expect(text()).toContain('Sampling · Interactive explorer');
+    expect(text()).toContain('3 frames · 4 → 30');
+  });
+
+  it('carries one card per frame count in the compact register', async () => {
+    await setUp({ register: 'filmcard' });
+
+    expect(find('.gs-sweep-offer')?.classList.contains('gs-cap--film')).toBe(
+      true,
     );
+    // Two frames rather than three, and the payload without the range: the
+    // register exists for the surfaces that stack several of these.
+    expect(
+      all<HTMLImageElement>('.gs-cap-peek-frame').map((frame) =>
+        frame.getAttribute('src'),
+      ),
+    ).toEqual([
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
+    ]);
+    expect(text()).toContain('3 frames');
+    expect(text()).not.toContain('Interactive explorer');
+
+    // The same plate, opened in place.
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-open')).not.toBeNull();
+    expect(find('.gs-tickrail')).not.toBeNull();
   });
 
   it('keeps even the preview behind a tap when data is being saved', async () => {
     await setUp({ reducedData: true });
 
     expect(find('.gs-sweep-offer')).not.toBeNull();
-    expect(find('.gs-sweep-preview')).toBeNull();
+    expect(find('.gs-cap-peek')).toBeNull();
   });
 
   it('expands to the large frame, its caption and a scrubber', async () => {
@@ -190,7 +250,10 @@ describe('GsSweepScrubComponent', () => {
     );
     expect(el().textContent).toContain('The face and the light have settled.');
     expect(text()).toContain('Steps 12');
-    expect(find('.gs-sweep-range')).not.toBeNull();
+    expect(find('.gs-tickrail')).not.toBeNull();
+    // The plate says where in the strip the reader is, inside the plate.
+    expect(find('.gs-plate-pos')?.textContent?.trim()).toBe('2 / 3');
+    expect(find('.gs-plate-value')?.textContent?.trim()).toBe('Steps 12');
     // The stub marks this stop as picked from a batch of 4, and curation is
     // disclosed rather than hidden.
     expect(find('.gs-sweep-caption-batch')?.textContent).toContain(
@@ -198,36 +261,63 @@ describe('GsSweepScrubComponent', () => {
     );
   });
 
-  it('carries slider semantics and moves with the keyboard', async () => {
+  it('carries slider semantics on the rail and moves with the keyboard', async () => {
     await setUp();
     find<HTMLButtonElement>('.gs-sweep-offer')!.click();
     fixture.detectChanges();
 
-    const range = find<HTMLInputElement>('.gs-sweep-range')!;
-    expect(range.type).toBe('range');
-    expect(range.min).toBe('0');
-    expect(range.max).toBe('2');
-    expect(range.value).toBe('1');
-    expect(range.getAttribute('aria-label')).toBe(
+    // One slit per frame, and the whole rail is the slider rather than every
+    // slit being a tab stop of its own.
+    expect(all('.gs-tickrail-tick')).toHaveLength(3);
+    expect(rail().getAttribute('role')).toBe('slider');
+    expect(rail().getAttribute('tabindex')).toBe('0');
+    expect(rail().getAttribute('aria-label')).toBe(
       en['generate.sweeps.slider_label'],
     );
-    expect(range.getAttribute('aria-valuetext')).toBe('12');
+    expect(rail().getAttribute('aria-valuemin')).toBe('1');
+    expect(rail().getAttribute('aria-valuemax')).toBe('3');
+    expect(rail().getAttribute('aria-valuenow')).toBe('2');
+    expect(rail().getAttribute('aria-valuetext')).toBe('12');
+    // The ends are labelled with what they were rendered at, not with 0 and 2.
+    expect(
+      all('.gs-tickrail-ends span').map((end) => end.textContent?.trim()),
+    ).toEqual(['4', '30']);
 
-    // What ArrowRight does to a range input, which jsdom does not do for us.
-    range.value = '2';
-    range.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
+    railKey('ArrowRight');
 
-    expect(range.getAttribute('aria-valuetext')).toBe('30');
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    expect(rail().getAttribute('aria-valuetext')).toBe('30');
     expect(text()).toContain('Steps 30');
     expect(el().textContent).toContain('Past here the picture stops changing');
+
+    // The ends hold rather than wrapping round to the other one.
+    railKey('ArrowRight');
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    railKey('Home');
+    expect(rail().getAttribute('aria-valuenow')).toBe('1');
+  });
+
+  it('jumps to the frame whose slit was pressed', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    clickTick(2);
+
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    expect(find<HTMLImageElement>('.gs-sweep-frame')?.getAttribute('src')).toBe(
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
+    );
+
+    clickTick(0);
+    expect(rail().getAttribute('aria-valuenow')).toBe('1');
   });
 
   it('shows the strip for the model the studio is set to', async () => {
     await setUp({ studioBaseline: 'stable_diffusion_1' });
 
     expect(
-      find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
+      find<HTMLImageElement>('.gs-cap-peek-frame')?.getAttribute('src'),
     ).toBe(
       `${environment.evidenceBaseUrl}/steps/deliberate/landscape/001_8.webp`,
     );
@@ -240,9 +330,9 @@ describe('GsSweepScrubComponent', () => {
     });
 
     expect(
-      find<HTMLImageElement>('.gs-sweep-preview')?.getAttribute('src'),
+      find<HTMLImageElement>('.gs-cap-peek-frame')?.getAttribute('src'),
     ).toBe(
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
     );
   });
 
@@ -332,7 +422,7 @@ describe('GsSweepScrubComponent', () => {
       fixture.detectChanges();
 
       expect(find('.gs-wipe')).not.toBeNull();
-      expect(find('.gs-sweep-range')).toBeNull();
+      expect(find('.gs-tickrail')).toBeNull();
       // The index labels these `off`/`on`, which is a filename, not a heading.
       expect(
         all('.gs-wipe-tag').map((n) =>
@@ -450,9 +540,7 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-sweep-caption-value')?.textContent?.trim()).toBe(
       'Prompted with (watercolor painting:1.0)',
     );
-    expect(
-      find<HTMLInputElement>('.gs-sweep-range')!.getAttribute('aria-valuetext'),
-    ).toBe('1');
+    expect(rail().getAttribute('aria-valuetext')).toBe('1');
     expect(find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('alt')).toBe(
       'The same picture rendered at 1',
     );
@@ -489,10 +577,7 @@ describe('GsSweepScrubComponent', () => {
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();
       fixture.detectChanges();
 
-      const range = find<HTMLInputElement>('.gs-sweep-range')!;
-      range.value = '2';
-      range.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+      railKey('End');
 
       const [base, alternate] = all<HTMLButtonElement>('.gs-sweep-variant');
       expect(base.getAttribute('aria-pressed')).toBe('true');
@@ -501,7 +586,7 @@ describe('GsSweepScrubComponent', () => {
       fixture.detectChanges();
 
       expect(alternate.getAttribute('aria-pressed')).toBe('true');
-      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('2');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
       expect(
         find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
       ).toBe(
@@ -528,7 +613,7 @@ describe('GsSweepScrubComponent', () => {
       // range: the static a render starts from is what the rest of it is read
       // against. The stops are labelled `step_1` for the filename's sake; the
       // chip says what was actually rendered.
-      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('0');
+      expect(rail().getAttribute('aria-valuenow')).toBe('1');
       expect(text()).toContain('Step 1');
       expect(text()).not.toContain('step_1');
 
@@ -571,14 +656,13 @@ describe('GsSweepScrubComponent', () => {
       await setUp();
       openZoom();
 
-      const range = (): HTMLInputElement =>
-        find<HTMLInputElement>('.gs-sweep-viewer-foot .gs-sweep-range')!;
-      expect(range().value).toBe('1');
-      expect(range().max).toBe('2');
+      const layer = '.gs-sweep-viewer-foot';
+      expect(rail(layer).getAttribute('aria-valuenow')).toBe('2');
+      expect(rail(layer).getAttribute('aria-valuemax')).toBe('3');
 
       arrow('ArrowRight');
-      expect(range().value).toBe('2');
-      expect(range().getAttribute('aria-valuetext')).toBe('30');
+      expect(rail(layer).getAttribute('aria-valuenow')).toBe('3');
+      expect(rail(layer).getAttribute('aria-valuetext')).toBe('30');
       expect(
         find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
       ).toBe(
@@ -587,11 +671,11 @@ describe('GsSweepScrubComponent', () => {
 
       // The edge holds rather than wrapping round to the other end.
       arrow('ArrowRight');
-      expect(range().value).toBe('2');
+      expect(rail(layer).getAttribute('aria-valuenow')).toBe('3');
 
       arrow('ArrowLeft');
       arrow('ArrowLeft');
-      expect(range().value).toBe('0');
+      expect(rail(layer).getAttribute('aria-valuenow')).toBe('1');
     });
 
     it('leaves the strip on the stop the reader scrubbed to', async () => {
@@ -601,20 +685,15 @@ describe('GsSweepScrubComponent', () => {
       find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
       fixture.detectChanges();
 
-      expect(find<HTMLInputElement>('.gs-sweep-range')!.value).toBe('2');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
       expect(text()).toContain('Steps 30');
     });
 
-    it('scrubs from the slider inside the layer', async () => {
+    it('scrubs from the rail inside the layer', async () => {
       await setUp();
       openZoom();
 
-      const range = find<HTMLInputElement>(
-        '.gs-sweep-viewer-foot .gs-sweep-range',
-      )!;
-      range.value = '0';
-      range.dispatchEvent(new Event('input'));
-      fixture.detectChanges();
+      clickTick(0, '.gs-sweep-viewer-foot');
 
       expect(text()).toContain('Barely resolved');
     });
@@ -659,18 +738,21 @@ describe('GsSweepScrubComponent', () => {
 
     expect(find('.gs-sweep-offer')).toBeNull();
     expect(find('.gs-sweep-frame')).not.toBeNull();
-    expect(find('.gs-sweep-range')).not.toBeNull();
+    expect(find('.gs-tickrail')).not.toBeNull();
   });
 
-  it('collapses back to the offer', async () => {
+  it('collapses from the plate back to the capsule', async () => {
     await setUp();
     find<HTMLButtonElement>('.gs-sweep-offer')!.click();
     fixture.detectChanges();
 
-    find<HTMLButtonElement>('.gs-sweep-collapse')!.click();
+    // The way out is a control in the plate's own corner rather than a link
+    // floating under the picture.
+    find<HTMLButtonElement>('.gs-plate-head .gs-plate-x')!.click();
     fixture.detectChanges();
 
     expect(find('.gs-sweep-frame')).toBeNull();
     expect(find('.gs-sweep-offer')).not.toBeNull();
+    expect(all('.gs-cap-peek-frame')).toHaveLength(3);
   });
 });

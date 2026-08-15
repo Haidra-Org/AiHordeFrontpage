@@ -21,6 +21,7 @@ import {
   GsIndexRailComponent,
   GsIndexRailEntry,
 } from '../../../components/gs-index-rail/gs-index-rail.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import {
   GsRecipeChipsComponent,
   RecipeRequest,
@@ -102,6 +103,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
     TranslocoPipe,
     IconComponent,
     GsIndexRailComponent,
+    GsDoorComponent,
     GsRecipeChipsComponent,
   ],
   templateUrl: './image-example.component.html',

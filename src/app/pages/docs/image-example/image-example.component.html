@@ -77,15 +77,14 @@
                    it. Flows without authored steps say so rather than
                    disappearing, so a reader can see what is coming. -->
             <div class="gs-tut-start">
-              <button
-                type="button"
-                class="gs-tut-start-btn"
+              <app-gs-door
+                kind="studio"
+                controlClass="gs-tut-start-btn"
                 [disabled]="!canStart()"
-                (click)="startTutorial()"
-              >
-                <app-icon name="star" class="gs-ico-sm" />
-                {{ "generate.learn.start" | transloco }}
-              </button>
+                [title]="'generate.learn.start' | transloco"
+                [meta]="'generate.sweeps.studio_door_note' | transloco"
+                (entered)="startTutorial()"
+              />
               @if (!canStart()) {
                 <span class="gs-tut-start-note">
                   {{ "generate.learn.start_soon" | transloco }}

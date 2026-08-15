@@ -13,7 +13,13 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
-import { settingProseLabelKey, sweepGridNoteKey } from '../../content/settings';
+import {
+  settingProseLabelKey,
+  settingSection,
+  sweepGridNoteKey,
+} from '../../content/settings';
+import { sectionIdentity } from '../../content/sections';
+import { GsDoorComponent } from '../gs-door/gs-door.component';
 import {
   SweepLibraryService,
   SweepStop,
@@ -40,7 +46,12 @@ import {
  */
 @Component({
   selector: 'app-gs-sweep-grid',
-  imports: [TranslocoPipe, IconComponent, GsSettingChipComponent],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    GsSettingChipComponent,
+    GsDoorComponent,
+  ],
   template: `
     @if (strip(); as plate) {
       <!-- The two settings the plate is of, named as the panel names them, so
@@ -50,19 +61,36 @@ import {
 
       <div class="gs-sweep">
         @if (!inline()) {
-          <button
-            type="button"
-            class="gs-sweep-grid-offer"
-            [attr.aria-expanded]="opened()"
-            (click)="open()"
-          >
-            <span class="gs-sweep-offer-label">
-              {{
-                'generate.sweeps.grid_expand'
-                  | transloco: { rows: rowsName, columns: columnsName }
-              }}
-            </span>
-          </button>
+          <!-- A grid is dozens of frames and a layer of its own, so the offer is
+               a door rather than a capsule: it leads with six of the plate's own
+               first stops as a contact sheet, and carries the arrow that says
+               the press leaves the page. -->
+          <app-gs-door
+            kind="grid"
+            controlClass="gs-sweep-grid-offer"
+            [tiles]="sheet()"
+            [eyebrow]="
+              sectionLabelKey()
+                ? ('generate.sweeps.badge_grid'
+                  | transloco: { section: sectionLabelKey()! | transloco })
+                : ('generate.sweeps.badge_grid_plain' | transloco)
+            "
+            [title]="
+              'generate.sweeps.grid_expand'
+                | transloco: { rows: rowsName, columns: columnsName }
+            "
+            [meta]="
+              'generate.sweeps.grid_meta'
+                | transloco
+                  : {
+                      n: plate.stops.length,
+                      rows: rowCount(),
+                      columns: columnCount(),
+                    }
+            "
+            [monoMeta]="true"
+            (entered)="open()"
+          />
         }
 
         @if (opened() || inline()) {
@@ -246,6 +274,9 @@ import {
       </div>
     }
   `,
+  host: {
+    '[class]': 'identityClass()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GsSweepGridComponent {
@@ -288,6 +319,27 @@ export class GsSweepGridComponent {
   );
   public readonly columnsLabelKey = computed(() =>
     settingProseLabelKey(this.strip()?.grid?.columns.parameter ?? ''),
+  );
+
+  /** The area of the panel the plate belongs to, taken from its rows axis. */
+  private readonly identity = computed(() =>
+    sectionIdentity(settingSection(this.strip()?.grid?.rows.parameter ?? '')),
+  );
+
+  public readonly sectionLabelKey = computed(
+    () => this.identity()?.labelKey ?? null,
+  );
+  public readonly identityClass = computed(
+    () => this.identity()?.className ?? '',
+  );
+
+  /**
+   * The contact sheet the door leads with: the plate's own first six frames.
+   * Six is one row of the sheet's three columns doubled, which is enough to
+   * read as a grid of renders and few enough to stay a thumbnail.
+   */
+  public readonly sheet = computed<readonly string[]>(() =>
+    (this.strip()?.stops ?? []).slice(0, 6).map((stop) => this.frameUrl(stop)),
   );
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
