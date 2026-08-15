@@ -1,4 +1,5 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
+import { ALCHEMY_USE_CASES } from './content/alchemy-usecases';
 import { FLOWS } from './content/flows';
 import { SETTINGS_INDEX } from './content/settings';
 
@@ -83,6 +84,18 @@ export const serverRoutes: ServerRoute[] = [
         SETTINGS_INDEX.flatMap((group) => group.ids).map((param) => ({
           param,
         })),
+      ),
+  },
+  {
+    path: 'docs/alchemy',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'docs/alchemy/:useCase',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: () =>
+      Promise.resolve(
+        ALCHEMY_USE_CASES.map((useCase) => ({ useCase: useCase.id })),
       ),
   },
   {

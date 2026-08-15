@@ -185,28 +185,42 @@
           <div class="gs-op-groups flex flex-col gap-4">
             @for (group of operationGroups; track group.id) {
               @let collapsed = isGroupCollapsed(group.id);
-              <div class="gs-op-group">
-                <button
-                  type="button"
-                  class="gs-opgroup-head"
-                  [attr.aria-expanded]="!collapsed"
-                  (click)="toggleGroup(group.id)"
-                >
-                  <app-icon
-                    name="chevron-right"
-                    class="gs-opgroup-chev"
-                    [class.gs-opgroup-chev--open]="!collapsed"
-                  />
-                  <span class="gs-opgroup-label">
-                    <span class="gs-opgroup-ico gs-opgroup-ico--{{ group.id }}">
-                      <app-icon [name]="group.icon" class="gs-ico-sm" />
+              <!-- Each family of operations is a section named by its own head,
+                   wearing the studio's identity: the glyph is the family's, the
+                   hue is alchemy's, and both are graphic only. -->
+              <section
+                class="gs-op-group"
+                [class]="identity.className"
+                [attr.aria-labelledby]="'alchemy-op-' + group.id"
+              >
+                <div class="gs-opgroup-row">
+                  <button
+                    type="button"
+                    class="gs-opgroup-head"
+                    [attr.aria-expanded]="!collapsed"
+                    (click)="toggleGroup(group.id)"
+                  >
+                    <app-icon
+                      name="chevron-right"
+                      class="gs-opgroup-chev"
+                      [class.gs-opgroup-chev--open]="!collapsed"
+                    />
+                    <span class="gs-opgroup-label">
+                      <span class="gs-sec-chip" aria-hidden="true">
+                        <app-icon [name]="group.icon" />
+                      </span>
+                      <span [id]="'alchemy-op-' + group.id">
+                        {{ group.titleKey | transloco }}
+                      </span>
                     </span>
-                    {{ group.titleKey | transloco }}
-                  </span>
-                  <span class="gs-sublabel gs-mono ml-auto">
-                    {{ group.outputKey | transloco }}
-                  </span>
-                </button>
+                    <span class="gs-sublabel gs-mono ml-auto">
+                      {{ group.outputKey | transloco }}
+                    </span>
+                  </button>
+                  @if (group.helpTopic) {
+                    <app-gs-help [topic]="group.helpTopic" />
+                  }
+                </div>
 
                 @if (!collapsed) {
                   @if (group.subGroups; as subGroups) {
@@ -242,7 +256,7 @@
                     </div>
                   }
                 }
-              </div>
+              </section>
             }
           </div>
         </div>
@@ -338,7 +352,23 @@
 
   <!-- ============ JOBS PANEL ============ -->
   <section class="gs-results">
-    <div class="flex min-h-0 flex-1 flex-col">
+    <!-- The docked reference entry. Only the wide layout has a pane to dock
+         into, so the host is display:none below 1024px, where the same entry is
+         mounted in the mobile sheet instead. -->
+    @if (helpDock.topic(); as topic) {
+      <div class="gs-help-dock" [class]="identity.className">
+        <button type="button" class="gs-ref-back" (click)="helpDock.close()">
+          <app-icon name="arrow-left" class="gs-ico-sm" />
+          {{ "generate.help.dock_close" | transloco }}
+        </button>
+        <app-gs-param-entry [topic]="topic" mode="dock" />
+      </div>
+    }
+
+    <div
+      class="flex min-h-0 flex-1 flex-col"
+      [class.gs-results-body--docked]="helpDock.isOpen()"
+    >
       <header class="gs-results-header">
         <div class="flex items-center gap-2.5">
           <span class="gs-results-title">
@@ -963,6 +993,22 @@
         </div>
       </div>
     </div>
+  }
+
+  <!-- The mobile half of the reference entry. The docked half lives in the jobs
+       pane and the two are mounted separately, because one element cannot be
+       both a pane child and a fixed sheet; CSS shows exactly one of them. -->
+  @if (helpDock.topic(); as topic) {
+    <app-gs-sheet
+      [startExpanded]="true"
+      [label]="'generate.help.sheet_label' | transloco"
+      (closed)="helpDock.close()"
+    >
+      <span sheet-bar class="gs-sheet-title">
+        {{ helpDockTitleKey() | transloco }}
+      </span>
+      <app-gs-param-entry [topic]="topic" mode="dock" />
+    </app-gs-sheet>
   }
 
   @if (imageDrop.dragActive()) {

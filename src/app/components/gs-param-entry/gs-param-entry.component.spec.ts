@@ -17,6 +17,8 @@ import {
   settingSweepGrid,
   settingSweepStrip,
 } from '../../content/settings';
+import { alchemyUseCase } from '../../content/alchemy-usecases';
+import { alchemyTopic } from '../../content/reference-topics';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
@@ -292,5 +294,61 @@ describe('GsParamEntryComponent', () => {
     );
     // A docked entry is not the page's own heading.
     expect(find('.gs-ref-title')?.tagName).toBe('H2');
+  });
+
+  describe('an alchemy use case, in the same chrome', () => {
+    const ENLARGE = alchemyTopic('enlarge');
+
+    it("writes the entry out in the alchemy studio's own hue and mark", async () => {
+      await setUp({ topic: ENLARGE });
+
+      expect(find('app-gs-param-entry')?.classList).toContain(
+        'gs-sec--alchemy',
+      );
+      expect(find('.gs-ref-title')?.textContent?.trim()).toBe(
+        translations['alchemy.usecases.enlarge.title'],
+      );
+      expect(find('.gs-ref-lead')?.textContent?.trim()).toBe(
+        translations['alchemy.usecases.enlarge.lead'],
+      );
+    });
+
+    it('lists the forms the use case is made of, with what each one is', async () => {
+      await setUp({ topic: ENLARGE });
+
+      const names = all('.gs-ref-variant-name').map((name) =>
+        name.textContent?.trim(),
+      );
+      expect(names).toHaveLength(
+        alchemyUseCase('enlarge')?.forms.length as number,
+      );
+      expect(names[0]).toBe(
+        translations['alchemy.form_names.RealESRGAN_x4plus'],
+      );
+      expect(all('.gs-ref-variant-note')[0].textContent?.trim()).toBe(
+        translations['alchemy.form_meta.RealESRGAN_x4plus.desc'],
+      );
+    });
+
+    it('offers no value to write into a form it has no form for', async () => {
+      await setUp({ topic: ENLARGE, mode: 'dock' });
+
+      expect(all('.gs-ref-chip--try')).toHaveLength(0);
+      expect(
+        find<HTMLAnchorElement>('.gs-ref-full')?.getAttribute('href'),
+      ).toBe('/docs/alchemy/enlarge');
+    });
+
+    it('keeps its siblings inside its own area', async () => {
+      await setUp({ topic: ENLARGE });
+
+      const related = all<HTMLAnchorElement>('.gs-ref-related-link');
+      expect(related.length).toBeGreaterThan(0);
+      for (const link of related) {
+        expect(link.getAttribute('href')?.startsWith('/docs/alchemy/')).toBe(
+          true,
+        );
+      }
+    });
   });
 });

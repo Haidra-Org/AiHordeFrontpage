@@ -275,4 +275,8 @@ export const APP_ICONS: Record<string, string> = {
     '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M12 19.25a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/><circle cx="6.5" cy="7" r="2.25" stroke-width="2"/><circle cx="17.5" cy="7" r="2.25" stroke-width="2"/><circle cx="12" cy="16.75" r="2.5" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M8.75 7h6.5M7.6 9l3.15 5.5M16.4 9l-3.15 5.5"/>',
   'sec-workflows':
     '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M18.25 9.25a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.75 12h4.5c2.2 0 3.2-1.2 4.4-2.7l1.1-1.3M9.25 12c2.2 0 3.2 1.2 4.4 2.7l1.1 1.3"/><circle cx="18.25" cy="7" r="2.25" stroke-width="2"/><circle cx="18.25" cy="17" r="2.25" stroke-width="2"/><circle cx="4.75" cy="12" r="1" fill="currentColor" stroke="none"/>',
+  // The alchemy studio, which is a flask rather than a card of the image panel.
+  // The tint is what is in it: the work is done to a picture already in hand.
+  'sec-alchemy':
+    '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M6.35 15.25h11.3l1.55 2.6a1.65 1.65 0 0 1-1.4 2.4H6.2a1.65 1.65 0 0 1-1.4-2.4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3.75v5.9L4.8 17.85a1.65 1.65 0 0 0 1.4 2.4h11.6a1.65 1.65 0 0 0 1.4-2.4L14 9.65v-5.9"/><path stroke-linecap="round" stroke-width="2" d="M8.75 3.75h6.5"/><circle cx="10.25" cy="17.25" r="1" fill="currentColor" stroke="none"/>',
 };

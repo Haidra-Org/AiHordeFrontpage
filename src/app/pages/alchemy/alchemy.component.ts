@@ -35,6 +35,18 @@ import {
   InterrogationRequest,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
+import { GsHelpComponent } from '../../components/gs-help/gs-help.component';
+import { GsParamEntryComponent } from '../../components/gs-param-entry/gs-param-entry.component';
+import { GsSheetComponent } from '../../components/gs-sheet/gs-sheet.component';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { SECTION_IDENTITIES } from '../../content/sections';
+import { alchemyTopic, referenceTopic } from '../../content/reference-topics';
+import {
+  ALCHEMY_BACKGROUND_FORMS,
+  ALCHEMY_FACE_FIXER_FORMS,
+  ALCHEMY_UPSCALER_FORMS,
+  alchemyUseCaseForGroup,
+} from '../../content/alchemy-usecases';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy-results-browser/alchemy-results-browser.component';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -75,6 +87,16 @@ const API_BASE_URL = 'https://aihorde.net/api/v2';
  */
 const MAX_PERSISTED_THUMB_BYTES = 40_000;
 
+/**
+ * The reference topic a panel operation group's `?` opens. Empty for a group
+ * the registry does not document, which the card renders no glyph for: an
+ * unanswerable question is worse than none.
+ */
+function helpTopicForGroup(groupId: string): string {
+  const useCase = alchemyUseCaseForGroup(groupId);
+  return useCase ? alchemyTopic(useCase.id) : '';
+}
+
 /** A labelled slice of a group's forms, for use-case sub-grouping. */
 interface AlchemyOperationSubGroup {
   labelKey: string;
@@ -84,6 +106,12 @@ interface AlchemyOperationSubGroup {
 interface AlchemyOperationGroup {
   id: string;
   icon: string;
+  /**
+   * The reference topic the card's `?` opens: the use case this group of forms
+   * is the tool's half of. Taken from the registry rather than written here, so
+   * a card cannot come to offer a note about something else.
+   */
+  helpTopic: string;
   titleKey: string;
   outputKey: string;
   blurbKey: string;
@@ -107,6 +135,9 @@ interface AlchemyOperationGroup {
     AlchemyResultsBrowserComponent,
     StudioImageDropDirective,
     IconComponent,
+    GsHelpComponent,
+    GsParamEntryComponent,
+    GsSheetComponent,
   ],
   templateUrl: './alchemy.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -151,32 +182,16 @@ export class AlchemyComponent {
 
   /**
    * The post-processor forms split into the groups shown in the builder, so
-   * each fieldset can carry its own explanation of what its options do
-   * instead of one undifferentiated "enhance" bucket. `postProcessorForms`
-   * above is kept as-is for the developers tab's plain form-name reference.
+   * each fieldset can carry its own explanation of what its options do instead
+   * of one undifferentiated "enhance" bucket. The lists are the use-case
+   * registry's, which is also what the documentation pages are built from: the
+   * tool and the book cannot come to disagree about which forms enlarge a
+   * picture. `postProcessorForms` above is kept as-is for the developers tab's
+   * plain form-name reference.
    */
-  public readonly upscalerForms: readonly AlchemyFormName[] = [
-    'RealESRGAN_x4plus',
-    'RealESRGAN_x2plus',
-    'RealESRGAN_x4plus_anime_6B',
-    'NMKD_Siax',
-    '4x_AnimeSharp',
-    '4xNomos8kSC',
-    '4xLSDIRplus',
-    '4xNomosWebPhoto_RealPLKSR',
-    '4xNomos2_realplksr_dysample',
-    '4xNomos2_hq_dat2',
-    '2xModernSpanimationV1',
-  ];
-  public readonly faceFixerForms: readonly AlchemyFormName[] = [
-    'GFPGAN',
-    'GFPGANv1.3',
-    'CodeFormers',
-    'RestoreFormer',
-  ];
-  public readonly backgroundForms: readonly AlchemyFormName[] = [
-    'strip_background',
-  ];
+  public readonly upscalerForms = ALCHEMY_UPSCALER_FORMS;
+  public readonly faceFixerForms = ALCHEMY_FACE_FIXER_FORMS;
+  public readonly backgroundForms = ALCHEMY_BACKGROUND_FORMS;
 
   /** Upscalers split by use case, so their long names get a full line each. */
   private readonly upscalerSubGroups: readonly AlchemyOperationSubGroup[] = [
@@ -208,6 +223,7 @@ export class AlchemyComponent {
     {
       id: 'analyze',
       icon: 'document-text',
+      helpTopic: helpTopicForGroup('analyze'),
       titleKey: 'alchemy.forms.analyze_title',
       outputKey: 'alchemy.forms.analyze_output',
       blurbKey: 'alchemy.forms.analyze_blurb',
@@ -216,6 +232,7 @@ export class AlchemyComponent {
     {
       id: 'upscale',
       icon: 'photo',
+      helpTopic: helpTopicForGroup('upscale'),
       titleKey: 'alchemy.forms.upscale_title',
       outputKey: 'alchemy.forms.upscale_output',
       blurbKey: 'alchemy.forms.upscale_blurb',
@@ -225,6 +242,7 @@ export class AlchemyComponent {
     {
       id: 'facefix',
       icon: 'paintbrush',
+      helpTopic: helpTopicForGroup('facefix'),
       titleKey: 'alchemy.forms.facefix_title',
       outputKey: 'alchemy.forms.facefix_output',
       blurbKey: 'alchemy.forms.facefix_blurb',
@@ -233,12 +251,29 @@ export class AlchemyComponent {
     {
       id: 'background',
       icon: 'cube-transparent',
+      helpTopic: helpTopicForGroup('background'),
       titleKey: 'alchemy.forms.background_title',
       outputKey: 'alchemy.forms.background_output',
       blurbKey: 'alchemy.forms.background_blurb',
       forms: this.backgroundForms,
     },
   ];
+
+  /**
+   * The reference entry the panel is showing, docked beside the results on a
+   * wide screen and in the sheet on a phone. The same service the image studio
+   * uses: at most one entry is open page-wide either way, and the topic it
+   * holds is the one both mountings read.
+   */
+  public readonly helpDock = inject(GsHelpDockService);
+
+  /** The title the sheet's bar carries, asked of whichever registry owns it. */
+  public readonly helpDockTitleKey = computed(
+    () => referenceTopic(this.helpDock.topic() ?? '')?.titleKey ?? '',
+  );
+
+  /** The studio's own mark and hue, worn by every operation card. */
+  public readonly identity = SECTION_IDENTITIES.alchemy;
 
   /** The API request-preview modal (the header's "{ } API" affordance). */
   public readonly apiModalOpen = signal(false);
@@ -435,6 +470,10 @@ export class AlchemyComponent {
 
   constructor() {
     effect(() => this.persistJobs(this.jobs()));
+
+    // The dock is page-wide state and the image studio mounts it too, so an
+    // entry left open here would follow the reader across the tab bar.
+    this.destroyRef.onDestroy(() => this.helpDock.close());
 
     afterNextRender(() => {
       setPageTitle(

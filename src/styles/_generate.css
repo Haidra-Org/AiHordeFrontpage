@@ -70,7 +70,7 @@
   src: url("/assets/fonts/jetbrains-mono-600.woff2") format("woff2");
 }
 
-/* The eight section identity hues, declared at the document root because the
+/* The nine section identity hues, declared at the document root because the
    surfaces that use them are not all inside the studio: the glossary modal is
    mounted at the root and would otherwise have to restate every value, which is
    two sets of hexes to keep in agreement. The studio derives its tints from
@@ -88,6 +88,7 @@
   --gs-sec-finishing: #0e7490;
   --gs-sec-horde: #475569;
   --gs-sec-workflows: #4d7c0f;
+  --gs-sec-alchemy: #7e22ce;
 }
 
 /* The lightbox the evidence capsules are drawn on. A rendered frame is judged
@@ -115,6 +116,7 @@
   --gs-sec-finishing: #67e8f9;
   --gs-sec-horde: #94a3b8;
   --gs-sec-workflows: #bef264;
+  --gs-sec-alchemy: #d8b4fe;
 }
 
 .gen-studio {
@@ -223,6 +225,12 @@
   --gs-sec-workflows-tint-border: color-mix(
     in srgb,
     var(--gs-sec-workflows) 24%,
+    #ffffff
+  );
+  --gs-sec-alchemy-tint: color-mix(in srgb, var(--gs-sec-alchemy) 8%, #ffffff);
+  --gs-sec-alchemy-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-alchemy) 24%,
     #ffffff
   );
   --gs-subtab-height: 45px;
@@ -341,6 +349,16 @@
     var(--gs-sec-workflows) 38%,
     transparent
   );
+  --gs-sec-alchemy-tint: color-mix(
+    in srgb,
+    var(--gs-sec-alchemy) 14%,
+    transparent
+  );
+  --gs-sec-alchemy-tint-border: color-mix(
+    in srgb,
+    var(--gs-sec-alchemy) 38%,
+    transparent
+  );
 }
 
 /* ------- concept zones ---------------------------------------------- */
@@ -406,6 +424,11 @@
   --gs-sec: var(--gs-sec-horde);
   --gs-sec-tint: var(--gs-sec-horde-tint);
   --gs-sec-tint-border: var(--gs-sec-horde-tint-border);
+}
+.gen-studio .gs-sec--alchemy {
+  --gs-sec: var(--gs-sec-alchemy);
+  --gs-sec-tint: var(--gs-sec-alchemy-tint);
+  --gs-sec-tint-border: var(--gs-sec-alchemy-tint-border);
 }
 .gen-studio .gs-sec--workflows {
   --gs-sec: var(--gs-sec-workflows);
@@ -2995,35 +3018,19 @@
   font-weight: 700;
   color: var(--gs-ink-2);
 }
-.gen-studio .gs-opgroup-ico {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  flex: none;
+/* The head is a whole row: the collapse control takes the width it can, and the
+   `?` sits outside it, because a trigger inside a button is not a trigger. */
+.gen-studio .gs-opgroup-row {
   display: flex;
+  /* Wrapping, because the `?` note is a full-width row of this container: the
+     note component is `display: contents` and its paragraph claims 100%. */
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
 }
-.gen-studio .gs-opgroup-ico app-icon,
-.gen-studio .gs-opgroup-ico app-icon svg {
-  width: 12px;
-  height: 12px;
-}
-.gen-studio .gs-opgroup-ico--analyze {
-  background: rgba(147, 51, 234, 0.15);
-  color: #9333ea;
-}
-.gen-studio .gs-opgroup-ico--upscale {
-  background: rgba(37, 99, 235, 0.14);
-  color: #2563eb;
-}
-.gen-studio .gs-opgroup-ico--facefix {
-  background: rgba(22, 163, 74, 0.15);
-  color: #16a34a;
-}
-.gen-studio .gs-opgroup-ico--background {
-  background: rgba(217, 119, 6, 0.15);
-  color: #d97706;
+.gen-studio .gs-opgroup-row .gs-opgroup-head {
+  flex: 1;
+  min-width: 0;
 }
 
 /* operation checkbox cards */
@@ -9377,6 +9384,87 @@ app-gs-compare-wipe {
   line-height: 1.6;
   color: var(--gs-ink-2);
 }
+/* How many forms sit behind a card. A count is the one thing the lead cannot
+   say without turning into a list, and it is what tells a reader whether the
+   page is a choice or a single operation. */
+.gen-studio .gs-ref-card-meta {
+  font-size: 11.5px;
+  color: var(--gs-muted);
+}
+
+/* ------- published runs, under the prose that describes them ---------- */
+.gen-studio .gs-ref-evidence {
+  margin: 28px 0 0;
+}
+.gen-studio .gs-ref-shot {
+  margin: 16px 0 0;
+  padding: 12px;
+  border: 1px solid var(--gs-sec-tint-border, var(--gs-card-border));
+  border-radius: 10px;
+  background: var(--gs-card);
+}
+.gen-studio .gs-ref-shot-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 10px;
+}
+.gen-studio .gs-ref-shot-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ref-shot-meta {
+  font-size: 11.5px;
+  color: var(--gs-muted);
+}
+/* Source beside result, and stacked where there is no room for two: the
+   comparison is the whole point, and a result on its own says nothing. */
+.gen-studio .gs-ref-shot-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.gen-studio .gs-ref-shot-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.gen-studio .gs-ref-shot-frame img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: var(--gs-stage);
+}
+.gen-studio .gs-ref-shot-frame--text {
+  justify-content: space-between;
+}
+.gen-studio .gs-ref-shot-text {
+  display: block;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--gs-field-soft);
+  border: 1px solid var(--gs-field-border);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--gs-ink-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-ref-shot-label {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-ref-shot-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--gs-muted);
+}
 
 /* ------- settings reference: one entry ------------------------------- */
 .gen-studio .gs-ref-entry {
@@ -9415,6 +9503,30 @@ app-gs-compare-wipe {
   line-height: 1.75;
   color: var(--gs-ink-2);
   max-width: 68ch;
+}
+
+/* The members of a subject that is a family: a definition list, because that is
+   what it is. The name takes the entry's hue on its edge only, so eleven
+   upscalers read as one set without any of them colouring their own words. */
+.gen-studio .gs-ref-variants {
+  margin: 14px 0 0;
+  max-width: 68ch;
+  display: grid;
+  gap: 8px;
+}
+.gen-studio .gs-ref-variant-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--gs-ink);
+  padding-inline-start: 9px;
+  border-inline-start: 3px solid var(--gs-sec, var(--gs-card-border));
+}
+.gen-studio .gs-ref-variant-note {
+  margin: 2px 0 0;
+  padding-inline-start: 12px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--gs-ink-2);
 }
 
 /* What the setting costs, on one line. Glyph-coded rather than colour-coded:
@@ -10094,6 +10206,9 @@ html:has(app-gs-sheet) {
 }
 .glossary-sec--workflows {
   color: var(--gs-sec-workflows);
+}
+.glossary-sec--alchemy {
+  color: var(--gs-sec-alchemy);
 }
 
 /* ------- the recipe card (worked examples) --------------------------- */

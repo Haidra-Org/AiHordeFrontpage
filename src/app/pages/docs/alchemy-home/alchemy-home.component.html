@@ -1,0 +1,51 @@
+<div class="gs-ref-index-inner" [class]="identity.className">
+  <header class="gs-ref-index-top">
+    <h1 class="gs-ref-index-title">
+      <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+        ><app-icon [name]="identity.icon"
+      /></span>
+      {{ "alchemy.usecases.head" | transloco }}
+    </h1>
+    <p class="gs-ref-index-lead">
+      {{ "alchemy.usecases.lead" | transloco }}
+    </p>
+  </header>
+
+  <div class="gs-ref-cards">
+    @for (card of cards(); track card.id) {
+      <a class="gs-ref-card" [routerLink]="card.link">
+        <!-- What a published run of this use case produced. A use case nobody
+             has run yet is simply text, and the grid has to look finished that
+             way too. -->
+        @if (card.thumb; as thumb) {
+          <img
+            class="gs-ref-card-img"
+            [src]="thumb"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        }
+        <span class="gs-ref-card-text">
+          <span class="gs-ref-card-title">
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon [name]="card.icon"
+            /></span>
+            {{ card.titleKey | transloco }}
+          </span>
+          @let leadKey = card.leadKey;
+          @let leadText = leadKey | transloco;
+          @if (leadText && leadText !== leadKey) {
+            <span class="gs-ref-card-lead">{{ leadText }}</span>
+          }
+          <span class="gs-ref-card-meta">
+            {{
+              "alchemy.usecases.form_count"
+                | transloco: { count: card.formCount }
+            }}
+          </span>
+        </span>
+      </a>
+    }
+  </div>
+</div>

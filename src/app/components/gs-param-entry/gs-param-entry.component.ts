@@ -13,21 +13,13 @@ import {
   GLOSSARY_TERMS,
   GlossaryService,
 } from '../../services/glossary.service';
-import { SectionIdentity, sectionIdentity } from '../../content/sections';
-import { STUDIO_IMAGE, docsSettingLink } from '../../content/docs-links';
+import { SectionIdentity } from '../../content/sections';
+import { STUDIO_IMAGE } from '../../content/docs-links';
+import { ReferenceTopic, referenceTopic } from '../../content/reference-topics';
 import {
   SettingApply,
   SettingRange,
-  SettingReference,
   SettingTradeoffs,
-  settingBodyKey,
-  settingLeadKey,
-  settingReference,
-  settingSection,
-  settingSweepAlsoStrips,
-  settingSweepGrid,
-  settingSweepStrip,
-  settingTitleKey,
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 import { GsDoorComponent } from '../gs-door/gs-door.component';
@@ -42,8 +34,8 @@ const TRADEOFF_ICONS = {
 } as const;
 
 /**
- * One setting, written out in full: what it is, what it does, what it costs, the
- * numbers it lives between, and the pictures of it changing.
+ * One subject of the reference, written out in full: what it is, what it does,
+ * what it costs, the numbers it lives between, and the pictures of it changing.
  *
  * This is the only place that composition exists. The routed reference page
  * mounts it, and the pane dock and the mobile sheet are meant to mount the same
@@ -51,11 +43,15 @@ const TRADEOFF_ICONS = {
  * learned what guidance does in the dock and then opened the page should be
  * reading the same words, not a shorter paraphrase of them.
  *
- * Content lives under `generate.reference.<topic>.lead` (one sentence for
- * someone meeting the setting) and `.body` (the depth). Either may be missing
- * while the reference is being written, and a missing one renders nothing at
- * all: a page with no body reads as brief, a page showing a translation key
- * reads as broken.
+ * The subject is a setting of the image panel or a use case of the alchemy
+ * studio, and the entry does not know which: it asks {@link referenceTopic} for
+ * keys and paths, and renders whichever parts came back. That is what keeps the
+ * second studio from growing a second entry component whose prose, hue and
+ * chrome would drift from this one's.
+ *
+ * Any piece of prose may be missing while the reference is being written, and a
+ * missing one renders nothing at all: a page with no body reads as brief, a
+ * page showing a translation key reads as broken.
  */
 @Component({
   selector: 'app-gs-param-entry',
@@ -170,6 +166,27 @@ const TRADEOFF_ICONS = {
       <p class="gs-ref-body">{{ bodyText }}</p>
     }
 
+    <!-- The named members of the subject, where it is a family: which of the
+         eleven upscalers, rather than what enlarging is. They are listed under
+         the prose that says what the family does, because choosing between them
+         is the second question and the reader should not be made to answer it
+         before the first. -->
+    @if (variants().length > 0) {
+      <dl class="gs-ref-variants">
+        @for (variant of variants(); track variant.id) {
+          @let noteText = variant.noteKey | transloco;
+          <dt class="gs-ref-variant-name">
+            {{ variant.titleKey | transloco }}
+          </dt>
+          <dd class="gs-ref-variant-note">
+            @if (noteText !== variant.noteKey) {
+              {{ noteText }}
+            }
+          </dd>
+        }
+      </dl>
+    }
+
     <!-- The routed page is about this one setting and has no prose for the
          pictures to bury, so they are already open on it; the dock and the sheet
          sit beside something else the reader is doing and keep the offer. -->
@@ -265,7 +282,7 @@ export class GsParamEntryComponent {
   private readonly glossary = inject(GlossaryService);
   private readonly router = inject(Router);
 
-  /** The `generate.help.<topic>` setting this entry is the long form of. */
+  /** The reference topic this entry is the long form of. */
   public readonly topic = input.required<string>();
   /**
    * Where the entry is mounted. The routed page is the reference; the dock is a
@@ -282,13 +299,13 @@ export class GsParamEntryComponent {
 
   public readonly icons = TRADEOFF_ICONS;
 
-  private readonly entry = computed<SettingReference | undefined>(() =>
-    settingReference(this.topic()),
+  private readonly entry = computed<ReferenceTopic | null>(() =>
+    referenceTopic(this.topic()),
   );
 
-  /** The mark and hue of the panel area this setting sits in. */
-  public readonly identity = computed<SectionIdentity | null>(() =>
-    sectionIdentity(settingSection(this.topic())),
+  /** The mark and hue of the area this subject sits in. */
+  public readonly identity = computed<SectionIdentity | null>(
+    () => this.entry()?.identity ?? null,
   );
 
   /** Whether this is the reference itself rather than a copy of it beside something. */
@@ -308,16 +325,23 @@ export class GsParamEntryComponent {
       .join(' '),
   );
 
-  public readonly titleKey = computed(() => settingTitleKey(this.topic()));
+  public readonly titleKey = computed(
+    () => this.entry()?.titleKey ?? this.topic(),
+  );
+
+  /** The named members of a subject that is a family, in reading order. */
+  public readonly variants = computed(() => this.entry()?.variants ?? []);
 
   /**
    * Where a piece of the entry's prose lives: `lead` is the one sentence for
-   * someone meeting the setting, and `body` the depth beneath it.
+   * someone meeting the subject, and `body` the depth beneath it.
    */
   public proseKey(part: 'lead' | 'body'): string {
-    return part === 'lead'
-      ? settingLeadKey(this.topic())
-      : settingBodyKey(this.topic());
+    const entry = this.entry();
+    if (!entry) {
+      return this.topic();
+    }
+    return part === 'lead' ? entry.leadKey : entry.bodyKey;
   }
 
   public readonly tradeoffs = computed<SettingTradeoffs | null>(
@@ -346,29 +370,14 @@ export class GsParamEntryComponent {
       : 'generate.reference.try_value',
   );
 
-  public readonly sweepParameter = computed(() =>
-    settingSweepStrip(this.topic()),
-  );
-  public readonly alsoStrips = computed(() =>
-    settingSweepAlsoStrips(this.topic()),
-  );
-  public readonly sweepGridParameter = computed(() =>
-    settingSweepGrid(this.topic()),
+  public readonly sweepParameter = computed(() => this.entry()?.strip ?? null);
+  public readonly alsoStrips = computed(() => this.entry()?.alsoStrips ?? []);
+  public readonly sweepGridParameter = computed(
+    () => this.entry()?.grid ?? null,
   );
 
   /** The siblings this entry points on to, already resolved for the template. */
-  public readonly related = computed(() =>
-    (this.entry()?.related ?? []).map((id) => {
-      const identity = sectionIdentity(settingSection(id));
-      return {
-        id,
-        titleKey: settingTitleKey(id),
-        link: docsSettingLink(id),
-        icon: identity?.icon ?? '',
-        className: identity?.className ?? '',
-      };
-    }),
-  );
+  public readonly related = computed(() => this.entry()?.related ?? []);
 
   /**
    * The horde's own words this entry uses, as the dictionary holds them. Named
@@ -384,7 +393,7 @@ export class GsParamEntryComponent {
   );
 
   /** Where the docked entry sends a reader who wants the whole page. */
-  public readonly fullLink = computed(() => docsSettingLink(this.topic()));
+  public readonly fullLink = computed(() => this.entry()?.fullLink ?? '');
 
   /**
    * Put one of the offered values in the form. Beside the studio that is the

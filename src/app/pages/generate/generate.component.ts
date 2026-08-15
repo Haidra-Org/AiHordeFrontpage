@@ -87,7 +87,7 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from './image-meta-panel/image-meta-panel.component';
-import { SECTION_IDENTITIES } from '../../content/sections';
+import { PANEL_SECTION_IDS, SECTION_IDENTITIES } from '../../content/sections';
 import {
   RequestWarning,
   evaluateRequestLint,
@@ -1043,16 +1043,19 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       pageId: STUDIO_GLOSSARY_PAGE_ID,
       pageTitleKey: 'help.glossary.page.generate_image',
       relevantTermIds: [...STUDIO_GLOSSARY_TERM_IDS],
-      entries: Object.entries(SECTION_IDENTITIES).map(([id, identity]) => ({
-        id,
-        titleKey: identity.labelKey,
-        descriptionKey: `generate.reference.section_hint.${id}`,
-        iconName: identity.icon,
-        // The panel's hue classes are declared inside `.gen-studio` and the
-        // glossary is mounted outside it, so the modal has its own set.
-        iconColorClass: `glossary-sec--${id}`,
-        action: () => this.showSection(identity.className),
-      })),
+      entries: PANEL_SECTION_IDS.map((id) => {
+        const identity = SECTION_IDENTITIES[id];
+        return {
+          id,
+          titleKey: identity.labelKey,
+          descriptionKey: `generate.reference.section_hint.${id}`,
+          iconName: identity.icon,
+          // The panel's hue classes are declared inside `.gen-studio` and the
+          // glossary is mounted outside it, so the modal has its own set.
+          iconColorClass: `glossary-sec--${id}`,
+          action: () => this.showSection(identity.className),
+        };
+      }),
     });
     this.destroyRef.onDestroy(() =>
       this.glossary.clearPageContext(STUDIO_GLOSSARY_PAGE_ID),

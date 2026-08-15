@@ -23,6 +23,9 @@ export const DOCS_IMAGE_SETTINGS = `${DOCS_IMAGE}/settings`;
 /** The worked examples, one page per technique. */
 export const DOCS_IMAGE_EXAMPLES = `${DOCS_IMAGE}/learn`;
 
+/** The alchemy studio's documentation: one page per thing it is used for. */
+export const DOCS_ALCHEMY = `${DOCS_ROOT}/alchemy`;
+
 /** The studios themselves, which is where reading turns into doing. */
 export const STUDIO_IMAGE = '/generate/image';
 export const STUDIO_ALCHEMY = '/generate/alchemy';
@@ -35,4 +38,9 @@ export function docsSettingLink(id: string): string {
 /** One technique's worked example. */
 export function docsExampleLink(flowId: string): string {
   return `${DOCS_IMAGE_EXAMPLES}/${flowId}`;
+}
+
+/** One thing alchemy is used for, and the forms that do it. */
+export function docsAlchemyUseCaseLink(id: string): string {
+  return `${DOCS_ALCHEMY}/${id}`;
 }

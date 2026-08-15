@@ -73,9 +73,10 @@ export const routes: Routes = [
         (c) => c.DocsShellComponent,
       ),
     children: [
-      // The image area is the whole of the documentation, so a front door over
-      // it would be one page listing one thing. /docs stays as the name of the
-      // area, and lands on what the area actually holds.
+      // /docs has no page of its own and lands on the image area, which is the
+      // larger of the two and the one a reader arriving without an area in mind
+      // is looking for. A front door listing both areas is a page nobody has
+      // written yet rather than a page that was decided against.
       { path: '', redirectTo: 'image', pathMatch: 'full' },
       {
         path: 'image',
@@ -117,6 +118,23 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/docs/settings-entry/settings-entry.component').then(
             (c) => c.DocsSettingsEntryComponent,
+          ),
+      },
+      // The alchemy area: the four things the studio is used for, and a page
+      // per one. A `:useCase` naming none is sent back to the list by the page
+      // itself, which is the only place that knows what the area has.
+      {
+        path: 'alchemy',
+        loadComponent: () =>
+          import('./pages/docs/alchemy-home/alchemy-home.component').then(
+            (c) => c.DocsAlchemyHomeComponent,
+          ),
+      },
+      {
+        path: 'alchemy/:useCase',
+        loadComponent: () =>
+          import('./pages/docs/alchemy-usecase/alchemy-usecase.component').then(
+            (c) => c.DocsAlchemyUseCaseComponent,
           ),
       },
     ],

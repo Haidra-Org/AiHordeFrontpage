@@ -15,12 +15,19 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
+  DOCS_ALCHEMY,
   DOCS_IMAGE,
   DOCS_IMAGE_GUIDE,
   DOCS_IMAGE_SETTINGS,
   DOCS_ROOT,
+  docsAlchemyUseCaseLink,
   docsExampleLink,
 } from '../../../content/docs-links';
+import {
+  ALCHEMY_USE_CASES,
+  alchemyUseCaseTitleKey,
+} from '../../../content/alchemy-usecases';
+import { SECTION_IDENTITIES } from '../../../content/sections';
 
 /** One entry of an area's subnav. */
 export interface DocsNavEntry {
@@ -61,10 +68,12 @@ export interface DocsArea {
 }
 
 /**
- * The documented areas. The entries take no section identity: the eight
- * identities name areas of the control panel, and none of these pages is one of
- * them. A neutral chip is more honest than borrowing a hue that already means
- * something else.
+ * The documented areas.
+ *
+ * The image area's entries take no section identity: those identities name
+ * cards of the control panel, and none of the image pages is one card. The
+ * alchemy area is the exception because the whole studio is one identity, so
+ * its entries wear the mark the panel and the `?` notes already wear.
  */
 export const DOCS_AREAS: readonly DocsArea[] = [
   {
@@ -101,6 +110,30 @@ export const DOCS_AREAS: readonly DocsArea[] = [
         icon: 'question-mark-circle',
         exact: false,
       },
+    ],
+  },
+  {
+    id: 'alchemy',
+    labelKey: 'docs.area_alchemy',
+    icon: SECTION_IDENTITIES.alchemy.icon,
+    root: DOCS_ALCHEMY,
+    entries: [
+      {
+        labelKey: 'generate.learn.nav_overview',
+        link: DOCS_ALCHEMY,
+        activePath: DOCS_ALCHEMY,
+        icon: 'home',
+        exact: true,
+      },
+      // The area is four pages, so the subnav is the four pages. An index entry
+      // standing for all of them would be the landing page a second time.
+      ...ALCHEMY_USE_CASES.map((useCase) => ({
+        labelKey: alchemyUseCaseTitleKey(useCase.id),
+        link: docsAlchemyUseCaseLink(useCase.id),
+        activePath: docsAlchemyUseCaseLink(useCase.id),
+        icon: useCase.icon,
+        exact: false,
+      })),
     ],
   },
 ];

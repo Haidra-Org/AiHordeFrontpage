@@ -1,6 +1,6 @@
 import { GenerateFormValue } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
-import { SectionId, SECTION_IDS } from './sections';
+import { SectionId, PANEL_SECTION_IDS } from './sections';
 
 /**
  * A setting's value, in the type the API takes it in. Numbers stay numbers and
@@ -859,7 +859,7 @@ export interface SettingGroup {
  * only settings the book has a page for are listed: an index entry leading to a
  * page with nothing on it reads as a bug.
  */
-export const SETTINGS_INDEX: readonly SettingGroup[] = SECTION_IDS.map(
+export const SETTINGS_INDEX: readonly SettingGroup[] = PANEL_SECTION_IDS.map(
   (section) => ({
     section,
     ids: SETTINGS.filter(

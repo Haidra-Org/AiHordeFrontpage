@@ -20,6 +20,12 @@ import {
   formsProgressLabel,
   isJobSettled,
 } from '../../helper/alchemy-job-view';
+import {
+  ALCHEMY_USE_CASES,
+  alchemyUseCaseForGroup,
+} from '../../content/alchemy-usecases';
+import { referenceTopic } from '../../content/reference-topics';
+import { GsHelpDockService } from '../../services/gs-help-dock.service';
 
 describe('AlchemyComponent', () => {
   let fixture: ComponentFixture<AlchemyComponent>;
@@ -131,6 +137,42 @@ describe('AlchemyComponent', () => {
       expect(component.isGroupCollapsed('analyze')).toBe(false);
       component.toggleGroup('upscale');
       expect(component.isGroupCollapsed('upscale')).toBe(false);
+    });
+  });
+
+  describe('operation cards and their notes', () => {
+    it('offers every operation family the registry documents', () => {
+      expect(component.operationGroups.map((group) => group.id)).toEqual(
+        ALCHEMY_USE_CASES.map((useCase) => useCase.groupId),
+      );
+    });
+
+    it('builds each group from the use case it documents', () => {
+      expect(component.operationGroups.map((group) => group.forms)).toEqual(
+        component.operationGroups.map(
+          (group) => alchemyUseCaseForGroup(group.id)?.forms,
+        ),
+      );
+    });
+
+    it("points each card's note at an entry the reference can answer", () => {
+      const subjects = component.operationGroups.map((group) =>
+        referenceTopic(group.helpTopic),
+      );
+
+      expect(subjects.map((subject) => subject?.section)).toEqual(
+        component.operationGroups.map(() => 'alchemy'),
+      );
+      expect(subjects.filter((subject) => !subject?.hasEntry)).toEqual([]);
+    });
+
+    it('takes the docked entry with it when the studio is left', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+      dock.open(component.operationGroups[0].helpTopic);
+      expect(dock.isOpen()).toBe(true);
+
+      fixture.destroy();
+      expect(dock.isOpen()).toBe(false);
     });
   });
 

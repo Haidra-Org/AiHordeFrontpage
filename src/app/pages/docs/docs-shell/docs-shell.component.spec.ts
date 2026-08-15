@@ -15,6 +15,9 @@ const translations = en as Record<string, string>;
 /** The image area, which is the one the shell is exercised through. */
 const IMAGE = DOCS_AREAS.find((area) => area.id === 'image')!;
 
+/** The second area, which is what proves the shell knows areas rather than pages. */
+const ALCHEMY = DOCS_AREAS.find((area) => area.id === 'alchemy')!;
+
 describe('DocsShellComponent', () => {
   let fixture: ComponentFixture<DocsShellComponent>;
   let router: Router;
@@ -54,6 +57,8 @@ describe('DocsShellComponent', () => {
           { path: 'docs/image/settings', component: StubPageComponent },
           { path: 'docs/image/settings/:param', component: StubPageComponent },
           { path: 'docs/image/guide', component: StubPageComponent },
+          { path: 'docs/alchemy', component: StubPageComponent },
+          { path: 'docs/alchemy/:useCase', component: StubPageComponent },
         ]),
       ],
     }).compileComponents();
@@ -176,6 +181,17 @@ describe('DocsShellComponent', () => {
     await go('/docs/image/guide');
 
     expect(current()).toBe(translations['generate.learn.nav_guide']);
+  });
+
+  it('switches to the alchemy area, chrome and all, on its own URLs', async () => {
+    await go('/docs/alchemy/enlarge');
+
+    const crumbs = (fixture.nativeElement as HTMLElement).querySelector(
+      '.gs-docs-crumbs',
+    );
+    expect(crumbs?.textContent).toContain(translations['docs.area_alchemy']);
+    expect(links()).toHaveLength(ALCHEMY.entries.length);
+    expect(current()).toBe(translations['alchemy.usecases.enlarge.title']);
   });
 
   it('renders the page the route names beneath the subnav', async () => {

@@ -1,12 +1,17 @@
 /**
- * The eight areas of the control panel, and the icon, hue class and name each
- * one is known by wherever it is referred to.
+ * The areas the creation tools are read in, and the icon, hue class and name
+ * each one is known by wherever it is referred to.
  *
- * The studio talks about the same eight areas in four places: the panel's own
- * cards, the written guide, the follow-along steps and the `?` field notes.
- * Holding the identity here rather than at each surface is what keeps a reader
- * who learned "Sampling is the crimson dial" in the guide from meeting a
- * different glyph on the card it sent them to.
+ * The studio talks about the same areas in four places: the panel's own cards,
+ * the written guide, the follow-along steps and the `?` field notes. Holding
+ * the identity here rather than at each surface is what keeps a reader who
+ * learned "Sampling is the crimson dial" in the guide from meeting a different
+ * glyph on the card it sent them to.
+ *
+ * Eight of them are cards of the image panel. The ninth, `alchemy`, is the
+ * other studio taken whole: its operations are one family of work rather than
+ * nine cards of one form, and giving it one identity is what lets its cards,
+ * its `?` notes and its documentation wear the same mark the image areas do.
  *
  * Which area a *setting* belongs to is not here: a setting knows its own area,
  * and the registry in `./settings` is the one place that says so.
@@ -19,7 +24,8 @@ export type SectionId =
   | 'sampling'
   | 'finishing'
   | 'horde'
-  | 'workflows';
+  | 'workflows'
+  | 'alchemy';
 
 /** What a surface needs to render a section's mark and name. */
 export interface SectionIdentity {
@@ -31,7 +37,13 @@ export interface SectionIdentity {
   labelKey: string;
 }
 
-export const SECTION_IDS: readonly SectionId[] = [
+/**
+ * The areas that are cards of the image control panel, in the order the panel
+ * shows them. Surfaces that mean "the parts of that panel" ask for these rather
+ * than for every identity: the alchemy studio is an identity and is not a card
+ * of the image form.
+ */
+export const PANEL_SECTION_IDS: readonly SectionId[] = [
   'prompt',
   'model',
   'size',
@@ -40,6 +52,11 @@ export const SECTION_IDS: readonly SectionId[] = [
   'finishing',
   'horde',
   'workflows',
+];
+
+export const SECTION_IDS: readonly SectionId[] = [
+  ...PANEL_SECTION_IDS,
+  'alchemy',
 ];
 
 function buildIdentity(id: SectionId): SectionIdentity {

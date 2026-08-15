@@ -11,15 +11,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsHelpService } from '../../services/gs-help.service';
-import {
-  hasReference,
-  settingNoteKey,
-  settingSection,
-  settingSweepGrid,
-  settingSweepStrip,
-  settingTitleKey,
-} from '../../content/settings';
-import { sectionIdentity } from '../../content/sections';
+import { referenceTopic } from '../../content/reference-topics';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -42,8 +34,9 @@ import { IconComponent } from '../icon/icon.component';
  * depth now live in the setting's reference entry, and the note offers the way
  * to it rather than becoming it.
  *
- * Content lives under `generate.help.<topic>.title` (a short field name, used
- * for the trigger's accessible name) and `generate.help.<topic>.body`.
+ * Which words a topic has, and whether there is an entry behind it, is asked of
+ * the reference registries rather than known here: the same `?` sits beside an
+ * image setting and beside an alchemy operation, and neither studio owns it.
  */
 @Component({
   selector: 'app-gs-help',
@@ -129,7 +122,7 @@ export class GsHelpComponent {
   private readonly dock = inject(GsHelpDockService);
   private readonly sweeps = inject(SweepLibraryService);
 
-  /** The `generate.help.<topic>` content this trigger explains. */
+  /** The reference topic this trigger explains. */
   public readonly topic = input.required<string>();
 
   private static nextInstance = 0;
@@ -138,14 +131,23 @@ export class GsHelpComponent {
   private readonly trigger =
     viewChild<ElementRef<HTMLButtonElement>>('trigger');
 
+  /** What either registry knows about the subject beside this trigger. */
+  private readonly subject = computed(() => referenceTopic(this.topic()));
+
+  /* A namespaced topic carries a colon, which is legal in an id and awkward in
+     every selector that would go looking for one. */
   public readonly noteId = computed(
-    () => `gs-help-${this.topic()}-${this.instance}`,
+    () => `gs-help-${this.topic().replace(/[^\w-]+/g, '-')}-${this.instance}`,
   );
-  public readonly titleKey = computed(() => settingTitleKey(this.topic()));
-  public readonly bodyKey = computed(() => settingNoteKey(this.topic()));
+  public readonly titleKey = computed(
+    () => this.subject()?.titleKey ?? this.topic(),
+  );
+  public readonly bodyKey = computed(
+    () => this.subject()?.noteKey ?? this.topic(),
+  );
 
   /** Whether the reference has an entry this note can send a reader on to. */
-  public readonly hasEntry = computed(() => hasReference(this.topic()));
+  public readonly hasEntry = computed(() => this.subject()?.hasEntry ?? false);
 
   /**
    * Whether the offer can be kept: an entry to open, and a strip or a plate the
@@ -153,12 +155,12 @@ export class GsHelpComponent {
    * offer is withheld rather than shown and then taken away.
    */
   public readonly canSeeIt = computed(() => {
-    if (!this.hasEntry()) {
+    const subject = this.subject();
+    if (!subject?.hasEntry) {
       return false;
     }
-    const topic = this.topic();
-    const strip = settingSweepStrip(topic);
-    const grid = settingSweepGrid(topic);
+    const strip = subject.strip;
+    const grid = subject.grid;
     if (!strip && !grid) {
       return false;
     }
@@ -170,9 +172,7 @@ export class GsHelpComponent {
   });
 
   /** The area of the panel this field sits in, for the offer's badge. */
-  private readonly identity = computed(() =>
-    sectionIdentity(settingSection(this.topic())),
-  );
+  private readonly identity = computed(() => this.subject()?.identity ?? null);
 
   public readonly sectionLabelKey = computed(
     () => this.identity()?.labelKey ?? null,
@@ -190,7 +190,7 @@ export class GsHelpComponent {
     if (!this.canSeeIt()) {
       return [];
     }
-    const strip = settingSweepStrip(this.topic());
+    const strip = this.subject()?.strip;
     const stops = (strip && this.sweeps.strip(strip)?.stops) || [];
     return stops.length === 0
       ? []

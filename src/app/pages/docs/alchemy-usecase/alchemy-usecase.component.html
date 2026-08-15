@@ -1,0 +1,128 @@
+<div class="gs-ref-page-inner">
+  <a class="gs-ref-back" [routerLink]="indexLink">
+    <app-icon name="arrow-left" class="gs-ico-sm" />
+    {{ "alchemy.usecases.back" | transloco }}
+  </a>
+
+  @if (topic(); as id) {
+    <app-gs-param-entry [topic]="id" mode="page" />
+
+    <!-- What the forms on this page actually produced. Shown only once the
+         library has answered and only where it answered with something: an
+         empty evidence band would promise pictures the library has not
+         published, and the prose above stands on its own without them. -->
+    @if (evidenceSettled() && shots().length > 0) {
+      <section class="gs-ref-evidence" [class]="identity.className">
+        <h2 class="gs-guide-head">
+          <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+            ><app-icon [name]="identity.icon"
+          /></span>
+          {{ "alchemy.usecases.evidence_head" | transloco }}
+        </h2>
+
+        @for (shot of shots(); track shot.form) {
+          <figure class="gs-ref-shot">
+            <figcaption class="gs-ref-shot-head">
+              <span class="gs-ref-shot-name">
+                {{ shot.formNameKey | transloco }}
+              </span>
+              @if (shot.model; as model) {
+                <span class="gs-ref-shot-meta gs-mono">{{ model }}</span>
+              }
+            </figcaption>
+
+            <div class="gs-ref-shot-pair">
+              <span class="gs-ref-shot-frame">
+                <img
+                  [src]="shot.source"
+                  [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="gs-ref-shot-label">
+                  {{ "alchemy.usecases.evidence_source" | transloco }}
+                </span>
+              </span>
+
+              @if (shot.result; as result) {
+                <span class="gs-ref-shot-frame">
+                  <img
+                    [src]="result"
+                    [alt]="
+                      'alchemy.usecases.evidence_result_alt'
+                        | transloco: { form: shot.formNameKey | transloco }
+                    "
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span class="gs-ref-shot-label">
+                    {{ "alchemy.usecases.evidence_result" | transloco }}
+                  </span>
+                </span>
+              } @else if (shot.text; as text) {
+                <!-- A form that answers with words shows the words, verbatim.
+                     A summary of a caption is not the caption. -->
+                <span class="gs-ref-shot-frame gs-ref-shot-frame--text">
+                  <output class="gs-ref-shot-text">{{ text }}</output>
+                  <span class="gs-ref-shot-label">
+                    {{ "alchemy.usecases.evidence_result" | transloco }}
+                  </span>
+                </span>
+              }
+            </div>
+
+            @if (shot.notes; as notes) {
+              <p class="gs-ref-shot-note">{{ notes }}</p>
+            }
+          </figure>
+        }
+      </section>
+    }
+
+    <a class="gs-ref-full" [routerLink]="studioLink">
+      {{ "alchemy.usecases.open_studio" | transloco }}
+    </a>
+
+    @if (previous() || next()) {
+      <nav
+        class="gs-ref-onwards"
+        [attr.aria-label]="'alchemy.usecases.onwards_label' | transloco"
+      >
+        @if (previous(); as entry) {
+          <a
+            class="gs-ref-onward"
+            [class]="identity.className"
+            [routerLink]="entry.link"
+          >
+            <app-icon name="chevron-left" class="gs-ico-sm" />
+            <span class="gs-ref-onward-text">
+              <span class="gs-ref-onward-rel">{{
+                "generate.reference.previous" | transloco
+              }}</span>
+              <span class="gs-ref-onward-name">{{
+                entry.titleKey | transloco
+              }}</span>
+            </span>
+          </a>
+        }
+        @if (next(); as entry) {
+          <a
+            class="gs-ref-onward gs-ref-onward--next"
+            [class]="identity.className"
+            [routerLink]="entry.link"
+          >
+            <span class="gs-ref-onward-text">
+              <span class="gs-ref-onward-rel">{{
+                "generate.reference.next" | transloco
+              }}</span>
+              <span class="gs-ref-onward-name">{{
+                entry.titleKey | transloco
+              }}</span>
+            </span>
+            <app-icon name="chevron-right" class="gs-ico-sm" />
+          </a>
+        }
+      </nav>
+    }
+  }
+</div>
