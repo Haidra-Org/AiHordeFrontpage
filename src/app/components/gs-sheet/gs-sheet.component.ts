@@ -199,6 +199,13 @@ export class GsSheetComponent {
    */
   public readonly dismissible = input(true);
 
+  /**
+   * A storage key under which the stop is remembered between mounts, for a
+   * sheet the reader meets again and again: a reader who chose full for one
+   * step should not have to choose it for the next.
+   */
+  public readonly rememberAs = input<string | null>(null);
+
   /** The reader dismissed the sheet; the caller decides what that means. */
   public readonly closed = output<void>();
 
@@ -243,7 +250,8 @@ export class GsSheetComponent {
     // state is taken when it arrives rather than read out of the constructor.
     effect(() => {
       const start = this.startExpanded();
-      untracked(() => this.at.set(start ? 'half' : 'peek'));
+      const remembered = this.rememberedStop();
+      untracked(() => this.at.set(remembered ?? (start ? 'half' : 'peek')));
     });
     // The height is read after the browser has drawn the state it belongs to;
     // reading it as the state changes would publish the height it just left.
@@ -390,12 +398,26 @@ export class GsSheetComponent {
     this.setStop(STOPS[Math.max(0, Math.min(STOPS.length - 1, index))]);
   }
 
+  /** The stop remembered under `rememberAs`, if it is one the sheet has. */
+  private rememberedStop(): SheetStop | null {
+    const key = this.rememberAs();
+    if (!key || !this.isBrowser) {
+      return null;
+    }
+    const stored = localStorage.getItem(key);
+    return STOPS.includes(stored as SheetStop) ? (stored as SheetStop) : null;
+  }
+
   private setStop(next: SheetStop): void {
     const previous = this.at();
     if (previous === next) {
       return;
     }
     this.at.set(next);
+    const key = this.rememberAs();
+    if (key && this.isBrowser) {
+      localStorage.setItem(key, next);
+    }
     // Focus follows the body when it first appears; a change of size around a
     // body already being read leaves the reader where they were.
     if (previous !== 'peek' || next === 'peek' || !this.isBrowser) {

@@ -4,6 +4,7 @@
 <app-gs-sheet
   [label]="'generate.learn.sheet_label' | transloco"
   [dismissible]="false"
+  rememberAs="aihorde.generate.learn.sheet_stop"
 >
   <!-- Progress along the sheet's top edge: three pixels, one segment per step,
        filled to the step on show. It costs the peek row no height, and it is
@@ -158,12 +159,9 @@
       }
     </section>
 
+    <!-- The bar row above already carries the step's one action, so the body
+         offers only what the bar has no room for: pointing at the field. -->
     <div class="gs-learn-actions">
-      @if (canApply()) {
-        <button type="button" class="gs-learn-apply" (click)="apply()">
-          {{ "generate.learn.apply" | transloco }}
-        </button>
-      }
       @if (current.anchorId) {
         <button type="button" class="gs-learn-show" (click)="showMe()">
           {{ "generate.learn.show_me" | transloco }}

@@ -306,6 +306,48 @@ describe('TutorialEngineService', () => {
       expect(host.applied).toEqual([]);
     });
 
+    it('rings every control a step wrote, so the write is seen as well as said', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const size = document.createElement('div');
+      const model = document.createElement('div');
+      anchors.register('size', size);
+      anchors.register('model', model);
+
+      // The size step writes width and height, which share the size control.
+      engine.goTo(2);
+      engine.applyStep();
+
+      expect(size.classList.contains('gs-tut-ping')).toBe(true);
+      expect(model.classList.contains('gs-tut-ping')).toBe(false);
+    });
+
+    it('answers the keyboard while it has the pane, and not from inside a field', () => {
+      const key = (k: string, target?: HTMLElement): KeyboardEvent => {
+        const event = new KeyboardEvent('keydown', { key: k, bubbles: true });
+        if (target) {
+          Object.defineProperty(event, 'target', { value: target });
+        }
+        return event;
+      };
+      engine.goTo(2);
+
+      expect(engine.handleKey(key(']'))).toBe(true);
+      expect(engine.stepIndex()).toBe(3);
+      expect(engine.handleKey(key('['))).toBe(true);
+      expect(engine.stepIndex()).toBe(2);
+
+      // Typing in a field: the bracket is a bracket.
+      const input = document.createElement('input');
+      expect(engine.handleKey(key(']', input))).toBe(false);
+      expect(engine.stepIndex()).toBe(2);
+
+      // Escape parks, from anywhere.
+      expect(engine.handleKey(key('Escape', input))).toBe(true);
+      expect(engine.parked()).toBe(true);
+      // Parked, the keys are nobody's.
+      expect(engine.handleKey(key(']'))).toBe(false);
+    });
+
     it('marks the current step field and expands its help note', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       const help = TestBed.inject(GsHelpService);

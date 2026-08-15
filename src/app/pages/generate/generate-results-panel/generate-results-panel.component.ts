@@ -369,7 +369,10 @@ export class GenerateResultsPanelComponent {
       !this.welcomed() &&
       this.showStarters() &&
       !this.helpDockOpen() &&
-      !this.tutorialOpen(),
+      !this.tutorialOpen() &&
+      // A parked tutorial's way back is the offer this pane makes; three more
+      // doors beside it would be two starts competing for one reader.
+      !this.tutorial.parked(),
   );
 
   /** Ask the parent to write a selection of one image's parameters to the form. */

@@ -201,6 +201,34 @@ const PING_CLASS = 'gs-tut-ping';
 const PING_MS = 800;
 
 /**
+ * Which anchor a written form field lives on, so an apply can flash the
+ * controls it changed. Fields that share a control share an anchor; a field
+ * with no anchor (a hidden one, or one written by another surface) flashes
+ * nothing.
+ */
+const FIELD_ANCHORS: Readonly<
+  Partial<Record<keyof GenerateFormValue, string>>
+> = {
+  prompt: 'prompt',
+  negativePrompt: 'prompt',
+  model: 'model',
+  width: 'size',
+  height: 'size',
+  steps: 'steps',
+  cfg_scale: 'cfg',
+  sampler_name: 'sampler',
+  karras: 'sampler',
+  seed: 'seed',
+  denoising_strength: 'denoise',
+  control_type: 'control_type',
+  sourceMode: 'source_mode',
+  qrText: 'qr',
+  transparent: 'transparent',
+  post_processing: 'facefixer',
+  facefixer_strength: 'facefixer',
+};
+
+/**
  * The in-pane follow-along tutorial: which flow is running, which step is
  * current, and how talkative the prose should be.
  *
@@ -469,6 +497,73 @@ export class TutorialEngineService {
       Object.assign(written, { [field]: example[field] });
     }
     this.host.applyFields(written);
+    // Show the write as well as saying it happened: each control the step
+    // changed sends one ring out, the same ring "Show me where" sends, so the
+    // reader's eye is taken to what moved rather than told to look for it.
+    const anchors = new Set(
+      fields
+        .map((field) => FIELD_ANCHORS[field])
+        .filter((id) => id !== undefined),
+    );
+    for (const id of anchors) {
+      const element = this.anchors.element(id);
+      if (element) {
+        this.flash(element);
+      }
+    }
+  }
+
+  /**
+   * One ring on a control that is not the pointed one. The pointed control's
+   * ring is tracked so a second press can restart it; these are fire-and-forget,
+   * because an apply writes several at once and none of them is being pointed
+   * at.
+   */
+  private flash(element: HTMLElement): void {
+    if (element === this.highlighted) {
+      this.ping(element);
+      return;
+    }
+    element.classList.remove(PING_CLASS);
+    void element.offsetWidth;
+    element.classList.add(PING_CLASS);
+    setTimeout(() => element.classList.remove(PING_CLASS), PING_MS);
+  }
+
+  /**
+   * The keyboard's way through a tutorial, for a reader whose hands are on the
+   * keys: bracket keys step, ? points at the field again, Escape leaves. Only
+   * while a tutorial has the pane, and never from inside a field, where the
+   * keys mean what they type.
+   */
+  public handleKey(event: KeyboardEvent): boolean {
+    if (!this.active()) {
+      return false;
+    }
+    const target = event.target as HTMLElement | null;
+    const typing =
+      target !== null &&
+      (target.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+    if (typing && event.key !== 'Escape') {
+      return false;
+    }
+    switch (event.key) {
+      case ']':
+        this.next();
+        return true;
+      case '[':
+        this.back();
+        return true;
+      case '?':
+        this.focusStep(true);
+        return true;
+      case 'Escape':
+        this.pause();
+        return true;
+      default:
+        return false;
+    }
   }
 
   /**

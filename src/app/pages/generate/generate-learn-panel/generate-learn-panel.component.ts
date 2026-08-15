@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
   inject,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -43,11 +44,13 @@ import {
   templateUrl: './generate-learn-panel.component.html',
   host: {
     class: 'gs-results-body gs-learn',
+    '(document:keydown)': 'onKey($event)',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GenerateLearnPanelComponent {
   private readonly engine = inject(TutorialEngineService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   public readonly levels = this.engine.levels;
   public readonly level = this.engine.level;
@@ -202,5 +205,19 @@ export class GenerateLearnPanelComponent {
   /** Leave for the results; the flow is parked, not ended. */
   public exit(): void {
     this.engine.pause();
+  }
+
+  /**
+   * The keyboard's way through the tutorial, only while this pane is the one
+   * on screen: below the wide layout the same steps live in the sheet, which
+   * answers Escape by unwinding a stop and must not be parked from under it.
+   */
+  public onKey(event: KeyboardEvent): void {
+    if (getComputedStyle(this.host.nativeElement).display === 'none') {
+      return;
+    }
+    if (this.engine.handleKey(event)) {
+      event.preventDefault();
+    }
   }
 }

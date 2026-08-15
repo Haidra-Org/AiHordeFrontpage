@@ -17,6 +17,7 @@ const CLEARANCE_VAR = '--gs-sheet-clearance';
       <app-gs-sheet
         [label]="'Sheet'"
         [startExpanded]="startExpanded"
+        [rememberAs]="rememberAs"
         (closed)="closed = closed + 1"
       >
         <span sheet-bar>Bar</span>
@@ -30,6 +31,7 @@ class HostComponent {
   public readonly sheet = viewChild.required(GsSheetComponent);
   public readonly mounted = signal(true);
   public startExpanded = false;
+  public rememberAs: string | null = null;
   public closed = 0;
 }
 
@@ -70,7 +72,10 @@ describe('GsSheetComponent', () => {
     fixture.detectChanges();
   }
 
-  async function setUp(startExpanded = false): Promise<void> {
+  async function setUp(
+    startExpanded = false,
+    rememberAs: string | null = null,
+  ): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         HostComponent,
@@ -83,6 +88,7 @@ describe('GsSheetComponent', () => {
 
     fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.startExpanded = startExpanded;
+    fixture.componentInstance.rememberAs = rememberAs;
     await settle();
   }
 
@@ -124,6 +130,26 @@ describe('GsSheetComponent', () => {
     stopButton('generate.sheet.hide')!.click();
     await settle();
     expect(body().hidden).toBe(true);
+  });
+
+  it('remembers its stop under a key, and comes back to it', async () => {
+    localStorage.clear();
+    await setUp(false, 'test.sheet.stop');
+
+    stopButton('generate.sheet.show')!.click();
+    await settle();
+    stopButton('generate.sheet.fill')!.click();
+    await settle();
+    expect(localStorage.getItem('test.sheet.stop')).toBe('full');
+
+    // Remount: the sheet opens where it was left.
+    fixture.componentInstance.mounted.set(false);
+    fixture.detectChanges();
+    fixture.componentInstance.mounted.set(true);
+    fixture.detectChanges();
+    await settle();
+    expect(fixture.componentInstance.sheet().stop()).toBe('full');
+    localStorage.clear();
   });
 
   it('fills the viewport from half, and shrinks back to half', async () => {
