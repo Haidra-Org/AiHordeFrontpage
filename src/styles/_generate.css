@@ -6424,16 +6424,17 @@
   color: var(--gs-ink);
 }
 .gen-studio .gs-guide-close {
-  min-height: 32px;
-  padding: 5px 11px;
+  min-height: var(--gs-control-h);
+  padding: 0 var(--gs-space-4);
   border: 1px solid var(--gs-border);
-  border-radius: 7px;
-  background: var(--gs-field);
-  color: var(--gs-label);
-  font-size: 11px;
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--gs-elev-1);
 }
 .gen-studio .gs-guide-close:hover {
   color: var(--gs-ink);
@@ -8970,7 +8971,9 @@ app-gs-compare-wipe {
    field; see the follow-along section. */
 .gen-studio .gs-learn-card {
   position: relative;
-  margin-top: 10px;
+  margin-top: var(--gs-space-3);
+  border-radius: var(--gs-radius-md);
+  padding: var(--gs-space-4);
 }
 .gen-studio .gs-learn-reveal {
   display: flex;
@@ -8994,13 +8997,13 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-apply,
 .gen-studio .gs-learn-next,
 .gen-studio .gs-learn-all {
-  min-height: 34px;
-  padding: 7px 14px;
+  min-height: var(--gs-control-h);
+  padding: 0 var(--gs-space-4);
   border: 1px solid var(--gs-blue);
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-blue);
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -9016,16 +9019,17 @@ app-gs-compare-wipe {
   cursor: default;
 }
 .gen-studio .gs-learn-show {
-  min-height: 34px;
-  padding: 7px 12px;
+  min-height: var(--gs-control-h);
+  padding: 0 var(--gs-space-4);
   border: 1px solid var(--gs-border);
-  border-radius: 8px;
-  background: var(--gs-field);
-  color: var(--gs-ink-2);
-  font-size: 12px;
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
+  box-shadow: var(--gs-elev-1);
 }
 .gen-studio .gs-learn-show:hover {
   border-color: var(--gs-blue);
