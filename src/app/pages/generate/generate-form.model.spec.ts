@@ -230,13 +230,15 @@ describe('buildImageRequest source processing', () => {
     expect(request.params?.control_type).toBeUndefined();
   });
 
-  it('maps inpainting to inpainting processing with denoising', () => {
+  it('maps inpainting to inpainting processing, replacing the masked region outright', () => {
+    // The panel shows no strength control in this mode, so the strength the
+    // reader last set for img2img must not ride along unseen.
     const request = buildImageRequest(
       value({ sourceMode: 'inpainting', denoising_strength: 0.8 }),
       { hasSourceImage: true },
     );
     expect(request.source_processing).toBe('inpainting');
-    expect(request.params?.denoising_strength).toBe(0.8);
+    expect(request.params?.denoising_strength).toBe(1);
   });
 });
 

@@ -118,6 +118,7 @@ const CHROME_KEYS = [
   'images_head',
   'shot_source',
   'shot_mask',
+  'shot_reference',
   'shot_before',
   'shot_result',
   'enlarge',
@@ -415,6 +416,45 @@ describe('DocsImageExampleComponent', () => {
     );
     // Source, mask and result: the inputs are shown, not only the outcome.
     expect(harness.query('.gs-tut-img')).toHaveLength(3);
+    // And the source is wiped against the result, because the change is in
+    // one place and a divider reads it better than two tiles.
+    expect(harness.query('.gs-tut-compare app-gs-compare-wipe')).toHaveLength(
+      1,
+    );
+  });
+
+  it('offers no wipe for a flow that starts from nothing', async () => {
+    harness = await createPage('txt2img');
+    flushAll(harness);
+
+    expect(harness.component.comparison()).toBeNull();
+    expect(harness.query('.gs-tut-compare')).toHaveLength(0);
+  });
+
+  it('shows every reference a remix blended in, after the source', async () => {
+    harness = await createPage('remix');
+    flushAll(harness, {
+      ...MANIFEST,
+      flows: MANIFEST.flows.map((flow) =>
+        flow.id === 'remix'
+          ? {
+              ...flow,
+              references: ['reference-1.webp'],
+              files: [...flow.files, 'reference-1.webp'],
+            }
+          : flow,
+      ),
+    });
+
+    const translations = en as Record<string, string>;
+    const captions = harness
+      .query<HTMLElement>('.gs-tut-shot-cap')
+      .map((cap) => cap.textContent?.trim());
+    expect(captions).toEqual([
+      translations['generate.tutorials.shot_source'],
+      translations['generate.tutorials.shot_reference'],
+      translations['generate.tutorials.shot_result'],
+    ]);
   });
 
   it('reads its steps from the studio pane’s bodies, filled from the request on screen', async () => {

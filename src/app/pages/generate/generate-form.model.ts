@@ -1303,7 +1303,10 @@ export function buildImageRequest(
         break;
       case 'inpainting':
         sourceProcessing = 'inpainting';
-        params.denoising_strength = value.denoising_strength;
+        // The panel offers no strength control in this mode: the masked region
+        // is replaced outright, so the request says so rather than carrying
+        // whatever strength the reader last set for img2img.
+        params.denoising_strength = 1;
         break;
       // Remix weights its inputs through per-image `extra_source_images`
       // strengths rather than a denoise pass, so no denoising_strength is sent.

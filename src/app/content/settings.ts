@@ -187,6 +187,16 @@ const SWEEP_VARIANTS: Readonly<Record<string, SweepVariantPair>> = {
     altLabelKey: 'generate.sweeps.variant_alt',
     samplerNote: true,
   },
+  // Denoising strength reads differently on a re-rolling sampler too: part of
+  // what moves along the ancestral strip is the sampler rather than the
+  // strength, and the settling strip is how a reader tells the two apart.
+  denoising_strength: {
+    parameter: 'denoising_strength_converging',
+    groupLabelKey: 'generate.sweeps.variant_label',
+    baseLabelKey: 'generate.sweeps.variant_base',
+    altLabelKey: 'generate.sweeps.variant_alt',
+    samplerNote: true,
+  },
   // What the canvas actually holds part-way through a render, against what the
   // model thinks it is heading towards from there. The first is why an
   // unfinished picture looks like static; the second is why it is not random.

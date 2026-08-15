@@ -33,6 +33,8 @@ export interface ExampleFlow {
   source?: string;
   mask?: string;
   before?: string;
+  /** A remix's extra source images, in request order. */
+  references?: string[];
   request?: string;
   files: string[];
 }

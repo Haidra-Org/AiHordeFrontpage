@@ -53,6 +53,7 @@ import {
 } from '../../../content/flows';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
+import { GsCompareWipeComponent } from '../../../components/gs-compare-wipe/gs-compare-wipe.component';
 import { requestToFormValue } from '../../generate/generate-form.model';
 import { ImageGenerationRequest } from '../../../types/generation';
 import {
@@ -117,6 +118,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
     GsProseComponent,
     GsSweepScrubComponent,
     GsWorldPickerComponent,
+    GsCompareWipeComponent,
   ],
   templateUrl: './image-example.component.html',
   host: {
@@ -288,6 +290,13 @@ export class DocsImageExampleComponent {
         alpha: false,
       });
     }
+    for (const reference of flow.references ?? []) {
+      shots.push({
+        labelKey: 'generate.tutorials.shot_reference',
+        src: this.assetUrl(reference),
+        alpha: false,
+      });
+    }
     if (flow.before) {
       shots.push({
         labelKey: 'generate.tutorials.shot_before',
@@ -303,6 +312,54 @@ export class DocsImageExampleComponent {
       alpha: canonicalFlowId(flow.id) === 'transparent',
     });
     return shots;
+  });
+
+  /**
+   * The before and after of a flow that has one, for the wipe: what went in
+   * against what came out where the technique repaints a picture, and the
+   * untouched render against the fixed one where it post-processes. The
+   * difference is in one place, and a wipe reads it better than two tiles set
+   * apart. Flows that start from nothing, or from a source that is not the
+   * frame being repainted, offer no pair.
+   */
+  public readonly comparison = computed<{
+    before: TutorialShot;
+    after: TutorialShot;
+  } | null>(() => {
+    const flow = this.activeFlow();
+    if (!flow || flow.status !== 'available' || !flow.result) {
+      return null;
+    }
+    const kind = canonicalFlowId(flow.id);
+    const after: TutorialShot = {
+      labelKey: 'generate.tutorials.shot_result',
+      src: this.assetUrl(flow.result),
+      alpha: false,
+    };
+    if (flow.before) {
+      return {
+        before: {
+          labelKey: 'generate.tutorials.shot_before',
+          src: this.assetUrl(flow.before),
+          alpha: false,
+        },
+        after,
+      };
+    }
+    if (
+      flow.source &&
+      (kind === 'img2img' || kind === 'controlnet' || kind === 'inpainting')
+    ) {
+      return {
+        before: {
+          labelKey: 'generate.tutorials.shot_source',
+          src: this.assetUrl(flow.source),
+          alpha: false,
+        },
+        after,
+      };
+    }
+    return null;
   });
 
   /** The picture the enlarged view is showing, if it is open. */

@@ -339,6 +339,32 @@
               </p>
             }
 
+            <!-- Where the technique changes one picture into another, the
+                   change is read on the sweeps' own wipe: what went in under
+                   what came out, one divider between them, so the reader
+                   drags across the difference instead of carrying it between
+                   two tiles. The tiles still follow, for the pictures the
+                   wipe cannot hold (the mask, the references) and for the
+                   full-size view. -->
+            @if (comparison(); as pair) {
+              <figure
+                class="gs-tut-compare"
+                [attr.aria-label]="'generate.sweeps.pair_label' | transloco"
+              >
+                <app-gs-compare-wipe
+                  [beforeSrc]="pair.before.src"
+                  [afterSrc]="pair.after.src"
+                  [beforeAlt]="pair.before.labelKey | transloco"
+                  [afterAlt]="pair.after.labelKey | transloco"
+                  [beforeLabel]="pair.before.labelKey | transloco"
+                  [afterLabel]="pair.after.labelKey | transloco"
+                />
+                <figcaption class="gs-tut-compare-cap">
+                  {{ "generate.sweeps.rail_hint" | transloco }}
+                </figcaption>
+              </figure>
+            }
+
             <!-- Every picture sits on the same bounded stage and is
                    letterboxed rather than cropped: a before and an after are
                    only worth reading side by side if neither one is trimmed to

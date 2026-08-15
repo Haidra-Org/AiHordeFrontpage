@@ -6864,6 +6864,18 @@
 /* Inputs and result side by side where there is room, stacked where there is
    not, and on stages of one height either way: a before and an after read as a
    pair only if the same picture size means the same thing on both. */
+/* The before-and-after wipe at the head of the evidence rail, on the sweep
+   pair's own component; the tiles under it keep the mask, the references and the
+   way to full size. */
+.gen-studio .gs-tut-compare {
+  margin: 0 0 14px;
+  min-width: 0;
+}
+.gen-studio .gs-tut-compare-cap {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--gs-ink-2);
+}
 .gen-studio .gs-tut-shots {
   /* One cap for every picture in the rail, on the sweep frame's reasoning: a
      portrait example at column width is taller than the pane it was opened in,
