@@ -1,4 +1,7 @@
-import { ALCHEMY_DATA_FORMS, AlchemyFormName } from '../types/generation';
+import {
+  AlchemyDocumentedFormName,
+  AlchemyFormName,
+} from '../types/generation';
 import { DOCS_IMAGE_SETTINGS, docsSettingLink } from './docs-links';
 import { SettingLink } from './settings';
 
@@ -6,16 +9,42 @@ import { SettingLink } from './settings';
  * What the alchemy studio is used for, as the panel, its `?` notes and its
  * documentation all know it.
  *
- * The studio submits twenty-three forms and a reader wants four things. Filing
- * the forms under the thing they do is what lets the documentation be four
- * pages instead of twenty-three stubs, and what lets a card in the panel and a
- * page in the book be the same subject rather than two arrangements of it.
+ * The horde knows twenty-four forms and a reader wants four things. Filing the
+ * forms under the thing they do is what lets the documentation be four pages
+ * instead of twenty-four stubs, and what lets a card in the panel and a page in
+ * the book be the same subject rather than two arrangements of it.
  *
- * The form lists here are the studio's own: the panel builds its operation
- * groups from them, so a form cannot be offered by the tool and missing from
- * the page about it.
+ * A use case files every form the horde's enumeration puts under it, and names
+ * separately the subset this studio can submit. The panel builds its operation
+ * groups from that subset, so a form cannot be offered by the tool and missing
+ * from the page about it, and a form the tool cannot send cannot become a
+ * control that produces failed jobs.
  */
 export type AlchemyUseCaseId = 'describe' | 'enlarge' | 'fix_faces' | 'cut_out';
+
+/**
+ * The forms that answer a question about the picture, in the order the panel
+ * offers them.
+ */
+export const ALCHEMY_ANALYSIS_FORMS: readonly AlchemyFormName[] = [
+  'caption',
+  'interrogation',
+  'nsfw',
+  'palette',
+  'describe',
+  'aesthetic',
+];
+
+/**
+ * The describe use case as the horde enumerates it. `annotation` reads edges,
+ * depth or pose out of a picture and answers with a map of them, which is a
+ * question about the picture answered in an image; the studio does not submit
+ * it, so it is documented here and absent from the panel.
+ */
+export const ALCHEMY_DESCRIBE_FORMS: readonly AlchemyDocumentedFormName[] = [
+  ...ALCHEMY_ANALYSIS_FORMS,
+  'annotation',
+];
 
 /**
  * The upscalers, in the order the panel offers them. They are one use case with
@@ -34,6 +63,16 @@ export const ALCHEMY_UPSCALER_FORMS: readonly AlchemyFormName[] = [
   '4xNomos2_realplksr_dysample',
   '4xNomos2_hq_dat2',
   '2xModernSpanimationV1',
+];
+
+/**
+ * The enlarge use case: the upscalers and `vectorize`, which is the other answer
+ * to the same question. An SVG has no resolution to run out of, so it belongs
+ * with making a picture bigger rather than with reading one.
+ */
+export const ALCHEMY_ENLARGE_FORMS: readonly AlchemyFormName[] = [
+  ...ALCHEMY_UPSCALER_FORMS,
+  'vectorize',
 ];
 
 export const ALCHEMY_FACE_FIXER_FORMS: readonly AlchemyFormName[] = [
@@ -58,8 +97,13 @@ export interface AlchemyUseCase {
   groupId: string;
   /** Registry name of the glyph the panel's card already carries. */
   icon: string;
-  /** The forms filed under it, in the order the panel offers them. */
-  forms: readonly AlchemyFormName[];
+  /** Every form filed under it, in the order the documentation reads them. */
+  forms: readonly AlchemyDocumentedFormName[];
+  /**
+   * The forms of this use case the studio can submit, in the order the panel
+   * offers them. Everything else it files is documented only.
+   */
+  operableForms: readonly AlchemyFormName[];
   /** Other use cases worth reading next. */
   related?: readonly AlchemyUseCaseId[];
   /**
@@ -93,8 +137,10 @@ export const ALCHEMY_USE_CASES: readonly AlchemyUseCase[] = [
     id: 'describe',
     groupId: 'analyze',
     icon: 'document-text',
-    // Every form that answers with words or numbers rather than a picture.
-    forms: ALCHEMY_DATA_FORMS,
+    // Every form whose answer is a read of the picture rather than a change to
+    // it, which is words or numbers in all but the annotation case.
+    forms: ALCHEMY_DESCRIBE_FORMS,
+    operableForms: ALCHEMY_ANALYSIS_FORMS,
     related: ['enlarge'],
     links: [SETTINGS_LINK],
   },
@@ -102,7 +148,8 @@ export const ALCHEMY_USE_CASES: readonly AlchemyUseCase[] = [
     id: 'enlarge',
     groupId: 'upscale',
     icon: 'photo',
-    forms: ALCHEMY_UPSCALER_FORMS,
+    forms: ALCHEMY_ENLARGE_FORMS,
+    operableForms: ALCHEMY_ENLARGE_FORMS,
     related: ['fix_faces', 'cut_out'],
     // The library publishes one source run through every upscaler, which is the
     // only honest way to answer "which of these eleven".
@@ -114,6 +161,7 @@ export const ALCHEMY_USE_CASES: readonly AlchemyUseCase[] = [
     groupId: 'facefix',
     icon: 'paintbrush',
     forms: ALCHEMY_FACE_FIXER_FORMS,
+    operableForms: ALCHEMY_FACE_FIXER_FORMS,
     related: ['enlarge'],
     links: [FACEFIXER_SETTING_LINK],
   },
@@ -122,6 +170,7 @@ export const ALCHEMY_USE_CASES: readonly AlchemyUseCase[] = [
     groupId: 'background',
     icon: 'cube-transparent',
     forms: ALCHEMY_BACKGROUND_FORMS,
+    operableForms: ALCHEMY_BACKGROUND_FORMS,
     related: ['enlarge', 'describe'],
   },
 ];

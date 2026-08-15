@@ -42,7 +42,9 @@ import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { SECTION_IDENTITIES } from '../../content/sections';
 import { alchemyTopic, referenceTopic } from '../../content/reference-topics';
 import {
+  ALCHEMY_ANALYSIS_FORMS,
   ALCHEMY_BACKGROUND_FORMS,
+  ALCHEMY_ENLARGE_FORMS,
   ALCHEMY_FACE_FIXER_FORMS,
   ALCHEMY_UPSCALER_FORMS,
   alchemyUseCaseForGroup,
@@ -181,20 +183,22 @@ export class AlchemyComponent {
   public readonly postProcessorForms = ALCHEMY_POST_PROCESSOR_FORMS;
 
   /**
-   * The post-processor forms split into the groups shown in the builder, so
-   * each fieldset can carry its own explanation of what its options do instead
-   * of one undifferentiated "enhance" bucket. The lists are the use-case
-   * registry's, which is also what the documentation pages are built from: the
-   * tool and the book cannot come to disagree about which forms enlarge a
-   * picture. `postProcessorForms` above is kept as-is for the developers tab's
-   * plain form-name reference.
+   * The forms split into the groups shown in the builder, so each fieldset can
+   * carry its own explanation of what its options do instead of one
+   * undifferentiated "enhance" bucket. The lists are the use-case registry's
+   * operable ones, which is also what the documentation pages are built from:
+   * the tool and the book cannot come to disagree about which forms enlarge a
+   * picture, and a form the registry documents but the studio cannot submit
+   * never reaches a checkbox. `dataForms` and `postProcessorForms` above are
+   * kept as-is for the developers tab's plain form-name reference.
    */
-  public readonly upscalerForms = ALCHEMY_UPSCALER_FORMS;
+  public readonly analysisForms = ALCHEMY_ANALYSIS_FORMS;
+  public readonly enlargeForms = ALCHEMY_ENLARGE_FORMS;
   public readonly faceFixerForms = ALCHEMY_FACE_FIXER_FORMS;
   public readonly backgroundForms = ALCHEMY_BACKGROUND_FORMS;
 
-  /** Upscalers split by use case, so their long names get a full line each. */
-  private readonly upscalerSubGroups: readonly AlchemyOperationSubGroup[] = [
+  /** Enlargers split by use case, so their long names get a full line each. */
+  private readonly enlargeSubGroups: readonly AlchemyOperationSubGroup[] = [
     {
       labelKey: 'alchemy.forms.upscale_photo',
       forms: [
@@ -217,6 +221,12 @@ export class AlchemyComponent {
       labelKey: 'alchemy.forms.upscale_general',
       forms: ['4xLSDIRplus', '4xNomos8kSC', '4xNomos2_hq_dat2'],
     },
+    {
+      // Not an upscaler, but the same wish: an SVG has no resolution to run out
+      // of. It gets its own row so nobody reads it as a four-times model.
+      labelKey: 'alchemy.forms.upscale_vector',
+      forms: ['vectorize'],
+    },
   ];
 
   public readonly operationGroups: readonly AlchemyOperationGroup[] = [
@@ -227,7 +237,7 @@ export class AlchemyComponent {
       titleKey: 'alchemy.forms.analyze_title',
       outputKey: 'alchemy.forms.analyze_output',
       blurbKey: 'alchemy.forms.analyze_blurb',
-      forms: this.dataForms,
+      forms: this.analysisForms,
     },
     {
       id: 'upscale',
@@ -236,8 +246,8 @@ export class AlchemyComponent {
       titleKey: 'alchemy.forms.upscale_title',
       outputKey: 'alchemy.forms.upscale_output',
       blurbKey: 'alchemy.forms.upscale_blurb',
-      forms: this.upscalerForms,
-      subGroups: this.upscalerSubGroups,
+      forms: this.enlargeForms,
+      subGroups: this.enlargeSubGroups,
     },
     {
       id: 'facefix',
@@ -624,8 +634,9 @@ export class AlchemyComponent {
     return form !== 'strip_background';
   }
 
+  /** True for the forms that carry a scale badge, which vectorize does not. */
   public isUpscalerForm(form: AlchemyFormName): boolean {
-    return this.upscalerForms.includes(form);
+    return ALCHEMY_UPSCALER_FORMS.includes(form);
   }
 
   public toggleSlowWorkers(): void {

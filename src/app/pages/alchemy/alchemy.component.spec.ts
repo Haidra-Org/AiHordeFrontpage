@@ -147,10 +147,38 @@ describe('AlchemyComponent', () => {
       );
     });
 
-    it('builds each group from the use case it documents', () => {
+    it('builds each group from the forms its use case can submit', () => {
       expect(component.operationGroups.map((group) => group.forms)).toEqual(
         component.operationGroups.map(
-          (group) => alchemyUseCaseForGroup(group.id)?.forms,
+          (group) => alchemyUseCaseForGroup(group.id)?.operableForms,
+        ),
+      );
+    });
+
+    it('offers no control for a form the studio cannot submit', () => {
+      const offered = component.operationGroups.flatMap((group) => [
+        ...group.forms,
+        ...(group.subGroups ?? []).flatMap((sub) => sub.forms),
+      ]);
+      const submittable = new Set<string>([
+        ...component.dataForms,
+        ...component.postProcessorForms,
+      ]);
+
+      expect(offered.filter((form) => !submittable.has(form))).toEqual([]);
+    });
+
+    it('renders every form of a split group in one of its sub-groups', () => {
+      const split = component.operationGroups.filter(
+        (group) => group.subGroups,
+      );
+
+      expect(split.length).toBeGreaterThan(0);
+      expect(split.map((group) => [...group.forms].sort().join())).toEqual(
+        split.map((group) =>
+          [...(group.subGroups ?? []).flatMap((sub) => sub.forms)]
+            .sort()
+            .join(),
         ),
       );
     });

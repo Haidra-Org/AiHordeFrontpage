@@ -279,12 +279,25 @@ export const ALCHEMY_POST_PROCESSOR_FORMS = [
   'strip_background',
 ] as const;
 
+/**
+ * Forms the horde's own enumeration carries that this client does not submit.
+ * They are documented so the four use-case pages describe every form the horde
+ * knows of, and kept out of the two lists above so the studio's panel, which is
+ * built from those, cannot offer a control whose job would never come back.
+ */
+export const ALCHEMY_DOCUMENTED_ONLY_FORMS = ['annotation'] as const;
+
 export type AlchemyDataFormName = (typeof ALCHEMY_DATA_FORMS)[number];
 export type AlchemyPostProcessorFormName =
   (typeof ALCHEMY_POST_PROCESSOR_FORMS)[number];
+/** A form the studio can put in an `/interrogate/async` request. */
 export type AlchemyFormName =
   | AlchemyDataFormName
   | AlchemyPostProcessorFormName;
+/** A form the documentation describes, submittable or not. */
+export type AlchemyDocumentedFormName =
+  | AlchemyFormName
+  | (typeof ALCHEMY_DOCUMENTED_ONLY_FORMS)[number];
 
 // --- Request types ---------------------------------------------------------
 

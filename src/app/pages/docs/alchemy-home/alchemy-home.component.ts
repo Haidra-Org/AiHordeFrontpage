@@ -31,7 +31,7 @@ interface UseCaseCard {
 
 /**
  * The alchemy area's front door: the four things the studio is used for, and
- * how many of its twenty-three forms do each.
+ * how many of its twenty-four forms do each.
  *
  * The cards are the use cases rather than the forms, for the same reason the
  * panel groups them: nobody arrives wanting `4xNomos2_hq_dat2`, they arrive
