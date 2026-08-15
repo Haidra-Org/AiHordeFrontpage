@@ -450,6 +450,22 @@ describe('TutorialEngineService', () => {
       expect(engine.completed()).toBe(true);
     });
 
+    it('offers the technique that follows the one just finished, until dismissed', () => {
+      engine.goTo(engine.total() - 1);
+
+      engine.notifySubmitted();
+
+      // The finished flow is the one the note recaps; its successor is the
+      // one the note offers to start.
+      expect(engine.finishedFlowId()).toBe('txt2img');
+      expect(engine.nextFlow()).toBe('img2img');
+
+      engine.dismissCompletion();
+
+      expect(engine.finishedFlowId()).toBeNull();
+      expect(engine.nextFlow()).toBeNull();
+    });
+
     it('ignores a submission made partway through the flow', () => {
       engine.goTo(2);
 
