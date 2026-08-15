@@ -10270,6 +10270,23 @@ html:has(app-gs-sheet) {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* The same token set in a line of prose. It names a setting the sentence is
+   about rather than reporting a value, so it keeps the outline and drops
+   everything that would make it a block: the size comes off the sentence and
+   the padding is trimmed to what a pill needs, so a paragraph carrying three of
+   these has the leading it would have had without them. */
+.gen-studio .gs-setting-chip--inline {
+  padding: 0 0.45em;
+  background: none;
+  font-size: 0.92em;
+  line-height: inherit;
+  vertical-align: baseline;
+}
+.gen-studio .gs-setting-chip--inline .gs-sec-chip {
+  width: 0.9em;
+  height: 0.9em;
+}
+
 /* The payload under the chips: closed by default, because the chips are the
    answer for the reader this tab is for and the developer tab already leads
    with the file. */

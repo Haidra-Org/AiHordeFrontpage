@@ -107,7 +107,7 @@
         }}
       </h2>
       <p class="gs-guide-step-body">
-        {{ bodyKey(current) | transloco: copyParams() }}
+        <app-gs-prose [key]="bodyKey(current)" [params]="copyParams()" />
       </p>
 
       @if (showsSweep()) {

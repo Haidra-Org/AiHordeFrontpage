@@ -5,6 +5,7 @@ import {
   inject,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { GsProseComponent } from '../../../components/gs-prose/gs-prose.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
@@ -33,7 +34,12 @@ import {
  */
 @Component({
   selector: 'app-generate-learn-panel',
-  imports: [TranslocoPipe, IconComponent, GsSweepScrubComponent],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    GsProseComponent,
+    GsSweepScrubComponent,
+  ],
   templateUrl: './generate-learn-panel.component.html',
   host: {
     class: 'gs-results-body gs-learn',

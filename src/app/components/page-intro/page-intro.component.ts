@@ -3,13 +3,11 @@ import {
   Component,
   computed,
   ElementRef,
-  effect,
   inject,
   input,
   signal,
   viewChild,
 } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { GlossaryService } from '../../services/glossary.service';
@@ -17,10 +15,11 @@ import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { PageGuideService } from '../../services/page-guide.service';
 import { scrollToElement } from '../../helper/scroll-utils';
 import { IconComponent } from '../icon/icon.component';
+import { GsProseComponent } from '../gs-prose/gs-prose.component';
 
 @Component({
   selector: 'app-page-intro',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, GsProseComponent],
   template: `
     @if (!isDismissed()) {
       <div #container class="collapsible-card card-bg-secondary page-intro">
@@ -56,11 +55,19 @@ import { IconComponent } from '../icon/icon.component';
         @if (isExpanded()) {
           <div [id]="contentId()" class="card-expandable-content">
             <div class="card-expandable-stack">
-              <div
-                #bodyContent
-                class="page-intro-body"
-                [innerHTML]="bodyKey() | transloco"
-              ></div>
+              <!-- A body written in the site's prose grammar is rendered
+                   rather than injected; the ones still written as markup keep
+                   the old path until they are converted. -->
+              @if (prose()) {
+                <div class="page-intro-body">
+                  <app-gs-prose [key]="bodyKey()" [paragraphs]="true" />
+                </div>
+              } @else {
+                <div
+                  class="page-intro-body"
+                  [innerHTML]="bodyKey() | transloco"
+                ></div>
+              }
 
               <div class="page-intro-actions">
                 <button
@@ -113,12 +120,9 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageIntroComponent {
-  private readonly document = inject(DOCUMENT);
   private readonly glossary = inject(GlossaryService);
   private readonly stickyRegistry = inject(StickyRegistryService);
   private readonly guideService = inject(PageGuideService);
-  private readonly bodyContent =
-    viewChild<ElementRef<HTMLElement>>('bodyContent');
   private readonly container = viewChild<ElementRef<HTMLElement>>('container');
 
   /** Page key — drives localStorage key and i18n key prefix */
@@ -129,6 +133,13 @@ export class PageIntroComponent {
 
   /** Optional routerLink to show a "Read more" link instead of glossary */
   public readonly readMoreLink = input<string>();
+
+  /**
+   * Whether the body is written in the site's prose grammar rather than as
+   * markup. The two cannot be mixed in one string, so the page that owns the
+   * body says which it is.
+   */
+  public readonly prose = input(false);
 
   public readonly titleKey = computed(() => `help.${this.pageKey()}.title`);
   public readonly subtitleKey = computed(
@@ -143,17 +154,6 @@ export class PageIntroComponent {
   public readonly isDismissed = computed(() =>
     this.guideService.isDismissed(this.storageKey())(),
   );
-
-  constructor() {
-    effect((onCleanup) => {
-      const body = this.bodyContent()?.nativeElement;
-      if (!body) return;
-
-      const handler = (event: Event) => this.onBodyClick(event);
-      body.addEventListener('click', handler);
-      onCleanup(() => body.removeEventListener('click', handler));
-    });
-  }
 
   public toggleExpanded(): void {
     const wasExpanded = this._isExpanded();
@@ -180,20 +180,6 @@ export class PageIntroComponent {
 
   public openGlossary(): void {
     this.glossary.open();
-  }
-
-  /** Intercept clicks on glossary links rendered via innerHTML */
-  public onBodyClick(event: Event): void {
-    const target = event.target as HTMLElement;
-    if (target.tagName === 'A' && target.classList.contains('glossary-link')) {
-      event.preventDefault();
-      const termClass = Array.from(target.classList).find((c) =>
-        c.startsWith('gl-'),
-      );
-      if (termClass) {
-        this.glossary.open(termClass.substring(3));
-      }
-    }
   }
 
   private storageKey(): string {

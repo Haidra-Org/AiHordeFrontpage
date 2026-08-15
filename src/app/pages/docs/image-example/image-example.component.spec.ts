@@ -502,8 +502,10 @@ describe('DocsImageExampleComponent', () => {
   it('reads the recipe off the request the example was submitted with', () => {
     flushAll(harness);
 
+    // The recipe's own chips: the steps beside it set the same token inline
+    // wherever their prose names a setting, and those report no value.
     const chips = harness
-      .query<HTMLElement>('.gs-setting-chip')
+      .query<HTMLElement>('.gs-recipe .gs-setting-chip')
       .map((chip) => chip.textContent?.replace(/\s+/g, ' ').trim());
 
     // Model, size, steps, guidance, sampler, seed and the sigmas: every field

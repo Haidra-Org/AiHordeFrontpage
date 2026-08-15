@@ -11,14 +11,12 @@
       <h2 class="heading-section-lg">
         {{ "workers.what_are.title" | transloco }}
       </h2>
-      <div
-        class="text-lead"
-        [innerHTML]="'workers.what_are.description' | transloco"
-      ></div>
-      <div
-        class="text-secondary"
-        [innerHTML]="'workers.what_are.types_intro' | transloco"
-      ></div>
+      <p class="text-lead">
+        <app-gs-prose key="workers.what_are.description" />
+      </p>
+      <p class="text-secondary">
+        <app-gs-prose key="workers.what_are.types_intro" />
+      </p>
     </div>
 
     <!-- Worker Types -->

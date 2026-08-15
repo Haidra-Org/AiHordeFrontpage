@@ -178,4 +178,82 @@
       0 4px 8px rgb(0 0 0 / 0.15),
       inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
+
+  /* =================================================================
+     GS-PROSE - the three inline marks the teaching copy is written with
+
+     Mounted inside the studio and outside it, so the marks carry their own
+     colours rather than borrowing the studio's: --gs-blue is the same value in
+     both themes and sinks to 2.2:1 on a dark card.
+     ================================================================= */
+
+  .gs-prose {
+    --gs-prose-accent: var(--color-primary-700);
+    --gs-prose-code-ink: var(--color-gray-800);
+    --gs-prose-code-bg: rgb(15 23 42 / 0.06);
+    --gs-prose-code-border: rgb(15 23 42 / 0.12);
+  }
+
+  .dark .gs-prose {
+    --gs-prose-accent: var(--color-primary-300);
+    --gs-prose-code-ink: var(--color-gray-100);
+    --gs-prose-code-bg: rgb(255 255 255 / 0.08);
+    --gs-prose-code-border: rgb(255 255 255 / 0.16);
+  }
+
+  .gs-prose--blocks {
+    display: block;
+  }
+
+  /* A paragraph of a multi-block body. Blocks rather than real paragraphs: the
+     component is mounted inside a sentence as often as around one, and a `p`
+     nested in a `p` is closed by the parser rather than by the author. */
+  .gs-prose-p {
+    display: block;
+  }
+
+  .gs-prose-p + .gs-prose-p {
+    margin-top: 0.75em;
+  }
+
+  /* A dictionary word. Dotted where a link is solid and a reference chip is
+     dashed: the mark says the definition opens where the reader is standing
+     rather than somewhere they have to come back from. */
+  .gs-prose-term {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--gs-prose-accent);
+    font: inherit;
+    font-weight: 600;
+    text-align: inherit;
+    text-decoration: underline dotted currentColor;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .gs-prose-term:hover {
+    text-decoration-style: solid;
+  }
+
+  .gs-prose-term:focus-visible {
+    border-radius: 2px;
+    outline: 2px solid var(--gs-prose-accent);
+    outline-offset: 2px;
+  }
+
+  /* A literal: a prompt fragment, a value, an API field name. Quiet ground and
+     a mono face, sized off the sentence so it never sets the line height. */
+  .gs-prose-code {
+    padding: 0.1em 0.35em;
+    border: 1px solid var(--gs-prose-code-border);
+    border-radius: 4px;
+    background: var(--gs-prose-code-bg);
+    color: var(--gs-prose-code-ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.9em;
+    overflow-wrap: anywhere;
+  }
 }

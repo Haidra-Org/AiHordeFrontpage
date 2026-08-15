@@ -23,6 +23,7 @@ import {
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 import { GsDoorComponent } from '../gs-door/gs-door.component';
+import { GsProseComponent } from '../gs-prose/gs-prose.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 
@@ -60,14 +61,16 @@ const TRADEOFF_ICONS = {
     RouterLink,
     IconComponent,
     GsDoorComponent,
+    GsProseComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
   ],
   template: `
-    <!-- The prose is resolved through the pipe like everything else, and the
-         missing case is spotted by the answer coming back as the key: that is
-         what the service does with a key it has no translation for, and it is
-         the one thing that must never reach the page. -->
+    <!-- The prose is drawn by gs-prose, so a body may carry the site's inline
+         marks. It is resolved through the pipe here as well, and only to spot
+         the missing case: the answer comes back as the key when there is no
+         translation for it, and that is the one thing that must never reach the
+         page. -->
     @let leadKey = proseKey('lead');
     @let leadText = leadKey | transloco;
     @let bodyKey = proseKey('body');
@@ -87,7 +90,7 @@ const TRADEOFF_ICONS = {
     </header>
 
     @if (leadText && leadText !== leadKey) {
-      <p class="gs-ref-lead">{{ leadText }}</p>
+      <p class="gs-ref-lead"><app-gs-prose [key]="leadKey" /></p>
     }
 
     @if (tradeoffs(); as costs) {
@@ -163,7 +166,7 @@ const TRADEOFF_ICONS = {
     }
 
     @if (bodyText && bodyText !== bodyKey) {
-      <p class="gs-ref-body">{{ bodyText }}</p>
+      <p class="gs-ref-body"><app-gs-prose [key]="bodyKey" /></p>
     }
 
     <!-- The named members of the subject, where it is a family: which of the

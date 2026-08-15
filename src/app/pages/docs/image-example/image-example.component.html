@@ -169,7 +169,9 @@
                         }}
                       </h3>
                       <p class="gs-tut-step-body">
-                        {{ stepKey(flowId, step.id, "body") | transloco }}
+                        <app-gs-prose
+                          [key]="stepKey(flowId, step.id, 'body')"
+                        />
                         @if (runCostFor(step.id); as cost) {
                           {{ "generate.tutorials.run_cost" | transloco: cost }}
                         }

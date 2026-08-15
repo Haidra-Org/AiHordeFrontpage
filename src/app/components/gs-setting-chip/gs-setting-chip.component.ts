@@ -9,6 +9,7 @@ import { SectionIdentity, sectionIdentity } from '../../content/sections';
 import {
   SettingValue,
   settingLabelKey,
+  settingProseLabelKey,
   settingSection,
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
@@ -59,7 +60,7 @@ import { IconComponent } from '../icon/icon.component';
   `,
   host: {
     class: 'gs-setting-chip',
-    '[class]': 'identityClass()',
+    '[class]': 'hostClass()',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -74,6 +75,16 @@ export class GsSettingChipComponent {
    * that one surface turns it off.
    */
   public readonly glyph = input(true);
+  /**
+   * Whether the chip is set in a line of prose rather than beside a picture.
+   *
+   * Inline it has to sit on a text baseline without setting the line's height,
+   * so it loses the standalone chip's padding and takes the sentence's own type
+   * size. It also takes the setting's prose name, because a sentence names a
+   * setting the way it would be said out loud and a caption names it the way it
+   * is written on the card.
+   */
+  public readonly inline = input(false);
 
   public readonly identity = computed<SectionIdentity | null>(() =>
     sectionIdentity(settingSection(this.settingId())),
@@ -83,7 +94,17 @@ export class GsSettingChipComponent {
     () => this.identity()?.className ?? '',
   );
 
-  public readonly labelKey = computed(() => settingLabelKey(this.settingId()));
+  public readonly hostClass = computed(() =>
+    [this.identityClass(), this.inline() ? 'gs-setting-chip--inline' : '']
+      .filter((name) => name !== '')
+      .join(' '),
+  );
+
+  public readonly labelKey = computed(() =>
+    this.inline()
+      ? settingProseLabelKey(this.settingId())
+      : settingLabelKey(this.settingId()),
+  );
 
   /** Set on a flag, which is a state the page has words for rather than data. */
   public readonly stateKey = computed<string | null>(() => {
