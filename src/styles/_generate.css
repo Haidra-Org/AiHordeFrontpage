@@ -6738,12 +6738,10 @@
   width: 2px;
   background: var(--gs-sec-tint-border, var(--gs-border));
 }
-/* A step continuing the area the step above it named. It keeps its own hairline
-   and its own number and gives up only the repeated eyebrow, so the run reads as
-   one band of the panel rather than as one heading per step. */
-.gen-studio .gs-tut-step--tucked {
-  padding-left: 27px;
-}
+/* A step continuing the area the previous step named (.gs-tut-step--tucked)
+   keeps the same edge, hairline and number as any other step and gives up only
+   the repeated eyebrow: the steps in a run are peers, and an indent would read
+   them as sub-steps. */
 .gen-studio .gs-tut-step-title {
   font-size: 13px;
   font-weight: 700;
