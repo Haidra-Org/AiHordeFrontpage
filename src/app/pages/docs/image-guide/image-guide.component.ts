@@ -39,6 +39,16 @@ import { setPageMeta } from '../../../helper/page-meta';
 const NO_SWEEPS: readonly string[] = [];
 
 /**
+ * Every strip the walkthrough already puts on this page. The reference half
+ * below covers the same settings, and a strip shown twice on one page reads as
+ * two pieces of evidence rather than one: the walkthrough is where the reader
+ * meets it, so the walkthrough is where it stays.
+ */
+const WALKTHROUGH_SWEEPS: ReadonlySet<string> = new Set(
+  GUIDE_STEPS.flatMap((step) => step.sweeps),
+);
+
+/**
  * The contents of the page: the walkthrough, then the reference sections in the
  * panel's own order. The walkthrough belongs to no card of the panel, so it
  * takes the page's own glyph and no hue rather than borrowing a section's.
@@ -132,7 +142,9 @@ export class DocsImageGuideComponent {
   /** The strips a reference entry has pictures for, in the order they read. */
   public sweepFor(topic: string): readonly string[] {
     const parameter = settingSweepStrip(topic);
-    return parameter ? [parameter] : NO_SWEEPS;
+    return parameter && !WALKTHROUGH_SWEEPS.has(parameter)
+      ? [parameter]
+      : NO_SWEEPS;
   }
 
   /** The two-axis plate a reference entry can offer beside its strip. */

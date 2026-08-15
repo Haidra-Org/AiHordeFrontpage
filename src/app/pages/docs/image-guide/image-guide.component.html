@@ -37,9 +37,9 @@
               <p class="gs-guide-step-body">
                 {{ "generate.guide.steps." + step.id + ".body" | transloco }}
               </p>
-              <!-- Prompt and size have no `?` glyph in the panel and so no entry
-                 in the reference half below; the walkthrough is the only place
-                 their pictures can be offered. -->
+              <!-- The step is where a reader first meets the idea, so it is
+                 where its pictures sit. The reference half below links to the
+                 same settings and leaves the strips here. -->
               @for (parameter of step.sweeps; track parameter) {
                 <app-gs-sweep-scrub
                   [parameter]="parameter"

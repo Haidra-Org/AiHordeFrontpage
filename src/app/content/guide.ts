@@ -29,10 +29,24 @@ export interface GuideSection {
 
 /**
  * The reference half of the guide, mirroring the control panel top to bottom.
- * Cards that carry no settings of their own (prompt, dimensions) are covered by
- * the walkthrough instead, so they would list nothing here.
+ *
+ * Every card is listed, including the two whose topics are ideas rather than
+ * rows: what a prompt is doing and what a size is measured against are written
+ * up in the book like any dial, so the guide links to them like any dial. The
+ * walkthrough above still carries their pictures, and a topic whose strip the
+ * walkthrough has already shown is listed here without repeating it.
  */
 export const GUIDE_SECTIONS: readonly GuideSection[] = [
+  {
+    id: 'prompt',
+    labelKey: 'generate.form.prompt_section',
+    topics: ['prompt', 'negative', 'prompt_emphasis'],
+  },
+  {
+    id: 'dimensions',
+    labelKey: 'generate.form.dimensions_section',
+    topics: ['size', 'native_resolution', 'oversize'],
+  },
   {
     id: 'source',
     labelKey: 'generate.source.section',
@@ -96,10 +110,10 @@ export interface GuideStep {
   /** Suffix of the step's `generate.guide.steps.<id>` copy. */
   id: string;
   /**
-   * Sweep parameters the step offers, in the order they are read. These are
-   * the settings the walkthrough covers instead of the reference half, so the
-   * pictures have nowhere else to hang: the panel cards they belong to carry no
-   * `?` glyph of their own.
+   * Sweep parameters the step offers, in the order they are read. A step is
+   * where a reader first meets the idea, so it is where the picture of it does
+   * the most work; the reference half below links to the same settings and
+   * leaves the strips to the step rather than showing them twice on one page.
    */
   sweeps: readonly string[];
 }

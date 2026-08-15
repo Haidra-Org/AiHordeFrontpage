@@ -74,6 +74,24 @@ describe('SweepLibraryService', () => {
     expect(sweeps.strip('sampler')).toBeNull();
   });
 
+  it('honours a named scene without being told which model rendered it', async () => {
+    // An entry citing the second of two strips of one parameter knows the
+    // scene it means and nothing about the model: the library published one
+    // model for it, and naming that model in the content would be repeating
+    // the index back at itself.
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    expect(sweeps.strip('steps', undefined, 'landscape')?.strip_id).toBe(
+      'steps/deliberate/landscape',
+    );
+    // An ambient model does not outrank a scene the caller asked for.
+    expect(sweeps.strip('steps', 'albedobase-xl', 'landscape')?.strip_id).toBe(
+      'steps/deliberate/landscape',
+    );
+  });
+
   it('leaves out the strips a scrubber cannot show', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);

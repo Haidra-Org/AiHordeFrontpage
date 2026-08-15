@@ -284,13 +284,18 @@ describe('reference index', () => {
     const grouped = new Set(SETTINGS_INDEX.flatMap((group) => group.ids));
 
     expect(grouped.has('model')).toBe(false);
-    expect(grouped.has('prompt')).toBe(false);
+    expect(grouped.has('tis')).toBe(false);
     expect(grouped.has('post')).toBe(false);
+    // The prompt box used to be one of these. It is a chapter now, so the
+    // index has to list it like any other page the book holds.
+    expect(grouped.has('prompt')).toBe(true);
   });
 
   it('lays the areas out in the order the control panel shows them', () => {
     expect(SETTINGS_INDEX.map((group) => group.section)).toEqual([
+      'prompt',
       'model',
+      'size',
       'source',
       'sampling',
       'finishing',
@@ -299,13 +304,18 @@ describe('reference index', () => {
     ]);
   });
 
-  it('leaves out the two areas that carry no documented setting', () => {
-    // Prompt and size have no `?` glyph in the panel, so they have nothing to
-    // group, and a heading over an empty band would read as a bug.
-    const sections = SETTINGS_INDEX.map((group) => group.section);
+  it('reads the prompt and size chapters in the order they were written', () => {
+    // Both chapters run from the field the reader can see to the idea behind
+    // it, so declaration order is reading order and the way onwards follows it.
+    const ids = (section: string): readonly string[] =>
+      SETTINGS_INDEX.find((group) => group.section === section)?.ids ?? [];
 
-    expect(sections).not.toContain('prompt');
-    expect(sections).not.toContain('size');
+    expect(ids('prompt')).toEqual(['prompt', 'negative', 'prompt_emphasis']);
+    expect(ids('size')).toEqual(['size', 'native_resolution', 'oversize']);
+    // Native resolution and going past it are pages about ideas rather than
+    // about rows of the panel, which is a page the book has without a note the
+    // panel shows.
+    expect(settingEntry('native_resolution')?.reference).toBeDefined();
   });
 
   it('groups each setting under its own section', () => {

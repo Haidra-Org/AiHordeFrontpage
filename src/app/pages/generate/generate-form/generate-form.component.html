@@ -187,6 +187,7 @@
             /></span>
             {{ "generate.form.prompt_section" | transloco }}
           </h2>
+          <app-gs-help topic="prompt" />
         </div>
         <div class="gs-prompt-wrap" #historyContainer>
           <textarea
@@ -283,17 +284,24 @@
         </div>
       </section>
 
-      <!-- Negative prompt (one row by default; drag the grip to grow it) -->
-      <textarea
-        class="gs-neg-input"
-        appTutAnchor="negative_prompt"
-        formControlName="negativePrompt"
-        rows="1"
-        [placeholder]="'generate.form.negative_prompt_placeholder' | transloco"
-        [attr.aria-label]="'generate.form.negative_prompt_label' | transloco"
-        (keydown.control.enter)="onSubmitShortcut()"
-        (keydown.meta.enter)="onSubmitShortcut()"
-      ></textarea>
+      <!-- Negative prompt (one row by default; drag the grip to grow it). The
+           help glyph sits beside the field because the row carries no label to
+           host it. -->
+      <div class="flex items-start gap-1.5">
+        <textarea
+          class="gs-neg-input min-w-0 flex-1"
+          appTutAnchor="negative_prompt"
+          formControlName="negativePrompt"
+          rows="1"
+          [placeholder]="
+            'generate.form.negative_prompt_placeholder' | transloco
+          "
+          [attr.aria-label]="'generate.form.negative_prompt_label' | transloco"
+          (keydown.control.enter)="onSubmitShortcut()"
+          (keydown.meta.enter)="onSubmitShortcut()"
+        ></textarea>
+        <app-gs-help topic="negative" />
+      </div>
 
       <!-- Setting cards. When the panel is expanded these reflow into
            independent masonry columns; the prompt + negative above stay full
@@ -414,6 +422,7 @@
               /></span>
               {{ "generate.form.dimensions_section" | transloco }}
             </h2>
+            <app-gs-help topic="size" />
             @if (stylePins("dimensions")) {
               <ng-container
                 *ngTemplateOutlet="

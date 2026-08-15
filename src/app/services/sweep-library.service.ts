@@ -212,8 +212,9 @@ export class SweepLibraryService {
 
   /**
    * The best strip for a parameter: an exact model and scene match first, then
-   * the same model on any scene, then whatever was published for the parameter.
-   * Null when nothing matches, which is what the consumers render for.
+   * the named scene on any model, then the same model on any scene, then
+   * whatever was published for the parameter. Null when nothing matches, which
+   * is what the consumers render for.
    */
   public strip(
     parameter: string,
@@ -266,6 +267,12 @@ export class SweepLibraryService {
               entry.image_model.slug === modelSlug &&
               entry.scene.scene_id === sceneId,
           )
+        : undefined) ??
+      // A named scene outranks an ambient model. The model is usually whatever
+      // the studio happens to have selected, while a scene is only ever named
+      // because the caller is citing that particular strip.
+      (sceneId
+        ? candidates.find((entry) => entry.scene.scene_id === sceneId)
         : undefined) ??
       (modelSlug
         ? candidates.find((entry) => entry.image_model.slug === modelSlug)

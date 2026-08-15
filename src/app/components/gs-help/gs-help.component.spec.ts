@@ -19,6 +19,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
   template: `
     <app-gs-help topic="steps" />
     <app-gs-help topic="sampling" />
+    <app-gs-help topic="prompt_emphasis" />
   `,
   imports: [GsHelpComponent],
 })
@@ -72,7 +73,7 @@ describe('GsHelpComponent', () => {
   it('starts collapsed with no note rendered', () => {
     const { triggers, notes } = setup();
 
-    expect(triggers()).toHaveLength(2);
+    expect(triggers()).toHaveLength(3);
     expect(notes()).toHaveLength(0);
     for (const trigger of triggers()) {
       expect(trigger.getAttribute('aria-expanded')).toBe('false');
@@ -188,6 +189,22 @@ describe('GsHelpComponent', () => {
       expect(
         fixture.nativeElement.querySelectorAll('[role="note"]'),
       ).toHaveLength(1);
+    });
+
+    it('lights the offer up as soon as the book writes the setting', async () => {
+      // Nothing here is wired per setting: the prompt fields carried notes with
+      // the offer suppressed for as long as the book had no page for them, and
+      // writing the page is the whole of what turns it on.
+      const { fixture, click } = setup();
+      await publish();
+
+      // The third trigger is `prompt_emphasis`, a prompt chapter entry.
+      click(2);
+
+      expect(hasReference('prompt_emphasis')).toBe(true);
+      const see = fixture.nativeElement.querySelector('.gs-help-see');
+      expect(see).not.toBeNull();
+      expect(see.classList.contains('gs-sec--prompt')).toBe(true);
     });
 
     it('offers nothing from a note the reference has not reached', async () => {

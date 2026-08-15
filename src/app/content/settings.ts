@@ -108,6 +108,22 @@ export interface SettingReference {
 }
 
 /**
+ * One published strip, named the way a surface asks for it.
+ *
+ * A parameter is usually enough, because the library publishes one strip per
+ * parameter that a surface with no model in hand would want. Where it publishes
+ * several scenes of one parameter and they teach different things, the scene has
+ * to be named too: both negative-prompt strips are `negative_prompt`, and one is
+ * about repairing anatomy while the other is about taking a named thing out of
+ * the frame.
+ */
+export interface SweepStripRef {
+  parameter: string;
+  /** The library's `scene_id`, where the parameter alone would not pick it out. */
+  scene?: string;
+}
+
+/**
  * Which published strips illustrate a setting. The names are the library's own
  * parameter names, which are API field names, because the library is generated
  * against the API rather than against this app.
@@ -119,9 +135,10 @@ export interface SettingSweeps {
    * Further strips shown under the primary one, in declaration order. A second
    * strip here is evidence about the same setting from another angle rather
    * than a second setting: the steps entry carries the per-step canvas of one
-   * real render, which is what a step count is a count of.
+   * real render, which is what a step count is a count of, and the prompt
+   * entries carry the second scene the library published of their own parameter.
    */
-  alsoStrips?: readonly string[];
+  alsoStrips?: readonly SweepStripRef[];
   /**
    * The two-axis plate offered beside the strip. A grid answers "how does this
    * interact with the setting next to it", which is a second question rather
@@ -263,21 +280,60 @@ const MODELS_LINK: SettingLink = {
  * not already state.
  *
  * A setting with no `reference` is one the studio can name but the book has no
- * page for: the prompt itself, the model, the list of textual inversions. A
- * setting with no `labelKey` is named by its `?` note's title.
+ * page for: the model, the list of textual inversions, the post-processor
+ * picker. A setting with no `labelKey` is named by its `?` note's title.
+ *
+ * Not every entry is a row of the panel. The prompt and size chapters document
+ * what the fields around them are for, so they include ideas the reader can
+ * neither type into nor drag: what a model's native size is, and what happens
+ * above it. Those carry a reference and no `?` glyph, which is the difference
+ * between a page the book has and a note the panel shows.
  */
 export const SETTINGS: readonly SettingEntry[] = [
   // --- prompt ---
-  { id: 'prompt', section: 'prompt', labelKey: 'generate.sections.prompt' },
+  {
+    id: 'prompt',
+    section: 'prompt',
+    labelKey: 'generate.sections.prompt',
+    reference: {
+      related: ['negative', 'prompt_emphasis', 'loras'],
+      links: [MODELS_LINK],
+    },
+  },
   {
     id: 'negative',
     section: 'prompt',
     labelKey: 'generate.form.negative_prompt_label',
+    reference: {
+      tradeoffs: { quality: 'generate.reference.quality_negative' },
+      related: ['prompt', 'prompt_emphasis', 'cfg'],
+    },
+    sweeps: {
+      strip: 'negative_prompt',
+      // The two scenes are the two jobs a negative prompt does. The portrait is
+      // the one the parameter answers with by default, and the harbour is the
+      // other half: naming a thing you asked for by implication and do not want.
+      alsoStrips: [{ parameter: 'negative_prompt', scene: 'harbour' }],
+    },
   },
   {
     id: 'prompt_emphasis',
     section: 'prompt',
     labelKey: 'generate.sweeps.param_prompt_emphasis',
+    reference: {
+      tradeoffs: { quality: 'generate.reference.quality_prompt_emphasis' },
+      // No bounds: the weights are prompt syntax rather than a control the
+      // panel holds, so there is no slider to read a minimum and a maximum off.
+      range: { typical: '0.9-1.3' },
+      related: ['prompt', 'negative', 'cfg'],
+    },
+    sweeps: {
+      strip: 'prompt_emphasis',
+      // One phrase walked up and down says where the usable range ends; two
+      // phrases traded against each other says what a weight is. A gradient
+      // cannot show the second, which is why both were rendered.
+      alsoStrips: [{ parameter: 'prompt_emphasis', scene: 'person' }],
+    },
   },
 
   // --- model ---
@@ -309,7 +365,47 @@ export const SETTINGS: readonly SettingEntry[] = [
   },
 
   // --- size ---
-  { id: 'size', section: 'size', labelKey: 'generate.tutorials.recipe_size' },
+  {
+    id: 'size',
+    section: 'size',
+    labelKey: 'generate.tutorials.recipe_size',
+    reference: {
+      tradeoffs: {
+        speed: 'slower',
+        kudos: 'costlier',
+        quality: 'generate.reference.quality_size',
+      },
+      range: { min: 64, max: 3072, typical: '512-1024' },
+      related: ['native_resolution', 'oversize', 'hires'],
+      glossaryTerms: ['megapixelsteps'],
+    },
+  },
+  {
+    // Not a control: the size a model was trained at is a property of the
+    // model, and the panel only ever reports it. It has a page because it is
+    // the thing width and height are read against, and because the strip that
+    // shows a request walked away from it had nowhere else to hang.
+    id: 'native_resolution',
+    section: 'size',
+    reference: {
+      related: ['size', 'oversize', 'requirements'],
+      links: [MODELS_LINK],
+      glossaryTerms: ['model'],
+    },
+    sweeps: { strip: 'resolution' },
+  },
+  {
+    // The problem, filed beside the sizes that cause it. The control that
+    // answers it is the hires pass, which is written up in Sampling: this
+    // entry says what goes wrong and points there rather than restating it.
+    id: 'oversize',
+    section: 'size',
+    reference: {
+      tradeoffs: { quality: 'generate.reference.quality_oversize' },
+      related: ['hires', 'native_resolution', 'size', 'upscaler'],
+      glossaryTerms: ['hires_fix'],
+    },
+  },
 
   // --- source image ---
   {
@@ -362,7 +458,7 @@ export const SETTINGS: readonly SettingEntry[] = [
       strip: 'steps',
       // What a step count is a count of, under the strip of what changing it
       // does: the timeline is the same evidence read along the other axis.
-      alsoStrips: ['step_preview'],
+      alsoStrips: [{ parameter: 'step_preview' }],
       grid: 'steps_cfg_grid',
     },
   },
@@ -704,7 +800,7 @@ export function settingSweepStrip(id: string): string | null {
 }
 
 /** The further strips shown under a setting's primary one, in reading order. */
-export function settingSweepAlsoStrips(id: string): readonly string[] {
+export function settingSweepAlsoStrips(id: string): readonly SweepStripRef[] {
   return settingEntry(id)?.sweeps?.alsoStrips ?? [];
 }
 

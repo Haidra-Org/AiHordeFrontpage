@@ -181,8 +181,12 @@ const TRADEOFF_ICONS = {
          value of it is made of. The setting's own strip is the page's evidence
          and stays full size; these are the footnotes to it, and take the
          compact card so a second capsule does not read as a second subject. -->
-    @for (parameter of alsoStrips(); track parameter) {
-      <app-gs-sweep-scrub [parameter]="parameter" register="filmcard" />
+    @for (also of alsoStrips(); track also.parameter + (also.scene ?? '')) {
+      <app-gs-sweep-scrub
+        [parameter]="also.parameter"
+        [sceneId]="also.scene"
+        register="filmcard"
+      />
     }
     @if (sweepGridParameter(); as parameter) {
       <app-gs-sweep-grid [parameter]="parameter" [startExpanded]="onPage()" />

@@ -57,10 +57,13 @@ export const SECTION_IDENTITIES: Record<SectionId, SectionIdentity> =
 
 /**
  * The guide's reference sections, which are cut by help topic rather than by
- * card: `loras` is part of the model area, and post-processing and output are
- * both the finishing area.
+ * card: `loras` is part of the model area, post-processing and output are both
+ * the finishing area, and the Dimensions card is the size area under the name
+ * the panel prints on it.
  */
 export const SECTION_BY_GUIDE_ID: Record<string, SectionId> = {
+  prompt: 'prompt',
+  dimensions: 'size',
   source: 'source',
   sampling: 'sampling',
   loras: 'model',
