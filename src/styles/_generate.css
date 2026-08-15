@@ -161,6 +161,9 @@
   --gs-radius-pill: 999px;
   --gs-control-h: 40px;
   --gs-control-h-dense: 36px;
+  /* The one red in the studio: a field that will not submit as typed carries
+     it on its edge, always beside a hint line, never as the only signal. */
+  --gs-danger: #dc2626;
   --gs-green-tint-border: #bbf7d0;
   --gs-border-soft: #f0f1f3;
   --gs-border-results: #eceef1;
@@ -291,6 +294,8 @@
   --gs-elev-2: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
   --gs-elev-3: 0 14px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
   --gs-green-tint-border: rgba(34, 197, 94, 0.35);
+  /* #dc2626 drops to 3.4:1 on the dark field; the lighter red holds AA. */
+  --gs-danger: #f87171;
   --gs-border: #2a2e37;
   --gs-border-soft: #23262d;
   --gs-border-results: #23262d;
@@ -800,29 +805,52 @@
   font-size: 16px;
   letter-spacing: -0.01em;
 }
+/* A track with a 3px inset, so the selected option reads as a tile lifted out
+   of a well rather than a button sitting on a strip. */
 .gen-studio .gs-seg {
   display: inline-flex;
   gap: 2px;
   background: var(--gs-seg-track);
   padding: 3px;
-  border-radius: 9px;
+  border-radius: var(--gs-radius-md);
 }
 .gen-studio .gs-seg-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
   cursor: pointer;
-  border-radius: 7px;
-  padding: 4px 12px;
-  font-size: 12px;
+  border-radius: var(--gs-radius-sm);
+  padding: 0 var(--gs-space-3);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-label);
-  transition: color 0.12s;
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-seg-opt:hover:not([aria-pressed="true"]):not(:disabled) {
+  color: var(--gs-ink);
 }
 .gen-studio .gs-seg-opt[aria-pressed="true"] {
   background: var(--gs-seg-active);
   color: var(--gs-seg-active-ink);
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-seg-opt:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .gen-studio .gs-seg-opt:focus-visible {
   outline: 2px solid var(--gs-blue);
-  outline-offset: 1px;
+  outline-offset: 2px;
+}
+/* 38px inside a track with a 3px inset is a 44px control under a thumb. */
+@media (pointer: coarse) {
+  .gen-studio .gs-seg-opt {
+    min-height: 38px;
+  }
 }
 
 .gen-studio .gs-kudos-balance {
@@ -864,15 +892,22 @@
 .gen-studio .gs-neg-input {
   width: 100%;
   font-family: "Inter", system-ui, sans-serif;
+  font-size: var(--gs-text-md);
   color: var(--gs-ink);
   background: var(--gs-field);
   border: 1px solid var(--gs-field-border);
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
+  transition:
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-input {
+  height: var(--gs-control-h);
+  padding: 0 var(--gs-space-3);
 }
 .gen-studio .gs-textarea {
   min-height: 76px;
-  padding: 12px;
-  font-size: 13.5px;
+  padding: var(--gs-space-3);
   line-height: 1.5;
   resize: none;
 }
@@ -885,10 +920,9 @@
   resize: vertical;
 }
 .gen-studio .gs-neg-input {
-  padding: 9px 12px;
-  border-radius: 8px;
+  padding: var(--gs-space-2) var(--gs-space-3);
   border-color: var(--gs-border);
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   background: var(--gs-field-soft);
   color: var(--gs-label);
 }
@@ -896,35 +930,40 @@
    way the main prompt can, without claiming vertical space by default. */
 .gen-studio textarea.gs-neg-input {
   display: block;
-  min-height: 38px;
+  min-height: var(--gs-control-h);
   max-height: 220px;
   line-height: 1.45;
   resize: vertical;
 }
+/* One focus treatment for every field in the studio: a ring outside the edge,
+   never a glow bleeding into the layout around it. */
 .gen-studio .gs-textarea:focus,
 .gen-studio .gs-input:focus,
 .gen-studio .gs-neg-input:focus {
-  outline: none;
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-color: var(--gs-blue);
 }
 .gen-studio .gs-textarea::placeholder,
+.gen-studio .gs-input::placeholder,
 .gen-studio .gs-neg-input::placeholder {
   color: var(--gs-muted);
 }
-
-.gen-studio .gs-label {
-  font-size: 11px;
+.gen-studio .gs-textarea:disabled,
+.gen-studio .gs-input:disabled,
+.gen-studio .gs-neg-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.gen-studio .gs-label,
+.gen-studio .gs-slabel {
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-label);
 }
 .gen-studio .gs-sublabel {
-  font-size: 10.5px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
-}
-.gen-studio .gs-slabel {
-  font-size: 10.5px;
-  color: var(--gs-label);
 }
 
 /* ------- field heads + help notes ----------------------------------- */
@@ -936,7 +975,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-field-head > .gs-slabel {
   min-width: 0;
@@ -958,24 +997,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border: 1px solid var(--gs-field-border);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--gs-label);
-  font-size: 10px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
   transition:
-    color 0.12s,
-    border-color 0.12s,
-    background 0.12s;
+    color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-help-btn:hover {
   color: var(--gs-ink);
   border-color: var(--gs-zone, var(--gs-blue));
+  background: var(--gs-panel);
 }
 .gen-studio .gs-help-btn[aria-expanded="true"] {
   color: var(--gs-zone, var(--gs-blue));
@@ -1004,36 +1044,39 @@
    the wrapping rows above holds it. */
 .gen-studio .gs-help-note {
   flex: 1 0 100%;
-  margin: 2px 0 0;
-  padding: 8px 10px;
+  margin: var(--gs-space-1) 0 0;
+  padding: var(--gs-space-3);
   border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-zone-tint, var(--gs-card));
   color: var(--gs-ink-2);
-  font-size: 10.5px;
-  line-height: 1.55;
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
 }
 
 /* select-like chips (model row, sampler, control type) */
 .gen-studio .gs-select-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
+  gap: var(--gs-space-2);
+  height: var(--gs-control-h);
+  padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-field-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-md);
   font-weight: 500;
   color: var(--gs-ink);
   background: var(--gs-field);
   cursor: pointer;
   width: 100%;
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
+/* The dense row: a select sitting inside a card's grid rather than under its
+   own label. */
 .gen-studio .gs-select-sm {
-  padding: 6px 9px;
-  border-radius: 7px;
+  height: var(--gs-control-h-dense);
   border-color: var(--gs-border);
-  font-size: 11.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   justify-content: space-between;
 }
@@ -1041,22 +1084,28 @@
 /* real native <select>, styled to the studio language */
 .gen-studio .gs-native-select {
   width: 100%;
-  padding: 8px 10px;
+  height: var(--gs-control-h);
+  padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-field-border);
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-md);
   font-weight: 500;
   color: var(--gs-ink);
   background: var(--gs-field);
   cursor: pointer;
   font-family: inherit;
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-native-select--sm {
-  padding: 6px 9px;
-  border-radius: 7px;
+  height: var(--gs-control-h-dense);
   border-color: var(--gs-border);
-  font-size: 11.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
+}
+.gen-studio .gs-native-select:disabled,
+.gen-studio .gs-select-row:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* The model picker stands directly beside the style select and has to read as
@@ -1067,22 +1116,24 @@
    toggle is still the button it was. */
 .gen-studio .autocomplete-input-row {
   align-items: stretch;
+  height: var(--gs-control-h);
   border: 1px solid var(--gs-field-border);
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
 }
 .gen-studio .autocomplete-input-row:focus-within {
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-color: var(--gs-blue);
 }
 .gen-studio .autocomplete-input {
-  padding: 8px 4px 8px 10px;
+  padding: 0 var(--gs-space-1) 0 var(--gs-space-3);
   border: 0;
-  border-radius: 8px 0 0 8px;
+  border-radius: var(--gs-radius-sm) 0 0 var(--gs-radius-sm);
   background: none;
   box-shadow: none;
   font-family: inherit;
-  font-size: 12px;
+  font-size: var(--gs-text-md);
   font-weight: 500;
   color: var(--gs-ink);
 }
@@ -1092,9 +1143,9 @@
   box-shadow: none;
 }
 .gen-studio .autocomplete-toggle {
-  padding: 0 9px;
+  padding: 0 var(--gs-space-3);
   border: 0;
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--gs-radius-sm) var(--gs-radius-sm) 0;
   background: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -1108,36 +1159,46 @@
   font-size: 12px;
   line-height: 1;
 }
-.gen-studio .gs-native-select:focus {
-  outline: none;
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+.gen-studio .gs-native-select:focus-visible,
+.gen-studio .gs-select-row:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-color: var(--gs-blue);
 }
 
 /* mono seed input */
 .gen-studio .gs-seed-input {
   width: 100%;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  padding: 6px 9px;
+  height: var(--gs-control-h);
+  padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-border);
-  border-radius: 7px;
-  font-size: 11px;
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-sm);
   color: var(--gs-ink-2);
   background: var(--gs-field);
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-seed-input:focus {
-  outline: none;
-  border-color: #93c5fd;
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-color: var(--gs-blue);
 }
 
-/* extra-small segmented, used for the 512/1024 base toggle */
-.gen-studio .gs-seg--xs {
-  padding: 2px;
+/* A field that will not submit as typed. The edge is the second signal: every
+   place this is set also renders the hint line that says what is wrong. It
+   follows the fields it modifies so it wins over their own focus edge. */
+.gen-studio .gs-field--invalid,
+.gen-studio .gs-field--invalid:focus {
+  border-color: var(--gs-danger);
 }
+
+/* Narrow segmented, used for the 512/1024 base toggle and the worker mode.
+   Only the horizontal padding tightens: the option keeps the segmented height
+   so a toggle in a card header is the same target as one in a row. */
 .gen-studio .gs-seg--xs .gs-seg-opt {
-  padding: 2px 7px;
-  font-size: 10px;
+  padding: 0 var(--gs-space-2);
+  font-size: var(--gs-text-xs);
 }
 
 /* small icon button (seed randomize etc.) */
@@ -1145,15 +1206,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;
+  min-width: var(--gs-control-h-dense);
+  min-height: var(--gs-control-h-dense);
   border: 1px solid var(--gs-border);
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
   color: var(--gs-label);
   cursor: pointer;
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-mini-btn:hover {
   color: var(--gs-ink);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-mini-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
 }
 /* The reset control clears a session's worth of choices, so its target is
    generous under a thumb even though its glyph stays the size of its
@@ -1201,32 +1271,218 @@
   height: 12px;
 }
 
+/* ------- buttons ---------------------------------------------------- */
+/* One shape in four weights. A button that already carries a name of its own
+   (Generate, Browse, the batch steps) joins the anatomy here rather than being
+   renamed at every call site, so the shape is shared without the markup
+   churning. */
+.gen-studio .gs-btn,
+.gen-studio .gs-btn-primary,
+.gen-studio .gs-btn-tonal,
+.gen-studio .gs-btn-ghost,
+.gen-studio .gs-browse-btn,
+.gen-studio .gs-genbtn,
+.gen-studio .gs-batch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-1);
+  min-height: var(--gs-control-h);
+  padding: 0 var(--gs-space-4);
+  border: 1px solid transparent;
+  border-radius: var(--gs-radius-sm);
+  font-family: inherit;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease),
+    transform var(--gs-dur-fast) var(--gs-ease);
+}
+/* A row that is already dense (a card's grid, a field's trailing action) takes
+   the shorter button rather than a differently shaped one. */
+.gen-studio .gs-btn--dense {
+  min-height: var(--gs-control-h-dense);
+  padding: 0 var(--gs-space-3);
+}
+/* Icon-only: a square the height of a field, with the word in aria-label. */
+.gen-studio .gs-btn--icon,
+.gen-studio .gs-batch-btn {
+  width: var(--gs-control-h);
+  padding: 0;
+}
+.gen-studio .gs-btn {
+  background: var(--gs-panel);
+  border-color: var(--gs-border);
+  color: var(--gs-ink);
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-btn:hover:not(:disabled) {
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-btn-primary,
+.gen-studio .gs-genbtn {
+  background: var(--gs-blue);
+  color: #fff;
+}
+.gen-studio .gs-btn-primary:hover:not(:disabled),
+.gen-studio .gs-genbtn:hover:not(:disabled) {
+  background: var(--gs-blue-hover);
+}
+.gen-studio .gs-btn-primary:active:not(:disabled),
+.gen-studio .gs-genbtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.gen-studio .gs-btn-tonal,
+.gen-studio .gs-browse-btn {
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-btn-tonal:hover:not(:disabled),
+.gen-studio .gs-browse-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--gs-blue) 12%, var(--gs-blue-tint));
+}
+.gen-studio .gs-btn-ghost,
+.gen-studio .gs-batch-btn {
+  background: none;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-btn-ghost:hover:not(:disabled),
+.gen-studio .gs-batch-btn:hover:not(:disabled) {
+  background: var(--gs-seg-track);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-btn:disabled,
+.gen-studio .gs-btn-primary:disabled,
+.gen-studio .gs-btn-tonal:disabled,
+.gen-studio .gs-btn-ghost:disabled,
+.gen-studio .gs-browse-btn:disabled,
+.gen-studio .gs-genbtn:disabled,
+.gen-studio .gs-batch-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.gen-studio .gs-btn:focus-visible,
+.gen-studio .gs-btn-primary:focus-visible,
+.gen-studio .gs-btn-tonal:focus-visible,
+.gen-studio .gs-btn-ghost:focus-visible,
+.gen-studio .gs-browse-btn:focus-visible,
+.gen-studio .gs-genbtn:focus-visible,
+.gen-studio .gs-batch-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-btn,
+  .gen-studio .gs-btn-primary,
+  .gen-studio .gs-btn-tonal,
+  .gen-studio .gs-btn-ghost,
+  .gen-studio .gs-browse-btn,
+  .gen-studio .gs-genbtn,
+  .gen-studio .gs-batch-btn {
+    min-height: 44px;
+  }
+  .gen-studio .gs-btn--icon,
+  .gen-studio .gs-batch-btn {
+    width: 44px;
+  }
+}
+
 /* chips (aspect, base) */
 .gen-studio .gs-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 5px 9px;
-  border: 1px solid var(--gs-border);
-  border-radius: 7px;
-  font-size: 11px;
+  min-height: 32px;
+  padding: 0 var(--gs-space-3);
+  border: 1px solid var(--gs-sec-tint-border, var(--gs-border));
+  border-radius: var(--gs-radius-pill);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-label);
   background: var(--gs-field);
   transition:
-    color 0.12s,
-    border-color 0.12s,
-    background 0.12s;
+    color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
 }
-.gen-studio .gs-chip:hover {
+.gen-studio .gs-chip:hover:not(:disabled) {
   color: var(--gs-ink);
+  border-color: var(--gs-sec, var(--gs-blue));
 }
+/* The chosen one wears its area's tint as a surface, so a card's selection is
+   read in the same hue as the card's mark and top edge. */
 .gen-studio .gs-chip--active {
-  color: var(--gs-blue);
-  border-color: var(--gs-blue);
-  background: var(--gs-blue-tint);
+  color: var(--gs-ink);
+  border-color: var(--gs-sec, var(--gs-blue));
+  background: var(--gs-sec-tint, var(--gs-blue-tint));
+}
+.gen-studio .gs-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .gen-studio .gs-chip:focus-visible {
   outline: 2px solid var(--gs-blue);
-  outline-offset: 1px;
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-chip {
+    min-height: 36px;
+  }
+}
+
+/* In a forced-colours theme every surface collapses to the system canvas, so
+   each control has to carry its own edge to keep its shape, and the selected
+   member of a set is marked by the system's highlight rather than by a tint. */
+@media (forced-colors: active) {
+  .gen-studio .gs-btn,
+  .gen-studio .gs-btn-primary,
+  .gen-studio .gs-btn-tonal,
+  .gen-studio .gs-btn-ghost,
+  .gen-studio .gs-browse-btn,
+  .gen-studio .gs-genbtn,
+  .gen-studio .gs-batch,
+  .gen-studio .gs-chip,
+  .gen-studio .gs-seg,
+  .gen-studio .gs-help-btn,
+  .gen-studio .gs-textarea,
+  .gen-studio .gs-input,
+  .gen-studio .gs-neg-input,
+  .gen-studio .gs-native-select,
+  .gen-studio .gs-select-row,
+  .gen-studio .gs-seed-input {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+  .gen-studio .gs-chip--active,
+  .gen-studio .gs-seg-opt[aria-pressed="true"] {
+    border-color: Highlight;
+    color: HighlightText;
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+  /* One engine's pseudo-element per rule: a list containing a pseudo-element
+     the engine does not know drops the whole rule. */
+  .gen-studio .gs-range::-webkit-slider-thumb {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .gen-studio .gs-range::-moz-range-thumb {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .gen-studio .gs-range::-webkit-slider-runnable-track {
+    border: 1px solid CanvasText;
+  }
+  .gen-studio .gs-range::-moz-range-track {
+    border: 1px solid CanvasText;
+  }
 }
 
 /* ------- advanced divider ------------------------------------------- */
@@ -1258,12 +1514,20 @@
   /* Cards echo the pane header's zone underline as a top edge: the zone hue
      always reads as a horizontal rule, at pane scope and at card scope. */
   border-top: 2px solid var(--gs-zone-tint-border, var(--gs-card-border));
-  border-radius: 10px;
-  padding: 12px 13px;
+  border-radius: var(--gs-radius-md);
+  padding: var(--gs-space-4);
   background: var(--gs-card);
 }
-.gen-studio .gs-card--pad-sm {
-  padding: 11px 12px;
+/* A phone gives the card back the space its padding was taking, and so does a
+   card sharing the panel's width with another: half a control column is as
+   narrow as a phone, and the eyebrow starts wrapping at the wider padding. */
+@media (max-width: 639.98px) {
+  .gen-studio .gs-card {
+    padding: var(--gs-space-3);
+  }
+}
+.gen-studio .gs-grid-2 > .gs-card {
+  padding: var(--gs-space-3);
 }
 /* Every section title is the same landmark: an uppercase eyebrow followed by a
    hairline in the zone hue, running out to the end of its row. That is the
@@ -1276,11 +1540,11 @@
 .gen-studio .gs-card-title--sm {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gs-space-2);
   min-width: 0;
-  font-size: 10px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--gs-ink);
 }
@@ -1309,7 +1573,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 /* Only in a row does the title take the free space, pushing whatever shares the
    row (a lock badge, an action link) to the far end. On its own in a column
@@ -1378,8 +1642,9 @@
 .gen-studio .gs-switch {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
   color: var(--gs-label);
   cursor: pointer;
   position: relative;
@@ -1400,10 +1665,10 @@
   position: relative;
   width: 28px;
   height: 16px;
-  border-radius: 999px;
+  border-radius: var(--gs-radius-pill);
   background: var(--gs-switch-off);
   flex: none;
-  transition: background 0.15s;
+  transition: background-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-switch-knob {
   position: absolute;
@@ -1413,8 +1678,8 @@
   height: 12px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  transition: transform 0.15s;
+  box-shadow: var(--gs-elev-1);
+  transition: transform var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-switch input:checked ~ .gs-switch-track {
   background: var(--gs-blue);
@@ -1434,46 +1699,85 @@
 }
 
 /* ------- range sliders --------------------------------------------- */
+/* A 4px rail with the travelled part in the accent. Blink and WebKit have no
+   progress pseudo-element, so the filled part is a gradient stop driven by
+   --gs-range-fill, which the template sets from the control's own value;
+   Firefox paints ::-moz-range-progress and ignores it. */
 .gen-studio .gs-range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--gs-switch-off);
+  height: 20px;
+  background: transparent;
+  border-radius: var(--gs-radius-pill);
   outline: none;
-  accent-color: var(--gs-blue);
+  cursor: pointer;
+  --gs-range-accent: var(--gs-blue);
+}
+.gen-studio .gs-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--gs-range-accent) 0 var(--gs-range-fill, 0%),
+    var(--gs-border) var(--gs-range-fill, 0%) 100%
+  );
 }
 .gen-studio .gs-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
+  width: 20px;
+  height: 20px;
+  /* Centres the thumb on the 4px track. */
+  margin-top: -8px;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid var(--gs-blue);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  background: var(--gs-panel);
+  border: 2px solid var(--gs-range-accent);
+  box-shadow: var(--gs-elev-1);
   cursor: pointer;
 }
+.gen-studio .gs-range::-moz-range-track {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-border);
+}
+.gen-studio .gs-range::-moz-range-progress {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-range-accent);
+}
 .gen-studio .gs-range::-moz-range-thumb {
-  width: 15px;
-  height: 15px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #fff;
-  border: 2px solid var(--gs-blue);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  background: var(--gs-panel);
+  border: 2px solid var(--gs-range-accent);
+  box-shadow: var(--gs-elev-1);
   cursor: pointer;
 }
 .gen-studio .gs-range--purple {
-  accent-color: var(--gs-purple);
+  --gs-range-accent: var(--gs-purple);
 }
-.gen-studio .gs-range--purple::-webkit-slider-thumb {
-  border-color: var(--gs-purple);
-}
-.gen-studio .gs-range--purple::-moz-range-thumb {
-  border-color: var(--gs-purple);
+.gen-studio .gs-range:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 .gen-studio .gs-range:focus-visible {
-  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-range {
+    height: 24px;
+  }
+  .gen-studio .gs-range::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -10px;
+  }
+  .gen-studio .gs-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 /* ------- LoRA / TI addons ------------------------------------------- */
@@ -1537,18 +1841,38 @@
   padding: 8px 0;
 }
 
-/* neutral inline text button (e.g. the custom-size toggle) */
+/* The disclosure buttons inside a card (custom size, reset the mask): the ghost
+   button at its dense height, so a quiet action is still a target. */
 .gen-studio .gs-textlink {
-  font-size: 10.5px;
-  color: var(--gs-label);
-  cursor: pointer;
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-height: var(--gs-control-h-dense);
+  padding: 0 var(--gs-space-2);
   border: 0;
-  padding: 0;
+  border-radius: var(--gs-radius-sm);
   font-family: inherit;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink-2);
+  background: none;
+  cursor: pointer;
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-textlink:hover {
   color: var(--gs-ink);
+  background: var(--gs-seg-track);
+}
+.gen-studio .gs-textlink:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-textlink {
+    min-height: 44px;
+  }
 }
 
 /* pixel-budget warning line */
@@ -1654,56 +1978,36 @@
 }
 
 /* ------- footer batch stepper + generate --------------------------- */
+/* The stepper is one object: two ghost icon buttons with the count between
+   them, the group carrying the edge rather than each part. */
 .gen-studio .gs-batch {
   display: inline-flex;
+  align-items: stretch;
   border: 1px solid var(--gs-border);
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   overflow: hidden;
 }
-.gen-studio .gs-batch-btn {
-  padding: 3px 9px;
-  font-size: 13px;
-  color: var(--gs-label);
-  cursor: pointer;
-  background: none;
-  border: 0;
-}
-.gen-studio .gs-batch-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 .gen-studio .gs-batch-count {
-  padding: 3px 11px;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--gs-space-3);
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   border-left: 1px solid var(--gs-border);
   border-right: 1px solid var(--gs-border);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
+/* The panel's one primary action: the button anatomy at full width, a step
+   larger than the buttons inside the cards. */
 .gen-studio .gs-genbtn {
   width: 100%;
-  background: var(--gs-blue);
-  color: #fff;
-  border: 0;
-  padding: 13px;
-  border-radius: 10px;
+  min-height: 44px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-md);
   font-weight: 700;
-  font-size: 14.5px;
-  font-family: "Inter", system-ui, sans-serif;
-  cursor: pointer;
   box-shadow: 0 4px 12px rgba(29, 78, 216, 0.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  transition: background 0.12s;
-}
-.gen-studio .gs-genbtn:hover {
-  background: var(--gs-blue-hover);
 }
 .gen-studio .gs-genbtn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
   box-shadow: none;
 }
 
@@ -3817,14 +4121,8 @@
   inset: 0;
 }
 
-/* View toggle + gallery density controls (results header). */
-.gen-studio .gs-seg {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  background: var(--gs-seg-track);
-  border-radius: 8px;
-}
+/* View toggle + gallery density controls (results header). The track itself is
+   the shared segmented control; only its options differ. */
 .gen-studio .gs-seg-btn {
   border: 0;
   background: none;
@@ -4870,8 +5168,19 @@
   .gen-studio .gs-switch-knob,
   .gen-studio .gs-chip,
   .gen-studio .gs-help-btn,
+  .gen-studio .gs-btn,
+  .gen-studio .gs-btn-primary,
+  .gen-studio .gs-btn-tonal,
+  .gen-studio .gs-btn-ghost,
+  .gen-studio .gs-browse-btn,
+  .gen-studio .gs-batch-btn,
   .gen-studio .gs-genbtn {
     transition: none;
+  }
+  /* The press is a nudge, not information: it goes when motion is not wanted. */
+  .gen-studio .gs-btn-primary:active:not(:disabled),
+  .gen-studio .gs-genbtn:active:not(:disabled) {
+    transform: none;
   }
 }
 
@@ -4879,40 +5188,14 @@
 /* Clears the selected style without hunting for "None" in the long select. */
 .gen-studio .gs-clear-style {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--gs-field-border);
-  border-radius: 8px;
-  background: var(--gs-field);
   color: var(--gs-muted);
-  cursor: pointer;
 }
-.gen-studio .gs-clear-style:hover {
+.gen-studio .gs-clear-style:hover:not(:disabled) {
   color: var(--gs-ink);
-  border-color: var(--gs-border);
 }
 .gen-studio .gs-browse-btn {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 10px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: inherit;
-  color: var(--gs-blue);
-  border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 8px;
-  background: var(--gs-blue-tint);
-  cursor: pointer;
   white-space: nowrap;
-}
-.gen-studio .gs-browse-btn:hover {
-  color: var(--gs-blue-hover);
 }
 
 /* ------- style preview browser modal -------------------------------- */

@@ -135,6 +135,25 @@ export function cyclePanelSize(size: PanelSize): PanelSize {
   return PANEL_SIZES[(index + 1) % PANEL_SIZES.length];
 }
 
+/**
+ * How far along its travel a range input sits, as a percentage. Blink and
+ * WebKit paint no progress pseudo-element, so the studio's slider draws its
+ * filled portion from a gradient stop the template feeds with this value.
+ */
+export function rangeFillPercent(
+  value: number | string | null,
+  min: number,
+  max: number,
+): number {
+  const span = max - min;
+  if (span <= 0) {
+    return 0;
+  }
+  const at =
+    ((typeof value === 'string' ? +value : (value ?? min)) - min) / span;
+  return Math.min(100, Math.max(0, at * 100));
+}
+
 /** Horde LoRA/TI strength bounds (`model`, `clip`, TI `strength`): -5 to 5. */
 export const MIN_LORA_STRENGTH = -5;
 export const MAX_LORA_STRENGTH = 5;

@@ -1245,13 +1245,20 @@ describe('GenerateComponent arrival with a tutorial armed', () => {
     Element.prototype.scrollIntoView = scrollIntoView;
     // The environment defines no matchMedia at all, which is the answer the
     // guard reads as "no sheet"; the narrow viewport has to be stood up.
+    // CDK's media matcher (which the sheet's scroll strategy reaches through
+    // the overlay layer) subscribes to the list it is handed, so the stand-in
+    // carries the listener methods as well as the answer.
     vi.stubGlobal(
       'matchMedia',
       (query: string) =>
         ({
           matches: query.includes('max-width'),
           media: query,
-        }) as MediaQueryList,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+        }) as unknown as MediaQueryList,
     );
     await createPaneOnlyStudio();
     TestBed.inject(TutorialEngineService).arm('txt2img');

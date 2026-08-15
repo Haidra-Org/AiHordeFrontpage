@@ -77,6 +77,7 @@ import {
   nativeSizeHint,
   nativeSquareFor,
   normalizeWorkers,
+  rangeFillPercent,
   resetFormValue,
   samplerRequirementHint,
   sd15HiresHint,
@@ -685,6 +686,9 @@ export class GenerateFormComponent implements OnInit {
   public rangeValue(event: Event): number {
     return +(event.target as HTMLInputElement).value;
   }
+
+  /** Where a slider's thumb sits, as the percentage its track fills to. */
+  public readonly rangeFill = rangeFillPercent;
 
   // --- Seed / batch helpers -----------------------------------------------
 

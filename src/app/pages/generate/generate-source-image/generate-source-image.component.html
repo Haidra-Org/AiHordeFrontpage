@@ -134,6 +134,13 @@
           [min]="minDenoise"
           [max]="maxDenoise"
           [step]="denoiseStep"
+          [style.--gs-range-fill.%]="
+            rangeFill(
+              form().controls.denoising_strength.value,
+              minDenoise,
+              maxDenoise
+            )
+          "
         />
         <p class="gs-sublabel mt-1">
           {{ "generate.source.denoise_hint" | transloco }}
@@ -199,6 +206,9 @@
             [max]="maxBrush"
             step="1"
             [value]="brushSize()"
+            [style.--gs-range-fill.%]="
+              rangeFill(brushSize(), minBrush, maxBrush)
+            "
             (input)="setBrushSize(+$any($event.target).value)"
           />
         </div>
@@ -257,6 +267,9 @@
                 [max]="maxExtraStrength"
                 [step]="extraStrengthStep"
                 [value]="extra.strength"
+                [style.--gs-range-fill.%]="
+                  rangeFill(extra.strength, minExtraStrength, maxExtraStrength)
+                "
                 [disabled]="disabled()"
                 (input)="setExtraStrength(i, +$any($event.target).value)"
               />

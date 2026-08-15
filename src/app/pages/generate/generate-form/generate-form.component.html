@@ -171,12 +171,12 @@
 
   <!-- Scrollable control body -->
   <div class="gs-body">
-    <div class="gs-body-flow flex flex-col gap-[14px]">
+    <div class="gs-body-flow flex flex-col gap-4">
       <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
       <section
-        class="gs-sec--prompt flex flex-col gap-2.5"
+        class="gs-sec--prompt flex flex-col gap-3"
         appTutAnchor="prompt"
         aria-labelledby="gs-card-prompt"
       >
@@ -306,10 +306,10 @@
       <!-- Setting cards. When the panel is expanded these reflow into
            independent masonry columns; the prompt + negative above stay full
            width so growing them never shuffles the cards. -->
-      <div class="gs-body-cards flex flex-col gap-[14px]">
+      <div class="gs-body-cards flex flex-col gap-4">
         <!-- Model & style -->
         <section
-          class="gs-sec--model flex flex-col gap-2.5"
+          class="gs-sec--model flex flex-col gap-3"
           aria-labelledby="gs-card-model"
         >
           <div class="gs-sec-head">
@@ -345,7 +345,7 @@
               @if (selectedStyleName()) {
                 <button
                   type="button"
-                  class="gs-clear-style"
+                  class="gs-btn gs-btn-ghost gs-btn--icon gs-clear-style"
                   (click)="clearStyle()"
                   [attr.aria-label]="'generate.form.clear_style' | transloco"
                   [title]="'generate.form.clear_style' | transloco"
@@ -411,7 +411,7 @@
 
         <!-- Aspect + resolution -->
         <section
-          class="gs-card gs-card--pad-sm gs-sec--size flex flex-col gap-3"
+          class="gs-card gs-sec--size flex flex-col gap-3"
           appTutAnchor="size"
           aria-labelledby="gs-card-size"
         >
@@ -518,6 +518,13 @@
                     [min]="minDimension"
                     [max]="maxDimension"
                     [step]="dimensionStep"
+                    [style.--gs-range-fill.%]="
+                      rangeFill(
+                        form().controls.width.value,
+                        minDimension,
+                        maxDimension
+                      )
+                    "
                   />
                 </div>
                 <div>
@@ -535,6 +542,13 @@
                     [min]="minDimension"
                     [max]="maxDimension"
                     [step]="dimensionStep"
+                    [style.--gs-range-fill.%]="
+                      rangeFill(
+                        form().controls.height.value,
+                        minDimension,
+                        maxDimension
+                      )
+                    "
                   />
                 </div>
               </div>
@@ -611,6 +625,9 @@
                   min="1"
                   max="500"
                   step="1"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(form().controls.steps.value, 1, 500)
+                  "
                   [attr.aria-label]="'generate.form.steps_short' | transloco"
                 />
                 <ng-container
@@ -637,6 +654,9 @@
                   min="0"
                   max="100"
                   step="0.5"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(form().controls.cfg_scale.value, 0, 100)
+                  "
                   [attr.aria-label]="'generate.form.cfg_short' | transloco"
                 />
                 <ng-container
@@ -718,6 +738,9 @@
                 min="1"
                 max="12"
                 step="1"
+                [style.--gs-range-fill.%]="
+                  rangeFill(form().controls.clip_skip.value, 1, 12)
+                "
               />
               <ng-container
                 *ngTemplateOutlet="reqHint; context: { hint: clipSkipHint() }"
@@ -790,6 +813,13 @@
                   [min]="minHiresDenoise"
                   [max]="maxHiresDenoise"
                   step="0.01"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.hires_fix_denoising_strength.value,
+                      minHiresDenoise,
+                      maxHiresDenoise
+                    )
+                  "
                 />
               </div>
             }
@@ -797,7 +827,7 @@
 
           <!-- LoRAs & embeddings -->
           <section
-            class="gs-card gs-sec--model flex flex-col gap-2"
+            class="gs-card gs-sec--model flex flex-col gap-3"
             aria-labelledby="gs-card-loras"
           >
             <div class="gs-sec-head">
@@ -855,6 +885,9 @@
                       [max]="maxLoraStrength"
                       step="0.05"
                       [value]="lora.model"
+                      [style.--gs-range-fill.%]="
+                        rangeFill(lora.model, minLoraStrength, maxLoraStrength)
+                      "
                       (input)="setLoraStrength(i, 'model', rangeValue($event))"
                       [attr.aria-label]="
                         'generate.form.lora_model_short' | transloco
@@ -875,6 +908,9 @@
                       [max]="maxLoraStrength"
                       step="0.05"
                       [value]="lora.clip"
+                      [style.--gs-range-fill.%]="
+                        rangeFill(lora.clip, minLoraStrength, maxLoraStrength)
+                      "
                       (input)="setLoraStrength(i, 'clip', rangeValue($event))"
                       [attr.aria-label]="
                         'generate.form.lora_clip_short' | transloco
@@ -928,6 +964,9 @@
                     [max]="maxLoraStrength"
                     step="0.05"
                     [value]="ti.strength"
+                    [style.--gs-range-fill.%]="
+                      rangeFill(ti.strength, minLoraStrength, maxLoraStrength)
+                    "
                     (input)="setTiStrength(i, rangeValue($event))"
                     [attr.aria-label]="
                       'generate.form.ti_strength_short' | transloco
@@ -946,7 +985,7 @@
           <!-- Post-process + Output -->
           <div class="gs-grid-2">
             <section
-              class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+              class="gs-card gs-sec--finishing flex flex-col gap-3"
               aria-labelledby="gs-card-post"
             >
               <h2 id="gs-card-post" class="gs-card-title--sm">
@@ -1016,6 +1055,13 @@
                     [min]="minFacefixer"
                     [max]="maxFacefixer"
                     step="0.05"
+                    [style.--gs-range-fill.%]="
+                      rangeFill(
+                        form().controls.facefixer_strength.value,
+                        minFacefixer,
+                        maxFacefixer
+                      )
+                    "
                   />
                 </div>
               }
@@ -1035,7 +1081,7 @@
             </section>
 
             <section
-              class="gs-card gs-card--pad-sm gs-sec--finishing flex flex-col gap-2.5"
+              class="gs-card gs-sec--finishing flex flex-col gap-3"
               aria-labelledby="gs-card-output"
             >
               <h2 id="gs-card-output" class="gs-card-title--sm">
@@ -1076,7 +1122,7 @@
 
           <!-- Workers & filters -->
           <section
-            class="gs-card gs-sec--horde flex flex-col gap-2.5"
+            class="gs-card gs-sec--horde flex flex-col gap-3"
             aria-labelledby="gs-card-horde"
           >
             <h2 id="gs-card-horde" class="gs-card-title">
@@ -1158,6 +1204,8 @@
                 <input
                   id="generate-webhook"
                   class="gs-seed-input mt-1.5"
+                  [class.gs-field--invalid]="webhookInvalid()"
+                  [attr.aria-invalid]="webhookInvalid() ? 'true' : null"
                   type="url"
                   inputmode="url"
                   autocomplete="off"

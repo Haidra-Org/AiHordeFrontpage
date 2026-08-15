@@ -34,6 +34,7 @@ import {
   MIN_DENOISE,
   MIN_EXTRA_SOURCE_STRENGTH,
   SOURCE_MODES,
+  rangeFillPercent,
 } from '../generate-form.model';
 import type { FeatureCompatRuleId, RequestWarning } from '../request-lint';
 import {
@@ -140,6 +141,8 @@ export class GenerateSourceImageComponent implements OnInit {
   public readonly minExtraStrength = MIN_EXTRA_SOURCE_STRENGTH;
   public readonly maxExtraStrength = MAX_EXTRA_SOURCE_STRENGTH;
   public readonly extraStrengthStep = EXTRA_SOURCE_STRENGTH_STEP;
+  /** Where a slider's thumb sits, as the percentage its track fills to. */
+  public readonly rangeFill = rangeFillPercent;
 
   public readonly sourceImage = signal<SourceImage | null>(null);
   public readonly previewUrl = signal<string | null>(null);
