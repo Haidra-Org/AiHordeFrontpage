@@ -17,6 +17,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { A11yModule } from '@angular/cdk/a11y';
+import { BlockScrollStrategy, Overlay } from '@angular/cdk/overlay';
 import { IconComponent } from '../icon/icon.component';
 
 /** How far along its own height a drag has to travel before it snaps over. */
@@ -65,9 +67,17 @@ let nextInstance = 0;
  */
 @Component({
   selector: 'app-gs-sheet',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, IconComponent, A11yModule],
   template: `
-    <div class="gs-sheet-panel" [style.transform]="dragTransform()">
+    <div
+      class="gs-sheet-panel"
+      [style.transform]="dragTransform()"
+      [cdkTrapFocus]="stop() === 'full'"
+    >
+      <!-- Whatever the caller wants read across the very top edge, before the
+           grip: the tutorial puts its progress there, three pixels tall, so
+           the peek row spends no height on it. -->
+      <ng-content select="[sheet-edge]" />
       <!-- The grip row: the grabber across the width, and the stop buttons at
            its end, so the controls that move the sheet sit with the handle
            that moves it rather than in the row the content's own actions
@@ -159,6 +169,7 @@ let nextInstance = 0;
     class: 'gs-sheet',
     role: 'dialog',
     '[attr.aria-label]': 'label()',
+    '[attr.aria-modal]': 'stop() === "full" ? "true" : null',
     '[class.gs-sheet--open]': 'expanded()',
     '[class.gs-sheet--full]': 'stop() === "full"',
     '[class.gs-sheet--dragging]': 'dragging()',
@@ -192,6 +203,17 @@ export class GsSheetComponent {
   public readonly closed = output<void>();
 
   private readonly bodyRef = viewChild<ElementRef<HTMLElement>>('sheetBody');
+
+  /**
+   * The page behind the sheet stops scrolling once the sheet is above peek:
+   * a body that scrolls internally over a page that also scrolls sends every
+   * overshoot to the wrong one, which reads as the tutorial dragging the form
+   * about. CDK's strategy is what the overlay layer uses for the same reason,
+   * so a sheet and a dialog lock the page the same way and restore it the same
+   * way.
+   */
+  private readonly scrollBlock: BlockScrollStrategy =
+    inject(Overlay).scrollStrategies.block();
 
   public readonly bodyId = `gs-sheet-body-${nextInstance++}`;
 
@@ -237,7 +259,19 @@ export class GsSheetComponent {
     if (this.isBrowser) {
       afterNextRender(() => this.observeHeight(), { injector: this.injector });
     }
+    effect(() => {
+      const above = this.at() !== 'peek';
+      if (!this.isBrowser) {
+        return;
+      }
+      if (above) {
+        this.scrollBlock.enable();
+      } else {
+        this.scrollBlock.disable();
+      }
+    });
     this.destroyRef.onDestroy(() => {
+      this.scrollBlock.disable();
       this.observer?.disconnect();
       if (this.isBrowser) {
         document.documentElement.style.removeProperty(CLEARANCE_VAR);

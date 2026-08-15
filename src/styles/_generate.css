@@ -10368,7 +10368,9 @@ app-gs-compare-wipe {
   position: fixed;
   inset: auto 0 0 0;
   z-index: 45;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  transition: top var(--gs-dur) var(--gs-ease);
   padding-bottom: env(safe-area-inset-bottom);
   background: var(--gs-card);
   border-top: 1px solid var(--gs-card-border);
@@ -10391,9 +10393,16 @@ app-gs-compare-wipe {
 /* Full is the whole viewport, less the safe area: the sheet becomes the page
    until the reader shrinks it, which is what a reader who finds the half too
    small to follow asked for. */
+.gen-studio .gs-sheet--full {
+  top: var(--nav-height-mobile, 64px);
+  border-top-left-radius: var(--gs-radius-lg);
+  border-top-right-radius: var(--gs-radius-lg);
+  box-shadow: var(--gs-elev-3);
+}
 .gen-studio .gs-sheet--full .gs-sheet-panel {
-  max-height: calc(100dvh - var(--nav-height-mobile, 64px));
-  height: calc(100dvh - var(--nav-height-mobile, 64px));
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 .gen-studio .gs-sheet-top {
   display: flex;
@@ -10406,9 +10415,6 @@ app-gs-compare-wipe {
   align-items: center;
   gap: 2px;
   flex: none;
-}
-.gen-studio .gs-sheet--full {
-  box-shadow: none;
 }
 /* A dragged sheet is already following the finger; easing it as well would put
    the surface behind the touch that is moving it. */
@@ -10517,7 +10523,31 @@ app-gs-compare-wipe {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 2px 14px 16px;
+  overscroll-behavior: contain;
+  padding: 0 var(--gs-space-3) var(--gs-space-4);
+  border-top: 1px solid var(--gs-border);
+  /* A scroll shadow at the top edge, drawn only once the body has scrolled: the
+     cover fades to nothing when the content is at its start, so the shadow is
+     the sign that there is more above and, by its absence, that this is the
+     top. The same idea keeps a small shadow at the foot while there is more. */
+  background:
+    linear-gradient(var(--gs-card) 30%, rgba(0, 0, 0, 0)) center top / 100% 24px
+      no-repeat local,
+    linear-gradient(rgba(0, 0, 0, 0), var(--gs-card) 70%) center bottom / 100%
+      24px no-repeat local,
+    radial-gradient(
+        farthest-side at 50% 0,
+        rgba(0, 0, 0, 0.22),
+        rgba(0, 0, 0, 0)
+      )
+      center top / 100% 10px no-repeat scroll,
+    radial-gradient(
+        farthest-side at 50% 100%,
+        rgba(0, 0, 0, 0.22),
+        rgba(0, 0, 0, 0)
+      )
+      center bottom / 100% 10px no-repeat scroll;
+  background-color: var(--gs-card);
 }
 .gen-studio .gs-sheet-body:focus-visible {
   outline: none;
@@ -10709,12 +10739,49 @@ html:has(app-gs-sheet) {
   flex: 1 1 0;
   min-width: 0;
 }
+/* The tutorial's progress along the sheet's top edge: a segment per step, the
+   ones read so far in the area's hue. It is information rather than a control
+   (the dot list in the body is the control), so it can be three pixels tall. */
+.gen-studio .gs-tut-progress {
+  display: flex;
+  gap: 2px;
+  height: 3px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+}
+.gen-studio .gs-tut-progress-seg {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--gs-border);
+  transition: background-color var(--gs-dur) var(--gs-ease);
+}
+.gen-studio .gs-tut-progress-seg--done {
+  background: var(--gs-sec, var(--gs-blue));
+}
+/* Above the body: the count and the dot list, on the surface the bar has, so
+   the scrolling card under them reads as the thing that scrolls. */
+.gen-studio .gs-tut-body-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+  margin: 0 calc(-1 * var(--gs-space-3));
+  padding: var(--gs-space-2) var(--gs-space-3) var(--gs-space-2);
+  background: var(--gs-card);
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-body-head .gs-learn-progress {
+  margin: 0;
+}
 .gen-studio .gs-tut-dot {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 44px;
+  height: 32px;
   padding: 0;
   border: 0;
   background: transparent;

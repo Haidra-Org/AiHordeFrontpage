@@ -363,6 +363,17 @@
     @apply flex items-center justify-center p-4;
   }
 
+  /* CDK's BlockScrollStrategy pins the document while something modal is up
+     (a dialog, the studio's sheet above its bar) by putting this class on the
+     root and an offsetting top on it. The prebuilt overlay stylesheet is not
+     imported here, so the one structural rule it needs lives with the rest of
+     the CDK styling. */
+  .cdk-global-scrollblock {
+    position: fixed;
+    width: 100%;
+    overflow-y: scroll;
+  }
+
   .glossary-related-heading {
     @apply text-sm font-semibold text-gray-700 mb-3;
   }

@@ -5,32 +5,31 @@
   [label]="'generate.learn.sheet_label' | transloco"
   [dismissible]="false"
 >
-  <div sheet-bar class="gs-tut-bar">
-    <ol
-      class="gs-tut-dots"
-      [attr.aria-label]="'generate.learn.sheet_steps_label' | transloco"
-    >
-      @for (entry of steps(); track entry.id; let i = $index) {
-        <li>
-          <button
-            type="button"
-            class="gs-tut-dot"
-            [class]="identityFor(entry)?.className"
-            [class.gs-tut-dot--on]="isCurrent(i)"
-            [class.gs-tut-dot--done]="i < stepIndex()"
-            [attr.aria-current]="isCurrent(i) ? 'step' : null"
-            [attr.aria-label]="
-              'generate.learn.sheet_step'
-                | transloco: { n: i + 1, title: titleKey(entry) | transloco }
-            "
-            (click)="goTo(i)"
-          >
-            <span class="gs-tut-dot-mark" aria-hidden="true"></span>
-          </button>
-        </li>
-      }
-    </ol>
+  <!-- Progress along the sheet's top edge: three pixels, one segment per step,
+       filled to the step on show. It costs the peek row no height, and it is
+       the same information the dot list in the body carries as controls. -->
+  <div
+    sheet-edge
+    class="gs-tut-progress"
+    role="progressbar"
+    [attr.aria-label]="'generate.learn.steps_label' | transloco"
+    [attr.aria-valuemin]="1"
+    [attr.aria-valuemax]="steps().length"
+    [attr.aria-valuenow]="stepIndex() + 1"
+    [attr.aria-valuetext]="
+      'generate.learn.sheet_progress' | transloco: progressParams()
+    "
+  >
+    @for (entry of steps(); track entry.id; let i = $index) {
+      <span
+        class="gs-tut-progress-seg"
+        [class]="identityFor(entry)?.className"
+        [class.gs-tut-progress-seg--done]="i <= stepIndex()"
+      ></span>
+    }
+  </div>
 
+  <div sheet-bar class="gs-tut-bar">
     @if (step(); as current) {
       <div class="gs-tut-bar-row">
         <span class="gs-tut-bar-title">{{
@@ -75,9 +74,35 @@
   } @else if (loading()) {
     <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
   } @else if (step(); as current) {
-    <p class="gs-learn-progress" role="status" aria-live="polite">
-      {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
-    </p>
+    <div class="gs-tut-body-head">
+      <p class="gs-learn-progress" role="status" aria-live="polite">
+        {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
+      </p>
+      <ol
+        class="gs-tut-dots"
+        [attr.aria-label]="'generate.learn.sheet_steps_label' | transloco"
+      >
+        @for (entry of steps(); track entry.id; let i = $index) {
+          <li>
+            <button
+              type="button"
+              class="gs-tut-dot"
+              [class]="identityFor(entry)?.className"
+              [class.gs-tut-dot--on]="isCurrent(i)"
+              [class.gs-tut-dot--done]="i < stepIndex()"
+              [attr.aria-current]="isCurrent(i) ? 'step' : null"
+              [attr.aria-label]="
+                'generate.learn.sheet_step'
+                  | transloco: { n: i + 1, title: titleKey(entry) | transloco }
+              "
+              (click)="goTo(i)"
+            >
+              <span class="gs-tut-dot-mark" aria-hidden="true"></span>
+            </button>
+          </li>
+        }
+      </ol>
+    </div>
 
     <!-- The card wears the hue of the area its step is about and breathes in
          step with the field it points at, so the pair reads as one thing on a
