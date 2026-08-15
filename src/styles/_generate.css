@@ -8822,6 +8822,19 @@ app-gs-compare-wipe {
 }
 
 /* The Learn page's way into the studio. */
+/* The hand-off at the foot of the steps: eyebrow, the recap, and a door to the
+   next technique in the chain. */
+.gen-studio .gs-tut-next {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-next .gs-cap-eyebrow {
+  margin: 0;
+}
 .gs-tut .gs-tut-start {
   display: flex;
   flex-wrap: wrap;

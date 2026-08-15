@@ -362,6 +362,16 @@ export class DocsImageExampleComponent {
     return null;
   });
 
+  /** The technique this one hands on to, or null at the end of the chain. */
+  public readonly nextFlowId = computed<string | null>(() => {
+    const id = this.activeId();
+    return id ? (flowDef(id)?.next ?? null) : null;
+  });
+
+  public goToFlow(flowId: string): void {
+    void this.router.navigateByUrl(docsExampleLink(flowId));
+  }
+
   /** The picture the enlarged view is showing, if it is open. */
   public readonly enlargedShot = computed<TutorialShot | null>(() => {
     const at = this.enlargedAt();
@@ -660,25 +670,26 @@ export class DocsImageExampleComponent {
    * regenerated. Null is a complete answer: the submitting step reads as a
    * whole sentence without it.
    */
-  public readonly runCost = computed<{ time: number; kudos: number } | null>(
-    () => {
-      const meta = this.activeDetail()?.meta;
-      if (
-        !meta ||
-        meta.wall_time_seconds === undefined ||
-        meta.kudos_charged === undefined
-      ) {
-        return null;
-      }
-      return {
-        time: Math.round(meta.wall_time_seconds),
-        kudos: meta.kudos_charged,
-      };
-    },
-  );
+  public readonly runCost = computed<{
+    time: number;
+    kudos: number | null;
+  } | null>(() => {
+    const meta = this.activeDetail()?.meta;
+    if (!meta || meta.wall_time_seconds === undefined) {
+      return null;
+    }
+    // A run made on the worker software directly was charged nothing, and
+    // says so by having no kudos line rather than a zero.
+    return {
+      time: Math.round(meta.wall_time_seconds),
+      kudos: meta.kudos_charged ?? null,
+    };
+  });
 
   /** The run's cost, for the one step that submits the request. */
-  public runCostFor(step: string): { time: number; kudos: number } | null {
+  public runCostFor(
+    step: string,
+  ): { time: number; kudos: number | null } | null {
     return step === 'generate' ? this.runCost() : null;
   }
 

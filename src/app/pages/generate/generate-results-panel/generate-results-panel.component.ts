@@ -298,6 +298,14 @@ export class GenerateResultsPanelComponent {
   public readonly tutorialOpen = this.tutorial.active;
   /** The tutorial's parting note, shown over the results it just made room for. */
   public readonly tutorialCompleted = this.tutorial.completed;
+  /** The technique the finished tutorial hands on to, offered on the card. */
+  public readonly nextTutorial = this.tutorial.nextFlow;
+  public readonly finishedTutorial = this.tutorial.finishedFlowId;
+
+  public startNextTutorial(flowId: string): void {
+    this.tutorial.dismissCompletion();
+    void this.tutorial.start(flowId);
+  }
 
   /**
    * The ways in offered to a reader who has not been here before. The first

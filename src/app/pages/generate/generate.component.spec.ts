@@ -266,7 +266,9 @@ describe('GenerateComponent', () => {
       { kind: string; blob: Blob; mimeType: string }[],
     ];
     expect(request.source_processing).toBe('inpainting');
-    expect(request.params?.denoising_strength).toBe(0.6);
+    // The masked region is replaced outright: inpainting shows no strength
+    // control, so the img2img slider's value does not ride along.
+    expect(request.params?.denoising_strength).toBe(1);
     expect(sources).toHaveLength(2);
     expect(sources.map((s) => s.kind)).toEqual(['source', 'mask']);
     expect(sources[0].blob).toBe(sourceBlob);

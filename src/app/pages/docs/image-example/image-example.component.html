@@ -189,7 +189,12 @@
                           [params]="copyParams()"
                         />
                         @if (runCostFor(entry.step.id); as cost) {
-                          {{ "generate.tutorials.run_cost" | transloco: cost }}
+                          {{
+                            (cost.kudos === null
+                              ? "generate.tutorials.run_time"
+                              : "generate.tutorials.run_cost"
+                            ) | transloco: cost
+                          }}
                         }
                       </p>
                       <!-- The strips the studio pane shows under the same step,
@@ -206,6 +211,41 @@
                     </li>
                   }
                 </ol>
+                <!-- One lesson hands on to the next, in a sentence that says
+                     what was learned and where it leads, so the reader can
+                     chain rather than go back to the picker. -->
+                @if (nextFlowId(); as next) {
+                  <div class="gs-tut-next">
+                    <p class="gs-cap-eyebrow">
+                      <span class="gs-cap-dot" aria-hidden="true"></span>
+                      {{ "generate.learn.next_head" | transloco }}
+                    </p>
+                    <p class="gs-tut-body">
+                      {{
+                        "generate.learn.flows." + flowId + ".next.body"
+                          | transloco
+                      }}
+                    </p>
+                    <app-gs-door
+                      kind="grid"
+                      [title]="
+                        'generate.learn.next_cta'
+                          | transloco
+                            : {
+                                task:
+                                  'generate.tutorials.flows.' +
+                                    next +
+                                    '.task_name' | transloco,
+                              }
+                      "
+                      [meta]="
+                        'generate.tutorials.flows.' + next + '.technique'
+                          | transloco
+                      "
+                      (entered)="goToFlow(next)"
+                    />
+                  </div>
+                }
               </section>
             }
 
@@ -439,10 +479,14 @@
                   <dt>{{ "generate.tutorials.meta_seed" | transloco }}</dt>
                   <dd class="gs-mono">{{ detail.meta.seed }}</dd>
                 </div>
-                <div class="gs-tut-meta-row">
-                  <dt>{{ "generate.tutorials.meta_kudos" | transloco }}</dt>
-                  <dd>{{ detail.meta.kudos_charged }}</dd>
-                </div>
+                <!-- Only a run through the horde was charged; a render on the
+                     worker software directly has no kudos line to show. -->
+                @if (detail.meta.kudos_charged !== undefined) {
+                  <div class="gs-tut-meta-row">
+                    <dt>{{ "generate.tutorials.meta_kudos" | transloco }}</dt>
+                    <dd>{{ detail.meta.kudos_charged }}</dd>
+                  </div>
+                }
                 <div class="gs-tut-meta-row">
                   <dt>{{ "generate.tutorials.meta_time" | transloco }}</dt>
                   <dd>

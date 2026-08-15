@@ -78,6 +78,12 @@ export interface FlowDef {
    */
   concept?: boolean;
   steps: readonly FlowStep[];
+  /**
+   * The technique that follows this one naturally, offered when the flow is
+   * finished so a reader can chain lessons rather than return to the picker.
+   * The last technique in the chain names none.
+   */
+  next?: string;
 }
 
 /**
@@ -91,6 +97,7 @@ export interface FlowDef {
 export const FLOWS: readonly FlowDef[] = [
   {
     id: 'txt2img',
+    next: 'img2img',
     section: 'prompt',
     steps: [
       {
@@ -147,6 +154,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'img2img',
+    next: 'inpainting',
     section: 'source',
     steps: [
       // The picture itself is the one thing a step cannot write: the form holds
@@ -193,6 +201,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'inpainting',
+    next: 'controlnet',
     section: 'source',
     steps: [
       {
@@ -229,6 +238,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'controlnet',
+    next: 'facefix',
     section: 'source',
     steps: [
       {
@@ -308,6 +318,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'transparent',
+    next: 'qr_code',
     section: 'workflows',
     steps: [
       {
@@ -329,6 +340,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'qr_code',
+    next: 'remix',
     section: 'workflows',
     steps: [
       {
@@ -364,6 +376,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'facefix',
+    next: 'transparent',
     section: 'finishing',
     steps: [
       {

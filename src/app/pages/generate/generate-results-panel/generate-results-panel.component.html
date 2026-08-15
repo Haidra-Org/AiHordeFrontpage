@@ -257,6 +257,32 @@
           <p class="gs-learn-done-body">
             {{ "generate.learn.done.queue" | transloco }}
           </p>
+          <!-- One lesson hands on to the next, so a reader who has just made
+               something can carry straight on rather than go back to the
+               picker to find out what comes after. -->
+          @if (nextTutorial(); as next) {
+            <p class="gs-learn-done-body">
+              {{
+                "generate.learn.flows." + finishedTutorial() + ".next.body"
+                  | transloco
+              }}
+            </p>
+            <button
+              type="button"
+              class="gs-learn-apply gs-learn-cta gs-learn-done-next"
+              (click)="startNextTutorial(next)"
+            >
+              {{
+                "generate.learn.next_cta"
+                  | transloco
+                    : {
+                        task:
+                          "generate.tutorials.flows." + next + ".task_name"
+                          | transloco,
+                      }
+              }}
+            </button>
+          }
         </div>
         <button
           type="button"

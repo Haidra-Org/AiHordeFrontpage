@@ -130,6 +130,7 @@ const CHROME_KEYS = [
   'meta_kudos',
   'meta_time',
   'run_cost',
+  'run_time',
   'recipe_label',
   'recipe_model',
   'recipe_size',

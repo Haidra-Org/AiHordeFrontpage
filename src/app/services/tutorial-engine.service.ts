@@ -35,6 +35,7 @@ import {
 import {
   FlowReveal,
   FlowStep,
+  flowDef,
   flowFollowable,
   flowSteps,
   isConceptFlow,
@@ -227,6 +228,10 @@ export class TutorialEngineService {
   private readonly failed = signal(false);
   private readonly revealed = signal<string | null>(null);
   private readonly finished = signal(false);
+  /** The technique that just finished, so the completion card can offer the next one. */
+  private readonly finishedFlow = signal<string | null>(null);
+  /** The technique that just finished, for the completion card's recap. */
+  public readonly finishedFlowId = this.finishedFlow.asReadonly();
 
   /** The flow the Learn page asked for, consumed once by the studio. */
   private armed: string | null = null;
@@ -452,12 +457,23 @@ export class TutorialEngineService {
     if (!this.active() || !this.onFinale() || isConceptFlow(this.flowId())) {
       return;
     }
+    this.finishedFlow.set(this.flowId());
     this.finished.set(true);
     this.stop();
   }
 
+  /**
+   * The technique the flow that just finished hands on to, or null where the
+   * chain ends. Read by the completion card; cleared with the card.
+   */
+  public readonly nextFlow = computed<string | null>(() => {
+    const finished = this.finishedFlow();
+    return finished ? (flowDef(finished)?.next ?? null) : null;
+  });
+
   public dismissCompletion(): void {
     this.finished.set(false);
+    this.finishedFlow.set(null);
   }
 
   /**
