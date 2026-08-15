@@ -703,7 +703,19 @@ export const SETTINGS: readonly SettingEntry[] = [
     section: 'workflows',
     reference: { related: ['upscaler'] },
   },
-  { id: 'qr', section: 'workflows', reference: { related: ['batch'] } },
+  {
+    id: 'qr',
+    section: 'workflows',
+    reference: { related: ['batch', 'prompt'] },
+    sweeps: {
+      // The strength strip is the workflow's one dial, rendered locally because
+      // the public API has no field to carry it. The style strip is what the
+      // workflow is for once that argument is settled: three finished codes,
+      // with the layout entries that ride beside the payload.
+      strip: 'control_strength',
+      alsoStrips: [{ parameter: 'qr_style' }],
+    },
+  },
 ];
 
 const SETTING_BY_ID: ReadonlyMap<string, SettingEntry> = new Map(
@@ -717,6 +729,10 @@ const SETTING_BY_ID: ReadonlyMap<string, SettingEntry> = new Map(
  */
 const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   cfg_scale: 'cfg',
+  // Both QR strips are readings of the one field the panel has: the payload box
+  // that selects the workflow. Neither has a control of its own to be named by.
+  control_strength: 'qr',
+  qr_style: 'qr',
   denoising_strength: 'denoise',
   hires_fix: 'hires',
   hires_fix_denoising_strength: 'hires_denoise',

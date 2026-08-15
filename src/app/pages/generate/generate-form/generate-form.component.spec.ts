@@ -5,6 +5,7 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
   GenerateFormValue,
+  QR_MODULE_DRAWERS,
   buildStyledImageRequest,
   createGenerateForm,
 } from '../generate-form.model';
@@ -775,7 +776,9 @@ describe('GenerateFormComponent request warnings', () => {
  * structure is the thing being guaranteed.
  */
 describe('GenerateFormComponent structure', () => {
-  async function render(): Promise<HTMLElement> {
+  async function renderFixture(): Promise<
+    ComponentFixture<GenerateFormComponent>
+  > {
     await TestBed.configureTestingModule({
       imports: [
         GenerateFormComponent,
@@ -798,6 +801,11 @@ describe('GenerateFormComponent structure', () => {
     );
     fixture.componentRef.setInput('forcedParams', null);
     fixture.detectChanges();
+    return fixture;
+  }
+
+  async function render(): Promise<HTMLElement> {
+    const fixture = await renderFixture();
     return fixture.nativeElement as HTMLElement;
   }
 
@@ -824,6 +832,38 @@ describe('GenerateFormComponent structure', () => {
     ).map((section) => section.getAttribute('aria-labelledby'));
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('offers the QR layout controls, and only the shapes the workflow accepts', async () => {
+    const host = await render();
+    const drawer = host.querySelector<HTMLSelectElement>('#generate-qr-module');
+
+    expect(host.querySelector('#generate-qr-x-offset')).not.toBeNull();
+    expect(host.querySelector('#generate-qr-y-offset')).not.toBeNull();
+    expect(drawer).not.toBeNull();
+    // The unset option first, then the renderer's own names: a shape it does
+    // not know is dropped on the worker, so the panel never offers one.
+    expect(Array.from(drawer!.options).map((option) => option.value)).toEqual([
+      '',
+      ...QR_MODULE_DRAWERS,
+    ]);
+  });
+
+  it('disables the QR layout controls with the payload box they belong to', async () => {
+    const fixture = await renderFixture();
+    const host = fixture.nativeElement as HTMLElement;
+
+    fixture.componentRef.setInput('qrSupported', false);
+    fixture.detectChanges();
+
+    const enabled = [
+      'generate-qr-text',
+      'generate-qr-x-offset',
+      'generate-qr-y-offset',
+      'generate-qr-module',
+    ].filter((id) => !host.querySelector(`#${id}`)!.hasAttribute('disabled'));
+
+    expect(enabled).toEqual([]);
   });
 
   it('keeps the warnings region in the document before it has anything to say', async () => {

@@ -59,6 +59,7 @@ import {
   PanelSize,
   PIXEL_WARN_THRESHOLD,
   PromptHistoryEntry,
+  QR_MODULE_DRAWERS,
   RequirementHint,
   SAMPLERS,
   STRIP_BACKGROUND,
@@ -220,6 +221,7 @@ export class GenerateFormComponent implements OnInit {
   public readonly samplers = SAMPLERS;
   public readonly upscalers = UPSCALERS;
   public readonly faceFixers = FACE_FIXERS;
+  public readonly moduleDrawers = QR_MODULE_DRAWERS;
 
   public readonly minBatch = MIN_BATCH;
   public readonly maxBatch = MAX_BATCH;

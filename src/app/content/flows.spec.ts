@@ -264,8 +264,8 @@ describe('the techniques that live in the workflow and finishing cards', () => {
     ]);
     const qr = flowSteps('qr_code').find((step) => step.id === 'qr');
     expect(qr?.anchorId).toBe('qr');
-    // Typing the payload is what selects the workflow, so the text is all there
-    // is to write: control_strength has no control in the panel to point at.
+    // Typing the payload is what selects the workflow, and the committed example
+    // sets no offsets and no module shape, so the text is all there is to write.
     expect(qr?.applyFields).toEqual(['qrText']);
     const recipe = flowSteps('qr_code').find((step) => step.id === 'cfg');
     expect(recipe?.applyFields).toEqual([

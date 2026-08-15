@@ -691,6 +691,39 @@ describe('buildImageRequest extras', () => {
     expect(bare.params?.extra_texts).toBeUndefined();
   });
 
+  it('sends the layout knobs beside the payload, and only when set', () => {
+    const request = buildImageRequest(
+      value({
+        qrText: 'https://aihorde.net',
+        qrXOffset: ' 48 ',
+        qrYOffset: '48',
+        qrModuleDrawer: 'Circle',
+      }),
+    );
+    expect(request.params?.extra_texts).toEqual([
+      { text: 'https://aihorde.net', reference: 'qr_code' },
+      { text: '48', reference: 'x_offset' },
+      { text: '48', reference: 'y_offset' },
+      { text: 'Circle', reference: 'module_drawer' },
+    ]);
+
+    // Unset, and anything that is not a whole number of pixels, sends nothing:
+    // the workflow's own defaults are a centred code drawn as squares.
+    const partial = buildImageRequest(
+      value({ qrText: 'https://aihorde.net', qrXOffset: '-8', qrYOffset: '' }),
+    );
+    expect(partial.params?.extra_texts).toEqual([
+      { text: 'https://aihorde.net', reference: 'qr_code' },
+    ]);
+  });
+
+  it('leaves the layout knobs off a request with no QR payload', () => {
+    const request = buildImageRequest(
+      value({ qrText: '', qrXOffset: '48', qrModuleDrawer: 'Circle' }),
+    );
+    expect(request.params?.extra_texts).toBeUndefined();
+  });
+
   it('maps remix onto its own source processing without a denoise pass', () => {
     const request = buildImageRequest(value({ sourceMode: 'remix' }), {
       hasSourceImage: true,
@@ -728,6 +761,45 @@ describe('requestToFormValue extras', () => {
     expect(recovered.workers).toEqual([]);
     expect(recovered.workerBlacklist).toBe(false);
     expect(recovered.qrText).toBe('');
+    expect(recovered.qrXOffset).toBe('');
+    expect(recovered.qrYOffset).toBe('');
+    expect(recovered.qrModuleDrawer).toBe('');
+  });
+
+  it('reads the QR layout back out of extra_texts', () => {
+    const recovered = requestToFormValue(
+      buildImageRequest(
+        value({
+          qrText: 'https://aihorde.net',
+          qrXOffset: '48',
+          qrYOffset: '64',
+          qrModuleDrawer: 'Circle',
+        }),
+      ),
+    );
+
+    expect(recovered.qrXOffset).toBe('48');
+    expect(recovered.qrYOffset).toBe('64');
+    expect(recovered.qrModuleDrawer).toBe('Circle');
+  });
+
+  it('reads a hand-written drawer name as the option the panel holds', () => {
+    // The worker matches the name case-insensitively, so a request written by
+    // hand is the same choice and has to land on the same option.
+    const recovered = requestToFormValue({
+      prompt: 'a fox',
+      params: {
+        workflow: 'qr_code',
+        extra_texts: [
+          { text: 'https://aihorde.net', reference: 'qr_code' },
+          { text: 'circle', reference: 'module_drawer' },
+          { text: 'sideways', reference: 'x_offset' },
+        ],
+      },
+    });
+
+    expect(recovered.qrModuleDrawer).toBe('Circle');
+    expect(recovered.qrXOffset).toBe('');
   });
 });
 
@@ -746,6 +818,15 @@ describe('coerceFormValue extras', () => {
     expect(merged.workerBlacklist).toBe(false);
     expect(merged.qrText).toBe('');
     expect(merged.rememberExtras).toBe(true);
+  });
+
+  it('rejects a persisted drawer name the workflow does not accept', () => {
+    expect(coerceFormValue({ qrModuleDrawer: 'Circle' }).qrModuleDrawer).toBe(
+      'Circle',
+    );
+    expect(coerceFormValue({ qrModuleDrawer: 'Hexagon' }).qrModuleDrawer).toBe(
+      '',
+    );
   });
 
   it('accepts remix as a persisted source mode', () => {

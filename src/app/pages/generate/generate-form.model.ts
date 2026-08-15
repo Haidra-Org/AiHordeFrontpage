@@ -185,6 +185,51 @@ export function isValidWebhook(webhook: string): boolean {
 /** The `extra_texts` reference the `qr_code` workflow reads its payload from. */
 export const QR_CODE_TEXT_REFERENCE = 'qr_code';
 
+/**
+ * The further `extra_texts` references the `qr_code` workflow reads its layout
+ * from. The offsets place the code's top-left corner in the frame; left unset,
+ * the workflow centres it.
+ */
+export const QR_X_OFFSET_REFERENCE = 'x_offset';
+export const QR_Y_OFFSET_REFERENCE = 'y_offset';
+export const QR_MODULE_DRAWER_REFERENCE = 'module_drawer';
+
+/**
+ * How the code's modules are drawn before the picture is grown over them. These
+ * are the renderer's own names for the six shapes it accepts; anything else is
+ * dropped on the worker, so the panel offers this set and nothing wider.
+ */
+export const QR_MODULE_DRAWERS = [
+  'Square',
+  'Gapped square',
+  'Circle',
+  'Rounded',
+  'Vertical bars',
+  'Horizontal bars',
+] as const;
+export type QrModuleDrawer = (typeof QR_MODULE_DRAWERS)[number];
+
+/** A QR offset the worker accepts: a whole number of pixels, never negative. */
+const QR_OFFSET_PATTERN = /^\d+$/;
+
+/** The offset as the request should carry it, or null when it is unset or unusable. */
+export function qrOffsetText(raw: string): string | null {
+  const trimmed = raw.trim();
+  return QR_OFFSET_PATTERN.test(trimmed) ? trimmed : null;
+}
+
+/**
+ * The drawer name the panel holds, read out of whatever a request carries. The
+ * worker matches the name case-insensitively, so a request written by hand with
+ * a lowercase name is the same choice and reads back as the same option.
+ */
+export function drawerNameFor(raw: string | null): QrModuleDrawer | null {
+  const name = raw?.trim().toLowerCase();
+  return (
+    QR_MODULE_DRAWERS.find((drawer) => drawer.toLowerCase() === name) ?? null
+  );
+}
+
 export const MIN_HIRES_DENOISE = 0.01;
 export const MAX_HIRES_DENOISE = 1;
 export const DEFAULT_HIRES_DENOISE = 0.65;
@@ -600,6 +645,15 @@ export interface GenerateFormValue {
   /** Payload for the `qr_code` workflow; '' leaves the workflow unset. */
   qrText: string;
   /**
+   * Where the code sits in the frame, in pixels from the left and top edge, and
+   * which shape its modules are drawn as. All three ride the request beside the
+   * payload and all three are opt-in: '' sends nothing and the workflow uses its
+   * own defaults, which are a centred code drawn as squares.
+   */
+  qrXOffset: string;
+  qrYOffset: string;
+  qrModuleDrawer: QrModuleDrawer | '';
+  /**
    * Opt-in to persisting the webhook and worker routing between sessions. These
    * carry account-shaped detail that should not linger in local storage unless
    * the user asks for it, so {@link stripEphemeralExtras} blanks them on the way
@@ -657,6 +711,9 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   workers: [],
   workerBlacklist: false,
   qrText: '',
+  qrXOffset: '',
+  qrYOffset: '',
+  qrModuleDrawer: '',
   rememberExtras: false,
 };
 
@@ -921,6 +978,15 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
+    if (key === 'qrModuleDrawer') {
+      if (
+        value === '' ||
+        (QR_MODULE_DRAWERS as readonly string[]).includes(value as string)
+      ) {
+        merged.qrModuleDrawer = value as QrModuleDrawer | '';
+      }
+      continue;
+    }
     if (key === 'seed_variation') {
       merged.seed_variation = Math.round(
         clampNumber(
@@ -988,6 +1054,9 @@ export function createGenerateForm(
     workers: control(value.workers),
     workerBlacklist: control(value.workerBlacklist),
     qrText: control(value.qrText),
+    qrXOffset: control(value.qrXOffset),
+    qrYOffset: control(value.qrYOffset),
+    qrModuleDrawer: control(value.qrModuleDrawer),
     rememberExtras: control(value.rememberExtras),
   });
 }
@@ -1244,10 +1313,27 @@ export function buildImageRequest(
     }
   }
 
+  // The layout entries only mean anything beside a payload, so they ride the
+  // same test the workflow itself is selected by; each is sent only when set.
   const qrText = value.qrText.trim();
   if (qrText) {
     params.workflow = 'qr_code';
-    params.extra_texts = [{ text: qrText, reference: QR_CODE_TEXT_REFERENCE }];
+    const extraTexts = [{ text: qrText, reference: QR_CODE_TEXT_REFERENCE }];
+    const xOffset = qrOffsetText(value.qrXOffset);
+    if (xOffset !== null) {
+      extraTexts.push({ text: xOffset, reference: QR_X_OFFSET_REFERENCE });
+    }
+    const yOffset = qrOffsetText(value.qrYOffset);
+    if (yOffset !== null) {
+      extraTexts.push({ text: yOffset, reference: QR_Y_OFFSET_REFERENCE });
+    }
+    if (value.qrModuleDrawer) {
+      extraTexts.push({
+        text: value.qrModuleDrawer,
+        reference: QR_MODULE_DRAWER_REFERENCE,
+      });
+    }
+    params.extra_texts = extraTexts;
   }
 
   const request: ImageGenerationRequest = {
@@ -1504,11 +1590,26 @@ export function requestToFormValue(
   result.workerBlacklist = request.worker_blacklist === true;
 
   if (Array.isArray(params.extra_texts)) {
-    const qr = params.extra_texts.find(
-      (entry) => entry.reference === QR_CODE_TEXT_REFERENCE,
-    );
-    if (qr && typeof qr.text === 'string') {
-      result.qrText = qr.text;
+    const entries = params.extra_texts;
+    const textFor = (reference: string): string | null => {
+      const entry = entries.find((item) => item.reference === reference);
+      return entry && typeof entry.text === 'string' ? entry.text : null;
+    };
+    const qr = textFor(QR_CODE_TEXT_REFERENCE);
+    if (qr !== null) {
+      result.qrText = qr;
+    }
+    const xOffset = textFor(QR_X_OFFSET_REFERENCE);
+    if (xOffset !== null && qrOffsetText(xOffset) !== null) {
+      result.qrXOffset = xOffset.trim();
+    }
+    const yOffset = textFor(QR_Y_OFFSET_REFERENCE);
+    if (yOffset !== null && qrOffsetText(yOffset) !== null) {
+      result.qrYOffset = yOffset.trim();
+    }
+    const drawer = drawerNameFor(textFor(QR_MODULE_DRAWER_REFERENCE));
+    if (drawer !== null) {
+      result.qrModuleDrawer = drawer;
     }
   }
 

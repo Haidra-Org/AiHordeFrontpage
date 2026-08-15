@@ -1361,6 +1361,74 @@
                   {{ "generate.form.qr_batch_note" | transloco }}
                 </p>
               }
+
+              <!-- Where the code sits and how its modules are drawn. Left alone
+                   they send nothing and the workflow centres a square code, so
+                   the row is three opt-ins rather than three defaults. -->
+              <div class="gs-grid-2 mt-2.5">
+                <div>
+                  <label class="gs-slabel" for="generate-qr-x-offset">
+                    {{ "generate.form.qr_x_offset_label" | transloco }}
+                  </label>
+                  <input
+                    id="generate-qr-x-offset"
+                    class="gs-seed-input mt-1.5"
+                    type="number"
+                    min="0"
+                    step="8"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    formControlName="qrXOffset"
+                    [attr.disabled]="qrAllowed() ? null : true"
+                    [placeholder]="
+                      'generate.form.qr_offset_placeholder' | transloco
+                    "
+                    aria-describedby="generate-qr-layout-hint"
+                  />
+                </div>
+                <div>
+                  <label class="gs-slabel" for="generate-qr-y-offset">
+                    {{ "generate.form.qr_y_offset_label" | transloco }}
+                  </label>
+                  <input
+                    id="generate-qr-y-offset"
+                    class="gs-seed-input mt-1.5"
+                    type="number"
+                    min="0"
+                    step="8"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    formControlName="qrYOffset"
+                    [attr.disabled]="qrAllowed() ? null : true"
+                    [placeholder]="
+                      'generate.form.qr_offset_placeholder' | transloco
+                    "
+                    aria-describedby="generate-qr-layout-hint"
+                  />
+                </div>
+              </div>
+              <div class="mt-2.5">
+                <label class="gs-slabel" for="generate-qr-module">
+                  {{ "generate.form.qr_module_label" | transloco }}
+                </label>
+                <select
+                  id="generate-qr-module"
+                  class="gs-native-select gs-native-select--sm mt-1.5"
+                  formControlName="qrModuleDrawer"
+                  [attr.disabled]="qrAllowed() ? null : true"
+                  aria-describedby="generate-qr-layout-hint"
+                >
+                  <option value="">
+                    {{ "generate.form.qr_module_default" | transloco }}
+                  </option>
+                  @for (drawer of moduleDrawers; track drawer) {
+                    <option [value]="drawer">{{ drawer }}</option>
+                  }
+                </select>
+              </div>
+              <p id="generate-qr-layout-hint" class="gs-sublabel mt-1.5">
+                {{ "generate.form.qr_layout_hint" | transloco }}
+              </p>
             </div>
           </section>
         }

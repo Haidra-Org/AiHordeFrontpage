@@ -13,6 +13,7 @@ import {
   settingNoteKey,
   settingProseLabelKey,
   settingSection,
+  settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
   settingTitleKey,
@@ -261,6 +262,16 @@ describe('settings sweeps', () => {
     expect(settingLabelKey('step_preview')).not.toBe(
       SETTING_FALLBACK_LABEL_KEY,
     );
+  });
+
+  it('files both QR strips under the one field the panel has', () => {
+    // Neither the strength nor the treatments have a control of their own: the
+    // payload box is what selects the workflow, and both strips are about it.
+    expect(settingSweepStrip('qr')).toBe('control_strength');
+    expect(settingSweepAlsoStrips('qr')).toEqual([{ parameter: 'qr_style' }]);
+    expect(settingIdFor('control_strength')).toBe('qr');
+    expect(settingIdFor('qr_style')).toBe('qr');
+    expect(settingLabelKey('qr_style')).toBe(settingLabelKey('qr'));
   });
 
   it('has nothing to show for a setting no strip was rendered for', () => {

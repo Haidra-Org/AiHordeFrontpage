@@ -582,7 +582,7 @@ describe('TutorialEngineService', () => {
       params: {
         ...request.params,
         sampler_name: 'k_euler',
-        cfg_scale: 4,
+        cfg_scale: 7.5,
         steps: 25,
         karras: false,
         workflow: 'qr_code',
@@ -604,7 +604,7 @@ describe('TutorialEngineService', () => {
       expect(engine.example()?.qrText).toBe(QR_TEXT);
       expect(engine.copyParams()['qr']).toBe(QR_TEXT);
       expect(engine.copyParams()['sampler']).toBe('k_euler');
-      expect(engine.copyParams()['cfg']).toBe(4);
+      expect(engine.copyParams()['cfg']).toBe(7.5);
     });
 
     it('walks every step to the finale, writing what each one names', () => {
@@ -643,7 +643,7 @@ describe('TutorialEngineService', () => {
         [
           'cfg',
           {
-            cfg_scale: 4,
+            cfg_scale: 7.5,
             steps: 25,
             sampler_name: 'k_euler',
             karras: false,
