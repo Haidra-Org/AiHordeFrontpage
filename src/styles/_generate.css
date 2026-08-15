@@ -6712,11 +6712,11 @@
   color: var(--gs-ink-2);
 }
 
-/* The flow picker, on the Learn area's contents rail. It keeps the rail's bar
-   form at every width rather than taking the column form the wide step would
-   otherwise give it: the dossier below already spends both gutters, and a
-   third column of flows beside it would leave neither the walkthrough nor the
-   evidence a readable width. */
+/* The flow picker, on the Learn area's contents rail and on the same layout the
+   guide and the settings reference put it on: a scrolling bar above the dossier
+   below the wide step, a sticky contents column beside it above one. The width
+   the column costs is paid for out of the page's margins rather than out of the
+   dossier, which is why the wide step widens the page as it adds the column. */
 .gen-studio .gs-tut-picker {
   min-width: 0;
 }
@@ -7084,8 +7084,10 @@
    step being read rather than scrolling away from it. Everything narrower than
    this is the stacked column, in the same order. */
 @media (min-width: 1200px) {
+  /* The contents column and the gap to it, on top of the 1200px the dossier
+     reads at, so adding the column takes nothing off the two panes. */
   .gen-studio .gs-tut-inner {
-    max-width: 1200px;
+    max-width: 1440px;
   }
   .gen-studio .gs-tut-panes {
     display: grid;
@@ -10749,6 +10751,17 @@ html:has(app-gs-sheet) {
   text-transform: uppercase;
   color: var(--gs-muted);
 }
+/* The second name an entry may carry. It is a whole line of its own, so only
+   the column form has room for it; the row form is one line per entry and drops
+   it rather than letting the bar grow a second. */
+.gen-studio .gs-index-entry-sub {
+  display: none;
+  flex-basis: 100%;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gs-muted);
+}
 .gen-studio .gs-index-entry--muted .gs-index-entry-label {
   color: var(--gs-muted);
 }
@@ -10839,6 +10852,11 @@ html:has(app-gs-sheet) {
     min-height: 0;
     padding: 8px 10px 8px 12px;
     white-space: normal;
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  .gen-studio .gs-index-entry-sub {
+    display: block;
   }
   .gen-studio .gs-index-entry + .gs-index-entry {
     border-left: 0;
@@ -10880,6 +10898,10 @@ html:has(app-gs-sheet) {
     min-height: 44px;
     padding: 0 12px;
     white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  .gen-studio .gs-index-rail--bar .gs-index-entry-sub {
+    display: none;
   }
   .gen-studio .gs-index-rail--bar .gs-index-entry + .gs-index-entry {
     border-top: 0;

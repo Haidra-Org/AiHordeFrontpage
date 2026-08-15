@@ -315,6 +315,39 @@ describe('DocsImageExampleComponent', () => {
     );
   });
 
+  it('names the technique under the task on every picker line', () => {
+    flushAll(harness);
+
+    const translations = en as Record<string, string>;
+    const lines = harness.query<HTMLElement>('.gs-index-entry');
+
+    // The technique is what a reader who already knows one comes looking for,
+    // so it is on the line rather than only inside the page.
+    expect(
+      lines.map((line) =>
+        line.querySelector('.gs-index-entry-sub')?.textContent?.trim(),
+      ),
+    ).toEqual(
+      CANONICAL.map(
+        (flow) => translations[`generate.tutorials.flows.${flow.id}.technique`],
+      ),
+    );
+  });
+
+  it('lays the picker out as the contents column the wide step gives it', () => {
+    flushAll(harness);
+
+    const rail = harness.query<HTMLElement>('app-gs-index-rail')[0];
+
+    // The page is on the shared contents layout, which is a plain column with
+    // the rail as a bar above the dossier below the wide step and a grid with
+    // the rail beside it above one. Holding the bar form at every width is what
+    // the `--bar` class does, and this page no longer asks for it.
+    expect(rail.parentElement?.classList).toContain('gs-index-layout');
+    expect(rail.classList).toContain('gs-tut-picker');
+    expect(rail.classList).not.toContain('gs-index-rail--bar');
+  });
+
   it('keeps a flow with no example in the picker, muted and annotated', () => {
     flushAll(harness, SKIPPED_MANIFEST);
 
@@ -693,6 +726,9 @@ describe('DocsImageExampleComponent', () => {
     // to say what it would have made.
     for (const flow of CANONICAL) {
       expected.add(`generate.tutorials.flows.${flow.id}.task_name`);
+      // And by the technique behind the task, which is the second name the
+      // picker sets under the first.
+      expected.add(`generate.tutorials.flows.${flow.id}.technique`);
       // Every flow overrides the manifest's own summary, which is written for
       // someone who already knows the technique.
       expected.add(`generate.tutorials.flows.${flow.id}.summary`);

@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Signal,
   afterRenderEffect,
   computed,
   effect,
@@ -144,8 +145,13 @@ export class DocsImageExampleComponent {
     {},
   );
 
-  /** The picker rail, so the flow on screen can be kept inside its window. */
-  private readonly rail = viewChild<ElementRef<HTMLElement>>('rail');
+  /**
+   * The picker rail, so the flow on screen can be kept inside its window. Read
+   * as an element rather than as the component: what has to be scrolled is the
+   * host, which is what the column form makes scrollable.
+   */
+  private readonly rail: Signal<ElementRef<HTMLElement> | undefined> =
+    viewChild('rail', { read: ElementRef });
 
   private readonly shotTriggers =
     viewChildren<ElementRef<HTMLButtonElement>>('shotTrigger');
@@ -394,9 +400,11 @@ export class DocsImageExampleComponent {
 
   /**
    * The flows as lines of the picker: the same contents idiom the guide and the
-   * settings reference use, routing rather than scrolling. A flow the horde
-   * could not serve is offered all the same, muted and annotated, because what
-   * is missing is worth reading before it is clicked.
+   * settings reference use, routing rather than scrolling. Each line is named by
+   * what the flow makes, with the technique behind it under the name, so a
+   * reader who came looking for "ControlNet" finds it without opening pages. A
+   * flow the horde could not serve is offered all the same, muted and
+   * annotated, because what is missing is worth reading before it is clicked.
    */
   public readonly pickerEntries = computed<readonly GsIndexRailEntry[]>(() => {
     const unavailable = new Set(
@@ -409,6 +417,7 @@ export class DocsImageExampleComponent {
       return {
         id: flow.id,
         labelKey: `generate.tutorials.flows.${flow.id}.task_name`,
+        subLabelKey: `generate.tutorials.flows.${flow.id}.technique`,
         icon: identity?.icon,
         hueClass: identity?.className,
         link: docsExampleLink(flow.id),

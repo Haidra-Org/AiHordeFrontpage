@@ -71,7 +71,11 @@ const ENTRIES: readonly GsIndexRailEntry[] = [
 @Component({
   imports: [GsIndexRailComponent],
   template: `
-    <app-gs-index-rail [entries]="entries()" [labelKey]="labelKey()" />
+    <app-gs-index-rail
+      [entries]="entries()"
+      [labelKey]="labelKey()"
+      [barForm]="barForm()"
+    />
     @for (entry of entries(); track entry.id) {
       <section [id]="entry.targetId"></section>
     }
@@ -80,6 +84,7 @@ const ENTRIES: readonly GsIndexRailEntry[] = [
 class HostComponent {
   public readonly entries = signal<readonly GsIndexRailEntry[]>(ENTRIES);
   public readonly labelKey = signal('generate.guide.toc_label');
+  public readonly barForm = signal(false);
 }
 
 describe('GsIndexRailComponent', () => {
@@ -203,6 +208,21 @@ describe('GsIndexRailComponent', () => {
     expect(entries()[1].getAttribute('aria-current')).toBe('true');
   });
 
+  it('carries the bar form only where the caller asks for it', () => {
+    const rail = (): HTMLElement =>
+      el().querySelector<HTMLElement>('app-gs-index-rail')!;
+
+    // The class is what holds the row form past the width the column form
+    // would otherwise take over at, so a page that wants the bar on a wide
+    // screen is the only page carrying it.
+    expect(rail().classList).not.toContain('gs-index-rail--bar');
+
+    fixture.componentInstance.barForm.set(true);
+    fixture.detectChanges();
+
+    expect(rail().classList).toContain('gs-index-rail--bar');
+  });
+
   it('lets the observer go when the rail does', () => {
     const instance = observer();
 
@@ -220,6 +240,7 @@ const LINK_ENTRIES: readonly GsIndexRailEntry[] = [
     icon: 'sec-prompt',
     hueClass: 'gs-sec--prompt',
     link: ['/docs/image/learn', 'txt2img'],
+    subLabelKey: 'generate.tutorials.flows.txt2img.technique',
   },
   {
     id: 'remix',
@@ -313,6 +334,15 @@ describe('GsIndexRailComponent (link mode)', () => {
     ).toBe(translations['generate.tutorials.unavailable_tag']);
     // Still a way in: what is missing is worth reading before it is clicked.
     expect(noted.getAttribute('href')).toBe('/docs/image/learn/remix');
+  });
+
+  it('sets a second name under the first, where an entry has one', () => {
+    const [named, plain] = entries();
+
+    expect(
+      named.querySelector('.gs-index-entry-sub')?.textContent?.trim(),
+    ).toBe(translations['generate.tutorials.flows.txt2img.technique']);
+    expect(plain.querySelector('.gs-index-entry-sub')).toBeNull();
   });
 
   it('watches nothing, having no section on the page to follow', () => {

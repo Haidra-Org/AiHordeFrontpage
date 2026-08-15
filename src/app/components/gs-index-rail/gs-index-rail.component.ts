@@ -40,6 +40,12 @@ export interface GsIndexRailEntry {
    * something to say about it. The entry stays reachable; it reads muted.
    */
   noteKey?: string;
+  /**
+   * A second name under the first, for a rail whose entries are known by two:
+   * what the page is about, and what it is called elsewhere. Only the column
+   * form shows it, the bar having one line to spend per entry.
+   */
+  subLabelKey?: string;
 }
 
 /**
@@ -118,6 +124,9 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
       }
       @if (entry.noteKey; as noteKey) {
         <span class="gs-index-entry-note">{{ noteKey | transloco }}</span>
+      }
+      @if (entry.subLabelKey; as subLabelKey) {
+        <span class="gs-index-entry-sub">{{ subLabelKey | transloco }}</span>
       }
     </ng-template>
   `,

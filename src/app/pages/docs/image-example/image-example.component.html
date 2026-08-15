@@ -1,15 +1,16 @@
-<div class="gs-tut-inner">
-  <!-- The techniques on the documentation's one contents idiom. It keeps the bar
-       form at every width here: the page's own wide layout already spends both
-       gutters on the dossier, so a sticky column would be a third one. -->
-  <div class="gs-tut-picker" #rail>
-    <app-gs-index-rail
-      [entries]="pickerEntries()"
-      [currentId]="activeId()"
-      [barForm]="true"
-      labelKey="generate.tutorials.picker_label"
-    />
-  </div>
+<div class="gs-tut-inner gs-index-layout">
+  <!-- The techniques on the documentation's one contents idiom, in both of its
+       shapes: a bar above the dossier where the page is one column, a sticky
+       contents column beside it where the page is wide enough to pay for one
+       out of its margins. The enlarged-picture layer is fixed, so the dossier
+       is the only other thing the grid places. -->
+  <app-gs-index-rail
+    class="gs-tut-picker"
+    #rail
+    [entries]="pickerEntries()"
+    [currentId]="activeId()"
+    labelKey="generate.tutorials.picker_label"
+  />
 
   @if (activeId(); as flowId) {
     <article class="gs-tut-flow" [class]="activeIdentity()?.className">
