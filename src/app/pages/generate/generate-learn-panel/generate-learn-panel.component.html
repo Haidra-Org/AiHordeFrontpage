@@ -34,7 +34,9 @@
 } @else {
   <div class="gs-learn-body">
     <div class="gs-learn-main">
-      <p class="gs-learn-progress" role="status" aria-live="polite">
+      <!-- The step count is drawn in the pane's header; this copy is the one
+           a screen reader hears change, so it stays and stays out of sight. -->
+      <p class="sr-only" role="status" aria-live="polite">
         {{ "generate.learn.progress" | transloco: progressParams() }}
       </p>
 
