@@ -217,10 +217,19 @@ describe('GenerateLearnPanelComponent', () => {
     expect(host.applied).toEqual([]);
   });
 
-  it('leaves the tutorial from the exit control', () => {
-    query<HTMLButtonElement>('.gs-learn-exit')[0].click();
+  it('leaves for the results without ending the flow, which waits to be resumed', () => {
+    engine.goTo(2);
 
+    query<HTMLButtonElement>('.gs-learn-leave')[0].click();
+
+    // Parked: off screen but not forgotten, at the step it was left on.
     expect(engine.active()).toBe(false);
+    expect(engine.parked()).toBe(true);
+    expect(engine.stepIndex()).toBe(2);
+
+    engine.resume();
+    expect(engine.active()).toBe(true);
+    expect(engine.stepIndex()).toBe(2);
   });
 
   it('names the flow by its outcome, with the technique behind it', () => {

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,6 +27,7 @@ const CLEARANCE_VAR = '--gs-sheet-clearance';
   `,
 })
 class HostComponent {
+  public readonly sheet = viewChild.required(GsSheetComponent);
   public readonly mounted = signal(true);
   public startExpanded = false;
   public closed = 0;
@@ -46,10 +47,19 @@ describe('GsSheetComponent', () => {
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const find = <T extends Element>(selector: string): T | null =>
     el().querySelector<T>(selector);
+  /** The stop button carrying this label, or null where the sheet has none. */
+  const stopButton = (key: string): HTMLButtonElement | null =>
+    Array.from(el().querySelectorAll<HTMLButtonElement>('.gs-sheet-btn')).find(
+      (button) => button.textContent?.trim() === translations[key],
+    ) ?? null;
   const chevron = (): HTMLButtonElement =>
     el().querySelectorAll<HTMLButtonElement>('.gs-sheet-btn')[0];
   const dismiss = (): HTMLButtonElement =>
-    el().querySelectorAll<HTMLButtonElement>('.gs-sheet-btn')[1];
+    Array.from(el().querySelectorAll<HTMLButtonElement>('.gs-sheet-btn')).find(
+      (button) =>
+        button.getAttribute('aria-label') ===
+        translations['generate.sheet.close'],
+    )!;
   const grab = (): HTMLElement => find<HTMLElement>('.gs-sheet-grab')!;
   const body = (): HTMLElement => find<HTMLElement>('.gs-sheet-body')!;
 
@@ -87,9 +97,9 @@ describe('GsSheetComponent', () => {
     expect(chevron().getAttribute('aria-expanded')).toBe('false');
     expect(chevron().getAttribute('aria-controls')).toBe(body().id);
     expect(body().hidden).toBe(true);
-    expect(chevron().getAttribute('aria-label')).toBe(
-      translations['generate.sheet.expand'],
-    );
+    // The only way to go from the bar is up, and the button says so in words.
+    expect(stopButton('generate.sheet.show')).not.toBeNull();
+    expect(stopButton('generate.sheet.hide')).toBeNull();
   });
 
   it('opens where the caller asks it to, with focus on the heading', async () => {
@@ -100,20 +110,37 @@ describe('GsSheetComponent', () => {
     expect(find('.gs-sheet-slot')?.textContent?.trim()).toBe('Bar');
   });
 
-  it('expands and collapses from the chevron', async () => {
+  it('shows the body from the bar, and hides it again', async () => {
     await setUp();
 
-    chevron().click();
+    stopButton('generate.sheet.show')!.click();
     await settle();
     expect(body().hidden).toBe(false);
     expect(document.activeElement?.tagName).toBe('H2');
-    expect(chevron().getAttribute('aria-label')).toBe(
-      translations['generate.sheet.collapse'],
-    );
+    // At half a reader can go either way, and each way is named.
+    expect(stopButton('generate.sheet.fill')).not.toBeNull();
+    expect(stopButton('generate.sheet.hide')).not.toBeNull();
 
-    chevron().click();
+    stopButton('generate.sheet.hide')!.click();
     await settle();
     expect(body().hidden).toBe(true);
+  });
+
+  it('fills the viewport from half, and shrinks back to half', async () => {
+    await setUp(true);
+
+    stopButton('generate.sheet.fill')!.click();
+    await settle();
+    expect(fixture.componentInstance.sheet().stop()).toBe('full');
+    expect(el().querySelector('.gs-sheet--full')).not.toBeNull();
+    // Full has one way to go, down, and never a way to keep growing.
+    expect(stopButton('generate.sheet.fill')).toBeNull();
+    expect(stopButton('generate.sheet.show')).toBeNull();
+
+    stopButton('generate.sheet.shrink')!.click();
+    await settle();
+    expect(fixture.componentInstance.sheet().stop()).toBe('half');
+    expect(body().hidden).toBe(false);
   });
 
   it('expands on a tap of the grabber', async () => {
@@ -207,7 +234,17 @@ describe('GsSheetComponent', () => {
       expect(find<HTMLElement>('.gs-sheet-panel')?.style.transform).toBe(
         'translateY(50px)',
       );
-      // An expanded sheet does not follow the pointer upwards.
+      // From half the sheet follows both ways, because there is a stop above
+      // as well as below; from full it follows down only.
+      grab().dispatchEvent(pointer('pointermove', 40));
+      fixture.detectChanges();
+      expect(find<HTMLElement>('.gs-sheet-panel')?.style.transform).toBe(
+        'translateY(-60px)',
+      );
+      grab().dispatchEvent(pointer('pointerup', 40));
+      stopButton('generate.sheet.fill')?.click();
+      await settle();
+      grab().dispatchEvent(pointer('pointerdown', 100));
       grab().dispatchEvent(pointer('pointermove', 40));
       fixture.detectChanges();
       expect(find<HTMLElement>('.gs-sheet-panel')?.style.transform).toBe('');

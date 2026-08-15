@@ -46,6 +46,7 @@ import {
 } from '../image-meta-panel/image-meta-panel.component';
 import { GenerateFormValue, splitCombinedPrompt } from '../generate-form.model';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
+import { GsTutorialParkedComponent } from '../../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
@@ -223,6 +224,7 @@ function positivePrompt(prompt: string): string {
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     GenerateLearnPanelComponent,
+    GsTutorialParkedComponent,
     GsParamEntryComponent,
     GsSettingChipComponent,
     RouterLink,

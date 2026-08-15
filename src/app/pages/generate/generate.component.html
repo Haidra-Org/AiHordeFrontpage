@@ -111,6 +111,8 @@
   @if (tutorialActive() && !helpDock.topic()) {
     <app-generate-learn-sheet />
   }
+  <!-- On a phone a parked tutorial's way back sits where the sheet was. -->
+  <app-gs-tutorial-parked class="gs-parked-host gs-parked-host--phone" />
 
   @if (previewRequest(); as request) {
     <app-studio-json-modal

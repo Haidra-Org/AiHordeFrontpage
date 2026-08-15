@@ -10092,8 +10092,20 @@ app-gs-compare-wipe {
 .gen-studio .gs-sheet-panel {
   display: flex;
   flex-direction: column;
-  max-height: min(70dvh, 640px);
-  transition: transform 0.18s ease;
+  max-height: min(56dvh, 560px);
+  transition:
+    transform var(--gs-dur) var(--gs-ease),
+    max-height var(--gs-dur) var(--gs-ease);
+}
+/* Full is the whole viewport, less the safe area: the sheet becomes the page
+   until the reader shrinks it, which is what a reader who finds the half too
+   small to follow asked for. */
+.gen-studio .gs-sheet--full .gs-sheet-panel {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px));
+  height: calc(100dvh - env(safe-area-inset-top, 0px));
+}
+.gen-studio .gs-sheet--full {
+  box-shadow: none;
 }
 /* A dragged sheet is already following the finger; easing it as well would put
    the surface behind the touch that is moving it. */
@@ -10149,6 +10161,19 @@ app-gs-compare-wipe {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The stop buttons carry a word as well as a chevron, because a bare chevron
+   on a bar at the foot of a phone is a guess. */
+.gen-studio .gs-sheet-btn--labelled {
+  width: auto;
+  gap: 4px;
+  padding: 0 10px 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sheet-btn-text {
+  white-space: nowrap;
+}
 .gen-studio .gs-sheet-btn {
   flex: none;
   display: inline-flex;
@@ -10199,6 +10224,147 @@ app-gs-compare-wipe {
    simply overlaps the foot of the page, as it did before it could say so. */
 html:has(app-gs-sheet) {
   scroll-padding-bottom: var(--gs-sheet-clearance, 96px);
+}
+
+/* The way out of the tutorial pane, and the way back to a parked one. Leaving
+   is a real button with a word and an arrow, because a ghost link at the top of
+   a pane is what readers report as no way out. */
+.gen-studio .gs-learn-leave {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--gs-elev-1);
+  transition:
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-learn-leave:hover {
+  background: var(--gs-card);
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-learn-leave:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-parked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--gs-blue-tint-border);
+  border-radius: 12px;
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink);
+  box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-parked-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--gs-panel);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-parked-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 1px;
+}
+.gen-studio .gs-parked-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-parked-where {
+  font-size: 11px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-parked-return {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gs-blue);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-parked-return:hover {
+  filter: brightness(1.08);
+}
+.gen-studio .gs-parked-return:focus-visible,
+.gen-studio .gs-parked-end:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-parked-end {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gs-ink-2);
+  cursor: pointer;
+}
+.gen-studio .gs-parked-end:hover {
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+}
+/* The pane's copy sits over the results; the phone's is fixed where the sheet
+   was, and each is hidden where the other applies. */
+.gen-studio .gs-parked-host--pane {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-parked-host--pane {
+    display: block;
+    padding: 10px 14px 0;
+  }
+  .gen-studio .gs-parked-host--phone {
+    display: none;
+  }
+}
+.gen-studio .gs-parked-host--phone {
+  position: fixed;
+  inset: auto 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+  z-index: 45;
+}
+.gen-studio .gs-parked-host--phone .gs-parked {
+  box-shadow: var(--gs-elev-3);
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-parked,
+  .gen-studio .gs-learn-leave,
+  .gen-studio .gs-parked-return {
+    border: 1px solid ButtonText;
+  }
 }
 
 /* ------- the follow-along tutorial on a phone ------------------------ */

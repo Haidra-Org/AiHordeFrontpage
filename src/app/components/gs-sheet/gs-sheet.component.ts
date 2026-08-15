@@ -21,6 +21,16 @@ import { IconComponent } from '../icon/icon.component';
 
 /** How far along its own height a drag has to travel before it snaps over. */
 const SNAP_FRACTION = 0.25;
+/** A drag past this share of the viewport height jumps two stops rather than one. */
+const LONG_DRAG_FRACTION = 0.45;
+
+/**
+ * How much of the screen the sheet takes: a bar (peek), the step at a readable
+ * height (half), or the whole viewport (full) for a reader who finds the half
+ * too small to read and follow at once.
+ */
+export type SheetStop = 'peek' | 'half' | 'full';
+const STOPS: readonly SheetStop[] = ['peek', 'half', 'full'];
 /** Movement above this is a drag, so the click that follows is not a tap. */
 const DRAG_SLOP_PX = 6;
 /** The clearance to claim while the sheet measures as nothing. */
@@ -39,11 +49,14 @@ let nextInstance = 0;
  * follow-along steps after it), and each of those is content rather than a
  * different way of covering the bottom of the screen.
  *
- * Docked it is a bar: a grabber, whatever the caller projects into
- * `[sheet-bar]`, and the two buttons that open and dismiss it. Expanded it
- * scrolls its own body. It opens from the chevron, from a tap on the grabber
- * and from a drag on the grabber, because on a phone those are one intention
- * and only the last of them is discoverable without reading anything.
+ * It has three stops. At peek it is a bar: a grabber, whatever the caller
+ * projects into `[sheet-bar]`, and the buttons that move it. At half it shows
+ * its body at a readable height and scrolls it. At full it takes the whole
+ * viewport, for a reader who finds the half too small to read and follow at
+ * once. It moves from the labelled buttons, from a tap on the grabber and from a
+ * drag on the grabber, because on a phone those are one intention and only the
+ * last of them is discoverable without reading anything; the buttons carry
+ * words as well as chevrons so the affordance is not a guess.
  *
  * Whether a sheet is the right presentation at all is a question for CSS: the
  * host is display:none from 1024px up, where the studio has a pane to dock
@@ -75,23 +88,44 @@ let nextInstance = 0;
         <div class="gs-sheet-slot">
           <ng-content select="[sheet-bar]" />
         </div>
-        <button
-          type="button"
-          class="gs-sheet-btn"
-          [attr.aria-expanded]="expanded()"
-          [attr.aria-controls]="bodyId"
-          [attr.aria-label]="
-            (expanded() ? 'generate.sheet.collapse' : 'generate.sheet.expand')
-              | transloco
-          "
-          (click)="toggle()"
-        >
-          <app-icon
-            name="chevron-right"
-            class="gs-sheet-chev"
-            [class.gs-sheet-chev--up]="!expanded()"
-          />
-        </button>
+        <!-- One labelled button per direction the sheet can go from where it
+             is: the words say what happens, the chevron says which way. -->
+        @if (stop() !== 'full') {
+          <button
+            type="button"
+            class="gs-sheet-btn gs-sheet-btn--labelled"
+            [attr.aria-expanded]="expanded()"
+            [attr.aria-controls]="bodyId"
+            (click)="up()"
+          >
+            <app-icon
+              name="chevron-right"
+              class="gs-sheet-chev gs-sheet-chev--up"
+            />
+            <span class="gs-sheet-btn-text">{{
+              (stop() === 'peek'
+                ? 'generate.sheet.show'
+                : 'generate.sheet.fill'
+              ) | transloco
+            }}</span>
+          </button>
+        }
+        @if (stop() !== 'peek') {
+          <button
+            type="button"
+            class="gs-sheet-btn gs-sheet-btn--labelled"
+            [attr.aria-controls]="bodyId"
+            (click)="down()"
+          >
+            <app-icon name="chevron-right" class="gs-sheet-chev" />
+            <span class="gs-sheet-btn-text">{{
+              (stop() === 'full'
+                ? 'generate.sheet.shrink'
+                : 'generate.sheet.hide'
+              ) | transloco
+            }}</span>
+          </button>
+        }
         @if (dismissible()) {
           <button
             type="button"
@@ -119,6 +153,7 @@ let nextInstance = 0;
     role: 'dialog',
     '[attr.aria-label]': 'label()',
     '[class.gs-sheet--open]': 'expanded()',
+    '[class.gs-sheet--full]': 'stop() === "full"',
     '[class.gs-sheet--dragging]': 'dragging()',
     '(document:keydown.escape)': 'onEscape()',
   },
@@ -153,8 +188,11 @@ export class GsSheetComponent {
 
   public readonly bodyId = `gs-sheet-body-${nextInstance++}`;
 
-  private readonly open = signal(false);
-  public readonly expanded = this.open.asReadonly();
+  private readonly at = signal<SheetStop>('peek');
+  /** Which stop the sheet is at. */
+  public readonly stop = this.at.asReadonly();
+  /** Whether the body is on screen at all: any stop above peek. */
+  public readonly expanded = computed(() => this.at() !== 'peek');
 
   public readonly dragging = signal(false);
   private readonly dragOffset = signal(0);
@@ -163,9 +201,9 @@ export class GsSheetComponent {
     return offset === 0 ? null : `translateY(${offset}px)`;
   });
 
-  /** Where the drag started, and which state it started from. */
+  /** Where the drag started, and which stop it started from. */
   private startY = 0;
-  private startedExpanded = false;
+  private startedAt: SheetStop = 'peek';
   /** Whether the pointer moved far enough that the click after it is no tap. */
   private moved = false;
 
@@ -176,7 +214,7 @@ export class GsSheetComponent {
     // state is taken when it arrives rather than read out of the constructor.
     effect(() => {
       const start = this.startExpanded();
-      untracked(() => this.open.set(start));
+      untracked(() => this.at.set(start ? 'half' : 'peek'));
     });
     // The height is read after the browser has drawn the state it belongs to;
     // reading it as the state changes would publish the height it just left.
@@ -200,16 +238,27 @@ export class GsSheetComponent {
     });
   }
 
+  /** Between the bar and the readable height, which is what a tap on the grabber means. */
   public toggle(): void {
-    this.setExpanded(!this.open());
+    this.setStop(this.at() === 'peek' ? 'half' : 'peek');
   }
 
   public collapse(): void {
-    this.setExpanded(false);
+    this.setStop('peek');
   }
 
   public expand(): void {
-    this.setExpanded(true);
+    this.setStop('half');
+  }
+
+  /** One stop up: peek to half, half to full. */
+  public up(): void {
+    this.setStop(this.at() === 'peek' ? 'half' : 'full');
+  }
+
+  /** One stop down: full to half, half to peek. */
+  public down(): void {
+    this.setStop(this.at() === 'full' ? 'half' : 'peek');
   }
 
   public close(): void {
@@ -223,8 +272,8 @@ export class GsSheetComponent {
    * The second press does nothing where the sheet is not dismissible.
    */
   public onEscape(): void {
-    if (this.open()) {
-      this.collapse();
+    if (this.at() !== 'peek') {
+      this.down();
       return;
     }
     if (!this.dismissible()) {
@@ -246,52 +295,69 @@ export class GsSheetComponent {
       return;
     }
     this.startY = event.clientY;
-    this.startedExpanded = this.open();
+    this.startedAt = this.at();
     this.moved = false;
     this.dragging.set(true);
     (event.target as Element).setPointerCapture?.(event.pointerId);
   }
 
   /**
-   * An expanded sheet only follows the pointer downwards and a docked one only
-   * upwards: the other direction asks the sheet for a state it does not have,
-   * and rubber-banding towards one would promise it.
+   * The sheet only follows the pointer towards a stop it has: at peek that is
+   * up, at full it is down, and at half it is either. Rubber-banding towards a
+   * state that does not exist would promise it.
    */
   public onPointerMove(event: PointerEvent): void {
     if (!this.dragging()) {
       return;
     }
     const delta = event.clientY - this.startY;
-    const offset = this.startedExpanded
-      ? Math.max(0, delta)
-      : Math.min(0, delta);
+    let offset = delta;
+    if (this.startedAt === 'peek') {
+      offset = Math.min(0, delta);
+    } else if (this.startedAt === 'full') {
+      offset = Math.max(0, delta);
+    }
     if (Math.abs(offset) > DRAG_SLOP_PX) {
       this.moved = true;
     }
     this.dragOffset.set(offset);
   }
 
+  /**
+   * A short drag moves one stop in its direction; a drag longer than a good
+   * share of the screen moves two, so a reader can pull the bar straight up to
+   * full or throw the full sheet straight down to the bar.
+   */
   public onPointerUp(event: PointerEvent): void {
     if (!this.dragging()) {
       return;
     }
     (event.target as Element).releasePointerCapture?.(event.pointerId);
-    const offset = Math.abs(this.dragOffset());
+    const offset = this.dragOffset();
     this.dragging.set(false);
     this.dragOffset.set(0);
     const travel =
       this.host.nativeElement.offsetHeight || FALLBACK_CLEARANCE_PX;
-    if (offset >= travel * SNAP_FRACTION) {
-      this.setExpanded(!this.startedExpanded);
-    }
-  }
-
-  private setExpanded(next: boolean): void {
-    if (this.open() === next) {
+    if (Math.abs(offset) < travel * SNAP_FRACTION) {
       return;
     }
-    this.open.set(next);
-    if (!next || !this.isBrowser) {
+    const viewport = this.isBrowser ? window.innerHeight : 0;
+    const steps =
+      viewport > 0 && Math.abs(offset) >= viewport * LONG_DRAG_FRACTION ? 2 : 1;
+    const direction = offset < 0 ? 1 : -1;
+    const index = STOPS.indexOf(this.startedAt) + direction * steps;
+    this.setStop(STOPS[Math.max(0, Math.min(STOPS.length - 1, index))]);
+  }
+
+  private setStop(next: SheetStop): void {
+    const previous = this.at();
+    if (previous === next) {
+      return;
+    }
+    this.at.set(next);
+    // Focus follows the body when it first appears; a change of size around a
+    // body already being read leaves the reader where they were.
+    if (previous !== 'peek' || next === 'peek' || !this.isBrowser) {
       return;
     }
     afterNextRender(() => this.focusHeading(), { injector: this.injector });

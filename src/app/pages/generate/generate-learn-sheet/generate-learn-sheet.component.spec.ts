@@ -203,7 +203,13 @@ describe('GenerateLearnSheetComponent', () => {
     // button is suppressed and its second Escape does nothing.
     first<HTMLButtonElement>('.gs-sheet-btn').click();
     await settle();
-    expect(query('.gs-sheet-btn')).toHaveLength(1);
+    // Two stop buttons at half (up and down) and no close button among them.
+    expect(query('.gs-sheet-btn')).toHaveLength(2);
+    expect(
+      query<HTMLButtonElement>('.gs-sheet-btn').some(
+        (button) => button.getAttribute('aria-label') !== null,
+      ),
+    ).toBe(false);
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     await settle();

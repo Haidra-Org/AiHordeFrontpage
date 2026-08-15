@@ -59,6 +59,7 @@ import {
   StylePickerGroup,
 } from './generate-form/generate-form.component';
 import { GenerateLearnSheetComponent } from './generate-learn-sheet/generate-learn-sheet.component';
+import { GsTutorialParkedComponent } from '../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
@@ -152,6 +153,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GsSheetComponent,
     GsParamEntryComponent,
     GenerateLearnSheetComponent,
+    GsTutorialParkedComponent,
     IconComponent,
     TranslocoPipe,
   ],

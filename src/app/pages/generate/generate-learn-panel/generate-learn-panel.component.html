@@ -7,8 +7,11 @@
       }
     </h2>
   </div>
-  <button type="button" class="gs-guide-close gs-learn-exit" (click)="exit()">
-    {{ "generate.learn.exit" | transloco }}
+  <!-- Leaving parks the flow: the results come back and the step, world and
+       register wait behind them, with the way back offered in the pane. -->
+  <button type="button" class="gs-learn-leave" (click)="exit()">
+    <app-icon name="arrow-left" class="gs-ico-sm" />
+    {{ "generate.learn.leave" | transloco }}
   </button>
 </div>
 

@@ -172,7 +172,8 @@ export class GenerateLearnSheetComponent {
     this.engine.focusStep(true);
   }
 
+  /** Leave for the results; the flow is parked, not ended. */
   public exit(): void {
-    this.engine.stop();
+    this.engine.pause();
   }
 }

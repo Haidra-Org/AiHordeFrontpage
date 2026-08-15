@@ -265,7 +265,21 @@ export class TutorialEngineService {
   /** A generation was submitted on the finale step and the tutorial stood down. */
   public readonly completed = this.finished.asReadonly();
 
-  public readonly active = computed(() => this.flowId() !== null);
+  /**
+   * Whether the flow is parked: the reader left the pane for the results and
+   * can come back to the same step. A parked flow keeps its id, index and
+   * world; only the pane and the pointing stand down.
+   */
+  private readonly paused = signal(false);
+
+  /** A flow is on screen: chosen and not parked. */
+  public readonly active = computed(
+    () => this.flowId() !== null && !this.paused(),
+  );
+  /** A flow is chosen but parked, waiting behind the results. */
+  public readonly parked = computed(
+    () => this.flowId() !== null && this.paused(),
+  );
 
   public readonly steps = computed<readonly FlowStep[]>(() =>
     flowSteps(canonicalFlowId(this.flowId() ?? '')),
@@ -338,6 +352,7 @@ export class TutorialEngineService {
     this.dock.close();
     this.finished.set(false);
     this.failed.set(false);
+    this.paused.set(false);
     this.flowId.set(flowId);
     this.index.set(0);
     if (isConceptFlow(flowId)) {
@@ -366,13 +381,38 @@ export class TutorialEngineService {
     this.enterStep();
   }
 
-  /** Leave the tutorial, putting the results back. */
+  /** End the tutorial, putting the results back and forgetting the step. */
   public stop(): void {
     this.flowId.set(null);
     this.index.set(0);
+    this.paused.set(false);
     this.revealed.set(null);
     this.clearHighlight();
     this.help.releaseRequested();
+  }
+
+  /**
+   * Leave the pane for the results without ending the flow: the step, the
+   * world and the register are kept, and {@link resume} comes back to them.
+   */
+  public pause(): void {
+    if (this.flowId() === null) {
+      return;
+    }
+    this.paused.set(true);
+    this.revealed.set(null);
+    this.clearHighlight();
+    this.help.releaseRequested();
+  }
+
+  /** Come back to a parked flow at the step it was left on. */
+  public resume(): void {
+    if (this.flowId() === null || !this.paused()) {
+      return;
+    }
+    this.dock.close();
+    this.paused.set(false);
+    this.enterStep();
   }
 
   public next(): void {
