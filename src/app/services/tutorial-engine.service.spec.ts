@@ -48,9 +48,15 @@ class HostSpy implements TutorialStudioHost {
   public readonly sourceModes: GenerateSourceMode[] = [];
   public readonly bulk: GenerateFormValue[] = [];
   public mode: GenerateMode = 'simple';
+  public sourceMode: GenerateSourceMode = 'none';
 
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
+    // The studio writes the panel, so a step that applies the source mode moves
+    // the state the next step's reveal is measured against.
+    if (fields.sourceMode !== undefined) {
+      this.sourceMode = fields.sourceMode;
+    }
   }
   public currentMode(): GenerateMode {
     return this.mode;
@@ -59,7 +65,11 @@ class HostSpy implements TutorialStudioHost {
     this.mode = mode;
     this.modes.push(mode);
   }
+  public currentSourceMode(): GenerateSourceMode {
+    return this.sourceMode;
+  }
   public setSourceMode(mode: GenerateSourceMode): void {
+    this.sourceMode = mode;
     this.sourceModes.push(mode);
   }
   public openBulkApply(example: GenerateFormValue): void {
@@ -121,16 +131,17 @@ describe('TutorialEngineService', () => {
     http.verify();
   });
 
-  it('offers steps for txt2img and the concept tracks, and nothing else', () => {
-    expect(flowFollowable('txt2img')).toBe(true);
+  it('offers steps for the wired techniques and the concept tracks', () => {
+    for (const flow of ['txt2img', 'img2img', 'controlnet', 'inpainting']) {
+      expect(flowFollowable(flow)).toBe(true);
+      expect(isConceptFlow(flow)).toBe(false);
+    }
     for (const flow of CONCEPT_FLOWS) {
       expect(flowFollowable(flow)).toBe(true);
       expect(isConceptFlow(flow)).toBe(true);
     }
-    for (const flow of ['img2img', 'controlnet', 'inpainting', 'facefix']) {
-      expect(flowFollowable(flow)).toBe(false);
-      expect(isConceptFlow(flow)).toBe(false);
-    }
+    // Still a page to read: its steps name no control yet.
+    expect(flowFollowable('facefix')).toBe(false);
     expect(isConceptFlow(null)).toBe(false);
   });
 
@@ -457,6 +468,100 @@ describe('TutorialEngineService', () => {
 
       expect(engine.active()).toBe(false);
       expect(engine.stepIndex()).toBe(0);
+    });
+  });
+
+  describe('a flow that works from a source image', () => {
+    // The same committed payload with the two things that make it img2img: the
+    // source processing the horde is told about, and the strength that says how
+    // far the render may travel from the picture.
+    const sourced = {
+      ...structuredClone(request),
+      params: { ...request.params, denoising_strength: 0.55 },
+      source_processing: 'img2img',
+    };
+
+    async function startImg2img(): Promise<void> {
+      const started = engine.start('img2img');
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await settle();
+      http
+        .expectOne(`${EXAMPLES_ROOT}/img2img/request.json`)
+        .flush(structuredClone(sourced));
+      await started;
+    }
+
+    beforeEach(async () => {
+      await startImg2img();
+    });
+
+    it('reads the source mode back off the committed request', () => {
+      expect(engine.example()?.sourceMode).toBe('img2img');
+      expect(engine.example()?.denoising_strength).toBe(0.55);
+      expect(engine.copyParams()['denoise']).toBe(0.55);
+    });
+
+    it('walks every step to the finale, writing what each one names', () => {
+      const written: [string, Partial<GenerateFormValue>][] = [];
+      const visited: string[] = [];
+      for (let index = 0; index < engine.total(); index++) {
+        engine.goTo(index);
+        const id = engine.step()!.id;
+        visited.push(id);
+        if (engine.canApply()) {
+          engine.applyStep();
+          written.push([id, host.applied[host.applied.length - 1]]);
+        }
+      }
+
+      expect(visited).toEqual([
+        'source',
+        'mode',
+        'denoise',
+        'prompt',
+        'model',
+        'generate',
+      ]);
+      expect(written).toEqual([
+        // The picture itself is the reader's: the source step narrates.
+        ['mode', { sourceMode: 'img2img' }],
+        ['denoise', { denoising_strength: 0.55 }],
+        ['prompt', { prompt: PROMPT, negativePrompt: NEGATIVE }],
+        [
+          'model',
+          {
+            model: request.models[0],
+            width: request.params.width,
+            height: request.params.height,
+          },
+        ],
+      ]);
+      expect(engine.onFinale()).toBe(true);
+      expect(engine.canApply()).toBe(false);
+
+      engine.notifySubmitted();
+      expect(engine.completed()).toBe(true);
+    });
+
+    it('opens the panel and the source section the steps live in', () => {
+      // Advanced first, since the source card is only there; the source mode
+      // follows on the step that needs the strength slider to exist.
+      expect(host.modes).toEqual(['advanced']);
+      expect(engine.revealNote()).toBe('advanced');
+
+      engine.goTo(2);
+
+      expect(host.sourceModes).toEqual(['img2img']);
+      expect(engine.revealNote()).toBe('source');
+    });
+
+    it('says nothing about a source mode the reader has already set', () => {
+      engine.goTo(1);
+      engine.applyStep();
+
+      engine.goTo(2);
+
+      expect(engine.revealNote()).toBeNull();
     });
   });
 

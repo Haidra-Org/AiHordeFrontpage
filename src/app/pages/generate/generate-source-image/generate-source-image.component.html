@@ -9,7 +9,7 @@
     <app-gs-help topic="source" />
   </div>
 
-  <div class="flex flex-wrap gap-1.5" role="group">
+  <div class="flex flex-wrap gap-1.5" role="group" appTutAnchor="source_mode">
     @for (m of modes; track m) {
       <button
         type="button"
@@ -142,7 +142,7 @@
     }
 
     @if (mode() === "controlnet") {
-      <div>
+      <div appTutAnchor="control_type">
         <label class="gs-slabel" for="generate-control-type">
           {{ "generate.source.control_type_label" | transloco }}
         </label>
@@ -184,7 +184,7 @@
     }
 
     @if (mode() === "inpainting" && previewUrl()) {
-      <div class="flex flex-col gap-2">
+      <div class="flex flex-col gap-2" appTutAnchor="mask">
         <div>
           <label class="gs-slabel" for="generate-brush">
             {{

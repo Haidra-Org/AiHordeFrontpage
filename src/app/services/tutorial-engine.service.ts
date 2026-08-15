@@ -122,6 +122,10 @@ const STEP_FIELD_LABEL_KEY: Readonly<Record<string, string>> = {
   prompt: 'generate.form.prompt_label',
   model: 'generate.form.model_label',
   size: 'generate.sections.size',
+  source: 'generate.sections.source',
+  source_mode: 'generate.learn.fields.source_mode',
+  control_type: 'generate.source.control_type_label',
+  mask: 'generate.learn.fields.mask',
   generate: 'generate.learn.fields.generate',
 };
 
@@ -139,6 +143,7 @@ export interface TutorialStudioHost {
   applyFields(fields: Partial<GenerateFormValue>): void;
   currentMode(): GenerateMode;
   setMode(mode: GenerateMode): void;
+  currentSourceMode(): GenerateSourceMode;
   setSourceMode(mode: GenerateSourceMode): void;
   /** Offer the whole example through the studio's review-and-apply panel. */
   openBulkApply(example: GenerateFormValue): void;
@@ -264,6 +269,10 @@ export class TutorialEngineService {
     params['cfg'] = example.cfg_scale;
     params['sampler'] = example.sampler_name;
     params['seed'] = example.seed;
+    // The sourced flows' two numbers. They are meaningless on a request with no
+    // source image, and the prose of a flow that has none never names them.
+    params['denoise'] = example.denoising_strength;
+    params['control'] = example.control_type;
     return params;
   });
 
@@ -474,8 +483,12 @@ export class TutorialEngineService {
       this.host.setMode(reveal.mode);
     }
     if (reveal.sourceMode) {
+      // Same rule as the mode above: a sourced flow revealing its mode on every
+      // one of its steps would narrate an opening that happened once.
+      if (this.host.currentSourceMode() !== reveal.sourceMode) {
+        note = note ?? 'source';
+      }
       this.host.setSourceMode(reveal.sourceMode);
-      note = note ?? 'source';
     }
     return note;
   }

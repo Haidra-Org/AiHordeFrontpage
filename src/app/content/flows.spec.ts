@@ -173,6 +173,64 @@ describe('concept tracks', () => {
   });
 });
 
+describe('the techniques that work from a source image', () => {
+  const SOURCED = ['img2img', 'inpainting', 'controlnet'];
+
+  /** The controls the panel only draws under one of the source modes. */
+  const GATED_BY: Record<string, readonly string[]> = {
+    denoise: ['img2img', 'controlnet'],
+    control_type: ['controlnet'],
+    mask: ['inpainting'],
+  };
+
+  it('points every step at a control, so the pane can run them', () => {
+    for (const id of SOURCED) {
+      expect(flowFollowable(id)).toBe(true);
+      for (const step of flowSteps(id)) {
+        expect(step.anchorId, `${id}.${step.id}`).toBeTruthy();
+      }
+    }
+  });
+
+  it('narrates the picture rather than claiming to write it', () => {
+    // The source image is a blob the reader attaches; the committed request
+    // carries it as base64 the form value never holds. Same for the mask, which
+    // is painted onto a canvas rather than set.
+    for (const id of SOURCED) {
+      const first = flowSteps(id)[0];
+      expect(first.id).toBe('source');
+      expect(first.applyFields).toBeUndefined();
+    }
+    const mask = flowSteps('inpainting').find((step) => step.id === 'mask');
+    expect(mask?.anchorId).toBe('mask');
+    expect(mask?.applyFields).toBeUndefined();
+  });
+
+  it('opens the panel and the mode each control lives under', () => {
+    // The source card is advanced-only, and the strength, the control type and
+    // the brush each exist only under one of the modes.
+    const problems = SOURCED.flatMap((id) =>
+      flowSteps(id)
+        .filter((step) => GATED_BY[step.anchorId ?? ''])
+        .filter(
+          (step) =>
+            step.reveal?.mode !== 'advanced' ||
+            !GATED_BY[step.anchorId!].includes(step.reveal.sourceMode ?? ''),
+        )
+        .map((step) => `${id}.${step.id}`),
+    );
+
+    expect(problems).toEqual([]);
+  });
+
+  it('takes the source mode from the example rather than restating it', () => {
+    for (const id of SOURCED) {
+      const mode = flowSteps(id).find((step) => step.id === 'mode');
+      expect(mode?.applyFields).toEqual(['sourceMode']);
+    }
+  });
+});
+
 describe('followability', () => {
   it('runs a track, which is read rather than performed', () => {
     for (const id of CONCEPT_FLOWS) {
@@ -181,7 +239,9 @@ describe('followability', () => {
   });
 
   it('runs a technique once its steps name the controls they are about', () => {
-    expect(flowFollowable('txt2img')).toBe(true);
+    for (const id of ['txt2img', 'img2img', 'inpainting', 'controlnet']) {
+      expect(flowFollowable(id)).toBe(true);
+    }
     // A technique whose steps are written but not yet wired is a page to read.
     // As each one is wired this list shrinks on its own; it is not a target.
     const unwired = techniques

@@ -11,6 +11,7 @@ import {
   TUTORIAL_LEVELS,
   TutorialEngineService,
   TutorialStudioHost,
+  stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import {
   CONCEPT_FLOWS,
@@ -48,6 +49,9 @@ class HostStub implements TutorialStudioHost {
   }
   public setMode(): void {
     /* the panel never reveals on its own account */
+  }
+  public currentSourceMode(): GenerateSourceMode {
+    return 'none';
   }
   public setSourceMode(_mode: GenerateSourceMode): void {
     /* txt2img attaches no source image */
@@ -263,6 +267,18 @@ describe('GenerateLearnPanelComponent', () => {
         TRANSLATIONS[`generate.learn.flows.${flowId}.task_name`],
       ).toBeTruthy();
     }
+  });
+
+  it("names the field every step points at in the panel's own words", () => {
+    // The eyebrow above a step's title is the control's name, and an anchor
+    // whose name has no translation would show the reader a key.
+    const unnamed = FLOWS.filter((flow) => flowFollowable(flow.id))
+      .flatMap((flow) => flow.steps)
+      .filter((step) => step.anchorId)
+      .map((step) => stepFieldLabelKey(step.anchorId!))
+      .filter((key) => !TRANSLATIONS[key]);
+
+    expect([...new Set(unnamed)]).toEqual([]);
   });
 
   describe('a concept track', () => {

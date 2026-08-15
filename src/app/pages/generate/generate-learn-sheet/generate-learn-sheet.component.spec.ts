@@ -39,6 +39,9 @@ class HostStub implements TutorialStudioHost {
   public setMode(): void {
     /* the sheet never reveals on its own account */
   }
+  public currentSourceMode(): GenerateSourceMode {
+    return 'none';
+  }
   public setSourceMode(_mode: GenerateSourceMode): void {
     /* txt2img attaches no source image */
   }

@@ -674,7 +674,9 @@ describe('DocsImageExampleComponent', () => {
   });
 
   it('disables the walkthrough, with a note, for a flow still being written', async () => {
-    const other = await createPage('img2img');
+    // A page whose steps are written but name no control yet: it reads, and its
+    // start button lights up on its own the moment those steps are wired.
+    const other = await createPage('facefix');
     flushAll(other);
 
     const start = other.query<HTMLButtonElement>('.gs-tut-start-btn')[0];

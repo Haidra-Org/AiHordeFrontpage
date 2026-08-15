@@ -149,38 +149,121 @@ export const FLOWS: readonly FlowDef[] = [
     id: 'img2img',
     section: 'source',
     steps: [
-      { id: 'source' },
-      { id: 'mode' },
-      { id: 'denoise' },
-      { id: 'prompt' },
-      { id: 'model' },
-      { id: 'generate' },
+      // The picture itself is the one thing a step cannot write: the form holds
+      // a blob the reader attached, and the committed request carries only the
+      // base64 the generator sent. So the source steps of all three sourced
+      // flows point at the card and say what to put in it, and nothing else.
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
+        reveal: { mode: 'advanced' },
+      },
+      {
+        id: 'mode',
+        anchorId: 'source_mode',
+        reveal: { mode: 'advanced' },
+        applyFields: ['sourceMode'],
+      },
+      {
+        // The number is the whole technique, so the strip is offered here
+        // rather than left to the settings reference.
+        id: 'denoise',
+        anchorId: 'denoise',
+        helpTopic: 'denoise',
+        sweepParameters: ['denoising_strength'],
+        reveal: { mode: 'advanced', sourceMode: 'img2img' },
+        applyFields: ['denoising_strength'],
+      },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      {
+        // This flow has no size step of its own: the size is not a choice here
+        // but a consequence of the source, so it is set with the model that
+        // wants it and the step's prose names both.
+        id: 'model',
+        anchorId: 'model',
+        applyFields: ['model', 'width', 'height'],
+      },
+      { id: 'generate', anchorId: 'generate' },
     ],
   },
   {
     id: 'inpainting',
     section: 'source',
     steps: [
-      { id: 'source' },
-      { id: 'mode' },
-      { id: 'mask' },
-      { id: 'prompt' },
-      { id: 'model' },
-      { id: 'generate' },
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
+        reveal: { mode: 'advanced' },
+      },
+      {
+        id: 'mode',
+        anchorId: 'source_mode',
+        reveal: { mode: 'advanced' },
+        applyFields: ['sourceMode'],
+      },
+      {
+        // Painted rather than set: the mask is a canvas the reader draws on,
+        // so this step points at the brush and writes nothing.
+        id: 'mask',
+        anchorId: 'mask',
+        reveal: { mode: 'advanced', sourceMode: 'inpainting' },
+      },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      {
+        id: 'model',
+        anchorId: 'model',
+        applyFields: ['model', 'width', 'height'],
+      },
+      { id: 'generate', anchorId: 'generate' },
     ],
   },
   {
     id: 'controlnet',
     section: 'source',
     steps: [
-      { id: 'source' },
-      { id: 'mode' },
-      { id: 'control_type' },
-      { id: 'denoise' },
-      { id: 'prompt' },
-      { id: 'model' },
-      { id: 'size' },
-      { id: 'generate' },
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
+        reveal: { mode: 'advanced' },
+      },
+      {
+        id: 'mode',
+        anchorId: 'source_mode',
+        reveal: { mode: 'advanced' },
+        applyFields: ['sourceMode'],
+      },
+      {
+        id: 'control_type',
+        anchorId: 'control_type',
+        reveal: { mode: 'advanced', sourceMode: 'controlnet' },
+        applyFields: ['control_type'],
+      },
+      {
+        id: 'denoise',
+        anchorId: 'denoise',
+        helpTopic: 'denoise',
+        reveal: { mode: 'advanced', sourceMode: 'controlnet' },
+        applyFields: ['denoising_strength'],
+      },
+      {
+        id: 'prompt',
+        anchorId: 'prompt',
+        applyFields: ['prompt', 'negativePrompt'],
+      },
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
+      { id: 'generate', anchorId: 'generate' },
     ],
   },
   { id: 'remix', section: 'source', steps: [] },
