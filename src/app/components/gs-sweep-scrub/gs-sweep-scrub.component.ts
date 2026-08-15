@@ -98,7 +98,8 @@ const RAIL_STEPS: Readonly<Record<string, number | 'first' | 'last'>> = {
  * how far in from the lane's edges a label may be placed, so the outermost
  * numbers stay inside the plate however dense the strip or long the value.
  */
-const END_LABEL_PERCENT = 30;
+/** How close to the lane's edge an end number may be centred before it is held in. */
+const END_LABEL_EDGE_PERCENT = 4;
 /** Longer than this and an end value is a sentence, which the chip already says. */
 const END_LABEL_MAX_CHARS = 14;
 
@@ -1372,13 +1373,16 @@ export class GsSweepScrubComponent {
   }
 
   /**
-   * Where an end number sits. It is the slit's own position, held far enough in
-   * from the lane's edges that a label centred on it cannot hang outside the
-   * plate on a strip whose outermost slits are close to the ends.
+   * Where an end number sits: the slit's own position, so the number is under
+   * the slit it names. Only a value that reaches the lane's edge is held in,
+   * and only by the little a short number needs; sentence-length values do not
+   * render here at all (see {@link showsEnds}).
    */
   public labelPercent(at: number): number {
-    const inset = END_LABEL_PERCENT / 2;
-    return Math.min(Math.max(this.tickPercent(at), inset), 100 - inset);
+    return Math.min(
+      Math.max(this.tickPercent(at), END_LABEL_EDGE_PERCENT),
+      100 - END_LABEL_EDGE_PERCENT,
+    );
   }
 
   /** The stop at a position on the rail, clamped to what the strip has. */

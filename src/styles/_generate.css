@@ -8016,9 +8016,10 @@ app-gs-sweep-scrub {
 .gen-studio .gs-tickrail-end {
   position: absolute;
   top: 2px;
-  /* Kept to the same share of the lane the placement holds the numbers in from
-     the edges by, so a long value wraps inside the plate instead of past it. */
+  /* Short by construction: a value longer than a few characters is not shown
+     here (the chip says it), so a number centred on its slit stays inside. */
   max-width: 30%;
+  white-space: nowrap;
   transform: translateX(-50%);
   text-align: center;
   overflow-wrap: anywhere;
