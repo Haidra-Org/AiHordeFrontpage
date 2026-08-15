@@ -118,7 +118,11 @@ describe('flow registry', () => {
 
 describe('concept tracks', () => {
   it('knows which flows are tracks', () => {
-    expect(CONCEPT_FLOWS).toEqual(['concepts_images', 'concepts_horde']);
+    expect(CONCEPT_FLOWS).toEqual([
+      'concepts_images',
+      'concepts_horde',
+      'concepts_migrating',
+    ]);
     for (const id of CONCEPT_FLOWS) {
       expect(isConceptFlow(id)).toBe(true);
     }
@@ -162,6 +166,34 @@ describe('concept tracks', () => {
       'noise_to_picture:step_preview',
       'the_knobs:steps+cfg_scale',
       'why_it_differs:seed',
+    ]);
+  });
+
+  it('reads the migrating track from what the reader can already do', () => {
+    // Vocabulary first, because everything after it is a difference from
+    // something the reader already has a habit about, and the handoff last: the
+    // track ends where the walkthrough begins, as the other two tracks do.
+    expect(flowSteps('concepts_migrating').map((step) => step.id)).toEqual([
+      'your_words_still_work',
+      'what_the_horde_changes',
+      'what_to_expect_differently',
+      'the_models',
+      'try_it',
+    ]);
+    expect(flowSteps('concepts_migrating').at(-1)?.startsFlow).toBe('txt2img');
+  });
+
+  it('shows the migrating track the two renames and the re-roll', () => {
+    const attached = flowSteps('concepts_migrating')
+      .filter((step) => step.sweepParameters?.length)
+      .map((step) => `${step.id}:${step.sweepParameters!.join('+')}`);
+
+    // Both renames on the one step that claims them, and the seed strip where
+    // the track says determinism is not promised across workers: a step making
+    // a claim the library has pictures for should not be asking to be believed.
+    expect(attached).toEqual([
+      'your_words_still_work:hires_fix+clip_skip',
+      'what_to_expect_differently:seed',
     ]);
   });
 

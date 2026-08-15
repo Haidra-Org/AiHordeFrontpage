@@ -29,8 +29,14 @@ import {
 } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
 
-/** The flow the hero door starts, and the one the page is written around. */
+/** The flow the hero's first door starts, and the one the page is written around. */
 const HERO_FLOW = 'txt2img';
+
+/**
+ * The flow the hero's second door starts: the track for a reader who already
+ * generates somewhere else and needs the vocabulary mapped rather than taught.
+ */
+const HERO_MIGRATE_FLOW = 'concepts_migrating';
 
 /**
  * The techniques the shelf offers, in the order they are worth meeting: the
@@ -50,11 +56,6 @@ const SHELF_FLOWS: readonly string[] = [
 ];
 
 /**
- * One door of the "understand it" band. A door either routes to a page of its
- * own or starts a concept track in the studio, and carries whichever of the two
- * it is: nothing on the page has both.
- */
-/**
  * One card of the shelf: the technique it names, and whatever the library has
  * published about it. A card with nothing published is still a card.
  */
@@ -68,7 +69,12 @@ export interface ShelfCard {
   skippedReason: string;
 }
 
-interface UnderstandDoor {
+/**
+ * One door of the page, in the hero or in the "understand it" band. A door
+ * either routes to a page of its own or starts a flow in the studio, and
+ * carries whichever of the two it is: nothing on the page has both.
+ */
+interface LearnDoor {
   titleKey: string;
   hintKey: string;
   link?: string;
@@ -104,11 +110,31 @@ export class DocsImageHomeComponent {
   public readonly loadFailed = signal(false);
 
   /**
+   * The hero's two ways in, of equal rank: one for a reader who has never made
+   * an image, one for a reader who has made plenty somewhere else. Both leave
+   * for the studio, so both are doors rather than one door and one aside.
+   */
+  public readonly heroDoors: readonly LearnDoor[] = [
+    {
+      titleKey: 'generate.learn.hero_cta',
+      hintKey: 'generate.learn.hero_cta_hint',
+      flow: HERO_FLOW,
+      icon: 'star',
+    },
+    {
+      titleKey: 'generate.learn.hero_migrate_cta',
+      hintKey: 'generate.learn.hero_migrate_hint',
+      flow: HERO_MIGRATE_FLOW,
+      icon: 'adjustments-horizontal',
+    },
+  ];
+
+  /**
    * The doors of the "understand it" band: the two concept tracks first, since
    * a reader who does not know what a model is has no use for a list of what
    * each control does, and the written reference last.
    */
-  public readonly understandDoors: readonly UnderstandDoor[] = [
+  public readonly understandDoors: readonly LearnDoor[] = [
     {
       titleKey: 'generate.learn.understand_images_title',
       hintKey: 'generate.learn.understand_images_hint',
@@ -200,7 +226,7 @@ export class DocsImageHomeComponent {
    * opened, and the written guide is a page rather than something that runs, so
    * the two say different things about what pressing them costs.
    */
-  public goKey(door: UnderstandDoor): string {
+  public goKey(door: LearnDoor): string {
     return door.flow
       ? 'generate.learn.understand_start'
       : 'generate.learn.understand_read';
@@ -256,20 +282,13 @@ export class DocsImageHomeComponent {
   }
 
   /**
-   * Arm the first walkthrough and go to the studio, the same handoff the
-   * examples page makes: held in memory rather than in the URL, so reloading
-   * the studio lands on an ordinary studio.
+   * A door that leaves for the studio, which every door on this page but the
+   * written guide does: the walkthroughs and the tracks alike run in the
+   * follow-along pane, so there is no page of their own to route to. The flow
+   * is held in memory rather than in the URL, as the examples page hands off
+   * too, so reloading the studio lands on an ordinary studio.
    */
-  public startHero(): void {
-    this.start(HERO_FLOW);
-  }
-
-  /**
-   * A concept track's door, which makes the same handoff the hero does: the
-   * tracks run in the studio's follow-along pane like everything else, so there
-   * is no page of their own to route to.
-   */
-  public startTrack(door: UnderstandDoor): void {
+  public startTrack(door: LearnDoor): void {
     if (door.flow) {
       this.start(door.flow);
     }

@@ -421,6 +421,27 @@ export const FLOWS: readonly FlowDef[] = [
       { id: 'where_next', startsFlow: 'txt2img' },
     ],
   },
+  {
+    // For a reader who already generates elsewhere, so it starts from what they
+    // can already do rather than from what an image is: the vocabulary first,
+    // then the three things the horde does differently, then where those three
+    // change what they should expect of a result.
+    id: 'concepts_migrating',
+    concept: true,
+    steps: [
+      // The two renames the step names are the two the library has strips for,
+      // so "it is the same control under another name" is shown rather than
+      // asserted.
+      {
+        id: 'your_words_still_work',
+        sweepParameters: ['hires_fix', 'clip_skip'],
+      },
+      { id: 'what_the_horde_changes' },
+      { id: 'what_to_expect_differently', sweepParameters: ['seed'] },
+      { id: 'the_models' },
+      { id: 'try_it', startsFlow: 'txt2img' },
+    ],
+  },
 ];
 
 const FLOW_BY_ID: ReadonlyMap<string, FlowDef> = new Map(

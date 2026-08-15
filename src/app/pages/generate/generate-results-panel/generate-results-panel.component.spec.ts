@@ -922,20 +922,23 @@ describe('GenerateResultsPanelComponent', () => {
 
   it('sends the second door through the concepts before the walkthrough', () => {
     // Door 1 makes an image by working the panel; door 2 is for the reader who
-    // wants to know what the panel is doing first, so it opens a concept track
-    // rather than a second copy of the same walkthrough.
+    // already generates elsewhere, so it opens the track that maps their
+    // vocabulary rather than a second copy of the same walkthrough.
     const engine = TestBed.inject(TutorialEngineService);
     const [door1, door2] = component.welcomeDoors;
 
     expect(isConceptFlow(door1.flowId)).toBe(false);
     expect(isConceptFlow(door2.flowId)).toBe(true);
+    expect(door2.flowId).toBe('concepts_migrating');
 
     engine.stop();
     component.enterVia(door2);
 
-    expect(engine.activeFlowId()).toBe('concepts_images');
+    expect(engine.activeFlowId()).toBe('concepts_migrating');
     // The track ends by handing the reader on to the walkthrough door 1 runs.
-    expect(flowSteps('concepts_images').at(-1)?.startsFlow).toBe(door1.flowId);
+    expect(flowSteps('concepts_migrating').at(-1)?.startsFlow).toBe(
+      door1.flowId,
+    );
   });
 
   it('seeds the level and leaves the studio alone behind the last door', () => {

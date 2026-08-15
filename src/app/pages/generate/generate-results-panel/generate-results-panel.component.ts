@@ -302,14 +302,15 @@ export class GenerateResultsPanelComponent {
   /**
    * The ways in offered to a reader who has not been here before. The first
    * door runs the txt2img walkthrough, which makes an image by working the
-   * panel; the second starts the understanding-images concept track, which
-   * explains what the panel is doing before handing over to that same
-   * walkthrough. Pointing a door at another track is this list's `flowId` and
-   * nothing else.
+   * panel; the second starts the migrating track, since a reader comfortable
+   * with this has almost always generated somewhere else and needs their
+   * vocabulary mapped rather than image generation taught, and it hands over to
+   * that same walkthrough at the end. Pointing a door at another track is this
+   * list's `flowId` and nothing else.
    */
   public readonly welcomeDoors: readonly WelcomeDoor[] = [
     { id: 'door1', level: 'new_to_this', flowId: 'txt2img' },
-    { id: 'door2', level: 'comfortable', flowId: 'concepts_images' },
+    { id: 'door2', level: 'comfortable', flowId: 'concepts_migrating' },
     { id: 'door3', level: 'expert', flowId: null },
   ];
 

@@ -8909,30 +8909,68 @@ app-gs-compare-wipe {
   line-height: 1.7;
   color: #e2e8f0;
 }
-/* Squared, like every other control in the studio: the pill is retired as a
-   way of saying "press me". */
-.gen-studio .gs-learn-hero-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
+/* The hero's two doors. Squared, like every other control in the studio: the
+   pill is retired as a way of saying "press me". Equal width and one treatment,
+   because they are two ways in rather than an offer and its footnote; the
+   trailing arrow is the docs' door grammar, saying the press leaves for the
+   panel. Blue tint over the scrim rather than the capsule's own card, which is
+   a light-theme surface and would have to be repainted to sit here. */
+.gen-studio .gs-learn-hero-doors {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   margin-top: 20px;
+}
+.gen-studio .gs-learn-hero-door {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   min-height: 40px;
-  padding: 9px 18px;
-  border: 1px solid var(--gs-blue);
+  padding: 12px 14px;
+  border: 1px solid rgba(147, 197, 253, 0.45);
   border-radius: 8px;
-  background: var(--gs-blue);
+  background: rgba(37, 99, 235, 0.28);
   color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
   font-family: inherit;
+  text-align: left;
   cursor: pointer;
 }
-.gen-studio .gs-learn-hero-cta:hover {
-  background: var(--gs-blue-hover);
+.gen-studio .gs-learn-hero-door:hover {
+  background: rgba(37, 99, 235, 0.45);
+  border-color: rgba(191, 219, 254, 0.7);
 }
-.gen-studio .gs-learn-hero-cta:focus-visible {
+.gen-studio .gs-learn-hero-door:focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
+}
+.gen-studio .gs-learn-hero-door-mark {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  color: #bfdbfe;
+}
+.gen-studio .gs-learn-hero-door-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gen-studio .gs-learn-hero-door-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.gen-studio .gs-learn-hero-door-hint {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #dbeafe;
+}
+.gen-studio .gs-learn-hero-door-arrow {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #bfdbfe;
 }
 
 .gen-studio .gs-learn-band {
@@ -9114,8 +9152,16 @@ app-gs-compare-wipe {
   color: var(--gs-muted);
 }
 
+/* Side by side there is no measure left for a hint on the narrowest phones, so
+   the pair stacks rather than shrinking to two words a line. */
+@media (max-width: 390px) {
+  .gen-studio .gs-learn-hero-doors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (pointer: coarse) {
-  .gen-studio .gs-learn-hero-cta {
+  .gen-studio .gs-learn-hero-door {
     min-height: 44px;
   }
 }

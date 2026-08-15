@@ -1,5 +1,5 @@
 <div class="gs-learn-home-inner">
-  <!-- The one door most readers need, and the Learn area's display moment. Its
+  <!-- The two doors most readers need, and the Learn area's display moment. Its
        backdrop is the image the walkthrough behind it actually produced, not an
        illustration, so the copy sits on a scrim rather than on the picture. -->
   <section class="gs-learn-hero">
@@ -16,10 +16,35 @@
       <p class="gs-learn-hero-sub">
         {{ "generate.learn.hero_sub" | transloco }}
       </p>
-      <button type="button" class="gs-learn-hero-cta" (click)="startHero()">
-        <app-icon name="star" class="gs-ico-sm" />
-        {{ "generate.learn.hero_cta" | transloco }}
-      </button>
+      <!-- Two doors of one rank: the reader who has never made an image and the
+           reader who has made hundreds elsewhere both belong here, and putting
+           the second one under the fold would answer the question of which of
+           them the area is for. The door grammar rather than the capsule's:
+           both presses leave for the studio, so both carry the arrow, but the
+           hero is dark in both themes and the capsule chassis is not. -->
+      <div class="gs-learn-hero-doors">
+        @for (door of heroDoors; track door.titleKey) {
+          <button
+            type="button"
+            class="gs-learn-hero-door"
+            (click)="startTrack(door)"
+          >
+            <app-icon [name]="door.icon" class="gs-learn-hero-door-mark" />
+            <span class="gs-learn-hero-door-text">
+              <span class="gs-learn-hero-door-title">
+                {{ door.titleKey | transloco }}
+              </span>
+              <span class="gs-learn-hero-door-hint">
+                {{ door.hintKey | transloco }}
+              </span>
+            </span>
+            <app-icon
+              name="arrow-right"
+              class="gs-ico-sm gs-learn-hero-door-arrow"
+            />
+          </button>
+        }
+      </div>
     </div>
   </section>
 

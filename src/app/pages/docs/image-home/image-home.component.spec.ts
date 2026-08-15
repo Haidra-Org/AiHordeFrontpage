@@ -70,6 +70,9 @@ const OWN_KEYS = [
   'hero_title',
   'hero_sub',
   'hero_cta',
+  'hero_cta_hint',
+  'hero_migrate_cta',
+  'hero_migrate_hint',
   'understand_head',
   'understand_images_title',
   'understand_images_hint',
@@ -166,11 +169,47 @@ describe('DocsImageHomeComponent', () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
-    query<HTMLButtonElement>('.gs-learn-hero-cta')[0].click();
+    query<HTMLButtonElement>('.gs-learn-hero-door')[0].click();
 
     expect(navigate).toHaveBeenCalledWith('/generate/image');
     // Held in memory rather than routed, as the examples page hands off too.
     expect(engine.consumeArmed()).toBe('txt2img');
+  });
+
+  it('offers the reader arriving from another tool a door of equal rank', () => {
+    flush();
+
+    const doors = query<HTMLButtonElement>('.gs-learn-hero-door');
+
+    expect(component.heroDoors.map((door) => door.flow)).toEqual([
+      'txt2img',
+      'concepts_migrating',
+    ]);
+    expect(doors).toHaveLength(2);
+    // One treatment across the pair: the second is another way in rather than a
+    // footnote to the first, so neither carries a class the other does not.
+    expect(new Set(doors.map((door) => door.className)).size).toBe(1);
+    expect(doors[0].textContent).toContain(
+      TRANSLATIONS['generate.learn.hero_cta'],
+    );
+    expect(doors[1].textContent).toContain(
+      TRANSLATIONS['generate.learn.hero_migrate_cta'],
+    );
+    expect(doors[1].textContent).toContain(
+      TRANSLATIONS['generate.learn.hero_migrate_hint'],
+    );
+  });
+
+  it('arms the migrating track from the hero, as the walkthrough door does', () => {
+    flush();
+    const engine = TestBed.inject(TutorialEngineService);
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    query<HTMLButtonElement>('.gs-learn-hero-door')[1].click();
+
+    expect(navigate).toHaveBeenCalledWith('/generate/image');
+    expect(engine.consumeArmed()).toBe('concepts_migrating');
   });
 
   it('offers the written guide as a door of its own', () => {
