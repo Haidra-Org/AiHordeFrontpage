@@ -7656,6 +7656,7 @@ app-gs-sweep-scrub {
    on the page with a bare slider and a floating link under it, and neither read
    as belonging to the pictures. */
 .gen-studio .gs-sweep-open {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--gs-stage-rim);
   border-radius: 12px;
@@ -7697,24 +7698,31 @@ app-gs-sweep-scrub {
   color: var(--gs-stage-ink);
 }
 .gen-studio .gs-plate-body {
+  min-width: 0;
   padding: 0 14px;
 }
 /* The footer: what this frame is, where in the strip it is, and the way to the
-   full-size view. All three used to be somewhere else. */
+   full-size view. All three used to be somewhere else. The row wraps rather
+   than growing: a strip that varies a piece of prompt text puts a whole
+   sentence in the chip, and a footer that cannot fold takes the page with it. */
 .gen-studio .gs-plate-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
+  min-width: 0;
   padding: 10px 14px 12px;
 }
 .gen-studio .gs-plate-value {
+  min-width: 0;
+  max-width: 100%;
   padding: 4px 8px;
   border: 1px solid var(--gs-stage-rim);
   border-radius: 7px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12px;
   color: var(--gs-stage-ink);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .gen-studio .gs-plate-pos {
   font-size: 11.5px;
@@ -7747,6 +7755,7 @@ app-gs-sweep-scrub {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   padding: 0 14px 10px;
 }
 /* The way into the record reads as the disclosure it is: a bordered control in
@@ -7772,6 +7781,7 @@ app-gs-sweep-scrub {
   border-color: var(--gs-stage-label);
 }
 .gen-studio .gs-plate-model {
+  min-width: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 11px;
   color: var(--gs-stage-label);
@@ -7878,23 +7888,25 @@ app-gs-sweep-scrub {
    "somewhere between two ends"; the rail says how many frames there are, which
    one this is, and what the ends were rendered at, without being asked. */
 .gen-studio .gs-tickrail-box {
+  min-width: 0;
   padding: 2px 14px 0;
 }
+/* The lane the slits sit in. A short strip's few ticks read as decoration
+   without it; a visible groove under a thumb is the shape every reader already
+   knows as a control. The whole 44px of it is the hit area: a press anywhere
+   along it moves to the nearest stop, so the thumb is somewhere to look rather
+   than the only thing worth aiming at. */
 .gen-studio .gs-tickrail {
-  display: flex;
-  align-items: flex-end;
+  position: relative;
   width: 100%;
   height: 44px;
   padding: 0 2px;
   border: 0;
   background: none;
   cursor: pointer;
-}
-/* The lane the slits sit in. A short strip's few ticks read as decoration
-   without it; a visible groove under a thumb is the shape every reader already
-   knows as a control. */
-.gen-studio .gs-tickrail {
-  position: relative;
+  /* The lane is in a page that scrolls, so a finger going down it takes the
+     page with it; the scrubber claims the gesture only once it turns across. */
+  touch-action: pan-y;
 }
 .gen-studio .gs-tickrail::before {
   content: "";
@@ -7907,12 +7919,17 @@ app-gs-sweep-scrub {
   background: color-mix(in srgb, var(--gs-stage-rim) 55%, transparent);
   pointer-events: none;
 }
+/* Each slit stands in the middle of its own share of the lane, placed from the
+   same arithmetic the end numbers are, so a number is under the slit it names
+   rather than out at the lane's edge. */
 .gen-studio .gs-tickrail-tick {
-  position: relative;
-  flex: 1;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 16px;
   display: grid;
   place-items: end center;
-  height: 100%;
+  transform: translateX(-50%);
 }
 .gen-studio .gs-tickrail-tick::after {
   content: "";
@@ -7924,8 +7941,9 @@ app-gs-sweep-scrub {
      rail whose unvisited frames cannot be counted is a slider again. */
   background: color-mix(in srgb, var(--gs-stage-label) 60%, transparent);
   transition:
-    height 0.12s,
-    background 0.12s;
+    height var(--gs-dur-fast) var(--gs-ease),
+    background var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-tickrail:hover .gs-tickrail-tick:hover::after {
   height: 16px;
@@ -7941,7 +7959,30 @@ app-gs-sweep-scrub {
   background: var(--gs-stage-ink);
   box-shadow:
     0 0 0 2px var(--gs-stage),
-    0 0 0 3px var(--gs-stage-label);
+    0 0 0 3px var(--gs-stage-label),
+    var(--gs-elev-1);
+}
+/* The thumb answers the hand that is on it: it lifts off the lane under a
+   pointer and settles back while the lane is being dragged. */
+.gen-studio .gs-tickrail:hover .gs-tickrail-tick.is-at::after {
+  box-shadow:
+    0 0 0 2px var(--gs-stage),
+    0 0 0 3px var(--gs-stage-ink),
+    var(--gs-elev-2);
+}
+.gen-studio .gs-tickrail:active .gs-tickrail-tick.is-at::after {
+  box-shadow:
+    0 0 0 2px var(--gs-stage),
+    0 0 0 3px var(--gs-stage-ink),
+    var(--gs-elev-1);
+}
+/* A finger covers the thumb it is moving, so it is given more to hold on to
+   than a mouse needs. */
+@media (pointer: coarse) {
+  .gen-studio .gs-tickrail-tick.is-at::after {
+    width: 12px;
+    height: 28px;
+  }
 }
 .gen-studio .gs-tickrail-tick.is-at::before {
   content: "";
@@ -7953,22 +7994,55 @@ app-gs-sweep-scrub {
   border-top-color: var(--gs-stage-ink);
 }
 .gen-studio .gs-tickrail-hint {
+  min-width: 0;
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--gs-stage-label);
+  overflow-wrap: anywhere;
 }
+/* The row the two end numbers sit in. The hint holds the row open in the flow;
+   the numbers are placed across it at their own slits' positions. */
 .gen-studio .gs-tickrail-ends {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  min-width: 0;
   padding-top: 2px;
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
   color: var(--gs-stage-label);
 }
+.gen-studio .gs-tickrail-end {
+  position: absolute;
+  top: 2px;
+  /* Kept to the same share of the lane the placement holds the numbers in from
+     the edges by, so a long value wraps inside the plate instead of past it. */
+  max-width: 30%;
+  transform: translateX(-50%);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
 @media (prefers-reduced-motion: reduce) {
   .gen-studio .gs-tickrail-tick::after {
     transition: none;
+  }
+}
+/* Nothing in the lane is drawn from text, so a forced palette would leave a
+   blank strip. The slits, the thumb and the groove are restated as borders in
+   the system's own colours. */
+@media (forced-colors: active) {
+  .gen-studio .gs-tickrail::before {
+    border: 1px solid CanvasText;
+  }
+  .gen-studio .gs-tickrail-tick::after {
+    outline: 1px solid CanvasText;
+  }
+  .gen-studio .gs-tickrail-tick.is-at::after {
+    outline: 2px solid Highlight;
+  }
+  .gen-studio .gs-plate-value {
+    border-color: CanvasText;
   }
 }
 
@@ -8088,9 +8162,12 @@ app-gs-sweep-scrub + app-gs-door {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 8px;
+  min-width: 0;
   margin-top: 6px;
   font-size: 12px;
   color: var(--gs-ink-2);
+  overflow-wrap: anywhere;
+  transition: color var(--gs-dur) var(--gs-ease);
 }
 .gen-studio .gs-sweep-caption-text {
   min-width: 0;
@@ -8099,12 +8176,14 @@ app-gs-sweep-scrub + app-gs-door {
    describes it. */
 .gen-studio .gs-sweep-caption-batch {
   flex-basis: 100%;
+  min-width: 0;
   font-size: 11px;
   color: var(--gs-muted);
 }
 /* The strips that vary a piece of prompt text have no field to name, so they
    keep the eyebrow the chip replaced everywhere else. */
 .gen-studio .gs-sweep-caption-value {
+  min-width: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -8232,6 +8311,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-viewer-name {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -8249,6 +8329,8 @@ app-gs-sweep-scrub + app-gs-door {
    The layer's own body is the panel rather than the plate, so the rail's stage
    tokens are re-pointed at the page's ink for the length of this row: the same
    rail, drawn for the ground it is actually standing on. */
+/* The layer carries the same lane and the same caption, so it carries the same
+   guard: nothing in it may set how wide the layer is. */
 .gen-studio .gs-sweep-viewer-foot {
   --gs-stage-rim: var(--gs-switch-off);
   --gs-stage-label: var(--gs-label);
@@ -8294,9 +8376,12 @@ app-gs-sweep-scrub + app-gs-door {
 }
 .gen-studio .gs-sweep-viewer-cap {
   flex: none;
+  min-width: 0;
   margin: 10px 16px 0;
   font-size: 12px;
   color: var(--gs-ink-2);
+  overflow-wrap: anywhere;
+  transition: color var(--gs-dur) var(--gs-ease);
 }
 
 /* ------- sweeps: pairs, tiles, sources ------------------------------- */
@@ -8319,6 +8404,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-pair-cap {
   display: block;
   min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 12px;
   color: var(--gs-ink-2);
 }

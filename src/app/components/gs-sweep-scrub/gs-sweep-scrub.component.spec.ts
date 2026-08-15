@@ -101,6 +101,41 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
   };
 
+  /**
+   * Tell the lane how wide it is. jsdom lays nothing out, and the scrubber
+   * reads a position across a measured width.
+   */
+  const railWidth = (width: number, scope = ''): void => {
+    vi.spyOn(rail(scope), 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      width,
+      right: width,
+      top: 0,
+      bottom: 44,
+      height: 44,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+  };
+
+  /**
+   * A press or a drag on the lane itself, away from any slit. jsdom has no
+   * PointerEvent, so the mouse event of the same name stands in for one; a
+   * pointer without an id is one nothing can capture.
+   */
+  const railPointer = (type: string, clientX: number, scope = ''): void => {
+    rail(scope).dispatchEvent(
+      new MouseEvent(type, {
+        clientX,
+        clientY: 22,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+  };
+
   /** Tell whatever the wipe is watching how much room the pair has. */
   const reportWidth = (width: number): void => {
     for (const observer of FakeResizeObserver.instances) {
@@ -312,6 +347,61 @@ describe('GsSweepScrubComponent', () => {
 
     clickTick(0);
     expect(rail().getAttribute('aria-valuenow')).toBe('1');
+  });
+
+  it('takes a press anywhere on the lane to the nearest stop', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+    railWidth(300);
+
+    // Three stops share the lane, so their slits stand at 50px, 150px and
+    // 250px. None of these presses lands on one.
+    railPointer('pointerdown', 240);
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+
+    railPointer('pointerdown', 30);
+    expect(rail().getAttribute('aria-valuenow')).toBe('1');
+
+    railPointer('pointerdown', 160);
+    expect(rail().getAttribute('aria-valuenow')).toBe('2');
+  });
+
+  it('keeps snapping while a drag runs, and stops when it is let go', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+    railWidth(300);
+
+    railPointer('pointerdown', 30);
+    expect(rail().getAttribute('aria-valuenow')).toBe('1');
+
+    railPointer('pointermove', 160);
+    expect(rail().getAttribute('aria-valuenow')).toBe('2');
+    railPointer('pointermove', 290);
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+
+    railPointer('pointerup', 290);
+    // Nothing is being dragged, so the pointer passing back over the lane
+    // leaves the strip where the reader left it.
+    railPointer('pointermove', 10);
+    expect(rail().getAttribute('aria-valuenow')).toBe('3');
+  });
+
+  it('puts each end number at the position of its own slit', async () => {
+    await setUp();
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    const ticks = all<HTMLElement>('.gs-tickrail-tick');
+    const ends = all<HTMLElement>('.gs-tickrail-end');
+
+    expect(ends).toHaveLength(2);
+    expect(ends[0].style.left).toBe(ticks[0].style.left);
+    expect(ends[1].style.left).toBe(ticks[ticks.length - 1].style.left);
+    // The slits stand in the middle of their share of the lane rather than at
+    // its two edges, which is what the numbers now read from.
+    expect(ticks[0].style.left).not.toBe('0%');
   });
 
   it('shows the strip for the model the studio is set to', async () => {

@@ -94,6 +94,20 @@ const RAIL_STEPS: Readonly<Record<string, number | 'first' | 'last'>> = {
 };
 
 /**
+ * How wide an end label is allowed to be, as a share of the lane. It is also
+ * how far in from the lane's edges a label may be placed, so the outermost
+ * numbers stay inside the plate however dense the strip or long the value.
+ */
+const END_LABEL_PERCENT = 30;
+
+/**
+ * How far a finger has to travel before the lane treats the gesture as a scrub.
+ * Below this the direction is not yet known, and claiming the gesture early
+ * would stop a reader scrolling the page they happened to touch the lane on.
+ */
+const DRAG_INTENT_PX = 4;
+
+/**
  * What Tab may land on inside the full-size view. The wipe's divider is a
  * slider built out of a div rather than an input, and leaving it out of the
  * cycle would make the one control a pair strip has unreachable in the layer.
@@ -280,7 +294,7 @@ const VIEWER_FOCUSABLE =
           [attr.aria-valuetext]="valueTextOf(stopAt(at))"
           (click)="onRailPress($event, mode)"
           (keydown)="onRailKeydown($event, at, mode)"
-          (pointerdown)="startRailDrag($event)"
+          (pointerdown)="startRailDrag($event, mode)"
           (pointermove)="onRailDrag($event, mode)"
           (pointerup)="endRailDrag()"
           (pointercancel)="endRailDrag()"
@@ -289,19 +303,29 @@ const VIEWER_FOCUSABLE =
             <span
               class="gs-tickrail-tick"
               [class.is-at]="$index === at"
+              [style.left.%]="tickPercent($index)"
               [attr.data-at]="$index"
             ></span>
           }
         </div>
         <span class="gs-tickrail-ends">
-          <span>{{ endValues().first }}</span>
+          <!-- Both end numbers are placed by the same arithmetic the slits are,
+               so each sits under the slit it names. Left at the lane's own two
+               edges they read as labelling frames that are not there. -->
+          <span class="gs-tickrail-end" [style.left.%]="labelPercent(0)">{{
+            endValues().first
+          }}</span>
           <!-- What the lane is for, said where a reader's eye lands on it: a
                row of slits between two numbers does not announce itself as a
                control, and the invitation is the difference. -->
           <span class="gs-tickrail-hint" aria-hidden="true">{{
             'generate.sweeps.rail_hint' | transloco
           }}</span>
-          <span>{{ endValues().last }}</span>
+          <span
+            class="gs-tickrail-end"
+            [style.left.%]="labelPercent(lastIndex())"
+            >{{ endValues().last }}</span
+          >
         </span>
       </div>
     </ng-template>
@@ -874,6 +898,9 @@ export class GsSweepScrubComponent {
   /** Whether a pointer is currently dragging along the rail. */
   private dragging = false;
 
+  /** Where a press on the rail landed, while it is still deciding its way. */
+  private pressedAt: { x: number; y: number } | null = null;
+
   /**
    * What the collapsed offer calls the setting. Naming it is what separates one
    * offer from the next where a step or a reference entry carries more than one:
@@ -1315,6 +1342,26 @@ export class GsSweepScrubComponent {
     this.loaded.set(true);
   }
 
+  /**
+   * Where a stop's slit sits across the lane, as a percentage of its width.
+   * Each stop gets a cell of its own and stands in the middle of it, which is
+   * what keeps the two outermost slits clear of the lane's ends.
+   */
+  public tickPercent(at: number): number {
+    const count = this.frameCount();
+    return count > 0 ? ((at + 0.5) / count) * 100 : 50;
+  }
+
+  /**
+   * Where an end number sits. It is the slit's own position, held far enough in
+   * from the lane's edges that a label centred on it cannot hang outside the
+   * plate on a strip whose outermost slits are close to the ends.
+   */
+  public labelPercent(at: number): number {
+    const inset = END_LABEL_PERCENT / 2;
+    return Math.min(Math.max(this.tickPercent(at), inset), 100 - inset);
+  }
+
   /** The stop at a position on the rail, clamped to what the strip has. */
   public stopAt(at: number): SweepStop {
     const stops = this.stops();
@@ -1350,21 +1397,32 @@ export class GsSweepScrubComponent {
     );
   }
 
-  public startRailDrag(event: PointerEvent): void {
-    this.dragging = true;
-    const rail = event.currentTarget;
-    if (rail instanceof HTMLElement && Number.isFinite(event.pointerId)) {
-      try {
-        rail.setPointerCapture(event.pointerId);
-      } catch {
-        // A pointer the browser will not hand over simply drags without capture.
-      }
+  /**
+   * A press anywhere on the lane, its full height included, lands on the
+   * nearest stop and arms a drag from there. Waiting for the press to land on
+   * the thumb makes the lane a control only someone who already knows where the
+   * thumb is can use, and the thumb is the smallest part of it.
+   */
+  public startRailDrag(event: PointerEvent, mode: RailMode): void {
+    const at = this.railPosition(event.currentTarget, event.clientX);
+    if (at !== null) {
+      this.railMove(mode, at);
     }
+    this.pressedAt = { x: event.clientX, y: event.clientY };
+    // A finger has to say which way it is going first: the lane sits in a page
+    // that scrolls, and a swipe down over it belongs to the page. Anything else
+    // has a scrollbar of its own and can be taken at its word straight away.
+    if (event.pointerType === 'touch') {
+      this.dragging = false;
+      return;
+    }
+    this.dragging = true;
+    this.captureRail(event);
   }
 
   /** A drag along the rail reads its position rather than the slit under it. */
   public onRailDrag(event: PointerEvent, mode: RailMode): void {
-    if (!this.dragging) {
+    if (!this.dragging && !this.takesOverGesture(event)) {
       return;
     }
     const at = this.railPosition(event.currentTarget, event.clientX);
@@ -1375,6 +1433,38 @@ export class GsSweepScrubComponent {
 
   public endRailDrag(): void {
     this.dragging = false;
+    this.pressedAt = null;
+  }
+
+  /**
+   * Whether a press that has not yet become a drag has now moved far enough,
+   * and more across the lane than down the page, for the lane to claim it.
+   */
+  private takesOverGesture(event: PointerEvent): boolean {
+    const pressed = this.pressedAt;
+    if (!pressed) {
+      return false;
+    }
+    const dx = event.clientX - pressed.x;
+    const dy = event.clientY - pressed.y;
+    if (Math.abs(dx) < DRAG_INTENT_PX || Math.abs(dx) <= Math.abs(dy)) {
+      return false;
+    }
+    this.dragging = true;
+    this.captureRail(event);
+    return true;
+  }
+
+  /** Keep the rest of the drag on the lane, wherever the pointer wanders. */
+  private captureRail(event: PointerEvent): void {
+    const rail = event.currentTarget;
+    if (rail instanceof HTMLElement && Number.isFinite(event.pointerId)) {
+      try {
+        rail.setPointerCapture(event.pointerId);
+      } catch {
+        // A pointer the browser will not hand over simply drags without capture.
+      }
+    }
   }
 
   /** Which slit a press landed on, or null when it landed between them. */
@@ -1384,7 +1474,7 @@ export class GsSweepScrubComponent {
     return tick && Number.isFinite(at) ? at : null;
   }
 
-  /** Where along the rail's width a pointer falls, in stops. */
+  /** Where along the rail's width a pointer falls, as the nearest stop. */
   private railPosition(
     rail: EventTarget | null,
     clientX: number,
@@ -1393,13 +1483,17 @@ export class GsSweepScrubComponent {
       return null;
     }
     const box = rail.getBoundingClientRect();
-    const last = this.lastIndex();
+    const count = this.frameCount();
     // A rail with no measured width is a rail nothing has laid out yet, and a
     // guess made from it would jump the reader to an arbitrary frame.
-    if (box.width <= 0 || last <= 0) {
+    if (box.width <= 0 || count <= 1) {
       return null;
     }
-    return Math.round(((clientX - box.left) / box.width) * last);
+    // The inverse of the placement below, so the stop a press lands on is the
+    // one whose slit is nearest the pointer rather than one the arithmetic
+    // rounds to on a different reading of the lane.
+    const across = ((clientX - box.left) / box.width) * count - 0.5;
+    return Math.round(across);
   }
 
   /** Move whichever scrubber the rail is driving: the strip, or the layer. */
