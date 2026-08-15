@@ -1,7 +1,19 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import {
+  FindHighlightPart,
+  GsFindFieldComponent,
+  findHighlightParts,
+} from '../../../components/gs-find-field/gs-find-field.component';
 import {
   GsIndexRailComponent,
   GsIndexRailEntry,
@@ -34,6 +46,21 @@ import {
   guideSectionId,
 } from '../../../content/guide';
 import { setPageMeta } from '../../../helper/page-meta';
+
+/** One walkthrough step as the page draws it, with its title marked up. */
+interface GuideStepView {
+  id: string;
+  /** The step's place in the walkthrough, which filtering must not renumber. */
+  number: number;
+  sweeps: readonly string[];
+  title: readonly FindHighlightPart[];
+}
+
+/** One reference section as the page draws it, with its heading marked up. */
+interface GuideSectionView {
+  section: GuideSection;
+  title: readonly FindHighlightPart[];
+}
 
 /** What a topic with no strip published for it offers, without allocating. */
 const NO_SWEEPS: readonly string[] = [];
@@ -92,6 +119,7 @@ const RAIL_ENTRIES: readonly GsIndexRailEntry[] = [
     GsDoorComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
+    GsFindFieldComponent,
   ],
   templateUrl: './image-guide.component.html',
   host: {
@@ -110,8 +138,97 @@ export class DocsImageGuideComponent {
     });
   }
 
+  private readonly transloco = inject(TranslocoService);
+
+  /** What the reader has typed into the find field. */
+  public readonly query = signal('');
+
+  /** Re-read the copy whenever the language or the loaded file changes. */
+  private readonly translations = toSignal(this.transloco.events$, {
+    initialValue: null,
+  });
+
   public readonly sections = GUIDE_SECTIONS;
   public readonly steps = GUIDE_STEPS;
+
+  /**
+   * The walkthrough steps the page draws. A step is kept when the query is in
+   * its heading or in its copy, and its number is its place in the walkthrough
+   * rather than its place in what is left.
+   */
+  public readonly visibleSteps = computed<readonly GuideStepView[]>(() => {
+    const needle = this.needle();
+    return GUIDE_STEPS.map((step, index) => ({
+      step,
+      index,
+      title: this.copyFor(`generate.guide.steps.${step.id}.title`),
+      body: this.copyFor(`generate.guide.steps.${step.id}.body`),
+    }))
+      .filter(
+        (step) =>
+          !needle ||
+          `${step.title} ${step.body}`.toLowerCase().includes(needle),
+      )
+      .map((step) => ({
+        id: step.step.id,
+        number: step.index + 1,
+        sweeps: step.step.sweeps,
+        title: findHighlightParts(step.title, needle),
+      }));
+  });
+
+  /**
+   * The reference sections the page draws. A section's body is the terms it
+   * lists, so looking for a setting keeps the card that names it and drops the
+   * cards that do not.
+   */
+  public readonly visibleSections = computed<readonly GuideSectionView[]>(
+    () => {
+      const needle = this.needle();
+      return GUIDE_SECTIONS.map((section) => ({
+        section,
+        title: this.copyFor(section.labelKey),
+      }))
+        .filter(
+          (entry) =>
+            !needle ||
+            `${entry.title} ${this.sectionBody(entry.section)}`
+              .toLowerCase()
+              .includes(needle),
+        )
+        .map((entry) => ({
+          section: entry.section,
+          title: findHighlightParts(entry.title, needle),
+        }));
+    },
+  );
+
+  /** How much of the page is left, which is what the find field announces. */
+  public readonly matchCount = computed(
+    () => this.visibleSteps().length + this.visibleSections().length,
+  );
+
+  private needle(): string {
+    return this.query().trim().toLowerCase();
+  }
+
+  /** A line of copy, or an empty string where the book has not written it. */
+  private copyFor(key: string): string {
+    this.translations();
+    const line = this.transloco.translate(key);
+    return line === key ? '' : line;
+  }
+
+  /** Everything a reference section says: the terms it lists and their notes. */
+  private sectionBody(section: GuideSection): string {
+    return section.topics
+      .flatMap((topic) => [
+        topic,
+        this.copyFor(settingTitleKey(topic)),
+        this.copyFor(settingNoteKey(topic)),
+      ])
+      .join(' ');
+  }
   public readonly railEntries = RAIL_ENTRIES;
   /** The way back up to the area this page is one of. */
   public readonly learnLink = DOCS_IMAGE;

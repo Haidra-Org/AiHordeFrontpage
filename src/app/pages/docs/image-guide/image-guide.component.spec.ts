@@ -208,6 +208,77 @@ describe('DocsImageGuideComponent', () => {
     expect(engine.consumeArmed()).toBe('txt2img');
   });
 
+  describe('find on this page', () => {
+    const translations = en as Record<string, string>;
+    const type = (text: string): void => {
+      const field = (
+        fixture.nativeElement as HTMLElement
+      ).querySelector<HTMLInputElement>('.gs-find-input')!;
+      field.value = text;
+      field.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    };
+
+    it('marks the matched run of a title it kept', () => {
+      type('describe');
+      const marks = query<HTMLElement>('.gs-guide-step-title .gs-find-mark');
+
+      expect(marks.length).toBeGreaterThan(0);
+      expect(marks[0].tagName).toBe('MARK');
+      expect(marks[0].textContent).toBe('Describe');
+      // The rest of the title is still there, unmarked.
+      expect(query<HTMLElement>('.gs-guide-step-title')[0].textContent).toBe(
+        translations['generate.guide.steps.prompt.title'],
+      );
+    });
+
+    it('keeps a step its own number rather than renumbering what is left', () => {
+      type('describe');
+      const steps = query<HTMLElement>('.gs-guide-step');
+
+      expect(steps).toHaveLength(1);
+      expect(steps[0].querySelector('.gs-guide-step-n')?.textContent).toBe('1');
+    });
+
+    it('drops the sections that do not carry the word', () => {
+      type('facefixer');
+      const heads = query<HTMLElement>('.gs-guide-card .gs-guide-head');
+
+      expect(query('.gs-guide-step')).toHaveLength(0);
+      expect(heads.map((head) => head.textContent?.trim())).toEqual([
+        translations['generate.form.post_processing_section'],
+      ]);
+    });
+
+    it('finds a section by its own name', () => {
+      type('sampling');
+      const marks = query<HTMLElement>('.gs-guide-head .gs-find-mark');
+
+      expect(marks.map((mark) => mark.textContent)).toContain('Sampling');
+    });
+
+    it('says so when nothing on the page carries the word', () => {
+      type('zzzz');
+
+      expect(query('.gs-guide-card')).toHaveLength(0);
+      expect(
+        (fixture.nativeElement as HTMLElement)
+          .querySelector('.gs-find-empty')
+          ?.textContent?.trim(),
+      ).toBe(translations['docs.find.empty'].replace('{{ query }}', 'zzzz'));
+    });
+
+    it('puts the whole guide back when the field is emptied', () => {
+      type('zzzz');
+      type('');
+
+      expect(query('.gs-guide-step')).toHaveLength(component.steps.length);
+      expect(query('.gs-guide-card')).toHaveLength(
+        component.sections.length + 1,
+      );
+    });
+  });
+
   it('reads as a page of its own rather than a pane of the studio', () => {
     const translations = en as Record<string, string>;
 

@@ -9396,6 +9396,110 @@ app-gs-compare-wipe {
   max-width: 68ch;
 }
 
+/* ------- find on this page ------------------------------------------- */
+/* The docs pages are long by design: the reference is eight bands of cards and
+   the guide is a walkthrough plus nine cards. The field takes the studio's own
+   field shape so the docs read as the same surface as the panel, and it keeps
+   the page's measure rather than the full width of the column. */
+.gen-studio .gs-find {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+}
+/* The guide heads its page with a row rather than a stack, so the field shares
+   that line with the title and drops under it when the row runs out. */
+.gen-studio .gs-guide-top .gs-find {
+  flex: 0 1 320px;
+}
+.gen-studio .gs-find-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gs-label);
+}
+.gen-studio .gs-find-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.gen-studio app-icon.gs-find-ico {
+  position: absolute;
+  left: 10px;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  color: var(--gs-muted);
+  pointer-events: none;
+}
+.gen-studio app-icon.gs-find-ico svg {
+  width: 14px;
+  height: 14px;
+}
+/* Room on the left for the glyph, and on the right for the clear button, which
+   sits inside the field rather than beside it. */
+.gen-studio .gs-find-input {
+  width: 100%;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--gs-ink);
+  background: var(--gs-field);
+  border: 1px solid var(--gs-field-border);
+  border-radius: 10px;
+  padding: 9px 40px 9px 30px;
+}
+.gen-studio .gs-find-input::placeholder {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-find-input:focus {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+}
+/* The browser's own clear affordance is suppressed: it is drawn differently in
+   every engine and there is a labelled button here already. */
+.gen-studio .gs-find-input::-webkit-search-cancel-button {
+  appearance: none;
+}
+.gen-studio .gs-find-clear {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-find-clear:hover {
+  background: var(--gs-field-soft);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-find-clear:focus-visible {
+  outline: 2px solid var(--gs-zone, var(--gs-blue));
+  outline-offset: 1px;
+}
+.gen-studio .gs-find-empty {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--gs-ink-2);
+  max-width: 68ch;
+}
+/* The matched run of a heading. Tinted rather than reversed: the heading is
+   still a heading, and the mark says where the word is without restating it in
+   another colour. The guide sets no zone of its own, so the documentation
+   plane's blue is the fallback. */
+.gen-studio .gs-find-mark {
+  background: var(--gs-zone-tint, var(--gs-blue-tint));
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
 /* One band per panel area, headed by the same eyebrow and hairline the guide
    uses. The identity class sits on the band, so the head's hairline, the chips
    and every card under it take the area's hue from one place. */

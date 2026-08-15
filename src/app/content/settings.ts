@@ -727,7 +727,7 @@ const SETTING_BY_ID: ReadonlyMap<string, SettingEntry> = new Map(
  * above. The two readings of steps are one setting: which sampler the strip was
  * rendered with is a property of the strip rather than of the field.
  */
-const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
+export const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   cfg_scale: 'cfg',
   // Both QR strips are readings of the one field the panel has: the payload box
   // that selects the workflow. Neither has a control of its own to be named by.

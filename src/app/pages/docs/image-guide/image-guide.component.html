@@ -1,5 +1,11 @@
 <div class="gs-guide-top">
   <h1 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h1>
+  <!-- The guide is a walkthrough and nine reference cards on one page, so a
+       reader who came for one setting is asked for the word instead. -->
+  <app-gs-find-field
+    [matches]="matchCount()"
+    (queryChange)="query.set($event)"
+  />
 </div>
 
 <div class="gs-index-layout">
@@ -22,44 +28,56 @@
       {{ "generate.guide.tutorials_link" | transloco }}
     </a>
 
-    <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
-      <h3 class="gs-guide-head">
-        {{ "generate.guide.walkthrough_head" | transloco }}
-      </h3>
-      <ol class="gs-guide-steps">
-        @for (step of steps; track step.id; let i = $index) {
-          <li class="gs-guide-step">
-            <span class="gs-guide-step-n" aria-hidden="true">{{ i + 1 }}</span>
-            <div class="gs-guide-step-text">
-              <h4 class="gs-guide-step-title">
-                {{ "generate.guide.steps." + step.id + ".title" | transloco }}
-              </h4>
-              <p class="gs-guide-step-body">
-                {{ "generate.guide.steps." + step.id + ".body" | transloco }}
-              </p>
-              <!-- The step is where a reader first meets the idea, so it is
+    @if (matchCount() === 0) {
+      <p class="gs-find-empty">
+        {{ "docs.find.empty" | transloco: { query: query() } }}
+      </p>
+    }
+
+    @if (visibleSteps().length > 0) {
+      <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
+        <h3 class="gs-guide-head">
+          {{ "generate.guide.walkthrough_head" | transloco }}
+        </h3>
+        <ol class="gs-guide-steps">
+          @for (step of visibleSteps(); track step.id) {
+            <li class="gs-guide-step">
+              <span class="gs-guide-step-n" aria-hidden="true">{{
+                step.number
+              }}</span>
+              <div class="gs-guide-step-text">
+                <!-- prettier-ignore -->
+                <h4 class="gs-guide-step-title">@for (part of step.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</h4>
+                <p class="gs-guide-step-body">
+                  {{ "generate.guide.steps." + step.id + ".body" | transloco }}
+                </p>
+                <!-- The step is where a reader first meets the idea, so it is
                  where its pictures sit. The reference half below links to the
                  same settings and leaves the strips here. -->
-              @for (parameter of step.sweeps; track parameter) {
-                <app-gs-sweep-scrub
-                  [parameter]="parameter"
-                  register="filmcard"
-                />
-              }
-            </div>
-          </li>
-        }
-      </ol>
-    </section>
+                @for (parameter of step.sweeps; track parameter) {
+                  <app-gs-sweep-scrub
+                    [parameter]="parameter"
+                    register="filmcard"
+                  />
+                }
+              </div>
+            </li>
+          }
+        </ol>
+      </section>
+    }
 
-    <h3 class="gs-guide-head gs-guide-head--major">
-      {{ "generate.guide.reference_head" | transloco }}
-    </h3>
-    <p class="gs-guide-lead">
-      {{ "generate.guide.reference_lead" | transloco }}
-    </p>
+    @if (visibleSections().length > 0) {
+      <h3 class="gs-guide-head gs-guide-head--major">
+        {{ "generate.guide.reference_head" | transloco }}
+      </h3>
+      <p class="gs-guide-lead">
+        {{ "generate.guide.reference_lead" | transloco }}
+      </p>
+    }
 
-    @for (section of sections; track section.id) {
+    @for (entry of visibleSections(); track entry.section.id) {
+      @let section = entry.section;
       <section
         class="gs-card gs-guide-card"
         [class]="identityFor(section.id)?.className"
@@ -71,7 +89,8 @@
               ><app-icon [name]="identity.icon"
             /></span>
           }
-          {{ section.labelKey | transloco }}
+          <!-- prettier-ignore -->
+          <span class="gs-guide-head-text">@for (part of entry.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</span>
         </h4>
         <!-- Reading about the dials is half of it; the other half is turning
            them, which is a page away and needs saying where the reading is. -->

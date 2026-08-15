@@ -5,11 +5,14 @@ import {
   PLATFORM_ID,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsFindFieldComponent } from '../../../components/gs-find-field/gs-find-field.component';
 import {
   GsIndexRailComponent,
   GsIndexRailEntry,
@@ -22,11 +25,27 @@ import { SweepLibraryService } from '../../../services/sweep-library.service';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   SETTINGS_INDEX,
+  SETTING_ID_BY_PARAMETER,
+  settingLeadKey,
+  settingProseLabelKey,
   settingSweepStrip,
   settingTitleKey,
 } from '../../../content/settings';
 import { docsSettingLink } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
+
+/**
+ * The API's field names, gathered under the setting they name. A reader who
+ * knows the horde by its payload looks for `cfg_scale`, and the alias map is
+ * where the studio already keeps that knowledge, so the find field reads it
+ * rather than restating it.
+ */
+const ALIASES_BY_ID: ReadonlyMap<string, readonly string[]> = Object.entries(
+  SETTING_ID_BY_PARAMETER,
+).reduce((map, [alias, id]) => {
+  map.set(id, [...(map.get(id) ?? []), alias]);
+  return map;
+}, new Map<string, string[]>());
 
 /** What the glossary files the reference index's this-page entries under. */
 const GLOSSARY_PAGE_ID = 'learn-settings';
@@ -66,7 +85,13 @@ interface IndexGroup {
  */
 @Component({
   selector: 'app-docs-settings-index',
-  imports: [TranslocoPipe, RouterLink, IconComponent, GsIndexRailComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    IconComponent,
+    GsIndexRailComponent,
+    GsFindFieldComponent,
+  ],
   templateUrl: './settings-index.component.html',
   host: {
     class: 'gs-ref-index',
@@ -80,7 +105,17 @@ export class DocsSettingsIndexComponent {
   private readonly document = inject(DOCUMENT);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  public readonly groups = computed<readonly IndexGroup[]>(() =>
+  private readonly transloco = inject(TranslocoService);
+
+  /** What the reader has typed into the find field, trimmed when it is used. */
+  public readonly query = signal('');
+
+  /** Re-read the copy whenever the language or the loaded file changes. */
+  private readonly translations = toSignal(this.transloco.events$, {
+    initialValue: null,
+  });
+
+  private readonly allGroups = computed<readonly IndexGroup[]>(() =>
     SETTINGS_INDEX.map((group) => {
       const identity = SECTION_IDENTITIES[group.section];
       return {
@@ -94,11 +129,63 @@ export class DocsSettingsIndexComponent {
   );
 
   /**
+   * The bands the page draws: every band while the field is empty, and only the
+   * cards carrying the query once it is not. A band whose cards have all gone
+   * is dropped rather than left as a heading over nothing.
+   */
+  public readonly groups = computed<readonly IndexGroup[]>(() => {
+    const needle = this.query().trim().toLowerCase();
+    if (!needle) {
+      return this.allGroups();
+    }
+    return this.allGroups()
+      .map((group) => ({
+        ...group,
+        cards: group.cards.filter((card) =>
+          this.haystack(card.id).includes(needle),
+        ),
+      }))
+      .filter((group) => group.cards.length > 0);
+  });
+
+  /** How many cards survived, which is what the find field announces. */
+  public readonly matchCount = computed(() =>
+    this.groups().reduce((total, group) => total + group.cards.length, 0),
+  );
+
+  /**
+   * Everything a setting can be looked for by: what the panel calls it, what
+   * prose calls it, the sentence the entry leads with, the studio's own id, and
+   * every API field name that is an alias onto that id.
+   */
+  private haystack(id: string): string {
+    this.translations();
+    const copy = [
+      settingTitleKey(id),
+      settingProseLabelKey(id),
+      settingLeadKey(id),
+    ].map((key) => this.copyFor(key));
+    return [id, ...(ALIASES_BY_ID.get(id) ?? []), ...copy]
+      .join(' ')
+      .toLowerCase();
+  }
+
+  /**
+   * A line of copy, or nothing where the book has not written it: the service
+   * answers an unwritten key with the key itself, and a key is made of words no
+   * reader would type.
+   */
+  private copyFor(key: string): string {
+    const line = this.transloco.translate(key);
+    return line === key ? '' : line;
+  }
+
+  /**
    * The bands as the contents rail names them: the same areas, in the same
    * order, aimed at the ids the bands already carry for the glossary.
    */
   public readonly railEntries = computed<readonly GsIndexRailEntry[]>(() =>
-    this.groups().map((group) => ({
+    this.allGroups().map((group) => ({
       id: group.section,
       labelKey: group.labelKey,
       icon: group.icon,

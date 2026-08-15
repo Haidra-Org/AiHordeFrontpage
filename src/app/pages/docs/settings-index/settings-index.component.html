@@ -6,6 +6,12 @@
     <p class="gs-ref-index-lead">
       {{ "generate.reference.lead" | transloco }}
     </p>
+    <!-- The index runs to eight bands and sixty-odd cards, which is more than a
+         reader who knows the name of the setting should have to walk. -->
+    <app-gs-find-field
+      [matches]="matchCount()"
+      (queryChange)="query.set($event)"
+    />
   </header>
 
   <div class="gs-index-layout">
@@ -15,6 +21,11 @@
     />
 
     <div class="gs-index-layout-main gs-index-layout-main--bands">
+      @if (groups().length === 0) {
+        <p class="gs-find-empty">
+          {{ "docs.find.empty" | transloco: { query: query() } }}
+        </p>
+      }
       @for (group of groups(); track group.section) {
         <!-- Named so the glossary's this-page list can send a reader to a band. -->
         <section

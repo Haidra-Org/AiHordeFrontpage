@@ -180,6 +180,61 @@ describe('DocsSettingsIndexComponent', () => {
     });
   });
 
+  describe('find on this page', () => {
+    const type = (text: string): void => {
+      const field = el().querySelector<HTMLInputElement>('.gs-find-input')!;
+      field.value = text;
+      field.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+    };
+    const titles = (): (string | undefined)[] =>
+      all('.gs-ref-card-title').map((title) => title.textContent?.trim());
+
+    it('shows the whole index until something is typed', async () => {
+      await setUp();
+
+      expect(all('.gs-ref-card')).toHaveLength(DOCUMENTED.length);
+      expect(el().querySelector('.gs-find-empty')).toBeNull();
+    });
+
+    it('finds a setting by the API field name that is an alias onto it', async () => {
+      await setUp();
+      type('cfg_scale');
+
+      expect(titles()).toEqual([translations['generate.help.cfg.title']]);
+      // The band the card is in is the only one left standing.
+      expect(all('.gs-ref-group')).toHaveLength(1);
+    });
+
+    it('finds the same setting by its id and by what it is called', async () => {
+      await setUp();
+
+      type('CFG');
+      expect(titles()).toContain(translations['generate.help.cfg.title']);
+
+      type('guidance');
+      expect(titles()).toContain(translations['generate.help.cfg.title']);
+    });
+
+    it('says so when nothing on the page carries the word', async () => {
+      await setUp();
+      type('zzzz');
+
+      expect(all('.gs-ref-card')).toHaveLength(0);
+      expect(all('.gs-ref-group')).toHaveLength(0);
+      expect(el().querySelector('.gs-find-empty')?.textContent?.trim()).toBe(
+        translations['docs.find.empty'].replace('{{ query }}', 'zzzz'),
+      );
+    });
+
+    it('leaves the contents rail whole, since the areas have not moved', async () => {
+      await setUp();
+      type('cfg_scale');
+
+      expect(all('.gs-index-entry')).toHaveLength(SETTINGS_INDEX.length);
+    });
+  });
+
   it('has an English heading and lead of its own', async () => {
     await setUp();
 
