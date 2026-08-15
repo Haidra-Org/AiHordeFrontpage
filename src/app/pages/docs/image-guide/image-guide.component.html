@@ -1,6 +1,6 @@
 <div class="gs-guide-top">
   <h1 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h1>
-  <!-- The guide is a walkthrough and nine reference cards on one page, so a
+  <!-- The guide is a walkthrough and nine reference groups on one page, so a
        reader who came for one setting is asked for the word instead. -->
   <app-gs-find-field
     [matches]="matchCount()"
@@ -14,19 +14,21 @@
     labelKey="generate.guide.toc_label"
   />
 
-  <div class="gs-index-layout-main">
-    <p class="gs-guide-lead">{{ "generate.guide.lead" | transloco }}</p>
+  <div class="gs-index-layout-main gs-index-layout-main--bands">
+    <div class="gs-guide-intro">
+      <p class="gs-guide-lead">{{ "generate.guide.lead" | transloco }}</p>
 
-    <!-- Kept with the intro rather than after the reference sections: below them
-       the way into Learn sits past a pane's worth of scrolling, where a reader
-       deciding how to start has already stopped looking. -->
-    <p class="gs-guide-note">
-      {{ "generate.guide.tutorials_note" | transloco }}
-    </p>
-    <a class="gs-guide-cta" [routerLink]="learnLink">
-      <app-icon name="document-text" class="gs-ico-sm" />
-      {{ "generate.guide.tutorials_link" | transloco }}
-    </a>
+      <!-- Kept with the intro rather than after the reference groups: below them
+           the way into Learn sits past a pane's worth of scrolling, where a
+           reader deciding how to start has already stopped looking. -->
+      <p class="gs-guide-note">
+        {{ "generate.guide.tutorials_note" | transloco }}
+      </p>
+      <a class="gs-guide-cta" [routerLink]="learnLink">
+        <app-icon name="document-text" class="gs-ico-sm" />
+        {{ "generate.guide.tutorials_link" | transloco }}
+      </a>
+    </div>
 
     @if (matchCount() === 0) {
       <p class="gs-find-empty">
@@ -35,32 +37,54 @@
     }
 
     @if (visibleSteps().length > 0) {
-      <section class="gs-card gs-guide-card" [id]="sectionId('walkthrough')">
-        <h3 class="gs-guide-head">
-          {{ "generate.guide.walkthrough_head" | transloco }}
-        </h3>
+      <section class="gs-guide-sec" [id]="sectionId('walkthrough')">
+        <!-- The eyebrow is an ordinal rather than a word: the page has two
+             halves and their headings already name them, so a line of prose
+             over each would say the heading twice. It is a mark for the eye,
+             which is why it is hidden from a reader being read to. -->
+        <header class="gs-guide-sec-head">
+          <p class="gs-cap-eyebrow" aria-hidden="true">
+            <span class="gs-cap-dot"></span>01
+          </p>
+          <h2 class="gs-guide-sec-title">
+            {{ "generate.guide.walkthrough_head" | transloco }}
+          </h2>
+        </header>
+
         <ol class="gs-guide-steps">
           @for (step of visibleSteps(); track step.id) {
-            <li class="gs-guide-step">
-              <span class="gs-guide-step-n" aria-hidden="true">{{
-                step.number
-              }}</span>
-              <div class="gs-guide-step-text">
-                <!-- prettier-ignore -->
-                <h4 class="gs-guide-step-title">@for (part of step.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</h4>
-                <p class="gs-guide-step-body">
-                  {{ "generate.guide.steps." + step.id + ".body" | transloco }}
-                </p>
-                <!-- The step is where a reader first meets the idea, so it is
-                 where its pictures sit. The reference half below links to the
-                 same settings and leaves the strips here. -->
-                @for (parameter of step.sweeps; track parameter) {
-                  <app-gs-sweep-scrub
-                    [parameter]="parameter"
-                    register="filmcard"
-                  />
+            <li class="gs-guide-step" [class]="step.identity?.className">
+              <div class="gs-guide-step-top">
+                <span class="gs-guide-step-n" aria-hidden="true">{{
+                  step.number
+                }}</span>
+                <!-- A step names the part of the panel it is about before it
+                     says what to do there, in that area's hue and mark: the
+                     same eyebrow the worked examples carry, so a reader who
+                     goes on to one meets what they just read. -->
+                @if (step.identity; as identity) {
+                  <p class="gs-learn-eyebrow">
+                    <span class="gs-sec-chip" aria-hidden="true"
+                      ><app-icon [name]="identity.icon"
+                    /></span>
+                    {{ identity.labelKey | transloco }}
+                  </p>
                 }
               </div>
+              <!-- prettier-ignore -->
+              <h3 class="gs-guide-step-title">@for (part of step.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</h3>
+              <p class="gs-guide-step-body">
+                {{ "generate.guide.steps." + step.id + ".body" | transloco }}
+              </p>
+              <!-- The step is where a reader first meets the idea, so it is
+                   where its pictures sit. The reference half below links to the
+                   same settings and leaves the strips here. -->
+              @for (parameter of step.sweeps; track parameter) {
+                <app-gs-sweep-scrub
+                  [parameter]="parameter"
+                  register="filmcard"
+                />
+              }
             </li>
           }
         </ol>
@@ -68,68 +92,88 @@
     }
 
     @if (visibleSections().length > 0) {
-      <h3 class="gs-guide-head gs-guide-head--major">
-        {{ "generate.guide.reference_head" | transloco }}
-      </h3>
-      <p class="gs-guide-lead">
-        {{ "generate.guide.reference_lead" | transloco }}
-      </p>
-    }
+      <section class="gs-guide-sec">
+        <header class="gs-guide-sec-head">
+          <p class="gs-cap-eyebrow" aria-hidden="true">
+            <span class="gs-cap-dot"></span>02
+          </p>
+          <h2 class="gs-guide-sec-title">
+            {{ "generate.guide.reference_head" | transloco }}
+          </h2>
+          <p class="gs-guide-sec-lead">
+            {{ "generate.guide.reference_lead" | transloco }}
+          </p>
+        </header>
 
-    @for (entry of visibleSections(); track entry.section.id) {
-      @let section = entry.section;
-      <section
-        class="gs-card gs-guide-card"
-        [class]="identityFor(section.id)?.className"
-        [id]="sectionId(section.id)"
-      >
-        <h4 class="gs-guide-head">
-          @if (identityFor(section.id); as identity) {
-            <span class="gs-sec-chip" aria-hidden="true"
-              ><app-icon [name]="identity.icon"
-            /></span>
-          }
-          <!-- prettier-ignore -->
-          <span class="gs-guide-head-text">@for (part of entry.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</span>
-        </h4>
-        <!-- Reading about the dials is half of it; the other half is turning
-           them, which is a page away and needs saying where the reading is. -->
-        @if (section.practiceFlow) {
-          <app-gs-door
-            kind="studio"
-            controlClass="gs-guide-practice"
-            [title]="'generate.guide.practice_link' | transloco"
-            [meta]="'generate.sweeps.studio_door_note' | transloco"
-            (entered)="startPractice(section)"
-          />
-        }
-        <!-- The panel's own note for each setting, which is a summary and says
-             so by linking on: the setting is written out in full on its own
-             page, and this list is here to be scanned rather than read. -->
-        <dl class="gs-guide-terms">
-          @for (topic of section.topics; track topic) {
-            <dt class="gs-guide-term">
-              <a class="gs-guide-term-link" [routerLink]="settingLink(topic)">
-                {{ titleKey(topic) | transloco }}
-              </a>
-            </dt>
-            <dd class="gs-guide-def">
-              {{ noteKey(topic) | transloco }}
-              <!-- The same offers the field's own `?` note carries. A reader in
-                 the guide is reading about the setting without the panel row in
-                 front of them, which is where the pictures do the most work. -->
-              @for (parameter of sweepFor(topic); track parameter) {
-                <app-gs-sweep-scrub
-                  [parameter]="parameter"
-                  register="filmcard"
+        <div class="gs-guide-areas">
+          @for (entry of visibleSections(); track entry.section.id) {
+            @let section = entry.section;
+            <section
+              class="gs-guide-area"
+              [class]="identityFor(section.id)?.className"
+              [id]="sectionId(section.id)"
+            >
+              <h3 class="gs-guide-area-head">
+                @if (identityFor(section.id); as identity) {
+                  <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+                    ><app-icon [name]="identity.icon"
+                  /></span>
+                }
+                <!-- prettier-ignore -->
+                <span class="gs-guide-head-text">@for (part of entry.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</span>
+              </h3>
+              <!-- Reading about the dials is half of it; the other half is
+                   turning them, which is a page away and needs saying where the
+                   reading is. -->
+              @if (section.practiceFlow) {
+                <app-gs-door
+                  kind="studio"
+                  controlClass="gs-guide-practice"
+                  [title]="'generate.guide.practice_link' | transloco"
+                  [meta]="'generate.sweeps.studio_door_note' | transloco"
+                  (entered)="startPractice(section)"
                 />
               }
-              @if (sweepGridFor(topic); as parameter) {
-                <app-gs-sweep-grid [parameter]="parameter" />
-              }
-            </dd>
+              <!-- The panel's own note for each setting, one row apiece, which
+                   is a summary and says so by linking on: the setting is
+                   written out in full on its own page, and this list is here to
+                   be scanned rather than read. -->
+              <dl class="gs-guide-terms">
+                @for (topic of section.topics; track topic) {
+                  <div class="gs-guide-term-row">
+                    <dt class="gs-guide-term">
+                      @if (hasSettingPage(topic)) {
+                        <a
+                          class="gs-guide-term-link"
+                          [routerLink]="settingLink(topic)"
+                          >{{ titleKey(topic) | transloco }}</a
+                        >
+                      } @else {
+                        {{ titleKey(topic) | transloco }}
+                      }
+                    </dt>
+                    <dd class="gs-guide-def">
+                      {{ noteKey(topic) | transloco }}
+                      <!-- The same offers the field's own `?` note carries. A
+                           reader in the guide is reading about the setting
+                           without the panel row in front of them, which is
+                           where the pictures do the most work. -->
+                      @for (parameter of sweepFor(topic); track parameter) {
+                        <app-gs-sweep-scrub
+                          [parameter]="parameter"
+                          register="filmcard"
+                        />
+                      }
+                      @if (sweepGridFor(topic); as parameter) {
+                        <app-gs-sweep-grid [parameter]="parameter" />
+                      }
+                    </dd>
+                  </div>
+                }
+              </dl>
+            </section>
           }
-        </dl>
+        </div>
       </section>
     }
   </div>

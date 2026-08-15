@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageGuideComponent } from './image-guide.component';
+import { hasReference } from '../../../content/settings';
 import en from '../../../../assets/i18n/en.json';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
@@ -53,6 +54,45 @@ describe('DocsImageGuideComponent', () => {
     expect(
       steps.map((step) => step.querySelector('.gs-guide-step-n')?.textContent),
     ).toEqual(component.steps.map((_, index) => String(index + 1)));
+  });
+
+  it('draws the walkthrough as an ordered list of cards', () => {
+    const list = query<HTMLElement>('.gs-guide-steps');
+    const steps = query<HTMLElement>('.gs-guide-step');
+
+    expect(list).toHaveLength(1);
+    expect(list[0].tagName).toBe('OL');
+    // A step is a card in its own right rather than a row of a spine, so the
+    // ordered list has to be the list itself rather than a wrapper around one.
+    for (const step of steps) {
+      expect(step.tagName).toBe('LI');
+      expect(step.parentElement).toBe(list[0]);
+    }
+  });
+
+  it('gives a step the mark and hue of the panel area it is about', () => {
+    const steps = query<HTMLElement>('.gs-guide-step');
+    const marked = steps.filter((step) =>
+      Array.from(step.classList).some((name) => name.startsWith('gs-sec--')),
+    );
+
+    // Every step but the one about reading the results pane, which is about the
+    // page rather than about a card of the panel and so takes no area.
+    expect(marked).toHaveLength(component.steps.length - 1);
+    for (const step of marked) {
+      expect(step.querySelector('.gs-learn-eyebrow .gs-sec-chip')).toBeTruthy();
+    }
+  });
+
+  it('keeps the headings in order: page, half, step', () => {
+    const levels = query<HTMLElement>('h1, h2, h3').map((head) =>
+      Number(head.tagName.slice(1)),
+    );
+
+    expect(levels[0]).toBe(1);
+    for (const [index, level] of levels.entries()) {
+      expect(level - (levels[index - 1] ?? level)).toBeLessThanOrEqual(1);
+    }
   });
 
   it('carries each walkthrough step its own copy and its own strips', () => {
@@ -134,19 +174,39 @@ describe('DocsImageGuideComponent', () => {
     }
   });
 
-  it('marks each reference section with the panel area it stands for', () => {
-    const cards = query<HTMLElement>('.gs-guide-card').slice(1);
+  it('groups the reference notes by panel area, each under its own mark', () => {
+    const groups = query<HTMLElement>('.gs-guide-area');
 
+    expect(groups).toHaveLength(component.sections.length);
     component.sections.forEach((section, index) => {
       const identity = component.identityFor(section.id);
 
       expect(identity).toBeTruthy();
-      expect(cards[index].classList).toContain('gs-guide-card');
-      expect(cards[index].classList).toContain(identity?.className);
+      expect(groups[index].id).toBe(component.sectionId(section.id));
+      expect(groups[index].classList).toContain(identity?.className);
       expect(
-        cards[index].querySelector('.gs-guide-head .gs-sec-chip'),
+        groups[index].querySelector('.gs-guide-area-head .gs-sec-chip'),
       ).toBeTruthy();
+      expect(groups[index].querySelectorAll('.gs-guide-term-row')).toHaveLength(
+        section.topics.length,
+      );
     });
+  });
+
+  it('links a note to the setting page only where the book has one', () => {
+    const topics = component.sections.flatMap((section) => section.topics);
+    const linked = query<HTMLAnchorElement>('.gs-guide-term-link');
+
+    // Every topic the guide lists has a page today, so the list of links is the
+    // list of topics; the guard is what keeps a topic added without one from
+    // becoming a link into nothing.
+    expect(topics.every(hasReference)).toBe(true);
+    expect(linked.map((link) => link.getAttribute('href'))).toEqual(
+      topics.filter(hasReference).map((topic) => component.settingLink(topic)),
+    );
+    for (const link of linked) {
+      expect(link.textContent?.trim()).toBeTruthy();
+    }
   });
 
   it('scrolls the pane to a section when its rail entry is pressed', () => {
@@ -161,7 +221,7 @@ describe('DocsImageGuideComponent', () => {
   it('offers the way into the Learn tutorials with the intro', () => {
     const translations = en as Record<string, string>;
     const link = query<HTMLAnchorElement>('.gs-guide-cta')[0];
-    const firstSection = query<HTMLElement>('.gs-guide-card')[0];
+    const firstSection = query<HTMLElement>('.gs-guide-sec')[0];
 
     expect(link.getAttribute('href')).toBe('/docs/image');
     expect(link.textContent).toContain(
@@ -179,7 +239,7 @@ describe('DocsImageGuideComponent', () => {
 
   it('offers practice only on the sections a worked example exercises', () => {
     const translations = en as Record<string, string>;
-    const cards = query<HTMLElement>('.gs-guide-card').slice(1);
+    const cards = query<HTMLElement>('.gs-guide-area');
     const withPractice = component.sections.filter(
       (section) => section.practiceFlow,
     );
@@ -242,7 +302,7 @@ describe('DocsImageGuideComponent', () => {
 
     it('drops the sections that do not carry the word', () => {
       type('facefixer');
-      const heads = query<HTMLElement>('.gs-guide-card .gs-guide-head');
+      const heads = query<HTMLElement>('.gs-guide-area-head');
 
       expect(query('.gs-guide-step')).toHaveLength(0);
       expect(heads.map((head) => head.textContent?.trim())).toEqual([
@@ -252,7 +312,7 @@ describe('DocsImageGuideComponent', () => {
 
     it('finds a section by its own name', () => {
       type('sampling');
-      const marks = query<HTMLElement>('.gs-guide-head .gs-find-mark');
+      const marks = query<HTMLElement>('.gs-guide-area-head .gs-find-mark');
 
       expect(marks.map((mark) => mark.textContent)).toContain('Sampling');
     });
@@ -260,7 +320,8 @@ describe('DocsImageGuideComponent', () => {
     it('says so when nothing on the page carries the word', () => {
       type('zzzz');
 
-      expect(query('.gs-guide-card')).toHaveLength(0);
+      expect(query('.gs-guide-sec')).toHaveLength(0);
+      expect(query('.gs-guide-area')).toHaveLength(0);
       expect(
         (fixture.nativeElement as HTMLElement)
           .querySelector('.gs-find-empty')
@@ -273,9 +334,7 @@ describe('DocsImageGuideComponent', () => {
       type('');
 
       expect(query('.gs-guide-step')).toHaveLength(component.steps.length);
-      expect(query('.gs-guide-card')).toHaveLength(
-        component.sections.length + 1,
-      );
+      expect(query('.gs-guide-area')).toHaveLength(component.sections.length);
     });
   });
 

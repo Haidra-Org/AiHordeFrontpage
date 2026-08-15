@@ -6424,13 +6424,9 @@
 .gen-studio .gs-guide-lead {
   margin: 14px 0 0;
   color: var(--gs-ink-2);
-  font-size: 12.5px;
-  line-height: 1.65;
-  max-width: 68ch;
-}
-.gen-studio .gs-guide-card {
-  margin-top: 12px;
-  scroll-margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 72ch;
 }
 /* The same landmark the panel's section titles use (uppercase eyebrow, hairline
    to the end of the row), one step up in size because here it heads a page of
@@ -6454,22 +6450,95 @@
     var(--gs-zone-tint-border, var(--gs-border))
   );
 }
-.gen-studio .gs-guide-head--major {
-  margin-top: 26px;
+/* One of the page's two halves. The header carries the landmark and the hairline
+   under it, and everything below the header belongs to that half, so the page
+   reads as two blocks rather than as a run of same-sized headings. */
+.gen-studio .gs-guide-sec {
+  scroll-margin-top: 12px;
+}
+.gen-studio .gs-guide-sec-head {
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gs-border);
+}
+.gen-studio .gs-guide-sec-title {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--gs-ink);
+}
+/* The sentence that sets a half up, a step larger and darker than the notes
+   under it: scrolling past, the framing has to be tellable from the detail. */
+.gen-studio .gs-guide-sec-lead {
+  margin: 7px 0 0;
+  color: var(--gs-ink-2);
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 72ch;
 }
 
+/* The walkthrough as cards rather than as a spine: a step here is a thing to
+   stop at and act on, and six of them down a scroll want edges. The area's hue
+   rides the left edge and its mark sits in the eyebrow, which is where the
+   worked examples put both. */
 .gen-studio .gs-guide-steps {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin: 14px 0 0;
+  gap: 12px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 .gen-studio .gs-guide-step {
+  position: relative;
+  min-width: 0;
+  padding: 12px 14px 12px 17px;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 10px;
+  background: var(--gs-card);
+  box-shadow: var(--gs-elev-1);
+  transition:
+    box-shadow var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-guide-step:hover {
+  border-color: var(--gs-sec, var(--gs-card-border));
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-guide-step::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--gs-sec, var(--gs-border));
+}
+.gen-studio .gs-guide-step-top {
   display: flex;
-  align-items: flex-start;
-  gap: 11px;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+/* The eyebrow's own gap below is for a step that leads with it; here it shares
+   a row with the number and the hairline runs out from both. */
+.gen-studio .gs-guide-step-top .gs-learn-eyebrow {
+  margin: 0;
+}
+/* The number takes the area's hue where the step has one, so the badge, the
+   edge and the mark are the same colour rather than three. */
+.gen-studio .gs-guide-step .gs-guide-step-n {
+  background: var(--gs-sec-tint, var(--gs-zone-tint, var(--gs-blue-tint)));
+  border-color: var(
+    --gs-sec-tint-border,
+    var(--gs-zone-tint-border, var(--gs-blue-tint-border))
+  );
+}
+.gen-studio .gs-guide-step .gs-guide-step-body {
+  margin: 5px 0 0;
+  max-width: 72ch;
 }
 .gen-studio .gs-guide-step-n {
   flex: none;
@@ -6485,13 +6554,13 @@
   font-size: 11px;
   font-weight: 700;
 }
-.gen-studio .gs-guide-step-text {
-  min-width: 0;
-}
 .gen-studio .gs-guide-step-title {
-  font-size: 12.5px;
+  margin: 8px 0 0;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--gs-ink);
+  overflow-wrap: anywhere;
 }
 .gen-studio .gs-guide-step-body {
   margin: 4px 0 0;
@@ -6501,23 +6570,87 @@
   max-width: 68ch;
 }
 
-.gen-studio .gs-guide-terms {
-  margin: 12px 0 0;
+/* The reference half: one group per panel area, each headed by that area's mark
+   and hue, so a reader looking for a dial can find the card it lives on first
+   and the row second. */
+.gen-studio .gs-guide-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
-.gen-studio .gs-guide-term {
-  font-size: 12px;
+.gen-studio .gs-guide-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-margin-top: 12px;
+}
+.gen-studio .gs-guide-area-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--gs-ink);
 }
+.gen-studio .gs-guide-area-head::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--gs-sec-tint-border, var(--gs-border));
+}
+.gen-studio .gs-guide-head-text {
+  min-width: 0;
+}
+
+.gen-studio .gs-guide-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+/* Deliberately quiet, as the settings index's cards are: the hue is carried by
+   the group's mark and by the row's own edge, and a column of rows each
+   shouting it would be a colour chart rather than a list to scan. */
+.gen-studio .gs-guide-term-row {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--gs-card-border);
+  border-left: 2px solid var(--gs-sec-tint-border, var(--gs-card-border));
+  border-radius: 10px;
+  background: var(--gs-card);
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-guide-term-row:hover {
+  border-color: var(--gs-sec, var(--gs-card-border));
+}
+.gen-studio .gs-guide-term {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-guide-term-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: inherit;
+  text-decoration: none;
+}
+.gen-studio .gs-guide-term-link:hover {
+  color: var(--gs-sec, var(--gs-blue));
+  text-decoration: underline;
+}
+.gen-studio .gs-guide-term-link:focus-visible {
+  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
 .gen-studio .gs-guide-def {
-  margin: 3px 0 12px;
+  margin: 3px 0 0;
   color: var(--gs-ink-2);
   font-size: 12px;
   line-height: 1.65;
-  max-width: 68ch;
-}
-.gen-studio .gs-guide-def:last-child {
-  margin-bottom: 0;
+  max-width: 72ch;
 }
 .gen-studio .gs-guide-note {
   margin: 18px 0 0;
@@ -6556,6 +6689,36 @@
   .gen-studio .gs-guide-close,
   .gen-studio .gs-guide-cta {
     min-height: 44px;
+  }
+  /* The row's own title is the way on to the setting's page, so on a touch
+     screen it is the row's height that has to be reachable, not the words. */
+  .gen-studio .gs-guide-term-link {
+    min-height: 44px;
+    margin: -10px 0;
+  }
+}
+
+/* A forced palette throws the identity hues away, and with them the card edge
+   and the area marks: the page would read as unbroken prose. Redraw both as
+   borders the system palette has to honour. */
+@media (forced-colors: active) {
+  .gen-studio .gs-guide-step,
+  .gen-studio .gs-guide-term-row {
+    border: 1px solid CanvasText;
+  }
+  .gen-studio .gs-guide-step::before {
+    background: CanvasText;
+  }
+  .gen-studio .gs-guide-step .gs-guide-step-n,
+  .gen-studio .gs-guide-step .gs-sec-chip,
+  .gen-studio .gs-guide-area-head .gs-sec-chip {
+    border: 1px solid CanvasText;
+  }
+  .gen-studio .gs-guide-area-head::after {
+    background: CanvasText;
+  }
+  .gen-studio .gs-guide-sec-head {
+    border-bottom-color: CanvasText;
   }
 }
 

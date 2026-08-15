@@ -24,11 +24,13 @@ import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-swe
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import {
   SECTION_IDENTITIES,
+  SectionId,
   SectionIdentity,
   sectionFor,
   sectionIdentity,
 } from '../../../content/sections';
 import {
+  hasReference,
   settingNoteKey,
   settingSweepGrid,
   settingSweepStrip,
@@ -54,6 +56,8 @@ interface GuideStepView {
   number: number;
   sweeps: readonly string[];
   title: readonly FindHighlightPart[];
+  /** The panel area the step's card wears, or null where it is about none. */
+  identity: SectionIdentity | null;
 }
 
 /** One reference section as the page draws it, with its heading marked up. */
@@ -61,6 +65,22 @@ interface GuideSectionView {
   section: GuideSection;
   title: readonly FindHighlightPart[];
 }
+
+/**
+ * The panel area each walkthrough step is about, which is the mark and hue its
+ * card carries. The step ids are the guide's own, so the registry's tutorial
+ * lookup does not answer for them: the Dimensions card is the size area, and
+ * pressing Generate is a question put to the horde. Reading the results is
+ * about the page rather than about a card, so it maps to nothing and takes no
+ * mark, the way the worked examples' own spine treats such a step.
+ */
+const SECTION_BY_GUIDE_STEP: Readonly<Record<string, SectionId>> = {
+  prompt: 'prompt',
+  model: 'model',
+  dimensions: 'size',
+  generate: 'horde',
+  advanced: 'sampling',
+};
 
 /** What a topic with no strip published for it offers, without allocating. */
 const NO_SWEEPS: readonly string[] = [];
@@ -174,6 +194,7 @@ export class DocsImageGuideComponent {
         number: step.index + 1,
         sweeps: step.step.sweeps,
         title: findHighlightParts(step.title, needle),
+        identity: sectionIdentity(SECTION_BY_GUIDE_STEP[step.step.id]),
       }));
   });
 
@@ -254,6 +275,15 @@ export class DocsImageGuideComponent {
   /** Where the setting is written out in full. */
   public settingLink(topic: string): string {
     return docsSettingLink(topic);
+  }
+
+  /**
+   * Whether the reference has a page for the setting. A row whose setting has
+   * none is the note and nothing else: a link that lands on a missing page is
+   * worse than a title a reader cannot press.
+   */
+  public hasSettingPage(topic: string): boolean {
+    return hasReference(topic);
   }
 
   /** The strips a reference entry has pictures for, in the order they read. */
