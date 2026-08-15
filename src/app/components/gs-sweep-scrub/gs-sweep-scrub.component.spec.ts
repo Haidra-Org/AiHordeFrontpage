@@ -755,4 +755,102 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-sweep-offer')).not.toBeNull();
     expect(all('.gs-cap-peek-frame')).toHaveLength(3);
   });
+
+  describe('provenance', () => {
+    const requestToggle = (): HTMLButtonElement =>
+      find<HTMLButtonElement>('.gs-plate-request-toggle')!;
+
+    /** Answer the sidecar fetch for one library path. */
+    const flushSidecar = async (
+      path: string,
+      record: Record<string, unknown> | null,
+    ): Promise<void> => {
+      const pending = http.expectOne(`${environment.evidenceBaseUrl}/${path}`);
+      if (record === null) {
+        pending.error(new ProgressEvent('offline'), {
+          status: 0,
+          statusText: '',
+        });
+      } else {
+        pending.flush(record);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+    };
+
+    it('names the model behind the pictures, family included', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(find('.gs-plate-model')?.textContent?.trim()).toBe(
+        'AlbedoBase XL (SDXL) · SDXL',
+      );
+    });
+
+    it('unfolds the full request of the frame on show', async () => {
+      await setUp({ startExpanded: true });
+
+      requestToggle().click();
+      fixture.detectChanges();
+      await flushSidecar('steps/albedobase-xl/person/002_12.json', {
+        model_requested: 'AlbedoBase XL (SDXL)',
+        params: { steps: 12, cfg_scale: 7 },
+      });
+
+      // The chips read the record the way the worked examples read a request,
+      // and the record itself sits under them for whoever wants the file.
+      expect(find('.gs-plate-request .gs-recipe')).not.toBeNull();
+      expect(find('.gs-plate-raw')?.textContent).toContain('"cfg_scale": 7');
+    });
+
+    it('fetches the record again when the reader scrubs on', async () => {
+      await setUp({ startExpanded: true });
+      requestToggle().click();
+      fixture.detectChanges();
+      await flushSidecar('steps/albedobase-xl/person/002_12.json', {
+        params: { steps: 12 },
+      });
+
+      clickTick(0);
+      await flushSidecar('steps/albedobase-xl/person/001_4.json', {
+        params: { steps: 4 },
+      });
+
+      expect(find('.gs-plate-raw')?.textContent).toContain('"steps": 4');
+    });
+
+    it('reads a record once, however often it is asked for', async () => {
+      await setUp({ startExpanded: true });
+      requestToggle().click();
+      fixture.detectChanges();
+      await flushSidecar('steps/albedobase-xl/person/002_12.json', {
+        params: { steps: 12 },
+      });
+
+      requestToggle().click();
+      fixture.detectChanges();
+      requestToggle().click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+
+      // The record is immutable once published, so the second look is served
+      // from what the first one fetched.
+      http.expectNone(
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.json`,
+      );
+      expect(find('.gs-plate-raw')?.textContent).toContain('"steps": 12');
+    });
+
+    it('says so when the record cannot be loaded', async () => {
+      await setUp({ startExpanded: true });
+
+      requestToggle().click();
+      fixture.detectChanges();
+      await flushSidecar('steps/albedobase-xl/person/002_12.json', null);
+
+      expect(find('.gs-plate-request')?.textContent).toContain(
+        'could not be loaded',
+      );
+      expect(find('.gs-plate-raw')).toBeNull();
+    });
+  });
 });

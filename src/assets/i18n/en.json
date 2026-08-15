@@ -764,6 +764,8 @@
   "generate.sweeps.position": "{{ at }} / {{ n }}",
   "generate.sweeps.collapse": "Collapse",
   "generate.sweeps.loading": "Fetching the example images.",
+  "generate.sweeps.full_request": "Full request",
+  "generate.sweeps.request_missing": "The request record for this frame could not be loaded.",
   "generate.sweeps.value_prompt": "Prompted with {{ value }}",
   "generate.sweeps.batch_note": "Picked from a batch of {{ n }}.",
   "generate.sweeps.slider_label": "Drag to compare the same picture at each setting",

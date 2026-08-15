@@ -7459,6 +7459,62 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-link:hover {
   color: var(--gs-stage-ink);
 }
+/* The provenance line: what model made the pictures, always, and the way to
+   the record itself. It closes the plate, so it is quieter than the foot and
+   separated by the same rim the plate's edges use. */
+.gen-studio .gs-plate-provenance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px 10px;
+}
+/* The way into the record reads as the disclosure it is: a bordered control in
+   the plate's own chrome, its chevron pointing at what a press will do. */
+.gen-studio .gs-plate-request-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: 7px;
+  background: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gs-stage-label);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gen-studio .gs-plate-request-toggle:hover,
+.gen-studio .gs-plate-request-toggle[aria-expanded="true"] {
+  color: var(--gs-stage-ink);
+  border-color: var(--gs-stage-label);
+}
+.gen-studio .gs-plate-model {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--gs-stage-label);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-plate-request {
+  border-top: 1px solid var(--gs-stage-rim);
+  padding: 12px 14px 14px;
+}
+.gen-studio .gs-plate-request .gs-recipe {
+  margin: 0 0 10px;
+}
+.gen-studio .gs-plate-raw {
+  margin: 0;
+  max-height: 260px;
+  overflow: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--gs-stage-label);
+  white-space: pre;
+}
 /* The tokens the plate borrows from the page have to survive the change of
    ground under them. */
 .gen-studio .gs-sweep-open .gs-setting-chip {
@@ -7577,10 +7633,26 @@ app-gs-sweep-scrub {
   height: 16px;
   background: var(--gs-stage-label);
 }
+/* The frame on show is a thumb rather than a bigger slit: filled, haloed off
+   its neighbours by the stage tone, and pointed at from above, so the current
+   position reads at a glance and not by comparing slit heights. */
 .gen-studio .gs-tickrail-tick.is-at::after {
-  width: 5px;
-  height: 22px;
+  width: 9px;
+  height: 24px;
+  border-radius: 3px;
   background: var(--gs-stage-ink);
+  box-shadow:
+    0 0 0 2px var(--gs-stage),
+    0 0 0 3px var(--gs-stage-label);
+}
+.gen-studio .gs-tickrail-tick.is-at::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--gs-stage-ink);
 }
 .gen-studio .gs-tickrail-ends {
   display: flex;
@@ -7692,6 +7764,17 @@ app-gs-sweep-scrub + app-gs-door {
    and is left alone: a cap on it would crop the seam it exists to show. */
 .gen-studio img.gs-sweep-frame {
   max-height: min(42vh, 460px);
+  object-fit: contain;
+}
+/* Frames of one strip can differ in shape (a resolution sweep by its nature, a
+   sketch-sourced strip by its sources), and a stage that takes each frame's own
+   height bounces the whole plate as the reader scrubs. The single-frame stage
+   is one fixed letterbox: the frame element itself carries the stage's height
+   and letterboxes its picture, so every stop renders in the same box. The pair
+   and the tiled plate keep their own layouts. */
+.gen-studio .gs-sweep-figure img.gs-sweep-frame {
+  width: 100%;
+  height: min(42vh, 460px);
   object-fit: contain;
 }
 /* The setting and its value lead the caption as one token, and the sentence

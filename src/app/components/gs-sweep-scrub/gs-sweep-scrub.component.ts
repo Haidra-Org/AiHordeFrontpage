@@ -5,6 +5,7 @@ import {
   ElementRef,
   afterRenderEffect,
   computed,
+  effect,
   inject,
   input,
   linkedSignal,
@@ -17,6 +18,11 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
+import {
+  GsRecipeChipsComponent,
+  RecipeParams,
+  RecipeRequest,
+} from '../gs-recipe-chips/gs-recipe-chips.component';
 import {
   SweepVariantPair,
   settingProseLabelKey,
@@ -41,6 +47,21 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /** Where the whole answer about samplers lives, for the folded note's last line. */
 const SAMPLER_REFERENCE = docsSettingLink('sampler');
+
+/**
+ * How a model family reads on the provenance line. The library records the
+ * baseline in the API's own vocabulary; a reader gets the name the panel's
+ * dimension presets already taught them, and an unlisted family reads as the
+ * recorded token rather than being hidden.
+ */
+const BASELINE_LABELS: Record<string, string> = {
+  stable_diffusion_1: 'SD 1.5',
+  stable_diffusion_2_512: 'SD 2',
+  stable_diffusion_2_768: 'SD 2 (768)',
+  stable_diffusion_xl: 'SDXL',
+  stable_cascade: 'Stable Cascade',
+  flux_1: 'Flux',
+};
 
 /** Which way each arrow key steps through the stops in the full-size view. */
 const VIEWER_STEPS: Readonly<Record<string, number>> = {
@@ -129,6 +150,7 @@ const VIEWER_FOCUSABLE =
     RouterLink,
     GsCompareWipeComponent,
     GsSettingChipComponent,
+    GsRecipeChipsComponent,
   ],
   template: `
     <!-- The tile a repeated plate is made of, on its own. The plate answers
@@ -548,6 +570,46 @@ const VIEWER_FOCUSABLE =
                 >
                   {{ 'generate.sweeps.enlarge' | transloco }}
                 </button>
+              </div>
+            }
+
+            <!-- What made these pictures. The model is stated at all times,
+                 because a strip means something different on every family; the
+                 full request is there for whoever wants the record itself. -->
+            <div class="gs-plate-provenance">
+              @if (modelChip(); as chip) {
+                <span class="gs-plate-model">{{ chip }}</span>
+              }
+              <span class="gs-plate-grow"></span>
+              @if (!paired() && sidecarPath()) {
+                <button
+                  type="button"
+                  class="gs-plate-request-toggle"
+                  [attr.aria-expanded]="requestOpen()"
+                  (click)="toggleRequest()"
+                >
+                  <app-icon
+                    [name]="requestOpen() ? 'chevron-up' : 'chevron-down'"
+                    class="gs-ico-sm"
+                  />
+                  {{ 'generate.sweeps.full_request' | transloco }}
+                </button>
+              }
+            </div>
+            @if (requestOpen() && !paired()) {
+              <div class="gs-plate-request">
+                @if (requestRecord() === undefined) {
+                  <p class="gs-sweep-loading">
+                    {{ 'generate.sweeps.loading' | transloco }}
+                  </p>
+                } @else if (requestRecord() === null) {
+                  <p class="gs-sweep-loading">
+                    {{ 'generate.sweeps.request_missing' | transloco }}
+                  </p>
+                } @else {
+                  <app-gs-recipe-chips [request]="requestChips()" />
+                  <pre class="gs-plate-raw">{{ requestRaw() }}</pre>
+                }
               </div>
             }
           </div>
@@ -990,8 +1052,86 @@ export class GsSweepScrubComponent {
    */
   public readonly showPreview = computed(() => !this.reducedData());
 
+  /**
+   * The model behind the pictures, named with its family: the one piece of
+   * context a strip means nothing without, on the plate at all times.
+   */
+  public readonly modelChip = computed(() => {
+    const model = this.strip()?.image_model;
+    if (!model) {
+      return null;
+    }
+    const family = BASELINE_LABELS[model.baseline] ?? model.baseline;
+    return `${model.name} · ${family}`;
+  });
+
+  /** Whether the full request record is unfolded under the plate. */
+  public readonly requestOpen = signal(false);
+
+  /**
+   * The current frame's provenance record. `undefined` while nothing has been
+   * fetched or a fetch is in flight, `null` when the record is unavailable.
+   */
+  public readonly requestRecord = signal<
+    Record<string, unknown> | null | undefined
+  >(undefined);
+
+  /** Where the current frame's provenance record is published, if it is. */
+  public readonly sidecarPath = computed(() => {
+    const strip = this.strip();
+    return strip ? (strip.stops[this.index()]?.sidecar ?? null) : null;
+  });
+
+  /**
+   * The record read the way the worked examples read a request: the chips are
+   * the settings that shaped the picture, and the raw view below them is the
+   * record itself.
+   */
+  public readonly requestChips = computed<RecipeRequest | null>(() => {
+    const record = this.requestRecord();
+    if (!record) {
+      return null;
+    }
+    const model =
+      record['model_generated_with'] ?? record['model_requested'] ?? null;
+    const params = record['params'];
+    return {
+      models: typeof model === 'string' ? [model] : undefined,
+      params:
+        params && typeof params === 'object'
+          ? (params as RecipeParams)
+          : undefined,
+    };
+  });
+
+  public readonly requestRaw = computed(() => {
+    const record = this.requestRecord();
+    return record ? JSON.stringify(record, null, 2) : '';
+  });
+
+  public toggleRequest(): void {
+    this.requestOpen.update((open) => !open);
+  }
+
   constructor() {
     void this.sweeps.ensureLoaded();
+
+    // The record is fetched when it is asked for and again when the reader
+    // scrubs to another frame with the fold open; a reply that arrives after
+    // the frame has moved on is dropped rather than shown against the wrong
+    // picture.
+    effect(() => {
+      const path = this.requestOpen() ? this.sidecarPath() : null;
+      this.requestRecord.set(undefined);
+      if (!path) {
+        return;
+      }
+      void this.sweeps.sidecar(path).then((record) => {
+        if (this.requestOpen() && this.sidecarPath() === path) {
+          this.requestRecord.set(record);
+        }
+      });
+    });
 
     // The enlarged frame takes focus as it opens, so the keys that close it and
     // the button that dismisses it are where the reader already is.

@@ -24,6 +24,13 @@ export interface SweepStop {
    * render is the one shown; anything higher is disclosed to the reader.
    */
   batch_size?: number;
+  /**
+   * Path to this frame's provenance record relative to the library root: the
+   * full request it was rendered from, as the runner recorded it. The library
+   * writes one beside every frame; a stop without one simply offers no full
+   * request to read.
+   */
+  sidecar?: string | null;
 }
 
 /** One side of a grid plate: what it varies, and the values it varies it over. */
@@ -293,6 +300,32 @@ export class SweepLibraryService {
   public assetUrl(path: string): string {
     return `${this.baseUrl}/${path}`;
   }
+
+  /**
+   * One frame's provenance record, fetched on demand and kept: the record is
+   * immutable once published, so a path is only ever read once. Null when the
+   * fetch fails, which a caller shows as the record being unavailable rather
+   * than as an error of its own.
+   */
+  public async sidecar(path: string): Promise<Record<string, unknown> | null> {
+    const cached = this.sidecars.get(path);
+    if (cached !== undefined) {
+      return cached;
+    }
+    let record: Record<string, unknown> | null;
+    try {
+      record =
+        (await firstValueFrom(
+          this.http.get<Record<string, unknown>>(this.assetUrl(path)),
+        )) ?? null;
+    } catch {
+      record = null;
+    }
+    this.sidecars.set(path, record);
+    return record;
+  }
+
+  private readonly sidecars = new Map<string, Record<string, unknown> | null>();
 
   private async fetchIndex(): Promise<void> {
     try {
