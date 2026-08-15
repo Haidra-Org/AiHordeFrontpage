@@ -99,6 +99,8 @@ const RAIL_STEPS: Readonly<Record<string, number | 'first' | 'last'>> = {
  * numbers stay inside the plate however dense the strip or long the value.
  */
 const END_LABEL_PERCENT = 30;
+/** Longer than this and an end value is a sentence, which the chip already says. */
+const END_LABEL_MAX_CHARS = 14;
 
 /**
  * How far a finger has to travel before the lane treats the gesture as a scrub.
@@ -312,20 +314,24 @@ const VIEWER_FOCUSABLE =
           <!-- Both end numbers are placed by the same arithmetic the slits are,
                so each sits under the slit it names. Left at the lane's own two
                edges they read as labelling frames that are not there. -->
-          <span class="gs-tickrail-end" [style.left.%]="labelPercent(0)">{{
-            endValues().first
-          }}</span>
+          @if (showsEnds()) {
+            <span class="gs-tickrail-end" [style.left.%]="labelPercent(0)">{{
+              endValues().first
+            }}</span>
+          }
           <!-- What the lane is for, said where a reader's eye lands on it: a
                row of slits between two numbers does not announce itself as a
                control, and the invitation is the difference. -->
           <span class="gs-tickrail-hint" aria-hidden="true">{{
             'generate.sweeps.rail_hint' | transloco
           }}</span>
-          <span
-            class="gs-tickrail-end"
-            [style.left.%]="labelPercent(lastIndex())"
-            >{{ endValues().last }}</span
-          >
+          @if (showsEnds()) {
+            <span
+              class="gs-tickrail-end"
+              [style.left.%]="labelPercent(lastIndex())"
+              >{{ endValues().last }}</span
+            >
+          }
         </span>
       </div>
     </ng-template>
@@ -1003,6 +1009,19 @@ export class GsSweepScrubComponent {
   );
 
   public readonly frameCount = computed(() => this.stops().length);
+
+  /**
+   * Whether the two end values are short enough to sit under their slits. A
+   * value that is a sentence (a weighted phrase, a prompt fragment) would wrap
+   * into the value chip under the lane, and the chip and the caption already
+   * say it in full; the hint alone keeps the row honest on those strips.
+   */
+  public readonly showsEnds = computed(() => {
+    const { first, last } = this.endValues();
+    return (
+      first.length <= END_LABEL_MAX_CHARS && last.length <= END_LABEL_MAX_CHARS
+    );
+  });
 
   /** What the two ends were rendered at, under the ends of the rail. */
   public readonly endValues = computed(() => {
