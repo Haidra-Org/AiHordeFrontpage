@@ -29,13 +29,24 @@ import {
   settingSection,
   settingTitleKey,
 } from '../../content/settings';
+import { DocsPageContextService } from '../../services/docs-page-context.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { IconComponent } from '../icon/icon.component';
 
 /** Where a reader was when they left a page for a setting's reference entry. */
 export interface ReferenceOrigin {
   url: string;
+  /**
+   * The page's document title, less the site suffix. The fallback name, for a
+   * page that has not declared one of its own.
+   */
   title: string;
+  /**
+   * The key the page named itself by, when it declared one. Preferred over the
+   * title: it is the page's own word for itself and it is translated where the
+   * offer is read rather than where it was stowed.
+   */
+  returnLabelKey?: string;
 }
 
 /** The navigation state key the reference entry reads its way back from. */
@@ -167,6 +178,7 @@ export class GsSettingChipComponent {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly dock = inject(GsHelpDockService);
+  private readonly docsPage = inject(DocsPageContextService);
   private readonly pageTitle = inject(Title);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly trigger =
@@ -287,9 +299,11 @@ export class GsSettingChipComponent {
       this.dock.open(id);
       return;
     }
+    const declared = this.docsPage.returnLabelKey();
     const origin: ReferenceOrigin = {
       url,
       title: this.pageTitle.getTitle().split(' | ')[0],
+      ...(declared ? { returnLabelKey: declared } : {}),
     };
     void this.router.navigateByUrl(docsSettingLink(id), {
       state: { [REFERENCE_ORIGIN_STATE]: origin },

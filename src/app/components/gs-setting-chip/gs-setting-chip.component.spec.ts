@@ -10,6 +10,7 @@ import {
   REFERENCE_ORIGIN_STATE,
 } from './gs-setting-chip.component';
 import { SettingValue } from '../../content/settings';
+import { DocsPageContextService } from '../../services/docs-page-context.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import en from '../../../assets/i18n/en.json';
 
@@ -159,6 +160,35 @@ describe('GsSettingChipComponent', () => {
       expect(dock.topic()).toBe('steps');
       expect(navigate).not.toHaveBeenCalled();
       expect(pop()).toBeNull();
+    });
+
+    it('prefers the name the page declared over the document title', () => {
+      const router = TestBed.inject(Router);
+      TestBed.inject(Title).setTitle(
+        'Restyle an image you already have | AI Horde',
+      );
+      TestBed.inject(DocsPageContextService).returnLabelKey.set(
+        'generate.tutorials.flows.img2img.task_name',
+      );
+      vi.spyOn(router, 'url', 'get').mockReturnValue(
+        '/docs/image/learn/img2img',
+      );
+      const navigate = vi
+        .spyOn(router, 'navigateByUrl')
+        .mockResolvedValue(true);
+      open('cfg_scale');
+
+      pop()!.querySelector<HTMLButtonElement>('.gs-setting-pop-go')!.click();
+
+      expect(navigate).toHaveBeenCalledWith('/docs/image/settings/cfg', {
+        state: {
+          [REFERENCE_ORIGIN_STATE]: {
+            url: '/docs/image/learn/img2img',
+            title: 'Restyle an image you already have',
+            returnLabelKey: 'generate.tutorials.flows.img2img.task_name',
+          },
+        },
+      });
     });
 
     it('goes to the reference page from anywhere else, carrying where the reader was', () => {

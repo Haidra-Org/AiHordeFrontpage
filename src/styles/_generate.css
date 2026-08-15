@@ -1282,7 +1282,12 @@
 .gen-studio .gs-btn-ghost,
 .gen-studio .gs-browse-btn,
 .gen-studio .gs-genbtn,
-.gen-studio .gs-batch-btn {
+.gen-studio .gs-batch-btn,
+.gen-studio .gs-guide-cta,
+.gen-studio .gs-ref-related-link,
+.gen-studio .gs-tut-viewer-x,
+.gen-studio .gs-sweep-viewer-x,
+.gen-studio .gs-sweep-cell-step {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1311,17 +1316,22 @@
 }
 /* Icon-only: a square the height of a field, with the word in aria-label. */
 .gen-studio .gs-btn--icon,
-.gen-studio .gs-batch-btn {
+.gen-studio .gs-batch-btn,
+.gen-studio .gs-tut-viewer-x,
+.gen-studio .gs-sweep-viewer-x,
+.gen-studio .gs-sweep-cell-step {
   width: var(--gs-control-h);
   padding: 0;
 }
-.gen-studio .gs-btn {
+.gen-studio .gs-btn,
+.gen-studio .gs-ref-related-link {
   background: var(--gs-panel);
   border-color: var(--gs-border);
   color: var(--gs-ink);
   box-shadow: var(--gs-elev-1);
 }
-.gen-studio .gs-btn:hover:not(:disabled) {
+.gen-studio .gs-btn:hover:not(:disabled),
+.gen-studio .gs-ref-related-link:hover {
   box-shadow: var(--gs-elev-2);
 }
 .gen-studio .gs-btn-primary,
@@ -1338,21 +1348,29 @@
   transform: translateY(1px);
 }
 .gen-studio .gs-btn-tonal,
-.gen-studio .gs-browse-btn {
+.gen-studio .gs-browse-btn,
+.gen-studio .gs-guide-cta {
   background: var(--gs-blue-tint);
   color: var(--gs-blue);
 }
 .gen-studio .gs-btn-tonal:hover:not(:disabled),
-.gen-studio .gs-browse-btn:hover:not(:disabled) {
+.gen-studio .gs-browse-btn:hover:not(:disabled),
+.gen-studio .gs-guide-cta:hover {
   background: color-mix(in srgb, var(--gs-blue) 12%, var(--gs-blue-tint));
 }
 .gen-studio .gs-btn-ghost,
-.gen-studio .gs-batch-btn {
+.gen-studio .gs-batch-btn,
+.gen-studio .gs-tut-viewer-x,
+.gen-studio .gs-sweep-viewer-x,
+.gen-studio .gs-sweep-cell-step {
   background: none;
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-btn-ghost:hover:not(:disabled),
-.gen-studio .gs-batch-btn:hover:not(:disabled) {
+.gen-studio .gs-batch-btn:hover:not(:disabled),
+.gen-studio .gs-tut-viewer-x:hover,
+.gen-studio .gs-sweep-viewer-x:hover,
+.gen-studio .gs-sweep-cell-step:hover:not(:disabled) {
   background: var(--gs-seg-track);
   color: var(--gs-ink);
 }
@@ -1373,7 +1391,12 @@
 .gen-studio .gs-btn-ghost:focus-visible,
 .gen-studio .gs-browse-btn:focus-visible,
 .gen-studio .gs-genbtn:focus-visible,
-.gen-studio .gs-batch-btn:focus-visible {
+.gen-studio .gs-batch-btn:focus-visible,
+.gen-studio .gs-guide-cta:focus-visible,
+.gen-studio .gs-ref-related-link:focus-visible,
+.gen-studio .gs-tut-viewer-x:focus-visible,
+.gen-studio .gs-sweep-viewer-x:focus-visible,
+.gen-studio .gs-sweep-cell-step:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
@@ -1384,11 +1407,19 @@
   .gen-studio .gs-btn-ghost,
   .gen-studio .gs-browse-btn,
   .gen-studio .gs-genbtn,
-  .gen-studio .gs-batch-btn {
+  .gen-studio .gs-batch-btn,
+  .gen-studio .gs-guide-cta,
+  .gen-studio .gs-ref-related-link,
+  .gen-studio .gs-tut-viewer-x,
+  .gen-studio .gs-sweep-viewer-x,
+  .gen-studio .gs-sweep-cell-step {
     min-height: 44px;
   }
   .gen-studio .gs-btn--icon,
-  .gen-studio .gs-batch-btn {
+  .gen-studio .gs-batch-btn,
+  .gen-studio .gs-tut-viewer-x,
+  .gen-studio .gs-sweep-viewer-x,
+  .gen-studio .gs-sweep-cell-step {
     width: 44px;
   }
 }
@@ -6687,7 +6718,7 @@
 .gen-studio .gs-guide {
   display: block;
   background: var(--gs-canvas);
-  padding: 18px 16px 48px;
+  padding: var(--gs-space-4) var(--gs-space-4) 48px;
 }
 .gen-studio .gs-guide > * {
   max-width: 880px;
@@ -6698,11 +6729,11 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: var(--gs-space-3);
 }
 /* The page's own title, on the same step as the worked examples' heading. */
 .gen-studio .gs-guide-title {
-  font-size: 20px;
+  font-size: var(--gs-text-xl);
   font-weight: 800;
   color: var(--gs-ink);
 }
@@ -6725,9 +6756,9 @@
 }
 
 .gen-studio .gs-guide-lead {
-  margin: 14px 0 0;
+  margin: var(--gs-space-4) 0 0;
   color: var(--gs-ink-2);
-  font-size: 13px;
+  font-size: var(--gs-text-lg-docs, var(--gs-text-md));
   line-height: 1.7;
   max-width: 72ch;
 }
@@ -6737,8 +6768,8 @@
 .gen-studio .gs-guide-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -6757,16 +6788,16 @@
    under it, and everything below the header belongs to that half, so the page
    reads as two blocks rather than as a run of same-sized headings. */
 .gen-studio .gs-guide-sec {
-  scroll-margin-top: 12px;
+  scroll-margin-top: var(--gs-space-3);
 }
 .gen-studio .gs-guide-sec-head {
-  margin-bottom: 16px;
-  padding-bottom: 10px;
+  margin-bottom: var(--gs-space-4);
+  padding-bottom: var(--gs-space-3);
   border-bottom: 1px solid var(--gs-border);
 }
 .gen-studio .gs-guide-sec-title {
-  margin: 4px 0 0;
-  font-size: 17px;
+  margin: var(--gs-space-1) 0 0;
+  font-size: var(--gs-text-lg);
   font-weight: 700;
   line-height: 1.3;
   color: var(--gs-ink);
@@ -6774,9 +6805,9 @@
 /* The sentence that sets a half up, a step larger and darker than the notes
    under it: scrolling past, the framing has to be tellable from the detail. */
 .gen-studio .gs-guide-sec-lead {
-  margin: 7px 0 0;
+  margin: var(--gs-space-2) 0 0;
   color: var(--gs-ink-2);
-  font-size: 13px;
+  font-size: var(--gs-text-lg-docs, var(--gs-text-md));
   line-height: 1.7;
   max-width: 72ch;
 }
@@ -6788,7 +6819,7 @@
 .gen-studio .gs-guide-steps {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gs-space-3);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -6796,9 +6827,10 @@
 .gen-studio .gs-guide-step {
   position: relative;
   min-width: 0;
-  padding: 12px 14px 12px 17px;
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-3)
+    var(--gs-space-4);
   border: 1px solid var(--gs-card-border);
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-card);
   box-shadow: var(--gs-elev-1);
   transition:
@@ -6822,7 +6854,7 @@
 .gen-studio .gs-guide-step-top {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--gs-space-2);
   min-width: 0;
 }
 /* The eyebrow's own gap below is for a step that leads with it; here it shares
@@ -6840,7 +6872,7 @@
   );
 }
 .gen-studio .gs-guide-step .gs-guide-step-body {
-  margin: 5px 0 0;
+  margin: var(--gs-space-1) 0 0;
   max-width: 72ch;
 }
 .gen-studio .gs-guide-step-n {
@@ -6854,21 +6886,21 @@
   background: var(--gs-zone-tint, var(--gs-blue-tint));
   border: 1px solid var(--gs-zone-tint-border, var(--gs-blue-tint-border));
   color: var(--gs-ink);
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
 }
 .gen-studio .gs-guide-step-title {
-  margin: 8px 0 0;
-  font-size: 14px;
+  margin: var(--gs-space-2) 0 0;
+  font-size: var(--gs-text-lg);
   font-weight: 700;
   line-height: 1.4;
   color: var(--gs-ink);
   overflow-wrap: anywhere;
 }
 .gen-studio .gs-guide-step-body {
-  margin: 4px 0 0;
+  margin: var(--gs-space-1) 0 0;
   color: var(--gs-ink-2);
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   max-width: 68ch;
 }
@@ -6879,20 +6911,20 @@
 .gen-studio .gs-guide-areas {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--gs-space-6);
 }
 .gen-studio .gs-guide-area {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  scroll-margin-top: 12px;
+  gap: var(--gs-space-3);
+  scroll-margin-top: var(--gs-space-3);
 }
 .gen-studio .gs-guide-area-head {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--gs-space-2);
   min-width: 0;
-  font-size: 13.5px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -6909,7 +6941,7 @@
 .gen-studio .gs-guide-terms {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gs-space-2);
   margin: 0;
 }
 /* Deliberately quiet, as the settings index's cards are: the hue is carried by
@@ -6917,10 +6949,10 @@
    shouting it would be a colour chart rather than a list to scan. */
 .gen-studio .gs-guide-term-row {
   min-width: 0;
-  padding: 10px 12px;
+  padding: var(--gs-space-3) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);
   border-left: 2px solid var(--gs-sec-tint-border, var(--gs-card-border));
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-card);
   transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
@@ -6928,7 +6960,7 @@
   border-color: var(--gs-sec, var(--gs-card-border));
 }
 .gen-studio .gs-guide-term {
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -6949,16 +6981,16 @@
   border-radius: 4px;
 }
 .gen-studio .gs-guide-def {
-  margin: 3px 0 0;
+  margin: var(--gs-space-1) 0 0;
   color: var(--gs-ink-2);
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   max-width: 72ch;
 }
 .gen-studio .gs-guide-note {
-  margin: 18px 0 0;
+  margin: var(--gs-space-4) 0 0;
   color: var(--gs-muted);
-  font-size: 11.5px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-xs));
   line-height: 1.6;
 }
 
@@ -6966,31 +6998,20 @@
    Squared with the studio's other controls: the pill no longer says "press
    me" anywhere in the area. */
 .gen-studio .gs-guide-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  min-height: 34px;
-  padding: 7px 14px;
-  border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 8px;
-  background: var(--gs-blue-tint);
-  color: var(--gs-blue);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
+  margin-top: var(--gs-space-3);
+  border-color: var(--gs-blue-tint-border);
+  text-decoration: none;
 }
 .gen-studio .gs-guide-cta:hover {
   border-color: var(--gs-blue);
+  text-decoration: none;
 }
 .dark .gen-studio .gs-guide-cta {
   color: #bfdbfe;
 }
 
 @media (pointer: coarse) {
-  .gen-studio .gs-guide-close,
-  .gen-studio .gs-guide-cta {
+  .gen-studio .gs-guide-close {
     min-height: 44px;
   }
   /* The row's own title is the way on to the setting's page, so on a touch
@@ -7036,7 +7057,7 @@
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
-  padding: 18px 16px 48px;
+  padding: var(--gs-space-4) var(--gs-space-4) 48px;
 }
 @media (min-width: 1024px) {
   .gen-studio .gs-shell-outlet > .gs-tut {
@@ -7048,7 +7069,7 @@
 .gen-studio .gs-tut-inner {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--gs-space-4);
   max-width: 880px;
   margin: 0 auto;
 }
@@ -7058,7 +7079,7 @@
    claim from the evidence for it. */
 .gen-studio .gs-tut-head {
   position: relative;
-  padding: 2px 0 14px 14px;
+  padding: var(--gs-space-1) 0 var(--gs-space-4) var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border-soft);
 }
 .gen-studio .gs-tut-head::before {
@@ -7075,36 +7096,36 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
-  font-size: 21px;
+  gap: var(--gs-space-3);
+  font-size: var(--gs-text-xl);
   font-weight: 800;
   line-height: 1.25;
   color: var(--gs-ink);
 }
 /* The heads inside the dossier, one step under the flow's own name. */
 .gen-studio .gs-tut-head-2 {
-  font-size: 13.5px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
 /* The technique behind the task, set quietly beside it. */
 .gen-studio .gs-tut-technique {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--gs-muted);
 }
 .gen-studio .gs-tut-lead {
-  margin: 6px 0 0;
+  margin: var(--gs-space-2) 0 0;
   color: var(--gs-ink-2);
-  font-size: 13px;
+  font-size: var(--gs-text-lg-docs, var(--gs-text-md));
   line-height: 1.65;
   max-width: 72ch;
 }
 .gen-studio .gs-tut-body {
   color: var(--gs-ink-2);
-  font-size: 12.5px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   max-width: 72ch;
 }
@@ -7116,12 +7137,12 @@
 .gen-studio .gs-tut-worlds,
 .gen-studio .gs-learn-worlds {
   display: block;
-  margin-top: 14px;
+  margin-top: var(--gs-space-4);
 }
 .gen-studio .gs-worlds {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-worlds-eyebrow {
   margin: 0;
@@ -7129,25 +7150,25 @@
 .gen-studio .gs-worlds-opts {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-world {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: var(--gs-space-1);
   min-height: 44px;
-  padding: 7px 12px;
+  padding: var(--gs-space-2) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-card);
   color: var(--gs-ink-2);
   font: inherit;
   text-align: left;
   cursor: pointer;
   transition:
-    border-color 0.12s,
-    background-color 0.12s;
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-world:hover {
   border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
@@ -7162,12 +7183,12 @@
   outline-offset: 2px;
 }
 .gen-studio .gs-world-name {
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   line-height: 1.3;
 }
 .gen-studio .gs-world-hint {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   line-height: 1.4;
   color: var(--gs-ink-2);
 }
@@ -7183,7 +7204,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 16px;
+  gap: var(--gs-space-2) var(--gs-space-4);
 }
 .gen-studio .gs-tut-steps-head .gs-tut-head-2 {
   margin: 0;
@@ -7191,10 +7212,10 @@
 .gen-studio .gs-tut-level {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-tut-level-label {
-  font-size: 10px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7212,7 +7233,7 @@
 /* The tag a flow with no example behind it is annotated with, here and on the
    Learn landing shelf. */
 .gen-studio .gs-tut-chip-tag {
-  font-size: 10px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -7224,7 +7245,7 @@
    alchemy page's panel-wide switch this borrows its markup from. */
 .gen-studio .gs-tut-modes {
   grid-column: auto;
-  gap: 2px;
+  gap: var(--gs-space-1);
   padding: 0;
   background: none;
   border-bottom: 1px solid var(--gs-border-soft);
@@ -7232,10 +7253,10 @@
 .gen-studio .gs-tut-modes .gs-devtab {
   position: relative;
   min-height: 38px;
-  padding: 0 11px;
+  padding: 0 var(--gs-space-3);
   border: 0;
   border-radius: 0;
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
 }
 .gen-studio .gs-tut-modes .gs-devtab.gs-devtab--on {
   color: var(--gs-ink);
@@ -7255,7 +7276,7 @@
 .gen-studio .gs-tut-flow {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--gs-space-4);
   min-width: 0;
 }
 /* The two panes: how it was made down the reading column, what it was made of
@@ -7263,14 +7284,14 @@
 .gen-studio .gs-tut-panes {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--gs-space-4);
   min-width: 0;
 }
 .gen-studio .gs-tut-main,
 .gen-studio .gs-tut-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gs-space-3);
   min-width: 0;
 }
 
@@ -7289,7 +7310,7 @@
 .gen-studio .gs-tut-step {
   position: relative;
   min-width: 0;
-  padding: 11px 0 11px 15px;
+  padding: var(--gs-space-3) 0 var(--gs-space-3) var(--gs-space-4);
 }
 .gen-studio .gs-tut-step + .gs-tut-step {
   border-top: 1px solid var(--gs-border-soft);
@@ -7308,16 +7329,16 @@
    the repeated eyebrow: the steps in a run are peers, and an indent would read
    them as sub-steps. */
 .gen-studio .gs-tut-step-title {
-  font-size: 13px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   line-height: 1.4;
   color: var(--gs-ink);
   overflow-wrap: anywhere;
 }
 .gen-studio .gs-tut-step-body {
-  margin: 5px 0 0;
+  margin: var(--gs-space-1) 0 0;
   color: var(--gs-ink-2);
-  font-size: 12.5px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   max-width: 66ch;
 }
@@ -7328,24 +7349,24 @@
 .gen-studio .gs-tut-evidence {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gs-space-3);
   min-width: 0;
   max-width: 100%;
-  padding: 14px 15px;
+  padding: var(--gs-space-4) var(--gs-space-4);
   border: 1px solid var(--gs-card-border);
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
 }
 
 .gen-studio .gs-tut-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 15px 16px;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-4) var(--gs-space-4);
 }
 .gen-studio .gs-tut-subhead {
-  margin-top: 2px;
-  font-size: 12px;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   color: var(--gs-ink);
 }
@@ -7357,12 +7378,12 @@
    pair's own component; the tiles under it keep the mask, the references and the
    way to full size. */
 .gen-studio .gs-tut-compare {
-  margin: 0 0 14px;
+  margin: 0 0 var(--gs-space-4);
   min-width: 0;
 }
 .gen-studio .gs-tut-compare-cap {
-  margin: 6px 0 0;
-  font-size: 11px;
+  margin: var(--gs-space-2) 0 0;
+  font-size: var(--gs-text-xs);
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-tut-shots {
@@ -7372,7 +7393,7 @@
   --gs-tut-stage: min(34vh, 300px);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 14px;
+  gap: var(--gs-space-4);
 }
 .gen-studio .gs-tut-shot {
   margin: 0;
@@ -7386,7 +7407,7 @@
   height: var(--gs-tut-stage);
   padding: 0;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
   border: 1px solid var(--gs-card-border);
   background: var(--gs-field-soft);
   cursor: zoom-in;
@@ -7404,7 +7425,7 @@
   height: 100%;
   max-width: 100%;
   object-fit: contain;
-  border-radius: 9px;
+  border-radius: var(--gs-radius-sm);
 }
 /* The alpha example has to be seen through: a checkerboard is the only backdrop
    that reads as "nothing here" in both themes. */
@@ -7423,8 +7444,8 @@
     -9px 0;
 }
 .gen-studio .gs-tut-shot-cap {
-  margin-top: 7px;
-  font-size: 11.5px;
+  margin-top: var(--gs-space-2);
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   color: var(--gs-label);
 }
@@ -7440,7 +7461,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--gs-space-6);
   background: rgba(3, 5, 10, 0.82);
 }
 .gen-studio .gs-tut-viewer-body {
@@ -7450,47 +7471,40 @@
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
-  padding-bottom: 14px;
+  padding-bottom: var(--gs-space-4);
   background: var(--gs-panel);
   border: 1px solid var(--gs-border);
-  border-radius: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  border-radius: var(--gs-radius-lg);
+  box-shadow: var(--gs-elev-3);
   outline: none;
 }
 .gen-studio .gs-tut-viewer-top {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 6px 16px;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2)
+    var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border-results);
 }
 .gen-studio .gs-tut-viewer-name {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--gs-label);
 }
+/* Square by its own measure rather than the control height: it sits in the
+   layer's title band, where a thumb has to reach it at every pointer type. The
+   ring turns inwards because the button is flush with the band's edge. */
 .gen-studio .gs-tut-viewer-x {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 44px;
   height: 44px;
-  border: 0;
-  background: none;
-  color: var(--gs-muted);
-  cursor: pointer;
-}
-.gen-studio .gs-tut-viewer-x:hover {
-  color: var(--gs-ink);
 }
 .gen-studio .gs-tut-viewer-x:focus-visible {
-  outline: 2px solid var(--gs-blue);
   outline-offset: -2px;
 }
 .gen-studio .gs-tut-viewer-stage {
@@ -7498,22 +7512,22 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
-  padding: 14px 16px 0;
+  padding: var(--gs-space-4) var(--gs-space-4) 0;
 }
 .gen-studio .gs-tut-viewer-img {
   min-height: 0;
   max-width: 100%;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
 }
 
 /* The claim the rail rests on, set as a footnote to it: quiet enough not to
    compete with the evidence, attached closely enough to be read as part of it. */
 .gen-studio .gs-tut-evidence-note {
-  margin: 2px 0 0;
-  padding-top: 11px;
+  margin: var(--gs-space-1) 0 0;
+  padding-top: var(--gs-space-3);
   border-top: 1px solid var(--gs-border-soft);
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.6;
   color: var(--gs-muted);
 }
@@ -7526,10 +7540,10 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  padding: 7px 0;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2) 0;
   border-bottom: 1px solid var(--gs-border-soft);
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
 }
 .gen-studio .gs-tut-meta-row:last-child {
   border-bottom: 0;
@@ -7558,21 +7572,21 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 9px;
-  font-size: 12px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
 }
 /* The payload sits on the card rather than on the API modal's fixed dark slab,
    so the shared .json-* token colours land on a surface they were picked for
    in both themes. */
 .gen-studio .gs-tut-code {
   margin: 0;
-  padding: 13px 14px;
-  border-radius: 10px;
+  padding: var(--gs-space-3) var(--gs-space-4);
+  border-radius: var(--gs-radius-sm);
   border: 1px solid var(--gs-card-border);
   background: var(--gs-field-soft);
   color: var(--gs-ink);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -7593,7 +7607,7 @@
   .gen-studio .gs-tut-panes {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
-    column-gap: 24px;
+    column-gap: var(--gs-space-6);
     align-items: start;
   }
   .gen-studio .gs-tut-evidence {
@@ -7797,13 +7811,13 @@ app-gs-sweep-scrub {
 .gen-studio .gs-cap {
   display: flex;
   align-items: stretch;
-  gap: 14px;
+  gap: var(--gs-space-4);
   width: 100%;
   min-height: 44px;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--gs-border);
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
   color: var(--gs-ink);
   text-align: left;
@@ -7820,8 +7834,8 @@ app-gs-sweep-scrub {
   flex: 0 0 118px;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 10px 6px;
+  gap: var(--gs-space-1);
+  padding: var(--gs-space-3) var(--gs-space-2);
   background: var(--gs-stage);
 }
 .gen-studio .gs-cap-peek::before,
@@ -7854,7 +7868,7 @@ app-gs-sweep-scrub {
 .gen-studio .gs-cap-text {
   flex: 1;
   min-width: 0;
-  padding: 12px 8px 12px 0;
+  padding: var(--gs-space-3) var(--gs-space-2) var(--gs-space-3) 0;
 }
 /* The section's hue rides on the dash rather than on the words: the identity
    hues are audited as graphic colour only, and `size` in particular falls under
@@ -7863,8 +7877,8 @@ app-gs-sweep-scrub {
 .gen-studio .gs-cap-eyebrow {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -7878,20 +7892,20 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-cap-title {
   display: block;
-  margin-top: 3px;
-  font-size: 14.5px;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-lg);
   font-weight: 600;
   color: var(--gs-ink);
 }
 .gen-studio .gs-cap-meta {
   display: block;
-  margin-top: 2px;
-  font-size: 12px;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   color: var(--gs-muted);
 }
 .gen-studio .gs-cap-mono {
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
 }
 /* The affordance, and the whole of the difference between staying and leaving:
    a chevron opens the evidence here, an arrow says the press goes elsewhere. */
@@ -7902,7 +7916,7 @@ app-gs-sweep-scrub {
   place-items: center;
   width: 28px;
   height: 28px;
-  margin-right: 14px;
+  margin-right: var(--gs-space-4);
   border: 1px solid var(--gs-border);
   border-radius: 50%;
   color: var(--gs-muted);
@@ -7921,8 +7935,8 @@ app-gs-sweep-scrub {
    card and opens the same plate. */
 .gen-studio .gs-cap--film .gs-cap-peek {
   flex: 0 0 66px;
-  gap: 1px;
-  padding: 5px 3px;
+  gap: var(--gs-space-1);
+  padding: var(--gs-space-1) var(--gs-space-1);
 }
 .gen-studio .gs-cap--film .gs-cap-peek::before,
 .gen-studio .gs-cap--film .gs-cap-peek::after {
@@ -7930,26 +7944,26 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-cap--film {
   align-items: center;
-  gap: 10px;
+  gap: var(--gs-space-3);
   /* Held to a measure of its own: run to the column's full width and the
      chevron ends up a hand's width from the words it belongs to. */
   max-width: 440px;
 }
 .gen-studio .gs-cap--film .gs-cap-text {
-  padding: 6px 8px 6px 0;
+  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2) 0;
 }
 .gen-studio .gs-cap--film .gs-cap-title {
   margin-top: 0;
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
 }
 .gen-studio .gs-cap--film .gs-cap-meta {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
 }
 .gen-studio .gs-cap--film .gs-cap-go {
   width: 22px;
   height: 22px;
   border: 0;
-  margin-right: 10px;
+  margin-right: var(--gs-space-3);
 }
 
 /* ------- the open plate ---------------------------------------------- */
@@ -7962,37 +7976,37 @@ app-gs-sweep-scrub {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--gs-stage-rim);
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-stage);
   color: var(--gs-stage-ink);
 }
 .gen-studio .gs-plate-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px 6px;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-2);
 }
 .gen-studio .gs-plate-head .gs-cap-eyebrow {
-  font-size: 9.5px;
+  font-size: var(--gs-text-2xs);
   color: var(--gs-stage-label);
 }
 .gen-studio .gs-plate-title {
-  font-size: 13.5px;
+  font-size: var(--gs-text-md);
   font-weight: 600;
   color: var(--gs-stage-ink);
 }
 .gen-studio .gs-plate-x {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
   min-height: 44px;
   margin-left: auto;
-  padding: 0 10px;
+  padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-stage-rim);
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: none;
   color: var(--gs-stage-label);
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   cursor: pointer;
 }
@@ -8002,7 +8016,7 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate-body {
   min-width: 0;
-  padding: 0 14px;
+  padding: 0 var(--gs-space-4);
 }
 /* The footer: what this frame is, where in the strip it is, and the way to the
    full-size view. All three used to be somewhere else. The row wraps rather
@@ -8012,23 +8026,23 @@ app-gs-sweep-scrub {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: var(--gs-space-2) var(--gs-space-3);
   min-width: 0;
-  padding: 10px 14px 12px;
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-3);
 }
 .gen-studio .gs-plate-value {
   min-width: 0;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: var(--gs-space-1) var(--gs-space-2);
   border: 1px solid var(--gs-stage-rim);
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   color: var(--gs-stage-ink);
   overflow-wrap: anywhere;
 }
 .gen-studio .gs-plate-pos {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   font-variant-numeric: tabular-nums;
   color: var(--gs-stage-label);
   white-space: nowrap;
@@ -8038,10 +8052,10 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate-link {
   min-height: 44px;
-  padding: 0 4px;
+  padding: 0 var(--gs-space-1);
   border: 0;
   background: none;
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-stage-label);
   text-decoration: underline;
@@ -8057,22 +8071,22 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-provenance {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--gs-space-3);
   min-width: 0;
-  padding: 0 14px 10px;
+  padding: 0 var(--gs-space-4) var(--gs-space-3);
 }
 /* The way into the record reads as the disclosure it is: a bordered control in
    the plate's own chrome, its chevron pointing at what a press will do. */
 .gen-studio .gs-plate-request-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
   min-height: 32px;
-  padding: 5px 10px;
+  padding: var(--gs-space-1) var(--gs-space-3);
   border: 1px solid var(--gs-stage-rim);
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   background: none;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   color: var(--gs-stage-label);
   cursor: pointer;
@@ -8086,7 +8100,7 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-model {
   min-width: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-stage-label);
   white-space: nowrap;
   overflow: hidden;
@@ -8094,17 +8108,17 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate-request {
   border-top: 1px solid var(--gs-stage-rim);
-  padding: 12px 14px 14px;
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-4);
 }
 .gen-studio .gs-plate-request .gs-recipe {
-  margin: 0 0 10px;
+  margin: 0 0 var(--gs-space-3);
 }
 .gen-studio .gs-plate-raw {
   margin: 0;
   max-height: 260px;
   overflow: auto;
   font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   line-height: 1.55;
   color: var(--gs-stage-label);
   white-space: pre;
@@ -8163,7 +8177,7 @@ app-gs-sweep-scrub {
 /* The choice of which reading to show sits in the plate's header band, so it is
    read as a control over these pictures rather than as prose beside them. */
 .gen-studio .gs-plate-controls {
-  padding: 0 14px 4px;
+  padding: 0 var(--gs-space-4) var(--gs-space-1);
 }
 .gen-studio .gs-plate-controls .gs-sweep-variants {
   margin-bottom: 0;
@@ -8192,7 +8206,7 @@ app-gs-sweep-scrub {
    one this is, and what the ends were rendered at, without being asked. */
 .gen-studio .gs-tickrail-box {
   min-width: 0;
-  padding: 2px 14px 0;
+  padding: var(--gs-space-1) var(--gs-space-4) 0;
 }
 /* The lane the slits sit in. A short strip's few ticks read as decoration
    without it; a visible groove under a thumb is the shape every reader already
@@ -8298,7 +8312,7 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-tickrail-hint {
   min-width: 0;
-  font-size: 10.5px;
+  font-size: var(--gs-text-2xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--gs-stage-label);
@@ -8311,8 +8325,8 @@ app-gs-sweep-scrub {
   display: flex;
   justify-content: center;
   min-width: 0;
-  padding-top: 2px;
-  font-size: 10.5px;
+  padding-top: var(--gs-space-1);
+  font-size: var(--gs-text-2xs);
   font-variant-numeric: tabular-nums;
   color: var(--gs-stage-label);
 }
@@ -8360,8 +8374,8 @@ app-gs-sweep-scrub {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-content: center;
-  gap: 2px;
-  padding: 8px 6px;
+  gap: var(--gs-space-1);
+  padding: var(--gs-space-2) var(--gs-space-2);
   background: var(--gs-stage);
 }
 .gen-studio .gs-door-tile {
@@ -8385,7 +8399,7 @@ app-gs-sweep-scrub {
 .gen-studio .gs-door-arrow {
   flex: 0 0 auto;
   align-self: center;
-  margin-right: 14px;
+  margin-right: var(--gs-space-4);
   color: var(--gs-blue);
 }
 .dark .gen-studio .gs-door-arrow {
@@ -8397,7 +8411,7 @@ app-gs-door {
 app-gs-door + app-gs-door,
 app-gs-door + app-gs-sweep-scrub,
 app-gs-sweep-scrub + app-gs-door {
-  margin-top: 8px;
+  margin-top: var(--gs-space-2);
 }
 .gen-studio .gs-cap:focus-visible,
 .gen-studio .gs-tickrail:focus-visible,
@@ -8426,7 +8440,7 @@ app-gs-sweep-scrub + app-gs-door {
   width: 100%;
   padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   background: none;
   cursor: zoom-in;
 }
@@ -8465,10 +8479,10 @@ app-gs-sweep-scrub + app-gs-door {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: var(--gs-space-2) var(--gs-space-2);
   min-width: 0;
-  margin-top: 6px;
-  font-size: 12px;
+  margin-top: var(--gs-space-2);
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   color: var(--gs-ink-2);
   overflow-wrap: anywhere;
   transition: color var(--gs-dur) var(--gs-ease);
@@ -8481,14 +8495,14 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-caption-batch {
   flex-basis: 100%;
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
 /* The strips that vary a piece of prompt text have no field to name, so they
    keep the eyebrow the chip replaced everywhere else. */
 .gen-studio .gs-sweep-caption-value {
   min-width: 0;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -8497,13 +8511,13 @@ app-gs-sweep-scrub + app-gs-door {
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-sweep-loading {
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   color: var(--gs-muted);
 }
 .gen-studio .gs-sweep-collapse {
   min-height: 44px;
-  padding: 0 4px;
-  font-size: 12px;
+  padding: 0 var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-blue);
   background: none;
@@ -8520,8 +8534,8 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-why {
   display: block;
   min-height: 44px;
-  padding: 0 4px;
-  font-size: 12px;
+  padding: 0 var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   text-align: left;
   color: var(--gs-blue);
@@ -8533,17 +8547,17 @@ app-gs-sweep-scrub + app-gs-door {
   color: var(--gs-pop-accent);
 }
 .gen-studio .gs-sweep-why-body {
-  margin: 0 0 9px;
-  padding: 7px 9px;
+  margin: 0 0 var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-2);
   border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
-  border-radius: 9px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-zone-tint, var(--gs-blue-tint));
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   line-height: 1.5;
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-sweep-why-body p {
-  margin: 0 0 6px;
+  margin: 0 0 var(--gs-space-2);
 }
 .gen-studio .gs-sweep-why-list {
   font-weight: 600;
@@ -8570,7 +8584,7 @@ app-gs-sweep-scrub + app-gs-door {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--gs-space-6);
   background: rgba(3, 5, 10, 0.82);
 }
 /* The same plate, laid out in the page instead of over it: a reference page
@@ -8588,7 +8602,7 @@ app-gs-sweep-scrub + app-gs-door {
   max-height: none;
   background: var(--gs-card);
   box-shadow: none;
-  border-radius: 9px;
+  border-radius: var(--gs-radius-sm);
 }
 .gen-studio .gs-sweep-viewer-body {
   display: flex;
@@ -8597,26 +8611,27 @@ app-gs-sweep-scrub + app-gs-door {
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
-  padding-bottom: 12px;
+  padding-bottom: var(--gs-space-3);
   background: var(--gs-panel);
   border: 1px solid var(--gs-border);
-  border-radius: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  border-radius: var(--gs-radius-lg);
+  box-shadow: var(--gs-elev-3);
   outline: none;
 }
 .gen-studio .gs-sweep-viewer-top {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 6px 16px;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2)
+    var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border-results);
 }
 .gen-studio .gs-sweep-viewer-name {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -8642,47 +8657,37 @@ app-gs-sweep-scrub + app-gs-door {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin: 8px 16px 0;
+  gap: var(--gs-space-2);
+  margin: var(--gs-space-2) var(--gs-space-4) 0;
 }
 .gen-studio .gs-sweep-viewer-foot .gs-tickrail-box {
   padding: 0;
 }
 .gen-studio .gs-sweep-viewer-x {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 44px;
   height: 44px;
-  border: 0;
-  background: none;
-  color: var(--gs-muted);
-  cursor: pointer;
-}
-.gen-studio .gs-sweep-viewer-x:hover {
-  color: var(--gs-ink);
 }
 .gen-studio .gs-sweep-viewer-img {
   min-height: 0;
   max-width: 100%;
-  margin: 12px auto 0;
+  margin: var(--gs-space-3) auto 0;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
 }
 .gen-studio .gs-sweep-viewer-stage {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: 12px;
+  gap: var(--gs-space-3);
   min-height: 0;
-  padding: 0 16px;
+  padding: 0 var(--gs-space-4);
 }
 .gen-studio .gs-sweep-viewer-cap {
   flex: none;
   min-width: 0;
-  margin: 10px 16px 0;
-  font-size: 12px;
+  margin: var(--gs-space-3) var(--gs-space-4) 0;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   color: var(--gs-ink-2);
   overflow-wrap: anywhere;
   transition: color var(--gs-dur) var(--gs-ease);
@@ -8702,22 +8707,22 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-pair-caps {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-top: 6px;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-2);
 }
 .gen-studio .gs-sweep-pair-cap {
   display: block;
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   color: var(--gs-ink-2);
 }
 /* The frame is the divider's now, so the way to full size is a line of its own,
    in the same quiet register as the control that folds the strip away. */
 .gen-studio .gs-sweep-pair-enlarge {
   min-height: 44px;
-  padding: 0 4px;
-  font-size: 12px;
+  padding: 0 var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-blue);
   background: none;
@@ -8733,8 +8738,8 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-pair-mode {
   display: block;
   min-height: 44px;
-  padding: 0 4px;
-  font-size: 12px;
+  padding: 0 var(--gs-space-1);
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-blue);
   background: none;
@@ -8747,7 +8752,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-viewer-wipe {
   min-width: 0;
   max-width: 100%;
-  margin: 12px auto 0;
+  margin: var(--gs-space-3) auto 0;
 }
 
 /* ------- the before/after wipe --------------------------------------- */
@@ -8931,7 +8936,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-sweep-tileset {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: var(--gs-space-2);
   min-width: 0;
 }
 .gen-studio .gs-sweep-tiled {
@@ -8940,7 +8945,7 @@ app-gs-compare-wipe {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
 }
 .gen-studio .gs-sweep-tile {
@@ -8962,8 +8967,8 @@ app-gs-compare-wipe {
 .gen-studio .gs-sweep-solos {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-top: 6px;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-2);
 }
 .gen-studio .gs-sweep-solos .gs-sweep-solo {
   width: 84px;
@@ -8973,13 +8978,13 @@ app-gs-compare-wipe {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
 }
 .gen-studio .gs-sweep-solo-cap {
   display: block;
-  margin-top: 3px;
-  font-size: 11px;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -8991,19 +8996,19 @@ app-gs-compare-wipe {
 .gen-studio .gs-sweep-source {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin: 0 0 9px;
+  gap: var(--gs-space-2);
+  margin: 0 0 var(--gs-space-2);
 }
 .gen-studio .gs-sweep-source-img {
   flex: 0 0 auto;
   width: 64px;
   height: 64px;
-  border-radius: 6px;
+  border-radius: var(--gs-radius-sm);
   object-fit: cover;
   background: var(--gs-field);
 }
 .gen-studio .gs-sweep-source-cap {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -9011,14 +9016,14 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-sweep-viewer-source {
   flex: 0 0 auto;
-  margin: 12px 0 0;
+  margin: var(--gs-space-3) 0 0;
   text-align: center;
 }
 .gen-studio .gs-sweep-viewer-source-img {
   display: block;
   width: 120px;
   max-width: 100%;
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
 }
 
@@ -9026,18 +9031,18 @@ app-gs-compare-wipe {
    strip: subtle enough to be read past by anyone who does not want it. */
 .gen-studio .gs-sweep-variants {
   display: flex;
-  gap: 4px;
-  margin-bottom: 9px;
+  gap: var(--gs-space-1);
+  margin-bottom: var(--gs-space-2);
 }
 .gen-studio .gs-sweep-variant {
   flex: 1 1 0;
   min-height: 44px;
-  padding: 4px 8px;
+  padding: var(--gs-space-1) var(--gs-space-2);
   border: 1px solid var(--gs-border);
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: none;
   color: var(--gs-ink-2);
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   cursor: pointer;
 }
@@ -9055,7 +9060,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-sweep-grid-scroll {
   min-height: 0;
   overflow: auto;
-  padding: 12px 16px 0;
+  padding: var(--gs-space-3) var(--gs-space-4) 0;
 }
 .gen-studio .gs-sweep-plate {
   border-collapse: separate;
@@ -9064,24 +9069,24 @@ app-gs-compare-wipe {
 /* The corner says which way round the plate is read, and is the widest thing
    in its column, so it is the one head allowed to wrap. */
 .gen-studio .gs-sweep-plate-corner {
-  padding: 0 6px;
+  padding: 0 var(--gs-space-2);
   max-width: 140px;
-  font-size: 10.5px;
+  font-size: var(--gs-text-2xs);
   line-height: 1.3;
   color: var(--gs-muted);
   text-align: left;
   vertical-align: bottom;
 }
 .gen-studio .gs-sweep-plate-head {
-  padding: 0 6px;
+  padding: 0 var(--gs-space-2);
   white-space: nowrap;
   vertical-align: middle;
 }
 /* A head is a setting chip without its glyph: eight repetitions of two marks
    over one plate is noise, and the axis is named once in the chip's label. */
 .gen-studio .gs-sweep-plate-head .gs-setting-chip {
-  font-size: 10.5px;
-  padding: 3px 8px;
+  font-size: var(--gs-text-2xs);
+  padding: var(--gs-space-1) var(--gs-space-2);
 }
 .gen-studio .gs-sweep-plate-td {
   padding: 0;
@@ -9095,7 +9100,7 @@ app-gs-compare-wipe {
   min-height: 44px;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field);
   cursor: zoom-in;
 }
@@ -9108,12 +9113,12 @@ app-gs-compare-wipe {
   width: 100%;
   max-width: 160px;
   height: auto;
-  border-radius: 6px;
+  border-radius: var(--gs-radius-sm);
 }
 .gen-studio .gs-sweep-plate-legend {
   flex: none;
-  margin: 8px 16px 0;
-  font-size: 12px;
+  margin: var(--gs-space-2) var(--gs-space-4) 0;
+  font-size: var(--gs-text-sm);
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-sweep-grid-cell-view {
@@ -9122,7 +9127,7 @@ app-gs-compare-wipe {
   align-items: center;
   min-height: 0;
   overflow: auto;
-  padding: 0 16px;
+  padding: 0 var(--gs-space-4);
 }
 /* The way between neighbouring cells for anyone without arrow keys. Sized to
    the viewer's own 44px controls rather than to the caption beside it: it is
@@ -9130,25 +9135,13 @@ app-gs-compare-wipe {
 .gen-studio .gs-sweep-cell-nav {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 8px;
+  gap: var(--gs-space-1);
+  margin-top: var(--gs-space-2);
 }
 .gen-studio .gs-sweep-cell-step {
   flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   width: 44px;
   height: 44px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  color: var(--gs-ink-2);
-  cursor: pointer;
-}
-.gen-studio .gs-sweep-cell-step:hover:not(:disabled) {
-  color: var(--gs-ink);
-  background: var(--gs-field);
 }
 .gen-studio .gs-sweep-cell-step:disabled {
   color: var(--gs-muted);
@@ -9486,6 +9479,22 @@ app-gs-compare-wipe {
   background: var(--gs-canvas);
   min-height: 60vh;
 }
+/* The documentation is read rather than worked in, so its prose sits one step
+   above the panel's: the panel packs controls into a column and the docs give a
+   sentence the width of the page. Two tokens rather than a size on every rule,
+   scoped to the area, so the same component drawn inside a pane (a docked
+   reference entry, a `?` note's strip) falls back to the pane's own step. They
+   are sizes rather than colours, so one declaration serves both themes. */
+.gen-studio.gs-docs {
+  --gs-text-md-docs: var(--gs-text-md);
+  --gs-text-lg-docs: 14.5px;
+}
+@media (min-width: 1024px) {
+  .gen-studio.gs-docs {
+    --gs-text-md-docs: 14.5px;
+    --gs-text-lg-docs: var(--gs-text-lg);
+  }
+}
 .gs-learn-outlet {
   display: block;
 }
@@ -9495,9 +9504,9 @@ app-gs-compare-wipe {
 .gs-docs .gs-docs-crumbs {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  font-size: 0.8125rem;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3) var(--gs-space-4);
+  font-size: var(--gs-text-md);
   color: var(--gs-ink-2);
   border-bottom: 1px solid var(--gs-border);
   background: var(--gs-panel);
@@ -9526,13 +9535,13 @@ app-gs-compare-wipe {
   flex: none;
   display: flex;
   flex-wrap: nowrap;
-  padding: 0 16px;
+  padding: 0 var(--gs-space-4);
   background: var(--gs-panel);
   border-bottom: 1px solid var(--gs-border);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
-  scroll-padding-inline: 4px;
+  scroll-padding-inline: var(--gs-space-1);
 }
 .gen-studio .gs-hub-nav::-webkit-scrollbar {
   height: 0;
@@ -9547,12 +9556,12 @@ app-gs-compare-wipe {
   flex: none;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gs-space-2);
   /* The bar form is the one a thumb uses, at every pointer type. */
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 var(--gs-space-3);
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-label);
   border: 0;
@@ -9567,6 +9576,7 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-hub-nav-link:hover {
   color: var(--gs-ink-2);
+  background: var(--gs-card);
   text-decoration: none;
 }
 .gen-studio .gs-hub-nav-link:focus-visible {
@@ -9639,12 +9649,12 @@ app-gs-compare-wipe {
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
-  padding: 18px 16px 48px;
+  padding: var(--gs-space-4) var(--gs-space-4) 48px;
 }
 .gen-studio .gs-learn-home-inner {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: var(--gs-space-6);
   max-width: 880px;
   margin: 0 auto;
 }
@@ -9659,7 +9669,7 @@ app-gs-compare-wipe {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--gs-radius-md);
   border: 1px solid var(--gs-card-border);
   background: #0b1220;
   min-height: clamp(280px, 34vw, 360px);
@@ -9695,7 +9705,7 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-learn-hero-text {
   position: relative;
-  padding: 26px 26px 28px;
+  padding: var(--gs-space-6) var(--gs-space-6) var(--gs-space-6);
   max-width: 62ch;
 }
 /* The area's eyebrow grammar, in the one place it has to be drawn in literal
@@ -9703,9 +9713,9 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-hero-eyebrow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 10px;
-  font-size: 10.5px;
+  gap: var(--gs-space-3);
+  margin: 0 0 var(--gs-space-3);
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -9725,9 +9735,9 @@ app-gs-compare-wipe {
   color: #ffffff;
 }
 .gen-studio .gs-learn-hero-sub {
-  margin: 12px 0 0;
+  margin: var(--gs-space-3) 0 0;
   max-width: 52ch;
-  font-size: 14px;
+  font-size: var(--gs-text-lg);
   line-height: 1.7;
   color: #e2e8f0;
 }
@@ -9740,17 +9750,17 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-hero-doors {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 20px;
+  gap: var(--gs-space-3);
+  margin-top: var(--gs-space-6);
 }
 .gen-studio .gs-learn-hero-door {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--gs-space-3);
   min-height: 40px;
-  padding: 12px 14px;
+  padding: var(--gs-space-3) var(--gs-space-4);
   border: 1px solid rgba(147, 197, 253, 0.45);
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: rgba(37, 99, 235, 0.28);
   color: #ffffff;
   font-family: inherit;
@@ -9775,17 +9785,17 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-hero-door-text {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--gs-space-1);
   flex: 1 1 auto;
   min-width: 0;
 }
 .gen-studio .gs-learn-hero-door-title {
-  font-size: 13px;
+  font-size: var(--gs-text-md);
   font-weight: 600;
   line-height: 1.35;
 }
 .gen-studio .gs-learn-hero-door-hint {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.55;
   color: #dbeafe;
 }
@@ -9798,7 +9808,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-band {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--gs-space-4);
 }
 
 /* The rail's grammar at reading size: hairline-separated lines, each led by its
@@ -9818,9 +9828,10 @@ app-gs-compare-wipe {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 6px 12px;
+  gap: var(--gs-space-2) var(--gs-space-3);
   min-height: 44px;
-  padding: 14px 4px 14px 16px;
+  padding: var(--gs-space-4) var(--gs-space-1) var(--gs-space-4)
+    var(--gs-space-4);
   border: 0;
   border-bottom: 1px solid var(--gs-border-soft);
   border-radius: 0;
@@ -9870,16 +9881,16 @@ app-gs-compare-wipe {
   display: flex;
   flex: 1 1 240px;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--gs-space-1);
   min-width: 0;
 }
 .gen-studio .gs-learn-door-title {
-  font-size: 13.5px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
 .gen-studio .gs-learn-door-hint {
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.6;
   color: var(--gs-ink-2);
   max-width: 62ch;
@@ -9891,10 +9902,10 @@ app-gs-compare-wipe {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
+  gap: var(--gs-space-1);
   margin-left: auto;
-  padding-right: 12px;
-  font-size: 10px;
+  padding-right: var(--gs-space-3);
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -9919,14 +9930,14 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-shelf {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  gap: var(--gs-space-4);
 }
 .gen-studio .gs-home-card {
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--gs-card-border);
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
   text-decoration: none;
 }
@@ -9949,8 +9960,8 @@ app-gs-compare-wipe {
 .gen-studio .gs-home-card-text {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 11px 14px 14px;
+  gap: var(--gs-space-1);
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-4);
   min-width: 0;
 }
 /* The eyebrow already owns the space under itself; the card's own gap is what
@@ -9959,17 +9970,17 @@ app-gs-compare-wipe {
   margin: 0;
 }
 .gen-studio .gs-home-card-title {
-  font-size: 13.5px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
 .gen-studio .gs-home-card-hint {
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.6;
   color: var(--gs-ink-2);
 }
 .gen-studio .gs-home-card-note {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.55;
   color: var(--gs-muted);
 }
@@ -9981,13 +9992,15 @@ app-gs-compare-wipe {
   .gen-studio .gs-learn-hero-door {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: var(--gs-space-2);
+    padding: var(--gs-space-3) var(--gs-space-3);
   }
   .gen-studio .gs-learn-hero-door-hint {
     display: none;
   }
-  .gen-studio .gs-learn-hero-door-arrow {
+  /* Named through the element as well: the shared `.gs-ico-sm` sizing rule is
+     an element-qualified selector, so a class on its own never reached this. */
+  .gen-studio app-icon.gs-learn-hero-door-arrow {
     display: none;
   }
 }
@@ -10013,29 +10026,29 @@ app-gs-compare-wipe {
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
-  padding: 18px 16px 48px;
+  padding: var(--gs-space-4) var(--gs-space-4) 48px;
 }
 .gen-studio .gs-ref-index-inner,
 .gen-studio .gs-ref-page-inner {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: var(--gs-space-6);
   max-width: 880px;
   margin: 0 auto;
 }
 .gen-studio .gs-ref-index-top {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-ref-index-title {
-  font-size: 22px;
+  font-size: var(--gs-text-xl);
   font-weight: 800;
   line-height: 1.25;
   color: var(--gs-ink);
 }
 .gen-studio .gs-ref-index-lead {
-  font-size: 13px;
+  font-size: var(--gs-text-lg-docs, var(--gs-text-md));
   line-height: 1.7;
   color: var(--gs-ink-2);
   max-width: 68ch;
@@ -10049,7 +10062,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-find {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gs-space-2);
   max-width: 420px;
 }
 /* The guide heads its page with a row rather than a stack, so the field shares
@@ -10058,7 +10071,7 @@ app-gs-compare-wipe {
   flex: 0 1 320px;
 }
 .gen-studio .gs-find-label {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   color: var(--gs-label);
 }
@@ -10085,13 +10098,14 @@ app-gs-compare-wipe {
 .gen-studio .gs-find-input {
   width: 100%;
   font-family: "Inter", system-ui, sans-serif;
-  font-size: 13px;
+  font-size: var(--gs-text-md);
   line-height: 1.4;
   color: var(--gs-ink);
   background: var(--gs-field);
   border: 1px solid var(--gs-field-border);
-  border-radius: 10px;
-  padding: 9px 40px 9px 30px;
+  border-radius: var(--gs-radius-sm);
+  padding: var(--gs-space-2) var(--gs-control-h) var(--gs-space-2)
+    var(--gs-space-8);
 }
 .gen-studio .gs-find-input::placeholder {
   color: var(--gs-muted);
@@ -10114,7 +10128,7 @@ app-gs-compare-wipe {
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   border: none;
   background: transparent;
   color: var(--gs-muted);
@@ -10129,7 +10143,7 @@ app-gs-compare-wipe {
   outline-offset: 1px;
 }
 .gen-studio .gs-find-empty {
-  font-size: 13px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-md));
   line-height: 1.7;
   color: var(--gs-ink-2);
   max-width: 68ch;
@@ -10151,12 +10165,12 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-group {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--gs-space-4);
 }
 .gen-studio .gs-ref-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: 12px;
+  gap: var(--gs-space-3);
 }
 /* Deliberately quiet: this is a list to scan, and thirty cards each shouting
    their hue would be a colour chart rather than an index. The hue is carried by
@@ -10167,7 +10181,7 @@ app-gs-compare-wipe {
   overflow: hidden;
   min-height: 44px;
   border: 1px solid var(--gs-card-border);
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
   text-decoration: none;
 }
@@ -10190,20 +10204,20 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-card-text {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 11px 13px 13px;
+  gap: var(--gs-space-1);
+  padding: var(--gs-space-3) var(--gs-space-3) var(--gs-space-3);
   min-width: 0;
 }
 .gen-studio .gs-ref-card-title {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 13px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
 .gen-studio .gs-ref-card-lead {
-  font-size: 12px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.6;
   color: var(--gs-ink-2);
 }
@@ -10211,35 +10225,35 @@ app-gs-compare-wipe {
    say without turning into a list, and it is what tells a reader whether the
    page is a choice or a single operation. */
 .gen-studio .gs-ref-card-meta {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
 
 /* ------- published runs, under the prose that describes them ---------- */
 .gen-studio .gs-ref-evidence {
-  margin: 28px 0 0;
+  margin: var(--gs-space-6) 0 0;
 }
 .gen-studio .gs-ref-shot {
-  margin: 16px 0 0;
-  padding: 12px;
+  margin: var(--gs-space-4) 0 0;
+  padding: var(--gs-space-3);
   border: 1px solid var(--gs-sec-tint-border, var(--gs-card-border));
-  border-radius: 10px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-card);
 }
 .gen-studio .gs-ref-shot-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 10px;
-  margin-bottom: 10px;
+  gap: var(--gs-space-1) var(--gs-space-3);
+  margin-bottom: var(--gs-space-3);
 }
 .gen-studio .gs-ref-shot-name {
-  font-size: 13px;
+  font-size: var(--gs-text-md);
   font-weight: 600;
   color: var(--gs-ink);
 }
 .gen-studio .gs-ref-shot-meta {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
 /* Source beside result, and stacked where there is no room for two: the
@@ -10247,18 +10261,18 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-shot-pair {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
+  gap: var(--gs-space-3);
 }
 .gen-studio .gs-ref-shot-frame {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--gs-space-2);
   min-width: 0;
 }
 .gen-studio .gs-ref-shot-frame img {
   width: 100%;
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-stage);
 }
 .gen-studio .gs-ref-shot-frame--text {
@@ -10266,25 +10280,25 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-ref-shot-text {
   display: block;
-  padding: 12px;
-  border-radius: 8px;
+  padding: var(--gs-space-3);
+  border-radius: var(--gs-radius-sm);
   background: var(--gs-field-soft);
   border: 1px solid var(--gs-field-border);
-  font-size: 12.5px;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   color: var(--gs-ink-2);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .gen-studio .gs-ref-shot-label {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--gs-muted);
 }
 .gen-studio .gs-ref-shot-note {
-  margin: 10px 0 0;
-  font-size: 12px;
+  margin: var(--gs-space-3) 0 0;
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.6;
   color: var(--gs-muted);
 }
@@ -10303,10 +10317,10 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-head {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-ref-title {
-  font-size: 20px;
+  font-size: var(--gs-text-xl);
   font-weight: 800;
   line-height: 1.25;
   color: var(--gs-ink);
@@ -10314,15 +10328,15 @@ app-gs-compare-wipe {
 /* The lead is set larger than the body: it is the sentence a reader who has
    never met the setting needs, and everything under it is optional. */
 .gen-studio .gs-ref-lead {
-  margin: 12px 0 0;
-  font-size: 14.5px;
+  margin: var(--gs-space-3) 0 0;
+  font-size: var(--gs-text-lg-docs, var(--gs-text-lg));
   line-height: 1.65;
   color: var(--gs-ink);
   max-width: 68ch;
 }
 .gen-studio .gs-ref-body {
-  margin: 14px 0 0;
-  font-size: 13px;
+  margin: var(--gs-space-4) 0 0;
+  font-size: var(--gs-text-md-docs, var(--gs-text-md));
   line-height: 1.75;
   color: var(--gs-ink-2);
   max-width: 68ch;
@@ -10332,22 +10346,22 @@ app-gs-compare-wipe {
    what it is. The name takes the entry's hue on its edge only, so eleven
    upscalers read as one set without any of them colouring their own words. */
 .gen-studio .gs-ref-variants {
-  margin: 14px 0 0;
+  margin: var(--gs-space-4) 0 0;
   max-width: 68ch;
   display: grid;
-  gap: 8px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-ref-variant-name {
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-ink);
-  padding-inline-start: 9px;
+  padding-inline-start: var(--gs-space-2);
   border-inline-start: 3px solid var(--gs-sec, var(--gs-card-border));
 }
 .gen-studio .gs-ref-variant-note {
-  margin: 2px 0 0;
-  padding-inline-start: 12px;
-  font-size: 12.5px;
+  margin: var(--gs-space-1) 0 0;
+  padding-inline-start: var(--gs-space-3);
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.65;
   color: var(--gs-ink-2);
 }
@@ -10357,14 +10371,14 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-costs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 14px;
-  margin: 12px 0 0;
+  gap: var(--gs-space-2) var(--gs-space-4);
+  margin: var(--gs-space-3) 0 0;
 }
 .gen-studio .gs-ref-cost {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.5;
   color: var(--gs-ink-2);
 }
@@ -10376,20 +10390,20 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-range {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin: 10px 0 0;
+  gap: var(--gs-space-2);
+  margin: var(--gs-space-3) 0 0;
 }
 .gen-studio .gs-ref-chip {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
-  font-size: 11.5px;
+  padding: var(--gs-space-1) var(--gs-space-3);
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   color: var(--gs-label);
   background: var(--gs-field);
   border: 1px solid var(--gs-border);
-  border-radius: 999px;
+  border-radius: var(--gs-radius-pill);
 }
 
 /* The ways onward from an entry. Siblings wear their own area's chip, because
@@ -10399,11 +10413,11 @@ app-gs-compare-wipe {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 20px;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-6);
 }
 .gen-studio .gs-ref-related-head {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -10413,17 +10427,7 @@ app-gs-compare-wipe {
    says so anywhere in the area. The hue stays, as border and text on hover, so
    the link still names the section it crosses into. */
 .gen-studio .gs-ref-related-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
   color: var(--gs-ink-2);
-  border: 1px solid var(--gs-border);
-  border-radius: 8px;
-  background: var(--gs-field);
   text-decoration: none;
 }
 .gen-studio .gs-ref-related-link:hover {
@@ -10439,17 +10443,17 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin: 16px 0 0;
+  gap: var(--gs-space-3);
+  margin: var(--gs-space-4) 0 0;
 }
 .gen-studio .gs-ref-link,
 .gen-studio .gs-ref-full,
 .gen-studio .gs-ref-back {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gs-space-2);
   min-height: 34px;
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   color: var(--gs-blue);
   text-decoration: none;
@@ -10474,23 +10478,23 @@ app-gs-compare-wipe {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 18px;
+  gap: 0 var(--gs-space-4);
 }
 /* Only the docked entry has a footer: the routed page is already the full
    reference and would be pointing at itself. */
 .gen-studio .gs-ref-foot {
   display: flex;
-  margin-top: 18px;
-  padding-top: 12px;
+  margin-top: var(--gs-space-4);
+  padding-top: var(--gs-space-3);
   border-top: 1px solid var(--gs-border);
 }
 
 .gen-studio .gs-ref-onwards {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--gs-space-3);
   justify-content: space-between;
-  padding-top: 16px;
+  padding-top: var(--gs-space-4);
   border-top: 1px solid var(--gs-border);
 }
 /* The leading bar takes the hue of the entry the link leads to and sits on the
@@ -10499,13 +10503,13 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-onward {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--gs-space-2);
   flex: 1 1 200px;
   min-height: 44px;
-  padding: 8px 13px;
+  padding: var(--gs-space-2) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);
   border-inline-start: 3px solid var(--gs-sec, var(--gs-card-border));
-  border-radius: 12px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
   text-decoration: none;
 }
@@ -10526,12 +10530,12 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-onward-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gs-space-1);
   min-width: 0;
 }
 .gen-studio .gs-ref-onward-rel,
 .gen-studio .gs-ref-onward-sec {
-  font-size: 10.5px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -10540,19 +10544,18 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-onward-sec {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-ref-onward--next .gs-ref-onward-sec {
   justify-content: flex-end;
 }
 .gen-studio .gs-ref-onward-name {
-  font-size: 13px;
+  font-size: var(--gs-text-md);
   font-weight: 700;
   color: var(--gs-ink);
 }
 
 @media (pointer: coarse) {
-  .gen-studio .gs-ref-related-link,
   .gen-studio .gs-ref-link,
   .gen-studio .gs-ref-full,
   .gen-studio .gs-ref-back {
@@ -11298,8 +11301,8 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-recipe {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 12px;
+  gap: var(--gs-space-2);
+  margin: 0 0 var(--gs-space-3);
   padding: 0;
   min-width: 0;
   max-width: 100%;
@@ -11321,14 +11324,14 @@ html:has(app-gs-sheet) {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
   min-width: 0;
   max-width: 100%;
-  padding: 5px 10px;
+  padding: var(--gs-space-1) var(--gs-space-3);
   border: 1px solid var(--gs-sec-tint-border);
-  border-radius: 999px;
+  border-radius: var(--gs-radius-pill);
   background: var(--gs-card);
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.4;
   overflow: hidden;
 }
@@ -11383,7 +11386,7 @@ html:has(app-gs-sheet) {
   color: inherit;
   text-align: inherit;
   cursor: pointer;
-  border-radius: 999px;
+  border-radius: var(--gs-radius-pill);
 }
 .gen-studio .gs-setting-chip-btn:hover .gs-setting-chip-label {
   color: var(--gs-ink);
@@ -11403,15 +11406,15 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-setting-pop {
   position: fixed;
   z-index: 55;
-  padding: 10px 12px;
+  padding: var(--gs-space-3) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);
-  border-radius: 10px;
+  border-radius: var(--gs-radius-md);
   background: var(--gs-card);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--gs-elev-2);
   color: var(--gs-ink-2);
-  font-size: 12px;
+  font-size: var(--gs-text-sm);
   line-height: 1.55;
-  animation: gs-fadeup 0.18s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: gs-fadeup var(--gs-dur) var(--gs-ease);
 }
 .gen-studio .gs-setting-pop:focus {
   outline: none;
@@ -11421,9 +11424,9 @@ html:has(app-gs-sheet) {
   outline-offset: 2px;
 }
 .gen-studio .gs-setting-pop-title {
-  margin: 0 0 4px;
+  margin: 0 0 var(--gs-space-1);
   color: var(--gs-ink);
-  font-size: 12.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 700;
 }
 .gen-studio .gs-setting-pop-body {
@@ -11432,9 +11435,9 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-setting-pop-go {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--gs-space-1);
   min-height: 34px;
-  margin: 6px 0 -4px;
+  margin: var(--gs-space-2) 0 -4px;
   padding: 0;
   border: 0;
   background: none;
@@ -11449,27 +11452,27 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-setting-pop-go:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: var(--gs-radius-sm);
 }
 
 /* The payload under the chips: closed by default, because the chips are the
    answer for the reader this tab is for and the developer tab already leads
    with the file. */
 .gen-studio .gs-tut-raw {
-  margin-bottom: 14px;
+  margin-bottom: var(--gs-space-4);
 }
 .gen-studio .gs-tut-raw-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-2);
   min-height: 44px;
-  padding: 7px 12px;
+  padding: var(--gs-space-2) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);
-  border-radius: 999px;
+  border-radius: var(--gs-radius-pill);
   background: var(--gs-card);
   color: var(--gs-ink-2);
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   cursor: pointer;
 }
@@ -11478,7 +11481,7 @@ html:has(app-gs-sheet) {
   color: var(--gs-ink);
 }
 .gen-studio .gs-tut-raw-toggle[aria-expanded="true"] {
-  margin-bottom: 8px;
+  margin-bottom: var(--gs-space-2);
 }
 
 /* ------- practice handoff (written guide) ---------------------------- */
@@ -11488,7 +11491,7 @@ html:has(app-gs-sheet) {
    second one is a page away: a door, on the same chassis as the evidence
    cards, carrying the arrow rather than the chevron. */
 .gen-studio .gs-guide-practice {
-  margin: 0 0 10px;
+  margin: 0 0 var(--gs-space-3);
   max-width: 480px;
 }
 
@@ -11563,7 +11566,7 @@ html:has(app-gs-sheet) {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
-  scroll-padding-inline: 4px;
+  scroll-padding-inline: var(--gs-space-1);
 }
 /* The bar carries more names than fit at any width, so the edge that has
    entries behind it is faded out: an edge that stops mid-word reads as the end
@@ -11600,15 +11603,15 @@ html:has(app-gs-sheet) {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 7px;
+  gap: var(--gs-space-2);
   /* The bar form is the one a thumb uses. */
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 var(--gs-space-3);
   border: 0;
   border-radius: 0;
   background: none;
   font: inherit;
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   font-weight: 600;
   line-height: 1.3;
   color: var(--gs-label);
@@ -11628,6 +11631,7 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-index-entry:hover {
   color: var(--gs-ink-2);
+  background: var(--gs-card);
   text-decoration: none;
 }
 /* An entry offered with something to say about it: the note is set after the
@@ -11635,7 +11639,7 @@ html:has(app-gs-sheet) {
    difference before the note is. */
 .gen-studio .gs-index-entry-note {
   flex: none;
-  font-size: 10px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -11647,7 +11651,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-index-entry-sub {
   display: none;
   flex-basis: 100%;
-  font-size: 10.5px;
+  font-size: var(--gs-text-2xs);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--gs-muted);
@@ -11702,7 +11706,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-index-layout {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--gs-space-4);
 }
 .gen-studio .gs-index-layout-main {
   min-width: 0;
@@ -11710,7 +11714,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-index-layout-main--bands {
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: var(--gs-space-6);
 }
 
 @media (min-width: 1200px) {
@@ -11723,7 +11727,7 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-index-layout {
     display: grid;
     grid-template-columns: 208px minmax(0, 1fr);
-    gap: 32px;
+    gap: var(--gs-space-8);
     align-items: start;
   }
   .gen-studio .gs-index-rail {
@@ -11740,10 +11744,11 @@ html:has(app-gs-sheet) {
   }
   .gen-studio .gs-index-entry {
     min-height: 0;
-    padding: 8px 10px 8px 12px;
+    padding: var(--gs-space-2) var(--gs-space-3) var(--gs-space-2)
+      var(--gs-space-3);
     white-space: normal;
     flex-wrap: wrap;
-    row-gap: 2px;
+    row-gap: var(--gs-space-1);
   }
   .gen-studio .gs-index-entry-sub {
     display: block;
@@ -11786,7 +11791,7 @@ html:has(app-gs-sheet) {
   }
   .gen-studio .gs-index-rail--bar .gs-index-entry {
     min-height: 44px;
-    padding: 0 12px;
+    padding: 0 var(--gs-space-3);
     white-space: nowrap;
     flex-wrap: nowrap;
   }
@@ -11880,5 +11885,127 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-learn-card {
     box-shadow: none;
     border: 1px solid CanvasText;
+  }
+}
+
+/* ------- documentation area and sweep viewer: depth, motion, edges ----- */
+/* The same pass over the pages a reader reads rather than works in, and over
+   the evidence chrome they carry. Every surface that stands off the canvas
+   takes its depth from the elevation ladder and follows a state change on the
+   shared duration; every one of them is restated as a system-colour edge where
+   a forced palette throws the surfaces away, and every line that navigates is
+   a thumb's target on a touch screen. */
+.gen-studio .gs-home-card,
+.gen-studio .gs-ref-card,
+.gen-studio .gs-ref-onward,
+.gen-studio .gs-ref-shot,
+.gen-studio .gs-tut-evidence,
+.gen-studio .gs-cap,
+.gen-studio .gs-sweep-open {
+  box-shadow: var(--gs-elev-1);
+  transition:
+    box-shadow var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    transform var(--gs-dur-fast) var(--gs-ease);
+}
+/* A card answers the pointer by rising, which is the one motion the docs have:
+   the shelf and the index are grids of things to choose between, and depth is
+   how the studio says which one is under the hand. */
+.gen-studio .gs-home-card:hover,
+.gen-studio .gs-ref-card:hover,
+.gen-studio .gs-ref-onward:hover,
+.gen-studio .gs-cap:hover {
+  box-shadow: var(--gs-elev-2);
+  transform: translateY(-1px);
+}
+.gen-studio .gs-home-card:active,
+.gen-studio .gs-ref-card:active,
+.gen-studio .gs-ref-onward:active,
+.gen-studio .gs-cap:active {
+  box-shadow: var(--gs-elev-1);
+  transform: translateY(0);
+}
+/* The tabs, the rail and the landing's doors are lists rather than objects, so
+   they answer with a surface under the line instead of a lift. */
+.gen-studio .gs-hub-nav-link,
+.gen-studio .gs-index-entry,
+.gen-studio .gs-learn-door {
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-learn-door:hover {
+  background: var(--gs-card);
+}
+.gen-studio .gs-hub-nav-link::before,
+.gen-studio .gs-index-entry::before,
+.gen-studio .gs-learn-door::before {
+  transition:
+    background-color var(--gs-dur) var(--gs-ease),
+    opacity var(--gs-dur) var(--gs-ease);
+}
+.gen-studio .gs-guide-term-row,
+.gen-studio .gs-world,
+.gen-studio .gs-sweep-variant,
+.gen-studio .gs-tut-raw-toggle,
+.gen-studio .gs-sweep-plate-cell {
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-home-card:hover,
+  .gen-studio .gs-ref-card:hover,
+  .gen-studio .gs-ref-onward:hover,
+  .gen-studio .gs-cap:hover {
+    transform: none;
+  }
+}
+/* A thumb reaches a documentation page the same way it reaches the panel. */
+@media (pointer: coarse) {
+  .gen-studio .gs-hub-nav-link,
+  .gen-studio .gs-index-entry,
+  .gen-studio .gs-learn-door,
+  .gen-studio .gs-learn-hero-door,
+  .gen-studio .gs-cap,
+  .gen-studio .gs-ref-chip,
+  .gen-studio .gs-setting-chip:not(.gs-setting-chip--inline),
+  .gen-studio .gs-guide-term-row,
+  .gen-studio .gs-world {
+    min-height: 44px;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-home-card,
+  .gen-studio .gs-ref-card,
+  .gen-studio .gs-ref-onward,
+  .gen-studio .gs-ref-shot,
+  .gen-studio .gs-tut-evidence,
+  .gen-studio .gs-cap,
+  .gen-studio .gs-sweep-open,
+  .gen-studio .gs-world,
+  .gen-studio .gs-ref-chip,
+  .gen-studio .gs-setting-chip:not(.gs-setting-chip--inline),
+  .gen-studio .gs-setting-pop,
+  .gen-studio .gs-tut-raw-toggle,
+  .gen-studio .gs-sweep-variant,
+  .gen-studio .gs-tut-stage,
+  .gen-studio .gs-sweep-plate-cell {
+    box-shadow: none;
+    border: 1px solid CanvasText;
+  }
+  /* The mark under the tab and the rail entry being read is a filled pseudo,
+     which a forced palette paints out with every other background; restating it
+     in the system's own selection colour is the only way it survives. */
+  .gen-studio .gs-hub-nav-link[aria-current]::before,
+  .gen-studio .gs-index-entry[aria-current]::before,
+  .gen-studio .gs-tut-modes .gs-devtab.gs-devtab--on::after {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+  .gen-studio .gs-sweep-plate-cell.is-at,
+  .gen-studio .gs-sweep-plate-cell:hover {
+    border-color: Highlight;
   }
 }

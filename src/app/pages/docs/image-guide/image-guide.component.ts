@@ -48,6 +48,7 @@ import {
   guideSectionId,
 } from '../../../content/guide';
 import { setPageMeta } from '../../../helper/page-meta';
+import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
 /** One walkthrough step as the page draws it, with its title marked up. */
 interface GuideStepView {
@@ -151,11 +152,14 @@ export class DocsImageGuideComponent {
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
 
+  private readonly docsPage = inject(DocsPageContextService);
+
   constructor() {
     setPageMeta({
       titleKey: 'generate.guide.title',
       descriptionKey: 'generate.guide.lead',
     });
+    this.docsPage.declare('generate.guide.title');
   }
 
   private readonly transloco = inject(TranslocoService);

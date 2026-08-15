@@ -28,6 +28,7 @@ import {
   docsExampleLink,
 } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
+import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
 /** The flow the hero's first door starts, and the one the page is written around. */
 const HERO_FLOW = 'txt2img';
@@ -204,11 +205,14 @@ export class DocsImageHomeComponent {
     );
   });
 
+  private readonly docsPage = inject(DocsPageContextService);
+
   constructor() {
     setPageMeta({
       titleKey: 'generate.learn.hero_title',
       descriptionKey: 'generate.learn.hero_sub',
     });
+    this.docsPage.declare('docs.nav_overview');
     this.http
       .get<ExampleManifest>(exampleManifestUrl())
       .pipe(takeUntilDestroyed())

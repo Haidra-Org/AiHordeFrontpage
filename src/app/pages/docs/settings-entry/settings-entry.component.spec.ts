@@ -127,6 +127,21 @@ describe('DocsSettingsEntryComponent', () => {
     expect(ways[1].getAttribute('href')).toBe('/docs/image/settings');
   });
 
+  it('names the page it goes back to by the key the page declared', async () => {
+    await setUp('steps', {
+      [REFERENCE_ORIGIN_STATE]: {
+        url: '/docs/image/learn/img2img',
+        title: 'a title nobody chose | AI Horde',
+        returnLabelKey: 'generate.tutorials.flows.img2img.task_name',
+      },
+    });
+
+    const ways = all<HTMLAnchorElement>('.gs-ref-back');
+    expect(ways[0].textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      `Back to ${translations['generate.tutorials.flows.img2img.task_name']}`,
+    );
+  });
+
   it('walks on to the neighbouring settings in the same area', async () => {
     await setUp('cfg');
     const { previous, next } = settingNeighbours('cfg');

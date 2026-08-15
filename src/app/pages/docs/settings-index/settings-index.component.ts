@@ -33,6 +33,7 @@ import {
 } from '../../../content/settings';
 import { docsSettingLink } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
+import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
 /**
  * The API's field names, gathered under the setting they name. A reader who
@@ -194,11 +195,14 @@ export class DocsSettingsIndexComponent {
     })),
   );
 
+  private readonly docsPage = inject(DocsPageContextService);
+
   constructor() {
     setPageMeta({
       titleKey: 'generate.reference.head',
       descriptionKey: 'generate.reference.lead',
     });
+    this.docsPage.declare('docs.nav_settings');
     void this.sweeps.ensureLoaded();
     this.registerGlossaryContext();
   }

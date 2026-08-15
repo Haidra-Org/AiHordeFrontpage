@@ -40,7 +40,12 @@ function readOrigin(
     typeof (candidate as ReferenceOrigin).url === 'string' &&
     typeof (candidate as ReferenceOrigin).title === 'string'
   ) {
-    return candidate as ReferenceOrigin;
+    const origin = candidate as ReferenceOrigin;
+    // The declared name is optional and comes off navigation state, so a
+    // malformed one is dropped rather than rendered as a raw key.
+    return typeof origin.returnLabelKey === 'string' || !origin.returnLabelKey
+      ? origin
+      : { url: origin.url, title: origin.title };
   }
   return null;
 }

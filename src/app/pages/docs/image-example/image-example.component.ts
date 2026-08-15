@@ -62,6 +62,7 @@ import {
   docsExampleLink,
 } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
+import { DocsPageContextService } from '../../../services/docs-page-context.service';
 import {
   ExampleFlow,
   ExampleManifest,
@@ -129,6 +130,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
 export class DocsImageExampleComponent {
   private readonly http = inject(HttpClient);
   private readonly route = inject(ActivatedRoute);
+  private readonly docsPage = inject(DocsPageContextService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
@@ -508,6 +510,12 @@ export class DocsImageExampleComponent {
         const id = this.activeId();
         return id ? `generate.tutorials.flows.${id}.summary` : null;
       },
+    });
+    // The page is named by the technique it is showing, so the name follows the
+    // URL rather than being fixed when the page mounts.
+    this.docsPage.declare(() => {
+      const id = this.activeId();
+      return id ? this.taskNameKey(id) : null;
     });
     this.http
       .get<ExampleManifest>(exampleManifestUrl())
