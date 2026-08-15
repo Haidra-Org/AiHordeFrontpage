@@ -142,6 +142,25 @@
   --gs-dur-fast: 150ms;
   --gs-dur: 220ms;
   --gs-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* The four scales every gs-* rule draws from; see docs/design-language.md. */
+  --gs-text-2xs: 10px;
+  --gs-text-xs: 11.5px;
+  --gs-text-sm: 12.5px;
+  --gs-text-md: 13.5px;
+  --gs-text-lg: 15.5px;
+  --gs-text-xl: 20px;
+  --gs-space-1: 4px;
+  --gs-space-2: 8px;
+  --gs-space-3: 12px;
+  --gs-space-4: 16px;
+  --gs-space-6: 24px;
+  --gs-space-8: 32px;
+  --gs-radius-sm: 8px;
+  --gs-radius-md: 12px;
+  --gs-radius-lg: 16px;
+  --gs-radius-pill: 999px;
+  --gs-control-h: 40px;
+  --gs-control-h-dense: 36px;
   --gs-green-tint-border: #bbf7d0;
   --gs-border-soft: #f0f1f3;
   --gs-border-results: #eceef1;
