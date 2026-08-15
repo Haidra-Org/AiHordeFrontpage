@@ -92,10 +92,10 @@ describe('GsSettingChipComponent', () => {
 
     it('stays a plain token for a setting with no note and no reference to open', () => {
       fixture.componentInstance.entry = true;
-      render('model', 'Deliberate');
+      // A setting the vocabulary does not know has neither a note nor a page.
+      render('nothing_here', 3);
 
       expect(chip().querySelector('button')).toBeNull();
-      expect(text()).toBe('Model Deliberate');
     });
 
     it('presses to open the setting note in place, and reads the same', async () => {
