@@ -900,6 +900,14 @@
   padding: 15px 18px 13px;
   border-bottom: 2px solid var(--gs-zone-tint-border, var(--gs-border-soft));
 }
+/* The tool group is one flex item, so on a 360px phone its four buttons and the
+   detail toggle overran the header's edge by a few pixels rather than wrapping
+   with it. The group wraps inside itself the same way. */
+.gen-studio .gs-panel-header > .flex {
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
 .gen-studio .gs-title {
   font-weight: 800;
   font-size: 16px;
@@ -8795,6 +8803,21 @@ app-gs-sweep-scrub + app-gs-door {
     var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border-results);
 }
+/* What the plate's head says, in the layer: the badge and the setting's name
+   over the value on show. The layer is the only view a phone gets, so the
+   value has to arrive named rather than as a bare token. */
+.gen-studio .gs-sweep-viewer-what {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+  min-width: 0;
+}
+.gen-studio .gs-sweep-viewer-param {
+  font-size: var(--gs-text-md);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
 .gen-studio .gs-sweep-viewer-name {
   flex: 1;
   min-width: 0;
@@ -8804,6 +8827,11 @@ app-gs-sweep-scrub + app-gs-door {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--gs-label);
+}
+/* Under the setting's name the value is a row of its own height rather than the
+   stretched child of a column. */
+.gen-studio .gs-sweep-viewer-what .gs-sweep-viewer-name {
+  flex: none;
 }
 /* A chip in the title row is a token rather than an eyebrow, and drops the
    eyebrow's treatment so it reads the same here as it does on the page. */
@@ -8859,6 +8887,30 @@ app-gs-sweep-scrub + app-gs-door {
   color: var(--gs-ink-2);
   overflow-wrap: anywhere;
   transition: color var(--gs-dur) var(--gs-ease);
+}
+
+/* On a phone the layer is the sweep: the plate cannot hold a frame, its
+   controls and its lane in the room a sheet leaves, so the offer opens this
+   instead. Centred with a hidden overflow it would lose its own top edge on a
+   short viewport, so it starts at the top and scrolls inside itself. The
+   inline flavour is laid out in a page and keeps its own rules. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-sweep-viewer:not(.gs-sweep-viewer--inline) {
+    align-items: flex-start;
+    padding: var(--gs-space-2);
+    padding-top: calc(var(--gs-space-2) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--gs-space-2) + env(safe-area-inset-bottom));
+  }
+  .gen-studio
+    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
+    .gs-sweep-viewer-body {
+    max-height: calc(
+      100dvh - 2 * var(--gs-space-2) - env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* ------- sweeps: pairs, tiles, sources ------------------------------- */
@@ -9326,6 +9378,14 @@ app-gs-compare-wipe {
 /* The pane's header while a tutorial has it: what is taught, the step, the
    world switch and the way out, in the header row the results otherwise own.
    The title takes the area's technique behind it, as the docs page does. */
+/* On a phone the sheet is the tutorial's header: the pane's own would show
+   behind it, saying the same thing twice on a screen that has no room for
+   once. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-results-header--tutorial {
+    display: none;
+  }
+}
 .gen-studio .gs-results-header--tutorial {
   align-items: center;
   border-bottom: 2px solid var(--gs-tut-tint-border);
@@ -9469,6 +9529,16 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-next:hover,
 .gen-studio .gs-learn-all:hover {
   background: var(--gs-blue-hover);
+}
+/* After the write, the offer stands down to a plain button: the form has what
+   the step wanted, and Next is the thing to press. */
+.gen-studio .gs-learn-apply--done {
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  border-color: var(--gs-border);
+}
+.gen-studio .gs-learn-apply--done:hover {
+  background: var(--gs-field-soft);
 }
 .gen-studio .gs-learn-next:disabled,
 .gen-studio .gs-guide-close:disabled {
@@ -10863,6 +10933,14 @@ app-gs-compare-wipe {
   border-top: 1px solid var(--gs-card-border);
   box-shadow: 0 -10px 28px -14px rgb(0 0 0 / 0.5);
 }
+
+/* The sheet is a stacking context, so a layer opened from inside it (the
+   enlarged sweep viewer) can only rise as high as the sheet does, and the site
+   nav (50) would cover the layer's top row. While the sheet hosts such a layer
+   it lifts above the nav, and no higher than the modal band. */
+.gen-studio .gs-sheet:has(.gs-sweep-viewer:not(.gs-sweep-viewer--inline)) {
+  z-index: 59;
+}
 /* From here up the studio has a pane, and the pane is the better place. */
 @media (min-width: 1024px) {
   .gen-studio .gs-sheet {
@@ -10892,10 +10970,61 @@ app-gs-compare-wipe {
   max-height: none;
 }
 .gen-studio .gs-sheet-top {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 0 6px 0 0;
+}
+/* A caller's own first line shares the row with the stop buttons. The grabber
+   then has no column of its own: it becomes the pill phones draw at a sheet's
+   top edge, laid over the row's centre with a hit area wider than it looks,
+   and the row leaves room above its text for it. */
+.gen-studio .gs-sheet-top > [sheet-head] {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 10px 0 0 var(--gs-space-3);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.gen-studio .gs-sheet-top:has(> [sheet-head]) {
+  padding-top: 6px;
+}
+.gen-studio .gs-sheet-top:has(> [sheet-head]) .gs-sheet-grab {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  flex: none;
+  width: 96px;
+  height: 18px;
+  z-index: 1;
+}
+.gen-studio .gs-sheet-top:has(> [sheet-head]) .gs-sheet-stops {
+  align-self: flex-end;
+}
+/* A first line that is a way back: the tutorials' eyebrow, pressable. */
+.gen-studio .gs-sheet-return {
+  border: 0;
+  background: transparent;
+  color: var(--gs-tut-ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+}
+.gen-studio .gs-sheet-return:hover {
+  text-decoration: underline;
+}
+.gen-studio .gs-sheet-return:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 .gen-studio .gs-sheet-stops {
   display: flex;
@@ -11054,6 +11183,15 @@ html:has(app-gs-sheet) {
   html:has(app-gs-sheet) {
     scroll-padding-bottom: calc(
       var(--gs-sheet-clearance, 96px) + 56px + env(safe-area-inset-bottom)
+    );
+  }
+  /* The page also has to be able to scroll that far: a field near the foot of
+     the form can only reach the band above the sheet if the page ends that
+     much below its last control. */
+  html:has(.gs-sheet--open) .gen-studio .gs-shell-outlet {
+    padding-bottom: calc(
+      var(--gs-sheet-clearance, 96px) + var(--gs-tabbar-height) +
+        env(safe-area-inset-bottom)
     );
   }
 }
@@ -11217,38 +11355,23 @@ html:has(app-gs-sheet) {
   border-top: 2px solid var(--gs-tut-tint-border);
 }
 
-/* One target per step, laid across the bar rather than sized to the mark in it:
-   a dot big enough to read is not a dot big enough to hit, so the pressable
-   area takes the full height of the row and an equal share of its width. */
-.gen-studio .gs-tut-dots {
-  display: flex;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.gen-studio .gs-tut-dots > li {
-  flex: 1 1 0;
-  min-width: 0;
-}
 /* The tutorial's progress along the sheet's top edge: a segment per step, the
-   ones read so far in the area's hue. It is information rather than a control
-   (the dot list in the body is the control), so it can be three pixels tall. */
+   ones read so far in the tutorials' hue. It is information rather than a
+   control, so it can be four pixels tall. */
 .gen-studio .gs-tut-progress {
   display: flex;
   gap: 2px;
   height: 4px;
-  margin: 0 0 var(--gs-space-2);
+  margin: 0;
   padding: 0;
   flex: none;
-  border-radius: var(--gs-radius-pill);
   overflow: hidden;
 }
 .gen-studio .gs-tut-bar-eyebrow {
   display: flex;
   align-items: center;
   gap: var(--gs-space-2);
-  margin: 0 0 var(--gs-space-2);
+  margin: 0;
   font-size: var(--gs-text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -11282,55 +11405,6 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-progress-seg--done {
   background: var(--gs-tut);
 }
-/* Above the body: the count and the dot list, on the surface the bar has, so
-   the scrolling card under them reads as the thing that scrolls. */
-.gen-studio .gs-tut-body-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-1);
-  margin: 0 calc(-1 * var(--gs-space-3));
-  padding: var(--gs-space-2) var(--gs-space-3) var(--gs-space-2);
-  background: var(--gs-card);
-  border-bottom: 1px solid var(--gs-border-soft);
-}
-.gen-studio .gs-tut-body-head .gs-learn-progress {
-  margin: 0;
-}
-.gen-studio .gs-tut-dot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.gen-studio .gs-tut-dot:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
-  outline-offset: -4px;
-  border-radius: 8px;
-}
-.gen-studio .gs-tut-dot-mark {
-  width: 100%;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--gs-border);
-}
-.gen-studio .gs-tut-dot--done .gs-tut-dot-mark {
-  background: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
-}
-/* The step being read is a bar rather than a brighter dot: at four pixels tall
-   a colour change alone is not something a thumb can find at arm's length. */
-.gen-studio .gs-tut-dot--on .gs-tut-dot-mark {
-  height: 8px;
-  background: var(--gs-sec, var(--gs-blue));
-}
-
 .gen-studio .gs-tut-bar-row {
   display: flex;
   align-items: center;
@@ -11341,39 +11415,46 @@ html:has(app-gs-sheet) {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.25;
   font-size: 13.5px;
   font-weight: 800;
   color: var(--gs-ink);
 }
+/* The bar's buttons: one shape, quiet by default, and `gs-tut-bar-do` on the
+   one the step is asking for. The primary rule comes last so a button that
+   is both (Next, promoted once there is nothing else to do) reads as primary. */
+.gen-studio .gs-tut-bar-btn,
 .gen-studio .gs-tut-bar-do,
 .gen-studio .gs-tut-bar-next {
   flex: none;
   min-height: 36px;
   padding: 8px 12px;
+  border: 1px solid var(--gs-border);
   border-radius: 8px;
+  background: var(--gs-field);
+  color: var(--gs-ink-2);
   font-size: 12px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
 }
+.gen-studio .gs-tut-bar-btn:hover,
+.gen-studio .gs-tut-bar-next:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
 .gen-studio .gs-tut-bar-do {
-  border: 1px solid var(--gs-blue);
+  border-color: var(--gs-blue);
   background: var(--gs-blue);
   color: #ffffff;
 }
 .gen-studio .gs-tut-bar-do:hover {
+  border-color: var(--gs-blue-hover);
   background: var(--gs-blue-hover);
-}
-.gen-studio .gs-tut-bar-next {
-  border: 1px solid var(--gs-border);
-  background: var(--gs-field);
-  color: var(--gs-ink-2);
-}
-.gen-studio .gs-tut-bar-next:hover {
-  border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: #ffffff;
 }
 .gen-studio .gs-tut-bar-do:focus-visible,
 .gen-studio .gs-tut-bar-next:focus-visible,
@@ -11402,8 +11483,14 @@ html:has(app-gs-sheet) {
 
 .gen-studio .gs-tut-sheet-nav {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-top: 12px;
+}
+.gen-studio .gs-tut-sheet-nav .gs-tut-sheet-exit {
+  flex: 1 1 auto;
+  width: auto;
+  margin-top: 0;
 }
 
 /* The only way out, and set apart from the step's own buttons for it: leaving

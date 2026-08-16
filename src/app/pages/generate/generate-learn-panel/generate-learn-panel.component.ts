@@ -97,6 +97,7 @@ export class GenerateLearnPanelComponent {
   );
 
   public readonly canApply = computed(() => this.engine.canApply());
+  public readonly stepApplied = this.engine.stepApplied;
 
   /**
    * Whether there is a committed request behind the flow. Everything that

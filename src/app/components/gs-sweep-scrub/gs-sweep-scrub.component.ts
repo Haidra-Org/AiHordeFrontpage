@@ -372,6 +372,39 @@ const VIEWER_FOCUSABLE =
       }
     </ng-template>
 
+    <!-- The sampler toggle names two kinds of sampler and assumes the reader
+         knows which theirs is. Answering that is more than a label can carry
+         and less than a trip to the reference is worth, so it sits beside the
+         toggle, folded, with the two lists in full. No other pair raises the
+         question, and none of them carry it. It goes wherever the toggle goes:
+         the plate, and the full-size view, from the one piece of markup. -->
+    <ng-template #why>
+      @if (variantPair()?.samplerNote) {
+        <button
+          type="button"
+          class="gs-sweep-why"
+          [attr.aria-expanded]="variantWhyOpen()"
+          (click)="toggleVariantWhy()"
+        >
+          {{ 'generate.sweeps.variant_why' | transloco }}
+        </button>
+        @if (variantWhyOpen()) {
+          <div class="gs-sweep-why-body">
+            <p>{{ 'generate.sweeps.variant_why_body' | transloco }}</p>
+            <p class="gs-sweep-why-list">
+              {{ 'generate.sweeps.variant_why_rerollers' | transloco }}
+            </p>
+            <p class="gs-sweep-why-list">
+              {{ 'generate.sweeps.variant_why_settlers' | transloco }}
+            </p>
+            <a class="gs-sweep-why-link" [routerLink]="samplerReference">
+              {{ 'generate.sweeps.variant_why_link' | transloco }}
+            </a>
+          </div>
+        }
+      }
+    </ng-template>
+
     <!-- What kind of evidence this is and which area of the panel it belongs to,
          in one badge. The hue rides on the dash rather than on the words: the
          identity hues are audited as graphic colour only. -->
@@ -417,42 +450,7 @@ const VIEWER_FOCUSABLE =
               <div class="gs-plate-controls">
                 <ng-container [ngTemplateOutlet]="variants" />
 
-                <!-- The sampler toggle names two kinds of sampler and assumes the
-                   reader knows which theirs is. Answering that is more than a
-                   label can carry and less than a trip to the reference is
-                   worth, so it sits here, folded, with the two lists in full.
-                   No other pair raises the question, and none of them carry it. -->
-                @if (variantPair()?.samplerNote) {
-                  <button
-                    type="button"
-                    class="gs-sweep-why"
-                    [attr.aria-expanded]="variantWhyOpen()"
-                    (click)="toggleVariantWhy()"
-                  >
-                    {{ 'generate.sweeps.variant_why' | transloco }}
-                  </button>
-                  @if (variantWhyOpen()) {
-                    <div class="gs-sweep-why-body">
-                      <p>
-                        {{ 'generate.sweeps.variant_why_body' | transloco }}
-                      </p>
-                      <p class="gs-sweep-why-list">
-                        {{
-                          'generate.sweeps.variant_why_rerollers' | transloco
-                        }}
-                      </p>
-                      <p class="gs-sweep-why-list">
-                        {{ 'generate.sweeps.variant_why_settlers' | transloco }}
-                      </p>
-                      <a
-                        class="gs-sweep-why-link"
-                        [routerLink]="samplerReference"
-                      >
-                        {{ 'generate.sweeps.variant_why_link' | transloco }}
-                      </a>
-                    </div>
-                  }
-                }
+                <ng-container [ngTemplateOutlet]="why" />
               </div>
             }
 
@@ -656,6 +654,7 @@ const VIEWER_FOCUSABLE =
                the same sentence on every setting, which is what made a page of
                these read as one offer repeated; the frames never are. -->
           <button
+            #zoomTrigger
             type="button"
             class="gs-sweep-offer gs-cap"
             [class.gs-cap--film]="filmcard()"
@@ -730,20 +729,30 @@ const VIEWER_FOCUSABLE =
               (keydown)="onViewerKeydown($event)"
             >
               <div class="gs-sweep-viewer-top">
-                <span class="gs-sweep-viewer-name">
-                  @if (paired()) {
-                    {{ 'generate.sweeps.pair_label' | transloco }}
-                  } @else if (shown.prompt_fragment) {
-                    {{
-                      'generate.sweeps.value_prompt'
-                        | transloco: valueParamsOf(shown)
-                    }}
-                  } @else {
-                    <app-gs-setting-chip
-                      [settingId]="activeParameter()"
-                      [value]="shown.value"
-                    />
-                  }
+                <!-- The layer is the whole strip on a phone, where the plate
+                     does not fit, so it says what the plate says: what kind of
+                     evidence this is, which setting it is about, and only then
+                     which value is on show. -->
+                <span class="gs-sweep-viewer-what">
+                  <ng-container [ngTemplateOutlet]="badge" />
+                  <span class="gs-sweep-viewer-param">
+                    {{ parameterLabelKey() | transloco }}
+                  </span>
+                  <span class="gs-sweep-viewer-name">
+                    @if (paired()) {
+                      {{ 'generate.sweeps.pair_label' | transloco }}
+                    } @else if (shown.prompt_fragment) {
+                      {{
+                        'generate.sweeps.value_prompt'
+                          | transloco: valueParamsOf(shown)
+                      }}
+                    } @else {
+                      <app-gs-setting-chip
+                        [settingId]="activeParameter()"
+                        [value]="shown.value"
+                      />
+                    }
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -816,6 +825,7 @@ const VIEWER_FOCUSABLE =
               <div class="gs-sweep-viewer-foot">
                 @if (hasVariant()) {
                   <ng-container [ngTemplateOutlet]="variants" />
+                  <ng-container [ngTemplateOutlet]="why" />
                 }
                 @if (paired()) {
                   <ng-container [ngTemplateOutlet]="pairMode" />
@@ -865,6 +875,14 @@ export class GsSweepScrubComponent {
    */
   public readonly startExpanded = input(false);
   /**
+   * Skip the inline plate: the offer opens the full-size layer, and closing it
+   * comes back to the offer. Where the surface is a phone-sized sheet the plate
+   * cannot fit its picture and its controls at once, and a reader left with the
+   * picture alone has nothing to scrub with. `startExpanded` has nothing to
+   * open here and is ignored.
+   */
+  public readonly viewerFirst = input(false);
+  /**
    * How much room the collapsed capsule takes. `full` is the three-frame card
    * with its badge and its range spelled out; `filmcard` is the one-line
    * version, for the surfaces that carry several of these in a row and would
@@ -873,7 +891,9 @@ export class GsSweepScrubComponent {
   public readonly register = input<'full' | 'filmcard'>('full');
 
   private readonly cursor = signal<number | null>(null);
-  private readonly open = linkedSignal(() => this.startExpanded());
+  private readonly open = linkedSignal(
+    () => !this.viewerFirst() && this.startExpanded(),
+  );
   private readonly loaded = signal(false);
   private readonly zoom = signal<number | null>(null);
   private readonly variant = signal(false);
@@ -896,7 +916,7 @@ export class GsSweepScrubComponent {
     viewChildren<ElementRef<HTMLButtonElement>>('zoomTrigger');
   private readonly zoomPanel = viewChild<ElementRef<HTMLElement>>('zoomPanel');
 
-  /** Which frame opened the enlarged view, so closing hands focus back to it. */
+  /** Which control opened the enlarged view, so closing hands focus back to it. */
   private opener = 0;
 
   /** The panel focus was last moved to, so an unrelated render cannot re-take it. */
@@ -1240,8 +1260,12 @@ export class GsSweepScrubComponent {
   }
 
   public expand(): void {
-    this.open.set(true);
     this.loaded.set(false);
+    if (this.viewerFirst()) {
+      this.openZoom(this.index(), 0);
+    } else {
+      this.open.set(true);
+    }
     this.prefetchNeighbours();
   }
 
@@ -1277,7 +1301,7 @@ export class GsSweepScrubComponent {
     this.zoom.set(stopIndex);
   }
 
-  /** Closing hands focus back to the frame that opened the enlarged view. */
+  /** Closing hands focus back to the control that opened the enlarged view. */
   public closeZoom(): void {
     this.zoom.set(null);
     this.zoomTriggers()[this.opener]?.nativeElement.focus();

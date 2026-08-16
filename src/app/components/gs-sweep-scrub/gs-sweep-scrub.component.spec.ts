@@ -5,6 +5,7 @@ import {
 } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GsSweepScrubComponent } from './gs-sweep-scrub.component';
@@ -19,6 +20,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
     [parameter]="parameter"
     [modelSlug]="modelSlug"
     [startExpanded]="startExpanded"
+    [viewerFirst]="viewerFirst"
     [register]="register"
   />`,
 })
@@ -26,6 +28,7 @@ class HostComponent {
   public parameter = 'steps';
   public modelSlug: string | undefined = undefined;
   public startExpanded = false;
+  public viewerFirst = false;
   public register: 'full' | 'filmcard' = 'full';
 }
 
@@ -158,6 +161,8 @@ describe('GsSweepScrubComponent', () => {
     parameter?: string;
     /** Whether the surface opens the strip without waiting to be asked. */
     startExpanded?: boolean;
+    /** Whether the offer opens the full-size layer instead of the plate. */
+    viewerFirst?: boolean;
     /** Which collapsed card the surface asks for. */
     register?: 'full' | 'filmcard';
   }): Promise<void> {
@@ -176,7 +181,13 @@ describe('GsSweepScrubComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // The folded sampler note links into the reference, so the links in it
+        // need a router to resolve against.
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
@@ -189,6 +200,7 @@ describe('GsSweepScrubComponent', () => {
     fixture.componentInstance.modelSlug = options?.modelSlug;
     fixture.componentInstance.parameter = options?.parameter ?? 'steps';
     fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
+    fixture.componentInstance.viewerFirst = options?.viewerFirst ?? false;
     fixture.componentInstance.register = options?.register ?? 'full';
     fixture.detectChanges();
 
@@ -830,6 +842,62 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-sweep-offer')).toBeNull();
     expect(find('.gs-sweep-frame')).not.toBeNull();
     expect(find('.gs-tickrail')).not.toBeNull();
+  });
+
+  describe('a surface that has no room for the plate', () => {
+    it('takes the offer straight to the full-size view', async () => {
+      await setUp({ viewerFirst: true });
+
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-viewer')).not.toBeNull();
+      // Nothing opens behind the layer: the plate is what does not fit here.
+      expect(find('.gs-sweep-open')).toBeNull();
+      expect(find('.gs-sweep-frame')).toBeNull();
+      // The layer stands on its own, so it names the setting as well as the
+      // value, and carries the lane.
+      expect(find('.gs-sweep-viewer-param')?.textContent?.trim()).toBe('Steps');
+      expect(find('.gs-sweep-viewer-top .gs-cap-eyebrow')).not.toBeNull();
+      expect(find('.gs-sweep-viewer-foot .gs-tickrail')).not.toBeNull();
+    });
+
+    it('comes back to the offer when the layer is closed', async () => {
+      await setUp({ viewerFirst: true });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-viewer')).toBeNull();
+      expect(find('.gs-sweep-open')).toBeNull();
+      expect(find('.gs-sweep-offer')).not.toBeNull();
+      expect(document.activeElement).toBe(find('.gs-sweep-offer'));
+    });
+
+    it('ignores a surface that also asks for the plate to be open', async () => {
+      await setUp({ viewerFirst: true, startExpanded: true });
+
+      expect(find('.gs-sweep-offer')).not.toBeNull();
+      expect(find('.gs-sweep-open')).toBeNull();
+    });
+
+    it('offers the sampler note in the layer, where the plate is not', async () => {
+      await setUp({ viewerFirst: true });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      const why = find<HTMLButtonElement>(
+        '.gs-sweep-viewer-foot .gs-sweep-why',
+      );
+      expect(why).not.toBeNull();
+
+      why!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-viewer-foot .gs-sweep-why-body')).not.toBeNull();
+    });
   });
 
   it('collapses from the plate back to the capsule', async () => {

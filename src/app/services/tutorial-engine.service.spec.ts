@@ -310,6 +310,8 @@ describe('TutorialEngineService', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       const size = document.createElement('div');
       const model = document.createElement('div');
+      size.scrollIntoView = vi.fn();
+      model.scrollIntoView = vi.fn();
       anchors.register('size', size);
       anchors.register('model', model);
 
@@ -319,6 +321,9 @@ describe('TutorialEngineService', () => {
 
       expect(size.classList.contains('gs-tut-ping')).toBe(true);
       expect(model.classList.contains('gs-tut-ping')).toBe(false);
+      // The written control is brought into view as a pointed one is.
+      expect(size.scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(model.scrollIntoView).not.toHaveBeenCalled();
     });
 
     it('answers the keyboard while it has the pane, and not from inside a field', () => {

@@ -486,6 +486,16 @@ export class TutorialEngineService {
     this.db.store(WORLD_KEY, world);
   }
 
+  /**
+   * The step whose fields were last written, so the offer to write them can
+   * say it has been taken: a button that reads the same before and after the
+   * press tells a reader whose form is out of sight that nothing happened.
+   */
+  private readonly appliedFor = signal<string | null>(null);
+  public readonly stepApplied = computed(
+    () => this.appliedFor() !== null && this.appliedFor() === this.step()?.id,
+  );
+
   /** Whether the current step has anything to write. */
   public canApply(): boolean {
     return (
@@ -509,6 +519,7 @@ export class TutorialEngineService {
       Object.assign(written, { [field]: example[field] });
     }
     this.host.applyFields(written);
+    this.appliedFor.set(this.step()?.id ?? null);
     // Show the write as well as saying it happened: each control the step
     // changed sends one ring out, the same ring "Show me where" sends, so the
     // reader's eye is taken to what moved rather than told to look for it.
@@ -517,10 +528,20 @@ export class TutorialEngineService {
         .map((field) => FIELD_ANCHORS[field])
         .filter((id) => id !== undefined),
     );
+    let brought = false;
     for (const id of anchors) {
       const element = this.anchors.element(id);
       if (element) {
         this.flash(element);
+        // The first written control is brought into view as a pointed one is:
+        // a ring the reader cannot see says nothing happened.
+        if (!brought) {
+          brought = true;
+          element.scrollIntoView({
+            behavior: this.scrollBehavior(),
+            block: 'center',
+          });
+        }
       }
     }
   }

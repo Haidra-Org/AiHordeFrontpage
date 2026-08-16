@@ -134,8 +134,18 @@
 
           <div class="gs-learn-actions">
             @if (canApply()) {
-              <button type="button" class="gs-learn-apply" (click)="apply()">
-                {{ "generate.learn.apply" | transloco }}
+              <button
+                type="button"
+                class="gs-learn-apply"
+                [class.gs-learn-apply--done]="stepApplied()"
+                (click)="apply()"
+              >
+                {{
+                  (stepApplied()
+                    ? "generate.learn.apply_again"
+                    : "generate.learn.apply"
+                  ) | transloco
+                }}
               </button>
             }
             @if (current.anchorId) {

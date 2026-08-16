@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
@@ -91,6 +92,7 @@ export class GenerateLearnSheetComponent {
   );
 
   public readonly canApply = computed(() => this.engine.canApply());
+  public readonly stepApplied = this.engine.stepApplied;
 
   /**
    * Whether there is a committed request behind the flow, which is what makes
@@ -170,18 +172,36 @@ export class GenerateLearnSheetComponent {
     this.engine.next();
   }
 
+  private readonly sheet = viewChild(GsSheetComponent);
+
   /**
    * Write the step's fields and stay where we are. The panel does not advance
    * on an apply either: the reader is meant to look at what just changed in the
    * form, which is the whole reason the step named it.
    */
   public apply(): void {
-    this.engine.applyStep();
+    this.uncover(() => this.engine.applyStep());
   }
 
   /** Point at the current field again, for a reader who has scrolled away. */
   public showMe(): void {
-    this.engine.focusStep(true);
+    this.uncover(() => this.engine.focusStep(true));
+  }
+
+  /**
+   * A field can only be looked at in the band above the sheet, so a sheet that
+   * is the whole screen drops to half before the engine scrolls the field into
+   * that band. The drop publishes the sheet's new clearance after the next
+   * render, and the scroll has to read it, so the action waits one frame.
+   */
+  private uncover(action: () => void): void {
+    const sheet = this.sheet();
+    if (sheet && sheet.stop() === 'full') {
+      sheet.down();
+      setTimeout(action, 60);
+      return;
+    }
+    action();
   }
 
   /** Leave for the results; the flow is parked, not ended. */

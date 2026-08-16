@@ -85,6 +85,11 @@ let nextInstance = 0;
            technology on purpose: everything it does is on the buttons beside
            it, and those are what a keyboard or a screen reader is given. -->
       <div class="gs-sheet-top">
+        <!-- A caller may put its own first line here, beside the stop buttons:
+             the tutorial's mark and name live on this row so the sheet spends
+             one row on identity and controls together rather than two. With
+             content in it the grabber becomes a pill over the row's centre. -->
+        <ng-content select="[sheet-head]" />
         <button
           type="button"
           class="gs-sheet-grab"
@@ -192,6 +197,13 @@ export class GsSheetComponent {
    */
   public readonly startExpanded = input(false);
   /**
+   * The stop to open at, when the caller knows better than the memory: a long
+   * read has nothing to show behind it, so it asks for full whatever the reader
+   * chose for a stepped tutorial. Null defers to the memory and to
+   * `startExpanded`.
+   */
+  public readonly startAt = input<SheetStop | null>(null);
+  /**
    * Whether the chassis offers a way out of itself. Content the reader is
    * part-way through has no safe dismissal here: a close button and the Escape
    * that follows a collapse would both end that content rather than the sheet
@@ -212,12 +224,14 @@ export class GsSheetComponent {
   private readonly bodyRef = viewChild<ElementRef<HTMLElement>>('sheetBody');
 
   /**
-   * The page behind the sheet stops scrolling once the sheet is above peek:
-   * a body that scrolls internally over a page that also scrolls sends every
-   * overshoot to the wrong one, which reads as the tutorial dragging the form
-   * about. CDK's strategy is what the overlay layer uses for the same reason,
-   * so a sheet and a dialog lock the page the same way and restore it the same
-   * way.
+   * The page behind the sheet stops scrolling while the sheet is the whole
+   * screen: nothing of the page is visible then, and a page that still moves
+   * under a full sheet reads as the tutorial dragging the form about. At half
+   * the page stays scrollable on purpose, because the band above the sheet is
+   * where the field a step points at is brought into view; the body's own
+   * `overscroll-behavior: contain` keeps its overshoot from reaching the page.
+   * CDK's strategy is what the overlay layer uses, so a sheet and a dialog lock
+   * the page the same way and restore it the same way.
    */
   private readonly scrollBlock: BlockScrollStrategy =
     inject(Overlay).scrollStrategies.block();
@@ -250,8 +264,11 @@ export class GsSheetComponent {
     // state is taken when it arrives rather than read out of the constructor.
     effect(() => {
       const start = this.startExpanded();
+      const asked = this.startAt();
       const remembered = this.rememberedStop();
-      untracked(() => this.at.set(remembered ?? (start ? 'half' : 'peek')));
+      untracked(() =>
+        this.at.set(asked ?? remembered ?? (start ? 'half' : 'peek')),
+      );
     });
     // The height is read after the browser has drawn the state it belongs to;
     // reading it as the state changes would publish the height it just left.
@@ -268,11 +285,11 @@ export class GsSheetComponent {
       afterNextRender(() => this.observeHeight(), { injector: this.injector });
     }
     effect(() => {
-      const above = this.at() !== 'peek';
+      const whole = this.at() === 'full';
       if (!this.isBrowser) {
         return;
       }
-      if (above) {
+      if (whole) {
         this.scrollBlock.enable();
       } else {
         this.scrollBlock.disable();

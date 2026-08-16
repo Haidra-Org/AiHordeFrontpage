@@ -61,8 +61,10 @@ describe('GenerateLearnSheetComponent', () => {
     );
   const first = <T extends Element>(selector: string): T =>
     query<T>(selector)[0];
-  const dots = (): HTMLButtonElement[] =>
-    query<HTMLButtonElement>('.gs-tut-dot');
+  const segs = (): HTMLElement[] => query<HTMLElement>('.gs-tut-progress-seg');
+  const barTitle = (): string =>
+    first<HTMLElement>('.gs-tut-bar-title').lastChild?.textContent?.trim() ??
+    '';
   const body = (): HTMLElement => first<HTMLElement>('.gs-sheet-body');
 
   /** Let the chassis's post-render work (focus, clearance) run. */
@@ -103,34 +105,56 @@ describe('GenerateLearnSheetComponent', () => {
     await settle();
   });
 
-  it('docks as a bar of the flow, one target per step', () => {
-    expect(dots()).toHaveLength(flowSteps('txt2img').length);
-    expect(dots()[0].getAttribute('aria-current')).toBe('step');
-    expect(dots()[1].getAttribute('aria-current')).toBeNull();
-    // Named by their place and their step, so the list reads without the marks.
-    expect(dots()[0].getAttribute('aria-label')).toBe(
-      `Step 1: ${TRANSLATIONS['generate.learn.flows.txt2img.steps.prompt.title']}`,
+  it('docks as a bar of the flow: its name, the step, and progress on the edge', () => {
+    expect(first<HTMLElement>('.gs-tut-bar-name').textContent?.trim()).toBe(
+      TRANSLATIONS['generate.tutorials.flows.txt2img.task_name'],
     );
-    expect(first<HTMLElement>('.gs-tut-bar-title').textContent?.trim()).toBe(
+    expect(barTitle()).toBe(
       TRANSLATIONS['generate.learn.flows.txt2img.steps.prompt.title'],
     );
+    // The step count is said, not shown: the progress line shows it.
+    expect(
+      first<HTMLElement>('.gs-tut-bar-title .sr-only').textContent,
+    ).toContain('Step 1 of');
+    const bar = first<HTMLElement>('.gs-tut-progress');
+    expect(bar.getAttribute('role')).toBe('progressbar');
+    expect(bar.getAttribute('aria-valuenow')).toBe('1');
+    expect(bar.getAttribute('aria-valuemax')).toBe(
+      String(flowSteps('txt2img').length),
+    );
+    expect(segs()).toHaveLength(flowSteps('txt2img').length);
+    expect(segs()[0].classList).toContain('gs-tut-progress-seg--done');
+    expect(segs()[1].classList).not.toContain('gs-tut-progress-seg--done');
+    // Nothing else in the sheet counts the steps again.
+    expect(query('.gs-tut-dot')).toHaveLength(0);
+    expect(query('.gs-tut-body-head')).toHaveLength(0);
   });
 
-  it('moves to a step picked from the dots, which follow the move', async () => {
-    dots()[3].click();
+  it('fills the progress line as the reader moves, and names each step once', async () => {
+    engine.goTo(3);
     await settle();
 
     expect(engine.step()?.id).toBe('steps');
-    expect(dots()[3].getAttribute('aria-current')).toBe('step');
-    expect(dots()[0].getAttribute('aria-current')).toBeNull();
-    expect(dots()[0].classList).toContain('gs-tut-dot--done');
+    expect(barTitle()).toBe(
+      TRANSLATIONS['generate.learn.flows.txt2img.steps.steps.title'],
+    );
+    expect(
+      segs().filter((seg) =>
+        seg.classList.contains('gs-tut-progress-seg--done'),
+      ),
+    ).toHaveLength(4);
+    // The card's own heading is for assistive technology; the bar shows the title.
+    const heading = first<HTMLElement>('.gs-learn-sheet-card .gs-guide-head');
+    expect(heading.classList).toContain('sr-only');
+    expect(heading.textContent).toContain(
+      TRANSLATIONS['generate.learn.flows.txt2img.steps.steps.title'],
+    );
   });
 
-  it('marks each dot with the panel area its step points at', () => {
-    expect(dots()[0].classList).toContain('gs-sec--prompt');
-    expect(dots()[0].classList).toContain('gs-tut-dot--on');
+  it('marks each segment with the panel area its step points at', () => {
+    expect(segs()[0].classList).toContain('gs-sec--prompt');
     // The finale is about pressing Generate, which belongs to no card.
-    expect(dots()[dots().length - 1].className).not.toContain('gs-sec--');
+    expect(segs()[segs().length - 1].className).not.toContain('gs-sec--');
   });
 
   it('offers the step its own action in the bar, and Next beside it', () => {
@@ -228,17 +252,20 @@ describe('GenerateLearnSheetComponent', () => {
     beforeEach(async () => {
       await engine.start('concepts_horde');
       await settle();
-      first<HTMLButtonElement>('.gs-sheet-btn').click();
-      await settle();
     });
 
     it('docks as one read with a hint in the bar, and nothing to apply or point at', () => {
-      expect(dots()).toHaveLength(0);
       expect(query('.gs-tut-bar-next')).toHaveLength(0);
       expect(first<HTMLElement>('.gs-tut-bar-title').textContent?.trim()).toBe(
         TRANSLATIONS['generate.learn.read_hint'],
       );
       expect(query('.gs-tut-progress')).toHaveLength(0);
+      // A read has nothing to show behind it, so it asks for the whole screen.
+      expect(first<HTMLElement>('app-gs-sheet').classList).toContain(
+        'gs-sheet--full',
+      );
+      // And it can be left, like anything else.
+      expect(query('.gs-tut-sheet-exit')).toHaveLength(1);
       expect(query('.gs-learn-read-sec')).toHaveLength(
         flowSteps('concepts_horde').length,
       );
@@ -284,9 +311,12 @@ describe('GenerateLearnSheetComponent', () => {
     expect(first<HTMLElement>('app-gs-sheet').getAttribute('aria-label')).toBe(
       TRANSLATIONS['generate.learn.sheet_label'],
     );
-    expect(first<HTMLElement>('.gs-tut-dots').getAttribute('aria-label')).toBe(
-      TRANSLATIONS['generate.learn.sheet_steps_label'],
-    );
+    expect(
+      first<HTMLElement>('.gs-tut-progress').getAttribute('aria-label'),
+    ).toBe(TRANSLATIONS['generate.learn.steps_label']);
+    // The way out sits beside Back, at the foot, and is never one of the bar's actions.
+    expect(query('.gs-tut-sheet-nav .gs-tut-sheet-exit')).toHaveLength(1);
+    expect(query('.gs-tut-bar .gs-tut-sheet-exit')).toHaveLength(0);
     expect(TRANSLATIONS['generate.learn.sheet_exit']).toBeTruthy();
   });
 });

@@ -2,49 +2,56 @@
      would end a tutorial the reader is part-way through, and getting back costs
      them the whole flow. Leaving is the Exit button inside, and nothing else. -->
 <!-- Opens at half the first time, so what the reader meets is the step and
-     not a bar with a title on it; the stop they choose after that is kept. -->
+     not a bar with a title on it; the stop they choose after that is kept. A
+     read (a concept track) has nothing to show behind it, so it opens full. -->
 <app-gs-sheet
   [label]="'generate.learn.sheet_label' | transloco"
   [dismissible]="false"
   [startExpanded]="true"
+  [startAt]="conceptTrack() ? 'full' : null"
   rememberAs="aihorde.generate.learn.sheet_stop"
 >
-  <div sheet-bar class="gs-tut-bar">
-    <!-- What this is, before what it wants: the tutorials' mark and the name of
-       the tutorial, so a reader landing here from a door knows they are in
-       one and which; then the progress through it, in the tutorials' hue. -->
-    <p class="gs-tut-bar-eyebrow gs-tut-eyebrow">
-      <span class="gs-tut-mark" aria-hidden="true">
-        <app-icon name="academic-cap" />
-      </span>
-      <span class="gs-tut-bar-badge">{{
-        "generate.learn.badge" | transloco
-      }}</span>
-      <span class="gs-tut-bar-sep" aria-hidden="true">&middot;</span>
-      <span class="gs-tut-bar-name">{{ taskNameKey() | transloco }}</span>
-    </p>
-    @if (!conceptTrack()) {
-      <div
-        class="gs-tut-progress"
-        role="progressbar"
-        [attr.aria-label]="'generate.learn.steps_label' | transloco"
-        [attr.aria-valuemin]="1"
-        [attr.aria-valuemax]="steps().length"
-        [attr.aria-valuenow]="stepIndex() + 1"
-        [attr.aria-valuetext]="
-          'generate.learn.sheet_progress' | transloco: progressParams()
-        "
-      >
-        @for (entry of steps(); track entry.id; let i = $index) {
-          <span
-            class="gs-tut-progress-seg"
-            [class]="identityFor(entry)?.className"
-            [class.gs-tut-progress-seg--done]="i <= stepIndex()"
-          ></span>
-        }
-      </div>
-    }
+  <!-- Progress along the sheet's very top edge, in the tutorials' hue: a
+       segment per step, the ones read so far filled. Information rather than
+       a control, so it costs four pixels and no row. -->
+  @if (!conceptTrack()) {
+    <div
+      sheet-edge
+      class="gs-tut-progress"
+      role="progressbar"
+      [attr.aria-label]="'generate.learn.steps_label' | transloco"
+      [attr.aria-valuemin]="1"
+      [attr.aria-valuemax]="steps().length"
+      [attr.aria-valuenow]="stepIndex() + 1"
+      [attr.aria-valuetext]="
+        'generate.learn.sheet_progress' | transloco: progressParams()
+      "
+    >
+      @for (entry of steps(); track entry.id; let i = $index) {
+        <span
+          class="gs-tut-progress-seg"
+          [class]="identityFor(entry)?.className"
+          [class.gs-tut-progress-seg--done]="i <= stepIndex()"
+        ></span>
+      }
+    </div>
+  }
 
+  <!-- What this is, on the same row as the sheet's own controls: the tutorials'
+       mark and the tutorial's name, so a reader landing here knows they are in
+       one and which. -->
+  <p sheet-head class="gs-tut-bar-eyebrow gs-tut-eyebrow">
+    <span class="gs-tut-mark" aria-hidden="true">
+      <app-icon name="academic-cap" />
+    </span>
+    <span class="gs-tut-bar-badge">{{
+      "generate.learn.badge" | transloco
+    }}</span>
+    <span class="gs-tut-bar-sep" aria-hidden="true">&middot;</span>
+    <span class="gs-tut-bar-name">{{ taskNameKey() | transloco }}</span>
+  </p>
+
+  <div sheet-bar class="gs-tut-bar">
     @if (conceptTrack()) {
       <div class="gs-tut-bar-row">
         <span class="gs-tut-bar-title">{{
@@ -53,22 +60,36 @@
       </div>
     } @else if (step(); as current) {
       <div class="gs-tut-bar-row">
-        <span class="gs-tut-bar-title">{{
-          titleKey(current) | transloco
-        }}</span>
+        <span class="gs-tut-bar-title">
+          <span class="sr-only">{{
+            "generate.learn.sheet_progress" | transloco: progressParams()
+          }}</span>
+          {{ titleKey(current) | transloco }}
+        </span>
         <!-- One press-worthy thing per step, and never a disabled one: a step
              that writes something offers that, the finale offers the button it
              is asking to be pressed, and everything else moves on. -->
         @if (canApply()) {
-          <button type="button" class="gs-tut-bar-do" (click)="apply()">
-            {{ "generate.learn.apply" | transloco }}
+          <button
+            type="button"
+            class="gs-tut-bar-btn"
+            [class.gs-tut-bar-do]="!stepApplied()"
+            (click)="apply()"
+          >
+            {{
+              (stepApplied()
+                ? "generate.learn.apply_again"
+                : "generate.learn.apply"
+              ) | transloco
+            }}
           </button>
         }
         @if (!onFinale()) {
+          <!-- Once the step's write is done, moving on is the primary thing. -->
           <button
             type="button"
-            class="gs-tut-bar-next"
-            [class.gs-tut-bar-do]="!canApply()"
+            class="gs-tut-bar-btn gs-tut-bar-next"
+            [class.gs-tut-bar-do]="!canApply() || stepApplied()"
             (click)="next()"
           >
             {{ "generate.learn.next" | transloco }}
@@ -76,13 +97,17 @@
         } @else if (current.startsFlow) {
           <button
             type="button"
-            class="gs-tut-bar-do"
+            class="gs-tut-bar-btn gs-tut-bar-do"
             (click)="startOffered(current)"
           >
             {{ ctaKey(current) | transloco }}
           </button>
         } @else if (current.anchorId) {
-          <button type="button" class="gs-tut-bar-do" (click)="showMe()">
+          <button
+            type="button"
+            class="gs-tut-bar-btn gs-tut-bar-do"
+            (click)="showMe()"
+          >
             {{ "generate.learn.show_me" | transloco }}
           </button>
         }
@@ -97,8 +122,8 @@
   } @else if (conceptTrack()) {
     <!-- A track is a read rather than a walk: nothing in it is pressed or
          written, so it is laid out whole, section by section with its
-         evidence inline, and it ends at the one door it has to offer. Step
-         dots and Next would be chrome for a thing that has no steps. -->
+         evidence inline, and it ends at the one thing it offers to start.
+         Step dots and Next would be chrome for a thing that has no steps. -->
     <article class="gs-learn-read">
       @for (entry of steps(); track entry.id; let i = $index) {
         <section class="gs-learn-read-sec">
@@ -131,47 +156,25 @@
         </section>
       }
     </article>
+
+    <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
+      {{ "generate.learn.sheet_exit" | transloco }}
+    </button>
   } @else if (step(); as current) {
-    <div class="gs-tut-body-head">
-      <p class="gs-learn-progress" role="status" aria-live="polite">
-        {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
-      </p>
-      <ol
-        class="gs-tut-dots"
-        [attr.aria-label]="'generate.learn.sheet_steps_label' | transloco"
-      >
-        @for (entry of steps(); track entry.id; let i = $index) {
-          <li>
-            <button
-              type="button"
-              class="gs-tut-dot"
-              [class]="identityFor(entry)?.className"
-              [class.gs-tut-dot--on]="isCurrent(i)"
-              [class.gs-tut-dot--done]="i < stepIndex()"
-              [attr.aria-current]="isCurrent(i) ? 'step' : null"
-              [attr.aria-label]="
-                'generate.learn.sheet_step'
-                  | transloco: { n: i + 1, title: titleKey(entry) | transloco }
-              "
-              (click)="goTo(i)"
-            >
-              <span class="gs-tut-dot-mark" aria-hidden="true"></span>
-            </button>
-          </li>
-        }
-      </ol>
-    </div>
+    <p class="gs-learn-progress sr-only" role="status" aria-live="polite">
+      {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
+    </p>
 
     <!-- The card wears the hue of the area its step is about and breathes in
          step with the field it points at, so the pair reads as one thing on a
-         phone as it does beside the panel. -->
+         phone as it does beside the panel. The bar above already carries the
+         step's title, so the card's heading is for assistive technology and the
+         eyebrow (the field, in the area's hue) is what shows. -->
     <section
       class="gs-card gs-learn-sheet-card"
       [class]="identityFor(current)?.className"
       [class.gs-tut-breathe]="breathes(current)"
     >
-      <!-- The panel's step heading, unchanged: the field named first in the
-           area's hue, then the numbered title. -->
       @if (fieldLabelKey(current); as fieldKey) {
         <p class="gs-learn-eyebrow">
           @if (identityFor(current); as identity) {
@@ -182,7 +185,7 @@
           {{ fieldKey | transloco }}
         </p>
       }
-      <h2 class="gs-guide-head">
+      <h2 class="gs-guide-head sr-only">
         {{
           "generate.learn.step_heading"
             | transloco
@@ -195,10 +198,9 @@
 
       @if (showsSweep()) {
         @for (parameter of current.sweepParameters ?? []; track parameter) {
-          <app-gs-sweep-scrub
-            [parameter]="parameter"
-            [startExpanded]="conceptTrack()"
-          />
+          <!-- On a phone the enlarged view is the only one with room for the
+               pictures and the controls together, so the offer opens it. -->
+          <app-gs-sweep-scrub [parameter]="parameter" [viewerFirst]="true" />
         }
       }
 
@@ -217,7 +219,8 @@
     </section>
 
     <!-- The bar row above already carries the step's one action, so the body
-         offers only what the bar has no room for: pointing at the field. -->
+         offers only what the bar has no room for: pointing at the field, and
+         the way back a step. -->
     <div class="gs-learn-actions">
       @if (current.anchorId) {
         <button type="button" class="gs-learn-show" (click)="showMe()">
@@ -244,13 +247,8 @@
       >
         {{ "generate.learn.back" | transloco }}
       </button>
-      <button
-        type="button"
-        class="gs-learn-next"
-        [disabled]="onFinale()"
-        (click)="next()"
-      >
-        {{ "generate.learn.next" | transloco }}
+      <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
+        {{ "generate.learn.sheet_exit" | transloco }}
       </button>
     </div>
 
@@ -278,20 +276,13 @@
       </div>
     </div>
 
-    <!-- The world switch, as the pane header has it: the same lesson on
-         another subject, without leaving the step. A concept track is not
-         drawn in a world and offers none. -->
-    @if (!conceptTrack()) {
-      <div class="gs-learn-levels">
-        <span class="gs-learn-levels-label">{{
-          "generate.learn.world_label" | transloco
-        }}</span>
-        <app-gs-world-picker [compact]="true" />
-      </div>
-    }
-
-    <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
-      {{ "generate.learn.sheet_exit" | transloco }}
-    </button>
+    <!-- The subject switch, as the pane header has it: the same lesson on
+         another subject, without leaving the step. -->
+    <div class="gs-learn-levels">
+      <span class="gs-learn-levels-label">{{
+        "generate.learn.world_label" | transloco
+      }}</span>
+      <app-gs-world-picker [compact]="true" />
+    </div>
   }
 </app-gs-sheet>
