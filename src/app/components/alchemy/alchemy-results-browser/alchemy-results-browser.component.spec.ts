@@ -11,6 +11,7 @@ const makeJob = (
   full: string | null = null,
 ): AlchemyJob => ({
   id,
+  localId: id,
   forms: ['caption', 'nsfw'],
   status: null,
   done: false,
@@ -20,6 +21,8 @@ const makeJob = (
   firstSeenAt: Date.now(),
   sourceThumb: thumb,
   sourceFull: full,
+  storedResultForms: [],
+  failedResultForms: [],
 });
 
 @Component({

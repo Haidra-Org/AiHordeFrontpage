@@ -988,6 +988,7 @@ export class AlchemyComponent {
     this.jobs.update((jobs) => [
       {
         id,
+        localId: id,
         forms,
         status: null,
         done: false,
@@ -997,6 +998,8 @@ export class AlchemyComponent {
         firstSeenAt: Date.now(),
         sourceThumb: null,
         sourceFull,
+        storedResultForms: [],
+        failedResultForms: [],
       },
       ...jobs,
     ]);

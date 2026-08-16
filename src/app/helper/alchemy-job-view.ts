@@ -8,10 +8,14 @@ import {
   AlchemyFormName,
   AlchemyStatusResponse,
 } from '../types/generation';
+import { StoredAlchemyJob } from '../types/alchemy-job';
 
 /** A tracked alchemy interrogation request and its latest polled status. */
 export interface AlchemyJob {
+  /** The horde's interrogation id. */
   id: string;
+  /** The key this job is stored under, and the key its image blobs hang from. */
+  localId: string;
   forms: AlchemyFormName[];
   status: AlchemyStatusResponse | null;
   done: boolean;
@@ -20,23 +24,48 @@ export interface AlchemyJob {
   notFound: boolean;
   firstSeenAt: number;
   /**
-   * A small renderable thumbnail of the request's source image — a remote URL
-   * passthrough or a tiny `data:image/webp` URL — for the results rail/gallery.
-   * `null` when none is available (a legacy restored job, a source that failed
-   * to decode, or a thumbnail too large to persist). Always a plain string, so
-   * there is nothing to revoke on teardown (unlike an object URL).
+   * A small renderable thumbnail of the request's source image: a remote URL
+   * passthrough for a URL source, or an object URL over the stored 256px blob.
+   * `null` until the owning page has resolved it, and for a source that failed
+   * to decode. An object URL here belongs to whoever created it and must be
+   * revoked on teardown.
    */
   sourceThumb: string | null;
   /**
-   * The full-size renderable source image of the request, kept for the lifetime
-   * of the session only so large surfaces (gallery tiles) don't upscale the
-   * small `sourceThumb`. Deliberately **never persisted**: a full-size base64
-   * source is orders of magnitude larger than the localStorage quota allows, so
-   * it is stripped on write and normalized to `null` on read. A job restored
-   * from storage therefore has `sourceFull === null` and falls back to
-   * `sourceThumb` (or a placeholder when that is null too).
+   * The full-size renderable source image, so large surfaces (gallery tiles)
+   * don't upscale the small `sourceThumb`. Resolved only for the job currently
+   * on screen, because holding an object URL over every stored source would pin
+   * the whole history in memory. `null` otherwise, and the renderers fall back
+   * to `sourceThumb`.
    */
   sourceFull: string | null;
+  /** Form names whose result image is held locally. */
+  storedResultForms: string[];
+  /** Form names whose result image can no longer be retrieved. */
+  failedResultForms: string[];
+}
+
+/**
+ * View model for a stored job. The source images are left null: resolving them
+ * means creating object URLs, which belong to the component that can revoke
+ * them, not to a pure helper.
+ */
+export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
+  return {
+    id: stored.jobId,
+    localId: stored.localId,
+    forms: stored.forms,
+    status: stored.status,
+    done: stored.done,
+    faulted: stored.faulted,
+    cancelled: stored.cancelled,
+    notFound: stored.notFound,
+    firstSeenAt: stored.createdAt,
+    sourceThumb: null,
+    sourceFull: null,
+    storedResultForms: stored.storedResultForms,
+    failedResultForms: stored.failedResultForms,
+  };
 }
 
 /** How a single form's state reads in the per-form checklist. */
