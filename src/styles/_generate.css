@@ -161,6 +161,9 @@
   --gs-radius-pill: 999px;
   --gs-control-h: 40px;
   --gs-control-h-dense: 36px;
+  /* The `?` glyph's box. A row without a trigger reserves this width so the
+     controls in a group still end on one edge. */
+  --gs-help-trigger: 24px;
   /* The one red in the studio: a field that will not submit as typed carries
      it on its edge, always beside a hint line, never as the only signal. */
   --gs-danger: #dc2626;
@@ -196,6 +199,7 @@
   --gs-purple-tint-border: #e9d5ff;
   --gs-green: #16a34a;
   --gs-green-tint: #dcfce7;
+  --gs-danger-tint: #fee2e2;
   --gs-seg-track: #f3f4f6;
   --gs-seg-active: #111827;
   --gs-seg-active-ink: #ffffff;
@@ -322,6 +326,7 @@
   --gs-purple-tint: rgba(147, 51, 234, 0.16);
   --gs-purple-tint-border: rgba(147, 51, 234, 0.4);
   --gs-green-tint: rgba(22, 163, 74, 0.18);
+  --gs-danger-tint: rgba(220, 38, 38, 0.22);
   --gs-seg-track: #272c35;
   --gs-seg-active: #f3f4f6;
   --gs-seg-active-ink: #111827;
@@ -818,6 +823,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--gs-space-1);
   min-height: 32px;
   cursor: pointer;
   border-radius: var(--gs-radius-sm);
@@ -985,6 +991,12 @@
   width: auto;
   min-width: 0;
 }
+/* A switch with nothing to explain still stands in a column with ones that do,
+   so it holds the trigger's width open and every track in the group ends on the
+   same edge. */
+.gen-studio .gs-opt > .gs-switch-row:only-child {
+  margin-right: calc(var(--gs-help-trigger) + var(--gs-space-2));
+}
 
 /* The trigger is a glyph, not a button-shaped object: it marks individual
    fields and must stay quieter than the section landmarks above it. */
@@ -997,8 +1009,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: var(--gs-help-trigger);
+  height: var(--gs-help-trigger);
   border: 1px solid var(--gs-field-border);
   border-radius: var(--gs-radius-pill);
   background: var(--gs-card);
@@ -1549,16 +1561,13 @@
   padding: var(--gs-space-4);
   background: var(--gs-card);
 }
-/* A phone gives the card back the space its padding was taking, and so does a
-   card sharing the panel's width with another: half a control column is as
-   narrow as a phone, and the eyebrow starts wrapping at the wider padding. */
+/* A phone gives the card back the space its padding was taking: half a control
+   column is as narrow as a phone, and the eyebrow starts wrapping at the wider
+   padding. */
 @media (max-width: 639.98px) {
   .gen-studio .gs-card {
     padding: var(--gs-space-3);
   }
-}
-.gen-studio .gs-grid-2 > .gs-card {
-  padding: var(--gs-space-3);
 }
 /* Every section title is the same landmark: an uppercase eyebrow followed by a
    hairline in the zone hue, running out to the end of its row. That is the
@@ -1617,10 +1626,23 @@
   border-top: 1px solid var(--gs-border-soft);
 }
 
+/* Two-up while both columns can still hold their content on one line, one-up
+   below that. The pairing is a layout choice and the labels are not, so it is
+   the grid that gives way: a row of number fields needs little, while a card of
+   switch rows needs room for the label, the gap and the 28px track, and states
+   that on the element as --gs-grid-2-min. auto-fit then drops to a single
+   column at whatever panel width stops satisfying it, with min() keeping the
+   track from overflowing a container narrower than the floor itself. */
 .gen-studio .gs-grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--gs-grid-2-min, 160px), 100%), 1fr)
+  );
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-grid-2--switches {
+  --gs-grid-2-min: 240px;
 }
 .gen-studio .gs-grid-model {
   display: grid;
@@ -1636,28 +1658,44 @@
 /* add-tiles (source image / controlnet placeholders) */
 .gen-studio .gs-add-tile {
   border: 1px dashed var(--gs-field-border);
-  border-radius: 10px;
-  padding: 13px;
+  border-radius: var(--gs-radius-md);
+  padding: var(--gs-space-4) var(--gs-space-3);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-1);
   cursor: pointer;
+  text-align: center;
   background: var(--gs-field-soft);
   color: var(--gs-label);
-  transition: border-color 0.12s;
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-add-tile:hover {
   border-color: var(--gs-blue);
 }
+/* The tile is the control, so its own focus is the file input's. */
+.gen-studio .gs-add-tile:focus-within {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
 .gen-studio .gs-add-tile-title {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
   color: var(--gs-label);
 }
 .gen-studio .gs-add-tile-sub {
-  font-size: 9.5px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-add-tile {
+    min-height: 44px;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-add-tile {
+    border: 1px dashed CanvasText;
+  }
 }
 .gen-studio .gs-thumb-sm {
   width: 52px;
@@ -2080,11 +2118,15 @@
 .gen-studio .gs-status {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: var(--gs-space-1);
+  font-size: var(--gs-text-xs);
   font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: 3px var(--gs-space-2);
+  border-radius: var(--gs-radius-pill);
+  /* A pill is one word about a state: it holds its shape and lets the row it
+     sits in do the giving way. */
+  white-space: nowrap;
+  flex: none;
 }
 .gen-studio .gs-status--ready {
   background: var(--gs-seg-track);
@@ -2097,6 +2139,10 @@
 .gen-studio .gs-status--done {
   background: var(--gs-green-tint);
   color: var(--gs-green);
+}
+.gen-studio .gs-status--danger {
+  background: var(--gs-danger-tint);
+  color: var(--gs-danger);
 }
 .gen-studio .gs-spin-dot {
   width: 6px;
@@ -3248,7 +3294,7 @@
 .gen-studio .gs-alchemy-badge {
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--gs-radius-sm);
   flex: none;
   display: flex;
   align-items: center;
@@ -3261,39 +3307,21 @@
   width: 13px;
   height: 13px;
 }
-.gen-studio .gs-api-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 11px;
-  font-weight: 600;
-  font-family: inherit;
-  color: var(--gs-label);
-  background: var(--gs-field);
-  border: 1px solid var(--gs-border);
-  border-radius: 7px;
-  cursor: pointer;
-}
-.gen-studio .gs-api-btn:hover {
-  color: var(--gs-ink);
-}
-
 /* numbered step spine */
 .gen-studio .gs-step-head {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--gs-space-2);
 }
 .gen-studio .gs-step-num {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--gs-radius-pill);
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   color: var(--gs-zone, var(--gs-muted));
   background: var(--gs-zone-tint, var(--gs-seg-track));
@@ -3310,46 +3338,47 @@
   height: 12px;
 }
 .gen-studio .gs-step-title {
-  font-size: 12px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
+  color: var(--gs-ink);
 }
 
 /* studio info note (anonymous notice) */
 .gen-studio .gs-info-note {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.5;
   color: var(--gs-ink-2);
   background: var(--gs-blue-tint);
   border: 1px solid var(--gs-blue-tint-border);
-  border-radius: 9px;
-  padding: 9px 11px;
+  border-radius: var(--gs-radius-md);
+  padding: var(--gs-space-3);
 }
 
 /* operation focus/detail panel */
 .gen-studio .gs-focus {
   border: 1px solid var(--gs-blue-tint-border);
   background: var(--gs-blue-tint);
-  border-radius: 10px;
-  padding: 11px 12px;
+  border-radius: var(--gs-radius-md);
+  padding: var(--gs-space-3);
 }
 .gen-studio .gs-focus-name {
-  font-size: 11.5px;
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   color: var(--gs-blue);
 }
 .gen-studio .gs-focus-badge {
-  font-size: 9.5px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   color: var(--gs-blue);
   background: var(--gs-field);
   border: 1px solid var(--gs-blue-tint-border);
-  padding: 1px 7px;
-  border-radius: 999px;
+  padding: 1px var(--gs-space-2);
+  border-radius: var(--gs-radius-pill);
 }
 .gen-studio .gs-focus-desc {
-  font-size: 11.5px;
+  font-size: var(--gs-text-xs);
   line-height: 1.5;
   color: var(--gs-ink-2);
 }
@@ -3363,8 +3392,8 @@
   padding: 4px 18px 10px;
 }
 .gen-studio .gs-focus-example {
-  margin-top: 4px;
-  font-size: 11px;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-xs);
   line-height: 1.4;
   color: var(--gs-muted);
 }
@@ -3390,8 +3419,8 @@
 .gen-studio .gs-opgroup-label {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 11.5px;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
   font-weight: 700;
   color: var(--gs-ink-2);
 }
@@ -3414,15 +3443,16 @@
 .gen-studio .gs-op {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 9px;
+  gap: var(--gs-space-2);
+  min-height: var(--gs-control-h-dense);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border-radius: var(--gs-radius-sm);
   cursor: pointer;
   border: 1px solid var(--gs-border);
   background: var(--gs-field);
   transition:
-    border-color 0.12s,
-    background 0.12s;
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-op:hover {
   border-color: var(--gs-blue-tint-border);
@@ -3446,7 +3476,10 @@
   color: transparent;
   background: var(--gs-field);
   border: 1.5px solid var(--gs-field-border);
-  transition: all 0.12s;
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-op--selected .gs-op-check {
   color: #fff;
@@ -3461,20 +3494,20 @@
 .gen-studio .gs-op-name {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .gen-studio .gs-op-badge {
   flex: none;
-  font-size: 9px;
+  font-size: var(--gs-text-2xs);
   font-weight: 700;
   color: var(--gs-label);
   background: var(--gs-seg-track);
-  border-radius: 4px;
-  padding: 1px 5px;
+  border-radius: var(--gs-radius-sm);
+  padding: 1px var(--gs-space-1);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
@@ -3486,7 +3519,7 @@
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gs-space-1);
 }
 
 /* Per-operation (i): opens the description + example in a modal. Desktop already
@@ -3565,9 +3598,9 @@
 .gen-studio .gs-opgroup-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gs-space-2);
   width: 100%;
-  padding: 0 0 8px;
+  padding: 0 0 var(--gs-space-2);
   border: 0;
   background: none;
   cursor: pointer;
@@ -3583,7 +3616,7 @@
   color: var(--gs-muted);
 }
 .gen-studio .gs-opgroup-chev {
-  transition: transform 0.15s;
+  transition: transform var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-opgroup-chev--open {
   transform: rotate(90deg);

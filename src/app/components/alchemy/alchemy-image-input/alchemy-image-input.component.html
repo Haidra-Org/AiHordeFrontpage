@@ -1,72 +1,72 @@
 <div class="alchemy-image-input">
   <div
-    class="alchemy-segmented"
-    role="tablist"
-    aria-label="{{ 'alchemy.image_input.tab_url' | transloco }}"
+    class="gs-seg"
+    role="group"
+    [attr.aria-label]="'alchemy.steps.source' | transloco"
   >
     <button
       type="button"
-      class="alchemy-segmented__btn"
-      [class.alchemy-segmented__btn--active]="mode() === 'url'"
+      class="gs-seg-opt"
       [disabled]="disabled()"
-      role="tab"
-      [attr.aria-selected]="mode() === 'url'"
+      [attr.aria-pressed]="mode() === 'url'"
       (click)="setMode('url')"
     >
-      <app-icon name="globe-alt" />
+      <app-icon name="globe-alt" class="gs-ico-sm" />
       {{ "alchemy.image_input.tab_url" | transloco }}
     </button>
     <button
       type="button"
-      class="alchemy-segmented__btn"
-      [class.alchemy-segmented__btn--active]="mode() === 'upload'"
+      class="gs-seg-opt"
       [disabled]="disabled()"
-      role="tab"
-      [attr.aria-selected]="mode() === 'upload'"
+      [attr.aria-pressed]="mode() === 'upload'"
       (click)="setMode('upload')"
     >
-      <app-icon name="arrow-up" />
+      <app-icon name="arrow-up" class="gs-ico-sm" />
       {{ "alchemy.image_input.tab_upload" | transloco }}
     </button>
   </div>
 
   @if (mode() === "url") {
-    <div class="alchemy-form-group">
-      <label class="form-label" for="alchemy-image-url">
+    <div>
+      <label class="gs-slabel" for="alchemy-image-url">
         {{ "alchemy.image_input.url_label" | transloco }}
       </label>
       <input
         id="alchemy-image-url"
         type="url"
-        class="form-input"
+        class="gs-input mt-1"
+        [class.gs-field--invalid]="error() !== null"
+        [attr.aria-invalid]="error() !== null ? 'true' : null"
         autocomplete="off"
         [disabled]="disabled()"
         [value]="urlValue()"
         [placeholder]="'alchemy.image_input.url_placeholder' | transloco"
         (input)="onUrlInput($any($event.target).value)"
       />
-      <p class="form-hint">{{ "alchemy.image_input.url_hint" | transloco }}</p>
+      <p class="gs-sublabel mt-1">
+        {{ "alchemy.image_input.url_hint" | transloco }}
+      </p>
     </div>
   } @else {
     <label
-      class="alchemy-dropzone"
+      class="gs-add-tile"
       for="alchemy-image-file"
-      [class.alchemy-dropzone--active]="dragActive()"
+      [class.gs-chip--active]="dragActive()"
       (dragover)="onDragOver($event)"
       (dragleave)="onDragLeave($event)"
       (drop)="onDrop($event)"
     >
       @if (encoding()) {
-        <app-icon name="spinner" class="animate-spin alchemy-dropzone__icon" />
-        <span class="alchemy-dropzone__text">{{
+        <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+        <span class="gs-add-tile-title">{{
           "alchemy.image_input.encoding" | transloco
         }}</span>
       } @else {
-        <app-icon name="photo" class="alchemy-dropzone__icon" />
-        <span class="alchemy-dropzone__text">{{
+        <app-icon name="photo" class="gs-ico-sm" />
+        <span class="gs-add-tile-title">{{
           "alchemy.image_input.upload_prompt" | transloco
         }}</span>
-        <span class="alchemy-dropzone__hint">{{
+        <span class="gs-add-tile-sub">{{
           "alchemy.image_input.upload_hint" | transloco
         }}</span>
       }
@@ -82,7 +82,7 @@
   }
 
   @if (error()) {
-    <p class="form-error">{{ error()! | transloco }}</p>
+    <p class="gs-warn mt-1">{{ error()! | transloco }}</p>
   }
 
   @if (previewSrc(); as src) {
@@ -93,13 +93,13 @@
       />
       <div class="alchemy-image-input__preview-meta">
         @if (encodedInfo(); as info) {
-          <span class="badge badge-info"
+          <span class="gs-op-badge"
             >{{ info.width }}×{{ info.height }} · webp</span
           >
         }
         <button
           type="button"
-          class="btn btn-sm btn-muted"
+          class="gs-btn gs-btn--dense"
           [disabled]="disabled()"
           (click)="clear()"
         >

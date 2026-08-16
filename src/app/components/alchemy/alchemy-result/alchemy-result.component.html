@@ -15,11 +15,7 @@
       <h4 class="alchemy-result__title">
         {{ "alchemy.form_names." + form().form | transloco }}
       </h4>
-      <span
-        class="badge"
-        [class.badge-secondary]="!returnsImage()"
-        [class.badge-info]="returnsImage()"
-      >
+      <span class="gs-op-badge">
         {{
           (returnsImage()
             ? "alchemy.result.output_image"
@@ -36,9 +32,9 @@
             }
             @case ("nsfw") {
               <span
-                class="badge"
-                [class.badge-danger]="nsfw()"
-                [class.badge-success]="!nsfw()"
+                class="gs-status"
+                [class.gs-status--danger]="nsfw()"
+                [class.gs-status--done]="!nsfw()"
                 >{{
                   (nsfw()
                     ? "alchemy.result.nsfw_true"
@@ -136,11 +132,11 @@
         @case ("nsfw") {
           <div class="alchemy-nsfw">
             @if (nsfw()) {
-              <span class="badge badge-danger">{{
+              <span class="gs-status gs-status--danger">{{
                 "alchemy.result.nsfw_true" | transloco
               }}</span>
             } @else {
-              <span class="badge badge-success">{{
+              <span class="gs-status gs-status--done">{{
                 "alchemy.result.nsfw_false" | transloco
               }}</span>
             }
@@ -175,14 +171,14 @@
             alt="{{ 'alchemy.result.image_alt' | transloco }}"
           />
           <a
-            class="btn btn-sm btn-secondary"
+            class="gs-btn gs-btn--dense"
             [href]="imageUrl()!"
             target="_blank"
             rel="noopener noreferrer"
           >
             {{ "alchemy.result.open_image" | transloco }}
           </a>
-          <p class="form-hint alchemy-result__save-hint">
+          <p class="gs-sublabel alchemy-result__save-hint">
             {{ "alchemy.result.save_hint" | transloco }}
           </p>
         }
@@ -280,7 +276,7 @@
           <pre class="alchemy-result__text">{{ inlineText() }}</pre>
         }
         @default {
-          <p class="form-hint">{{ "alchemy.result.raw_only" | transloco }}</p>
+          <p class="gs-sublabel">{{ "alchemy.result.raw_only" | transloco }}</p>
         }
       }
     </div>

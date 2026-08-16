@@ -983,7 +983,7 @@
           </section>
 
           <!-- Post-process + Output -->
-          <div class="gs-grid-2">
+          <div class="gs-grid-2 gs-grid-2--switches">
             <section
               class="gs-card gs-sec--finishing flex flex-col gap-3"
               aria-labelledby="gs-card-post"
@@ -1002,7 +1002,7 @@
                 </div>
                 <select
                   id="generate-upscaler"
-                  class="gs-native-select gs-native-select--sm mt-1"
+                  class="gs-native-select mt-1"
                   [value]="selectedUpscaler()"
                   (change)="onUpscalerChange($event)"
                 >
@@ -1022,7 +1022,7 @@
                 </div>
                 <select
                   id="generate-facefixer"
-                  class="gs-native-select gs-native-select--sm mt-1"
+                  class="gs-native-select mt-1"
                   [value]="selectedFaceFixer()"
                   (change)="onFaceFixerChange($event)"
                 >
@@ -1110,13 +1110,15 @@
                   ></span> </label
                 ><app-gs-help topic="censor_nsfw" />
               </div>
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.shared_label" | transloco }}</span>
-                <input type="checkbox" formControlName="shared" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.shared_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="shared" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
+                </label>
+              </div>
             </section>
           </div>
 
