@@ -93,6 +93,32 @@ describe('GenerateShellComponent', () => {
     expect(links()[2].getAttribute('aria-current')).toBeNull();
   });
 
+  it('names each tool twice, so a narrow bar can say it shorter', () => {
+    // The bottom bar gives each tool a third of a phone, which the full names
+    // do not fit into. Both are rendered and CSS picks one, so neither width
+    // arrives with a clipped word.
+    expect(
+      links().map((link) => [
+        link.querySelector('.gs-subtab-long')?.textContent?.trim(),
+        link.querySelector('.gs-subtab-short')?.textContent?.trim(),
+      ]),
+    ).toEqual([
+      [translations['generate.shell.tab_image'], 'Image'],
+      [translations['generate.shell.tab_alchemy'], 'Alchemy'],
+      [translations['generate.shell.tab_docs'], 'Learn'],
+    ]);
+  });
+
+  it('reads out the long name whichever one is drawn', () => {
+    // The short word is for the eye. A reader who cannot see the icon over it
+    // gets the name that says what the tool is.
+    expect(links().map((link) => link.getAttribute('aria-label'))).toEqual([
+      translations['generate.shell.tab_image'],
+      translations['generate.shell.tab_alchemy'],
+      translations['generate.shell.tab_docs'],
+    ]);
+  });
+
   it('carries the only way into the glossary the studio has', () => {
     const glossary = TestBed.inject(GlossaryService);
     const button = (fixture.nativeElement as HTMLElement).querySelector(
@@ -105,5 +131,17 @@ describe('GenerateShellComponent', () => {
     button.click();
 
     expect(glossary.isOpen()).toBe(true);
+  });
+
+  it('has a short name for every tool to fall back on', () => {
+    // Guards the pair: a tool whose short key went missing would render an
+    // empty word in the bottom bar rather than falling back to the long one.
+    for (const key of [
+      'generate.shell.tab_image_short',
+      'generate.shell.tab_alchemy_short',
+      'generate.shell.tab_docs_short',
+    ]) {
+      expect(translations[key]).toBeTruthy();
+    }
   });
 });

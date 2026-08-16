@@ -283,6 +283,11 @@
     #ffffff
   );
   --gs-subtab-height: 45px;
+  /* The height of the phone's bottom tool bar, minus its safe area. Everything
+     the studio pins to the foot of the screen (the sheet, a parked tutorial's
+     way back, the page's own last line) is offset by this, so the bar covers
+     nothing. */
+  --gs-tabbar-height: 56px;
 
   font-family: "Inter", system-ui, sans-serif;
   color: var(--gs-ink);
@@ -645,6 +650,11 @@
   color: var(--gs-ink);
   text-decoration: none;
 }
+/* The wide row has room for the full name; the bottom bar's third of a phone
+   does not, and a clipped word is worse than a shorter one. */
+.gen-studio .gs-subtab-short {
+  display: none;
+}
 .gen-studio .gs-subtab.gs-subtab--active {
   color: var(--gs-ink);
 }
@@ -693,16 +703,87 @@
   min-height: 0;
 }
 
-/* On mobile the studio scrolls with the page (it's only pinned to a fixed
-   viewport height on desktop), so keep the tool tab bar stuck just beneath the
-   fixed nav instead of letting it slide up and disappear behind the nav's
-   translucent glass. Its opaque background then cleanly hides the panel content
-   scrolling under it. */
+/* On a phone the tool switcher is a bottom bar, the shape every app on the
+   device uses for the same job: three equal slots under the thumb, always in
+   the same place, with no sideways scroll to discover and nothing clipped. It
+   is fixed rather than sticky because the studio scrolls with the page here,
+   and a switcher that scrolls away is one the reader has to hunt for. */
 @media (max-width: 1023.98px) {
   .gen-studio .gs-subtabs {
-    position: sticky;
-    top: var(--nav-height-mobile);
-    z-index: 5;
+    position: fixed;
+    inset: auto 0 0 0;
+    /* Over the studio's own sticky chrome (the rail at 5, the presets menu at
+       30) and under the sheet at 45, which is raised clear of the bar anyway. */
+    z-index: 44;
+    height: auto;
+    gap: 0;
+    padding: 0 0 env(safe-area-inset-bottom);
+    border-top: 1px solid var(--gs-border);
+    border-bottom: 0;
+    box-shadow: var(--gs-elev-2);
+  }
+  .gen-studio .gs-subtabs-scroll {
+    gap: 0;
+    overflow-x: visible;
+  }
+  .gen-studio .gs-subtab {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    height: var(--gs-tabbar-height);
+    padding: 0 4px;
+    font-size: 11px;
+    line-height: 1.2;
+    color: var(--gs-ink-2);
+    /* The mark of the current tool moves to the top edge, where it reads as an
+       indicator over the bar rather than an underline under a word. */
+    border-bottom: 0;
+    border-top: 2px solid transparent;
+    transition: color var(--gs-dur-fast) var(--gs-ease);
+  }
+  .gen-studio .gs-subtab-long {
+    display: none;
+  }
+  .gen-studio .gs-subtab-short {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gen-studio .gs-subtab.gs-subtab--active,
+  .gen-studio .gs-subtab--image.gs-subtab--active,
+  .gen-studio .gs-subtab--alchemy.gs-subtab--active {
+    color: var(--gs-blue);
+    border-top-color: var(--gs-blue);
+    border-bottom-color: transparent;
+  }
+  .gen-studio .gs-subtab:focus-visible {
+    outline-offset: -3px;
+  }
+  /* A bottom bar holds the tools and nothing else. The `?` moves to each tool's
+     own header row, which is the studio's top line once this row leaves it. */
+  .gen-studio .gs-subtab-glossary {
+    display: none;
+  }
+  /* The page ends above the bar rather than under it. */
+  .gen-studio .gs-shell-outlet {
+    padding-bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-subtab {
+    transition: none;
+  }
+}
+@media (max-width: 1023.98px) and (forced-colors: active) {
+  .gen-studio .gs-subtabs {
+    border-top: 1px solid ButtonText;
+  }
+  .gen-studio .gs-subtab.gs-subtab--active {
+    border-top-color: Highlight;
+    color: Highlight;
   }
 }
 
@@ -1250,6 +1331,44 @@
 .gen-studio .gs-mini-btn:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
+}
+/* The glossary trigger at the end of a tool's header row. It is the studio's
+   way into the glossary while the tool switcher is a bottom bar; from 1024px
+   up that row carries the button and this one stands down. An icon-only
+   control is 40px square. */
+.gen-studio .gs-studio-help {
+  /* The header wraps its tool row to a second line on a phone, which leaves the
+     title line empty past the title: the `?` ends that line rather than
+     crowding a row that is already full at 360px. */
+  margin-left: auto;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  border-color: transparent;
+  background: transparent;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-studio-help {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
+.gen-studio .gs-studio-help:hover {
+  border-color: var(--gs-border);
+  background: var(--gs-field-soft);
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-studio-help {
+    display: none;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-studio-help {
+    border-color: ButtonText;
+  }
 }
 /* The reset control clears a session's worth of choices, so its target is
    generous under a thumb even though its glyph stays the size of its
@@ -2748,19 +2867,20 @@
 }
 /* On phones the panel is full-bleed and the trigger is mid-header, so neither
    edge has room for the menu. Detach it from the trigger and pin it to the
-   viewport as a sheet under the studio subtab bar, where it's always fully on
-   screen. (It stays a DOM descendant of .gs-presets, so click-outside logic and
-   focus order are unaffected.) */
+   viewport, where it's always fully on screen: under the site nav, which is all
+   that stands above the studio here, and clear of the tool bar at the foot.
+   (It stays a DOM descendant of .gs-presets, so click-outside logic and focus
+   order are unaffected.) */
 @media (max-width: 640px) {
   .gen-studio .gs-presets-menu {
     position: fixed;
-    top: calc(var(--nav-height-mobile) + var(--gs-subtab-height) + 8px);
+    top: calc(var(--nav-height-mobile) + 8px);
     left: 12px;
     right: 12px;
     width: auto;
     max-height: min(
       360px,
-      calc(100dvh - var(--nav-height-mobile) - var(--gs-subtab-height) - 24px)
+      calc(100dvh - var(--nav-height-mobile) - var(--gs-tabbar-height) - 24px)
     );
   }
 }
@@ -3998,8 +4118,9 @@
   gap: 8px;
   padding: 10px 12px;
   position: sticky;
-  /* Pin below the fixed nav + the subtab bar (mirrors .gs-presets-menu). */
-  top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
+  /* Pin below the fixed nav, which is all there is above the studio on a phone:
+     the tool switcher sits at the foot of the screen here. */
+  top: var(--nav-height-mobile);
   z-index: 5;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -9678,14 +9799,14 @@ app-gs-compare-wipe {
   opacity: 1;
 }
 
-/* On mobile the studio scrolls with the page, so the subnav is pinned under
-   the tool tab bar the same way that bar is pinned under the site nav. In the
-   docs area the crumbs and the tabs pin together as one block, under the site
-   nav alone: the docs pages have no tool tab bar above them. */
+/* On mobile the studio scrolls with the page, so a subnav pins under the site
+   nav, which is all that stands above the studio there (the tool switcher is a
+   bottom bar). In the docs area the crumbs and the tabs pin together as one
+   block the same way. */
 @media (max-width: 1023.98px) {
   .gen-studio .gs-hub-nav {
     position: sticky;
-    top: calc(var(--nav-height-mobile) + var(--gs-subtab-height));
+    top: var(--nav-height-mobile);
     z-index: 4;
   }
   .gs-docs .gs-docs-chrome {
@@ -10728,14 +10849,16 @@ app-gs-compare-wipe {
 /* Above the sticky tool-tab bar (z-index 5) and below the modal surfaces
    (60+): the sheet is page furniture that covers the foot of the studio, not a
    dialog that takes it. */
+/* It stops at the top of the tool bar rather than the foot of the screen, so
+   the two stack instead of one burying the other. The bar carries the safe area
+   below it, which is why the sheet no longer pads for it. */
 .gen-studio .gs-sheet {
   position: fixed;
-  inset: auto 0 0 0;
+  inset: auto 0 calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom)) 0;
   z-index: 45;
   display: flex;
   flex-direction: column;
   transition: top var(--gs-dur) var(--gs-ease);
-  padding-bottom: env(safe-area-inset-bottom);
   background: var(--gs-card);
   border-top: 1px solid var(--gs-card-border);
   box-shadow: 0 -10px 28px -14px rgb(0 0 0 / 0.5);
@@ -10924,6 +11047,16 @@ app-gs-compare-wipe {
 html:has(app-gs-sheet) {
   scroll-padding-bottom: var(--gs-sheet-clearance, 96px);
 }
+/* The sheet publishes its own height, and on a phone it stands on the tool
+   bar, so the bar's height is added here rather than in the measurement: the
+   token lives on .gen-studio and this rule is on the root. */
+@media (max-width: 1023.98px) {
+  html:has(app-gs-sheet) {
+    scroll-padding-bottom: calc(
+      var(--gs-sheet-clearance, 96px) + 56px + env(safe-area-inset-bottom)
+    );
+  }
+}
 
 /* The way out of the tutorial pane, and the way back to a parked one. Leaving
    is a real button with a word and an arrow, because a ghost link at the top of
@@ -11041,7 +11174,8 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-parked-host--phone {
   position: fixed;
-  inset: auto 10px calc(10px + env(safe-area-inset-bottom)) 10px;
+  inset: auto 10px
+    calc(var(--gs-tabbar-height) + 10px + env(safe-area-inset-bottom)) 10px;
   z-index: 45;
 }
 .gen-studio .gs-parked-host--phone .gs-parked {
@@ -12014,6 +12148,18 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-learn-read-sec .gs-cap-eyebrow,
 .gen-studio .gs-learn-read-sec .gs-guide-head {
   margin: 0;
+}
+/* The ordinal eyebrow is the section's landmark, so its title is a title
+   rather than a second tracked-caps line: sentence case, the pane title size,
+   no hairline. */
+.gen-studio .gs-learn-read-sec .gs-guide-head {
+  font-size: var(--gs-text-lg);
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.gen-studio .gs-learn-read-sec .gs-guide-head::after {
+  content: none;
 }
 .gen-studio .gs-learn-read-sec app-gs-door {
   margin-top: var(--gs-space-3);

@@ -26,6 +26,7 @@ import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
+import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
@@ -132,6 +133,10 @@ export type { StylePickerGroup } from '../generate-form.model';
 export class GenerateFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   public readonly presetsSvc = inject(GeneratePresetsService);
+  /* Below 1024px the tool switcher is a bottom bar and carries nothing but the
+     tools, so this header is the studio's top line and the place the glossary
+     is reached from. The shell's copy takes over from 1024px up. */
+  public readonly glossary = inject(GlossaryService);
   private readonly toast = inject(ToastService);
 
   public readonly form = input.required<GenerateFormGroup>();

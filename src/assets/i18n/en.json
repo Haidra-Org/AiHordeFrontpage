@@ -7,6 +7,9 @@
   "generate.shell.tab_image": "Image generation",
   "generate.shell.tab_alchemy": "Alchemy",
   "generate.shell.tab_docs": "Learn",
+  "generate.shell.tab_image_short": "Image",
+  "generate.shell.tab_alchemy_short": "Alchemy",
+  "generate.shell.tab_docs_short": "Learn",
 
   "docs.title": "Documentation",
   "docs.nav_link": "Docs",

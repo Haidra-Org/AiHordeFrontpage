@@ -2,7 +2,13 @@
   <!-- These are page links, not tabs: each one navigates, and the third leaves
        the studio entirely for the documentation. `aria-current` says which page
        is on screen, which is the same thing `routerLinkActive` draws, so the
-       state is stated once and rendered once. -->
+       state is stated once and rendered once.
+
+       One row, two shapes. Wide, it is an underline row above the studio. Below
+       1024px it is the bottom bar a phone reader already knows: three equal
+       slots under the thumb, icon over a short word. Each link carries the long
+       name as its accessible name, so the short word costs nothing to a reader
+       who cannot see the icon above it. -->
   <nav
     class="gs-subtabs"
     [attr.aria-label]="'generate.shell.tabs_label' | transloco"
@@ -10,35 +16,58 @@
     <!-- The pages scroll on their own so the glossary button beside them keeps
          its place and its whole width at any viewport: with the button inside
          the scrolling row, a narrow screen puts it past the right edge and it
-         arrives half drawn. -->
+         arrives half drawn. The bottom bar shares the width three ways instead,
+         so nothing scrolls there and nothing is clipped. -->
     <div class="gs-subtabs-scroll">
       <a
         class="gs-subtab gs-subtab--image"
         routerLink="/generate/image"
         routerLinkActive="gs-subtab--active"
-        #imageActive="routerLinkActive"
-        [attr.aria-current]="imageActive.isActive ? 'page' : null"
+        ariaCurrentWhenActive="page"
+        [attr.aria-label]="'generate.shell.tab_image' | transloco"
       >
         <app-icon name="photo" class="gs-ico-sm" />
-        {{ "generate.shell.tab_image" | transloco }}
+        <span class="gs-subtab-long" aria-hidden="true">
+          {{ "generate.shell.tab_image" | transloco }}
+        </span>
+        <span class="gs-subtab-short" aria-hidden="true">
+          {{ "generate.shell.tab_image_short" | transloco }}
+        </span>
       </a>
       <a
         class="gs-subtab gs-subtab--alchemy"
         routerLink="/generate/alchemy"
         routerLinkActive="gs-subtab--active"
-        #alchemyActive="routerLinkActive"
-        [attr.aria-current]="alchemyActive.isActive ? 'page' : null"
+        ariaCurrentWhenActive="page"
+        [attr.aria-label]="'generate.shell.tab_alchemy' | transloco"
       >
         <app-icon name="beaker" class="gs-ico-sm" />
-        {{ "generate.shell.tab_alchemy" | transloco }}
+        <span class="gs-subtab-long" aria-hidden="true">
+          {{ "generate.shell.tab_alchemy" | transloco }}
+        </span>
+        <span class="gs-subtab-short" aria-hidden="true">
+          {{ "generate.shell.tab_alchemy_short" | transloco }}
+        </span>
       </a>
       <!-- The way out to the documentation. It never marks itself as the page
            on screen, because reaching it means leaving this shell behind. -->
-      <a class="gs-subtab gs-subtab--docs" [routerLink]="docsLink">
+      <a
+        class="gs-subtab gs-subtab--docs"
+        [routerLink]="docsLink"
+        [attr.aria-label]="'generate.shell.tab_docs' | transloco"
+      >
         <app-icon name="document-text" class="gs-ico-sm" />
-        {{ "generate.shell.tab_docs" | transloco }}
+        <span class="gs-subtab-long" aria-hidden="true">
+          {{ "generate.shell.tab_docs" | transloco }}
+        </span>
+        <span class="gs-subtab-short" aria-hidden="true">
+          {{ "generate.shell.tab_docs_short" | transloco }}
+        </span>
       </a>
     </div>
+    <!-- The wide row's door into the glossary. A bottom bar holds the tools and
+         nothing else, so below 1024px this stands down and each tool's own
+         header row carries the `?` instead. -->
     <button
       type="button"
       class="gs-subtab-glossary"

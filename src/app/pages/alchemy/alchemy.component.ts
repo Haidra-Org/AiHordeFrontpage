@@ -39,6 +39,7 @@ import { GsHelpComponent } from '../../components/gs-help/gs-help.component';
 import { GsParamEntryComponent } from '../../components/gs-param-entry/gs-param-entry.component';
 import { GsSheetComponent } from '../../components/gs-sheet/gs-sheet.component';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { GlossaryService } from '../../services/glossary.service';
 import { SECTION_IDENTITIES } from '../../content/sections';
 import { alchemyTopic, referenceTopic } from '../../content/reference-topics';
 import {
@@ -276,6 +277,10 @@ export class AlchemyComponent {
    * holds is the one both mountings read.
    */
   public readonly helpDock = inject(GsHelpDockService);
+  /* Below 1024px the tool switcher is a bottom bar and carries nothing but the
+     tools, so this header is the studio's top line and the place the glossary
+     is reached from. The shell's copy takes over from 1024px up. */
+  public readonly glossary = inject(GlossaryService);
 
   /** The title the sheet's bar carries, asked of whichever registry owns it. */
   public readonly helpDockTitleKey = computed(

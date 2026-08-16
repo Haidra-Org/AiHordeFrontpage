@@ -8,6 +8,19 @@
     <span class="gs-title">{{
       "generate.panel.create_title" | transloco
     }}</span>
+    <!-- The studio's door into the glossary while the tool switcher is a
+         bottom bar. It ends the title line rather than the tool row, which on
+         the narrowest phones is already full. It stands down from 1024px up,
+         where the switcher row carries the same button. -->
+    <button
+      type="button"
+      class="gs-mini-btn gs-studio-help"
+      (click)="glossary.open()"
+      [attr.aria-label]="'help.open_glossary' | transloco"
+      [title]="'help.open_glossary' | transloco"
+    >
+      <app-icon name="question-mark-circle" class="gs-ico-sm" />
+    </button>
     <div class="flex items-center gap-2">
       <div class="gs-presets" #presetsContainer>
         <button
