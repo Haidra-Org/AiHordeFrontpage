@@ -70,6 +70,16 @@
   src: url("/assets/fonts/jetbrains-mono-600.woff2") format("woff2");
 }
 
+/* The height of the phone's bottom tool bar, minus its safe area. Everything
+   pinned to the foot of the screen (the sheet, a parked tutorial's way back, a
+   page's own last line, the site's floating "?") is offset by this, so the bar
+   covers nothing. It sits at the document root because the bar is drawn on the
+   documentation as well as in the studio, and what has to clear it is not
+   always inside either. */
+:root {
+  --gs-tabbar-height: 56px;
+}
+
 /* The nine section identity hues, declared at the document root because the
    surfaces that use them are not all inside the studio: the glossary modal is
    mounted at the root and would otherwise have to restate every value, which is
@@ -283,11 +293,6 @@
     #ffffff
   );
   --gs-subtab-height: 45px;
-  /* The height of the phone's bottom tool bar, minus its safe area. Everything
-     the studio pins to the foot of the screen (the sheet, a parked tutorial's
-     way back, the page's own last line) is offset by this, so the bar covers
-     nothing. */
-  --gs-tabbar-height: 56px;
 
   font-family: "Inter", system-ui, sans-serif;
   color: var(--gs-ink);
@@ -770,6 +775,13 @@
   /* The page ends above the bar rather than under it. */
   .gen-studio .gs-shell-outlet {
     padding-bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom));
+  }
+}
+/* Wide, the documentation has crumbs and its own row of pages up there, so the
+   tool row it draws is the bottom bar and nothing else. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-subtabs--phone-only {
+    display: none;
   }
 }
 @media (max-width: 1023.98px) and (prefers-reduced-motion: reduce) {
@@ -8749,6 +8761,52 @@ app-gs-sweep-scrub + app-gs-door {
 .dark .gen-studio .gs-sweep-why-link {
   color: var(--gs-pop-accent);
 }
+/* Beside prose the note can be a tint, because the ground under it is already a
+   card. Over pictures it cannot: a translucent wash on the plate's stage or in
+   the layer gives the words no surface of their own, so they read as lying on
+   the frame. Where the note opens among pictures it is an opaque block in the
+   flow, between the toggle that raised it and the lane, so unfolding it moves
+   the lane down instead of covering the picture. */
+.gen-studio .gs-sweep-viewer-foot .gs-sweep-why-body {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-sweep-viewer-foot .gs-sweep-why-list {
+  color: var(--gs-ink);
+}
+/* Below the plate's own width the same holds for the plate: it is the whole
+   width of a phone, and the note is the only thing on it that is not a
+   picture. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-sweep-open .gs-sweep-why-body {
+    display: block;
+    width: 100%;
+    margin: 0 0 var(--gs-space-2);
+    padding: var(--gs-space-3);
+    border: 1px solid var(--gs-border);
+    border-radius: var(--gs-radius-md);
+    background: var(--gs-panel);
+    color: var(--gs-ink-2);
+  }
+  .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-list {
+    color: var(--gs-ink);
+  }
+  /* The block brings the page's ground back inside the plate, so the note's
+     link goes back to the page's accent: the plate ink it wears out here would
+     be the stage's quiet grey on a lit surface. */
+  .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-link {
+    color: var(--gs-blue);
+  }
+  .dark .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-link {
+    color: var(--gs-pop-accent);
+  }
+}
 
 /* The enlarged frame. Its own layer on the style browser's viewer grammar, kept
    here rather than borrowed from it: that viewer steps between styles and is
@@ -8910,6 +8968,20 @@ app-gs-sweep-scrub + app-gs-door {
     );
     overflow-y: auto;
     overscroll-behavior: contain;
+  }
+  /* The body scrolls here, so nothing in it shrinks: a stage that gave up
+     height to a taller foot kept its picture at full size and the caption and
+     controls were drawn over it. */
+  .gen-studio
+    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
+    .gs-sweep-viewer-stage,
+  .gen-studio
+    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
+    .gs-sweep-viewer-cap,
+  .gen-studio
+    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
+    .gs-sweep-viewer-foot {
+    flex: none;
   }
 }
 
@@ -9748,6 +9820,14 @@ app-gs-compare-wipe {
 }
 .gs-learn-outlet {
   display: block;
+}
+/* The page ends above the bottom tool bar rather than under it: the site
+   footer follows the docs outlet, so the clearance goes on the footer, which is
+   the last thing on the page, and the outlet keeps its own end. */
+@media (max-width: 1023.98px) {
+  html:has(.gs-docs .gs-subtabs) .footer-shell {
+    padding-bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom));
+  }
 }
 
 /* Where the reader is, and the way back out. One line, quiet, above the row of

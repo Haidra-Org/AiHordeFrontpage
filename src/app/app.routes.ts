@@ -72,6 +72,9 @@ export const routes: Routes = [
       import('./pages/docs/docs-shell/docs-shell.component').then(
         (c) => c.DocsShellComponent,
       ),
+    // A page of this area keeps the phone's tool bar unless it declares
+    // `data: { toolTabs: false }`, which is for a page that needs the foot of
+    // the screen for controls of its own.
     children: [
       // /docs has no page of its own and lands on the image area, which is the
       // larger of the two and the one a reader arriving without an area in mind

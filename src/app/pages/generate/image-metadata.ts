@@ -8,6 +8,32 @@ const ERROR_VALUES = new Set([
   'baseline_mismatch',
 ]);
 
+/** gen_metadata types that describe an input image the request had to supply. */
+const SOURCE_INPUT_TYPES = new Set([
+  'source_image',
+  'source_mask',
+  'extra_source_images',
+]);
+
+/**
+ * Whether the submitted request asked for a source image at all. The stored
+ * request keeps `source_processing` (only the base64 payloads are stripped), so
+ * its presence is the reliable mark of a job that carried an input image.
+ * An unknown request counts as carrying one, so a fault is never hidden on a
+ * guess.
+ */
+function requestCarriesSourceInput(
+  request: ImageGenerationRequest | undefined,
+): boolean {
+  return (
+    request === undefined ||
+    request.source_processing !== undefined ||
+    request.source_image !== undefined ||
+    request.source_mask !== undefined ||
+    (request.extra_source_images?.length ?? 0) > 0
+  );
+}
+
 /** A failed lora/ti/source/etc. reported in a result's gen_metadata. */
 export interface ImageMetaError {
   /** Which input failed: lora | ti | source_image | source_mask | ... */
@@ -35,11 +61,20 @@ export interface DerivedImageMeta {
  * NSFW is "censored/flagged only": an image is marked NSFW only when the worker
  * actually censored it or reported a censorship/csam reason, never merely because
  * the request permitted NSFW output.
+ *
+ * `request` is the request the job was submitted with. A worker reports a
+ * source-image fault whenever the job it popped names a source processing it
+ * cannot satisfy, and a job pop that omits the field is read as img2img by the
+ * horde's own schema default; a text-to-image request therefore comes back
+ * carrying a source fault it never asked for. Faults about an input the request
+ * never sent are dropped rather than shown to the reader.
  */
 export function deriveImageMeta(
   metadata: StoredJobImageMetadata | undefined,
+  request?: ImageGenerationRequest,
 ): DerivedImageMeta {
   const gen = metadata?.genMetadata ?? [];
+  const hasSourceInput = requestCarriesSourceInput(request);
   let censorReason: string | null = null;
   let aesthetic: number | null = null;
   const errors: ImageMetaError[] = [];
@@ -54,6 +89,9 @@ export function deriveImageMeta(
         aesthetic = parsed;
       }
     } else if (ERROR_VALUES.has(entry.value)) {
+      if (!hasSourceInput && SOURCE_INPUT_TYPES.has(entry.type)) {
+        continue;
+      }
       errors.push({ type: entry.type, value: entry.value, ref: entry.ref });
     }
   }

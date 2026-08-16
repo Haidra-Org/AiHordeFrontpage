@@ -23,6 +23,17 @@
       right: 2rem;
     }
   }
+
+  /* The documentation carries the phone's bottom tool bar, which is fixed over
+     the foot of the screen. Shifted rather than given a new `bottom`, so the
+     two resting places above stay the one place they are written. */
+  @media (max-width: 1023.98px) {
+    html:has(.gs-docs .gs-subtabs) .floating-controls {
+      transform: translateY(
+        calc(-1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom)))
+      );
+    }
+  }
 }
 
 /* ── Scroll To Top Button ────────────────────────────────────── */

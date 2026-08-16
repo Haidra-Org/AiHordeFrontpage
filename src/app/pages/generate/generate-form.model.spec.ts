@@ -167,6 +167,20 @@ describe('buildImageRequest source processing', () => {
     expect(request.params?.control_type).toBeUndefined();
   });
 
+  it('leaves the source keys out of a txt2img payload entirely', () => {
+    // A key present but undefined still serialises as a source-carrying request
+    // to anything that reads the payload by key, so absence is what is asserted.
+    for (const request of [
+      buildImageRequest(value({ prompt: 'a fox' })),
+      buildStyledImageRequest(value({ prompt: 'a fox' }), null),
+    ]) {
+      expect(Object.keys(request)).not.toContain('source_image');
+      expect(Object.keys(request)).not.toContain('source_processing');
+      expect(Object.keys(request)).not.toContain('source_mask');
+      expect(Object.keys(request)).not.toContain('extra_source_images');
+    }
+  });
+
   it('suppresses source fields when no image is attached', () => {
     const request = buildImageRequest(
       value({ sourceMode: 'img2img', denoising_strength: 0.5 }),

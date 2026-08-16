@@ -898,6 +898,44 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-sweep-viewer-foot .gs-sweep-why-body')).not.toBeNull();
     });
+
+    it('unfolds the note into the foot, between the toggle and the lane', async () => {
+      await setUp({ viewerFirst: true });
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      const why = find<HTMLButtonElement>(
+        '.gs-sweep-viewer-foot .gs-sweep-why',
+      )!;
+      expect(why.getAttribute('aria-expanded')).toBe('false');
+
+      why.click();
+      fixture.detectChanges();
+
+      expect(why.getAttribute('aria-expanded')).toBe('true');
+
+      // The note belongs to the foot's own flow rather than to a layer over
+      // the picture, so it is the foot's child and it stands between the
+      // toggle that raised it and the lane it pushes down.
+      const foot = find('.gs-sweep-viewer-foot')!;
+      const body = find('.gs-sweep-viewer-foot .gs-sweep-why-body')!;
+      expect(body.parentElement).toBe(foot);
+
+      const order = Array.from(foot.children);
+      expect(order.indexOf(body)).toBeGreaterThan(
+        order.indexOf(find('.gs-sweep-viewer-foot .gs-sweep-variants')!),
+      );
+      expect(order.indexOf(body)).toBeLessThan(
+        order.findIndex(
+          (child) =>
+            child.matches('.gs-tickrail') ||
+            !!child.querySelector('.gs-tickrail'),
+        ),
+      );
+
+      // The way on to the reference survives the move.
+      expect(body.querySelector('.gs-sweep-why-link')).not.toBeNull();
+    });
   });
 
   it('collapses from the plate back to the capsule', async () => {

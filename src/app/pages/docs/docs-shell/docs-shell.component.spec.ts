@@ -4,6 +4,11 @@ import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DOCS_AREAS, DocsShellComponent } from './docs-shell.component';
+import {
+  DOCS_IMAGE,
+  STUDIO_ALCHEMY,
+  STUDIO_IMAGE,
+} from '../../../content/docs-links';
 import en from '../../../../assets/i18n/en.json';
 
 /** Stands in for the area's pages, so the subnav has somewhere to navigate. */
@@ -27,6 +32,14 @@ describe('DocsShellComponent', () => {
       (
         fixture.nativeElement as HTMLElement
       ).querySelectorAll<HTMLAnchorElement>('.gs-hub-nav-link'),
+    );
+
+  /** The phone's bottom bar of creation tools, drawn by the shell. */
+  const tools = (): HTMLAnchorElement[] =>
+    Array.from(
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLAnchorElement>('.gs-subtab'),
     );
 
   /** The entry the subnav is currently marking as the page on screen. */
@@ -59,6 +72,12 @@ describe('DocsShellComponent', () => {
           { path: 'docs/image/guide', component: StubPageComponent },
           { path: 'docs/alchemy', component: StubPageComponent },
           { path: 'docs/alchemy/:useCase', component: StubPageComponent },
+          // Stands for a page that needs the foot of the screen for itself.
+          {
+            path: 'docs/quiet',
+            component: StubPageComponent,
+            data: { toolTabs: false },
+          },
         ]),
       ],
     }).compileComponents();
@@ -192,6 +211,40 @@ describe('DocsShellComponent', () => {
     expect(crumbs?.textContent).toContain(translations['docs.area_alchemy']);
     expect(links()).toHaveLength(ALCHEMY.entries.length);
     expect(current()).toBe(translations['alchemy.usecases.enlarge.title']);
+  });
+
+  it('keeps the phone tool bar the reader arrived on, with the documentation as the page on screen', async () => {
+    await go('/docs/image/guide');
+
+    const tabs = tools();
+    expect(tabs.map((tab) => tab.getAttribute('href'))).toEqual([
+      STUDIO_IMAGE,
+      STUDIO_ALCHEMY,
+      DOCS_IMAGE,
+    ]);
+    // Reading is where the reader is; the other two slots leave for the studio.
+    expect(tabs.map((tab) => tab.getAttribute('aria-current'))).toEqual([
+      null,
+      null,
+      'page',
+    ]);
+  });
+
+  it('draws the bar only as the bottom bar, never as a second row of chrome', async () => {
+    // The wide screen already has crumbs and the area's own row of pages.
+    await go('/docs/image');
+
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.gs-subtabs')
+        ?.classList.contains('gs-subtabs--phone-only'),
+    ).toBe(true);
+  });
+
+  it('stands the bar down where the route asks for the foot of the screen', async () => {
+    await go('/docs/quiet');
+
+    expect(tools()).toHaveLength(0);
   });
 
   it('renders the page the route names beneath the subnav', async () => {

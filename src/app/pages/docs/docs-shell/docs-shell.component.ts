@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
+  ActivatedRoute,
   NavigationEnd,
   Router,
   RouterLink,
@@ -14,6 +15,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsToolTabsComponent } from '../../../components/gs-tool-tabs/gs-tool-tabs.component';
 import {
   DOCS_ALCHEMY,
   DOCS_IMAGE,
@@ -148,7 +150,13 @@ export const DOCS_AREAS: readonly DocsArea[] = [
  */
 @Component({
   selector: 'app-docs-shell',
-  imports: [RouterOutlet, RouterLink, TranslocoPipe, IconComponent],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    TranslocoPipe,
+    IconComponent,
+    GsToolTabsComponent,
+  ],
   templateUrl: './docs-shell.component.html',
   host: {
     /* `gen-studio` is the scope the studio's design tokens are declared on, and
@@ -160,6 +168,7 @@ export const DOCS_AREAS: readonly DocsArea[] = [
 })
 export class DocsShellComponent {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   public readonly docsRoot = DOCS_ROOT;
 
@@ -190,11 +199,36 @@ export class DocsShellComponent {
     () => this.area()?.entries ?? [],
   );
 
+  /**
+   * Whether the page on screen wants the phone's tool bar. Every page does
+   * unless it says otherwise with `data: { toolTabs: false }`, which is for a
+   * page that puts its own controls under the thumb.
+   */
+  public readonly showToolTabs = toSignal(
+    this.router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => this.readToolTabsFlag()),
+    ),
+    { initialValue: this.readToolTabsFlag() },
+  );
+
   public isActive(entry: DocsNavEntry): boolean {
     const path = this.path();
     return entry.exact
       ? path === entry.activePath
       : path === entry.activePath || path.startsWith(`${entry.activePath}/`);
+  }
+
+  /**
+   * The flag as the deepest route on screen leaves it. Read from the route
+   * rather than from the URL so a page opts out where it is declared.
+   */
+  private readToolTabsFlag(): boolean {
+    let route = this.route;
+    while (route.firstChild) route = route.firstChild;
+    // During construction the child outlet may not have activated yet, and a
+    // route without a snapshot has declared nothing: the bar shows.
+    return route.snapshot?.data?.['toolTabs'] !== false;
   }
 
   private pathOf(url: string): string {

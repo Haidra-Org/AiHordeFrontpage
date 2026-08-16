@@ -45,3 +45,12 @@
 <div class="gs-learn-outlet">
   <router-outlet />
 </div>
+
+<!-- The reader arrives here from the studio's bottom bar on a phone, so the bar
+     stays with them: without it, reading a page is a one-way door and the way
+     back has to be hunted for. Last in the page's reading order, because it is
+     the way out rather than the way in, and only ever the bottom bar: up there
+     this area has crumbs and its own row of pages. -->
+@if (showToolTabs()) {
+  <app-gs-tool-tabs [wideRow]="false" [docsCurrent]="true" />
+}

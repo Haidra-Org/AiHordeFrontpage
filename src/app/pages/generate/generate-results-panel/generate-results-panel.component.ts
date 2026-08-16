@@ -573,7 +573,7 @@ export class GenerateResultsPanelComponent {
       if (job.status === 'done') {
         const thumbs = thumbnails.get(job.localId) ?? [];
         thumbs.forEach((thumb, index) => {
-          const derived = deriveImageMeta(thumb.metadata);
+          const derived = deriveImageMeta(thumb.metadata, job.request);
           tiles.push({
             key: `${job.localId}-${thumb.imageId}`,
             kind: 'done',
@@ -1679,7 +1679,7 @@ export class GenerateResultsPanelComponent {
       const jobImages = await this.queue.getJobImages(job.localId);
       const results = jobImages.filter((image) => image.kind === 'result');
       for (const image of results) {
-        const derived = deriveImageMeta(image.metadata);
+        const derived = deriveImageMeta(image.metadata, job.request);
         const record = buildImageMetadataExport(
           image.imageId,
           image.metadata,
