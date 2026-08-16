@@ -5,7 +5,9 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
   GenerateFormValue,
+  MAX_STEPS,
   QR_MODULE_DRAWERS,
+  STEPS_SLIDER_MAX,
   buildStyledImageRequest,
   createGenerateForm,
 } from '../generate-form.model';
@@ -889,6 +891,40 @@ describe('GenerateFormComponent structure', () => {
     expect(fixture.componentInstance.form().controls.prompt.value).toBe(
       'a fox in the snow',
     );
+  });
+
+  it('lets a typed step count run past the slider, and marks one past the horde', async () => {
+    const fixture = await renderFixture();
+    const host = fixture.nativeElement as HTMLElement;
+    const form = fixture.componentInstance.form();
+    const field = host.querySelector<HTMLInputElement>('#generate-steps')!;
+    const slider = host.querySelector<HTMLInputElement>(
+      'input[type="range"][formControlName="steps"]',
+    )!;
+
+    expect(slider.max).toBe(String(STEPS_SLIDER_MAX));
+    expect(field.max).toBe(String(MAX_STEPS));
+
+    field.value = '200';
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(form.controls.steps.value).toBe(200);
+    expect(form.controls.steps.valid).toBe(true);
+    // The thumb parks at the end of its travel; the value it stands for is not
+    // pulled back to it.
+    expect(slider.value).toBe(String(STEPS_SLIDER_MAX));
+    expect(field.classList).not.toContain('gs-field--invalid');
+
+    field.value = String(MAX_STEPS + 1);
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(form.controls.steps.value).toBe(MAX_STEPS + 1);
+    expect(
+      host.querySelector<HTMLInputElement>('#generate-steps')!.classList,
+    ).toContain('gs-field--invalid');
+    expect(host.querySelector('#generate-steps-range')).not.toBeNull();
   });
 
   it('keeps the warnings region in the document before it has anything to say', async () => {

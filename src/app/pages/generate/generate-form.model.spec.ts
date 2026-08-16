@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAspectPresets,
   buildImageRequest,
+  CFG_SLIDER_MAX,
+  CFG_SLIDER_MIN,
+  createGenerateForm,
+  MAX_CFG_SCALE,
+  MAX_CLIP_SKIP,
+  MAX_STEPS,
+  MIN_CFG_SCALE,
+  MIN_STEPS,
+  rangeFillPercent,
+  STEPS_SLIDER_MAX,
+  STEPS_SLIDER_MIN,
   buildStyledImageRequest,
   cfgRequirementHint,
   clipSkipRequirementHint,
@@ -1015,5 +1026,68 @@ describe('requirement hints', () => {
     expect(sd15HiresHint('stable_diffusion_1', 768, 768, false)).toBeNull();
     expect(sd15HiresHint('stable_diffusion_xl', 1024, 1024, false)).toBeNull();
     expect(sd15HiresHint(null, 1024, 1024, false)).toBeNull();
+  });
+});
+
+describe('sampling number bounds', () => {
+  it('validates a control against the horde bounds, not the slider travel', () => {
+    const form = createGenerateForm(value());
+
+    form.controls.steps.setValue(MAX_STEPS);
+    expect(form.controls.steps.valid).toBe(true);
+    form.controls.steps.setValue(MAX_STEPS + 1);
+    expect(form.controls.steps.valid).toBe(false);
+    form.controls.steps.setValue(MIN_STEPS - 1);
+    expect(form.controls.steps.valid).toBe(false);
+
+    // The slider stops well short of what may be typed, which is the point of
+    // holding the two ranges apart.
+    expect(STEPS_SLIDER_MAX).toBeLessThan(MAX_STEPS);
+    form.controls.steps.setValue(200);
+    expect(form.controls.steps.valid).toBe(true);
+    expect(form.controls.steps.value).toBe(200);
+  });
+
+  it('validates guidance and CLIP skip against their schema bounds', () => {
+    const form = createGenerateForm(value());
+
+    form.controls.cfg_scale.setValue(MAX_CFG_SCALE);
+    expect(form.controls.cfg_scale.valid).toBe(true);
+    form.controls.cfg_scale.setValue(MAX_CFG_SCALE + 0.5);
+    expect(form.controls.cfg_scale.valid).toBe(false);
+    form.controls.cfg_scale.setValue(MIN_CFG_SCALE - 0.5);
+    expect(form.controls.cfg_scale.valid).toBe(false);
+    // Past the slider's end but well inside what the horde takes.
+    form.controls.cfg_scale.setValue(CFG_SLIDER_MAX + 10);
+    expect(form.controls.cfg_scale.valid).toBe(true);
+
+    form.controls.clip_skip.setValue(MAX_CLIP_SKIP);
+    expect(form.controls.clip_skip.valid).toBe(true);
+    form.controls.clip_skip.setValue(MAX_CLIP_SKIP + 1);
+    expect(form.controls.clip_skip.valid).toBe(false);
+    form.controls.clip_skip.setValue(0);
+    expect(form.controls.clip_skip.valid).toBe(false);
+  });
+
+  it('pins the slider fill at its ends without touching the value', () => {
+    const form = createGenerateForm(value({ steps: 200 }));
+
+    expect(
+      rangeFillPercent(
+        form.controls.steps.value,
+        STEPS_SLIDER_MIN,
+        STEPS_SLIDER_MAX,
+      ),
+    ).toBe(100);
+    expect(form.controls.steps.value).toBe(200);
+
+    expect(rangeFillPercent(0.5, CFG_SLIDER_MIN, CFG_SLIDER_MAX)).toBe(0);
+    expect(
+      rangeFillPercent(
+        (CFG_SLIDER_MIN + CFG_SLIDER_MAX) / 2,
+        CFG_SLIDER_MIN,
+        CFG_SLIDER_MAX,
+      ),
+    ).toBe(50);
   });
 });

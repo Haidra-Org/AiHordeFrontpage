@@ -1319,6 +1319,45 @@
   border-color: var(--gs-blue);
 }
 
+/* The numeric twin of a slider, sitting where that field's readout used to.
+   It is narrow because it holds three or four characters, and it is the only
+   way into the part of a value's range the slider does not travel: the slider
+   covers the settings people render at, the field covers everything the horde
+   will accept. Right-aligned text so a two- and a three-digit entry read
+   against the same edge. */
+.gen-studio .gs-numfield {
+  width: 5.5ch;
+  min-width: 0;
+  height: var(--gs-control-h-dense);
+  padding: 0 var(--gs-space-2);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-sm);
+  text-align: right;
+  appearance: textfield;
+  color: var(--gs-ink);
+  background: var(--gs-field);
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-numfield:focus {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-color: var(--gs-blue);
+}
+/* The spinners would take most of a field this narrow, and the slider beside
+   it is the better way to step through the range. */
+.gen-studio .gs-numfield::-webkit-outer-spin-button,
+.gen-studio .gs-numfield::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-numfield {
+    height: 44px;
+    width: 6ch;
+  }
+}
+
 /* A field that will not submit as typed. The edge is the second signal: every
    place this is set also renders the hint line that says what is wrong. It
    follows the fields it modifies so it wins over their own focus edge. */
@@ -1659,7 +1698,8 @@
   .gen-studio .gs-neg-input,
   .gen-studio .gs-native-select,
   .gen-studio .gs-select-row,
-  .gen-studio .gs-seed-input {
+  .gen-studio .gs-seed-input,
+  .gen-studio .gs-numfield {
     border: 1px solid CanvasText;
     box-shadow: none;
   }

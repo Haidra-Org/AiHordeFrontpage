@@ -265,6 +265,7 @@
   "generate.form.webhook_placeholder": "https://example.com/horde-hook",
   "generate.form.webhook_hint": "The horde POSTs each finished generation here. Leave blank for none.",
   "generate.form.webhook_invalid": "Needs to be an http(s) URL of {{ min }}–{{ max }} characters, or blank. It will be left off the request as written.",
+  "generate.form.number_out_of_range": "The horde takes {{ min }} to {{ max }} here, so this cannot be sent as typed.",
   "generate.form.workers_label": "Worker targeting ({{ count }}/{{ max }})",
   "generate.form.worker_mode_group": "How the worker list is applied",
   "generate.form.worker_mode_allow": "Only these workers",

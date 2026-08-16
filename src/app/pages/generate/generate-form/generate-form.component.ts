@@ -42,21 +42,32 @@ import {
   GenerateFormGroup,
   GenerateFormValue,
   GenerateMode,
+  CFG_SLIDER_MAX,
+  CFG_SLIDER_MIN,
+  CFG_STEP,
   MAX_BATCH,
+  MAX_CFG_SCALE,
+  MAX_CLIP_SKIP,
   MAX_DIMENSION,
   MAX_FACEFIXER_STRENGTH,
   MAX_HIRES_DENOISE,
   MAX_LORA_STRENGTH,
   MAX_SEED_VARIATION,
+  MAX_STEPS,
   MAX_WEBHOOK_LENGTH,
   MAX_WORKERS,
   MIN_BATCH,
+  MIN_CFG_SCALE,
+  MIN_CLIP_SKIP,
   MIN_DIMENSION,
   MIN_FACEFIXER_STRENGTH,
   MIN_HIRES_DENOISE,
   MIN_LORA_STRENGTH,
   MIN_SEED_VARIATION,
+  MIN_STEPS,
   MIN_WEBHOOK_LENGTH,
+  STEPS_SLIDER_MAX,
+  STEPS_SLIDER_MIN,
   DIMENSION_STEP,
   ModelSizeBase,
   PanelSize,
@@ -241,6 +252,17 @@ export class GenerateFormComponent implements OnInit {
 
   public readonly minBatch = MIN_BATCH;
   public readonly maxBatch = MAX_BATCH;
+  public readonly minSteps = MIN_STEPS;
+  public readonly maxSteps = MAX_STEPS;
+  public readonly stepsSliderMin = STEPS_SLIDER_MIN;
+  public readonly stepsSliderMax = STEPS_SLIDER_MAX;
+  public readonly minCfg = MIN_CFG_SCALE;
+  public readonly maxCfg = MAX_CFG_SCALE;
+  public readonly cfgStep = CFG_STEP;
+  public readonly cfgSliderMin = CFG_SLIDER_MIN;
+  public readonly cfgSliderMax = CFG_SLIDER_MAX;
+  public readonly minClipSkip = MIN_CLIP_SKIP;
+  public readonly maxClipSkip = MAX_CLIP_SKIP;
   public readonly minDimension = MIN_DIMENSION;
   public readonly maxDimension = MAX_DIMENSION;
   public readonly dimensionStep = DIMENSION_STEP;
@@ -700,6 +722,24 @@ export class GenerateFormComponent implements OnInit {
   /** Read a range/number input's value as a float, for slider change handlers. */
   public rangeValue(event: Event): number {
     return +(event.target as HTMLInputElement).value;
+  }
+
+  /**
+   * Take what was typed into a number field onto its control. The field is
+   * bound one way and parsed here because the forms number accessor writes null
+   * for an empty or half-typed entry, where every reader of these controls does
+   * arithmetic on a number. A value outside the horde's bounds is kept as typed
+   * so the control's own validator can mark the field: clamping it silently
+   * would submit a number nobody asked for.
+   */
+  public setNumberEntry(control: FormControl<number>, event: Event): void {
+    const typed = (event.target as HTMLInputElement).value;
+    const parsed = Number(typed);
+    if (typed.trim() === '' || !Number.isFinite(parsed)) {
+      return;
+    }
+    control.setValue(parsed);
+    control.markAsDirty();
   }
 
   /** Where a slider's thumb sits, as the percentage its track fills to. */

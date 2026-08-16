@@ -1,4 +1,4 @@
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   ImageControlType,
   ImageGenerationParams,
@@ -77,6 +77,37 @@ export const MAX_DIMENSION = 3072;
 export const DIMENSION_STEP = 64;
 export const MIN_BATCH = 1;
 export const MAX_BATCH = 10;
+
+/**
+ * The horde takes up to twenty images in one request. The stepper stops at
+ * {@link MAX_BATCH}, a queue's worth of pictures being enough to ask for at
+ * once, but a batch that arrives from a shared request or a style is kept as
+ * long as the horde would take it.
+ */
+export const MAX_API_BATCH = 20;
+
+/**
+ * Two ranges govern each sampling number: what the horde will accept, and what
+ * a slider can usefully offer. The `MIN_`/`MAX_` pair is the schema's own bound
+ * and is what the control validates against, so anything the horde would take
+ * can be typed. The `_SLIDER_` pair is where the travel is worth spending: a
+ * steps slider stretched over the whole legal range makes the counts anyone
+ * actually renders at indistinguishable from each other. A typed value past the
+ * slider's end leaves the thumb parked there and is kept as typed.
+ */
+export const MIN_STEPS = 1;
+export const MAX_STEPS = 500;
+export const STEPS_SLIDER_MIN = 1;
+export const STEPS_SLIDER_MAX = 50;
+
+export const MIN_CFG_SCALE = 0;
+export const MAX_CFG_SCALE = 100;
+export const CFG_STEP = 0.5;
+export const CFG_SLIDER_MIN = 1;
+export const CFG_SLIDER_MAX = 30;
+
+export const MIN_CLIP_SKIP = 1;
+export const MAX_CLIP_SKIP = 12;
 
 /**
  * How a source image is used, if one is attached. `none` is plain txt2img.
@@ -1030,18 +1061,26 @@ export function createGenerateForm(
 ): GenerateFormGroup {
   const control = <T>(initial: T): FormControl<T> =>
     new FormControl<T>(initial, { nonNullable: true });
+  // Bounded numbers validate against the horde's schema rather than against the
+  // range their slider offers, so a value typed past the slider's end is still
+  // submittable as long as the horde would accept it.
+  const bounded = (initial: number, min: number, max: number) =>
+    new FormControl<number>(initial, {
+      nonNullable: true,
+      validators: [Validators.min(min), Validators.max(max)],
+    });
   return new FormGroup<GenerateFormControls>({
     mode: control(value.mode),
     styleName: control(value.styleName),
     styleDetach: control(value.styleDetach),
     prompt: control(value.prompt),
     negativePrompt: control(value.negativePrompt),
-    n: control(value.n),
+    n: bounded(value.n, MIN_BATCH, MAX_API_BATCH),
     model: control(value.model),
     sampler_name: control(value.sampler_name),
-    steps: control(value.steps),
-    cfg_scale: control(value.cfg_scale),
-    clip_skip: control(value.clip_skip),
+    steps: bounded(value.steps, MIN_STEPS, MAX_STEPS),
+    cfg_scale: bounded(value.cfg_scale, MIN_CFG_SCALE, MAX_CFG_SCALE),
+    clip_skip: bounded(value.clip_skip, MIN_CLIP_SKIP, MAX_CLIP_SKIP),
     seed: control(value.seed),
     width: control(value.width),
     height: control(value.height),
@@ -1054,13 +1093,25 @@ export function createGenerateForm(
     slow_workers: control(value.slow_workers),
     allow_downgrade: control(value.allow_downgrade),
     sourceMode: control(value.sourceMode),
-    denoising_strength: control(value.denoising_strength),
+    denoising_strength: bounded(
+      value.denoising_strength,
+      MIN_DENOISE,
+      MAX_DENOISE,
+    ),
     control_type: control(value.control_type),
     image_is_control: control(value.image_is_control),
     return_control_map: control(value.return_control_map),
     karras: control(value.karras),
-    facefixer_strength: control(value.facefixer_strength),
-    hires_fix_denoising_strength: control(value.hires_fix_denoising_strength),
+    facefixer_strength: bounded(
+      value.facefixer_strength,
+      MIN_FACEFIXER_STRENGTH,
+      MAX_FACEFIXER_STRENGTH,
+    ),
+    hires_fix_denoising_strength: bounded(
+      value.hires_fix_denoising_strength,
+      MIN_HIRES_DENOISE,
+      MAX_HIRES_DENOISE,
+    ),
     seed_variation: control(value.seed_variation),
     loras: control(value.loras),
     tis: control(value.tis),

@@ -668,26 +668,51 @@
                 [class.gs-locked]="isSectionLocked('sampling')"
               >
                 <div class="gs-field-head">
-                  <span class="gs-slabel">
-                    {{ "generate.form.steps_short" | transloco }}
-                  </span>
-                  <app-gs-help topic="steps" />
-                  <span class="gs-mono gs-ink ml-auto">
-                    {{ form().controls.steps.value }}
-                  </span>
+                  <label class="gs-slabel" for="generate-steps">
+                    {{ "generate.form.steps_short" | transloco }} </label
+                  ><app-gs-help topic="steps" />
+                  <input
+                    id="generate-steps"
+                    class="gs-numfield gs-mono ml-auto"
+                    [class.gs-field--invalid]="form().controls.steps.invalid"
+                    [attr.aria-invalid]="
+                      form().controls.steps.invalid ? 'true' : null
+                    "
+                    type="number"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    [min]="minSteps"
+                    [max]="maxSteps"
+                    step="1"
+                    [value]="form().controls.steps.value"
+                    (input)="setNumberEntry(form().controls.steps, $event)"
+                    aria-describedby="generate-steps-range"
+                  />
                 </div>
                 <input
                   class="gs-range mt-1.5"
                   type="range"
                   formControlName="steps"
-                  min="1"
-                  max="500"
+                  [min]="stepsSliderMin"
+                  [max]="stepsSliderMax"
                   step="1"
                   [style.--gs-range-fill.%]="
-                    rangeFill(form().controls.steps.value, 1, 500)
+                    rangeFill(
+                      form().controls.steps.value,
+                      stepsSliderMin,
+                      stepsSliderMax
+                    )
                   "
                   [attr.aria-label]="'generate.form.steps_short' | transloco"
                 />
+                @if (form().controls.steps.invalid) {
+                  <p id="generate-steps-range" class="gs-warn mt-1.5">
+                    {{
+                      "generate.form.number_out_of_range"
+                        | transloco: { min: minSteps, max: maxSteps }
+                    }}
+                  </p>
+                }
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: stepsHint() }"
                 />
@@ -697,26 +722,53 @@
                 [class.gs-locked]="isSectionLocked('sampling')"
               >
                 <div class="gs-field-head">
-                  <span class="gs-slabel">
-                    {{ "generate.form.cfg_short" | transloco }}
-                  </span>
-                  <app-gs-help topic="cfg" />
-                  <span class="gs-mono gs-ink ml-auto">
-                    {{ form().controls.cfg_scale.value | number: "1.1-1" }}
-                  </span>
+                  <label class="gs-slabel" for="generate-cfg">
+                    {{ "generate.form.cfg_short" | transloco }} </label
+                  ><app-gs-help topic="cfg" />
+                  <input
+                    id="generate-cfg"
+                    class="gs-numfield gs-mono ml-auto"
+                    [class.gs-field--invalid]="
+                      form().controls.cfg_scale.invalid
+                    "
+                    [attr.aria-invalid]="
+                      form().controls.cfg_scale.invalid ? 'true' : null
+                    "
+                    type="number"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [min]="minCfg"
+                    [max]="maxCfg"
+                    [step]="cfgStep"
+                    [value]="form().controls.cfg_scale.value"
+                    (input)="setNumberEntry(form().controls.cfg_scale, $event)"
+                    aria-describedby="generate-cfg-range"
+                  />
                 </div>
                 <input
                   class="gs-range mt-1.5"
                   type="range"
                   formControlName="cfg_scale"
-                  min="0"
-                  max="100"
-                  step="0.5"
+                  [min]="cfgSliderMin"
+                  [max]="cfgSliderMax"
+                  [step]="cfgStep"
                   [style.--gs-range-fill.%]="
-                    rangeFill(form().controls.cfg_scale.value, 0, 100)
+                    rangeFill(
+                      form().controls.cfg_scale.value,
+                      cfgSliderMin,
+                      cfgSliderMax
+                    )
                   "
                   [attr.aria-label]="'generate.form.cfg_short' | transloco"
                 />
+                @if (form().controls.cfg_scale.invalid) {
+                  <p id="generate-cfg-range" class="gs-warn mt-1.5">
+                    {{
+                      "generate.form.number_out_of_range"
+                        | transloco: { min: minCfg, max: maxCfg }
+                    }}
+                  </p>
+                }
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: cfgHint() }"
                 />
@@ -793,11 +845,15 @@
                 class="gs-range mt-1.5"
                 type="range"
                 formControlName="clip_skip"
-                min="1"
-                max="12"
+                [min]="minClipSkip"
+                [max]="maxClipSkip"
                 step="1"
                 [style.--gs-range-fill.%]="
-                  rangeFill(form().controls.clip_skip.value, 1, 12)
+                  rangeFill(
+                    form().controls.clip_skip.value,
+                    minClipSkip,
+                    maxClipSkip
+                  )
                 "
               />
               <ng-container
@@ -1648,7 +1704,7 @@
       type="submit"
       class="gs-genbtn"
       appTutAnchor="generate"
-      [disabled]="form().controls.prompt.invalid"
+      [disabled]="form().invalid"
       [title]="'generate.form.ctrl_enter_hint' | transloco"
     >
       <app-icon name="star" class="gs-ico-sm" />
