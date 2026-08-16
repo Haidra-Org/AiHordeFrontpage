@@ -32,6 +32,8 @@ import { GsHelpDockService } from '../../services/gs-help-dock.service';
  */
 class FakeAlchemyQueue {
   public readonly stored = signal<StoredAlchemyJob[]>([]);
+  public readonly imageWrites = signal(0);
+  public readonly imagesVersion = computed(() => this.imageWrites());
   public readonly jobs: Signal<AlchemyJob[]> = computed(() =>
     this.stored().map(toAlchemyJob),
   );
@@ -53,7 +55,11 @@ class FakeAlchemyQueue {
     return Promise.resolve();
   }
 
-  public add(id: string, forms: AlchemyFormName[] = ['caption']): void {
+  public add(
+    id: string,
+    forms: AlchemyFormName[] = ['caption'],
+    sourceMode: 'url' | 'upload' = 'url',
+  ): void {
     const now = Date.now();
     this.stored.update((jobs) => [
       {
@@ -63,8 +69,9 @@ class FakeAlchemyQueue {
         updatedAt: now,
         forms,
         slowWorkers: true,
-        sourceMode: 'url',
-        sourceUrl: 'https://example.com/i.png',
+        sourceMode,
+        sourceUrl:
+          sourceMode === 'url' ? 'https://example.com/i.png' : undefined,
         status: null,
         done: false,
         faulted: false,
@@ -524,7 +531,7 @@ describe('AlchemyComponent', () => {
         mimeType: 'image/webp',
       } as never);
 
-      queue.add('job-t');
+      queue.add('job-t', ['caption'], 'upload');
       fixture.detectChanges();
       await settle();
 
@@ -535,6 +542,43 @@ describe('AlchemyComponent', () => {
       await settle();
 
       expect(revoked).toContain('blob:thumb-0');
+    });
+
+    it('picks the thumbnail up when it is written after the job appears', async () => {
+      // The queue stores a submission's blobs just after the job itself, so the
+      // page's first look finds nothing; it must not give up on that.
+      URL.createObjectURL = vi.fn(() => 'blob:late');
+      URL.revokeObjectURL = vi.fn();
+      queue.getThumbnail.mockResolvedValue(undefined);
+
+      queue.add('job-late', ['caption'], 'upload');
+      fixture.detectChanges();
+      await settle();
+
+      expect(component.jobs()[0].sourceThumb).toBeNull();
+
+      queue.getThumbnail.mockResolvedValue({
+        localId: 'local-job-late',
+        imageId: 'thumb',
+        kind: 'thumb',
+        blob: new Blob(['x']),
+        mimeType: 'image/webp',
+      } as never);
+      queue.imageWrites.update((n) => n + 1);
+      fixture.detectChanges();
+      await settle();
+
+      expect(component.jobs()[0].sourceThumb).toBe('blob:late');
+    });
+
+    it('reads nothing for a job whose source is a plain URL', async () => {
+      queue.add('job-url');
+      fixture.detectChanges();
+      await settle();
+
+      expect(queue.getThumbnail).not.toHaveBeenCalled();
+      expect(queue.getSourceImage).not.toHaveBeenCalled();
+      expect(component.jobs()[0].sourceThumb).toBe('https://example.com/i.png');
     });
 
     it('revokes everything it created when the page goes away', async () => {
@@ -549,7 +593,7 @@ describe('AlchemyComponent', () => {
         mimeType: 'image/webp',
       } as never);
 
-      queue.add('job-u');
+      queue.add('job-u', ['caption'], 'upload');
       fixture.detectChanges();
       await settle();
 

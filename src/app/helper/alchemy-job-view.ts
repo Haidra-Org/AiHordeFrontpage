@@ -8,7 +8,7 @@ import {
   AlchemyFormName,
   AlchemyStatusResponse,
 } from '../types/generation';
-import { StoredAlchemyJob } from '../types/alchemy-job';
+import { AlchemySourceMode, StoredAlchemyJob } from '../types/alchemy-job';
 
 /** A tracked alchemy interrogation request and its latest polled status. */
 export interface AlchemyJob {
@@ -16,6 +16,12 @@ export interface AlchemyJob {
   id: string;
   /** The key this job is stored under, and the key its image blobs hang from. */
   localId: string;
+  /**
+   * Whether the request's image was uploaded or referenced by URL. A URL source
+   * needs no stored blob and no object URL, so the renderers can tell at a
+   * glance which jobs have anything to resolve.
+   */
+  sourceMode: AlchemySourceMode;
   forms: AlchemyFormName[];
   status: AlchemyStatusResponse | null;
   done: boolean;
@@ -55,6 +61,7 @@ export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
   return {
     id: stored.jobId,
     localId: stored.localId,
+    sourceMode: stored.sourceMode,
     forms: stored.forms,
     status: stored.status,
     done: stored.done,

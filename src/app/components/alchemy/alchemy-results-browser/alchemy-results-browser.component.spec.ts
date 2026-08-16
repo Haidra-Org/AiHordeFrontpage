@@ -12,6 +12,7 @@ const makeJob = (
 ): AlchemyJob => ({
   id,
   localId: id,
+  sourceMode: 'upload',
   forms: ['caption', 'nsfw'],
   status: null,
   done: false,

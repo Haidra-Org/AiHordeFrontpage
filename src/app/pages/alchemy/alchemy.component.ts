@@ -431,6 +431,8 @@ export class AlchemyComponent {
   private readonly loadedThumbs = new Set<string>();
   /** What the result-image map was last built for, so it is not rebuilt idly. */
   private loadedResultKey = '';
+  /** Which job the full-size source is currently resolved for. */
+  private loadedSourceId: string | null = null;
 
   /**
    * Object URLs for the shown job's stored result images, keyed
@@ -537,20 +539,30 @@ export class AlchemyComponent {
   );
 
   constructor() {
-    // Thumbnails for every job, so the rail and gallery are populated as soon
-    // as the queue hands over a restored history.
+    // Thumbnails for every uploaded source, so the rail and gallery are
+    // populated as soon as the queue hands over a restored history. A job's
+    // blobs are written just after the job itself appears, so this also runs
+    // again whenever one lands rather than giving up after one look.
     effect(() => {
+      this.queue.imagesVersion();
       for (const job of this.queue.jobs()) {
-        if (!this.loadedThumbs.has(job.localId)) {
-          this.loadedThumbs.add(job.localId);
-          void this.loadThumbnail(job.localId);
+        if (job.sourceMode === 'url' || this.loadedThumbs.has(job.localId)) {
+          continue;
         }
+        this.loadedThumbs.add(job.localId);
+        void this.loadThumbnail(job.localId);
       }
       this.revokeDepartedThumbs();
     });
 
     // The full-size source, for the one job whose detail view can show it.
-    effect(() => void this.loadSelectedSource(this.selectedJob()?.localId));
+    effect(() => {
+      this.queue.imagesVersion();
+      const job = this.selectedJob();
+      void this.loadSelectedSource(
+        job && job.sourceMode === 'upload' ? job.localId : undefined,
+      );
+    });
 
     // Result images for the shown job. Keyed on the stored-form list as well as
     // the job, so an image landing mid-poll is picked up as it arrives.
@@ -1041,7 +1053,12 @@ export class AlchemyComponent {
 
   private async loadThumbnail(localId: string): Promise<void> {
     const stored = await this.queue.getThumbnail(localId);
-    if (!stored) return;
+    if (!stored) {
+      // Nothing stored yet, which for a job just submitted means the encode is
+      // still running. Forget the attempt so the next write is picked up.
+      this.loadedThumbs.delete(localId);
+      return;
+    }
     const url = URL.createObjectURL(stored.blob);
     this.thumbUrls.update((map) => new Map(map).set(localId, url));
   }
@@ -1066,6 +1083,13 @@ export class AlchemyComponent {
   }
 
   private async loadSelectedSource(localId: string | undefined): Promise<void> {
+    // Already resolved for this job: re-reading on every poll would revoke a
+    // URL the template is still using and hand back an identical one.
+    if (localId === this.loadedSourceId && this.sourceFullUrl() !== null) {
+      return;
+    }
+    this.loadedSourceId = localId ?? null;
+
     const previous = this.sourceFullUrl();
     if (previous) URL.revokeObjectURL(previous);
     this.sourceFullUrl.set(null);
@@ -1074,7 +1098,7 @@ export class AlchemyComponent {
     const stored = await this.queue.getSourceImage(localId);
     // The selection can move while the read is in flight; a URL for a job no
     // longer on screen would leak, so it is dropped rather than published.
-    if (!stored || this.selectedJob()?.localId !== localId) return;
+    if (!stored || this.loadedSourceId !== localId) return;
     this.sourceFullUrl.set(URL.createObjectURL(stored.blob));
   }
 

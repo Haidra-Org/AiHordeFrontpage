@@ -131,11 +131,19 @@ export class AlchemyQueueService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly stored = signal<StoredAlchemyJob[]>([]);
+  private readonly imageWrites = signal(0);
 
   /** Every tracked job, newest first. */
   public readonly jobs = computed<AlchemyJob[]>(() =>
     this.stored().map(toAlchemyJob),
   );
+
+  /**
+   * Bumped whenever an image blob is written. The blobs for a submission land
+   * just after the job itself does, so a page resolving them needs a signal to
+   * retry on rather than a single attempt at first sight.
+   */
+  public readonly imagesVersion = computed(() => this.imageWrites());
 
   /** Jobs still worth polling: unsettled, or settled with images outstanding. */
   public readonly pendingJobs = computed<AlchemyJob[]>(() =>
@@ -253,8 +261,6 @@ export class AlchemyQueueService {
           mimeType: 'image/webp',
         });
       }
-      // Nudge subscribers so the page resolves the new thumbnail.
-      this.touch(job.localId);
     } catch (error) {
       console.warn('Could not store the alchemy source image.', error);
     }
@@ -369,6 +375,13 @@ export class AlchemyQueueService {
           }
           const attempts = (this.imageAttempts.get(key) ?? 0) + 1;
           this.imageAttempts.set(key, attempts);
+          // A silently dropped image is hard to account for later, and the
+          // reason (an expired link, a blocked read, a failed write) decides
+          // whether anything can be done about it.
+          console.warn(
+            `Alchemy result image for ${image.form} could not be saved (attempt ${attempts}).`,
+            error,
+          );
           if (attempts >= MAX_IMAGE_ATTEMPTS) {
             this.imageAttempts.delete(key);
             failed.push(image.form);
@@ -494,17 +507,9 @@ export class AlchemyQueueService {
     return next;
   }
 
-  /** Re-emit a job unchanged so subscribers re-resolve its stored images. */
-  private touch(localId: string): void {
-    this.ngZone.run(() =>
-      this.stored.update((jobs) =>
-        jobs.map((job) => (job.localId === localId ? { ...job } : job)),
-      ),
-    );
-  }
-
   private async putImage(image: StoredAlchemyImage): Promise<void> {
     await this.db.putImage(image);
+    this.ngZone.run(() => this.imageWrites.update((n) => n + 1));
   }
 
   // --- Migration -----------------------------------------------------------
