@@ -27,6 +27,7 @@ import {
   STUDIO_IMAGE,
   docsExampleLink,
 } from '../../../content/docs-links';
+import { FLOWS } from '../../../content/flows';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
@@ -198,6 +199,18 @@ export class DocsImageHomeComponent {
    * nothing to switch between, the control would be a preference with no
    * visible effect, so it is not put on the page at all.
    */
+  /** How far the reader has come, and where to go next, from the engine's memory. */
+  public readonly doneCount = this.tutorial.doneCount;
+  public readonly techniqueCount = FLOWS.filter((flow) => !flow.concept).length;
+  public readonly nextUndone = this.tutorial.nextUndone;
+  public isDone(flowId: string): boolean {
+    return this.tutorial.isDone(flowId);
+  }
+  public nextTaskKey(): string {
+    const next = this.nextUndone();
+    return next ? `generate.tutorials.flows.${next}.task_name` : '';
+  }
+
   public readonly worldChoice = computed(() => {
     const published = this.published();
     return [HERO_FLOW, ...SHELF_FLOWS].some((id) =>
@@ -235,6 +248,10 @@ export class DocsImageHomeComponent {
 
   public flowLink(card: ShelfCard): string {
     return docsExampleLink(card.id);
+  }
+
+  public flowLinkFor(flowId: string): string {
+    return docsExampleLink(flowId);
   }
 
   /** The key naming a technique by what it makes, as its own page names it. */

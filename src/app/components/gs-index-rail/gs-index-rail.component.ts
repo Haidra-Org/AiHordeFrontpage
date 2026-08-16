@@ -46,6 +46,8 @@ export interface GsIndexRailEntry {
    * form shows it, the bar having one line to spend per entry.
    */
   subLabelKey?: string;
+  /** The entry is something the reader has finished; drawn as a check after the name. */
+  done?: boolean;
 }
 
 /**
@@ -121,6 +123,14 @@ const SPY_ROOT_MARGIN = '-12% 0px -68% 0px';
         <span class="gs-index-entry-label">{{
           entry.labelKey | transloco
         }}</span>
+      }
+      @if (entry.done) {
+        <span
+          class="gs-index-entry-done"
+          [attr.aria-label]="'generate.learn.done_mark' | transloco"
+        >
+          <app-icon name="check" class="gs-ico-sm" aria-hidden="true" />
+        </span>
       }
       @if (entry.noteKey; as noteKey) {
         <span class="gs-index-entry-note">{{ noteKey | transloco }}</span>

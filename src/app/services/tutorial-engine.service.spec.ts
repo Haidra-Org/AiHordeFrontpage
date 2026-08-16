@@ -492,6 +492,22 @@ describe('TutorialEngineService', () => {
       expect(engine.completed()).toBe(true);
     });
 
+    it('remembers a finished technique and suggests the next undone one', () => {
+      expect(engine.isDone('txt2img')).toBe(false);
+      expect(engine.nextUndone()).toBe('txt2img');
+
+      engine.goTo(engine.total() - 1);
+      engine.notifySubmitted();
+
+      expect(engine.isDone('txt2img')).toBe(true);
+      expect(engine.doneCount()).toBe(1);
+      expect(engine.nextUndone()).toBe('img2img');
+      // Kept in this browser, so a fresh engine knows it too.
+      expect(
+        JSON.parse(localStorage.getItem('aihorde.generate.learn.done') ?? '[]'),
+      ).toEqual(['txt2img']);
+    });
+
     it('offers the technique that follows the one just finished, until dismissed', () => {
       engine.goTo(engine.total() - 1);
 

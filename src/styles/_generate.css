@@ -11955,6 +11955,48 @@ html:has(app-gs-sheet) {
   }
 }
 
+/* Progress through the techniques, on the home page: the mark, a sentence,
+   and the next one to do. */
+.gen-studio .gs-learn-progress-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2) var(--gs-space-3);
+  margin: 0 0 var(--gs-space-3);
+  font-size: var(--gs-text-sm);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-learn-progress-next {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-height: 36px;
+  padding: 0 var(--gs-space-3);
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-tut-tint);
+  border: 1px solid var(--gs-tut-tint-border);
+  color: var(--gs-tut-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.gen-studio .gs-learn-progress-next:hover {
+  border-color: var(--gs-tut);
+}
+.gen-studio .gs-index-entry-done,
+.gen-studio .gs-home-card-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: var(--gs-space-1);
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-tut-tint);
+  border: 1px solid var(--gs-tut-tint-border);
+  color: var(--gs-tut);
+  vertical-align: middle;
+}
+
 /* ------- quiet polish on the shared tokens ------------------------------ */
 /* One pass over the surfaces a reader meets most: form cards, welcome doors,
    the follow-along card, the docs tabs and the primary buttons. Depth is a soft

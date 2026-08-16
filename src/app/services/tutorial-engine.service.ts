@@ -33,6 +33,7 @@ import {
   exampleResultUrl,
 } from '../content/examples';
 import {
+  FLOWS,
   FlowReveal,
   FlowStep,
   flowDef,
@@ -44,6 +45,8 @@ import {
 const LEVEL_KEY = 'aihorde.generate.learn.level';
 
 const WORLD_KEY = 'aihorde.generate.learn.world';
+/** Which techniques this browser has finished, so the Learn surfaces can say so. */
+const DONE_KEY = 'aihorde.generate.learn.done';
 
 /**
  * Which cast the worked examples are drawn from. The three tell the same lesson
@@ -256,6 +259,15 @@ export class TutorialEngineService {
   private readonly failed = signal(false);
   private readonly revealed = signal<string | null>(null);
   private readonly finished = signal(false);
+  /**
+   * The techniques this reader has finished, remembered in this browser. A
+   * technique is finished when its finale generation is submitted; a concept
+   * track has no finale and is never recorded. Read by the picker, the home
+   * shelf and the hero to mark what is done and suggest what is next.
+   */
+  private readonly done = signal<ReadonlySet<string>>(this.loadDone());
+  public readonly doneFlows = this.done.asReadonly();
+  public readonly doneCount = computed(() => this.done().size);
   /** The technique that just finished, so the completion card can offer the next one. */
   private readonly finishedFlow = signal<string | null>(null);
   /** The technique that just finished, for the completion card's recap. */
@@ -592,9 +604,47 @@ export class TutorialEngineService {
     if (!this.active() || !this.onFinale() || isConceptFlow(this.flowId())) {
       return;
     }
-    this.finishedFlow.set(this.flowId());
+    const finishedId = this.flowId();
+    this.finishedFlow.set(finishedId);
+    if (finishedId) {
+      this.markDone(canonicalFlowId(finishedId));
+    }
     this.finished.set(true);
     this.stop();
+  }
+
+  public isDone(flowId: string): boolean {
+    return this.done().has(canonicalFlowId(flowId));
+  }
+
+  /**
+   * The technique the reader has not finished yet, in teaching order, or null
+   * once every one is done. What the home page suggests next.
+   */
+  public readonly nextUndone = computed<string | null>(() => {
+    const done = this.done();
+    return (
+      FLOWS.find((flow) => !flow.concept && !done.has(flow.id))?.id ?? null
+    );
+  });
+
+  private markDone(flowId: string): void {
+    if (this.done().has(flowId)) {
+      return;
+    }
+    const next = new Set(this.done());
+    next.add(flowId);
+    this.done.set(next);
+    this.db.store(DONE_KEY, [...next]);
+  }
+
+  private loadDone(): ReadonlySet<string> {
+    const stored = this.db.get(DONE_KEY);
+    return new Set(
+      Array.isArray(stored)
+        ? stored.filter((id): id is string => typeof id === 'string')
+        : [],
+    );
   }
 
   /**

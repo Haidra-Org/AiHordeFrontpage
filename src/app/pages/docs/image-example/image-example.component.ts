@@ -487,6 +487,7 @@ export class DocsImageExampleComponent {
         id: flow.id,
         labelKey: `generate.tutorials.flows.${flow.id}.task_name`,
         subLabelKey: `generate.tutorials.flows.${flow.id}.technique`,
+        done: this.tutorial.isDone(flow.id),
         icon: identity?.icon,
         hueClass: identity?.className,
         link: docsExampleLink(flow.id),
