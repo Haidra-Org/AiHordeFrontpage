@@ -83,6 +83,34 @@ describe('AlchemyResultComponent', () => {
     expect(c.imageUrl()).toBe('https://r2.example.com/out.webp');
   });
 
+  it('prefers the stored copy over the horde link, and names it for download', () => {
+    const fixture = TestBed.createComponent(AlchemyResultComponent);
+    fixture.componentRef.setInput('form', {
+      form: 'RealESRGAN_x4plus',
+      state: 'done',
+      result: { RealESRGAN_x4plus: 'https://r2.example.com/out.png?sig=abc' },
+    });
+    fixture.componentRef.setInput('storedImageUrl', 'blob:local/abc');
+    const c = fixture.componentInstance;
+
+    expect(c.usingStoredImage()).toBe(true);
+    expect(c.imageUrl()).toBe('blob:local/abc');
+    expect(c.kind()).toBe('image');
+    // A blob URL carries no filename, so the extension comes from the link.
+    expect(c.downloadName()).toBe('RealESRGAN_x4plus.png');
+  });
+
+  it('falls back to the horde link while no copy is held', () => {
+    const c = withForm({
+      form: 'RealESRGAN_x4plus',
+      state: 'done',
+      result: { RealESRGAN_x4plus: 'https://r2.example.com/out.webp' },
+    });
+
+    expect(c.usingStoredImage()).toBe(false);
+    expect(c.imageUrl()).toBe('https://r2.example.com/out.webp');
+  });
+
   it('detects newer inline data forms keyed by form name', () => {
     const c = withForm({
       form: 'describe',

@@ -207,7 +207,10 @@
   @if (doneResults(job).length > 0) {
     <div class="gs-result-cards">
       @for (form of doneResults(job); track form.form) {
-        <app-alchemy-result [form]="form" />
+        <app-alchemy-result
+          [form]="form"
+          [storedImageUrl]="storedImageUrl(job, form.form)"
+        />
       }
     </div>
   }

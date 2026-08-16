@@ -506,6 +506,59 @@ describe('AlchemyComponent', () => {
     });
   });
 
+  describe('stored source images', () => {
+    it('holds one object URL per job thumbnail and gives it back with the job', async () => {
+      const created: string[] = [];
+      const revoked: string[] = [];
+      URL.createObjectURL = vi.fn(() => {
+        const url = `blob:thumb-${created.length}`;
+        created.push(url);
+        return url;
+      });
+      URL.revokeObjectURL = vi.fn((url: string) => void revoked.push(url));
+      queue.getThumbnail.mockResolvedValue({
+        localId: 'local-job-t',
+        imageId: 'thumb',
+        kind: 'thumb',
+        blob: new Blob(['x']),
+        mimeType: 'image/webp',
+      } as never);
+
+      queue.add('job-t');
+      fixture.detectChanges();
+      await settle();
+
+      expect(component.jobs()[0].sourceThumb).toBe('blob:thumb-0');
+
+      await queue.deleteJobs(['local-job-t']);
+      fixture.detectChanges();
+      await settle();
+
+      expect(revoked).toContain('blob:thumb-0');
+    });
+
+    it('revokes everything it created when the page goes away', async () => {
+      const revoked: string[] = [];
+      URL.createObjectURL = vi.fn(() => 'blob:one');
+      URL.revokeObjectURL = vi.fn((url: string) => void revoked.push(url));
+      queue.getThumbnail.mockResolvedValue({
+        localId: 'local-job-u',
+        imageId: 'thumb',
+        kind: 'thumb',
+        blob: new Blob(['x']),
+        mimeType: 'image/webp',
+      } as never);
+
+      queue.add('job-u');
+      fixture.detectChanges();
+      await settle();
+
+      fixture.destroy();
+
+      expect(revoked).toContain('blob:one');
+    });
+  });
+
   describe('cancelJob', () => {
     it('asks the queue to cancel the job behind the shown id', () => {
       queue.add('job-c');

@@ -11495,6 +11495,7 @@ html:has(app-gs-sheet) {
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--gs-border);
+  border-color: rgba(252, 211, 77, 0.6);
   border-radius: 8px;
   background: var(--gs-panel);
   color: var(--gs-ink);

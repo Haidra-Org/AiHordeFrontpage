@@ -429,6 +429,16 @@ export class AlchemyComponent {
   private readonly thumbUrls = signal<ReadonlyMap<string, string>>(new Map());
   private readonly sourceFullUrl = signal<string | null>(null);
   private readonly loadedThumbs = new Set<string>();
+  /** What the result-image map was last built for, so it is not rebuilt idly. */
+  private loadedResultKey = '';
+
+  /**
+   * Object URLs for the shown job's stored result images, keyed
+   * `${localId}::${form}`, as the results browser expects them.
+   */
+  public readonly resultImageUrls = signal<ReadonlyMap<string, string>>(
+    new Map(),
+  );
   public readonly downloadingJobId = signal<string | null>(null);
 
   /**
@@ -541,6 +551,16 @@ export class AlchemyComponent {
 
     // The full-size source, for the one job whose detail view can show it.
     effect(() => void this.loadSelectedSource(this.selectedJob()?.localId));
+
+    // Result images for the shown job. Keyed on the stored-form list as well as
+    // the job, so an image landing mid-poll is picked up as it arrives.
+    effect(() => {
+      const job = this.selectedJob();
+      const key = job
+        ? `${job.localId}::${job.storedResultForms.join(',')}`
+        : '';
+      void this.loadResultImages(job?.localId, key);
+    });
 
     this.destroyRef.onDestroy(() => this.revokeAllSourceUrls());
 
@@ -1057,11 +1077,42 @@ export class AlchemyComponent {
     this.sourceFullUrl.set(URL.createObjectURL(stored.blob));
   }
 
+  private async loadResultImages(
+    localId: string | undefined,
+    key: string,
+  ): Promise<void> {
+    if (key === this.loadedResultKey) return;
+    this.loadedResultKey = key;
+    this.revokeResultImages();
+    if (!localId) return;
+
+    const images = await this.queue.getResultImages(localId);
+    // The selection can move while the read is in flight; publishing then would
+    // leak a URL nothing goes on to revoke.
+    if (this.loadedResultKey !== key) return;
+    this.resultImageUrls.set(
+      new Map(
+        images.map((image) => [
+          `${localId}::${image.imageId}`,
+          URL.createObjectURL(image.blob),
+        ]),
+      ),
+    );
+  }
+
+  private revokeResultImages(): void {
+    for (const url of this.resultImageUrls().values()) {
+      URL.revokeObjectURL(url);
+    }
+    this.resultImageUrls.set(new Map());
+  }
+
   private revokeAllSourceUrls(): void {
     for (const url of this.thumbUrls().values()) {
       URL.revokeObjectURL(url);
     }
     const full = this.sourceFullUrl();
     if (full) URL.revokeObjectURL(full);
+    this.revokeResultImages();
   }
 }

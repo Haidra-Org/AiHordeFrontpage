@@ -168,6 +168,18 @@ export class AlchemyResultComponent {
 
   public readonly form = input.required<AlchemyForm>();
 
+  /**
+   * An object URL over the copy of this form's result image held in the
+   * browser. Preferred over the horde's own link, which is presigned and stops
+   * working about half an hour after the form finished.
+   */
+  public readonly storedImageUrl = input<string | null>(null);
+
+  /** Whether the shown image is the local copy rather than the horde's link. */
+  public readonly usingStoredImage = computed(
+    () => this.storedImageUrl() !== null,
+  );
+
   public readonly rawJsonOpen = signal(false);
   public readonly copiedRaw = signal(false);
 
@@ -425,15 +437,37 @@ export class AlchemyResultComponent {
 
   /** Post-processor forms key the result by the form name with an image URL. */
   public readonly imageUrl = computed<string | null>(() => {
+    const stored = this.storedImageUrl();
+    if (stored) {
+      return stored;
+    }
     const f = this.form();
     if ((ALCHEMY_DATA_FORMS as readonly string[]).includes(f.form)) {
       return null;
     }
+    // Falling back to the live link keeps a form whose download failed
+    // renderable for as long as the horde's own copy lasts.
+
     const value = f.result?.[f.form];
     if (typeof value === 'string' && isLikelyImageFileLink(value)) {
       return toRenderableImageSource(value);
     }
     return null;
+  });
+
+  /**
+   * A filename for the local copy. A blob URL carries none of its own, so
+   * without this the browser saves it under a random id. The extension comes
+   * from the horde's original link, which the stored result still holds.
+   */
+  public readonly downloadName = computed(() => {
+    const f = this.form();
+    const link = f.result?.[f.form];
+    const extension =
+      typeof link === 'string'
+        ? /\.([a-z0-9]{3,4})(?:\?|$)/i.exec(link)?.[1]
+        : null;
+    return `${f.form}.${extension ?? 'webp'}`;
   });
 
   public readonly sections = computed<InterrogationSection[]>(() => {

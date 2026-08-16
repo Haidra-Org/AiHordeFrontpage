@@ -49,6 +49,19 @@ export class AlchemyResultsBrowserComponent {
   public readonly isNarrow = input<boolean>(false);
   public readonly justAddedJobId = input<string | null>(null);
   public readonly downloadingJobId = input<string | null>(null);
+  /**
+   * Object URLs for stored result images, keyed `${localId}::${form}`. Composite
+   * so the detail block can be rendered for more than one job without the keys
+   * colliding.
+   */
+  public readonly resultImageUrls = input<ReadonlyMap<string, string>>(
+    new Map(),
+  );
+
+  /** The locally held copy of a form's result image, if there is one. */
+  public storedImageUrl(job: AlchemyJob, form: string): string | null {
+    return this.resultImageUrls().get(`${job.localId}::${form}`) ?? null;
+  }
 
   /** Activate a request (rail thumb or gallery tile) to view its results. */
   public readonly activateJob = output<string>();

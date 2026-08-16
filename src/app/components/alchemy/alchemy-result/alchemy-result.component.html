@@ -173,13 +173,19 @@
           <a
             class="gs-btn gs-btn--dense"
             [href]="imageUrl()!"
-            target="_blank"
-            rel="noopener noreferrer"
+            [attr.download]="usingStoredImage() ? downloadName() : null"
+            [attr.target]="usingStoredImage() ? null : '_blank'"
+            [attr.rel]="usingStoredImage() ? null : 'noopener noreferrer'"
           >
             {{ "alchemy.result.open_image" | transloco }}
           </a>
           <p class="gs-sublabel alchemy-result__save-hint">
-            {{ "alchemy.result.save_hint" | transloco }}
+            {{
+              (usingStoredImage()
+                ? "alchemy.result.save_hint"
+                : "alchemy.result.save_hint_remote"
+              ) | transloco
+            }}
           </p>
         }
         @case ("interrogation") {
