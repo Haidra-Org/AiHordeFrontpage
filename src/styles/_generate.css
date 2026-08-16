@@ -12881,12 +12881,30 @@ html:has(app-gs-sheet) {
   gap: var(--gs-space-3);
   max-width: 720px;
   margin: 0 auto;
-  padding: var(--gs-space-4);
+  padding: var(--gs-space-6) var(--gs-space-4);
 }
 .gen-studio .gs-storage-head {
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-1);
+  margin-bottom: var(--gs-space-2);
+}
+.gen-studio .gs-storage-title {
+  font-size: var(--gs-text-xl);
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--gs-ink);
+}
+/* The danger card is a profile-area surface; its own heading and body type are
+   from that scale, so they are brought onto the studio's here. */
+.gen-studio .gs-storage-danger .heading-card {
+  font-size: var(--gs-text-lg);
+  font-weight: 650;
+  line-height: 1.3;
+}
+.gen-studio .gs-storage-danger p {
+  font-size: var(--gs-text-md);
+  line-height: 1.55;
 }
 .gen-studio .gs-storage-row {
   display: flex;
