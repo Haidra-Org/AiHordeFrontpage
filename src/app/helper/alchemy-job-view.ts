@@ -46,9 +46,10 @@ export interface AlchemyJob {
 }
 
 /**
- * View model for a stored job. The source images are left null: resolving them
- * means creating object URLs, which belong to the component that can revoke
- * them, not to a pure helper.
+ * View model for a stored job. A URL source needs nothing further: the link
+ * renders directly at any size. An uploaded source is left null here, because
+ * resolving its stored blob means creating object URLs, which belong to the
+ * component that can revoke them rather than to a pure helper.
  */
 export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
   return {
@@ -61,8 +62,9 @@ export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
     cancelled: stored.cancelled,
     notFound: stored.notFound,
     firstSeenAt: stored.createdAt,
-    sourceThumb: null,
-    sourceFull: null,
+    sourceThumb:
+      stored.sourceMode === 'url' ? (stored.sourceUrl ?? null) : null,
+    sourceFull: stored.sourceMode === 'url' ? (stored.sourceUrl ?? null) : null,
     storedResultForms: stored.storedResultForms,
     failedResultForms: stored.failedResultForms,
   };

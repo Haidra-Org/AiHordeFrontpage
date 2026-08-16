@@ -18,14 +18,13 @@ import {
   NgTemplateOutlet,
   isPlatformBrowser,
 } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AiHordeService } from '../../services/ai-horde.service';
 import { AuthService } from '../../services/auth.service';
 import { DatabaseService } from '../../services/database.service';
 import { NetworkStatusService } from '../../services/network-status.service';
+import { AlchemyQueueService } from '../../services/alchemy-queue.service';
 import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { setPageTitle } from '../../helper/page-title';
@@ -33,7 +32,6 @@ import {
   ALCHEMY_DATA_FORMS,
   ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
-  GENERATION_NOT_FOUND,
   InterrogationRequest,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
@@ -57,14 +55,10 @@ import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy
 import { IconComponent } from '../../components/icon/icon.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
 import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
-import { toRenderableImageSource } from '../../helper/generation-image';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
-import {
-  base64ByteLength,
-  sourceToThumbnailDataUrl,
-} from '../../helper/image-encoding';
 import { PanelSize, cyclePanelSize } from '../generate/generate-form.model';
 
+/** The key the developer surface documents an anonymous call with. */
 const ANONYMOUS_API_KEY = '0000000000';
 
 /** Gallery density (columns per row), persisted so it sticks across sessions. */
@@ -95,13 +89,6 @@ const BASE64_PLACEHOLDER = '{base64}';
  * button carries the rest.
  */
 const SOURCE_PREVIEW_CHARS = 2_000;
-
-/**
- * A thumbnail larger than this (bytes) is dropped from the persisted payload
- * (kept in memory for the session only) so a pathological source can't grow the
- * jobs blob toward the localStorage quota. A 256px webp is normally ~8-25 KB.
- */
-const MAX_PERSISTED_THUMB_BYTES = 40_000;
 
 /**
  * The reference topic a panel operation group's `?` opens. Empty for a group
@@ -159,9 +146,9 @@ interface AlchemyOperationGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlchemyComponent {
-  private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
   public readonly ns = inject(NetworkStatusService);
+  private readonly queue = inject(AlchemyQueueService);
   private readonly toast = inject(ToastService);
   private readonly injector = inject(Injector);
   private readonly translator = inject(TranslatorService);
@@ -180,25 +167,6 @@ export class AlchemyComponent {
     viewChild<ElementRef<HTMLButtonElement>>('apiButton');
   private readonly devBackButton =
     viewChild<ElementRef<HTMLButtonElement>>('devBackButton');
-
-  private static readonly POLL_MS = 10_000;
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
-
-  /**
-   * A job lives at most 20 minutes on the server and its results linger for
-   * roughly 20 more, so 40 minutes from first sight is the longest a restored
-   * job could still be useful. Past that we drop it: re-polling would only 404
-   * and any result images have already expired.
-   */
-  private static readonly FRESH_TTL_MS = 40 * 60_000;
-  private static readonly STORAGE_KEY = 'aihorde.alchemy.recent_jobs';
-
-  /**
-   * Guards persistence until the one-time restore has run, so the effect's
-   * initial pass over the empty list can't clobber what's in storage before we
-   * load it.
-   */
-  private restored = false;
 
   public readonly dataForms = ALCHEMY_DATA_FORMS;
   public readonly postProcessorForms = ALCHEMY_POST_PROCESSOR_FORMS;
@@ -435,7 +403,32 @@ export class AlchemyComponent {
   public readonly slowWorkers = signal(true);
 
   public readonly isSubmitting = signal(false);
-  public readonly jobs = signal<AlchemyJob[]>([]);
+  /**
+   * Tracked requests come from the queue service rather than this page, so a
+   * job keeps advancing (and its result images keep being captured before their
+   * links expire) while the reader is somewhere else in the app.
+   */
+  public readonly jobs = computed<AlchemyJob[]>(() => {
+    const thumbs = this.thumbUrls();
+    const full = this.sourceFullUrl();
+    const selected = this.selectedJobId();
+    return this.queue.jobs().map((job) => ({
+      ...job,
+      sourceThumb: thumbs.get(job.localId) ?? job.sourceThumb,
+      sourceFull:
+        job.id === selected ? (full ?? job.sourceFull) : job.sourceFull,
+    }));
+  });
+
+  /**
+   * Renderable source images: object URLs over the stored blobs, so they belong
+   * to this page and are revoked when it goes away. Thumbnails are held for
+   * every job (a few kilobytes each); the full-size source only for the job on
+   * screen, since holding one per job would pin the whole history in memory.
+   */
+  private readonly thumbUrls = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly sourceFullUrl = signal<string | null>(null);
+  private readonly loadedThumbs = new Set<string>();
   public readonly downloadingJobId = signal<string | null>(null);
 
   /**
@@ -534,7 +527,22 @@ export class AlchemyComponent {
   );
 
   constructor() {
-    effect(() => this.persistJobs(this.jobs()));
+    // Thumbnails for every job, so the rail and gallery are populated as soon
+    // as the queue hands over a restored history.
+    effect(() => {
+      for (const job of this.queue.jobs()) {
+        if (!this.loadedThumbs.has(job.localId)) {
+          this.loadedThumbs.add(job.localId);
+          void this.loadThumbnail(job.localId);
+        }
+      }
+      this.revokeDepartedThumbs();
+    });
+
+    // The full-size source, for the one job whose detail view can show it.
+    effect(() => void this.loadSelectedSource(this.selectedJob()?.localId));
+
+    this.destroyRef.onDestroy(() => this.revokeAllSourceUrls());
 
     // The dock is page-wide state and the image studio mounts it too, so an
     // entry left open here would follow the reader across the tab bar.
@@ -547,8 +555,7 @@ export class AlchemyComponent {
         this.destroyRef,
         'alchemy.title',
       );
-      this.restoreJobs();
-      this.startPolling();
+      void this.selectNewestJob();
       this.watchViewport();
       void this.consumeHandoff();
     });
@@ -771,26 +778,16 @@ export class AlchemyComponent {
       return;
     }
 
-    const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
-    const request = this.requestBody(source);
-
     this.isSubmitting.set(true);
-    this.aiHorde
-      .submitInterrogation(apiKey, request)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
+    void this.queue
+      .submit({ forms, slowWorkers: this.slowWorkers(), source })
+      .then((id) => {
         this.isSubmitting.set(false);
-        if (!response) {
+        if (!id) {
           this.toast.error('alchemy.submit.error', { transloco: true });
           return;
         }
-        this.addJob(response.id, forms, toRenderableImageSource(source));
-        // Derive the rail/gallery thumbnail off the request thread: the source
-        // is already in hand, and a slow canvas encode shouldn't hold up the
-        // toast or the job appearing. A URL source resolves synchronously.
-        void sourceToThumbnailDataUrl(source).then((thumb) =>
-          this.updateJob(response.id, { sourceThumb: thumb }),
-        );
+        this.announceNewJob(id);
         this.toast.success('alchemy.submit.success', { transloco: true });
       });
   }
@@ -852,19 +849,8 @@ export class AlchemyComponent {
   }
 
   public cancelJob(id: string): void {
-    this.aiHorde
-      .cancelInterrogation(id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((status) => {
-        if (status === GENERATION_NOT_FOUND) {
-          this.updateJob(id, { notFound: true, cancelled: true });
-          return;
-        }
-        this.updateJob(id, {
-          cancelled: true,
-          status: status ?? undefined,
-        });
-      });
+    const localId = this.localIdFor(id);
+    if (localId) void this.queue.cancel(localId);
   }
 
   public async downloadJobResults(job: AlchemyJob): Promise<void> {
@@ -963,7 +949,9 @@ export class AlchemyComponent {
     if (ids.size === 0) {
       return;
     }
-    this.jobs.update((jobs) => jobs.filter((job) => !ids.has(job.id)));
+    void this.queue.deleteJobs(
+      [...ids].map((id) => this.localIdFor(id)).filter((id) => id !== null),
+    );
     this.reconcileSelectedJob();
     this.selectedJobIds.set(new Set());
     this.selectMode.set(false);
@@ -979,34 +967,13 @@ export class AlchemyComponent {
     this.selectedJobId.set(this.jobs()[0]?.id ?? null);
   }
 
-  private addJob(
-    id: string,
-    forms: AlchemyFormName[],
-    sourceFull: string,
-  ): void {
-    if (this.jobs().some((j) => j.id === id)) return;
-    this.jobs.update((jobs) => [
-      {
-        id,
-        localId: id,
-        forms,
-        status: null,
-        done: false,
-        faulted: false,
-        cancelled: false,
-        notFound: false,
-        firstSeenAt: Date.now(),
-        sourceThumb: null,
-        sourceFull,
-        storedResultForms: [],
-        failedResultForms: [],
-      },
-      ...jobs,
-    ]);
-    // The newest request becomes the shown one, so its results fill the detail
-    // region as they arrive without the user having to pick it.
+  /**
+   * Bring the newest request forward: it becomes the shown job, is flagged for
+   * the arrival highlight, and takes the focus so its results are what the next
+   * keyboard step reaches.
+   */
+  private announceNewJob(id: string): void {
     this.selectedJobId.set(id);
-
     this.justAddedJobId.set(id);
     if (isPlatformBrowser(this.platformId)) {
       setTimeout(() => {
@@ -1014,6 +981,18 @@ export class AlchemyComponent {
       }, 2500);
     }
     this.focusElementById(`alchemy-rail-${id}`);
+  }
+
+  /** Show the newest restored request once the queue has loaded its history. */
+  private async selectNewestJob(): Promise<void> {
+    await this.queue.whenReady();
+    if (this.selectedJobId() === null) {
+      this.selectedJobId.set(this.jobs()[0]?.id ?? null);
+    }
+  }
+
+  private localIdFor(id: string): string | null {
+    return this.jobs().find((job) => job.id === id)?.localId ?? null;
   }
 
   /**
@@ -1037,144 +1016,52 @@ export class AlchemyComponent {
     }, 0);
   }
 
-  private updateJob(id: string, update: Partial<AlchemyJob>): void {
-    this.jobs.update((jobs) =>
-      jobs.map((j) => (j.id === id ? { ...j, ...update } : j)),
-    );
+  // --- Stored source images ------------------------------------------------
+
+  private async loadThumbnail(localId: string): Promise<void> {
+    const stored = await this.queue.getThumbnail(localId);
+    if (!stored) return;
+    const url = URL.createObjectURL(stored.blob);
+    this.thumbUrls.update((map) => new Map(map).set(localId, url));
   }
 
-  private pollJobs(): void {
-    const pending = this.jobs().filter((j) => !isJobSettled(j));
-    for (const job of pending) {
-      this.aiHorde
-        .getAlchemyStatus(job.id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((status) => {
-          if (status === GENERATION_NOT_FOUND) {
-            this.updateJob(job.id, { notFound: true });
-            return;
-          }
-          if (!status) return;
-          this.updateJob(job.id, {
-            status,
-            done: status.state === 'done',
-            faulted: status.state === 'faulted',
-          });
-        });
+  /** Release thumbnails for jobs that have left the list. */
+  private revokeDepartedThumbs(): void {
+    const live = new Set(this.queue.jobs().map((job) => job.localId));
+    const current = this.thumbUrls();
+    const departed = [...current.keys()].filter((id) => !live.has(id));
+    for (const id of departed) {
+      this.loadedThumbs.delete(id);
     }
-  }
-
-  private startPolling(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    this.ngZone.runOutsideAngular(() => {
-      this.pollTimer = setInterval(() => {
-        this.ngZone.run(() => {
-          this.pruneStaleJobs();
-          this.pollJobs();
-        });
-      }, AlchemyComponent.POLL_MS);
-    });
-
-    this.destroyRef.onDestroy(() => {
-      if (this.pollTimer != null) {
-        clearInterval(this.pollTimer);
+    if (departed.length === 0) return;
+    this.thumbUrls.update((map) => {
+      const next = new Map(map);
+      for (const id of departed) {
+        URL.revokeObjectURL(next.get(id) as string);
+        next.delete(id);
       }
+      return next;
     });
   }
 
-  /** Within its freshness window, a job is worth keeping and re-polling. */
-  private isJobFresh(job: AlchemyJob): boolean {
-    return (
-      typeof job.firstSeenAt === 'number' &&
-      Date.now() - job.firstSeenAt < AlchemyComponent.FRESH_TTL_MS
-    );
+  private async loadSelectedSource(localId: string | undefined): Promise<void> {
+    const previous = this.sourceFullUrl();
+    if (previous) URL.revokeObjectURL(previous);
+    this.sourceFullUrl.set(null);
+    if (!localId) return;
+
+    const stored = await this.queue.getSourceImage(localId);
+    // The selection can move while the read is in flight; a URL for a job no
+    // longer on screen would leak, so it is dropped rather than published.
+    if (!stored || this.selectedJob()?.localId !== localId) return;
+    this.sourceFullUrl.set(URL.createObjectURL(stored.blob));
   }
 
-  private pruneStaleJobs(): void {
-    let pruned = false;
-    this.jobs.update((jobs) => {
-      const fresh = jobs.filter((job) => this.isJobFresh(job));
-      if (fresh.length === jobs.length) return jobs;
-      pruned = true;
-      return fresh;
-    });
-    if (pruned) this.reconcileSelectedJob();
-  }
-
-  /**
-   * Best-effort rehydration of recent submissions across a reload. Stored jobs
-   * carry their last-known status, so completed results render immediately and
-   * still-running ones resume polling. Stale jobs are dropped on the way in.
-   */
-  private restoreJobs(): void {
-    const stored = this.loadJobs();
-    this.restored = true;
-    if (stored.length === 0) return;
-
-    this.jobs.set(stored);
-    // Rehydrate onto the newest restored job so its results are shown at once.
-    this.selectedJobId.set(stored[0].id);
-  }
-
-  private loadJobs(): AlchemyJob[] {
-    if (!isPlatformBrowser(this.platformId)) return [];
-    try {
-      const raw = localStorage.getItem(AlchemyComponent.STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return [];
-      // Jobs stored before source thumbnails existed lack the field, and
-      // `sourceFull` is deliberately never written, so both are normalized here
-      // to hold the `string | null` invariant the rail/gallery render against.
-      return (parsed as AlchemyJob[])
-        .filter((job) => this.isJobFresh(job))
-        .map((job) => ({
-          ...job,
-          sourceThumb: job.sourceThumb ?? null,
-          sourceFull: null,
-        }));
-    } catch {
-      return [];
+  private revokeAllSourceUrls(): void {
+    for (const url of this.thumbUrls().values()) {
+      URL.revokeObjectURL(url);
     }
-  }
-
-  private persistJobs(jobs: AlchemyJob[]): void {
-    if (!this.restored || !isPlatformBrowser(this.platformId)) return;
-    try {
-      const fresh = jobs
-        .filter((job) => this.isJobFresh(job))
-        // `sourceFull` is session-only (see `AlchemyJob`): a full-size base64
-        // source would blow the storage quota on the first request.
-        .map((job) => ({
-          ...this.withPersistableThumb(job),
-          sourceFull: null,
-        }));
-      if (fresh.length === 0) {
-        localStorage.removeItem(AlchemyComponent.STORAGE_KEY);
-        return;
-      }
-      localStorage.setItem(AlchemyComponent.STORAGE_KEY, JSON.stringify(fresh));
-    } catch {
-      // Storage may be full or unavailable; tracking across reloads is a
-      // best-effort nicety, never a correctness requirement.
-    }
-  }
-
-  /**
-   * Drop an oversized base64 thumbnail from the persisted copy (the in-memory
-   * job keeps it for the session) so the jobs blob stays small. URL thumbnails
-   * are strings of trivial length and always persist.
-   */
-  private withPersistableThumb(job: AlchemyJob): AlchemyJob {
-    const thumb = job.sourceThumb;
-    if (
-      typeof thumb === 'string' &&
-      thumb.startsWith('data:') &&
-      base64ByteLength(thumb) > MAX_PERSISTED_THUMB_BYTES
-    ) {
-      return { ...job, sourceThumb: null };
-    }
-    return job;
+    const full = this.sourceFullUrl();
+    if (full) URL.revokeObjectURL(full);
   }
 }

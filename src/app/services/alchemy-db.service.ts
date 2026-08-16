@@ -173,10 +173,15 @@ export class AlchemyDbService {
     }
     const db = await this.db();
     const tx = db.transaction([JOBS_STORE, IMAGES_STORE], 'readwrite');
-    await tx.objectStore(JOBS_STORE).delete(localId);
+    // Both handles are taken before the first await: a transaction commits as
+    // soon as it goes idle, so reaching for a store after one would be too late.
+    const jobStore = tx.objectStore(JOBS_STORE);
     const imageStore = tx.objectStore(IMAGES_STORE);
     const imageKeys = await imageStore.index('localId').getAllKeys(localId);
-    await Promise.all(imageKeys.map((key) => imageStore.delete(key)));
+    await Promise.all([
+      jobStore.delete(localId),
+      ...imageKeys.map((key) => imageStore.delete(key)),
+    ]);
     await tx.done;
   }
 

@@ -28,7 +28,7 @@ function isLikelyBase64ImagePayload(value: string): boolean {
   return BASE64_IMAGE_PATTERN.test(normalizedValue);
 }
 
-function inferImageMimeType(base64Payload: string): string {
+export function inferImageMimeType(base64Payload: string): string {
   if (base64Payload.startsWith('iVBORw0KGgo')) {
     return 'image/png';
   }
