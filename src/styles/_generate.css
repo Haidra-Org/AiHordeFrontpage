@@ -1040,6 +1040,13 @@
   max-height: 340px;
   resize: vertical;
 }
+/* Where there is room for it the box starts at three lines rather than two: a
+   prompt is rarely one line long, and the pane has the height to show it. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-textarea--resize {
+    min-height: calc(3 * 1.5em + 2 * var(--gs-space-3) + 2px);
+  }
+}
 .gen-studio .gs-neg-input {
   padding: var(--gs-space-2) var(--gs-space-3);
   border-color: var(--gs-border);
@@ -10662,7 +10669,11 @@ app-gs-compare-wipe {
   color: var(--gs-ink);
   max-width: 68ch;
 }
-.gen-studio .gs-ref-body {
+/* The sentence that introduces a figure reads as body prose, and is its own
+   class so that an entry with no body written yet still says what the figure
+   under it is. */
+.gen-studio .gs-ref-body,
+.gen-studio .gs-ref-strip-lead {
   margin: var(--gs-space-4) 0 0;
   font-size: var(--gs-text-md-docs, var(--gs-text-md));
   line-height: 1.75;
@@ -12553,5 +12564,116 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-sweep-plate-cell.is-at,
   .gen-studio .gs-sweep-plate-cell:hover {
     border-color: Highlight;
+  }
+}
+
+/* ------- full-screen prompt editing (phones) ------------------------ */
+/* A touch pointer has nothing to drag on a textarea's grip, so each prompt box
+   carries a way to open it over the screen. From 1024px up the grip works and
+   the button goes away. */
+.gen-studio .gs-prompt-expand {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-field);
+  color: var(--gs-label);
+  cursor: pointer;
+}
+/* Beside the negative prompt the button is part of the row, next to the help
+   glyph, because that field has no box corner to spare. */
+.gen-studio .gs-prompt-expand--inline {
+  position: static;
+  flex: none;
+}
+.gen-studio .gs-prompt-expand:hover {
+  color: var(--gs-blue);
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-prompt-expand:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-prompt-expand {
+    display: none;
+  }
+}
+/* Below that width the grip is decoration: the button is the way to size the
+   field, and the box's bottom corner is free for it. */
+@media (max-width: 1023px) {
+  .gen-studio .gs-textarea--resize,
+  .gen-studio textarea.gs-neg-input {
+    resize: none;
+  }
+  .gen-studio .gs-textarea--resize {
+    padding-bottom: 44px;
+  }
+}
+
+/* The editor itself: everything under the nav, so the prompt is the page while
+   it is open. It sits in the modal band, above the nav's own layer. */
+.gen-studio .gs-prompt-editor {
+  position: fixed;
+  inset: var(--nav-height-mobile, 64px) 0 0 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--gs-panel);
+}
+.gen-studio .gs-prompt-editor-head {
+  flex: none;
+  padding: var(--gs-space-3) var(--gs-space-4);
+  border-bottom: 1px solid var(--gs-border);
+}
+.gen-studio .gs-prompt-editor-title {
+  margin: 0;
+  font-size: var(--gs-text-lg);
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-prompt-editor-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  padding: var(--gs-space-4);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: var(--gs-text-md);
+  line-height: 1.5;
+  color: var(--gs-ink);
+  background: var(--gs-panel);
+  border: 0;
+  resize: none;
+}
+.gen-studio .gs-prompt-editor-area:focus {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gen-studio .gs-prompt-editor-area::placeholder {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-prompt-editor-foot {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--gs-space-3) var(--gs-space-4);
+  padding-bottom: calc(var(--gs-space-3) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--gs-border);
+}
+.gen-studio .gs-prompt-editor-done {
+  min-height: 44px;
+  min-width: 96px;
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-prompt-expand,
+  .gen-studio .gs-prompt-editor,
+  .gen-studio .gs-prompt-editor-area {
+    border: 1px solid CanvasText;
   }
 }

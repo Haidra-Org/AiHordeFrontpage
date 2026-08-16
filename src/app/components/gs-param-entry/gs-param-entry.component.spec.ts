@@ -224,12 +224,43 @@ describe('GsParamEntryComponent', () => {
     await setUp({ topic: 'steps' });
 
     // The setting's own evidence is the page's subject and is already open on
-    // it; the further strips are footnotes to it and take the compact card, so
-    // a second capsule does not read as a second subject.
+    // it; anything further about the same setting is offered rather than shown.
     expect(all('.gs-sweep-open')).toHaveLength(1);
+    expect(all('.gs-sweep-offer')).toHaveLength(1);
+  });
+
+  it('offers a timeline in the same capsule as every other example', async () => {
+    await setUp({ topic: 'steps' });
+
+    // The frames are one render pass by pass rather than a comparison across
+    // values, which the capsule has to say: everything around it is shaped like
+    // a comparison, and a reader who takes it for one reads it backwards. The
+    // compact card would say none of that, so the timeline does not take it.
     const folded = all('.gs-sweep-offer');
-    expect(folded).toHaveLength(1);
-    expect(folded[0].classList.contains('gs-cap--film')).toBe(true);
+    expect(folded[0].classList.contains('gs-cap--film')).toBe(false);
+    expect(folded[0].querySelector('.gs-cap-eyebrow')?.textContent).toContain(
+      'One picture, pass by pass',
+    );
+    expect(folded[0].querySelector('.gs-cap-title')?.textContent?.trim()).toBe(
+      translations['generate.help.step_preview.title'],
+    );
+    expect(folded[0].querySelector('.gs-cap-meta')).not.toBeNull();
+    expect(folded[0].querySelector('.gs-cap-go')).not.toBeNull();
+  });
+
+  it('says what a timeline is before showing one, and only there', async () => {
+    await setUp({ topic: 'steps' });
+
+    expect(find('.gs-ref-strip-lead')?.textContent?.trim()).toBe(
+      translations['generate.sweeps.timeline_lead'],
+    );
+
+    // The neighbouring setting carries a strip and a plate but no timeline, so
+    // it neither introduces one nor wears the badge.
+    await setUp({ topic: 'cfg' });
+
+    expect(find('.gs-ref-strip-lead')).toBeNull();
+    expect(el().textContent).not.toContain('One picture, pass by pass');
   });
 
   it('points on to its siblings, each wearing its own area mark', async () => {

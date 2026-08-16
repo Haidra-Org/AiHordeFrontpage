@@ -209,14 +209,17 @@ const SWEEP_VARIANTS: Readonly<Record<string, SweepVariantPair>> = {
 };
 
 /**
- * The strips a scrubber opens at their first stop rather than their middle one.
+ * The strips whose frames are one render over time rather than several renders
+ * at different values.
  *
- * A range strip's middle stands in for the range, because an end advertises the
- * extreme. A timeline is not a range: its first frame is the static a render
- * starts from, and opening half way through skips the one frame that makes the
- * rest of it mean anything.
+ * Everything a surface does differently with these follows from that. They are
+ * badged as one picture pass by pass, so a reader does not take them for a
+ * comparison; and they open at their first frame rather than their middle one,
+ * because a range strip's middle stands in for the range while a timeline's
+ * first frame is the static a render starts from, which is what makes every
+ * frame after it mean anything.
  */
-const SWEEPS_FROM_FIRST_STOP: ReadonlySet<string> = new Set([
+const SWEEP_TIMELINES: ReadonlySet<string> = new Set([
   'step_preview',
   'step_preview_guess',
 ]);
@@ -480,6 +483,9 @@ export const SETTINGS: readonly SettingEntry[] = [
     id: 'step_preview',
     section: 'sampling',
     labelKey: 'generate.sweeps.param_step',
+    // The chip under a frame says "Step 12", which is the number on that frame;
+    // an offer capsule headed "Step" beside one headed "Steps" names neither.
+    proseLabelKey: 'generate.help.step_preview.title',
   },
   {
     id: 'cfg',
@@ -835,9 +841,14 @@ export function settingSweepGrid(id: string): string | null {
   return settingEntry(id)?.sweeps?.grid ?? null;
 }
 
+/** Whether a strip's frames are one render over time rather than a comparison. */
+export function sweepIsTimeline(parameter: string): boolean {
+  return SWEEP_TIMELINES.has(parameter);
+}
+
 /** Whether a strip opens on its first frame rather than the middle of its range. */
 export function sweepOpensAtFirstStop(parameter: string): boolean {
-  return SWEEPS_FROM_FIRST_STOP.has(parameter);
+  return sweepIsTimeline(parameter);
 }
 
 /** Whether a two-frame strip is laid out side by side before it is wiped. */

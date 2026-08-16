@@ -731,6 +731,31 @@ describe('GsSweepScrubComponent', () => {
       expect(text()).toContain('Step 1');
     });
 
+    it('badges a per-step render as one picture rather than a comparison', async () => {
+      // The concepts read shows this one already open, where the badge is the
+      // only thing saying the frames are one render over time. Both readings of
+      // the pair are, so the toggle does not change what it is.
+      await setUp({ parameter: 'step_preview', startExpanded: true });
+
+      expect(find('.gs-plate-head .gs-cap-eyebrow')?.textContent?.trim()).toBe(
+        'Sampling · One picture, pass by pass',
+      );
+      expect(text()).not.toContain('Interactive explorer');
+
+      all<HTMLButtonElement>('.gs-sweep-variant')[1].click();
+      fixture.detectChanges();
+
+      expect(text()).toContain('One picture, pass by pass');
+
+      // A strip of several renders at different values keeps the explorer badge.
+      await setUp({ parameter: 'cfg_scale', startExpanded: true });
+
+      expect(find('.gs-plate-head .gs-cap-eyebrow')?.textContent?.trim()).toBe(
+        'Sampling · Interactive explorer',
+      );
+      expect(text()).not.toContain('One picture, pass by pass');
+    });
+
     it('offers no choice on a parameter with only one reading published', async () => {
       await setUp({ parameter: 'cfg_scale' });
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();

@@ -24,6 +24,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
+import { RememberedHeightDirective } from '../../../directives/remembered-height.directive';
+import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs-prompt-editor.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
 import { GlossaryService } from '../../../services/glossary.service';
@@ -99,6 +101,9 @@ import type { ModelRequirements } from '../../../services/model-reference.servic
 // without importing this component (which imports the browser in turn).
 export type { StylePickerGroup } from '../generate-form.model';
 
+/** Which of the two prompt boxes the full-screen editor is holding. */
+export type PromptEditorField = 'prompt' | 'negative';
+
 /**
  * The /generate left control panel. Presentational: every control binds to the
  * parent's form group and the parent owns kudos estimation, submission,
@@ -119,6 +124,8 @@ export type { StylePickerGroup } from '../generate-form.model';
     IconComponent,
     GsHelpComponent,
     TutorialAnchorDirective,
+    RememberedHeightDirective,
+    GsPromptEditorComponent,
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
     StyleBrowserComponent,
@@ -219,6 +226,9 @@ export class GenerateFormComponent implements OnInit {
   /** The warnings toggle, so dismissing with a key hands focus back to it. */
   private readonly lintBtn =
     viewChild<ElementRef<HTMLButtonElement>>('lintBtn');
+
+  /** Which prompt field, if any, is open in the full-screen editor. */
+  public readonly promptEditor = signal<PromptEditorField | null>(null);
 
   /** The prompt box, so a picked history entry or starter prompt can focus it. */
   private readonly promptInput =
@@ -1042,6 +1052,11 @@ export class GenerateFormComponent implements OnInit {
       controls.negativePrompt.markAsDirty();
     }
     this.focusPrompt();
+  }
+
+  /** Open the full-screen editor on one of the two prompt fields. */
+  public openPromptEditor(field: PromptEditorField): void {
+    this.promptEditor.set(field);
   }
 
   public focusPrompt(): void {

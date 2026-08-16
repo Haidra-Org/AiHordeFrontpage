@@ -209,11 +209,23 @@
             [class.gs-textarea--history]="promptHistory().length > 0"
             formControlName="prompt"
             rows="2"
+            appRememberedHeight="aihorde.generate.prompt_height"
             [placeholder]="'generate.form.prompt_placeholder' | transloco"
             [attr.aria-label]="'generate.form.prompt_label' | transloco"
             (keydown.control.enter)="onSubmitShortcut()"
             (keydown.meta.enter)="onSubmitShortcut()"
           ></textarea>
+          <!-- Phones only: the grip has nothing to drag there, so the box opens
+               over the screen instead. -->
+          <button
+            type="button"
+            class="gs-prompt-expand"
+            (click)="openPromptEditor('prompt')"
+            [attr.aria-label]="'generate.form.prompt_expand' | transloco"
+            [title]="'generate.form.prompt_expand' | transloco"
+          >
+            <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+          </button>
           @if (promptHistory().length > 0) {
             <button
               #historyBtn
@@ -306,6 +318,7 @@
           appTutAnchor="negative_prompt"
           formControlName="negativePrompt"
           rows="1"
+          appRememberedHeight="aihorde.generate.negative_height"
           [placeholder]="
             'generate.form.negative_prompt_placeholder' | transloco
           "
@@ -313,8 +326,40 @@
           (keydown.control.enter)="onSubmitShortcut()"
           (keydown.meta.enter)="onSubmitShortcut()"
         ></textarea>
+        <button
+          type="button"
+          class="gs-prompt-expand gs-prompt-expand--inline"
+          (click)="openPromptEditor('negative')"
+          [attr.aria-label]="'generate.form.negative_expand' | transloco"
+          [title]="'generate.form.negative_expand' | transloco"
+        >
+          <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+        </button>
         <app-gs-help topic="negative" />
       </div>
+
+      @if (promptEditor(); as field) {
+        <app-gs-prompt-editor
+          [heading]="
+            (field === 'prompt'
+              ? 'generate.form.prompt_label'
+              : 'generate.form.negative_prompt_label'
+            ) | transloco
+          "
+          [placeholder]="
+            (field === 'prompt'
+              ? 'generate.form.prompt_placeholder'
+              : 'generate.form.negative_prompt_placeholder'
+            ) | transloco
+          "
+          [control]="
+            field === 'prompt'
+              ? form().controls.prompt
+              : form().controls.negativePrompt
+          "
+          (closed)="promptEditor.set(null)"
+        />
+      }
 
       <!-- Setting cards. When the panel is expanded these reflow into
            independent masonry columns; the prompt + negative above stay full

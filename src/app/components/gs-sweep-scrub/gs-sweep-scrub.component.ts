@@ -27,6 +27,7 @@ import {
   SweepVariantPair,
   settingProseLabelKey,
   settingSection,
+  sweepIsTimeline,
   sweepOpensAtFirstStop,
   sweepPairStartsApart,
   sweepVariantPair,
@@ -407,17 +408,20 @@ const VIEWER_FOCUSABLE =
 
     <!-- What kind of evidence this is and which area of the panel it belongs to,
          in one badge. The hue rides on the dash rather than on the words: the
-         identity hues are audited as graphic colour only. -->
+         identity hues are audited as graphic colour only. A timeline says so
+         here, because the anatomy around it is the anatomy of a comparison and
+         a reader who takes the frames for different renders reads it backwards. -->
     <ng-template #badge>
+      @let kindKey =
+        timeline()
+          ? 'generate.sweeps.badge_timeline'
+          : 'generate.sweeps.badge_explorer';
       <span class="gs-cap-eyebrow">
         <span class="gs-cap-dot" aria-hidden="true"></span>
         @if (sectionLabelKey(); as key) {
-          {{
-            'generate.sweeps.badge_explorer'
-              | transloco: { section: key | transloco }
-          }}
+          {{ kindKey | transloco: { section: key | transloco } }}
         } @else {
-          {{ 'generate.sweeps.badge_explorer_plain' | transloco }}
+          {{ kindKey + '_plain' | transloco }}
         }
       </span>
     </ng-template>
@@ -964,6 +968,11 @@ export class GsSweepScrubComponent {
     const pair = this.variantPair();
     return this.variant() && pair ? pair.parameter : this.parameter();
   });
+
+  /** Whether the frames on show are one render over time rather than a range. */
+  public readonly timeline = computed(() =>
+    sweepIsTimeline(this.activeParameter()),
+  );
 
   public readonly strip = computed(() =>
     this.sweeps.strip(

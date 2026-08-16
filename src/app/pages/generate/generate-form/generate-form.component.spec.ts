@@ -866,6 +866,31 @@ describe('GenerateFormComponent structure', () => {
     expect(enabled).toEqual([]);
   });
 
+  it('opens each prompt box in full on the control it belongs to', async () => {
+    const fixture = await renderFixture();
+    const host = fixture.nativeElement as HTMLElement;
+    const buttons =
+      host.querySelectorAll<HTMLButtonElement>('.gs-prompt-expand');
+
+    expect(buttons.length).toBe(2);
+
+    buttons[0].click();
+    fixture.detectChanges();
+    const area = host.querySelector<HTMLTextAreaElement>(
+      '.gs-prompt-editor-area',
+    );
+
+    expect(area?.value).toBe('a fox');
+
+    area!.value = 'a fox in the snow';
+    area!.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form().controls.prompt.value).toBe(
+      'a fox in the snow',
+    );
+  });
+
   it('keeps the warnings region in the document before it has anything to say', async () => {
     const host = await render();
     // A live region inserted at the same moment as its content is not

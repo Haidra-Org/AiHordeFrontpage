@@ -20,6 +20,7 @@ import {
   SettingApply,
   SettingRange,
   SettingTradeoffs,
+  sweepIsTimeline,
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
 import { GsDoorComponent } from '../gs-door/gs-door.component';
@@ -199,13 +200,20 @@ const TRADEOFF_ICONS = {
     <!-- Further evidence about the same setting, under the strip of the setting
          itself: the reader has met the range before they are shown what one
          value of it is made of. The setting's own strip is the page's evidence
-         and stays full size; these are the footnotes to it, and take the
-         compact card so a second capsule does not read as a second subject. -->
+         and stays full size; a second scene of the same setting is a footnote to
+         it and takes the compact card, so a second capsule does not read as a
+         second subject. A timeline is a different kind of picture rather than
+         more of the same one, so it keeps the full capsule and is introduced. -->
     @for (also of alsoStrips(); track also.parameter + (also.scene ?? '')) {
+      @if (also.timeline) {
+        <p class="gs-ref-strip-lead">
+          {{ 'generate.sweeps.timeline_lead' | transloco }}
+        </p>
+      }
       <app-gs-sweep-scrub
         [parameter]="also.parameter"
         [sceneId]="also.scene"
-        register="filmcard"
+        [register]="also.timeline ? 'full' : 'filmcard'"
       />
     }
     @if (sweepGridParameter(); as parameter) {
@@ -374,7 +382,19 @@ export class GsParamEntryComponent {
   );
 
   public readonly sweepParameter = computed(() => this.entry()?.strip ?? null);
-  public readonly alsoStrips = computed(() => this.entry()?.alsoStrips ?? []);
+
+  /**
+   * The further strips, each carrying whether it is one render over time. The
+   * entry has to know: a timeline is the only one of these the page introduces
+   * in words, because it is the only one whose frames are not answers to the
+   * question the entry has just been asking.
+   */
+  public readonly alsoStrips = computed(() =>
+    (this.entry()?.alsoStrips ?? []).map((also) => ({
+      ...also,
+      timeline: sweepIsTimeline(also.parameter),
+    })),
+  );
   public readonly sweepGridParameter = computed(
     () => this.entry()?.grid ?? null,
   );
