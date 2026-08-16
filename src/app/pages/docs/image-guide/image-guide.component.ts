@@ -48,6 +48,7 @@ import {
   guideSectionId,
 } from '../../../content/guide';
 import { setPageMeta } from '../../../helper/page-meta';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
 /** One walkthrough step as the page draws it, with its title marked up. */
@@ -141,6 +142,7 @@ const RAIL_ENTRIES: readonly GsIndexRailEntry[] = [
     GsSweepScrubComponent,
     GsSweepGridComponent,
     GsFindFieldComponent,
+    StickyHeaderDirective,
   ],
   templateUrl: './image-guide.component.html',
   host: {

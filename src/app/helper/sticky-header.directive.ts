@@ -1,11 +1,4 @@
-import {
-  Directive,
-  inject,
-  input,
-  OnDestroy,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { Directive, effect, inject, input, signal } from '@angular/core';
 import { StickyRegistryService } from '../services/sticky-registry.service';
 import { injectHostElement } from './inject-host-element';
 
@@ -21,6 +14,11 @@ import { injectHostElement } from './inject-host-element';
  *
  * Pass `null` to opt out of registration while still positioning the
  * element below all registered sticky headers via `--sticky-offset`.
+ *
+ * The order is read as a signal rather than once at init: an element that only
+ * pins at some widths passes `null` at the others, and a window resized across
+ * that width must add and remove its height from the published offset rather
+ * than leave the pages below it offset for a bar that is no longer pinned.
  */
 @Directive({
   selector: '[appStickyHeader]',
@@ -28,7 +26,7 @@ import { injectHostElement } from './inject-host-element';
     '[style.top]': 'topStyle()',
   },
 })
-export class StickyHeaderDirective implements OnInit, OnDestroy {
+export class StickyHeaderDirective {
   private readonly registry = inject(StickyRegistryService);
   // Kept for StickyRegistryService.register() which needs the HTMLElement for ResizeObserver.
   private readonly host = injectHostElement();
@@ -36,23 +34,17 @@ export class StickyHeaderDirective implements OnInit, OnDestroy {
   public readonly appStickyHeader = input<number | null>(null);
 
   protected readonly topStyle = signal<string | null>(null);
-  private registered = false;
 
-  ngOnInit(): void {
-    const order = this.appStickyHeader();
-    if (order !== null) {
+  constructor() {
+    effect((onCleanup) => {
+      const order = this.appStickyHeader();
+      if (order === null) {
+        this.topStyle.set('var(--sticky-offset, 0px)');
+        onCleanup(() => this.topStyle.set(null));
+        return;
+      }
       this.registry.register(this.host, order);
-      this.registered = true;
-    } else {
-      this.topStyle.set('var(--sticky-offset, 0px)');
-    }
-  }
-
-  ngOnDestroy(): void {
-    if (this.registered) {
-      this.registry.unregister(this.host);
-    } else {
-      this.topStyle.set(null);
-    }
+      onCleanup(() => this.registry.unregister(this.host));
+    });
   }
 }

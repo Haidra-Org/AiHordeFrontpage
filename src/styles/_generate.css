@@ -6959,13 +6959,40 @@
   max-width: 880px;
   margin-inline: auto;
 }
+/* The head of the page stays on screen while the page is read. Its `top` is
+   whatever the sticky registry says is already standing there (the site nav,
+   and on a phone the area's chrome as well), so nothing here counts a bar's
+   height a second time; the fallback is the desktop nav for the moment before
+   the registry has measured. Opaque, because the prose runs under it. */
 .gen-studio .gs-guide-top {
+  position: sticky;
+  top: var(--sticky-offset, var(--nav-height-desktop, 80px));
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--gs-space-3);
+  padding-block: var(--gs-space-3);
+  background: var(--gs-canvas);
+  border-bottom: 1px solid var(--gs-border-soft);
 }
+/* A pinned head costs the reader every pixel it takes, and on a phone it is
+   pinned under the site nav and the area's chrome as well. So there it is one
+   line: the title drops a step and shares it with the find field, which is
+   trimmed to match where the field's own rules are written. */
+@media (max-width: 639.98px) {
+  .gen-studio .gs-guide-top {
+    flex-wrap: nowrap;
+    gap: var(--gs-space-2);
+    padding-block: var(--gs-space-2);
+  }
+  .gen-studio .gs-guide-top .gs-guide-title {
+    min-width: 0;
+    font-size: var(--gs-text-md);
+  }
+}
+
 /* The page's own title, on the same step as the worked examples' heading. */
 .gen-studio .gs-guide-title {
   font-size: var(--gs-text-xl);
@@ -7022,8 +7049,13 @@
 /* One of the page's two halves. The header carries the landmark and the hairline
    under it, and everything below the header belongs to that half, so the page
    reads as two blocks rather than as a run of same-sized headings. */
+/* A jump from the contents rail has to land under everything pinned over the
+   page (the nav, the area's chrome where it pins, and the page's own head),
+   which is what the registry publishes, plus a line of air. */
 .gen-studio .gs-guide-sec {
-  scroll-margin-top: var(--gs-space-3);
+  scroll-margin-top: calc(
+    var(--sticky-offset, var(--nav-height-desktop, 80px)) + var(--gs-space-3)
+  );
 }
 .gen-studio .gs-guide-sec-head {
   margin-bottom: var(--gs-space-4);
@@ -7152,7 +7184,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-3);
-  scroll-margin-top: var(--gs-space-3);
+  scroll-margin-top: calc(
+    var(--sticky-offset, var(--nav-height-desktop, 80px)) + var(--gs-space-3)
+  );
 }
 .gen-studio .gs-guide-area-head {
   display: flex;
@@ -10445,6 +10479,24 @@ app-gs-compare-wipe {
 .gen-studio .gs-guide-top .gs-find {
   flex: 0 1 320px;
 }
+/* On a phone that head is pinned, so the field shares the title's line and
+   spends no row on its name: the glyph and the placeholder say what it is, and
+   the label stays in the page for a reader being read to. Written here rather
+   than beside the head's own rules so it wins over the width above it. */
+@media (max-width: 639.98px) {
+  .gen-studio .gs-guide-top .gs-find {
+    flex: 1 1 160px;
+    max-width: 215px;
+  }
+  .gen-studio .gs-guide-top .gs-find-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+}
 .gen-studio .gs-find-label {
   font-size: var(--gs-text-xs);
   font-weight: 600;
@@ -12189,10 +12241,19 @@ html:has(app-gs-sheet) {
     gap: var(--gs-space-8);
     align-items: start;
   }
+  /* The column stands under whatever is pinned over the page rather than at
+     the top of the viewport, where the site nav cut its first entries off.
+     The offset is the registry's published total, so a page that pins a head
+     of its own is accounted for without the rail knowing about it. */
   .gen-studio .gs-index-rail {
     position: sticky;
-    top: 12px;
-    max-height: calc(100vh - 24px);
+    top: calc(
+      var(--sticky-offset, var(--nav-height-desktop, 80px)) + var(--gs-space-3)
+    );
+    max-height: calc(
+      100vh - var(--sticky-offset, var(--nav-height-desktop, 80px)) -
+        var(--gs-space-6)
+    );
     overflow-y: auto;
     scrollbar-width: thin;
     border-bottom: 0;

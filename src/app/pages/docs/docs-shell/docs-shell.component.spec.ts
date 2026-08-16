@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DOCS_AREAS, DocsShellComponent } from './docs-shell.component';
 import {
   DOCS_IMAGE,
@@ -10,6 +10,7 @@ import {
   STUDIO_IMAGE,
 } from '../../../content/docs-links';
 import en from '../../../../assets/i18n/en.json';
+import { StickyRegistryService } from '../../../services/sticky-registry.service';
 
 /** Stands in for the area's pages, so the subnav has somewhere to navigate. */
 @Component({ template: 'page' })
@@ -245,6 +246,88 @@ describe('DocsShellComponent', () => {
     await go('/docs/quiet');
 
     expect(tools()).toHaveLength(0);
+  });
+
+  describe('the pinned chrome', () => {
+    /** Listeners the stubbed media query is holding, so a test can cross it. */
+    let listeners: Set<(event: MediaQueryListEvent) => void>;
+
+    /** Stand in for a viewport on one side of the width the chrome pins at. */
+    const stubViewport = (matches: boolean): void => {
+      listeners = new Set();
+      vi.stubGlobal('matchMedia', (media: string) => ({
+        matches,
+        media,
+        addEventListener: (
+          _type: string,
+          listener: (event: MediaQueryListEvent) => void,
+        ) => listeners.add(listener),
+        removeEventListener: (
+          _type: string,
+          listener: (event: MediaQueryListEvent) => void,
+        ) => listeners.delete(listener),
+      }));
+    };
+
+    /** A shell built after the viewport is stubbed, on a page of an area. */
+    const shellOnAPage = async (): Promise<
+      ComponentFixture<DocsShellComponent>
+    > => {
+      await router.navigateByUrl('/docs/image/guide');
+      const shell = TestBed.createComponent(DocsShellComponent);
+      shell.detectChanges();
+      return shell;
+    };
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('takes its place in the sticky registry where it pins', async () => {
+      stubViewport(true);
+      const register = vi.spyOn(
+        TestBed.inject(StickyRegistryService),
+        'register',
+      );
+
+      const shell = await shellOnAPage();
+
+      const chrome = (shell.nativeElement as HTMLElement).querySelector(
+        '.gs-docs-chrome',
+      );
+      // Under the site nav, above anything a page of the area pins for itself.
+      expect(register).toHaveBeenCalledWith(chrome, 10);
+    });
+
+    it('takes no place in the offset on a screen that does not pin it', async () => {
+      stubViewport(false);
+      const register = vi.spyOn(
+        TestBed.inject(StickyRegistryService),
+        'register',
+      );
+
+      const shell = await shellOnAPage();
+
+      const chrome = (shell.nativeElement as HTMLElement).querySelector(
+        '.gs-docs-chrome',
+      );
+      expect(register).not.toHaveBeenCalledWith(chrome, 10);
+    });
+
+    it('gives its place back when the window grows past the pinning width', async () => {
+      stubViewport(true);
+      const registry = TestBed.inject(StickyRegistryService);
+      const unregister = vi.spyOn(registry, 'unregister');
+
+      const shell = await shellOnAPage();
+      for (const listener of listeners) {
+        listener({ matches: false } as MediaQueryListEvent);
+      }
+      shell.detectChanges();
+
+      const chrome = (shell.nativeElement as HTMLElement).querySelector(
+        '.gs-docs-chrome',
+      );
+      expect(unregister).toHaveBeenCalledWith(chrome);
+    });
   });
 
   it('renders the page the route names beneath the subnav', async () => {

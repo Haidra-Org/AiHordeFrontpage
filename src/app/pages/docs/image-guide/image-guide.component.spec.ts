@@ -8,6 +8,7 @@ import { hasReference } from '../../../content/settings';
 import en from '../../../../assets/i18n/en.json';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
+import { StickyRegistryService } from '../../../services/sticky-registry.service';
 
 describe('DocsImageGuideComponent', () => {
   let fixture: ComponentFixture<DocsImageGuideComponent>;
@@ -336,6 +337,25 @@ describe('DocsImageGuideComponent', () => {
       expect(query('.gs-guide-step')).toHaveLength(component.steps.length);
       expect(query('.gs-guide-area')).toHaveLength(component.sections.length);
     });
+  });
+
+  it('keeps its head on screen by way of the sticky registry', () => {
+    // The title and the find field pin under whatever the shell already pins,
+    // and the registry is what knows how much that is, so the page hands it its
+    // head rather than naming a height of its own.
+    const registry = TestBed.inject(StickyRegistryService);
+    const register = vi.spyOn(registry, 'register');
+
+    const pinned = TestBed.createComponent(DocsImageGuideComponent);
+    pinned.detectChanges();
+
+    const head = (pinned.nativeElement as HTMLElement).querySelector(
+      '.gs-guide-top',
+    );
+    expect(head).not.toBeNull();
+    expect(register).toHaveBeenCalledWith(head, 20);
+    // The find field is part of that head rather than a row below it.
+    expect(head?.querySelector('.gs-find')).not.toBeNull();
   });
 
   it('reads as a page of its own rather than a pane of the studio', () => {

@@ -193,6 +193,21 @@ describe('StickyRegistryService', () => {
     expect(service.totalOffset()).toBe(116);
   });
 
+  it('should still publish an offset where the platform has no ResizeObserver', () => {
+    // A registered bar is measured on every recalculation regardless; the
+    // observer only decides how soon a bar that changed height is noticed.
+    vi.stubGlobal('ResizeObserver', undefined);
+    const nav = makeFakeElement(64);
+    const head = makeFakeElement(56);
+
+    service.register(nav, 0);
+    service.register(head, 20);
+    flushRAF();
+
+    expect(head.style.top).toBe('64px');
+    expect(service.totalOffset()).toBe(120);
+  });
+
   it('offsetFor() returns the correct top offset for a specific element', () => {
     const nav = makeFakeElement(64);
     const filter = makeFakeElement(52);

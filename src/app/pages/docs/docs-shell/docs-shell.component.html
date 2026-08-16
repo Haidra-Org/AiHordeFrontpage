@@ -4,8 +4,10 @@
 @if (area(); as current) {
   <!-- Crumbs and tabs are one block of chrome, so on a phone they pin and
        scroll together: pinning the tabs alone left the crumbs sliding under
-       them, which read as a broken window. -->
-  <div class="gs-docs-chrome">
+       them, which read as a broken window. While it is pinned it takes its
+       place in the sticky registry, which is where it gets its own `top` from
+       and how the page under it knows how much is standing over it. -->
+  <div class="gs-docs-chrome" [appStickyHeader]="chromeOrder()">
     <nav
       class="gs-docs-crumbs"
       [attr.aria-label]="'docs.breadcrumb_label' | transloco"

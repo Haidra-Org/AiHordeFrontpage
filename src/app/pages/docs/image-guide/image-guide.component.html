@@ -1,4 +1,9 @@
-<div class="gs-guide-top">
+<!-- The page's head stays on screen: the title says which page the reader is in
+     the middle of, and the find field is only useful while there is page left
+     to filter. It joins the sticky registry under the site nav and the area's
+     chrome, so the contents rail and the section anchors below can offset
+     themselves by everything that is actually standing over the page. -->
+<div class="gs-guide-top" [appStickyHeader]="20">
   <h1 class="gs-guide-title">{{ "generate.guide.title" | transloco }}</h1>
   <!-- The guide is a walkthrough and nine reference groups on one page, so a
        reader who came for one setting is asked for the word instead. -->

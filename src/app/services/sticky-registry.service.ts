@@ -44,9 +44,14 @@ export class StickyRegistryService {
 
     this.entries.set(element, { order, height: 0 });
 
-    const ro = new ResizeObserver(() => this.scheduleRecalculate());
-    ro.observe(element);
-    this.observers.set(element, ro);
+    // Watching for a resize is how the offset keeps up with a bar that grows;
+    // where the environment has no ResizeObserver the element still counts,
+    // measured whenever anything else prompts a recalculation.
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => this.scheduleRecalculate());
+      ro.observe(element);
+      this.observers.set(element, ro);
+    }
 
     this.scheduleRecalculate();
   }

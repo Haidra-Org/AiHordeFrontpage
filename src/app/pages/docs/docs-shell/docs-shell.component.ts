@@ -1,8 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -16,6 +18,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { filter, map } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsToolTabsComponent } from '../../../components/gs-tool-tabs/gs-tool-tabs.component';
+import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import {
   DOCS_ALCHEMY,
   DOCS_IMAGE,
@@ -156,6 +159,7 @@ export const DOCS_AREAS: readonly DocsArea[] = [
     TranslocoPipe,
     IconComponent,
     GsToolTabsComponent,
+    StickyHeaderDirective,
   ],
   templateUrl: './docs-shell.component.html',
   host: {
@@ -169,8 +173,34 @@ export const DOCS_AREAS: readonly DocsArea[] = [
 export class DocsShellComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly docsRoot = DOCS_ROOT;
+
+  /** Whether the chrome is pinned, which is where the CSS pins it. */
+  private readonly chromePinned = signal(false);
+
+  /**
+   * The chrome's place in the sticky stack: under the site nav (order 0) and
+   * above anything a page of the area pins for itself. It only takes a place
+   * where it is pinned, so the offset the pages read is the height actually
+   * standing over them.
+   */
+  public readonly chromeOrder = computed<number | null>(() =>
+    this.chromePinned() ? 10 : null,
+  );
+
+  constructor() {
+    const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');
+    if (!mq) {
+      return;
+    }
+    this.chromePinned.set(mq.matches);
+    const onChange = (event: MediaQueryListEvent): void =>
+      this.chromePinned.set(event.matches);
+    mq.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
+  }
 
   /**
    * The path on screen. Read from the router rather than through
