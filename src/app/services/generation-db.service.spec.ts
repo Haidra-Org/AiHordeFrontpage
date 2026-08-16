@@ -183,6 +183,68 @@ describe('GenerationDbService', () => {
     warn.mockRestore();
   });
 
+  /**
+   * Provision a database at `version` that already carries this service's own
+   * stores, mimicking a browser that has been through a later build of the app.
+   */
+  async function seedNewerCompatibleDb(version: number): Promise<void> {
+    const db = await openDB(DB_NAME, version, {
+      upgrade(database) {
+        if (!database.objectStoreNames.contains('generationJobs')) {
+          const jobs = database.createObjectStore('generationJobs', {
+            keyPath: 'localId',
+          });
+          jobs.createIndex('status', 'status');
+          jobs.createIndex('createdAt', 'createdAt');
+        }
+        if (!database.objectStoreNames.contains('generationImages')) {
+          const images = database.createObjectStore('generationImages', {
+            keyPath: ['localId', 'imageId'],
+          });
+          images.createIndex('localId', 'localId');
+        }
+        if (!database.objectStoreNames.contains('somethingNewer')) {
+          database.createObjectStore('somethingNewer');
+        }
+      },
+    });
+    await db.put('generationJobs', makeJob({ localId: 'fromNewerBuild' }));
+    db.close();
+  }
+
+  it('adopts a newer database that still carries the required stores', async () => {
+    // Rolling back to an older bundle must not cost the user their history:
+    // schema growth is additive, so a v3 database still has everything v2 needs.
+    await seedNewerCompatibleDb(3);
+
+    await service.putJob(makeJob({ localId: 'afterRollback' }));
+
+    expect((await service.getJob('fromNewerBuild'))?.localId).toBe(
+      'fromNewerBuild',
+    );
+    expect((await service.getJob('afterRollback'))?.localId).toBe(
+      'afterRollback',
+    );
+  });
+
+  it('counts stored jobs', async () => {
+    await service.putJob(makeJob({ localId: 'c1' }));
+    await service.putJob(makeJob({ localId: 'c2' }));
+
+    expect(await service.countJobs()).toBe(2);
+  });
+
+  it('clears every job and image blob', async () => {
+    await service.putJob(makeJob({ localId: 'w1' }));
+    await service.putImage(makeImage('w1', 'i1'));
+
+    await service.clearAll();
+
+    expect(await service.listJobs()).toEqual([]);
+    expect(await service.getImagesForJob('w1')).toEqual([]);
+    expect(await service.countJobs()).toBe(0);
+  });
+
   it('migrates a pre-existing v1 database without losing schema access', async () => {
     // A v1 database opened at v2 takes the idempotent upgrade path; stores are
     // created and writes succeed either way.

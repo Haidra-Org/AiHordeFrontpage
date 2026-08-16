@@ -1,13 +1,7 @@
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import {
-  DBSchema,
-  IDBPDatabase,
-  IDBPTransaction,
-  StoreNames,
-  deleteDB,
-  openDB,
-} from 'idb';
+import { DBSchema, IDBPDatabase } from 'idb';
+import { StudioUpgradeTransaction, openStudioDb } from './idb-open';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -41,11 +35,7 @@ interface GenerationDbSchema extends DBSchema {
   };
 }
 
-type UpgradeTransaction = IDBPTransaction<
-  GenerationDbSchema,
-  StoreNames<GenerationDbSchema>[],
-  'versionchange'
->;
+type UpgradeTransaction = StudioUpgradeTransaction<GenerationDbSchema>;
 
 /**
  * Create the object stores and indexes this service depends on, tolerating a
@@ -91,11 +81,6 @@ function hasRequiredStores(db: IDBPDatabase<GenerationDbSchema>): boolean {
   );
 }
 
-/** A `VersionError` fires when the on-disk version already exceeds the request. */
-function isVersionError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === 'VersionError';
-}
-
 /**
  * IndexedDB persistence for locally-tracked generation jobs and their image
  * blobs. Browser-only: on the server every method is a no-op returning an empty
@@ -113,43 +98,14 @@ export class GenerationDbService {
     return this.dbPromise;
   }
 
-  private async openWithRecovery(): Promise<IDBPDatabase<GenerationDbSchema>> {
-    try {
-      const db = await openDB<GenerationDbSchema>(DB_NAME, DB_VERSION, {
-        upgrade: (database, _oldVersion, _newVersion, tx) =>
-          ensureSchema(database, tx),
-      });
-      if (hasRequiredStores(db)) {
-        return db;
-      }
-      // The database already sat at or above DB_VERSION with a foreign layout,
-      // so the upgrade callback never ran and our stores are absent. Generation
-      // history is a disposable local cache, so discard it and rebuild fresh
-      // rather than leaving every write throwing NotFoundError.
-      console.warn(
-        `IndexedDB "${DB_NAME}" is missing required stores; recreating it and discarding cached generation history.`,
-      );
-      db.close();
-      return await this.recreate();
-    } catch (error) {
-      if (isVersionError(error)) {
-        console.warn(
-          `IndexedDB "${DB_NAME}" is at an incompatible newer version; recreating it and discarding cached generation history.`,
-          error,
-        );
-        return await this.recreate();
-      }
-      throw error;
-    }
-  }
-
-  private recreate(): Promise<IDBPDatabase<GenerationDbSchema>> {
-    return deleteDB(DB_NAME).then(() =>
-      openDB<GenerationDbSchema>(DB_NAME, DB_VERSION, {
-        upgrade: (database, _oldVersion, _newVersion, tx) =>
-          ensureSchema(database, tx),
-      }),
-    );
+  private openWithRecovery(): Promise<IDBPDatabase<GenerationDbSchema>> {
+    return openStudioDb<GenerationDbSchema>({
+      name: DB_NAME,
+      version: DB_VERSION,
+      ensureSchema,
+      hasRequiredStores,
+      historyLabel: 'generation history',
+    });
   }
 
   public async putJob(job: LocalGenerationJob): Promise<void> {
@@ -238,10 +194,39 @@ export class GenerationDbService {
     await tx.done;
   }
 
+  /** How many jobs are stored, for the storage management surface. */
+  public async countJobs(): Promise<number> {
+    if (!this.isBrowser) {
+      return 0;
+    }
+    const db = await this.db();
+    return db.count(JOBS_STORE);
+  }
+
+  /**
+   * Drop every stored job and image blob. Reached only from the explicit
+   * storage management surface; nothing in the app calls this on its own.
+   */
+  public async clearAll(): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+    const db = await this.db();
+    const tx = db.transaction([JOBS_STORE, IMAGES_STORE], 'readwrite');
+    await Promise.all([
+      tx.objectStore(JOBS_STORE).clear(),
+      tx.objectStore(IMAGES_STORE).clear(),
+    ]);
+    await tx.done;
+  }
+
   /**
    * Keep at most `keep` terminal (done/error/cancelled) jobs, deleting the
    * oldest beyond that count together with their image blobs. In-flight jobs are
    * never pruned.
+   *
+   * Deliberately uncalled: stored results are only ever deleted by an explicit
+   * user action, so nothing may wire this to a lifecycle hook or a threshold.
    */
   public async pruneFinishedJobs(keep = DEFAULT_RETENTION): Promise<void> {
     if (!this.isBrowser) {
