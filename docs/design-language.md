@@ -23,14 +23,14 @@ All tokens live on `.gen-studio` (light) and `.dark .gen-studio` (dark) in `_gen
 
 Inter for text, JetBrains Mono for values. Six sizes; nothing between them.
 
-| token | px | use |
-|---|---|---|
-| `--gs-text-2xs` | 10 | eyebrows (uppercase, tracked), fine print |
-| `--gs-text-xs` | 11.5 | hints, captions, chip values, sublabels |
-| `--gs-text-sm` | 12.5 | labels, buttons, chips, table cells, dense prose |
-| `--gs-text-md` | 13.5 | body prose, inputs |
-| `--gs-text-lg` | 15.5 | pane titles, card titles |
-| `--gs-text-xl` | 20 | page titles |
+| token           | px   | use                                              |
+| --------------- | ---- | ------------------------------------------------ |
+| `--gs-text-2xs` | 10   | eyebrows (uppercase, tracked), fine print        |
+| `--gs-text-xs`  | 11.5 | hints, captions, chip values, sublabels          |
+| `--gs-text-sm`  | 12.5 | labels, buttons, chips, table cells, dense prose |
+| `--gs-text-md`  | 13.5 | body prose, inputs                               |
+| `--gs-text-lg`  | 15.5 | pane titles, card titles                         |
+| `--gs-text-xl`  | 20   | page titles                                      |
 
 Weights: 400 body, 600 labels and buttons, 700 titles and eyebrows. Line height 1.5 for prose,
 1.3 for titles and controls. Eyebrows are `--gs-text-2xs`, uppercase, `letter-spacing: 0.12em`,
@@ -41,31 +41,36 @@ precede them.
 
 A 4px base. Use the tokens; do not invent 5px or 7px gaps.
 
-| token | px | use |
-|---|---|---|
-| `--gs-space-1` | 4 | inside a chip, between an icon and its word |
-| `--gs-space-2` | 8 | between controls in a row, chip gaps |
-| `--gs-space-3` | 12 | card padding on a phone, gap between a label and its control |
-| `--gs-space-4` | 16 | card padding, gap between cards |
-| `--gs-space-6` | 24 | section gaps |
-| `--gs-space-8` | 32 | page-level gaps |
+| token            | px  | use                                                                |
+| ---------------- | --- | ------------------------------------------------------------------ |
+| `--gs-space-1`   | 4   | inside a chip, between an icon and its word, label to its control  |
+| `--gs-space-2`   | 8   | between controls in a row, chip gaps, gap between cards on a phone |
+| `--gs-space-2-5` | 10  | card padding on a phone, the rows inside a card                    |
+| `--gs-space-3`   | 12  | card padding, gap between cards, pane header and body padding      |
+| `--gs-space-4`   | 16  | pane header and body side padding, results pane padding            |
+| `--gs-space-6`   | 24  | section gaps                                                       |
+| `--gs-space-8`   | 32  | page-level gaps                                                    |
+
+`--gs-space-2-5` is a half step, and the only one: the studio's cards are dense enough that 12
+reads as loose inside them and 8 puts the content on the edge. Nothing outside a dense surface
+uses it.
 
 ### Radius
 
-| token | px | use |
-|---|---|---|
-| `--gs-radius-sm` | 8 | inputs, buttons, chips, segmented options |
-| `--gs-radius-md` | 12 | cards, popovers, sheet body |
-| `--gs-radius-lg` | 16 | panes, the sheet, heroes |
-| `--gs-radius-pill` | 999 | pills, dots, toggles |
+| token              | px  | use                                       |
+| ------------------ | --- | ----------------------------------------- |
+| `--gs-radius-sm`   | 8   | inputs, buttons, chips, segmented options |
+| `--gs-radius-md`   | 12  | cards, popovers, sheet body               |
+| `--gs-radius-lg`   | 16  | panes, the sheet, heroes                  |
+| `--gs-radius-pill` | 999 | pills, dots, toggles                      |
 
 ### Elevation
 
-| token | use |
-|---|---|
-| `--gs-elev-1` | a card or a field at rest |
+| token         | use                                             |
+| ------------- | ----------------------------------------------- |
+| `--gs-elev-1` | a card or a field at rest                       |
 | `--gs-elev-2` | a card on hover, an open popover, a raised pane |
-| `--gs-elev-3` | a sheet at full, a modal |
+| `--gs-elev-3` | a sheet at full, a modal                        |
 
 Elevation is a soft low shadow, never a bevel or a bright edge. A raised thing also gets a
 slightly lighter surface (`--gs-panel` over `--gs-card`); the two together are what read as depth.
@@ -129,9 +134,10 @@ becomes chips or a select.
 ### Card
 
 `.gs-card`: `--gs-card` surface, 1px `--gs-card-border`, the area's 2px tint as a top edge,
-`--gs-radius-md`, `--gs-space-4` padding (`--gs-space-3` on a phone), `--gs-elev-1`, `--gs-elev-2`
-on focus-within. A card starts with its header (mark, eyebrow, `?`), then its controls with
-`--gs-space-3` between them.
+`--gs-radius-md`, `--gs-space-3` padding (`--gs-space-2-5` on a phone), `--gs-elev-1`,
+`--gs-elev-2` on focus-within. A card starts with its header (mark, eyebrow, `?`), then its
+controls with `--gs-space-2-5` between them, the header included. Two cards in a column stand
+`--gs-space-3` apart (`--gs-space-2` on a phone): near enough to read as one stack of settings.
 
 ### Header
 
