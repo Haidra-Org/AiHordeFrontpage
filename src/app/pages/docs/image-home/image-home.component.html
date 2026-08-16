@@ -29,7 +29,12 @@
             class="gs-learn-hero-door"
             (click)="startTrack(door)"
           >
-            <app-icon [name]="door.icon" class="gs-learn-hero-door-mark" />
+            <span
+              class="gs-tut-mark gs-learn-hero-door-mark"
+              aria-hidden="true"
+            >
+              <app-icon name="academic-cap" />
+            </span>
             <span class="gs-learn-hero-door-text">
               <span class="gs-learn-hero-door-title">
                 {{ door.titleKey | transloco }}

@@ -35,10 +35,17 @@ import { IconComponent } from '../icon/icon.component';
       type="button"
       class="gs-cap gs-door"
       [class]="controlClass()"
+      [class.gs-door--tutorial]="kind() === 'tutorial'"
       [disabled]="disabled()"
       (click)="entered.emit()"
     >
-      @if (kind() === 'studio') {
+      @if (kind() === 'tutorial') {
+        <!-- The tutorials' own mark and hue: every door that starts one wears
+             them, so a reader learns once what the amber cap means. -->
+        <span class="gs-door-panel gs-door-panel--tutorial" aria-hidden="true">
+          <app-icon name="academic-cap" />
+        </span>
+      } @else if (kind() === 'studio') {
         <span class="gs-door-panel" aria-hidden="true">
           <app-icon name="adjustments-horizontal" />
         </span>
@@ -51,7 +58,10 @@ import { IconComponent } from '../icon/icon.component';
       }
       <span class="gs-cap-text">
         @if (eyebrow(); as badge) {
-          <span class="gs-cap-eyebrow">
+          <span
+            class="gs-cap-eyebrow"
+            [class.gs-tut-eyebrow]="kind() === 'tutorial'"
+          >
             <span class="gs-cap-dot" aria-hidden="true"></span>
             {{ badge }}
           </span>
@@ -71,8 +81,11 @@ import { IconComponent } from '../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GsDoorComponent {
-  /** Which kind of door: evidence somewhere else, or the panel itself. */
-  public readonly kind = input.required<'grid' | 'studio'>();
+  /**
+   * Which kind of door: evidence somewhere else, the panel itself, or a
+   * tutorial, which wears the tutorials' own mark and hue wherever it starts.
+   */
+  public readonly kind = input.required<'grid' | 'studio' | 'tutorial'>();
   /** The badge over the title, already translated, or null where there is none. */
   public readonly eyebrow = input<string | null>(null);
   /** Where the door goes, in the caller's own words. */

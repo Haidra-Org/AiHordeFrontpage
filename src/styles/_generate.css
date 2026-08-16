@@ -161,6 +161,15 @@
   --gs-radius-pill: 999px;
   --gs-control-h: 40px;
   --gs-control-h-dense: 36px;
+  /* The tutorials' own hue: a warm amber that belongs to learning alone, so a
+     door that starts a tutorial, the dock that runs one and the frame that says
+     one is running all read as one family, apart from the accent and from any
+     panel area's tint. */
+  --gs-tut: #b45309;
+  --gs-tut-ink: #92400e;
+  --gs-tut-tint: #fef3c7;
+  --gs-tut-tint-border: #fcd34d;
+  --gs-tut-glow: rgba(245, 158, 11, 0.35);
   /* The `?` glyph's box. A row without a trigger reserves this width so the
      controls in a group still end on one edge. */
   --gs-help-trigger: 24px;
@@ -294,6 +303,11 @@
   --gs-panel: #1c202a;
   --gs-card: #242a36;
   --gs-card-border: #3a4150;
+  --gs-tut: #fbbf24;
+  --gs-tut-ink: #fcd34d;
+  --gs-tut-tint: rgba(251, 191, 36, 0.14);
+  --gs-tut-tint-border: rgba(251, 191, 36, 0.45);
+  --gs-tut-glow: rgba(251, 191, 36, 0.3);
   --gs-elev-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
   --gs-elev-2: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
   --gs-elev-3: 0 14px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
@@ -9193,6 +9207,19 @@ app-gs-compare-wipe {
    The title takes the area's technique behind it, as the docs page does. */
 .gen-studio .gs-results-header--tutorial {
   align-items: center;
+  border-bottom: 2px solid var(--gs-tut-tint-border);
+}
+.gen-studio .gs-welcome-door--tutorial {
+  border-color: var(--gs-tut-tint-border);
+  background: var(--gs-tut-tint);
+}
+.gen-studio .gs-welcome-door--tutorial .gs-cap-eyebrow {
+  margin-bottom: 4px;
+}
+.gen-studio .gs-learn-hero-door .gs-tut-mark {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(252, 211, 77, 0.6);
+  color: #fcd34d;
 }
 .gen-studio .gs-tut-pane-title {
   display: flex;
@@ -9810,10 +9837,7 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-learn-hero-door-mark {
   flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
   margin-top: 1px;
-  color: #bfdbfe;
 }
 .gen-studio .gs-learn-hero-door-text {
   display: flex;
@@ -10937,22 +10961,11 @@ html:has(app-gs-sheet) {
   gap: 10px;
   min-height: 52px;
   padding: 8px 10px 8px 12px;
-  border: 1px solid var(--gs-blue-tint-border);
+  border: 1px solid var(--gs-tut-tint-border);
   border-radius: 12px;
-  background: var(--gs-blue-tint);
+  background: var(--gs-tut-tint);
   color: var(--gs-ink);
   box-shadow: var(--gs-elev-1);
-}
-.gen-studio .gs-parked-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  flex: none;
-  border-radius: 999px;
-  background: var(--gs-panel);
-  color: var(--gs-blue);
 }
 .gen-studio .gs-parked-text {
   display: flex;
@@ -10978,7 +10991,7 @@ html:has(app-gs-sheet) {
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: var(--gs-blue);
+  background: var(--gs-tut);
   color: #fff;
   font: inherit;
   font-size: 12px;
@@ -11842,6 +11855,68 @@ html:has(app-gs-sheet) {
     bottom: 0;
     width: auto;
     height: 2px;
+  }
+}
+
+/* ------- the tutorials' signature ---------------------------------------- */
+/* One family for learning: the amber cap and eyebrow on every door that starts
+   a tutorial, the same hue on the dock and the pane header while one runs, and
+   a thin frame around the whole studio saying that one is running. Static, so
+   it is a state rather than an event; the only breathing is where a step points. */
+.gen-studio .gs-tut-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-tut-tint);
+  border: 1px solid var(--gs-tut-tint-border);
+  color: var(--gs-tut);
+}
+.gen-studio .gs-tut-mark app-icon {
+  width: 16px;
+  height: 16px;
+}
+.gen-studio .gs-tut-eyebrow,
+.gen-studio .gs-cap-eyebrow.gs-tut-eyebrow {
+  color: var(--gs-tut-ink);
+}
+.gen-studio .gs-tut-eyebrow .gs-cap-dot,
+.gen-studio .gs-cap-eyebrow.gs-tut-eyebrow .gs-cap-dot {
+  background: var(--gs-tut);
+}
+.gen-studio .gs-door-panel--tutorial {
+  background: linear-gradient(135deg, var(--gs-tut) 0%, #d97706 100%);
+  color: #ffffff;
+}
+.gen-studio .gs-door--tutorial {
+  border-color: var(--gs-tut-tint-border);
+}
+.gen-studio .gs-door--tutorial:hover,
+.gen-studio .gs-door--tutorial:focus-visible {
+  border-color: var(--gs-tut);
+}
+/* The frame: a fixed inset line and inner glow over everything while a
+   tutorial has the studio, above the site nav and under nothing; it takes no
+   pointer events, so it changes what the page looks like and nothing else. */
+.gen-studio.gs-tut-on::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  border: 2px solid var(--gs-tut);
+  box-shadow: inset 0 0 14px var(--gs-tut-glow);
+}
+@media (forced-colors: active) {
+  .gen-studio.gs-tut-on::after {
+    border-color: Highlight;
+    box-shadow: none;
+  }
+  .gen-studio .gs-tut-mark {
+    border-color: CanvasText;
   }
 }
 

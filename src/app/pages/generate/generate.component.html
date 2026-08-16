@@ -1,5 +1,6 @@
 <div
   class="gen-studio gs-workspace"
+  [class.gs-tut-on]="tutorialActive()"
   [class.gs-workspace--full]="!embedded()"
   [class.gs-workspace--wide]="!embedded() && panelSize() === 'double'"
   [class.gs-workspace--max]="!embedded() && panelSize() === 'full'"

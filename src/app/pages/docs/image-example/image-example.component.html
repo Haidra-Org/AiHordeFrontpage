@@ -64,9 +64,10 @@
                    disappearing, so a reader can see what is coming. -->
             <div class="gs-tut-start">
               <app-gs-door
-                kind="studio"
+                kind="tutorial"
                 controlClass="gs-tut-start-btn"
                 [disabled]="!canStart()"
+                [eyebrow]="'generate.learn.badge' | transloco"
                 [title]="'generate.learn.start' | transloco"
                 [meta]="'generate.sweeps.studio_door_note' | transloco"
                 (entered)="startTutorial()"
@@ -227,7 +228,8 @@
                       }}
                     </p>
                     <app-gs-door
-                      kind="grid"
+                      kind="tutorial"
+                      [eyebrow]="'generate.learn.badge' | transloco"
                       [title]="
                         'generate.learn.next_cta'
                           | transloco

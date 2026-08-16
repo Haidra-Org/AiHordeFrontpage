@@ -27,8 +27,8 @@ import { IconComponent } from '../icon/icon.component';
   template: `
     @if (parked()) {
       <div class="gs-parked" role="status">
-        <span class="gs-parked-mark" aria-hidden="true">
-          <app-icon name="document-text" class="gs-ico-sm" />
+        <span class="gs-tut-mark" aria-hidden="true">
+          <app-icon name="academic-cap" />
         </span>
         <span class="gs-parked-text">
           <span class="gs-parked-title">{{ taskKey() | transloco }}</span>
