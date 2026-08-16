@@ -1278,8 +1278,6 @@
   "alchemy.flow.hint": "Your results appear under Requests as soon as you submit.",
   "alchemy.flow.jump": "{{count}} still processing — jump to results",
   "alchemy.flow.view_results": "View your results",
-  "alchemy.form_info_dialog.description": "Description",
-  "alchemy.form_info_dialog.example": "Example",
   "alchemy.submit.summary": "{{count}} selected",
   "alchemy.submit.summary_empty": "Add an image and pick at least one operation.",
   "alchemy.form_names.caption": "Caption",
