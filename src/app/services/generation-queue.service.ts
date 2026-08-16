@@ -215,6 +215,16 @@ export class GenerationQueueService {
     this.removeFromState(localId);
   }
 
+  /**
+   * Drop every tracked job and its stored images. Reached only from the storage
+   * management surface; nothing in the app calls this on its own.
+   */
+  public async clearHistory(): Promise<void> {
+    await this.db.clearAll();
+    this.checkBackoffUntil.clear();
+    this.setState([]);
+  }
+
   public getJobImages(localId: string): Promise<StoredJobImage[]> {
     return this.db.getImagesForJob(localId);
   }

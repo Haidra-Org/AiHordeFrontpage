@@ -59,6 +59,16 @@ export const routes: Routes = [
             (c) => c.AlchemyComponent,
           ),
       },
+      {
+        // What both studios have stored, and the only place anything is
+        // removed in bulk. Under the studio shell rather than the profile
+        // because this data is local and works without an account.
+        path: 'storage',
+        loadComponent: () =>
+          import('./pages/generate/studio-storage/studio-storage.component').then(
+            (c) => c.StudioStorageComponent,
+          ),
+      },
       { path: '', redirectTo: 'image', pathMatch: 'full' },
     ],
   },

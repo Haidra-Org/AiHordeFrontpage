@@ -12868,3 +12868,62 @@ html:has(app-gs-sheet) {
     border: 1px solid CanvasText;
   }
 }
+
+/* ===================================================================
+   STORED RESULTS — what the two studios hold, and the only bulk way out.
+
+   Reuses .gs-card, .danger-zone-card and the studio's confirm modal, so
+   nothing here introduces a surface of its own.
+   =================================================================== */
+.gen-studio.gs-storage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-3);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--gs-space-4);
+}
+.gen-studio .gs-storage-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-storage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-3);
+}
+.gen-studio .gs-storage-danger {
+  margin-top: var(--gs-space-3);
+}
+.gen-studio .gs-storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-btn--danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+.gen-studio .gs-btn--danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+/* The way from either studio's retention note to the storage page. Inherits
+   the note's own colour so it reads as part of the sentence, not a button. */
+.gen-studio .gs-retention-link {
+  margin-left: auto;
+  flex: none;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.gen-studio .gs-retention-link:hover {
+  text-decoration-thickness: 2px;
+}

@@ -1,0 +1,117 @@
+<div class="gen-studio gs-storage">
+  <header class="gs-storage-head">
+    <h1 class="gs-panel-title">{{ "studio.storage.title" | transloco }}</h1>
+    <p class="gs-sublabel">{{ "studio.storage.intro" | transloco }}</p>
+    @if (usedMb() !== null) {
+      <p class="gs-sublabel">
+        {{
+          "studio.storage.usage"
+            | transloco: { used: usedMb(), quota: quotaMb() }
+        }}
+      </p>
+    }
+  </header>
+
+  <div class="gs-card gs-storage-row">
+    <div>
+      <h2 class="gs-panel-title">
+        {{ "studio.storage.alchemy_title" | transloco }}
+      </h2>
+      <p class="gs-sublabel">
+        {{ "studio.storage.count" | transloco: { count: alchemyCount() ?? 0 } }}
+      </p>
+    </div>
+    <a class="gs-btn gs-btn--dense" routerLink="/generate/alchemy">
+      {{ "studio.storage.open_alchemy" | transloco }}
+    </a>
+  </div>
+
+  <div class="gs-card gs-storage-row">
+    <div>
+      <h2 class="gs-panel-title">
+        {{ "studio.storage.image_title" | transloco }}
+      </h2>
+      <p class="gs-sublabel">
+        {{ "studio.storage.count" | transloco: { count: imageCount() ?? 0 } }}
+      </p>
+    </div>
+    <a class="gs-btn gs-btn--dense" routerLink="/generate/image">
+      {{ "studio.storage.open_image" | transloco }}
+    </a>
+  </div>
+
+  <div class="danger-zone-card gs-storage-danger">
+    <h2 class="heading-card">
+      {{ "studio.storage.danger_title" | transloco }}
+    </h2>
+    <p class="text-secondary text-sm">
+      {{ "studio.storage.danger_desc" | transloco }}
+    </p>
+    <div class="gs-storage-actions">
+      <button
+        type="button"
+        class="gs-btn gs-btn--danger"
+        [disabled]="!alchemyCount()"
+        (click)="requestClear('alchemy')"
+      >
+        <app-icon name="trash-modern" class="gs-ico-sm" />
+        {{ "studio.storage.clear_alchemy" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="gs-btn gs-btn--danger"
+        [disabled]="!imageCount()"
+        (click)="requestClear('image')"
+      >
+        <app-icon name="trash-modern" class="gs-ico-sm" />
+        {{ "studio.storage.clear_image" | transloco }}
+      </button>
+    </div>
+  </div>
+</div>
+
+@if (pendingClear() !== null) {
+  <div
+    class="gs-modal-overlay"
+    (click)="onConfirmBackdrop($event)"
+    (keydown.escape)="cancelClear()"
+    role="dialog"
+    aria-modal="true"
+    tabindex="0"
+  >
+    <div class="gs-modal-panel gs-modal-panel--sm gs-fadeup">
+      <div class="gs-modal-header">
+        <div class="gs-modal-title">
+          <app-icon name="trash-modern" class="gs-ico-sm" />
+          {{ "studio.storage.confirm_title" | transloco }}
+        </div>
+      </div>
+      <div class="gs-modal-body">
+        <p class="gs-confirm-text">
+          {{
+            (pendingClear() === "alchemy"
+              ? "studio.storage.confirm_alchemy_body"
+              : "studio.storage.confirm_image_body"
+            ) | transloco: { count: pendingCount() }
+          }}
+        </p>
+      </div>
+      <div class="gs-modal-footer">
+        <button type="button" class="gs-tile-btn" (click)="cancelClear()">
+          {{ "studio.storage.confirm_cancel" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-modal-done gs-modal-done--danger"
+          [disabled]="clearing()"
+          (click)="confirmClear()"
+        >
+          {{
+            "studio.storage.confirm_action"
+              | transloco: { count: pendingCount() }
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
