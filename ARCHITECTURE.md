@@ -67,7 +67,7 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `/privacy`     | `PrivacyComponent`         | —                                                                                              |
 | `/terms`       | `TermsComponent`           | —                                                                                              |
 | `/contribute`  | `ContributeComponent`      | Child routes                                                                                   |
-| `/generate`    | `GenerateComponent`        | —                                                                                              |
+| `/generate`    | `GenerateShellComponent`   | `image`, `alchemy`, `storage`                                                                  |
 | `/v2-transfer` | `TransferComponent`        | —                                                                                              |
 | `/**`          | `NotFoundComponent`        | —                                                                                              |
 
@@ -99,6 +99,8 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
 | `GenerationQueueService` | Client-side image generation queue: dispatch, polling, result download          |
 | `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
+| `AlchemyQueueService`  | Client-side alchemy queue: submission, polling, result-image capture             |
+| `AlchemyDbService`     | IndexedDB persistence for alchemy jobs, results and their image blobs            |
 | `ToastService`         | Signal-based notification system with auto-dismiss                              |
 | `ThemeService`         | Theme management (`'light' \| 'dark' \| 'system'`)                              |
 | `IconRegistryService`  | Register and retrieve SVG icon paths by name                                    |
@@ -187,46 +189,123 @@ Template reads signal()  →  OnPush detects change  →  render
 
 ---
 
-## Generation Queue Subsystem
+## Studio Persistence and Queues
 
-Client-side image generation is driven by two root-provided, browser-only
-services. On the server both are inert: `GenerationDbService` methods no-op and
-`GenerationQueueService` starts no loops, so injecting them during SSR is safe.
+Both studios keep their work in the browser and keep it advancing while the
+reader is elsewhere in the app. Four root-provided, browser-only services do
+this. On the server all four are inert: the database services no-op and the
+queues start no loops, so injecting them during SSR is safe.
 
-- **`GenerationDbService`** owns an IndexedDB database (`ai-horde-frontpage`)
-  with two stores: `generationJobs` (keyed by `localId`, indexed on `status` and
-  `createdAt`) and `generationImages` (keyed by `[localId, imageId]`, indexed on
-  `localId`). It exposes job CRUD, per-job image storage, cascade delete, and a
-  retention prune that keeps at most N terminal jobs. The schema is versioned and
-  self-healing: the upgrade callback creates stores and indexes idempotently, and
-  if an opened database is found missing a required store (a foreign layout at or
-  above the current version) or the open fails with a `VersionError`, the database
-  is deleted and rebuilt fresh. Generation history is a disposable local cache, so
-  losing it on recovery is preferable to a permanently wedged page. Recovery is
-  race-safe because the open promise is memoized, so concurrent callers share a
-  single wipe-and-recreate.
+### The two databases
 
-- **`GenerationQueueService`** exposes `jobs`, `pendingJobs`, and `finishedJobs`
-  signals plus `enqueue`, `cancel`, `deleteJob`, `retry`, `getJobImages`, and
-  `estimateKudos` (a `dry_run` submission). It runs two cooperative loops:
-  - a **dispatch loop** (~1s) that submits `waiting` jobs while the active count
-    is below the concurrency cap and a sliding-window rate limit allows it,
-    backing off on 429 and marking 4xx validation failures as errored,
-  - a **poll loop** (~2s) that advances in-flight jobs from the check endpoint,
-    then on completion fetches the status, downloads each result (R2 URL or
-    base64) to a `Blob`, and stores it.
+Each studio owns its own IndexedDB database, opened through the shared
+`openStudioDb` helper in `services/idb-open.ts`:
 
-  Large base64 `source_image` / `source_mask` payloads are never embedded in the
-  persisted request; source/mask blobs live in the image store and are
-  rehydrated into the request at submit time. Timers run via
-  `NgZone.runOutsideAngular`; signal writes are marshalled back inside the zone.
-  On startup the service loads persisted jobs so in-flight work resumes polling
-  and `waiting` work resumes dispatch.
+| Database | Version | Stores |
+|---|---|---|
+| `ai-horde-frontpage` | 2 | `generationJobs` (key `localId`, indexes `status`, `createdAt`), `generationImages` (key `[localId, imageId]`, index `localId`) |
+| `ai-horde-frontpage-alchemy` | 1 | `alchemyJobs` (key `localId`, indexes `createdAt`, `jobId`), `alchemyImages` (key `[localId, imageId]`, index `localId`) |
 
-  The queue relies on the `*Result` variants of `AiHordeService`
-  (`submitImageGenerationResult`, `checkImageGenerationResult`) which surface the
-  HTTP status so the engine can distinguish a 429 backoff from a permanent 4xx
-  rejection, unlike the `null`-collapsing fire-and-forget methods.
+Alchemy is separate rather than two more stores in the existing database. Adding
+stores there would mean opening it at a higher version, and an older bundle that
+later met that database would fail with a `VersionError`; on builds predating the
+recovery policy below, that meant deleting every stored image. Keeping the
+generation database at the version older bundles already expect puts image
+history out of reach of the change.
+
+**Migrations are additive only, and a keyPath never changes.** Everything else
+rests on that: it is what makes a database written by a later build safe for an
+earlier one to adopt.
+
+Recovery, in `openStudioDb`:
+
+- The upgrade callback creates stores and indexes idempotently, so a
+  partially-provisioned database is completed rather than replaced.
+- A `VersionError` (the on-disk version is ahead of this build) is **not** a
+  wipe. The open is retried with no version argument, and a database carrying
+  the required stores is adopted as it stands.
+- Only a database that genuinely lacks the required stores is deleted and
+  rebuilt, because every write against it would otherwise throw.
+- `deleteDB` passes a `blocked` callback. Without one, a connection held by
+  another tab leaves the delete pending forever and every caller awaiting the
+  memoized open hangs with it.
+- Recovery is race-safe because each service memoizes its open promise, so
+  concurrent callers share a single attempt.
+
+**Nothing is pruned automatically, anywhere.** `GenerationDbService.pruneFinishedJobs`
+and `GenerationQueueService.pruneFinished` exist and are deliberately uncalled;
+they must stay that way. `AlchemyDbService` has no prune method at all. The only
+paths that remove stored work are a per-job delete and `/generate/storage`, which
+is the reader's own explicit action. The direct consequence is that a heavy user
+can exhaust the origin quota; the alchemy queue reports that once and keeps
+running rather than making room for itself.
+
+### Generation queue
+
+`GenerationQueueService` exposes `jobs`, `pendingJobs`, and `finishedJobs`
+signals plus `enqueue`, `cancel`, `deleteJob`, `retry`, `getJobImages`,
+`clearHistory`, and `estimateKudos` (a `dry_run` submission). It runs two
+cooperative loops:
+
+- a **dispatch loop** (~1s) that submits `waiting` jobs while the active count is
+  below the concurrency cap and a sliding-window rate limit allows it, backing
+  off on 429 and marking 4xx validation failures as errored,
+- a **poll loop** (~2s) that advances in-flight jobs from the check endpoint,
+  then on completion fetches the status, downloads each result (R2 URL or
+  base64) to a `Blob`, and stores it.
+
+Large base64 `source_image` / `source_mask` payloads are never embedded in the
+persisted request; source/mask blobs live in the image store and are rehydrated
+into the request at submit time. Timers run via `NgZone.runOutsideAngular`;
+signal writes are marshalled back inside the zone. On startup the service loads
+persisted jobs so in-flight work resumes polling and `waiting` work resumes
+dispatch.
+
+The queue relies on the `*Result` variants of `AiHordeService`
+(`submitImageGenerationResult`, `checkImageGenerationResult`) which surface the
+HTTP status so the engine can distinguish a 429 backoff from a permanent 4xx
+rejection, unlike the `null`-collapsing fire-and-forget methods.
+
+### Alchemy queue
+
+`AlchemyQueueService` exposes `jobs` and `pendingJobs` signals plus `submit`,
+`cancel`, `deleteJobs`, `clearHistory`, and the stored-image reads
+`getSourceImage` / `getThumbnail` / `getResultImages`.
+
+It is root-provided rather than owned by the page because the horde's result
+links are presigned and stop working after about half an hour: the bytes have to
+be captured whether or not the reader is still looking at the studio.
+
+A single ~10s poll loop visits every job that is unsettled **or** settled with
+result images still outstanding. For an unsettled job it reads the status and
+writes the transition straight through to IndexedDB; for a settled one it skips
+the status request entirely and retries only the downloads. That second case
+matters: a job can settle on the very tick its last result link first appears,
+and a transient failure there would otherwise forfeit the image.
+
+Result images are downloaded per form as that form reaches `done`, not when the
+job as a whole settles, so a slow interrogation cannot cost a fast upscale its
+image. `storedResultForms` and `failedResultForms` on the record track what has
+been captured and what is past saving. A download gets three attempts before it
+is written off; a job older than the link lifetime writes its remainder off
+without spending a request; a `QuotaExceededError` is reported once, through
+`studio.storage.quota_exhausted`, without wedging the loop. Cancelling harvests
+the forms the DELETE response still carries before marking the job cancelled.
+
+The whole polled `AlchemyStatusResponse` is stored verbatim rather than picked
+apart, so every per-form payload the horde returns survives a reload and the
+renderers keep receiving the shape they were written against.
+
+Object URLs over the stored blobs are created by `AlchemyComponent`, not the
+service: a root service is never destroyed, so URLs it made would pin the whole
+history in memory. The page holds a thumbnail per job and the full-size source
+and result images for the shown job only, and revokes them on destroy.
+
+Jobs written by earlier builds under the `aihorde.alchemy.recent_jobs`
+localStorage key are imported once on first load. Written results and data-URL
+thumbnails come across; the result links they carried are long dead, so those
+forms are written off without a request. The key is removed only once the
+imports resolve, so a failure retries on the next load.
 
 The `/generate` page (`pages/generate/`, `RenderMode.Client`) is the canonical UI
 over this queue. The profile `generations` tab

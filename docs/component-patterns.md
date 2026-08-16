@@ -74,6 +74,10 @@ Class catalog for the AI Horde frontend. For design philosophy, tokens, and surf
 
 `card-bg-primary`, `panel`, and similar wrappers exist for compatibility. Prefer feature-semantic classes inheriting from surface primitives for new UI.
 
+`.danger-zone-card` is the red-tinted surface for a group of destructive
+actions. Used by the profile settings page and by `/generate/storage`; a third
+destructive surface should reuse it rather than tint a card of its own.
+
 ---
 
 ## Alerts (`_alerts.css`)
