@@ -11075,8 +11075,12 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-bar {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
   min-width: 0;
+}
+/* The tutorial's sheet is edged in the tutorials' hue, as the pane header is. */
+.gen-studio .gs-learn-sheet .gs-sheet {
+  border-top: 2px solid var(--gs-tut-tint-border);
 }
 
 /* One target per step, laid across the bar rather than sized to the mark in it:
@@ -11099,10 +11103,41 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-progress {
   display: flex;
   gap: 2px;
-  height: 3px;
-  margin: 0;
+  height: 4px;
+  margin: 0 0 var(--gs-space-2);
   padding: 0;
   flex: none;
+  border-radius: var(--gs-radius-pill);
+  overflow: hidden;
+}
+.gen-studio .gs-tut-bar-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin: 0 0 var(--gs-space-2);
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-width: 0;
+}
+.gen-studio .gs-tut-bar-eyebrow .gs-tut-mark {
+  width: 22px;
+  height: 22px;
+}
+.gen-studio .gs-tut-bar-eyebrow .gs-tut-mark app-icon {
+  width: 13px;
+  height: 13px;
+}
+.gen-studio .gs-tut-bar-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-ink-2);
 }
 .gen-studio .gs-tut-progress-seg {
   flex: 1 1 0;
@@ -11111,7 +11146,7 @@ html:has(app-gs-sheet) {
   transition: background-color var(--gs-dur) var(--gs-ease);
 }
 .gen-studio .gs-tut-progress-seg--done {
-  background: var(--gs-sec, var(--gs-blue));
+  background: var(--gs-tut);
 }
 /* Above the body: the count and the dot list, on the surface the bar has, so
    the scrolling card under them reads as the thing that scrolls. */

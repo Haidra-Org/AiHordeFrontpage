@@ -67,6 +67,14 @@ export class GenerateLearnSheetComponent {
   public readonly copyParams = this.engine.copyParams;
 
   /** Whether the track being read teaches an idea rather than a technique. */
+  /** The tutorial's name, said on the bar before the step so a reader knows where they are. */
+  public readonly taskNameKey = computed(() => {
+    const flowId = this.engine.activeFlowId();
+    return isConceptFlow(flowId)
+      ? `generate.learn.flows.${flowId}.task_name`
+      : `generate.tutorials.flows.${flowId}.task_name`;
+  });
+
   public readonly conceptTrack = computed(() =>
     isConceptFlow(this.engine.activeFlowId()),
   );

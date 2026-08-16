@@ -1,36 +1,48 @@
 <!-- Not dismissible: an accidental Escape or a mistaken tap on a close button
      would end a tutorial the reader is part-way through, and getting back costs
      them the whole flow. Leaving is the Exit button inside, and nothing else. -->
+<!-- Opens at half the first time, so what the reader meets is the step and
+     not a bar with a title on it; the stop they choose after that is kept. -->
 <app-gs-sheet
   [label]="'generate.learn.sheet_label' | transloco"
   [dismissible]="false"
+  [startExpanded]="true"
   rememberAs="aihorde.generate.learn.sheet_stop"
 >
-  <!-- Progress along the sheet's top edge: three pixels, one segment per step,
-       filled to the step on show. It costs the peek row no height, and it is
-       the same information the dot list in the body carries as controls. -->
-  <div
-    sheet-edge
-    class="gs-tut-progress"
-    role="progressbar"
-    [attr.aria-label]="'generate.learn.steps_label' | transloco"
-    [attr.aria-valuemin]="1"
-    [attr.aria-valuemax]="steps().length"
-    [attr.aria-valuenow]="stepIndex() + 1"
-    [attr.aria-valuetext]="
-      'generate.learn.sheet_progress' | transloco: progressParams()
-    "
-  >
-    @for (entry of steps(); track entry.id; let i = $index) {
-      <span
-        class="gs-tut-progress-seg"
-        [class]="identityFor(entry)?.className"
-        [class.gs-tut-progress-seg--done]="i <= stepIndex()"
-      ></span>
-    }
-  </div>
-
   <div sheet-bar class="gs-tut-bar">
+    <!-- What this is, before what it wants: the tutorials' mark and the name of
+       the tutorial, so a reader landing here from a door knows they are in
+       one and which; then the progress through it, in the tutorials' hue. -->
+    <p class="gs-tut-bar-eyebrow gs-tut-eyebrow">
+      <span class="gs-tut-mark" aria-hidden="true">
+        <app-icon name="academic-cap" />
+      </span>
+      <span class="gs-tut-bar-badge">{{
+        "generate.learn.badge" | transloco
+      }}</span>
+      <span class="gs-tut-bar-sep" aria-hidden="true">&middot;</span>
+      <span class="gs-tut-bar-name">{{ taskNameKey() | transloco }}</span>
+    </p>
+    <div
+      class="gs-tut-progress"
+      role="progressbar"
+      [attr.aria-label]="'generate.learn.steps_label' | transloco"
+      [attr.aria-valuemin]="1"
+      [attr.aria-valuemax]="steps().length"
+      [attr.aria-valuenow]="stepIndex() + 1"
+      [attr.aria-valuetext]="
+        'generate.learn.sheet_progress' | transloco: progressParams()
+      "
+    >
+      @for (entry of steps(); track entry.id; let i = $index) {
+        <span
+          class="gs-tut-progress-seg"
+          [class]="identityFor(entry)?.className"
+          [class.gs-tut-progress-seg--done]="i <= stepIndex()"
+        ></span>
+      }
+    </div>
+
     @if (step(); as current) {
       <div class="gs-tut-bar-row">
         <span class="gs-tut-bar-title">{{

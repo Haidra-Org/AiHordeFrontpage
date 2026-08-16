@@ -165,14 +165,17 @@ describe('GenerateLearnSheetComponent', () => {
     );
   });
 
-  it('takes the reader to the step when it opens', async () => {
-    expect(body().hidden).toBe(true);
-
-    first<HTMLButtonElement>('.gs-sheet-btn').click();
+  it('opens on the step, named as a tutorial, the first time', async () => {
+    // Half from the start: what a reader meets is the step, not a bar with a
+    // title on it. Only after they shrink it does the sheet sit at its bar.
     await settle();
-
     expect(body().hidden).toBe(false);
-    expect(document.activeElement).toBe(first<HTMLElement>('.gs-guide-head'));
+    expect(first<HTMLElement>('.gs-tut-bar-eyebrow')?.textContent).toContain(
+      TRANSLATIONS['generate.learn.badge'],
+    );
+    expect(first<HTMLElement>('.gs-tut-bar-name')?.textContent).toContain(
+      TRANSLATIONS['generate.tutorials.flows.txt2img.task_name'],
+    );
     expect(body().textContent).toContain(
       TRANSLATIONS['generate.learn.sheet_progress']
         .replace('{{ current }}', '1')
@@ -200,8 +203,8 @@ describe('GenerateLearnSheetComponent', () => {
 
   it('offers no dismissal of its own: Escape unwinds but never exits', async () => {
     // A tutorial part-way through is expensive to lose, so the chassis's close
-    // button is suppressed and its second Escape does nothing.
-    first<HTMLButtonElement>('.gs-sheet-btn').click();
+    // button is suppressed and its second Escape does nothing. The sheet is
+    // already at half when it opens.
     await settle();
     // Two stop buttons at half (up and down) and no close button among them.
     expect(query('.gs-sheet-btn')).toHaveLength(2);
