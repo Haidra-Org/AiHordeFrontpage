@@ -93,27 +93,28 @@
       [label]="'generate.help.sheet_label' | transloco"
       (closed)="helpDock.close()"
     >
-      <!-- Opened from inside a tutorial, the entry says so on its first line
-           and that line is the way back: the tutorial's sheet stands down while
-           this one is up, and a reader should not have to guess that it will
-           return. -->
-      @if (tutorialActive()) {
-        <button
-          sheet-head
-          type="button"
-          class="gs-tut-bar-eyebrow gs-tut-eyebrow gs-sheet-return"
-          (click)="helpDock.close()"
-        >
-          <span class="gs-tut-mark" aria-hidden="true">
-            <app-icon name="academic-cap" />
+      <!-- The bar names the entry while the sheet is a bar; once the body is
+           up the entry carries its own heading, and the bar instead says where
+           the reader came from when that was a tutorial: the tutorial's sheet
+           stands down while this one is up, and this line is the way back. -->
+      <div sheet-bar>
+        @if (tutorialActive() && helpSheet.expanded()) {
+          <button
+            type="button"
+            class="gs-sheet-return"
+            (click)="helpDock.close()"
+          >
+            <span class="gs-tut-mark" aria-hidden="true">
+              <app-icon name="academic-cap" />
+            </span>
+            {{ "generate.help.dock_close_tutorial" | transloco }}
+          </button>
+        } @else {
+          <span class="gs-sheet-title">
+            {{ "generate.help." + topic + ".title" | transloco }}
           </span>
-          <app-icon name="arrow-left" class="gs-ico-sm" aria-hidden="true" />
-          {{ "generate.help.dock_close_tutorial" | transloco }}
-        </button>
-      }
-      <span sheet-bar class="gs-sheet-title">
-        {{ "generate.help." + topic + ".title" | transloco }}
-      </span>
+        }
+      </div>
       <app-gs-param-entry
         [topic]="topic"
         mode="dock"

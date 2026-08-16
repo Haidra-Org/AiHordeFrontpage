@@ -11005,18 +11005,35 @@ app-gs-compare-wipe {
 .gen-studio .gs-sheet-top:has(> [sheet-head]) .gs-sheet-stops {
   align-self: flex-end;
 }
-/* A first line that is a way back: the tutorials' eyebrow, pressable. */
+/* A bar line that is a way back to the tutorial the entry was opened from. */
 .gen-studio .gs-sheet-return {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  padding: 0;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-width: 0;
   border: 0;
   background: transparent;
   color: var(--gs-tut-ink);
   cursor: pointer;
   font: inherit;
-  font-size: var(--gs-text-2xs);
+  font-size: var(--gs-text-xs);
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-sheet-return .gs-tut-mark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+.gen-studio .gs-sheet-return .gs-tut-mark app-icon {
+  width: 13px;
+  height: 13px;
 }
 .gen-studio .gs-sheet-return:hover {
   text-decoration: underline;
@@ -11316,8 +11333,17 @@ html:has(app-gs-sheet) {
     calc(var(--gs-tabbar-height) + 10px + env(safe-area-inset-bottom)) 10px;
   z-index: 45;
 }
+/* Fixed over the form, so its tint is laid on an opaque card: a translucent
+   strip lets the controls under it show through its text. */
 .gen-studio .gs-parked-host--phone .gs-parked {
+  background:
+    linear-gradient(var(--gs-tut-tint), var(--gs-tut-tint)), var(--gs-card);
   box-shadow: var(--gs-elev-3);
+}
+.gen-studio .gs-parked-host--phone .gs-parked-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 @media (forced-colors: active) {
   .gen-studio .gs-parked,
