@@ -40,7 +40,44 @@
         {{ "generate.learn.progress" | transloco: progressParams() }}
       </p>
 
-      @if (step(); as current) {
+      @if (conceptTrack()) {
+        <!-- A track is a read rather than a walk: nothing in it is pressed or
+           written, so it is laid out whole, section by section with its
+           evidence inline, and it ends at the one door it has to offer. Step
+           dots and Next would be chrome for a thing that has no steps. -->
+        <article class="gs-learn-read">
+          @for (entry of steps(); track entry.id; let i = $index) {
+            <section class="gs-learn-read-sec">
+              <p class="gs-cap-eyebrow gs-tut-eyebrow">
+                <span class="gs-cap-dot" aria-hidden="true"></span>
+                {{ i + 1 }}
+              </p>
+              <h3 class="gs-guide-head">{{ titleKey(entry) | transloco }}</h3>
+              <div class="gs-guide-step-body">
+                <app-gs-prose
+                  [key]="bodyKey(entry)"
+                  [params]="copyParams()"
+                  [paragraphs]="true"
+                />
+              </div>
+              @for (parameter of entry.sweepParameters ?? []; track parameter) {
+                <app-gs-sweep-scrub
+                  [parameter]="parameter"
+                  [startExpanded]="true"
+                />
+              }
+              @if (entry.startsFlow) {
+                <app-gs-door
+                  kind="tutorial"
+                  [eyebrow]="'generate.learn.badge' | transloco"
+                  [title]="ctaKey(entry) | transloco"
+                  (entered)="startOffered(entry)"
+                />
+              }
+            </section>
+          }
+        </article>
+      } @else if (step(); as current) {
         <section
           class="gs-card gs-learn-card"
           [class]="identityFor(current)?.className"
@@ -160,30 +197,32 @@
         </div>
       }
 
-      <ol
-        class="gs-learn-steps"
-        [attr.aria-label]="'generate.learn.steps_label' | transloco"
-      >
-        @for (entry of steps(); track entry.id; let i = $index) {
-          <li>
-            <button
-              type="button"
-              class="gs-learn-step"
-              [class]="identityFor(entry)?.className"
-              [class.gs-learn-step--on]="isCurrent(i)"
-              [attr.aria-current]="isCurrent(i) ? 'step' : null"
-              (click)="goTo(i)"
-            >
-              <span class="gs-guide-step-n" aria-hidden="true">{{
-                i + 1
-              }}</span>
-              <span class="gs-learn-step-title">
-                {{ titleKey(entry) | transloco }}
-              </span>
-            </button>
-          </li>
-        }
-      </ol>
+      @if (!conceptTrack()) {
+        <ol
+          class="gs-learn-steps"
+          [attr.aria-label]="'generate.learn.steps_label' | transloco"
+        >
+          @for (entry of steps(); track entry.id; let i = $index) {
+            <li>
+              <button
+                type="button"
+                class="gs-learn-step"
+                [class]="identityFor(entry)?.className"
+                [class.gs-learn-step--on]="isCurrent(i)"
+                [attr.aria-current]="isCurrent(i) ? 'step' : null"
+                (click)="goTo(i)"
+              >
+                <span class="gs-guide-step-n" aria-hidden="true">{{
+                  i + 1
+                }}</span>
+                <span class="gs-learn-step-title">
+                  {{ titleKey(entry) | transloco }}
+                </span>
+              </button>
+            </li>
+          }
+        </ol>
+      }
     </div>
 
     @if (exampleImage()) {

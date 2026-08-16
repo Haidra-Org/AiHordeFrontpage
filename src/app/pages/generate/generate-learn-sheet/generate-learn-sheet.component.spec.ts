@@ -232,36 +232,33 @@ describe('GenerateLearnSheetComponent', () => {
       await settle();
     });
 
-    it('docks as a bar of its steps, with nothing to apply or point at', () => {
-      expect(dots()).toHaveLength(flowSteps('concepts_horde').length);
-      // Next is the whole of the bar's offer, promoted as it is on any step
-      // with nothing of its own to write.
-      expect(query('.gs-tut-bar-next')).toHaveLength(1);
-      expect(first<HTMLElement>('.gs-tut-bar-next').textContent?.trim()).toBe(
-        TRANSLATIONS['generate.learn.next'],
+    it('docks as one read with a hint in the bar, and nothing to apply or point at', () => {
+      expect(dots()).toHaveLength(0);
+      expect(query('.gs-tut-bar-next')).toHaveLength(0);
+      expect(first<HTMLElement>('.gs-tut-bar-title').textContent?.trim()).toBe(
+        TRANSLATIONS['generate.learn.read_hint'],
+      );
+      expect(query('.gs-tut-progress')).toHaveLength(0);
+      expect(query('.gs-learn-read-sec')).toHaveLength(
+        flowSteps('concepts_horde').length,
       );
       expect(query('.gs-learn-apply')).toHaveLength(0);
       expect(query('.gs-learn-show')).toHaveLength(0);
-      expect(dots()[0].className).not.toContain('gs-sec--');
     });
 
-    it('closes with the walkthrough rather than an ask to press Generate', async () => {
-      engine.goTo(engine.total() - 1);
-      await settle();
-
+    it('ends at a door into the walkthrough rather than an ask to press Generate', async () => {
       expect(body().textContent).not.toContain(
         TRANSLATIONS['generate.learn.finale_hint'],
       );
-      const cta =
+      const doors = query<HTMLElement>('.gs-door--tutorial');
+      expect(doors).toHaveLength(1);
+      expect(doors[0].textContent).toContain(
         TRANSLATIONS[
           'generate.learn.flows.concepts_horde.steps.where_next.cta'
-        ];
-      expect(first<HTMLElement>('.gs-tut-bar-do').textContent?.trim()).toBe(
-        cta,
+        ],
       );
-      expect(query('.gs-tut-bar-next')).toHaveLength(0);
 
-      first<HTMLButtonElement>('.gs-learn-cta').click();
+      doors[0].click();
       const http = TestBed.inject(HttpTestingController);
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await new Promise((resolve) => setTimeout(resolve, 0));

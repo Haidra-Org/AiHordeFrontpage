@@ -441,17 +441,18 @@ export const FLOWS: readonly FlowDef[] = [
     // change what they should expect of a result.
     id: 'concepts_migrating',
     concept: true,
+    // A map rather than a lesson: the reader already knows the controls, so
+    // each section answers one of their questions (where did my setting go,
+    // what is different, what is not here) and the last one is a door.
     steps: [
-      // The two renames the step names are the two the library has strips for,
-      // so "it is the same control under another name" is shown rather than
-      // asserted.
+      // The two controls that moved are the two the library has strips for,
+      // so "same control, new place" is shown rather than asserted.
       {
-        id: 'your_words_still_work',
+        id: 'where_things_are',
         sweepParameters: ['hires_fix', 'clip_skip'],
       },
-      { id: 'what_the_horde_changes' },
-      { id: 'what_to_expect_differently', sweepParameters: ['seed'] },
-      { id: 'the_models' },
+      { id: 'what_is_different', sweepParameters: ['seed'] },
+      { id: 'what_is_not_here' },
       { id: 'try_it', startsFlow: 'txt2img' },
     ],
   },

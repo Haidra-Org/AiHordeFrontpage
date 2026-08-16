@@ -15,12 +15,14 @@
             <span class="gs-tut-technique">{{ technique }}</span>
           }
         </h2>
-        <span class="gs-tut-pane-step">
-          {{
-            "generate.learn.progress"
-              | transloco: { current: tutorialStep(), total: tutorialTotal() }
-          }}
-        </span>
+        @if (tutorialHasWorlds()) {
+          <span class="gs-tut-pane-step">
+            {{
+              "generate.learn.progress"
+                | transloco: { current: tutorialStep(), total: tutorialTotal() }
+            }}
+          </span>
+        }
         @if (isBusy()) {
           <span class="gs-status gs-status--busy">
             <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>

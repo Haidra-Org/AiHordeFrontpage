@@ -278,10 +278,12 @@ describe('GenerateLearnPanelComponent', () => {
       fixture.detectChanges();
     });
 
-    it('lists its steps and names itself from its own prose', () => {
-      expect(query('.gs-learn-step')).toHaveLength(
+    it('lays its sections out as one read, named from its own prose', () => {
+      expect(query('.gs-learn-read-sec')).toHaveLength(
         flowSteps('concepts_images').length,
       );
+      expect(query('.gs-learn-step')).toHaveLength(0);
+      expect(query('.gs-learn-steps')).toHaveLength(0);
       expect(text()).toContain(
         TRANSLATIONS[
           'generate.learn.flows.concepts_images.steps.noise_to_picture.title'
@@ -296,27 +298,23 @@ describe('GenerateLearnPanelComponent', () => {
       expect(query('.gs-learn-example')).toHaveLength(0);
     });
 
-    it('takes no section hue, since no step is about a card', () => {
-      for (const step of query<HTMLElement>('.gs-learn-step')) {
-        expect(step.className).not.toContain('gs-sec--');
+    it('takes no section hue, since no section is about a card', () => {
+      for (const section of query<HTMLElement>('.gs-learn-read-sec')) {
+        expect(section.className).not.toContain('gs-sec--');
       }
-      expect(query<HTMLElement>('.gs-learn-card')[0].className).not.toContain(
-        'gs-tut-breathe',
-      );
+      expect(query('.gs-tut-breathe')).toHaveLength(0);
     });
 
-    it('closes with the walkthrough rather than an ask to press Generate', async () => {
-      engine.goTo(engine.total() - 1);
-      fixture.detectChanges();
-
+    it('ends at a door into the walkthrough rather than an ask to press Generate', async () => {
       expect(text()).not.toContain(TRANSLATIONS['generate.learn.finale_hint']);
-      const cta = query<HTMLButtonElement>('.gs-learn-cta');
-      expect(cta).toHaveLength(1);
-      expect(cta[0].textContent?.trim()).toBe(
+      expect(query('.gs-learn-cta')).toHaveLength(0);
+      const doors = query<HTMLElement>('.gs-door--tutorial');
+      expect(doors).toHaveLength(1);
+      expect(doors[0].textContent).toContain(
         TRANSLATIONS['generate.learn.flows.concepts_images.steps.try_it.cta'],
       );
 
-      cta[0].click();
+      doors[0].click();
       const http = TestBed.inject(HttpTestingController);
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -383,9 +381,13 @@ describe('GenerateLearnPanelComponent', () => {
       await serveLibrary(stubIndex);
 
       expect(query('.gs-sweep-offer')).toHaveLength(0);
-      expect(query('.gs-sweep-open')).toHaveLength(1);
+      // Every section's strip is open at once, since the whole track is one read.
+      expect(query('.gs-sweep-open').length).toBeGreaterThanOrEqual(1);
       // Both readings of the render, as one viewer with a choice in it.
-      const variants = query<HTMLButtonElement>('.gs-sweep-variant');
+      const variants = query<HTMLButtonElement>('.gs-sweep-variant').slice(
+        0,
+        2,
+      );
       expect(variants.map((button) => button.textContent?.trim())).toEqual([
         TRANSLATIONS['generate.sweeps.preview_variant_base'],
         TRANSLATIONS['generate.sweeps.preview_variant_alt'],
@@ -396,12 +398,12 @@ describe('GenerateLearnPanelComponent', () => {
       // The strips are published separately from the app, so a step whose
       // evidence is not there yet has to read as a finished step.
       await engine.start('concepts_images');
-      // The step about seeds asks for a strip the stub library never published.
-      engine.goTo(4);
       fixture.detectChanges();
       await serveLibrary(stubIndex);
 
-      expect(query('.gs-sweep')).toHaveLength(0);
+      // The section about seeds asks for a strip the stub library never published.
+      const sections = query<HTMLElement>('.gs-learn-read-sec');
+      expect(sections[4].querySelectorAll('.gs-sweep')).toHaveLength(0);
     });
 
     it('leaves no residue when the library cannot be reached', async () => {

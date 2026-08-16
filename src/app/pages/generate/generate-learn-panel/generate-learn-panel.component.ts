@@ -9,6 +9,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { GsProseComponent } from '../../../components/gs-prose/gs-prose.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import {
   TutorialEngineService,
   TutorialLevel,
@@ -38,6 +39,7 @@ import {
   imports: [
     TranslocoPipe,
     IconComponent,
+    GsDoorComponent,
     GsProseComponent,
     GsSweepScrubComponent,
   ],

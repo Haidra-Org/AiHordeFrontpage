@@ -174,10 +174,9 @@ describe('concept tracks', () => {
     // something the reader already has a habit about, and the handoff last: the
     // track ends where the walkthrough begins, as the other two tracks do.
     expect(flowSteps('concepts_migrating').map((step) => step.id)).toEqual([
-      'your_words_still_work',
-      'what_the_horde_changes',
-      'what_to_expect_differently',
-      'the_models',
+      'where_things_are',
+      'what_is_different',
+      'what_is_not_here',
       'try_it',
     ]);
     expect(flowSteps('concepts_migrating').at(-1)?.startsFlow).toBe('txt2img');
@@ -192,8 +191,8 @@ describe('concept tracks', () => {
     // the track says determinism is not promised across workers: a step making
     // a claim the library has pictures for should not be asking to be believed.
     expect(attached).toEqual([
-      'your_words_still_work:hires_fix+clip_skip',
-      'what_to_expect_differently:seed',
+      'where_things_are:hires_fix+clip_skip',
+      'what_is_different:seed',
     ]);
   });
 

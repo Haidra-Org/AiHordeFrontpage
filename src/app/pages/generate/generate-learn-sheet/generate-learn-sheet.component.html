@@ -23,27 +23,35 @@
       <span class="gs-tut-bar-sep" aria-hidden="true">&middot;</span>
       <span class="gs-tut-bar-name">{{ taskNameKey() | transloco }}</span>
     </p>
-    <div
-      class="gs-tut-progress"
-      role="progressbar"
-      [attr.aria-label]="'generate.learn.steps_label' | transloco"
-      [attr.aria-valuemin]="1"
-      [attr.aria-valuemax]="steps().length"
-      [attr.aria-valuenow]="stepIndex() + 1"
-      [attr.aria-valuetext]="
-        'generate.learn.sheet_progress' | transloco: progressParams()
-      "
-    >
-      @for (entry of steps(); track entry.id; let i = $index) {
-        <span
-          class="gs-tut-progress-seg"
-          [class]="identityFor(entry)?.className"
-          [class.gs-tut-progress-seg--done]="i <= stepIndex()"
-        ></span>
-      }
-    </div>
+    @if (!conceptTrack()) {
+      <div
+        class="gs-tut-progress"
+        role="progressbar"
+        [attr.aria-label]="'generate.learn.steps_label' | transloco"
+        [attr.aria-valuemin]="1"
+        [attr.aria-valuemax]="steps().length"
+        [attr.aria-valuenow]="stepIndex() + 1"
+        [attr.aria-valuetext]="
+          'generate.learn.sheet_progress' | transloco: progressParams()
+        "
+      >
+        @for (entry of steps(); track entry.id; let i = $index) {
+          <span
+            class="gs-tut-progress-seg"
+            [class]="identityFor(entry)?.className"
+            [class.gs-tut-progress-seg--done]="i <= stepIndex()"
+          ></span>
+        }
+      </div>
+    }
 
-    @if (step(); as current) {
+    @if (conceptTrack()) {
+      <div class="gs-tut-bar-row">
+        <span class="gs-tut-bar-title">{{
+          "generate.learn.read_hint" | transloco
+        }}</span>
+      </div>
+    } @else if (step(); as current) {
       <div class="gs-tut-bar-row">
         <span class="gs-tut-bar-title">{{
           titleKey(current) | transloco
@@ -86,6 +94,43 @@
     <p class="gs-info-note">{{ "generate.learn.load_error" | transloco }}</p>
   } @else if (loading()) {
     <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
+  } @else if (conceptTrack()) {
+    <!-- A track is a read rather than a walk: nothing in it is pressed or
+         written, so it is laid out whole, section by section with its
+         evidence inline, and it ends at the one door it has to offer. Step
+         dots and Next would be chrome for a thing that has no steps. -->
+    <article class="gs-learn-read">
+      @for (entry of steps(); track entry.id; let i = $index) {
+        <section class="gs-learn-read-sec">
+          <p class="gs-cap-eyebrow gs-tut-eyebrow">
+            <span class="gs-cap-dot" aria-hidden="true"></span>
+            {{ i + 1 }}
+          </p>
+          <h3 class="gs-guide-head">{{ titleKey(entry) | transloco }}</h3>
+          <div class="gs-guide-step-body">
+            <app-gs-prose
+              [key]="bodyKey(entry)"
+              [params]="copyParams()"
+              [paragraphs]="true"
+            />
+          </div>
+          @for (parameter of entry.sweepParameters ?? []; track parameter) {
+            <app-gs-sweep-scrub
+              [parameter]="parameter"
+              [startExpanded]="true"
+            />
+          }
+          @if (entry.startsFlow) {
+            <app-gs-door
+              kind="tutorial"
+              [eyebrow]="'generate.learn.badge' | transloco"
+              [title]="ctaKey(entry) | transloco"
+              (entered)="startOffered(entry)"
+            />
+          }
+        </section>
+      }
+    </article>
   } @else if (step(); as current) {
     <div class="gs-tut-body-head">
       <p class="gs-learn-progress" role="status" aria-live="polite">

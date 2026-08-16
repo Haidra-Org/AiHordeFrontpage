@@ -11997,6 +11997,28 @@ html:has(app-gs-sheet) {
   vertical-align: middle;
 }
 
+/* A track laid out whole: sections with an ordinal eyebrow, prose in
+   paragraphs, evidence inline, and the door at the end. */
+.gen-studio .gs-learn-read {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-6);
+  margin-top: var(--gs-space-3);
+}
+.gen-studio .gs-learn-read-sec {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  max-width: 72ch;
+}
+.gen-studio .gs-learn-read-sec .gs-cap-eyebrow,
+.gen-studio .gs-learn-read-sec .gs-guide-head {
+  margin: 0;
+}
+.gen-studio .gs-learn-read-sec app-gs-door {
+  margin-top: var(--gs-space-3);
+}
+
 /* ------- quiet polish on the shared tokens ------------------------------ */
 /* One pass over the surfaces a reader meets most: form cards, welcome doors,
    the follow-along card, the docs tabs and the primary buttons. Depth is a soft

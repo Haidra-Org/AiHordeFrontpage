@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import { GsProseComponent } from '../../../components/gs-prose/gs-prose.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
@@ -41,6 +42,7 @@ import {
     TranslocoPipe,
     IconComponent,
     GsProseComponent,
+    GsDoorComponent,
     GsWorldPickerComponent,
     GsSheetComponent,
     GsSweepScrubComponent,
