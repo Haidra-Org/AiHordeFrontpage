@@ -1,8 +1,9 @@
 /**
  * Bundles a completed alchemy job into a downloadable zip: the raw,
- * machine-readable results as JSON plus every result image fetched and stored
- * as a real file. Worker result images are short-lived remote URLs, so this is
- * the only chance to capture them before the Horde expires them.
+ * machine-readable results as JSON plus every result image as a real file.
+ * Images come from the copies the queue already saved; the horde's own links
+ * are only reached for a form whose download did not land, since those links
+ * expire.
  */
 import { strToU8, zipSync, type Zippable } from 'fflate';
 import {
@@ -18,6 +19,7 @@ import {
   buildAlchemyJobHtml,
   type AlchemyReportImage,
 } from './alchemy-html-report';
+import type { StoredAlchemyImage } from '../types/alchemy-job';
 
 export interface AlchemyJobArchive {
   bytes: Uint8Array;
@@ -77,16 +79,23 @@ function uniqueName(name: string, used: Set<string>): string {
   return candidate;
 }
 
+export interface AlchemyArchiveOptions {
+  /** Result images already held locally, preferred over a network fetch. */
+  storedImages?: readonly StoredAlchemyImage[];
+  fetchFn?: typeof fetch;
+}
+
 /**
- * Build a zip archive for a single alchemy job. Image fetches run concurrently
- * and failures are tolerated so a CORS-blocked or expired image never prevents
- * the user from saving the rest of their results.
+ * Build a zip archive for a single alchemy job. Any form without a stored copy
+ * is fetched, concurrently, and a failure is tolerated so a CORS-blocked or
+ * expired image never prevents the user from saving the rest of their results.
  */
 export async function buildAlchemyJobArchive(
   jobId: string,
   status: AlchemyStatusResponse,
-  fetchFn: typeof fetch = fetch,
+  options: AlchemyArchiveOptions = {},
 ): Promise<AlchemyJobArchive> {
+  const { storedImages = [], fetchFn = fetch } = options;
   const files: Zippable = {};
 
   const rawJson = JSON.stringify(
@@ -108,6 +117,14 @@ export async function buildAlchemyJobArchive(
 
   await Promise.all(
     imageForms.map(async ({ form, url }) => {
+      const stored = storedImages.find((image) => image.imageId === form.form);
+      if (stored) {
+        const ext = imageExtension(url, stored.mimeType);
+        const name = uniqueName(`images/${form.form}.${ext}`, usedNames);
+        files[name] = new Uint8Array(await stored.blob.arrayBuffer());
+        reportImages.push({ form: form.form, fileName: name });
+        return;
+      }
       try {
         const response = await fetchFn(url);
         if (!response.ok) {

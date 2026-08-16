@@ -883,6 +883,7 @@ export class AlchemyComponent {
       const { bytes, imageCount, failedImages } = await buildAlchemyJobArchive(
         job.id,
         status,
+        { storedImages: await this.queue.getResultImages(job.localId) },
       );
       this.triggerZipDownload(bytes, `alchemy-${job.id}.zip`);
 

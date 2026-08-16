@@ -27,6 +27,19 @@ const STATUS: AlchemyStatusResponse = {
   ],
 };
 
+/** Two image-bearing forms, so a mixed stored/fetched pass can be told apart. */
+const TWO_IMAGE_STATUS: AlchemyStatusResponse = {
+  state: 'done',
+  forms: [
+    ...(STATUS.forms ?? []),
+    {
+      form: 'GFPGAN',
+      state: 'done',
+      result: { GFPGAN: 'https://cdn.example/r2/face.webp' },
+    },
+  ],
+};
+
 describe('buildAlchemyJobArchive', () => {
   it('bundles results.json, results.html and fetched images', async () => {
     const fetchFn = vi
@@ -36,7 +49,7 @@ describe('buildAlchemyJobArchive', () => {
     const { bytes, imageCount, failedImages } = await buildAlchemyJobArchive(
       'job-1',
       STATUS,
-      fetchFn,
+      { fetchFn },
     );
 
     expect(imageCount).toBe(1);
@@ -70,7 +83,7 @@ describe('buildAlchemyJobArchive', () => {
     const { bytes, imageCount, failedImages } = await buildAlchemyJobArchive(
       'job-2',
       STATUS,
-      fetchFn,
+      { fetchFn },
     );
 
     expect(imageCount).toBe(0);
@@ -99,8 +112,63 @@ describe('buildAlchemyJobArchive', () => {
       ],
     };
 
-    const { bytes } = await buildAlchemyJobArchive('job-3', status, fetchFn);
+    const { bytes } = await buildAlchemyJobArchive('job-3', status, {
+      fetchFn,
+    });
     const entries = unzipSync(bytes);
     expect(entries['images/RealESRGAN_x4plus.png']).toBeDefined();
+  });
+
+  it('uses the copies already held and does not go to the network', async () => {
+    const fetchFn = vi.fn();
+
+    const { bytes, imageCount, failedImages } = await buildAlchemyJobArchive(
+      'job-4',
+      STATUS,
+      {
+        fetchFn: fetchFn as unknown as typeof fetch,
+        storedImages: [
+          {
+            localId: 'l1',
+            imageId: 'RestoreFormer',
+            kind: 'result',
+            blob: new Blob([new Uint8Array([9, 9])], { type: 'image/png' }),
+            mimeType: 'image/png',
+          },
+        ],
+      },
+    );
+
+    expect(fetchFn).not.toHaveBeenCalled();
+    expect(imageCount).toBe(1);
+    expect(failedImages).toBe(0);
+    expect(Object.keys(unzipSync(bytes))).toContain('images/RestoreFormer.png');
+  });
+
+  it('fetches only the forms it has no copy of', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(imageResponse([1, 2, 3, 4], 'image/webp'));
+
+    const { imageCount, failedImages } = await buildAlchemyJobArchive(
+      'job-5',
+      TWO_IMAGE_STATUS,
+      {
+        fetchFn,
+        storedImages: [
+          {
+            localId: 'l1',
+            imageId: 'RestoreFormer',
+            kind: 'result',
+            blob: new Blob([new Uint8Array([9, 9])], { type: 'image/png' }),
+            mimeType: 'image/png',
+          },
+        ],
+      },
+    );
+
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(imageCount).toBe(2);
+    expect(failedImages).toBe(0);
   });
 });
