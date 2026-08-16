@@ -18,38 +18,6 @@
     {{ "alchemy.skip_to_results" | transloco }}
   </a>
 
-  <!-- ============ SURFACE SWITCH ============ -->
-  <!-- A segmented control rather than a tab widget: the tool surface is two
-       sibling panes (builder + results), so there is no single element that
-       could honestly carry role="tabpanel". Pressed-state toggles describe the
-       same choice without lying about the structure underneath. -->
-  <div
-    class="gs-devtabs"
-    role="group"
-    [attr.aria-label]="'alchemy.tabs.label' | transloco"
-  >
-    <button
-      type="button"
-      class="gs-devtab"
-      [class.gs-devtab--on]="activeTab() === 'tool'"
-      [attr.aria-pressed]="activeTab() === 'tool'"
-      (click)="setTab('tool')"
-    >
-      <app-icon name="beaker" class="gs-ico-sm" />
-      {{ "alchemy.tabs.tool" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="gs-devtab"
-      [class.gs-devtab--on]="activeTab() === 'developers'"
-      [attr.aria-pressed]="activeTab() === 'developers'"
-      (click)="setTab('developers')"
-    >
-      <app-icon name="code-bracket" class="gs-ico-sm" />
-      {{ "alchemy.tabs.developers" | transloco }}
-    </button>
-  </div>
-
   <!-- ============ CONTROL PANEL ============ -->
   <section class="gs-panel">
     <div class="flex min-h-0 flex-1 flex-col">
@@ -103,12 +71,25 @@
             />
           </button>
           <button
+            #apiButton
             type="button"
             class="gs-btn gs-btn--dense"
             (click)="openApi()"
           >
             <span class="gs-mono">&#123;&#125;</span>
             {{ "alchemy.api.button" | transloco }}
+          </button>
+          <!-- The request without the trip to the documentation, for a caller
+               who only came for the body. -->
+          <button
+            type="button"
+            class="gs-mini-btn"
+            [disabled]="!hasSource()"
+            (click)="copyApiPayload()"
+            [attr.aria-label]="'alchemy.api.copy_payload' | transloco"
+            [title]="'alchemy.api.copy_payload' | transloco"
+          >
+            <app-icon name="clipboard-document" class="gs-ico-sm" />
           </button>
         </div>
       </header>
@@ -186,6 +167,32 @@
             <span class="gs-step-title">
               {{ "alchemy.steps.operations" | transloco }}
             </span>
+            <button
+              type="button"
+              class="gs-mini-btn"
+              (click)="toggleAllGroups()"
+              [attr.aria-label]="
+                (allGroupsCollapsed()
+                  ? 'alchemy.operations.expand_all'
+                  : 'alchemy.operations.collapse_all'
+                ) | transloco
+              "
+              [title]="
+                (allGroupsCollapsed()
+                  ? 'alchemy.operations.expand_all'
+                  : 'alchemy.operations.collapse_all'
+                ) | transloco
+              "
+            >
+              <app-icon
+                [name]="
+                  allGroupsCollapsed()
+                    ? 'chevron-double-down'
+                    : 'chevron-double-up'
+                "
+                class="gs-ico-sm"
+              />
+            </button>
             <span class="gs-sublabel ml-auto">
               @if (selectedCount() > 0) {
                 {{
@@ -594,6 +601,19 @@
        there is nothing to preserve while it is off screen. -->
   @if (activeTab() === "developers") {
     <div class="gs-devdoc">
+      <!-- The way back stands outside the scrolling body, so it is on screen
+           wherever the reader has got to. -->
+      <div class="gs-devdoc-crumb">
+        <button
+          #devBackButton
+          type="button"
+          class="gs-devdoc-back"
+          (click)="closeApi()"
+        >
+          <app-icon name="chevron-left" class="gs-ico-sm" />
+          {{ "alchemy.dev.back" | transloco }}
+        </button>
+      </div>
       <div class="gs-devdoc-inner">
         <p class="gs-devdoc-lead">{{ "alchemy.dev.lead" | transloco }}</p>
 
@@ -720,6 +740,15 @@
             <figcaption class="gs-devdoc-code-head">
               <span class="gs-api-verb gs-api-verb--post">POST</span>
               <code class="gs-mono">{{ submitEndpointUrl }}</code>
+              <button
+                type="button"
+                class="gs-devdoc-code-btn"
+                [disabled]="!hasSource()"
+                (click)="openFullPayload()"
+              >
+                <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+                {{ "alchemy.api.show_full" | transloco }}
+              </button>
             </figcaption>
             <pre class="gs-api-code"><code>{{ devRequestSample() }}</code></pre>
           </figure>
@@ -815,12 +844,15 @@
     </div>
   }
 
-  <!-- ============ API PREVIEW MODAL ============ -->
-  @if (apiModalOpen()) {
+  <!-- ============ FULL REQUEST MODAL ============ -->
+  <!-- The body with nothing stood in for. Everything around a request, the
+       endpoints and the response shape, is on the developer surface; this holds
+       only what a caller pastes. -->
+  @if (fullPayloadOpen()) {
     <div
       class="gs-modal-overlay"
-      (click)="onApiBackdrop($event)"
-      (keydown.escape)="closeApi()"
+      (click)="onFullPayloadBackdrop($event)"
+      (keydown.escape)="closeFullPayload()"
       role="dialog"
       aria-modal="true"
       tabindex="0"
@@ -828,12 +860,12 @@
       <div class="gs-modal-panel gs-fadeup">
         <div class="gs-modal-header">
           <div class="gs-modal-title">
-            {{ "alchemy.api.title" | transloco }}
+            {{ "alchemy.api.full_title" | transloco }}
           </div>
           <button
             type="button"
             class="gs-modal-close"
-            (click)="closeApi()"
+            (click)="closeFullPayload()"
             [attr.aria-label]="'generate.civitai.close' | transloco"
           >
             <app-icon name="x-mark" class="gs-ico-sm" />
@@ -846,67 +878,15 @@
         </div>
 
         <div class="gs-modal-body gs-api-body">
-          <pre class="gs-api-code"><code>{{ apiPayload() }}</code></pre>
-
-          <div class="gs-api-section">
-            <div class="gs-api-section-title">
-              {{ "alchemy.dev.endpoints.heading" | transloco }}
-            </div>
-            <ul class="gs-api-routes">
-              <li class="gs-api-route">
-                <span class="gs-api-verb gs-api-verb--post">POST</span>
-                <code class="gs-mono">/interrogate/async</code>
-                <span class="gs-api-route-desc">
-                  {{ "alchemy.dev.endpoints.submit" | transloco }}
-                </span>
-              </li>
-              <li class="gs-api-route">
-                <span class="gs-api-verb gs-api-verb--get">GET</span>
-                <code class="gs-mono">/interrogate/status/:id</code>
-                <span class="gs-api-route-desc">
-                  {{ "alchemy.dev.endpoints.status" | transloco }}
-                </span>
-              </li>
-              <li class="gs-api-route">
-                <span class="gs-api-verb gs-api-verb--del">DELETE</span>
-                <code class="gs-mono">/interrogate/status/:id</code>
-                <span class="gs-api-route-desc">
-                  {{ "alchemy.dev.endpoints.cancel" | transloco }}
-                </span>
-              </li>
-            </ul>
+          <pre class="gs-api-code"><code>{{ apiPayloadPreview() }}</code></pre>
+          @if (apiPayloadTruncated()) {
             <p class="gs-sublabel gs-api-note">
-              {{ "alchemy.dev.endpoints.auth_note" | transloco }}
+              {{
+                "alchemy.api.truncated_note"
+                  | transloco: { count: apiPayloadLength() }
+              }}
             </p>
-          </div>
-
-          <div class="gs-api-section">
-            <div class="gs-api-section-title">
-              {{ "alchemy.api.response_heading" | transloco }}
-            </div>
-            <pre class="gs-api-code"><code>{{ statusSample }}</code></pre>
-          </div>
-
-          <div class="gs-api-links">
-            <a
-              href="https://github.com/Haidra-Org/horde-sdk"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="gs-tile-btn"
-            >
-              <app-icon name="github" />
-              {{ "alchemy.dev.sdk.repo_link" | transloco }}
-            </a>
-            <a
-              href="https://github.com/Haidra-Org/horde-sdk/blob/main/examples/ai_horde_client/image/alchemy_example.py"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="gs-tile-btn"
-            >
-              <app-icon name="code-bracket" />
-              {{ "alchemy.dev.sdk.example_link" | transloco }}
-            </a>
-          </div>
+          }
         </div>
 
         <div class="gs-modal-footer">
@@ -918,7 +898,8 @@
             class="gs-modal-done"
             (click)="copyApiPayload()"
           >
-            {{ "alchemy.api.copy_close" | transloco }}
+            <app-icon name="clipboard-document" class="gs-ico-sm" />
+            {{ "alchemy.api.copy_all" | transloco }}
           </button>
         </div>
       </div>

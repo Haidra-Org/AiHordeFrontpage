@@ -185,6 +185,8 @@ export const APP_ICONS: Record<string, string> = {
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>',
   'chevron-double-down':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 5.25l-7.5 7.5-7.5-7.5m15 6l-7.5 7.5-7.5-7.5"/>',
+  'chevron-double-up':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 18.75l7.5-7.5 7.5 7.5m-15-6l7.5-7.5 7.5 7.5"/>',
   'clock-alt':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6l3.5 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
 

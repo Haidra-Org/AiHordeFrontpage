@@ -4189,6 +4189,19 @@
   .gen-studio .gs-results-body--browser {
     overflow: hidden;
   }
+  /* The browser is a component host, and a bare custom element is an inline
+     box that hands its child no height: `.gs-browser` below asks for `flex: 1;
+     min-height: 0` and gets neither, so the rail/detail grid sizes to its
+     content and everything past the pane's height disappears behind the
+     `overflow: hidden` above. The same declarations as `.gs-fill`, kept to this
+     width because the narrow pane has no height to fill and a `flex-basis: 0`
+     item in an auto-height column would collapse instead. */
+  .gen-studio .gs-results-body--browser > app-alchemy-results-browser {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
 }
 .gen-studio .gs-retention--flush {
   flex: none;
@@ -6152,6 +6165,7 @@
   .gen-studio .gs-presets-del,
   .gen-studio .gs-prompt-hist-btn,
   .gen-studio .gs-seg--xs .gs-seg-opt,
+  .gen-studio .gs-devdoc-code-btn,
   .gen-studio .gs-batch-btn {
     min-height: 40px;
     min-width: 40px;
@@ -7542,9 +7556,51 @@
   color: var(--gs-muted);
 }
 
+/* A row of pressed-state toggles standing in for a tab widget where the thing
+   being chosen between is not one element that could honestly carry
+   `role="tabpanel"`. The walkthrough's detail switch below is the only user
+   left; the alchemy page, which this anatomy was written for, reaches its
+   documentation from a button in the panel header instead. */
+.gen-studio .gs-devtabs {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  background: var(--gs-panel);
+  border-bottom: 1px solid var(--gs-border);
+}
+.gen-studio .gs-devtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-devtab:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-devtab.gs-devtab--on {
+  color: var(--gs-purple);
+  background: var(--gs-purple-tint);
+  border-color: var(--gs-purple-tint-border);
+}
+.gen-studio .gs-devtab:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+
 /* How much detail the walkthrough goes into, as a line of the dossier: the
    underline tabs the index rail's bar form already reads as, rather than the
-   alchemy page's panel-wide switch this borrows its markup from. */
+   panel-wide switch anatomy above. */
 .gen-studio .gs-tut-modes {
   grid-column: auto;
   gap: var(--gs-space-1);

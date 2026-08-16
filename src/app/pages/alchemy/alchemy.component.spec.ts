@@ -95,13 +95,30 @@ describe('AlchemyComponent', () => {
     });
   });
 
-  describe('api modal', () => {
-    it('opens and closes the API request preview', () => {
-      expect(component.apiModalOpen()).toBe(false);
+  describe('request preview', () => {
+    it('sends the API button to the documentation and the crumb back', () => {
+      expect(component.activeTab()).toBe('tool');
       component.openApi();
-      expect(component.apiModalOpen()).toBe(true);
+      expect(component.activeTab()).toBe('developers');
       component.closeApi();
-      expect(component.apiModalOpen()).toBe(false);
+      expect(component.activeTab()).toBe('tool');
+    });
+
+    it('opens and closes the whole-request modal', () => {
+      expect(component.fullPayloadOpen()).toBe(false);
+      component.openFullPayload();
+      expect(component.fullPayloadOpen()).toBe(true);
+      component.closeFullPayload();
+      expect(component.fullPayloadOpen()).toBe(false);
+    });
+
+    it('takes the request modal with it when the surface is left', () => {
+      component.openApi();
+      component.openFullPayload();
+
+      component.closeApi();
+
+      expect(component.fullPayloadOpen()).toBe(false);
     });
 
     it('previews the request body built from the current selection', () => {
@@ -114,6 +131,41 @@ describe('AlchemyComponent', () => {
         source_image: 'https://example.com/i.png',
         slow_workers: true,
       });
+    });
+
+    it('stands a placeholder in for the encoded image the picker hands over', () => {
+      // The picker emits bare base64, never a data URL, so the elision cannot
+      // be decided on a `data:` prefix.
+      const base64 = 'UklGRuQ'.repeat(600);
+      component.onSourceImage(base64);
+      select('caption');
+
+      expect(JSON.parse(component.apiPayload()).source_image).toBe('{base64}');
+      expect(JSON.parse(component.apiPayloadFull()).source_image).toBe(base64);
+      expect(component.apiPayload()).not.toContain(base64);
+    });
+
+    it('cuts a long source short for the modal and reports the real length', () => {
+      const base64 = 'UklGRuQ'.repeat(600);
+      component.onSourceImage(base64);
+      select('caption');
+
+      expect(component.apiPayloadTruncated()).toBe(true);
+      const shown = JSON.parse(component.apiPayloadPreview())
+        .source_image as string;
+      expect(shown.length).toBeLessThan(base64.length);
+      expect(base64.startsWith(shown.slice(0, -1))).toBe(true);
+      expect(component.apiPayloadLength()).toBe(
+        component.apiPayloadFull().length,
+      );
+    });
+
+    it('shows a short source whole', () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('caption');
+
+      expect(component.apiPayloadTruncated()).toBe(false);
+      expect(component.apiPayloadPreview()).toBe(component.apiPayloadFull());
     });
   });
 
@@ -137,6 +189,29 @@ describe('AlchemyComponent', () => {
       expect(component.isGroupCollapsed('analyze')).toBe(false);
       component.toggleGroup('upscale');
       expect(component.isGroupCollapsed('upscale')).toBe(false);
+    });
+
+    it('folds every family shut, then opens them all again', () => {
+      expect(component.allGroupsCollapsed()).toBe(false);
+
+      component.toggleAllGroups();
+      expect(component.allGroupsCollapsed()).toBe(true);
+      for (const group of component.operationGroups) {
+        expect(component.isGroupCollapsed(group.id)).toBe(true);
+      }
+
+      component.toggleAllGroups();
+      expect(component.allGroupsCollapsed()).toBe(false);
+      for (const group of component.operationGroups) {
+        expect(component.isGroupCollapsed(group.id)).toBe(false);
+      }
+    });
+
+    it('collapses the rest once one family is already shut', () => {
+      component.toggleGroup('upscale');
+      component.toggleAllGroups();
+
+      expect(component.allGroupsCollapsed()).toBe(true);
     });
   });
 
@@ -591,16 +666,25 @@ describe('AlchemyComponent developer surface (rendered)', () => {
 
   const text = (): string => fixture.nativeElement.textContent ?? '';
 
-  it('offers both surfaces from the switch, with the tool pressed', () => {
-    const tabs: HTMLButtonElement[] = [
-      ...fixture.nativeElement.querySelectorAll('.gs-devtab'),
-    ];
+  it('costs the tool no standing row for the documentation', () => {
+    expect(fixture.nativeElement.querySelector('.gs-devtabs')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.gs-devdoc')).toBeNull();
+  });
 
-    expect(tabs).toHaveLength(2);
-    expect(tabs.map((t) => t.getAttribute('aria-pressed'))).toEqual([
-      'true',
-      'false',
-    ]);
+  it('opens the documentation from the API button and leaves by its crumb', () => {
+    component.openApi();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.gs-devdoc')).not.toBeNull();
+
+    const back: HTMLButtonElement =
+      fixture.nativeElement.querySelector('.gs-devdoc-back');
+    expect(back).not.toBeNull();
+
+    back.click();
+    fixture.detectChanges();
+
+    expect(component.activeTab()).toBe('tool');
     expect(fixture.nativeElement.querySelector('.gs-devdoc')).toBeNull();
   });
 

@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   NgZone,
   PLATFORM_ID,
   afterNextRender,
@@ -83,6 +85,17 @@ type AlchemyTab = 'tool' | 'developers';
 /** Public base URL of the Horde REST API, as quoted in the developer surface. */
 const API_BASE_URL = 'https://aihorde.net/api/v2';
 
+/** What the encoded source image stands as in the documented request. */
+const BASE64_PLACEHOLDER = '{base64}';
+
+/**
+ * How much of the encoded source the full-request modal shows. The picker
+ * accepts up to four megabytes, and a string that long in a `<pre>` stalls the
+ * page as the modal opens; the head of it is enough to recognise, and the copy
+ * button carries the rest.
+ */
+const SOURCE_PREVIEW_CHARS = 2_000;
+
 /**
  * A thumbnail larger than this (bytes) is dropped from the persisted payload
  * (kept in memory for the session only) so a pathological source can't grow the
@@ -150,6 +163,7 @@ export class AlchemyComponent {
   private readonly auth = inject(AuthService);
   public readonly ns = inject(NetworkStatusService);
   private readonly toast = inject(ToastService);
+  private readonly injector = inject(Injector);
   private readonly translator = inject(TranslatorService);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
@@ -160,6 +174,12 @@ export class AlchemyComponent {
 
   /** The source picker, so an image handed over from /generate can be applied. */
   private readonly imageInput = viewChild(AlchemyImageInputComponent);
+  /* The two ends of the trip into the documentation: each hands the focus to
+     the other, so the way back is never something to go hunting for. */
+  private readonly apiButton =
+    viewChild<ElementRef<HTMLButtonElement>>('apiButton');
+  private readonly devBackButton =
+    viewChild<ElementRef<HTMLButtonElement>>('devBackButton');
 
   private static readonly POLL_MS = 10_000;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -290,8 +310,8 @@ export class AlchemyComponent {
   /** The studio's own mark and hue, worn by every operation card. */
   public readonly identity = SECTION_IDENTITIES.alchemy;
 
-  /** The API request-preview modal (the header's "{ } API" affordance). */
-  public readonly apiModalOpen = signal(false);
+  /** The modal holding the request body with nothing stood in for. */
+  public readonly fullPayloadOpen = signal(false);
   public readonly activeOperation = signal<AlchemyFormName>('caption');
 
   /**
@@ -317,6 +337,21 @@ export class AlchemyComponent {
   public onInfoBackdrop(event: MouseEvent): void {
     if (event.target === event.currentTarget) {
       this.closeInfo();
+    }
+  }
+
+  public openFullPayload(): void {
+    this.fullPayloadOpen.set(true);
+  }
+
+  public closeFullPayload(): void {
+    this.fullPayloadOpen.set(false);
+  }
+
+  /** Close the request modal only when its backdrop is clicked. */
+  public onFullPayloadBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.closeFullPayload();
     }
   }
 
@@ -350,11 +385,26 @@ export class AlchemyComponent {
     });
   }
 
+  public readonly allGroupsCollapsed = computed(
+    () => this.collapsedGroups().size === this.operationGroups.length,
+  );
+
+  /** Fold every family shut, or, once they all are, open them all again. */
+  public toggleAllGroups(): void {
+    this.collapsedGroups.set(
+      this.allGroupsCollapsed()
+        ? new Set()
+        : new Set(this.operationGroups.map((group) => group.id)),
+    );
+  }
+
   /**
    * Which surface is on screen. The docs are a reference detour taken while a
    * request may still be running, so the tool is hidden rather than torn down,
    * and the choice is not persisted or reflected in the URL: the studio's own
    * tabs are routes, and this page has no query-parameter state of its own.
+   * The header's API button is the only way in and the crumb the only way out,
+   * so the documentation costs the tool no standing row of screen.
    */
   public readonly activeTab = signal<AlchemyTab>('tool');
 
@@ -516,66 +566,132 @@ export class AlchemyComponent {
     this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
   }
 
+  /**
+   * Show the developer surface, and give it the focus so the way back is the
+   * next thing a keyboard reaches.
+   */
   public openApi(): void {
-    this.apiModalOpen.set(true);
+    this.setTab('developers');
+    afterNextRender(() => this.devBackButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
+  /** Back to the tool, with the focus returned to the button that left it. */
   public closeApi(): void {
-    this.apiModalOpen.set(false);
-  }
-
-  /** Close the API modal only when its backdrop (not the panel) is clicked. */
-  public onApiBackdrop(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeApi();
-    }
+    // The request modal belongs to the surface being left, so it goes with it
+    // rather than standing over the tool with nothing behind it.
+    this.closeFullPayload();
+    this.setTab('tool');
+    afterNextRender(() => this.apiButton()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   /**
-   * Live preview of the `/interrogate/async` request body the current source and
-   * selected operations would submit. A base64 source is elided to a placeholder
-   * so the modal stays readable; a URL source is shown verbatim.
+   * The `/interrogate/async` body the current source and selected operations
+   * would submit. One builder for the documentation and for `submit()`, so the
+   * example on screen cannot drift away from what the tool sends.
+   */
+  private requestBody(source: string): InterrogationRequest {
+    const forms = [...this.selectedForms()];
+    return {
+      forms: (forms.length > 0 ? forms : ['caption' as AlchemyFormName]).map(
+        (name) => ({ name }),
+      ),
+      source_image: source,
+      slow_workers: this.slowWorkers(),
+    };
+  }
+
+  /**
+   * A URL source is a short string worth reading; anything else is the encoded
+   * image, which the picker hands over as bare base64 rather than a data URL.
+   * The distinction has to be made this way round: a test for a `data:` prefix
+   * never matches, and the whole encoded image lands in the example.
+   */
+  private isUrlSource(source: string): boolean {
+    return /^https?:\/\//i.test(source);
+  }
+
+  /**
+   * The request as the documentation shows it: the image stands as a
+   * placeholder rather than the megabytes it really is, which no reader can
+   * take anything from and which a `<pre>` lays out one glyph at a time.
    */
   public readonly apiPayload = computed(() => {
     const source = this.sourceImage();
-    const forms = [...this.selectedForms()].map((name) => ({ name }));
-    const payload = {
-      forms: forms.length > 0 ? forms : [{ name: 'caption' }],
-      source_image: source
-        ? source.startsWith('data:')
-          ? '<base64 webp>'
-          : source
-        : '<source image>',
-      slow_workers: this.slowWorkers(),
-    };
-    return JSON.stringify(payload, null, 2);
+    return JSON.stringify(
+      {
+        ...this.requestBody(source ?? ''),
+        source_image:
+          source && this.isUrlSource(source) ? source : BASE64_PLACEHOLDER,
+      },
+      null,
+      2,
+    );
+  });
+
+  /** The same request with nothing stood in for: what a caller would send. */
+  public readonly apiPayloadFull = computed(() =>
+    JSON.stringify(this.requestBody(this.sourceImage() ?? ''), null, 2),
+  );
+
+  /** How long the real body is, for the note under the shortened preview. */
+  public readonly apiPayloadLength = computed(
+    () => this.apiPayloadFull().length,
+  );
+
+  /** Whether the preview below is standing in for a longer body. */
+  public readonly apiPayloadTruncated = computed(
+    () => (this.sourceImage() ?? '').length > SOURCE_PREVIEW_CHARS,
+  );
+
+  /**
+   * The real body with a long source cut short for display. The encoded image
+   * runs to four megabytes at the picker's limit, and a string that size in a
+   * `<pre>` stalls the page as it opens, so the modal reads a head of it and
+   * the copy button is what carries the whole thing.
+   */
+  public readonly apiPayloadPreview = computed(() => {
+    const source = this.sourceImage();
+    if (!source || !this.apiPayloadTruncated()) {
+      return this.apiPayloadFull();
+    }
+    return JSON.stringify(
+      {
+        ...this.requestBody(source),
+        source_image: `${source.slice(0, SOURCE_PREVIEW_CHARS)}…`,
+      },
+      null,
+      2,
+    );
   });
 
   /**
-   * The documented request for the developer surface: the same live body the
-   * preview modal shows, under the two headers a caller has to send. Sharing
-   * the builder keeps the documentation from drifting away from what the tool
-   * actually submits.
+   * The documented request for the developer surface: the shown body under the
+   * two headers a caller has to send.
    */
   public readonly devRequestSample = computed(
     () =>
       `apikey: ${ANONYMOUS_API_KEY}\nContent-Type: application/json\n\n${this.apiPayload()}`,
   );
 
-  /** Copy the previewed request body to the clipboard, then close the modal. */
+  /** Put the whole request body, image and all, on the clipboard. */
   public async copyApiPayload(): Promise<void> {
     if (
-      isPlatformBrowser(this.platformId) &&
-      typeof navigator !== 'undefined' &&
-      navigator.clipboard
+      !isPlatformBrowser(this.platformId) ||
+      typeof navigator === 'undefined' ||
+      !navigator.clipboard
     ) {
-      try {
-        await navigator.clipboard.writeText(this.apiPayload());
-      } catch {
-        // Clipboard access can be denied; closing the modal is the main intent.
-      }
+      return;
     }
-    this.closeApi();
+    try {
+      await navigator.clipboard.writeText(this.apiPayloadFull());
+      this.toast.success('alchemy.api.copied', { transloco: true });
+    } catch {
+      this.toast.error('alchemy.api.copy_failed', { transloco: true });
+    }
   }
 
   /**
@@ -656,11 +772,7 @@ export class AlchemyComponent {
     }
 
     const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
-    const request: InterrogationRequest = {
-      forms: forms.map((name) => ({ name })),
-      source_image: source,
-      slow_workers: this.slowWorkers(),
-    };
+    const request = this.requestBody(source);
 
     this.isSubmitting.set(true);
     this.aiHorde
