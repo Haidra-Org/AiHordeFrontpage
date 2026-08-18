@@ -1,4 +1,8 @@
-import { AlchemyFormName, AlchemyStatusResponse } from './generation';
+import {
+  AlchemyFormName,
+  AlchemyStatusResponse,
+  AnnotationControlType,
+} from './generation';
 
 /** Whether the request's source image was uploaded or referenced by URL. */
 export type AlchemySourceMode = 'url' | 'upload';
@@ -12,7 +16,11 @@ export type StoredAlchemyImageKind = 'source' | 'thumb' | 'result';
 /** An image blob attached to a stored alchemy job. */
 export interface StoredAlchemyImage {
   localId: string;
-  /** `source` or `thumb` for the request's own image; the form name for a result. */
+  /**
+   * `source` or `thumb` for the request's own image; for a result, the form's
+   * key from `alchemy-job-view`, which carries the detector for a control map
+   * so two of them in one job do not overwrite each other.
+   */
   imageId: string;
   kind: StoredAlchemyImageKind;
   blob: Blob;
@@ -42,6 +50,14 @@ export interface StoredAlchemyJob {
   createdAt: number;
   updatedAt: number;
   forms: AlchemyFormName[];
+  /** Detectors requested by control-map forms, in the order they were picked. */
+  annotationControlTypes?: readonly AnnotationControlType[];
+  /**
+   * The single detector jobs carried before a request could ask for several.
+   * Read only, so an old job still names its detector; every write uses
+   * `annotationControlTypes`.
+   */
+  annotationControlType?: AnnotationControlType;
   slowWorkers: boolean;
   sourceMode: AlchemySourceMode;
   /** The literal `source_image` when it was a URL; absent for an upload. */
@@ -52,9 +68,9 @@ export interface StoredAlchemyJob {
   faulted: boolean;
   cancelled: boolean;
   notFound: boolean;
-  /** Form names whose result image is held in `alchemyImages`. */
+  /** Result keys whose image is held in `alchemyImages`. */
   storedResultForms: string[];
-  /** Form names whose result image can no longer be retrieved. */
+  /** Result keys whose image can no longer be retrieved. */
   failedResultForms: string[];
   lastPolledAt?: number;
 }

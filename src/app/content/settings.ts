@@ -512,9 +512,92 @@ export const SETTINGS: readonly SettingEntry[] = [
         speed: 'varies',
         quality: 'generate.reference.quality_sampler',
       },
-      related: ['steps', 'karras', 'requirements'],
+      related: ['steps', 'scheduler', 'sampler_settings', 'requirements'],
     },
-    sweeps: { strip: 'sampler', grid: 'sampler_steps_grid' },
+    // The four-stop strip is the lesson; the gallery is every sampler the horde
+    // publishes on the same seed, for a reader choosing from the advanced tier.
+    sweeps: {
+      strip: 'sampler',
+      alsoStrips: [{ parameter: 'sampler_gallery' }],
+      grid: 'sampler_steps_grid',
+    },
+  },
+  {
+    // The whole schedule rather than the one flag: which of them the panel can
+    // offer is the horde's answer rather than this studio's, so the page says
+    // what a schedule is and leaves the list to the control.
+    id: 'scheduler',
+    section: 'sampling',
+    reference: {
+      tradeoffs: { quality: 'generate.reference.quality_scheduler' },
+      related: ['sampler', 'karras', 'steps', 'sampler_settings'],
+    },
+    sweeps: { strip: 'scheduler', grid: 'scheduler_steps_grid' },
+  },
+  {
+    // The solver knobs the contract exposes per sampler: eta, noise scale,
+    // churn and its window, solver order and solver type. One page for all of
+    // them, because a reader meets them as one disclosure and each strip holds
+    // every other knob at its default.
+    id: 'sampler_settings',
+    section: 'sampling',
+    reference: {
+      related: ['sampler', 'scheduler', 'flow_shift'],
+    },
+    sweeps: {
+      strip: 'sampler_eta',
+      alsoStrips: [
+        { parameter: 'sampler_s_noise' },
+        { parameter: 'sampler_s_churn' },
+        { parameter: 'sampler_solver_type' },
+      ],
+    },
+  },
+  // The knobs themselves, so a strip about one of them is named after it rather
+  // than after the page. They are read on the shared page above and have none
+  // of their own; the panel names each with its form label.
+  // Every sampler the horde publishes on one seed: read on the sampler page,
+  // named for what it is so its row does not read as the four-stop strip again.
+  {
+    id: 'sampler_gallery',
+    section: 'sampling',
+    labelKey: 'generate.sweeps.sampler_gallery_label',
+    sweeps: { strip: 'sampler_gallery' },
+  },
+  {
+    id: 'sampler_eta',
+    section: 'sampling',
+    labelKey: 'generate.form.sampler_eta_label',
+    sweeps: { strip: 'sampler_eta' },
+  },
+  {
+    id: 'sampler_s_noise',
+    section: 'sampling',
+    labelKey: 'generate.form.sampler_s_noise_label',
+    sweeps: { strip: 'sampler_s_noise' },
+  },
+  {
+    id: 'sampler_s_churn',
+    section: 'sampling',
+    labelKey: 'generate.form.sampler_s_churn_label',
+    sweeps: { strip: 'sampler_s_churn' },
+  },
+  {
+    id: 'sampler_solver_type',
+    section: 'sampling',
+    labelKey: 'generate.form.sampler_solver_type_label',
+    sweeps: { strip: 'sampler_solver_type' },
+  },
+  {
+    // A Flux and Qwen Image control. The panel only shows it where the selected
+    // model reads it, so the page is mostly about why it is usually missing.
+    id: 'flow_shift',
+    section: 'sampling',
+    reference: {
+      range: { min: 0, max: 100, typical: '2-4' },
+      related: ['scheduler', 'sampler_settings', 'steps', 'requirements'],
+    },
+    sweeps: { strip: 'flow_shift' },
   },
   {
     id: 'seed',
@@ -543,7 +626,7 @@ export const SETTINGS: readonly SettingEntry[] = [
     proseLabelKey: 'generate.help.karras.title',
     reference: {
       tradeoffs: { quality: 'generate.reference.quality_karras' },
-      related: ['sampler', 'steps', 'requirements'],
+      related: ['sampler', 'scheduler', 'steps', 'requirements'],
     },
     sweeps: { strip: 'karras', grid: 'karras_grid' },
   },
@@ -756,6 +839,9 @@ export const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   post_processing: 'post',
   resolution: 'size',
   sampler_name: 'sampler',
+  // The alchemy library sweeps the upscaler by the name of the form that runs
+  // it, which is the finishing setting the panel already names.
+  upscaler_form: 'upscaler',
   step_preview_guess: 'step_preview',
   steps_converging: 'steps',
 };

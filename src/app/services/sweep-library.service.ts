@@ -142,6 +142,35 @@ export function sweepSlugForBaseline(
   return baseline ? SWEEP_SLUG_BY_BASELINE[baseline] : undefined;
 }
 
+/**
+ * A stop value that is a measurement rather than a name: a number, a size like
+ * `768x768`, or a phrase carrying one. Those strips are points on a scale even
+ * where the index writes them as text, and a scale is read by scrubbing along
+ * it.
+ */
+const MEASURED_VALUE = /^\s*[-+]?\d+(\.\d+)?\s*$|^\d+\s*x\s*\d+$|\d+\.\d/;
+
+/**
+ * Whether a strip's stops are named alternatives rather than a range.
+ *
+ * A schedule, a sampler or an upscaler is a comparison: the frames stand beside
+ * each other and nothing lies between two of them, so they are laid out at once
+ * rather than scrubbed through. This is read off the published stops rather
+ * than from a list of parameters here, so a strip the library adds tomorrow is
+ * laid out by what it holds.
+ */
+export function sweepIsCategorical(strip: SweepStrip | null): boolean {
+  const stops = strip?.stops ?? [];
+  return (
+    stops.length > 0 &&
+    stops.every(
+      (stop) =>
+        typeof stop.value === 'boolean' ||
+        (typeof stop.value === 'string' && !MEASURED_VALUE.test(stop.value)),
+    )
+  );
+}
+
 /** The library slug rendered from this exact model, if the library has one. */
 export function sweepSlugForModelName(
   name: string | null | undefined,

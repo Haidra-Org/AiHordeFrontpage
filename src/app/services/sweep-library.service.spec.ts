@@ -5,7 +5,10 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { SweepLibraryService } from './sweep-library.service';
+import {
+  SweepLibraryService,
+  sweepIsCategorical,
+} from './sweep-library.service';
 import { environment } from '../../environments/environment';
 import stubIndex from '../testing/fixtures/sweep-index.stub.json';
 
@@ -160,6 +163,41 @@ describe('SweepLibraryService', () => {
     expect(sweeps.assetUrl(strip.source_image!)).toBe(
       `${environment.evidenceBaseUrl}/denoising-strength/deliberate/place/source.webp`,
     );
+  });
+
+  it('reads named alternatives apart from a range, off the stops themselves', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    expect(sweepIsCategorical(sweeps.strip('scheduler'))).toBe(true);
+    expect(sweepIsCategorical(sweeps.strip('sampler_solver_type'))).toBe(true);
+    expect(sweepIsCategorical(sweeps.strip('tiling'))).toBe(true);
+    expect(sweepIsCategorical(sweeps.strip('steps'))).toBe(false);
+    expect(sweepIsCategorical(sweeps.strip('denoising_strength'))).toBe(false);
+    expect(sweepIsCategorical(null)).toBe(false);
+  });
+
+  it('counts a value written as a measurement as a point on a scale', () => {
+    const of = (...values: (string | number | boolean)[]) =>
+      sweepIsCategorical({
+        stops: values.map((value) => ({
+          value,
+          label: String(value),
+          caption: '',
+          file: `${value}.webp`,
+        })),
+      } as never);
+
+    // A size and a blend written in words are still numbers, and a strip of
+    // them is read by moving along it.
+    expect(of('128x128', '768x768')).toBe(false);
+    expect(of('winter 1.5 : summer 0.5', 'winter 1.0 : summer 1.0')).toBe(
+      false,
+    );
+    expect(of('k_dpmpp_2m', 'k_euler')).toBe(true);
+    expect(of('RealESRGAN_x4plus', 'NMKD_Siax')).toBe(true);
+    expect(of(false, true)).toBe(true);
   });
 
   it('builds frame urls from the stop path verbatim', async () => {

@@ -1,0 +1,1084 @@
+{
+  "schema_version": "1.0",
+  "execution_contracts": {
+    "1.0": {
+      "version": "1.0",
+      "guarantees": [
+        {
+          "name": "bounded_dpm_adaptive_v1",
+          "sampler": "k_dpm_adaptive",
+          "maximum_solver_iterations": {
+            "trajectory_multiplier_numerator": 5,
+            "trajectory_multiplier_denominator": 4,
+            "rounding": "ceiling"
+          },
+          "work_units_per_solver_iteration_source": "sampler_order"
+        }
+      ]
+    }
+  },
+  "samplers": {
+    "k_lms": {
+      "name": "k_lms",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.02,
+      "measured_cost_ratio_sdxl": 1.0,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_order": {
+          "minimum": 1.0,
+          "maximum": 100.0,
+          "default": 4.0,
+          "integer_only": true
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_heun": {
+      "name": "k_heun",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.03,
+      "measured_cost_ratio_sdxl": 1.87,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_churn": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_tmax": {
+          "minimum": 0.0,
+          "maximum": null,
+          "default": null,
+          "integer_only": false
+        },
+        "sampler_s_tmin": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_euler": {
+      "name": "k_euler",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.0,
+      "measured_cost_ratio_sdxl": 1.0,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_churn": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_tmax": {
+          "minimum": 0.0,
+          "maximum": null,
+          "default": null,
+          "integer_only": false
+        },
+        "sampler_s_tmin": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_euler_a": {
+      "name": "k_euler_a",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.08,
+      "measured_cost_ratio_sdxl": 1.01,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_dpm_2": {
+      "name": "k_dpm_2",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.17,
+      "measured_cost_ratio_sdxl": 1.94,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_churn": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_tmax": {
+          "minimum": 0.0,
+          "maximum": null,
+          "default": null,
+          "integer_only": false
+        },
+        "sampler_s_tmin": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_dpm_2_a": {
+      "name": "k_dpm_2_a",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.22,
+      "measured_cost_ratio_sdxl": 1.97,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_dpm_fast": {
+      "name": "k_dpm_fast",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.16,
+      "measured_cost_ratio_sdxl": 0.97,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "k_dpm_adaptive": {
+      "name": "k_dpm_adaptive",
+      "work_profile": {
+        "kind": "adaptive",
+        "estimated_work_units_per_request": 40,
+        "finite_ceiling_contract_versions": ["1.0"]
+      },
+      "measured_cost_ratio_sd15": null,
+      "measured_cost_ratio_sdxl": null,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        },
+        "sampler_order": {
+          "minimum": 2.0,
+          "maximum": 3.0,
+          "default": 3.0,
+          "integer_only": true
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_dpmpp_2s_a": {
+      "name": "k_dpmpp_2s_a",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.35,
+      "measured_cost_ratio_sdxl": 2.01,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "k_dpmpp_2m": {
+      "name": "k_dpmpp_2m",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.08,
+      "measured_cost_ratio_sdxl": 0.98,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "dpmsolver": {
+      "name": "dpmsolver",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.12,
+      "measured_cost_ratio_sdxl": 1.0,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "k_dpmpp_sde": {
+      "name": "k_dpmpp_sde",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.58,
+      "measured_cost_ratio_sdxl": 2.22,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "lcm": {
+      "name": "lcm",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.21,
+      "measured_cost_ratio_sdxl": 0.96,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "DDIM": {
+      "name": "DDIM",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.13,
+      "measured_cost_ratio_sdxl": 0.96,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "uni_pc": {
+      "name": "uni_pc",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.34,
+      "measured_cost_ratio_sdxl": 0.98,
+      "presentation_tier": "recommended",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "uni_pc_bh2": {
+      "name": "uni_pc_bh2",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.17,
+      "measured_cost_ratio_sdxl": 0.99,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "dpmpp_2m_sde": {
+      "name": "dpmpp_2m_sde",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.33,
+      "measured_cost_ratio_sdxl": 1.14,
+      "presentation_tier": "recommended",
+      "solver_type_choices": ["midpoint", "heun"],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "dpmpp_3m_sde": {
+      "name": "dpmpp_3m_sde",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.18,
+      "measured_cost_ratio_sdxl": 1.12,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "ddpm": {
+      "name": "ddpm",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.05,
+      "measured_cost_ratio_sdxl": 1.03,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "deis": {
+      "name": "deis",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.13,
+      "measured_cost_ratio_sdxl": 0.96,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_order": {
+          "minimum": 2.0,
+          "maximum": 4.0,
+          "default": 3.0,
+          "integer_only": true
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "ipndm": {
+      "name": "ipndm",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.01,
+      "measured_cost_ratio_sdxl": 1.0,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_order": {
+          "minimum": 2.0,
+          "maximum": 4.0,
+          "default": 4.0,
+          "integer_only": true
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "res_multistep": {
+      "name": "res_multistep",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.01,
+      "measured_cost_ratio_sdxl": 0.98,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "gradient_estimation": {
+      "name": "gradient_estimation",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.18,
+      "measured_cost_ratio_sdxl": 0.99,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "heunpp2": {
+      "name": "heunpp2",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 3
+      },
+      "measured_cost_ratio_sd15": 3.21,
+      "measured_cost_ratio_sdxl": 2.93,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_churn": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_tmax": {
+          "minimum": 0.0,
+          "maximum": null,
+          "default": null,
+          "integer_only": false
+        },
+        "sampler_s_tmin": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 0.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "er_sde": {
+      "name": "er_sde",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.07,
+      "measured_cost_ratio_sdxl": 0.98,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "sa_solver": {
+      "name": "sa_solver",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.08,
+      "measured_cost_ratio_sdxl": 0.94,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "euler_cfg_pp": {
+      "name": "euler_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.11,
+      "measured_cost_ratio_sdxl": 1.1,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": true
+    },
+    "euler_ancestral_cfg_pp": {
+      "name": "euler_ancestral_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.15,
+      "measured_cost_ratio_sdxl": 0.99,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 10.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": true
+    },
+    "exp_heun_2_x0": {
+      "name": "exp_heun_2_x0",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.08,
+      "measured_cost_ratio_sdxl": 2.39,
+      "presentation_tier": "advanced",
+      "solver_type_choices": ["phi_1", "phi_2"],
+      "accepted_settings": {},
+      "applies_cfg_pp": false
+    },
+    "exp_heun_2_x0_sde": {
+      "name": "exp_heun_2_x0_sde",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.27,
+      "measured_cost_ratio_sdxl": 1.99,
+      "presentation_tier": "advanced",
+      "solver_type_choices": ["phi_1", "phi_2"],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "dpmpp_2s_ancestral_cfg_pp": {
+      "name": "dpmpp_2s_ancestral_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.14,
+      "measured_cost_ratio_sdxl": 2.02,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": true
+    },
+    "dpmpp_2m_cfg_pp": {
+      "name": "dpmpp_2m_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.01,
+      "measured_cost_ratio_sdxl": 1.05,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": true
+    },
+    "dpmpp_2m_sde_heun": {
+      "name": "dpmpp_2m_sde_heun",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.27,
+      "measured_cost_ratio_sdxl": 1.1,
+      "presentation_tier": "advanced",
+      "solver_type_choices": ["midpoint", "heun"],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "ipndm_v": {
+      "name": "ipndm_v",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.11,
+      "measured_cost_ratio_sdxl": 1.15,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_order": {
+          "minimum": 2.0,
+          "maximum": 4.0,
+          "default": 4.0,
+          "integer_only": true
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "res_multistep_cfg_pp": {
+      "name": "res_multistep_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.08,
+      "measured_cost_ratio_sdxl": 1.03,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": true
+    },
+    "res_multistep_ancestral": {
+      "name": "res_multistep_ancestral",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.13,
+      "measured_cost_ratio_sdxl": 1.14,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "res_multistep_ancestral_cfg_pp": {
+      "name": "res_multistep_ancestral_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.11,
+      "measured_cost_ratio_sdxl": 1.04,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": true
+    },
+    "gradient_estimation_cfg_pp": {
+      "name": "gradient_estimation_cfg_pp",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 1
+      },
+      "measured_cost_ratio_sd15": 1.2,
+      "measured_cost_ratio_sdxl": 1.02,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {},
+      "applies_cfg_pp": true
+    },
+    "seeds_2": {
+      "name": "seeds_2",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.26,
+      "measured_cost_ratio_sdxl": 1.88,
+      "presentation_tier": "advanced",
+      "solver_type_choices": ["phi_1", "phi_2"],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "seeds_3": {
+      "name": "seeds_3",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 3
+      },
+      "measured_cost_ratio_sd15": 3.52,
+      "measured_cost_ratio_sdxl": 2.82,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_eta": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        },
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    },
+    "sa_solver_pece": {
+      "name": "sa_solver_pece",
+      "work_profile": {
+        "kind": "fixed_rate",
+        "marginal_work_units_per_trajectory_step": 2
+      },
+      "measured_cost_ratio_sd15": 2.38,
+      "measured_cost_ratio_sdxl": 2.11,
+      "presentation_tier": "advanced",
+      "solver_type_choices": [],
+      "accepted_settings": {
+        "sampler_s_noise": {
+          "minimum": 0.0,
+          "maximum": 100.0,
+          "default": 1.0,
+          "integer_only": false
+        }
+      },
+      "applies_cfg_pp": false
+    }
+  },
+  "hard_constraints": {
+    "rejected_sampler_scheduler_pairings": [
+      {
+        "sampler": "dpmpp_3m_sde",
+        "scheduler": "normal"
+      }
+    ],
+    "scheduler_baseline_applicability": {
+      "align_your_steps": ["stable_diffusion_1", "stable_diffusion_xl"],
+      "gits": ["stable_diffusion_1", "stable_diffusion_xl"]
+    }
+  },
+  "recommendations": [
+    {
+      "samplers": [],
+      "schedulers": ["karras", "normal"],
+      "provenance": "upstream_author",
+      "source": "comfyanonymous, ComfyUI GitHub discussion #227 (2023-03-23)",
+      "summary": "karras and normal are the schedules to use for most samplers."
+    },
+    {
+      "samplers": ["DDIM"],
+      "schedulers": ["ddim_uniform"],
+      "provenance": "upstream_author",
+      "source": "comfyanonymous, ComfyUI GitHub discussion #227 (2023-03-23)",
+      "summary": "ddim_uniform is the schedule ddim is meant to be used with, matching the reference implementation."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["simple"],
+      "provenance": "upstream_author",
+      "source": "comfyanonymous, ComfyUI GitHub discussion #227 (2023-03-23)",
+      "summary": "simple worked well in some scenarios, such as the second pass of a hires fix."
+    },
+    {
+      "samplers": ["k_dpmpp_2m", "dpmpp_2m_sde"],
+      "schedulers": ["karras"],
+      "provenance": "community",
+      "source": "comfyui.dev sampler/scheduler matrix. A third-party site with no affiliation to the backend's authors, and not endorsed by them.",
+      "summary": "The dpmpp_2m family is commonly paired with karras for smooth gradients and clean surfaces."
+    },
+    {
+      "samplers": ["k_euler", "k_euler_a"],
+      "schedulers": ["normal", "simple"],
+      "provenance": "community",
+      "source": "comfyui.dev sampler/scheduler matrix. A third-party site with no affiliation to the backend's authors, and not endorsed by them.",
+      "summary": "The euler family is commonly paired with normal or simple as an inexpensive general default."
+    },
+    {
+      "samplers": ["lcm"],
+      "schedulers": ["sgm_uniform", "simple"],
+      "provenance": "community",
+      "source": "comfyui.dev sampler/scheduler matrix. A third-party site with no affiliation to the backend's authors, and not endorsed by them.",
+      "summary": "Distilled and few-step solvers are commonly paired with a uniform schedule."
+    },
+    {
+      "samplers": [
+        "dpmpp_2m_cfg_pp",
+        "dpmpp_2s_ancestral_cfg_pp",
+        "euler_ancestral_cfg_pp",
+        "euler_cfg_pp",
+        "gradient_estimation_cfg_pp",
+        "res_multistep_ancestral_cfg_pp",
+        "res_multistep_cfg_pp"
+      ],
+      "schedulers": [],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "CFG++ solvers expect a cfg_scale near 1.0 to 2.0; the usual range oversaturates them."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["karras"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "karras is not the safe choice at low step counts. Reach for it for fine detail at a normal step budget, not because the budget is short."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["align_your_steps", "gits"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "align_your_steps and gits are recommended for low step counts, on the baselines they are defined for. Both exist to make a short step budget work."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["exponential", "kl_optimal"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "exponential and kl_optimal render coherently but shift colour noticeably, toward a red or magenta cast. Treat that as a distinctive look to choose deliberately rather than a fault."
+    },
+    {
+      "samplers": [
+        "dpmpp_2m_sde",
+        "dpmpp_2m_sde_heun",
+        "dpmpp_3m_sde",
+        "k_dpmpp_sde"
+      ],
+      "schedulers": [],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "The dpmpp SDE family stays usable with sampler_eta out to about 2.5."
+    },
+    {
+      "samplers": ["k_euler_a"],
+      "schedulers": [],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "k_euler_a collapses with sampler_eta above about 1.0."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["beta"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "beta shows a colour cast and posterisation at low step counts; at a normal step budget it renders cleanly with no cast."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["ddim_uniform"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "ddim_uniform degrades to glitchy static at very low step counts, but at a normal step budget it is not noticeably worse than simple."
+    },
+    {
+      "samplers": [],
+      "schedulers": ["linear_quadratic"],
+      "provenance": "user_ruled",
+      "source": "Project ruling, made by inspecting rendered comparisons of the claim against a fixed seed. Authoritative for this project, and the only evidence here that speaks to colour and to perceived quality, which the similarity measurements cannot.",
+      "summary": "linear_quadratic blurs heavily at every tested step count on both SD1.5 and SDXL, and stays largely unusable even at a normal step budget."
+    }
+  ],
+  "advisories": {
+    "cfg_pp_advised_max_cfg_scale": 2.0
+  },
+  "work_accounting": {
+    "authoritative_field": "work_profile",
+    "authoritative_note": "First-order-equivalent marginal sampler work. Fixed samplers scale with requested trajectory steps; adaptive samplers use an explicit service estimate. This drives operational accounting and time budgeting, while learned Kudos pricing remains separate.",
+    "measured_cost_ratio_provenance": "measured",
+    "measured_cost_ratio_source": "sampler-cost.json",
+    "measured_cost_ratio_note": "Wall-clock cost per step relative to k_euler, measured on one card through the production render pipeline. Each figure is the slope of a fit of render time against step count, so it excludes the fixed overhead of a render. The two figures corroborate the fixed-rate work profiles rather than replace them. A sampler that sets its own iteration count publishes no ratio, because cost per requested step is not a quantity it has.",
+    "measured_cost_ratio_sdxl_note": "Measured on a stable_diffusion_xl model at 1024x1024. The step is long enough that per-step host work is negligible, so this figure reflects what the sampler itself costs, and every fixed sampler lands close to its marginal work family.",
+    "measured_cost_ratio_sd15_note": "Measured on a stable_diffusion_1 model at 512x512. The step there is short enough that per-step host work is a visible fraction of it, which biases the one-evaluation samplers upwards by up to a third. Read the stable_diffusion_xl figure for the sampler's own cost."
+  },
+  "presentation_tiers": {
+    "note": "A presentation hint only. Every sampler is accepted, priced and dispatched identically whatever its tier. Clients may show the recommended tier by default and put the rest behind an advanced affordance; nothing in the advanced tier is deprecated.",
+    "recommended": [
+      "DDIM",
+      "dpmpp_2m_sde",
+      "k_dpmpp_2m",
+      "k_dpmpp_sde",
+      "k_euler",
+      "k_euler_a",
+      "lcm",
+      "uni_pc"
+    ]
+  }
+}

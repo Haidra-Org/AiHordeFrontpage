@@ -124,6 +124,53 @@ describe('AlchemyQueueService', () => {
       expect((await db.listJobs())[0].jobId).toBe('job-1');
     });
 
+    it('sends and persists the detector selected for an annotation', async () => {
+      const pending = service.submit({
+        annotationControlTypes: ['depth'],
+        forms: ['annotation'],
+        slowWorkers: false,
+        source: 'https://example.com/i.png',
+      });
+
+      const req = http.expectOne(`${API_BASE}/interrogate/async`);
+      expect(req.request.body).toEqual({
+        forms: [{ name: 'annotation', payload: { control_type: 'depth' } }],
+        source_image: 'https://example.com/i.png',
+        slow_workers: false,
+      });
+      req.flush({ id: 'job-annotation' });
+
+      expect(await pending).toBe('job-annotation');
+      await settle();
+      expect(service.jobs()[0].annotationControlTypes).toEqual(['depth']);
+    });
+
+    it('submits one annotation form per detector asked for', async () => {
+      const pending = service.submit({
+        annotationControlTypes: ['canny', 'depth', 'openpose'],
+        forms: ['caption', 'annotation'],
+        slowWorkers: false,
+        source: 'https://example.com/i.png',
+      });
+
+      const req = http.expectOne(`${API_BASE}/interrogate/async`);
+      expect(req.request.body.forms).toEqual([
+        { name: 'caption' },
+        { name: 'annotation', payload: { control_type: 'canny' } },
+        { name: 'annotation', payload: { control_type: 'depth' } },
+        { name: 'annotation', payload: { control_type: 'openpose' } },
+      ]);
+      req.flush({ id: 'job-detectors' });
+
+      expect(await pending).toBe('job-detectors');
+      await settle();
+      expect((await db.listJobs())[0].annotationControlTypes).toEqual([
+        'canny',
+        'depth',
+        'openpose',
+      ]);
+    });
+
     it('records a URL source without storing a blob for it', async () => {
       const localId = await submit('job-url');
 
@@ -211,6 +258,82 @@ describe('AlchemyQueueService', () => {
         (await service.getResultImages(localId)).map((i) => i.imageId),
       ).toEqual(['GFPGAN']);
       expect((await db.getJob(localId))?.storedResultForms).toEqual(['GFPGAN']);
+    });
+
+    it('stores a control map per detector rather than one over the other', async () => {
+      const pending = service.submit({
+        annotationControlTypes: ['canny', 'depth'],
+        forms: ['annotation'],
+        slowWorkers: true,
+        source: 'https://example.com/i.png',
+      });
+      http.expectOne(`${API_BASE}/interrogate/async`).flush({ id: 'job-maps' });
+      await pending;
+      await settle();
+      const localId = service.jobs().find((job) => job.id === 'job-maps')
+        ?.localId as string;
+
+      await poll('job-maps', {
+        state: 'done',
+        forms: [
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: `${RESULT_URL}?a` },
+            payload: { control_type: 'canny' },
+          },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: `${RESULT_URL}?b` },
+            payload: { control_type: 'depth' },
+          },
+        ],
+      });
+
+      expect(
+        (await service.getResultImages(localId)).map((i) => i.imageId).sort(),
+      ).toEqual(['annotation-canny', 'annotation-depth']);
+      expect((await db.getJob(localId))?.storedResultForms.sort()).toEqual([
+        'annotation-canny',
+        'annotation-depth',
+      ]);
+    });
+
+    it('names control maps by request order when the server echoes no payload', async () => {
+      const pending = service.submit({
+        annotationControlTypes: ['canny', 'depth'],
+        forms: ['annotation'],
+        slowWorkers: true,
+        source: 'https://example.com/i.png',
+      });
+      http
+        .expectOne(`${API_BASE}/interrogate/async`)
+        .flush({ id: 'job-legacy-maps' });
+      await pending;
+      await settle();
+      const localId = service.jobs().find((job) => job.id === 'job-legacy-maps')
+        ?.localId as string;
+
+      await poll('job-legacy-maps', {
+        state: 'done',
+        forms: [
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: `${RESULT_URL}?a` },
+          },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: `${RESULT_URL}?b` },
+          },
+        ],
+      });
+
+      expect(
+        (await service.getResultImages(localId)).map((i) => i.imageId).sort(),
+      ).toEqual(['annotation-canny', 'annotation-depth']);
     });
 
     it('does not download a form it already holds', async () => {

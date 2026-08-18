@@ -81,6 +81,7 @@ import {
   StylePickerGroup,
   UPSCALERS,
   buildAspectPresets,
+  cfgPlusPlusHint,
   cfgRequirementHint,
   clipSkipRequirementHint,
   cyclePanelSize,
@@ -88,12 +89,14 @@ import {
   isSnappableSize,
   isValidWebhook,
   karrasRequirementHint,
+  LEGACY_SCHEDULERS,
   nativeSizeHint,
   nativeSquareFor,
   normalizeWorkers,
   rangeFillPercent,
   resetFormValue,
   samplerRequirementHint,
+  schedulerRequirementHint,
   sd15HiresHint,
   sizeBaseFor,
   stepsRequirementHint,
@@ -106,6 +109,20 @@ import {
 } from '../request-lint';
 import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
+import {
+  ImageSchedulerName,
+  MAX_FLOW_SHIFT,
+  MIN_FLOW_SHIFT,
+  SAMPLER_SETTING_NAMES,
+  SamplerConstraintsDocument,
+  SamplerKnobRange,
+  SamplerSettingName,
+  availableSchedulers,
+  baselinesSupportFlowShift,
+  recommendedSchedulers,
+  samplerSettingIsValid,
+  samplerWorkFactor,
+} from '../../../types/sampler-constraints';
 
 // Re-exported for the parent page, which has always imported the picker group
 // type from here; it lives in the form model so the style browser can use it
@@ -188,6 +205,10 @@ export class GenerateFormComponent implements OnInit {
    * (or none is selected), in which case no guidance is shown.
    */
   public readonly modelRequirements = input<ModelRequirements | null>(null);
+  /** Live sampler-specific controls and hard compatibility rules. */
+  public readonly samplerContract = input<SamplerConstraintsDocument | null>(
+    null,
+  );
   /**
    * Everything the request as it stands would earn a warning for, evaluated by
    * the parent across the whole request. Nothing here gates submission: the
@@ -245,7 +266,75 @@ export class GenerateFormComponent implements OnInit {
   private readonly promptInput =
     viewChild<ElementRef<HTMLTextAreaElement>>('promptInput');
 
-  public readonly samplers = SAMPLERS;
+  private readonly selectedSampler = signal<string>('');
+  public readonly recommendedSamplers = computed(() => {
+    const contract = this.samplerContract();
+    return contract
+      ? contract.presentation_tiers.recommended.filter(
+          (name) => contract.samplers[name] !== undefined,
+        )
+      : [...SAMPLERS];
+  });
+  public readonly advancedSamplers = computed(() => {
+    const contract = this.samplerContract();
+    if (!contract) return [];
+    const recommended = new Set(this.recommendedSamplers());
+    return Object.keys(contract.samplers).filter(
+      (name) => !recommended.has(name),
+    );
+  });
+  public readonly samplerSettings = computed(() => {
+    const sampler = this.samplerContract()?.samplers[this.selectedSampler()];
+    if (!sampler) return [];
+    return Object.entries(sampler.accepted_settings) as [
+      SamplerSettingName,
+      SamplerKnobRange,
+    ][];
+  });
+  public readonly solverTypeChoices = computed(
+    () =>
+      this.samplerContract()?.samplers[this.selectedSampler()]
+        ?.solver_type_choices ?? [],
+  );
+  public readonly schedulerOptions = computed((): ImageSchedulerName[] => {
+    const contract = this.samplerContract();
+    // Without the contract there is no way to know which of the newer schedules
+    // the horde would accept for this sampler, so only the pair every worker
+    // has always understood is offered.
+    if (!contract) return [...LEGACY_SCHEDULERS];
+    const baseline = this.modelBaseline();
+    return availableSchedulers(
+      contract,
+      this.selectedSampler(),
+      baseline ? [baseline] : [],
+    );
+  });
+  public readonly flowShiftAllowed = computed(() => {
+    const baseline = this.modelBaseline();
+    return baselinesSupportFlowShift(baseline ? [baseline] : []);
+  });
+  public readonly minFlowShift = MIN_FLOW_SHIFT;
+  public readonly maxFlowShift = MAX_FLOW_SHIFT;
+
+  /**
+   * Drop a scheduler or solver type the current sampler and model no longer
+   * offer. A select holding a value that is not among its options renders
+   * blank while the control still carries that value, which would send a
+   * schedule the reader cannot see.
+   */
+  private readonly samplerVocabularySync = effect(() => {
+    const schedulers = this.schedulerOptions();
+    const solverTypes = this.solverTypeChoices();
+    const controls = this.form().controls;
+    if (!schedulers.includes(controls.scheduler.value)) {
+      controls.scheduler.setValue(schedulers[0] ?? 'karras');
+    }
+    const solverType = controls.sampler_solver_type.value;
+    if (solverType !== '' && !solverTypes.includes(solverType)) {
+      controls.sampler_solver_type.setValue('');
+    }
+    this.revealAdvancedSampling();
+  });
   public readonly upscalers = UPSCALERS;
   public readonly faceFixers = FACE_FIXERS;
   public readonly moduleDrawers = QR_MODULE_DRAWERS;
@@ -278,6 +367,159 @@ export class GenerateFormComponent implements OnInit {
   public readonly maxWorkers = MAX_WORKERS;
   public readonly minWebhookLength = MIN_WEBHOOK_LENGTH;
   public readonly maxWebhookLength = MAX_WEBHOOK_LENGTH;
+
+  public samplerControl(
+    setting: SamplerSettingName,
+  ): FormControl<number | null> {
+    return this.form().controls[setting];
+  }
+
+  public setOptionalNumberEntry(
+    control: FormControl<number | null>,
+    event: Event,
+  ): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    control.setValue(raw === '' ? null : Number(raw));
+    control.markAsDirty();
+  }
+
+  public samplerSettingInvalid(
+    setting: SamplerSettingName,
+    range: SamplerKnobRange,
+  ): boolean {
+    const value = this.samplerControl(setting).value;
+    return value !== null && !samplerSettingIsValid(range, value);
+  }
+
+  public flowShiftInvalid(): boolean {
+    const value = this.form().controls.flow_shift.value;
+    return value !== null && (value < MIN_FLOW_SHIFT || value > MAX_FLOW_SHIFT);
+  }
+
+  // --- Advanced sampling ---------------------------------------------------
+
+  /** Whether the advanced sampling knobs are showing. */
+  public readonly advancedSamplingOpen = signal(false);
+  /**
+   * Set once the reader closes the disclosure, so a knob that arrives later
+   * (from a preset, or from switching to a sampler that accepts one already
+   * filled in) cannot push it back open for the rest of the session.
+   */
+  private advancedSamplingDismissed = false;
+
+  public toggleAdvancedSampling(): void {
+    const open = !this.advancedSamplingOpen();
+    if (!open) {
+      this.advancedSamplingDismissed = true;
+    }
+    this.advancedSamplingOpen.set(open);
+  }
+
+  /**
+   * Whether this sampler and model offer any knob at all. Without the contract
+   * the horde rejects every one of these fields, so the disclosure stays away.
+   */
+  public hasAdvancedSampling(): boolean {
+    return (
+      this.samplerContract() !== null &&
+      (this.samplerSettings().length > 0 ||
+        this.solverTypeChoices().length > 0 ||
+        this.flowShiftAllowed())
+    );
+  }
+
+  /** How many of the knobs that apply to this sampler and model carry a value. */
+  public advancedSamplingCount(): number {
+    const controls = this.form().controls;
+    let count = this.samplerSettings().filter(
+      ([name]) => controls[name].value !== null,
+    ).length;
+    if (
+      this.solverTypeChoices().length > 0 &&
+      controls.sampler_solver_type.value !== ''
+    ) {
+      count++;
+    }
+    if (this.flowShiftAllowed() && controls.flow_shift.value !== null) {
+      count++;
+    }
+    return count;
+  }
+
+  /** Return every knob to the worker default, whether or not it applies here. */
+  public clearAdvancedSampling(): void {
+    const controls = this.form().controls;
+    for (const name of SAMPLER_SETTING_NAMES) {
+      controls[name].setValue(null);
+    }
+    controls.sampler_solver_type.setValue('');
+    controls.flow_shift.setValue(null);
+    this.form().markAsDirty();
+  }
+
+  /** Show the knobs unasked when some already carry a value. */
+  private revealAdvancedSampling(): void {
+    if (this.advancedSamplingDismissed || this.advancedSamplingOpen()) {
+      return;
+    }
+    if (this.advancedSamplingCount() > 0) {
+      this.advancedSamplingOpen.set(true);
+    }
+  }
+
+  // --- Sampler cost --------------------------------------------------------
+
+  /**
+   * What the sampler charges per step relative to the cheapest ones, or
+   * 'adaptive' where it picks its own step count. Null where it charges the
+   * ordinary rate, or where the contract has not loaded.
+   */
+  public samplerWork(sampler: string): number | 'adaptive' | null {
+    return samplerWorkFactor(this.samplerContract(), sampler);
+  }
+
+  /** The option label's key, which carries the suggestion and cost markers. */
+  public samplerOptionKey(sampler: string): string {
+    const work = this.samplerWork(sampler);
+    const cost =
+      work === null ? '' : work === 'adaptive' ? '_adaptive' : '_work';
+    const suggested = this.isSuggestedSampler(sampler) ? '_suggested' : '';
+    return `generate.form.sampler_option${suggested}${cost}`;
+  }
+
+  /**
+   * The note under the select for an advanced-tier sampler. The tier is a
+   * presentation hint and nothing more, so the line says as much rather than
+   * reading as a warning.
+   */
+  public samplerTierKey(): string | null {
+    const contract = this.samplerContract();
+    const sampler = this.form().controls.sampler_name.value;
+    if (contract?.samplers[sampler]?.presentation_tier !== 'advanced') {
+      return null;
+    }
+    const work = this.samplerWork(sampler);
+    if (work === 'adaptive') {
+      // The option label states it too, but a long sampler name pushes that
+      // marker out of the closed select, and this line is always in view.
+      return 'generate.form.sampler_advanced_note_adaptive';
+    }
+    return typeof work === 'number'
+      ? 'generate.form.sampler_advanced_note_work'
+      : 'generate.form.sampler_advanced_note';
+  }
+
+  /** The schedules the horde pairs the selected sampler with, by name. */
+  private readonly suggestedSchedules = computed(() =>
+    recommendedSchedulers(this.samplerContract(), this.selectedSampler()),
+  );
+
+  /** The schedule option's key, which carries the suggestion marker. */
+  public schedulerOptionKey(scheduler: ImageSchedulerName): string {
+    return this.suggestedSchedules().includes(scheduler)
+      ? 'generate.form.scheduler_option_suggested'
+      : 'generate.form.scheduler_option';
+  }
 
   public readonly negativePromptOpen = signal(false);
   public readonly customSizeOpen = signal(false);
@@ -432,6 +674,17 @@ export class GenerateFormComponent implements OnInit {
       .subscribe((mode) => this.mode.set(mode));
 
     const controls = this.form().controls;
+    this.selectedSampler.set(controls.sampler_name.value);
+    controls.sampler_name.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((sampler) => this.selectedSampler.set(sampler));
+    merge(
+      ...SAMPLER_SETTING_NAMES.map((name) => controls[name].valueChanges),
+      controls.sampler_solver_type.valueChanges,
+      controls.flow_shift.valueChanges,
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.revealAdvancedSampling());
     controls.styleName.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onStyleNameChanged());
@@ -500,6 +753,14 @@ export class GenerateFormComponent implements OnInit {
     );
   }
 
+  public cfgPlusPlusHint(): RequirementHint | null {
+    return cfgPlusPlusHint(
+      this.samplerContract(),
+      this.form().controls.sampler_name.value,
+      this.form().controls.cfg_scale.value,
+    );
+  }
+
   public clipSkipHint(): RequirementHint | null {
     return clipSkipRequirementHint(
       this.modelRequirements(),
@@ -517,7 +778,14 @@ export class GenerateFormComponent implements OnInit {
   public karrasHint(): RequirementHint | null {
     return karrasRequirementHint(
       this.modelRequirements(),
-      this.form().controls.karras.value,
+      this.form().controls.scheduler.value,
+    );
+  }
+
+  public schedulerHint(): RequirementHint | null {
+    return schedulerRequirementHint(
+      this.modelRequirements(),
+      this.form().controls.scheduler.value,
     );
   }
 
@@ -797,7 +1065,7 @@ export class GenerateFormComponent implements OnInit {
       pins('sampling', forced?.sampler_name),
     );
     this.setDisabled(controls.clip_skip, pins('sampling', forced?.clip_skip));
-    this.setDisabled(controls.karras, pins('sampling', forced?.karras));
+    this.setDisabled(controls.scheduler, pins('sampling', forced?.karras));
     this.setDisabled(controls.hires_fix, pins('sampling', forced?.hires_fix));
   });
 
@@ -896,7 +1164,14 @@ export class GenerateFormComponent implements OnInit {
       set(controls.cfg_scale, forced.cfg_scale);
       set(controls.sampler_name, forced.sampler_name);
       set(controls.clip_skip, forced.clip_skip);
-      set(controls.karras, forced.karras);
+      set(
+        controls.scheduler,
+        forced.karras === undefined
+          ? undefined
+          : forced.karras
+            ? 'karras'
+            : 'normal',
+      );
       set(controls.hires_fix, forced.hires_fix);
     }
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ALCHEMY_USE_CASES,
+  ANNOTATION_DETECTOR_GROUPS,
   alchemyFormNameKey,
   alchemyFormNoteKey,
   alchemyUseCase,
@@ -9,9 +10,12 @@ import {
   alchemyUseCaseLeadKey,
   alchemyUseCaseNoteKey,
   alchemyUseCaseTitleKey,
+  annotationGroupLabelKey,
 } from './alchemy-usecases';
 import {
+  ALCHEMY_ANNOTATION_FORMS,
   ALCHEMY_DATA_FORMS,
+  ANNOTATION_CONTROL_TYPES,
   ALCHEMY_POST_PROCESSOR_FORMS,
 } from '../types/generation';
 import { APP_ICONS } from '../icons';
@@ -37,8 +41,8 @@ const KNOWN_ALCHEMY_FORMS: Readonly<Record<string, readonly string[]>> = {
     'describe',
     'aesthetic',
     'palette',
-    'annotation',
   ],
+  control_map: ['annotation'],
   enlarge: [
     'RealESRGAN_x4plus',
     'RealESRGAN_x2plus',
@@ -80,6 +84,7 @@ describe('alchemy use cases', () => {
     const submittable = new Set<string>([
       ...ALCHEMY_DATA_FORMS,
       ...ALCHEMY_POST_PROCESSOR_FORMS,
+      ...ALCHEMY_ANNOTATION_FORMS,
     ]);
     const operable = ALCHEMY_USE_CASES.flatMap(
       (useCase) => useCase.operableForms,
@@ -93,15 +98,14 @@ describe('alchemy use cases', () => {
     const submittable = new Set<string>([
       ...ALCHEMY_DATA_FORMS,
       ...ALCHEMY_POST_PROCESSOR_FORMS,
+      ...ALCHEMY_ANNOTATION_FORMS,
     ]);
     const operable = new Set<string>(
       ALCHEMY_USE_CASES.flatMap((useCase) => useCase.operableForms),
     );
 
-    expect(filed.filter((form) => !operable.has(form))).toEqual(['annotation']);
-    expect(filed.filter((form) => !submittable.has(form))).toEqual([
-      'annotation',
-    ]);
+    expect(filed.filter((form) => !operable.has(form))).toEqual([]);
+    expect(filed.filter((form) => !submittable.has(form))).toEqual([]);
   });
 
   it('files each form under exactly one use case', () => {
@@ -152,6 +156,15 @@ describe('alchemy use cases', () => {
     expect(wrong).toEqual([]);
   });
 
+  it('sends a control map reader on to where the map is used', () => {
+    const links = alchemyUseCase('control_map')?.links ?? [];
+
+    expect(links.map((link) => link.routerLink)).toEqual([
+      '/docs/image/learn/controlnet',
+      '/docs/image/settings/source',
+    ]);
+  });
+
   it('writes the label of every way out of an entry', () => {
     const links = ALCHEMY_USE_CASES.flatMap((useCase) => useCase.links ?? []);
 
@@ -160,5 +173,32 @@ describe('alchemy use cases', () => {
     expect(links.filter((link) => !link.routerLink.startsWith('/'))).toEqual(
       [],
     );
+  });
+});
+
+describe('annotation detector groups', () => {
+  const grouped = ANNOTATION_DETECTOR_GROUPS.flatMap((group) => group.types);
+
+  it('files every detector the horde knows exactly once', () => {
+    expect([...grouped].sort()).toEqual([...ANNOTATION_CONTROL_TYPES].sort());
+    expect(new Set(grouped).size).toBe(grouped.length);
+  });
+
+  it('says on the control map page what each group is for', () => {
+    const missing = ANNOTATION_DETECTOR_GROUPS.filter(
+      (group) =>
+        !translations[`alchemy.usecases.control_map.group_${group.id}`],
+    ).map((group) => group.id);
+
+    expect(missing).toEqual([]);
+  });
+
+  it('says in English what each group reads out of the picture', () => {
+    const translations = en as Record<string, string>;
+    const missing = ANNOTATION_DETECTOR_GROUPS.filter(
+      (group) => !translations[annotationGroupLabelKey(group.id)],
+    ).map((group) => group.id);
+
+    expect(missing).toEqual([]);
   });
 });

@@ -725,7 +725,7 @@ describe('TutorialEngineService', () => {
             cfg_scale: 7.5,
             steps: 25,
             sampler_name: 'k_euler',
-            karras: false,
+            scheduler: 'normal',
           },
         ],
       ]);

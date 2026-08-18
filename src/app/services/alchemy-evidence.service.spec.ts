@@ -42,6 +42,26 @@ const manifest: AlchemyEvidenceManifest = {
       title: 'Nothing published',
       files: { source: 'cut_out/source.webp' },
     },
+    {
+      use_case: 'control_map',
+      form: 'annotation',
+      title: 'canny',
+      control_type: 'canny',
+      files: {
+        source: 'sources/anchor.webp',
+        result: 'control_map/canny/result.webp',
+      },
+    },
+    // The detector ran and nothing came back. Kept, because the page reads the
+    // detectors as a set and has to say which one is missing.
+    {
+      use_case: 'control_map',
+      form: 'annotation',
+      title: 'openpose',
+      control_type: 'openpose',
+      notes: 'Draws the people as skeletons.',
+      files: { source: 'sources/anchor.webp' },
+    },
   ],
 };
 
@@ -75,6 +95,30 @@ describe('AlchemyEvidenceService', () => {
     await loaded;
 
     expect(evidence.entriesFor('cut_out')).toEqual([]);
+  });
+
+  it('picks a run by the detector it asked for, not by its form alone', async () => {
+    const loaded = evidence.ensureLoaded();
+    http.expectOne(manifestUrl).flush(manifest);
+    await loaded;
+
+    expect(
+      evidence.entryFor('control_map', 'annotation', 'canny')?.files.result,
+    ).toBe('control_map/canny/result.webp');
+    expect(evidence.entryFor('control_map', 'annotation')?.title).toBe('canny');
+    expect(
+      evidence.entryFor('control_map', 'annotation', 'not_a_detector'),
+    ).toBeUndefined();
+  });
+
+  it('keeps a detector that published no map, so the page can say so', async () => {
+    const loaded = evidence.ensureLoaded();
+    http.expectOne(manifestUrl).flush(manifest);
+    await loaded;
+
+    const entry = evidence.entryFor('control_map', 'annotation', 'openpose');
+    expect(entry?.files.result).toBeUndefined();
+    expect(entry?.notes).toBe('Draws the people as skeletons.');
   });
 
   it('fetches the manifest once however many callers ask for it', async () => {

@@ -175,6 +175,13 @@ export class AlchemyResultComponent {
    */
   public readonly storedImageUrl = input<string | null>(null);
 
+  /**
+   * The detector a control-map request asked for. The status response reports
+   * the form name alone, so which of the thirty-odd detectors made this picture
+   * is only knowable from the request the studio stored.
+   */
+  public readonly detector = input<string | null>(null);
+
   /** Whether the shown image is the local copy rather than the horde's link. */
   public readonly usingStoredImage = computed(
     () => this.storedImageUrl() !== null,

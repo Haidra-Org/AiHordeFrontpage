@@ -186,7 +186,7 @@
   }
 
   <ul class="gs-checklist">
-    @for (row of formRows(job); track row.form) {
+    @for (row of formRows(job); track row.key) {
       @let view = statusView(row.state);
       <li class="gs-checkrow gs-checkrow--{{ view.modifier }}">
         <app-icon
@@ -196,6 +196,9 @@
         />
         <span class="gs-checkrow-name">
           {{ "alchemy.form_names." + row.form | transloco }}
+          @if (row.detector) {
+            <span class="gs-mono">{{ row.detector }}</span>
+          }
         </span>
         <span class="gs-checkrow-state">
           {{ "alchemy.state." + row.state | transloco }}
@@ -206,10 +209,11 @@
 
   @if (doneResults(job).length > 0) {
     <div class="gs-result-cards">
-      @for (form of doneResults(job); track form.form) {
+      @for (result of doneResults(job); track result.key) {
         <app-alchemy-result
-          [form]="form"
-          [storedImageUrl]="storedImageUrl(job, form.form)"
+          [form]="result.form"
+          [storedImageUrl]="storedImageUrl(job, result.key)"
+          [detector]="result.detector"
         />
       }
     </div>

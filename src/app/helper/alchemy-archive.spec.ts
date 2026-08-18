@@ -75,6 +75,50 @@ describe('buildAlchemyJobArchive', () => {
     expect(html).not.toContain('data:image');
   });
 
+  it('names each control map by the detector that made it', async () => {
+    // A fresh response per call: a body can only be read once, and both maps
+    // are fetched.
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockImplementation(() =>
+        Promise.resolve(imageResponse([1, 2, 3, 4], 'image/webp')),
+      );
+
+    const { bytes, imageCount } = await buildAlchemyJobArchive(
+      'job-maps',
+      {
+        state: 'done',
+        forms: [
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://cdn.example/r2/a.webp' },
+            payload: { control_type: 'canny' },
+          },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://cdn.example/r2/b.webp' },
+          },
+        ],
+      },
+      { fetchFn, annotationControlTypes: ['canny', 'depth'] },
+    );
+
+    expect(imageCount).toBe(2);
+    const entries = unzipSync(bytes);
+    expect(Object.keys(entries).sort()).toEqual([
+      'images/annotation-canny.webp',
+      'images/annotation-depth.webp',
+      'results.html',
+      'results.json',
+    ]);
+
+    const html = strFromU8(entries['results.html']);
+    expect(html).toContain('Control map (canny)');
+    expect(html).toContain('Control map (depth)');
+  });
+
   it('still produces an archive when an image fetch fails', async () => {
     const fetchFn = vi
       .fn<typeof fetch>()

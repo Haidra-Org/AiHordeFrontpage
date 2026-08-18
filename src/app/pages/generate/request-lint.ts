@@ -184,7 +184,9 @@ export function evaluateRequestLint(
       samplerRequirementHint(requirements, value.sampler_name),
     ),
   );
-  push(fromHint('sampling', karrasRequirementHint(requirements, value.karras)));
+  push(
+    fromHint('sampling', karrasRequirementHint(requirements, value.scheduler)),
+  );
   push(
     fromHint(
       'size',

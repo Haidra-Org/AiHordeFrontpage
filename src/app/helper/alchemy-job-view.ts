@@ -7,6 +7,7 @@ import {
   AlchemyForm,
   AlchemyFormName,
   AlchemyStatusResponse,
+  AnnotationControlType,
 } from '../types/generation';
 import { AlchemySourceMode, StoredAlchemyJob } from '../types/alchemy-job';
 
@@ -23,6 +24,8 @@ export interface AlchemyJob {
    */
   sourceMode: AlchemySourceMode;
   forms: AlchemyFormName[];
+  /** Detectors used when `forms` includes the control-map operation. */
+  annotationControlTypes: readonly AnnotationControlType[];
   status: AlchemyStatusResponse | null;
   done: boolean;
   faulted: boolean;
@@ -45,10 +48,27 @@ export interface AlchemyJob {
    * to `sourceThumb`.
    */
   sourceFull: string | null;
-  /** Form names whose result image is held locally. */
+  /** Result keys whose image is held locally. */
   storedResultForms: string[];
-  /** Form names whose result image can no longer be retrieved. */
+  /** Result keys whose image can no longer be retrieved. */
   failedResultForms: string[];
+}
+
+/**
+ * The detectors a stored job asked for. Jobs written before a request could
+ * carry more than one kept a single `annotationControlType`, so that reads as a
+ * list of one and nothing has to be rewritten on disk.
+ */
+export function storedAnnotationDetectors(
+  stored: Pick<
+    StoredAlchemyJob,
+    'annotationControlTypes' | 'annotationControlType'
+  >,
+): readonly AnnotationControlType[] {
+  if (stored.annotationControlTypes?.length) {
+    return stored.annotationControlTypes;
+  }
+  return stored.annotationControlType ? [stored.annotationControlType] : [];
 }
 
 /**
@@ -63,6 +83,7 @@ export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
     localId: stored.localId,
     sourceMode: stored.sourceMode,
     forms: stored.forms,
+    annotationControlTypes: storedAnnotationDetectors(stored),
     status: stored.status,
     done: stored.done,
     faulted: stored.faulted,
@@ -75,6 +96,101 @@ export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
     storedResultForms: stored.storedResultForms,
     failedResultForms: stored.failedResultForms,
   };
+}
+
+/** The form name a control map is requested and returned under. */
+const ANNOTATION_FORM = 'annotation';
+
+/** A form of a request, paired with the detector it belongs to. */
+export interface AlchemyFormView {
+  form: AlchemyForm;
+  /** Non-null only for a control-map form. */
+  detector: AnnotationControlType | null;
+  /** What tells this form's result apart from the rest of the job's. */
+  key: string;
+}
+
+/** A form of a request, before the horde has said anything about it. */
+export interface AlchemyFormEntry {
+  form: AlchemyFormName;
+  detector: AnnotationControlType | null;
+  key: string;
+}
+
+/** A requested form and its latest reported state, for the checklist. */
+export interface AlchemyFormRow extends AlchemyFormEntry {
+  state: string;
+}
+
+/**
+ * How a form's result is filed: under the form name, except for a control map,
+ * which is filed under its detector as well. One request can ask for several
+ * detectors and they all come back as the form `annotation`, so the name alone
+ * would have them overwrite one another.
+ */
+export function resultFormKey(
+  form: string,
+  detector?: AnnotationControlType | null,
+): string {
+  return form === ANNOTATION_FORM && detector
+    ? `${ANNOTATION_FORM}-${detector}`
+    : form;
+}
+
+/**
+ * Pair each returned form with the detector that produced it.
+ *
+ * The horde echoes the request payload back on the form, which names the
+ * detector outright. Older servers do not, and then the detector is inferred:
+ * a request that asked for one detector can only have used that one, and a
+ * request that asked for several has its annotation forms read off against the
+ * detectors in the order they were submitted. That ordering is best effort, so
+ * a server that returns the forms in another order would label them wrongly.
+ */
+export function formViews(
+  forms: readonly AlchemyForm[],
+  requested: readonly AnnotationControlType[],
+): AlchemyFormView[] {
+  let annotationsSeen = 0;
+  return forms.map((form) => {
+    if (form.form !== ANNOTATION_FORM) {
+      return { form, detector: null, key: form.form };
+    }
+    const detector =
+      form.payload?.control_type ??
+      requested[annotationsSeen] ??
+      requested[0] ??
+      null;
+    annotationsSeen += 1;
+    return { form, detector, key: resultFormKey(form.form, detector) };
+  });
+}
+
+/** {@link formViews} for a tracked job's latest status. */
+export function statusFormViews(job: AlchemyJob): AlchemyFormView[] {
+  return formViews(job.status?.forms ?? [], job.annotationControlTypes);
+}
+
+/**
+ * The forms a request asked for, with a control map expanded to one entry per
+ * detector: each detector is submitted as its own form and comes back as its
+ * own result.
+ */
+export function requestedFormEntries(job: AlchemyJob): AlchemyFormEntry[] {
+  return job.forms.flatMap((form): AlchemyFormEntry[] => {
+    if (form !== ANNOTATION_FORM) {
+      return [{ form, detector: null, key: form }];
+    }
+    const detectors = job.annotationControlTypes;
+    if (detectors.length === 0) {
+      return [{ form, detector: null, key: form }];
+    }
+    return detectors.map((detector) => ({
+      form,
+      detector,
+      key: resultFormKey(form, detector),
+    }));
+  });
 }
 
 /** How a single form's state reads in the per-form checklist. */
@@ -150,7 +266,7 @@ export function jobAge(job: AlchemyJob): { key: string; count: number } {
 }
 
 export function formsProgressLabel(job: AlchemyJob): string {
-  const total = job.forms.length;
+  const total = requestedFormEntries(job).length;
   const completed = (job.status?.forms ?? []).filter(
     (f) => f.state === 'done',
   ).length;
@@ -160,17 +276,16 @@ export function formsProgressLabel(job: AlchemyJob): string {
 /**
  * Per-form status rows. Seeded from the requested forms so every operation
  * shows (as `waiting`) the instant a job is tracked, then each row advances
- * independently as the status poll reports it.
+ * independently as the status poll reports it. A control-map request asking for
+ * several detectors gets a row each, because each one is its own form.
  */
-export function jobFormRows(
-  job: AlchemyJob,
-): { form: AlchemyFormName; state: string }[] {
+export function jobFormRows(job: AlchemyJob): AlchemyFormRow[] {
   const states = new Map(
-    (job.status?.forms ?? []).map((f) => [f.form, f.state]),
+    statusFormViews(job).map((view) => [view.key, view.form.state]),
   );
-  return job.forms.map((form) => ({
-    form,
-    state: states.get(form) ?? 'waiting',
+  return requestedFormEntries(job).map((entry) => ({
+    ...entry,
+    state: states.get(entry.key) ?? 'waiting',
   }));
 }
 
@@ -182,8 +297,10 @@ export function jobHasResults(job: AlchemyJob): boolean {
 }
 
 /** The done forms that carry a renderable result, for the detail card grid. */
-export function jobDoneResults(job: AlchemyJob | null): AlchemyForm[] {
-  return (job?.status?.forms ?? []).filter(
-    (f) => f.state === 'done' && !!f.result,
-  );
+export function jobDoneResults(job: AlchemyJob | null): AlchemyFormView[] {
+  return job
+    ? statusFormViews(job).filter(
+        (view) => view.form.state === 'done' && !!view.form.result,
+      )
+    : [];
 }

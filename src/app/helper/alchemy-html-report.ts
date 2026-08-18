@@ -19,6 +19,8 @@ import { sanitizeGenerationResponsePayload } from './generation-image';
 /** A processed image already written into the archive, by relative path. */
 export interface AlchemyReportImage {
   form: string;
+  /** The detector behind a control map, so several in one job read apart. */
+  detector?: string | null;
   fileName: string;
 }
 
@@ -65,6 +67,7 @@ const FORM_LABELS: Record<string, string> = {
   '4xNomos2_hq_dat2': '4x Nomos2 HQ DAT2',
   '2xModernSpanimationV1': '2x Modern Spanimation v1',
   strip_background: 'Strip background',
+  annotation: 'Control map',
 };
 
 const DESCRIBE_LABELS: Record<string, string> = {
@@ -203,7 +206,7 @@ function renderDescribe(form: AlchemyForm): string {
     .sort(([a], [b]) => describeRank(a) - describeRank(b))
     .map(([key, rawValue]) => {
       const label = DESCRIBE_LABELS[key] ?? key;
-      let display = '';
+      let display: string;
       if (typeof rawValue === 'boolean') {
         display = rawValue ? 'Yes' : 'No';
       } else if (typeof rawValue === 'number') {
@@ -262,7 +265,7 @@ function renderVectorize(form: AlchemyForm): string {
 }
 
 function renderDataForm(form: AlchemyForm): string {
-  let body = '';
+  let body: string;
   if (form.form === 'caption') {
     body = renderCaption(form);
   } else if (form.form === 'nsfw') {
@@ -291,7 +294,11 @@ function renderImageList(images: readonly AlchemyReportImage[]): string {
   const items = images
     .map(
       (image) =>
-        `<li><span class="image-form">${escapeHtml(formLabel(image.form))}</span>
+        `<li><span class="image-form">${escapeHtml(
+          image.detector
+            ? `${formLabel(image.form)} (${image.detector})`
+            : formLabel(image.form),
+        )}</span>
         <code>${escapeHtml(image.fileName)}</code></li>`,
     )
     .join('');

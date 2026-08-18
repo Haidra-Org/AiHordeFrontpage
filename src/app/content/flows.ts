@@ -369,7 +369,7 @@ export const FLOWS: readonly FlowDef[] = [
         helpTopic: 'cfg',
         sweepParameters: ['cfg_scale'],
         reveal: { mode: 'advanced' },
-        applyFields: ['cfg_scale', 'steps', 'sampler_name', 'karras'],
+        applyFields: ['cfg_scale', 'steps', 'sampler_name', 'scheduler'],
       },
       { id: 'generate', anchorId: 'generate' },
     ],

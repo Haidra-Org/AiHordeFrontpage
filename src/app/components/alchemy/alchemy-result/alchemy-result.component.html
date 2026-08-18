@@ -14,6 +14,9 @@
       />
       <h4 class="alchemy-result__title">
         {{ "alchemy.form_names." + form().form | transloco }}
+        @if (detector()) {
+          <span class="gs-mono">{{ detector() }}</span>
+        }
       </h4>
       <span class="gs-op-badge">
         {{

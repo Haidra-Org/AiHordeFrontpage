@@ -9,6 +9,7 @@ app/**/*.js.map
 # dependencies
 node_modules/
 bower_components/
+.venv/
 
 # IDEs and editors
 .idea/
@@ -22,6 +23,16 @@ npm-debug.log
 testem.log
 typings/
 .angular/
+out-tsc/
+tmp-chrome-*/
+
+# The local build needs only the published sweep assets. Design working files
+# can be several gigabytes and never become part of the application image.
+/docs/**
+!/docs/haidra-assets/
+!/docs/haidra-assets/assets/
+!/docs/haidra-assets/assets/param-sweeps/
+!/docs/haidra-assets/assets/param-sweeps/**
 
 # e2e
 e2e/*.js

@@ -10,7 +10,9 @@ import {
   ALCHEMY_DATA_FORMS,
   type AlchemyForm,
   type AlchemyStatusResponse,
+  type AnnotationControlType,
 } from '../types/generation';
+import { formViews } from './alchemy-job-view';
 import {
   isLikelyImageFileLink,
   sanitizeGenerationResponsePayload,
@@ -82,6 +84,8 @@ function uniqueName(name: string, used: Set<string>): string {
 export interface AlchemyArchiveOptions {
   /** Result images already held locally, preferred over a network fetch. */
   storedImages?: readonly StoredAlchemyImage[];
+  /** The detectors the request asked for, so each control map is named by its own. */
+  annotationControlTypes?: readonly AnnotationControlType[];
   fetchFn?: typeof fetch;
 }
 
@@ -95,7 +99,11 @@ export async function buildAlchemyJobArchive(
   status: AlchemyStatusResponse,
   options: AlchemyArchiveOptions = {},
 ): Promise<AlchemyJobArchive> {
-  const { storedImages = [], fetchFn = fetch } = options;
+  const {
+    storedImages = [],
+    annotationControlTypes = [],
+    fetchFn = fetch,
+  } = options;
   const files: Zippable = {};
 
   const rawJson = JSON.stringify(
@@ -109,20 +117,28 @@ export async function buildAlchemyJobArchive(
   const reportImages: AlchemyReportImage[] = [];
   let failedImages = 0;
 
-  const imageForms = (status.forms ?? [])
-    .map((form) => ({ form, url: formImageUrl(form) }))
-    .filter((entry): entry is { form: AlchemyForm; url: string } =>
-      Boolean(entry.url),
+  const imageForms = formViews(status.forms ?? [], annotationControlTypes)
+    .map((view) => ({ ...view, url: formImageUrl(view.form) }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        form: AlchemyForm;
+        detector: AnnotationControlType | null;
+        key: string;
+        url: string;
+      } => Boolean(entry.url),
     );
 
   await Promise.all(
-    imageForms.map(async ({ form, url }) => {
-      const stored = storedImages.find((image) => image.imageId === form.form);
+    imageForms.map(async ({ form, detector, key, url }) => {
+      const report = { form: form.form, detector, fileName: '' };
+      const stored = storedImages.find((image) => image.imageId === key);
       if (stored) {
         const ext = imageExtension(url, stored.mimeType);
-        const name = uniqueName(`images/${form.form}.${ext}`, usedNames);
+        const name = uniqueName(`images/${key}.${ext}`, usedNames);
         files[name] = new Uint8Array(await stored.blob.arrayBuffer());
-        reportImages.push({ form: form.form, fileName: name });
+        reportImages.push({ ...report, fileName: name });
         return;
       }
       try {
@@ -133,9 +149,9 @@ export async function buildAlchemyJobArchive(
         }
         const buffer = new Uint8Array(await response.arrayBuffer());
         const ext = imageExtension(url, response.headers.get('content-type'));
-        const name = uniqueName(`images/${form.form}.${ext}`, usedNames);
+        const name = uniqueName(`images/${key}.${ext}`, usedNames);
         files[name] = buffer;
-        reportImages.push({ form: form.form, fileName: name });
+        reportImages.push({ ...report, fileName: name });
       } catch {
         failedImages += 1;
       }

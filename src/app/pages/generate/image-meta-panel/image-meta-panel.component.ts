@@ -201,10 +201,10 @@ export class ImageMetaPanelComponent {
         keys: ['seed'],
       },
       {
-        id: 'karras',
-        labelKey: label('karras'),
-        value: value.karras ? on : off,
-        keys: ['karras'],
+        id: 'schedule',
+        labelKey: label('schedule'),
+        value: value.scheduler,
+        keys: ['scheduler'],
       },
       {
         id: 'hires',

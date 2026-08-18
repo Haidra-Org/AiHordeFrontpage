@@ -1,8 +1,13 @@
 import {
   AlchemyDocumentedFormName,
   AlchemyFormName,
+  AnnotationControlType,
 } from '../types/generation';
-import { DOCS_IMAGE_SETTINGS, docsSettingLink } from './docs-links';
+import {
+  DOCS_IMAGE_SETTINGS,
+  docsExampleLink,
+  docsSettingLink,
+} from './docs-links';
 import { SettingLink } from './settings';
 
 /**
@@ -10,17 +15,21 @@ import { SettingLink } from './settings';
  * documentation all know it.
  *
  * The horde knows twenty-four forms and a reader wants four things. Filing the
- * forms under the thing they do is what lets the documentation be four pages
+ * forms under the thing they do is what lets the documentation be five pages
  * instead of twenty-four stubs, and what lets a card in the panel and a page in
  * the book be the same subject rather than two arrangements of it.
  *
  * A use case files every form the horde's enumeration puts under it, and names
  * separately the subset this studio can submit. The panel builds its operation
  * groups from that subset, so a form cannot be offered by the tool and missing
- * from the page about it, and a form the tool cannot send cannot become a
- * control that produces failed jobs.
+ * from the page about it.
  */
-export type AlchemyUseCaseId = 'describe' | 'enlarge' | 'fix_faces' | 'cut_out';
+export type AlchemyUseCaseId =
+  | 'describe'
+  | 'control_map'
+  | 'enlarge'
+  | 'fix_faces'
+  | 'cut_out';
 
 /**
  * The forms that answer a question about the picture, in the order the panel
@@ -36,13 +45,14 @@ export const ALCHEMY_ANALYSIS_FORMS: readonly AlchemyFormName[] = [
 ];
 
 /**
- * The describe use case as the horde enumerates it. `annotation` reads edges,
- * depth or pose out of a picture and answers with a map of them, which is a
- * question about the picture answered in an image; the studio does not submit
- * it, so it is documented here and absent from the panel.
+ * The describe use case as the horde enumerates it.
  */
 export const ALCHEMY_DESCRIBE_FORMS: readonly AlchemyDocumentedFormName[] = [
   ...ALCHEMY_ANALYSIS_FORMS,
+];
+
+/** Forms that extract reusable structural guidance from an image. */
+export const ALCHEMY_CONTROL_MAP_FORMS: readonly AlchemyFormName[] = [
   'annotation',
 ];
 
@@ -87,6 +97,80 @@ export const ALCHEMY_BACKGROUND_FORMS: readonly AlchemyFormName[] = [
 ];
 
 /** One thing the studio is used for, and everything said about it. */
+/**
+ * The detectors a control-map request can ask for, filed under what each one
+ * reads out of the picture. The horde publishes them as one flat list of
+ * thirty-three names; a reader picking one is choosing between edges, depth and
+ * pose rather than between spellings, so the picker groups them that way.
+ *
+ * Every name the horde knows appears exactly once, and the names themselves are
+ * the horde's: renaming a detector in the picker would leave the reader unable
+ * to match what they chose against the request or against any other client.
+ */
+export interface AnnotationDetectorGroup {
+  /** Suffix of `alchemy.annotation.group_*` naming what the group reads. */
+  id: string;
+  types: readonly AnnotationControlType[];
+}
+
+export const ANNOTATION_DETECTOR_GROUPS: readonly AnnotationDetectorGroup[] = [
+  {
+    id: 'edges',
+    types: [
+      'canny',
+      'hed',
+      'pidinet',
+      'teed',
+      'pyracanny',
+      'binary',
+      'scribble',
+      'fakescribbles',
+      'scribble_xdog',
+      'scribble_pidinet',
+    ],
+  },
+  {
+    id: 'lines',
+    types: [
+      'standard_lineart',
+      'lineart',
+      'lineart_anime',
+      'lineart_anime_denoise',
+      'mlsd',
+    ],
+  },
+  {
+    id: 'depth',
+    types: [
+      'depth',
+      'midas_depth',
+      'zoe_depth',
+      'depth_anything',
+      'depth_anything_v2',
+    ],
+  },
+  { id: 'surface', types: ['normal', 'normal_bae'] },
+  { id: 'pose', types: ['openpose'] },
+  { id: 'regions', types: ['seg', 'oneformer_ade20k', 'oneformer_coco'] },
+  {
+    id: 'colour',
+    types: [
+      'color',
+      'shuffle',
+      'recolor_luminance',
+      'recolor_intensity',
+      'tile',
+      'tile_ttplanet_guided',
+      'tile_ttplanet_simple',
+    ],
+  },
+];
+
+/** The i18n key naming what a detector group reads out of the picture. */
+export function annotationGroupLabelKey(id: string): string {
+  return `alchemy.annotation.group_${id}`;
+}
+
 export interface AlchemyUseCase {
   id: AlchemyUseCaseId;
   /**
@@ -127,6 +211,21 @@ const FACEFIXER_SETTING_LINK: SettingLink = {
   routerLink: docsSettingLink('facefixer'),
 };
 
+/**
+ * The other half of the control map story. Alchemy runs the detector; the
+ * lesson and the setting are where the map is used to hold a render to it, and
+ * a reader who came for the map is usually on the way there.
+ */
+const CONTROLNET_FLOW_LINK: SettingLink = {
+  labelKey: 'alchemy.usecases.link_controlnet',
+  routerLink: docsExampleLink('controlnet'),
+};
+
+const SOURCE_SETTING_LINK: SettingLink = {
+  labelKey: 'alchemy.usecases.link_source',
+  routerLink: docsSettingLink('source'),
+};
+
 const SETTINGS_LINK: SettingLink = {
   labelKey: 'alchemy.usecases.link_settings',
   routerLink: DOCS_IMAGE_SETTINGS,
@@ -137,12 +236,20 @@ export const ALCHEMY_USE_CASES: readonly AlchemyUseCase[] = [
     id: 'describe',
     groupId: 'analyze',
     icon: 'document-text',
-    // Every form whose answer is a read of the picture rather than a change to
-    // it, which is words or numbers in all but the annotation case.
+    // Every form whose answer is words or numbers read from the picture.
     forms: ALCHEMY_DESCRIBE_FORMS,
     operableForms: ALCHEMY_ANALYSIS_FORMS,
-    related: ['enlarge'],
+    related: ['control_map', 'enlarge'],
     links: [SETTINGS_LINK],
+  },
+  {
+    id: 'control_map',
+    groupId: 'control_map',
+    icon: 'photo',
+    forms: ALCHEMY_CONTROL_MAP_FORMS,
+    operableForms: ALCHEMY_CONTROL_MAP_FORMS,
+    related: ['describe'],
+    links: [CONTROLNET_FLOW_LINK, SOURCE_SETTING_LINK],
   },
   {
     id: 'enlarge',

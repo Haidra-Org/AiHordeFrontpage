@@ -34,6 +34,12 @@ export interface AlchemyEvidenceEntry {
   form: string;
   title: string;
   files: AlchemyEvidenceFiles;
+  /**
+   * Which detector the run asked for, on the forms that take one. The control
+   * map form is thirty-three runs on one source rather than one run, so the
+   * form alone does not name what a reader is looking at.
+   */
+  control_type?: string;
   model?: string;
   notes?: string;
 }

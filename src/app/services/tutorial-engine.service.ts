@@ -220,7 +220,7 @@ const FIELD_ANCHORS: Readonly<
   steps: 'steps',
   cfg_scale: 'cfg',
   sampler_name: 'sampler',
-  karras: 'sampler',
+  scheduler: 'sampler',
   seed: 'seed',
   denoising_strength: 'denoise',
   control_type: 'control_type',

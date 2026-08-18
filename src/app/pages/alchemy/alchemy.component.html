@@ -279,6 +279,81 @@
                       }
                     </div>
                   }
+                  @if (
+                    group.id === "control_map" && isFormSelected("annotation")
+                  ) {
+                    <div class="alchemy-detectors mt-3">
+                      <div class="alchemy-detectors__head">
+                        <span class="gs-opsub-label">
+                          {{ "alchemy.annotation.detector_label" | transloco }}
+                        </span>
+                        @if (annotationControlTypes().length > 0) {
+                          <button
+                            type="button"
+                            class="gs-mini-btn"
+                            (click)="clearDetectors()"
+                          >
+                            {{ "alchemy.annotation.clear" | transloco }}
+                          </button>
+                        }
+                      </div>
+                      <p class="gs-sublabel">
+                        {{ "alchemy.annotation.detector_hint" | transloco }}
+                      </p>
+                      @for (detectors of detectorGroups; track detectors.id) {
+                        <div class="alchemy-detectors__group">
+                          <div class="alchemy-detectors__group-head">
+                            <span class="gs-opsub-label">
+                              {{ groupLabelKey(detectors.id) | transloco }}
+                            </span>
+                            <button
+                              type="button"
+                              class="gs-mini-btn"
+                              [disabled]="isSubmitting()"
+                              (click)="toggleDetectorGroup(detectors)"
+                            >
+                              {{
+                                (isGroupFullySelected(detectors)
+                                  ? "alchemy.annotation.group_none"
+                                  : "alchemy.annotation.group_all"
+                                ) | transloco
+                              }}
+                            </button>
+                          </div>
+                          <div class="alchemy-detectors__chips">
+                            @for (type of detectors.types; track type) {
+                              <label
+                                class="gs-op gs-op--chip"
+                                [class.gs-op--selected]="
+                                  isDetectorSelected(type)
+                                "
+                              >
+                                <input
+                                  type="checkbox"
+                                  class="sr-only"
+                                  [checked]="isDetectorSelected(type)"
+                                  [disabled]="isSubmitting()"
+                                  (change)="toggleDetector(type)"
+                                />
+                                <span class="gs-op-check" aria-hidden="true">
+                                  <app-icon name="check" />
+                                </span>
+                                <span class="gs-op-name gs-mono">{{
+                                  type
+                                }}</span>
+                              </label>
+                            }
+                          </div>
+                        </div>
+                      }
+                      @if (missingDetector()) {
+                        <p class="gs-warn">
+                          <app-icon name="warning-triangle" class="gs-ico-sm" />
+                          {{ "alchemy.annotation.none_picked" | transloco }}
+                        </p>
+                      }
+                    </div>
+                  }
                 }
               </section>
             }
@@ -307,7 +382,14 @@
             <app-icon name="check" />
           </span>
           <span class="gs-op-name">
-            {{ "alchemy.form_names." + form | transloco }}
+            @if (form === "annotation" && annotationControlTypes().length > 1) {
+              {{
+                "alchemy.annotation.op_label_count"
+                  | transloco: { count: annotationControlTypes().length }
+              }}
+            } @else {
+              {{ "alchemy.form_names." + form | transloco }}
+            }
           </span>
           <!-- Factor badge + info button, grouped and right-justified so they
                line up across rows regardless of how long the name is. -->
@@ -359,6 +441,8 @@
             {{ "alchemy.submit.need_source" | transloco }}
           } @else if (selectedCount() === 0) {
             {{ "alchemy.submit.need_operation" | transloco }}
+          } @else if (missingDetector()) {
+            {{ "alchemy.annotation.need_detector" | transloco }}
           } @else {
             {{ "alchemy.submit.button" | transloco }}
           }
@@ -787,6 +871,17 @@
             </span>
             <ul class="gs-devdoc-chips">
               @for (form of postProcessorForms; track form) {
+                <li>
+                  <code class="gs-mono">{{ form }}</code>
+                </li>
+              }
+            </ul>
+            <span class="gs-devdoc-label">
+              <app-icon name="photo" class="gs-ico-sm" />
+              {{ "alchemy.dev.request.annotation_forms" | transloco }}
+            </span>
+            <ul class="gs-devdoc-chips">
+              @for (form of annotationForms; track form) {
                 <li>
                   <code class="gs-mono">{{ form }}</code>
                 </li>

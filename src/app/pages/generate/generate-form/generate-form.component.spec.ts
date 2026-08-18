@@ -7,6 +7,7 @@ import {
   GenerateFormValue,
   MAX_STEPS,
   QR_MODULE_DRAWERS,
+  SAMPLERS,
   STEPS_SLIDER_MAX,
   buildStyledImageRequest,
   createGenerateForm,
@@ -21,6 +22,12 @@ import { ToastService } from '../../../services/toast.service';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
 import en from '../../../../assets/i18n/en.json';
+import {
+  SAMPLER_SETTING_NAMES,
+  SamplerConstraintsDocument,
+  coerceSamplerConstraints,
+} from '../../../types/sampler-constraints';
+import live from '../../../testing/fixtures/sampler-constraints.stub.json';
 
 const FORCED: StyleForcedParams = {
   model: 'Flux.1-Schnell fp8',
@@ -105,7 +112,7 @@ describe('GenerateFormComponent style locks', () => {
       form.controls.cfg_scale,
       form.controls.sampler_name,
       form.controls.clip_skip,
-      form.controls.karras,
+      form.controls.scheduler,
       form.controls.hires_fix,
     ]) {
       expect(control.disabled).toBe(true);
@@ -168,7 +175,7 @@ describe('GenerateFormComponent style locks', () => {
     component.detachSection('sampling');
     fixture.detectChanges();
     form.controls.steps.setValue(40);
-    form.controls.karras.setValue(true);
+    form.controls.scheduler.setValue('karras');
 
     component.reattachSection('sampling');
     fixture.detectChanges();
@@ -176,7 +183,9 @@ describe('GenerateFormComponent style locks', () => {
     expect(component.isSectionDetached('sampling')).toBe(false);
     expect(component.isSectionLocked('sampling')).toBe(true);
     expect(form.controls.steps.value).toBe(FORCED.steps);
-    expect(form.controls.karras.value).toBe(FORCED.karras);
+    // The style names its schedule as the legacy flag, so 'no karras' comes
+    // back as the schedule that flag stands for.
+    expect(form.controls.scheduler.value).toBe('normal');
     expect(form.controls.steps.disabled).toBe(true);
     expect(submitted(form, FORCED).params?.steps).toBe(FORCED.steps);
   });
@@ -545,7 +554,7 @@ describe('GenerateFormComponent model recommendations', () => {
     form.controls.steps.setValue(6);
     form.controls.cfg_scale.setValue(2);
     form.controls.sampler_name.setValue('k_euler');
-    form.controls.karras.setValue(false);
+    form.controls.scheduler.setValue('normal');
 
     expect(component.stepsHint()?.violated).toBe(false);
     expect(component.cfgHint()?.violated).toBe(false);
@@ -935,5 +944,413 @@ describe('GenerateFormComponent structure', () => {
 
     expect(region).not.toBeNull();
     expect(region!.textContent?.trim()).toBe('');
+  });
+});
+
+/**
+ * The sampler-specific controls are built from the horde's live contract rather
+ * than from a list in this repository, so nothing here can be checked by
+ * reading the template: which fields exist, what they are called and which
+ * values they offer are all decided at runtime. These render the real template
+ * against a contract standing in for the endpoint's answer.
+ */
+describe('GenerateFormComponent sampler contract', () => {
+  const contract: SamplerConstraintsDocument = {
+    schema_version: '1.0',
+    samplers: {
+      k_euler: {
+        name: 'k_euler',
+        presentation_tier: 'recommended',
+        solver_type_choices: [],
+        accepted_settings: {
+          sampler_s_churn: {
+            minimum: 0,
+            maximum: 100,
+            default: 0,
+            integer_only: false,
+          },
+        },
+      },
+      dpmpp_2m_sde: {
+        name: 'dpmpp_2m_sde',
+        presentation_tier: 'advanced',
+        solver_type_choices: ['midpoint', 'heun'],
+        accepted_settings: {
+          sampler_eta: {
+            minimum: 0,
+            maximum: 10,
+            default: 1,
+            integer_only: false,
+          },
+        },
+      },
+    },
+    hard_constraints: {
+      rejected_sampler_scheduler_pairings: [
+        { sampler: 'k_euler', scheduler: 'linear_quadratic' },
+      ],
+      scheduler_baseline_applicability: {
+        align_your_steps: ['stable_diffusion_1'],
+      },
+    },
+    presentation_tiers: { recommended: ['k_euler'] },
+  };
+
+  async function renderWithContract(
+    value: Partial<GenerateFormValue> = {},
+    baseline: string | null = 'stable_diffusion_1',
+  ): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+    host: HTMLElement;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      sampler_name: 'k_euler',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('samplerContract', contract);
+    fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.detectChanges();
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      form,
+      host: fixture.nativeElement as HTMLElement,
+    };
+  }
+
+  it('names every knob the contract offers in English', async () => {
+    const { fixture, component, host } = await renderWithContract();
+    component.toggleAdvancedSampling();
+    fixture.detectChanges();
+    const label = host.querySelector('label[for="generate-sampler_s_churn"]');
+
+    expect(label).not.toBeNull();
+    // A key that reached the surface is a label nobody can read, and these keys
+    // are built from the horde's field names rather than written out.
+    expect(label!.textContent).not.toContain('generate.form.');
+    const unnamed = SAMPLER_SETTING_NAMES.filter(
+      (setting) =>
+        !(en as Record<string, string>)[`generate.form.${setting}_label`],
+    );
+    expect(unnamed).toEqual([]);
+  });
+
+  it('offers only the schedules the sampler and the model both allow', async () => {
+    const { host } = await renderWithContract();
+    const select = host.querySelector<HTMLSelectElement>('#generate-scheduler');
+    const offered = Array.from(select!.options).map((option) => option.value);
+
+    // The schedule is always named, so there is no "unset" row to pick.
+    expect(offered[0]).toBe('karras');
+    expect(offered).toContain('karras');
+    expect(offered).toContain('align_your_steps');
+    expect(offered).not.toContain('linear_quadratic');
+  });
+
+  it('withholds a schedule the selected model was not derived for', async () => {
+    const { host } = await renderWithContract({}, 'flux_1');
+    const select = host.querySelector<HTMLSelectElement>('#generate-scheduler');
+
+    expect(
+      Array.from(select!.options).map((option) => option.value),
+    ).not.toContain('align_your_steps');
+  });
+
+  it('shows the flow shift only where the model family reads it', async () => {
+    const { fixture, component, host } = await renderWithContract({}, 'flux_1');
+    component.toggleAdvancedSampling();
+    fixture.detectChanges();
+    expect(host.querySelector('#generate-flow-shift')).not.toBeNull();
+
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    expect(host.querySelector('#generate-flow-shift')).toBeNull();
+  });
+
+  it('drops a scheduler and solver type the new sampler cannot take', async () => {
+    const { fixture, form } = await renderWithContract({
+      sampler_name: 'dpmpp_2m_sde',
+      scheduler: 'linear_quadratic',
+      sampler_solver_type: 'heun',
+    });
+
+    form.controls.sampler_name.setValue('k_euler');
+    fixture.detectChanges();
+
+    // A select holding a value it no longer offers renders blank while still
+    // sending that value, so the schedule falls back to the first one offered.
+    expect(form.controls.scheduler.value).toBe('karras');
+    expect(form.controls.sampler_solver_type.value).toBe('');
+  });
+
+  it('keeps a scheduler the new sampler still accepts', async () => {
+    const { fixture, form } = await renderWithContract({
+      sampler_name: 'dpmpp_2m_sde',
+      scheduler: 'karras',
+    });
+
+    form.controls.sampler_name.setValue('k_euler');
+    fixture.detectChanges();
+
+    expect(form.controls.scheduler.value).toBe('karras');
+  });
+
+  it('locks the schedule while a style pins one', async () => {
+    const { fixture, form } = await renderWithContract();
+    expect(form.controls.scheduler.disabled).toBe(false);
+
+    fixture.componentRef.setInput('forcedParams', { karras: false });
+    fixture.detectChanges();
+
+    expect(form.controls.scheduler.disabled).toBe(true);
+  });
+
+  it('reveals the advanced knobs once one of them carries a value', async () => {
+    const { fixture, component, form, host } = await renderWithContract();
+    expect(component.advancedSamplingOpen()).toBe(false);
+    expect(host.querySelector('#generate-sampler_s_churn')).toBeNull();
+
+    form.controls.sampler_s_churn.setValue(4);
+    fixture.detectChanges();
+
+    expect(component.advancedSamplingOpen()).toBe(true);
+    expect(component.advancedSamplingCount()).toBe(1);
+    expect(host.querySelector('#generate-sampler_s_churn')).not.toBeNull();
+
+    // A knob the selected sampler does not accept is not counted.
+    form.controls.sampler_eta.setValue(2);
+    fixture.detectChanges();
+    expect(component.advancedSamplingCount()).toBe(1);
+  });
+
+  it('leaves the knobs closed once the reader closes them', async () => {
+    const { fixture, component, form } = await renderWithContract();
+    component.toggleAdvancedSampling();
+    component.toggleAdvancedSampling();
+    fixture.detectChanges();
+
+    form.controls.sampler_s_churn.setValue(4);
+    fixture.detectChanges();
+
+    expect(component.advancedSamplingOpen()).toBe(false);
+  });
+
+  it('clears every knob at once', async () => {
+    const { fixture, component, form } = await renderWithContract({
+      sampler_s_churn: 4,
+      flow_shift: 3,
+      sampler_solver_type: 'heun',
+    });
+
+    component.clearAdvancedSampling();
+    fixture.detectChanges();
+
+    expect(form.controls.sampler_s_churn.value).toBeNull();
+    expect(form.controls.flow_shift.value).toBeNull();
+    expect(form.controls.sampler_solver_type.value).toBe('');
+    expect(component.advancedSamplingCount()).toBe(0);
+  });
+
+  it('files the samplers under the tier the horde puts them in', async () => {
+    const { host } = await renderWithContract();
+    const groups = Array.from(
+      host.querySelectorAll<HTMLOptGroupElement>('#generate-sampler optgroup'),
+    );
+
+    expect(groups.length).toBe(2);
+    expect(
+      Array.from(groups[0].querySelectorAll('option')).map(
+        (option) => option.value,
+      ),
+    ).toEqual(['k_euler']);
+    expect(
+      Array.from(groups[1].querySelectorAll('option')).map(
+        (option) => option.value,
+      ),
+    ).toEqual(['dpmpp_2m_sde']);
+  });
+
+  it('falls back to the built-in samplers with no contract published', async () => {
+    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+      .overrideComponent(GenerateFormComponent, { set: { template: '' } })
+      .compileComponents();
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, mode: 'advanced' }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.recommendedSamplers()).toEqual([
+      ...SAMPLERS,
+    ]);
+    expect(fixture.componentInstance.advancedSamplers()).toEqual([]);
+  });
+});
+
+/**
+ * The same panel, driven by a captured response from a horde serving schema
+ * 1.0 rather than by a contract written to suit the assertions. What the
+ * controls offer is the horde's answer, so a hand-written contract can only
+ * show that the wiring runs, not that it runs on the real vocabulary.
+ */
+describe('GenerateFormComponent on the published contract', () => {
+  const contract = coerceSamplerConstraints(live)!;
+
+  async function render(
+    value: Partial<GenerateFormValue> = {},
+    baseline: string | null = 'stable_diffusion_1',
+  ): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+    host: HTMLElement;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('samplerContract', contract);
+    fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.detectChanges();
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      form,
+      host: fixture.nativeElement as HTMLElement,
+    };
+  }
+
+  it('offers every sampler the horde publishes, under its own tier', async () => {
+    const { host } = await render();
+    const options = Array.from(
+      host.querySelectorAll<HTMLOptionElement>('#generate-sampler option'),
+    ).map((option) => option.value);
+
+    expect(new Set(options)).toEqual(new Set(Object.keys(live.samplers)));
+    expect(options).toHaveLength(Object.keys(live.samplers).length);
+  });
+
+  it('builds the solver controls the selected sampler actually accepts', async () => {
+    const { fixture, form, host } = await render({
+      sampler_name: 'dpmpp_2m_sde',
+    });
+    fixture.componentInstance.toggleAdvancedSampling();
+    fixture.detectChanges();
+
+    const solver = host.querySelector<HTMLSelectElement>(
+      '#generate-solver-type',
+    );
+    expect(Array.from(solver!.options).map((option) => option.value)).toEqual([
+      '',
+      'midpoint',
+      'heun',
+    ]);
+    expect(host.querySelector('#generate-sampler_eta')).not.toBeNull();
+
+    // A sampler with no knobs leaves none of them behind.
+    form.controls.sampler_name.setValue('DDIM');
+    fixture.detectChanges();
+    expect(host.querySelector('#generate-solver-type')).toBeNull();
+    expect(host.querySelector('#generate-sampler_eta')).toBeNull();
+  });
+
+  it('prices the samplers that charge more than one pass a step', async () => {
+    const { host } = await render();
+    const labels = new Map(
+      Array.from(
+        host.querySelectorAll<HTMLOptionElement>('#generate-sampler option'),
+      ).map((option) => [option.value, option.textContent?.trim() ?? '']),
+    );
+
+    expect(labels.get('k_heun')).toBe('k_heun · ×2');
+    expect(labels.get('heunpp2')).toBe('heunpp2 · ×3');
+    expect(labels.get('k_dpm_adaptive')).toBe('k_dpm_adaptive · adaptive');
+    // The ordinary rate is the rest of the list, and says nothing.
+    expect(labels.get('k_euler')).toBe('k_euler');
+  });
+
+  it('says what an advanced sampler costs without calling it a warning', async () => {
+    const { component } = await render({ sampler_name: 'k_heun' });
+
+    expect(component.samplerTierKey()).toBe(
+      'generate.form.sampler_advanced_note_work',
+    );
+    expect(component.samplerWork('k_heun')).toBe(2);
+  });
+
+  it('says an adaptive sampler sets its own step count', async () => {
+    const { component } = await render({ sampler_name: 'k_dpm_adaptive' });
+
+    expect(component.samplerTierKey()).toBe(
+      'generate.form.sampler_advanced_note_adaptive',
+    );
+  });
+
+  it('marks the schedules the horde pairs the sampler with', async () => {
+    const { host } = await render({ sampler_name: 'DDIM' });
+    const labels = (): string[] =>
+      Array.from(
+        host.querySelectorAll<HTMLOptionElement>('#generate-scheduler option'),
+      ).map((option) => option.textContent?.trim() ?? '');
+
+    // ddim_uniform is the schedule the backend's authors name for DDIM; the
+    // entry that names no sampler marks nothing, and the third-party matrix
+    // never does.
+    expect(labels()).toContain('ddim_uniform · suggested');
+    expect(labels()).toContain('karras');
+    expect(labels().filter((label) => label.includes('suggested'))).toEqual([
+      'ddim_uniform · suggested',
+    ]);
+  });
+
+  it('withholds a sigma generator the chosen model was not derived for', async () => {
+    const { fixture, host } = await render({ sampler_name: 'k_euler' });
+    const schedules = (): string[] =>
+      Array.from(
+        host.querySelectorAll<HTMLOptionElement>('#generate-scheduler option'),
+      ).map((option) => option.value);
+
+    expect(schedules()).toContain('align_your_steps');
+
+    fixture.componentRef.setInput('modelBaseline', 'flux_1');
+    fixture.detectChanges();
+
+    expect(schedules()).not.toContain('align_your_steps');
+    expect(schedules()).toContain('karras');
   });
 });

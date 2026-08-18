@@ -161,10 +161,22 @@
           <option value="">
             {{ "generate.source.control_type_placeholder" | transloco }}
           </option>
-          @for (control of controlTypes; track control) {
-            <option [value]="control">{{ control }}</option>
-          }
+          <optgroup [label]="'generate.source.control_type_common' | transloco">
+            @for (control of legacyControlTypes; track control) {
+              <option [value]="control">{{ control }}</option>
+            }
+          </optgroup>
+          <optgroup
+            [label]="'generate.source.control_type_extended' | transloco"
+          >
+            @for (control of extendedControlTypes; track control) {
+              <option [value]="control">{{ control }}</option>
+            }
+          </optgroup>
         </select>
+        <p class="gs-sublabel mt-1">
+          {{ "generate.source.control_type_hint" | transloco }}
+        </p>
       </div>
       <label class="gs-switch gs-switch-row">
         <span>{{ "generate.source.image_is_control_label" | transloco }}</span>

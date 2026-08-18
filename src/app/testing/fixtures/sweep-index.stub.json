@@ -780,6 +780,111 @@
         }
       ],
       "grid": null
+    },
+    {
+      "strip_id": "scheduler/albedobase-xl/person",
+      "parameter": "scheduler",
+      "presentation": "strip",
+      "caption": "Which noise schedule the sampler walks.",
+      "rationale": "Which noise schedule the sampler walks.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 4,
+        "cfg_scale": 7.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": ["scheduler"],
+      "stops": [
+        {
+          "value": "normal",
+          "label": "normal",
+          "caption": "Even spacing from noise to picture.",
+          "file": "scheduler/albedobase-xl/person/001_normal.webp",
+          "sidecar": "scheduler/albedobase-xl/person/001_normal.json"
+        },
+        {
+          "value": "karras",
+          "label": "karras",
+          "caption": "More of the steps spent at the low-noise end.",
+          "file": "scheduler/albedobase-xl/person/002_karras.webp",
+          "sidecar": "scheduler/albedobase-xl/person/002_karras.json"
+        },
+        {
+          "value": "simple",
+          "label": "simple",
+          "caption": "A shorter ramp that suits few-step renders.",
+          "file": "scheduler/albedobase-xl/person/003_simple.webp",
+          "sidecar": "scheduler/albedobase-xl/person/003_simple.json"
+        }
+      ]
+    },
+    {
+      "strip_id": "sampler-solver-type/albedobase-xl/person",
+      "parameter": "sampler_solver_type",
+      "presentation": "strip",
+      "caption": "Which solver the SDE sampler runs.",
+      "rationale": "Which solver the SDE sampler runs.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "person",
+        "label": "Portrait",
+        "prompt": "a portrait of a lighthouse keeper, overcast afternoon"
+      },
+      "held": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 4,
+        "cfg_scale": 7.0,
+        "sampler_name": "k_euler_a",
+        "clip_skip": 1,
+        "hires_fix": false,
+        "tiling": false,
+        "karras": true,
+        "denoising_strength": 0.75,
+        "seed": 1312
+      },
+      "varying": ["sampler_solver_type"],
+      "stops": [
+        {
+          "value": "midpoint",
+          "label": "midpoint",
+          "caption": "The default solver, steady across the range.",
+          "file": "sampler-solver-type/albedobase-xl/person/001_midpoint.webp",
+          "sidecar": "sampler-solver-type/albedobase-xl/person/001_midpoint.json"
+        },
+        {
+          "value": "heun",
+          "label": "heun",
+          "caption": "A second evaluation per step, at twice the work.",
+          "file": "sampler-solver-type/albedobase-xl/person/002_heun.webp",
+          "sidecar": "sampler-solver-type/albedobase-xl/person/002_heun.json"
+        }
+      ]
     }
   ]
 }

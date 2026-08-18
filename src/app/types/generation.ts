@@ -4,6 +4,7 @@ import {
   StyleLoraConfig,
   StyleTextualInversionConfig,
 } from './style';
+import type { ImageSchedulerName } from './sampler-constraints';
 
 // ============================================================================
 // Image Generation Request Types
@@ -13,16 +14,46 @@ import {
  * ControlNet guidance modes accepted by the AI Horde `control_type` param.
  * Mirrors the enum on `ModelPayloadStyleStable` in the v2 swagger.
  */
-export type ImageControlType =
-  | 'canny'
-  | 'hed'
-  | 'depth'
-  | 'normal'
-  | 'openpose'
-  | 'seg'
-  | 'scribble'
-  | 'fakescribbles'
-  | 'hough';
+export const ANNOTATION_CONTROL_TYPES = [
+  'canny',
+  'hed',
+  'depth',
+  'mlsd',
+  'openpose',
+  'normal',
+  'scribble',
+  'fakescribbles',
+  'seg',
+  'binary',
+  'standard_lineart',
+  'lineart',
+  'lineart_anime',
+  'lineart_anime_denoise',
+  'pidinet',
+  'scribble_xdog',
+  'scribble_pidinet',
+  'teed',
+  'pyracanny',
+  'midas_depth',
+  'zoe_depth',
+  'depth_anything',
+  'depth_anything_v2',
+  'normal_bae',
+  'oneformer_ade20k',
+  'oneformer_coco',
+  'color',
+  'shuffle',
+  'recolor_luminance',
+  'recolor_intensity',
+  'tile',
+  'tile_ttplanet_guided',
+  'tile_ttplanet_simple',
+] as const;
+
+export type AnnotationControlType = (typeof ANNOTATION_CONTROL_TYPES)[number];
+
+/** Image generation additionally accepts the legacy `hough` alias for `mlsd`. */
+export type ImageControlType = AnnotationControlType | 'hough';
 
 /**
  * The ways a `source_image` may be interpreted. `remix` feeds the source into
@@ -76,6 +107,15 @@ export interface ImageGenerationParams {
   n?: number;
   post_processing?: ImagePostProcessor[];
   karras?: boolean;
+  scheduler?: ImageSchedulerName;
+  sampler_eta?: number;
+  sampler_s_noise?: number;
+  sampler_s_churn?: number;
+  sampler_s_tmin?: number;
+  sampler_s_tmax?: number;
+  sampler_order?: number;
+  sampler_solver_type?: string;
+  flow_shift?: number;
   tiling?: boolean;
   hires_fix?: boolean;
   clip_skip?: number;
@@ -280,12 +320,11 @@ export const ALCHEMY_POST_PROCESSOR_FORMS = [
 ] as const;
 
 /**
- * Forms the horde's own enumeration carries that this client does not submit.
- * They are documented so the four use-case pages describe every form the horde
- * knows of, and kept out of the two lists above so the studio's panel, which is
- * built from those, cannot offer a control whose job would never come back.
+ * Annotation is separate from data and post-processing because it needs a
+ * detector payload and returns an image intended for a later generation. That
+ * distinction keeps generic form builders from silently dropping the payload.
  */
-export const ALCHEMY_DOCUMENTED_ONLY_FORMS = ['annotation'] as const;
+export const ALCHEMY_ANNOTATION_FORMS = ['annotation'] as const;
 
 export type AlchemyDataFormName = (typeof ALCHEMY_DATA_FORMS)[number];
 export type AlchemyPostProcessorFormName =
@@ -293,17 +332,16 @@ export type AlchemyPostProcessorFormName =
 /** A form the studio can put in an `/interrogate/async` request. */
 export type AlchemyFormName =
   | AlchemyDataFormName
-  | AlchemyPostProcessorFormName;
-/** A form the documentation describes, submittable or not. */
-export type AlchemyDocumentedFormName =
-  | AlchemyFormName
-  | (typeof ALCHEMY_DOCUMENTED_ONLY_FORMS)[number];
+  | AlchemyPostProcessorFormName
+  | (typeof ALCHEMY_ANNOTATION_FORMS)[number];
+/** A form the documentation describes. */
+export type AlchemyDocumentedFormName = AlchemyFormName;
 
 // --- Request types ---------------------------------------------------------
 
 export interface InterrogationForm {
   name: AlchemyFormName;
-  payload?: Record<string, unknown>;
+  payload?: { control_type: AnnotationControlType };
 }
 
 export interface InterrogationRequest {
@@ -364,6 +402,12 @@ export interface AlchemyForm {
   form: string;
   state: string;
   result?: AlchemyFormResult;
+  /**
+   * The request payload the form was submitted with, echoed back. Only the
+   * control-map form carries one, and only servers new enough to echo it: it is
+   * what tells two annotation forms in the same job apart.
+   */
+  payload?: { control_type: AnnotationControlType };
 }
 
 export interface AlchemyStatusResponse {

@@ -869,6 +869,69 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-tickrail')).not.toBeNull();
   });
 
+  describe('stops that are names rather than numbers', () => {
+    const tiles = (): HTMLButtonElement[] =>
+      all<HTMLButtonElement>('.gs-sweep-options .gs-sweep-plate-cell');
+
+    it('lays the alternatives out at once instead of scrubbing them', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+
+      expect(tiles()).toHaveLength(3);
+      // Nothing lies between two named stops, so there is no lane to move
+      // along and no single frame the plate is parked on.
+      expect(find('.gs-tickrail')).toBeNull();
+      expect(find('.gs-sweep-frame')).toBeNull();
+      expect(find('.gs-plate-foot')).toBeNull();
+    });
+
+    it('carries the value and the sentence on every tile', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+      const captions = all<HTMLElement>('.gs-sweep-option-cap');
+
+      expect(captions).toHaveLength(3);
+      expect(captions[1].textContent).toContain('karras');
+      expect(captions[1].textContent).toContain('More of the steps');
+      expect(tiles()[1].getAttribute('aria-label')).toBe(
+        'See this example larger: karras',
+      );
+    });
+
+    it('opens one tile full size, and keeps the plate on it', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+
+      tiles()[2].click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-viewer')).not.toBeNull();
+      expect(text()).toContain('A shorter ramp');
+      // The press moves the plate onto that frame too, so the provenance under
+      // it is about the picture the reader just looked at.
+      expect(tiles()[2].classList.contains('is-at')).toBe(true);
+    });
+
+    it('lays two named alternatives out rather than wiping them', async () => {
+      await setUp({ parameter: 'sampler_solver_type', startExpanded: true });
+
+      expect(tiles()).toHaveLength(2);
+      expect(find('.gs-sweep-pair')).toBeNull();
+    });
+
+    it('counts the alternatives rather than naming two ends', async () => {
+      await setUp({ parameter: 'scheduler' });
+
+      // The offer of a range reads "first to last"; a set of names has no ends.
+      expect(text()).toContain('3 frames');
+      expect(text()).not.toContain('→');
+    });
+
+    it('leaves a range strip on its scrubber', async () => {
+      await setUp({ parameter: 'denoising_strength', startExpanded: true });
+
+      expect(find('.gs-sweep-options')).toBeNull();
+      expect(find('.gs-tickrail')).not.toBeNull();
+    });
+  });
+
   describe('a surface that has no room for the plate', () => {
     it('takes the offer straight to the full-size view', async () => {
       await setUp({ viewerFirst: true });

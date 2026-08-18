@@ -1885,6 +1885,29 @@
   grid-template-columns: 1fr 1fr;
   gap: 13px 14px;
 }
+/* Two columns need room for a label and its help glyph on one line; below that
+   the pairs stack rather than wrapping their own heads. */
+@media (max-width: 420px) {
+  .gen-studio .gs-grid-sampling {
+    grid-template-columns: 1fr;
+  }
+}
+/* The advanced-sampling header: its toggle, the help glyph, the count while it
+   is closed, and Clear pushed to the far edge. */
+.gen-studio .gs-adv-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-count-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--gs-field-soft);
+  color: var(--gs-label);
+}
 
 /* add-tiles (source image / controlnet placeholders) */
 .gen-studio .gs-add-tile {
@@ -9583,6 +9606,69 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-sm);
   color: var(--gs-ink-2);
 }
+
+/* ------- sweeps: the one-row plate of named alternatives -------------- */
+/* Stops that are names rather than numbers are a comparison: they are laid out
+   at once, in as many columns as the column they sit in affords, and each one
+   carries the chip and the sentence the scrubber would have shown one at a
+   time. Tiles reuse the two-axis plate's cell so the two plates are one look. */
+.gen-studio .gs-sweep-options {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(var(--gs-sweep-option-min, 150px), 100%), 1fr)
+  );
+  gap: var(--gs-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* A gallery of every sampler the horde publishes is dozens of alternatives
+   rather than a handful, and reads as a contact sheet: smaller tiles, more of
+   them across, and two lines of caption, so it is scanned in a few screens
+   instead of scrolled through for a dozen. */
+.gen-studio .gs-sweep-options--dense {
+  --gs-sweep-option-min: 118px;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-sweep-options--dense .gs-sweep-option-text {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.gen-studio .gs-sweep-option {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+/* The cell's own cap is for a plate whose columns are fixed; here the tile is
+   as wide as the track it landed in. */
+.gen-studio .gs-sweep-option .gs-sweep-plate-img {
+  max-width: none;
+}
+.gen-studio .gs-sweep-option-cap {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-sweep-option-cap .gs-setting-chip {
+  max-width: 100%;
+  font-size: var(--gs-text-2xs);
+}
+/* Three lines is a sentence about the frame; a gallery of forty would otherwise
+   be as tall as its longest caption forty times over. */
+.gen-studio .gs-sweep-option-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  font-size: var(--gs-text-xs);
+  line-height: 1.4;
+  color: var(--gs-muted);
+}
 .gen-studio .gs-sweep-grid-cell-view {
   display: flex;
   flex-direction: column;
@@ -10817,6 +10903,98 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   line-height: 1.6;
   color: var(--gs-muted);
+}
+
+/* ------- the control map gallery: one source, read many ways ---------- */
+/* The source is shown once, beside the line that says what the maps under it
+   were read from. Repeating it under every detector would spend the width the
+   maps need and say the same thing thirty-three times. */
+.gen-studio .gs-ref-shot--lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gs-space-3) var(--gs-space-4);
+}
+.gen-studio .gs-ref-shot-frame--lead {
+  flex: 0 0 auto;
+  width: min(220px, 100%);
+}
+.gen-studio .gs-ref-shot--lead .gs-ref-shot-note {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+.gen-studio .gs-ref-maps-group {
+  margin-top: var(--gs-space-6);
+}
+.gen-studio .gs-ref-maps-head {
+  margin: 0;
+  font-size: var(--gs-text-md);
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ref-maps-intro {
+  margin: var(--gs-space-1) 0 var(--gs-space-3);
+  font-size: var(--gs-text-md-docs, var(--gs-text-sm));
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+/* A wrapping grid rather than a strip: the reader is comparing every map in a
+   group against its neighbours, and a strip that scrolls sideways hides half of
+   them behind a gesture. */
+.gen-studio .gs-ref-maps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--gs-space-4) var(--gs-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-ref-map {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  margin: 0;
+  min-width: 0;
+}
+.gen-studio .gs-ref-map img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--gs-radius-sm);
+  border: 1px solid var(--gs-card-border);
+  background: var(--gs-stage);
+}
+/* A detector nothing has been published for keeps its place in the grid: it is
+   still a detector the studio will run, and a hole would read as one that does
+   not exist. */
+.gen-studio .gs-ref-map-gap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: var(--gs-space-3);
+  border: 1px dashed var(--gs-field-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-field-soft);
+  font-size: var(--gs-text-xs);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ref-map figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-ref-map-name {
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-ref-map-note {
+  font-size: var(--gs-text-xs);
+  line-height: 1.5;
+  color: var(--gs-ink-2);
 }
 
 /* ------- settings reference: one entry ------------------------------- */

@@ -15,7 +15,9 @@ import { ToastService } from './toast.service';
 import {
   AlchemyFormName,
   AlchemyStatusResponse,
+  AnnotationControlType,
   GENERATION_NOT_FOUND,
+  InterrogationForm,
   InterrogationRequest,
 } from '../types/generation';
 import {
@@ -25,7 +27,9 @@ import {
 } from '../types/alchemy-job';
 import {
   AlchemyJob,
+  formViews,
   isJobSettled,
+  storedAnnotationDetectors,
   toAlchemyJob,
 } from '../helper/alchemy-job-view';
 import { base64ToBlob } from '../helper/blob-base64';
@@ -74,6 +78,8 @@ interface LegacyStoredJob {
 
 export interface AlchemySubmission {
   forms: AlchemyFormName[];
+  /** Detectors for the control-map operation, one form submitted per detector. */
+  annotationControlTypes?: readonly AnnotationControlType[];
   slowWorkers: boolean;
   /** A public image URL or a bare base64-encoded image, as the API takes it. */
   source: string;
@@ -83,7 +89,8 @@ export interface AlchemySubmission {
 
 /** A result image the horde has published but that is not yet held locally. */
 interface UnresolvedImage {
-  form: string;
+  /** The form's result key, which carries the detector for a control map. */
+  key: string;
   url: string;
 }
 
@@ -98,11 +105,15 @@ function isUrlSource(source: string): AlchemySourceMode {
 function unresolvedImages(job: StoredAlchemyJob): UnresolvedImage[] {
   const settled = new Set([...job.storedResultForms, ...job.failedResultForms]);
   const out: UnresolvedImage[] = [];
-  for (const form of job.status?.forms ?? []) {
-    if (form.state !== 'done' || settled.has(form.form)) continue;
+  const views = formViews(
+    job.status?.forms ?? [],
+    storedAnnotationDetectors(job),
+  );
+  for (const { form, key } of views) {
+    if (form.state !== 'done' || settled.has(key)) continue;
     const value = form.result?.[form.form];
     if (typeof value === 'string' && isLikelyImageFileLink(value)) {
-      out.push({ form: form.form, url: value });
+      out.push({ key, url: value });
     }
   }
   return out;
@@ -187,8 +198,18 @@ export class AlchemyQueueService {
   /** Submit a request and begin tracking it. Returns the horde's job id. */
   public async submit(input: AlchemySubmission): Promise<string | null> {
     const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
+    const detectors = input.annotationControlTypes ?? [];
     const request: InterrogationRequest = {
-      forms: input.forms.map((name) => ({ name })),
+      // A control map is one form per detector: the horde reads each entry on
+      // its own and returns a separate result for it.
+      forms: input.forms.flatMap((name): InterrogationForm[] =>
+        name === 'annotation'
+          ? detectors.map((control_type) => ({
+              name,
+              payload: { control_type },
+            }))
+          : [{ name }],
+      ),
       source_image: input.source,
       slow_workers: input.slowWorkers,
     };
@@ -208,6 +229,9 @@ export class AlchemyQueueService {
       createdAt: now,
       updatedAt: now,
       forms: input.forms,
+      annotationControlTypes: input.forms.includes('annotation')
+        ? detectors
+        : undefined,
       slowWorkers: input.slowWorkers,
       sourceMode,
       sourceUrl: sourceMode === 'url' ? input.source : undefined,
@@ -339,7 +363,7 @@ export class AlchemyQueueService {
       await this.patch(job.localId, {
         failedResultForms: [
           ...job.failedResultForms,
-          ...outstanding.map((image) => image.form),
+          ...outstanding.map((image) => image.key),
         ],
       });
       return;
@@ -349,7 +373,7 @@ export class AlchemyQueueService {
     const failed: string[] = [];
     await Promise.all(
       outstanding.map(async (image) => {
-        const key = `${job.localId}::${image.form}`;
+        const attemptKey = `${job.localId}::${image.key}`;
         try {
           const response = await fetch(image.url);
           if (!response.ok) {
@@ -358,33 +382,33 @@ export class AlchemyQueueService {
           const blob = await response.blob();
           await this.putImage({
             localId: job.localId,
-            imageId: image.form,
+            imageId: image.key,
             kind: 'result',
             blob,
             mimeType: blob.type || 'image/webp',
             sourceUrl: image.url,
             fetchedAt: Date.now(),
           });
-          this.imageAttempts.delete(key);
-          stored.push(image.form);
+          this.imageAttempts.delete(attemptKey);
+          stored.push(image.key);
         } catch (error) {
           if (this.isQuotaError(error)) {
             this.reportQuotaExhausted();
-            failed.push(image.form);
+            failed.push(image.key);
             return;
           }
-          const attempts = (this.imageAttempts.get(key) ?? 0) + 1;
-          this.imageAttempts.set(key, attempts);
+          const attempts = (this.imageAttempts.get(attemptKey) ?? 0) + 1;
+          this.imageAttempts.set(attemptKey, attempts);
           // A silently dropped image is hard to account for later, and the
           // reason (an expired link, a blocked read, a failed write) decides
           // whether anything can be done about it.
           console.warn(
-            `Alchemy result image for ${image.form} could not be saved (attempt ${attempts}).`,
+            `Alchemy result image for ${image.key} could not be saved (attempt ${attempts}).`,
             error,
           );
           if (attempts >= MAX_IMAGE_ATTEMPTS) {
-            this.imageAttempts.delete(key);
-            failed.push(image.form);
+            this.imageAttempts.delete(attemptKey);
+            failed.push(image.key);
           }
         }
       }),

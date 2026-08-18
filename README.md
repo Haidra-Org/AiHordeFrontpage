@@ -32,12 +32,31 @@ npm start
 
 Navigate to `http://localhost:4209/`. The app will hot-reload on file changes.
 
+To test frontend and API changes together, start AI-Horde on port 7001 and use
+the local configuration. This configuration points API traffic at the local
+server and serves the on-disk evidence library:
+
+```bash
+npm start -- --configuration local
+```
+
+The equivalent container build and launch are:
+
+```bash
+docker build --build-arg BUILD_CONFIG=local -t aihorde-frontpage:local .
+docker run --rm -p 8006:8006 --name aihorde-frontpage-local aihorde-frontpage:local
+```
+
+Open `http://localhost:8006/`. The browser calls
+`http://localhost:7001/api/v2`, so the API can run in its own container with
+port 7001 published to the host.
+
 ## Scripts
 
 | Command                            | Description                      |
 | ---------------------------------- | -------------------------------- |
 | `npm start`                        | Development server on port 4209  |
-| `npm test`                         | Run unit tests (Karma + Jasmine) |
+| `npm test`                         | Run unit tests with Vitest       |
 | `npm run build`                    | Production build with SSR        |
 | `npm run serve:ssr:AiHordeWebsite` | Serve the SSR build locally      |
 

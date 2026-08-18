@@ -8,8 +8,11 @@ import {
 } from 'idb';
 
 /** The transaction handed to an `upgrade` callback. */
-export type StudioUpgradeTransaction<Schema extends DBSchema> =
-  IDBPTransaction<Schema, StoreNames<Schema>[], 'versionchange'>;
+export type StudioUpgradeTransaction<Schema extends DBSchema> = IDBPTransaction<
+  Schema,
+  StoreNames<Schema>[],
+  'versionchange'
+>;
 
 export interface StudioDbOptions<Schema extends DBSchema> {
   name: string;

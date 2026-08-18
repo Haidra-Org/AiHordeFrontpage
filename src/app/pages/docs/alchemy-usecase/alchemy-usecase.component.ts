@@ -14,10 +14,12 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ALCHEMY_USE_CASES,
+  ANNOTATION_DETECTOR_GROUPS,
   alchemyFormNameKey,
   alchemyUseCase,
   alchemyUseCaseLeadKey,
   alchemyUseCaseTitleKey,
+  annotationGroupLabelKey,
 } from '../../../content/alchemy-usecases';
 import { alchemyTopic } from '../../../content/reference-topics';
 import {
@@ -40,6 +42,22 @@ interface EvidenceShot {
   text: string | null;
   model: string | null;
   notes: string | null;
+}
+
+/** One detector's map in the control map gallery. */
+interface ControlMapTile {
+  /** The horde's own spelling, which is what a reader picks in the studio. */
+  type: string;
+  result: string | null;
+  notes: string | null;
+}
+
+/** The detectors that read the same kind of structure, shown together. */
+interface ControlMapGroup {
+  id: string;
+  labelKey: string;
+  introKey: string;
+  tiles: readonly ControlMapTile[];
 }
 
 /** One way onwards to the next thing the studio is used for. */
@@ -113,6 +131,54 @@ export class DocsAlchemyUseCaseComponent {
       text: this.evidence.resultText(entry),
       model: entry.model ?? null,
       notes: entry.notes ?? null,
+    }));
+  });
+
+  /**
+   * Whether this use case is read as a gallery rather than as a pair per form.
+   *
+   * The control map form is one operation run thirty-three ways on one source,
+   * so the answer to "what does it do" is every map beside its neighbours, and
+   * repeating the source thirty-three times would say nothing thirty-three
+   * times. Every other use case reads as source beside result.
+   */
+  public readonly isGallery = computed(
+    () => this.useCase()?.forms.includes('annotation') ?? false,
+  );
+
+  /** The one picture every map on the page was read out of. */
+  public readonly gallerySource = computed(() => {
+    if (!this.isGallery()) {
+      return null;
+    }
+    const entry = this.evidence.entryFor('control_map', 'annotation');
+    return entry ? this.evidence.assetUrl(entry.files.source) : null;
+  });
+
+  /**
+   * Every detector the picker offers, in the picker's own grouping and order,
+   * whether or not a map for it was published. A detector the library is
+   * missing is still a detector the studio will run, so it keeps its place and
+   * says that nothing has been published for it yet.
+   */
+  public readonly galleryGroups = computed<readonly ControlMapGroup[]>(() => {
+    if (!this.isGallery()) {
+      return [];
+    }
+    return ANNOTATION_DETECTOR_GROUPS.map((group) => ({
+      id: group.id,
+      labelKey: annotationGroupLabelKey(group.id),
+      introKey: `alchemy.usecases.control_map.group_${group.id}`,
+      tiles: group.types.map((type) => {
+        const entry = this.evidence.entryFor('control_map', 'annotation', type);
+        return {
+          type,
+          result: entry?.files.result
+            ? this.evidence.assetUrl(entry.files.result)
+            : null,
+          notes: entry?.notes ?? null,
+        };
+      }),
     }));
   });
 

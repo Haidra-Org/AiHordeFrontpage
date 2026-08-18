@@ -303,7 +303,7 @@ describe('the techniques that live in the workflow and finishing cards', () => {
       'cfg_scale',
       'steps',
       'sampler_name',
-      'karras',
+      'scheduler',
     ]);
   });
 

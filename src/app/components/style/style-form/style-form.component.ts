@@ -28,7 +28,6 @@ import {
   ImageStyle,
   TextStyle,
   StyleType,
-  ImageSamplerName,
   ImageStyleParams,
   TextStyleParams,
 } from '../../../types/style';
@@ -39,6 +38,8 @@ import {
   UpdateTextStyleInput,
 } from '../../../types/style-api';
 import { AiHordeService } from '../../../services/ai-horde.service';
+import { SamplerConstraintsService } from '../../../services/sampler-constraints.service';
+import { SAMPLERS } from '../../../pages/generate/generate-form.model';
 import { ActiveModel } from '../../../types/active-model';
 import {
   StyleLoraConfig,
@@ -164,6 +165,32 @@ export class StyleFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly samplerConstraints = inject(SamplerConstraintsService);
+
+  /**
+   * The samplers a style may pin: the horde's published contract when it has
+   * one (recommended tier first), otherwise the legacy list. A sampler the
+   * style already names stays offered even if the current list lacks it, so
+   * editing never silently drops it.
+   */
+  public samplerOptions(): readonly string[] {
+    const contract = this.samplerConstraints.contract();
+    const names = contract
+      ? [
+          ...contract.presentation_tiers.recommended.filter(
+            (name) => name in contract.samplers,
+          ),
+          ...Object.keys(contract.samplers).filter(
+            (name) => !contract.presentation_tiers.recommended.includes(name),
+          ),
+        ]
+      : [...SAMPLERS];
+    const current =
+      this.form && this.isImageStyle()
+        ? this.imageForm.controls.sampler_name.value
+        : '';
+    return current && !names.includes(current) ? [...names, current] : names;
+  }
 
   /** Form mode: create or edit. */
   public readonly mode = input<StyleFormMode>('create');
@@ -246,6 +273,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.initializeForm();
     this.loadModels();
+    if (this.isImageStyle()) this.samplerConstraints.load();
     this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
   }
 
@@ -564,8 +592,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
       const f = this.imageForm.value;
       const params: ImageStyleParams = {};
 
-      if (f.sampler_name)
-        params.sampler_name = f.sampler_name as ImageSamplerName;
+      if (f.sampler_name) params.sampler_name = f.sampler_name;
       const cfgScale = this.parseOptionalNumber(f.cfg_scale);
       if (cfgScale !== undefined) params.cfg_scale = cfgScale;
       const denoisingStrength = this.parseOptionalNumber(f.denoising_strength);

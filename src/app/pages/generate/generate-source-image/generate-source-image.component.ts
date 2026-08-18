@@ -23,7 +23,8 @@ import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.dir
 import { ImageControlType } from '../../../types/generation';
 import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
 import {
-  CONTROL_TYPES,
+  EXTENDED_CONTROL_TYPES,
+  LEGACY_CONTROL_TYPES,
   DEFAULT_EXTRA_SOURCE_STRENGTH,
   DENOISE_STEP,
   EXTRA_SOURCE_STRENGTH_STEP,
@@ -131,7 +132,8 @@ export class GenerateSourceImageComponent implements OnInit {
   }
 
   public readonly modes = SOURCE_MODES;
-  public readonly controlTypes = CONTROL_TYPES;
+  public readonly legacyControlTypes = LEGACY_CONTROL_TYPES;
+  public readonly extendedControlTypes = EXTENDED_CONTROL_TYPES;
   public readonly minDenoise = MIN_DENOISE;
   public readonly maxDenoise = MAX_DENOISE;
   public readonly denoiseStep = DENOISE_STEP;

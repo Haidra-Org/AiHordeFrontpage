@@ -870,3 +870,46 @@
     padding: 24px 24px 48px;
   }
 }
+
+/* --- Control-map detectors ----------------------------------------
+   Thirty-three detectors filed under what each reads out of the picture. They
+   are chosen the way operations are, so the checkbox card is the studio's own;
+   only the density changes, because a name here is one word rather than a
+   sentence and a column of thirty-three rows would bury the rest of the panel. */
+
+.gen-studio .alchemy-detectors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+
+.gen-studio .alchemy-detectors__head,
+.gen-studio .alchemy-detectors__group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-2);
+}
+
+.gen-studio .alchemy-detectors__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+
+.gen-studio .alchemy-detectors__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-1);
+}
+
+.gen-studio .gs-op--chip {
+  padding: var(--gs-space-1) var(--gs-space-2);
+  flex: 0 1 auto;
+}
+
+.gen-studio .gs-op--chip .gs-op-name {
+  flex: 0 1 auto;
+  font-weight: 500;
+  font-size: var(--gs-text-xs);
+}

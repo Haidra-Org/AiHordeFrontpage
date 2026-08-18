@@ -14,6 +14,7 @@ const makeJob = (
   localId: id,
   sourceMode: 'upload',
   forms: ['caption', 'nsfw'],
+  annotationControlTypes: [],
   status: null,
   done: false,
   faulted: false,
@@ -36,6 +37,7 @@ const makeJob = (
     [selectMode]="selectMode()"
     [selectedJobIds]="selectedJobIds()"
     [isNarrow]="isNarrow()"
+    [resultImageUrls]="resultImageUrls()"
     (activateJob)="selected = $event"
     (toggleSelected)="toggled = $event"
   />`,
@@ -51,6 +53,7 @@ class HostComponent {
   selectMode = signal(false);
   selectedJobIds = signal<ReadonlySet<string>>(new Set());
   isNarrow = signal(false);
+  resultImageUrls = signal<ReadonlyMap<string, string>>(new Map());
   selected: string | null = null;
   toggled: string | null = null;
 }
@@ -139,6 +142,57 @@ describe('AlchemyResultsBrowserComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.gs-gtile-ph').length).toBe(
       1,
     );
+  });
+
+  it('renders a card per control map, each with its own detector and image', () => {
+    const job: AlchemyJob = {
+      ...makeJob('job-maps', null),
+      forms: ['annotation'],
+      annotationControlTypes: ['canny', 'depth'],
+      done: true,
+      status: {
+        state: 'done',
+        forms: [
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://r2.example/a.webp' },
+            payload: { control_type: 'depth' },
+          },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://r2.example/b.webp' },
+            payload: { control_type: 'canny' },
+          },
+        ],
+      },
+    };
+    host.jobs.set([job]);
+    host.selectedJobId.set('job-maps');
+    host.resultImageUrls.set(
+      new Map([
+        ['job-maps::annotation-depth', 'blob:depth'],
+        ['job-maps::annotation-canny', 'blob:canny'],
+      ]),
+    );
+    fixture.detectChanges();
+
+    const cards = [
+      ...fixture.nativeElement.querySelectorAll('.alchemy-result'),
+    ] as HTMLElement[];
+    expect(cards.length).toBe(2);
+    expect(
+      cards.map((card) => card.querySelector('.gs-mono')?.textContent?.trim()),
+    ).toEqual(['depth', 'canny']);
+
+    const images = [
+      ...fixture.nativeElement.querySelectorAll('.alchemy-result img'),
+    ] as HTMLImageElement[];
+    expect(images.map((img) => img.getAttribute('src'))).toEqual([
+      'blob:depth',
+      'blob:canny',
+    ]);
   });
 
   it('renders the selected job inline on narrow viewports', () => {

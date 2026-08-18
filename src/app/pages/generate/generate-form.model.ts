@@ -1,5 +1,6 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
+  ANNOTATION_CONTROL_TYPES,
   ImageControlType,
   ImageGenerationParams,
   ImageGenerationRequest,
@@ -14,6 +15,18 @@ import {
 import type { AppliedStyle } from '../../services/horde-styles.service';
 import type { ModelRequirements } from '../../services/model-reference.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
+import {
+  MAX_FLOW_SHIFT,
+  MIN_FLOW_SHIFT,
+  IMAGE_SCHEDULERS,
+  SamplerConstraintsDocument,
+  SamplerSettingName,
+  advisedMaxCfgScale,
+  availableSchedulers,
+  baselinesSupportFlowShift,
+  samplerSettingIsValid,
+} from '../../types/sampler-constraints';
+import type { ImageSchedulerName } from '../../types/sampler-constraints';
 
 /**
  * The samplers AI Horde accepts, in the display order used by the form.
@@ -125,8 +138,13 @@ export const SOURCE_MODES = [
 ] as const;
 export type GenerateSourceMode = (typeof SOURCE_MODES)[number];
 
-/** The ControlNet guidance modes offered in the source-image section. */
-export const CONTROL_TYPES: readonly ImageControlType[] = [
+/**
+ * The ControlNet guidance modes every worker that offers ControlNet at all can
+ * render, in the order the horde enumerates them. `hough` is the older spelling
+ * of the line detector the wider vocabulary calls `mlsd`, and is the spelling an
+ * older worker understands.
+ */
+export const LEGACY_CONTROL_TYPES: readonly ImageControlType[] = [
   'canny',
   'hed',
   'depth',
@@ -136,6 +154,23 @@ export const CONTROL_TYPES: readonly ImageControlType[] = [
   'scribble',
   'fakescribbles',
   'hough',
+];
+
+/**
+ * The rest of the detector vocabulary. A worker only serves these with a recent
+ * bridge and the extended-ControlNet opt-in switched on, so a request using one
+ * reaches a smaller pool and can wait longer. They are offered separately for
+ * that reason rather than because the horde treats them differently.
+ */
+export const EXTENDED_CONTROL_TYPES: readonly ImageControlType[] =
+  ANNOTATION_CONTROL_TYPES.filter(
+    (type) => !LEGACY_CONTROL_TYPES.includes(type),
+  );
+
+/** The ControlNet guidance modes offered in the source-image section. */
+export const CONTROL_TYPES: readonly ImageControlType[] = [
+  ...LEGACY_CONTROL_TYPES,
+  ...EXTENDED_CONTROL_TYPES,
 ];
 
 export const MIN_DENOISE = 0.01;
@@ -443,8 +478,18 @@ export const HIRES_WARN_DIMENSION = 768;
 
 const REQUIREMENT_KEY_PREFIX = 'generate.form.requirement.';
 
-/** The scheduler token the form's `karras` switch stands for. */
+/** The scheduler token the legacy `karras` boolean stands for. */
 const KARRAS_SCHEDULER = 'karras';
+
+/**
+ * The two schedules that predate the `scheduler` field. A request naming one of
+ * them carries the legacy boolean too, so a worker that reads only `karras`
+ * still renders the schedule that was asked for.
+ */
+export const LEGACY_SCHEDULERS: readonly ImageSchedulerName[] = [
+  'karras',
+  'normal',
+];
 
 /**
  * One line of advice under a control. `violated` is true when the form's current
@@ -555,22 +600,75 @@ export function samplerRequirementHint(
 }
 
 /**
+ * Guidance advice for a sampler that folds the guidance step into its own
+ * update. Those samplers want guidance around a couple rather than the seven or
+ * eight the rest are set to, and the horde publishes the ceiling as advice: a
+ * request above it is accepted, dispatched and rendered burnt.
+ */
+export function cfgPlusPlusHint(
+  contract: SamplerConstraintsDocument | null,
+  sampler: string,
+  cfgScale: number,
+): RequirementHint | null {
+  const advised = advisedMaxCfgScale(contract, sampler);
+  if (advised === null) {
+    return null;
+  }
+  return hint('cfg_pp', { max: advised }, cfgScale > advised);
+}
+
+/** The scheduler names a model suggests, lowercased; empty when it names none. */
+export function suggestedSchedulers(
+  requirements: ModelRequirements | null,
+): readonly string[] {
+  return (requirements?.schedulers ?? []).map((scheduler) =>
+    scheduler.trim().toLowerCase(),
+  );
+}
+
+/**
  * Karras advice, read off the suggested schedulers. Absent schedulers say
  * nothing either way, so no line is shown; a list that names some other
  * scheduler is a positive statement that karras is not wanted.
+ *
+ * The model reference speaks of whole schedules, so this only phrases itself as
+ * karras advice while the chosen schedule is one of the legacy pair. Any other
+ * schedule is covered by {@link schedulerRequirementHint}, which names the
+ * suggested list outright rather than reducing it to on or off.
  */
 export function karrasRequirementHint(
   requirements: ModelRequirements | null,
-  karras: boolean,
+  scheduler: ImageSchedulerName,
 ): RequirementHint | null {
-  const schedulers = requirements?.schedulers;
-  if (!schedulers || schedulers.length === 0) {
+  const schedulers = suggestedSchedulers(requirements);
+  if (schedulers.length === 0 || !LEGACY_SCHEDULERS.includes(scheduler)) {
     return null;
   }
-  const suggested = schedulers.some(
-    (scheduler) => scheduler.trim().toLowerCase() === KARRAS_SCHEDULER,
+  const suggested = schedulers.includes(KARRAS_SCHEDULER);
+  return hint(
+    suggested ? 'karras_on' : 'karras_off',
+    {},
+    (scheduler === KARRAS_SCHEDULER) !== suggested,
   );
-  return hint(suggested ? 'karras_on' : 'karras_off', {}, karras !== suggested);
+}
+
+/**
+ * Scheduler advice for the schedule select, naming the whole suggested list as
+ * the model reference states it.
+ */
+export function schedulerRequirementHint(
+  requirements: ModelRequirements | null,
+  scheduler: ImageSchedulerName,
+): RequirementHint | null {
+  const schedulers = suggestedSchedulers(requirements);
+  if (schedulers.length === 0) {
+    return null;
+  }
+  return hint(
+    'schedulers',
+    { list: schedulers.join(', ') },
+    !schedulers.includes(scheduler),
+  );
 }
 
 /**
@@ -670,7 +768,20 @@ export interface GenerateFormValue {
   control_type: ImageControlType | '';
   image_is_control: boolean;
   return_control_map: boolean;
-  karras: boolean;
+  /**
+   * The noise schedule. Always set: `karras` and `normal` are the pair every
+   * horde client has always had, and they ride the request as the legacy
+   * `karras` boolean as well as the modern `scheduler` field.
+   */
+  scheduler: ImageSchedulerName;
+  sampler_eta: number | null;
+  sampler_s_noise: number | null;
+  sampler_s_churn: number | null;
+  sampler_s_tmin: number | null;
+  sampler_s_tmax: number | null;
+  sampler_order: number | null;
+  sampler_solver_type: string;
+  flow_shift: number | null;
   /** Face-fixer strength (0-1); only applied when a face fixer is selected. */
   facefixer_strength: number;
   /** Denoise strength for the hires-fix pass; only applied when hires_fix is on. */
@@ -746,7 +857,15 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   control_type: '',
   image_is_control: false,
   return_control_map: false,
-  karras: true,
+  scheduler: 'karras',
+  sampler_eta: null,
+  sampler_s_noise: null,
+  sampler_s_churn: null,
+  sampler_s_tmin: null,
+  sampler_s_tmax: null,
+  sampler_order: null,
+  sampler_solver_type: '',
+  flow_shift: null,
   facefixer_strength: DEFAULT_FACEFIXER_STRENGTH,
   hires_fix_denoising_strength: DEFAULT_HIRES_DENOISE,
   seed_variation: MIN_SEED_VARIATION,
@@ -961,12 +1080,35 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
+    if (key === 'scheduler') {
+      if ((IMAGE_SCHEDULERS as readonly string[]).includes(value as string)) {
+        merged.scheduler = value as ImageSchedulerName;
+      }
+      continue;
+    }
     if (key === 'denoising_strength') {
       if (typeof value === 'number' && Number.isFinite(value)) {
         merged.denoising_strength = Math.min(
           MAX_DENOISE,
           Math.max(MIN_DENOISE, value),
         );
+      }
+      continue;
+    }
+    if (
+      key === 'sampler_eta' ||
+      key === 'sampler_s_noise' ||
+      key === 'sampler_s_churn' ||
+      key === 'sampler_s_tmin' ||
+      key === 'sampler_s_tmax' ||
+      key === 'sampler_order' ||
+      key === 'flow_shift'
+    ) {
+      if (
+        value === null ||
+        (typeof value === 'number' && Number.isFinite(value))
+      ) {
+        merged[key] = value;
       }
       continue;
     }
@@ -1101,7 +1243,15 @@ export function createGenerateForm(
     control_type: control(value.control_type),
     image_is_control: control(value.image_is_control),
     return_control_map: control(value.return_control_map),
-    karras: control(value.karras),
+    scheduler: control(value.scheduler),
+    sampler_eta: control(value.sampler_eta),
+    sampler_s_noise: control(value.sampler_s_noise),
+    sampler_s_churn: control(value.sampler_s_churn),
+    sampler_s_tmin: control(value.sampler_s_tmin),
+    sampler_s_tmax: control(value.sampler_s_tmax),
+    sampler_order: control(value.sampler_order),
+    sampler_solver_type: control(value.sampler_solver_type),
+    flow_shift: control(value.flow_shift),
     facefixer_strength: bounded(
       value.facefixer_strength,
       MIN_FACEFIXER_STRENGTH,
@@ -1280,6 +1430,105 @@ export interface BuildImageRequestOptions {
    * submits as plain txt2img.
    */
   hasSourceImage?: boolean;
+  /** Live API contract; absent keeps the legacy sampler request shape. */
+  samplerContract?: SamplerConstraintsDocument | null;
+  /** Resolve final request model names after a style has replaced the model. */
+  baselineForModel?: (modelName: string) => string | null;
+}
+
+const MODERN_SAMPLER_PARAMS = [
+  'scheduler',
+  'sampler_eta',
+  'sampler_s_noise',
+  'sampler_s_churn',
+  'sampler_s_tmin',
+  'sampler_s_tmax',
+  'sampler_order',
+  'sampler_solver_type',
+  'flow_shift',
+] as const satisfies readonly (keyof ImageGenerationParams)[];
+
+const SAMPLER_VALUE_FIELDS: Readonly<
+  Record<SamplerSettingName, keyof GenerateFormValue>
+> = {
+  sampler_eta: 'sampler_eta',
+  sampler_s_noise: 'sampler_s_noise',
+  sampler_s_churn: 'sampler_s_churn',
+  sampler_s_tmin: 'sampler_s_tmin',
+  sampler_s_tmax: 'sampler_s_tmax',
+  sampler_order: 'sampler_order',
+};
+
+/**
+ * Apply sampler-specific fields to the final request. This deliberately runs
+ * after style resolution because a style may replace the sampler or model that
+ * made the visible controls applicable.
+ */
+export function applyModernSamplerSettings(
+  request: ImageGenerationRequest,
+  value: GenerateFormValue,
+  options: BuildImageRequestOptions,
+): ImageGenerationRequest {
+  const params = request.params ?? {};
+  for (const field of MODERN_SAMPLER_PARAMS) delete params[field];
+
+  const contract = options.samplerContract;
+  const samplerName = params.sampler_name ?? value.sampler_name;
+  const sampler = contract?.samplers[samplerName];
+  if (!contract || !sampler) {
+    request.params = params;
+    return request;
+  }
+
+  const modelNames = request.models ?? [];
+  const resolved = modelNames.map((name) => options.baselineForModel?.(name));
+  const baselines =
+    modelNames.length > 0 && resolved.every((baseline) => baseline !== null)
+      ? (resolved as string[])
+      : [];
+
+  if (
+    availableSchedulers(contract, samplerName, baselines).includes(
+      value.scheduler,
+    )
+  ) {
+    params.scheduler = value.scheduler;
+    // The legacy boolean only speaks for the two schedules it can name, so it
+    // is dropped rather than left contradicting a modern schedule.
+    if (!LEGACY_SCHEDULERS.includes(value.scheduler)) {
+      delete params.karras;
+    }
+  }
+
+  for (const [settingName, range] of Object.entries(
+    sampler.accepted_settings,
+  ) as [
+    SamplerSettingName,
+    NonNullable<(typeof sampler.accepted_settings)[SamplerSettingName]>,
+  ][]) {
+    const raw = value[SAMPLER_VALUE_FIELDS[settingName]];
+    if (typeof raw === 'number' && samplerSettingIsValid(range, raw)) {
+      params[settingName] = raw;
+    }
+  }
+
+  if (
+    value.sampler_solver_type &&
+    sampler.solver_type_choices.includes(value.sampler_solver_type)
+  ) {
+    params.sampler_solver_type = value.sampler_solver_type;
+  }
+  if (
+    value.flow_shift !== null &&
+    value.flow_shift >= MIN_FLOW_SHIFT &&
+    value.flow_shift <= MAX_FLOW_SHIFT &&
+    baselinesSupportFlowShift(baselines)
+  ) {
+    params.flow_shift = value.flow_shift;
+  }
+
+  request.params = params;
+  return request;
 }
 
 /**
@@ -1321,8 +1570,8 @@ export function buildImageRequest(
   if (value.tiling) {
     params.tiling = true;
   }
-  // The horde default for karras is false, so only the enabled state is sent.
-  if (value.karras) {
+  // The horde default for karras is false, so only the karras schedule is sent.
+  if (value.scheduler === 'karras') {
     params.karras = true;
   }
   if (value.transparent) {
@@ -1455,7 +1704,7 @@ export function buildImageRequest(
   if (model) {
     request.models = [model];
   }
-  return request;
+  return applyModernSamplerSettings(request, value, options);
 }
 
 /**
@@ -1523,7 +1772,14 @@ export function buildStyledImageRequest(
   if (pinned('model') && forced.model !== undefined) {
     request.models = [forced.model];
   }
-  return request;
+  // A style names its schedule as the legacy boolean, so the modern pass runs
+  // against that schedule rather than the form's: leaving the form's in would
+  // send a `scheduler` contradicting the `karras` the style just pinned.
+  const styled: GenerateFormValue =
+    pinned('sampling') && forced.karras !== undefined
+      ? { ...value, scheduler: forced.karras ? 'karras' : 'normal' }
+      : value;
+  return applyModernSamplerSettings(request, styled, options);
 }
 
 /**
@@ -1608,7 +1864,37 @@ export function requestToFormValue(
     result.hires_fix_denoising_strength = params.hires_fix_denoising_strength;
   }
   result.tiling = params.tiling === true;
-  result.karras = params.karras === true;
+  // A named schedule wins; otherwise the legacy boolean names one of the pair.
+  if (
+    params.scheduler &&
+    (IMAGE_SCHEDULERS as readonly string[]).includes(params.scheduler)
+  ) {
+    result.scheduler = params.scheduler;
+  } else {
+    result.scheduler = params.karras === true ? 'karras' : 'normal';
+  }
+  if (typeof params.sampler_eta === 'number')
+    result.sampler_eta = params.sampler_eta;
+  if (typeof params.sampler_s_noise === 'number') {
+    result.sampler_s_noise = params.sampler_s_noise;
+  }
+  if (typeof params.sampler_s_churn === 'number') {
+    result.sampler_s_churn = params.sampler_s_churn;
+  }
+  if (typeof params.sampler_s_tmin === 'number') {
+    result.sampler_s_tmin = params.sampler_s_tmin;
+  }
+  if (typeof params.sampler_s_tmax === 'number') {
+    result.sampler_s_tmax = params.sampler_s_tmax;
+  }
+  if (typeof params.sampler_order === 'number') {
+    result.sampler_order = params.sampler_order;
+  }
+  if (typeof params.sampler_solver_type === 'string') {
+    result.sampler_solver_type = params.sampler_solver_type;
+  }
+  if (typeof params.flow_shift === 'number')
+    result.flow_shift = params.flow_shift;
   result.transparent = params.transparent === true;
   if (typeof params.seed_variation === 'number') {
     result.seed_variation = params.seed_variation;

@@ -54,21 +54,10 @@ export interface StyleTextualInversionConfig {
 // ============================================================================
 
 /**
- * Sampler names available for image generation.
+ * Sampler name accepted by the API. The live vocabulary comes from the
+ * sampler-constraints endpoint, so this cannot be a closed compile-time union.
  */
-export type ImageSamplerName =
-  | 'k_euler'
-  | 'k_euler_a'
-  | 'k_heun'
-  | 'k_dpm_2'
-  | 'k_dpm_2_a'
-  | 'k_dpmpp_2s_a'
-  | 'k_dpmpp_2m'
-  | 'k_dpmpp_sde'
-  | 'dpmsolver'
-  | 'k_lms'
-  | 'DDIM'
-  | 'lcm';
+export type ImageSamplerName = string;
 
 /**
  * Post-processing options for image generation.

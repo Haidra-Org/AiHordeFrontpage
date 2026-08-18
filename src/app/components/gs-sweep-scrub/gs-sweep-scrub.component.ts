@@ -36,6 +36,7 @@ import { sectionIdentity } from '../../content/sections';
 import {
   SweepLibraryService,
   SweepStop,
+  sweepIsCategorical,
 } from '../../services/sweep-library.service';
 import { docsSettingLink } from '../../content/docs-links';
 
@@ -438,7 +439,7 @@ const VIEWER_FOCUSABLE =
               <span class="gs-plate-title">
                 {{ parameterLabelKey() | transloco }}
               </span>
-              @if (paired()) {
+              @if (showsPair()) {
                 <ng-container [ngTemplateOutlet]="pairMode" />
               }
               <button type="button" class="gs-plate-x" (click)="collapse()">
@@ -476,7 +477,49 @@ const VIEWER_FOCUSABLE =
                 </figure>
               }
 
-              @if (pairSides(); as sides) {
+              @if (categorical()) {
+                <!-- Named stops are alternatives rather than a range: nothing
+                   lies between two of them, so the frames are laid out at once
+                   and compared by eye instead of scrubbed through. -->
+                <ul
+                  class="gs-sweep-options"
+                  [class.gs-sweep-options--dense]="denseTiles()"
+                  role="list"
+                >
+                  @for (frame of stops(); track frame.file; let i = $index) {
+                    <li class="gs-sweep-option">
+                      <button
+                        #zoomTrigger
+                        type="button"
+                        class="gs-sweep-plate-cell"
+                        [class.is-at]="tileAt() === i"
+                        [attr.aria-label]="
+                          'generate.sweeps.tile_enlarge'
+                            | transloco: { value: valueTextOf(frame) }
+                        "
+                        (click)="openTile(i)"
+                      >
+                        <img
+                          class="gs-sweep-plate-img"
+                          [src]="frameUrl(frame)"
+                          alt=""
+                          loading="lazy"
+                        />
+                      </button>
+                      <span class="gs-sweep-option-cap">
+                        <app-gs-setting-chip
+                          [glyph]="false"
+                          [settingId]="activeParameter()"
+                          [value]="frame.value"
+                        />
+                        <span class="gs-sweep-option-text">{{
+                          frame.caption
+                        }}</span>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else if (pairSides(); as sides) {
                 <!-- A before and an after of one scene, wiped rather than set
                    apart: the difference is in one place, and a gap between two
                    copies is exactly the distance the reader would have to carry
@@ -577,14 +620,14 @@ const VIEWER_FOCUSABLE =
                 </figure>
               }
 
-              @if (!frameLoaded()) {
+              @if (!frameLoaded() && !categorical()) {
                 <p class="gs-sweep-loading">
                   {{ 'generate.sweeps.loading' | transloco }}
                 </p>
               }
             </div>
 
-            @if (!paired()) {
+            @if (!showsPair() && !categorical()) {
               <ng-container
                 [ngTemplateOutlet]="rail"
                 [ngTemplateOutletContext]="{ at: index(), mode: 'strip' }"
@@ -620,7 +663,7 @@ const VIEWER_FOCUSABLE =
                 <span class="gs-plate-model">{{ chip }}</span>
               }
               <span class="gs-plate-grow"></span>
-              @if (!paired() && sidecarPath()) {
+              @if (!showsPair() && sidecarPath()) {
                 <button
                   type="button"
                   class="gs-plate-request-toggle"
@@ -635,7 +678,7 @@ const VIEWER_FOCUSABLE =
                 </button>
               }
             </div>
-            @if (requestOpen() && !paired()) {
+            @if (requestOpen() && !showsPair()) {
               <div class="gs-plate-request">
                 @if (requestRecord() === undefined) {
                   <p class="gs-sweep-loading">
@@ -686,7 +729,9 @@ const VIEWER_FOCUSABLE =
               </span>
               <span class="gs-cap-meta">
                 <span class="gs-cap-mono">
-                  @if (filmcard()) {
+                  <!-- A range reads as one end to the other; a set of named
+                       alternatives has no ends, so the card counts them. -->
+                  @if (filmcard() || categorical()) {
                     {{
                       'generate.sweeps.frames_only'
                         | transloco: { n: frameCount() }
@@ -725,7 +770,7 @@ const VIEWER_FOCUSABLE =
               aria-modal="true"
               tabindex="-1"
               [attr.aria-label]="
-                paired()
+                showsPair()
                   ? ('generate.sweeps.enlarged_pair_title' | transloco)
                   : ('generate.sweeps.enlarged_title'
                     | transloco: { value: valueTextOf(shown) })
@@ -743,7 +788,7 @@ const VIEWER_FOCUSABLE =
                     {{ parameterLabelKey() | transloco }}
                   </span>
                   <span class="gs-sweep-viewer-name">
-                    @if (paired()) {
+                    @if (showsPair()) {
                       {{ 'generate.sweeps.pair_label' | transloco }}
                     } @else if (shown.prompt_fragment) {
                       {{
@@ -831,10 +876,10 @@ const VIEWER_FOCUSABLE =
                   <ng-container [ngTemplateOutlet]="variants" />
                   <ng-container [ngTemplateOutlet]="why" />
                 }
-                @if (paired()) {
+                @if (showsPair()) {
                   <ng-container [ngTemplateOutlet]="pairMode" />
                 }
-                @if (!paired()) {
+                @if (!showsPair()) {
                   <ng-container
                     [ngTemplateOutlet]="rail"
                     [ngTemplateOutletContext]="{
@@ -998,6 +1043,49 @@ export class GsSweepScrubComponent {
   /** A strip of two frames is a before and an after, not a range. */
   public readonly paired = computed(() => this.strip()?.stops.length === 2);
 
+  /**
+   * Whether the frames are named alternatives rather than points on a scale.
+   * Nothing lies between two of them, so they are laid out at once and read
+   * side by side rather than scrubbed through.
+   *
+   * A strip whose frames only read as a repeated tile keeps that plate, and so
+   * does a pair the studio deliberately sets apart: both are already laid out
+   * rather than scrubbed, and both say something the tiles could not.
+   */
+  public readonly categorical = computed(
+    () =>
+      sweepIsCategorical(this.strip()) &&
+      !this.tiled() &&
+      !sweepPairStartsApart(this.activeParameter()),
+  );
+
+  /**
+   * Whether the plate is the before-and-after pair. Two frames whose values are
+   * names are a comparison of two alternatives instead, and are laid out with
+   * every other comparison rather than wiped over each other.
+   */
+  public readonly showsPair = computed(
+    () => this.paired() && !this.categorical(),
+  );
+
+  /**
+   * Whether the plate holds enough alternatives to read as a contact sheet. A
+   * gallery of every sampler published is scanned rather than compared two at a
+   * time, and a smaller tile puts more of it in one look.
+   */
+  public readonly denseTiles = computed(
+    () => this.categorical() && this.stops().length > 12,
+  );
+
+  /**
+   * Which tile the plate is marked on, or null before one has been opened. A
+   * plate of alternatives has no current frame the way a scrubber does; the
+   * mark only says which one the reader last looked at.
+   */
+  public readonly tileAt = computed(() =>
+    this.categorical() ? this.cursor() : null,
+  );
+
   /** Those two frames, in the order they read, or null on a range strip. */
   public readonly pairSides = computed<SweepStop[] | null>(() => {
     const stops = this.strip()?.stops;
@@ -1107,7 +1195,7 @@ export class GsSweepScrubComponent {
     if (held !== null) {
       return Math.min(held, this.lastIndex());
     }
-    return sweepOpensAtFirstStop(this.activeParameter())
+    return sweepOpensAtFirstStop(this.activeParameter()) || this.categorical()
       ? 0
       : Math.floor(((this.strip()?.stops.length ?? 1) - 1) / 2);
   });
@@ -1303,6 +1391,16 @@ export class GsSweepScrubComponent {
     this.loaded.set(false);
     const last = this.lastIndex();
     this.zoom.update((at) => (at === null ? null : Math.min(at, last)));
+  }
+
+  /**
+   * Open one tile of a categorical plate. The plate has no scrubber to say
+   * which frame is being read, so the press moves the strip onto that frame as
+   * well: the provenance under the plate is about the picture just looked at.
+   */
+  public openTile(stopIndex: number): void {
+    this.cursor.set(stopIndex);
+    this.openZoom(stopIndex, stopIndex);
   }
 
   public openZoom(stopIndex: number, trigger: number): void {

@@ -243,18 +243,9 @@
                 <option value="">
                   {{ "styles.form.default" | transloco }}
                 </option>
-                <option value="k_euler">k_euler</option>
-                <option value="k_euler_a">k_euler_a</option>
-                <option value="k_heun">k_heun</option>
-                <option value="k_dpm_2">k_dpm_2</option>
-                <option value="k_dpm_2_a">k_dpm_2_a</option>
-                <option value="k_dpmpp_2s_a">k_dpmpp_2s_a</option>
-                <option value="k_dpmpp_2m">k_dpmpp_2m</option>
-                <option value="k_dpmpp_sde">k_dpmpp_sde</option>
-                <option value="dpmsolver">dpmsolver</option>
-                <option value="k_lms">k_lms</option>
-                <option value="DDIM">DDIM</option>
-                <option value="lcm">lcm</option>
+                @for (sampler of samplerOptions(); track sampler) {
+                  <option [value]="sampler">{{ sampler }}</option>
+                }
               </select>
             </div>
 

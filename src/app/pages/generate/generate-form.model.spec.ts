@@ -5,6 +5,9 @@ import {
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
   createGenerateForm,
+  CONTROL_TYPES,
+  EXTENDED_CONTROL_TYPES,
+  LEGACY_CONTROL_TYPES,
   MAX_CFG_SCALE,
   MAX_CLIP_SKIP,
   MAX_STEPS,
@@ -27,7 +30,9 @@ import {
   normalizeWorkers,
   promptHistoryFromJobs,
   requestToFormValue,
+  cfgPlusPlusHint,
   samplerRequirementHint,
+  schedulerRequirementHint,
   sd15HiresHint,
   simpleModeValue,
   sizeBaseFor,
@@ -36,8 +41,58 @@ import {
   stripEphemeralExtras,
   suggestedSamplers,
 } from './generate-form.model';
+import { ANNOTATION_CONTROL_TYPES } from '../../types/generation';
 import { AppliedStyle } from '../../services/horde-styles.service';
 import { LocalGenerationJob } from '../../types/generation-job';
+import {
+  SamplerConstraintsDocument,
+  coerceSamplerConstraints,
+} from '../../types/sampler-constraints';
+import live from '../../testing/fixtures/sampler-constraints.stub.json';
+
+const samplerContract: SamplerConstraintsDocument = {
+  schema_version: '1.0',
+  samplers: {
+    k_euler: {
+      name: 'k_euler',
+      presentation_tier: 'recommended',
+      solver_type_choices: [],
+      accepted_settings: {
+        sampler_s_churn: {
+          minimum: 0,
+          maximum: 100,
+          default: 0,
+          integer_only: false,
+        },
+      },
+    },
+    dpmpp_2m_sde: {
+      name: 'dpmpp_2m_sde',
+      presentation_tier: 'recommended',
+      solver_type_choices: ['midpoint', 'heun'],
+      accepted_settings: {
+        sampler_eta: {
+          minimum: 0,
+          maximum: 100,
+          default: 1,
+          integer_only: false,
+        },
+      },
+    },
+  },
+  hard_constraints: {
+    rejected_sampler_scheduler_pairings: [
+      { sampler: 'dpmpp_2m_sde', scheduler: 'normal' },
+    ],
+    scheduler_baseline_applicability: {
+      align_your_steps: ['stable_diffusion_1', 'stable_diffusion_xl'],
+    },
+  },
+  presentation_tiers: { recommended: ['k_euler', 'dpmpp_2m_sde'] },
+};
+
+const baselineForModel = (model: string): string | null =>
+  ({ flux: 'flux_1', sdxl: 'stable_diffusion_xl' })[model] ?? null;
 
 function value(overrides: Partial<GenerateFormValue> = {}): GenerateFormValue {
   return { ...DEFAULT_GENERATE_FORM_VALUE, ...overrides };
@@ -268,11 +323,14 @@ describe('buildImageRequest source processing', () => {
 });
 
 describe('buildImageRequest advanced params', () => {
-  it('sends karras only when enabled (default on emits true)', () => {
+  it('sends the legacy karras flag for the karras schedule and no other', () => {
     expect(buildImageRequest(value()).params?.karras).toBe(true);
     expect(
-      buildImageRequest(value({ karras: false })).params?.karras,
+      buildImageRequest(value({ scheduler: 'normal' })).params?.karras,
     ).toBeUndefined();
+    // Without the contract the modern field is never sent, so the flag is the
+    // whole of what a pre-contract server is told.
+    expect(buildImageRequest(value()).params?.scheduler).toBeUndefined();
   });
 
   it('emits transparent only when enabled', () => {
@@ -341,6 +399,82 @@ describe('buildImageRequest advanced params', () => {
     expect(request.params?.tis).toEqual([
       { name: '7808', strength: 0.6, inject_ti: 'negprompt' },
     ]);
+  });
+});
+
+describe('buildImageRequest sampler contract', () => {
+  it('serializes only settings accepted by the final sampler', () => {
+    const request = buildImageRequest(
+      value({
+        model: 'sdxl',
+        sampler_name: 'dpmpp_2m_sde',
+        scheduler: 'karras',
+        sampler_eta: 0.7,
+        sampler_s_churn: 9,
+        sampler_solver_type: 'heun',
+      }),
+      { samplerContract, baselineForModel },
+    );
+
+    expect(request.params?.scheduler).toBe('karras');
+    // The legacy pair rides both fields, so a worker reading either one gets
+    // the schedule that was asked for.
+    expect(request.params?.karras).toBe(true);
+    expect(request.params?.sampler_eta).toBe(0.7);
+    expect(request.params?.sampler_s_churn).toBeUndefined();
+    expect(request.params?.sampler_solver_type).toBe('heun');
+  });
+
+  it('drops the legacy flag once a modern schedule is chosen', () => {
+    const request = buildImageRequest(
+      value({
+        model: 'sdxl',
+        sampler_name: 'k_euler',
+        scheduler: 'align_your_steps',
+      }),
+      { samplerContract, baselineForModel },
+    );
+
+    expect(request.params?.scheduler).toBe('align_your_steps');
+    expect(request.params?.karras).toBeUndefined();
+  });
+
+  it('omits rejected schedulers and out-of-range settings', () => {
+    const request = buildImageRequest(
+      value({
+        model: 'sdxl',
+        sampler_name: 'dpmpp_2m_sde',
+        scheduler: 'normal',
+        sampler_eta: 101,
+        sampler_solver_type: 'unsupported',
+      }),
+      { samplerContract, baselineForModel },
+    );
+
+    expect(request.params?.scheduler).toBeUndefined();
+    expect(request.params?.sampler_eta).toBeUndefined();
+    expect(request.params?.sampler_solver_type).toBeUndefined();
+  });
+
+  it('revalidates hidden values after a style replaces sampler and model', () => {
+    const request = buildStyledImageRequest(
+      value({
+        model: 'flux',
+        sampler_name: 'k_euler',
+        sampler_eta: 0.5,
+        sampler_s_churn: 4,
+        flow_shift: 3,
+      }),
+      {
+        prompt: 'styled',
+        forcedParams: { model: 'sdxl', sampler_name: 'dpmpp_2m_sde' },
+      },
+      { samplerContract, baselineForModel },
+    );
+
+    expect(request.params?.sampler_eta).toBe(0.5);
+    expect(request.params?.sampler_s_churn).toBeUndefined();
+    expect(request.params?.flow_shift).toBeUndefined();
   });
 });
 
@@ -545,11 +679,23 @@ describe('requestToFormValue', () => {
     expect(result.height).toBe(1024);
     expect(result.n).toBe(2);
     expect(result.seed).toBe('42');
-    expect(result.karras).toBe(true);
+    expect(result.scheduler).toBe('karras');
     expect(result.nsfw).toBe(true);
     expect(result.censor_nsfw).toBe(false);
     // Loading always opens advanced so every recovered field is visible.
     expect(result.mode).toBe('advanced');
+  });
+
+  it('prefers a named schedule over the legacy flag when both ride along', () => {
+    expect(
+      requestToFormValue({
+        prompt: 'a castle',
+        params: { karras: true, scheduler: 'beta' },
+      }).scheduler,
+    ).toBe('beta');
+    expect(
+      requestToFormValue({ prompt: 'a castle', params: {} }).scheduler,
+    ).toBe('normal');
   });
 
   it('recovers a plain prompt with no negative half', () => {
@@ -986,21 +1132,25 @@ describe('requirement hints', () => {
   });
 
   it('reads karras off the suggested schedulers, and only when they exist', () => {
-    expect(karrasRequirementHint({ schedulers: ['karras'] }, true)).toEqual({
-      key: 'generate.form.requirement.karras_on',
-      params: {},
-      violated: false,
-    });
+    expect(karrasRequirementHint({ schedulers: ['karras'] }, 'karras')).toEqual(
+      {
+        key: 'generate.form.requirement.karras_on',
+        params: {},
+        violated: false,
+      },
+    );
     expect(
-      karrasRequirementHint({ schedulers: ['karras'] }, false)?.violated,
+      karrasRequirementHint({ schedulers: ['karras'] }, 'normal')?.violated,
     ).toBe(true);
-    expect(karrasRequirementHint({ schedulers: ['simple'] }, true)).toEqual({
-      key: 'generate.form.requirement.karras_off',
-      params: {},
-      violated: true,
-    });
-    expect(karrasRequirementHint({}, true)).toBeNull();
-    expect(karrasRequirementHint(null, false)).toBeNull();
+    expect(karrasRequirementHint({ schedulers: ['simple'] }, 'karras')).toEqual(
+      {
+        key: 'generate.form.requirement.karras_off',
+        params: {},
+        violated: true,
+      },
+    );
+    expect(karrasRequirementHint({}, 'karras')).toBeNull();
+    expect(karrasRequirementHint(null, 'normal')).toBeNull();
   });
 
   it('notes an off-family size without calling it a violation', () => {
@@ -1089,5 +1239,84 @@ describe('sampling number bounds', () => {
         CFG_SLIDER_MAX,
       ),
     ).toBe(50);
+  });
+});
+
+describe('scheduler advice', () => {
+  const suggests = { schedulers: ['karras', 'exponential'] };
+
+  it('reads the model reference list as it stands', () => {
+    const hint = schedulerRequirementHint(suggests, 'karras');
+
+    expect(hint?.key).toBe('generate.form.requirement.schedulers');
+    expect(hint?.params['list']).toBe('karras, exponential');
+    expect(hint?.violated).toBe(false);
+  });
+
+  it('marks an explicit schedule the model does not suggest', () => {
+    expect(schedulerRequirementHint(suggests, 'beta')?.violated).toBe(true);
+    expect(schedulerRequirementHint(suggests, 'karras')?.violated).toBe(false);
+  });
+
+  it('says nothing about a model that suggests no schedule', () => {
+    expect(schedulerRequirementHint(null, 'karras')).toBeNull();
+    expect(schedulerRequirementHint({ schedulers: [] }, 'karras')).toBeNull();
+  });
+
+  it('speaks of karras only for the two schedules that predate the field', () => {
+    // Any other schedule is named outright by the list line, which says more
+    // than reducing the reference's advice to on or off.
+    expect(karrasRequirementHint(suggests, 'normal')?.key).toBe(
+      'generate.form.requirement.karras_on',
+    );
+    expect(karrasRequirementHint(suggests, 'beta')).toBeNull();
+  });
+});
+
+describe('control type vocabulary', () => {
+  it('offers every detector the horde takes, and the legacy line alias', () => {
+    expect([...CONTROL_TYPES].sort()).toEqual(
+      [...ANNOTATION_CONTROL_TYPES, 'hough'].sort(),
+    );
+  });
+
+  it('separates what any ControlNet worker serves from what few do', () => {
+    expect(
+      LEGACY_CONTROL_TYPES.filter((type) =>
+        EXTENDED_CONTROL_TYPES.includes(type),
+      ),
+    ).toEqual([]);
+    expect(LEGACY_CONTROL_TYPES).toContain('hough');
+    // The same detector under its current name reaches only newer workers.
+    expect(EXTENDED_CONTROL_TYPES).toContain('mlsd');
+    expect(EXTENDED_CONTROL_TYPES).toContain('depth_anything_v2');
+  });
+});
+
+describe('guidance advice for samplers that apply it themselves', () => {
+  it('names the ceiling, and marks a request above it', () => {
+    const contract = coerceSamplerConstraints(live)!;
+
+    expect(cfgPlusPlusHint(contract, 'euler_cfg_pp', 2)?.violated).toBe(false);
+    const over = cfgPlusPlusHint(contract, 'euler_cfg_pp', 7.5);
+    expect(over?.key).toBe('generate.form.requirement.cfg_pp');
+    expect(over?.params['max']).toBe(2);
+    expect(over?.violated).toBe(true);
+  });
+
+  it('says nothing for a sampler that takes guidance the ordinary way', () => {
+    const contract = coerceSamplerConstraints(live)!;
+
+    expect(cfgPlusPlusHint(contract, 'k_euler', 7.5)).toBeNull();
+    expect(cfgPlusPlusHint(null, 'euler_cfg_pp', 7.5)).toBeNull();
+  });
+
+  it('says nothing where the horde publishes no ceiling', () => {
+    const contract = coerceSamplerConstraints({
+      ...live,
+      advisories: {},
+    })!;
+
+    expect(cfgPlusPlusHint(contract, 'euler_cfg_pp', 7.5)).toBeNull();
   });
 });

@@ -205,6 +205,29 @@ describe('AlchemyComponent', () => {
       });
     });
 
+    it('includes the selected detector in an annotation form payload', () => {
+      component.onSourceImage('https://example.com/i.png');
+      component.annotationControlTypes.set(['depth']);
+      select('annotation');
+
+      expect(JSON.parse(component.apiPayload()).forms).toEqual([
+        { name: 'annotation', payload: { control_type: 'depth' } },
+      ]);
+    });
+
+    it('sends one annotation form per detector, in the order picked', () => {
+      component.onSourceImage('https://example.com/i.png');
+      component.annotationControlTypes.set([]);
+      component.toggleDetector('depth');
+      component.toggleDetector('canny');
+      select('annotation');
+
+      expect(JSON.parse(component.apiPayload()).forms).toEqual([
+        { name: 'annotation', payload: { control_type: 'depth' } },
+        { name: 'annotation', payload: { control_type: 'canny' } },
+      ]);
+    });
+
     it('stands a placeholder in for the encoded image the picker hands over', () => {
       // The picker emits bare base64, never a data URL, so the elision cannot
       // be decided on a `data:` prefix.
@@ -287,6 +310,49 @@ describe('AlchemyComponent', () => {
     });
   });
 
+  describe('control-map detectors', () => {
+    it('adds and removes a detector, keeping the order they were picked', () => {
+      component.annotationControlTypes.set([]);
+      component.toggleDetector('depth');
+      component.toggleDetector('canny');
+      expect(component.annotationControlTypes()).toEqual(['depth', 'canny']);
+
+      component.toggleDetector('depth');
+      expect(component.annotationControlTypes()).toEqual(['canny']);
+    });
+
+    it('takes a whole group, then drops it again', () => {
+      const group = component.detectorGroups[0];
+      component.annotationControlTypes.set([]);
+
+      component.toggleDetectorGroup(group);
+      expect(component.isGroupFullySelected(group)).toBe(true);
+      expect(component.annotationControlTypes()).toEqual([...group.types]);
+
+      component.toggleDetectorGroup(group);
+      expect(component.annotationControlTypes()).toEqual([]);
+    });
+
+    it('refuses a control map with no detector picked', () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('annotation');
+      expect(component.canSubmit()).toBe(true);
+
+      component.clearDetectors();
+      expect(component.missingDetector()).toBe(true);
+      expect(component.canSubmit()).toBe(false);
+    });
+
+    it('asks for no detector when no control map is requested', () => {
+      component.onSourceImage('https://example.com/i.png');
+      component.clearDetectors();
+      select('caption');
+
+      expect(component.missingDetector()).toBe(false);
+      expect(component.canSubmit()).toBe(true);
+    });
+  });
+
   describe('operation cards and their notes', () => {
     it('offers every operation family the registry documents', () => {
       expect(component.operationGroups.map((group) => group.id)).toEqual(
@@ -310,6 +376,7 @@ describe('AlchemyComponent', () => {
       const submittable = new Set<string>([
         ...component.dataForms,
         ...component.postProcessorForms,
+        ...component.annotationForms,
       ]);
 
       expect(offered.filter((form) => !submittable.has(form))).toEqual([]);
@@ -705,6 +772,38 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     }
   });
 
+  it('offers a chip per detector once a control map is asked for', () => {
+    expect(
+      fixture.nativeElement.querySelector('.alchemy-detectors'),
+    ).toBeNull();
+
+    component.toggleForm('annotation');
+    fixture.detectChanges();
+
+    const chips = [
+      ...fixture.nativeElement.querySelectorAll(
+        '.alchemy-detectors .gs-op--chip',
+      ),
+    ] as HTMLElement[];
+    expect(chips.length).toBe(
+      component.detectorGroups.reduce(
+        (total, group) => total + group.types.length,
+        0,
+      ),
+    );
+    expect(
+      chips.filter((chip) => chip.classList.contains('gs-op--selected')).length,
+    ).toBe(1);
+
+    const depth = chips.find(
+      (chip) => chip.textContent?.trim() === 'depth',
+    ) as HTMLElement;
+    depth.querySelector('input')?.click();
+    fixture.detectChanges();
+
+    expect(component.annotationControlTypes()).toEqual(['canny', 'depth']);
+  });
+
   it('lists every valid form name from the shared constants', () => {
     component.setTab('developers');
     fixture.detectChanges();
@@ -716,6 +815,7 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     expect(chips).toEqual([
       ...component.dataForms,
       ...component.postProcessorForms,
+      ...component.annotationForms,
     ]);
   });
 });

@@ -32,6 +32,8 @@ import {
   ALCHEMY_DATA_FORMS,
   ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
+  AnnotationControlType,
+  InterrogationForm,
   InterrogationRequest,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
@@ -45,6 +47,10 @@ import { alchemyTopic, referenceTopic } from '../../content/reference-topics';
 import {
   ALCHEMY_ANALYSIS_FORMS,
   ALCHEMY_BACKGROUND_FORMS,
+  ALCHEMY_CONTROL_MAP_FORMS,
+  ANNOTATION_DETECTOR_GROUPS,
+  AnnotationDetectorGroup,
+  annotationGroupLabelKey,
   ALCHEMY_ENLARGE_FORMS,
   ALCHEMY_FACE_FIXER_FORMS,
   ALCHEMY_UPSCALER_FORMS,
@@ -170,6 +176,7 @@ export class AlchemyComponent {
 
   public readonly dataForms = ALCHEMY_DATA_FORMS;
   public readonly postProcessorForms = ALCHEMY_POST_PROCESSOR_FORMS;
+  public readonly annotationForms = ALCHEMY_CONTROL_MAP_FORMS;
 
   /**
    * The forms split into the groups shown in the builder, so each fieldset can
@@ -177,14 +184,16 @@ export class AlchemyComponent {
    * undifferentiated "enhance" bucket. The lists are the use-case registry's
    * operable ones, which is also what the documentation pages are built from:
    * the tool and the book cannot come to disagree about which forms enlarge a
-   * picture, and a form the registry documents but the studio cannot submit
-   * never reaches a checkbox. `dataForms` and `postProcessorForms` above are
-   * kept as-is for the developers tab's plain form-name reference.
+   * picture. The separate form lists above preserve the request-shape
+   * distinction for the developers tab.
    */
   public readonly analysisForms = ALCHEMY_ANALYSIS_FORMS;
   public readonly enlargeForms = ALCHEMY_ENLARGE_FORMS;
   public readonly faceFixerForms = ALCHEMY_FACE_FIXER_FORMS;
   public readonly backgroundForms = ALCHEMY_BACKGROUND_FORMS;
+  public readonly controlMapForms = ALCHEMY_CONTROL_MAP_FORMS;
+  public readonly detectorGroups = ANNOTATION_DETECTOR_GROUPS;
+  public readonly groupLabelKey = annotationGroupLabelKey;
 
   /** Enlargers split by use case, so their long names get a full line each. */
   private readonly enlargeSubGroups: readonly AlchemyOperationSubGroup[] = [
@@ -227,6 +236,15 @@ export class AlchemyComponent {
       outputKey: 'alchemy.forms.analyze_output',
       blurbKey: 'alchemy.forms.analyze_blurb',
       forms: this.analysisForms,
+    },
+    {
+      id: 'control_map',
+      icon: 'photo',
+      helpTopic: helpTopicForGroup('control_map'),
+      titleKey: 'alchemy.forms.control_map_title',
+      outputKey: 'alchemy.forms.control_map_output',
+      blurbKey: 'alchemy.forms.control_map_blurb',
+      forms: this.controlMapForms,
     },
     {
       id: 'upscale',
@@ -400,6 +418,13 @@ export class AlchemyComponent {
 
   public readonly sourceImage = signal<string | null>(null);
   public readonly selectedForms = signal<Set<AlchemyFormName>>(new Set());
+  /**
+   * The detectors a control-map request asks for, in the order they were
+   * picked. Each one is submitted as its own form and returns its own map.
+   */
+  public readonly annotationControlTypes = signal<
+    readonly AnnotationControlType[]
+  >(['canny']);
   public readonly slowWorkers = signal(true);
 
   public readonly isSubmitting = signal(false);
@@ -511,11 +536,22 @@ export class AlchemyComponent {
   public readonly hasSource = computed(() => this.sourceImage() !== null);
   public readonly selectedCount = computed(() => this.selectedForms().size);
 
+  /**
+   * A control map with no detector picked has nothing to read out of the
+   * picture, so the request is incomplete rather than merely empty-handed.
+   */
+  public readonly missingDetector = computed(
+    () =>
+      this.selectedForms().has('annotation') &&
+      this.annotationControlTypes().length === 0,
+  );
+
   public readonly canSubmit = computed(
     () =>
       !this.isSubmitting() &&
       this.sourceImage() !== null &&
-      this.selectedForms().size > 0,
+      this.selectedForms().size > 0 &&
+      !this.missingDetector(),
   );
 
   /** A backed-up queue (>50) is the trigger above this line. */
@@ -635,8 +671,16 @@ export class AlchemyComponent {
   private requestBody(source: string): InterrogationRequest {
     const forms = [...this.selectedForms()];
     return {
-      forms: (forms.length > 0 ? forms : ['caption' as AlchemyFormName]).map(
-        (name) => ({ name }),
+      forms: (forms.length > 0
+        ? forms
+        : ['caption' as AlchemyFormName]
+      ).flatMap((name): InterrogationForm[] =>
+        name === 'annotation'
+          ? this.annotationControlTypes().map((control_type) => ({
+              name,
+              payload: { control_type },
+            }))
+          : [{ name }],
       ),
       source_image: source,
       slow_workers: this.slowWorkers(),
@@ -790,8 +834,43 @@ export class AlchemyComponent {
   }
 
   public hasExample(form: AlchemyFormName): boolean {
-    // strip_background is the only form without an example entry
-    return form !== 'strip_background';
+    return form !== 'strip_background' && form !== 'annotation';
+  }
+
+  public isDetectorSelected(type: AnnotationControlType): boolean {
+    return this.annotationControlTypes().includes(type);
+  }
+
+  /** Add or remove a detector, keeping the order they were picked in. */
+  public toggleDetector(type: AnnotationControlType): void {
+    this.annotationControlTypes.update((current) =>
+      current.includes(type)
+        ? current.filter((existing) => existing !== type)
+        : [...current, type],
+    );
+  }
+
+  /** Whether every detector a group offers is already picked. */
+  public isGroupFullySelected(group: AnnotationDetectorGroup): boolean {
+    const picked = this.annotationControlTypes();
+    return group.types.every((type) => picked.includes(type));
+  }
+
+  /**
+   * Take a whole group, or drop it again once it is all taken. The groups run
+   * to ten detectors, and asking for all the edge readings at once is a real
+   * thing to want.
+   */
+  public toggleDetectorGroup(group: AnnotationDetectorGroup): void {
+    const takeAll = !this.isGroupFullySelected(group);
+    this.annotationControlTypes.update((current) => {
+      const kept = current.filter((type) => !group.types.includes(type));
+      return takeAll ? [...kept, ...group.types] : kept;
+    });
+  }
+
+  public clearDetectors(): void {
+    this.annotationControlTypes.set([]);
   }
 
   /** True for the forms that carry a scale badge, which vectorize does not. */
@@ -812,7 +891,14 @@ export class AlchemyComponent {
 
     this.isSubmitting.set(true);
     void this.queue
-      .submit({ forms, slowWorkers: this.slowWorkers(), source })
+      .submit({
+        ...(forms.includes('annotation')
+          ? { annotationControlTypes: this.annotationControlTypes() }
+          : {}),
+        forms,
+        slowWorkers: this.slowWorkers(),
+        source,
+      })
       .then((id) => {
         this.isSubmitting.set(false);
         if (!id) {
@@ -895,7 +981,10 @@ export class AlchemyComponent {
       const { bytes, imageCount, failedImages } = await buildAlchemyJobArchive(
         job.id,
         status,
-        { storedImages: await this.queue.getResultImages(job.localId) },
+        {
+          storedImages: await this.queue.getResultImages(job.localId),
+          annotationControlTypes: job.annotationControlTypes,
+        },
       );
       this.triggerZipDownload(bytes, `alchemy-${job.id}.zip`);
 

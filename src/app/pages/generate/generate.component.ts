@@ -38,6 +38,7 @@ import { ImagePostProcessor } from '../../types/style';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
+import { SamplerConstraintsService } from '../../services/sampler-constraints.service';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import {
   TutorialEngineService,
@@ -172,6 +173,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
+  private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly tryIt = inject(GsTryItService);
   private readonly sweeps = inject(SweepLibraryService);
@@ -201,6 +203,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     coerceFormValue(this.db.get(STORAGE_KEY)),
   );
   public readonly models = signal<ActiveModel[]>([]);
+  public readonly samplerContract = this.samplerConstraints.contract;
   public readonly kudos = signal<number | null>(null);
   public readonly estimating = signal(false);
 
@@ -244,7 +247,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       // A preset carries no image, so its source-mode fields describe nothing
       // and are left out of the request entirely.
       return pending
-        ? buildImageRequest(pending, { hasSourceImage: false })
+        ? buildImageRequest(pending, this.buildOptions(false))
         : null;
     },
   );
@@ -353,6 +356,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       this.fetchModels();
       this.fetchStyles();
       this.modelReference.load();
+      this.samplerConstraints.load();
       this.form.valueChanges
         .pipe(
           debounceTime(KUDOS_DEBOUNCE_MS),
@@ -609,7 +613,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const request = buildStyledImageRequest(
       effective,
       this.resolveApplied(effective),
-      { hasSourceImage },
+      this.buildOptions(hasSourceImage),
     );
     this.previewRequest.set(request);
   }
@@ -860,7 +864,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const request = buildStyledImageRequest(
       effective,
       this.resolveApplied(effective),
-      { hasSourceImage },
+      this.buildOptions(hasSourceImage),
     );
     const sourceImages = usesSource ? this.buildEnqueueSources(state) : [];
     try {
@@ -1001,7 +1005,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       prompt: effective.prompt.trim() || '_',
     };
     const request = buildStyledImageRequest(base, this.resolveApplied(base), {
-      hasSourceImage,
+      ...this.buildOptions(hasSourceImage),
     });
     // Attach the source image (but never the mask) so controlnet/img2img cost
     // differences are reflected in the estimate.
@@ -1024,6 +1028,16 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         this.estimating.set(false);
       }
     }
+  }
+
+  /** Contract inputs shared by preview, dry-run estimation, and submission. */
+  private buildOptions(hasSourceImage: boolean) {
+    return {
+      hasSourceImage,
+      samplerContract: this.samplerContract(),
+      baselineForModel: (modelName: string) =>
+        this.modelReference.baselineFor(modelName),
+    };
   }
 
   // --- Glossary: what this page is made of ---------------------------------

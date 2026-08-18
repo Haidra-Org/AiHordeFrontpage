@@ -15,7 +15,11 @@ import {
   ALCHEMY_EVIDENCE_ROOT,
   AlchemyEvidenceManifest,
 } from '../../../content/alchemy-evidence';
-import { alchemyUseCase } from '../../../content/alchemy-usecases';
+import {
+  ANNOTATION_DETECTOR_GROUPS,
+  alchemyUseCase,
+  annotationGroupLabelKey,
+} from '../../../content/alchemy-usecases';
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
@@ -45,6 +49,35 @@ const PUBLISHED: AlchemyEvidenceManifest = {
       notes: 'Rendered from the same source as every other stop.',
     },
   ],
+};
+
+/** Every detector the picker offers, in the order the gallery reads them. */
+const DETECTORS = ANNOTATION_DETECTOR_GROUPS.flatMap((group) => group.types);
+
+/** The detector the library is short of, which the page still has to name. */
+const UNPUBLISHED = 'openpose';
+
+/**
+ * The control map library as it is published: one source, one run per detector.
+ * One detector is left without a result, because a page that dropped it would
+ * be telling the reader the studio does not offer it.
+ */
+const CONTROL_MAPS: AlchemyEvidenceManifest = {
+  generated_against: 'https://aihorde.net/api/v2',
+  entries: DETECTORS.map((type) => ({
+    use_case: 'control_map',
+    form: 'annotation',
+    title: type,
+    control_type: type,
+    model: type,
+    notes: `What ${type} reads.`,
+    files: {
+      source: 'sources/anchor.webp',
+      ...(type === UNPUBLISHED
+        ? {}
+        : { result: `control_map/${type}/result.webp` }),
+    },
+  })),
 };
 
 /** Stands in for the docs shell, so the router mounts the page it routes to. */
@@ -165,6 +198,53 @@ describe('DocsAlchemyUseCaseComponent', () => {
     );
   });
 
+  it('shows the shared source once, and every detector under its group', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    const leads = all<HTMLImageElement>('.gs-ref-shot-frame--lead img');
+    expect(leads.map((frame) => frame.getAttribute('src'))).toEqual([
+      `${ALCHEMY_EVIDENCE_ROOT}/sources/anchor.webp`,
+    ]);
+
+    const names = all('.gs-ref-map-name').map((name) =>
+      name.textContent?.trim(),
+    );
+    expect(names).toEqual([...DETECTORS]);
+    expect(new Set(names).size).toBe(DETECTORS.length);
+  });
+
+  it('heads each group with what it reads, in the order the picker offers', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    const heads = all('.gs-ref-maps-head').map((head) =>
+      head.textContent?.trim(),
+    );
+    const translations = en as Record<string, string>;
+    expect(heads).toEqual(
+      ANNOTATION_DETECTOR_GROUPS.map(
+        (group) => translations[annotationGroupLabelKey(group.id)],
+      ),
+    );
+  });
+
+  it('keeps a detector nothing was published for, and says what it reads', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    expect(all('.gs-ref-map-gap')).toHaveLength(1);
+    expect(all('.gs-ref-map img')).toHaveLength(DETECTORS.length - 1);
+    expect(el().textContent).toContain(`What ${UNPUBLISHED} reads.`);
+  });
+
+  it('offers the way on to where a control map is used', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    const links = all<HTMLAnchorElement>('.gs-ref-link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual([
+      '/docs/image/learn/controlnet',
+      '/docs/image/settings/source',
+    ]);
+  });
+
   it('sends a URL naming no use case back to the list', async () => {
     await setUp('not_a_use_case');
 
@@ -176,7 +256,7 @@ describe('DocsAlchemyUseCaseComponent', () => {
 
     const onwards = all<HTMLAnchorElement>('.gs-ref-onward');
     expect(onwards.map((link) => link.getAttribute('href'))).toEqual([
-      '/docs/alchemy/enlarge',
+      '/docs/alchemy/control_map',
     ]);
   });
 });

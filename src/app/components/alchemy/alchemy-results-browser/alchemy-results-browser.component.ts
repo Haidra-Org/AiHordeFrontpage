@@ -50,8 +50,9 @@ export class AlchemyResultsBrowserComponent {
   public readonly justAddedJobId = input<string | null>(null);
   public readonly downloadingJobId = input<string | null>(null);
   /**
-   * Object URLs for stored result images, keyed `${localId}::${form}`. Composite
-   * so the detail block can be rendered for more than one job without the keys
+   * Object URLs for stored result images, keyed `${localId}::${resultKey}`,
+   * where the result key carries the detector for a control map. Composite so
+   * the detail block can be rendered for more than one job without the keys
    * colliding.
    */
   public readonly resultImageUrls = input<ReadonlyMap<string, string>>(
@@ -59,8 +60,8 @@ export class AlchemyResultsBrowserComponent {
   );
 
   /** The locally held copy of a form's result image, if there is one. */
-  public storedImageUrl(job: AlchemyJob, form: string): string | null {
-    return this.resultImageUrls().get(`${job.localId}::${form}`) ?? null;
+  public storedImageUrl(job: AlchemyJob, resultKey: string): string | null {
+    return this.resultImageUrls().get(`${job.localId}::${resultKey}`) ?? null;
   }
 
   /** Activate a request (rail thumb or gallery tile) to view its results. */

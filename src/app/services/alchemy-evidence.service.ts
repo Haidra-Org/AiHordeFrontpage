@@ -48,13 +48,21 @@ export class AlchemyEvidenceService {
     return this.published().filter((entry) => entry.use_case === useCase);
   }
 
-  /** What was published for one form, or null where nothing was. */
+  /**
+   * What was published for one form, or undefined where nothing was. A form
+   * that ran once per detector is asked for by detector as well, since every
+   * one of its runs carries the same use case and the same form name.
+   */
   public entryFor(
     useCase: string,
     form: string,
+    controlType?: string,
   ): AlchemyEvidenceEntry | undefined {
     return this.published().find(
-      (entry) => entry.use_case === useCase && entry.form === form,
+      (entry) =>
+        entry.use_case === useCase &&
+        entry.form === form &&
+        (controlType === undefined || entry.control_type === controlType),
     );
   }
 
@@ -112,12 +120,16 @@ export class AlchemyEvidenceService {
  * Whether a published entry is one a page can show. An entry naming no source
  * has nothing to compare against, and one with neither a result nor a result
  * file is a run that produced nothing: both would lay out as a gap.
+ *
+ * A run naming a detector is kept either way. Those are read as a set of every
+ * detector the horde offers, where a missing map is itself worth showing and
+ * the entry is what says which detector is missing and what it would have read.
  */
 function isUsable(entry: AlchemyEvidenceEntry): boolean {
   return (
     !!entry?.use_case &&
     !!entry.form &&
     !!entry.files?.source &&
-    (!!entry.files.result || !!entry.files.result_text)
+    (!!entry.files.result || !!entry.files.result_text || !!entry.control_type)
   );
 }
