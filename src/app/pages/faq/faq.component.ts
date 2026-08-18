@@ -34,6 +34,8 @@ import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { scrollToElement as scrollToEl } from '../../helper/scroll-utils';
 import { SortedItems } from '../../types/sorted-items';
 import { NoSorterKeyValue } from '../../types/no-sorter-key-value';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import { ToastService } from '../../services/toast.service';
 
 function slugify(text: string): string {
   return text
@@ -71,6 +73,7 @@ export class FaqComponent implements OnInit, OnDestroy {
   private readonly zone = inject(NgZone);
   private readonly destroyRef = inject(DestroyRef);
   private readonly stickyRegistry = inject(StickyRegistryService);
+  private readonly toast = inject(ToastService);
 
   private observer?: IntersectionObserver;
 
@@ -80,6 +83,7 @@ export class FaqComponent implements OnInit, OnDestroy {
   public expandedFaqs = signal<Set<string>>(new Set());
   public collapsedSections = signal<Set<string>>(new Set());
   public highlightedQuestions = signal<Set<string>>(new Set());
+  public copiedQuestionSlug = signal<string | null>(null);
   public tocOpen = signal(false);
   public tocExpandedSections = signal<Set<string>>(new Set());
 
@@ -256,6 +260,46 @@ export class FaqComponent implements OnInit, OnDestroy {
 
   public sectionSlug(section: string): string {
     return slugify(section);
+  }
+
+  public questionHref(question: string): string {
+    return `/faq#${slugify(question)}`;
+  }
+
+  /** Copy a question's absolute deep link while preserving native modified-click behavior. */
+  public async copyQuestionLink(
+    event: MouseEvent,
+    question: string,
+  ): Promise<void> {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)
+      return;
+
+    event.preventDefault();
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const slug = slugify(question);
+    const url = new URL(
+      this.questionHref(question),
+      this.document.location.href,
+    ).href;
+    const copied = await copyToClipboard(url);
+
+    if (!copied) {
+      this.toast.error('faq.link_copy_failed', { transloco: true });
+      return;
+    }
+
+    this.copiedQuestionSlug.set(slug);
+    this.toast.success('faq.link_copied', {
+      transloco: true,
+      autoDismissMs: 2000,
+    });
+
+    setTimeout(() => {
+      if (this.copiedQuestionSlug() === slug) {
+        this.copiedQuestionSlug.set(null);
+      }
+    }, 2000);
   }
 
   /** Returns how many questions away the given question is from the active scroll position (or -1) */

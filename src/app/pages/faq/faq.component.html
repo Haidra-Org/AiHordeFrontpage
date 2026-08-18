@@ -167,11 +167,13 @@
                       "
                       [id]="'faq-item-' + questionSlug(faqItem.question)"
                     >
-                      <h3>
+                      <h3
+                        class="faq-question"
+                        [class.is-active]="isFaqExpanded(faqItem.question)"
+                      >
                         <button
                           type="button"
-                          [class.is-active]="isFaqExpanded(faqItem.question)"
-                          class="faq-question"
+                          class="faq-question-toggle"
                           [attr.aria-expanded]="isFaqExpanded(faqItem.question)"
                           [attr.aria-controls]="
                             'faq-answer-' + questionSlug(faqItem.question)
@@ -181,6 +183,33 @@
                           <span class="faq-question-text">{{
                             faqItem.question
                           }}</span>
+                        </button>
+                        <a
+                          class="faq-question-link"
+                          [href]="questionHref(faqItem.question)"
+                          [attr.aria-label]="'faq.copy_link' | transloco"
+                          [attr.title]="'faq.copy_link' | transloco"
+                          (click)="copyQuestionLink($event, faqItem.question)"
+                        >
+                          <app-icon
+                            [name]="
+                              copiedQuestionSlug() ===
+                              questionSlug(faqItem.question)
+                                ? 'check'
+                                : 'link'
+                            "
+                          />
+                        </a>
+                        <button
+                          type="button"
+                          class="faq-chevron-button"
+                          [attr.aria-label]="faqItem.question"
+                          [attr.aria-expanded]="isFaqExpanded(faqItem.question)"
+                          [attr.aria-controls]="
+                            'faq-answer-' + questionSlug(faqItem.question)
+                          "
+                          (click)="toggleFaq(faqItem.question)"
+                        >
                           <inline-svg
                             href="assets/img/faq-closed.svg"
                             class="faq-chevron"
