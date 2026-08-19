@@ -470,9 +470,13 @@ describe('DocsImageExampleComponent', () => {
     const bodies = harness
       .query<HTMLElement>('.gs-tut-step-body')
       .map((el) => el.textContent ?? '');
-    // The prompt step's expert body is "[[set:prompt]]: “{{ prompt }}”…", so
-    // the request's own prompt is what the page shows.
-    expect(bodies[0]).toContain('“hello”');
+    // The prompt step's expert body is "[[set:prompt]]: `{{ prompt }}`…", so
+    // the request's own prompt is what the page shows, as a quoted literal.
+    expect(bodies[0]).toContain('hello');
+    expect(
+      harness.query<HTMLElement>('.gs-tut-step-body')[0].querySelector('code')
+        ?.textContent,
+    ).toBe('hello');
     expect(harness.text()).toContain(
       translations['generate.learn.flows.txt2img.steps.seed.title'],
     );

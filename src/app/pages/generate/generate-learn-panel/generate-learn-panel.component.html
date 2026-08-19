@@ -107,9 +107,13 @@
                     }
             }}
           </h3>
-          <p class="gs-guide-step-body">
-            <app-gs-prose [key]="bodyKey(current)" [params]="copyParams()" />
-          </p>
+          <div class="gs-guide-step-body">
+            <app-gs-prose
+              [key]="bodyKey(current)"
+              [params]="copyParams()"
+              [paragraphs]="true"
+            />
+          </div>
 
           <!-- On a technique only the newcomer register gets the sweep; on a
                track the pictures are what the step is about, so they are there

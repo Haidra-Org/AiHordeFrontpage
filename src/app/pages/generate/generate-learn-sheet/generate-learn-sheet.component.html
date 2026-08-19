@@ -192,9 +192,13 @@
               : { n: stepIndex() + 1, title: titleKey(current) | transloco }
         }}
       </h2>
-      <p class="gs-guide-step-body">
-        <app-gs-prose [key]="bodyKey(current)" [params]="copyParams()" />
-      </p>
+      <div class="gs-guide-step-body">
+        <app-gs-prose
+          [key]="bodyKey(current)"
+          [params]="copyParams()"
+          [paragraphs]="true"
+        />
+      </div>
 
       @if (showsSweep()) {
         @for (parameter of current.sweepParameters ?? []; track parameter) {
