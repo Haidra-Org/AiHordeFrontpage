@@ -322,7 +322,14 @@ describe('reference index', () => {
       SETTINGS_INDEX.find((group) => group.section === section)?.ids ?? [];
 
     expect(ids('prompt')).toEqual(['prompt', 'negative', 'prompt_emphasis']);
-    expect(ids('size')).toEqual(['size', 'native_resolution', 'oversize']);
+    // Hires fix follows, since it is the answer to going past the native size.
+    expect(ids('size')).toEqual([
+      'size',
+      'native_resolution',
+      'oversize',
+      'hires',
+      'hires_denoise',
+    ]);
     // Native resolution and going past it are pages about ideas rather than
     // about rows of the panel, which is a page the book has without a note the
     // panel shows.

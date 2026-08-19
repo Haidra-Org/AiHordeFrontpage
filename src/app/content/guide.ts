@@ -45,7 +45,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
     id: 'dimensions',
     labelKey: 'generate.form.dimensions_section',
-    topics: ['size', 'native_resolution', 'oversize'],
+    topics: ['size', 'native_resolution', 'oversize', 'hires', 'hires_denoise'],
   },
   {
     id: 'source',
@@ -62,9 +62,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
       'seed',
       'clip_skip',
       'karras',
-      'hires',
       'tiling',
-      'hires_denoise',
       'requirements',
     ],
     practiceFlow: 'txt2img',

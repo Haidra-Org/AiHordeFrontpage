@@ -9,6 +9,8 @@ import {
   warningsInSection,
 } from './request-lint';
 import { DEFAULT_GENERATE_FORM_VALUE } from './generate-form.model';
+import { coerceSamplerConstraints } from '../../types/sampler-constraints';
+import live from '../../testing/fixtures/sampler-constraints.stub.json';
 
 function lintInput(
   overrides: Partial<RequestLintInput> = {},
@@ -18,6 +20,7 @@ function lintInput(
     baseline: null,
     requirements: null,
     hasSourceImage: false,
+    contract: null,
     ...overrides,
   };
 }
@@ -208,6 +211,42 @@ describe('evaluateRequestLint', () => {
       }),
     );
     expect(warnings).toEqual([]);
+  });
+
+  it('counts the sampler cost and the CLIP skip among the sampling warnings', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          sampler_name: 'k_heun',
+          steps: 30,
+          clip_skip: 4,
+        },
+        contract: coerceSamplerConstraints(live),
+      }),
+    );
+    expect(warnings.map((warning) => warning.key)).toEqual([
+      'generate.form.requirement.steps_work',
+      'generate.form.requirement.clip_skip_high',
+    ]);
+    expect(warningsInSection(warnings, 'sampling')).toHaveLength(2);
+  });
+
+  it('counts a hires pass that has nothing to enlarge as a size warning', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          width: 512,
+          height: 512,
+          hires_fix: true,
+        },
+        baseline: 'stable_diffusion_1',
+      }),
+    );
+    expect(warningsInSection(warnings, 'size').map((w) => w.key)).toEqual([
+      'generate.form.requirement.hires_unneeded',
+    ]);
   });
 
   it('appends the compat rules after the recommendations, tagged by section', () => {

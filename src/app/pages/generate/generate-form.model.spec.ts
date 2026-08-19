@@ -33,6 +33,9 @@ import {
   cfgPlusPlusHint,
   samplerRequirementHint,
   schedulerRequirementHint,
+  clipSkipRangeHint,
+  hiresUnneededHint,
+  samplerStepCostHint,
   sd15HiresHint,
   simpleModeValue,
   sizeBaseFor,
@@ -1318,5 +1321,79 @@ describe('guidance advice for samplers that apply it themselves', () => {
     })!;
 
     expect(cfgPlusPlusHint(contract, 'euler_cfg_pp', 7.5)).toBeNull();
+  });
+});
+
+describe('the cost of a sampler that charges above the ordinary rate', () => {
+  const contract = coerceSamplerConstraints(live)!;
+
+  it('states what the steps really cost, once there are enough of them', () => {
+    const hint = samplerStepCostHint(contract, 'k_heun', 30);
+
+    expect(hint?.key).toBe('generate.form.requirement.steps_work');
+    expect(hint?.params).toEqual({
+      sampler: 'k_heun',
+      factor: 2,
+      steps: 20,
+      equivalent: 40,
+    });
+    expect(hint?.violated).toBe(true);
+    expect(samplerStepCostHint(contract, 'heunpp2', 30)?.params).toMatchObject({
+      factor: 3,
+      equivalent: 60,
+    });
+  });
+
+  it('says nothing at a modest count, or for an ordinary sampler', () => {
+    expect(samplerStepCostHint(contract, 'k_heun', 20)).toBeNull();
+    expect(samplerStepCostHint(contract, 'k_euler', 30)).toBeNull();
+    expect(samplerStepCostHint(null, 'k_heun', 30)).toBeNull();
+  });
+
+  it('tells a sampler that picks its own count apart from the rest', () => {
+    const hint = samplerStepCostHint(contract, 'k_dpm_adaptive', 30);
+
+    expect(hint?.key).toBe('generate.form.requirement.steps_adaptive');
+    expect(hint?.params).toEqual({ sampler: 'k_dpm_adaptive' });
+  });
+});
+
+describe('clipSkipRangeHint', () => {
+  it('marks a CLIP skip above what models are trained for', () => {
+    expect(clipSkipRangeHint(1)).toBeNull();
+    expect(clipSkipRangeHint(2)).toBeNull();
+    expect(clipSkipRangeHint(3)).toEqual({
+      key: 'generate.form.requirement.clip_skip_high',
+      params: {},
+      violated: true,
+    });
+  });
+});
+
+describe('hiresUnneededHint', () => {
+  it('marks a hires pass that has nothing to enlarge', () => {
+    expect(hiresUnneededHint('stable_diffusion_1', 512, 512, true)).toEqual({
+      key: 'generate.form.requirement.hires_unneeded',
+      params: {},
+      violated: true,
+    });
+    expect(
+      hiresUnneededHint('stable_diffusion_1', 512, 640, true),
+    ).not.toBeNull();
+    expect(
+      hiresUnneededHint('stable_diffusion_xl', 768, 768, true),
+    ).not.toBeNull();
+  });
+
+  it('stays quiet where the pass is actually enlarging something', () => {
+    expect(hiresUnneededHint('stable_diffusion_1', 1024, 512, true)).toBeNull();
+    expect(
+      hiresUnneededHint('stable_diffusion_xl', 1024, 1024, true),
+    ).toBeNull();
+  });
+
+  it('says nothing while the pass is off, or with no model picked', () => {
+    expect(hiresUnneededHint('stable_diffusion_1', 512, 512, false)).toBeNull();
+    expect(hiresUnneededHint(null, 512, 512, true)).toBeNull();
   });
 });

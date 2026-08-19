@@ -719,6 +719,40 @@ describe('GenerateFormComponent reset', () => {
     expect(value.sourceMode).toBe('img2img');
   });
 
+  it('asks before it clears anything, and keeping the settings changes nothing', async () => {
+    const { component, form } = await createDirty();
+    const before = form.getRawValue();
+
+    component.toggleResetConfirm();
+    expect(component.resetConfirmOpen()).toBe(true);
+    expect(form.getRawValue()).toEqual(before);
+
+    component.keepSettings();
+    expect(component.resetConfirmOpen()).toBe(false);
+    expect(form.getRawValue()).toEqual(before);
+  });
+
+  it('clears the settings once the confirm is answered, and closes it', async () => {
+    const { component, form } = await createDirty();
+
+    component.toggleResetConfirm();
+    component.resetSettings();
+
+    expect(component.resetConfirmOpen()).toBe(false);
+    expect(form.getRawValue().steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+  });
+
+  it('keeps the settings when the confirm is dismissed with Escape', async () => {
+    const { component, form } = await createDirty();
+    const before = form.getRawValue();
+
+    component.toggleResetConfirm();
+    component.onDocumentEscape();
+
+    expect(component.resetConfirmOpen()).toBe(false);
+    expect(form.getRawValue()).toEqual(before);
+  });
+
   it('offers an undo that restores exactly what was there', async () => {
     const { component, form, toast } = await createDirty();
     const before = form.getRawValue();
@@ -1429,5 +1463,148 @@ describe('GenerateFormComponent on the published contract', () => {
 
     expect(schedules()).not.toContain('align_your_steps');
     expect(schedules()).toContain('karras');
+  });
+});
+
+/**
+ * The advice that reads the horde's sampler contract and the size together,
+ * rendered from the real template: each of these lines exists to be seen beside
+ * the control it speaks about, and the count beside Generate is the same list.
+ */
+describe('GenerateFormComponent cost and size advice', () => {
+  const contract = coerceSamplerConstraints(live)!;
+
+  async function render(
+    value: Partial<GenerateFormValue> = {},
+    baseline: string | null = 'stable_diffusion_1',
+  ): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+    form: GenerateFormGroup;
+    host: HTMLElement;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('samplerContract', contract);
+    fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.detectChanges();
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      form,
+      host: fixture.nativeElement as HTMLElement,
+    };
+  }
+
+  function lines(host: HTMLElement, anchor: string): string[] {
+    const field = host.querySelector<HTMLElement>(`[appTutAnchor="${anchor}"]`);
+    return Array.from(field?.querySelectorAll('.gs-req') ?? []).map(
+      (line) => line.textContent?.trim() ?? '',
+    );
+  }
+
+  it('states the cost of a heavier sampler under a high step count', async () => {
+    const { host } = await render({ sampler_name: 'k_heun', steps: 30 });
+
+    expect(lines(host, 'steps')).toContain(
+      'k_heun does about \u00d72 the work per step, so 20 steps already cost what 40 do on a plain sampler. More rarely helps.',
+    );
+  });
+
+  it('says nothing about the cost at a modest count', async () => {
+    const { host } = await render({ sampler_name: 'k_heun', steps: 20 });
+    expect(lines(host, 'steps')).toEqual([]);
+  });
+
+  it('says nothing about the cost of a sampler charging the ordinary rate', async () => {
+    const { host } = await render({ sampler_name: 'k_euler', steps: 30 });
+    expect(lines(host, 'steps')).toEqual([]);
+  });
+
+  it('marks a CLIP skip above 2', async () => {
+    const { host } = await render({ clip_skip: 3 });
+    expect(lines(host, 'clip_skip')).toEqual([
+      en['generate.form.requirement.clip_skip_high'],
+    ]);
+  });
+
+  it('leaves CLIP skip 2 alone', async () => {
+    const { host } = await render({ clip_skip: 2 });
+    expect(lines(host, 'clip_skip')).toEqual([]);
+  });
+
+  it('shows the hires switch in the dimensions card, under its own anchor', async () => {
+    const { host } = await render();
+    const size = host.querySelector<HTMLElement>('.gs-sec--size')!;
+    const hires = host.querySelector<HTMLElement>('[appTutAnchor="hires"]')!;
+
+    expect(size.contains(hires)).toBe(true);
+    expect(hires.querySelector('input[type="checkbox"]')).not.toBeNull();
+    expect(
+      host.querySelector('.gs-sec--sampling [appTutAnchor="hires"]'),
+    ).toBeNull();
+  });
+
+  it('marks the switch and offers it where an SD 1.5 request outgrows the model', async () => {
+    const { host, fixture, component, form } = await render({
+      width: 1024,
+      height: 768,
+    });
+
+    expect(component.hiresSuggested()).toBe(true);
+    expect(host.querySelector('.gs-opt--urged')).not.toBeNull();
+    expect(lines(host, 'hires')).toContain(en['generate.form.hires_helps']);
+
+    // Once the pass is on there is nothing left to urge.
+    host
+      .querySelector<HTMLInputElement>(
+        '[appTutAnchor="hires"] input[type="checkbox"]',
+      )!
+      .click();
+    fixture.detectChanges();
+    expect(form.controls.hires_fix.value).toBe(true);
+    expect(component.hiresSuggested()).toBe(false);
+    expect(host.querySelector('.gs-opt--urged')).toBeNull();
+  });
+
+  it('warns when the pass is on at a size it does nothing for', async () => {
+    const { host, component } = await render({
+      width: 512,
+      height: 512,
+      hires_fix: true,
+    });
+
+    expect(component.hiresUnneededHint()?.violated).toBe(true);
+    expect(lines(host, 'hires')).toContain(
+      en['generate.form.requirement.hires_unneeded'],
+    );
+  });
+
+  it('keeps the switch locked while a style pins the sampling group', async () => {
+    const { fixture, host, form } = await render();
+    fixture.componentRef.setInput('forcedParams', { hires_fix: true });
+    fixture.detectChanges();
+
+    expect(form.controls.hires_fix.disabled).toBe(true);
+    expect(
+      host.querySelector('[appTutAnchor="hires"] .gs-switch-row.gs-locked'),
+    ).not.toBeNull();
   });
 });

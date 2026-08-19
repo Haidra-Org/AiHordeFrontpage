@@ -1417,6 +1417,28 @@
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
+/* Panel-header tools carry a word under the glyph on a phone. Four unlabelled
+   glyphs in a row are read one at a time or not at all, and the header is the
+   one place in the studio where a mistaken press costs the whole session's
+   settings. A pointer keeps the tooltip and the glyph alone. */
+.gen-studio .gs-mini-btn-label {
+  display: none;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+@media (max-width: 640px) {
+  .gen-studio .gs-mini-btn:has(.gs-mini-btn-label) {
+    flex-direction: column;
+    gap: 3px;
+    min-width: 54px;
+    min-height: 44px;
+    padding: 5px 7px;
+  }
+  .gen-studio .gs-mini-btn-label {
+    display: block;
+  }
+}
 /* The glossary trigger at the end of a tool's header row. It is the studio's
    way into the glossary while the tool switcher is a bottom bar; from 1024px
    up that row carries the button and this one stands down. An icon-only
@@ -1460,6 +1482,79 @@
    neighbours': the 44px is an overlay, as it is for the `?` glyphs. */
 .gen-studio .gs-reset-btn {
   position: relative;
+}
+/* The confirm hangs off the button, in the presets menu's grammar. It opens
+   leftward: the reset control sits at the right end of the tool row, where a
+   panel anchored to its left edge runs off a phone. */
+.gen-studio .gs-reset {
+  position: relative;
+}
+.gen-studio .gs-reset-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: 232px;
+  max-width: calc(100vw - 24px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+/* On a phone the trigger sits mid-header, where neither edge of a panel this
+   wide is on screen. Pin it to the viewport instead, as the presets menu does,
+   so the question and both answers are always fully readable. */
+@media (max-width: 640px) {
+  .gen-studio .gs-reset-pop {
+    position: fixed;
+    top: calc(var(--nav-height-mobile) + 8px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}
+.gen-studio .gs-reset-ask {
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-reset-actions {
+  display: flex;
+  gap: 8px;
+}
+.gen-studio .gs-reset-go,
+.gen-studio .gs-reset-keep {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--gs-radius-sm);
+  border: 1px solid var(--gs-border);
+  font-size: var(--gs-text-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.gen-studio .gs-reset-go {
+  border-color: rgba(180, 83, 9, 0.4);
+  background: rgba(251, 191, 36, 0.16);
+  color: #b45309;
+}
+.dark .gen-studio .gs-reset-go {
+  border-color: rgba(251, 191, 36, 0.34);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+.gen-studio .gs-reset-keep {
+  background: var(--gs-field);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-reset-go:focus-visible,
+.gen-studio .gs-reset-keep:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
 }
 @media (pointer: coarse) {
   .gen-studio .gs-reset-btn::after {
@@ -6593,6 +6688,25 @@
   font-size: 10.5px;
   line-height: 1.35;
   color: var(--gs-muted);
+}
+/* A switch the request would be better off with. The tint is the studio's own
+   blue rather than the warning amber: nothing is wrong with the request, there
+   is simply a control here that answers the note above it. */
+.gen-studio .gs-opt--urged {
+  padding: 6px 8px;
+  margin: -6px -8px;
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.34);
+  background: rgba(59, 130, 246, 0.09);
+}
+.dark .gen-studio .gs-opt--urged {
+  border-color: rgba(96, 165, 250, 0.36);
+  background: rgba(96, 165, 250, 0.12);
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-opt--urged {
+    border-color: Highlight;
+  }
 }
 .gen-studio .gs-req--warn {
   padding: 3px 7px;

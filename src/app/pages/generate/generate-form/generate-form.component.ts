@@ -83,9 +83,11 @@ import {
   buildAspectPresets,
   cfgPlusPlusHint,
   cfgRequirementHint,
+  clipSkipRangeHint,
   clipSkipRequirementHint,
   cyclePanelSize,
   detachedStyleSections,
+  hiresUnneededHint,
   isSnappableSize,
   isValidWebhook,
   karrasRequirementHint,
@@ -96,6 +98,7 @@ import {
   rangeFillPercent,
   resetFormValue,
   samplerRequirementHint,
+  samplerStepCostHint,
   schedulerRequirementHint,
   sd15HiresHint,
   sizeBaseFor,
@@ -232,6 +235,14 @@ export class GenerateFormComponent implements OnInit {
   /** The presets toggle, so the parent's load panel can hand focus back to it. */
   private readonly presetsBtn =
     viewChild<ElementRef<HTMLButtonElement>>('presetsBtn');
+  /** Whether the reset control is asking before it clears anything. */
+  public readonly resetConfirmOpen = signal(false);
+  /** The confirm's anchor, used to detect click-away dismissals. */
+  private readonly resetRef =
+    viewChild<ElementRef<HTMLElement>>('resetContainer');
+  /** The reset trigger, so dismissing the confirm hands focus back to it. */
+  private readonly resetBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('resetBtn');
   /** The style select, so clearing the style can hand focus back to it. */
   private readonly styleSelect =
     viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
@@ -770,6 +781,21 @@ export class GenerateFormComponent implements OnInit {
     );
   }
 
+  /** A note that the CLIP skip sits above what models are trained for. */
+  public clipSkipRangeHint(): RequirementHint | null {
+    return clipSkipRangeHint(this.form().controls.clip_skip.value);
+  }
+
+  /** What a sampler that charges above the ordinary rate costs at this count. */
+  public stepCostHint(): RequirementHint | null {
+    const controls = this.form().controls;
+    return samplerStepCostHint(
+      this.samplerContract(),
+      controls.sampler_name.value,
+      controls.steps.value,
+    );
+  }
+
   public samplerHint(): RequirementHint | null {
     return samplerRequirementHint(
       this.modelRequirements(),
@@ -810,6 +836,26 @@ export class GenerateFormComponent implements OnInit {
   public hiresHint(): RequirementHint | null {
     const controls = this.form().controls;
     return sd15HiresHint(
+      this.modelBaseline(),
+      controls.width.value,
+      controls.height.value,
+      controls.hires_fix.value,
+    );
+  }
+
+  /**
+   * Whether the size gives the hires pass something to do that the request is
+   * not asking for. The switch is marked and given a line of its own, so the
+   * warning above it names an action the reader can see from where they read it.
+   */
+  public hiresSuggested(): boolean {
+    return this.hiresHint() !== null;
+  }
+
+  /** The "hires fix is on and doing nothing at this size" note. */
+  public hiresUnneededHint(): RequirementHint | null {
+    const controls = this.form().controls;
+    return hiresUnneededHint(
       this.modelBaseline(),
       controls.width.value,
       controls.height.value,
@@ -1294,6 +1340,12 @@ export class GenerateFormComponent implements OnInit {
         this.closeHistory();
       }
     }
+    if (this.resetConfirmOpen()) {
+      const anchor = this.resetRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeResetConfirm();
+      }
+    }
     if (this.lintOpen()) {
       const anchor = this.lintRef()?.nativeElement;
       if (anchor && !anchor.contains(target)) {
@@ -1305,6 +1357,10 @@ export class GenerateFormComponent implements OnInit {
   public onDocumentEscape(): void {
     if (this.presetsOpen()) {
       this.closePresets();
+    }
+    if (this.resetConfirmOpen()) {
+      this.closeResetConfirm();
+      this.resetBtn()?.nativeElement.focus();
     }
     if (this.lintOpen()) {
       this.closeLint();
@@ -1418,12 +1474,31 @@ export class GenerateFormComponent implements OnInit {
   // --- Reset all settings --------------------------------------------------
 
   /**
+   * Ask before clearing. Reset takes back a session's worth of choices at once,
+   * which is more than an undo in a toast that may be missed can answer for, so
+   * the button offers the question and the answer sits under it.
+   */
+  public toggleResetConfirm(): void {
+    this.resetConfirmOpen.update((open) => !open);
+  }
+
+  public closeResetConfirm(): void {
+    this.resetConfirmOpen.set(false);
+  }
+
+  /** Dismiss the confirm and leave the settings alone. */
+  public keepSettings(): void {
+    this.closeResetConfirm();
+    this.resetBtn()?.nativeElement.focus();
+  }
+
+  /**
    * Put every generation setting back to its default, keeping the prompts and
-   * whatever source image is attached (see {@link resetFormValue}). There is no
-   * confirmation: the undo the toast offers is the affordance, the same bargain
-   * the results grid makes for a deletion.
+   * whatever source image is attached (see {@link resetFormValue}). The toast's
+   * undo stands after the fact for a reader who answered the confirm too fast.
    */
   public resetSettings(): void {
+    this.closeResetConfirm();
     const previous = this.form().getRawValue();
     this.writeSettings(resetFormValue(previous));
     this.toast.success('generate.form.reset_done', {

@@ -632,7 +632,7 @@ export const SETTINGS: readonly SettingEntry[] = [
   },
   {
     id: 'hires',
-    section: 'sampling',
+    section: 'size',
     labelKey: 'generate.tutorials.recipe_hires',
     reference: {
       tradeoffs: {
@@ -646,7 +646,7 @@ export const SETTINGS: readonly SettingEntry[] = [
   },
   {
     id: 'hires_denoise',
-    section: 'sampling',
+    section: 'size',
     reference: {
       range: { min: 0.01, max: 1, typical: '0.65' },
       // The slider only exists while hires fix is on, so the chip turns it on:

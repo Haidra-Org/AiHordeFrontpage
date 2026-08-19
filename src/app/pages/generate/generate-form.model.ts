@@ -25,6 +25,7 @@ import {
   availableSchedulers,
   baselinesSupportFlowShift,
   samplerSettingIsValid,
+  samplerWorkFactor,
 } from '../../types/sampler-constraints';
 import type { ImageSchedulerName } from '../../types/sampler-constraints';
 
@@ -547,6 +548,61 @@ export function stepsRequirementHint(
 }
 
 /**
+ * The step count past which a sampler that charges more than the ordinary rate
+ * per step is worth a word. Below it the extra work is small enough that the
+ * cost line beside the sampler name says everything there is to say.
+ */
+export const STEP_COST_NOTICE_STEPS = 20;
+
+/**
+ * What a costly sampler is charging for the steps asked of it. `fixed_rate`
+ * samplers multiply every step, so a modest count already buys the work of a
+ * much larger one; an adaptive sampler ignores the count altogether. Advice
+ * only: the horde runs the request as asked either way.
+ */
+export function samplerStepCostHint(
+  contract: SamplerConstraintsDocument | null,
+  sampler: string,
+  steps: number,
+): RequirementHint | null {
+  if (steps <= STEP_COST_NOTICE_STEPS) {
+    return null;
+  }
+  const work = samplerWorkFactor(contract, sampler);
+  if (work === null) {
+    return null;
+  }
+  if (work === 'adaptive') {
+    return hint('steps_adaptive', { sampler }, true);
+  }
+  return hint(
+    'steps_work',
+    {
+      sampler,
+      factor: work,
+      steps: STEP_COST_NOTICE_STEPS,
+      equivalent: Math.round(STEP_COST_NOTICE_STEPS * work),
+    },
+    true,
+  );
+}
+
+/** The highest CLIP skip models are ordinarily trained for. */
+export const COMMON_MAX_CLIP_SKIP = 2;
+
+/**
+ * A note that the CLIP skip sits above what models are trained for. Separate
+ * from {@link clipSkipRequirementHint}, which speaks for a model that names an
+ * exact value; this one holds for any model, including none.
+ */
+export function clipSkipRangeHint(clipSkip: number): RequirementHint | null {
+  if (clipSkip <= COMMON_MAX_CLIP_SKIP) {
+    return null;
+  }
+  return hint('clip_skip_high', {}, true);
+}
+
+/**
  * CFG advice. An exact `cfg_scale` wins over the range, which a record may carry
  * alongside it; the exact value is the tighter statement of the same intent.
  */
@@ -705,6 +761,42 @@ export function sd15HiresHint(
     return null;
   }
   return hint('sd15_hires', {}, true);
+}
+
+/**
+ * How far above its native square a small-format model may be asked to draw
+ * before the hires pass earns its second render.
+ */
+const HIRES_USEFUL_RATIO = 1.25;
+
+/** The pixel count a 1024-class model reaches before the same is true of it. */
+const HIRES_USEFUL_PIXELS = 1024 * 1024;
+
+/**
+ * A note that the hires pass is on at a size it does nothing for. The pass
+ * renders twice, so paying for it to enlarge a picture to roughly the size the
+ * model draws natively is cost without a result.
+ *
+ * The two families are measured differently because the smaller one is asked
+ * for portrait and landscape crops of its square far more often, where a rule
+ * on total pixels would call a tall 512x768 native and a wide one oversized.
+ */
+export function hiresUnneededHint(
+  baseline: string | null,
+  width: number,
+  height: number,
+  hiresFix: boolean,
+): RequirementHint | null {
+  const native = nativeSquareFor(baseline);
+  if (!hiresFix || native === null) {
+    return null;
+  }
+  const enlarging =
+    native <= HIRES_WARN_DIMENSION
+      ? width > native * HIRES_USEFUL_RATIO ||
+        height > native * HIRES_USEFUL_RATIO
+      : width * height >= HIRES_USEFUL_PIXELS;
+  return enlarging ? null : hint('hires_unneeded', {}, true);
 }
 
 /** A style category paired with the style names under it, for the picker. */

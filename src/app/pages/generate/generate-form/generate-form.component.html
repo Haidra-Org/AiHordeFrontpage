@@ -33,6 +33,9 @@
           [title]="'generate.form.presets' | transloco"
         >
           <app-icon name="folder" class="gs-ico-sm" />
+          <span class="gs-mini-btn-label">{{
+            "generate.form.presets_short" | transloco
+          }}</span>
         </button>
         @if (presetsOpen()) {
           <div class="gs-presets-menu">
@@ -113,17 +116,53 @@
         }
       </div>
       <!-- Quiet by design: it undoes a session's worth of choices, so it sits
-           with the other header tools rather than beside anything it clears,
-           and the toast's undo stands in for a confirmation. -->
-      <button
-        type="button"
-        class="gs-mini-btn gs-reset-btn"
-        (click)="resetSettings()"
-        [attr.aria-label]="'generate.form.reset' | transloco"
-        [title]="'generate.form.reset_title' | transloco"
-      >
-        <app-icon name="refresh-alt" class="gs-ico-sm" />
-      </button>
+           with the other header tools rather than beside anything it clears.
+           It asks first, because a reader who meant to press its neighbour has
+           lost everything they set by the time the toast offers the undo. -->
+      <div class="gs-reset" #resetContainer>
+        <button
+          #resetBtn
+          type="button"
+          class="gs-mini-btn gs-reset-btn"
+          (click)="toggleResetConfirm()"
+          [attr.aria-expanded]="resetConfirmOpen()"
+          aria-haspopup="dialog"
+          [attr.aria-label]="'generate.form.reset' | transloco"
+          [title]="'generate.form.reset_title' | transloco"
+        >
+          <app-icon name="refresh-alt" class="gs-ico-sm" />
+          <span class="gs-mini-btn-label">{{
+            "generate.form.reset_short" | transloco
+          }}</span>
+        </button>
+        @if (resetConfirmOpen()) {
+          <div
+            class="gs-reset-pop"
+            role="dialog"
+            [attr.aria-label]="'generate.form.reset_confirm' | transloco"
+          >
+            <p class="gs-reset-ask">
+              {{ "generate.form.reset_confirm" | transloco }}
+            </p>
+            <div class="gs-reset-actions">
+              <button
+                type="button"
+                class="gs-reset-go"
+                (click)="resetSettings()"
+              >
+                {{ "generate.form.reset_confirm_yes" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-reset-keep"
+                (click)="keepSettings()"
+              >
+                {{ "generate.form.reset_confirm_no" | transloco }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
       <button
         type="button"
         class="gs-mini-btn"
@@ -132,6 +171,9 @@
         [title]="'generate.form.preview_request' | transloco"
       >
         <app-icon name="code-bracket" class="gs-ico-sm" />
+        <span class="gs-mini-btn-label">{{
+          "generate.form.preview_request_short" | transloco
+        }}</span>
       </button>
       @if (expandable()) {
         <button
@@ -155,6 +197,12 @@
             [name]="panelSize() === 'full' ? 'panel-narrow' : 'panel-widen'"
             class="gs-ico-sm"
           />
+          <span class="gs-mini-btn-label">{{
+            (panelSize() === "full"
+              ? "generate.panel.narrow_short"
+              : "generate.panel.widen_short"
+            ) | transloco
+          }}</span>
         </button>
       }
       <div
@@ -629,6 +677,72 @@
           <ng-container
             *ngTemplateOutlet="reqHint; context: { hint: hiresHint() }"
           />
+          <!-- Hires fix draws at the size the model was trained for and enlarges
+               from there, so it answers the question this card asks and lives
+               with it. The lock it obeys is still the sampling one: that is the
+               group a style pins it with, wherever it is shown. -->
+          <div
+            class="gs-hairline flex flex-col gap-2.5 pt-3"
+            appTutAnchor="hires"
+          >
+            <div class="gs-opt" [class.gs-opt--urged]="hiresSuggested()">
+              <label
+                class="gs-switch gs-switch-row"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <span>{{ "generate.form.hires_fix_label" | transloco }}</span>
+                <input type="checkbox" formControlName="hires_fix" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span>
+              </label>
+              <app-gs-help topic="hires" />
+            </div>
+            @if (hiresSuggested()) {
+              <p class="gs-req">
+                {{ "generate.form.hires_helps" | transloco }}
+              </p>
+            }
+            <ng-container
+              *ngTemplateOutlet="
+                reqHint;
+                context: { hint: hiresUnneededHint() }
+              "
+            />
+            @if (form().controls.hires_fix.value) {
+              <div appTutAnchor="hires_denoise">
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-hires-denoise">
+                    {{
+                      "generate.form.hires_denoise_label"
+                        | transloco
+                          : {
+                              value:
+                                form().controls.hires_fix_denoising_strength
+                                  .value,
+                            }
+                    }} </label
+                  ><app-gs-help topic="hires_denoise" />
+                </div>
+                <input
+                  id="generate-hires-denoise"
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="hires_fix_denoising_strength"
+                  [min]="minHiresDenoise"
+                  [max]="maxHiresDenoise"
+                  step="0.01"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.hires_fix_denoising_strength.value,
+                      minHiresDenoise,
+                      maxHiresDenoise
+                    )
+                  "
+                />
+              </div>
+            }
+          </div>
         </section>
 
         @if (isAdvanced()) {
@@ -720,6 +834,9 @@
                 }
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: stepsHint() }"
+                />
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: stepCostHint() }"
                 />
               </div>
               <div
@@ -939,6 +1056,12 @@
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: clipSkipHint() }"
                 />
+                <ng-container
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: clipSkipRangeHint() }
+                  "
+                />
               </div>
             </div>
             @if (samplerContract()) {
@@ -1137,23 +1260,10 @@
                 }
               </div>
             }
-            <!-- Stacked rather than side by side: each toggle carries a help
-                 trigger, and a shared row would leave it unclear which label a
-                 glyph belongs to. -->
+            <!-- A whole-image switch rather than a per-step number, so it sits
+                 under a rule at the foot of the card rather than in the grid of
+                 sampling values above. -->
             <div class="gs-hairline flex flex-col gap-2.5 pt-3">
-              <div class="gs-opt">
-                <label
-                  class="gs-switch gs-switch-row"
-                  [class.gs-locked]="isSectionLocked('sampling')"
-                >
-                  <span>{{ "generate.form.hires_fix_label" | transloco }}</span>
-                  <input type="checkbox" formControlName="hires_fix" />
-                  <span class="gs-switch-track"
-                    ><span class="gs-switch-knob"></span
-                  ></span>
-                </label>
-                <app-gs-help topic="hires" />
-              </div>
               <div class="gs-opt">
                 <label class="gs-switch gs-switch-row">
                   <span>{{ "generate.form.tiling_label" | transloco }}</span>
@@ -1165,39 +1275,6 @@
                 <app-gs-help topic="tiling" />
               </div>
             </div>
-            @if (form().controls.hires_fix.value) {
-              <div appTutAnchor="hires_denoise">
-                <div class="gs-field-head">
-                  <label class="gs-slabel" for="generate-hires-denoise">
-                    {{
-                      "generate.form.hires_denoise_label"
-                        | transloco
-                          : {
-                              value:
-                                form().controls.hires_fix_denoising_strength
-                                  .value,
-                            }
-                    }} </label
-                  ><app-gs-help topic="hires_denoise" />
-                </div>
-                <input
-                  id="generate-hires-denoise"
-                  class="gs-range mt-1.5"
-                  type="range"
-                  formControlName="hires_fix_denoising_strength"
-                  [min]="minHiresDenoise"
-                  [max]="maxHiresDenoise"
-                  step="0.01"
-                  [style.--gs-range-fill.%]="
-                    rangeFill(
-                      form().controls.hires_fix_denoising_strength.value,
-                      minHiresDenoise,
-                      maxHiresDenoise
-                    )
-                  "
-                />
-              </div>
-            }
           </section>
 
           <!-- LoRAs & embeddings -->

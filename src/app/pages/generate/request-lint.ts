@@ -9,9 +9,12 @@ import {
 } from '../../services/model-reference.service';
 import {
   cfgRequirementHint,
+  clipSkipRangeHint,
   clipSkipRequirementHint,
+  hiresUnneededHint,
   karrasRequirementHint,
   samplerRequirementHint,
+  samplerStepCostHint,
   sd15HiresHint,
   stepsRequirementHint,
   PIXEL_WARN_THRESHOLD,
@@ -19,6 +22,7 @@ import {
   type RequirementHint,
 } from './generate-form.model';
 import type { SectionId } from '../../content/sections';
+import type { SamplerConstraintsDocument } from '../../types/sampler-constraints';
 
 /**
  * A combination the horde may refuse, or serve as something other than what was
@@ -61,6 +65,8 @@ export interface RequestLintInput {
   requirements: ModelRequirements | null;
   /** Whether a source image blob is genuinely attached. */
   hasSourceImage: boolean;
+  /** The horde's sampler contract, or null while it has not loaded. */
+  contract: SamplerConstraintsDocument | null;
 }
 
 /** One warning the request currently earns. */
@@ -162,7 +168,7 @@ function fromHint(
 export function evaluateRequestLint(
   input: RequestLintInput,
 ): readonly RequestWarning[] {
-  const { value, requirements, baseline } = input;
+  const { value, requirements, baseline, contract } = input;
   const warnings: RequestWarning[] = [];
   const push = (warning: RequestWarning | null): void => {
     if (warning) {
@@ -175,9 +181,16 @@ export function evaluateRequestLint(
   push(
     fromHint(
       'sampling',
+      samplerStepCostHint(contract, value.sampler_name, value.steps),
+    ),
+  );
+  push(
+    fromHint(
+      'sampling',
       clipSkipRequirementHint(requirements, value.clip_skip),
     ),
   );
+  push(fromHint('sampling', clipSkipRangeHint(value.clip_skip)));
   push(
     fromHint(
       'sampling',
@@ -191,6 +204,12 @@ export function evaluateRequestLint(
     fromHint(
       'size',
       sd15HiresHint(baseline, value.width, value.height, value.hires_fix),
+    ),
+  );
+  push(
+    fromHint(
+      'size',
+      hiresUnneededHint(baseline, value.width, value.height, value.hires_fix),
     ),
   );
   if (value.width * value.height > PIXEL_WARN_THRESHOLD) {
