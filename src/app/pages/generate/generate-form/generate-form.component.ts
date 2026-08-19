@@ -3,7 +3,9 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
   OnInit,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -24,6 +26,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
+import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
 import { RememberedHeightDirective } from '../../../directives/remembered-height.directive';
 import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs-prompt-editor.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
@@ -71,7 +74,6 @@ import {
   DIMENSION_STEP,
   ModelSizeBase,
   PanelSize,
-  PIXEL_WARN_THRESHOLD,
   PromptHistoryEntry,
   QR_MODULE_DRAWERS,
   RequirementHint,
@@ -81,32 +83,33 @@ import {
   StylePickerGroup,
   UPSCALERS,
   buildAspectPresets,
-  cfgPlusPlusHint,
-  cfgRequirementHint,
-  clipSkipRangeHint,
-  clipSkipRequirementHint,
+  cfgAdvisory,
+  clipSkipAdvisory,
   cyclePanelSize,
   detachedStyleSections,
   hiresUnneededHint,
   isSnappableSize,
   isValidWebhook,
-  karrasRequirementHint,
   LEGACY_SCHEDULERS,
-  nativeSizeHint,
   nativeSquareFor,
   normalizeWorkers,
   rangeFillPercent,
   resetFormValue,
   samplerRequirementHint,
-  samplerStepCostHint,
-  schedulerRequirementHint,
+  scheduleAdvisory,
   sd15HiresHint,
+  sizeAdvisory,
   sizeBaseFor,
-  stepsRequirementHint,
+  stepsAdvisory,
   suggestedSamplers,
+  suggestedSettings,
+  suggestedSettingsCount,
+  type SuggestedSettings,
 } from '../generate-form.model';
 import {
   FeatureCompatRuleId,
+  FieldAnchorId,
+  FieldRejection,
   RequestWarning,
   warningsInSection,
 } from '../request-lint';
@@ -131,6 +134,18 @@ import {
 // type from here; it lives in the form model so the style browser can use it
 // without importing this component (which imports the browser in turn).
 export type { StylePickerGroup } from '../generate-form.model';
+
+/**
+ * The controls that live behind the advanced-sampling disclosure. Pointing at
+ * one has to open the disclosure first, or the reader is sent to a control that
+ * is not on the page.
+ */
+const KNOB_ANCHORS: readonly FieldAnchorId[] = [
+  ...SAMPLER_SETTING_NAMES,
+  'advanced_sampling',
+  'solver_type',
+  'flow_shift',
+];
 
 /** Which of the two prompt boxes the full-screen editor is holding. */
 export type PromptEditorField = 'prompt' | 'negative';
@@ -176,6 +191,8 @@ export class GenerateFormComponent implements OnInit {
      is reached from. The shell's copy takes over from 1024px up. */
   public readonly glossary = inject(GlossaryService);
   private readonly toast = inject(ToastService);
+  private readonly anchors = inject(TutorialAnchorService);
+  private readonly injector = inject(Injector);
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
@@ -218,6 +235,13 @@ export class GenerateFormComponent implements OnInit {
    * count beside Generate is an offer to look, and the horde decides.
    */
   public readonly lintWarnings = input<readonly RequestWarning[]>([]);
+  /**
+   * The horde's own answer to the last submit it refused, placed at the control
+   * it named. Null once the reader has changed that control, which the parent
+   * decides: the horde is the authority on whether the new value is acceptable,
+   * so the studio only stops repeating a sentence it can no longer stand behind.
+   */
+  public readonly fieldRejection = input<FieldRejection | null>(null);
 
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
@@ -366,7 +390,6 @@ export class GenerateFormComponent implements OnInit {
   public readonly minDimension = MIN_DIMENSION;
   public readonly maxDimension = MAX_DIMENSION;
   public readonly dimensionStep = DIMENSION_STEP;
-  public readonly pixelWarnThreshold = PIXEL_WARN_THRESHOLD;
   public readonly minFacefixer = MIN_FACEFIXER_STRENGTH;
   public readonly maxFacefixer = MAX_FACEFIXER_STRENGTH;
   public readonly minHiresDenoise = MIN_HIRES_DENOISE;
@@ -729,11 +752,6 @@ export class GenerateFormComponent implements OnInit {
     this.sizeTouched.set(true);
   }
 
-  public totalPixels(): number {
-    const controls = this.form().controls;
-    return controls.width.value * controls.height.value;
-  }
-
   public applyPreset(width: number, height: number): void {
     this.form().patchValue({ width, height });
     this.form().controls.width.markAsDirty();
@@ -752,47 +770,33 @@ export class GenerateFormComponent implements OnInit {
   // are not signals, so these are methods the template re-reads on each change
   // detection rather than computeds.
 
-  public stepsHint(): RequirementHint | null {
-    return stepsRequirementHint(
-      this.modelRequirements(),
-      this.form().controls.steps.value,
-    );
-  }
-
-  public cfgHint(): RequirementHint | null {
-    return cfgRequirementHint(
-      this.modelRequirements(),
-      this.form().controls.cfg_scale.value,
-    );
-  }
-
-  public cfgPlusPlusHint(): RequirementHint | null {
-    return cfgPlusPlusHint(
-      this.samplerContract(),
-      this.form().controls.sampler_name.value,
-      this.form().controls.cfg_scale.value,
-    );
-  }
-
-  public clipSkipHint(): RequirementHint | null {
-    return clipSkipRequirementHint(
-      this.modelRequirements(),
-      this.form().controls.clip_skip.value,
-    );
-  }
-
-  /** A note that the CLIP skip sits above what models are trained for. */
-  public clipSkipRangeHint(): RequirementHint | null {
-    return clipSkipRangeHint(this.form().controls.clip_skip.value);
-  }
-
-  /** What a sampler that charges above the ordinary rate costs at this count. */
-  public stepCostHint(): RequirementHint | null {
+  /** The one line under the step count. */
+  public stepsAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
-    return samplerStepCostHint(
+    return stepsAdvisory(
+      this.modelRequirements(),
       this.samplerContract(),
       controls.sampler_name.value,
       controls.steps.value,
+    );
+  }
+
+  /** The one line under the guidance scale. */
+  public cfgAdvisory(): RequirementHint | null {
+    const controls = this.form().controls;
+    return cfgAdvisory(
+      this.modelRequirements(),
+      this.samplerContract(),
+      controls.sampler_name.value,
+      controls.cfg_scale.value,
+    );
+  }
+
+  /** The one line under the CLIP skip slider. */
+  public clipSkipAdvisory(): RequirementHint | null {
+    return clipSkipAdvisory(
+      this.modelRequirements(),
+      this.form().controls.clip_skip.value,
     );
   }
 
@@ -803,16 +807,11 @@ export class GenerateFormComponent implements OnInit {
     );
   }
 
-  public karrasHint(): RequirementHint | null {
-    return karrasRequirementHint(
+  /** The one line under the schedule select. */
+  public scheduleAdvisory(): RequirementHint | null {
+    return scheduleAdvisory(
       this.modelRequirements(),
-      this.form().controls.scheduler.value,
-    );
-  }
-
-  public schedulerHint(): RequirementHint | null {
-    return schedulerRequirementHint(
-      this.modelRequirements(),
+      this.samplerContract(),
       this.form().controls.scheduler.value,
     );
   }
@@ -822,20 +821,10 @@ export class GenerateFormComponent implements OnInit {
     return suggestedSamplers(this.modelRequirements()).includes(sampler);
   }
 
-  /** A note that the dimensions sit outside the model baseline's family. */
-  public nativeSizeHint(): RequirementHint | null {
+  /** The one line under the size controls. */
+  public sizeAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
-    return nativeSizeHint(
-      this.modelBaseline(),
-      controls.width.value,
-      controls.height.value,
-    );
-  }
-
-  /** The SD 1.5 "turn on hires fix or pick a newer model" warning. */
-  public hiresHint(): RequirementHint | null {
-    const controls = this.form().controls;
-    return sd15HiresHint(
+    return sizeAdvisory(
       this.modelBaseline(),
       controls.width.value,
       controls.height.value,
@@ -849,7 +838,15 @@ export class GenerateFormComponent implements OnInit {
    * warning above it names an action the reader can see from where they read it.
    */
   public hiresSuggested(): boolean {
-    return this.hiresHint() !== null;
+    const controls = this.form().controls;
+    return (
+      sd15HiresHint(
+        this.modelBaseline(),
+        controls.width.value,
+        controls.height.value,
+        controls.hires_fix.value,
+      ) !== null
+    );
   }
 
   /** The "hires fix is on and doing nothing at this size" note. */
@@ -1516,6 +1513,108 @@ export class GenerateFormComponent implements OnInit {
   }
 
   // --- Request warnings ----------------------------------------------------
+
+  /** The horde's refusal for one control, or null when it named another. */
+  public rejectionFor(anchor: FieldAnchorId): string | null {
+    const rejection = this.fieldRejection();
+    return rejection?.anchor === anchor ? rejection.message : null;
+  }
+
+  /** The id the refused control is described by, so the two are announced together. */
+  public rejectionId(anchor: FieldAnchorId): string {
+    return `generate-rejection-${anchor}`;
+  }
+
+  /**
+   * The ids describing a control: whatever it already names, plus the horde's
+   * refusal where one is standing at it. Null rather than an empty string so the
+   * attribute is absent when there is nothing to describe.
+   */
+  public describedBy(
+    anchor: FieldAnchorId,
+    ...ids: (string | null)[]
+  ): string | null {
+    const named = ids.filter((id): id is string => id !== null && id !== '');
+    if (this.rejectionFor(anchor) !== null) {
+      named.push(this.rejectionId(anchor));
+    }
+    return named.length > 0 ? named.join(' ') : null;
+  }
+
+  /**
+   * Bring the control a warning or a refusal is about onto the screen and ring
+   * it. A control the panel is not currently drawing is one the essentials view
+   * leaves out or the sampling knobs are folded over, so both are opened and the
+   * pointing waits for the control to exist.
+   */
+  public goToField(anchor: FieldAnchorId): void {
+    this.closeLint();
+    if (KNOB_ANCHORS.includes(anchor)) {
+      this.advancedSamplingOpen.set(true);
+    }
+    const element = this.anchors.element(anchor);
+    if (element) {
+      this.anchors.flash(element);
+      return;
+    }
+    if (!this.isAdvanced()) {
+      this.setMode('advanced');
+    }
+    afterNextRender(
+      () => {
+        const revealed = this.anchors.element(anchor);
+        if (revealed) {
+          this.anchors.flash(revealed);
+        }
+      },
+      { injector: this.injector },
+    );
+  }
+
+  // --- Model recommendations, applied --------------------------------------
+
+  /** What the selected model recommends that the form is not already doing. */
+  public suggested(): SuggestedSettings {
+    const controls = this.form().controls;
+    return suggestedSettings(
+      this.modelRequirements(),
+      {
+        samplers: [...this.recommendedSamplers(), ...this.advancedSamplers()],
+        schedulers: this.schedulerOptions(),
+      },
+      {
+        sampler_name: controls.sampler_name.value,
+        scheduler: controls.scheduler.value,
+        steps: controls.steps.value,
+        cfg_scale: controls.cfg_scale.value,
+        clip_skip: controls.clip_skip.value,
+      },
+    );
+  }
+
+  /** Whether the model has anything left to recommend. */
+  public hasSuggested(): boolean {
+    return suggestedSettingsCount(this.suggested()) > 0;
+  }
+
+  /**
+   * Take the model's recommendations in one gesture. Announced by count rather
+   * than by listing the fields: the settings are on the screen the moment they
+   * change, and the message is there to say the press did something.
+   */
+  public applySuggested(): void {
+    const changes = this.suggested();
+    const count = suggestedSettingsCount(changes);
+    if (count === 0) {
+      return;
+    }
+    this.form().patchValue(changes);
+    this.form().markAsDirty();
+    this.toast.success('generate.form.use_suggested_done', {
+      transloco: true,
+      messageParams: { count },
+    });
+  }
 
   public toggleLint(): void {
     this.lintOpen.update((open) => !open);

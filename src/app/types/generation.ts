@@ -196,6 +196,12 @@ export interface HordeApiError {
   /** HTTP status, or 0 when the failure was not an HTTP response. */
   status: number;
   message: string;
+  /**
+   * The horde's own return code for the refusal, where it sent one. It names
+   * what was wrong in a stable way the sentence does not, which is what lets a
+   * rejection be shown at the control it is about.
+   */
+  rc?: string;
 }
 
 export type SubmitImageResult =

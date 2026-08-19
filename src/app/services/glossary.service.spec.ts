@@ -226,6 +226,30 @@ describe('GlossaryService', () => {
       expect(linkFor('api_key')).toBeUndefined();
     });
 
+    it('words a walkthrough apart from a reference page', () => {
+      const labelFor = (id: string): string | undefined =>
+        GLOSSARY_TERMS.find((term) => term.id === id)?.links?.at(-1)?.labelKey;
+
+      expect(labelFor('steps')).toBe('help.glossary.link.full_reference');
+      expect(labelFor('controlnet')).toBe('help.glossary.link.walkthrough');
+      expect(labelFor('control_map')).toBe('help.glossary.link.full_page');
+      // A term carrying both a reference and a walkthrough reads as two
+      // distinguishable ways onwards rather than the same phrase twice.
+      const labels = new Set(
+        (GLOSSARY_TERMS.find((term) => term.id === 'controlnet')?.links ?? [])
+          .map((link) => link.labelKey)
+          .concat(
+            (
+              GLOSSARY_TERMS.find((term) => term.id === 'steps')?.links ?? []
+            ).map((link) => link.labelKey),
+          ),
+      );
+      expect(labels.size).toBeGreaterThan(1);
+      for (const label of labels) {
+        expect(translations[label]).toBeTruthy();
+      }
+    });
+
     it('points every documented term at a page the site actually serves', () => {
       const links = GLOSSARY_TERMS.flatMap((term) =>
         (term.links ?? [])

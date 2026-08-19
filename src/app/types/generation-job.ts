@@ -102,6 +102,12 @@ export interface LocalGenerationJob {
   queuePosition?: number;
   waitTime?: number;
   errorMessage?: string;
+  /**
+   * The horde's return code for a refused submit, where it sent one. Kept beside
+   * the message so the studio can put the message under the control the code
+   * names; absent on jobs that failed for any other reason.
+   */
+  errorRc?: string;
   /** How many times this job has been re-submitted via Retry (0/undefined = original). */
   retryCount?: number;
   /**

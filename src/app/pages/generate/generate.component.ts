@@ -11,6 +11,7 @@ import {
   input,
   PLATFORM_ID,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
@@ -92,8 +93,11 @@ import {
 } from './image-meta-panel/image-meta-panel.component';
 import { PANEL_SECTION_IDS, SECTION_IDENTITIES } from '../../content/sections';
 import {
+  FieldRejection,
   RequestWarning,
   evaluateRequestLint,
+  rejectionField,
+  rejectionWatchValue,
   warningsInSection,
 } from './request-lint';
 
@@ -332,6 +336,65 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
       contract: this.samplerContract(),
+    });
+  });
+
+  /**
+   * The horde's answer to the last submit it refused, held with the form value
+   * of the control it named. Nothing is inferred from it: the sentence is the
+   * horde's and the code only decides which control it is shown under.
+   */
+  private readonly rejectionState = signal<{
+    rejection: FieldRejection;
+    watched: unknown;
+  } | null>(null);
+
+  /** The job whose refusal has already been taken up, so it is taken up once. */
+  private handledRejectionJob: string | null = null;
+
+  /** Where the horde's last refusal belongs, or null when none is standing. */
+  public readonly fieldRejection = computed<FieldRejection | null>(
+    () => this.rejectionState()?.rejection ?? null,
+  );
+
+  /**
+   * Adopt a refusal the horde has just sent, and drop one the reader has
+   * answered. A rejection stands until the control it names is changed: the
+   * horde decides whether a new value is acceptable, so the studio does not
+   * re-judge it locally, it just stops repeating a sentence about a value that
+   * is no longer in the form.
+   */
+  private readonly rejectionSync = effect(() => {
+    const value = this.formValue();
+    const refused = this.queue
+      .jobs()
+      .filter((job) => job.status === 'error' && job.errorRc)
+      .sort((a, b) => a.updatedAt - b.updatedAt)
+      .at(-1);
+    untracked(() => {
+      if (refused && refused.localId !== this.handledRejectionJob) {
+        this.handledRejectionJob = refused.localId;
+        const rejection = rejectionField(
+          refused.errorRc,
+          refused.errorMessage ?? '',
+        );
+        this.rejectionState.set(
+          rejection
+            ? {
+                rejection,
+                watched: rejectionWatchValue(rejection.anchor, value),
+              }
+            : null,
+        );
+        return;
+      }
+      const current = this.rejectionState();
+      if (
+        current &&
+        rejectionWatchValue(current.rejection.anchor, value) !== current.watched
+      ) {
+        this.rejectionState.set(null);
+      }
     });
   });
 

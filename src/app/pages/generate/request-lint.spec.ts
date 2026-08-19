@@ -5,6 +5,8 @@ import {
   RequestLintInput,
   evaluateRequestLint,
   featureCompatRule,
+  rejectionField,
+  rejectionWatchValue,
   violatedCompatRules,
   warningsInSection,
 } from './request-lint';
@@ -183,7 +185,7 @@ describe('evaluateRequestLint', () => {
     expect(warnings).toEqual([]);
   });
 
-  it('carries the SD 1.5 hires note and the pixel budget as size warnings', () => {
+  it('speaks once for the size, and the pixel budget outranks the rest', () => {
     const warnings = evaluateRequestLint(
       lintInput({
         value: { ...DEFAULT_GENERATE_FORM_VALUE, width: 2048, height: 2048 },
@@ -191,11 +193,22 @@ describe('evaluateRequestLint', () => {
       }),
     );
     expect(warnings.map((warning) => warning.key)).toEqual([
-      'generate.form.requirement.sd15_hires',
       'generate.form.pixel_warning',
     ]);
-    expect(warningsInSection(warnings, 'size')).toHaveLength(2);
+    expect(warningsInSection(warnings, 'size')).toHaveLength(1);
     expect(warningsInSection(warnings, 'sampling')).toHaveLength(0);
+  });
+
+  it('falls to the SD 1.5 hires note where the size is within budget', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        value: { ...DEFAULT_GENERATE_FORM_VALUE, width: 1024, height: 1024 },
+        baseline: 'stable_diffusion_1',
+      }),
+    );
+    expect(warnings.map((warning) => warning.key)).toEqual([
+      'generate.form.requirement.sd15_hires',
+    ]);
   });
 
   it('drops the hires note once the hires pass is on', () => {
@@ -211,6 +224,44 @@ describe('evaluateRequestLint', () => {
       }),
     );
     expect(warnings).toEqual([]);
+  });
+
+  it('gives a step count contradicting the model precedence over its cost', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          sampler_name: 'k_heun',
+          steps: 30,
+        },
+        requirements: { min_steps: 4, max_steps: 12 },
+        contract: coerceSamplerConstraints(live),
+      }),
+    );
+    expect(warnings.map((warning) => warning.key)).toEqual([
+      'generate.form.requirement.steps_range',
+    ]);
+  });
+
+  it('names the control every warning is about', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          sourceMode: 'controlnet',
+          steps: 30,
+          clip_skip: 4,
+        },
+        baseline: 'stable_cascade',
+        requirements: { min_steps: 4, max_steps: 12 },
+      }),
+    );
+    expect(warnings.map((warning) => warning.anchor)).toEqual([
+      'steps',
+      'clip_skip',
+      'control_type',
+      'source',
+    ]);
   });
 
   it('counts the sampler cost and the CLIP skip among the sampling warnings', () => {
@@ -272,5 +323,69 @@ describe('evaluateRequestLint', () => {
     expect(warningsInSection(warnings, 'workflows').map((w) => w.key)).toEqual([
       'generate.form.qr_unsupported',
     ]);
+  });
+});
+
+describe('rejectionField', () => {
+  it('reads the knob out of the sentence the horde refused with', () => {
+    expect(
+      rejectionField('SamplerKnobInapplicable', 'k_dpm_2 does not accept eta.'),
+    ).toEqual({
+      anchor: 'sampler_eta',
+      message: 'k_dpm_2 does not accept eta.',
+    });
+    expect(
+      rejectionField('SamplerKnobOutOfRange', 'order must be at most 4.')
+        ?.anchor,
+    ).toBe('sampler_order');
+  });
+
+  it('falls back to the group when the sentence names no knob', () => {
+    expect(
+      rejectionField('SamplerKnobInapplicable', 'That value is not accepted.')
+        ?.anchor,
+    ).toBe('advanced_sampling');
+  });
+
+  it('places the codes it models at their own controls', () => {
+    const cases: [string, string][] = [
+      ['SamplerSolverTypeUnsupported', 'solver_type'],
+      ['SamplerSchedulerMismatch', 'scheduler'],
+      ['SchedulerBaselineMismatch', 'scheduler'],
+      ['FlowShiftInapplicable', 'flow_shift'],
+      ['FlowShiftOutOfRange', 'flow_shift'],
+      ['ControlNetSourceMissing', 'source'],
+      ['ControlNetMismatch', 'source'],
+      ['ControlNetUnsupported', 'source'],
+      ['ControlNetInpaintingMismatch', 'source'],
+      ['InvalidControlType', 'control_type'],
+      ['KudosUpfront', 'generate'],
+      ['TooManyPrompts', 'generate'],
+      ['InvalidModel', 'model'],
+    ];
+    for (const [rc, anchor] of cases) {
+      expect(rejectionField(rc, 'refused')?.anchor).toBe(anchor);
+    }
+  });
+
+  it('leaves a code it does not model, and an empty sentence, to the tile', () => {
+    expect(rejectionField('SomethingElse', 'refused')).toBeNull();
+    expect(rejectionField(undefined, 'refused')).toBeNull();
+    expect(rejectionField('KudosUpfront', '   ')).toBeNull();
+  });
+});
+
+describe('rejectionWatchValue', () => {
+  it('watches the control the rejection was placed at', () => {
+    const value = { ...DEFAULT_GENERATE_FORM_VALUE, flow_shift: 3 };
+    expect(rejectionWatchValue('flow_shift', value)).toBe(3);
+    expect(rejectionWatchValue('model', value)).toBe(value.model);
+    expect(rejectionWatchValue('sampler_eta', value)).toBe(value.sampler_eta);
+    expect(
+      rejectionWatchValue('scheduler', {
+        ...value,
+        scheduler: 'normal',
+      }),
+    ).not.toBe(rejectionWatchValue('scheduler', value));
   });
 });

@@ -26,6 +26,7 @@ describe('ProfileGenerationsComponent', () => {
           useValue: {
             estimateKudos: () => Promise.resolve(0),
             enqueue: () => Promise.resolve('local-1'),
+            jobs: signal([]),
             pendingJobs: signal([]),
             finishedJobs: signal([]),
           },

@@ -39,6 +39,7 @@
       [modelRequirements]="modelRequirements()"
       [samplerContract]="samplerContract()"
       [lintWarnings]="lintWarnings()"
+      [fieldRejection]="fieldRejection()"
       (panelSizeChange)="panelSize.set($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
@@ -50,6 +51,7 @@
         [showValidation]="sourceValidationVisible()"
         [remixSupported]="remixSupported()"
         [lintWarnings]="sourceLintWarnings()"
+        [fieldRejection]="fieldRejection()"
         (stateChange)="onSourceState($event)"
       />
     </app-generate-form>

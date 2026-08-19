@@ -37,7 +37,12 @@ import {
   SOURCE_MODES,
   rangeFillPercent,
 } from '../generate-form.model';
-import type { FeatureCompatRuleId, RequestWarning } from '../request-lint';
+import type {
+  FeatureCompatRuleId,
+  FieldAnchorId,
+  FieldRejection,
+  RequestWarning,
+} from '../request-lint';
 import {
   SourceImage,
   blobToSourceImage,
@@ -123,8 +128,19 @@ export class GenerateSourceImageComponent implements OnInit {
    * the shared lint table. Advisory: nothing here gates the mode or the submit.
    */
   public readonly lintWarnings = input<readonly RequestWarning[]>([]);
+  /**
+   * The horde's own answer to the last submit it refused, where it named a
+   * control in this card. Shown as written, under the control it names.
+   */
+  public readonly fieldRejection = input<FieldRejection | null>(null);
 
   public readonly stateChange = output<GenerateSourceState>();
+
+  /** The horde's refusal for one control, or null when it named another. */
+  public rejectionFor(anchor: FieldAnchorId): string | null {
+    const rejection = this.fieldRejection();
+    return rejection?.anchor === anchor ? rejection.message : null;
+  }
 
   /** Whether a named compatibility rule is currently firing for this section. */
   public hasWarning(id: FeatureCompatRuleId): boolean {

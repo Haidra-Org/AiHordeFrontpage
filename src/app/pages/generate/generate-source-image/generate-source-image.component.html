@@ -157,6 +157,11 @@
           id="generate-control-type"
           class="gs-native-select gs-native-select--sm mt-1.5"
           [formControl]="form().controls.control_type"
+          [attr.aria-describedby]="
+            rejectionFor('control_type')
+              ? 'generate-rejection-control_type'
+              : null
+          "
         >
           <option value="">
             {{ "generate.source.control_type_placeholder" | transloco }}
@@ -177,6 +182,16 @@
         <p class="gs-sublabel mt-1">
           {{ "generate.source.control_type_hint" | transloco }}
         </p>
+        @if (rejectionFor("control_type"); as message) {
+          <p
+            id="generate-rejection-control_type"
+            class="gs-warn mt-1.5"
+            role="alert"
+          >
+            <app-icon name="warning-triangle" class="gs-ico-sm" />
+            {{ message }}
+          </p>
+        }
       </div>
       <label class="gs-switch gs-switch-row">
         <span>{{ "generate.source.image_is_control_label" | transloco }}</span>
@@ -350,6 +365,15 @@
     <p class="gs-req gs-req--warn">
       <app-icon name="warning-triangle" class="gs-ico-sm" />
       {{ warning.key | transloco: warning.params }}
+    </p>
+  }
+
+  <!-- The horde's own reason for refusing the request, where it named this
+       card's source rather than a single control inside it. -->
+  @if (rejectionFor("source"); as message) {
+    <p class="gs-warn" role="alert">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ message }}
     </p>
   }
 </div>

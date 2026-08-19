@@ -117,6 +117,13 @@ const STATUS_LINK: GlossaryLink = {
 const FULL_PAGE_LINK_LABEL = 'help.glossary.link.full_page';
 
 /**
+ * Where a subject is walked through start to finish. Worded apart from the
+ * page label above so a term carrying both a reference and a worked example
+ * offers two distinguishable ways onwards rather than the same phrase twice.
+ */
+const WALKTHROUGH_LINK_LABEL = 'help.glossary.link.walkthrough';
+
+/**
  * The page a term is about, where one exists.
  *
  * A term whose id is already a setting's, a worked example's or an alchemy use
@@ -132,7 +139,10 @@ function docsLinkFor(term: GlossaryTerm): GlossaryLink | null {
     return referenceLink(id);
   }
   if ((!area || area === 'example') && flowDef(id)) {
-    return { labelKey: FULL_PAGE_LINK_LABEL, routerLink: docsExampleLink(id) };
+    return {
+      labelKey: WALKTHROUGH_LINK_LABEL,
+      routerLink: docsExampleLink(id),
+    };
   }
   if ((!area || area === 'alchemy') && alchemyUseCase(id)) {
     return {

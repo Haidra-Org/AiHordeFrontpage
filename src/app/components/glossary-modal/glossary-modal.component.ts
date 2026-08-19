@@ -197,6 +197,20 @@ import {
               [id]="'glossary-panel-page-' + activePageContext()!.pageId"
               role="tabpanel"
             >
+              <!-- The same search the dictionary offers, over what this page
+                   holds: its controls and the words it uses. A page with a long
+                   list of glyphs is read by looking for one of them. -->
+              <div class="glossary-search">
+                <input
+                  type="text"
+                  class="form-input w-full"
+                  [placeholder]="
+                    'help.glossary.page_filter_placeholder' | transloco
+                  "
+                  [value]="pageQuery()"
+                  (input)="onPageFilterChange($event)"
+                />
+              </div>
               <div class="modal-scroll glossary-terms-list">
                 <!-- The page's unlabelled buttons and marks, first: a reader
                      looking at a row of glyphs is asking what one of them does,
@@ -240,7 +254,7 @@ import {
                      two are written out separately because a button may only
                      hold phrasing content, and the entry a reader cannot press
                      keeps the headed markup it has always had. -->
-                @for (entry of activePageContext()!.entries; track entry.id) {
+                @for (entry of pageEntries(); track entry.id) {
                   @if (entry.action) {
                     <button
                       type="button"
@@ -298,6 +312,12 @@ import {
                   }
                 }
 
+                @if (pageFilterEmpty()) {
+                  <p class="text-secondary text-sm">
+                    {{ 'help.glossary.page_no_results' | transloco }}
+                  </p>
+                }
+
                 <!-- Related Terms subsection -->
                 @if (relevantTerms().length > 0) {
                   <div class="glossary-related-section">
@@ -337,6 +357,8 @@ export class GlossaryModalComponent {
   public readonly searchQuery = signal('');
   public readonly activeCategory = signal<GlossaryCategory | null>(null);
   public readonly showRelevantOnly = signal(false);
+  /** The this-page tab's filter, over that page's controls, entries and words. */
+  public readonly pageQuery = signal('');
 
   private readonly searchInput =
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
@@ -384,16 +406,61 @@ export class GlossaryModalComponent {
     return terms;
   });
 
-  /** The active page's unlabelled controls, or nothing where it declares none. */
-  public readonly pageControls = computed<PageGlossaryEntry[]>(
-    () => this.activePageContext()?.controls ?? [],
+  /** The active page's unlabelled controls, matching the page filter. */
+  public readonly pageControls = computed<PageGlossaryEntry[]>(() =>
+    this.matchingEntries(this.activePageContext()?.controls ?? []),
+  );
+
+  /** The active page's own entries, matching the page filter. */
+  public readonly pageEntries = computed<PageGlossaryEntry[]>(() =>
+    this.matchingEntries(this.activePageContext()?.entries ?? []),
+  );
+
+  /** Whether a filter is on and has left the page's own lists with nothing. */
+  public readonly pageFilterEmpty = computed(
+    () =>
+      this.pageQuery().trim() !== '' &&
+      this.pageControls().length === 0 &&
+      this.pageEntries().length === 0,
   );
 
   public readonly relevantTerms = computed(() => {
     const ctx = this.activePageContext();
     if (!ctx?.relevantTermIds?.length) return [];
-    return GLOSSARY_TERMS.filter((t) => ctx.relevantTermIds.includes(t.id));
+    const terms = GLOSSARY_TERMS.filter((t) =>
+      ctx.relevantTermIds.includes(t.id),
+    );
+    const query = this.pageQuery().toLowerCase().trim();
+    if (!query) return terms;
+    return terms.filter(
+      (t) => t.id.includes(query) || this.matches(t.titleKey, query),
+    );
   });
+
+  /** The entries whose name or description carries the filter's words. */
+  private matchingEntries(
+    entries: readonly PageGlossaryEntry[],
+  ): PageGlossaryEntry[] {
+    const query = this.pageQuery().toLowerCase().trim();
+    if (!query) return [...entries];
+    return entries.filter(
+      (entry) =>
+        entry.id.includes(query) ||
+        this.matches(entry.titleKey, query) ||
+        this.matches(entry.descriptionKey, query),
+    );
+  }
+
+  /**
+   * Whether a translated line carries the query. A key without a translation
+   * reads as no match rather than throwing: the filter is a convenience, and a
+   * page that declares a key the catalogue has not caught up with must still
+   * be searchable by everything else on it.
+   */
+  private matches(key: string, query: string): boolean {
+    const text: unknown = this.transloco.translate(key);
+    return typeof text === 'string' && text.toLowerCase().includes(query);
+  }
 
   constructor() {
     // Scroll to active term/entry when modal opens
@@ -426,6 +493,7 @@ export class GlossaryModalComponent {
       }
       if (!this.glossary.isOpen()) {
         this.searchQuery.set('');
+        this.pageQuery.set('');
         this.activeCategory.set(null);
         this.showRelevantOnly.set(false);
       }
@@ -438,6 +506,10 @@ export class GlossaryModalComponent {
 
   public onSearchChange(event: Event): void {
     this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  public onPageFilterChange(event: Event): void {
+    this.pageQuery.set((event.target as HTMLInputElement).value);
   }
 
   public setCategory(category: GlossaryCategory | null): void {
@@ -478,5 +550,6 @@ export class GlossaryModalComponent {
     this.showRelevantOnly.set(false);
     this.activeCategory.set(null);
     this.searchQuery.set('');
+    this.pageQuery.set('');
   }
 }

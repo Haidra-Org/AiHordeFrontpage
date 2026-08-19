@@ -17,7 +17,7 @@ import {
   StyleForcedParams,
 } from '../../../services/horde-styles.service';
 import type { ModelRequirements } from '../../../services/model-reference.service';
-import type { RequestWarning } from '../request-lint';
+import { evaluateRequestLint, type RequestWarning } from '../request-lint';
 import { ToastService } from '../../../services/toast.service';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
@@ -543,11 +543,11 @@ describe('GenerateFormComponent model recommendations', () => {
     });
 
     // The form defaults (25 steps, cfg 7.5, k_euler_a) contradict all of these.
-    expect(component.stepsHint()?.violated).toBe(true);
-    expect(component.cfgHint()?.violated).toBe(true);
+    expect(component.stepsAdvisory()?.violated).toBe(true);
+    expect(component.cfgAdvisory()?.violated).toBe(true);
     expect(component.samplerHint()?.violated).toBe(true);
-    expect(component.clipSkipHint()?.violated).toBe(false);
-    expect(component.karrasHint()?.violated).toBe(false);
+    expect(component.clipSkipAdvisory()?.violated).toBe(false);
+    expect(component.scheduleAdvisory()?.violated).toBe(false);
     expect(component.isSuggestedSampler('k_euler')).toBe(true);
     expect(component.isSuggestedSampler('k_lms')).toBe(false);
 
@@ -556,20 +556,20 @@ describe('GenerateFormComponent model recommendations', () => {
     form.controls.sampler_name.setValue('k_euler');
     form.controls.scheduler.setValue('normal');
 
-    expect(component.stepsHint()?.violated).toBe(false);
-    expect(component.cfgHint()?.violated).toBe(false);
+    expect(component.stepsAdvisory()?.violated).toBe(false);
+    expect(component.cfgAdvisory()?.violated).toBe(false);
     expect(component.samplerHint()?.violated).toBe(false);
-    expect(component.karrasHint()?.violated).toBe(true);
+    expect(component.scheduleAdvisory()?.violated).toBe(true);
   });
 
   it('shows no hints for a model that recommends nothing', async () => {
     const { component } = await createWithModel({}, 'flux_1', null);
 
-    expect(component.stepsHint()).toBeNull();
-    expect(component.cfgHint()).toBeNull();
-    expect(component.clipSkipHint()).toBeNull();
+    expect(component.stepsAdvisory()).toBeNull();
+    expect(component.cfgAdvisory()).toBeNull();
+    expect(component.clipSkipAdvisory()).toBeNull();
     expect(component.samplerHint()).toBeNull();
-    expect(component.karrasHint()).toBeNull();
+    expect(component.scheduleAdvisory()).toBeNull();
   });
 
   it('snaps a pristine size onto the baseline native square', async () => {
@@ -628,13 +628,16 @@ describe('GenerateFormComponent model recommendations', () => {
     fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
     fixture.detectChanges();
 
-    expect(component.nativeSizeHint()?.key).toBe(
-      'generate.form.requirement.native_size',
+    expect(component.sizeAdvisory()?.key).toBe(
+      'generate.form.requirement.sd15_hires',
     );
-    expect(component.hiresHint()?.violated).toBe(true);
+    expect(component.hiresSuggested()).toBe(true);
 
     form.controls.hires_fix.setValue(true);
-    expect(component.hiresHint()).toBeNull();
+    expect(component.hiresSuggested()).toBe(false);
+    expect(component.sizeAdvisory()?.key).toBe(
+      'generate.form.requirement.native_size',
+    );
   });
 });
 
@@ -774,12 +777,14 @@ describe('GenerateFormComponent request warnings', () => {
     {
       id: 'controlnet_baseline',
       section: 'source',
+      anchor: 'control_type',
       key: 'generate.lint.controlnet_baseline',
       params: {},
     },
     {
       id: 'qr_code_baseline',
       section: 'workflows',
+      anchor: 'qr',
       key: 'generate.form.qr_unsupported',
       params: {},
     },
@@ -1606,5 +1611,271 @@ describe('GenerateFormComponent cost and size advice', () => {
     expect(
       host.querySelector('[appTutAnchor="hires"] .gs-switch-row.gs-locked'),
     ).not.toBeNull();
+  });
+});
+
+/**
+ * The panel and the count beside Generate are two views of one list, so a
+ * warning line the reader can see is a warning the count includes, and a field
+ * never carries two advisory lines at once. These render the real template,
+ * because the number of lines drawn is exactly what is being guaranteed.
+ */
+describe('GenerateFormComponent advisory lines', () => {
+  async function render(
+    value: Partial<GenerateFormValue>,
+    baseline: string | null,
+    requirements: ModelRequirements | null,
+    contract: SamplerConstraintsDocument | null = null,
+  ): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+    form: GenerateFormGroup;
+    warnings: readonly RequestWarning[];
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      model: 'a model',
+      ...value,
+    });
+    const warnings = evaluateRequestLint({
+      value: form.getRawValue(),
+      baseline,
+      requirements,
+      hasSourceImage: false,
+      contract,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.detectChanges();
+    // The size has been chosen for this request, so the model-change snap must
+    // leave it alone and the panel lints the size the test asked for.
+    fixture.componentInstance.setSizeBase(1024);
+    fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.componentRef.setInput('modelRequirements', requirements);
+    fixture.componentRef.setInput('samplerContract', contract);
+    fixture.componentRef.setInput('lintWarnings', warnings);
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      fixture,
+      form,
+      warnings,
+    };
+  }
+
+  /** Every warning line the panel is drawing, in document order. */
+  function warnLines(host: HTMLElement): string[] {
+    return Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-req--warn, .gs-warn'),
+    ).map((line) => line.textContent?.trim() ?? '');
+  }
+
+  it('draws exactly the lines the count beside Generate reports', async () => {
+    const { host, warnings } = await render(
+      { steps: 30, clip_skip: 4, width: 1024, height: 1024 },
+      'stable_diffusion_1',
+      { min_steps: 4, max_steps: 12, samplers: ['k_euler'] },
+      coerceSamplerConstraints(live),
+    );
+
+    expect(warnings.map((warning) => warning.anchor)).toEqual([
+      'steps',
+      'clip_skip',
+      'sampler',
+      'size',
+    ]);
+    expect(warnLines(host)).toHaveLength(warnings.length);
+    expect(host.querySelector('.gs-lint-count')?.textContent?.trim()).toBe(
+      String(warnings.length),
+    );
+  });
+
+  it('shows one line under the steps field however many could apply', async () => {
+    const { host } = await render(
+      { steps: 30, sampler_name: 'k_heun' },
+      null,
+      { min_steps: 4, max_steps: 12 },
+      coerceSamplerConstraints(live),
+    );
+
+    const steps = host.querySelector<HTMLElement>('[appTutAnchor="steps"]');
+    const lines = steps?.querySelectorAll('.gs-req') ?? [];
+    expect(lines).toHaveLength(1);
+    expect(lines[0].textContent).toContain('4');
+  });
+
+  it('offers a way to the control each warning is about', async () => {
+    const { host, fixture } = await render(
+      { steps: 30 },
+      null,
+      { min_steps: 4, max_steps: 12 },
+      null,
+    );
+
+    fixture.componentInstance.toggleLint();
+    fixture.detectChanges();
+
+    const gotos = host.querySelectorAll<HTMLButtonElement>('.gs-lint-goto');
+    expect(gotos).toHaveLength(1);
+    expect(gotos[0].textContent?.trim()).toBe(en['generate.lint.go_to']);
+
+    gotos[0].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.lintOpen()).toBe(false);
+  });
+
+  it('puts a refused knob under that knob, and drops it once it is answered', async () => {
+    const { host, fixture } = await render(
+      { sampler_name: 'k_euler_a' },
+      null,
+      null,
+      coerceSamplerConstraints(live),
+    );
+    fixture.componentInstance.advancedSamplingOpen.set(true);
+    fixture.componentRef.setInput('fieldRejection', {
+      anchor: 'sampler_eta',
+      message: 'k_euler_a does not accept eta.',
+    });
+    fixture.detectChanges();
+
+    const field = host.querySelector<HTMLInputElement>('#generate-sampler_eta');
+    const knob = field?.parentElement;
+    expect(knob?.querySelector('.gs-warn')?.textContent).toContain(
+      'does not accept eta',
+    );
+    expect(field?.getAttribute('aria-describedby')).toBe(
+      'generate-rejection-sampler_eta',
+    );
+
+    fixture.componentRef.setInput('fieldRejection', null);
+    fixture.detectChanges();
+    expect(knob?.querySelector('.gs-warn')).toBeNull();
+  });
+
+  it('puts a refused schedule under the schedule select', async () => {
+    const { host, fixture } = await render({}, null, null, null);
+    fixture.componentRef.setInput('fieldRejection', {
+      anchor: 'scheduler',
+      message: 'That schedule is not offered for this model.',
+    });
+    fixture.detectChanges();
+
+    const field = host.querySelector<HTMLElement>('[appTutAnchor="scheduler"]');
+    expect(field?.querySelector('.gs-warn')?.textContent).toContain(
+      'not offered',
+    );
+    expect(
+      host
+        .querySelector('#generate-scheduler')
+        ?.getAttribute('aria-describedby'),
+    ).toBe('generate-rejection-scheduler');
+  });
+});
+
+describe('GenerateFormComponent suggested settings', () => {
+  async function render(
+    requirements: ModelRequirements | null,
+    value: Partial<GenerateFormValue> = {},
+  ): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+    form: GenerateFormGroup;
+    toast: ToastService;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      model: 'a model',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('modelRequirements', requirements);
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      fixture,
+      form,
+      toast: TestBed.inject(ToastService),
+    };
+  }
+
+  function suggestButton(host: HTMLElement): HTMLButtonElement | null {
+    return (
+      Array.from(
+        host.querySelectorAll<HTMLButtonElement>(
+          '[appTutAnchor="model"] button',
+        ),
+      ).find(
+        (button) =>
+          button.textContent?.trim() === en['generate.form.use_suggested'],
+      ) ?? null
+    );
+  }
+
+  it('applies every recommendation the request is not already following', async () => {
+    const { host, fixture, form, toast } = await render({
+      samplers: ['k_euler'],
+      schedulers: ['normal'],
+      min_steps: 4,
+      max_steps: 12,
+      cfg_scale: 3,
+      clip_skip: 2,
+    });
+
+    suggestButton(host)?.click();
+    fixture.detectChanges();
+
+    const value = form.getRawValue();
+    expect(value.sampler_name).toBe('k_euler');
+    expect(value.scheduler).toBe('normal');
+    expect(value.steps).toBe(12);
+    expect(value.cfg_scale).toBe(3);
+    expect(value.clip_skip).toBe(2);
+    expect(toast.toasts()[0].message).toBe('generate.form.use_suggested_done');
+    expect(toast.toasts()[0].messageParams).toEqual({ count: 5 });
+  });
+
+  it('stands down once the request already follows the advice', async () => {
+    const { host, fixture } = await render({
+      samplers: ['k_euler'],
+      min_steps: 4,
+      max_steps: 12,
+    });
+    expect(suggestButton(host)).not.toBeNull();
+
+    suggestButton(host)?.click();
+    fixture.detectChanges();
+    expect(suggestButton(host)).toBeNull();
+  });
+
+  it('is absent for a model that recommends nothing', async () => {
+    const { host } = await render(null);
+    expect(suggestButton(host)).toBeNull();
   });
 });

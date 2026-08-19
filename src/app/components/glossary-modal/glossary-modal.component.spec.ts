@@ -163,4 +163,61 @@ describe('GlossaryModalComponent', () => {
       expect(find('.glossary-controls-section')).toBeNull();
     });
   });
+
+  describe('the this-page filter', () => {
+    const ENTRIES: PageGlossaryEntry[] = [
+      {
+        id: 'sampling',
+        titleKey: 'help.glossary.page.generate_image',
+        descriptionKey: 'help.glossary.controls_note',
+      },
+      {
+        id: 'seed',
+        titleKey: 'help.glossary.related_terms',
+        descriptionKey: 'help.glossary.no_results',
+      },
+    ];
+
+    function typeFilter(text: string): void {
+      const input = find<HTMLInputElement>(
+        '[role="tabpanel"] .glossary-search input',
+      );
+      if (input) {
+        input.value = text;
+        input.dispatchEvent(new Event('input'));
+      }
+      fixture.detectChanges();
+    }
+
+    it('narrows the page entries and the controls beside them', () => {
+      open(ENTRIES, [STUDIO_CONTROLS[0]]);
+      expect(all('.glossary-page-entry')).toHaveLength(3);
+
+      typeFilter('seed');
+
+      const ids = all('.glossary-page-entry').map((entry) => entry.id);
+      expect(ids).toEqual(['glossary-entry-seed']);
+    });
+
+    it('says so when the page holds nothing matching', () => {
+      open(ENTRIES);
+      typeFilter('nothing here matches this');
+
+      expect(all('.glossary-page-entry')).toHaveLength(0);
+      expect(el().textContent).toContain(
+        translations['help.glossary.page_no_results'],
+      );
+    });
+
+    it('is cleared when the modal closes', () => {
+      open(ENTRIES);
+      typeFilter('seed');
+      expect(fixture.componentInstance.pageQuery()).toBe('seed');
+
+      glossary.close();
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.pageQuery()).toBe('');
+    });
+  });
 });

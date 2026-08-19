@@ -799,6 +799,230 @@ export function hiresUnneededHint(
   return enlarging ? null : hint('hires_unneeded', {}, true);
 }
 
+/**
+ * A warning that the request asks for more pixels than the horde's ordinary
+ * allowance covers. Worded as an advisory line so it can take its turn under
+ * the size controls alongside the model's own advice.
+ */
+export function pixelBudgetHint(
+  width: number,
+  height: number,
+): RequirementHint | null {
+  if (width * height <= PIXEL_WARN_THRESHOLD) {
+    return null;
+  }
+  return { key: 'generate.form.pixel_warning', params: {}, violated: true };
+}
+
+/**
+ * Pick the one line a field shows from the advice that could apply to it.
+ *
+ * Two lines under one control read as two problems, so a field speaks once. A
+ * contradicted value is always the more useful thing to say, so the first
+ * violated candidate wins; failing that the first candidate that exists at all,
+ * which is how a field with nothing wrong still carries its model's advice.
+ */
+export function firstAdvisory(
+  candidates: readonly (RequirementHint | null)[],
+): RequirementHint | null {
+  return (
+    candidates.find((candidate) => candidate?.violated) ??
+    candidates.find((candidate) => candidate !== null) ??
+    null
+  );
+}
+
+/** The single line under the step count. */
+export function stepsAdvisory(
+  requirements: ModelRequirements | null,
+  contract: SamplerConstraintsDocument | null,
+  sampler: string,
+  steps: number,
+): RequirementHint | null {
+  return firstAdvisory([
+    stepsRequirementHint(requirements, steps),
+    samplerStepCostHint(contract, sampler, steps),
+  ]);
+}
+
+/** The single line under the guidance scale. */
+export function cfgAdvisory(
+  requirements: ModelRequirements | null,
+  contract: SamplerConstraintsDocument | null,
+  sampler: string,
+  cfgScale: number,
+): RequirementHint | null {
+  return firstAdvisory([
+    cfgRequirementHint(requirements, cfgScale),
+    cfgPlusPlusHint(contract, sampler, cfgScale),
+  ]);
+}
+
+/** The single line under the CLIP skip slider. */
+export function clipSkipAdvisory(
+  requirements: ModelRequirements | null,
+  clipSkip: number,
+): RequirementHint | null {
+  return firstAdvisory([
+    clipSkipRequirementHint(requirements, clipSkip),
+    clipSkipRangeHint(clipSkip),
+  ]);
+}
+
+/**
+ * The single line under the schedule select. A horde that publishes a sampler
+ * contract offers whole schedules, so the advice names the suggested list; one
+ * that does not offers the legacy pair, where the same advice reduces to
+ * whether karras is wanted.
+ */
+export function scheduleAdvisory(
+  requirements: ModelRequirements | null,
+  contract: SamplerConstraintsDocument | null,
+  scheduler: ImageSchedulerName,
+): RequirementHint | null {
+  return contract
+    ? schedulerRequirementHint(requirements, scheduler)
+    : karrasRequirementHint(requirements, scheduler);
+}
+
+/** The single line under the size controls. */
+export function sizeAdvisory(
+  baseline: string | null,
+  width: number,
+  height: number,
+  hiresFix: boolean,
+): RequirementHint | null {
+  return firstAdvisory([
+    pixelBudgetHint(width, height),
+    sd15HiresHint(baseline, width, height, hiresFix),
+    nativeSizeHint(baseline, width, height),
+  ]);
+}
+
+/** The settings a model's own recommendations would change, and to what. */
+export interface SuggestedSettings {
+  sampler_name?: string;
+  scheduler?: ImageSchedulerName;
+  steps?: number;
+  cfg_scale?: number;
+  clip_skip?: number;
+}
+
+/** What the form currently holds of the settings a model can recommend. */
+export type SuggestedSettingsSubject = Pick<
+  GenerateFormValue,
+  'sampler_name' | 'scheduler' | 'steps' | 'cfg_scale' | 'clip_skip'
+>;
+
+/** The choices the panel is actually offering, so a suggestion is selectable. */
+export interface SuggestedSettingsOffer {
+  samplers: readonly string[];
+  schedulers: readonly ImageSchedulerName[];
+}
+
+/**
+ * Everything the selected model recommends that the form is not already doing.
+ *
+ * Only differences are returned, so an empty result is the statement that the
+ * request already matches the model's advice and there is nothing to offer. A
+ * recommendation the panel cannot select (a sampler this horde does not run, a
+ * schedule refused for this sampler) is left out rather than written into a
+ * control that would show it blank.
+ */
+export function suggestedSettings(
+  requirements: ModelRequirements | null,
+  offer: SuggestedSettingsOffer,
+  current: SuggestedSettingsSubject,
+): SuggestedSettings {
+  const changes: SuggestedSettings = {};
+  if (!requirements) {
+    return changes;
+  }
+
+  const samplers = suggestedSamplers(requirements);
+  if (samplers.length > 0 && !samplers.includes(current.sampler_name)) {
+    const sampler = samplers.find((name) => offer.samplers.includes(name));
+    if (sampler !== undefined) {
+      changes.sampler_name = sampler;
+    }
+  }
+
+  const schedulers = suggestedSchedulers(requirements);
+  if (schedulers.length > 0 && !schedulers.includes(current.scheduler)) {
+    const scheduler = offer.schedulers.find((name) =>
+      schedulers.includes(name),
+    );
+    if (scheduler !== undefined) {
+      changes.scheduler = scheduler;
+    }
+  }
+
+  const steps = clampToRange(
+    current.steps,
+    requirements.min_steps,
+    requirements.max_steps,
+  );
+  if (steps !== current.steps) {
+    changes.steps = steps;
+  }
+
+  const cfg = suggestedCfgScale(requirements, current.cfg_scale);
+  if (cfg !== current.cfg_scale) {
+    changes.cfg_scale = cfg;
+  }
+
+  if (
+    requirements.clip_skip !== undefined &&
+    requirements.clip_skip !== current.clip_skip
+  ) {
+    changes.clip_skip = requirements.clip_skip;
+  }
+
+  return changes;
+}
+
+/** How many settings {@link suggestedSettings} would change. */
+export function suggestedSettingsCount(changes: SuggestedSettings): number {
+  return Object.keys(changes).length;
+}
+
+function clampToRange(
+  value: number,
+  min: number | undefined,
+  max: number | undefined,
+): number {
+  if (min !== undefined && value < min) {
+    return min;
+  }
+  if (max !== undefined && value > max) {
+    return max;
+  }
+  return value;
+}
+
+/**
+ * The guidance the model asks for: its exact figure where it names one, and
+ * otherwise the middle of the range it names, which is the only single value a
+ * pair of bounds recommends.
+ */
+function suggestedCfgScale(
+  requirements: ModelRequirements,
+  current: number,
+): number {
+  if (requirements.cfg_scale !== undefined) {
+    return requirements.cfg_scale;
+  }
+  const { min_cfg_scale: min, max_cfg_scale: max } = requirements;
+  if (
+    min !== undefined &&
+    max !== undefined &&
+    (current < min || current > max)
+  ) {
+    return Math.round(((min + max) / 2) * 2) / 2;
+  }
+  return clampToRange(current, min, max);
+}
+
 /** A style category paired with the style names under it, for the picker. */
 export interface StylePickerGroup {
   category: string;

@@ -37,6 +37,13 @@ import {
   hiresUnneededHint,
   samplerStepCostHint,
   sd15HiresHint,
+  cfgAdvisory,
+  clipSkipAdvisory,
+  scheduleAdvisory,
+  sizeAdvisory,
+  stepsAdvisory,
+  suggestedSettings,
+  suggestedSettingsCount,
   simpleModeValue,
   sizeBaseFor,
   sizeSuitsNativeSquare,
@@ -1395,5 +1402,148 @@ describe('hiresUnneededHint', () => {
   it('says nothing while the pass is off, or with no model picked', () => {
     expect(hiresUnneededHint('stable_diffusion_1', 512, 512, false)).toBeNull();
     expect(hiresUnneededHint(null, 512, 512, true)).toBeNull();
+  });
+});
+
+describe('per-field advisories', () => {
+  const contract = coerceSamplerConstraints(live);
+
+  it('lets a contradicted step count outrank the sampler cost note', () => {
+    expect(
+      stepsAdvisory({ min_steps: 4, max_steps: 12 }, contract, 'k_heun', 30)
+        ?.key,
+    ).toBe('generate.form.requirement.steps_range');
+  });
+
+  it('falls to the cost note where the step count is within the range', () => {
+    expect(
+      stepsAdvisory({ min_steps: 4, max_steps: 40 }, contract, 'k_heun', 30)
+        ?.key,
+    ).toBe('generate.form.requirement.steps_work');
+  });
+
+  it('keeps the model advice where nothing else applies', () => {
+    expect(stepsAdvisory({ min_steps: 4 }, null, 'k_euler', 30)?.key).toBe(
+      'generate.form.requirement.steps_min',
+    );
+    expect(stepsAdvisory(null, null, 'k_euler', 30)).toBeNull();
+  });
+
+  it('lets a contradicted guidance outrank the folded-guidance ceiling', () => {
+    const advisory = cfgAdvisory({ cfg_scale: 4 }, contract, 'k_dpmpp_2m', 12);
+    expect(advisory?.key).toBe('generate.form.requirement.cfg_exact');
+  });
+
+  it('lets an exact CLIP skip outrank the note about high values', () => {
+    expect(clipSkipAdvisory({ clip_skip: 1 }, 4)?.key).toBe(
+      'generate.form.requirement.clip_skip_exact',
+    );
+    expect(clipSkipAdvisory(null, 4)?.key).toBe(
+      'generate.form.requirement.clip_skip_high',
+    );
+  });
+
+  it('names the whole schedule list with a contract, and karras without', () => {
+    const requirements = { schedulers: ['karras'] };
+    expect(scheduleAdvisory(requirements, contract, 'normal')?.key).toBe(
+      'generate.form.requirement.schedulers',
+    );
+    expect(scheduleAdvisory(requirements, null, 'normal')?.key).toBe(
+      'generate.form.requirement.karras_on',
+    );
+  });
+
+  it('puts the pixel budget ahead of the other size notes', () => {
+    expect(sizeAdvisory('stable_diffusion_1', 2048, 2048, false)?.key).toBe(
+      'generate.form.pixel_warning',
+    );
+    expect(sizeAdvisory('stable_diffusion_1', 1024, 1024, false)?.key).toBe(
+      'generate.form.requirement.sd15_hires',
+    );
+    expect(sizeAdvisory('stable_diffusion_xl', 640, 640, false)?.key).toBe(
+      'generate.form.requirement.native_size',
+    );
+  });
+});
+
+describe('suggestedSettings', () => {
+  const offer = {
+    samplers: ['k_euler', 'k_dpmpp_2m'],
+    schedulers: ['karras', 'normal'] as const,
+  };
+  const current = {
+    sampler_name: 'k_euler',
+    scheduler: 'normal' as const,
+    steps: 30,
+    cfg_scale: 7,
+    clip_skip: 1,
+  };
+
+  it('names only what the model would change', () => {
+    const changes = suggestedSettings(
+      {
+        samplers: ['k_dpmpp_2m'],
+        schedulers: ['karras'],
+        min_steps: 8,
+        max_steps: 20,
+        cfg_scale: 4,
+        clip_skip: 2,
+      },
+      { ...offer, schedulers: [...offer.schedulers] },
+      current,
+    );
+    expect(changes).toEqual({
+      sampler_name: 'k_dpmpp_2m',
+      scheduler: 'karras',
+      steps: 20,
+      cfg_scale: 4,
+      clip_skip: 2,
+    });
+    expect(suggestedSettingsCount(changes)).toBe(5);
+  });
+
+  it('offers nothing once the request already matches the advice', () => {
+    const changes = suggestedSettings(
+      {
+        samplers: ['k_euler'],
+        schedulers: ['normal'],
+        min_steps: 8,
+        max_steps: 40,
+        cfg_scale: 7,
+        clip_skip: 1,
+      },
+      { ...offer, schedulers: [...offer.schedulers] },
+      current,
+    );
+    expect(changes).toEqual({});
+    expect(suggestedSettingsCount(changes)).toBe(0);
+  });
+
+  it('takes the middle of a guidance range where no exact figure is named', () => {
+    const changes = suggestedSettings(
+      { min_cfg_scale: 1, max_cfg_scale: 4 },
+      { ...offer, schedulers: [...offer.schedulers] },
+      current,
+    );
+    expect(changes).toEqual({ cfg_scale: 2.5 });
+  });
+
+  it('leaves out a recommendation the panel is not offering', () => {
+    const changes = suggestedSettings(
+      { samplers: ['k_lms'], schedulers: ['exponential'] },
+      { ...offer, schedulers: [...offer.schedulers] },
+      current,
+    );
+    expect(changes).toEqual({});
+  });
+
+  it('offers nothing at all when the model names no requirements', () => {
+    expect(
+      suggestedSettings(
+        null,
+        { ...offer, schedulers: [...offer.schedulers] },
+        current,
+      ),
+    ).toEqual({});
   });
 });

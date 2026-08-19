@@ -425,7 +425,7 @@ export class AiHordeService {
       extractApiErrorField(err, 'message') ??
       extractApiErrorField(err, 'detail') ??
       'Request failed';
-    return { status, message };
+    return { status, message, rc: extractApiErrorField(err, 'rc') };
   }
 
   public getImageGenerationStatus(

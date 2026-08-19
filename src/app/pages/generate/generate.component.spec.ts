@@ -771,6 +771,75 @@ describe('GenerateComponent', () => {
     });
   });
 
+  describe('horde rejections', () => {
+    const refused = (
+      errorRc: string,
+      errorMessage: string,
+    ): LocalGenerationJob => ({
+      localId: `refused-${errorRc}`,
+      status: 'error',
+      createdAt: 100,
+      updatedAt: 100,
+      request: { prompt: 'a fox' },
+      resultImageIds: [],
+      errorRc,
+      errorMessage,
+    });
+
+    it('places the horde sentence at the control its code names', () => {
+      jobs.set([
+        refused('FlowShiftInapplicable', 'flow_shift is not applied.'),
+      ]);
+      fixture.detectChanges();
+
+      expect(component.fieldRejection()).toEqual({
+        anchor: 'flow_shift',
+        message: 'flow_shift is not applied.',
+      });
+    });
+
+    it('reads the knob out of a sentence the code does not name one in', () => {
+      jobs.set([
+        refused('SamplerKnobInapplicable', 'k_dpm_2 does not accept eta.'),
+      ]);
+      fixture.detectChanges();
+
+      expect(component.fieldRejection()?.anchor).toBe('sampler_eta');
+    });
+
+    it('drops the sentence once that control is changed', () => {
+      jobs.set([
+        refused('FlowShiftInapplicable', 'flow_shift is not applied.'),
+      ]);
+      fixture.detectChanges();
+      expect(component.fieldRejection()).not.toBeNull();
+
+      component.form.controls.flow_shift.setValue(2.5);
+      fixture.detectChanges();
+
+      expect(component.fieldRejection()).toBeNull();
+    });
+
+    it('keeps the sentence while some other control is changed', () => {
+      jobs.set([
+        refused('FlowShiftInapplicable', 'flow_shift is not applied.'),
+      ]);
+      fixture.detectChanges();
+
+      component.form.controls.steps.setValue(31);
+      fixture.detectChanges();
+
+      expect(component.fieldRejection()?.anchor).toBe('flow_shift');
+    });
+
+    it('leaves a code it does not model to the results tile alone', () => {
+      jobs.set([refused('SomethingNew', 'The horde said no.')]);
+      fixture.detectChanges();
+
+      expect(component.fieldRejection()).toBeNull();
+    });
+  });
+
   describe('follow-along tutorial host', () => {
     it('writes only the fields a step names', () => {
       component.applyFields({ steps: 30 });

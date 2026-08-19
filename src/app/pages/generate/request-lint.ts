@@ -8,21 +8,48 @@ import {
   type ModelRequirements,
 } from '../../services/model-reference.service';
 import {
-  cfgRequirementHint,
-  clipSkipRangeHint,
-  clipSkipRequirementHint,
+  cfgAdvisory,
+  clipSkipAdvisory,
   hiresUnneededHint,
-  karrasRequirementHint,
   samplerRequirementHint,
-  samplerStepCostHint,
-  sd15HiresHint,
-  stepsRequirementHint,
-  PIXEL_WARN_THRESHOLD,
+  scheduleAdvisory,
+  sizeAdvisory,
+  stepsAdvisory,
   type GenerateFormValue,
   type RequirementHint,
 } from './generate-form.model';
 import type { SectionId } from '../../content/sections';
-import type { SamplerConstraintsDocument } from '../../types/sampler-constraints';
+import {
+  SAMPLER_SETTING_NAMES,
+  type SamplerConstraintsDocument,
+  type SamplerSettingName,
+} from '../../types/sampler-constraints';
+
+/**
+ * The control a warning or a rejection is about, named by the id its wrapper is
+ * registered under with {@link TutorialAnchorService}. One vocabulary serves the
+ * follow-along tutorial, the go-to beside each warning, and the field a horde
+ * rejection is shown at, so a control that can be pointed at can be pointed at
+ * from all three.
+ */
+export type FieldAnchorId =
+  | 'model'
+  | 'size'
+  | 'hires'
+  | 'steps'
+  | 'cfg'
+  | 'sampler'
+  | 'scheduler'
+  | 'clip_skip'
+  | 'source'
+  | 'source_mode'
+  | 'control_type'
+  | 'qr'
+  | 'generate'
+  | 'advanced_sampling'
+  | 'solver_type'
+  | 'flow_shift'
+  | SamplerSettingName;
 
 /**
  * A combination the horde may refuse, or serve as something other than what was
@@ -43,6 +70,8 @@ export interface FeatureCompatRule {
   baselines: readonly string[];
   /** Transloco key of the line the rule renders, inline and in the popover. */
   messageKey: string;
+  /** The anchor id of the control the rule is about, for the go-to. */
+  anchor: FieldAnchorId;
   /** Whether the request asks for the feature at all. */
   applies: (input: RequestLintInput) => boolean;
   /** Whether the request as described satisfies the rule. */
@@ -78,6 +107,8 @@ export interface RequestWarning {
    */
   id: string;
   section: SectionId;
+  /** The control the warning is about, so the popover can offer a way there. */
+  anchor: FieldAnchorId;
   /** Transloco key for the line's text. */
   key: string;
   params: Record<string, string | number>;
@@ -90,6 +121,7 @@ export interface RequestWarning {
 export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
   {
     id: 'controlnet_baseline',
+    anchor: 'control_type',
     section: 'source',
     baselines: CONTROLNET_BASELINES,
     messageKey: 'generate.lint.controlnet_baseline',
@@ -98,6 +130,7 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
   },
   {
     id: 'remix_baseline',
+    anchor: 'source_mode',
     section: 'source',
     baselines: REMIX_BASELINES,
     // The source section already words this for the mode chip it disables, and
@@ -108,6 +141,7 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
   },
   {
     id: 'qr_code_baseline',
+    anchor: 'qr',
     section: 'workflows',
     baselines: QR_CODE_BASELINES,
     // As above: the workflows card already carries this sentence beside the
@@ -118,6 +152,7 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
   },
   {
     id: 'source_required',
+    anchor: 'source',
     section: 'source',
     baselines: [],
     messageKey: 'generate.lint.source_required',
@@ -145,18 +180,20 @@ export function violatedCompatRules(
 }
 
 /**
- * Turn a requirement hint into a warning, or null where the hint is absent or
- * the form's value agrees with it. The advisory lines under the controls are
- * the same objects, so the popover can never say something the card does not.
+ * Turn a field's one advisory line into a warning, or null where the field has
+ * no line or its line does not contradict the form. Every card's inline line
+ * comes from the same per-field resolvers, so the count beside Generate is
+ * exactly the set of warning lines the panel is drawing.
  */
 function fromHint(
   section: SectionId,
+  anchor: FieldAnchorId,
   hint: RequirementHint | null,
 ): RequestWarning | null {
   if (!hint || !hint.violated) {
     return null;
   }
-  return { id: hint.key, section, key: hint.key, params: hint.params };
+  return { id: hint.key, section, anchor, key: hint.key, params: hint.params };
 }
 
 /**
@@ -164,6 +201,10 @@ function fromHint(
  * recommendations where the form contradicts them, the resolution notes, and
  * the feature-compatibility table. The list is the request's, not any one
  * card's, which is what lets the panel show a single count beside Generate.
+ *
+ * One entry per field at most, because one line per field is what the panel
+ * draws; the per-field resolvers in the form model decide which of a field's
+ * candidates that is.
  */
 export function evaluateRequestLint(
   input: RequestLintInput,
@@ -176,55 +217,61 @@ export function evaluateRequestLint(
     }
   };
 
-  push(fromHint('sampling', stepsRequirementHint(requirements, value.steps)));
-  push(fromHint('sampling', cfgRequirementHint(requirements, value.cfg_scale)));
   push(
     fromHint(
       'sampling',
-      samplerStepCostHint(contract, value.sampler_name, value.steps),
+      'steps',
+      stepsAdvisory(requirements, contract, value.sampler_name, value.steps),
     ),
   );
   push(
     fromHint(
       'sampling',
-      clipSkipRequirementHint(requirements, value.clip_skip),
+      'cfg',
+      cfgAdvisory(requirements, contract, value.sampler_name, value.cfg_scale),
     ),
   );
-  push(fromHint('sampling', clipSkipRangeHint(value.clip_skip)));
   push(
     fromHint(
       'sampling',
+      'clip_skip',
+      clipSkipAdvisory(requirements, value.clip_skip),
+    ),
+  );
+  push(
+    fromHint(
+      'sampling',
+      'sampler',
       samplerRequirementHint(requirements, value.sampler_name),
     ),
   );
   push(
-    fromHint('sampling', karrasRequirementHint(requirements, value.scheduler)),
-  );
-  push(
     fromHint(
-      'size',
-      sd15HiresHint(baseline, value.width, value.height, value.hires_fix),
+      'sampling',
+      'scheduler',
+      scheduleAdvisory(requirements, contract, value.scheduler),
     ),
   );
   push(
     fromHint(
       'size',
+      'size',
+      sizeAdvisory(baseline, value.width, value.height, value.hires_fix),
+    ),
+  );
+  push(
+    fromHint(
+      'size',
+      'hires',
       hiresUnneededHint(baseline, value.width, value.height, value.hires_fix),
     ),
   );
-  if (value.width * value.height > PIXEL_WARN_THRESHOLD) {
-    push({
-      id: 'pixel_budget',
-      section: 'size',
-      key: 'generate.form.pixel_warning',
-      params: {},
-    });
-  }
 
   for (const rule of violatedCompatRules(input)) {
     warnings.push({
       id: rule.id,
       section: rule.section,
+      anchor: rule.anchor,
       key: rule.messageKey,
       params: {},
     });
@@ -238,4 +285,130 @@ export function warningsInSection(
   section: SectionId,
 ): readonly RequestWarning[] {
   return warnings.filter((warning) => warning.section === section);
+}
+
+// --- Horde rejections ------------------------------------------------------
+//
+// A rejected submit comes back as a sentence and a return code. The sentence is
+// the horde's own and is shown verbatim, because it is more specific than
+// anything the studio could reconstruct; the code is only used to decide which
+// control to show it under, so that a reader is looking at the field they have
+// to change rather than at a tile at the far side of the screen.
+
+/** A horde rejection placed at the control it is about. */
+export interface FieldRejection {
+  anchor: FieldAnchorId;
+  /** The horde's own sentence, shown as written. */
+  message: string;
+}
+
+/** The knob words the horde uses in a rejection, and the controls they name. */
+const KNOB_WORDS: ReadonlyMap<string, SamplerSettingName> = new Map([
+  ['eta', 'sampler_eta'],
+  ['s_noise', 'sampler_s_noise'],
+  ['s_churn', 'sampler_s_churn'],
+  ['s_tmin', 'sampler_s_tmin'],
+  ['s_tmax', 'sampler_s_tmax'],
+  ['order', 'sampler_order'],
+]);
+
+/**
+ * Which control a rejection code is about. A code the studio does not model
+ * returns null and the rejection stays where every failure already appears.
+ */
+const REJECTION_ANCHORS: ReadonlyMap<string, FieldAnchorId> = new Map([
+  ['SamplerSolverTypeUnsupported', 'solver_type'],
+  ['SamplerSchedulerMismatch', 'scheduler'],
+  ['SchedulerBaselineMismatch', 'scheduler'],
+  ['FlowShiftInapplicable', 'flow_shift'],
+  ['FlowShiftOutOfRange', 'flow_shift'],
+  ['ControlNetSourceMissing', 'source'],
+  ['ControlNetMismatch', 'source'],
+  ['ControlNetUnsupported', 'source'],
+  ['ControlNetInpaintingMismatch', 'source'],
+  ['InvalidControlType', 'control_type'],
+  ['KudosUpfront', 'generate'],
+  ['InsufficientKudos', 'generate'],
+  ['TooManyPrompts', 'generate'],
+  ['InvalidModel', 'model'],
+  ['ModelNotFound', 'model'],
+  ['UnknownModel', 'model'],
+]);
+
+/** The codes that name a sampler knob, which the message has to be read for. */
+const KNOB_REJECTION_CODES: readonly string[] = [
+  'SamplerKnobInapplicable',
+  'SamplerKnobOutOfRange',
+];
+
+/**
+ * The knob a rejection is about. The code says only that some knob was refused,
+ * so the word is read out of the sentence; a sentence that names none puts the
+ * rejection on the group the knobs live in, which is still nearer than nothing.
+ */
+function knobAnchor(message: string): FieldAnchorId {
+  const boundary = String.raw`\b`;
+  for (const [word, setting] of KNOB_WORDS) {
+    // Bounded on both sides so `order` does not answer for `sampler_order` in
+    // one sentence and for the word "order" in another.
+    const pattern = boundary + `(sampler_)?${word}` + boundary;
+    if (new RegExp(pattern).test(message)) {
+      return setting;
+    }
+  }
+  return 'advanced_sampling';
+}
+
+/**
+ * Where a horde rejection belongs, or null when the studio has no field for it.
+ */
+export function rejectionField(
+  rc: string | undefined,
+  message: string,
+): FieldRejection | null {
+  if (!rc || message.trim() === '') {
+    return null;
+  }
+  if (KNOB_REJECTION_CODES.includes(rc)) {
+    return { anchor: knobAnchor(message), message };
+  }
+  const anchor = REJECTION_ANCHORS.get(rc);
+  return anchor ? { anchor, message } : null;
+}
+
+/**
+ * The form value a rejection is answered by changing. A rejection stands until
+ * the reader touches the control it was placed at: the horde is the authority on
+ * whether the new value is acceptable, so an edit clears the message rather than
+ * being re-judged locally.
+ */
+export function rejectionWatchValue(
+  anchor: FieldAnchorId,
+  value: GenerateFormValue,
+): unknown {
+  for (const name of SAMPLER_SETTING_NAMES) {
+    if (anchor === name) {
+      return value[name];
+    }
+  }
+  switch (anchor) {
+    case 'solver_type':
+      return value.sampler_solver_type;
+    case 'scheduler':
+      return `${value.scheduler}|${value.sampler_name}|${value.model}`;
+    case 'flow_shift':
+      return value.flow_shift;
+    case 'source':
+      return value.sourceMode;
+    case 'control_type':
+      return value.control_type;
+    case 'generate':
+      return `${value.n}|${value.prompt}`;
+    case 'model':
+      return value.model;
+    case 'advanced_sampling':
+      return SAMPLER_SETTING_NAMES.map((name) => value[name]).join('|');
+    default:
+      return null;
+  }
 }

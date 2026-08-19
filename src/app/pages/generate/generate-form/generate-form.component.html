@@ -517,6 +517,21 @@
                 {{ "generate.form.model_hint" | transloco }}
               }
             </p>
+            <!-- The model's own recommendations, taken in one press. Absent
+                 where the model names none, and once the request already
+                 matches: an offer that would change nothing is not an offer. -->
+            @if (hasSuggested()) {
+              <button
+                type="button"
+                class="gs-textlink gs-textlink--accent mt-1.5"
+                (click)="applySuggested()"
+              >
+                {{ "generate.form.use_suggested" | transloco }}
+              </button>
+            }
+            <ng-container
+              *ngTemplateOutlet="fieldError; context: { anchor: 'model' }"
+            />
           </div>
         </section>
 
@@ -665,17 +680,11 @@
               </div>
             }
           </div>
-          @if (totalPixels() > pixelWarnThreshold) {
-            <p class="gs-warn">
-              <app-icon name="warning-triangle" class="gs-ico-sm" />
-              {{ "generate.form.pixel_warning" | transloco }}
-            </p>
-          }
           <ng-container
-            *ngTemplateOutlet="reqHint; context: { hint: nativeSizeHint() }"
+            *ngTemplateOutlet="reqHint; context: { hint: sizeAdvisory() }"
           />
           <ng-container
-            *ngTemplateOutlet="reqHint; context: { hint: hiresHint() }"
+            *ngTemplateOutlet="fieldError; context: { anchor: 'size' }"
           />
           <!-- Hires fix draws at the size the model was trained for and enlarges
                from there, so it answers the question this card asks and lives
@@ -805,7 +814,9 @@
                     step="1"
                     [value]="form().controls.steps.value"
                     (input)="setNumberEntry(form().controls.steps, $event)"
-                    aria-describedby="generate-steps-range"
+                    [attr.aria-describedby]="
+                      describedBy('steps', 'generate-steps-range')
+                    "
                   />
                 </div>
                 <input
@@ -833,10 +844,13 @@
                   </p>
                 }
                 <ng-container
-                  *ngTemplateOutlet="reqHint; context: { hint: stepsHint() }"
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: stepsAdvisory() }
+                  "
                 />
                 <ng-container
-                  *ngTemplateOutlet="reqHint; context: { hint: stepCostHint() }"
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'steps' }"
                 />
               </div>
               <div
@@ -864,7 +878,9 @@
                     [step]="cfgStep"
                     [value]="form().controls.cfg_scale.value"
                     (input)="setNumberEntry(form().controls.cfg_scale, $event)"
-                    aria-describedby="generate-cfg-range"
+                    [attr.aria-describedby]="
+                      describedBy('cfg', 'generate-cfg-range')
+                    "
                   />
                 </div>
                 <input
@@ -892,13 +908,10 @@
                   </p>
                 }
                 <ng-container
-                  *ngTemplateOutlet="reqHint; context: { hint: cfgHint() }"
+                  *ngTemplateOutlet="reqHint; context: { hint: cfgAdvisory() }"
                 />
                 <ng-container
-                  *ngTemplateOutlet="
-                    reqHint;
-                    context: { hint: cfgPlusPlusHint() }
-                  "
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'cfg' }"
                 />
               </div>
               <div
@@ -914,6 +927,7 @@
                   id="generate-sampler"
                   class="gs-native-select gs-native-select--sm mt-1.5"
                   formControlName="sampler_name"
+                  [attr.aria-describedby]="describedBy('sampler')"
                 >
                   <optgroup
                     [label]="'generate.form.sampler_recommended' | transloco"
@@ -953,6 +967,9 @@
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"
                 />
+                <ng-container
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'sampler' }"
+                />
                 @if (samplerTierKey(); as tierKey) {
                   <p class="gs-sublabel mt-1">
                     {{
@@ -967,7 +984,10 @@
                   </p>
                 }
               </div>
-              <div [class.gs-locked]="isSectionLocked('sampling')">
+              <div
+                appTutAnchor="scheduler"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-scheduler">
                     {{ "generate.form.scheduler_label" | transloco }} </label
@@ -977,6 +997,7 @@
                   id="generate-scheduler"
                   class="gs-native-select gs-native-select--sm mt-1.5"
                   formControlName="scheduler"
+                  [attr.aria-describedby]="describedBy('scheduler')"
                 >
                   @for (scheduler of schedulerOptions(); track scheduler) {
                     <option [value]="scheduler">
@@ -987,18 +1008,18 @@
                     </option>
                   }
                 </select>
-                @if (samplerContract()) {
-                  <ng-container
-                    *ngTemplateOutlet="
-                      reqHint;
-                      context: { hint: schedulerHint() }
-                    "
-                  />
-                } @else {
-                  <ng-container
-                    *ngTemplateOutlet="reqHint; context: { hint: karrasHint() }"
-                  />
-                }
+                <ng-container
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: scheduleAdvisory() }
+                  "
+                />
+                <ng-container
+                  *ngTemplateOutlet="
+                    fieldError;
+                    context: { anchor: 'scheduler' }
+                  "
+                />
               </div>
               <div appTutAnchor="seed">
                 <div class="gs-field-head">
@@ -1054,12 +1075,15 @@
                   "
                 />
                 <ng-container
-                  *ngTemplateOutlet="reqHint; context: { hint: clipSkipHint() }"
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: clipSkipAdvisory() }
+                  "
                 />
                 <ng-container
                   *ngTemplateOutlet="
-                    reqHint;
-                    context: { hint: clipSkipRangeHint() }
+                    fieldError;
+                    context: { anchor: 'clip_skip' }
                   "
                 />
               </div>
@@ -1067,6 +1091,7 @@
             @if (samplerContract()) {
               <div
                 class="gs-hairline pt-3"
+                appTutAnchor="advanced_sampling"
                 [class.gs-locked]="isSectionLocked('sampling')"
               >
                 <div class="gs-adv-head">
@@ -1120,7 +1145,7 @@
                     class="gs-grid-sampling mt-3"
                   >
                     @for (setting of samplerSettings(); track setting[0]) {
-                      <div>
+                      <div [appTutAnchor]="setting[0]">
                         <label
                           class="gs-slabel"
                           [attr.for]="'generate-' + setting[0]"
@@ -1153,9 +1178,12 @@
                               : null
                           "
                           [attr.aria-describedby]="
-                            samplerSettingInvalid(setting[0], setting[1])
-                              ? 'generate-' + setting[0] + '-range'
-                              : null
+                            describedBy(
+                              setting[0],
+                              samplerSettingInvalid(setting[0], setting[1])
+                                ? 'generate-' + setting[0] + '-range'
+                                : null
+                            )
                           "
                           (input)="
                             setOptionalNumberEntry(
@@ -1179,10 +1207,16 @@
                             }}
                           </p>
                         }
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: setting[0] }
+                          "
+                        />
                       </div>
                     }
                     @if (solverTypeChoices().length > 0) {
-                      <div>
+                      <div appTutAnchor="solver_type">
                         <label class="gs-slabel" for="generate-solver-type">
                           {{
                             "generate.form.sampler_solver_type_label"
@@ -1193,6 +1227,7 @@
                           id="generate-solver-type"
                           class="gs-native-select gs-native-select--sm mt-1.5"
                           formControlName="sampler_solver_type"
+                          [attr.aria-describedby]="describedBy('solver_type')"
                         >
                           <option value="">
                             {{ "generate.form.worker_default" | transloco }}
@@ -1201,10 +1236,16 @@
                             <option [value]="solver">{{ solver }}</option>
                           }
                         </select>
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: 'solver_type' }
+                          "
+                        />
                       </div>
                     }
                     @if (flowShiftAllowed()) {
-                      <div>
+                      <div appTutAnchor="flow_shift">
                         <div class="gs-field-head">
                           <label class="gs-slabel" for="generate-flow-shift">
                             {{
@@ -1228,9 +1269,12 @@
                             flowShiftInvalid() ? 'true' : null
                           "
                           [attr.aria-describedby]="
-                            flowShiftInvalid()
-                              ? 'generate-flow-shift-range'
-                              : null
+                            describedBy(
+                              'flow_shift',
+                              flowShiftInvalid()
+                                ? 'generate-flow-shift-range'
+                                : null
+                            )
                           "
                           (input)="
                             setOptionalNumberEntry(
@@ -1251,12 +1295,24 @@
                             }}
                           </p>
                         }
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: 'flow_shift' }
+                          "
+                        />
                       </div>
                     }
                   </div>
                   <p class="gs-sublabel mt-2">
                     {{ "generate.form.knob_defaults_note" | transloco }}
                   </p>
+                  <ng-container
+                    *ngTemplateOutlet="
+                      fieldError;
+                      context: { anchor: 'advanced_sampling' }
+                    "
+                  />
                 }
               </div>
             }
@@ -2030,6 +2086,13 @@
                   <li class="gs-lint-item gs-sec--{{ warning.section }}">
                     <app-icon name="warning-triangle" class="gs-ico-sm" />
                     <span>{{ warning.key | transloco: warning.params }}</span>
+                    <button
+                      type="button"
+                      class="gs-lint-goto"
+                      (click)="goToField(warning.anchor)"
+                    >
+                      {{ "generate.lint.go_to" | transloco }}
+                    </button>
                   </li>
                 }
               </ul>
@@ -2038,6 +2101,9 @@
         </div>
       }
     </div>
+    <ng-container
+      *ngTemplateOutlet="fieldError; context: { anchor: 'generate' }"
+    />
     <button
       type="submit"
       class="gs-genbtn"
@@ -2107,6 +2173,18 @@
         <app-icon name="warning-triangle" class="gs-ico-sm" />
       }
       {{ hint.key | transloco: hint.params }}
+    </p>
+  }
+</ng-template>
+
+<!-- The horde's own sentence about a control, under that control. Shown as
+     written and in the error idiom: this is not advice, it is the reason the
+     request was refused, and the field it names is the one to change. -->
+<ng-template #fieldError let-anchor="anchor">
+  @if (rejectionFor(anchor); as message) {
+    <p class="gs-warn mt-1.5" [id]="rejectionId(anchor)" role="alert">
+      <app-icon name="warning-triangle" class="gs-ico-sm" />
+      {{ message }}
     </p>
   }
 </ng-template>

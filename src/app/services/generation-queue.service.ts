@@ -349,11 +349,12 @@ export class GenerationQueueService {
         hordeId: result.response.id,
         kudos: result.response.kudos,
         errorMessage: undefined,
+        errorRc: undefined,
       });
       return 'submitted';
     }
 
-    const { status, message } = result.error;
+    const { status, message, rc } = result.error;
     if (status === 429) {
       // A 429 is a global submit-rate signal, so back off regardless of whether
       // this particular job is still waiting.
@@ -367,6 +368,7 @@ export class GenerationQueueService {
       await this.patchJob(job.localId, {
         status: 'error',
         errorMessage: message,
+        errorRc: rc,
       });
       return 'error';
     }
