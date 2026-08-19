@@ -13,7 +13,11 @@ export const CLIENT_AGENT = new HttpContextToken<string>(
 export const clientAgentInterceptor: HttpInterceptorFn = (req, next) => {
   const apiHost = new URL(inject(API_BASE_URL)).hostname;
 
-  if (!req.url.includes(apiHost)) {
+  /* Exact host match only. A substring test would tag every other host under
+     the same domain, such as the evidence library on a sibling subdomain, and
+     the extra header turns a plain cross-origin GET into one that needs a
+     preflight the other host does not answer. */
+  if (requestHost(req.url) !== apiHost) {
     return next(req);
   }
 
@@ -23,3 +27,12 @@ export const clientAgentInterceptor: HttpInterceptorFn = (req, next) => {
   });
   return next(patched);
 };
+
+/** The hostname of an absolute URL, or null for a relative one. */
+function requestHost(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}

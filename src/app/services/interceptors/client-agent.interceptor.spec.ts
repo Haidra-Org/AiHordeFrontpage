@@ -52,6 +52,16 @@ describe('clientAgentInterceptor', () => {
     req.flush({});
   });
 
+  it('should NOT add Client-Agent to another host under the same domain', () => {
+    http.get('https://assets.aihorde.net/param-sweeps/index.json').subscribe();
+
+    const req = httpTesting.expectOne(
+      'https://assets.aihorde.net/param-sweeps/index.json',
+    );
+    expect(req.request.headers.has('Client-Agent')).toBe(false);
+    req.flush({});
+  });
+
   it('should NOT add Client-Agent to relative (local asset) requests', () => {
     http.get('/assets/data/faq.en.json').subscribe();
 
