@@ -1,10 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnDestroy,
   OnInit,
   PLATFORM_ID,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -72,6 +74,14 @@ export interface StyleBrowserExpanded {
    */
   shots: StyleBrowserShot[];
 }
+
+/**
+ * How far a drag on the control dock has to travel, and how much more of that
+ * travel has to be vertical than horizontal, before it counts as a swipe. Short
+ * enough to be worth the gesture on a dock only a few rows tall, long enough
+ * that a thumb settling on a chip does not fold the dock away.
+ */
+const DOCK_SWIPE_PX = 24;
 
 /** How many favourites the pinned strip shows at most. */
 const MOST_USED_LIMIT = 10;
@@ -168,6 +178,7 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   public readonly closed = output<void>();
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly bar = viewChild<ElementRef<HTMLElement>>('bar');
   private readonly searchInput =
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly expandedPanel =
@@ -202,6 +213,98 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
 
   public toggleBarFolded(): void {
     this.barFolded.update((v) => !v);
+  }
+
+  /** The pointer a dock drag is following, and where it started. */
+  private dockPointer: number | null = null;
+  private dockStartX = 0;
+  private dockStartY = 0;
+  /** Whether the current gesture already read as a swipe rather than a tap. */
+  private dockSwiped = false;
+  /** Whether the dock took the pointer off the control the drag started on. */
+  private dockCaptured = false;
+
+  /**
+   * The dock answers a swipe as well as its chevron: on a phone the dock is
+   * within thumb reach and the chevron is a small target above it, so pushing
+   * the dock down to get it out of the way and pulling it up to get it back is
+   * the gesture the shape invites. It is the same fold either way.
+   *
+   * A drag that starts in the search field is left alone, so selecting text and
+   * placing a caret behave as they do in any other field.
+   */
+  public onDockPointerDown(event: PointerEvent): void {
+    if (event.button > 0 || this.isTextEntry(event.target)) {
+      return;
+    }
+    this.dockPointer = event.pointerId;
+    this.dockStartX = event.clientX;
+    this.dockStartY = event.clientY;
+    this.dockSwiped = false;
+    this.dockCaptured = false;
+  }
+
+  /**
+   * The fold happens as soon as the travel qualifies rather than on release, so
+   * the dock answers under the thumb. One fold per gesture: the rest of the
+   * travel is ignored.
+   *
+   * The pointer is only captured at that moment, never at the start of the
+   * drag: a captured pointer sends its click to whatever holds it, so capturing
+   * every touch on the dock would take the click away from the chip the reader
+   * simply tapped.
+   */
+  public onDockPointerMove(event: PointerEvent): void {
+    if (this.dockPointer !== event.pointerId || this.dockSwiped) {
+      return;
+    }
+    const dy = event.clientY - this.dockStartY;
+    const dx = event.clientX - this.dockStartX;
+    if (Math.abs(dy) < DOCK_SWIPE_PX || Math.abs(dy) <= Math.abs(dx)) {
+      return;
+    }
+    this.dockSwiped = true;
+    this.dockCaptured = true;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    // Up asks for the dock, down puts it away; a swipe the way the dock already
+    // is means nothing rather than folding it back.
+    if (dy < 0 === this.barFolded()) {
+      this.toggleBarFolded();
+    }
+  }
+
+  public onDockPointerUp(event: PointerEvent): void {
+    if (this.dockPointer !== event.pointerId) {
+      return;
+    }
+    if (this.dockCaptured) {
+      (event.currentTarget as HTMLElement).releasePointerCapture?.(
+        event.pointerId,
+      );
+      this.dockCaptured = false;
+    }
+    this.dockPointer = null;
+  }
+
+  /**
+   * Swallow the click a swipe leaves behind. A gesture that started on a chip
+   * and travelled far enough to fold the dock has been answered already, and
+   * the browser would otherwise follow it with a click on that chip. Capturing,
+   * so it is stopped before the chip's own handler sees it, and only ever one
+   * click, so the tap after the swipe is an ordinary tap again.
+   */
+  private readonly swallowDockClick = (event: MouseEvent): void => {
+    if (!this.dockSwiped) {
+      return;
+    }
+    this.dockSwiped = false;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  /** Whether a drag starting here is the field's own business. */
+  private isTextEntry(target: EventTarget | null): boolean {
+    return target instanceof HTMLElement && target.closest('input') !== null;
   }
 
   /**
@@ -401,6 +504,20 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       ? this.usedOrder().length === 0
       : this.sections().length === 0 && this.mostUsed().length === 0,
   );
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const bar = this.bar()?.nativeElement;
+      if (!bar) {
+        return;
+      }
+      bar.addEventListener('click', this.swallowDockClick, true);
+      destroyRef.onDestroy(() =>
+        bar.removeEventListener('click', this.swallowDockClick, true),
+      );
+    });
+  }
 
   public ngOnInit(): void {
     // Lazy by design: the previews payload is only worth fetching once a user

@@ -56,8 +56,13 @@
     </div>
 
     <div
+      #bar
       class="gs-modal-search-bar gs-sb-bar"
       [class.gs-sb-bar--folded]="barFolded()"
+      (pointerdown)="onDockPointerDown($event)"
+      (pointermove)="onDockPointerMove($event)"
+      (pointerup)="onDockPointerUp($event)"
+      (pointercancel)="onDockPointerUp($event)"
     >
       <button
         type="button"

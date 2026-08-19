@@ -131,6 +131,22 @@ async function createBrowser(
   };
 }
 
+/** A pointer event jsdom can build, with the fields the swipe maths reads. */
+const pointer = (type: string, clientY: number, clientX = 100): PointerEvent =>
+  new MouseEvent(type, {
+    clientX,
+    clientY,
+    bubbles: true,
+  }) as unknown as PointerEvent;
+
+/** Drag the control dock from `from` to `to`, as a finger would. */
+const swipeDock = (el: HTMLElement, from: number, to: number): void => {
+  const bar = el.querySelector<HTMLElement>('.gs-sb-bar')!;
+  bar.dispatchEvent(pointer('pointerdown', from));
+  bar.dispatchEvent(pointer('pointermove', to));
+  bar.dispatchEvent(pointer('pointerup', to));
+};
+
 const cardNames = (el: HTMLElement): string[] =>
   [...el.querySelectorAll('.gs-sb-card .gs-sb-name')].map((node) =>
     (node.textContent ?? '').trim(),
@@ -522,6 +538,64 @@ describe('StyleBrowserComponent', () => {
         expect.stringContaining('gs-sb-variant'),
         expect.stringContaining('gs-sb-sort'),
       ]);
+    });
+
+    it('folds the dock away on a swipe down and back on a swipe up', async () => {
+      const { component, el } = await createBrowser();
+      expect(component.barFolded()).toBe(false);
+
+      swipeDock(el, 700, 740);
+      expect(component.barFolded()).toBe(true);
+
+      swipeDock(el, 740, 700);
+      expect(component.barFolded()).toBe(false);
+    });
+
+    it('leaves the dock alone for travel too short to be a swipe', async () => {
+      const { component, el } = await createBrowser();
+      swipeDock(el, 700, 710);
+      expect(component.barFolded()).toBe(false);
+    });
+
+    it('reads a swipe the way the dock already is as nothing', async () => {
+      const { component, el } = await createBrowser();
+      swipeDock(el, 700, 660);
+      expect(component.barFolded()).toBe(false);
+    });
+
+    it('leaves a mostly sideways drag to the controls under it', async () => {
+      const { component, el } = await createBrowser();
+      const bar = el.querySelector<HTMLElement>('.gs-sb-bar')!;
+      bar.dispatchEvent(pointer('pointerdown', 700, 100));
+      bar.dispatchEvent(pointer('pointermove', 740, 200));
+      bar.dispatchEvent(pointer('pointerup', 740, 200));
+      expect(component.barFolded()).toBe(false);
+    });
+
+    it('ignores a drag that starts in the search field', async () => {
+      const { component, el } = await createBrowser();
+      const input = el.querySelector<HTMLElement>('.gs-modal-search input')!;
+      input.dispatchEvent(pointer('pointerdown', 700));
+      input.dispatchEvent(pointer('pointermove', 740));
+      input.dispatchEvent(pointer('pointerup', 740));
+      expect(component.barFolded()).toBe(false);
+    });
+
+    it('swallows the click a swipe leaves on the chip it started from', async () => {
+      const { component, el, fixture } = await createBrowser();
+      const chip = el.querySelector<HTMLElement>('.gs-sb-mature')!;
+      chip.dispatchEvent(pointer('pointerdown', 700));
+      chip.dispatchEvent(pointer('pointermove', 740));
+      chip.dispatchEvent(pointer('pointerup', 740));
+      chip.click();
+      fixture.detectChanges();
+      expect(component.barFolded()).toBe(true);
+      expect(component.showMature()).toBe(false);
+
+      // The next tap is an ordinary tap again.
+      chip.click();
+      fixture.detectChanges();
+      expect(component.showMature()).toBe(true);
     });
   });
 

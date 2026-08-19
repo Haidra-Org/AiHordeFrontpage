@@ -5707,6 +5707,14 @@
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     background: var(--gs-panel);
     gap: 10px;
+    /* The dock reads a vertical swipe as a fold, so the browser must not spend
+       that gesture on a scroll of its own. Nothing here scrolls; the search
+       field is handed back its native behaviour below, so a caret drag and a
+       long value's own panning still work. */
+    touch-action: none;
+  }
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    touch-action: auto;
   }
   /* Thumb-scale controls: search + sort share the first row, the subject
      switch stretches across its own row, every target >= 40px tall. The fold
@@ -6901,14 +6909,64 @@
   background: var(--gs-blue-hover);
 }
 @media (max-width: 1023.98px) {
-  /* Near-fullscreen on phones: the preview is the point of the layer. */
+  /* Full screen on phones, and the layer itself is what scrolls. The contact
+     sheet stacks one example per row here, which is taller than the screen,
+     and a centred child that outgrows its box loses its top edge to a
+     scrollport that begins below it. Scrolling the layer, with the panel
+     centred only while it fits, keeps the first example whole and reachable. */
   .gen-studio .gs-sb-viewer {
-    padding: 0;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    align-items: flex-start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .gen-studio .gs-sb-viewer-body {
     width: 100%;
-    height: 100%;
+    height: auto;
+    min-height: 100%;
+    margin: auto;
+    overflow: visible;
     border-radius: 0;
+  }
+  /* The style's name and the way out stay put while the examples pass under. */
+  .gen-studio .gs-sb-viewer-top {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--gs-panel);
+  }
+  /* The stage is as tall as its examples rather than as tall as what is left:
+     the layer around it is the scroller now. */
+  .gen-studio .gs-sb-viewer-stage {
+    flex: none;
+    min-height: auto;
+    align-items: flex-start;
+    overflow: visible;
+    padding: 12px 8px;
+  }
+  /* Stepping between styles stays within reach of the screen rather than the
+     middle of a stage several screens tall. The examples run the full width
+     here, so both arrows are lifted over them rather than only the one that
+     happens to follow the sheet in the markup. */
+  .gen-studio .gs-sb-viewer-nav {
+    position: fixed;
+    z-index: 3;
+  }
+  .gen-studio .gs-sb-viewer-sheet {
+    align-items: flex-start;
+    align-content: flex-start;
+    max-height: none;
+  }
+  /* One example per row at full width, each as tall as it is wide. */
+  .gen-studio .gs-sb-viewer-shot {
+    flex: 1 1 100%;
+    max-height: none;
+  }
+  .gen-studio .gs-sb-viewer-img {
+    max-width: 100%;
+    height: auto;
+    max-height: none;
   }
   .gen-studio .gs-sb-viewer-actions {
     flex-wrap: wrap;
