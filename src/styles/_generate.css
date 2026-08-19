@@ -12984,8 +12984,20 @@ html:has(app-gs-sheet) {
   }
 }
 /* Below that width the grip is decoration: the button is the way to size the
-   field, and the box's bottom corner is free for it. */
+   field, and the box's bottom corner is free for it. The history button shares
+   the corner column: same size, same inset, so the two read as one control
+   strip rather than two afterthoughts. */
 @media (max-width: 1023px) {
+  .gen-studio .gs-prompt-hist-btn {
+    top: 8px;
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--gs-radius-sm);
+  }
+  .gen-studio .gs-textarea--history {
+    padding-right: 60px;
+  }
   .gen-studio .gs-textarea--resize,
   .gen-studio textarea.gs-neg-input {
     resize: none;
