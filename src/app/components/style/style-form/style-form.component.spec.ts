@@ -5,6 +5,7 @@ import { StyleFormComponent } from './style-form.component';
 import { signal } from '@angular/core';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { SamplerConstraintsService } from '../../../services/sampler-constraints.service';
+import { ModelReferenceService } from '../../../services/model-reference.service';
 import { ImageStyle, TextStyle } from '../../../types/style';
 import { SamplerConstraintsDocument } from '../../../types/sampler-constraints';
 import { SAMPLERS } from '../../../pages/generate/generate-form.model';
@@ -60,11 +61,16 @@ describe('StyleFormComponent', () => {
   const contract = signal<SamplerConstraintsDocument | null>(null);
   const samplerConstraintsMock = { contract, load: vi.fn() };
 
+  const referenceNames = signal<string[] | null>(null);
+  const modelReferenceMock = { names: referenceNames, load: vi.fn() };
+
   beforeEach(() => {
     aiHordeMock.getImageModels.mockClear();
     aiHordeMock.getTextModels.mockClear();
     contract.set(null);
     samplerConstraintsMock.load.mockClear();
+    referenceNames.set(null);
+    modelReferenceMock.load.mockClear();
 
     TestBed.configureTestingModule({
       imports: [StyleFormComponent],
@@ -77,6 +83,7 @@ describe('StyleFormComponent', () => {
           provide: SamplerConstraintsService,
           useValue: samplerConstraintsMock,
         },
+        { provide: ModelReferenceService, useValue: modelReferenceMock },
       ],
     });
   });
@@ -139,6 +146,52 @@ describe('StyleFormComponent', () => {
         'seeds_3',
         'k_lms',
       ]);
+    });
+  });
+
+  describe('model choices', () => {
+    it('offers the reference models with the live worker counts over them', () => {
+      aiHordeMock.getImageModels.mockReturnValueOnce(
+        of([
+          { name: 'Deliberate', count: 3 },
+          { name: 'Private Merge', count: 1 },
+        ]),
+      );
+      referenceNames.set(['Deliberate', 'Pony Diffusion']);
+
+      const fixture = TestBed.createComponent(StyleFormComponent);
+      fixture.componentRef.setInput('styleType', 'image');
+      fixture.detectChanges();
+
+      expect(modelReferenceMock.load).toHaveBeenCalled();
+      expect(
+        fixture.componentInstance
+          .availableModels()
+          .map((model) => [model.name, model.count, model.custom ?? false]),
+      ).toEqual([
+        ['Deliberate', 3, false],
+        ['Private Merge', 1, true],
+        ['Pony Diffusion', 0, false],
+      ]);
+    });
+
+    it('leaves a text style on the horde list alone', () => {
+      aiHordeMock.getTextModels.mockReturnValueOnce(
+        of([
+          { name: 'Zephyr', count: 1 },
+          { name: 'Airoboros', count: 2 },
+        ]),
+      );
+      referenceNames.set(['Deliberate']);
+
+      const fixture = TestBed.createComponent(StyleFormComponent);
+      fixture.componentRef.setInput('styleType', 'text');
+      fixture.detectChanges();
+
+      expect(
+        fixture.componentInstance.availableModels().map((model) => model.name),
+      ).toEqual(['Airoboros', 'Zephyr']);
+      expect(modelReferenceMock.load).not.toHaveBeenCalled();
     });
   });
 

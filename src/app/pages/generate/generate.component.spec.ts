@@ -78,6 +78,7 @@ describe('GenerateComponent', () => {
           // baseline map and drive the remix/QR gating directly.
           provide: ModelReferenceService,
           useValue: {
+            names: signal(null),
             baselines,
             load: () => undefined,
             supportsRemix: (model: string) =>
@@ -1090,6 +1091,7 @@ async function createWholeStudio(
       {
         provide: ModelReferenceService,
         useValue: {
+          names: signal(null),
           baselines: signal(baselines),
           requirements: signal(null),
           load: () => undefined,

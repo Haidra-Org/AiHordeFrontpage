@@ -19,7 +19,7 @@ const CACHE_KEY = 'aihorde.generate.model_baselines';
  * dropped rather than migrated, since a refetch costs one request and the data
  * is not user-owned.
  */
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 /** How long a persisted copy is served without a background refetch. */
 export const MODEL_REFERENCE_TTL_MS = 60 * 60 * 1000;
@@ -71,8 +71,35 @@ export type ModelRequirementsMap = Record<string, ModelRequirements>;
 interface CachedReference {
   version: number;
   fetchedAt: number;
+  names: string[];
   baselines: ModelBaselineMap;
   requirements: ModelRequirementsMap;
+}
+
+/**
+ * Every record name in a raw reference payload. This is the universe of models
+ * the pickers offer, so a record is kept whether or not it carries a baseline.
+ */
+export function coerceModelNames(raw: unknown): string[] {
+  if (typeof raw !== 'object' || raw === null) {
+    return [];
+  }
+  return Object.entries(raw as Record<string, unknown>)
+    .filter(
+      ([name, value]) =>
+        name !== '' && typeof value === 'object' && value !== null,
+    )
+    .map(([name]) => name);
+}
+
+/** Re-read an already-flattened list of names, e.g. from the cache. */
+function coerceFlatNames(raw: unknown): string[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.filter(
+    (name): name is string => typeof name === 'string' && name !== '',
+  );
 }
 
 /**
@@ -246,6 +273,12 @@ export class ModelReferenceService {
   private readonly http = inject(HttpClient);
   private readonly db = inject(DatabaseService);
 
+  /**
+   * Every model the reference lists, or null while nothing has been loaded yet.
+   * This is what the model pickers offer, with the horde's worker counts laid
+   * over it, which `mergeModelList` in `types/active-model` does.
+   */
+  public readonly names = signal<string[] | null>(null);
   /** Known model baselines, or null while nothing has been loaded yet. */
   public readonly baselines = signal<ModelBaselineMap | null>(null);
   /** Recommended settings per model; null until something has been loaded. */
@@ -266,6 +299,7 @@ export class ModelReferenceService {
     this.started = true;
     const cached = this.readCache();
     if (cached) {
+      this.names.set(cached.names);
       this.baselines.set(cached.baselines);
       this.requirements.set(cached.requirements);
       if (this.now() - cached.fetchedAt < MODEL_REFERENCE_TTL_MS) {
@@ -323,12 +357,15 @@ export class ModelReferenceService {
         if (Object.keys(baselines).length === 0) {
           return;
         }
+        const names = coerceModelNames(raw);
         const requirements = coerceRequirementsMap(raw);
+        this.names.set(names);
         this.baselines.set(baselines);
         this.requirements.set(requirements);
         this.db.store(CACHE_KEY, {
           version: CACHE_VERSION,
           fetchedAt: this.now(),
+          names,
           baselines,
           requirements,
         } satisfies CachedReference);
@@ -351,9 +388,11 @@ export class ModelReferenceService {
     if (Object.keys(baselines).length === 0) {
       return null;
     }
+    const names = coerceFlatNames(source['names']);
     return {
       version: CACHE_VERSION,
       fetchedAt: source['fetchedAt'],
+      names: names.length > 0 ? names : Object.keys(baselines),
       baselines,
       requirements: coerceFlatRequirementsMap(source['requirements']),
     };

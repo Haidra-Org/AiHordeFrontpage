@@ -469,6 +469,23 @@
     @apply bg-gray-800;
   }
 
+  /* Marks an option nobody is serving right now; it stays selectable. */
+  .autocomplete-no-workers {
+    @apply text-xs;
+    color: var(--color-warning-text);
+  }
+
+  .dark .autocomplete-no-workers {
+    color: rgb(253 230 138);
+  }
+
+  /* Marks an option a worker offers that the model reference does not list. */
+  .autocomplete-custom {
+    @apply ml-1 rounded px-1.5 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide;
+    background-color: var(--color-surface-secondary);
+    color: var(--color-text-secondary);
+  }
+
   /* Empty-state message when no options match */
   .autocomplete-empty {
     @apply px-3 py-2 text-xs;

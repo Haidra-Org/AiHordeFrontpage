@@ -1097,6 +1097,15 @@
   font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
+/* The same line carrying something the user should act on, e.g. a model no
+   worker is serving. Tinted rather than iconned: nothing here blocks a
+   submission. */
+.gen-studio .gs-sublabel--warn {
+  color: #b45309;
+}
+.dark .gen-studio .gs-sublabel--warn {
+  color: #fbbf24;
+}
 
 /* ------- field heads + help notes ----------------------------------- */
 /* A field's label line, and a switch's row, both become wrapping flex rows so a

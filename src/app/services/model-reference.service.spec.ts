@@ -12,6 +12,7 @@ import {
   baselineSupportsRemix,
   coerceBaselineMap,
   coerceRequirements,
+  coerceModelNames,
   coerceRequirementsMap,
   normalizeBaseline,
 } from './model-reference.service';
@@ -19,7 +20,7 @@ import {
 const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
 const CACHE_KEY = 'aihorde.generate.model_baselines';
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 const REFERENCE_FIXTURE = {
   Deliberate: { baseline: 'stable diffusion 1', nsfw: false },
@@ -161,6 +162,22 @@ describe('baseline capability rules', () => {
   });
 });
 
+describe('coerceModelNames', () => {
+  it('keeps every record, including one without a baseline', () => {
+    expect(coerceModelNames(REFERENCE_FIXTURE)).toEqual([
+      'Deliberate',
+      'AlbedoBase XL (SDXL)',
+      'Stable Cascade 1.0',
+      'Flux',
+      'NoBaseline',
+    ]);
+  });
+
+  it('tolerates a non-object payload', () => {
+    expect(coerceModelNames(null)).toEqual([]);
+  });
+});
+
 describe('ModelReferenceService', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -182,6 +199,7 @@ describe('ModelReferenceService', () => {
     http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
 
     expect(service.loading()).toBe(false);
+    expect(service.names()).toContain('NoBaseline');
     expect(service.baselineFor('Deliberate')).toBe('stable_diffusion_1');
     expect(service.supportsRemix('Stable Cascade 1.0')).toBe(true);
     expect(service.supportsRemix('Deliberate')).toBe(false);
@@ -207,6 +225,7 @@ describe('ModelReferenceService', () => {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null');
     expect(cached.version).toBe(CACHE_VERSION);
     expect(typeof cached.fetchedAt).toBe('number');
+    expect(cached.names).toContain('NoBaseline');
     expect(cached.baselines['Flux']).toBe('flux_1');
     expect(cached.requirements['Flux'].samplers).toEqual(['k_euler']);
   });
@@ -217,6 +236,7 @@ describe('ModelReferenceService', () => {
       JSON.stringify({
         version: CACHE_VERSION,
         fetchedAt: Date.now(),
+        names: ['Deliberate', 'NoBaseline'],
         baselines: { Deliberate: 'stable_diffusion_1' },
         requirements: { Deliberate: { clip_skip: 2 } },
       }),
@@ -225,6 +245,7 @@ describe('ModelReferenceService', () => {
     service.load();
 
     http.expectNone(MODEL_REFERENCE_URL);
+    expect(service.names()).toEqual(['Deliberate', 'NoBaseline']);
     expect(service.baselineFor('Deliberate')).toBe('stable_diffusion_1');
     expect(service.requirementsFor('Deliberate')?.clip_skip).toBe(2);
   });

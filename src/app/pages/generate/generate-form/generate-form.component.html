@@ -454,8 +454,13 @@
               hiddenCountKey="generate.form.model_hidden_count"
               emptyKey="generate.form.model_empty"
             />
-            <p class="gs-sublabel mt-1">
-              @if (selectedModelCount() !== null) {
+            <p
+              class="gs-sublabel mt-1"
+              [class.gs-sublabel--warn]="selectedModelCount() === 0"
+            >
+              @if (selectedModelCount() === 0) {
+                {{ "generate.form.model_no_workers" | transloco }}
+              } @else if (selectedModelCount() !== null) {
                 {{
                   "generate.form.model_workers"
                     | transloco: { count: selectedModelCount() }

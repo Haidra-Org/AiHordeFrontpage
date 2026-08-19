@@ -31,7 +31,7 @@ import {
   applyStyle,
 } from '../../services/horde-styles.service';
 import { setPageTitle } from '../../helper/page-title';
-import { ActiveModel } from '../../types/active-model';
+import { ActiveModel, mergeModelList } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
 import { ImageGenerationRequest } from '../../types/generation';
 import { ImagePostProcessor } from '../../types/style';
@@ -202,7 +202,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public readonly form = createGenerateForm(
     coerceFormValue(this.db.get(STORAGE_KEY)),
   );
-  public readonly models = signal<ActiveModel[]>([]);
+  /** What `/status/models` reports: the worker counts, not the model universe. */
+  private readonly workerModels = signal<ActiveModel[]>([]);
+  /** The models the pickers offer: the reference, with worker counts over it. */
+  public readonly models = computed(() =>
+    mergeModelList(this.modelReference.names(), this.workerModels()),
+  );
   public readonly samplerContract = this.samplerConstraints.contract;
   public readonly kudos = signal<number | null>(null);
   public readonly estimating = signal(false);
@@ -966,9 +971,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.aiHorde
       .getImageModels('all')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((models) =>
-        this.models.set([...models].sort((a, b) => b.count - a.count)),
-      );
+      .subscribe((models) => this.workerModels.set(models));
   }
 
   private fetchStyles(): void {

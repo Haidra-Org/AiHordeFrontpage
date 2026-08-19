@@ -63,7 +63,20 @@
           (keydown.space)="onOptionKeydown($event, model.name)"
         >
           {{ model.name }}
-          <span class="text-secondary">({{ model.count }} workers)</span>
+          @if (model.count > 0) {
+            <span class="text-secondary">{{
+              "model_autocomplete.workers" | transloco: { count: model.count }
+            }}</span>
+          } @else {
+            <span class="autocomplete-no-workers">{{
+              "model_autocomplete.no_workers" | transloco
+            }}</span>
+          }
+          @if (model.custom) {
+            <span class="autocomplete-custom">{{
+              "model_autocomplete.custom" | transloco
+            }}</span>
+          }
         </div>
       }
 

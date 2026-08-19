@@ -39,8 +39,9 @@ import {
 } from '../../../types/style-api';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { SamplerConstraintsService } from '../../../services/sampler-constraints.service';
+import { ModelReferenceService } from '../../../services/model-reference.service';
 import { SAMPLERS } from '../../../pages/generate/generate-form.model';
-import { ActiveModel } from '../../../types/active-model';
+import { ActiveModel, mergeModelList } from '../../../types/active-model';
 import {
   StyleLoraConfig,
   StyleTextualInversionConfig,
@@ -166,6 +167,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
+  private readonly modelReference = inject(ModelReferenceService);
 
   /**
    * The samplers a style may pin: the horde's published contract when it has
@@ -233,8 +235,20 @@ export class StyleFormComponent implements OnInit, OnChanges {
   /** Whether this is an image style. */
   public readonly isImageStyle = computed(() => this.styleType() === 'image');
 
-  /** All available models fetched from the API. */
-  public readonly availableModels = signal<ActiveModel[]>([]);
+  /** What the horde reports as being served right now, per model. */
+  private readonly workerModels = signal<ActiveModel[]>([]);
+
+  /**
+   * The models this picker offers. An image style picks from the official model
+   * reference with the live worker counts over it, the same list the generate
+   * studio offers; a text style has no such reference, so it picks from whatever
+   * the horde reports.
+   */
+  public readonly availableModels = computed(() =>
+    this.isImageStyle()
+      ? mergeModelList(this.modelReference.names(), this.workerModels())
+      : [...this.workerModels()].sort((a, b) => a.name.localeCompare(b.name)),
+  );
 
   /** Confirm modal state. */
   public readonly confirmModalOpen = signal(false);
@@ -273,7 +287,10 @@ export class StyleFormComponent implements OnInit, OnChanges {
   ngOnInit(): void {
     this.initializeForm();
     this.loadModels();
-    if (this.isImageStyle()) this.samplerConstraints.load();
+    if (this.isImageStyle()) {
+      this.samplerConstraints.load();
+      this.modelReference.load();
+    }
     this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
   }
 
@@ -347,11 +364,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
       : this.aiHorde.getTextModels();
 
     models$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((models) => {
-      this.availableModels.set(
-        models
-          .filter((m) => m.name)
-          .sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      this.workerModels.set(models.filter((m) => m.name));
     });
   }
 

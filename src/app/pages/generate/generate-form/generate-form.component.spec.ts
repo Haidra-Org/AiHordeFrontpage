@@ -786,6 +786,66 @@ describe('GenerateFormComponent request warnings', () => {
  * want. These assertions render the real template rather than stubbing it: the
  * structure is the thing being guaranteed.
  */
+describe('GenerateFormComponent model availability', () => {
+  async function renderWithModel(
+    model: string,
+    models: { name: string; count: number }[],
+  ): Promise<HTMLElement> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        mode: 'advanced',
+        prompt: 'a fox',
+        model,
+      }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.componentRef.setInput('models', models);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  function modelHint(host: HTMLElement): string {
+    const field = host.querySelector<HTMLElement>('[appTutAnchor="model"]');
+    return field?.querySelector('.gs-sublabel')?.textContent?.trim() ?? '';
+  }
+
+  it('warns that the request will wait when nobody serves the chosen model', async () => {
+    const host = await renderWithModel('Pony Diffusion', [
+      { name: 'Pony Diffusion', count: 0 },
+    ]);
+
+    expect(modelHint(host)).toBe(en['generate.form.model_no_workers']);
+    expect(
+      host.querySelector('[appTutAnchor="model"] .gs-sublabel--warn'),
+    ).not.toBeNull();
+  });
+
+  it('counts the workers when the model is being served', async () => {
+    const host = await renderWithModel('Deliberate', [
+      { name: 'Deliberate', count: 5 },
+    ]);
+
+    expect(modelHint(host)).toBe('5 workers online');
+    expect(
+      host.querySelector('[appTutAnchor="model"] .gs-sublabel--warn'),
+    ).toBeNull();
+  });
+});
+
 describe('GenerateFormComponent structure', () => {
   async function renderFixture(): Promise<
     ComponentFixture<GenerateFormComponent>

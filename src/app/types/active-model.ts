@@ -17,7 +17,53 @@ export interface ActiveModel {
   eta?: number;
   /** The model type (text or image). */
   type?: 'image' | 'text';
+  /** Set when a worker offers a model the official reference does not list. */
+  custom?: boolean;
 }
 
 /** Type of model: image or text */
 export type ModelType = 'image' | 'text';
+
+/**
+ * The list every model picker offers, built from the official model reference
+ * with the horde's live worker counts laid over it.
+ *
+ * The reference is the universe of models: one with nobody serving it stays
+ * selectable at a count of zero, so the picker does not empty out when the
+ * network is quiet. A model a worker offers that the reference has never heard
+ * of is a custom model and is folded in, marked so the picker can say as much.
+ *
+ * `referenceNames` is null until the reference answers, and the status list is
+ * served on its own in the meantime rather than showing nothing.
+ */
+export function mergeModelList(
+  referenceNames: readonly string[] | null,
+  statusModels: readonly ActiveModel[],
+): ActiveModel[] {
+  const byName = new Map<string, ActiveModel>();
+  for (const model of statusModels) {
+    if (model.name) {
+      byName.set(model.name, model);
+    }
+  }
+
+  const merged: ActiveModel[] =
+    referenceNames === null
+      ? [...byName.values()]
+      : referenceNames
+          .filter((name) => name !== '')
+          .map((name) => byName.get(name) ?? { name, count: 0 });
+
+  if (referenceNames !== null) {
+    const known = new Set(referenceNames);
+    for (const model of byName.values()) {
+      if (!known.has(model.name)) {
+        merged.push({ ...model, custom: true });
+      }
+    }
+  }
+
+  return merged.sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  );
+}
