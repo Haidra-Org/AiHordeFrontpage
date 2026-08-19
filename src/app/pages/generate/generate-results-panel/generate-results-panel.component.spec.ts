@@ -303,6 +303,32 @@ describe('GenerateResultsPanelComponent', () => {
     });
   });
 
+  describe('tile quick actions', () => {
+    it('defaults to off with no stored preference', () => {
+      expect(component.showQuickActions()).toBe(false);
+    });
+
+    it('honours a stored opt-in', () => {
+      dbGet.mockImplementation((key: string) =>
+        key === 'aihorde.generate.show_quick_actions' ? true : undefined,
+      );
+      const fresh = TestBed.createComponent(GenerateResultsPanelComponent);
+
+      expect(fresh.componentInstance.showQuickActions()).toBe(true);
+      fresh.destroy();
+    });
+
+    it('persists each toggle', () => {
+      component.toggleShowQuickActions();
+
+      expect(component.showQuickActions()).toBe(true);
+      expect(dbStore).toHaveBeenCalledWith(
+        'aihorde.generate.show_quick_actions',
+        true,
+      );
+    });
+  });
+
   describe('effective column count', () => {
     it('uses the stored preference while the grid is unmeasured', () => {
       component.imagesPerRow.set(5);

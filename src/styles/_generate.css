@@ -2857,6 +2857,15 @@
 .gen-studio .gs-view-toggle:hover {
   color: var(--gs-ink);
 }
+/* Tracks the tile quick-action row, which only exists from 1024px up. */
+.gen-studio .gs-view-toggle--wide {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-view-toggle--wide {
+    display: inline-flex;
+  }
+}
 .gen-studio .gs-view-toggle--on {
   color: var(--gs-blue);
   border-color: var(--gs-blue);
@@ -5359,7 +5368,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 34px;
+    bottom: 40px;
     z-index: 2;
     justify-content: flex-end;
     gap: 5px;

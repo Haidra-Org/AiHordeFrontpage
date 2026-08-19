@@ -71,6 +71,7 @@ const PER_ROW_OPTIONS = [2, 3, 4, 5, 6] as const;
 const PER_ROW_KEY = 'aihorde.generate.results.perRow';
 const DEFAULT_PER_ROW = 4;
 const SHOW_PROMPTS_KEY = 'aihorde.generate.show_prompts';
+const SHOW_QUICK_ACTIONS_KEY = 'aihorde.generate.show_quick_actions';
 const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
 /** Set once the welcome card has been answered, dismissed or otherwise. */
 const WELCOMED_KEY = 'aihorde.generate.learn.welcomed';
@@ -510,6 +511,16 @@ export class GenerateResultsPanelComponent {
    */
   public readonly showPrompts = signal<boolean>(
     this.db.get(SHOW_PROMPTS_KEY) !== false,
+  );
+
+  /**
+   * Put the next-move buttons on every finished tile. Off by default: they
+   * cover part of the picture, and the same three moves stay reachable from
+   * the tile's own menu. Persisted, and only offered where the tile carries
+   * them: from 1024px up, where the flip machinery stands down.
+   */
+  public readonly showQuickActions = signal<boolean>(
+    this.db.get(SHOW_QUICK_ACTIONS_KEY) === true,
   );
 
   /** Keep the metadata panel open across viewer navigation. Persisted. */
@@ -1612,6 +1623,12 @@ export class GenerateResultsPanelComponent {
     const next = !this.showPrompts();
     this.showPrompts.set(next);
     this.db.store(SHOW_PROMPTS_KEY, next);
+  }
+
+  public toggleShowQuickActions(): void {
+    const next = !this.showQuickActions();
+    this.showQuickActions.set(next);
+    this.db.store(SHOW_QUICK_ACTIONS_KEY, next);
   }
 
   public openMeta(tile: ResultTile): void {

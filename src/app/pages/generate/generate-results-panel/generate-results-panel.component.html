@@ -165,6 +165,20 @@
           <app-icon name="document-text" class="gs-ico-sm" />
           {{ "generate.results.show_prompts" | transloco }}
         </button>
+
+        <!-- Only offered at the widths where a tile carries the buttons; below
+             that the same three moves lead the flip menu and there is nothing
+             for this to turn on. CSS drops it under 1024px. -->
+        <button
+          type="button"
+          class="gs-view-toggle gs-view-toggle--wide"
+          [class.gs-view-toggle--on]="showQuickActions()"
+          [attr.aria-pressed]="showQuickActions()"
+          (click)="toggleShowQuickActions()"
+        >
+          <app-icon name="bolt" class="gs-ico-sm" />
+          {{ "generate.results.show_quick_actions" | transloco }}
+        </button>
       }
 
       @if (styleOptions().length > 0) {
@@ -644,7 +658,7 @@
                         </span>
                       </button>
                     }
-                    @if (!selectMode()) {
+                    @if (!selectMode() && showQuickActions()) {
                       <!-- The three next moves, on the tile itself from the
                            width where the flip machinery stands down. Below
                            that the face is the picture alone and these lead
