@@ -40,6 +40,15 @@ server and serves the on-disk evidence library:
 npm start -- --configuration local
 ```
 
+To open that studio from a phone or a second machine, serve the `lan`
+configuration bound to the machine's address. It is the local configuration
+with the API origin read off the page's own hostname, so requests reach the API
+on the machine the page came from:
+
+```bash
+npm start -- --configuration lan --host <this-machine-ip>
+```
+
 The equivalent container build and launch are:
 
 ```bash
@@ -53,12 +62,12 @@ port 7001 published to the host.
 
 ## Scripts
 
-| Command                            | Description                      |
-| ---------------------------------- | -------------------------------- |
-| `npm start`                        | Development server on port 4209  |
-| `npm test`                         | Run unit tests with Vitest       |
-| `npm run build`                    | Production build with SSR        |
-| `npm run serve:ssr:AiHordeWebsite` | Serve the SSR build locally      |
+| Command                            | Description                     |
+| ---------------------------------- | ------------------------------- |
+| `npm start`                        | Development server on port 4209 |
+| `npm test`                         | Run unit tests with Vitest      |
+| `npm run build`                    | Production build with SSR       |
+| `npm run serve:ssr:AiHordeWebsite` | Serve the SSR build locally     |
 
 ## SSR Host Allowlist (Security)
 

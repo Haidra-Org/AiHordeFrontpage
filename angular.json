@@ -91,6 +91,31 @@
                   "input": "docs/haidra-assets/assets/param-sweeps"
                 }
               ]
+            },
+            "lan": {
+              "optimization": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.lan.ts"
+                }
+              ],
+              "assets": [
+                "src/assets",
+                "src/404.html",
+                "src/.nojekyll",
+                {
+                  "glob": "*",
+                  "output": "/",
+                  "input": "src/favicon"
+                },
+                {
+                  "glob": "**/*",
+                  "output": "/assets/param-sweeps",
+                  "input": "docs/haidra-assets/assets/param-sweeps"
+                }
+              ]
             }
           },
           "defaultConfiguration": "production"
@@ -106,6 +131,9 @@
             },
             "local": {
               "buildTarget": "AiHordeWebsite:build:local"
+            },
+            "lan": {
+              "buildTarget": "AiHordeWebsite:build:lan"
             }
           },
           "defaultConfiguration": "development",
