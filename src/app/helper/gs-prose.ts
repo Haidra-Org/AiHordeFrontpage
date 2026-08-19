@@ -106,12 +106,57 @@ export function tokenizeProse(source: string): ProseRun[] {
   return runs;
 }
 
-/** Blank lines are the only block-level mark the grammar has. */
-export function splitProseBlocks(source: string): string[] {
-  return source
-    .split(/\n[ \t]*\n/)
-    .map((block) => block.trim())
-    .filter((block) => block !== '');
+/**
+ * One block of a body: a paragraph, or a bulleted list of items.
+ *
+ * Both hold source text still to be cut into runs, so a list item carries the
+ * same marks a paragraph does.
+ */
+export type ProseBlock =
+  | { readonly kind: 'paragraph'; readonly text: string }
+  | { readonly kind: 'list'; readonly items: readonly string[] };
+
+const LIST_ITEM = /^[ \t]*-[ \t]+(.*)$/;
+
+/**
+ * The body cut into blocks. Blank lines separate blocks, and within a block a
+ * run of lines each starting with `- ` is a list; lines before or after such a
+ * run are their own paragraphs, so an intro line and its bullets can share one
+ * block.
+ *
+ * Long teaching bodies read as walls of text when they are one paragraph, and
+ * a reader skimming for the one thing they need cannot find it. Paragraphs and
+ * bullets are the two shapes that fix that without asking the translator to
+ * write markup, and they are the only block marks the grammar has.
+ */
+export function splitProseBlocks(source: string): ProseBlock[] {
+  const blocks: ProseBlock[] = [];
+  for (const chunk of source.split(/\n[ \t]*\n/)) {
+    let paragraph: string[] = [];
+    let items: string[] = [];
+    const flushParagraph = (): void => {
+      const text = paragraph.join('\n').trim();
+      if (text !== '') blocks.push({ kind: 'paragraph', text });
+      paragraph = [];
+    };
+    const flushList = (): void => {
+      if (items.length > 0) blocks.push({ kind: 'list', items });
+      items = [];
+    };
+    for (const line of chunk.split('\n')) {
+      const item = LIST_ITEM.exec(line);
+      if (item) {
+        flushParagraph();
+        items.push(item[1].trim());
+      } else {
+        flushList();
+        paragraph.push(line);
+      }
+    }
+    flushParagraph();
+    flushList();
+  }
+  return blocks;
 }
 
 /**

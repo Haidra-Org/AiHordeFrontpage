@@ -93,8 +93,26 @@ describe('tokenizeProse', () => {
 describe('splitProseBlocks', () => {
   it('starts a paragraph at a blank line and nowhere else', () => {
     expect(splitProseBlocks('One.\nStill one.\n\nTwo.')).toEqual([
-      'One.\nStill one.',
-      'Two.',
+      { kind: 'paragraph', text: 'One.\nStill one.' },
+      { kind: 'paragraph', text: 'Two.' },
+    ]);
+  });
+
+  it('reads a run of dashed lines as one list, beside the prose around it', () => {
+    expect(
+      splitProseBlocks(
+        'Write it in parts:\n- the subject\n- where they are\nThen send it.',
+      ),
+    ).toEqual([
+      { kind: 'paragraph', text: 'Write it in parts:' },
+      { kind: 'list', items: ['the subject', 'where they are'] },
+      { kind: 'paragraph', text: 'Then send it.' },
+    ]);
+  });
+
+  it('leaves a dash inside a sentence as text', () => {
+    expect(splitProseBlocks('A value of -1 is not a bullet.')).toEqual([
+      { kind: 'paragraph', text: 'A value of -1 is not a bullet.' },
     ]);
   });
 });

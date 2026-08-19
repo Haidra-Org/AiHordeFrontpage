@@ -184,20 +184,23 @@
                                 }
                         }}
                       </h3>
-                      <p class="gs-tut-step-body">
+                      <div class="gs-tut-step-body">
                         <app-gs-prose
                           [key]="stepBodyKey(flowId, entry.step)"
                           [params]="copyParams()"
+                          [paragraphs]="true"
                         />
                         @if (runCostFor(entry.step.id); as cost) {
-                          {{
-                            (cost.kudos === null
-                              ? "generate.tutorials.run_time"
-                              : "generate.tutorials.run_cost"
-                            ) | transloco: cost
-                          }}
+                          <span class="gs-prose-p">
+                            {{
+                              (cost.kudos === null
+                                ? "generate.tutorials.run_time"
+                                : "generate.tutorials.run_cost"
+                              ) | transloco: cost
+                            }}
+                          </span>
                         }
-                      </p>
+                      </div>
                       <!-- The strips the studio pane shows under the same step,
                            in the same register, so the page teaches what the
                            walkthrough teaches. -->

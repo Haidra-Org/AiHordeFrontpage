@@ -18,6 +18,11 @@ import {
 } from '../../helper/gs-prose';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 
+/** A block of the body with its text already cut into runs. */
+type RenderedBlock =
+  | { readonly kind: 'paragraph'; readonly runs: ProseRun[] }
+  | { readonly kind: 'list'; readonly items: ProseRun[][] };
+
 /** What a body's `{{ }}` placeholders are filled with, as `| transloco` takes it. */
 export type ProseParams = Record<string, string | number>;
 
@@ -80,16 +85,29 @@ export type ProseParams = Record<string, string | number>;
 
     @if (paragraphs()) {
       @for (block of blocks(); track $index) {
-        <span class="gs-prose-p"
-          ><ng-container
-            [ngTemplateOutlet]="runs"
-            [ngTemplateOutletContext]="{ $implicit: block }"
-        /></span>
+        @if (block.kind === 'list') {
+          <ul class="gs-prose-list">
+            @for (item of block.items; track $index) {
+              <li>
+                <ng-container
+                  [ngTemplateOutlet]="runs"
+                  [ngTemplateOutletContext]="{ $implicit: item }"
+                />
+              </li>
+            }
+          </ul>
+        } @else {
+          <span class="gs-prose-p"
+            ><ng-container
+              [ngTemplateOutlet]="runs"
+              [ngTemplateOutletContext]="{ $implicit: block.runs }"
+          /></span>
+        }
       }
     } @else {
       <ng-container
         [ngTemplateOutlet]="runs"
-        [ngTemplateOutletContext]="{ $implicit: blocks()[0] }"
+        [ngTemplateOutletContext]="{ $implicit: inlineRuns() }"
       />
     }
   `,
@@ -143,22 +161,33 @@ export class GsProseComponent {
     );
   });
 
-  public readonly blocks = computed<ProseRun[][]>(() => {
+  private cut(text: string): ProseRun[] {
     const params = this.params() ?? {};
     const values = this.names().map((name) => String(params[name]));
-    const source = this.source();
-    // Not in paragraph mode there is exactly one block, which is the whole
-    // body: the template renders that one bare, inside whatever sentence the
-    // surface wrapped the component in.
-    const chunks = this.paragraphs() ? splitProseBlocks(source) : [source];
-    return chunks.map((chunk) =>
-      tokenizeProse(chunk).map((run) =>
-        run.kind === 'setting'
-          ? run
-          : { ...run, text: restoreProseParams(run.text, values) },
-      ),
+    return tokenizeProse(text).map((run) =>
+      run.kind === 'setting'
+        ? run
+        : { ...run, text: restoreProseParams(run.text, values) },
     );
-  });
+  }
+
+  /**
+   * Not in paragraph mode the whole body is one run of inline prose, rendered
+   * bare inside whatever sentence the surface wrapped the component in; a list
+   * mark there is left as the text it was written as.
+   */
+  public readonly inlineRuns = computed<ProseRun[]>(() =>
+    this.cut(this.source()),
+  );
+
+  /** In paragraph mode, the body's blocks with their text cut into runs. */
+  public readonly blocks = computed<RenderedBlock[]>(() =>
+    splitProseBlocks(this.source()).map((block) =>
+      block.kind === 'list'
+        ? { kind: 'list', items: block.items.map((item) => this.cut(item)) }
+        : { kind: 'paragraph', runs: this.cut(block.text) },
+    ),
+  );
 
   public openTerm(termId: string): void {
     this.glossary.open(termId);

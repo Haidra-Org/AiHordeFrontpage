@@ -212,8 +212,25 @@
     display: block;
   }
 
-  .gs-prose-p + .gs-prose-p {
+  .gs-prose-p + .gs-prose-p,
+  .gs-prose-p + .gs-prose-list,
+  .gs-prose-list + .gs-prose-p,
+  .gs-prose-list + .gs-prose-list {
     margin-top: 0.75em;
+  }
+
+  /* A bulleted block. Real list semantics so a screen reader announces the
+     count; a hanging indent so the bullets read as a column beside the prose
+     rather than as prose that happens to start with a dash. */
+  .gs-prose-list {
+    display: block;
+    margin: 0;
+    padding-left: 1.25em;
+    list-style: disc outside;
+  }
+
+  .gs-prose-list > li + li {
+    margin-top: 0.35em;
   }
 
   /* A dictionary word. Dotted where a link is solid and a reference chip is
