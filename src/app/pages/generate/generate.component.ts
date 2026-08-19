@@ -48,6 +48,7 @@ import {
   GLOSSARY_TERMS,
   GlossaryService,
 } from '../../services/glossary.service';
+import { STUDIO_CONTROLS } from '../../content/studio-controls';
 import { TutorialAnchorService } from '../../services/tutorial-anchor.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsTryItService, TryItHost } from '../../services/gs-try-it.service';
@@ -330,6 +331,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       baseline: this.modelBaseline(),
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
+      contract: this.samplerContract(),
     });
   });
 
@@ -1062,6 +1064,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       pageId: STUDIO_GLOSSARY_PAGE_ID,
       pageTitleKey: 'help.glossary.page.generate_image',
       relevantTermIds: [...STUDIO_GLOSSARY_TERM_IDS],
+      // Read rather than pressed: an entry here names a button the reader can
+      // already see, so pointing at it would take them where they already are.
+      controls: STUDIO_CONTROLS.map((control) => ({
+        id: control.id,
+        titleKey: control.labelKey,
+        descriptionKey: control.bodyKey,
+        iconName: control.icon,
+      })),
       entries: PANEL_SECTION_IDS.map((id) => {
         const identity = SECTION_IDENTITIES[id];
         return {

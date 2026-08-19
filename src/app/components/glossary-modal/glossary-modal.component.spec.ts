@@ -7,7 +7,10 @@ import {
   GlossaryService,
   PageGlossaryEntry,
 } from '../../services/glossary.service';
+import { STUDIO_CONTROLS } from '../../content/studio-controls';
 import en from '../../../assets/i18n/en.json';
+
+const translations = en as Record<string, string>;
 
 describe('GlossaryModalComponent', () => {
   let fixture: ComponentFixture<GlossaryModalComponent>;
@@ -20,12 +23,16 @@ describe('GlossaryModalComponent', () => {
     Array.from(el().querySelectorAll<T>(selector));
 
   /** Open the modal on a page context made of the given entries. */
-  function open(entries: PageGlossaryEntry[]): void {
+  function open(
+    entries: PageGlossaryEntry[],
+    controls?: PageGlossaryEntry[],
+  ): void {
     glossary.registerPageContext({
       pageId: 'studio',
       pageTitleKey: 'help.glossary.page.generate_image',
       relevantTermIds: [],
       entries,
+      controls,
     });
     glossary.open();
     fixture.detectChanges();
@@ -105,5 +112,55 @@ describe('GlossaryModalComponent', () => {
     const icon = find('#glossary-entry-horde app-icon');
     expect(icon?.classList).toContain('glossary-page-entry-icon');
     expect(icon?.classList).toContain('glossary-sec--horde');
+  });
+
+  describe('the unlabelled buttons and marks a page declares', () => {
+    const area: PageGlossaryEntry = {
+      id: 'sampling',
+      titleKey: 'generate.sections.sampling',
+      descriptionKey: 'generate.reference.section_hint.sampling',
+    };
+    const controls: PageGlossaryEntry[] = STUDIO_CONTROLS.map((control) => ({
+      id: control.id,
+      titleKey: control.labelKey,
+      descriptionKey: control.bodyKey,
+      iconName: control.icon,
+    }));
+
+    it('reads them before the areas, under a heading of their own', () => {
+      open([area], controls);
+
+      const section = find('.glossary-controls-section');
+      expect(section).not.toBeNull();
+      expect(section?.querySelector('h3')?.textContent?.trim()).toBe(
+        translations['help.glossary.controls_heading'],
+      );
+      expect(all('.glossary-control-entry').length).toBe(controls.length);
+
+      // Before the areas: the panel's glyphs are the first thing asked about.
+      const first = all('.glossary-page-entry')[0];
+      expect(first?.classList).toContain('glossary-control-entry');
+    });
+
+    it('shows each glyph beside its name and its sentence', () => {
+      open([area], controls);
+
+      const entry = find('#glossary-entry-reset');
+      expect(
+        entry?.querySelector('.glossary-control-glyph app-icon'),
+      ).not.toBeNull();
+      expect(
+        entry?.querySelector('.glossary-page-entry-title')?.textContent?.trim(),
+      ).toBe(translations['help.glossary.controls.reset.title']);
+      expect(
+        entry?.querySelector('.glossary-page-entry-desc')?.textContent?.trim(),
+      ).toBe(translations['help.glossary.controls.reset.body']);
+    });
+
+    it('leaves the section out for a page that declares none', () => {
+      open([area]);
+
+      expect(find('.glossary-controls-section')).toBeNull();
+    });
   });
 });

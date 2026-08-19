@@ -338,6 +338,42 @@
     @apply ring-offset-gray-900;
   }
 
+  /* The page's unlabelled buttons and marks, read before its areas. Each row
+     is text rather than a control, so the glyph is a plate at the size the
+     studio draws it and the entry itself is quieter than a pressable one. */
+  .glossary-controls-section {
+    @apply flex flex-col gap-2 pb-4 mb-4 border-b border-gray-200;
+  }
+
+  .dark .glossary-controls-section {
+    @apply border-gray-700;
+  }
+
+  .glossary-controls-note {
+    @apply -mt-2 text-xs text-gray-500;
+  }
+
+  .dark .glossary-controls-note {
+    @apply text-gray-400;
+  }
+
+  .glossary-control-entry {
+    @apply items-start gap-3 p-3;
+  }
+
+  .glossary-control-glyph {
+    @apply flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg
+      border border-gray-200 bg-gray-50 text-gray-700;
+  }
+
+  .dark .glossary-control-glyph {
+    @apply border-gray-700 bg-gray-800 text-gray-200;
+  }
+
+  .glossary-control-glyph .icon {
+    @apply w-5 h-5;
+  }
+
   /* Related terms section */
   .glossary-related-section {
     @apply mt-6 pt-4 border-t border-gray-200;

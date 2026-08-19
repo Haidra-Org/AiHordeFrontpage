@@ -18,6 +18,7 @@ import { TutorialEngineService } from '../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsTryItService } from '../../services/gs-try-it.service';
 import { GlossaryService } from '../../services/glossary.service';
+import { STUDIO_CONTROLS } from '../../content/studio-controls';
 import { HIGHLIGHT_CLASS } from '../../services/tutorial-anchor.service';
 import {
   ModelBaselineMap,
@@ -986,6 +987,22 @@ describe('GenerateComponent', () => {
       fixture.destroy();
 
       expect(glossary.pageContexts().has('generate-image')).toBe(false);
+    });
+
+    it('explains every unlabelled button and mark before the areas', () => {
+      const context = TestBed.inject(GlossaryService)
+        .pageContexts()
+        .get('generate-image');
+
+      expect(context?.controls?.map((control) => control.id)).toEqual(
+        STUDIO_CONTROLS.map((control) => control.id),
+      );
+      // Named and drawn with the glyph the control itself wears.
+      const reset = context?.controls?.find((entry) => entry.id === 'reset');
+      expect(reset?.iconName).toBe('refresh-alt');
+      expect(reset?.titleKey).toBe('help.glossary.controls.reset.title');
+      // Read rather than pressed: the button is already on the screen.
+      expect(reset?.action).toBeUndefined();
     });
 
     it('takes the reader to the card an entry names, and rings it', () => {

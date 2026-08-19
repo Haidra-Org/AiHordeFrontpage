@@ -198,6 +198,43 @@ import {
               role="tabpanel"
             >
               <div class="modal-scroll glossary-terms-list">
+                <!-- The page's unlabelled buttons and marks, first: a reader
+                     looking at a row of glyphs is asking what one of them does,
+                     and no definition answers that. Read rather than pressed,
+                     so each is static text beside the glyph it explains. -->
+                @if (pageControls().length > 0) {
+                  <section class="glossary-controls-section">
+                    <h3 class="glossary-related-heading">
+                      {{ 'help.glossary.controls_heading' | transloco }}
+                    </h3>
+                    <p class="glossary-controls-note">
+                      {{ 'help.glossary.controls_note' | transloco }}
+                    </p>
+                    @for (control of pageControls(); track control.id) {
+                      <div
+                        class="glossary-page-entry glossary-control-entry"
+                        [id]="'glossary-entry-' + control.id"
+                      >
+                        @if (control.iconName) {
+                          <span
+                            class="glossary-control-glyph"
+                            aria-hidden="true"
+                          >
+                            <app-icon [name]="control.iconName" />
+                          </span>
+                        }
+                        <div class="glossary-page-entry-content">
+                          <h4 class="glossary-page-entry-title">
+                            {{ control.titleKey | transloco }}
+                          </h4>
+                          <p class="glossary-page-entry-desc">
+                            {{ control.descriptionKey | transloco }}
+                          </p>
+                        </div>
+                      </div>
+                    }
+                  </section>
+                }
                 <!-- Page-specific entries. An entry the page gave an action to
                      is a control and is pressed; one without it is read. The
                      two are written out separately because a button may only
@@ -346,6 +383,11 @@ export class GlossaryModalComponent {
 
     return terms;
   });
+
+  /** The active page's unlabelled controls, or nothing where it declares none. */
+  public readonly pageControls = computed<PageGlossaryEntry[]>(
+    () => this.activePageContext()?.controls ?? [],
+  );
 
   public readonly relevantTerms = computed(() => {
     const ctx = this.activePageContext();

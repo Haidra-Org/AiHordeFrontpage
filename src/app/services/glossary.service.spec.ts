@@ -7,6 +7,11 @@ import {
   GLOSSARY_CATEGORIES,
 } from './glossary.service';
 import { hasReference } from '../content/settings';
+import { flowDef } from '../content/flows';
+import { alchemyUseCase } from '../content/alchemy-usecases';
+import en from '../../assets/i18n/en.json';
+
+const translations = en as Record<string, string>;
 
 describe('GlossaryService', () => {
   let service: GlossaryService;
@@ -193,7 +198,78 @@ describe('GlossaryService', () => {
         'hires_fix',
         'denoise',
         'tiling',
+        'scheduler',
+        'sampler_settings',
+        'sampler_tier',
+        'batch',
+        'style',
+        'preset',
       ]);
+    });
+
+    it('gives every term the documentation has written out its way there', () => {
+      const linkFor = (id: string): string | undefined =>
+        GLOSSARY_TERMS.find((term) => term.id === id)?.links?.at(-1)
+          ?.routerLink;
+
+      // Derived from the term's own id where the reference already files the
+      // page under it, so a term never has to repeat a route.
+      expect(linkFor('steps')).toBe('/docs/image/settings/steps');
+      expect(linkFor('scheduler')).toBe('/docs/image/settings/scheduler');
+      // Declared only where the page is filed under a different name.
+      expect(linkFor('hires_fix')).toBe('/docs/image/settings/hires');
+      expect(linkFor('controlnet')).toBe('/docs/image/learn/controlnet');
+      expect(linkFor('kudos')).toBe('/docs/image/learn/concepts_horde');
+      expect(linkFor('control_map')).toBe('/docs/alchemy/control_map');
+      // A term the documentation has no page for is left without one.
+      expect(linkFor('preset')).toBeUndefined();
+      expect(linkFor('api_key')).toBeUndefined();
+    });
+
+    it('points every documented term at a page the site actually serves', () => {
+      const links = GLOSSARY_TERMS.flatMap((term) =>
+        (term.links ?? [])
+          .map((link) => link.routerLink)
+          .filter((link) => link.startsWith('/docs/')),
+      );
+
+      expect(links.length).toBeGreaterThan(15);
+      const served = (link: string): boolean => {
+        if (link.startsWith('/docs/image/settings/')) {
+          return hasReference(link.slice('/docs/image/settings/'.length));
+        }
+        if (link.startsWith('/docs/image/learn/')) {
+          return flowDef(link.slice('/docs/image/learn/'.length)) !== undefined;
+        }
+        return (
+          link.startsWith('/docs/alchemy/') &&
+          alchemyUseCase(link.slice('/docs/alchemy/'.length)) !== undefined
+        );
+      };
+      expect(links.filter((link) => !served(link))).toEqual([]);
+    });
+
+    it('writes English for every term, including the ones the studio needed', () => {
+      const unwritten = GLOSSARY_TERMS.filter(
+        (term) => !translations[term.titleKey] || !translations[term.bodyKey],
+      ).map((term) => term.id);
+      expect(unwritten).toEqual([]);
+
+      const ids = GLOSSARY_TERMS.map((term) => term.id);
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          'scheduler',
+          'sampler_settings',
+          'sampler_tier',
+          'batch',
+          'style',
+          'preset',
+          'lint',
+          'baseline',
+          'control_map',
+          'temporary_link',
+        ]),
+      );
     });
 
     it('sends every term that links to the reference at a setting that exists', () => {

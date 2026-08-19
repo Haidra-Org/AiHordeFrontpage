@@ -1,5 +1,12 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { docsSettingLink } from '../content/docs-links';
+import {
+  docsAlchemyUseCaseLink,
+  docsExampleLink,
+  docsSettingLink,
+} from '../content/docs-links';
+import { hasReference } from '../content/settings';
+import { alchemyUseCase } from '../content/alchemy-usecases';
+import { flowDef } from '../content/flows';
 
 export interface GlossaryLink {
   labelKey: string;
@@ -14,6 +21,22 @@ export interface GlossaryTerm {
   category: GlossaryCategory;
   faqFragment?: string;
   links?: GlossaryLink[];
+  /**
+   * The page the documentation writes this term out on, where the term's own id
+   * is not the page's. A term whose id already names a setting, a worked
+   * example or an alchemy use case gets its link derived and needs nothing here.
+   */
+  docs?: GlossaryDocsPage;
+}
+
+/**
+ * One documented page, named by area and id rather than by path: a term says
+ * which page is about it, and the route that reaches the page is the docs
+ * links' business alone.
+ */
+export interface GlossaryDocsPage {
+  area: 'setting' | 'example' | 'alchemy';
+  id: string;
 }
 
 export interface PageGlossaryEntry {
@@ -36,6 +59,12 @@ export interface PageGlossaryContext {
   pageTitleKey: string;
   relevantTermIds: string[];
   entries: PageGlossaryEntry[];
+  /**
+   * The page's unlabelled buttons and marks, read before the areas: a reader
+   * who opens the glossary from a panel of glyphs is usually asking what one of
+   * them does, and that question has to be answered before any other.
+   */
+  controls?: PageGlossaryEntry[];
 }
 
 export type GlossaryTab = 'dictionary' | 'this-page';
@@ -84,7 +113,38 @@ const STATUS_LINK: GlossaryLink = {
   routerLink: '/status',
 };
 
-export const GLOSSARY_TERMS: GlossaryTerm[] = [
+/** Where the documentation writes a subject out at length, in any area. */
+const FULL_PAGE_LINK_LABEL = 'help.glossary.link.full_page';
+
+/**
+ * The page a term is about, where one exists.
+ *
+ * A term whose id is already a setting's, a worked example's or an alchemy use
+ * case's needs nothing declared: the link is looked up from the same registries
+ * the pages themselves are built from, so a term can never point at a page that
+ * was never written, and a page that arrives later is linked the moment it does.
+ */
+function docsLinkFor(term: GlossaryTerm): GlossaryLink | null {
+  const id = term.docs?.id ?? term.id;
+  const area = term.docs?.area;
+
+  if ((!area || area === 'setting') && hasReference(id)) {
+    return referenceLink(id);
+  }
+  if ((!area || area === 'example') && flowDef(id)) {
+    return { labelKey: FULL_PAGE_LINK_LABEL, routerLink: docsExampleLink(id) };
+  }
+  if ((!area || area === 'alchemy') && alchemyUseCase(id)) {
+    return {
+      labelKey: FULL_PAGE_LINK_LABEL,
+      routerLink: docsAlchemyUseCaseLink(id),
+    };
+  }
+  return null;
+}
+
+/** The dictionary before its documented terms are given their way onwards. */
+const GLOSSARY_TERM_DEFINITIONS: GlossaryTerm[] = [
   // Core Concepts
   {
     id: 'ai_horde',
@@ -98,6 +158,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     bodyKey: 'help.glossary.terms.kudos.body',
     category: 'core',
     faqFragment: 'kudos',
+    docs: { area: 'example', id: 'concepts_horde' },
   },
   {
     id: 'request',
@@ -134,6 +195,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.trusted.title',
     bodyKey: 'help.glossary.terms.trusted.body',
     category: 'core',
+    docs: { area: 'setting', id: 'trusted_workers' },
   },
   {
     id: 'nsfw',
@@ -146,6 +208,24 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     id: 'api_key',
     titleKey: 'help.glossary.terms.api_key.title',
     bodyKey: 'help.glossary.terms.api_key.body',
+    category: 'core',
+  },
+  {
+    id: 'baseline',
+    titleKey: 'help.glossary.terms.baseline.title',
+    bodyKey: 'help.glossary.terms.baseline.body',
+    category: 'core',
+    links: [
+      {
+        labelKey: 'help.glossary.link.view_models',
+        routerLink: '/details/models',
+      },
+    ],
+  },
+  {
+    id: 'temporary_link',
+    titleKey: 'help.glossary.terms.temporary_link.title',
+    bodyKey: 'help.glossary.terms.temporary_link.body',
     category: 'core',
   },
   {
@@ -276,6 +356,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.text2img.title',
     bodyKey: 'help.glossary.terms.text2img.body',
     category: 'generation',
+    docs: { area: 'example', id: 'txt2img' },
   },
   {
     id: 'img2img',
@@ -300,63 +381,99 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.steps.title',
     bodyKey: 'help.glossary.terms.steps.body',
     category: 'generation_settings',
-    links: [referenceLink('steps')],
   },
   {
     id: 'cfg',
     titleKey: 'help.glossary.terms.cfg.title',
     bodyKey: 'help.glossary.terms.cfg.body',
     category: 'generation_settings',
-    links: [referenceLink('cfg')],
   },
   {
     id: 'sampler',
     titleKey: 'help.glossary.terms.sampler.title',
     bodyKey: 'help.glossary.terms.sampler.body',
     category: 'generation_settings',
-    links: [referenceLink('sampler')],
   },
   {
     id: 'seed',
     titleKey: 'help.glossary.terms.seed.title',
     bodyKey: 'help.glossary.terms.seed.body',
     category: 'generation_settings',
-    links: [referenceLink('seed')],
   },
   {
     id: 'clip_skip',
     titleKey: 'help.glossary.terms.clip_skip.title',
     bodyKey: 'help.glossary.terms.clip_skip.body',
     category: 'generation_settings',
-    links: [referenceLink('clip_skip')],
   },
   {
     id: 'karras',
     titleKey: 'help.glossary.terms.karras.title',
     bodyKey: 'help.glossary.terms.karras.body',
     category: 'generation_settings',
-    links: [referenceLink('karras')],
   },
   {
     id: 'hires_fix',
     titleKey: 'help.glossary.terms.hires_fix.title',
     bodyKey: 'help.glossary.terms.hires_fix.body',
     category: 'generation_settings',
-    links: [referenceLink('hires')],
+    docs: { area: 'setting', id: 'hires' },
   },
   {
     id: 'denoise',
     titleKey: 'help.glossary.terms.denoise.title',
     bodyKey: 'help.glossary.terms.denoise.body',
     category: 'generation_settings',
-    links: [referenceLink('denoise')],
   },
   {
     id: 'tiling',
     titleKey: 'help.glossary.terms.tiling.title',
     bodyKey: 'help.glossary.terms.tiling.body',
     category: 'generation_settings',
-    links: [referenceLink('tiling')],
+  },
+
+  {
+    id: 'scheduler',
+    titleKey: 'help.glossary.terms.scheduler.title',
+    bodyKey: 'help.glossary.terms.scheduler.body',
+    category: 'generation_settings',
+  },
+  {
+    id: 'sampler_settings',
+    titleKey: 'help.glossary.terms.sampler_settings.title',
+    bodyKey: 'help.glossary.terms.sampler_settings.body',
+    category: 'generation_settings',
+  },
+  {
+    id: 'sampler_tier',
+    titleKey: 'help.glossary.terms.sampler_tier.title',
+    bodyKey: 'help.glossary.terms.sampler_tier.body',
+    category: 'generation_settings',
+    docs: { area: 'setting', id: 'sampler' },
+  },
+  {
+    id: 'batch',
+    titleKey: 'help.glossary.terms.batch.title',
+    bodyKey: 'help.glossary.terms.batch.body',
+    category: 'generation_settings',
+  },
+  {
+    id: 'style',
+    titleKey: 'help.glossary.terms.style.title',
+    bodyKey: 'help.glossary.terms.style.body',
+    category: 'generation_settings',
+  },
+  {
+    id: 'preset',
+    titleKey: 'help.glossary.terms.preset.title',
+    bodyKey: 'help.glossary.terms.preset.body',
+    category: 'generation_settings',
+  },
+  {
+    id: 'lint',
+    titleKey: 'help.glossary.terms.lint.title',
+    bodyKey: 'help.glossary.terms.lint.body',
+    category: 'generation',
   },
 
   // Capabilities
@@ -365,13 +482,14 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.lora.title',
     bodyKey: 'help.glossary.terms.lora.body',
     category: 'capabilities',
-    links: [referenceLink('loras')],
+    docs: { area: 'setting', id: 'loras' },
   },
   {
     id: 'controlnet',
     titleKey: 'help.glossary.terms.controlnet.title',
     bodyKey: 'help.glossary.terms.controlnet.body',
     category: 'capabilities',
+    docs: { area: 'example', id: 'controlnet' },
     links: [referenceLink('source')],
   },
   {
@@ -379,7 +497,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.post_processing.title',
     bodyKey: 'help.glossary.terms.post_processing.body',
     category: 'capabilities',
-    links: [referenceLink('upscaler')],
+    docs: { area: 'setting', id: 'upscaler' },
   },
   {
     id: 'maintenance',
@@ -403,6 +521,13 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     id: 'threads',
     titleKey: 'help.glossary.terms.threads.title',
     bodyKey: 'help.glossary.terms.threads.body',
+    category: 'capabilities',
+  },
+
+  {
+    id: 'control_map',
+    titleKey: 'help.glossary.terms.control_map.title',
+    bodyKey: 'help.glossary.terms.control_map.body',
     category: 'capabilities',
   },
 
@@ -433,6 +558,25 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     category: 'units',
   },
 ];
+
+/**
+ * The dictionary as it is read: every term that has a page ends with the way to
+ * it. A term that already names the page in its own links keeps the one it has
+ * rather than showing the same route twice.
+ */
+export const GLOSSARY_TERMS: GlossaryTerm[] = GLOSSARY_TERM_DEFINITIONS.map(
+  (term) => {
+    const link = docsLinkFor(term);
+    if (!link) {
+      return term;
+    }
+    const links = term.links ?? [];
+    if (links.some((existing) => existing.routerLink === link.routerLink)) {
+      return term;
+    }
+    return { ...term, links: [...links, link] };
+  },
+);
 
 @Injectable({ providedIn: 'root' })
 export class GlossaryService {
