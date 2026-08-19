@@ -10,6 +10,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GsSweepScrubComponent } from './gs-sweep-scrub.component';
 import { SweepLibraryService } from '../../services/sweep-library.service';
+import { ScrollLockService } from '../../helper/scroll-lock';
 import { environment } from '../../../environments/environment';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
@@ -452,7 +453,9 @@ describe('GsSweepScrubComponent', () => {
     expect(panel.getAttribute('role')).toBe('dialog');
     expect(panel.getAttribute('aria-modal')).toBe('true');
     expect(
-      find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+      find<HTMLImageElement>(
+        '.gs-sweep-viewer-body img.gs-sweep-frame',
+      )!.getAttribute('src'),
     ).toBe(
       `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
     );
@@ -565,8 +568,8 @@ describe('GsSweepScrubComponent', () => {
         find<HTMLElement>('.gs-sweep-viewer-body')!.getAttribute('aria-label'),
       ).toBe(en['generate.sweeps.enlarged_pair_title']);
       // The layer shows the comparison, not one side lifted out of it.
-      expect(find('.gs-sweep-viewer-wipe .gs-wipe')).not.toBeNull();
-      expect(find('.gs-sweep-viewer-img')).toBeNull();
+      expect(find('.gs-sweep-viewer-body .gs-wipe')).not.toBeNull();
+      expect(find('.gs-sweep-viewer-body img.gs-sweep-frame')).toBeNull();
 
       find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
       fixture.detectChanges();
@@ -651,9 +654,11 @@ describe('GsSweepScrubComponent', () => {
     find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
     fixture.detectChanges();
 
-    expect(find('.gs-sweep-viewer-name')?.textContent?.trim()).toBe(
-      'Prompted with (watercolor painting:1.0)',
-    );
+    expect(
+      find(
+        '.gs-sweep-viewer-body .gs-sweep-caption-value',
+      )?.textContent?.trim(),
+    ).toBe('Prompted with (watercolor painting:1.0)');
   });
 
   it('shows the image a denoising strip was painted over', async () => {
@@ -671,7 +676,7 @@ describe('GsSweepScrubComponent', () => {
     find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
     fixture.detectChanges();
 
-    expect(find('.gs-sweep-viewer-source-img')).not.toBeNull();
+    expect(find('.gs-sweep-viewer-body .gs-sweep-source-img')).not.toBeNull();
   });
 
   describe('the second reading of steps', () => {
@@ -784,7 +789,7 @@ describe('GsSweepScrubComponent', () => {
       await setUp();
       openZoom();
 
-      const layer = '.gs-sweep-viewer-foot';
+      const layer = '.gs-sweep-viewer-body';
       expect(rail(layer).getAttribute('aria-valuenow')).toBe('2');
       expect(rail(layer).getAttribute('aria-valuemax')).toBe('3');
 
@@ -792,7 +797,9 @@ describe('GsSweepScrubComponent', () => {
       expect(rail(layer).getAttribute('aria-valuenow')).toBe('3');
       expect(rail(layer).getAttribute('aria-valuetext')).toBe('30');
       expect(
-        find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+        find<HTMLImageElement>(
+          '.gs-sweep-viewer-body img.gs-sweep-frame',
+        )!.getAttribute('src'),
       ).toBe(
         `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
       );
@@ -821,7 +828,7 @@ describe('GsSweepScrubComponent', () => {
       await setUp();
       openZoom();
 
-      clickTick(0, '.gs-sweep-viewer-foot');
+      clickTick(0, '.gs-sweep-viewer-body');
 
       expect(text()).toContain('Barely resolved');
     });
@@ -840,7 +847,9 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-sweep-viewer')).not.toBeNull();
       expect(
-        find<HTMLImageElement>('.gs-sweep-viewer-img')!.getAttribute('src'),
+        find<HTMLImageElement>(
+          '.gs-sweep-viewer-body img.gs-sweep-frame',
+        )!.getAttribute('src'),
       ).toBe(
         `${environment.evidenceBaseUrl}/steps-converging/albedobase-xl/person/002_12.webp`,
       );
@@ -851,13 +860,15 @@ describe('GsSweepScrubComponent', () => {
       await setUp({ parameter: 'denoising_strength' });
       openZoom();
 
-      expect(
-        find('.gs-sweep-viewer-name')?.textContent?.replace(/\s+/g, ' ').trim(),
-      ).toBe('Denoise 0.5');
+      // The value on show is said once, on the lane the reader is working.
+      const chip = (): string =>
+        find('.gs-sweep-viewer-dock .gs-setting-chip')
+          ?.textContent?.replace(/\s+/g, ' ')
+          .trim() ?? '';
+
+      expect(chip()).toBe('Denoise 0.5');
       arrow('ArrowLeft');
-      expect(
-        find('.gs-sweep-viewer-name')?.textContent?.replace(/\s+/g, ' ').trim(),
-      ).toBe('Denoise 0.15');
+      expect(chip()).toBe('Denoise 0.15');
     });
   });
 
@@ -942,12 +953,12 @@ describe('GsSweepScrubComponent', () => {
       expect(find('.gs-sweep-viewer')).not.toBeNull();
       // Nothing opens behind the layer: the plate is what does not fit here.
       expect(find('.gs-sweep-open')).toBeNull();
-      expect(find('.gs-sweep-frame')).toBeNull();
+      expect(find('.gs-sweep-viewer .gs-sweep-frame')).not.toBeNull();
       // The layer stands on its own, so it names the setting as well as the
       // value, and carries the lane.
       expect(find('.gs-sweep-viewer-param')?.textContent?.trim()).toBe('Steps');
       expect(find('.gs-sweep-viewer-top .gs-cap-eyebrow')).not.toBeNull();
-      expect(find('.gs-sweep-viewer-foot .gs-tickrail')).not.toBeNull();
+      expect(find('.gs-sweep-viewer-body .gs-tickrail')).not.toBeNull();
     });
 
     it('comes back to the offer when the layer is closed', async () => {
@@ -977,23 +988,23 @@ describe('GsSweepScrubComponent', () => {
       fixture.detectChanges();
 
       const why = find<HTMLButtonElement>(
-        '.gs-sweep-viewer-foot .gs-sweep-why',
+        '.gs-sweep-viewer-body .gs-sweep-why',
       );
       expect(why).not.toBeNull();
 
       why!.click();
       fixture.detectChanges();
 
-      expect(find('.gs-sweep-viewer-foot .gs-sweep-why-body')).not.toBeNull();
+      expect(find('.gs-sweep-viewer-body .gs-sweep-why-body')).not.toBeNull();
     });
 
-    it('unfolds the note into the foot, between the toggle and the lane', async () => {
+    it('unfolds the note among the controls, above the pictures and the lane', async () => {
       await setUp({ viewerFirst: true });
       find<HTMLButtonElement>('.gs-sweep-offer')!.click();
       fixture.detectChanges();
 
       const why = find<HTMLButtonElement>(
-        '.gs-sweep-viewer-foot .gs-sweep-why',
+        '.gs-sweep-viewer-body .gs-sweep-why',
       )!;
       expect(why.getAttribute('aria-expanded')).toBe('false');
 
@@ -1002,27 +1013,101 @@ describe('GsSweepScrubComponent', () => {
 
       expect(why.getAttribute('aria-expanded')).toBe('true');
 
-      // The note belongs to the foot's own flow rather than to a layer over
-      // the picture, so it is the foot's child and it stands between the
-      // toggle that raised it and the lane it pushes down.
-      const foot = find('.gs-sweep-viewer-foot')!;
-      const body = find('.gs-sweep-viewer-foot .gs-sweep-why-body')!;
-      expect(body.parentElement).toBe(foot);
-
-      const order = Array.from(foot.children);
-      expect(order.indexOf(body)).toBeGreaterThan(
-        order.indexOf(find('.gs-sweep-viewer-foot .gs-sweep-variants')!),
-      );
-      expect(order.indexOf(body)).toBeLessThan(
-        order.findIndex(
-          (child) =>
-            child.matches('.gs-tickrail') ||
-            !!child.querySelector('.gs-tickrail'),
-        ),
-      );
+      // The note belongs to the controls' own flow rather than to a layer over
+      // the picture, so it stands between the toggle that raised it and
+      // everything it pushes down.
+      const controls = find('.gs-sweep-viewer-body .gs-plate-controls')!;
+      const body = find('.gs-sweep-viewer-body .gs-sweep-why-body')!;
+      expect(body.parentElement).toBe(controls);
+      expect(
+        body.compareDocumentPosition(
+          find('.gs-sweep-viewer-body .gs-tickrail')!,
+        ) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
 
       // The way on to the reference survives the move.
       expect(body.querySelector('.gs-sweep-why-link')).not.toBeNull();
+    });
+  });
+
+  describe('the one explorer, in the plate and in the layer', () => {
+    /** What the reader steers the strip with, wherever the strip is drawn. */
+    const controls = (scope: string): Record<string, boolean> => ({
+      rail: !!find(`${scope} .gs-tickrail`),
+      caption: !!find(`${scope} .gs-sweep-caption`),
+      position: !!find(`${scope} .gs-plate-pos`),
+      request: !!find(`${scope} .gs-plate-request-toggle`),
+      model: !!find(`${scope} .gs-plate-model`),
+      variants: all(`${scope} .gs-sweep-variant`).length === 2,
+    });
+
+    it('gives the layer everything the plate has', async () => {
+      await setUp();
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+
+      const plate = controls('.gs-sweep-open');
+      expect(plate).toEqual({
+        rail: true,
+        caption: true,
+        position: true,
+        request: true,
+        model: true,
+        variants: true,
+      });
+
+      find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
+      fixture.detectChanges();
+
+      expect(controls('.gs-sweep-viewer-body')).toEqual(plate);
+      // The way to full size is the one thing the layer has no use for.
+      expect(find('.gs-sweep-viewer-body .gs-plate-link')).toBeNull();
+    });
+
+    it('carries the plate of alternatives into the layer, tile by tile', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+
+      all<HTMLButtonElement>('.gs-sweep-open .gs-sweep-plate-cell')[0].click();
+      fixture.detectChanges();
+
+      const cells = all<HTMLButtonElement>(
+        '.gs-sweep-viewer-body .gs-sweep-plate-cell',
+      );
+      expect(cells).toHaveLength(3);
+      // One of them is on show above the plate, at the size the layer is for.
+      expect(
+        find<HTMLImageElement>(
+          '.gs-sweep-viewer-body img.gs-sweep-frame',
+        )!.getAttribute('src'),
+      ).toBe(
+        find<HTMLImageElement>('.gs-sweep-plate-img')!.getAttribute('src'),
+      );
+      expect(
+        find('.gs-sweep-viewer-body .gs-plate-pos')?.textContent,
+      ).toContain('1');
+
+      cells[2].click();
+      fixture.detectChanges();
+
+      // A tile enlarges in place: the layer stays open on the one pressed.
+      expect(find('.gs-sweep-viewer')).not.toBeNull();
+      expect(text()).toContain('A shorter ramp');
+      expect(cells[2].classList.contains('is-at')).toBe(true);
+    });
+
+    it('freezes the page behind the layer while it is open', async () => {
+      await setUp({ viewerFirst: true });
+      const lock = TestBed.inject(ScrollLockService);
+      const acquire = vi.spyOn(lock, 'acquire');
+      const release = vi.spyOn(lock, 'release');
+
+      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+      fixture.detectChanges();
+      expect(acquire).toHaveBeenCalledTimes(1);
+
+      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+      fixture.detectChanges();
+      expect(release).toHaveBeenCalledTimes(1);
     });
   });
 

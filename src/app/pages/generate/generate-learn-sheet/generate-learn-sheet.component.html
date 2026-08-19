@@ -139,11 +139,11 @@
               [paragraphs]="true"
             />
           </div>
+          <!-- The offer opens the full-size layer here as it does on a step:
+               the plate cannot hold a frame, its controls and its lane in the
+               room a sheet leaves, whichever half of the sheet asks for it. -->
           @for (parameter of entry.sweepParameters ?? []; track parameter) {
-            <app-gs-sweep-scrub
-              [parameter]="parameter"
-              [startExpanded]="true"
-            />
+            <app-gs-sweep-scrub [parameter]="parameter" [viewerFirst]="true" />
           }
           @if (entry.startsFlow) {
             <app-gs-door

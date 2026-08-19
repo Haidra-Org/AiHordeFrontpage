@@ -39,6 +39,7 @@ import {
   sweepIsCategorical,
 } from '../../services/sweep-library.service';
 import { docsSettingLink } from '../../content/docs-links';
+import { useScrollLock } from '../../helper/scroll-lock';
 
 /**
  * The nine copies a `tile_repeat_3x3` frame is laid out as. Three across rather
@@ -72,9 +73,6 @@ const VIEWER_STEPS: Readonly<Record<string, number>> = {
   ArrowUp: -1,
   ArrowDown: 1,
 };
-
-/** Which scrubber a rail is driving: the strip on the page, or the layer. */
-type RailMode = 'strip' | 'zoom';
 
 /**
  * Whether a key landed on a control that steps by itself. The layer's arrow
@@ -286,7 +284,8 @@ const VIEWER_FOCUSABLE =
          were rendered at, without being asked. The row is 44px so a thumb has
          somewhere to land, and the whole rail is one slider to the keyboard
          rather than a dozen tab stops. -->
-    <ng-template #rail let-at="at" let-mode="mode">
+    <ng-template #rail>
+      @let at = index();
       <div class="gs-tickrail-box">
         <div
           class="gs-tickrail"
@@ -297,14 +296,14 @@ const VIEWER_FOCUSABLE =
           [attr.aria-valuemax]="frameCount()"
           [attr.aria-valuenow]="at + 1"
           [attr.aria-valuetext]="valueTextOf(stopAt(at))"
-          (click)="onRailPress($event, mode)"
-          (keydown)="onRailKeydown($event, at, mode)"
-          (pointerdown)="startRailDrag($event, mode)"
-          (pointermove)="onRailDrag($event, mode)"
+          (click)="onRailPress($event)"
+          (keydown)="onRailKeydown($event, at)"
+          (pointerdown)="startRailDrag($event)"
+          (pointermove)="onRailDrag($event)"
           (pointerup)="endRailDrag()"
           (pointercancel)="endRailDrag()"
         >
-          @for (frame of stops(); track $index) {
+          @for (tick of stops(); track $index) {
             <span
               class="gs-tickrail-tick"
               [class.is-at]="$index === at"
@@ -427,10 +426,329 @@ const VIEWER_FOCUSABLE =
       </span>
     </ng-template>
 
+    <!-- One frame at the size its column allows, with the caption that says
+         what the value did to it. On the page the frame is itself the way to
+         the full-size view; in the layer it is already at that size, so it is
+         a picture rather than a control. -->
+    <ng-template #single let-layer="layer">
+      <figure class="gs-sweep-figure">
+        @if (layer) {
+          <ng-container
+            [ngTemplateOutlet]="frame"
+            [ngTemplateOutletContext]="{ stop: stop(), cls: 'gs-sweep-frame' }"
+          />
+        } @else {
+          <!-- The frame is as wide as the column it sits in, which in the form
+               is narrow enough to lose the detail the sweep is about, so the
+               frame is itself the way to a full-size look. -->
+          <button
+            #zoomTrigger
+            type="button"
+            class="gs-sweep-zoom"
+            [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
+            (click)="openZoom(index(), 0)"
+          >
+            <ng-container
+              [ngTemplateOutlet]="frame"
+              [ngTemplateOutletContext]="{
+                stop: stop(),
+                cls: 'gs-sweep-frame',
+              }"
+            />
+          </button>
+        }
+        <!-- The setting and its value lead, as the one token the reader is
+             here to read; the sentence about what it did to the picture
+             follows it. The caption is the live region, so a scrub announces
+             both together rather than a bare number. -->
+        <figcaption class="gs-sweep-caption" role="status" aria-live="polite">
+          @if (stop().prompt_fragment) {
+            <span class="gs-sweep-caption-value">
+              {{
+                'generate.sweeps.value_prompt'
+                  | transloco: valueParamsOf(stop())
+              }}
+            </span>
+          } @else if (!layer) {
+            <app-gs-setting-chip
+              [settingId]="activeParameter()"
+              [value]="stop().value"
+            />
+          }
+          <span class="gs-sweep-caption-text">{{ stop().caption }}</span>
+          <!-- Curation is disclosed rather than hidden: a frame picked from a
+               batch says so, because generation is stochastic and pretending
+               the first roll looked like this would teach the wrong lesson. -->
+          @if ((stop().batch_size ?? 1) > 1) {
+            <span class="gs-sweep-caption-batch">{{
+              'generate.sweeps.batch_note' | transloco: { n: stop().batch_size }
+            }}</span>
+          }
+        </figcaption>
+      </figure>
+    </ng-template>
+
+    <!-- Named stops are alternatives rather than a range: nothing lies between
+         two of them, so the frames are laid out at once and compared by eye
+         instead of scrubbed through. On the page a tile opens the layer; in the
+         layer it is already open, so a tile moves the frame above the plate on
+         to itself. -->
+    <ng-template #plate let-layer="layer">
+      <ul
+        class="gs-sweep-options"
+        [class.gs-sweep-options--dense]="denseTiles()"
+        role="list"
+      >
+        @for (option of stops(); track option.file; let i = $index) {
+          <li class="gs-sweep-option">
+            <button
+              #zoomTrigger
+              type="button"
+              class="gs-sweep-plate-cell"
+              [class.is-at]="tileAt() === i"
+              [attr.aria-label]="
+                'generate.sweeps.tile_enlarge'
+                  | transloco: { value: valueTextOf(option) }
+              "
+              (click)="layer ? goToStop(i) : openTile(i)"
+            >
+              <img
+                class="gs-sweep-plate-img"
+                [src]="frameUrl(option)"
+                alt=""
+                loading="lazy"
+              />
+            </button>
+            <span class="gs-sweep-option-cap">
+              <app-gs-setting-chip
+                [glyph]="false"
+                [settingId]="activeParameter()"
+                [value]="option.value"
+              />
+              <span class="gs-sweep-option-text">{{ option.caption }}</span>
+            </span>
+          </li>
+        }
+      </ul>
+    </ng-template>
+
+    <!-- The explorer itself: the pictures and everything the reader steers them
+         with, written once and rendered either in the plate on the page or
+         inside the full-size layer. The layer is where the differences between
+         neighbouring stops are actually readable, so it is this same explorer
+         at that size rather than a stripped copy of it; only the chrome around
+         it differs. -->
+    <!-- Which reading of the parameter is on show, and which way a pair is
+         laid out: controls over these pictures rather than a title. -->
+    <ng-template #controls>
+      @if (hasVariant() || (showsPair() && offersWipeToggle())) {
+        <div class="gs-plate-controls">
+          @if (hasVariant()) {
+            <ng-container [ngTemplateOutlet]="variants" />
+
+            <ng-container [ngTemplateOutlet]="why" />
+          }
+          @if (showsPair()) {
+            <ng-container [ngTemplateOutlet]="pairMode" />
+          }
+        </div>
+      }
+    </ng-template>
+
+    <!-- The lane and the line that says where along it the reader is. In the
+         plate they follow the picture; in the layer they are docked at the foot
+         of the screen, because a scrubber scrolled out of sight is a control
+         nobody finds. -->
+    <ng-template #scrubber let-layer="layer">
+      @if (!showsPair() && !categorical()) {
+        <ng-container [ngTemplateOutlet]="rail" />
+      }
+      <!-- What this frame is, where in the strip it is, and the way to the
+           full-size view: the three things that used to be scattered around the
+           picture, on one line. The plate of alternatives has no line of its
+           own on the page, where every tile carries its value already; in the
+           layer one frame is on show and the count is how the reader knows how
+           far through the set they are. -->
+      @if (!showsPair() && (!categorical() || layer)) {
+        <div class="gs-plate-foot">
+          @if (layer && !stop().prompt_fragment) {
+            <app-gs-setting-chip
+              [settingId]="activeParameter()"
+              [value]="stop().value"
+            />
+          } @else {
+            <span class="gs-plate-value">{{ valueChip() }}</span>
+          }
+          <span class="gs-plate-pos">
+            {{
+              'generate.sweeps.position'
+                | transloco: { at: index() + 1, n: frameCount() }
+            }}
+          </span>
+          <span class="gs-plate-grow"></span>
+          @if (!layer) {
+            <button
+              #zoomTrigger
+              type="button"
+              class="gs-plate-link"
+              (click)="openZoom(index(), 1)"
+            >
+              {{ 'generate.sweeps.enlarge' | transloco }}
+            </button>
+          }
+        </div>
+      }
+    </ng-template>
+
+    <ng-template #explorer let-layer="layer">
+      @if (!layer) {
+        <ng-container [ngTemplateOutlet]="controls" />
+      }
+
+      <div class="gs-plate-body">
+        @if (sourceUrl(); as source) {
+          <!-- What the sweep was painted over. Without it the low end of a
+               denoising strip looks like a weak render rather than a faithful
+               one. -->
+          <figure class="gs-sweep-source">
+            <img
+              class="gs-sweep-source-img"
+              [src]="source"
+              [alt]="'generate.sweeps.source_alt' | transloco"
+              loading="lazy"
+            />
+            <figcaption class="gs-sweep-source-cap">
+              {{ 'generate.sweeps.source_label' | transloco }}
+            </figcaption>
+          </figure>
+        }
+
+        @if (categorical()) {
+          @if (layer) {
+            <ng-container
+              [ngTemplateOutlet]="single"
+              [ngTemplateOutletContext]="{ layer: layer }"
+            />
+          }
+          <ng-container
+            [ngTemplateOutlet]="plate"
+            [ngTemplateOutletContext]="{ layer: layer }"
+          />
+        } @else if (pairSides(); as sides) {
+          <!-- A before and an after of one scene, wiped rather than set apart:
+               the difference is in one place, and a gap between two copies is
+               exactly the distance the reader would have to carry it across.
+               The wipe drops back to the pair itself where the halves would be
+               too small to read. -->
+          <figure
+            class="gs-sweep-pair"
+            [attr.aria-label]="'generate.sweeps.pair_label' | transloco"
+          >
+            <ng-container
+              [ngTemplateOutlet]="wipe"
+              [ngTemplateOutletContext]="{ sides: sides }"
+            />
+            <!-- The wipe carries the plates, so the two tiles themselves go
+                 under it, in the columns the captions already read in. -->
+            @if (tiled()) {
+              <div class="gs-sweep-solos">
+                @for (side of sides; track side.file) {
+                  <ng-container
+                    [ngTemplateOutlet]="solo"
+                    [ngTemplateOutletContext]="{ stop: side }"
+                  />
+                }
+              </div>
+            }
+            <figcaption class="gs-sweep-pair-caps">
+              @for (side of sides; track side.file) {
+                <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+              }
+            </figcaption>
+            <!-- The picture is the divider's now, so the way to full size is a
+                 control of its own rather than a press on the frame. -->
+            @if (!layer) {
+              <button
+                #zoomTrigger
+                type="button"
+                class="gs-sweep-pair-enlarge"
+                (click)="openZoom(0, 0)"
+              >
+                {{ 'generate.sweeps.pair_enlarge' | transloco }}
+              </button>
+            }
+          </figure>
+        } @else {
+          <ng-container
+            [ngTemplateOutlet]="single"
+            [ngTemplateOutletContext]="{ layer: layer }"
+          />
+        }
+
+        @if (!frameLoaded() && !categorical()) {
+          <p class="gs-sweep-loading">
+            {{ 'generate.sweeps.loading' | transloco }}
+          </p>
+        }
+      </div>
+
+      @if (layer) {
+        <!-- Under the picture rather than over it: on a phone the toggle and
+             the note it raises are read after the frame they are about, and
+             putting them first pushed the picture off the screen. -->
+        <ng-container [ngTemplateOutlet]="controls" />
+      } @else {
+        <ng-container
+          [ngTemplateOutlet]="scrubber"
+          [ngTemplateOutletContext]="{ layer: false }"
+        />
+      }
+
+      <!-- What made these pictures. The model is stated at all times, because a
+           strip means something different on every family; the full request is
+           there for whoever wants the record itself. -->
+      <div class="gs-plate-provenance">
+        @if (modelChip(); as chip) {
+          <span class="gs-plate-model">{{ chip }}</span>
+        }
+        <span class="gs-plate-grow"></span>
+        @if (!showsPair() && sidecarPath()) {
+          <button
+            type="button"
+            class="gs-plate-request-toggle"
+            [attr.aria-expanded]="requestOpen()"
+            (click)="toggleRequest()"
+          >
+            <app-icon
+              [name]="requestOpen() ? 'chevron-up' : 'chevron-down'"
+              class="gs-ico-sm"
+            />
+            {{ 'generate.sweeps.full_request' | transloco }}
+          </button>
+        }
+      </div>
+      @if (requestOpen() && !showsPair()) {
+        <div class="gs-plate-request">
+          @if (requestRecord() === undefined) {
+            <p class="gs-sweep-loading">
+              {{ 'generate.sweeps.loading' | transloco }}
+            </p>
+          } @else if (requestRecord() === null) {
+            <p class="gs-sweep-loading">
+              {{ 'generate.sweeps.request_missing' | transloco }}
+            </p>
+          } @else {
+            <app-gs-recipe-chips [request]="requestChips()" />
+            <pre class="gs-plate-raw">{{ requestRaw() }}</pre>
+          }
+        </div>
+      }
+    </ng-template>
+
     @if (strip()) {
       <div class="gs-sweep">
         @if (expanded()) {
-          <div class="gs-sweep-open">
+          <div class="gs-sweep-open gs-plate">
             <!-- The plate says what it is and holds the way back out, so the
                  control that folds it away is a corner of the picture rather
                  than a link floating under it. -->
@@ -439,261 +757,16 @@ const VIEWER_FOCUSABLE =
               <span class="gs-plate-title">
                 {{ parameterLabelKey() | transloco }}
               </span>
-              @if (showsPair()) {
-                <ng-container [ngTemplateOutlet]="pairMode" />
-              }
               <button type="button" class="gs-plate-x" (click)="collapse()">
                 {{ 'generate.sweeps.collapse' | transloco }}
                 <app-icon name="x-mark" class="gs-ico-sm" />
               </button>
             </div>
 
-            @if (hasVariant()) {
-              <!-- Which reading of the parameter is on show, on its own row
-                   under the plate's name: it is a control over these pictures
-                   rather than the plate's title. -->
-              <div class="gs-plate-controls">
-                <ng-container [ngTemplateOutlet]="variants" />
-
-                <ng-container [ngTemplateOutlet]="why" />
-              </div>
-            }
-
-            <div class="gs-plate-body">
-              @if (sourceUrl(); as source) {
-                <!-- What the sweep was painted over. Without it the low end of a
-                   denoising strip looks like a weak render rather than a
-                   faithful one. -->
-                <figure class="gs-sweep-source">
-                  <img
-                    class="gs-sweep-source-img"
-                    [src]="source"
-                    [alt]="'generate.sweeps.source_alt' | transloco"
-                    loading="lazy"
-                  />
-                  <figcaption class="gs-sweep-source-cap">
-                    {{ 'generate.sweeps.source_label' | transloco }}
-                  </figcaption>
-                </figure>
-              }
-
-              @if (categorical()) {
-                <!-- Named stops are alternatives rather than a range: nothing
-                   lies between two of them, so the frames are laid out at once
-                   and compared by eye instead of scrubbed through. -->
-                <ul
-                  class="gs-sweep-options"
-                  [class.gs-sweep-options--dense]="denseTiles()"
-                  role="list"
-                >
-                  @for (frame of stops(); track frame.file; let i = $index) {
-                    <li class="gs-sweep-option">
-                      <button
-                        #zoomTrigger
-                        type="button"
-                        class="gs-sweep-plate-cell"
-                        [class.is-at]="tileAt() === i"
-                        [attr.aria-label]="
-                          'generate.sweeps.tile_enlarge'
-                            | transloco: { value: valueTextOf(frame) }
-                        "
-                        (click)="openTile(i)"
-                      >
-                        <img
-                          class="gs-sweep-plate-img"
-                          [src]="frameUrl(frame)"
-                          alt=""
-                          loading="lazy"
-                        />
-                      </button>
-                      <span class="gs-sweep-option-cap">
-                        <app-gs-setting-chip
-                          [glyph]="false"
-                          [settingId]="activeParameter()"
-                          [value]="frame.value"
-                        />
-                        <span class="gs-sweep-option-text">{{
-                          frame.caption
-                        }}</span>
-                      </span>
-                    </li>
-                  }
-                </ul>
-              } @else if (pairSides(); as sides) {
-                <!-- A before and an after of one scene, wiped rather than set
-                   apart: the difference is in one place, and a gap between two
-                   copies is exactly the distance the reader would have to carry
-                   it across. The wipe drops back to the pair itself where the
-                   halves would be too small to read. -->
-                <figure
-                  class="gs-sweep-pair"
-                  [attr.aria-label]="'generate.sweeps.pair_label' | transloco"
-                >
-                  <ng-container
-                    [ngTemplateOutlet]="wipe"
-                    [ngTemplateOutletContext]="{ sides: sides }"
-                  />
-                  <!-- The wipe carries the plates, so the two tiles themselves go
-                     under it, in the columns the captions already read in. -->
-                  @if (tiled()) {
-                    <div class="gs-sweep-solos">
-                      @for (side of sides; track side.file) {
-                        <ng-container
-                          [ngTemplateOutlet]="solo"
-                          [ngTemplateOutletContext]="{ stop: side }"
-                        />
-                      }
-                    </div>
-                  }
-                  <figcaption class="gs-sweep-pair-caps">
-                    @for (side of sides; track side.file) {
-                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
-                    }
-                  </figcaption>
-                  <!-- The picture is the divider's now, so the way to full size
-                     is a control of its own rather than a press on the frame. -->
-                  <button
-                    #zoomTrigger
-                    type="button"
-                    class="gs-sweep-pair-enlarge"
-                    (click)="openZoom(0, 0)"
-                  >
-                    {{ 'generate.sweeps.pair_enlarge' | transloco }}
-                  </button>
-                </figure>
-              } @else {
-                <figure class="gs-sweep-figure">
-                  <!-- The frame is as wide as the column it sits in, which in the
-                     form is narrow enough to lose the detail the sweep is about,
-                     so the frame is itself the way to a full-size look. -->
-                  <button
-                    #zoomTrigger
-                    type="button"
-                    class="gs-sweep-zoom"
-                    [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
-                    (click)="openZoom(index(), 0)"
-                  >
-                    <ng-container
-                      [ngTemplateOutlet]="frame"
-                      [ngTemplateOutletContext]="{
-                        stop: stop(),
-                        cls: 'gs-sweep-frame',
-                      }"
-                    />
-                  </button>
-                  <!-- The setting and its value lead, as the one token the reader
-                     is here to read; the sentence about what it did to the
-                     picture follows it. The caption is the live region, so a
-                     scrub announces both together rather than a bare number. -->
-                  <figcaption
-                    class="gs-sweep-caption"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    @if (stop().prompt_fragment) {
-                      <span class="gs-sweep-caption-value">
-                        {{
-                          'generate.sweeps.value_prompt'
-                            | transloco: valueParamsOf(stop())
-                        }}
-                      </span>
-                    } @else {
-                      <app-gs-setting-chip
-                        [settingId]="activeParameter()"
-                        [value]="stop().value"
-                      />
-                    }
-                    <span class="gs-sweep-caption-text">{{
-                      stop().caption
-                    }}</span>
-                    <!-- Curation is disclosed rather than hidden: a frame picked
-                       from a batch says so, because generation is stochastic
-                       and pretending the first roll looked like this would
-                       teach the wrong lesson. -->
-                    @if ((stop().batch_size ?? 1) > 1) {
-                      <span class="gs-sweep-caption-batch">{{
-                        'generate.sweeps.batch_note'
-                          | transloco: { n: stop().batch_size }
-                      }}</span>
-                    }
-                  </figcaption>
-                </figure>
-              }
-
-              @if (!frameLoaded() && !categorical()) {
-                <p class="gs-sweep-loading">
-                  {{ 'generate.sweeps.loading' | transloco }}
-                </p>
-              }
-            </div>
-
-            @if (!showsPair() && !categorical()) {
-              <ng-container
-                [ngTemplateOutlet]="rail"
-                [ngTemplateOutletContext]="{ at: index(), mode: 'strip' }"
-              />
-              <!-- What this frame is, where in the strip it is, and the way to
-                   the full-size view: the three things that used to be scattered
-                   around the picture, on one line inside the plate. -->
-              <div class="gs-plate-foot">
-                <span class="gs-plate-value">{{ valueChip() }}</span>
-                <span class="gs-plate-pos">
-                  {{
-                    'generate.sweeps.position'
-                      | transloco: { at: index() + 1, n: frameCount() }
-                  }}
-                </span>
-                <span class="gs-plate-grow"></span>
-                <button
-                  #zoomTrigger
-                  type="button"
-                  class="gs-plate-link"
-                  (click)="openZoom(index(), 1)"
-                >
-                  {{ 'generate.sweeps.enlarge' | transloco }}
-                </button>
-              </div>
-            }
-
-            <!-- What made these pictures. The model is stated at all times,
-                 because a strip means something different on every family; the
-                 full request is there for whoever wants the record itself. -->
-            <div class="gs-plate-provenance">
-              @if (modelChip(); as chip) {
-                <span class="gs-plate-model">{{ chip }}</span>
-              }
-              <span class="gs-plate-grow"></span>
-              @if (!showsPair() && sidecarPath()) {
-                <button
-                  type="button"
-                  class="gs-plate-request-toggle"
-                  [attr.aria-expanded]="requestOpen()"
-                  (click)="toggleRequest()"
-                >
-                  <app-icon
-                    [name]="requestOpen() ? 'chevron-up' : 'chevron-down'"
-                    class="gs-ico-sm"
-                  />
-                  {{ 'generate.sweeps.full_request' | transloco }}
-                </button>
-              }
-            </div>
-            @if (requestOpen() && !showsPair()) {
-              <div class="gs-plate-request">
-                @if (requestRecord() === undefined) {
-                  <p class="gs-sweep-loading">
-                    {{ 'generate.sweeps.loading' | transloco }}
-                  </p>
-                } @else if (requestRecord() === null) {
-                  <p class="gs-sweep-loading">
-                    {{ 'generate.sweeps.request_missing' | transloco }}
-                  </p>
-                } @else {
-                  <app-gs-recipe-chips [request]="requestChips()" />
-                  <pre class="gs-plate-raw">{{ requestRaw() }}</pre>
-                }
-              </div>
-            }
+            <ng-container
+              [ngTemplateOutlet]="explorer"
+              [ngTemplateOutletContext]="{ layer: false }"
+            />
           </div>
         } @else {
           <!-- The offer, leading with three of the strip's own frames on the
@@ -765,7 +838,7 @@ const VIEWER_FOCUSABLE =
           >
             <div
               #zoomPanel
-              class="gs-sweep-viewer-body"
+              class="gs-sweep-viewer-body gs-plate"
               role="dialog"
               aria-modal="true"
               tabindex="-1"
@@ -778,29 +851,14 @@ const VIEWER_FOCUSABLE =
               (keydown)="onViewerKeydown($event)"
             >
               <div class="gs-sweep-viewer-top">
-                <!-- The layer is the whole strip on a phone, where the plate
-                     does not fit, so it says what the plate says: what kind of
-                     evidence this is, which setting it is about, and only then
-                     which value is on show. -->
+                <!-- One row: what kind of evidence this is, which setting
+                     it is about, and the way out. The value on show is the
+                     caption's own chip under the picture, and saying it twice
+                     cost the band a line the frame needed. -->
                 <span class="gs-sweep-viewer-what">
                   <ng-container [ngTemplateOutlet]="badge" />
                   <span class="gs-sweep-viewer-param">
                     {{ parameterLabelKey() | transloco }}
-                  </span>
-                  <span class="gs-sweep-viewer-name">
-                    @if (showsPair()) {
-                      {{ 'generate.sweeps.pair_label' | transloco }}
-                    } @else if (shown.prompt_fragment) {
-                      {{
-                        'generate.sweeps.value_prompt'
-                          | transloco: valueParamsOf(shown)
-                      }}
-                    } @else {
-                      <app-gs-setting-chip
-                        [settingId]="activeParameter()"
-                        [value]="shown.value"
-                      />
-                    }
                   </span>
                 </span>
                 <button
@@ -814,81 +872,24 @@ const VIEWER_FOCUSABLE =
                   <app-icon name="x-mark" class="gs-ico-sm" />
                 </button>
               </div>
-              <div class="gs-sweep-viewer-stage">
-                @if (sourceUrl(); as source) {
-                  <figure class="gs-sweep-viewer-source">
-                    <img
-                      class="gs-sweep-viewer-source-img"
-                      [src]="source"
-                      [alt]="'generate.sweeps.source_alt' | transloco"
-                    />
-                    <figcaption class="gs-sweep-source-cap">
-                      {{ 'generate.sweeps.source_label' | transloco }}
-                    </figcaption>
-                  </figure>
-                }
-                <!-- Full size is where a wipe is worth the most, so a pair is
-                     the same wipe here rather than one side lifted out of it. -->
-                @if (pairSides(); as sides) {
-                  <div class="gs-sweep-viewer-wipe">
-                    <ng-container
-                      [ngTemplateOutlet]="wipe"
-                      [ngTemplateOutletContext]="{ sides: sides }"
-                    />
-                    @if (tiled()) {
-                      <div class="gs-sweep-solos">
-                        @for (side of sides; track side.file) {
-                          <ng-container
-                            [ngTemplateOutlet]="solo"
-                            [ngTemplateOutletContext]="{ stop: side }"
-                          />
-                        }
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <ng-container
-                    [ngTemplateOutlet]="frame"
-                    [ngTemplateOutletContext]="{
-                      stop: shown,
-                      cls: 'gs-sweep-viewer-img',
-                    }"
-                  />
-                }
+              <!-- The layer supplies the chrome and nothing else: the same
+                   explorer that stands in the page runs inside it, on a
+                   scroller of its own so the pictures and the controls can
+                   both be reached however short the screen is. -->
+              <div class="gs-sweep-viewer-scroll">
+                <ng-container
+                  [ngTemplateOutlet]="explorer"
+                  [ngTemplateOutletContext]="{ layer: true }"
+                />
               </div>
-              <p class="gs-sweep-viewer-cap">
-                @if (pairSides(); as sides) {
-                  <span class="gs-sweep-pair-caps">
-                    @for (side of sides; track side.file) {
-                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
-                    }
-                  </span>
-                } @else {
-                  {{ shown.caption }}
-                }
-              </p>
-
-              <!-- Full size is where the differences between stops are actually
-                   readable, so the scrubber comes with it rather than being left
-                   behind on the page: stepping here is the point of opening it. -->
-              <div class="gs-sweep-viewer-foot">
-                @if (hasVariant()) {
-                  <ng-container [ngTemplateOutlet]="variants" />
-                  <ng-container [ngTemplateOutlet]="why" />
-                }
-                @if (showsPair()) {
-                  <ng-container [ngTemplateOutlet]="pairMode" />
-                }
-                @if (!showsPair()) {
+              @if (!showsPair()) {
+                <div class="gs-sweep-viewer-dock">
                   <ng-container
-                    [ngTemplateOutlet]="rail"
-                    [ngTemplateOutletContext]="{
-                      at: zoomIndex(),
-                      mode: 'zoom',
-                    }"
+                    [ngTemplateOutlet]="scrubber"
+                    [ngTemplateOutletContext]="{ layer: true }"
                   />
-                }
-              </div>
+                </div>
+              }
             </div>
           </div>
         }
@@ -906,6 +907,7 @@ const VIEWER_FOCUSABLE =
 export class GsSweepScrubComponent {
   private readonly sweeps = inject(SweepLibraryService);
   private readonly transloco = inject(TranslocoService);
+  private readonly scrollLock = useScrollLock();
 
   /** API field name the sweep varies, e.g. `steps`. */
   public readonly parameter = input.required<string>();
@@ -1204,9 +1206,6 @@ export class GsSweepScrubComponent {
     () => this.strip()!.stops[this.index()],
   );
 
-  /** Which stop the full-size view is on, before it has been moved off. */
-  public readonly zoomIndex = computed(() => this.zoom() ?? 0);
-
   /** The frame on show full size, or null when nothing is. */
   public readonly zoomStop = computed<SweepStop | null>(() => {
     const at = this.zoom();
@@ -1302,6 +1301,13 @@ export class GsSweepScrubComponent {
         }
       });
     });
+
+    // The page behind the layer is frozen while it is open. On a phone the
+    // layer is the whole screen, and a drag that starts on its chrome would
+    // otherwise scroll the studio underneath it.
+    effect(() =>
+      this.zoomed() ? this.scrollLock.enable() : this.scrollLock.disable(),
+    );
 
     // The enlarged frame takes focus as it opens, so the keys that close it and
     // the button that dismisses it are where the reader already is.
@@ -1448,22 +1454,20 @@ export class GsSweepScrubComponent {
 
   /** Move the full-size view one stop along, and the strip under it with it. */
   public stepZoom(delta: number): void {
-    const at = this.zoom();
-    if (at === null) {
-      return;
+    if (this.zoom() !== null) {
+      this.goToStop(this.index() + delta);
     }
-    this.moveZoom(at + delta);
   }
 
   /**
-   * Where the enlarged view is, and where the strip behind it is: closing on a
-   * stop the reader scrubbed to and finding the page still on the old one would
-   * undo the comparison they just made.
+   * Move the strip to a stop, and the layer over it with it: one rail drives
+   * both, and closing on a stop the reader scrubbed to only to find the page
+   * still on the old one would undo the comparison they just made.
    */
-  private moveZoom(to: number): void {
+  public goToStop(to: number): void {
     const at = Math.min(Math.max(to, 0), this.lastIndex());
-    this.zoom.set(at);
     this.cursor.set(at);
+    this.zoom.update((open) => (open === null ? null : at));
     this.prefetchNeighbours();
   }
 
@@ -1528,16 +1532,16 @@ export class GsSweepScrubComponent {
    * than on whatever the arithmetic rounds to; anywhere else on the rail falls
    * back to the position across its width.
    */
-  public onRailPress(event: MouseEvent, mode: RailMode): void {
+  public onRailPress(event: MouseEvent): void {
     const at =
       this.tickUnder(event.target) ??
       this.railPosition(event.currentTarget, event.clientX);
     if (at !== null) {
-      this.railMove(mode, at);
+      this.goToStop(at);
     }
   }
 
-  public onRailKeydown(event: KeyboardEvent, at: number, mode: RailMode): void {
+  public onRailKeydown(event: KeyboardEvent, at: number): void {
     const step = RAIL_STEPS[event.key];
     if (step === undefined) {
       return;
@@ -1545,10 +1549,7 @@ export class GsSweepScrubComponent {
     event.preventDefault();
     event.stopPropagation();
     const last = this.lastIndex();
-    this.railMove(
-      mode,
-      step === 'first' ? 0 : step === 'last' ? last : at + step,
-    );
+    this.goToStop(step === 'first' ? 0 : step === 'last' ? last : at + step);
   }
 
   /**
@@ -1557,10 +1558,10 @@ export class GsSweepScrubComponent {
    * the thumb makes the lane a control only someone who already knows where the
    * thumb is can use, and the thumb is the smallest part of it.
    */
-  public startRailDrag(event: PointerEvent, mode: RailMode): void {
+  public startRailDrag(event: PointerEvent): void {
     const at = this.railPosition(event.currentTarget, event.clientX);
     if (at !== null) {
-      this.railMove(mode, at);
+      this.goToStop(at);
     }
     this.pressedAt = { x: event.clientX, y: event.clientY };
     // A finger has to say which way it is going first: the lane sits in a page
@@ -1575,13 +1576,13 @@ export class GsSweepScrubComponent {
   }
 
   /** A drag along the rail reads its position rather than the slit under it. */
-  public onRailDrag(event: PointerEvent, mode: RailMode): void {
+  public onRailDrag(event: PointerEvent): void {
     if (!this.dragging && !this.takesOverGesture(event)) {
       return;
     }
     const at = this.railPosition(event.currentTarget, event.clientX);
     if (at !== null) {
-      this.railMove(mode, at);
+      this.goToStop(at);
     }
   }
 
@@ -1648,16 +1649,6 @@ export class GsSweepScrubComponent {
     // rounds to on a different reading of the lane.
     const across = ((clientX - box.left) / box.width) * count - 0.5;
     return Math.round(across);
-  }
-
-  /** Move whichever scrubber the rail is driving: the strip, or the layer. */
-  private railMove(mode: RailMode, to: number): void {
-    if (mode === 'zoom') {
-      this.moveZoom(to);
-      return;
-    }
-    this.cursor.set(Math.min(Math.max(to, 0), this.lastIndex()));
-    this.prefetchNeighbours();
   }
 
   /**

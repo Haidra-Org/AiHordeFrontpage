@@ -23,6 +23,8 @@ import { EXAMPLES_ROOT } from '../../../content/examples';
 import request from '../../../testing/fixtures/example-request.stub.json';
 import meta from '../../../testing/fixtures/example-meta.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
+import { environment } from '../../../../environments/environment';
+import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 
 const TRANSLATIONS = en as Record<string, string>;
 
@@ -300,6 +302,44 @@ describe('GenerateLearnSheetComponent', () => {
       await settle();
 
       expect(engine.step()?.id).toBe('prompt');
+    });
+  });
+
+  describe('a sweep on a phone', () => {
+    /** The evidence library, which every strip in the sheet reads from. */
+    async function serveSweeps(): Promise<void> {
+      const http = TestBed.inject(HttpTestingController);
+      for (const request of http.match(
+        `${environment.evidenceBaseUrl}/index.json`,
+      )) {
+        request.flush(structuredClone(stubIndex));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await settle();
+    }
+
+    it('takes the offer to the full-screen layer, never to a strip in the sheet', async () => {
+      // A track is the half of the sheet that used to open its strips inline.
+      await engine.start('concepts_images');
+      await settle();
+      await serveSweeps();
+
+      const offer = first<HTMLButtonElement>('.gs-sweep-offer');
+      expect(offer).toBeTruthy();
+      expect(query('.gs-sweep-open')).toHaveLength(0);
+
+      offer.click();
+      await settle();
+
+      expect(query('.gs-sweep-viewer')).toHaveLength(1);
+      // Nothing opens behind it: the plate is what has no room here.
+      expect(query('.gs-sweep-open')).toHaveLength(0);
+
+      first<HTMLButtonElement>('.gs-sweep-viewer-x').click();
+      await settle();
+
+      expect(query('.gs-sweep-viewer')).toHaveLength(0);
+      expect(document.activeElement).toBe(offer);
     });
   });
 

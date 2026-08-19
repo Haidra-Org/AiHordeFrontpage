@@ -8619,53 +8619,53 @@ app-gs-sweep-scrub {
 }
 /* The tokens the plate borrows from the page have to survive the change of
    ground under them. */
-.gen-studio .gs-sweep-open .gs-setting-chip {
+.gen-studio .gs-plate .gs-setting-chip {
   border-color: var(--gs-stage-rim);
   background: transparent;
 }
-.gen-studio .gs-sweep-open .gs-setting-chip-label {
+.gen-studio .gs-plate .gs-setting-chip-label {
   color: var(--gs-stage-label);
 }
-.gen-studio .gs-sweep-open .gs-setting-chip-value {
+.gen-studio .gs-plate .gs-setting-chip-value {
   color: var(--gs-stage-ink);
 }
-.gen-studio .gs-sweep-open .gs-sweep-caption,
-.gen-studio .gs-sweep-open .gs-sweep-caption-batch,
-.gen-studio .gs-sweep-open .gs-sweep-caption-value,
-.gen-studio .gs-sweep-open .gs-sweep-loading,
-.gen-studio .gs-sweep-open .gs-sweep-pair-cap,
-.gen-studio .gs-sweep-open .gs-sweep-solo-cap,
-.gen-studio .gs-sweep-open .gs-sweep-source-cap {
+.gen-studio .gs-plate .gs-sweep-caption,
+.gen-studio .gs-plate .gs-sweep-caption-batch,
+.gen-studio .gs-plate .gs-sweep-caption-value,
+.gen-studio .gs-plate .gs-sweep-loading,
+.gen-studio .gs-plate .gs-sweep-pair-cap,
+.gen-studio .gs-plate .gs-sweep-solo-cap,
+.gen-studio .gs-plate .gs-sweep-source-cap {
   color: var(--gs-stage-label);
 }
 /* The controls that were quiet blue links on the page are quiet plate ink here:
    an accent picked for contrast on a white card is not the accent that reads on
    a lightbox, and every one of these is a second look at the frame rather than
    a way off it. */
-.gen-studio .gs-sweep-open .gs-sweep-why,
-.gen-studio .gs-sweep-open .gs-sweep-why-link,
-.gen-studio .gs-sweep-open .gs-sweep-pair-enlarge,
-.gen-studio .gs-sweep-open .gs-sweep-pair-mode,
-.dark .gen-studio .gs-sweep-open .gs-sweep-why,
-.dark .gen-studio .gs-sweep-open .gs-sweep-why-link,
-.dark .gen-studio .gs-sweep-open .gs-sweep-pair-enlarge,
-.dark .gen-studio .gs-sweep-open .gs-sweep-pair-mode {
+.gen-studio .gs-plate .gs-sweep-why,
+.gen-studio .gs-plate .gs-sweep-why-link,
+.gen-studio .gs-plate .gs-sweep-pair-enlarge,
+.gen-studio .gs-plate .gs-sweep-pair-mode,
+.dark .gen-studio .gs-plate .gs-sweep-why,
+.dark .gen-studio .gs-plate .gs-sweep-why-link,
+.dark .gen-studio .gs-plate .gs-sweep-pair-enlarge,
+.dark .gen-studio .gs-plate .gs-sweep-pair-mode {
   color: var(--gs-stage-label);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.gen-studio .gs-sweep-open .gs-sweep-why:hover,
-.gen-studio .gs-sweep-open .gs-sweep-why-link:hover,
-.gen-studio .gs-sweep-open .gs-sweep-pair-enlarge:hover,
-.gen-studio .gs-sweep-open .gs-sweep-pair-mode:hover {
+.gen-studio .gs-plate .gs-sweep-why:hover,
+.gen-studio .gs-plate .gs-sweep-why-link:hover,
+.gen-studio .gs-plate .gs-sweep-pair-enlarge:hover,
+.gen-studio .gs-plate .gs-sweep-pair-mode:hover {
   color: var(--gs-stage-ink);
 }
-.gen-studio .gs-sweep-open .gs-sweep-why-body {
+.gen-studio .gs-plate .gs-sweep-why-body {
   border-color: var(--gs-stage-rim);
   background: rgba(255, 255, 255, 0.04);
   color: var(--gs-stage-label);
 }
-.gen-studio .gs-sweep-open .gs-sweep-why-list {
+.gen-studio .gs-plate .gs-sweep-why-list {
   color: var(--gs-stage-ink);
 }
 /* The choice of which reading to show sits in the plate's header band, so it is
@@ -8683,11 +8683,11 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-head .gs-sweep-pair-mode + .gs-plate-x {
   margin-left: 0;
 }
-.gen-studio .gs-sweep-open .gs-sweep-variant {
+.gen-studio .gs-plate .gs-sweep-variant {
   border-color: var(--gs-stage-rim);
   color: var(--gs-stage-label);
 }
-.gen-studio .gs-sweep-open .gs-sweep-variant.is-on {
+.gen-studio .gs-plate .gs-sweep-variant.is-on {
   border-color: var(--gs-stage-label);
   background: rgba(255, 255, 255, 0.08);
   color: var(--gs-stage-ink);
@@ -9067,30 +9067,11 @@ app-gs-sweep-scrub + app-gs-door {
 .dark .gen-studio .gs-sweep-why-link {
   color: var(--gs-pop-accent);
 }
-/* Beside prose the note can be a tint, because the ground under it is already a
-   card. Over pictures it cannot: a translucent wash on the plate's stage or in
-   the layer gives the words no surface of their own, so they read as lying on
-   the frame. Where the note opens among pictures it is an opaque block in the
-   flow, between the toggle that raised it and the lane, so unfolding it moves
-   the lane down instead of covering the picture. */
-.gen-studio .gs-sweep-viewer-foot .gs-sweep-why-body {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: var(--gs-space-3);
-  border: 1px solid var(--gs-border);
-  border-radius: var(--gs-radius-md);
-  background: var(--gs-panel);
-  color: var(--gs-ink-2);
-}
-.gen-studio .gs-sweep-viewer-foot .gs-sweep-why-list {
-  color: var(--gs-ink);
-}
 /* Below the plate's own width the same holds for the plate: it is the whole
    width of a phone, and the note is the only thing on it that is not a
    picture. */
 @media (max-width: 1023.98px) {
-  .gen-studio .gs-sweep-open .gs-sweep-why-body {
+  .gen-studio .gs-plate .gs-sweep-why-body {
     display: block;
     width: 100%;
     margin: 0 0 var(--gs-space-2);
@@ -9100,16 +9081,16 @@ app-gs-sweep-scrub + app-gs-door {
     background: var(--gs-panel);
     color: var(--gs-ink-2);
   }
-  .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-list {
+  .gen-studio .gs-plate .gs-sweep-why-body .gs-sweep-why-list {
     color: var(--gs-ink);
   }
   /* The block brings the page's ground back inside the plate, so the note's
      link goes back to the page's accent: the plate ink it wears out here would
      be the stage's quiet grey on a lit surface. */
-  .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-link {
+  .gen-studio .gs-plate .gs-sweep-why-body .gs-sweep-why-link {
     color: var(--gs-blue);
   }
-  .dark .gen-studio .gs-sweep-open .gs-sweep-why-body .gs-sweep-why-link {
+  .dark .gen-studio .gs-plate .gs-sweep-why-body .gs-sweep-why-link {
     color: var(--gs-pop-accent);
   }
 }
@@ -9158,6 +9139,69 @@ app-gs-sweep-scrub + app-gs-door {
   box-shadow: var(--gs-elev-3);
   outline: none;
 }
+/* The explorer's layer is the plate at full size rather than a panel with a
+   picture on it: the same ground, the same rim and the same ink, so a reader
+   who opens the strip from the page meets what they were already looking at.
+   The band and the scroller are all the layer adds. */
+.gen-studio .gs-sweep-viewer-body.gs-plate {
+  padding-bottom: 0;
+  border-color: var(--gs-stage-rim);
+  background: var(--gs-stage);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-top {
+  border-bottom-color: var(--gs-stage-rim);
+}
+.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-param {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-name,
+.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-x {
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-x:hover {
+  color: var(--gs-stage-ink);
+}
+/* Under the picture the controls need the room a heading above them did not:
+   the toggle is a row of buttons rather than a line of prose, and set tight
+   against the caption it reads as part of it. */
+.gen-studio .gs-sweep-viewer-scroll .gs-plate-controls {
+  padding-top: var(--gs-space-3);
+}
+.gen-studio .gs-sweep-viewer-scroll .gs-plate-controls .gs-sweep-variants {
+  margin-bottom: var(--gs-space-2);
+}
+/* The scrubber is docked rather than scrolled: a lane the reader has to find
+   by scrolling is a lane they do not know is there, and stepping the strip is
+   the whole reason the layer opened. */
+.gen-studio .gs-sweep-viewer-dock {
+  flex: none;
+  padding: var(--gs-space-2) var(--gs-space-4) var(--gs-space-2);
+  border-top: 1px solid var(--gs-stage-rim);
+}
+.gen-studio .gs-sweep-viewer-dock .gs-tickrail-box,
+.gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
+  padding: 0;
+}
+.gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
+  margin-top: var(--gs-space-2);
+}
+/* Everything below the band scrolls together, and the scroll stops at the
+   layer's own edge rather than running on into the page behind it. */
+.gen-studio .gs-sweep-viewer-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-bottom: var(--gs-space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Full size is the whole reason the layer exists, so the letterboxed stage the
+   plate holds its frames in is given the room the page could not. */
+.gen-studio .gs-sweep-viewer-body .gs-sweep-figure img.gs-sweep-frame,
+.gen-studio .gs-sweep-viewer-body img.gs-sweep-frame {
+  height: min(52vh, 620px);
+  max-height: min(52vh, 620px);
+}
 .gen-studio .gs-sweep-viewer-top {
   flex: none;
   display: flex;
@@ -9173,8 +9217,8 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-viewer-what {
   flex: 1;
   display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-1);
+  align-items: center;
+  gap: var(--gs-space-2);
   min-width: 0;
 }
 .gen-studio .gs-sweep-viewer-param {
@@ -9204,25 +9248,6 @@ app-gs-sweep-scrub + app-gs-door {
   text-transform: none;
   font-weight: 400;
 }
-/* The scrubber, carried into the full-size view with the pictures it drives.
-   The layer's own body is the panel rather than the plate, so the rail's stage
-   tokens are re-pointed at the page's ink for the length of this row: the same
-   rail, drawn for the ground it is actually standing on. */
-/* The layer carries the same lane and the same caption, so it carries the same
-   guard: nothing in it may set how wide the layer is. */
-.gen-studio .gs-sweep-viewer-foot {
-  --gs-stage-rim: var(--gs-switch-off);
-  --gs-stage-label: var(--gs-label);
-  --gs-stage-ink: var(--gs-ink);
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-2);
-  margin: var(--gs-space-2) var(--gs-space-4) 0;
-}
-.gen-studio .gs-sweep-viewer-foot .gs-tickrail-box {
-  padding: 0;
-}
 .gen-studio .gs-sweep-viewer-x {
   flex: none;
   width: 44px;
@@ -9234,14 +9259,6 @@ app-gs-sweep-scrub + app-gs-door {
   margin: var(--gs-space-3) auto 0;
   object-fit: contain;
   border-radius: var(--gs-radius-sm);
-}
-.gen-studio .gs-sweep-viewer-stage {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: var(--gs-space-3);
-  min-height: 0;
-  padding: 0 var(--gs-space-4);
 }
 .gen-studio .gs-sweep-viewer-cap {
   flex: none;
@@ -9267,7 +9284,7 @@ app-gs-sweep-scrub + app-gs-door {
   }
   .gen-studio
     .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
-    .gs-sweep-viewer-body {
+    .gs-sweep-viewer-body:not(.gs-plate) {
     max-height: calc(
       100dvh - 2 * var(--gs-space-2) - env(safe-area-inset-top) -
         env(safe-area-inset-bottom)
@@ -9275,19 +9292,75 @@ app-gs-sweep-scrub + app-gs-door {
     overflow-y: auto;
     overscroll-behavior: contain;
   }
-  /* The body scrolls here, so nothing in it shrinks: a stage that gave up
-     height to a taller foot kept its picture at full size and the caption and
-     controls were drawn over it. */
+  /* The explorer's layer is the screen: a band that stays, a scroller under it
+     and the lane docked at the foot, so the picture, what it is and the way to
+     the next stop are all on the first screen. A margin around it would be
+     taken off the frame, which is the one thing the reader came for. */
+  .gen-studio .gs-sweep-viewer:has(.gs-sweep-viewer-body.gs-plate) {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .gen-studio .gs-sweep-viewer-body.gs-plate {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    overflow: hidden;
+  }
+  /* The band is one row: the setting's name is what the reader needs at the
+     top of it, and the section it belongs to gives up whatever room the name
+     needs rather than pushing it onto a second line. */
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-top {
+    padding: var(--gs-space-1) var(--gs-space-1) var(--gs-space-1)
+      var(--gs-space-3);
+  }
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-what {
+    flex-wrap: nowrap;
+  }
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-cap-eyebrow {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-param {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  /* The frame runs the full width and is capped so the caption under it and
+     the lane below that are both on screen before anything is scrolled. */
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-body {
+    padding: 0;
+  }
   .gen-studio
-    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
-    .gs-sweep-viewer-stage,
-  .gen-studio
-    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
-    .gs-sweep-viewer-cap,
-  .gen-studio
-    .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
-    .gs-sweep-viewer-foot {
-    flex: none;
+    .gs-sweep-viewer-body.gs-plate
+    .gs-sweep-figure
+    img.gs-sweep-frame,
+  .gen-studio .gs-sweep-viewer-body.gs-plate img.gs-sweep-frame {
+    height: min(56dvh, 100vw);
+    max-height: min(56dvh, 100vw);
+    border-radius: 0;
+  }
+  /* The words keep a margin the picture does not need. */
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-caption,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-loading,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-pair-caps,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-options,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-source,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-controls,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-provenance,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-request,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-dock {
+    padding-left: var(--gs-space-3);
+    padding-right: var(--gs-space-3);
+  }
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-controls {
+    padding-top: var(--gs-space-2);
+  }
+  .gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
+    margin-top: var(--gs-space-1);
   }
 }
 
@@ -9611,18 +9684,6 @@ app-gs-compare-wipe {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--gs-label);
-}
-.gen-studio .gs-sweep-viewer-source {
-  flex: 0 0 auto;
-  margin: var(--gs-space-3) 0 0;
-  text-align: center;
-}
-.gen-studio .gs-sweep-viewer-source-img {
-  display: block;
-  width: 120px;
-  max-width: 100%;
-  border-radius: var(--gs-radius-sm);
-  background: var(--gs-field);
 }
 
 /* The two readings of one number, offered as a choice rather than as a second
