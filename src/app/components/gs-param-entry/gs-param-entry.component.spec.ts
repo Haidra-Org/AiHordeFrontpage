@@ -99,8 +99,14 @@ describe('GsParamEntryComponent', () => {
     expect(find('.gs-ref-lead')?.textContent?.trim()).toBe(
       translations['generate.reference.steps.lead'],
     );
+    // The body is rendered as blocks, so each paragraph of the written copy is
+    // an element of its own and the blank lines between them carry no text.
+    const body = translations['generate.reference.steps.body'];
+    expect(all('.gs-ref-body .gs-prose-p')).toHaveLength(
+      body.split('\n\n').length,
+    );
     expect(find('.gs-ref-body')?.textContent?.trim()).toBe(
-      translations['generate.reference.steps.body'],
+      body.split('\n\n').join(''),
     );
   });
 

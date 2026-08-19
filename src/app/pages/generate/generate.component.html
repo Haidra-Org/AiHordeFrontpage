@@ -29,6 +29,8 @@
       [models]="models()"
       [kudos]="kudos()"
       [estimating]="estimating()"
+      [kudosLines]="kudosLines()"
+      [waitLine]="waitLine()"
       [forcedParams]="forcedParams()"
       [styleGroups]="styleGroups()"
       [panelSize]="panelSize()"
@@ -70,6 +72,7 @@
       [formValue]="formValue()"
       (applyMeta)="onApplyMeta($event)"
       (useAsSource)="onUseAsSource($event)"
+      (loadSettings)="onLoadSettings($event)"
       (usePrompt)="onUsePrompt($event)"
     />
   </section>

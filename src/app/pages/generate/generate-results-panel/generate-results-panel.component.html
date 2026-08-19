@@ -644,6 +644,56 @@
                         </span>
                       </button>
                     }
+                    @if (!selectMode()) {
+                      <!-- The three next moves, on the tile itself from the
+                           width where the flip machinery stands down. Below
+                           that the face is the picture alone and these lead
+                           the flip menu instead. -->
+                      <!-- One word apiece: three tiles to a row leaves no
+                           space for the full label, and the whole sentence
+                           stays as the button's name. -->
+                      <div class="gs-quick-acts gs-quick-acts--tile">
+                        <button
+                          type="button"
+                          class="gs-quick-act gs-quick-act--primary"
+                          (click)="makeVariation(tile)"
+                          [attr.aria-label]="
+                            'generate.results.make_variation' | transloco
+                          "
+                          [title]="
+                            'generate.results.make_variation' | transloco
+                          "
+                        >
+                          <app-icon name="squares-2x2" />
+                          {{ "generate.results.variation_short" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-quick-act"
+                          [disabled]="!tile.thumb"
+                          (click)="reuseAsSource(tile)"
+                          [attr.aria-label]="
+                            'generate.results.reuse' | transloco
+                          "
+                          [title]="'generate.results.reuse' | transloco"
+                        >
+                          <app-icon name="refresh-alt" />
+                          {{ "generate.results.source_short" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-quick-act"
+                          (click)="copySettings(tile)"
+                          [attr.aria-label]="
+                            'generate.results.copy_settings' | transloco
+                          "
+                          [title]="'generate.results.copy_settings' | transloco"
+                        >
+                          <app-icon name="adjustments-horizontal" />
+                          {{ "generate.results.settings_short" | transloco }}
+                        </button>
+                      </div>
+                    }
                     <div class="gs-tile-bar">
                       <span class="gs-tile-seed">
                         @if (tile.seed) {
@@ -696,6 +746,24 @@
                         >
                           <app-icon name="arrow-left" />
                           {{ "generate.results.back_to_image" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="makeVariation(tile)"
+                        >
+                          <app-icon name="squares-2x2" />
+                          {{ "generate.results.make_variation" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="copySettings(tile)"
+                        >
+                          <app-icon name="adjustments-horizontal" />
+                          {{ "generate.results.copy_settings" | transloco }}
                         </button>
                         <button
                           type="button"
@@ -1012,6 +1080,35 @@
             }
           </div>
         }
+        <!-- What to do next, ahead of the rest: on a phone this row is the
+             whole answer and everything below it scrolls. -->
+        <div class="gs-quick-acts gs-quick-acts--viewer">
+          <button
+            type="button"
+            class="gs-quick-act gs-quick-act--primary"
+            (click)="makeVariation(view)"
+          >
+            <app-icon name="squares-2x2" />
+            {{ "generate.results.make_variation" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-quick-act"
+            [disabled]="!view.thumb"
+            (click)="reuseAsSource(view)"
+          >
+            <app-icon name="refresh-alt" />
+            {{ "generate.results.reuse" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-quick-act"
+            (click)="copySettings(view)"
+          >
+            <app-icon name="adjustments-horizontal" />
+            {{ "generate.results.copy_settings" | transloco }}
+          </button>
+        </div>
         <div class="gs-viewer-actions">
           <button
             type="button"
@@ -1021,14 +1118,6 @@
           >
             <app-icon name="arrow-down-tray" />
             {{ "generate.results.download" | transloco }}
-          </button>
-          <button
-            type="button"
-            class="gs-viewer-act"
-            (click)="reuseAsSource(view)"
-          >
-            <app-icon name="refresh-alt" />
-            {{ "generate.results.reuse" | transloco }}
           </button>
           @if (canCopyImage) {
             <button
@@ -1081,14 +1170,6 @@
           </button>
           <button
             type="button"
-            class="gs-viewer-act"
-            (click)="openLoadSettings(view)"
-          >
-            <app-icon name="adjustments-horizontal" />
-            {{ "generate.results.menu_load" | transloco }}
-          </button>
-          <button
-            type="button"
             class="gs-viewer-act gs-viewer-act--danger"
             (click)="requestDelete([view.jobLocalId])"
           >
@@ -1113,7 +1194,9 @@
           [currentValue]="formValue()"
           [defaultMode]="metaMode()"
           [pinned]="metaPinned()"
+          [quickActions]="true"
           (apply)="onMetaApply($event)"
+          (quickAction)="onQuickAction($event, tile)"
           (rawJson)="metaJsonOpen.set(true)"
           (pinToggle)="toggleMetaPin()"
           (closed)="closeMeta()"
@@ -1139,6 +1222,24 @@
     >
       <app-icon name="arrow-down-tray" />
       {{ "generate.results.download" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="makeVariation(menu.tile)"
+    >
+      <app-icon name="squares-2x2" />
+      {{ "generate.results.make_variation" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="copySettings(menu.tile)"
+    >
+      <app-icon name="adjustments-horizontal" />
+      {{ "generate.results.copy_settings" | transloco }}
     </button>
     <button
       type="button"
@@ -1207,7 +1308,9 @@
         [currentValue]="formValue()"
         [defaultMode]="metaMode()"
         [pinned]="metaPinned()"
+        [quickActions]="true"
         (apply)="onMetaApply($event)"
+        (quickAction)="onQuickAction($event, tile)"
         (rawJson)="metaJsonOpen.set(true)"
         (pinToggle)="toggleMetaPin()"
         (closed)="closeMeta()"

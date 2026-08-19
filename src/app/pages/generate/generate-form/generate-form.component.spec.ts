@@ -11,6 +11,8 @@ import {
   STEPS_SLIDER_MAX,
   buildStyledImageRequest,
   createGenerateForm,
+  kudosBreakdown,
+  modelWaitEstimate,
 } from '../generate-form.model';
 import {
   AppliedStyle,
@@ -18,6 +20,7 @@ import {
 } from '../../../services/horde-styles.service';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
+import type { ActiveModel } from '../../../types/active-model';
 import { ToastService } from '../../../services/toast.service';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
@@ -1877,5 +1880,138 @@ describe('GenerateFormComponent suggested settings', () => {
   it('is absent for a model that recommends nothing', async () => {
     const { host } = await render(null);
     expect(suggestButton(host)).toBeNull();
+  });
+});
+
+/**
+ * The estimate is the horde's number and nobody explained it. The popover is
+ * the explanation, so what it draws is what is being guaranteed here: the
+ * reader's own settings, and a word about the wait.
+ */
+describe('GenerateFormComponent kudos breakdown', () => {
+  async function render(
+    value: Partial<GenerateFormValue>,
+    models: ActiveModel[] = [],
+  ): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+    component: GenerateFormComponent;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      mode: 'advanced',
+      prompt: 'a fox',
+      model: 'a model',
+      ...value,
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('kudos', 26.4);
+    fixture.componentRef.setInput('models', models);
+    fixture.componentRef.setInput(
+      'kudosLines',
+      kudosBreakdown(form.getRawValue(), coerceSamplerConstraints(live)),
+    );
+    fixture.componentRef.setInput(
+      'waitLine',
+      modelWaitEstimate(models[0] ?? null),
+    );
+    fixture.detectChanges();
+    fixture.componentInstance.toggleKudos();
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      fixture,
+      component: fixture.componentInstance,
+    };
+  }
+
+  function popLines(host: HTMLElement): string[] {
+    return Array.from(host.querySelectorAll<HTMLElement>('.gs-kudos-item')).map(
+      (line) => line.textContent?.trim() ?? '',
+    );
+  }
+
+  it('names the settings the reader controls, in their own numbers', async () => {
+    const { host } = await render({
+      width: 1024,
+      height: 1024,
+      steps: 30,
+      sampler_name: 'k_heun',
+      hires_fix: true,
+      n: 4,
+    });
+
+    expect(popLines(host)).toEqual([
+      'Size 1024×1024, 1.05 megapixels',
+      '30 steps × k_heun at ×2 = 60 units of work',
+      'Hires fix, which paints the picture a second time at full size',
+      '× 4 images',
+    ]);
+    expect(host.querySelector('.gs-kudos-title')?.textContent?.trim()).toBe(
+      'Why this costs about 26 kudos',
+    );
+    expect(host.querySelector('.gs-kudos-note')?.textContent?.trim()).toBe(
+      en['generate.form.kudos_horde_owns'],
+    );
+  });
+
+  it('says how long the picked model is taking right now', async () => {
+    const { host } = await render({ model: 'a model' }, [
+      { name: 'a model', count: 4, eta: 45 },
+    ]);
+
+    expect(host.querySelector('.gs-kudos-wait')?.textContent?.trim()).toBe(
+      'Usually about 45 seconds right now for this model',
+    );
+  });
+
+  it('falls back to the workers when the horde states no eta', async () => {
+    const { host } = await render({ model: 'a model' }, [
+      { name: 'a model', count: 4 },
+    ]);
+
+    expect(host.querySelector('.gs-kudos-wait')?.textContent?.trim()).toBe(
+      en['generate.form.kudos_wait_unknown'],
+    );
+  });
+
+  it('reuses the no-worker sentence for a model nobody carries', async () => {
+    const { host } = await render({ model: 'a model' }, [
+      { name: 'a model', count: 0, eta: 10000 },
+    ]);
+
+    expect(host.querySelector('.gs-kudos-wait')?.textContent?.trim()).toBe(
+      en['generate.form.model_no_workers'],
+    );
+  });
+
+  it('says on the trigger whether the breakdown is open', async () => {
+    const { host, fixture, component } = await render({});
+    const button = host.querySelector<HTMLButtonElement>('.gs-kudos-btn');
+
+    expect(button?.getAttribute('aria-expanded')).toBe('true');
+
+    component.onDocumentEscape();
+    fixture.detectChanges();
+
+    expect(component.kudosOpen()).toBe(false);
+    expect(host.querySelector('.gs-kudos-pop')).toBeNull();
+    expect(
+      host
+        .querySelector<HTMLButtonElement>('.gs-kudos-btn')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('false');
   });
 });

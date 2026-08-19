@@ -24,6 +24,8 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
   isSnappableSize,
+  kudosBreakdown,
+  modelWaitEstimate,
   karrasRequirementHint,
   nativeSizeHint,
   nativeSquareFor,
@@ -1545,5 +1547,132 @@ describe('suggestedSettings', () => {
         current,
       ),
     ).toEqual({});
+  });
+});
+
+describe('what the kudos estimate is made of', () => {
+  const contract = coerceSamplerConstraints(live)!;
+  const value: GenerateFormValue = {
+    ...DEFAULT_GENERATE_FORM_VALUE,
+    width: 1024,
+    height: 1024,
+    steps: 30,
+    sampler_name: 'k_heun',
+  };
+  const lineFor = (
+    lines: readonly {
+      id: string;
+      key: string;
+      params: Record<string, unknown>;
+    }[],
+    id: string,
+  ) => lines.find((line) => line.id === id);
+
+  it('opens with the size, in pixels and in megapixels', () => {
+    const size = lineFor(kudosBreakdown(value, contract), 'size');
+
+    expect(size?.key).toBe('generate.form.kudos_line_size');
+    expect(size?.params).toEqual({
+      width: 1024,
+      height: 1024,
+      megapixels: '1.05',
+    });
+  });
+
+  it('charges the steps at the rate the sampler really costs', () => {
+    const steps = lineFor(kudosBreakdown(value, contract), 'steps');
+
+    expect(steps?.key).toBe('generate.form.kudos_line_steps_work');
+    expect(steps?.params).toEqual({
+      steps: 30,
+      sampler: 'k_heun',
+      factor: 2,
+      units: 60,
+    });
+  });
+
+  it('states the steps plainly where the sampler charges the ordinary rate', () => {
+    const steps = lineFor(
+      kudosBreakdown({ ...value, sampler_name: 'k_euler' }, contract),
+      'steps',
+    );
+
+    expect(steps?.key).toBe('generate.form.kudos_line_steps');
+    expect(steps?.params).toEqual({ steps: 30, sampler: 'k_euler' });
+  });
+
+  it('says a sampler that picks its own step count does exactly that', () => {
+    const steps = lineFor(
+      kudosBreakdown({ ...value, sampler_name: 'k_dpm_adaptive' }, contract),
+      'steps',
+    );
+
+    expect(steps?.key).toBe('generate.form.kudos_line_steps_adaptive');
+  });
+
+  it('names the second pass, the finishing and the batch when they are asked for', () => {
+    const lines = kudosBreakdown(
+      {
+        ...value,
+        hires_fix: true,
+        post_processing: ['GFPGAN', 'RealESRGAN_x4plus'],
+        loras: [{ name: '12345', model: 1, clip: 1, is_version: false }],
+        n: 4,
+      },
+      contract,
+    );
+
+    expect(lines.map((line) => line.id)).toEqual([
+      'size',
+      'steps',
+      'hires',
+      'post',
+      'facefix',
+      'loras',
+      'batch',
+    ]);
+    expect(lineFor(lines, 'post')?.params).toEqual({
+      list: 'RealESRGAN_x4plus',
+    });
+    expect(lineFor(lines, 'facefix')?.params).toEqual({ list: 'GFPGAN' });
+    expect(lineFor(lines, 'loras')?.key).toBe(
+      'generate.form.kudos_line_loras_one',
+    );
+    expect(lineFor(lines, 'batch')?.params).toEqual({ count: 4 });
+  });
+
+  it('leaves out everything the request does not ask for', () => {
+    expect(kudosBreakdown(value, contract).map((line) => line.id)).toEqual([
+      'size',
+      'steps',
+    ]);
+  });
+});
+
+describe('what to say about the wait', () => {
+  it('speaks a short queue in seconds and a long one in minutes', () => {
+    expect(modelWaitEstimate({ name: 'a', count: 3, eta: 45 })).toEqual({
+      key: 'generate.form.kudos_wait_seconds',
+      params: { seconds: 45 },
+    });
+    expect(modelWaitEstimate({ name: 'a', count: 3, eta: 240 })).toEqual({
+      key: 'generate.form.kudos_wait_minutes',
+      params: { minutes: 4 },
+    });
+  });
+
+  it('falls back to the workers when the horde states no eta', () => {
+    expect(modelWaitEstimate({ name: 'a', count: 3 }).key).toBe(
+      'generate.form.kudos_wait_unknown',
+    );
+    expect(modelWaitEstimate(null).key).toBe(
+      'generate.form.kudos_wait_unknown',
+    );
+  });
+
+  it('reuses the no-worker sentence, eta or no eta', () => {
+    expect(modelWaitEstimate({ name: 'a', count: 0, eta: 10000 }).key).toBe(
+      'generate.form.model_no_workers',
+    );
   });
 });

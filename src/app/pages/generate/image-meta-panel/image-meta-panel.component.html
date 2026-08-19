@@ -113,6 +113,37 @@
   </div>
 
   <div class="gs-meta-foot">
+    @if (quickActions()) {
+      <!-- The three things people do with a finished picture, above the
+           row-by-row apply: most visits want one of them and nothing else, and
+           on a phone this sheet covers everything that offers them. -->
+      <div class="gs-quick-acts">
+        <button
+          type="button"
+          class="gs-quick-act gs-quick-act--primary"
+          (click)="quickAction.emit('variation')"
+        >
+          <app-icon name="squares-2x2" />
+          {{ "generate.results.make_variation" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-quick-act"
+          (click)="quickAction.emit('source')"
+        >
+          <app-icon name="refresh-alt" />
+          {{ "generate.results.reuse" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-quick-act"
+          (click)="quickAction.emit('copy')"
+        >
+          <app-icon name="adjustments-horizontal" />
+          {{ "generate.results.copy_settings" | transloco }}
+        </button>
+      </div>
+    }
     <div class="gs-meta-seg" role="group">
       <button
         type="button"

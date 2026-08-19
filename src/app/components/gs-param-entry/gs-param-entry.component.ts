@@ -167,7 +167,11 @@ const TRADEOFF_ICONS = {
     }
 
     @if (bodyText && bodyText !== bodyKey) {
-      <p class="gs-ref-body"><app-gs-prose [key]="bodyKey" /></p>
+      <!-- A div rather than a paragraph: a body long enough to need paragraphs
+           and bullets of its own cannot render them inside a p element. -->
+      <div class="gs-ref-body">
+        <app-gs-prose [key]="bodyKey" [paragraphs]="true" />
+      </div>
     }
 
     <!-- The named members of the subject, where it is a family: which of the

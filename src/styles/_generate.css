@@ -5264,6 +5264,147 @@
   }
 }
 
+/* ------- the three next moves on a finished image -------------------- */
+/* One row, three placements: over the foot of a tile, under the enlarged image,
+   and above the metadata panel's own row-by-row apply. Making a variation is
+   the one most people want, so it wears the panel's action colour and the other
+   two stay quiet beside it. */
+.gen-studio .gs-quick-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gen-studio .gs-quick-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 7px 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 9px;
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.gen-studio .gs-quick-act:hover:not(:disabled) {
+  border-color: var(--gs-blue);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-quick-act:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-quick-act:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.gen-studio .gs-quick-act--primary {
+  border-color: transparent;
+  background: var(--gs-blue);
+  color: #fff;
+}
+.gen-studio .gs-quick-act--primary:hover:not(:disabled) {
+  background: var(--gs-blue-hover);
+  color: #fff;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-quick-act {
+    min-height: 44px;
+  }
+}
+
+/* The panel's own row spans the footer rather than sharing it with the mode
+   toggle, which is a choice about the checkboxes below and not about these. */
+.gen-studio .gs-meta-foot .gs-quick-acts {
+  flex: 1 0 100%;
+}
+
+/* Under the enlarged image the row is centred like the actions beneath it, and
+   reads light-on-dark because the viewer is dark in both themes. */
+.gen-studio .gs-quick-acts--viewer {
+  flex: none;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 10px 0;
+}
+.gen-studio .gs-quick-acts--viewer .gs-quick-act {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f3f4f6;
+}
+.gen-studio .gs-quick-acts--viewer .gs-quick-act:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.gen-studio .gs-quick-acts--viewer .gs-quick-act--primary {
+  border-color: transparent;
+  background: var(--gs-blue);
+  color: #fff;
+}
+
+/* On a tile the row sits just clear of the seed bar. It exists only from the
+   width where the flip machinery stands down; below that the face is the
+   picture alone and these three lead the flip menu instead. */
+.gen-studio .gs-quick-acts--tile {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-quick-acts--tile {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 34px;
+    z-index: 2;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 0 8px;
+  }
+  .gen-studio .gs-quick-acts--tile .gs-quick-act {
+    min-height: 32px;
+    padding: 5px 8px;
+    gap: 4px;
+    white-space: nowrap;
+    font-size: 10.5px;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(17, 24, 39, 0.72);
+    color: #f3f4f6;
+  }
+  /* Words only here. Three tiles to a row leaves the glyphs no space they do
+     not take from the label, and a label is the half that says anything. */
+  .gen-studio .gs-quick-acts--tile .gs-quick-act app-icon {
+    display: none;
+  }
+  .gen-studio .gs-quick-acts--tile .gs-quick-act:hover:not(:disabled) {
+    background: rgba(17, 24, 39, 0.9);
+    color: #fff;
+  }
+  .gen-studio .gs-quick-acts--tile .gs-quick-act--primary {
+    border-color: transparent;
+    background: var(--gs-blue);
+    color: #fff;
+  }
+}
+@media (min-width: 1024px) and (pointer: coarse) {
+  .gen-studio .gs-quick-acts--tile .gs-quick-act {
+    min-height: 44px;
+  }
+}
+/* A narrow studio leaves the tile barely wider than one of these, so it keeps
+   the one most people press and the other two stay in the tile's own menu. A
+   glyph with no word beside it would be cheaper and would say nothing. */
+.gen-studio
+  .gs-tile-grid--compact
+  .gs-quick-acts--tile
+  .gs-quick-act:not(.gs-quick-act--primary) {
+  display: none;
+}
+
 /* ---- metadata panel ----------------------------------------------------
    One component in three placements: a bottom sheet inside the viewer on
    phones, a column docked beside the image on desktop, and a centred panel
@@ -6161,29 +6302,129 @@
   }
 }
 
-/* ------- kudos estimate on the Generate button ---------------------- */
-/* A light tint chip on the blue fill: white text over the blended surface holds
-   ~5:1 in both themes (the fill is the same blue either way), where the
-   blue-on-panel treatment used beside the button would not. */
-.gen-studio .gs-genbtn-kudos {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 3px;
-  margin-left: 2px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 11.5px;
-  font-weight: 600;
+/* ------- kudos estimate beside Generate ------------------------------ */
+/* A quiet blue chip in the panel's own idiom, sharing the warnings indicator's
+   shape and popover so the two read as one row of things to look at. Blue at
+   this weight holds over the footer surface in both themes. */
+.gen-studio .gs-kudos {
+  position: relative;
+  flex: none;
 }
-.gen-studio .gs-genbtn-kudos-unit {
+.gen-studio .gs-kudos-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid rgba(37, 99, 235, 0.32);
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gen-studio .gs-kudos-btn:hover {
+  background: rgba(37, 99, 235, 0.18);
+}
+.gen-studio .gs-kudos-btn:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.dark .gen-studio .gs-kudos-btn {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(96, 165, 250, 0.12);
+  color: #93c5fd;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-kudos-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    min-width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+.gen-studio .gs-kudos-unit {
   font-size: 10.5px;
   font-weight: 600;
 }
-.gen-studio .gs-genbtn-kudos-dots {
+.gen-studio .gs-kudos-dots {
   font-size: 12px;
   letter-spacing: 0.05em;
+}
+/* Opens upward, like the warnings popover: both hang off the foot of the panel. */
+.gen-studio .gs-kudos-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(56vh, 380px);
+  overflow-y: auto;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--gs-pop-surface);
+  border: 1px solid var(--gs-pop-border);
+  border-radius: 11px;
+  box-shadow: var(--gs-pop-shadow);
+}
+.gen-studio .gs-kudos-title {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-kudos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-kudos-item {
+  padding-left: 11px;
+  position: relative;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-kudos-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gs-blue);
+}
+.gen-studio .gs-kudos-note {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-kudos-wait {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 7px;
+  border-top: 1px solid var(--gs-border);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-kudos-wait app-icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--gs-muted);
 }
 
 /* ------- request warnings beside Generate ---------------------------- */

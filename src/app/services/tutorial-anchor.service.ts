@@ -91,7 +91,8 @@ export class TutorialAnchorService {
    */
   public flash(element: HTMLElement, hueClass?: string): void {
     this.clearFlash();
-    element.scrollIntoView({
+    // Optional call: a test document has no layout to scroll.
+    element.scrollIntoView?.({
       behavior: this.scrollBehavior(),
       block: 'center',
     });

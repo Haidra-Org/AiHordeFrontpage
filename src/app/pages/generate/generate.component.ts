@@ -76,11 +76,15 @@ import {
   GenerateFormValue,
   GenerateMode,
   GenerateSourceMode,
+  KudosBreakdownLine,
   PanelSize,
+  WaitEstimate,
   buildImageRequest,
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  kudosBreakdown,
+  modelWaitEstimate,
   promptHistoryFromJobs,
   requestToFormValue,
   simpleModeValue,
@@ -337,6 +341,26 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       hasSourceImage: state.sourceBlob !== null,
       contract: this.samplerContract(),
     });
+  });
+
+  /**
+   * What the estimate is made of, in the reader's own settings. Simple mode is
+   * projected the same way the warnings are, so the lines describe the request
+   * that would actually be sent rather than the advanced controls behind it.
+   */
+  public readonly kudosLines = computed<readonly KudosBreakdownLine[]>(() => {
+    const raw = this.formValue();
+    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    return kudosBreakdown(value, this.samplerContract());
+  });
+
+  /** What to say about the wait for the picked model, as the popover's last line. */
+  public readonly waitLine = computed<WaitEstimate>(() => {
+    const name = this.formValue().model.trim();
+    const match = name
+      ? (this.models().find((model) => model.name === name) ?? null)
+      : null;
+    return modelWaitEstimate(match);
   });
 
   /**
@@ -812,6 +836,41 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       transloco: true,
       messageParams: { count: event.keys.length },
     });
+  }
+
+  /**
+   * Write one past image's whole request back into the form. `seed` decides what
+   * the next request is: the image's own seed holds the picture still so a
+   * changed setting is the only thing that moves, and null lets the horde pick a
+   * fresh one, which is the same settings and a different picture.
+   */
+  public async onLoadSettings(event: {
+    request: ImageGenerationRequest;
+    localId: string;
+    seed: string | null;
+  }): Promise<void> {
+    const next = requestToFormValue(event.request);
+    next.seed = event.seed ?? '';
+    // A stale source blob would otherwise outlive the settings that wanted it.
+    this.sourceState.set(DEFAULT_SOURCE_STATE);
+    this.cachedSourceBlob = null;
+    this.sourceBase64 = null;
+    this.form.setValue(next);
+    this.form.markAsDirty();
+    if (next.sourceMode !== 'none') {
+      await this.reattachSource(event.localId);
+    }
+    this.formRef()?.focusPrompt();
+    if (event.seed) {
+      this.toast.success('generate.results.variation_loaded', {
+        transloco: true,
+        messageParams: { seed: event.seed },
+      });
+    } else {
+      this.toast.success('generate.results.settings_loaded', {
+        transloco: true,
+      });
+    }
   }
 
   /**

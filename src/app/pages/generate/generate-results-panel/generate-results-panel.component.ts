@@ -41,6 +41,7 @@ import {
 } from '../image-metadata';
 import {
   ImageMetaPanelComponent,
+  ImageQuickAction,
   MetaApplyEvent,
   MetaApplyMode,
 } from '../image-meta-panel/image-meta-panel.component';
@@ -381,6 +382,18 @@ export class GenerateResultsPanelComponent {
     localId: string;
     keys: (keyof GenerateFormValue)[];
     mode: MetaApplyEvent['mode'];
+  }>();
+
+  /**
+   * Ask the parent to write one image's whole request to the form. `seed` is
+   * the seed to hold the form at, and null lets the horde pick a fresh one:
+   * that single difference is what separates a variation of this image from a
+   * second try at the same settings.
+   */
+  public readonly loadSettings = output<{
+    request: ImageGenerationRequest;
+    localId: string;
+    seed: string | null;
   }>();
 
   public readonly pendingJobs = this.queue.pendingJobs;
@@ -1230,6 +1243,42 @@ export class GenerateResultsPanelComponent {
    * image store, and the source section belongs to the parent page, so the
    * parent does the attaching; this only says which image.
    */
+  /**
+   * Take this image's settings with its own seed held, so the next request
+   * lands next door to it rather than somewhere else entirely.
+   */
+  /** The metadata panel's three actions, on the image the panel is showing. */
+  public onQuickAction(action: ImageQuickAction, tile: ResultTile): void {
+    if (action === 'variation') {
+      this.makeVariation(tile);
+    } else if (action === 'source') {
+      this.reuseAsSource(tile);
+    } else {
+      this.copySettings(tile);
+    }
+  }
+
+  public makeVariation(tile: ResultTile): void {
+    this.loadOwnSettings(tile, tile.seed ?? null);
+  }
+
+  /** The same settings with the seed let go, so the horde picks a new picture. */
+  public copySettings(tile: ResultTile): void {
+    this.loadOwnSettings(tile, null);
+  }
+
+  private loadOwnSettings(tile: ResultTile, seed: string | null): void {
+    const request = tile.applyRequest ?? tile.request;
+    if (!request) {
+      return;
+    }
+    this.loadSettings.emit({ request, localId: tile.jobLocalId, seed });
+    this.closeMeta();
+    this.closeViewer();
+    this.closeTileMenu();
+    this.unflip();
+  }
+
   public reuseAsSource(tile: ResultTile): void {
     if (!tile.thumb) {
       return;

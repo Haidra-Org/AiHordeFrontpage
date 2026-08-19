@@ -15,6 +15,7 @@ import {
 import type { AppliedStyle } from '../../services/horde-styles.service';
 import type { ModelRequirements } from '../../services/model-reference.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
+import type { ActiveModel } from '../../types/active-model';
 import {
   MAX_FLOW_SHIFT,
   MIN_FLOW_SHIFT,
@@ -2289,4 +2290,148 @@ export function requestToFormValue(
   }
 
   return result;
+}
+
+// ---------------------------------------------------------------------------
+// What the estimate is made of
+// ---------------------------------------------------------------------------
+
+/** One contribution to the price, as a line the popover prints. */
+export interface KudosBreakdownLine {
+  id: string;
+  key: string;
+  params: Record<string, string | number>;
+}
+
+/**
+ * The settings the reader is spending kudos on, read off the form in front of
+ * them. The horde owns the arithmetic and the button carries its answer; these
+ * lines only name the choices that move it, so a bare number becomes something
+ * the reader can act on.
+ */
+export function kudosBreakdown(
+  value: GenerateFormValue,
+  contract: SamplerConstraintsDocument | null,
+): KudosBreakdownLine[] {
+  const lines: KudosBreakdownLine[] = [];
+
+  lines.push({
+    id: 'size',
+    key: 'generate.form.kudos_line_size',
+    params: {
+      width: value.width,
+      height: value.height,
+      megapixels: ((value.width * value.height) / 1_000_000).toFixed(2),
+    },
+  });
+
+  const work = samplerWorkFactor(contract, value.sampler_name);
+  if (work === 'adaptive') {
+    lines.push({
+      id: 'steps',
+      key: 'generate.form.kudos_line_steps_adaptive',
+      params: { steps: value.steps, sampler: value.sampler_name },
+    });
+  } else if (typeof work === 'number') {
+    lines.push({
+      id: 'steps',
+      key: 'generate.form.kudos_line_steps_work',
+      params: {
+        steps: value.steps,
+        sampler: value.sampler_name,
+        factor: work,
+        units: Math.round(value.steps * work),
+      },
+    });
+  } else {
+    lines.push({
+      id: 'steps',
+      key: 'generate.form.kudos_line_steps',
+      params: { steps: value.steps, sampler: value.sampler_name },
+    });
+  }
+
+  if (value.hires_fix) {
+    lines.push({
+      id: 'hires',
+      key: 'generate.form.kudos_line_hires',
+      params: {},
+    });
+  }
+
+  const faceFixers = value.post_processing.filter((processor) =>
+    FACE_FIXERS.includes(processor),
+  );
+  const afterwards = value.post_processing.filter(
+    (processor) => !FACE_FIXERS.includes(processor),
+  );
+  if (afterwards.length > 0) {
+    lines.push({
+      id: 'post',
+      key: 'generate.form.kudos_line_post',
+      params: { list: afterwards.join(', ') },
+    });
+  }
+  if (faceFixers.length > 0) {
+    lines.push({
+      id: 'facefix',
+      key: 'generate.form.kudos_line_facefix',
+      params: { list: faceFixers.join(', ') },
+    });
+  }
+
+  if (value.loras.length > 0) {
+    lines.push({
+      id: 'loras',
+      key:
+        value.loras.length === 1
+          ? 'generate.form.kudos_line_loras_one'
+          : 'generate.form.kudos_line_loras_other',
+      params: { count: value.loras.length },
+    });
+  }
+
+  if (value.n > 1) {
+    lines.push({
+      id: 'batch',
+      key: 'generate.form.kudos_line_batch',
+      params: { count: value.n },
+    });
+  }
+
+  return lines;
+}
+
+/** How long the picked model is taking right now, as a line to print. */
+export interface WaitEstimate {
+  key: string;
+  params: Record<string, string | number>;
+}
+
+/** Below this many seconds the wait is spoken in seconds rather than minutes. */
+const WAIT_MINUTES_FROM_SECONDS = 90;
+
+/**
+ * What to say about the wait for `model`, which is null when no model is picked
+ * or the status list has never heard of the one that is. The horde reports an
+ * eta for a model nobody serves as well as for one in demand, so the worker
+ * count is read first: with nobody carrying it the number means nothing.
+ */
+export function modelWaitEstimate(model: ActiveModel | null): WaitEstimate {
+  if (model && model.count === 0) {
+    return { key: 'generate.form.model_no_workers', params: {} };
+  }
+  const eta = model?.eta;
+  if (typeof eta === 'number' && Number.isFinite(eta) && eta > 0) {
+    return eta < WAIT_MINUTES_FROM_SECONDS
+      ? {
+          key: 'generate.form.kudos_wait_seconds',
+          params: { seconds: Math.max(1, Math.round(eta)) },
+        }
+      : {
+          key: 'generate.form.kudos_wait_minutes',
+          params: { minutes: Math.round(eta / 60) },
+        };
+  }
+  return { key: 'generate.form.kudos_wait_unknown', params: {} };
 }

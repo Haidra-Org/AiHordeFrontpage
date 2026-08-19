@@ -2046,6 +2046,65 @@
           }}
         }
       </p>
+      <!-- The price, beside the button rather than on it: it is a claim about
+           the settings, so it has to be something the reader can press to find
+           out which ones. Absent until the horde has been asked. -->
+      @if (estimating() || kudos() !== null) {
+        <div class="gs-kudos" #kudosContainer>
+          <button
+            #kudosBtn
+            type="button"
+            class="gs-kudos-btn"
+            (click)="toggleKudos()"
+            [attr.aria-expanded]="kudosOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="
+              kudosWhyKey() | transloco: { kudos: kudosShown() }
+            "
+            [title]="kudosWhyKey() | transloco: { kudos: kudosShown() }"
+          >
+            @if (estimating()) {
+              <span class="gs-kudos-dots" aria-hidden="true">&hellip;</span>
+            } @else {
+              <span class="gs-mono" aria-hidden="true"
+                >~{{ kudosShown() }}</span
+              >
+            }
+            <span class="gs-kudos-unit" aria-hidden="true">{{
+              "generate.form.kudos_unit" | transloco
+            }}</span>
+          </button>
+          @if (kudosOpen()) {
+            <div
+              class="gs-kudos-pop"
+              role="dialog"
+              [attr.aria-label]="
+                kudosWhyKey() | transloco: { kudos: kudosShown() }
+              "
+            >
+              <p class="gs-kudos-title">
+                {{ kudosWhyKey() | transloco: { kudos: kudosShown() } }}
+              </p>
+              <ul class="gs-kudos-list">
+                @for (line of kudosLines(); track line.id) {
+                  <li class="gs-kudos-item">
+                    {{ line.key | transloco: line.params }}
+                  </li>
+                }
+              </ul>
+              <p class="gs-kudos-note">
+                {{ "generate.form.kudos_horde_owns" | transloco }}
+              </p>
+              @if (waitLine(); as wait) {
+                <p class="gs-kudos-wait">
+                  <app-icon name="clock" class="gs-ico-sm" />
+                  <span>{{ wait.key | transloco: wait.params }}</span>
+                </p>
+              }
+            </div>
+          }
+        </div>
+      }
       <!-- The request's warnings, beside the button rather than on it: the
            button must stay one unambiguous action, and nothing here ever stops
            it. Absent entirely when the request earns none. -->
@@ -2118,33 +2177,6 @@
           : "generate.footer.generate_other"
         ) | transloco: { count: form().controls.n.value }
       }}
-      <!-- The estimate belongs to the act of generating, so it rides the button
-           rather than sitting beside it: a tint chip keeps it legible on the
-           blue fill in both themes without competing with the label. -->
-      @if (estimating() || kudos() !== null) {
-        <span
-          class="gs-genbtn-kudos"
-          [attr.aria-label]="
-            estimating()
-              ? ('generate.form.kudos_estimating' | transloco)
-              : ('generate.form.kudos_estimate'
-                | transloco: { kudos: kudos() ?? 0 })
-          "
-        >
-          @if (estimating()) {
-            <span class="gs-genbtn-kudos-dots" aria-hidden="true"
-              >&hellip;</span
-            >
-          } @else {
-            <span class="gs-mono" aria-hidden="true"
-              >~{{ kudos() | number: "1.0-0" }}</span
-            >
-            <span class="gs-genbtn-kudos-unit" aria-hidden="true">{{
-              "generate.form.kudos_unit" | transloco
-            }}</span>
-          }
-        </span>
-      }
     </button>
   </footer>
 </form>

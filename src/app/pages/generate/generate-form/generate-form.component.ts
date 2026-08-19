@@ -72,6 +72,7 @@ import {
   STEPS_SLIDER_MAX,
   STEPS_SLIDER_MIN,
   DIMENSION_STEP,
+  KudosBreakdownLine,
   ModelSizeBase,
   PanelSize,
   PromptHistoryEntry,
@@ -82,6 +83,7 @@ import {
   StyleLockSection,
   StylePickerGroup,
   UPSCALERS,
+  WaitEstimate,
   buildAspectPresets,
   cfgAdvisory,
   clipSkipAdvisory,
@@ -198,6 +200,10 @@ export class GenerateFormComponent implements OnInit {
   public readonly models = input<ActiveModel[]>([]);
   public readonly kudos = input<number | null>(null);
   public readonly estimating = input(false);
+  /** What the estimate is made of, for the popover behind the kudos chip. */
+  public readonly kudosLines = input<readonly KudosBreakdownLine[]>([]);
+  /** What to say about the wait for the picked model, as the popover's tail. */
+  public readonly waitLine = input<WaitEstimate | null>(null);
   /** Style-forced parameters, used to flag controls a style overrides. */
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */
@@ -285,6 +291,14 @@ export class GenerateFormComponent implements OnInit {
   /** The history toggle, so dismissing with a key hands focus back to it. */
   private readonly historyBtn =
     viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
+  /** Whether the estimate's breakdown popover is open. */
+  public readonly kudosOpen = signal(false);
+  /** The breakdown popover's anchor, used to detect click-away dismissals. */
+  private readonly kudosRef =
+    viewChild<ElementRef<HTMLElement>>('kudosContainer');
+  /** The breakdown toggle, so dismissing with a key hands focus back to it. */
+  private readonly kudosBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('kudosBtn');
   /** Whether the request-warnings popover beside Generate is open. */
   public readonly lintOpen = signal(false);
   /** The warnings popover's anchor, used to detect click-away dismissals. */
@@ -1349,6 +1363,12 @@ export class GenerateFormComponent implements OnInit {
         this.closeLint();
       }
     }
+    if (this.kudosOpen()) {
+      const anchor = this.kudosRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeKudos();
+      }
+    }
   }
 
   public onDocumentEscape(): void {
@@ -1362,6 +1382,10 @@ export class GenerateFormComponent implements OnInit {
     if (this.lintOpen()) {
       this.closeLint();
       this.lintBtn()?.nativeElement.focus();
+    }
+    if (this.kudosOpen()) {
+      this.closeKudos();
+      this.kudosBtn()?.nativeElement.focus();
     }
     if (!this.historyOpen()) {
       return;
@@ -1622,6 +1646,26 @@ export class GenerateFormComponent implements OnInit {
 
   public closeLint(): void {
     this.lintOpen.set(false);
+  }
+
+  /** The estimate as it is spoken: whole kudos, never a decimal tail. */
+  public kudosShown(): number {
+    return Math.round(this.kudos() ?? 0);
+  }
+
+  /** The breakdown's heading, which names the number when there is one. */
+  public kudosWhyKey(): string {
+    return this.kudos() === null
+      ? 'generate.form.kudos_why_unknown'
+      : 'generate.form.kudos_why';
+  }
+
+  public toggleKudos(): void {
+    this.kudosOpen.update((open) => !open);
+  }
+
+  public closeKudos(): void {
+    this.kudosOpen.set(false);
   }
 
   /** The warnings belonging to one card, for its own inline lines. */

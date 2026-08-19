@@ -497,6 +497,50 @@ describe('GenerateComponent', () => {
     expect(component.forcedParams()?.model).toBe('flux');
   });
 
+  describe('taking a past image forward', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a lighthouse ### blurry',
+      models: ['flux'],
+      params: {
+        steps: 30,
+        cfg_scale: 6.5,
+        seed: '4242',
+        width: 832,
+        height: 1216,
+      },
+    };
+
+    it('holds the form at the image seed for a variation', async () => {
+      await component.onLoadSettings({
+        request,
+        localId: 'job-1',
+        seed: '4242',
+      });
+
+      const value = component.form.getRawValue();
+      expect(value.seed).toBe('4242');
+      expect(value.prompt).toBe('a lighthouse');
+      expect(value.steps).toBe(30);
+      expect(value.width).toBe(832);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.results.variation_loaded',
+        expect.objectContaining({ messageParams: { seed: '4242' } }),
+      );
+    });
+
+    it('leaves the seed to the horde when the settings are only copied', async () => {
+      await component.onLoadSettings({ request, localId: 'job-1', seed: null });
+
+      const value = component.form.getRawValue();
+      expect(value.seed).toBe('');
+      expect(value.steps).toBe(30);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.results.settings_loaded',
+        expect.anything(),
+      );
+    });
+  });
+
   describe('applying a metadata selection', () => {
     const request: ImageGenerationRequest = {
       prompt: 'a lighthouse ### blurry',

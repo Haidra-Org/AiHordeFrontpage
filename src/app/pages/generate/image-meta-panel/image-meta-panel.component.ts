@@ -29,6 +29,9 @@ import { settingSection } from '../../../content/settings';
 export type MetaApplyMode = 'replace' | 'overlay';
 
 /** What the panel asks the studio to write back into the form. */
+/** The three things to do with a finished image, wherever it is shown. */
+export type ImageQuickAction = 'variation' | 'source' | 'copy';
+
 export interface MetaApplyEvent {
   localId: string;
   keys: (keyof GenerateFormValue)[];
@@ -127,11 +130,20 @@ export class ImageMetaPanelComponent {
    * can say what it is. */
   public readonly titleKey = input('generate.results.metadata_title');
 
+  /**
+   * Whether the panel offers the three whole-image actions above its own row of
+   * checkboxes. Off for hosts reviewing a saved preset, where there is no image
+   * to make a variation of or hand to the source slot.
+   */
+  public readonly quickActions = input(false);
+
   public readonly apply = output<MetaApplyEvent>();
   public readonly closed = output<void>();
   /** Ask the host to open the raw JSON view of the full metadata export. */
   public readonly rawJson = output<void>();
   public readonly pinToggle = output<void>();
+  /** One of the three whole-image actions; the host owns what each one does. */
+  public readonly quickAction = output<ImageQuickAction>();
 
   public readonly mode = linkedSignal(() => this.defaultMode());
 
