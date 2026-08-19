@@ -18,6 +18,18 @@
       (focus)="onFocus()"
       (blur)="onBlur()"
     />
+    @if (value() !== "" && !isDisabled()) {
+      <button
+        type="button"
+        class="autocomplete-clear"
+        (mousedown)="$event.preventDefault()"
+        (click)="clear()"
+        [attr.aria-label]="'model_autocomplete.clear' | transloco"
+        [title]="'model_autocomplete.clear' | transloco"
+      >
+        <span aria-hidden="true">&times;</span>
+      </button>
+    }
     <button
       type="button"
       class="autocomplete-toggle"
@@ -53,15 +65,21 @@
         <div
           class="autocomplete-option"
           [class.autocomplete-option--active]="activeOptionIndex() === $index"
+          [class.autocomplete-option--selected]="isSelected(model.name)"
           [id]="getOptionId($index)"
           role="option"
           tabindex="-1"
-          [attr.aria-selected]="activeOptionIndex() === $index"
+          [attr.aria-selected]="
+            isSelected(model.name) || activeOptionIndex() === $index
+          "
           (mouseenter)="onOptionMouseEnter($index)"
           (click)="selectModel(model.name)"
           (keydown.enter)="onOptionKeydown($event, model.name)"
           (keydown.space)="onOptionKeydown($event, model.name)"
         >
+          @if (isSelected(model.name)) {
+            <span class="autocomplete-check" aria-hidden="true">&#10003;</span>
+          }
           {{ model.name }}
           @if (model.count > 0) {
             <span class="text-secondary">{{

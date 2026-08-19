@@ -70,3 +70,49 @@ describe('ModelAutocompleteComponent', () => {
     ).toBe('custom');
   });
 });
+
+describe('ModelAutocompleteComponent, over a chosen model', () => {
+  const models: ActiveModel[] = [
+    { name: 'Deliberate', count: 4 },
+    { name: 'AlbedoBase XL', count: 2 },
+    { name: 'Pony Diffusion', count: 0 },
+  ];
+
+  it('offers every model, with the chosen one marked, rather than only the chosen one', async () => {
+    const fixture = await render(models);
+    fixture.componentInstance.writeValue('Deliberate');
+    fixture.detectChanges();
+
+    expect(optionText(fixture)).toHaveLength(3);
+    const host = fixture.nativeElement as HTMLElement;
+    const selected = host.querySelectorAll('.autocomplete-option--selected');
+    expect(selected).toHaveLength(1);
+    expect(selected[0].textContent).toContain('Deliberate');
+    expect(selected[0].getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('still narrows the list while the reader types a partial name', async () => {
+    const fixture = await render(models);
+    fixture.componentInstance.writeValue('Delib');
+    fixture.detectChanges();
+
+    expect(optionText(fixture)).toHaveLength(1);
+  });
+
+  it('shows a clear control once the field holds text, and clearing reopens the whole list', async () => {
+    const fixture = await render(models);
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.autocomplete-clear')).toBeNull();
+
+    fixture.componentInstance.writeValue('Deliberate');
+    fixture.detectChanges();
+    const clear = host.querySelector<HTMLButtonElement>('.autocomplete-clear');
+    expect(clear).not.toBeNull();
+
+    clear?.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.value()).toBe('');
+    expect(fixture.componentInstance.dropdownOpen()).toBe(true);
+    expect(optionText(fixture)).toHaveLength(3);
+  });
+});

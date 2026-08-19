@@ -1649,6 +1649,7 @@
   "model_autocomplete.workers": "({{ count }} workers)",
   "model_autocomplete.no_workers": "no workers right now",
   "model_autocomplete.custom": "custom",
+  "model_autocomplete.clear": "Clear the model",
   "mps.tooltip.line1": "mps = megapixelsteps (1 million pixelsteps)",
   "mps.tooltip.line2": "Megapixelsteps = megapixels × steps. One megapixel equals a 1024×1024 image.",
   "pages_of_text": "pages of text",

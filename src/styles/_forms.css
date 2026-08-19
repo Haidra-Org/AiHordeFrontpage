@@ -387,6 +387,9 @@
   /* Toggle button that opens/closes the dropdown without focusing the input */
   .autocomplete-toggle {
     @apply inline-flex items-center justify-center px-2.5 shrink-0;
+    /* A full touch target, and the same width as the clear control beside it,
+       so a thumb aiming at the chevron does not land on the clear. */
+    min-width: 2.75rem;
     @apply border rounded-r-lg transition-all duration-150;
     background: var(--color-glass-surface);
     backdrop-filter: blur(var(--blur-glass-sm));
@@ -409,6 +412,47 @@
 
   .dark .autocomplete-toggle:hover {
     background: rgb(31 41 55 / 0.75);
+  }
+
+  /* Clears the field. Sits between the text and the chevron, in the same glass
+     as the toggle so the two read as one strip of controls on the field. */
+  .autocomplete-clear {
+    @apply inline-flex items-center justify-center shrink-0 px-2.5 text-lg leading-none;
+    @apply border border-l-0 transition-all duration-150;
+    min-width: 2.75rem;
+    background: var(--color-glass-surface);
+    border-color: var(--color-glass-border);
+    color: var(--color-content-secondary);
+  }
+
+  .autocomplete-clear:hover {
+    background: var(--color-glass-surface-elevated);
+    color: var(--color-content-primary);
+  }
+
+  .dark .autocomplete-clear {
+    background: rgb(31 41 55 / 0.55);
+    border-color: rgb(255 255 255 / 0.08);
+    color: rgb(209 213 219);
+  }
+
+  .dark .autocomplete-clear:hover {
+    background: rgb(31 41 55 / 0.75);
+    color: rgb(243 244 246);
+  }
+
+  /* A row the field already holds: marked so a reader opening the list over a
+     chosen model sees where their choice sits among the rest. */
+  .autocomplete-option--selected {
+    @apply font-semibold;
+  }
+
+  .autocomplete-check {
+    @apply mr-1.5 text-brand-purple;
+  }
+
+  .dark .autocomplete-check {
+    color: rgb(196 181 253);
   }
 
   /* Chevron icon inside the toggle — rotated when open */

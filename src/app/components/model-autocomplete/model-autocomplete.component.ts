@@ -54,16 +54,52 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     return active >= 0 ? this.getOptionId(active) : null;
   });
 
+  /**
+   * The names the field already holds, whether one or a comma-separated list.
+   * A segment counts only when it names a model exactly: partial text is a
+   * search, not a choice.
+   */
+  public readonly selectedNames = computed<ReadonlySet<string>>(() => {
+    const known = new Set(this.models().map((model) => model.name));
+    const parts = this.allowMultiple()
+      ? this.value().split(',')
+      : [this.value()];
+    return new Set(
+      parts.map((part) => part.trim()).filter((part) => known.has(part)),
+    );
+  });
+
   public readonly filteredModels = computed(() => {
-    const search = this.getSearchSegment(this.value()).toLowerCase();
+    const search = this.getSearchSegment(this.value());
     const all = this.models();
 
-    if (!search) {
+    // A completed choice is not a search: opening the list over a chosen model
+    // shows every model with that one marked, so the reader can change their
+    // mind without first deleting the name they picked.
+    if (!search || this.selectedNames().has(search)) {
       return all;
     }
 
-    return all.filter((model) => model.name.toLowerCase().includes(search));
+    const lowered = search.toLowerCase();
+    return all.filter((model) => model.name.toLowerCase().includes(lowered));
   });
+
+  /** Whether a row names a model the field already holds. */
+  public isSelected(name: string): boolean {
+    return this.selectedNames().has(name);
+  }
+
+  /** Empty the field and offer the whole list, so a new choice is one tap away. */
+  public clear(): void {
+    if (this.isDisabled()) {
+      return;
+    }
+    this.setValue('', true);
+    this.resetActiveOption();
+    this.dropdownPinned = true;
+    this.dropdownOpen.set(true);
+    this.wrapper()?.nativeElement.querySelector('input')?.focus();
+  }
 
   public readonly hiddenModelCount = computed(
     () => this.models().length - this.filteredModels().length,
@@ -158,6 +194,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
       this.activeOptionIndex.set(
         current < options.length - 1 ? current + 1 : 0,
       );
+      this.scrollActiveIntoView();
       return;
     }
 
@@ -174,6 +211,7 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
       this.activeOptionIndex.set(
         current > 0 ? current - 1 : options.length - 1,
       );
+      this.scrollActiveIntoView();
       return;
     }
 
@@ -253,8 +291,35 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     return `${this.inputId()}-option-${index}`;
   }
 
+  /**
+   * The row keyboard focus starts on: the model the field already names when
+   * the list opens over a completed choice, so it is in view and one Enter
+   * away from being kept; otherwise the first row.
+   */
   private resetActiveOption(): void {
-    this.activeOptionIndex.set(this.filteredModels().length > 0 ? 0 : -1);
+    const options = this.filteredModels();
+    if (options.length === 0) {
+      this.activeOptionIndex.set(-1);
+      return;
+    }
+    const chosen = this.getSearchSegment(this.value());
+    const index = this.selectedNames().has(chosen)
+      ? options.findIndex((model) => model.name === chosen)
+      : 0;
+    this.activeOptionIndex.set(index >= 0 ? index : 0);
+    this.scrollActiveIntoView();
+  }
+
+  private scrollActiveIntoView(): void {
+    const id = this.activeOptionId();
+    if (!id) return;
+    // The list renders after this change; scroll once it exists.
+    setTimeout(() => {
+      const row = this.wrapper()?.nativeElement.querySelector<HTMLElement>(
+        `[id="${id}"]`,
+      );
+      row?.scrollIntoView?.({ block: 'nearest' });
+    });
   }
 
   private getSearchSegment(rawValue: string): string {
