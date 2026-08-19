@@ -19,9 +19,14 @@ export const NAV_ITEMS: NavItem[] = [
     labelKey: 'docs.nav_link',
     dropdownId: 'docs',
     activeRoutePrefix: '/docs',
+    // The FAQ and the API reference are documentation too, and folding them in
+    // here keeps the desktop bar within its width on a 1440px screen; as
+    // top-level entries they ran into the theme control.
     children: [
       { labelKey: 'docs.area_image', routerLink: '/docs/image/' },
       { labelKey: 'docs.nav_settings', routerLink: '/docs/image/settings/' },
+      { labelKey: 'faq', routerLink: '/faq/' },
+      { labelKey: 'api', href: '/api/' },
     ],
   },
   {
@@ -38,11 +43,9 @@ export const NAV_ITEMS: NavItem[] = [
       { labelKey: 'nav.contribute.donate', routerLink: '/contribute/donate' },
     ],
   },
-  { labelKey: 'faq', routerLink: '/faq/' },
   ...(environment.features.ratingsPage
     ? [{ labelKey: 'rate', routerLink: '/rate/' } as NavItem]
     : []),
-  { labelKey: 'api', href: '/api/' },
   {
     labelKey: 'nav.active_details',
     dropdownId: 'details',
