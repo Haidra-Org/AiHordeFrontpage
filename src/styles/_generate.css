@@ -5669,13 +5669,24 @@
   color: var(--gs-purple);
 }
 @media (max-width: 1023.98px) {
-  /* Near-full-screen sheet: the grid needs the room on small screens. */
+  /* The browser is the whole screen here, so it has no backdrop margin for a
+     drag to land in and the page behind it is never visible. 100dvh rather
+     than the inset alone, so a phone's collapsing address bar cannot leave the
+     control bar under the browser chrome. */
+  .gen-studio .gs-modal-overlay--browser {
+    padding: env(safe-area-inset-top, 0px) 0 0;
+    height: 100dvh;
+  }
   .gen-studio .gs-modal-panel--browser {
     width: 100%;
     max-width: 100%;
     max-height: 100%;
     height: 100%;
-    border-radius: 12px;
+    border-radius: 0;
+  }
+  /* Sizing the browser is a desktop question: it already fills the screen. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-full {
+    display: none;
   }
   .gen-studio .gs-sb-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -5737,8 +5748,14 @@
   .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-variant {
     display: none;
   }
+  /* The results are the only thing that scrolls: the header and the control
+     bar are flex children of a panel that is exactly viewport-tall, and the
+     list keeps its overshoot to itself so a flick at either end of it does not
+     reach the page. */
   .gen-studio .gs-modal-panel--browser .gs-modal-body {
     order: 2;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -7910,6 +7927,35 @@
   object-fit: contain;
   border-radius: var(--gs-radius-sm);
 }
+/* What the run took, for the surfaces that say it beside the picture rather
+   than in their prose. */
+.gen-studio .gs-tut-viewer-cost {
+  flex: none;
+  margin: var(--gs-space-3) var(--gs-space-4) 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+}
+
+/* On a phone the layer is the picture: centred with a hidden overflow it would
+   lose its own top edge on a short viewport, so it starts at the top, keeps
+   clear of the notch and the home bar, and scrolls inside itself. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-tut-viewer {
+    align-items: flex-start;
+    padding: var(--gs-space-2);
+    padding-top: calc(var(--gs-space-2) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--gs-space-2) + env(safe-area-inset-bottom));
+  }
+  .gen-studio .gs-tut-viewer-body {
+    max-height: calc(
+      100dvh - 2 * var(--gs-space-2) - env(safe-area-inset-top) -
+        env(safe-area-inset-bottom)
+    );
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
 
 /* The claim the rail rests on, set as a footnote to it: quiet enough not to
    compete with the evidence, attached closely enough to be read as part of it. */
@@ -9820,6 +9866,12 @@ app-gs-compare-wipe {
   color: var(--gs-muted);
   font-size: 11px;
 }
+/* What the published run took, under the picture it produced. */
+.gen-studio .gs-learn-example-cost {
+  display: block;
+  margin-top: 4px;
+  color: var(--gs-ink-2);
+}
 
 /* Positioned for the breathing overlay it wears while its step is pointing at a
    field; see the follow-along section. */
@@ -11397,7 +11449,8 @@ app-gs-compare-wipe {
    enlarged sweep viewer) can only rise as high as the sheet does, and the site
    nav (50) would cover the layer's top row. While the sheet hosts such a layer
    it lifts above the nav, and no higher than the modal band. */
-.gen-studio .gs-sheet:has(.gs-sweep-viewer:not(.gs-sweep-viewer--inline)) {
+.gen-studio .gs-sheet:has(.gs-sweep-viewer:not(.gs-sweep-viewer--inline)),
+.gen-studio .gs-sheet:has(.gs-tut-viewer) {
   z-index: 59;
 }
 /* From here up the studio has a pane, and the pane is the better place. */
@@ -11954,6 +12007,77 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-tut-sheet-exit {
     min-height: 44px;
   }
+}
+
+/* What the example produced, and what it started from, kept under the sheet's
+   bar. A strip while there is work to do: thumb-tall pictures with their name
+   beside them, so the row costs one line and still says which is which. */
+.gen-studio .gs-learn-shots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.gen-studio .gs-learn-shot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+}
+/* The picture is the affordance, so the button around it adds the pointer and
+   the focus ring it cannot carry itself. Never narrower than a thumb, whatever
+   shape the example is. */
+.gen-studio .gs-learn-shot-stage {
+  flex: none;
+  display: block;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 8px;
+  background: var(--gs-field-soft);
+  cursor: zoom-in;
+}
+.gen-studio .gs-learn-shot-stage:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-learn-shot-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.gen-studio .gs-learn-shot-cap {
+  min-width: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-learn-shot-cost {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--gs-ink-2);
+}
+/* On the step that asks for the button to be pressed, the picture is what the
+   press is for: it takes the height, its name goes under it, and what the run
+   cost is said without being asked for. */
+.gen-studio .gs-learn-shots--open {
+  align-items: flex-start;
+}
+.gen-studio .gs-learn-shots--open .gs-learn-shot {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.gen-studio .gs-learn-shots--open .gs-learn-shot-stage {
+  height: 128px;
+  width: 100%;
+  min-width: 96px;
 }
 
 /* Its own card rather than the pane panel's, so the breathing ring has an edge

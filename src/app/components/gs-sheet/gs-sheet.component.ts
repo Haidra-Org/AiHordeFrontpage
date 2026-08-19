@@ -18,8 +18,8 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { A11yModule } from '@angular/cdk/a11y';
-import { BlockScrollStrategy, Overlay } from '@angular/cdk/overlay';
 import { IconComponent } from '../icon/icon.component';
+import { useScrollLock } from '../../helper/scroll-lock';
 
 /** How far along its own height a drag has to travel before it snaps over. */
 const SNAP_FRACTION = 0.25;
@@ -230,11 +230,10 @@ export class GsSheetComponent {
    * the page stays scrollable on purpose, because the band above the sheet is
    * where the field a step points at is brought into view; the body's own
    * `overscroll-behavior: contain` keeps its overshoot from reaching the page.
-   * CDK's strategy is what the overlay layer uses, so a sheet and a dialog lock
-   * the page the same way and restore it the same way.
+   * The shared lock is what the overlay layer uses, so a sheet and a dialog
+   * lock the page the same way and restore it the same way.
    */
-  private readonly scrollBlock: BlockScrollStrategy =
-    inject(Overlay).scrollStrategies.block();
+  private readonly scrollBlock = useScrollLock();
 
   public readonly bodyId = `gs-sheet-body-${nextInstance++}`;
 
@@ -296,7 +295,6 @@ export class GsSheetComponent {
       }
     });
     this.destroyRef.onDestroy(() => {
-      this.scrollBlock.disable();
       this.observer?.disconnect();
       if (this.isBrowser) {
         document.documentElement.style.removeProperty(CLEARANCE_VAR);

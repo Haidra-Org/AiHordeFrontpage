@@ -1,5 +1,5 @@
 <div
-  class="gs-modal-overlay"
+  class="gs-modal-overlay gs-modal-overlay--browser"
   [class.gs-modal-overlay--full]="fullscreen()"
   (click)="onBackdrop($event)"
   (keydown.escape)="onClose()"
@@ -13,6 +13,7 @@
     class="gs-modal-panel gs-modal-panel--browser gs-fadeup"
     [class.gs-modal-panel--browser-full]="fullscreen()"
     tabindex="-1"
+    cdkTrapFocus
   >
     <div class="gs-modal-header">
       <div class="gs-modal-title">
@@ -266,6 +267,7 @@
       role="dialog"
       aria-modal="true"
       tabindex="-1"
+      cdkTrapFocus
       [attr.aria-label]="
         'generate.form.style_expanded_title' | transloco: { style: view.name }
       "

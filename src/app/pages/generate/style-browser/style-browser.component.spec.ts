@@ -5,7 +5,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { By } from '@angular/platform-browser';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ScrollLockService } from '../../../helper/scroll-lock';
 import {
   StyleBrowserComponent,
   isMatureStyle,
@@ -44,6 +47,9 @@ const PREVIEWS = {
   dreadhorror: { person: 'https://img/dread-person.webp' },
 };
 
+/** Stands in for the shared page lock, so the holds can be counted. */
+const scrollLock = { acquire: vi.fn(), release: vi.fn() };
+
 /** A remembered fullscreen preference, for the restore-on-open tests. */
 const FULL_PREF = { 'aihorde.generate.style_browser_fullscreen': true };
 
@@ -66,6 +72,8 @@ async function createBrowser(
   } = {},
 ): Promise<Harness> {
   TestBed.resetTestingModule();
+  scrollLock.acquire.mockClear();
+  scrollLock.release.mockClear();
   // Each harness starts cold, so the previews fetch is always exercised rather
   // than served from a sibling test's stale-while-revalidate cache.
   localStorage.clear();
@@ -80,7 +88,11 @@ async function createBrowser(
         translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
       }),
     ],
-    providers: [provideHttpClient(), provideHttpClientTesting()],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      { provide: ScrollLockService, useValue: scrollLock },
+    ],
   }).compileComponents();
 
   const usage = TestBed.inject(StyleUsageService);
@@ -293,6 +305,44 @@ describe('StyleBrowserComponent', () => {
 
     overlay.click();
     expect(closeCount()).toBe(2);
+  });
+
+  describe('modal behaviour', () => {
+    it('blocks the page while it is open and frees it on close', async () => {
+      const { fixture } = await createBrowser();
+      expect(scrollLock.acquire).toHaveBeenCalledTimes(1);
+      expect(scrollLock.release).not.toHaveBeenCalled();
+
+      fixture.destroy();
+      expect(scrollLock.release).toHaveBeenCalledTimes(1);
+    });
+
+    it('opens with the search field focused', async () => {
+      const { el } = await createBrowser();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(document.activeElement).toBe(
+        el.querySelector('.gs-modal-search input'),
+      );
+    });
+
+    it('traps the tab run in the panel and in the enlarged layer', async () => {
+      const { fixture, component, el } = await createBrowser();
+      const trapped = () =>
+        fixture.debugElement
+          .queryAll(By.directive(CdkTrapFocus))
+          .map((node) => (node.nativeElement as HTMLElement).className);
+      expect(trapped()).toEqual([
+        expect.stringContaining('gs-modal-panel--browser'),
+      ]);
+
+      component.openExpanded('Cinematic');
+      fixture.detectChanges();
+      expect(trapped()).toEqual([
+        expect.stringContaining('gs-modal-panel--browser'),
+        expect.stringContaining('gs-sb-viewer-body'),
+      ]);
+      expect(el.querySelector('.gs-sb-viewer-body')).not.toBeNull();
+    });
   });
 
   it('keeps working when previews cannot be loaded', async () => {

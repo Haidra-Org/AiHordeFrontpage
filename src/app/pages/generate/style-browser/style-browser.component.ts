@@ -13,7 +13,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
+import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { useScrollLock } from '../../../helper/scroll-lock';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   GsIndexRailComponent,
@@ -145,6 +147,7 @@ export function isMatureStyle(
     TranslocoPipe,
     IconComponent,
     GsIndexRailComponent,
+    A11yModule,
   ],
   templateUrl: './style-browser.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -169,6 +172,14 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly expandedPanel =
     viewChild<ElementRef<HTMLElement>>('expandedPanel');
+
+  /**
+   * The page behind the browser stops scrolling while it is open: the browser
+   * covers the whole screen on a phone, where a drag that started on its header
+   * or its search field otherwise scrolled the form underneath. Released when
+   * the component is destroyed, which is how the browser closes.
+   */
+  private readonly scrollLock = useScrollLock();
 
   /** The element focused before the modal opened, restored when it closes. */
   private previousActiveElement: HTMLElement | null = null;
@@ -398,10 +409,12 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
+    this.scrollLock.enable();
     const active = document.activeElement;
     this.previousActiveElement = active instanceof HTMLElement ? active : null;
     // The panel renders in this same change detection pass, so focus moves on
-    // the next tick, matching the admin dialog's behaviour.
+    // the next tick. The search field is the target rather than whatever the
+    // focus trap would capture first: the reader came to look for a style.
     setTimeout(() => {
       const input = this.searchInput()?.nativeElement;
       (input ?? this.panel()?.nativeElement)?.focus();
@@ -544,18 +557,15 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Tab trapping, plus the enlarged layer's own keys while it is open. Escape is
-   * bound on the browser overlay itself (as in the CivitAI picker), so it is not
-   * handled twice while focus is inside the panel; the enlarged layer sits
-   * outside that overlay, so its Escape is handled here and unwinds one layer.
+   * The enlarged layer's own keys while it is open. Tab is left to the CDK
+   * focus traps on the panel and on the layer. Escape is bound on the browser
+   * overlay itself (as in the CivitAI picker), so it is not handled twice while
+   * focus is inside the panel; the enlarged layer sits outside that overlay, so
+   * its Escape is handled here and unwinds one layer.
    */
   public onKeydown(event: KeyboardEvent): void {
     if (this.expandedName() !== null) {
       this.onExpandedKeydown(event);
-      return;
-    }
-    if (event.key === 'Tab') {
-      this.trapFocus(event);
     }
   }
 
@@ -563,37 +573,12 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.closeExpanded();
-    } else if (event.key === 'Tab') {
-      this.trapFocus(event, this.expandedPanel()?.nativeElement);
     } else if (event.key === 'ArrowRight') {
       event.preventDefault();
       this.expandedNext();
     } else if (event.key === 'ArrowLeft') {
       event.preventDefault();
       this.expandedPrev();
-    }
-  }
-
-  /** Keep Tab cycling inside `within` (the browser panel by default). */
-  private trapFocus(event: KeyboardEvent, within?: HTMLElement): void {
-    const panel = within ?? this.panel()?.nativeElement;
-    if (!panel) {
-      return;
-    }
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) {
-      return;
-    }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
     }
   }
 

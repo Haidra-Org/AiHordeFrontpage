@@ -13,6 +13,7 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { useScrollLock } from '../../helper/scroll-lock';
 
 let nextInstance = 0;
 
@@ -76,6 +77,12 @@ export class GsPromptEditorComponent {
 
   private readonly area = viewChild<ElementRef<HTMLTextAreaElement>>('area');
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  /**
+   * The editor covers the page, so the page stops scrolling beneath it: a drag
+   * that starts on the heading or the button row is meant for the editor.
+   * Released when the editor is destroyed, which is how it closes.
+   */
+  private readonly scrollLock = useScrollLock();
   /** Whatever the reader was on when the editor opened, to hand focus back. */
   private readonly opener: HTMLElement | null;
 
@@ -84,6 +91,7 @@ export class GsPromptEditorComponent {
       this.isBrowser && document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    this.scrollLock.enable();
 
     afterNextRender(() => {
       const area = this.area()?.nativeElement;
