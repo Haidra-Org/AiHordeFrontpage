@@ -9,7 +9,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, forkJoin, of } from 'rxjs';
 import { DatabaseService } from './database.service';
 import { GsHelpService } from './gs-help.service';
 import {
@@ -28,9 +28,12 @@ import { sectionFor, sectionIdentity } from '../content/sections';
 import {
   ExampleFlow,
   ExampleManifest,
+  ExampleMeta,
+  ExampleRunCost,
   exampleAssetUrl,
   exampleManifestUrl,
   exampleResultUrl,
+  exampleRunCost,
 } from '../content/examples';
 import {
   FLOWS,
@@ -254,6 +257,7 @@ export class TutorialEngineService {
   private readonly flowId = signal<string | null>(null);
   private readonly flowMeta = signal<ExampleFlow | null>(null);
   private readonly request = signal<ImageGenerationRequest | null>(null);
+  private readonly runMeta = signal<ExampleMeta | null>(null);
   private readonly index = signal(0);
   private readonly loading = signal(false);
   private readonly failed = signal(false);
@@ -285,6 +289,13 @@ export class TutorialEngineService {
 
   /** The world {@link flowMeta} was resolved under, so a change reloads it. */
   private loadedWorld: TutorialWorld | null = null;
+
+  /**
+   * Which fetch owns the example. A world chosen while the previous world's
+   * files are still in flight would otherwise be overwritten by them when they
+   * land, leaving the reader on the world they just left.
+   */
+  private loadToken = 0;
 
   public readonly level = signal<TutorialLevel>(this.loadLevel());
   public readonly levels = TUTORIAL_LEVELS;
@@ -353,6 +364,23 @@ export class TutorialEngineService {
     return flow?.result ? exampleResultUrl(flow) : '';
   });
 
+  /**
+   * The picture the example was made from, on the techniques that start from
+   * one, or '' where the request starts from nothing. A flow that masks its
+   * source is still shown the source: what the mask covers is the lesson of one
+   * step, and the frame being repainted is what the reader has to recognise.
+   */
+  public readonly exampleSource = computed(() => {
+    const flow = this.flowMeta();
+    const file = flow?.source ?? flow?.mask;
+    return flow && file ? exampleAssetUrl(flow, file) : '';
+  });
+
+  /** What the published run took and cost; see {@link exampleRunCost}. */
+  public readonly runCost = computed<ExampleRunCost | null>(() =>
+    exampleRunCost(this.runMeta()),
+  );
+
   public registerHost(host: TutorialStudioHost): void {
     this.host = host;
   }
@@ -402,7 +430,9 @@ export class TutorialEngineService {
       // none, instead of offering the last technique's values under this one.
       this.flowMeta.set(null);
       this.request.set(null);
+      this.runMeta.set(null);
       this.loadedWorld = null;
+      this.loadToken++;
     } else if (
       this.request() === null ||
       canonicalFlowId(this.flowMeta()?.id ?? '') !== flowId ||
@@ -482,8 +512,46 @@ export class TutorialEngineService {
    * next flow started picks its assets up from here.
    */
   public setWorld(world: TutorialWorld): void {
+    if (world === this.world()) {
+      return;
+    }
     this.world.set(world);
     this.db.store(WORLD_KEY, world);
+    void this.reloadWorld();
+  }
+
+  /**
+   * Put the running flow's example on the world just chosen without moving the
+   * reader: the same step, the same register, the same open sheet or pane, and
+   * a new request behind them. Hung off the one call that can change the world
+   * rather than off an effect watching it, because an effect would have to tell
+   * a world change apart from a flow change and would re-run through every
+   * start, which loads the example itself.
+   */
+  private async reloadWorld(): Promise<void> {
+    const flowId = this.flowId();
+    if (flowId === null || isConceptFlow(flowId)) {
+      return;
+    }
+    const token = this.loadToken + 1;
+    this.failed.set(false);
+    this.loading.set(true);
+    try {
+      await this.load(flowId);
+    } catch {
+      if (token === this.loadToken) {
+        this.failed.set(true);
+        this.loading.set(false);
+      }
+      return;
+    }
+    if (token !== this.loadToken) {
+      return;
+    }
+    this.loading.set(false);
+    // The values the step writes have changed under the button that writes
+    // them, so the offer goes back to being an offer.
+    this.appliedFor.set(null);
   }
 
   /**
@@ -833,10 +901,11 @@ export class TutorialEngineService {
   }
 
   private async load(flowId: string): Promise<void> {
+    const token = ++this.loadToken;
+    const world = this.world();
     const manifest = await firstValueFrom(
       this.http.get<ExampleManifest>(exampleManifestUrl()),
     );
-    const world = this.world();
     const published = manifest.flows
       .filter((entry) => entry.status === 'available')
       .map((entry) => entry.id);
@@ -845,14 +914,29 @@ export class TutorialEngineService {
     if (!flow) {
       throw new Error(`Unknown tutorial flow: ${flowId}`);
     }
-    this.loadedWorld = world;
-    const request = await firstValueFrom(
-      this.http.get<ImageGenerationRequest>(
-        exampleAssetUrl(flow, flow.request ?? 'request.json'),
-      ),
+    const files = await firstValueFrom(
+      forkJoin({
+        request: this.http.get<ImageGenerationRequest>(
+          exampleAssetUrl(flow, flow.request ?? 'request.json'),
+        ),
+        // What the run took, for the line the surfaces put under the picture.
+        // Only asked for where the library published it, and never fatal: an
+        // example with no timing is shown without a cost line.
+        meta: flow.files.includes('meta.json')
+          ? this.http
+              .get<ExampleMeta>(exampleAssetUrl(flow, 'meta.json'))
+              .pipe(catchError(() => of(null)))
+          : of(null),
+      }),
     );
+    // A world chosen while these were in flight owns the example now.
+    if (token !== this.loadToken) {
+      return;
+    }
+    this.loadedWorld = world;
     this.flowMeta.set(flow);
-    this.request.set(request);
+    this.request.set(files.request);
+    this.runMeta.set(files.meta);
   }
 
   private loadLevel(): TutorialLevel {

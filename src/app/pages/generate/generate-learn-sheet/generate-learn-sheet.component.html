@@ -165,6 +165,47 @@
       {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
     </p>
 
+    <!-- What the walkthrough is working towards, kept under the bar on every
+         step: on a phone the pane's standing thumbnail has nowhere to live, and
+         a reader who cannot see the picture is following instructions rather
+         than making something. A strip while there is work to do, opened out on
+         the step that asks for the button, where the picture is the point. -->
+    @if (shots().length) {
+      <div class="gs-learn-shots" [class.gs-learn-shots--open]="shotsOpen()">
+        @for (shot of shots(); track shot.src; let i = $index) {
+          <figure class="gs-learn-shot">
+            <button
+              #shotTrigger
+              type="button"
+              class="gs-learn-shot-stage"
+              [attr.aria-label]="shot.enlargeKey | transloco"
+              (click)="openShot(i)"
+            >
+              <img
+                class="gs-learn-shot-img"
+                [src]="shot.src"
+                alt=""
+                loading="lazy"
+              />
+            </button>
+            <figcaption class="gs-learn-shot-cap">
+              {{ shot.captionKey | transloco }}
+            </figcaption>
+          </figure>
+        }
+        @if (shotsOpen() && runCost(); as cost) {
+          <p class="gs-learn-shot-cost">
+            {{
+              (cost.kudos === null
+                ? "generate.tutorials.run_time"
+                : "generate.tutorials.run_cost"
+              ) | transloco: cost
+            }}
+          </p>
+        }
+      </div>
+    }
+
     <!-- The card wears the hue of the area its step is about and breathes in
          step with the field it points at, so the pair reads as one thing on a
          phone as it does beside the panel. The bar above already carries the
@@ -288,5 +329,27 @@
       }}</span>
       <app-gs-world-picker [compact]="true" />
     </div>
+  }
+
+  <!-- The picture whole, on the layer the documentation page opens from its own
+       evidence rail. What the run cost rides under it here: on a phone this is
+       the only view with room to say it beside the picture it is about. -->
+  @if (enlargedShot(); as shot) {
+    <app-gs-shot-viewer
+      [src]="shot.src"
+      [label]="shot.captionKey | transloco"
+      (closed)="closeShot()"
+    >
+      @if (runCost(); as cost) {
+        <p class="gs-tut-viewer-cost">
+          {{
+            (cost.kudos === null
+              ? "generate.tutorials.run_time"
+              : "generate.tutorials.run_cost"
+            ) | transloco: cost
+          }}
+        </p>
+      }
+    </app-gs-shot-viewer>
   }
 </app-gs-sheet>

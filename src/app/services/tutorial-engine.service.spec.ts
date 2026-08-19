@@ -30,6 +30,7 @@ import {
 import manifest from '../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../content/examples';
 import request from '../testing/fixtures/example-request.stub.json';
+import meta from '../testing/fixtures/example-meta.stub.json';
 import { splitCombinedPrompt } from '../pages/generate/generate-form.model';
 import type { ExampleManifest } from '../content/examples';
 
@@ -105,13 +106,23 @@ describe('TutorialEngineService', () => {
   let http: HttpTestingController;
   let host: HostSpy;
 
+  /**
+   * Answer the two files a flow's example is made of. They are asked for
+   * together, so a test that answered only the payload would leave the engine
+   * waiting on a request it never sees.
+   */
+  function flushExample(directory: string, payload: unknown = request): void {
+    http
+      .expectOne(`${EXAMPLES_ROOT}/${directory}/request.json`)
+      .flush(structuredClone(payload));
+    http.expectOne(`${EXAMPLES_ROOT}/${directory}/meta.json`).flush(meta);
+  }
+
   async function startTxt2img(): Promise<void> {
     const started = engine.start('txt2img');
     http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await settle();
-    http
-      .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
-      .flush(structuredClone(request));
+    flushExample('txt2img');
     await started;
   }
 
@@ -571,14 +582,17 @@ describe('TutorialEngineService', () => {
       const started = engine.start('img2img');
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
-      http
-        .expectOne(`${EXAMPLES_ROOT}/img2img/request.json`)
-        .flush(structuredClone(sourced));
+      flushExample('img2img', sourced);
       await started;
     }
 
     beforeEach(async () => {
       await startImg2img();
+    });
+
+    it('offers the picture the run started from as well as the one it made', () => {
+      expect(engine.exampleSource()).toContain('/img2img/source.webp');
+      expect(engine.exampleImage()).toContain('/img2img/result.webp');
     });
 
     it('reads the source mode back off the committed request', () => {
@@ -673,9 +687,7 @@ describe('TutorialEngineService', () => {
       const started = engine.start('qr_code');
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
-      http
-        .expectOne(`${EXAMPLES_ROOT}/qr_code/request.json`)
-        .flush(structuredClone(qr));
+      flushExample('qr_code', qr);
       await started;
     });
 
@@ -831,7 +843,7 @@ describe('TutorialEngineService', () => {
     const started = engine.start('txt2img');
     http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
     await settle();
-    http.expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`).flush(plain);
+    flushExample('txt2img', plain);
     await started;
 
     engine.applyStep();
@@ -853,6 +865,12 @@ describe('TutorialEngineService', () => {
 
     expect(engine.loadFailed()).toBe(true);
     expect(engine.example()).toBeNull();
+  });
+
+  it('reports what the published run took, off the record of the run', async () => {
+    await startTxt2img();
+
+    expect(engine.runCost()).toEqual({ time: 8, kudos: 12.5 });
   });
 
   it('defaults to the most talkative register', () => {
@@ -928,9 +946,7 @@ describe('TutorialEngineService', () => {
       const started = engine.start('txt2img');
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
-      http
-        .expectOne(`${EXAMPLES_ROOT}/txt2img--w2/request.json`)
-        .flush(structuredClone(request));
+      flushExample('txt2img--w2');
       await started;
 
       expect(engine.flow()?.id).toBe('txt2img--w2');
@@ -946,15 +962,69 @@ describe('TutorialEngineService', () => {
       expect(engine.flow()?.id).toBe('txt2img');
 
       engine.setWorld('w2');
-      const restarted = engine.start('txt2img');
       http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
       await settle();
-      http
-        .expectOne(`${EXAMPLES_ROOT}/txt2img--w2/request.json`)
-        .flush(structuredClone(request));
-      await restarted;
+      flushExample('txt2img--w2');
+      await settle();
 
       expect(engine.flow()?.id).toBe('txt2img--w2');
+    });
+
+    it('changes the example under the reader without moving them', async () => {
+      await startTxt2img();
+      engine.next();
+      engine.next();
+      const wasAt = engine.stepIndex();
+      expect(wasAt).toBeGreaterThan(0);
+
+      engine.setWorld('w2');
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await settle();
+      flushExample('txt2img--w2', {
+        ...structuredClone(request),
+        prompt: 'a fox shrine at dusk',
+      });
+      await settle();
+
+      // The step the reader is on, the register they chose and the flow being
+      // taught are all where they were; only the worked example moved.
+      expect(engine.stepIndex()).toBe(wasAt);
+      expect(engine.activeFlowId()).toBe('txt2img');
+      expect(engine.copyParams()['prompt']).toBe('a fox shrine at dusk');
+      expect(engine.exampleImage()).toContain('/txt2img--w2/');
+      expect(engine.isLoading()).toBe(false);
+    });
+
+    it('leaves a track alone, which has no example to change', async () => {
+      await engine.start('concepts_images');
+
+      engine.setWorld('w2');
+
+      expect(engine.world()).toBe('w2');
+      http.expectNone(`${EXAMPLES_ROOT}/manifest.json`);
+    });
+
+    it('keeps the world chosen last when an earlier fetch lands late', async () => {
+      await startTxt2img();
+
+      engine.setWorld('w2');
+      engine.setWorld('w1');
+      const manifests = http.match(`${EXAMPLES_ROOT}/manifest.json`);
+      expect(manifests).toHaveLength(2);
+
+      // The world chosen last answers first, and the one abandoned on the way
+      // answers after it.
+      manifests[1].flush(manifest);
+      await settle();
+      flushExample('txt2img');
+      await settle();
+      manifests[0].flush(manifest);
+      await settle();
+      flushExample('txt2img--w2');
+      await settle();
+
+      expect(engine.flow()?.id).toBe('txt2img');
+      expect(engine.exampleImage()).not.toContain('--w2');
     });
 
     it('takes a variant id as the flow it belongs to', () => {

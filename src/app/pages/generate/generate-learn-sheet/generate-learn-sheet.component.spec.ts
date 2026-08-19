@@ -21,6 +21,7 @@ import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
 import request from '../../../testing/fixtures/example-request.stub.json';
+import meta from '../../../testing/fixtures/example-meta.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
@@ -99,6 +100,7 @@ describe('GenerateLearnSheetComponent', () => {
     http
       .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
       .flush(structuredClone(request));
+    http.expectOne(`${EXAMPLES_ROOT}/txt2img/meta.json`).flush(meta);
     await started;
 
     fixture = TestBed.createComponent(GenerateLearnSheetComponent);
@@ -271,6 +273,8 @@ describe('GenerateLearnSheetComponent', () => {
       );
       expect(query('.gs-learn-apply')).toHaveLength(0);
       expect(query('.gs-learn-show')).toHaveLength(0);
+      // A track teaches an idea, and has no worked run behind it to show.
+      expect(query('.gs-learn-shots')).toHaveLength(0);
     });
 
     it('ends at a door into the walkthrough rather than an ask to press Generate', async () => {
@@ -292,9 +296,58 @@ describe('GenerateLearnSheetComponent', () => {
       http
         .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
         .flush(structuredClone(request));
+      http.expectOne(`${EXAMPLES_ROOT}/txt2img/meta.json`).flush(meta);
       await settle();
 
       expect(engine.step()?.id).toBe('prompt');
+    });
+  });
+
+  describe('the example behind the walkthrough', () => {
+    const stage = (): HTMLButtonElement =>
+      first<HTMLButtonElement>('.gs-learn-shot-stage');
+
+    it('keeps what the run produced under the bar while there is work to do', () => {
+      expect(query('.gs-learn-shot')).toHaveLength(1);
+      expect(first<HTMLElement>('.gs-learn-shot-cap').textContent?.trim()).toBe(
+        TRANSLATIONS['generate.tutorials.example_result'],
+      );
+      expect(stage().getAttribute('aria-label')).toBe(
+        TRANSLATIONS['generate.tutorials.example_result_enlarge'],
+      );
+      // A strip on the way through: no height and no cost line until the step
+      // that is about the picture.
+      expect(query('.gs-learn-shots--open')).toHaveLength(0);
+      expect(query('.gs-learn-shot-cost')).toHaveLength(0);
+    });
+
+    it('opens the row out on the step that asks for the button', async () => {
+      engine.goTo(engine.total() - 1);
+      await settle();
+
+      expect(query('.gs-learn-shots--open')).toHaveLength(1);
+      expect(first<HTMLElement>('.gs-learn-shot-cost').textContent).toContain(
+        '12.5',
+      );
+    });
+
+    it('shows the picture whole, with what the run cost, and hands focus back', async () => {
+      stage().click();
+      await settle();
+
+      expect(query('app-gs-shot-viewer')).toHaveLength(1);
+      expect(first<HTMLImageElement>('.gs-tut-viewer-img').src).toContain(
+        '/txt2img/result.webp',
+      );
+      expect(first<HTMLElement>('.gs-tut-viewer-cost').textContent).toContain(
+        '12.5',
+      );
+
+      first<HTMLButtonElement>('.gs-tut-viewer-x').click();
+      await settle();
+
+      expect(query('app-gs-shot-viewer')).toHaveLength(0);
+      expect(document.activeElement).toBe(stage());
     });
   });
 

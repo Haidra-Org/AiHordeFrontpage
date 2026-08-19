@@ -30,6 +30,7 @@ import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
 import request from '../../../testing/fixtures/example-request.stub.json';
+import meta from '../../../testing/fixtures/example-meta.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
 
 const TRANSLATIONS = en as Record<string, string>;
@@ -98,6 +99,7 @@ describe('GenerateLearnPanelComponent', () => {
     http
       .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
       .flush(structuredClone(request));
+    http.expectOne(`${EXAMPLES_ROOT}/txt2img/meta.json`).flush(meta);
     await started;
 
     fixture = TestBed.createComponent(GenerateLearnPanelComponent);
@@ -321,6 +323,7 @@ describe('GenerateLearnPanelComponent', () => {
       http
         .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
         .flush(structuredClone(request));
+      http.expectOne(`${EXAMPLES_ROOT}/txt2img/meta.json`).flush(meta);
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
 

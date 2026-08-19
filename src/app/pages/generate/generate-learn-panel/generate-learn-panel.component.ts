@@ -65,6 +65,7 @@ export class GenerateLearnPanelComponent {
   public readonly loadFailed = this.engine.loadFailed;
   public readonly revealNote = this.engine.revealNote;
   public readonly exampleImage = this.engine.exampleImage;
+  public readonly runCost = this.engine.runCost;
   public readonly flow = this.engine.flow;
   public readonly copyParams = this.engine.copyParams;
 

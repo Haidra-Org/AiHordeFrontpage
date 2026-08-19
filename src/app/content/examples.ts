@@ -68,3 +68,30 @@ export function exampleAssetUrl(flow: ExampleFlow, file: string): string {
 export function exampleResultUrl(flow: ExampleFlow): string {
   return flow.result ? exampleAssetUrl(flow, flow.result) : '';
 }
+
+/** What a published run took, rounded for prose. */
+export interface ExampleRunCost {
+  time: number;
+  /** Null where the run was not charged, which reads as no kudos line at all. */
+  kudos: number | null;
+}
+
+/**
+ * What the published run cost, or null where the example carries no timing.
+ * Taken from the run's own meta rather than written into the copy, which
+ * otherwise goes stale the next time the library is regenerated. Null is a
+ * complete answer: every surface that shows this reads as a whole without it.
+ */
+export function exampleRunCost(
+  meta: ExampleMeta | null | undefined,
+): ExampleRunCost | null {
+  if (!meta || meta.wall_time_seconds === undefined) {
+    return null;
+  }
+  // A run made on the worker software directly was charged nothing, and says
+  // so by having no kudos line rather than a zero.
+  return {
+    time: Math.round(meta.wall_time_seconds),
+    kudos: meta.kudos_charged ?? null,
+  };
+}

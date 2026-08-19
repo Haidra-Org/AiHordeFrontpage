@@ -53,6 +53,7 @@ import {
 } from '../../../content/flows';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
+import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { GsCompareWipeComponent } from '../../../components/gs-compare-wipe/gs-compare-wipe.component';
 import { requestToFormValue } from '../../generate/generate-form.model';
 import { ImageGenerationRequest } from '../../../types/generation';
@@ -67,8 +68,10 @@ import {
   ExampleFlow,
   ExampleManifest,
   ExampleMeta,
+  ExampleRunCost,
   exampleAssetUrl,
   exampleManifestUrl,
+  exampleRunCost,
 } from '../../../content/examples';
 
 /**
@@ -120,6 +123,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
     GsSweepScrubComponent,
     GsWorldPickerComponent,
     GsCompareWipeComponent,
+    GsShotViewerComponent,
   ],
   templateUrl: './image-example.component.html',
   host: {
@@ -159,13 +163,6 @@ export class DocsImageExampleComponent {
 
   private readonly shotTriggers =
     viewChildren<ElementRef<HTMLButtonElement>>('shotTrigger');
-  private readonly viewerPanel =
-    viewChild<ElementRef<HTMLElement>>('viewerPanel');
-  private readonly viewerClose =
-    viewChild<ElementRef<HTMLButtonElement>>('viewerClose');
-
-  /** The panel focus was last moved to, so a later render cannot re-take it. */
-  private focusedPanel: HTMLElement | null = null;
 
   /** Which stage the enlarged view was opened from, or null while it is shut. */
   private readonly enlargedAt = signal<number | null>(null);
@@ -541,16 +538,6 @@ export class DocsImageExampleComponent {
       this.enlargedAt.set(null);
     });
 
-    // The enlarged picture takes focus as it opens, so the key that closes it
-    // and the button that dismisses it are where the reader already is.
-    afterRenderEffect(() => {
-      const panel = this.viewerPanel()?.nativeElement ?? null;
-      if (panel && panel !== this.focusedPanel) {
-        panel.focus();
-      }
-      this.focusedPanel = panel;
-    });
-
     // Waits for the manifest: until it has arrived there is nothing to say a
     // URL is wrong with, and a reader who deep-linked a real flow would be
     // thrown off it.
@@ -601,29 +588,6 @@ export class DocsImageExampleComponent {
     this.enlargedAt.set(null);
     if (at !== null) {
       this.shotTriggers()[at]?.nativeElement.focus();
-    }
-  }
-
-  /** The backdrop closes; a press that landed on the panel itself does not. */
-  public onViewerBackdrop(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
-      this.closeEnlarged();
-    }
-  }
-
-  /**
-   * Escape closes. Tab is held inside the layer by hand: the panel carries one
-   * control, so keeping focus on it is the whole trap.
-   */
-  public onViewerKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      this.closeEnlarged();
-      return;
-    }
-    if (event.key === 'Tab') {
-      event.preventDefault();
-      this.viewerClose()?.nativeElement.focus();
     }
   }
 
@@ -679,26 +643,12 @@ export class DocsImageExampleComponent {
    * regenerated. Null is a complete answer: the submitting step reads as a
    * whole sentence without it.
    */
-  public readonly runCost = computed<{
-    time: number;
-    kudos: number | null;
-  } | null>(() => {
-    const meta = this.activeDetail()?.meta;
-    if (!meta || meta.wall_time_seconds === undefined) {
-      return null;
-    }
-    // A run made on the worker software directly was charged nothing, and
-    // says so by having no kudos line rather than a zero.
-    return {
-      time: Math.round(meta.wall_time_seconds),
-      kudos: meta.kudos_charged ?? null,
-    };
-  });
+  public readonly runCost = computed<ExampleRunCost | null>(() =>
+    exampleRunCost(this.activeDetail()?.meta),
+  );
 
   /** The run's cost, for the one step that submits the request. */
-  public runCostFor(
-    step: string,
-  ): { time: number; kudos: number | null } | null {
+  public runCostFor(step: string): ExampleRunCost | null {
     return step === 'generate' ? this.runCost() : null;
   }
 

@@ -1,9 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   inject,
+  signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
@@ -11,6 +14,7 @@ import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import { GsProseComponent } from '../../../components/gs-prose/gs-prose.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
+import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   TutorialEngineService,
@@ -23,6 +27,18 @@ import {
   sectionIdentity,
   sectionFor,
 } from '../../../content/sections';
+
+/**
+ * A picture behind the example, in the order the run produced it: what went in,
+ * then what came back. Two at most, because the row is read at a glance.
+ */
+export interface LearnShot {
+  src: string;
+  /** What the picture is, said under it and used as its accessible name. */
+  captionKey: string;
+  /** The offer to see it whole, which names the picture rather than a number. */
+  enlargeKey: string;
+}
 
 /**
  * The follow-along tutorial on a phone, as a bottom sheet.
@@ -47,6 +63,7 @@ import {
     GsWorldPickerComponent,
     GsSheetComponent,
     GsSweepScrubComponent,
+    GsShotViewerComponent,
   ],
   templateUrl: './generate-learn-sheet.component.html',
   host: {
@@ -68,6 +85,7 @@ export class GenerateLearnSheetComponent {
   public readonly loadFailed = this.engine.loadFailed;
   public readonly revealNote = this.engine.revealNote;
   public readonly copyParams = this.engine.copyParams;
+  public readonly runCost = this.engine.runCost;
 
   /** Whether the track being read teaches an idea rather than a technique. */
   /** The tutorial's name, said on the bar before the step so a reader knows where they are. */
@@ -99,6 +117,64 @@ export class GenerateLearnSheetComponent {
    * the finale's ask to press Generate mean anything.
    */
   public readonly hasExample = computed(() => this.engine.example() !== null);
+
+  /**
+   * The pictures the example rests on: what the run started from, where it
+   * started from one, and what it produced. A concept track has no committed
+   * run behind it and shows no row at all.
+   */
+  public readonly shots = computed<readonly LearnShot[]>(() => {
+    const result = this.engine.exampleImage();
+    if (!result) {
+      return [];
+    }
+    const source = this.engine.exampleSource();
+    const shots: LearnShot[] = [];
+    if (source) {
+      shots.push({
+        src: source,
+        captionKey: 'generate.tutorials.example_source',
+        enlargeKey: 'generate.tutorials.example_source_enlarge',
+      });
+    }
+    shots.push({
+      src: result,
+      captionKey: 'generate.tutorials.example_result',
+      enlargeKey: 'generate.tutorials.example_result_enlarge',
+    });
+    return shots;
+  });
+
+  /**
+   * Whether the row is opened out. On the step that asks for the button to be
+   * pressed the picture is the point, so it is given the height and the cost
+   * line without the reader having to ask; everywhere else it is a reminder of
+   * what they are working towards and stays a strip.
+   */
+  public readonly shotsOpen = computed(() => this.onFinale());
+
+  /** Which picture the enlarged view is showing, or null while it is shut. */
+  private readonly enlargedAt = signal<number | null>(null);
+  public readonly enlargedShot = computed<LearnShot | null>(() => {
+    const at = this.enlargedAt();
+    return at === null ? null : (this.shots()[at] ?? null);
+  });
+
+  private readonly shotTriggers =
+    viewChildren<ElementRef<HTMLButtonElement>>('shotTrigger');
+
+  public openShot(index: number): void {
+    this.enlargedAt.set(index);
+  }
+
+  /** Closing hands focus back to the picture that opened the view. */
+  public closeShot(): void {
+    const at = this.enlargedAt();
+    this.enlargedAt.set(null);
+    if (at !== null) {
+      this.shotTriggers()[at]?.nativeElement.focus();
+    }
+  }
 
   public readonly progressParams = computed(() => ({
     current: this.stepIndex() + 1,

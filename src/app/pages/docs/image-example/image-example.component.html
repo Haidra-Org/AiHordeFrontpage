@@ -523,54 +523,17 @@
       }
     </article>
 
-    <!-- The enlarged picture, on the sweep viewer's grammar. It sits outside
-           the evidence rail rather than in it: that rail is a sticky scrolling
-           column at the wide step, and this layer belongs to the page. -->
+    <!-- The enlarged picture, on the layer every tutorial surface opens. It
+           sits outside the evidence rail rather than in it: that rail is a
+           sticky scrolling column at the wide step, and this layer belongs to
+           the page. -->
     @if (enlargedShot(); as shot) {
-      <!-- Focusable backdrop, so the press outside has a keyboard equivalent
-             rather than leaving one way out that only a pointer has. -->
-      <div
-        class="gs-tut-viewer"
-        tabindex="0"
-        (click)="onViewerBackdrop($event)"
-        (keydown.escape)="closeEnlarged()"
-      >
-        <div
-          #viewerPanel
-          class="gs-tut-viewer-body"
-          role="dialog"
-          aria-modal="true"
-          tabindex="-1"
-          [attr.aria-label]="
-            'generate.tutorials.enlarged_title'
-              | transloco: { name: shot.labelKey | transloco }
-          "
-          (keydown)="onViewerKeydown($event)"
-        >
-          <div class="gs-tut-viewer-top">
-            <span class="gs-tut-viewer-name">
-              {{ shot.labelKey | transloco }}
-            </span>
-            <button
-              #viewerClose
-              type="button"
-              class="gs-tut-viewer-x"
-              [attr.aria-label]="'generate.tutorials.enlarge_close' | transloco"
-              (click)="closeEnlarged()"
-            >
-              <app-icon name="x-mark" class="gs-ico-sm" />
-            </button>
-          </div>
-          <div class="gs-tut-viewer-stage">
-            <img
-              class="gs-tut-viewer-img"
-              [class.gs-tut-img--alpha]="shot.alpha"
-              [src]="shot.src"
-              alt=""
-            />
-          </div>
-        </div>
-      </div>
+      <app-gs-shot-viewer
+        [src]="shot.src"
+        [label]="shot.labelKey | transloco"
+        [alpha]="shot.alpha"
+        (closed)="closeEnlarged()"
+      />
     }
   }
 </div>

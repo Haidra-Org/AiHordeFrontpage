@@ -157,6 +157,18 @@ const CHROME_KEYS = [
   'dev_payload_base64_note',
 ];
 
+/**
+ * Keys of the same namespace the walkthrough owns rather than this page: the
+ * phone sheet names the example's pictures and the offer to see them whole.
+ * Listed here because the check below holds the whole namespace to account.
+ */
+const SHEET_KEYS = [
+  'example_result',
+  'example_result_enlarge',
+  'example_source',
+  'example_source_enlarge',
+];
+
 interface Harness {
   fixture: ComponentFixture<DocsImageExampleComponent>;
   component: DocsImageExampleComponent;
@@ -756,7 +768,7 @@ describe('DocsImageExampleComponent', () => {
   it('has an English string for every key the page asks for', () => {
     const translations = en as Record<string, string>;
     const expected = new Set(
-      CHROME_KEYS.map((key) => `generate.tutorials.${key}`),
+      [...CHROME_KEYS, ...SHEET_KEYS].map((key) => `generate.tutorials.${key}`),
     );
 
     for (const header of ['apikey', 'client_agent', 'content_type']) {

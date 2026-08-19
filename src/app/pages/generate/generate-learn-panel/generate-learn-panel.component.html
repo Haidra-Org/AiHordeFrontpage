@@ -249,6 +249,19 @@
         />
         <figcaption class="gs-learn-example-cap">
           {{ "generate.learn.example_caption" | transloco }}
+          <!-- What the published run took, read off the run's own record: the
+               reader is about to submit the same request, and the price of it
+               is the thing they cannot see from the form. -->
+          @if (runCost(); as cost) {
+            <span class="gs-learn-example-cost">
+              {{
+                (cost.kudos === null
+                  ? "generate.tutorials.run_time"
+                  : "generate.tutorials.run_cost"
+                ) | transloco: cost
+              }}
+            </span>
+          }
         </figcaption>
       </figure>
     }
