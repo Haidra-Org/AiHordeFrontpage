@@ -416,8 +416,10 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /**
-   * Whether this sampler and model offer any knob at all. Without the contract
-   * the horde rejects every one of these fields, so the disclosure stays away.
+   * Whether this sampler and model offer any knob at all. The disclosure stays
+   * in place either way once a contract exists, so a sampler with nothing to
+   * tune says so rather than making the whole row vanish; without a contract
+   * the horde rejects every one of these fields and the row is not offered.
    */
   public hasAdvancedSampling(): boolean {
     return (

@@ -74,6 +74,7 @@
   "generate.form.advanced_sampling": "Advanced sampling",
   "generate.form.advanced_sampling_count": "{{ count }} set",
   "generate.form.advanced_sampling_clear": "Clear",
+  "generate.form.advanced_sampling_none": "{{sampler}} has no extra settings. Pick an ancestral, SDE, Euler, Heun or multistep sampler to tune how it adds noise or which solver it runs.",
   "generate.form.sampler_eta_label": "Eta",
   "generate.form.sampler_s_noise_label": "Noise scale",
   "generate.form.sampler_s_churn_label": "Churn",

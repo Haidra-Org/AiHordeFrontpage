@@ -1202,6 +1202,23 @@ describe('GenerateFormComponent sampler contract', () => {
     expect(component.advancedSamplingCount()).toBe(1);
   });
 
+  it('keeps the disclosure for a sampler with nothing to tune, and says so', async () => {
+    const { fixture, component, form, host } = await renderWithContract();
+    form.controls.sampler_name.setValue('DDIM');
+    fixture.detectChanges();
+
+    expect(component.hasAdvancedSampling()).toBe(false);
+    expect(
+      host.querySelector('[aria-controls="generate-advanced-sampling"]'),
+    ).not.toBeNull();
+
+    component.toggleAdvancedSampling();
+    fixture.detectChanges();
+    const body = host.querySelector('#generate-advanced-sampling');
+    expect(body?.tagName).toBe('P');
+    expect(host.querySelector('#generate-sampler_eta')).toBeNull();
+  });
+
   it('leaves the knobs closed once the reader closes them', async () => {
     const { fixture, component, form } = await renderWithContract();
     component.toggleAdvancedSampling();

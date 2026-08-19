@@ -941,7 +941,7 @@
                 />
               </div>
             </div>
-            @if (hasAdvancedSampling()) {
+            @if (samplerContract()) {
               <div
                 class="gs-hairline pt-3"
                 [class.gs-locked]="isSectionLocked('sampling')"
@@ -983,7 +983,15 @@
                     </button>
                   }
                 </div>
-                @if (advancedSamplingOpen()) {
+                @if (advancedSamplingOpen() && !hasAdvancedSampling()) {
+                  <p id="generate-advanced-sampling" class="gs-sublabel mt-2">
+                    {{
+                      "generate.form.advanced_sampling_none"
+                        | transloco
+                          : { sampler: form().controls.sampler_name.value }
+                    }}
+                  </p>
+                } @else if (advancedSamplingOpen()) {
                   <div
                     id="generate-advanced-sampling"
                     class="gs-grid-sampling mt-3"
