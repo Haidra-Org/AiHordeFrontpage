@@ -444,10 +444,85 @@ export const SETTINGS: readonly SettingEntry[] = [
 
   // --- source image ---
   {
+    // The chapter's opening page: what attaching a picture does at all, and
+    // which of the four things the horde can do with one a reader wants. Each
+    // has its own page because they are different pipelines with different
+    // answers, and because a reader arriving from another tool is looking for
+    // one of them by name.
     id: 'source',
     section: 'source',
     labelKey: 'generate.sections.source',
-    reference: { related: ['denoise'] },
+    reference: {
+      related: [
+        'img2img',
+        'img2img_mask',
+        'inpainting',
+        'outpainting',
+        'remix',
+      ],
+      glossaryTerms: ['img2img'],
+    },
+  },
+  {
+    id: 'img2img',
+    section: 'source',
+    reference: {
+      related: ['denoise', 'img2img_mask', 'source'],
+      glossaryTerms: ['img2img'],
+    },
+    sweeps: { strip: 'denoising_strength' },
+  },
+  {
+    id: 'img2img_mask',
+    section: 'source',
+    reference: {
+      applies: [
+        {
+          display: '0.45',
+          anchorId: 'denoise',
+          fields: {
+            sourceMode: 'img2img',
+            maskEnabled: true,
+            denoising_strength: 0.45,
+          },
+          requiresSource: true,
+        },
+      ],
+      related: ['inpainting', 'denoise', 'img2img'],
+      glossaryTerms: ['inpainting'],
+    },
+    sweeps: {
+      strip: 'masked_denoising_strength',
+      grid: 'masking_grid',
+    },
+  },
+  {
+    id: 'inpainting',
+    section: 'source',
+    reference: {
+      related: ['img2img_mask', 'outpainting', 'source'],
+      glossaryTerms: ['inpainting'],
+    },
+    // The grid is the page's whole argument: the column that erases what was
+    // there, beside the one that keeps it.
+    sweeps: { grid: 'masking_grid' },
+  },
+  {
+    id: 'outpainting',
+    section: 'source',
+    reference: {
+      related: ['inpainting', 'size', 'source'],
+      glossaryTerms: ['inpainting'],
+    },
+    sweeps: { strip: 'outpaint_extent' },
+  },
+  {
+    id: 'remix',
+    section: 'source',
+    reference: {
+      related: ['source', 'img2img'],
+      glossaryTerms: ['model'],
+    },
   },
   {
     id: 'denoise',
@@ -684,6 +759,7 @@ export const SETTINGS: readonly SettingEntry[] = [
       ],
       related: ['hires', 'denoise'],
     },
+    sweeps: { strip: 'hires_fix_denoising_strength' },
   },
   {
     id: 'tiling',
@@ -857,6 +933,11 @@ export const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   control_strength: 'qr',
   qr_style: 'qr',
   denoising_strength: 'denoise',
+  // The masked readings belong to the mode that adds them, not to the plain
+  // strength page: what they teach is what a mask does to it.
+  masked_denoising_strength: 'img2img_mask',
+  masking_grid: 'img2img_mask',
+  outpaint_extent: 'outpainting',
   hires_fix: 'hires',
   hires_fix_denoising_strength: 'hires_denoise',
   negative_prompt: 'negative',

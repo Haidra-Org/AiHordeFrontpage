@@ -373,14 +373,21 @@ const GLOSSARY_TERM_DEFINITIONS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.img2img.title',
     bodyKey: 'help.glossary.terms.img2img.body',
     category: 'generation',
-    links: [referenceLink('source')],
+    docs: { area: 'setting', id: 'img2img' },
   },
   {
     id: 'inpainting',
     titleKey: 'help.glossary.terms.inpainting.title',
     bodyKey: 'help.glossary.terms.inpainting.body',
     category: 'generation',
-    links: [referenceLink('source')],
+    docs: { area: 'setting', id: 'inpainting' },
+  },
+  {
+    id: 'outpainting',
+    titleKey: 'help.glossary.terms.outpainting.title',
+    bodyKey: 'help.glossary.terms.outpainting.body',
+    category: 'generation',
+    docs: { area: 'setting', id: 'outpainting' },
   },
 
   // Generation settings. The dictionary's half of the settings reference: one
@@ -434,6 +441,7 @@ const GLOSSARY_TERM_DEFINITIONS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.denoise.title',
     bodyKey: 'help.glossary.terms.denoise.body',
     category: 'generation_settings',
+    docs: { area: 'setting', id: 'denoise' },
   },
   {
     id: 'tiling',

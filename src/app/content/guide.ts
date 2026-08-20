@@ -50,7 +50,15 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
   {
     id: 'source',
     labelKey: 'generate.source.section',
-    topics: ['source', 'denoise'],
+    topics: [
+      'source',
+      'img2img',
+      'denoise',
+      'img2img_mask',
+      'inpainting',
+      'outpainting',
+      'remix',
+    ],
   },
   {
     id: 'sampling',
