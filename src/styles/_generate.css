@@ -7469,17 +7469,76 @@
     var(--gs-zone-tint-border, var(--gs-border))
   );
 }
+
+/* The chain beside a heading, which is how a reader hands somebody else the
+   exact place they are reading rather than the page it is on.
+
+   It is quiet until it is wanted: at rest it holds its space and shows nothing,
+   and the heading being pointed at or tabbed into brings it up. Holding the
+   space is the point — a glyph that appeared on hover would push the heading
+   sideways under the pointer aiming at it. Where there is no pointer to hover
+   with there is nothing to reveal it, so a touch screen is simply given it. */
+.gs-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  vertical-align: middle;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+:hover > .gs-anchor,
+.gs-anchor:focus-within,
+.gs-anchor--said {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .gs-anchor {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gs-anchor {
+    transition: none;
+  }
+}
+/* Sized as a target rather than as a glyph: the mark inside it is small because
+   it sits beside running text, and the box around it is the part a finger or a
+   shaky pointer actually has to hit. */
+.gs-anchor-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: none;
+  border-radius: var(--gs-radius-sm, 0.375rem);
+  color: var(--gs-ink-2);
+  text-decoration: none;
+}
+.gs-anchor-link:hover {
+  color: var(--gs-zone, var(--gs-blue));
+  background: var(--gs-sec-tint, var(--gs-zone-tint, transparent));
+}
+@media (pointer: coarse) {
+  .gs-anchor-link {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+}
+/* What the press did, said where the press happened. It reads in the heading's
+   own case rather than the eyebrow's, because it is a sentence about the
+   reader's action and not part of the title. */
+.gs-anchor-said {
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
 /* One of the page's two halves. The header carries the landmark and the hairline
    under it, and everything below the header belongs to that half, so the page
    reads as two blocks rather than as a run of same-sized headings. */
-/* A jump from the contents rail has to land under everything pinned over the
-   page (the nav, the area's chrome where it pins, and the page's own head),
-   which is what the registry publishes, plus a line of air. */
-.gen-studio .gs-guide-sec {
-  scroll-margin-top: calc(
-    var(--sticky-offset, var(--nav-height-desktop, 80px)) + var(--gs-space-3)
-  );
-}
 .gen-studio .gs-guide-sec-head {
   margin-bottom: var(--gs-space-4);
   padding-bottom: var(--gs-space-3);
@@ -7607,9 +7666,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-3);
-  scroll-margin-top: calc(
-    var(--sticky-offset, var(--nav-height-desktop, 80px)) + var(--gs-space-3)
-  );
 }
 .gen-studio .gs-guide-area-head {
   display: flex;
@@ -7801,6 +7857,11 @@
   color: var(--gs-ink);
 }
 /* The technique behind the task, set quietly beside it. */
+.gen-studio .gs-tut-title-tail {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
 .gen-studio .gs-tut-technique {
   font-size: var(--gs-text-xs);
   font-weight: 700;

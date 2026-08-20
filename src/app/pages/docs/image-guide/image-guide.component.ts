@@ -8,6 +8,7 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   FindHighlightPart,
@@ -137,6 +138,7 @@ const RAIL_ENTRIES: readonly GsIndexRailEntry[] = [
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsAnchorLinkComponent,
     GsIndexRailComponent,
     GsDoorComponent,
     GsSweepScrubComponent,

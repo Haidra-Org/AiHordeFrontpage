@@ -22,9 +22,22 @@
       <header class="gs-tut-head">
         <h1 class="gs-tut-flow-title">
           {{ "generate.tutorials.flows." + flowId + ".task_name" | transloco }}
-          @if (activeFlow(); as flow) {
-            <span class="gs-tut-technique">{{ flow.title }}</span>
-          }
+          <!-- The technique and the chain travel together, so a narrow column
+               that cannot fit them after the name wraps the pair rather than
+               leaving the chain on a line of its own.
+
+               One technique to a page, so the page is what there is to hand
+               somebody: no fragment, because there is nowhere else to land. -->
+          <span class="gs-tut-title-tail">
+            @if (activeFlow(); as flow) {
+              <span class="gs-tut-technique">{{ flow.title }}</span>
+            }
+            <app-gs-anchor-link
+              [label]="
+                'generate.tutorials.flows.' + flowId + '.task_name' | transloco
+              "
+            />
+          </span>
         </h1>
         <p class="gs-tut-lead">{{ activeSummary() }}</p>
 
@@ -109,10 +122,14 @@
             </div>
 
             @if (isMode("user") && spine().length > 0) {
-              <section class="gs-tut-section">
+              <section class="gs-tut-section" id="gs-tut-sec-steps">
                 <div class="gs-tut-steps-head">
                   <h2 class="gs-tut-head-2">
                     {{ "generate.tutorials.steps_head" | transloco }}
+                    <app-gs-anchor-link
+                      targetId="gs-tut-sec-steps"
+                      [label]="'generate.tutorials.steps_head' | transloco"
+                    />
                   </h2>
                   <!-- The same three registers the studio pane offers, and the
                        same remembered choice, so the depth a reader picks here
@@ -366,9 +383,13 @@
 
           <!-- What went in, what came out, and what it cost. This belongs to
                  neither tab: the evidence is the same whoever is reading. -->
-          <aside class="gs-tut-evidence">
+          <aside class="gs-tut-evidence" id="gs-tut-sec-evidence">
             <h2 class="gs-tut-head-2">
               {{ "generate.tutorials.images_head" | transloco }}
+              <app-gs-anchor-link
+                targetId="gs-tut-sec-evidence"
+                [label]="'generate.tutorials.images_head' | transloco"
+              />
             </h2>
 
             <!-- The pictures are published rather than shipped, so this is the

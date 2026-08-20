@@ -9,6 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import {
@@ -95,7 +96,13 @@ interface LearnDoor {
  */
 @Component({
   selector: 'app-docs-image-home',
-  imports: [TranslocoPipe, RouterLink, IconComponent, GsWorldPickerComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    IconComponent,
+    GsAnchorLinkComponent,
+    GsWorldPickerComponent,
+  ],
   templateUrl: './image-home.component.html',
   host: {
     class: 'gs-learn-home',

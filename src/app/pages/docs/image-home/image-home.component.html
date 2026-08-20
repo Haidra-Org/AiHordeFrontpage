@@ -53,9 +53,13 @@
     </div>
   </section>
 
-  <section class="gs-learn-band">
+  <section class="gs-learn-band" id="gs-learn-band-understand">
     <h2 class="gs-guide-head">
       {{ "generate.learn.understand_head" | transloco }}
+      <app-gs-anchor-link
+        targetId="gs-learn-band-understand"
+        [label]="'generate.learn.understand_head' | transloco"
+      />
     </h2>
     <!-- A hairlined list in the rail's grammar rather than a row of cards: the
          three ways in are one list of the same kind of thing, and the leading
@@ -106,9 +110,13 @@
     </div>
   </section>
 
-  <section class="gs-learn-band">
+  <section class="gs-learn-band" id="gs-learn-band-further">
     <h2 class="gs-guide-head">
       {{ "generate.learn.further_head" | transloco }}
+      <app-gs-anchor-link
+        targetId="gs-learn-band-further"
+        [label]="'generate.learn.further_head' | transloco"
+      />
     </h2>
     <!-- Where the reader has got to, once they have got anywhere: how many of
          the techniques are done, and which one comes next in the teaching

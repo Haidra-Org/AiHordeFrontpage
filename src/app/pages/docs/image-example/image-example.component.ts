@@ -17,6 +17,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map, of } from 'rxjs';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   GsIndexRailComponent,
@@ -116,6 +117,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
   imports: [
     TranslocoPipe,
     IconComponent,
+    GsAnchorLinkComponent,
     GsIndexRailComponent,
     GsDoorComponent,
     GsRecipeChipsComponent,

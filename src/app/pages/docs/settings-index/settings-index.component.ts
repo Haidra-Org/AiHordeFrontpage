@@ -11,6 +11,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsFindFieldComponent } from '../../../components/gs-find-field/gs-find-field.component';
 import {
@@ -90,6 +91,7 @@ interface IndexGroup {
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsAnchorLinkComponent,
     GsIndexRailComponent,
     GsFindFieldComponent,
   ],

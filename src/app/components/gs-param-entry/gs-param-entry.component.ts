@@ -23,6 +23,7 @@ import {
   sweepIsTimeline,
 } from '../../content/settings';
 import { IconComponent } from '../icon/icon.component';
+import { GsAnchorLinkComponent } from '../gs-anchor-link/gs-anchor-link.component';
 import { GsDoorComponent } from '../gs-door/gs-door.component';
 import { GsProseComponent } from '../gs-prose/gs-prose.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
@@ -61,6 +62,7 @@ const TRADEOFF_ICONS = {
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsAnchorLinkComponent,
     GsDoorComponent,
     GsProseComponent,
     GsSweepScrubComponent,
@@ -84,7 +86,13 @@ const TRADEOFF_ICONS = {
         /></span>
       }
       @if (mode() === 'page') {
-        <h1 class="gs-ref-title">{{ titleKey() | transloco }}</h1>
+        <!-- The page is the subject, so what there is to share is the page: a
+             fragment hung off the title would be a longer address that arrives
+             in exactly the same place. -->
+        <h1 class="gs-ref-title">
+          {{ titleKey() | transloco }}
+          <app-gs-anchor-link [label]="titleKey() | transloco" />
+        </h1>
       } @else {
         <h2 class="gs-ref-title">{{ titleKey() | transloco }}</h2>
       }

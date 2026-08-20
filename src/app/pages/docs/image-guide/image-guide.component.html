@@ -53,6 +53,10 @@
           </p>
           <h2 class="gs-guide-sec-title">
             {{ "generate.guide.walkthrough_head" | transloco }}
+            <app-gs-anchor-link
+              [targetId]="sectionId('walkthrough')"
+              [label]="'generate.guide.walkthrough_head' | transloco"
+            />
           </h2>
         </header>
 
@@ -97,13 +101,17 @@
     }
 
     @if (visibleSections().length > 0) {
-      <section class="gs-guide-sec">
+      <section class="gs-guide-sec" [id]="sectionId('reference')">
         <header class="gs-guide-sec-head">
           <p class="gs-cap-eyebrow" aria-hidden="true">
             <span class="gs-cap-dot"></span>02
           </p>
           <h2 class="gs-guide-sec-title">
             {{ "generate.guide.reference_head" | transloco }}
+            <app-gs-anchor-link
+              [targetId]="sectionId('reference')"
+              [label]="'generate.guide.reference_head' | transloco"
+            />
           </h2>
           <p class="gs-guide-sec-lead">
             {{ "generate.guide.reference_lead" | transloco }}
@@ -126,6 +134,10 @@
                 }
                 <!-- prettier-ignore -->
                 <span class="gs-guide-head-text">@for (part of entry.title; track $index) {@if (part.hit) {<mark class="gs-find-mark">{{ part.text }}</mark>} @else {{{ part.text }}}}</span>
+                <app-gs-anchor-link
+                  [targetId]="sectionId(section.id)"
+                  [label]="section.labelKey | transloco"
+                />
               </h3>
               <!-- Reading about the dials is half of it; the other half is
                    turning them, which is a page away and needs saying where the

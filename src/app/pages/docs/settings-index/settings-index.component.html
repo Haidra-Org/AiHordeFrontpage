@@ -38,6 +38,10 @@
               ><app-icon [name]="group.icon"
             /></span>
             {{ group.labelKey | transloco }}
+            <app-gs-anchor-link
+              [targetId]="'gs-ref-group-' + group.section"
+              [label]="group.labelKey | transloco"
+            />
           </h2>
 
           <div class="gs-ref-cards">

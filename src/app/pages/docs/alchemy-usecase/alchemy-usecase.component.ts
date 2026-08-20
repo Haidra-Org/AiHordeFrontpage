@@ -11,6 +11,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { AlchemyResultComponent } from '../../../components/alchemy/alchemy-result/alchemy-result.component';
@@ -99,6 +100,7 @@ interface OnwardUseCase {
     TranslocoPipe,
     RouterLink,
     IconComponent,
+    GsAnchorLinkComponent,
     GsParamEntryComponent,
     GsShotViewerComponent,
     AlchemyResultComponent,

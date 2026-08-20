@@ -12,12 +12,20 @@
          empty evidence band would promise pictures the library has not
          published, and the prose above stands on its own without them. -->
     @if (evidenceSettled() && !isGallery() && shots().length > 0) {
-      <section class="gs-ref-evidence" [class]="identity.className">
+      <section
+        class="gs-ref-evidence"
+        [class]="identity.className"
+        id="gs-ref-sec-evidence"
+      >
         <h2 class="gs-guide-head">
           <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
             ><app-icon [name]="identity.icon"
           /></span>
           {{ "alchemy.usecases.evidence_head" | transloco }}
+          <app-gs-anchor-link
+            targetId="gs-ref-sec-evidence"
+            [label]="'alchemy.usecases.evidence_head' | transloco"
+          />
         </h2>
 
         @for (shot of shots(); track shot.form) {
@@ -94,12 +102,20 @@
          detector belongs to, in the order the picker offers them, so the page
          and the panel are the same list. -->
     @if (evidenceSettled() && gallerySource(); as source) {
-      <section class="gs-ref-evidence" [class]="identity.className">
+      <section
+        class="gs-ref-evidence"
+        [class]="identity.className"
+        id="gs-ref-sec-evidence"
+      >
         <h2 class="gs-guide-head">
           <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
             ><app-icon [name]="identity.icon"
           /></span>
           {{ "alchemy.usecases.evidence_head" | transloco }}
+          <app-gs-anchor-link
+            targetId="gs-ref-sec-evidence"
+            [label]="'alchemy.usecases.evidence_head' | transloco"
+          />
         </h2>
 
         <figure class="gs-ref-shot gs-ref-shot--lead">
@@ -135,8 +151,14 @@
         </p>
 
         @for (group of galleryGroups(); track group.id) {
-          <section class="gs-ref-maps-group">
-            <h3 class="gs-ref-maps-head">{{ group.labelKey | transloco }}</h3>
+          <section class="gs-ref-maps-group" [id]="'gs-ref-sec-' + group.id">
+            <h3 class="gs-ref-maps-head">
+              {{ group.labelKey | transloco }}
+              <app-gs-anchor-link
+                [targetId]="'gs-ref-sec-' + group.id"
+                [label]="group.labelKey | transloco"
+              />
+            </h3>
             <p class="gs-ref-maps-intro">{{ group.introKey | transloco }}</p>
 
             <ul class="gs-ref-maps-grid">
