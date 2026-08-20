@@ -66,6 +66,15 @@
         <app-icon name="trash-modern" class="gs-ico-sm" />
         {{ "studio.storage.clear_image" | transloco }}
       </button>
+      <button
+        type="button"
+        class="gs-btn gs-btn--danger"
+        [disabled]="!civitaiCount()"
+        (click)="requestClear('civitai')"
+      >
+        <app-icon name="trash-modern" class="gs-ico-sm" />
+        {{ "studio.storage.clear_civitai" | transloco }}
+      </button>
     </div>
   </div>
 </div>
@@ -91,7 +100,9 @@
           {{
             (pendingClear() === "alchemy"
               ? "studio.storage.confirm_alchemy_body"
-              : "studio.storage.confirm_image_body"
+              : pendingClear() === "civitai"
+                ? "studio.storage.confirm_civitai_body"
+                : "studio.storage.confirm_image_body"
             ) | transloco: { count: pendingCount() }
           }}
         </p>

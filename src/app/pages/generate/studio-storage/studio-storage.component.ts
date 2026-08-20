@@ -9,6 +9,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AlchemyDbService } from '../../../services/alchemy-db.service';
+import { CivitaiCacheService } from '../../../services/civitai-cache.service';
 import { AlchemyQueueService } from '../../../services/alchemy-queue.service';
 import { GenerationDbService } from '../../../services/generation-db.service';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
@@ -16,7 +17,7 @@ import { ToastService } from '../../../services/toast.service';
 import { IconComponent } from '../../../components/icon/icon.component';
 
 /** Which history a pending confirmation is about. */
-type StorageArea = 'alchemy' | 'image';
+type StorageArea = 'alchemy' | 'image' | 'civitai';
 
 /** Bytes to a rounded megabyte, for the usage line. */
 function megabytes(bytes: number): number {
@@ -42,11 +43,14 @@ export class StudioStorageComponent {
   private readonly alchemyQueue = inject(AlchemyQueueService);
   private readonly generationDb = inject(GenerationDbService);
   private readonly generationQueue = inject(GenerationQueueService);
+  private readonly civitaiCache = inject(CivitaiCacheService);
   private readonly toast = inject(ToastService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly alchemyCount = signal<number | null>(null);
   public readonly imageCount = signal<number | null>(null);
+  /** Cached CivitAI model pages; the versions beside them are not counted. */
+  public readonly civitaiCount = signal<number | null>(null);
 
   /**
    * Storage the browser reports for this whole site, not for either history on
@@ -80,11 +84,14 @@ export class StudioStorageComponent {
   }
 
   public pendingCount(): number {
-    return (
-      (this.pendingClear() === 'alchemy'
-        ? this.alchemyCount()
-        : this.imageCount()) ?? 0
-    );
+    switch (this.pendingClear()) {
+      case 'alchemy':
+        return this.alchemyCount() ?? 0;
+      case 'civitai':
+        return this.civitaiCount() ?? 0;
+      default:
+        return this.imageCount() ?? 0;
+    }
   }
 
   public async confirmClear(): Promise<void> {
@@ -96,6 +103,8 @@ export class StudioStorageComponent {
     try {
       if (area === 'alchemy') {
         await this.alchemyQueue.clearHistory();
+      } else if (area === 'civitai') {
+        await this.civitaiCache.clear();
       } else {
         await this.generationQueue.clearHistory();
       }
@@ -116,6 +125,7 @@ export class StudioStorageComponent {
     }
     this.alchemyCount.set(await this.alchemyDb.countJobs());
     this.imageCount.set(await this.generationDb.countJobs());
+    this.civitaiCount.set(await this.civitaiCache.countModels());
 
     const estimate = await navigator.storage?.estimate?.();
     if (estimate?.usage !== undefined && estimate.quota !== undefined) {
