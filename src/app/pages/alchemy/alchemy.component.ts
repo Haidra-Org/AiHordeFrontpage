@@ -43,6 +43,7 @@ import { GsSheetComponent } from '../../components/gs-sheet/gs-sheet.component';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GlossaryService } from '../../services/glossary.service';
 import { SECTION_IDENTITIES } from '../../content/sections';
+import { docsAlchemyUseCaseLink } from '../../content/docs-links';
 import { alchemyTopic, referenceTopic } from '../../content/reference-topics';
 import {
   ALCHEMY_ANALYSIS_FORMS,
@@ -50,6 +51,7 @@ import {
   ALCHEMY_CONTROL_MAP_FORMS,
   ANNOTATION_DETECTOR_GROUPS,
   AnnotationDetectorGroup,
+  annotationDetectorDescriptionKey,
   annotationGroupLabelKey,
   ALCHEMY_ENLARGE_FORMS,
   ALCHEMY_FACE_FIXER_FORMS,
@@ -194,6 +196,8 @@ export class AlchemyComponent {
   public readonly controlMapForms = ALCHEMY_CONTROL_MAP_FORMS;
   public readonly detectorGroups = ANNOTATION_DETECTOR_GROUPS;
   public readonly groupLabelKey = annotationGroupLabelKey;
+  public readonly detectorDescriptionKey = annotationDetectorDescriptionKey;
+  public readonly detectorGalleryLink = docsAlchemyUseCaseLink('control_map');
 
   /** Enlargers split by use case, so their long names get a full line each. */
   private readonly enlargeSubGroups: readonly AlchemyOperationSubGroup[] = [
@@ -299,6 +303,15 @@ export class AlchemyComponent {
   /** The modal holding the request body with nothing stood in for. */
   public readonly fullPayloadOpen = signal(false);
   public readonly activeOperation = signal<AlchemyFormName>('caption');
+
+  /**
+   * The detector the dock is describing, or null while it is describing the
+   * operation. A detector is a choice within the control map operation rather
+   * than an operation of its own, so it borrows the dock instead of adding a
+   * second one: hovering a detector says what that detector reads, and hovering
+   * anything else hands the dock back to the operation.
+   */
+  public readonly activeDetector = signal<AnnotationControlType | null>(null);
 
   /**
    * The operation whose info modal is open, or null. On mobile there is no
@@ -817,6 +830,7 @@ export class AlchemyComponent {
   }
 
   public toggleForm(form: AlchemyFormName): void {
+    this.activeDetector.set(null);
     this.activeOperation.set(form);
     this.selectedForms.update((current) => {
       const next = new Set(current);
@@ -830,7 +844,12 @@ export class AlchemyComponent {
   }
 
   public previewForm(form: AlchemyFormName): void {
+    this.activeDetector.set(null);
     this.activeOperation.set(form);
+  }
+
+  public previewDetector(type: AnnotationControlType): void {
+    this.activeDetector.set(type);
   }
 
   public hasExample(form: AlchemyFormName): boolean {

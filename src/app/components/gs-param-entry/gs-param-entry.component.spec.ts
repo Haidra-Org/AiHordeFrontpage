@@ -235,6 +235,22 @@ describe('GsParamEntryComponent', () => {
     expect(all('.gs-sweep-offer')).toHaveLength(1);
   });
 
+  it('gives peer strips the same card and opens none of them', async () => {
+    // The solver page is about four knobs rather than one with three footnotes.
+    // Opening the first and shrinking the rest would rank them, so every strip
+    // is offered on the same terms and the reader picks which to look at. The
+    // stub library publishes one of the four, which is the one that can be read
+    // off the page here.
+    await setUp({ topic: 'sampler_settings' });
+
+    const folded = all('.gs-sweep-offer');
+    expect(all('.gs-sweep-open')).toHaveLength(0);
+    expect(folded.length).toBeGreaterThan(0);
+    for (const card of folded) {
+      expect(card.classList.contains('gs-cap--film')).toBe(false);
+    }
+  });
+
   it('offers a timeline in the same capsule as every other example', async () => {
     await setUp({ topic: 'steps' });
 

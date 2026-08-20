@@ -235,6 +235,37 @@ describe('DocsAlchemyUseCaseComponent', () => {
     expect(el().textContent).toContain(`What ${UNPUBLISHED} reads.`);
   });
 
+  it('opens a map whole, and shuts the layer again', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    expect(find('.gs-tut-viewer')).toBeNull();
+
+    const trigger = all<HTMLButtonElement>('.gs-ref-map .gs-ref-zoom')[0];
+    trigger.click();
+    fixture.detectChanges();
+
+    const shown = find<HTMLImageElement>('.gs-tut-viewer-img');
+    expect(shown?.getAttribute('src')).toBe(
+      all<HTMLImageElement>('.gs-ref-map img')[0].getAttribute('src'),
+    );
+    expect(find('.gs-tut-viewer-name')?.textContent?.trim()).toBe(DETECTORS[0]);
+
+    find<HTMLButtonElement>('.gs-tut-viewer-x')?.click();
+    fixture.detectChanges();
+    expect(find('.gs-tut-viewer')).toBeNull();
+  });
+
+  it('opens the shared source whole as well', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+
+    find<HTMLButtonElement>('.gs-ref-shot-frame--lead .gs-ref-zoom')?.click();
+    fixture.detectChanges();
+
+    expect(
+      find<HTMLImageElement>('.gs-tut-viewer-img')?.getAttribute('src'),
+    ).toBe(`${ALCHEMY_EVIDENCE_ROOT}/sources/anchor.webp`);
+  });
+
   it('offers the way on to where a control map is used', async () => {
     await setUp('control_map', CONTROL_MAPS);
 

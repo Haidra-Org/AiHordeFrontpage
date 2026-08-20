@@ -100,22 +100,34 @@
       @let activeForm = activeOperation();
       <div class="gs-focus-dock">
         <div class="gs-focus gs-focus--fixed" aria-live="polite">
-          <div class="mb-1 flex items-center gap-2">
-            <span class="gs-focus-name">
-              {{ "alchemy.form_names." + activeForm | transloco }}
-            </span>
-            @if (isUpscalerForm(activeForm)) {
+          @if (activeDetector(); as detector) {
+            <div class="mb-1 flex items-center gap-2">
+              <span class="gs-focus-name gs-mono">{{ detector }}</span>
               <span class="gs-focus-badge">
-                {{ "alchemy.form_meta." + activeForm + ".badge" | transloco }}
+                {{ "alchemy.annotation.detector_badge" | transloco }}
               </span>
-            }
-          </div>
-          <div class="gs-focus-desc">
-            {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
-          </div>
-          <div class="gs-focus-example">
-            {{ "alchemy.form_meta." + activeForm + ".example" | transloco }}
-          </div>
+            </div>
+            <div class="gs-focus-desc">
+              {{ detectorDescriptionKey(detector) | transloco }}
+            </div>
+          } @else {
+            <div class="mb-1 flex items-center gap-2">
+              <span class="gs-focus-name">
+                {{ "alchemy.form_names." + activeForm | transloco }}
+              </span>
+              @if (isUpscalerForm(activeForm)) {
+                <span class="gs-focus-badge">
+                  {{ "alchemy.form_meta." + activeForm + ".badge" | transloco }}
+                </span>
+              }
+            </div>
+            <div class="gs-focus-desc">
+              {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
+            </div>
+            <div class="gs-focus-example">
+              {{ "alchemy.form_meta." + activeForm + ".example" | transloco }}
+            </div>
+          }
         </div>
       </div>
 
@@ -300,6 +312,10 @@
                       <p class="gs-sublabel">
                         {{ "alchemy.annotation.detector_hint" | transloco }}
                       </p>
+                      <a class="gs-textlink" [routerLink]="detectorGalleryLink">
+                        <app-icon name="photo" class="gs-ico-sm" />
+                        {{ "alchemy.annotation.detector_gallery" | transloco }}
+                      </a>
                       @for (detectors of detectorGroups; track detectors.id) {
                         <div class="alchemy-detectors__group">
                           <div class="alchemy-detectors__group-head">
@@ -327,6 +343,11 @@
                                 [class.gs-op--selected]="
                                   isDetectorSelected(type)
                                 "
+                                [attr.title]="
+                                  detectorDescriptionKey(type) | transloco
+                                "
+                                (mouseenter)="previewDetector(type)"
+                                (focusin)="previewDetector(type)"
                               >
                                 <input
                                   type="checkbox"

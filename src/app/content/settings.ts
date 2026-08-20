@@ -140,6 +140,16 @@ export interface SettingSweeps {
    */
   alsoStrips?: readonly SweepStripRef[];
   /**
+   * Whether the further strips are peers of the first rather than footnotes to
+   * it. A setting whose page is about one knob has one picture and the rest are
+   * more about it, so they take the compact card; a page that is about four
+   * knobs at once has four subjects of equal standing, and singling one out as
+   * the page's evidence would say the other three matter less. Peers all take
+   * the full card, and none of them opens itself: there is no one picture for
+   * the page to lead with.
+   */
+  coequal?: boolean;
+  /**
    * The two-axis plate offered beside the strip. A grid answers "how does this
    * interact with the setting next to it", which is a second question rather
    * than a fuller answer to the first, so two settings can share one plate.
@@ -538,7 +548,8 @@ export const SETTINGS: readonly SettingEntry[] = [
     // The solver knobs the contract exposes per sampler: eta, noise scale,
     // churn and its window, solver order and solver type. One page for all of
     // them, because a reader meets them as one disclosure and each strip holds
-    // every other knob at its default.
+    // every other knob at its default. No knob here is the subject and the rest
+    // its supporting evidence, so the four strips stand as peers.
     id: 'sampler_settings',
     section: 'sampling',
     reference: {
@@ -551,6 +562,7 @@ export const SETTINGS: readonly SettingEntry[] = [
         { parameter: 'sampler_s_churn' },
         { parameter: 'sampler_solver_type' },
       ],
+      coequal: true,
     },
   },
   // The knobs themselves, so a strip about one of them is named after it rather
@@ -920,6 +932,11 @@ export function settingSweepStrip(id: string): string | null {
 /** The further strips shown under a setting's primary one, in reading order. */
 export function settingSweepAlsoStrips(id: string): readonly SweepStripRef[] {
   return settingEntry(id)?.sweeps?.alsoStrips ?? [];
+}
+
+/** Whether a setting's strips stand as peers rather than one and its footnotes. */
+export function settingSweepsAreCoequal(id: string): boolean {
+  return settingEntry(id)?.sweeps?.coequal ?? false;
 }
 
 /** The two-axis plate a setting can offer beside its strip, if there is one. */

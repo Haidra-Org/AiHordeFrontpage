@@ -171,6 +171,13 @@ export function annotationGroupLabelKey(id: string): string {
   return `alchemy.annotation.group_${id}`;
 }
 
+/** The i18n key describing what one detector reads out of the picture. */
+export function annotationDetectorDescriptionKey(
+  type: AnnotationControlType,
+): string {
+  return `alchemy.annotation.detector.${type}`;
+}
+
 export interface AlchemyUseCase {
   id: AlchemyUseCaseId;
   /**

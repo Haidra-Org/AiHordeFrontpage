@@ -4,13 +4,15 @@ import {
   computed,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ALCHEMY_USE_CASES,
@@ -60,6 +62,13 @@ interface ControlMapGroup {
   tiles: readonly ControlMapTile[];
 }
 
+/** A picture of the gallery, opened at the size the grid cannot give it. */
+interface EnlargedMap {
+  src: string;
+  /** What the picture is: the detector's name, or the source's own label. */
+  label: string;
+}
+
 /** One way onwards to the next thing the studio is used for. */
 interface OnwardUseCase {
   id: string;
@@ -79,7 +88,13 @@ interface OnwardUseCase {
  */
 @Component({
   selector: 'app-docs-alchemy-usecase',
-  imports: [TranslocoPipe, RouterLink, IconComponent, GsParamEntryComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    IconComponent,
+    GsParamEntryComponent,
+    GsShotViewerComponent,
+  ],
   templateUrl: './alchemy-usecase.component.html',
   host: {
     class: 'gs-ref-page',
@@ -90,6 +105,7 @@ export class DocsAlchemyUseCaseComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly evidence = inject(AlchemyEvidenceService);
+  private readonly transloco = inject(TranslocoService);
 
   public readonly indexLink = DOCS_ALCHEMY;
   public readonly studioLink = STUDIO_ALCHEMY;
@@ -111,6 +127,16 @@ export class DocsAlchemyUseCaseComponent {
     const useCase = this.useCase();
     return useCase ? alchemyTopic(useCase.id) : null;
   });
+
+  /** The gallery picture on the enlarging layer, or null while it is shut. */
+  public readonly enlargedMap = signal<EnlargedMap | null>(null);
+
+  /**
+   * The tile that opened the layer, so closing hands focus back to it. Held as
+   * the element rather than as an index because the grid is thirty-four
+   * triggers across eight groups and the layer only ever needs the one.
+   */
+  private enlargedFrom: HTMLElement | null = null;
 
   /** True once the library has answered, whichever way it answered. */
   public readonly evidenceSettled = this.evidence.isSettled;
@@ -181,6 +207,33 @@ export class DocsAlchemyUseCaseComponent {
       }),
     }));
   });
+
+  /** Open one map whole. The press is on the picture, so the picture is the way. */
+  public openMap(src: string, label: string, event: Event): void {
+    const trigger = event.currentTarget;
+    this.enlargedFrom = trigger instanceof HTMLElement ? trigger : null;
+    this.enlargedMap.set({ src, label });
+  }
+
+  /**
+   * Open the one picture every map was read out of. It is named by the label
+   * the frame already wears, which the template cannot hand over: a pipe is not
+   * allowed in an action.
+   */
+  public openSource(src: string, event: Event): void {
+    this.openMap(
+      src,
+      this.transloco.translate('alchemy.usecases.evidence_source'),
+      event,
+    );
+  }
+
+  public closeMap(): void {
+    const trigger = this.enlargedFrom;
+    this.enlargedFrom = null;
+    this.enlargedMap.set(null);
+    trigger?.focus();
+  }
 
   private readonly neighbours = computed(() => {
     const at = ALCHEMY_USE_CASES.findIndex(

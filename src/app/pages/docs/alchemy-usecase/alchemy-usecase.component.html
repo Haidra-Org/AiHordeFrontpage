@@ -94,12 +94,23 @@
 
         <figure class="gs-ref-shot gs-ref-shot--lead">
           <span class="gs-ref-shot-frame gs-ref-shot-frame--lead">
-            <img
-              [src]="source"
-              [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
-              loading="lazy"
-              decoding="async"
-            />
+            <button
+              type="button"
+              class="gs-ref-zoom"
+              [attr.aria-label]="
+                'alchemy.usecases.control_map.enlarge'
+                  | transloco
+                    : { name: 'alchemy.usecases.evidence_source' | transloco }
+              "
+              (click)="openSource(source, $event)"
+            >
+              <img
+                [src]="source"
+                [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
+                loading="lazy"
+                decoding="async"
+              />
+            </button>
             <span class="gs-ref-shot-label">
               {{ "alchemy.usecases.evidence_source" | transloco }}
             </span>
@@ -123,15 +134,25 @@
                 <li>
                   <figure class="gs-ref-map">
                     @if (tile.result; as result) {
-                      <img
-                        [src]="result"
-                        [alt]="
-                          'alchemy.usecases.control_map.map_alt'
-                            | transloco: { detector: tile.type }
+                      <button
+                        type="button"
+                        class="gs-ref-zoom"
+                        [attr.aria-label]="
+                          'alchemy.usecases.control_map.enlarge'
+                            | transloco: { name: tile.type }
                         "
-                        loading="lazy"
-                        decoding="async"
-                      />
+                        (click)="openMap(result, tile.type, $event)"
+                      >
+                        <img
+                          [src]="result"
+                          [alt]="
+                            'alchemy.usecases.control_map.map_alt'
+                              | transloco: { detector: tile.type }
+                          "
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </button>
                     } @else {
                       <span class="gs-ref-map-gap">
                         {{
@@ -154,6 +175,14 @@
           </section>
         }
       </section>
+    }
+
+    @if (enlargedMap(); as enlarged) {
+      <app-gs-shot-viewer
+        [src]="enlarged.src"
+        [label]="enlarged.label"
+        (closed)="closeMap()"
+      />
     }
 
     <a class="gs-ref-full" [routerLink]="studioLink">

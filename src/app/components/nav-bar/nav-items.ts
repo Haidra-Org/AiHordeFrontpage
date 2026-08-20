@@ -24,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
     // top-level entries they ran into the theme control.
     children: [
       { labelKey: 'docs.area_image', routerLink: '/docs/image/' },
+      { labelKey: 'docs.area_alchemy', routerLink: '/docs/alchemy/' },
       { labelKey: 'docs.nav_settings', routerLink: '/docs/image/settings/' },
       { labelKey: 'faq', routerLink: '/faq/' },
       { labelKey: 'api', href: '/api/' },

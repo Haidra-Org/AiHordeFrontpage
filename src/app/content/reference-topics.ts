@@ -24,6 +24,7 @@ import {
   settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
+  settingSweepsAreCoequal,
   settingTitleKey,
 } from './settings';
 
@@ -67,6 +68,8 @@ export interface ReferenceTopic {
   glossaryTerms: readonly string[];
   strip: string | null;
   alsoStrips: readonly SweepStripRef[];
+  /** Whether the further strips stand as peers of the first rather than under it. */
+  coequalStrips: boolean;
   grid: string | null;
   /**
    * The named things the entry is about, where its subject is a family: the
@@ -140,6 +143,7 @@ function settingTopicFor(id: string): ReferenceTopic | null {
     glossaryTerms: reference?.glossaryTerms ?? [],
     strip: settingSweepStrip(id),
     alsoStrips: settingSweepAlsoStrips(id),
+    coequalStrips: settingSweepsAreCoequal(id),
     grid: settingSweepGrid(id),
     variants: [],
   };
@@ -174,6 +178,7 @@ function alchemyTopicFor(id: string): ReferenceTopic | null {
     glossaryTerms: [],
     strip: useCase.strip ?? null,
     alsoStrips: [],
+    coequalStrips: false,
     grid: null,
     variants: useCase.forms.map((form) => ({
       id: form,

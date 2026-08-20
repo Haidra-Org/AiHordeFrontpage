@@ -199,7 +199,10 @@ const TRADEOFF_ICONS = {
          pictures to bury, so they are already open on it; the dock and the sheet
          sit beside something else the reader is doing and keep the offer. -->
     @if (sweepParameter(); as parameter) {
-      <app-gs-sweep-scrub [parameter]="parameter" [startExpanded]="onPage()" />
+      <app-gs-sweep-scrub
+        [parameter]="parameter"
+        [startExpanded]="opensItself()"
+      />
     }
     <!-- Further evidence about the same setting, under the strip of the setting
          itself: the reader has met the range before they are shown what one
@@ -207,7 +210,9 @@ const TRADEOFF_ICONS = {
          and stays full size; a second scene of the same setting is a footnote to
          it and takes the compact card, so a second capsule does not read as a
          second subject. A timeline is a different kind of picture rather than
-         more of the same one, so it keeps the full capsule and is introduced. -->
+         more of the same one, so it keeps the full capsule and is introduced.
+         Where the strips are peers there is no footnote among them and they all
+         take the full card. -->
     @for (also of alsoStrips(); track also.parameter + (also.scene ?? '')) {
       @if (also.timeline) {
         <p class="gs-ref-strip-lead">
@@ -217,7 +222,7 @@ const TRADEOFF_ICONS = {
       <app-gs-sweep-scrub
         [parameter]="also.parameter"
         [sceneId]="also.scene"
-        [register]="also.timeline ? 'full' : 'filmcard'"
+        [register]="also.register"
       />
     }
     @if (sweepGridParameter(); as parameter) {
@@ -393,11 +398,31 @@ export class GsParamEntryComponent {
    * in words, because it is the only one whose frames are not answers to the
    * question the entry has just been asking.
    */
-  public readonly alsoStrips = computed(() =>
-    (this.entry()?.alsoStrips ?? []).map((also) => ({
-      ...also,
-      timeline: sweepIsTimeline(also.parameter),
-    })),
+  public readonly alsoStrips = computed(() => {
+    const coequal = this.coequalStrips();
+    return (this.entry()?.alsoStrips ?? []).map((also) => {
+      const timeline = sweepIsTimeline(also.parameter);
+      return {
+        ...also,
+        timeline,
+        register: timeline || coequal ? 'full' : 'filmcard',
+      };
+    });
+  });
+
+  /** Whether every strip on the entry is a subject in its own right. */
+  public readonly coequalStrips = computed(
+    () => this.entry()?.coequalStrips ?? false,
+  );
+
+  /**
+   * Whether the primary strip is open before it is asked for. The page opens
+   * the one picture its whole subject is about; where the strips are peers there
+   * is no one picture, and opening the first would make the other three read as
+   * afterthoughts to it.
+   */
+  public readonly opensItself = computed(
+    () => this.onPage() && !this.coequalStrips(),
   );
   public readonly sweepGridParameter = computed(
     () => this.entry()?.grid ?? null,

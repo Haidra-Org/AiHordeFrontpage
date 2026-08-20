@@ -10,6 +10,7 @@ import {
   alchemyUseCaseLeadKey,
   alchemyUseCaseNoteKey,
   alchemyUseCaseTitleKey,
+  annotationDetectorDescriptionKey,
   annotationGroupLabelKey,
 } from './alchemy-usecases';
 import {
@@ -189,6 +190,15 @@ describe('annotation detector groups', () => {
       (group) =>
         !translations[`alchemy.usecases.control_map.group_${group.id}`],
     ).map((group) => group.id);
+
+    expect(missing).toEqual([]);
+  });
+
+  it('says in English what each detector reads out of the picture', () => {
+    const translations = en as Record<string, string>;
+    const missing = grouped.filter(
+      (type) => !translations[annotationDetectorDescriptionKey(type)],
+    );
 
     expect(missing).toEqual([]);
   });

@@ -772,6 +772,37 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     }
   });
 
+  it('describes the detector under the pointer in the dock, then hands it back', () => {
+    component.toggleForm('annotation');
+    fixture.detectChanges();
+
+    const dock = () =>
+      fixture.nativeElement.querySelector('.gs-focus--fixed') as HTMLElement;
+    expect(dock().textContent).toContain('alchemy.form_meta.annotation.desc');
+
+    const chips = [
+      ...fixture.nativeElement.querySelectorAll(
+        '.alchemy-detectors .gs-op--chip',
+      ),
+    ] as HTMLElement[];
+    const depth = chips.find(
+      (chip) => chip.textContent?.trim() === 'depth',
+    ) as HTMLElement;
+
+    depth.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    expect(dock().textContent).toContain('alchemy.annotation.detector.depth');
+    expect(dock().textContent).not.toContain(
+      'alchemy.form_meta.annotation.desc',
+    );
+
+    // Moving back onto an operation is what returns the dock to it: there is no
+    // hover to leave on a phone, so nothing is said only by leaving.
+    component.previewForm('annotation');
+    fixture.detectChanges();
+    expect(dock().textContent).toContain('alchemy.form_meta.annotation.desc');
+  });
+
   it('offers a chip per detector once a control map is asked for', () => {
     expect(
       fixture.nativeElement.querySelector('.alchemy-detectors'),
