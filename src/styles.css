@@ -114,6 +114,7 @@
 
 /* Generate (image generation) page */
 @import "./styles/_generate.css";
+@import "./styles/_civitai.css";
 
 /* Status page */
 @import "./styles/_status.css";

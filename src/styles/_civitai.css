@@ -1,0 +1,163 @@
+/* CivitAI add-ons: the LoRA and embedding rows, and the picker that fills them.
+
+   Deliberately unscoped, unlike the rest of the studio's rules. The style editor
+   edits the same selections through the same components and does not live inside
+   .gen-studio, so a scoped rule would leave it unstyled.
+
+   The design tokens these rules read (--gs-purple, --gs-border and the rest) are
+   still declared on .gen-studio. Inside the studio they resolve by inheritance
+   exactly as before. Anywhere else they do not yet, so a surface outside the
+   studio has to bring its own token scope before mounting these. */
+
+/* ------- LoRA / TI addons ------------------------------------------- */
+.gs-civit-link {
+  font-size: 11px;
+  color: var(--gs-purple);
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+}
+.gs-civit-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.gs-addon {
+  border: 1px solid var(--gs-border);
+  border-radius: 9px;
+  padding: 9px 10px;
+}
+.gs-addon-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex: none;
+}
+.gs-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.gs-tag--lora {
+  background: var(--gs-purple-tint);
+  color: var(--gs-purple);
+}
+.gs-tag--ti {
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gs-addon-sub {
+  font-size: 10px;
+  color: var(--gs-muted);
+}
+.gs-addon-remove {
+  color: var(--gs-muted);
+  font-size: 13px;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  line-height: 1;
+}
+
+.gs-civit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-content: start;
+}
+.gs-civit-card {
+  border: 1px solid var(--gs-border);
+  border-radius: 11px;
+  overflow: hidden;
+  background: var(--gs-panel);
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
+}
+.gs-civit-card--added {
+  border-color: var(--gs-blue);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+.gs-civit-thumb {
+  position: relative;
+  height: 96px;
+  overflow: hidden;
+}
+.gs-civit-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gs-civit-added-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  background: var(--gs-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.gs-civit-meta {
+  padding: 10px 11px;
+}
+.gs-civit-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gs-civit-sub {
+  font-size: 10.5px;
+  color: var(--gs-muted);
+  margin: 3px 0 7px;
+}
+.gs-civit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.gs-civit-tags {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+.gs-civit-tag {
+  font-size: 9.5px;
+  background: var(--gs-seg-track);
+  color: var(--gs-label);
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+.gs-civit-add {
+  flex: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gs-blue);
+  border: 1px solid var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+  padding: 3px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gs-civit-add--remove {
+  color: var(--gs-label);
+  border-color: var(--gs-border);
+  background: none;
+  font-weight: 600;
+}
