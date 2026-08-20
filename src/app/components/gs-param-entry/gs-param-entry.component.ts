@@ -405,7 +405,8 @@ export class GsParamEntryComponent {
       return {
         ...also,
         timeline,
-        register: timeline || coequal ? 'full' : 'filmcard',
+        register:
+          timeline || coequal ? ('full' as const) : ('filmcard' as const),
       };
     });
   });
