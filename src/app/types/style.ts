@@ -31,9 +31,9 @@ export interface StyleLoraConfig {
   clip?: number;
   /** If true, will inject trigger into prompt. */
   inject_trigger?: string;
-  /** If true, the lora will only be downloaded if it matches this SHA256. */
+  /** Pins the file: the lora is used only if its hash matches this SHA256. */
   sha256?: string;
-  /** If true, the lora will only be used if model is SDXL. */
+  /** Read `name` as a CivitAI version ID rather than a model-page ID. */
   is_version?: boolean;
 }
 

@@ -295,8 +295,10 @@ describe('reference index', () => {
     const grouped = new Set(SETTINGS_INDEX.flatMap((group) => group.ids));
 
     expect(grouped.has('model')).toBe(false);
-    expect(grouped.has('tis')).toBe(false);
     expect(grouped.has('post')).toBe(false);
+    // Embeddings used to sit here as an undocumented setting. They have a page
+    // now, so the index has to list them like any other.
+    expect(grouped.has('tis')).toBe(true);
     // The prompt box used to be one of these. It is a chapter now, so the
     // index has to list it like any other page the book holds.
     expect(grouped.has('prompt')).toBe(true);

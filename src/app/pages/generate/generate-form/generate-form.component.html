@@ -1446,6 +1446,14 @@
                 </div>
               </div>
             }
+            @if (tis().length > 0) {
+              <div class="gs-sec-head gs-sec-head--sub">
+                <h3 class="gs-card-title--sm">
+                  {{ "generate.help.tis.title" | transloco }}
+                </h3>
+                <app-gs-help topic="tis" />
+              </div>
+            }
             @for (ti of tis(); track ti.name; let i = $index) {
               <div class="gs-addon">
                 <div class="mb-2 flex items-center gap-2">

@@ -370,11 +370,23 @@ export const SETTINGS: readonly SettingEntry[] = [
     section: 'model',
     reference: {
       range: { min: -5, max: 5, typical: '1' },
-      related: ['requirements'],
+      related: ['tis', 'requirements'],
       links: [MODELS_LINK],
     },
   },
-  { id: 'tis', section: 'model', labelKey: 'generate.results.meta_row_tis' },
+  {
+    // An embedding is not a weaker LoRA: it teaches one prompt word rather than
+    // changing how the model paints, and the horde names it by model page
+    // rather than by version. Both differences want saying somewhere.
+    id: 'tis',
+    section: 'model',
+    labelKey: 'generate.results.meta_row_tis',
+    reference: {
+      range: { min: -5, max: 5, typical: '1' },
+      related: ['loras', 'requirements'],
+      links: [MODELS_LINK],
+    },
+  },
   {
     // The suggested lines come out of the selected model's own reference entry,
     // so the question they answer is "what is this model asking for" rather than

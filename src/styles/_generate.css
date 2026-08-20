@@ -1951,6 +1951,15 @@
   align-items: center;
   gap: var(--gs-space-2);
 }
+/* A heading for a group inside a card, such as the embeddings among the LoRA
+   rows. Set apart from the rows above it so the two kinds of add-on read as
+   separate lists rather than one interleaved one. */
+.gen-studio .gs-sec-head--sub {
+  margin-top: var(--gs-space-1);
+  padding-top: var(--gs-space-2);
+  border-top: 1px solid var(--gs-border-soft);
+}
+
 /* Only in a row does the title take the free space, pushing whatever shares the
    row (a lock badge, an action link) to the far end. On its own in a column
    card it is already full width, and growing there would stretch it vertically. */
