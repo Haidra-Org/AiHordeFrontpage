@@ -8,6 +8,15 @@ import {
   type ModelRequirements,
 } from '../../services/model-reference.service';
 import {
+  activeLoras,
+  HORDE_MAX_LORAS,
+  HORDE_MAX_TIS,
+} from '../../types/civitai-asset';
+import {
+  civitaiBaseModelMatchesBaseline,
+  baselineForCivitaiBaseModel,
+} from '../../services/civitai-base-models';
+import {
   cfgAdvisory,
   clipSkipAdvisory,
   hiresUnneededHint,
@@ -41,6 +50,7 @@ export type FieldAnchorId =
   | 'sampler'
   | 'scheduler'
   | 'clip_skip'
+  | 'loras'
   | 'source'
   | 'source_mode'
   | 'control_type'
@@ -180,6 +190,91 @@ export function violatedCompatRules(
 }
 
 /**
+ * How many names a warning lists before it stops naming them. Past a few the
+ * sentence stops being readable and the reader is going to open the card
+ * anyway.
+ */
+const MAX_NAMED_ASSETS = 3;
+
+/** More selections than the horde will accept, so the request is truncated. */
+export function loraLimitWarning(
+  value: GenerateFormValue,
+): RequestWarning | null {
+  const count = value.loras.length;
+  if (count <= HORDE_MAX_LORAS) {
+    return null;
+  }
+  return {
+    id: 'lora_limit',
+    section: 'model',
+    anchor: 'loras',
+    key: 'generate.lint.lora_limit',
+    params: { count, max: HORDE_MAX_LORAS, dropped: count - HORDE_MAX_LORAS },
+  };
+}
+
+/** As {@link loraLimitWarning}, for textual inversions and their own cap. */
+export function tiLimitWarning(
+  value: GenerateFormValue,
+): RequestWarning | null {
+  const count = value.tis.length;
+  if (count <= HORDE_MAX_TIS) {
+    return null;
+  }
+  return {
+    id: 'ti_limit',
+    section: 'model',
+    anchor: 'loras',
+    key: 'generate.lint.ti_limit',
+    params: { count, max: HORDE_MAX_TIS, dropped: count - HORDE_MAX_TIS },
+  };
+}
+
+/**
+ * A selected LoRA trained for a different model family. Applying one produces
+ * noise or nothing at all, and the horde accepts the request either way, so
+ * without this the only symptom is a picture that ignored the LoRA.
+ *
+ * Only the selections actually being sent are checked: warning about one parked
+ * past the cap stacks noise on top of the truncation warning already firing.
+ * The rule is silent wherever it cannot be sure — no baseline known, no base
+ * model recorded on the entry, or a family the table has no opinion about —
+ * because a false warning against a working combination is worse than none.
+ */
+export function loraBaselineWarning(
+  value: GenerateFormValue,
+  baseline: string | null,
+): RequestWarning | null {
+  if (baseline === null) {
+    return null;
+  }
+  const mismatched = activeLoras(value.loras).filter(
+    (lora) =>
+      lora.baseModel !== undefined &&
+      baselineForCivitaiBaseModel(lora.baseModel) !== null &&
+      !civitaiBaseModelMatchesBaseline(lora.baseModel, baseline),
+  );
+  if (mismatched.length === 0) {
+    return null;
+  }
+  const named = mismatched
+    .slice(0, MAX_NAMED_ASSETS)
+    .map((lora) => lora.label ?? lora.name);
+  const extra = mismatched.length - named.length;
+  return {
+    id: 'lora_baseline',
+    section: 'model',
+    anchor: 'loras',
+    key: 'generate.lint.lora_baseline',
+    params: {
+      names: named.join(', '),
+      count: mismatched.length,
+      extra,
+    },
+  };
+}
+
+/**
  * Turn a field's one advisory line into a warning, or null where the field has
  * no line or its line does not contradict the form. Every card's inline line
  * comes from the same per-field resolvers, so the count beside Generate is
@@ -267,6 +362,10 @@ export function evaluateRequestLint(
     ),
   );
 
+  push(loraLimitWarning(value));
+  push(tiLimitWarning(value));
+  push(loraBaselineWarning(value, baseline));
+
   for (const rule of violatedCompatRules(input)) {
     warnings.push({
       id: rule.id,
@@ -277,6 +376,18 @@ export function evaluateRequestLint(
     });
   }
   return warnings;
+}
+
+/**
+ * The warnings about one control. The LoRA card reads this rather than its whole
+ * section, because the model area also owns the model select and a warning about
+ * that must not surface inside the LoRA card.
+ */
+export function warningsAtAnchor(
+  warnings: readonly RequestWarning[],
+  anchor: FieldAnchorId,
+): readonly RequestWarning[] {
+  return warnings.filter((warning) => warning.anchor === anchor);
 }
 
 /** The warnings belonging to one panel area, for that card's inline lines. */
@@ -330,6 +441,9 @@ const REJECTION_ANCHORS: ReadonlyMap<string, FieldAnchorId> = new Map([
   ['KudosUpfront', 'generate'],
   ['InsufficientKudos', 'generate'],
   ['TooManyPrompts', 'generate'],
+  ['TooManyLoras', 'loras'],
+  ['TooManyTIs', 'loras'],
+  ['BadLoraVersion', 'loras'],
   ['InvalidModel', 'model'],
   ['ModelNotFound', 'model'],
   ['UnknownModel', 'model'],
@@ -406,6 +520,14 @@ export function rejectionWatchValue(
       return `${value.n}|${value.prompt}`;
     case 'model':
       return value.model;
+    case 'loras':
+      return [
+        value.loras.length,
+        value.tis.length,
+        ...value.loras.map(
+          (lora) => `${lora.is_version === true}:${lora.name}`,
+        ),
+      ].join('|');
     case 'advanced_sampling':
       return SAMPLER_SETTING_NAMES.map((name) => value[name]).join('|');
     default:

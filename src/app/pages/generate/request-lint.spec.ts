@@ -8,9 +8,11 @@ import {
   rejectionField,
   rejectionWatchValue,
   violatedCompatRules,
+  warningsAtAnchor,
   warningsInSection,
 } from './request-lint';
 import { DEFAULT_GENERATE_FORM_VALUE } from './generate-form.model';
+import type { LoraSelection } from '../../types/civitai-asset';
 import { coerceSamplerConstraints } from '../../types/sampler-constraints';
 import live from '../../testing/fixtures/sampler-constraints.stub.json';
 
@@ -387,5 +389,143 @@ describe('rejectionWatchValue', () => {
         scheduler: 'normal',
       }),
     ).not.toBe(rejectionWatchValue('scheduler', value));
+  });
+});
+
+describe('LoRA and embedding warnings', () => {
+  const lora = (
+    name: string,
+    extra: Partial<LoraSelection> = {},
+  ): LoraSelection => ({ name, model: 1, clip: 1, ...extra });
+
+  const withLoras = (loras: LoraSelection[], baseline: string | null = null) =>
+    lintInput({
+      value: { ...DEFAULT_GENERATE_FORM_VALUE, loras },
+      baseline,
+    });
+
+  const ids = (input: RequestLintInput): string[] =>
+    evaluateRequestLint(input).map((warning) => warning.id);
+
+  it('says nothing while the selection fits', () => {
+    const five = ['a', 'b', 'c', 'd', 'e'].map((n) => lora(n));
+    expect(ids(withLoras(five))).not.toContain('lora_limit');
+  });
+
+  it('counts what will be dropped once the cap is passed', () => {
+    const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((n) => lora(n));
+    const warning = evaluateRequestLint(withLoras(seven)).find(
+      (entry) => entry.id === 'lora_limit',
+    );
+
+    expect(warning).toMatchObject({
+      anchor: 'loras',
+      section: 'model',
+      params: { count: 7, max: 5, dropped: 2 },
+    });
+  });
+
+  it('warns about too many embeddings at their own, larger cap', () => {
+    const tis = Array.from({ length: 21 }, (_, i) => ({
+      name: `ti-${i}`,
+      strength: 1,
+    }));
+    const warning = evaluateRequestLint(
+      lintInput({ value: { ...DEFAULT_GENERATE_FORM_VALUE, tis } }),
+    ).find((entry) => entry.id === 'ti_limit');
+
+    expect(warning?.params).toMatchObject({ count: 21, max: 20, dropped: 1 });
+  });
+
+  describe('a LoRA trained for another model family', () => {
+    it('is named when both families are known and differ', () => {
+      const warning = evaluateRequestLint(
+        withLoras(
+          [lora('1', { baseModel: 'Pony', label: 'Pony Detailer' })],
+          'stable_diffusion_1',
+        ),
+      ).find((entry) => entry.id === 'lora_baseline');
+
+      expect(warning).toMatchObject({
+        anchor: 'loras',
+        params: { names: 'Pony Detailer', count: 1 },
+      });
+    });
+
+    it('says nothing when the families agree', () => {
+      expect(
+        ids(
+          withLoras([lora('1', { baseModel: 'Pony' })], 'stable_diffusion_xl'),
+        ),
+      ).not.toContain('lora_baseline');
+    });
+
+    it('stays quiet wherever it cannot be sure', () => {
+      // No model picked, nothing recorded on the entry, and a family the table
+      // has no opinion about: a false warning is worse than none.
+      expect(
+        ids(withLoras([lora('1', { baseModel: 'Pony' })], null)),
+      ).not.toContain('lora_baseline');
+      expect(ids(withLoras([lora('1')], 'stable_diffusion_1'))).not.toContain(
+        'lora_baseline',
+      );
+      expect(
+        ids(
+          withLoras([lora('1', { baseModel: 'Chroma' })], 'stable_diffusion_1'),
+        ),
+      ).not.toContain('lora_baseline');
+    });
+
+    it('ignores a selection that is not being sent anyway', () => {
+      const loras = [
+        ...['a', 'b', 'c', 'd', 'e'].map((n) => lora(n)),
+        lora('6', { baseModel: 'Pony' }),
+      ];
+      // The sixth is already covered by the truncation warning; naming its base
+      // model too would stack noise on a selection that is not being sent.
+      expect(ids(withLoras(loras, 'stable_diffusion_1'))).not.toContain(
+        'lora_baseline',
+      );
+    });
+
+    it('stops naming names past a handful', () => {
+      const many = ['1', '2', '3', '4'].map((n) =>
+        lora(n, { baseModel: 'Pony', label: `L${n}` }),
+      );
+      const warning = evaluateRequestLint(
+        withLoras(many, 'stable_diffusion_1'),
+      ).find((entry) => entry.id === 'lora_baseline');
+
+      expect(warning?.params).toMatchObject({
+        names: 'L1, L2, L3',
+        count: 4,
+        extra: 1,
+      });
+    });
+  });
+
+  it('gathers the warnings for one card by the control they are about', () => {
+    const seven = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((n) => lora(n));
+    const warnings = evaluateRequestLint(withLoras(seven));
+
+    expect(warningsAtAnchor(warnings, 'loras').map((w) => w.id)).toEqual([
+      'lora_limit',
+    ]);
+    expect(warningsAtAnchor(warnings, 'model')).toEqual([]);
+  });
+
+  it('places the asset rejections the horde returns at the LoRA card', () => {
+    for (const code of ['TooManyLoras', 'TooManyTIs', 'BadLoraVersion']) {
+      expect(rejectionField(code, 'nope')?.anchor).toBe('loras');
+    }
+  });
+
+  it('clears an asset rejection once the selection changes', () => {
+    const before = { ...DEFAULT_GENERATE_FORM_VALUE, loras: [lora('a')] };
+    const after = { ...DEFAULT_GENERATE_FORM_VALUE, loras: [lora('b')] };
+
+    expect(rejectionWatchValue('loras', before)).not.toBe(
+      rejectionWatchValue('loras', after),
+    );
   });
 });

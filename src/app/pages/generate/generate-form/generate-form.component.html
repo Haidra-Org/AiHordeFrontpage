@@ -1337,6 +1337,7 @@
           <section
             class="gs-card gs-sec--model flex flex-col gap-3"
             aria-labelledby="gs-card-loras"
+            appTutAnchor="loras"
           >
             <div class="gs-sec-head">
               <h2 id="gs-card-loras" class="gs-card-title">
@@ -1488,6 +1489,12 @@
                 {{ "generate.form.loras_empty" | transloco }}
               </p>
             }
+            <ng-container
+              *ngTemplateOutlet="
+                lintLines;
+                context: { warnings: loraWarnings() }
+              "
+            />
           </section>
 
           <!-- Post-process + Output -->

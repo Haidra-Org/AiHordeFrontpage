@@ -113,6 +113,7 @@ import {
   FieldAnchorId,
   FieldRejection,
   RequestWarning,
+  warningsAtAnchor,
   warningsInSection,
 } from '../request-lint';
 import type { SectionId } from '../../../content/sections';
@@ -1671,6 +1672,15 @@ export class GenerateFormComponent implements OnInit {
   /** The warnings belonging to one card, for its own inline lines. */
   public warningsFor(section: SectionId): readonly RequestWarning[] {
     return warningsInSection(this.lintWarnings(), section);
+  }
+
+  /**
+   * The warnings about the LoRA card's own controls. Read by anchor rather than
+   * by section: the model area also owns the model select, and a warning about
+   * that belongs at the select, not among the add-ons.
+   */
+  public loraWarnings(): readonly RequestWarning[] {
+    return warningsAtAnchor(this.lintWarnings(), 'loras');
   }
 
   /**
