@@ -253,48 +253,4 @@ describe('CivitaiService', () => {
     if (result.kind !== 'error') return;
     expect(result.error.status).toBe(500);
   });
-
-  describe('resolving a bare identifier to a name', () => {
-    it('joins a version to its model, which alone means nothing', async () => {
-      const promise = firstValueFrom(service.resolveName('987', true));
-      http
-        .expectOne('https://civitai.com/api/v1/model-versions/987')
-        .flush({ id: 987, name: 'v2.0', model: { name: 'Detail Tweaker' } });
-
-      expect(await promise).toBe('Detail Tweaker · v2.0');
-    });
-
-    it('reads a model page by its own name', async () => {
-      const promise = firstValueFrom(service.resolveName('123', false));
-      http
-        .expectOne('https://civitai.com/api/v1/models/123')
-        .flush({ id: 123, name: 'Detail Tweaker' });
-
-      expect(await promise).toBe('Detail Tweaker');
-    });
-
-    it('answers null when the catalogue cannot be read', async () => {
-      const promise = firstValueFrom(service.resolveName('404', false));
-      http
-        .expectOne('https://civitai.com/api/v1/models/404')
-        .flush('nope', { status: 404, statusText: 'Not Found' });
-
-      expect(await promise).toBeNull();
-    });
-
-    it('does not remember a failure as an answer', async () => {
-      const first = firstValueFrom(service.resolveName('55', false));
-      http
-        .expectOne('https://civitai.com/api/v1/models/55')
-        .flush('boom', { status: 500, statusText: 'Server Error' });
-      expect(await first).toBeNull();
-
-      // A transient outage used to blank a name for the rest of the session.
-      const second = firstValueFrom(service.resolveName('55', false));
-      http
-        .expectOne('https://civitai.com/api/v1/models/55')
-        .flush({ id: 55, name: 'Recovered' });
-      expect(await second).toBe('Recovered');
-    });
-  });
 });

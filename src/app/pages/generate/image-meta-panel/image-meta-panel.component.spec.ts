@@ -1,13 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { of } from 'rxjs';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import {
   ImageMetaPanelComponent,
   MetaApplyEvent,
 } from './image-meta-panel.component';
 import { ImageGenerationRequest } from '../../../types/generation';
-import { CivitaiService } from '../../../services/civitai.service';
+import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import { ImageMetaProvenance } from '../image-metadata';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
@@ -45,11 +44,13 @@ describe('ImageMetaPanelComponent', () => {
   let fixture: ComponentFixture<ImageMetaPanelComponent>;
   let component: ImageMetaPanelComponent;
   let applied: MetaApplyEvent[];
-  let resolveName: ReturnType<typeof vi.fn>;
+  let requestAll: ReturnType<typeof vi.fn>;
+  let metaFor: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     applied = [];
-    resolveName = vi.fn().mockReturnValue(of(null));
+    requestAll = vi.fn();
+    metaFor = vi.fn().mockReturnValue(null);
     await TestBed.configureTestingModule({
       imports: [
         ImageMetaPanelComponent,
@@ -58,7 +59,12 @@ describe('ImageMetaPanelComponent', () => {
           translocoConfig: { defaultLang: 'en' },
         }),
       ],
-      providers: [{ provide: CivitaiService, useValue: { resolveName } }],
+      providers: [
+        {
+          provide: CivitaiResolverService,
+          useValue: { requestAll, request: vi.fn(), metaFor },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ImageMetaPanelComponent);
@@ -229,22 +235,20 @@ describe('ImageMetaPanelComponent', () => {
       expect(rowValue('tis')).toContain('generate.results.meta_ti_id');
     });
 
-    it('asks the catalogue once per identifier', () => {
+    it('hands every identifier in the request to the resolver', () => {
       fixture.componentRef.setInput('request', withAssets);
       fixture.detectChanges();
-      fixture.componentRef.setInput('request', {
-        ...withAssets,
-        prompt: 'a different prompt',
-      } satisfies ImageGenerationRequest);
-      fixture.detectChanges();
 
-      expect(resolveName).toHaveBeenCalledTimes(2);
-      expect(resolveName).toHaveBeenCalledWith('246091', true);
-      expect(resolveName).toHaveBeenCalledWith('7808', false);
+      // A pinned LoRA is a version; a textual inversion never is, because the
+      // horde's TI payload carries no version flag.
+      expect(requestAll).toHaveBeenCalledWith([
+        { id: '246091', isVersion: true },
+        { id: '7808', isVersion: false },
+      ]);
     });
 
     it('shows a resolved name with its weights', () => {
-      resolveName.mockReturnValue(of('Detail Tweaker'));
+      metaFor.mockReturnValue({ label: 'Detail Tweaker' });
       fixture.componentRef.setInput('request', withAssets);
       fixture.detectChanges();
 
@@ -254,7 +258,8 @@ describe('ImageMetaPanelComponent', () => {
     });
 
     it('leaves an already-readable asset name alone', () => {
-      resolveName.mockClear();
+      // Nothing has to be resolved for a named asset: the resolver declines to
+      // look one up, and the panel shows what the request already said.
       fixture.componentRef.setInput('request', {
         ...REQUEST,
         params: {
@@ -264,7 +269,6 @@ describe('ImageMetaPanelComponent', () => {
       } satisfies ImageGenerationRequest);
       fixture.detectChanges();
 
-      expect(resolveName).not.toHaveBeenCalled();
       expect(rowValue('loras')).toContain('GlowingRunes');
     });
   });

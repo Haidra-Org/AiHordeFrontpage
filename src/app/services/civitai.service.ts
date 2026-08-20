@@ -380,37 +380,6 @@ export class CivitaiService {
       );
   }
 
-  /**
-   * Resolve a bare CivitAI identifier to a display name. A stored request only
-   * carries the identifier it was given, so a past generation has nothing
-   * readable to show until the catalogue is asked. `isVersion` selects the
-   * version endpoint, matching the horde's own `is_version` flag.
-   *
-   * A version names itself only as "v2.0", which means something alongside its
-   * model, so the two are joined when both are known.
-   */
-  public resolveName(
-    id: string,
-    isVersion: boolean,
-  ): Observable<string | null> {
-    if (isVersion) {
-      return this.fetchVersion(id).pipe(
-        map((version) => {
-          if (!version) {
-            return null;
-          }
-          const own = version.name.trim();
-          const model = version.modelName?.trim();
-          if (model && own) {
-            return `${model} · ${own}`;
-          }
-          return model || own || null;
-        }),
-      );
-    }
-    return this.fetchModel(id).pipe(map((model) => model?.name.trim() || null));
-  }
-
   private buildParams(
     params: CivitaiSearchParams,
     type: CivitaiModelType,

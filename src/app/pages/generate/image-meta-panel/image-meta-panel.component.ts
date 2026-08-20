@@ -1,20 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   computed,
   effect,
   inject,
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ImageGenerationRequest } from '../../../types/generation';
-import { CivitaiService } from '../../../services/civitai.service';
+import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import {
   FormLoraEntry,
   FormTiEntry,
@@ -76,11 +73,6 @@ interface MetaInfoRow {
   tone: 'default' | 'good' | 'warn' | 'danger';
 }
 
-/** Cache key for a CivitAI lookup, mirroring the service's own keying. */
-function nameKey(id: string, isVersion: boolean): string {
-  return `${isVersion ? 'v' : 'm'}:${id}`;
-}
-
 /**
  * Compare two form-field values. Fields are scalars or arrays of small records
  * (loras/tis/post-processing), so a serialised comparison is both correct and
@@ -108,8 +100,7 @@ function sameFieldValue(a: unknown, b: unknown): boolean {
 })
 export class ImageMetaPanelComponent {
   private readonly transloco = inject(TranslocoService);
-  private readonly civitai = inject(CivitaiService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly resolver = inject(CivitaiResolverService);
 
   public readonly request = input<ImageGenerationRequest | null>(null);
   public readonly provenance = input<ImageMetaProvenance | null>(null);
@@ -298,54 +289,29 @@ export class ImageMetaPanelComponent {
 
   // --- CivitAI asset names -------------------------------------------------
 
-  /** Resolved display names, keyed as `m:<id>` / `v:<id>`. */
-  private readonly resolvedNames = signal<ReadonlyMap<string, string>>(
-    new Map(),
-  );
-  /** Ids already asked about (resolved or not), so each is fetched at most once. */
-  private readonly requestedNames = new Set<string>();
-
   /**
-   * Kick off a lookup for every CivitAI id in the current request. A stored
-   * request only carries the identifier the user typed or picked, so a bare
-   * numeric id is all a past generation has; anything non-numeric is already a
-   * horde asset name and needs no lookup.
+   * Ask about every CivitAI id in the current request. A stored request carries
+   * only the identifier it was given, so a bare number is all a past generation
+   * has; the resolver is shared with the studio's own LoRA card so the two
+   * cannot disagree about what an asset is called.
    */
   private resolveAssetNames(): void {
     const value = this.formValue();
     if (!value) {
       return;
     }
-    const assets = [
+    this.resolver.requestAll([
       ...value.loras.map((lora) => ({
         id: lora.name,
         isVersion: lora.is_version === true,
       })),
+      // A textual inversion is always a model-page id: the horde's TI payload
+      // has no version flag. A stored id that is really a version is repaired
+      // by the resolver rather than guessed at here.
       ...value.tis.map((ti) => ({ id: ti.name, isVersion: false })),
-    ];
-    for (const asset of assets) {
-      if (!/^\d+$/.test(asset.id)) {
-        continue;
-      }
-      const key = nameKey(asset.id, asset.isVersion);
-      if (this.requestedNames.has(key)) {
-        continue;
-      }
-      this.requestedNames.add(key);
-      this.civitai
-        .resolveName(asset.id, asset.isVersion)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((name) => {
-          if (name) {
-            this.resolvedNames.update((current) =>
-              new Map(current).set(key, name),
-            );
-          }
-        });
-    }
+    ]);
   }
 
-  /** The best name available right now: picked label, lookup, then the raw id. */
   private assetName(
     id: string,
     isVersion: boolean,
@@ -355,7 +321,7 @@ export class ImageMetaPanelComponent {
     if (label) {
       return label;
     }
-    const resolved = this.resolvedNames().get(nameKey(id, isVersion));
+    const resolved = this.resolver.metaFor({ id, isVersion })?.label;
     if (resolved) {
       return resolved;
     }
