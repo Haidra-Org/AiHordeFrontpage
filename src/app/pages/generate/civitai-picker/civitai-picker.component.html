@@ -85,9 +85,9 @@
               [class.gs-civit-card--added]="isAdded(model)"
             >
               <div class="gs-civit-thumb" [style.background]="gradient(i)">
-                @if (model.thumbnailUrl) {
+                @if (model.preview; as preview) {
                   <img
-                    [src]="model.thumbnailUrl"
+                    [src]="preview.url"
                     alt=""
                     loading="lazy"
                     referrerpolicy="no-referrer"
@@ -122,7 +122,7 @@
                         {{ model.versions[0].baseModel }}
                       </span>
                     }
-                    @if (model.versions[0]?.triggerWords?.[0]; as trigger) {
+                    @if (model.versions[0]?.trainedWords?.[0]; as trigger) {
                       <span class="gs-civit-tag" [title]="trigger">
                         {{ trigger }}
                       </span>
