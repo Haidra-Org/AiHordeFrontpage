@@ -1,0 +1,293 @@
+@if (isEmpty()) {
+  <p class="gs-empty-line">
+    {{ "generate.form.loras_empty" | transloco }}
+  </p>
+}
+
+@for (row of loraRows(); track row.entry.name; let i = $index) {
+  @if (showCap() && lorasOverCap() && i === sentLoraCount()) {
+    <p class="gs-cvsel-cutline">
+      {{
+        "generate.civitai.cutline_lora" | transloco: { max: sentLoraCount() }
+      }}
+    </p>
+  }
+  <div class="gs-addon" [class.gs-cvsel-row--inactive]="!row.active">
+    <div class="mb-2 flex items-center gap-2">
+      <span class="gs-addon-chip" [style.background]="gradient(i)"></span>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 text-xs font-semibold">
+          <span class="truncate">
+            @if (rowName(row.entry); as name) {
+              {{ name }}
+            } @else {
+              {{
+                "generate.results.meta_lora_id"
+                  | transloco: { id: row.entry.name }
+              }}
+            }
+          </span>
+          <span class="gs-tag gs-tag--lora">
+            {{ "generate.form.tag_lora" | transloco }}
+          </span>
+          @if (!row.active) {
+            <span class="gs-cvsel-pill">
+              {{ "generate.civitai.inactive_pill" | transloco }}
+            </span>
+          }
+        </div>
+        <div class="gs-addon-sub truncate">
+          @if (row.entry.versionLabel || row.entry.baseModel) {
+            <span class="gs-cvsel-version">
+              {{ row.entry.versionLabel }}
+              @if (row.entry.baseModel) {
+                <span class="gs-cvsel-base">{{ row.entry.baseModel }}</span>
+              }
+            </span>
+          }
+          @if (row.entry.inject_trigger; as trigger) {
+            {{ "generate.form.lora_trigger" | transloco: { trigger } }}
+          } @else {
+            {{ "generate.form.lora_no_trigger" | transloco }}
+          }
+        </div>
+      </div>
+
+      <div class="gs-cvsel-actions">
+        <button
+          type="button"
+          class="gs-cvsel-move"
+          [attr.data-move]="'lora-' + i + '--1'"
+          [disabled]="!canMove('lora', i, -1)"
+          (click)="move('lora', i, -1)"
+          [attr.aria-label]="
+            'generate.civitai.move_up'
+              | transloco: { name: rowName(row.entry) ?? row.entry.name }
+          "
+        >
+          &#9650;
+        </button>
+        <button
+          type="button"
+          class="gs-cvsel-move"
+          [attr.data-move]="'lora-' + i + '-1'"
+          [disabled]="!canMove('lora', i, 1)"
+          (click)="move('lora', i, 1)"
+          [attr.aria-label]="
+            'generate.civitai.move_down'
+              | transloco: { name: rowName(row.entry) ?? row.entry.name }
+          "
+        >
+          &#9660;
+        </button>
+        <button
+          type="button"
+          class="gs-cvsel-details"
+          (click)="onDetails(row.entry, i)"
+        >
+          {{ "generate.civitai.details" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-addon-remove"
+          (click)="remove('lora', i)"
+          [attr.aria-label]="'generate.form.remove' | transloco"
+          [title]="'generate.form.remove' | transloco"
+        >
+          &#10005;
+        </button>
+      </div>
+    </div>
+
+    <div class="flex gap-3.5">
+      <div class="flex-1">
+        <div class="gs-slabel">
+          {{ "generate.form.lora_model_short" | transloco }}
+          <span class="gs-mono gs-purple float-right">
+            {{ row.entry.model | number: "1.2-2" }}
+          </span>
+        </div>
+        <input
+          class="gs-range gs-range--purple mt-1"
+          type="range"
+          [min]="minStrength"
+          [max]="maxStrength"
+          step="0.05"
+          [value]="row.entry.model"
+          [style.--gs-range-fill.%]="fill(row.entry.model)"
+          (input)="setLoraStrength(i, 'model', rangeValue($event))"
+          [attr.aria-label]="'generate.form.lora_model_short' | transloco"
+        />
+      </div>
+      <div class="flex-1">
+        <div class="gs-slabel">
+          {{ "generate.form.lora_clip_short" | transloco }}
+          <span class="gs-mono gs-purple float-right">
+            {{ row.entry.clip | number: "1.2-2" }}
+          </span>
+        </div>
+        <input
+          class="gs-range gs-range--purple mt-1"
+          type="range"
+          [min]="minStrength"
+          [max]="maxStrength"
+          step="0.05"
+          [value]="row.entry.clip"
+          [style.--gs-range-fill.%]="fill(row.entry.clip)"
+          (input)="setLoraStrength(i, 'clip', rangeValue($event))"
+          [attr.aria-label]="'generate.form.lora_clip_short' | transloco"
+        />
+      </div>
+    </div>
+
+    @if (row.entry.triggerWords?.length) {
+      <div class="gs-cvsel-triggers">
+        @for (word of row.entry.triggerWords; track word) {
+          <button
+            type="button"
+            class="gs-cvsel-trigger"
+            (click)="onAppendTrigger(word)"
+            [title]="'generate.civitai.detail_trigger_to_prompt' | transloco"
+          >
+            {{ word }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+}
+
+@if (tiRows().length > 0) {
+  <div class="gs-sec-head gs-sec-head--sub">
+    <h3 class="gs-card-title--sm">
+      {{ "generate.help.tis.title" | transloco }}
+    </h3>
+  </div>
+}
+
+@for (row of tiRows(); track row.entry.name; let i = $index) {
+  @if (showCap() && tisOverCap() && i === sentTiCount()) {
+    <p class="gs-cvsel-cutline">
+      {{ "generate.civitai.cutline_ti" | transloco: { max: sentTiCount() } }}
+    </p>
+  }
+  <div class="gs-addon" [class.gs-cvsel-row--inactive]="!row.active">
+    <div class="mb-2 flex items-center gap-2">
+      <span
+        class="gs-addon-chip"
+        [style.background]="gradient(i + loraRows().length)"
+      ></span>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5 text-xs font-semibold">
+          <span class="truncate">
+            @if (rowName(row.entry); as name) {
+              {{ name }}
+            } @else {
+              {{
+                "generate.results.meta_ti_id"
+                  | transloco: { id: row.entry.name }
+              }}
+            }
+          </span>
+          <span class="gs-tag gs-tag--ti">
+            {{ "generate.form.tag_ti" | transloco }}
+          </span>
+          @if (!row.active) {
+            <span class="gs-cvsel-pill">
+              {{ "generate.civitai.inactive_pill" | transloco }}
+            </span>
+          }
+        </div>
+        <div class="gs-addon-sub truncate">
+          {{ "generate.form.ti_embedding" | transloco }}
+        </div>
+      </div>
+
+      <div class="gs-cvsel-actions">
+        <button
+          type="button"
+          class="gs-cvsel-move"
+          [attr.data-move]="'ti-' + i + '--1'"
+          [disabled]="!canMove('ti', i, -1)"
+          (click)="move('ti', i, -1)"
+          [attr.aria-label]="
+            'generate.civitai.move_up'
+              | transloco: { name: rowName(row.entry) ?? row.entry.name }
+          "
+        >
+          &#9650;
+        </button>
+        <button
+          type="button"
+          class="gs-cvsel-move"
+          [attr.data-move]="'ti-' + i + '-1'"
+          [disabled]="!canMove('ti', i, 1)"
+          (click)="move('ti', i, 1)"
+          [attr.aria-label]="
+            'generate.civitai.move_down'
+              | transloco: { name: rowName(row.entry) ?? row.entry.name }
+          "
+        >
+          &#9660;
+        </button>
+        <button
+          type="button"
+          class="gs-cvsel-details"
+          (click)="onDetails(row.entry, i)"
+        >
+          {{ "generate.civitai.details" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-addon-remove"
+          (click)="remove('ti', i)"
+          [attr.aria-label]="'generate.form.remove' | transloco"
+          [title]="'generate.form.remove' | transloco"
+        >
+          &#10005;
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="gs-slabel">
+        {{ "generate.form.ti_strength_short" | transloco }}
+        <span class="gs-mono gs-purple float-right">
+          {{ row.entry.strength | number: "1.2-2" }}
+        </span>
+      </div>
+      <input
+        class="gs-range gs-range--purple mt-1"
+        type="range"
+        [min]="minStrength"
+        [max]="maxStrength"
+        step="0.05"
+        [value]="row.entry.strength"
+        [style.--gs-range-fill.%]="fill(row.entry.strength)"
+        (input)="setTiStrength(i, rangeValue($event))"
+        [attr.aria-label]="'generate.form.ti_strength_short' | transloco"
+      />
+    </div>
+  </div>
+}
+
+<!-- A row crossing the cut-line is obvious to anyone who can see it move, and
+     invisible otherwise, so the move and its consequence are both announced. -->
+<p class="sr-only" role="status" aria-live="polite">
+  @if (announcementParts(); as parts) {
+    {{ "generate.civitai.moved_announce" | transloco: parts }}
+  }
+</p>
+
+@if (openRow(); as open) {
+  <app-civitai-detail
+    [target]="open.target"
+    [baseline]="baseline()"
+    [current]="openEntry()"
+    [allowSha256]="allowSha256()"
+    (apply)="onDetailApply($event)"
+    (remove)="onDetailRemove()"
+    (appendToPrompt)="appendToPrompt.emit($event)"
+    (closed)="closeDetails()"
+  />
+}

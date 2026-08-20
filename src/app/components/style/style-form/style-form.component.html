@@ -396,33 +396,100 @@
             />
           </div>
 
-          <div class="form-field">
-            <label for="style-loras" class="form-label">
-              {{ "styles.form.loras" | transloco }}
-            </label>
-            <textarea
-              id="style-loras"
-              formControlName="loras_json"
-              class="form-input form-code"
-              rows="4"
-              [placeholder]="'styles.form.loras_placeholder' | transloco"
-              spellcheck="false"
-            ></textarea>
+          <div class="form-field gs-civit-scope">
+            <div class="gs-sec-head">
+              <span class="form-label">
+                {{ "styles.form.loras" | transloco }}
+              </span>
+              <button
+                type="button"
+                class="gs-civit-link"
+                (click)="openCivitai()"
+              >
+                {{ "generate.form.add_from_civitai" | transloco }}
+              </button>
+            </div>
+
+            <!-- The shared rows and the panel they open read the studio's
+                 design tokens, which are declared on .gen-studio; this editor
+                 is elsewhere, so it brings the same scope the picker does. -->
+            <div class="gs-civit-scope">
+              <app-civitai-selection
+                [loras]="form.controls['loras'].value"
+                [tis]="form.controls['tis'].value"
+                [baseline]="styleBaseline()"
+                [allowSha256]="true"
+                [showCap]="false"
+                (lorasChange)="setLoras($event)"
+                (tisChange)="setTis($event)"
+                (appendToPrompt)="appendToPrompt($event)"
+              />
+            </div>
+
+            <!-- A style is a document rather than a submission: the cap applies
+                 to the merged request at generation time, and the editor is not
+                 the place to decide which five survive that merge. -->
+            @if (form.controls["loras"].value.length > 5) {
+              <p class="gs-warn mt-1.5">
+                {{ "styles.form.loras_cap_note" | transloco }}
+              </p>
+            }
+            @if (form.controls["tis"].value.length > 20) {
+              <p class="gs-warn mt-1.5">
+                {{ "styles.form.tis_cap_note" | transloco }}
+              </p>
+            }
+
+            <details class="gs-civit-json">
+              <summary>
+                {{ "styles.form.loras_json_toggle" | transloco }}
+              </summary>
+              <label for="style-loras" class="form-label">
+                {{ "styles.form.loras" | transloco }}
+              </label>
+              <textarea
+                id="style-loras"
+                formControlName="loras_json"
+                class="form-input form-code"
+                rows="4"
+                [placeholder]="'styles.form.loras_placeholder' | transloco"
+                spellcheck="false"
+                (blur)="applyJson('loras', textareaValue($event))"
+              ></textarea>
+              <label for="style-tis" class="form-label">
+                {{ "styles.form.textual_inversions" | transloco }}
+              </label>
+              <textarea
+                id="style-tis"
+                formControlName="tis_json"
+                class="form-input form-code"
+                rows="4"
+                [placeholder]="'styles.form.tis_placeholder' | transloco"
+                spellcheck="false"
+                (blur)="applyJson('tis', textareaValue($event))"
+              ></textarea>
+              @if (assetJsonError()) {
+                <p class="gs-warn mt-1.5">
+                  {{ "styles.form.loras_json_invalid" | transloco }}
+                </p>
+              }
+            </details>
           </div>
 
-          <div class="form-field">
-            <label for="style-tis" class="form-label">
-              {{ "styles.form.textual_inversions" | transloco }}
-            </label>
-            <textarea
-              id="style-tis"
-              formControlName="tis_json"
-              class="form-input form-code"
-              rows="4"
-              [placeholder]="'styles.form.tis_placeholder' | transloco"
-              spellcheck="false"
-            ></textarea>
-          </div>
+          @if (civitaiOpen()) {
+            <div class="gs-civit-scope">
+              <app-civitai-picker
+                [loras]="form.controls['loras'].value"
+                [tis]="form.controls['tis'].value"
+                [baseline]="styleBaseline()"
+                [allowSha256]="true"
+                (lorasChange)="setLoras($event)"
+                (tisChange)="setTis($event)"
+                (appendToPrompt)="appendToPrompt($event)"
+                (closed)="closeCivitai()"
+              />
+            </div>
+          }
 
           <div class="form-field">
             <label for="style-sharedkey" class="form-label">

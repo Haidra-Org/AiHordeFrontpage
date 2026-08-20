@@ -1351,178 +1351,14 @@
                 {{ "generate.form.add_from_civitai" | transloco }}
               </button>
             </div>
-            @for (lora of loras(); track lora.name; let i = $index) {
-              <div class="gs-addon">
-                <div class="mb-2 flex items-center gap-2">
-                  <span
-                    class="gs-addon-chip"
-                    [style.background]="addonGradient(i)"
-                  ></span>
-                  <div class="min-w-0 flex-1">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold"
-                    >
-                      <span class="truncate">
-                        @if (addonName(lora); as name) {
-                          {{ name }}
-                        } @else {
-                          {{
-                            "generate.results.meta_lora_id"
-                              | transloco: { id: lora.name }
-                          }}
-                        }
-                      </span>
-                      <span class="gs-tag gs-tag--lora">
-                        {{ "generate.form.tag_lora" | transloco }}
-                      </span>
-                    </div>
-                    <div class="gs-addon-sub truncate">
-                      @if (lora.inject_trigger; as trigger) {
-                        {{
-                          "generate.form.lora_trigger" | transloco: { trigger }
-                        }}
-                      } @else {
-                        {{ "generate.form.lora_no_trigger" | transloco }}
-                      }
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="gs-addon-remove"
-                    (click)="removeLora(i)"
-                    [attr.aria-label]="'generate.form.remove' | transloco"
-                    [title]="'generate.form.remove' | transloco"
-                  >
-                    &#10005;
-                  </button>
-                </div>
-                <div class="flex gap-3.5">
-                  <div class="flex-1">
-                    <div class="gs-slabel">
-                      {{ "generate.form.lora_model_short" | transloco }}
-                      <span class="gs-mono gs-purple float-right">
-                        {{ lora.model | number: "1.2-2" }}
-                      </span>
-                    </div>
-                    <input
-                      class="gs-range gs-range--purple mt-1"
-                      type="range"
-                      [min]="minLoraStrength"
-                      [max]="maxLoraStrength"
-                      step="0.05"
-                      [value]="lora.model"
-                      [style.--gs-range-fill.%]="
-                        rangeFill(lora.model, minLoraStrength, maxLoraStrength)
-                      "
-                      (input)="setLoraStrength(i, 'model', rangeValue($event))"
-                      [attr.aria-label]="
-                        'generate.form.lora_model_short' | transloco
-                      "
-                    />
-                  </div>
-                  <div class="flex-1">
-                    <div class="gs-slabel">
-                      {{ "generate.form.lora_clip_short" | transloco }}
-                      <span class="gs-mono gs-purple float-right">
-                        {{ lora.clip | number: "1.2-2" }}
-                      </span>
-                    </div>
-                    <input
-                      class="gs-range gs-range--purple mt-1"
-                      type="range"
-                      [min]="minLoraStrength"
-                      [max]="maxLoraStrength"
-                      step="0.05"
-                      [value]="lora.clip"
-                      [style.--gs-range-fill.%]="
-                        rangeFill(lora.clip, minLoraStrength, maxLoraStrength)
-                      "
-                      (input)="setLoraStrength(i, 'clip', rangeValue($event))"
-                      [attr.aria-label]="
-                        'generate.form.lora_clip_short' | transloco
-                      "
-                    />
-                  </div>
-                </div>
-              </div>
-            }
-            @if (tis().length > 0) {
-              <div class="gs-sec-head gs-sec-head--sub">
-                <h3 class="gs-card-title--sm">
-                  {{ "generate.help.tis.title" | transloco }}
-                </h3>
-                <app-gs-help topic="tis" />
-              </div>
-            }
-            @for (ti of tis(); track ti.name; let i = $index) {
-              <div class="gs-addon">
-                <div class="mb-2 flex items-center gap-2">
-                  <span
-                    class="gs-addon-chip"
-                    [style.background]="addonGradient(i + loras().length)"
-                  ></span>
-                  <div class="min-w-0 flex-1">
-                    <div
-                      class="flex items-center gap-1.5 text-xs font-semibold"
-                    >
-                      <span class="truncate">
-                        @if (addonName(ti); as name) {
-                          {{ name }}
-                        } @else {
-                          {{
-                            "generate.results.meta_ti_id"
-                              | transloco: { id: ti.name }
-                          }}
-                        }
-                      </span>
-                      <span class="gs-tag gs-tag--ti">
-                        {{ "generate.form.tag_ti" | transloco }}
-                      </span>
-                    </div>
-                    <div class="gs-addon-sub truncate">
-                      {{ "generate.form.ti_embedding" | transloco }}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    class="gs-addon-remove"
-                    (click)="removeTi(i)"
-                    [attr.aria-label]="'generate.form.remove' | transloco"
-                    [title]="'generate.form.remove' | transloco"
-                  >
-                    &#10005;
-                  </button>
-                </div>
-                <div>
-                  <div class="gs-slabel">
-                    {{ "generate.form.ti_strength_short" | transloco }}
-                    <span class="gs-mono gs-purple float-right">
-                      {{ ti.strength | number: "1.2-2" }}
-                    </span>
-                  </div>
-                  <input
-                    class="gs-range gs-range--purple mt-1"
-                    type="range"
-                    [min]="minLoraStrength"
-                    [max]="maxLoraStrength"
-                    step="0.05"
-                    [value]="ti.strength"
-                    [style.--gs-range-fill.%]="
-                      rangeFill(ti.strength, minLoraStrength, maxLoraStrength)
-                    "
-                    (input)="setTiStrength(i, rangeValue($event))"
-                    [attr.aria-label]="
-                      'generate.form.ti_strength_short' | transloco
-                    "
-                  />
-                </div>
-              </div>
-            }
-            @if (loras().length === 0 && tis().length === 0) {
-              <p class="gs-empty-line">
-                {{ "generate.form.loras_empty" | transloco }}
-              </p>
-            }
+            <app-civitai-selection
+              [loras]="loras()"
+              [tis]="tis()"
+              [baseline]="modelBaseline()"
+              (lorasChange)="setLoras($event)"
+              (tisChange)="setTis($event)"
+              (appendToPrompt)="appendToPrompt($event)"
+            />
             <ng-container
               *ngTemplateOutlet="
                 lintLines;
@@ -2223,7 +2059,15 @@
 </form>
 
 @if (civitOpen()) {
-  <app-civitai-picker [form]="form()" (closed)="closeCivit()" />
+  <app-civitai-picker
+    [loras]="loras()"
+    [tis]="tis()"
+    [baseline]="modelBaseline()"
+    (lorasChange)="setLoras($event)"
+    (tisChange)="setTis($event)"
+    (appendToPrompt)="appendToPrompt($event)"
+    (closed)="closeCivit()"
+  />
 }
 
 @if (styleBrowserOpen()) {

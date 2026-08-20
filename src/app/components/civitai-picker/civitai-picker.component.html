@@ -1,0 +1,345 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+>
+  <div class="gs-modal-panel gs-cv-panel gs-fadeup">
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        {{ "generate.civitai.title" | transloco }}
+        <span class="gs-modal-badge">
+          {{ "generate.civitai.third_party" | transloco }}
+        </span>
+      </div>
+      <label class="gs-cv-mature">
+        <input
+          type="checkbox"
+          [checked]="showMature()"
+          (change)="toggleMature()"
+        />
+        {{ "generate.civitai.mature_toggle" | transloco }}
+      </label>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="onClose()"
+        [attr.aria-label]="'generate.civitai.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-search-bar">
+      <div class="gs-modal-search">
+        <app-icon name="magnifying-glass" class="gs-ico-sm gs-muted" />
+        <input
+          type="text"
+          [formControl]="queryControl"
+          [placeholder]="'generate.civitai.search_placeholder' | transloco"
+        />
+      </div>
+      <div class="gs-seg" role="group">
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'lora'"
+          (click)="setTab('lora')"
+        >
+          {{ "generate.civitai.tab_lora" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'ti'"
+          (click)="setTab('ti')"
+        >
+          {{ "generate.civitai.tab_ti" | transloco }}
+        </button>
+      </div>
+      <button
+        type="button"
+        class="gs-cv-filters-btn"
+        [attr.aria-expanded]="filtersOpen()"
+        (click)="toggleFilters()"
+      >
+        {{ "generate.civitai.filters" | transloco }}
+        @if (filtersActive()) {
+          <span class="gs-cv-filters-dot" aria-hidden="true"></span>
+        }
+      </button>
+    </div>
+
+    @if (filtersOpen()) {
+      <div class="gs-cv-filters">
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.base_model_label" | transloco }}</span>
+          <select
+            [value]="baseModelChoice()"
+            (change)="setBaseModel(selectValue($event))"
+          >
+            @if (myBaseModels().length > 0) {
+              <option value="mine">
+                {{
+                  "generate.civitai.base_model_mine"
+                    | transloco: { names: myBaseModels().join(", ") }
+                }}
+              </option>
+            }
+            <option value="all">
+              {{ "generate.civitai.base_model_all" | transloco }}
+            </option>
+            @for (group of baseModelGroups; track group.baseline) {
+              <option [value]="group.baseline">
+                {{ group.labels.join(", ") }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.sort_label" | transloco }}</span>
+          <select
+            [value]="sort()"
+            (change)="setSort($any(selectValue($event)))"
+          >
+            @for (option of sorts; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.period_label" | transloco }}</span>
+          <select
+            [value]="period()"
+            (change)="setPeriod($any(selectValue($event)))"
+          >
+            @for (option of periods; track option) {
+              <option [value]="option">{{ option }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.tag_label" | transloco }}</span>
+          <input type="text" [formControl]="tagControl" />
+        </label>
+
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.creator_label" | transloco }}</span>
+          <input type="text" [formControl]="creatorControl" />
+        </label>
+
+        <button type="button" class="gs-civit-link" (click)="resetFilters()">
+          {{ "generate.civitai.filters_reset" | transloco }}
+        </button>
+      </div>
+    }
+
+    <div class="gs-modal-body">
+      @if (loading()) {
+        <div class="gs-civit-grid" aria-hidden="true">
+          @for (n of [1, 2, 3, 4, 5, 6]; track n) {
+            <div class="gs-civit-card">
+              <div class="gs-civit-thumb gs-shimmer"></div>
+              <div class="gs-civit-meta">
+                <div
+                  class="gs-civit-name gs-shimmer"
+                  style="height: 12px"
+                ></div>
+                <div class="gs-civit-sub gs-shimmer" style="height: 9px"></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (errored()) {
+        <div class="gs-modal-state">
+          {{ "generate.civitai.error" | transloco }}
+        </div>
+      } @else if (results().length === 0) {
+        <div class="gs-modal-state">
+          {{ "generate.civitai.empty" | transloco }}
+        </div>
+      } @else {
+        <div class="gs-civit-grid">
+          @for (model of results(); track model.id; let i = $index) {
+            <div
+              class="gs-civit-card"
+              [class.gs-civit-card--added]="isAdded(model)"
+            >
+              <div class="gs-civit-thumb" [style.background]="gradient(i)">
+                @if (model.preview; as preview) {
+                  <img
+                    [src]="preview.url"
+                    alt=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                    [class.gs-cv-shot--covered]="
+                      isCovered(preview.url, preview.nsfwLevel)
+                    "
+                  />
+                  @if (isCovered(preview.url, preview.nsfwLevel)) {
+                    <button
+                      type="button"
+                      class="gs-cv-reveal"
+                      (click)="reveal(preview.url)"
+                    >
+                      {{ "generate.civitai.reveal_image" | transloco }}
+                    </button>
+                  }
+                }
+                @if (isAdded(model)) {
+                  <span class="gs-civit-added-badge">
+                    {{ "generate.civitai.added" | transloco }}
+                  </span>
+                }
+              </div>
+              <div class="gs-civit-meta">
+                <div class="gs-civit-name" [title]="model.name">
+                  {{ model.name }}
+                </div>
+                <div class="gs-civit-sub">
+                  {{
+                    "generate.civitai.meta"
+                      | transloco
+                        : {
+                            creator:
+                              model.creator ||
+                              ("generate.civitai.by_unknown" | transloco),
+                            downloads: model.downloadCount,
+                          }
+                  }}
+                </div>
+                <div class="gs-civit-actions">
+                  <div class="gs-civit-tags">
+                    @if (model.versions[0]?.baseModel) {
+                      <span
+                        class="gs-civit-tag"
+                        [class.gs-civit-tag--misfit]="!suits(model)"
+                      >
+                        {{ model.versions[0].baseModel }}
+                      </span>
+                    }
+                    @if (
+                      model.rawType !== "LORA" &&
+                      model.rawType !== "TextualInversion"
+                    ) {
+                      <span class="gs-civit-tag">{{ model.rawType }}</span>
+                    }
+                  </div>
+                  <button
+                    type="button"
+                    class="gs-cvsel-details"
+                    (click)="openDetails(model)"
+                  >
+                    {{ "generate.civitai.details" | transloco }}
+                  </button>
+                  <button
+                    type="button"
+                    class="gs-civit-add"
+                    [class.gs-civit-add--remove]="isAdded(model)"
+                    (click)="toggle(model)"
+                  >
+                    {{
+                      (isAdded(model)
+                        ? "generate.civitai.remove"
+                        : "generate.civitai.add"
+                      ) | transloco
+                    }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div #sentinel aria-hidden="true"></div>
+        <!-- A button as well as the scroll: someone tabbing to the end of the
+             grid never triggers an observer that only fires on scroll. -->
+        <div class="gs-cv-more">
+          @if (cursor()) {
+            <button
+              type="button"
+              class="gs-civit-add"
+              [disabled]="loadingMore()"
+              (click)="onLoadMore()"
+            >
+              {{
+                (loadingMore()
+                  ? "generate.civitai.loading_more"
+                  : "generate.civitai.load_more"
+                ) | transloco
+              }}
+            </button>
+          } @else {
+            <span class="gs-modal-foot-note">
+              {{ "generate.civitai.end_of_results" | transloco }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="gs-modal-footer gs-cv-footer">
+      <button type="button" class="gs-civit-link" (click)="toggleManual()">
+        {{ "generate.civitai.manual_toggle" | transloco }}
+      </button>
+      <span class="gs-modal-foot-note">
+        {{ "generate.civitai.footer_note" | transloco }}
+      </span>
+      <button type="button" class="gs-modal-done" (click)="onClose()">
+        {{ "generate.civitai.done" | transloco: { count: selectedCount() } }}
+      </button>
+    </div>
+
+    @if (manualOpen()) {
+      <div class="gs-cv-manual">
+        <label class="gs-cv-filter">
+          <span>{{ "generate.civitai.manual_name_label" | transloco }}</span>
+          <input
+            type="text"
+            [formControl]="manualName"
+            maxlength="255"
+            [placeholder]="
+              'generate.civitai.manual_name_placeholder' | transloco
+            "
+          />
+        </label>
+        <!-- Only for an all-digit name on the LoRA tab: the horde refuses the
+             flag anywhere else, so it is never offered where it cannot apply. -->
+        @if (canBeVersion()) {
+          <label class="gs-cv-manual-check">
+            <input
+              type="checkbox"
+              [checked]="manualIsVersion()"
+              (change)="setManualIsVersion(!manualIsVersion())"
+            />
+            {{ "generate.civitai.manual_is_version" | transloco }}
+          </label>
+        }
+        <button
+          type="button"
+          class="gs-civit-add"
+          [disabled]="!manualName.value.trim()"
+          (click)="addManual()"
+        >
+          {{ "generate.civitai.manual_add" | transloco }}
+        </button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (detailTarget(); as target) {
+  <app-civitai-detail
+    [target]="target"
+    [baseline]="baseline()"
+    [allowSha256]="allowSha256()"
+    (apply)="onDetailApply($event)"
+    (appendToPrompt)="appendToPrompt.emit($event)"
+    (closed)="closeDetails()"
+  />
+}

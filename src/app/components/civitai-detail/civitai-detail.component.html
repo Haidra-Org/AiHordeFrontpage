@@ -1,0 +1,375 @@
+<div
+  class="gs-cv-detail-host"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+>
+  <div class="gs-cv-detail">
+    <div class="gs-cv-detail-grab" aria-hidden="true"></div>
+
+    <div class="gs-cv-detail-head">
+      <div class="min-w-0">
+        <div class="gs-cv-detail-title">
+          {{ model()?.name ?? ("generate.civitai.detail_title" | transloco) }}
+        </div>
+        @if (model()?.creator; as creator) {
+          <div class="gs-cv-detail-by">
+            {{ "generate.civitai.by" | transloco: { creator } }}
+          </div>
+        }
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="onClose()"
+        [attr.aria-label]="'generate.civitai.close' | transloco"
+      >
+        &#10005;
+      </button>
+    </div>
+
+    <div class="gs-cv-detail-body">
+      @if (loading() && !model()) {
+        <div class="gs-cv-detail-state">
+          {{ "generate.civitai.loading" | transloco }}
+        </div>
+      } @else if (errored() && !model()) {
+        <div class="gs-cv-detail-state">
+          {{ "generate.civitai.error" | transloco }}
+        </div>
+      }
+
+      @if (selectedVersion()?.images?.length) {
+        <div class="gs-cv-strip">
+          @for (image of selectedVersion()!.images; track image.url) {
+            <div class="gs-cv-shot">
+              <!-- A covered preview is not a link to a bigger one: the press it
+                   offers is the one that uncovers it. -->
+              @if (isCovered(image.url, image.nsfwLevel)) {
+                <img
+                  class="gs-cv-shot--covered"
+                  [src]="image.url"
+                  alt=""
+                  loading="lazy"
+                  referrerpolicy="no-referrer"
+                />
+                <button
+                  type="button"
+                  class="gs-cv-reveal"
+                  (click)="reveal(image.url)"
+                >
+                  {{ "generate.civitai.reveal_image" | transloco }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="gs-cv-shot-open"
+                  (click)="enlarge(image.url)"
+                  [attr.aria-label]="
+                    'generate.civitai.detail_preview_open' | transloco
+                  "
+                >
+                  <img
+                    [src]="image.url"
+                    alt=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer"
+                  />
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (model()) {
+        <div class="gs-cv-detail-meta">
+          <span>{{
+            "generate.civitai.downloads"
+              | transloco: { count: model()!.downloadCount }
+          }}</span>
+          <span>{{
+            "generate.civitai.thumbs" | transloco: { count: model()!.thumbsUp }
+          }}</span>
+          @if (model()!.rawType !== "LORA") {
+            <span class="gs-cv-type">{{ model()!.rawType }}</span>
+          }
+          @if (model()!.poi) {
+            <span class="gs-cv-flag">
+              {{ "generate.civitai.real_person" | transloco }}
+            </span>
+          }
+        </div>
+
+        @if (civitaiUrl(); as url) {
+          <a
+            class="gs-civit-link"
+            [href]="url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ "generate.civitai.detail_open_on_civitai" | transloco }}
+          </a>
+        }
+      }
+
+      <h4 class="gs-cv-detail-heading">
+        {{ "generate.civitai.detail_triggers" | transloco }}
+      </h4>
+      @if (triggerWords().length === 0) {
+        <p class="gs-cv-detail-note">
+          {{ "generate.civitai.detail_triggers_none" | transloco }}
+        </p>
+      } @else {
+        <p class="gs-cv-detail-note">
+          {{
+            (isLora()
+              ? "generate.civitai.detail_triggers_note"
+              : "generate.civitai.detail_triggers_note_ti"
+            ) | transloco
+          }}
+        </p>
+        <div class="gs-cv-triggers">
+          @for (word of triggerWords(); track word) {
+            <div class="gs-cv-trigger-row">
+              <span class="gs-cv-trigger-word" [title]="word">{{ word }}</span>
+              @if (isLora()) {
+                @if (canInject(word)) {
+                  <button
+                    type="button"
+                    class="gs-cv-trigger-act"
+                    [class.gs-cv-trigger-act--on]="injectTrigger() === word"
+                    (click)="setTrigger(word)"
+                  >
+                    {{ "generate.civitai.detail_trigger_inject" | transloco }}
+                  </button>
+                } @else {
+                  <!-- Said rather than greyed out: a dead control leaves the
+                       reader guessing which of the two offers is missing. -->
+                  <span class="gs-cv-trigger-why">
+                    {{ "generate.civitai.detail_trigger_too_long" | transloco }}
+                  </span>
+                }
+              }
+              <button
+                type="button"
+                class="gs-cv-trigger-act"
+                [class.gs-cv-trigger-act--done]="promptedWord() === word"
+                (click)="onAppendTrigger(word)"
+              >
+                {{
+                  (promptedWord() === word
+                    ? "generate.civitai.detail_trigger_to_prompt_done"
+                    : "generate.civitai.detail_trigger_to_prompt"
+                  ) | transloco
+                }}
+              </button>
+            </div>
+          }
+          @if (isLora()) {
+            <div class="gs-cv-trigger-row">
+              <span class="gs-cv-trigger-word">
+                {{ "generate.civitai.detail_trigger_inject_any" | transloco }}
+              </span>
+              <button
+                type="button"
+                class="gs-cv-trigger-act"
+                [class.gs-cv-trigger-act--on]="injectTrigger() === injectAny"
+                (click)="setTrigger(injectAny)"
+              >
+                {{ "generate.civitai.detail_trigger_inject" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-cv-trigger-act"
+                [class.gs-cv-trigger-act--on]="injectTrigger() === null"
+                (click)="setTrigger(null)"
+              >
+                {{ "generate.civitai.detail_trigger_inject_none" | transloco }}
+              </button>
+            </div>
+          }
+        </div>
+        <p class="sr-only" role="status" aria-live="polite">
+          @if (promptedWord(); as word) {
+            {{ "generate.civitai.detail_trigger_to_prompt_done" | transloco }}:
+            {{ word }}
+          }
+        </p>
+      }
+
+      <h4 class="gs-cv-detail-heading">
+        {{ "generate.civitai.detail_strength" | transloco }}
+      </h4>
+      @if (isLora()) {
+        <label class="gs-cv-field">
+          <span class="gs-slabel">
+            {{ "generate.form.lora_model_short" | transloco }}
+            <span class="gs-mono gs-purple float-right">
+              {{ modelStrength() | number: "1.2-2" }}
+            </span>
+          </span>
+          <input
+            class="gs-range gs-range--purple"
+            type="range"
+            [min]="minStrength"
+            [max]="maxStrength"
+            step="0.05"
+            [value]="modelStrength()"
+            (input)="modelStrength.set(numberValue($event))"
+          />
+        </label>
+        <label class="gs-cv-field">
+          <span class="gs-slabel">
+            {{ "generate.form.lora_clip_short" | transloco }}
+            <span class="gs-mono gs-purple float-right">
+              {{ clipStrength() | number: "1.2-2" }}
+            </span>
+          </span>
+          <input
+            class="gs-range gs-range--purple"
+            type="range"
+            [min]="minStrength"
+            [max]="maxStrength"
+            step="0.05"
+            [value]="clipStrength()"
+            (input)="clipStrength.set(numberValue($event))"
+          />
+        </label>
+        @if (allowSha256()) {
+          <label class="gs-cv-field">
+            <span class="gs-slabel">
+              {{ "generate.civitai.detail_sha256" | transloco }}
+            </span>
+            <input
+              class="form-input gs-cv-hash"
+              type="text"
+              spellcheck="false"
+              [value]="sha256()"
+              (input)="sha256.set(textValue($event))"
+              [placeholder]="
+                selectedVersion()?.sha256 ??
+                ('generate.civitai.detail_sha256_hint' | transloco)
+              "
+            />
+          </label>
+        }
+      } @else {
+        <label class="gs-cv-field">
+          <span class="gs-slabel">
+            {{ "generate.form.ti_strength_short" | transloco }}
+            <span class="gs-mono gs-purple float-right">
+              {{ tiStrength() | number: "1.2-2" }}
+            </span>
+          </span>
+          <input
+            class="gs-range gs-range--purple"
+            type="range"
+            [min]="minStrength"
+            [max]="maxStrength"
+            step="0.05"
+            [value]="tiStrength()"
+            (input)="tiStrength.set(numberValue($event))"
+          />
+        </label>
+        <div class="gs-cv-field">
+          <span class="gs-slabel">
+            {{ "generate.civitai.detail_inject_ti" | transloco }}
+          </span>
+          <p class="gs-cv-detail-note gs-cv-field-note">
+            {{ "generate.civitai.detail_inject_ti_note" | transloco }}
+          </p>
+          <div class="gs-seg" role="group">
+            @for (target of injectTargets; track target) {
+              <button
+                type="button"
+                class="gs-seg-opt"
+                [attr.aria-pressed]="injectTi() === target"
+                (click)="setInjectTi(target)"
+              >
+                {{ "generate.civitai.detail_inject_ti_" + target | transloco }}
+              </button>
+            }
+            <button
+              type="button"
+              class="gs-seg-opt"
+              [attr.aria-pressed]="injectTi() === null"
+              (click)="setInjectTi(null)"
+            >
+              {{ "generate.civitai.detail_inject_ti_none" | transloco }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (isLora() && versions().length > 0) {
+        <h4 class="gs-cv-detail-heading">
+          {{ "generate.civitai.detail_versions" | transloco }}
+        </h4>
+        <div class="gs-cv-versions" role="radiogroup">
+          @for (version of versions(); track version.id) {
+            <button
+              type="button"
+              class="gs-cv-version"
+              role="radio"
+              [attr.aria-checked]="version.id === selectedVersionId()"
+              [class.gs-cv-version--on]="version.id === selectedVersionId()"
+              (click)="selectVersion(version.id)"
+            >
+              <span class="gs-cv-version-name">{{ version.name }}</span>
+              <span class="gs-cv-version-base">{{ version.baseModel }}</span>
+              @if (version.fileSizeKb) {
+                <span class="gs-cv-version-size">
+                  {{ version.fileSizeKb / 1000 | number: "1.0-0" }} MB
+                </span>
+              }
+              @if (suitsBaseline(version)) {
+                <span class="gs-cv-version-fit">
+                  {{ "generate.civitai.detail_version_compatible" | transloco }}
+                </span>
+              }
+              @if (!isFetchable(version)) {
+                <span class="gs-cv-version-locked">
+                  {{
+                    "generate.civitai.detail_version_early_access" | transloco
+                  }}
+                </span>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="gs-cv-detail-foot">
+      @if (isEditing()) {
+        <button type="button" class="gs-cv-remove" (click)="onRemove()">
+          {{ "generate.civitai.detail_remove" | transloco }}
+        </button>
+      }
+      <button type="button" class="gs-modal-done" (click)="onApply()">
+        {{
+          (isEditing()
+            ? "generate.civitai.detail_apply_update"
+            : "generate.civitai.detail_apply_add"
+          ) | transloco
+        }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Outside the panel rather than inside it: the panel clips its own overflow,
+     and this layer covers the whole viewport. -->
+@if (enlarged(); as url) {
+  <app-gs-shot-viewer
+    [src]="url"
+    [label]="
+      'generate.civitai.detail_preview_label'
+        | transloco: { name: enlargedLabel() }
+    "
+    (closed)="closeEnlarged()"
+  />
+}

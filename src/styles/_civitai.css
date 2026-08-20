@@ -161,3 +161,1030 @@
   background: none;
   font-weight: 600;
 }
+
+/* ------- Selected rows: order, cap and details ----------------------- */
+
+/* Past the cap a row is dimmed but stays fully operable. Disabling its controls
+   would take them out of the tab order, and moving such a row up is exactly the
+   reason a reader goes to it. */
+.gs-cvsel-row--inactive {
+  opacity: 0.55;
+}
+
+/* The cap drawn as a place rather than a property of each row: one sentence at
+   the boundary beats a badge repeated down the list. */
+.gs-cvsel-cutline {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2, 8px);
+  margin: 10px 0 6px;
+  font-size: 10.5px;
+  color: var(--gs-muted);
+}
+.gs-cvsel-cutline::before,
+.gs-cvsel-cutline::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--gs-border);
+}
+
+.gs-cvsel-pill {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--gs-border-soft);
+  color: var(--gs-muted);
+}
+
+.gs-cvsel-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.gs-cvsel-move {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--gs-muted);
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+}
+.gs-cvsel-move:hover:not(:disabled) {
+  background: var(--gs-border-soft);
+  color: var(--gs-label);
+}
+.gs-cvsel-move:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.gs-cvsel-details {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gs-purple);
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.gs-cvsel-version {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 6px;
+}
+.gs-cvsel-base {
+  color: var(--gs-label);
+}
+
+.gs-cvsel-triggers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+.gs-cvsel-trigger {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--gs-border);
+  background: none;
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+}
+.gs-cvsel-trigger:hover {
+  border-color: var(--gs-purple);
+  color: var(--gs-purple);
+}
+
+/* ------- Detail panel ------------------------------------------------ */
+
+/* A sheet on a phone and a centred panel from a tablet up, decided in CSS the
+   way the metadata panel decides it, so there is no second component and no
+   width branch in script. */
+.gs-cv-detail-host {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(15 18 24 / 45%);
+  padding: 0;
+}
+.gs-cv-detail {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 92dvh;
+  background: var(--gs-panel, #fff);
+  color: var(--gs-label, #1f2328);
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+.gs-cv-detail-grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--gs-border);
+  margin: 8px auto 0;
+  flex: none;
+}
+@media (min-width: 768px) {
+  .gs-cv-detail-host {
+    align-items: center;
+    padding: 24px;
+  }
+  .gs-cv-detail {
+    max-width: 560px;
+    max-height: 86dvh;
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgb(15 18 24 / 28%);
+  }
+  .gs-cv-detail-grab {
+    display: none;
+  }
+}
+
+.gs-cv-detail-head {
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gs-space-2, 8px);
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gs-cv-detail-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+.gs-cv-detail-by,
+.gs-cv-detail-note {
+  font-size: 11px;
+  color: var(--gs-muted);
+}
+.gs-cv-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 16px;
+}
+.gs-cv-detail-state {
+  padding: 28px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--gs-muted);
+}
+.gs-cv-detail-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gs-muted);
+  margin: 16px 0 6px;
+}
+.gs-cv-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--gs-muted);
+  margin-top: 10px;
+}
+.gs-cv-type,
+.gs-cv-flag {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--gs-border-soft);
+  color: var(--gs-label);
+  font-weight: 600;
+}
+
+/* Previews scroll sideways rather than reflowing: the strip is a glance at the
+   work, not a gallery to browse. */
+.gs-cv-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.gs-cv-shot {
+  position: relative;
+  flex: none;
+  width: 116px;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--gs-border-soft);
+}
+.gs-cv-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* The whole tile is the press that opens the picture whole, so the strip needs
+   no separate affordance to carry one. */
+.gs-cv-shot-open {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.gs-cv-shot-open:focus-visible {
+  outline: 2px solid var(--gs-purple);
+  outline-offset: -2px;
+}
+
+/* The layer that opens over a preview comes from the tutorials' picture viewer.
+   Its close button borrows the studio's button anatomy, which is scoped to the
+   studio, so this gives it a square press anywhere else. Left at one class so
+   the studio's own rules still win there. */
+.gs-tut-viewer-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+}
+/* Covering is decided per image by its own rating, independent of whether
+   mature results were asked for: a model marked safe can still carry one. */
+.gs-cv-shot--covered {
+  filter: blur(18px);
+}
+.gs-cv-reveal {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgb(15 18 24 / 35%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* The list scrolls in its own box rather than lengthening the panel. A model
+   with forty versions would otherwise push the previews and the trigger words
+   off the top, and choosing a version is exactly when a reader wants to see
+   what that version looks like. */
+.gs-cv-versions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 210px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+.gs-cv-version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 7px 9px;
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--gs-label);
+  text-align: left;
+}
+.gs-cv-version--on {
+  border-color: var(--gs-purple);
+  background: var(--gs-purple-tint);
+}
+.gs-cv-version-name {
+  font-weight: 700;
+}
+.gs-cv-version-base,
+.gs-cv-version-size {
+  color: var(--gs-muted);
+}
+.gs-cv-version-fit {
+  margin-left: auto;
+  color: var(--gs-purple);
+  font-weight: 600;
+}
+.gs-cv-version-locked {
+  color: var(--gs-muted);
+  font-style: italic;
+}
+
+.gs-cv-triggers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gs-cv-trigger-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gs-cv-trigger-word {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.gs-cv-trigger-act {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gs-border);
+  background: none;
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+}
+/* What just happened, said where the press was: the prompt this wrote into is
+   behind both this panel and the picker over it. */
+.gs-cv-trigger-act--done {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gs-cv-trigger-act--on {
+  border-color: var(--gs-purple);
+  background: var(--gs-purple-tint);
+  color: var(--gs-purple);
+}
+.gs-cv-trigger-act:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.gs-cv-trigger-why {
+  flex: none;
+  font-size: 10px;
+  color: var(--gs-muted);
+  text-align: right;
+  max-width: 45%;
+}
+
+.gs-cv-field {
+  display: block;
+  margin-bottom: 10px;
+}
+.gs-cv-field-note {
+  margin: 2px 0 5px;
+}
+.gs-cv-hash {
+  width: 100%;
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+}
+
+.gs-cv-detail-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gs-cv-remove {
+  margin-right: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gs-danger, #dc2626);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* ------- Picker chrome ----------------------------------------------- */
+
+.gs-cv-panel {
+  max-width: 980px;
+}
+.gs-cv-mature {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 8px;
+  font-size: 11px;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gs-cv-filters-btn {
+  position: relative;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--gs-border);
+  background: none;
+  color: var(--gs-label);
+  cursor: pointer;
+  font-family: inherit;
+  flex: none;
+}
+.gs-cv-filters-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gs-purple);
+}
+.gs-cv-filters,
+.gs-cv-manual {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gs-cv-manual {
+  border-bottom: 0;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gs-cv-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--gs-muted);
+}
+.gs-cv-filter select,
+.gs-cv-filter input {
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  font-family: inherit;
+  max-width: 220px;
+}
+.gs-cv-manual-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gs-cv-more {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 4px;
+}
+.gs-cv-footer {
+  gap: 10px;
+}
+/* A base model the chosen model cannot load, marked rather than hidden: the
+   escape from the family filter is deliberate, so what it turns up is too. */
+.gs-civit-tag--misfit {
+  border: 1px dashed var(--gs-border);
+  opacity: 0.75;
+}
+
+/* ------- Token scope for hosts outside the studio -------------------- */
+
+/* The rules above read the studio's design tokens, which are declared on
+   .gen-studio. A surface outside it, such as the style editor, wears this class
+   to bring the same palette with it.
+
+   Deliberately not applied inside the studio: doing so would shadow the tokens
+   the studio itself sets, including the variants it uses for alchemy. */
+.gs-civit-scope {
+  --gs-blue: #1d4ed8;
+  --gs-blue-tint: #eff6ff;
+  --gs-blue-tint-border: #dbeafe;
+  --gs-border: #e5e7eb;
+  --gs-border-soft: #f0f1f3;
+  --gs-danger: #dc2626;
+  --gs-label: #6b7280;
+  --gs-muted: #737b88;
+  --gs-panel: #ffffff;
+  --gs-purple: #9333ea;
+  --gs-purple-tint: #faf5ff;
+  --gs-seg-track: #f3f4f6;
+  --gs-space-2: 8px;
+  --gs-space-1: 4px;
+  --gs-space-3: 12px;
+  --gs-space-4: 16px;
+  --gs-space-6: 24px;
+  --gs-radius-sm: 8px;
+  --gs-radius-lg: 14px;
+  --gs-border-results: #e5e7eb;
+  --gs-elev-3: 0 24px 60px rgb(15 18 24 / 28%);
+  --gs-text-xs: 11px;
+  --gs-ink-2: #4b5563;
+  --gs-control-h: 40px;
+}
+.dark .gs-civit-scope {
+  --gs-blue: #a855f7;
+  --gs-blue-tint: rgb(29 78 216 / 16%);
+  --gs-blue-tint-border: rgb(59 130 246 / 35%);
+  --gs-border: #2a2e37;
+  --gs-border-soft: #23262d;
+  --gs-danger: #f87171;
+  --gs-label: #9ca3af;
+  --gs-muted: #98a0ac;
+  --gs-panel: #1c202a;
+  --gs-purple-tint: rgb(147 51 234 / 16%);
+  --gs-seg-track: #272c35;
+  --gs-border-results: #2a2e37;
+  --gs-ink-2: #cbd5e1;
+}
+
+/* The raw-JSON editor kept beside the picker. Folded away because it is the
+   escape hatch, not the way in: the style API accepts fields the picker does
+   not model, and authors move payloads between tools. */
+.gs-civit-json {
+  margin-top: 10px;
+}
+.gs-civit-json > summary {
+  font-size: 11px;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+
+/* ------- Studio rules the shared components borrow ------------------- */
+
+/* The picker, the detail panel and the selected list use the studio's own modal
+   shell and small controls. Those rules are scoped .gen-studio, so on a page
+   that is not the studio the picker would not even overlay.
+
+   Copied here under the scope class rather than unscoped: several of these class
+   names already appear on pages outside the studio, and unscoping would restyle
+   them from something that never claimed them. Media queries come along, so the
+   other host keeps the same touch targets, forced-colours treatment and
+   reduced-motion behaviour.
+
+   These rules are copies of the ones in _generate.css. The copies hold
+   declarations only, with the reasoning left beside the originals, so change
+   the originals and repeat the change here. */
+
+.gs-civit-scope .gs-mono {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+.gs-civit-scope .gs-purple {
+  color: var(--gs-purple);
+}
+.gs-civit-scope .gs-muted {
+  color: var(--gs-muted);
+}
+.gs-civit-scope .gs-seg {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--gs-seg-track);
+  padding: 3px;
+  border-radius: var(--gs-radius-md);
+}
+.gs-civit-scope .gs-seg-opt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-1);
+  min-height: 32px;
+  cursor: pointer;
+  border-radius: var(--gs-radius-sm);
+  padding: 0 var(--gs-space-3);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-label);
+  transition:
+    color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gs-civit-scope .gs-seg-opt:hover:not([aria-pressed="true"]):not(:disabled) {
+  color: var(--gs-ink);
+}
+.gs-civit-scope .gs-seg-opt[aria-pressed="true"] {
+  background: var(--gs-seg-active);
+  color: var(--gs-seg-active-ink);
+  box-shadow: var(--gs-elev-1);
+}
+.gs-civit-scope .gs-seg-opt:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.gs-civit-scope .gs-seg-opt:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gs-civit-scope .gs-seg-opt {
+    min-height: 38px;
+  }
+}
+.gs-civit-scope .gs-slabel {
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-label);
+}
+.gs-civit-scope .gs-field-head > .gs-slabel {
+  min-width: 0;
+}
+.gs-civit-scope .gs-field-head + *:not(.gs-seg) {
+  margin-top: var(--gs-space-1);
+}
+.gs-civit-scope .gs-seg--xs .gs-seg-opt {
+  padding: 0 var(--gs-space-2);
+  font-size: var(--gs-text-xs);
+}
+.gs-civit-scope app-icon.gs-ico-sm {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+}
+.gs-civit-scope app-icon.gs-ico-sm svg {
+  width: 14px;
+  height: 14px;
+}
+@media (forced-colors: active) {
+  .gs-civit-scope .gs-seg {
+    border: 1px solid CanvasText;
+    box-shadow: none;
+  }
+  .gs-civit-scope .gs-seg-opt[aria-pressed="true"] {
+    border-color: Highlight;
+    color: HighlightText;
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+  .gs-civit-scope .gs-range::-webkit-slider-thumb {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .gs-civit-scope .gs-range::-moz-range-thumb {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+  .gs-civit-scope .gs-range::-webkit-slider-runnable-track {
+    border: 1px solid CanvasText;
+  }
+  .gs-civit-scope .gs-range::-moz-range-track {
+    border: 1px solid CanvasText;
+  }
+}
+.gs-civit-scope .gs-card-title--sm {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-width: 0;
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gs-ink);
+}
+.gs-civit-scope .gs-card-title--sm::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(
+    --gs-sec-tint-border,
+    var(--gs-zone-tint-border, var(--gs-border))
+  );
+}
+.gs-civit-scope .gs-sec-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gs-civit-scope .gs-sec-head--sub {
+  margin-top: var(--gs-space-1);
+  padding-top: var(--gs-space-2);
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gs-civit-scope .gs-sec-head > .gs-card-title,
+.gs-civit-scope .gs-sec-head > .gs-card-title--sm {
+  flex: 1 1 auto;
+}
+.gs-civit-scope .gs-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  border-radius: var(--gs-radius-pill);
+  outline: none;
+  cursor: pointer;
+  --gs-range-accent: var(--gs-blue);
+}
+.gs-civit-scope .gs-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--gs-range-accent) 0 var(--gs-range-fill, 0%),
+    var(--gs-border) var(--gs-range-fill, 0%) 100%
+  );
+}
+.gs-civit-scope .gs-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--gs-panel);
+  border: 2px solid var(--gs-range-accent);
+  box-shadow: var(--gs-elev-1);
+  cursor: pointer;
+}
+.gs-civit-scope .gs-range::-moz-range-track {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-border);
+}
+.gs-civit-scope .gs-range::-moz-range-progress {
+  height: 4px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-range-accent);
+}
+.gs-civit-scope .gs-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gs-panel);
+  border: 2px solid var(--gs-range-accent);
+  box-shadow: var(--gs-elev-1);
+  cursor: pointer;
+}
+.gs-civit-scope .gs-range--purple {
+  --gs-range-accent: var(--gs-purple);
+}
+.gs-civit-scope .gs-range:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.gs-civit-scope .gs-range:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gs-civit-scope .gs-range {
+    height: 24px;
+  }
+  .gs-civit-scope .gs-range::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+    margin-top: -10px;
+  }
+  .gs-civit-scope .gs-range::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+}
+.gs-civit-scope .gs-empty-line {
+  font-size: 11px;
+  color: var(--gs-muted);
+  text-align: center;
+  padding: 8px 0;
+}
+.gs-civit-scope .gs-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(2px);
+}
+.gs-civit-scope .gs-modal-panel {
+  width: 660px;
+  max-width: 92vw;
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+.gs-civit-scope .gs-modal-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--gs-border-results);
+}
+.gs-civit-scope .gs-modal-title {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.gs-civit-scope .gs-modal-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--gs-seg-track);
+  color: var(--gs-label);
+}
+.gs-civit-scope .gs-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gs-civit-scope .gs-modal-close:hover {
+  color: var(--gs-ink);
+}
+.gs-civit-scope .gs-modal-search-bar {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gs-civit-scope .gs-modal-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 9px;
+  background: var(--gs-field);
+}
+.gs-civit-scope .gs-modal-search:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.4);
+}
+.gs-civit-scope .gs-modal-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--gs-ink);
+  outline: none;
+}
+.gs-civit-scope .gs-modal-search input::placeholder {
+  color: var(--gs-muted);
+}
+.gs-civit-scope .gs-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 20px;
+}
+.gs-civit-scope .gs-modal-state {
+  padding: 40px 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--gs-muted);
+}
+.gs-civit-scope .gs-modal-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 20px;
+  border-top: 1px solid var(--gs-border-results);
+  flex-wrap: wrap;
+}
+.gs-civit-scope .gs-modal-foot-note ~ * {
+  flex: none;
+  margin-left: auto;
+}
+.gs-civit-scope .gs-modal-foot-note {
+  font-size: 11.5px;
+  color: var(--gs-muted);
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+.gs-civit-scope .gs-modal-done {
+  flex: none;
+  background: var(--gs-blue);
+  color: #fff;
+  border: 0;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.gs-civit-scope .gs-modal-done:hover {
+  background: var(--gs-blue-hover);
+}
+.gs-civit-scope .gs-shimmer {
+  background: linear-gradient(90deg, #eef0f3 25%, #e0e3e8 50%, #eef0f3 75%);
+  background-size: 200% 100%;
+  animation: gs-shim 1.6s infinite;
+}
+.dark .gs-civit-scope .gs-shimmer {
+  background: linear-gradient(90deg, #1b1e24 25%, #262a32 50%, #1b1e24 75%);
+  background-size: 200% 100%;
+}
+.gs-civit-scope .gs-fadeup {
+  animation: gs-fadeup 0.2s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gs-civit-scope .gs-shimmer,
+  .gs-civit-scope .gs-fadeup {
+    animation: none;
+  }
+  .gs-civit-scope .gs-seg-opt {
+    transition: none;
+  }
+}
+.gs-civit-scope .gs-sb-bar .gs-modal-search {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+@media (max-width: 1023.98px) {
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    touch-action: auto;
+  }
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    flex: 1 1 200px;
+    min-height: 40px;
+  }
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-variant .gs-seg-opt,
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-sort .gs-seg-opt {
+    flex: 1 1 0;
+    min-height: 40px;
+    font-size: 12.5px;
+  }
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-bar--folded .gs-modal-search {
+    display: none;
+  }
+  .gs-civit-scope .gs-modal-panel--browser .gs-modal-body {
+    order: 2;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+@media (max-width: 1023.98px) {
+  .gs-civit-scope .gs-seg--xs .gs-seg-opt {
+    min-height: 40px;
+    min-width: 40px;
+  }
+}
+.gs-civit-scope .gs-sb-viewer-variant .gs-seg-opt {
+  min-height: 44px;
+}
+@media (max-width: 1023.98px) {
+  .gs-civit-scope .gs-sb-viewer-variant .gs-seg-opt {
+    flex: 1 1 0;
+  }
+}
+@media (min-width: 1024px) {
+  .gs-civit-scope .gs-modal-panel--browser .gs-modal-header {
+    padding: 10px 20px;
+  }
+  .gs-civit-scope .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
+    flex: 1 1 160px;
+    padding: 7px 12px;
+  }
+}

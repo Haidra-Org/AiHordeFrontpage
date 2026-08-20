@@ -62,7 +62,12 @@ describe('StyleFormComponent', () => {
   const samplerConstraintsMock = { contract, load: vi.fn() };
 
   const referenceNames = signal<string[] | null>(null);
-  const modelReferenceMock = { names: referenceNames, load: vi.fn() };
+  const referenceBaselines = signal<Record<string, string> | null>(null);
+  const modelReferenceMock = {
+    names: referenceNames,
+    baselines: referenceBaselines,
+    load: vi.fn(),
+  };
 
   beforeEach(() => {
     aiHordeMock.getImageModels.mockClear();
@@ -70,6 +75,7 @@ describe('StyleFormComponent', () => {
     contract.set(null);
     samplerConstraintsMock.load.mockClear();
     referenceNames.set(null);
+    referenceBaselines.set(null);
     modelReferenceMock.load.mockClear();
 
     TestBed.configureTestingModule({
@@ -237,5 +243,132 @@ describe('StyleFormComponent', () => {
     expect(component.form.controls['name'].value).toBe('Text Style A');
     expect(component.hasUnsavedMeaningfulChanges()).toBe(false);
     expect(aiHordeMock.getTextModels).toHaveBeenCalled();
+  });
+
+  describe('LoRAs and embeddings', () => {
+    function imageForm(style: ImageStyle) {
+      const fixture = TestBed.createComponent(StyleFormComponent);
+      fixture.componentRef.setInput('styleType', 'image');
+      fixture.componentRef.setInput('initialValues', style);
+      fixture.detectChanges();
+      return fixture.componentInstance;
+    }
+
+    it('seeds the editable lists from the style it was given', () => {
+      const component = imageForm({
+        ...imageStyleA,
+        params: {
+          ...imageStyleA.params,
+          loras: [{ name: '246091', model: 0.8, clip: 0.6, is_version: true }],
+          tis: [{ name: '7808', strength: 0.5 }],
+        },
+      } as ImageStyle);
+
+      expect(component.form.controls['loras'].value).toEqual([
+        { name: '246091', model: 0.8, clip: 0.6, is_version: true },
+      ]);
+      expect(component.form.controls['tis'].value).toEqual([
+        { name: '7808', strength: 0.5 },
+      ]);
+    });
+
+    it('keeps a file hash, which a generation never carries', () => {
+      const hash = 'a'.repeat(64);
+      const component = imageForm({
+        ...imageStyleA,
+        params: {
+          ...imageStyleA.params,
+          loras: [{ name: '1', model: 1, clip: 1, sha256: hash }],
+        },
+      } as ImageStyle);
+
+      expect(component.form.controls['loras'].value[0].sha256).toBe(hash);
+    });
+
+    // The fold below the editor is read back when it loses focus, so a copy
+    // left showing the list as it was before a choice would apply that older
+    // list over the choice.
+    it('rewrites the text below the editor when the list above it changes', () => {
+      const component = imageForm(imageStyleA);
+
+      component.setLoras([
+        { name: '246091', model: 0.8, clip: 0.6, is_version: true, label: 'x' },
+      ]);
+      component.setTis([{ name: '7808', strength: 0.5, label: 'y' }]);
+
+      // The text is the payload's own shape, so the reader's label is not in it.
+      expect(
+        JSON.parse(component.form.controls['loras_json'].value as string),
+      ).toEqual([{ name: '246091', model: 0.8, clip: 0.6, is_version: true }]);
+      expect(
+        JSON.parse(component.form.controls['tis_json'].value as string),
+      ).toEqual([{ name: '7808', strength: 0.5 }]);
+
+      component.setLoras([]);
+      expect(component.form.controls['loras_json'].value).toBe('');
+    });
+
+    it('says so when the JSON escape hatch cannot be read', () => {
+      const component = imageForm(imageStyleA);
+
+      component.applyJson('loras', '{ not a list');
+
+      // The old editor discarded a mistyped list and saved the style without
+      // it, saying nothing at all.
+      expect(component.assetJsonError()).toBe('loras');
+    });
+
+    it('takes a corrected list back onto the real control', () => {
+      const component = imageForm(imageStyleA);
+
+      component.applyJson('loras', '[{"name":"42","model":1,"clip":1}]');
+
+      expect(component.assetJsonError()).toBeNull();
+      expect(component.form.controls['loras'].value).toEqual([
+        { name: '42', model: 1, clip: 1 },
+      ]);
+    });
+
+    describe('the family the picker starts from', () => {
+      it('follows the models the style names when they agree', () => {
+        referenceBaselines.set({ ModelA: 'stable_diffusion_1' });
+        const component = imageForm(imageStyleA);
+
+        expect(component.styleBaseline()).toBe('stable_diffusion_1');
+      });
+
+      it('has no opinion when the style spans two families', () => {
+        referenceBaselines.set({
+          ModelA: 'stable_diffusion_1',
+          ModelB: 'stable_diffusion_xl',
+        });
+        const component = imageForm({
+          ...imageStyleA,
+          models: ['ModelA', 'ModelB'],
+        } as ImageStyle);
+
+        // Narrowing to one would be the editor picking a side for the author.
+        expect(component.styleBaseline()).toBeNull();
+      });
+
+      it('has no opinion before the reference has loaded', () => {
+        const component = imageForm(imageStyleA);
+
+        expect(component.styleBaseline()).toBeNull();
+      });
+    });
+
+    it('puts a trigger word before the negative half of the template', () => {
+      const component = imageForm({
+        ...imageStyleB,
+        prompt: '{p}{np}',
+      } as ImageStyle);
+
+      component.appendToPrompt('detailed');
+
+      expect(component.form.controls['prompt'].value).toBe(
+        '{p}, detailed {np}',
+      );
+    });
   });
 });

@@ -40,12 +40,19 @@ import {
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { SamplerConstraintsService } from '../../../services/sampler-constraints.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
+import { CivitaiSelectionComponent } from '../../civitai-selection/civitai-selection.component';
+import { CivitaiPickerComponent } from '../../civitai-picker/civitai-picker.component';
+import {
+  loraConfigToSelection,
+  selectionToLoraConfig,
+  tiConfigToSelection,
+  selectionToTiConfig,
+  type LoraSelection,
+  type TiSelection,
+} from '../../../types/civitai-asset';
 import { SAMPLERS } from '../../../pages/generate/generate-form.model';
 import { ActiveModel, mergeModelList } from '../../../types/active-model';
-import {
-  StyleLoraConfig,
-  StyleTextualInversionConfig,
-} from '../../../types/style';
+import {} from '../../../types/style';
 import { ToggleCheckboxComponent } from '../../toggle-checkbox/toggle-checkbox.component';
 import { ModelAutocompleteComponent } from '../../model-autocomplete/model-autocomplete.component';
 import { IconComponent } from '../../icon/icon.component';
@@ -95,6 +102,9 @@ interface ImageStyleFormValue extends StyleFormBaseValue {
   facefixer_strength: number | string;
   post_processing: string;
   transparent: boolean | null;
+  loras: LoraSelection[];
+  tis: TiSelection[];
+  /** The same two lists as text, for the escape hatch below the editor. */
   loras_json: string;
   tis_json: string;
   workflow: string;
@@ -153,6 +163,8 @@ export interface StyleFormSubmitEvent {
 @Component({
   selector: 'app-style-form',
   imports: [
+    CivitaiSelectionComponent,
+    CivitaiPickerComponent,
     ReactiveFormsModule,
     TranslocoPipe,
     ToggleCheckboxComponent,
@@ -283,6 +295,119 @@ export class StyleFormComponent implements OnInit, OnChanges {
     }
     return entries;
   });
+
+  /** Whether the add-from-CivitAI surface is open. */
+  public readonly civitaiOpen = signal(false);
+
+  /** The last add-on list the escape hatch could not read, for the line beside it. */
+  public readonly assetJsonError = signal<'loras' | 'tis' | null>(null);
+
+  /**
+   * The one model family this style implies, or null when it implies none.
+   *
+   * A style may name several models. Where they agree the picker can start from
+   * that family; where they disagree, filtering to one would be the editor
+   * picking a side on the author's behalf, so it starts from everything.
+   */
+  public readonly styleBaseline = computed<string | null>(() => {
+    const map = this.modelReference.baselines();
+    if (!map) {
+      return null;
+    }
+    const names = this.parseCommaSeparated(
+      this.form?.controls['models']?.value as string | undefined,
+    );
+    const found = new Set(
+      names.map((name) => map[name]).filter((b): b is string => !!b),
+    );
+    return found.size === 1 ? [...found][0] : null;
+  });
+
+  public openCivitai(): void {
+    this.civitaiOpen.set(true);
+  }
+
+  public closeCivitai(): void {
+    this.civitaiOpen.set(false);
+  }
+
+  public setLoras(next: LoraSelection[]): void {
+    this.form.patchValue({
+      loras: next,
+      loras_json: this.assetJson(next.map(selectionToLoraConfig)),
+    });
+    this.assetJsonError.set(null);
+    this.form.markAsDirty();
+  }
+
+  public setTis(next: TiSelection[]): void {
+    this.form.patchValue({
+      tis: next,
+      tis_json: this.assetJson(next.map(selectionToTiConfig)),
+    });
+    this.assetJsonError.set(null);
+    this.form.markAsDirty();
+  }
+
+  /**
+   * Keep the text below the editor showing the list above it.
+   *
+   * The two are one value in two forms, and the text is read back on blur. Left
+   * unwritten, opening the fold after choosing from the catalogue would show an
+   * empty list, and looking away from it would then apply that emptiness over
+   * everything just chosen.
+   */
+  private assetJson(configs: readonly unknown[]): string {
+    return configs.length > 0 ? JSON.stringify(configs, null, 2) : '';
+  }
+
+  /**
+   * Put a trigger word into the style's prompt template. A style's prompt is a
+   * template around {p} and {np} rather than plain text, so the word goes just
+   * before the negative half where there is one, and on the end otherwise.
+   */
+  public appendToPrompt(trigger: string): void {
+    const control = this.form.controls['prompt'];
+    const current = String(control?.value ?? '');
+    const marker = current.indexOf('{np}');
+    const next =
+      marker >= 0
+        ? `${current.slice(0, marker).trimEnd()}, ${trigger} ${current.slice(marker)}`
+        : `${current.trimEnd()}, ${trigger}`;
+    control?.setValue(next.replace(/^,\s*/, ''));
+    this.form.markAsDirty();
+  }
+
+  /** Read an edited JSON list back onto the real control, or say it cannot. */
+  public applyJson(field: 'loras' | 'tis', raw: string): void {
+    if (!raw.trim()) {
+      this.form.patchValue({ [field]: [] });
+      this.assetJsonError.set(null);
+      return;
+    }
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        throw new Error('not a list');
+      }
+      this.form.patchValue({
+        [field]:
+          field === 'loras'
+            ? parsed.map((entry) => loraConfigToSelection(entry as never))
+            : parsed.map((entry) => tiConfigToSelection(entry as never)),
+      });
+      this.assetJsonError.set(null);
+      this.form.markAsDirty();
+    } catch {
+      // Said out loud rather than swallowed: the old editor discarded a
+      // mistyped list and saved the style without it.
+      this.assetJsonError.set(field);
+    }
+  }
+
+  public textareaValue(event: Event): string {
+    return (event.target as HTMLTextAreaElement).value;
+  }
 
   ngOnInit(): void {
     this.initializeForm();
@@ -416,6 +541,8 @@ export class StyleFormComponent implements OnInit, OnChanges {
         facefixer_strength: [params.facefixer_strength ?? ''],
         post_processing: [params.post_processing?.join(', ') ?? ''],
         transparent: [params.transparent ?? null],
+        loras: [(params.loras ?? []).map(loraConfigToSelection)],
+        tis: [(params.tis ?? []).map(tiConfigToSelection)],
         loras_json: [params.loras ? JSON.stringify(params.loras, null, 2) : ''],
         tis_json: [params.tis ? JSON.stringify(params.tis, null, 2) : ''],
         workflow: [params.workflow ?? ''],
@@ -514,6 +641,8 @@ export class StyleFormComponent implements OnInit, OnChanges {
           facefixer_strength: p.facefixer_strength ?? '',
           post_processing: p.post_processing?.join(', ') ?? '',
           transparent: p.transparent ?? null,
+          loras: (p.loras ?? []).map(loraConfigToSelection),
+          tis: (p.tis ?? []).map(tiConfigToSelection),
           loras_json: p.loras ? JSON.stringify(p.loras, null, 2) : '',
           tis_json: p.tis ? JSON.stringify(p.tis, null, 2) : '',
           workflow: p.workflow ?? '',
@@ -636,20 +765,16 @@ export class StyleFormComponent implements OnInit, OnChanges {
       else if (f.transparent === false) params.transparent = false;
       if (f.workflow) params.workflow = f.workflow;
 
-      // Parse LoRAs and TIs from JSON
-      if (f.loras_json) {
-        try {
-          params.loras = JSON.parse(f.loras_json) as StyleLoraConfig[];
-        } catch {
-          // Invalid JSON, skip
-        }
+      // Taken from the edited lists rather than parsed back out of text: the
+      // old path swallowed a syntax error and saved a style with no add-ons at
+      // all, with nothing said about it.
+      const loras = f.loras ?? [];
+      if (loras.length > 0) {
+        params.loras = loras.map(selectionToLoraConfig);
       }
-      if (f.tis_json) {
-        try {
-          params.tis = JSON.parse(f.tis_json) as StyleTextualInversionConfig[];
-        } catch {
-          // Invalid JSON, skip
-        }
+      const tis = f.tis ?? [];
+      if (tis.length > 0) {
+        params.tis = tis.map(selectionToTiConfig);
       }
 
       const payload: CreateImageStyleInput = {

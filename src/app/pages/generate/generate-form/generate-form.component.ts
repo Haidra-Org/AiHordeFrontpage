@@ -14,7 +14,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   AbstractControl,
   FormControl,
@@ -27,7 +27,7 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
-import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
+import { CivitaiSelectionComponent } from '../../../components/civitai-selection/civitai-selection.component';
 import { RememberedHeightDirective } from '../../../directives/remembered-height.directive';
 import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs-prompt-editor.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
@@ -37,7 +37,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
 import { StyleForcedParams } from '../../../services/horde-styles.service';
-import { CivitaiPickerComponent } from '../civitai-picker/civitai-picker.component';
+import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import {
   FACE_FIXERS,
@@ -109,7 +109,6 @@ import {
   suggestedSettingsCount,
   type SuggestedSettings,
 } from '../generate-form.model';
-import { isNumericAssetId } from '../../../types/civitai-asset';
 import {
   FeatureCompatRuleId,
   FieldAnchorId,
@@ -168,10 +167,10 @@ export type PromptEditorField = 'prompt' | 'negative';
 @Component({
   selector: 'app-generate-form',
   imports: [
-    DecimalPipe,
     NgTemplateOutlet,
     ReactiveFormsModule,
     TranslocoPipe,
+    CivitaiSelectionComponent,
     IconComponent,
     GsHelpComponent,
     TutorialAnchorDirective,
@@ -190,7 +189,6 @@ export type PromptEditorField = 'prompt' | 'negative';
 })
 export class GenerateFormComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly civitaiResolver = inject(CivitaiResolverService);
   public readonly presetsSvc = inject(GeneratePresetsService);
   /* Below 1024px the tool switcher is a bottom bar and carries nothing but the
      tools, so this header is the studio's top line and the place the glossary
@@ -755,13 +753,6 @@ export class GenerateFormComponent implements OnInit {
           this.sizeTouched.set(true);
         }
       });
-
-    // Rows loaded from history arrive as bare identifiers, so the catalogue is
-    // asked whenever the lists change as well as for the ones already there.
-    this.resolveAddonNames();
-    merge(controls.loras.valueChanges, controls.tis.valueChanges)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.resolveAddonNames());
   }
 
   public setMode(mode: GenerateMode): void {
@@ -978,62 +969,29 @@ export class GenerateFormComponent implements OnInit {
     return this.form().controls.tis.value;
   }
 
-  /**
-   * What an add-on row is called, or null when only its identifier is known.
-   *
-   * A request stores only the identifier the horde was given, so a generation
-   * loaded back from history arrives with a number and nothing else. The card
-   * words that case itself rather than showing a bare number, which would read
-   * as a quantity instead of a name.
-   */
-  public addonName(entry: FormLoraEntry | FormTiEntry): string | null {
-    if (entry.label) {
-      return entry.label;
-    }
-    const resolved = this.civitaiResolver.metaFor(this.addonRef(entry))?.label;
-    if (resolved) {
-      return resolved;
-    }
-    return isNumericAssetId(entry.name) ? null : entry.name;
+  /** Take an edited selection list onto the form, marking it as the user's. */
+  public setLoras(next: FormLoraEntry[]): void {
+    const control = this.form().controls.loras;
+    control.setValue(next);
+    control.markAsDirty();
   }
 
-  /** Whether an add-on row is a LoRA; only a LoRA can name a version. */
-  public isLoraEntry(
-    entry: FormLoraEntry | FormTiEntry,
-  ): entry is FormLoraEntry {
-    return this.isLora(entry);
-  }
-
-  private isLora(entry: FormLoraEntry | FormTiEntry): entry is FormLoraEntry {
-    return 'clip' in entry;
-  }
-
-  /** How an add-on row is looked up; only a LoRA can name a version. */
-  private addonRef(entry: FormLoraEntry | FormTiEntry): {
-    id: string;
-    isVersion: boolean;
-  } {
-    return {
-      id: entry.name,
-      isVersion: this.isLora(entry) && entry.is_version === true,
-    };
+  public setTis(next: FormTiEntry[]): void {
+    const control = this.form().controls.tis;
+    control.setValue(next);
+    control.markAsDirty();
   }
 
   /**
-   * Ask the catalogue about every add-on that arrived without a name. Rows
-   * loaded from history are the only ones that need it; a freshly picked one
-   * already knows what it is called.
+   * Put a trigger word into the prompt. The studio's prompt is plain text; the
+   * style editor's is a template, which is why the selection list asks its host
+   * to do this rather than writing anywhere itself.
    */
-  private resolveAddonNames(): void {
-    const entries: (FormLoraEntry | FormTiEntry)[] = [
-      ...this.loras(),
-      ...this.tis(),
-    ];
-    this.civitaiResolver.requestAll(
-      entries
-        .filter((entry) => !entry.label)
-        .map((entry) => this.addonRef(entry)),
-    );
+  public appendToPrompt(trigger: string): void {
+    const control = this.form().controls.prompt;
+    const current = control.value.trim();
+    control.setValue(current ? `${current}, ${trigger}` : trigger);
+    control.markAsDirty();
   }
 
   public removeLora(index: number): void {
