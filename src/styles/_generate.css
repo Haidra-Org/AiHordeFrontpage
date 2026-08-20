@@ -13758,3 +13758,48 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-retention-link:hover {
   text-decoration-thickness: 2px;
 }
+
+/* The canvas a picture is about to be grown into. The hatching is the ground
+   the model will invent, so it reads as absent rather than as a surface: the
+   picture inside keeps its own proportions and sits where it was anchored. */
+.gen-studio .gs-outpaint-frame {
+  position: relative;
+  width: 100%;
+  border: 1px dashed var(--gs-field-border);
+  border-radius: var(--gs-radius-md);
+  overflow: hidden;
+  background-color: var(--gs-field-soft);
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--gs-blue) 22%, transparent) 0 7px,
+    transparent 7px 14px
+  );
+}
+/* The picture keeps a flat opaque backing of its own, and deliberately no
+   pattern of any kind: hatching means "the model paints this", so a source with
+   transparency in it must not show hatching through its own area. Anything
+   see-through in the picture reads as plain ground that is staying put. The
+   solid edge is the boundary itself, so it does not depend on the picture's own
+   contrast against the frame. */
+.gen-studio .gs-outpaint-kept {
+  position: absolute;
+  display: block;
+  object-fit: fill;
+  background-color: var(--gs-panel);
+  background-image: none;
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -1px;
+}
+/* Says which half is which, for a picture whose own edges are ambiguous. */
+.gen-studio .gs-outpaint-tag {
+  position: absolute;
+  top: var(--gs-space-1);
+  left: var(--gs-space-1);
+  padding: 2px var(--gs-space-1);
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-xs);
+  line-height: 1.4;
+  color: #fff;
+  background: color-mix(in srgb, var(--gs-blue) 88%, transparent);
+  pointer-events: none;
+}

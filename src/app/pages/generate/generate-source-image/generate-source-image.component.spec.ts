@@ -267,3 +267,79 @@ describe('GenerateSourceImageComponent', () => {
     expect(states.length).toBe(before);
   });
 });
+
+describe('the masked choices inside a mode', () => {
+  it('carries a mask on image-to-image once masking is asked for', async () => {
+    // The queue attaches whatever mask the emitted state names, so this is the
+    // wire the whole feature hangs on: without it the request submits as plain
+    // image-to-image and the whole picture is redrawn.
+    const { component, form, states } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    component.maskPainted.set(true);
+    component.maskBlob.set(new Blob(['m'], { type: 'image/png' }));
+
+    form.controls.sourceMode.setValue('img2img');
+    expect(states.at(-1)!.maskBlob).toBeNull();
+    expect(component.brushActive()).toBe(false);
+
+    form.controls.maskEnabled.setValue(true);
+    expect(component.brushActive()).toBe(true);
+    expect(states.at(-1)!.maskBlob).not.toBeNull();
+  });
+
+  it('throws the strokes away when masking is switched back off', async () => {
+    const { component, form, states } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    form.controls.sourceMode.setValue('img2img');
+    form.controls.maskEnabled.setValue(true);
+    component.maskPainted.set(true);
+    component.maskBlob.set(new Blob(['m'], { type: 'image/png' }));
+
+    form.controls.maskEnabled.setValue(false);
+    expect(component.maskPainted()).toBe(false);
+    expect(states.at(-1)!.maskBlob).toBeNull();
+  });
+
+  it('stands the choices down when the mode they belong to is left', async () => {
+    const { form } = await createComponent();
+    form.controls.sourceMode.setValue('img2img');
+    form.controls.maskEnabled.setValue(true);
+
+    form.controls.sourceMode.setValue('inpainting');
+    expect(form.controls.maskEnabled.value).toBe(false);
+
+    form.controls.outpaintEnabled.setValue(true);
+    form.controls.sourceMode.setValue('img2img');
+    expect(form.controls.outpaintEnabled.value).toBe(false);
+  });
+
+  it('reports the attachment size rather than the canvas grown around it', async () => {
+    // A caller asks how much the reader brought so it can say whether the size
+    // being requested leaves anything to add; the composed canvas would always
+    // match the request and the question could never be answered.
+    const { component, form, states } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    form.controls.sourceMode.setValue('inpainting');
+    form.controls.outpaintEnabled.setValue(true);
+
+    const last = states.at(-1)!;
+    expect(last.sourceWidth).toBe(640);
+    expect(last.sourceHeight).toBe(480);
+  });
+
+  it('needs room before a grown canvas counts as complete', async () => {
+    const { component, form } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    form.controls.sourceMode.setValue('inpainting');
+    form.controls.outpaintEnabled.setValue(true);
+
+    form.controls.width.setValue(640);
+    form.controls.height.setValue(480);
+    expect(component.outpaintHasRoom()).toBe(false);
+    expect(component.valid()).toBe(false);
+
+    form.controls.width.setValue(1024);
+    expect(component.outpaintHasRoom()).toBe(true);
+    expect(component.valid()).toBe(true);
+  });
+});

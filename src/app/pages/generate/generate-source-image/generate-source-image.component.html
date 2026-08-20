@@ -79,23 +79,47 @@
 
     @if (previewUrl(); as src) {
       <div class="flex flex-col gap-2">
-        <div class="relative w-full">
-          <img
-            [src]="src"
-            class="w-full rounded-lg"
-            alt="{{ 'generate.source.preview_alt' | transloco }}"
-          />
-          @if (brushActive()) {
-            <canvas
-              #paintCanvas
-              class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
-              (pointerdown)="onPaintPointerDown($event)"
-              (pointermove)="onPaintPointerMove($event)"
-              (pointerup)="onPaintPointerUp($event)"
-              (pointerleave)="onPaintPointerUp($event)"
-            ></canvas>
-          }
-        </div>
+        <!-- While the canvas is being grown, the picture is shown where it will
+             actually sit: the hatched ground around it is exactly what the
+             model is being asked to invent, at the proportions of the request.
+             Otherwise the picture fills the width as before. -->
+        @if (outpaintPreview(); as frame) {
+          <div
+            class="gs-outpaint-frame"
+            [style.aspect-ratio]="frame.width + ' / ' + frame.height"
+          >
+            <img
+              [src]="src"
+              class="gs-outpaint-kept"
+              [style.left.%]="frame.left"
+              [style.top.%]="frame.top"
+              [style.width.%]="frame.widthShare"
+              [style.height.%]="frame.heightShare"
+              alt="{{ 'generate.source.preview_alt' | transloco }}"
+            />
+            <span class="gs-outpaint-tag">
+              {{ "generate.source.outpaint_new_area" | transloco }}
+            </span>
+          </div>
+        } @else {
+          <div class="relative w-full">
+            <img
+              [src]="src"
+              class="w-full rounded-lg"
+              alt="{{ 'generate.source.preview_alt' | transloco }}"
+            />
+            @if (brushActive()) {
+              <canvas
+                #paintCanvas
+                class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
+                (pointerdown)="onPaintPointerDown($event)"
+                (pointermove)="onPaintPointerMove($event)"
+                (pointerup)="onPaintPointerUp($event)"
+                (pointerleave)="onPaintPointerUp($event)"
+              ></canvas>
+            }
+          </div>
+        }
 
         <div class="flex items-center gap-2">
           @if (sourceImage(); as img) {

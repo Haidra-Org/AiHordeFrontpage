@@ -223,6 +223,27 @@ export class GenerateSourceImageComponent implements OnInit {
 
   public readonly anchors = OUTPAINT_ANCHORS;
 
+  /**
+   * The composed canvas as percentages of itself, for the preview to lay the
+   * picture out inside the frame it is about to grow into. Null whenever the
+   * canvas is not being grown, or has no room to grow into yet.
+   */
+  public readonly outpaintPreview = computed(() => {
+    const canvas = this.outpaintCanvas();
+    const image = this.sourceImage();
+    if (!canvas || !image || !this.outpaintHasRoom()) {
+      return null;
+    }
+    return {
+      width: canvas.width,
+      height: canvas.height,
+      left: (canvas.x / canvas.width) * 100,
+      top: (canvas.y / canvas.height) * 100,
+      widthShare: (image.width / canvas.width) * 100,
+      heightShare: (image.height / canvas.height) * 100,
+    };
+  });
+
   /** Whether the size being asked for leaves any room around the picture. */
   public readonly outpaintHasRoom = computed(() => {
     const image = this.sourceImage();

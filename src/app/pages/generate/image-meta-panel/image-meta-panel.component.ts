@@ -244,14 +244,26 @@ export class ImageMetaPanelComponent {
     // actually used a source image, and it travels as one row: applying half of
     // it (a denoise without a source mode, say) would build an invalid request.
     if (value.sourceMode !== 'none') {
+      // The mode alone no longer names what was sent: the same two chips cover
+      // four of the horde's processings, and the choice that tells them apart
+      // has to be both shown and carried, or re-applying this row would rebuild
+      // a different request from the one it is describing.
+      const detail = value.control_type
+        ? value.control_type
+        : value.sourceMode === 'img2img' && value.maskEnabled
+          ? 'masked'
+          : value.sourceMode === 'inpainting' && value.outpaintEnabled
+            ? 'outpainting'
+            : null;
       sampling.push({
         id: 'source',
         labelKey: label('source'),
-        value: value.control_type
-          ? `${value.sourceMode} · ${value.control_type}`
-          : value.sourceMode,
+        value: detail ? `${value.sourceMode} · ${detail}` : value.sourceMode,
         keys: [
           'sourceMode',
+          'maskEnabled',
+          'outpaintEnabled',
+          'outpaintAnchor',
           'denoising_strength',
           'control_type',
           'image_is_control',
