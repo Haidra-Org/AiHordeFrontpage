@@ -59,6 +59,16 @@
                     {{ "alchemy.usecases.evidence_result" | transloco }}
                   </span>
                 </span>
+              } @else if (shot.answer; as answer) {
+                <!-- The studio's own reader, on the studio's own answer, so a
+                     reader is shown here exactly what they will be shown
+                     there. -->
+                <div class="gs-ref-shot-frame gs-ref-shot-frame--answer">
+                  <app-alchemy-result [form]="answer" [defaultOpen]="true" />
+                  <span class="gs-ref-shot-label">
+                    {{ "alchemy.usecases.evidence_result" | transloco }}
+                  </span>
+                </div>
               } @else if (shot.text; as text) {
                 <!-- A form that answers with words shows the words, verbatim.
                      A summary of a caption is not the caption. -->

@@ -21,11 +21,17 @@ export const ALCHEMY_EVIDENCE_ROOT = `${environment.evidenceBaseUrl.replace(/\/+
  * What a run produced. An image-producing form publishes `result`; a form that
  * answers with words publishes `result_text`, a file beside the source rather
  * than a string in the manifest, so the manifest stays a listing.
+ *
+ * A form that answers with structure publishes `result_json` as well: the
+ * horde's own answer, unflattened, so the documentation can show it the way the
+ * studio shows it. `result_text` stays beside it for the libraries published
+ * before there was one.
  */
 export interface AlchemyEvidenceFiles {
   source: string;
   result?: string;
   result_text?: string;
+  result_json?: string;
 }
 
 /** One form, run once, on one source. */

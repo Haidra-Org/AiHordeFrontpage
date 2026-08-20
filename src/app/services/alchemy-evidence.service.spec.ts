@@ -26,6 +26,15 @@ const manifest: AlchemyEvidenceManifest = {
       },
     },
     {
+      use_case: 'describe',
+      form: 'interrogation',
+      title: 'What is in it',
+      files: {
+        source: 'describe/source.webp',
+        result_json: 'describe/interrogation.json',
+      },
+    },
+    {
       use_case: 'enlarge',
       form: 'RealESRGAN_x4plus',
       title: 'Four times',
@@ -175,5 +184,36 @@ describe('AlchemyEvidenceService', () => {
     await Promise.resolve();
 
     expect(evidence.resultText(entry)).toBeNull();
+  });
+
+  it('fetches the structured answer a form gave, once', async () => {
+    const loaded = evidence.ensureLoaded();
+    http.expectOne(manifestUrl).flush(manifest);
+    await loaded;
+
+    const entry = evidence.entriesFor('describe')[1];
+    expect(evidence.resultJson(entry)).toBeNull();
+
+    const jsonUrl = `${ALCHEMY_EVIDENCE_ROOT}/describe/interrogation.json`;
+    http.expectOne(jsonUrl).flush({ interrogation: { tags: [] } });
+    await Promise.resolve();
+
+    expect(evidence.resultJson(entry)).toEqual({ interrogation: { tags: [] } });
+    http.expectNone(jsonUrl);
+  });
+
+  it('says nothing where the structured answer could not be fetched', async () => {
+    const loaded = evidence.ensureLoaded();
+    http.expectOne(manifestUrl).flush(manifest);
+    await loaded;
+
+    const entry = evidence.entriesFor('describe')[1];
+    evidence.resultJson(entry);
+    http
+      .expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/interrogation.json`)
+      .error(new ProgressEvent('error'));
+    await Promise.resolve();
+
+    expect(evidence.resultJson(entry)).toBeNull();
   });
 });

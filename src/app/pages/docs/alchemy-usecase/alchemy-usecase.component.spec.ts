@@ -51,6 +51,22 @@ const PUBLISHED: AlchemyEvidenceManifest = {
   ],
 };
 
+/** The same run, published with its structure kept rather than flattened. */
+const STRUCTURED: AlchemyEvidenceManifest = {
+  generated_against: 'https://aihorde.net/api/v2',
+  entries: [
+    {
+      use_case: 'describe',
+      form: 'caption',
+      title: 'One line about the picture',
+      files: {
+        source: 'describe/source.webp',
+        result_json: 'describe/caption.json',
+      },
+    },
+  ],
+};
+
 /** Every detector the picker offers, in the order the gallery reads them. */
 const DETECTORS = ANNOTATION_DETECTOR_GROUPS.flatMap((group) => group.types);
 
@@ -194,6 +210,21 @@ describe('DocsAlchemyUseCaseComponent', () => {
     fixture.detectChanges();
 
     expect(find('.gs-ref-shot-text')?.textContent).toContain(
+      'a black dog sitting on the ground',
+    );
+  });
+
+  it('reads a structured answer with the studio, not as flat words', async () => {
+    await setUp('describe', STRUCTURED);
+
+    http
+      .expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/caption.json`)
+      .flush({ caption: 'a black dog sitting on the ground' });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(find('.gs-ref-shot-text')).toBeNull();
+    expect(find('.alchemy-result')?.textContent).toContain(
       'a black dog sitting on the ground',
     );
   });

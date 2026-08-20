@@ -13,6 +13,8 @@ import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
+import { AlchemyResultComponent } from '../../../components/alchemy/alchemy-result/alchemy-result.component';
+import { AlchemyForm } from '../../../types/generation';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ALCHEMY_USE_CASES,
@@ -42,6 +44,11 @@ interface EvidenceShot {
   result: string | null;
   /** The words that came back, once they have been fetched. */
   text: string | null;
+  /**
+   * The whole answer, shaped the way the studio's own reader takes it, where
+   * the library published it with its structure intact.
+   */
+  answer: AlchemyForm | null;
   model: string | null;
   notes: string | null;
 }
@@ -94,6 +101,7 @@ interface OnwardUseCase {
     IconComponent,
     GsParamEntryComponent,
     GsShotViewerComponent,
+    AlchemyResultComponent,
   ],
   templateUrl: './alchemy-usecase.component.html',
   host: {
@@ -146,18 +154,24 @@ export class DocsAlchemyUseCaseComponent {
     if (!useCase) {
       return [];
     }
-    return this.evidence.entriesFor(useCase.id).map((entry) => ({
-      form: entry.form,
-      formNameKey: alchemyFormNameKey(entry.form),
-      title: entry.title,
-      source: this.evidence.assetUrl(entry.files.source),
-      result: entry.files.result
-        ? this.evidence.assetUrl(entry.files.result)
-        : null,
-      text: this.evidence.resultText(entry),
-      model: entry.model ?? null,
-      notes: entry.notes ?? null,
-    }));
+    return this.evidence.entriesFor(useCase.id).map((entry) => {
+      const answer = this.evidence.resultJson(entry);
+      return {
+        form: entry.form,
+        formNameKey: alchemyFormNameKey(entry.form),
+        title: entry.title,
+        source: this.evidence.assetUrl(entry.files.source),
+        result: entry.files.result
+          ? this.evidence.assetUrl(entry.files.result)
+          : null,
+        text: this.evidence.resultText(entry),
+        answer: answer
+          ? { form: entry.form, state: 'done', result: answer }
+          : null,
+        model: entry.model ?? null,
+        notes: entry.notes ?? null,
+      };
+    });
   });
 
   /**

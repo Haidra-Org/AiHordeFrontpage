@@ -187,6 +187,13 @@ export class AlchemyResultComponent {
     () => this.storedImageUrl() !== null,
   );
 
+  /**
+   * Pins the initial open state. The studio leaves this unset, so compact
+   * results open and interrogations stay folded; a page showing a published
+   * example sets it so the content is readable without a click.
+   */
+  public readonly defaultOpen = input<boolean | null>(null);
+
   public readonly rawJsonOpen = signal(false);
   public readonly copiedRaw = signal(false);
 
@@ -214,6 +221,8 @@ export class AlchemyResultComponent {
   public readonly isOpen = computed(() => {
     const override = this.openOverride();
     if (override !== null) return override;
+    const preset = this.defaultOpen();
+    if (preset !== null) return preset;
     return this.kind() !== 'interrogation';
   });
 

@@ -7,6 +7,7 @@ import {
   alchemyEvidenceAssetUrl,
   alchemyEvidenceManifestUrl,
 } from '../content/alchemy-evidence';
+import { AlchemyFormResult } from '../types/generation';
 
 /**
  * The published alchemy runs, as the documentation reads them.
@@ -18,9 +19,10 @@ import {
  * library exists at all, and it is the state a prerender is in, which is why the
  * pages take their identity from the registry and only their pictures from here.
  *
- * The word a describe-family form answered with is a file rather than a string
- * in the manifest, so it is fetched on demand and remembered: a page showing
- * seven captions should make seven requests once, not once per render.
+ * What a describe-family form answered with is a file rather than a value in the
+ * manifest, whether it is the words alone or the whole structured answer, so it
+ * is fetched on demand and remembered: a page showing seven answers should make
+ * seven requests once, not once per render.
  */
 @Injectable({ providedIn: 'root' })
 export class AlchemyEvidenceService {
@@ -29,9 +31,13 @@ export class AlchemyEvidenceService {
   private readonly published = signal<readonly AlchemyEvidenceEntry[]>([]);
   private readonly settled = signal(false);
   private readonly texts = signal<Readonly<Record<string, string>>>({});
+  private readonly payloads = signal<
+    Readonly<Record<string, AlchemyFormResult>>
+  >({});
 
   private pending: Promise<void> | null = null;
   private readonly textRequests = new Set<string>();
+  private readonly payloadRequests = new Set<string>();
 
   /** True once a fetch has finished, whether it found anything or not. */
   public readonly isSettled = this.settled.asReadonly();
@@ -85,6 +91,20 @@ export class AlchemyEvidenceService {
     return this.texts()[file] ?? null;
   }
 
+  /**
+   * The answer a form gave, with its structure intact, once it has arrived.
+   * Null while it is in flight and where none was published, on the same
+   * reading as {@link resultText}: an entry says only what it can back up.
+   */
+  public resultJson(entry: AlchemyEvidenceEntry): AlchemyFormResult | null {
+    const file = entry.files.result_json;
+    if (!file) {
+      return null;
+    }
+    this.requestPayload(file);
+    return this.payloads()[file] ?? null;
+  }
+
   private requestText(file: string): void {
     if (this.textRequests.has(file)) {
       return;
@@ -99,6 +119,25 @@ export class AlchemyEvidenceService {
       .catch(() => {
         // An unpublished or unreachable file is "nothing to show", which is
         // already what an absent entry in the map means.
+      });
+  }
+
+  private requestPayload(file: string): void {
+    if (this.payloadRequests.has(file)) {
+      return;
+    }
+    this.payloadRequests.add(file);
+    void firstValueFrom(
+      this.http.get<AlchemyFormResult>(alchemyEvidenceAssetUrl(file)),
+    )
+      .then((payload) => {
+        if (!payload || typeof payload !== 'object') {
+          return;
+        }
+        this.payloads.update((current) => ({ ...current, [file]: payload }));
+      })
+      .catch(() => {
+        // Same reading as an unfetchable caption: there is nothing to show.
       });
   }
 
@@ -130,6 +169,9 @@ function isUsable(entry: AlchemyEvidenceEntry): boolean {
     !!entry?.use_case &&
     !!entry.form &&
     !!entry.files?.source &&
-    (!!entry.files.result || !!entry.files.result_text || !!entry.control_type)
+    (!!entry.files.result ||
+      !!entry.files.result_text ||
+      !!entry.files.result_json ||
+      !!entry.control_type)
   );
 }

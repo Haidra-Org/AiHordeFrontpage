@@ -199,8 +199,9 @@ export interface AlchemyUseCase {
   related?: readonly AlchemyUseCaseId[];
   /**
    * The published strip that shows the member forms against one another on one
-   * source. Only the upscalers have one: a comparison needs the forms to differ
-   * in a way a picture can carry, and four face fixers on one face do not.
+   * source. Only the upscalers have one: eleven of them is more than a page of
+   * pairs can hold. Everywhere else each form is read as its own source beside
+   * its own result, which is the comparison at the size it is worth.
    */
   strip?: string;
   /** Ways out of the entry to somewhere else in the site. */

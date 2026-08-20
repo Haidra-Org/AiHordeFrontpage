@@ -11487,6 +11487,19 @@ app-gs-compare-wipe {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* A form that answers with structure is read here by the studio's own reader,
+   which draws no surface of its own. The frame lends it the surface the flat
+   caption beside it is read on, so both halves of the page say "answer" the
+   same way. */
+.gen-studio .gs-ref-shot-frame--answer {
+  justify-content: space-between;
+}
+.gen-studio .gs-ref-shot-frame--answer .alchemy-result:first-of-type {
+  padding: var(--gs-space-3);
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-field-soft);
+}
 .gen-studio .gs-ref-shot-label {
   font-size: var(--gs-text-xs);
   letter-spacing: 0.04em;
