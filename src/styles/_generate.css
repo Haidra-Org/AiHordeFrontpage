@@ -1398,6 +1398,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0 var(--gs-space-1);
   min-width: var(--gs-control-h-dense);
   min-height: var(--gs-control-h-dense);
   border: 1px solid var(--gs-border);
@@ -8726,6 +8727,10 @@ app-gs-sweep-scrub {
   color: var(--gs-ink);
   text-align: left;
   cursor: pointer;
+  /* A measure of its own, on every surface that carries one. Given the column's
+     full width the peek pane stays put and the chevron drifts away from the
+     words it belongs to, and the card stops reading as one object. */
+  max-width: 520px;
 }
 .gen-studio .gs-cap:hover {
   border-color: var(--gs-blue);
@@ -11553,6 +11558,23 @@ app-gs-compare-wipe {
   border: 1px solid var(--gs-card-border);
   background: var(--gs-stage);
 }
+/* The picture is its own way to a full-size look, on the gallery's tiles and on
+   the source above them. The button is a frame around the picture and nothing
+   else, so it resets to one and lets the picture keep its own border. */
+.gen-studio .gs-ref-zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  cursor: zoom-in;
+}
+.gen-studio .gs-ref-zoom:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+
 /* A detector nothing has been published for keeps its place in the grid: it is
    still a detector the studio will run, and a hole would read as one that does
    not exist. */
@@ -11593,9 +11615,9 @@ app-gs-compare-wipe {
 }
 /* The routed page is a reading column, and a figure that ran its whole width
    would be a picture of a setting blown up past the point of being looked at.
-   The strip keeps a measure of its own, aligned with the prose it belongs to. */
-.gen-studio .gs-ref-entry--page .gs-sweep-open,
-.gen-studio .gs-ref-entry--page .gs-cap {
+   The open plate keeps a measure of its own, aligned with the prose it belongs
+   to; the collapsed capsule carries its own on every surface. */
+.gen-studio .gs-ref-entry--page .gs-sweep-open {
   max-width: 640px;
 }
 .gen-studio .gs-ref-head {
