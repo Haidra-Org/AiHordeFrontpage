@@ -1362,12 +1362,29 @@
                     <div
                       class="flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      <span class="truncate">{{ addonLabel(lora) }}</span>
+                      <span class="truncate">
+                        @if (addonName(lora); as name) {
+                          {{ name }}
+                        } @else {
+                          {{
+                            "generate.results.meta_lora_id"
+                              | transloco: { id: lora.name }
+                          }}
+                        }
+                      </span>
                       <span class="gs-tag gs-tag--lora">
                         {{ "generate.form.tag_lora" | transloco }}
                       </span>
                     </div>
-                    <div class="gs-addon-sub truncate">{{ loraSub(lora) }}</div>
+                    <div class="gs-addon-sub truncate">
+                      @if (lora.inject_trigger; as trigger) {
+                        {{
+                          "generate.form.lora_trigger" | transloco: { trigger }
+                        }}
+                      } @else {
+                        {{ "generate.form.lora_no_trigger" | transloco }}
+                      }
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -1440,7 +1457,16 @@
                     <div
                       class="flex items-center gap-1.5 text-xs font-semibold"
                     >
-                      <span class="truncate">{{ addonLabel(ti) }}</span>
+                      <span class="truncate">
+                        @if (addonName(ti); as name) {
+                          {{ name }}
+                        } @else {
+                          {{
+                            "generate.results.meta_ti_id"
+                              | transloco: { id: ti.name }
+                          }}
+                        }
+                      </span>
                       <span class="gs-tag gs-tag--ti">
                         {{ "generate.form.tag_ti" | transloco }}
                       </span>
