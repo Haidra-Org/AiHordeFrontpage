@@ -28,6 +28,29 @@ import {
   samplerSettingIsValid,
   samplerWorkFactor,
 } from '../../types/sampler-constraints';
+import {
+  activeLoras,
+  activeTis,
+  coerceLoraSelection,
+  coerceTiSelection,
+  DEFAULT_LORA_STRENGTH,
+} from '../../types/civitai-asset';
+export type { TiInjectTarget } from '../../types/civitai-asset';
+export {
+  activeLoras,
+  activeTis,
+  DEFAULT_LORA_STRENGTH,
+  HORDE_MAX_LORAS,
+  HORDE_MAX_TIS,
+  MAX_LORA_STRENGTH,
+  MIN_LORA_STRENGTH,
+  TI_INJECT_TARGETS,
+} from '../../types/civitai-asset';
+import type { LoraSelection, TiSelection } from '../../types/civitai-asset';
+
+/** The studio's names for the shared selection shapes. */
+export type FormLoraEntry = LoraSelection;
+export type FormTiEntry = TiSelection;
 import type { ImageSchedulerName } from '../../types/sampler-constraints';
 
 /**
@@ -222,11 +245,6 @@ export function rangeFillPercent(
   return Math.min(100, Math.max(0, at * 100));
 }
 
-/** Horde LoRA/TI strength bounds (`model`, `clip`, TI `strength`): -5 to 5. */
-export const MIN_LORA_STRENGTH = -5;
-export const MAX_LORA_STRENGTH = 5;
-export const DEFAULT_LORA_STRENGTH = 1;
-
 export const MIN_FACEFIXER_STRENGTH = 0;
 export const MAX_FACEFIXER_STRENGTH = 1;
 export const DEFAULT_FACEFIXER_STRENGTH = 0.75;
@@ -321,10 +339,6 @@ export const MIN_HIRES_DENOISE = 0.01;
 export const MAX_HIRES_DENOISE = 1;
 export const DEFAULT_HIRES_DENOISE = 0.65;
 
-/** Where the horde may auto-inject a textual inversion trigger. */
-export const TI_INJECT_TARGETS = ['prompt', 'negprompt'] as const;
-export type TiInjectTarget = (typeof TI_INJECT_TARGETS)[number];
-
 /**
  * Post-processors that are face fixers; `facefixer_strength` is only meaningful
  * (and only emitted) when one of these is selected.
@@ -333,33 +347,6 @@ const FACE_FIXER_POST_PROCESSORS: readonly ImagePostProcessor[] = [
   'GFPGAN',
   'CodeFormers',
 ];
-
-/**
- * A persisted LoRA selection. `name` is the horde LoRA identifier: an exact name
- * or CivitAI model-page ID, or a CivitAI version ID when `is_version` is set.
- * `model` and `clip` are strengths in the -5..5 range.
- */
-export interface FormLoraEntry {
-  name: string;
-  model: number;
-  clip: number;
-  inject_trigger?: string;
-  is_version?: boolean;
-  /** Friendly display name (e.g. from CivitAI); never sent to the horde. */
-  label?: string;
-}
-
-/**
- * A persisted textual-inversion selection. `strength` is in the -5..5 range;
- * `inject_ti` asks the horde to add the embedding to the given prompt half.
- */
-export interface FormTiEntry {
-  name: string;
-  strength: number;
-  inject_ti?: TiInjectTarget;
-  /** Friendly display name (e.g. from CivitAI); never sent to the horde. */
-  label?: string;
-}
 
 /**
  * Total-pixel budget above which the form warns that the request may be slow or
@@ -1253,75 +1240,10 @@ function clampNumber(
   return fallback;
 }
 
-/** Validate one persisted LoRA entry, returning null if it is malformed. */
-function coerceLoraEntry(raw: unknown): FormLoraEntry | null {
-  if (typeof raw !== 'object' || raw === null) {
-    return null;
-  }
-  const source = raw as Record<string, unknown>;
-  if (typeof source['name'] !== 'string' || source['name'].trim() === '') {
-    return null;
-  }
-  const entry: FormLoraEntry = {
-    name: source['name'],
-    model: clampNumber(
-      source['model'],
-      MIN_LORA_STRENGTH,
-      MAX_LORA_STRENGTH,
-      DEFAULT_LORA_STRENGTH,
-    ),
-    clip: clampNumber(
-      source['clip'],
-      MIN_LORA_STRENGTH,
-      MAX_LORA_STRENGTH,
-      DEFAULT_LORA_STRENGTH,
-    ),
-  };
-  if (
-    typeof source['inject_trigger'] === 'string' &&
-    source['inject_trigger'].trim() !== ''
-  ) {
-    entry.inject_trigger = source['inject_trigger'];
-  }
-  if (typeof source['is_version'] === 'boolean') {
-    entry.is_version = source['is_version'];
-  }
-  if (typeof source['label'] === 'string' && source['label'].trim() !== '') {
-    entry.label = source['label'];
-  }
-  return entry;
-}
-
-/** Validate one persisted textual-inversion entry, returning null if malformed. */
-function coerceTiEntry(raw: unknown): FormTiEntry | null {
-  if (typeof raw !== 'object' || raw === null) {
-    return null;
-  }
-  const source = raw as Record<string, unknown>;
-  if (typeof source['name'] !== 'string' || source['name'].trim() === '') {
-    return null;
-  }
-  const entry: FormTiEntry = {
-    name: source['name'],
-    strength: clampNumber(
-      source['strength'],
-      MIN_LORA_STRENGTH,
-      MAX_LORA_STRENGTH,
-      DEFAULT_LORA_STRENGTH,
-    ),
-  };
-  if (
-    (TI_INJECT_TARGETS as readonly string[]).includes(
-      source['inject_ti'] as string,
-    )
-  ) {
-    entry.inject_ti = source['inject_ti'] as TiInjectTarget;
-  }
-  if (typeof source['label'] === 'string' && source['label'].trim() !== '') {
-    entry.label = source['label'];
-  }
-  return entry;
-}
+// The two selection validators live with the shape they validate, so the
+// picker, the style editor and this form all reject the same malformed entry.
+const coerceLoraEntry = coerceLoraSelection;
+const coerceTiEntry = coerceTiSelection;
 
 /** Validate a persisted style-detach snapshot, falling back to "nothing detached". */
 function coerceStyleDetach(raw: unknown): StyleDetachState {
@@ -1713,6 +1635,11 @@ export function promptHistoryFromJobs(
   return history;
 }
 
+/**
+ * The horde's view of one LoRA. `sha256` is deliberately absent: the shared
+ * selection shape carries it for the style editor, and a generation request has
+ * never pinned a file hash.
+ */
 function mapFormLora(entry: FormLoraEntry): StyleLoraConfig {
   const lora: StyleLoraConfig = {
     name: entry.name,
@@ -1905,11 +1832,15 @@ export function buildImageRequest(
   if (usesFaceFixer) {
     params.facefixer_strength = value.facefixer_strength;
   }
-  if (value.loras.length > 0) {
-    params.loras = value.loras.map(mapFormLora);
+  // The panel keeps every selection so one can be promoted past the cap, but a
+  // request carries only the ones the horde will accept.
+  const sentLoras = activeLoras(value.loras);
+  if (sentLoras.length > 0) {
+    params.loras = sentLoras.map(mapFormLora);
   }
-  if (value.tis.length > 0) {
-    params.tis = value.tis.map(mapFormTi);
+  const sentTis = activeTis(value.tis);
+  if (sentTis.length > 0) {
+    params.tis = sentTis.map(mapFormTi);
   }
 
   // Only describe source processing when an image is genuinely attached.
@@ -2380,14 +2311,17 @@ export function kudosBreakdown(
     });
   }
 
-  if (value.loras.length > 0) {
+  // Counts what is sent, not what is listed: a selection parked past the cap
+  // must not inflate the estimate it is not part of.
+  const chargedLoras = activeLoras(value.loras).length;
+  if (chargedLoras > 0) {
     lines.push({
       id: 'loras',
       key:
-        value.loras.length === 1
+        chargedLoras === 1
           ? 'generate.form.kudos_line_loras_one'
           : 'generate.form.kudos_line_loras_other',
-      params: { count: value.loras.length },
+      params: { count: chargedLoras },
     });
   }
 

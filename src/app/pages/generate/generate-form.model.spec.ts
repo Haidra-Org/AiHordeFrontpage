@@ -173,6 +173,35 @@ describe('buildImageRequest', () => {
     expect(request.params?.n).toBe(1);
   });
 
+  it('sends only as many loras as the horde accepts', () => {
+    const loras = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((name) => ({
+      name,
+      model: 1,
+      clip: 1,
+    }));
+    const sent = buildImageRequest(value({ loras })).params?.loras;
+    // The panel keeps all seven so one can be promoted; the request cannot.
+    expect(sent).toHaveLength(5);
+    expect(sent?.map((lora) => lora.name)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('sends only as many textual inversions as the horde accepts', () => {
+    const tis = Array.from({ length: 25 }, (_, i) => ({
+      name: `ti-${i}`,
+      strength: 1,
+    }));
+    expect(buildImageRequest(value({ tis })).params?.tis).toHaveLength(20);
+  });
+
+  it('never sends a style-only file hash on a generation', () => {
+    const sent = buildImageRequest(
+      value({
+        loras: [{ name: '1', model: 1, clip: 1, sha256: 'c'.repeat(64) }],
+      }),
+    ).params?.loras;
+    expect(sent?.[0]).toEqual({ name: '1', model: 1, clip: 1 });
+  });
+
   it('omits the seed when blank and includes it when set', () => {
     expect(buildImageRequest(value({ seed: '' })).params?.seed).toBeUndefined();
     expect(
@@ -608,14 +637,29 @@ describe('coerceFormValue', () => {
         { model: 1, clip: 1 },
         'nonsense',
         null,
-        { name: 'Clamped', model: 99, clip: -99, is_version: true },
+        { name: '1558543', model: 99, clip: -99, is_version: true },
         { name: 'Trimmed', inject_trigger: '  ' },
       ],
     });
     expect(merged.loras).toEqual([
       { name: 'Good', model: 0.5, clip: 0.5 },
-      { name: 'Clamped', model: 5, clip: -5, is_version: true },
+      { name: '1558543', model: 5, clip: -5, is_version: true },
       { name: 'Trimmed', model: 1, clip: 1 },
+    ]);
+  });
+
+  it('keeps a lora version flag only where the horde would accept one', () => {
+    // A version request has to name an integer, so the flag is what is wrong on
+    // a named asset, not the name: dropping it saves the rest of the entry.
+    const merged = coerceFormValue({
+      loras: [
+        { name: 'epi_noiseoffset', model: 1, clip: 1, is_version: true },
+        { name: '1558543', model: 1, clip: 1, is_version: true },
+      ],
+    });
+    expect(merged.loras).toEqual([
+      { name: 'epi_noiseoffset', model: 1, clip: 1 },
+      { name: '1558543', model: 1, clip: 1, is_version: true },
     ]);
   });
 
