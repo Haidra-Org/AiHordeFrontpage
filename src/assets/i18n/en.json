@@ -1334,6 +1334,7 @@
   "generate.civitai.detail_apply_add": "Add",
   "generate.civitai.detail_apply_update": "Update",
   "generate.civitai.detail_remove": "Remove",
+  "generate.civitai.columns_label": "Columns",
   "generate.civitai.mature_toggle": "Include mature results",
   "generate.civitai.mature_note": "CivitAI decides what it returns.",
   "generate.civitai.filters": "Filters",

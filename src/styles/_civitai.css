@@ -64,13 +64,23 @@
   line-height: 1;
 }
 
+/* minmax(0, 1fr) rather than 1fr: a long model name would otherwise set the
+   track's minimum width and push the card's own controls past its edge. */
 .gs-civit-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(var(--gs-civit-cols, 3), minmax(0, 1fr));
+  gap: 10px;
   align-content: start;
 }
+@media (max-width: 719.98px) {
+  .gs-civit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .gs-civit-card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  min-width: 0;
   border: 1px solid var(--gs-border);
   border-radius: 11px;
   overflow: hidden;
@@ -83,15 +93,18 @@
   border-color: var(--gs-blue);
   box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
 }
+/* The card holds its own proportions and the preview fills it, so a tall
+   portrait is cropped at the bottom instead of stretching the row. */
 .gs-civit-thumb {
-  position: relative;
-  height: 96px;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
 }
 .gs-civit-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   display: block;
 }
 .gs-civit-added-badge {
@@ -105,37 +118,113 @@
   padding: 3px 9px;
   border-radius: 999px;
 }
+/* Pinned to the bottom edge so revealing the buttons grows the details upward
+   over the preview, leaving the card's own footprint alone. */
 .gs-civit-meta {
-  padding: 10px 11px;
+  position: absolute;
+  inset: auto 0 0 0;
+  min-width: 0;
+  padding: 6px 8px 7px;
+  background: color-mix(in srgb, var(--gs-panel) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid color-mix(in srgb, var(--gs-border) 60%, transparent);
 }
 .gs-civit-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .gs-civit-sub {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--gs-muted);
-  margin: 3px 0 7px;
+  margin: 1px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.gs-civit-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.gs-civit-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 6px;
+  border: 1px solid var(--gs-border);
+  border-radius: 7px;
+  overflow: hidden;
 }
+.gs-civit-split-btn {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 5px 4px;
+  border: 0;
+  background: var(--gs-panel);
+  color: var(--gs-label);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gs-civit-split-btn + .gs-civit-split-btn {
+  border-left: 1px solid var(--gs-border);
+}
+.gs-civit-split-btn--add {
+  color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gs-civit-split-btn--remove {
+  color: var(--gs-label);
+  background: var(--gs-panel);
+  font-weight: 600;
+}
+
+/* Where there is a pointer to hover with, the buttons stay out of the way of
+   the preview until the card is aimed at or tabbed into. A touch reader has no
+   hover to spend, so they are always present there. */
+@media (hover: hover) and (pointer: fine) {
+  .gs-civit-split {
+    max-height: 0;
+    margin-top: 0;
+    border-width: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    transition:
+      max-height 0.16s ease,
+      margin-top 0.16s ease,
+      opacity 0.16s ease,
+      transform 0.16s ease;
+  }
+  .gs-civit-card:hover .gs-civit-split,
+  .gs-civit-card:focus-within .gs-civit-split {
+    max-height: 34px;
+    margin-top: 6px;
+    border-width: 1px;
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gs-civit-split {
+    transition: none;
+  }
+}
+/* Over the preview rather than in the details: the baseline is what a reader
+   scans the grid for, and it costs no room the name and the buttons need. */
 .gs-civit-tags {
+  position: absolute;
+  top: 6px;
+  left: 6px;
   display: flex;
-  gap: 5px;
-  min-width: 0;
+  gap: 4px;
+  max-width: calc(100% - 58px);
   overflow: hidden;
 }
 .gs-civit-tag {
   font-size: 9.5px;
-  background: var(--gs-seg-track);
-  color: var(--gs-label);
+  font-weight: 600;
+  background: rgb(12 15 22 / 62%);
+  color: #fff;
+  backdrop-filter: blur(4px);
   padding: 2px 7px;
   border-radius: 5px;
   white-space: nowrap;
@@ -154,12 +243,6 @@
   border-radius: 7px;
   cursor: pointer;
   font-family: inherit;
-}
-.gs-civit-add--remove {
-  color: var(--gs-label);
-  border-color: var(--gs-border);
-  background: none;
-  font-weight: 600;
 }
 
 /* ------- Selected rows: order, cap and details ----------------------- */
@@ -590,6 +673,30 @@
 
 .gs-cv-panel {
   max-width: 980px;
+}
+.gs-cv-cols {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+  font-size: 11px;
+  color: var(--gs-muted);
+}
+.gs-cv-cols select {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+  border: 1px solid var(--gs-border);
+  border-radius: 6px;
+  background: var(--gs-panel);
+  color: var(--gs-label);
+}
+/* The grid is fixed at two columns this narrow, so the choice has nothing to
+   act on. */
+@media (max-width: 719.98px) {
+  .gs-cv-cols {
+    display: none;
+  }
 }
 .gs-cv-mature {
   display: inline-flex;

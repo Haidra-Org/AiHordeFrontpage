@@ -22,6 +22,14 @@
         />
         {{ "generate.civitai.mature_toggle" | transloco }}
       </label>
+      <label class="gs-cv-cols">
+        <span>{{ "generate.civitai.columns_label" | transloco }}</span>
+        <select [value]="columns()" (change)="setColumns(selectValue($event))">
+          @for (option of columnOptions; track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </label>
       <button
         type="button"
         class="gs-modal-close"
@@ -141,7 +149,11 @@
 
     <div class="gs-modal-body">
       @if (loading()) {
-        <div class="gs-civit-grid" aria-hidden="true">
+        <div
+          class="gs-civit-grid"
+          [style.--gs-civit-cols]="columns()"
+          aria-hidden="true"
+        >
           @for (n of [1, 2, 3, 4, 5, 6]; track n) {
             <div class="gs-civit-card">
               <div class="gs-civit-thumb gs-shimmer"></div>
@@ -164,7 +176,7 @@
           {{ "generate.civitai.empty" | transloco }}
         </div>
       } @else {
-        <div class="gs-civit-grid">
+        <div class="gs-civit-grid" [style.--gs-civit-cols]="columns()">
           @for (model of results(); track model.id; let i = $index) {
             <div
               class="gs-civit-card"
@@ -191,6 +203,22 @@
                     </button>
                   }
                 }
+                <div class="gs-civit-tags">
+                  @if (model.versions[0]?.baseModel) {
+                    <span
+                      class="gs-civit-tag"
+                      [class.gs-civit-tag--misfit]="!suits(model)"
+                    >
+                      {{ model.versions[0].baseModel }}
+                    </span>
+                  }
+                  @if (
+                    model.rawType !== "LORA" &&
+                    model.rawType !== "TextualInversion"
+                  ) {
+                    <span class="gs-civit-tag">{{ model.rawType }}</span>
+                  }
+                </div>
                 @if (isAdded(model)) {
                   <span class="gs-civit-added-badge">
                     {{ "generate.civitai.added" | transloco }}
@@ -213,34 +241,18 @@
                           }
                   }}
                 </div>
-                <div class="gs-civit-actions">
-                  <div class="gs-civit-tags">
-                    @if (model.versions[0]?.baseModel) {
-                      <span
-                        class="gs-civit-tag"
-                        [class.gs-civit-tag--misfit]="!suits(model)"
-                      >
-                        {{ model.versions[0].baseModel }}
-                      </span>
-                    }
-                    @if (
-                      model.rawType !== "LORA" &&
-                      model.rawType !== "TextualInversion"
-                    ) {
-                      <span class="gs-civit-tag">{{ model.rawType }}</span>
-                    }
-                  </div>
+                <div class="gs-civit-split">
                   <button
                     type="button"
-                    class="gs-cvsel-details"
+                    class="gs-civit-split-btn"
                     (click)="openDetails(model)"
                   >
                     {{ "generate.civitai.details" | transloco }}
                   </button>
                   <button
                     type="button"
-                    class="gs-civit-add"
-                    [class.gs-civit-add--remove]="isAdded(model)"
+                    class="gs-civit-split-btn gs-civit-split-btn--add"
+                    [class.gs-civit-split-btn--remove]="isAdded(model)"
                     (click)="toggle(model)"
                   >
                     {{

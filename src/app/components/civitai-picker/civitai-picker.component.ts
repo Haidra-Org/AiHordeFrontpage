@@ -51,6 +51,18 @@ import {
 } from '../../types/civitai-asset';
 
 const MATURE_PREF_KEY = 'aihorde.civitai.mature';
+const COLUMNS_PREF_KEY = 'aihorde.civitai.columns';
+const COLUMN_OPTIONS = [2, 3, 4, 5, 6] as const;
+const DEFAULT_COLUMNS = 3;
+
+/** Keeps a stored or selected column count inside the range the grid offers. */
+function clampColumns(value: unknown): number {
+  const parsed = typeof value === 'string' ? Number(value) : value;
+  if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+    return DEFAULT_COLUMNS;
+  }
+  return Math.min(6, Math.max(2, Math.round(parsed)));
+}
 const FILTERS_OPEN_KEY = 'aihorde.civitai.filters_open';
 
 /** CivitAI's tamest maturity rating; anything above it is covered until asked. */
@@ -147,6 +159,8 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly filtersOpen = signal(
     this.db.get<boolean>(FILTERS_OPEN_KEY, false) === true,
   );
+  public readonly columnOptions = COLUMN_OPTIONS;
+  public readonly columns = signal(clampColumns(this.db.get(COLUMNS_PREF_KEY)));
   public readonly manualOpen = signal(false);
   public readonly revealed = signal<ReadonlySet<string>>(new Set());
 
@@ -336,6 +350,11 @@ export class CivitaiPickerComponent implements OnInit {
   public toggleFilters(): void {
     this.filtersOpen.update((open) => !open);
     this.db.store(FILTERS_OPEN_KEY, this.filtersOpen());
+  }
+
+  public setColumns(value: string): void {
+    this.columns.set(clampColumns(value));
+    this.db.store(COLUMNS_PREF_KEY, this.columns());
   }
 
   public toggleMature(): void {
