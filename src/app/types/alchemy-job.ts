@@ -72,5 +72,12 @@ export interface StoredAlchemyJob {
   storedResultForms: string[];
   /** Result keys whose image can no longer be retrieved. */
   failedResultForms: string[];
+  /**
+   * When each result link was first seen, keyed by result form key. The horde
+   * mints a link as its form finishes, so the half-hour it stays valid is
+   * counted from here rather than from the request, which may have waited in
+   * the queue for longer than the link will live.
+   */
+  resultLinkFirstSeenAt?: Record<string, number>;
   lastPolledAt?: number;
 }

@@ -392,12 +392,38 @@ describe('AlchemyQueueService', () => {
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
+    it('fetches a fresh link for a job that waited out the link lifetime in the queue', async () => {
+      const localId = await submit('job-8b');
+      // Submitted long ago, but the result has only just been published, so its
+      // link is new and worth a request.
+      await (
+        service as unknown as {
+          patch(id: string, update: { createdAt: number }): Promise<unknown>;
+        }
+      ).patch(localId, { createdAt: Date.now() - 60 * 60_000 });
+
+      await poll('job-8b', {
+        state: 'done',
+        forms: [
+          { form: 'GFPGAN', state: 'done', result: { GFPGAN: RESULT_URL } },
+        ],
+      });
+
+      expect(fetchMock).toHaveBeenCalledWith(RESULT_URL);
+      expect((await service.getResultImages(localId)).length).toBe(1);
+      expect((await db.getJob(localId))?.failedResultForms).toEqual([]);
+    });
+
     it('spends no request on links that have already expired', async () => {
       const localId = await submit('job-8');
       const stored = await db.getJob(localId);
       await db.putJob({
         ...(stored as NonNullable<typeof stored>),
         createdAt: Date.now() - 60 * 60_000,
+        // The link's own age is what decides, so it is the sighting that is
+        // aged here: a request can sit in the queue far longer than its
+        // results stay reachable.
+        resultLinkFirstSeenAt: { GFPGAN: Date.now() - 60 * 60_000 },
         status: {
           state: 'done',
           forms: [
@@ -439,6 +465,55 @@ describe('AlchemyQueueService', () => {
         (await TestBed.inject(AlchemyDbService).getJob(localId))
           ?.failedResultForms,
       ).toEqual(['GFPGAN']);
+      http = TestBed.inject(HttpTestingController);
+    });
+
+    it('retries an image written off while its link was still alive', async () => {
+      const localId = await submit('job-8c');
+      fetchMock.mockRejectedValue(new Error('network'));
+      await poll('job-8c', {
+        state: 'done',
+        forms: [
+          { form: 'GFPGAN', state: 'done', result: { GFPGAN: RESULT_URL } },
+        ],
+      });
+      for (let i = 0; i < 2; i++) {
+        await (service as unknown as { pollTick(): Promise<void> }).pollTick();
+        await settle();
+      }
+      expect((await db.getJob(localId))?.failedResultForms).toEqual(['GFPGAN']);
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withInterceptors([clientAgentInterceptor])),
+          provideHttpClientTesting(),
+          {
+            provide: AuthService,
+            useValue: {
+              getStoredApiKey: () => 'my-key',
+              isLoggedIn: signal(false),
+            },
+          },
+          {
+            provide: ToastService,
+            useValue: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+          },
+        ],
+      });
+      fetchMock.mockResolvedValue(imageResponse());
+      const reopened = TestBed.inject(AlchemyQueueService);
+      await reopened.whenReady();
+
+      expect(
+        (await TestBed.inject(AlchemyDbService).getJob(localId))
+          ?.failedResultForms,
+      ).toEqual([]);
+
+      await (reopened as unknown as { pollTick(): Promise<void> }).pollTick();
+      await settle();
+
+      expect((await reopened.getResultImages(localId)).length).toBe(1);
       http = TestBed.inject(HttpTestingController);
     });
 

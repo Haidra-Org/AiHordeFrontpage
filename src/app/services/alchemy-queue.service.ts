@@ -185,12 +185,41 @@ export class AlchemyQueueService {
       this.stored.set(await this.db.listJobs());
       await this.migrateLegacyJobs();
       this.stored.set(await this.db.listJobs());
+      await this.reopenRecoverableImages();
     } catch (error) {
       console.warn('Could not restore stored alchemy jobs.', error);
     }
     // Started regardless: a restore failure should not also stop whatever the
     // user submits next from being followed.
     this.startPolling();
+  }
+
+  /**
+   * Offer another attempt to result images written off while their link was
+   * still alive. A download fails for reasons that have nothing to do with the
+   * link (a dropped connection, a reload part-way through the read), and the
+   * attempts that exhausted its budget belong to a session that is over. An
+   * image with no recorded sighting was written off before that was tracked and
+   * stays written off.
+   */
+  private async reopenRecoverableImages(): Promise<void> {
+    const now = Date.now();
+    for (const job of this.stored()) {
+      if (job.failedResultForms.length === 0) {
+        continue;
+      }
+      const seenAt = job.resultLinkFirstSeenAt ?? {};
+      const stillFailed = job.failedResultForms.filter((key) => {
+        const firstSeen = seenAt[key];
+        return (
+          firstSeen === undefined || now - firstSeen > IMAGE_URL_LIFETIME_MS
+        );
+      });
+      if (stillFailed.length === job.failedResultForms.length) {
+        continue;
+      }
+      await this.patch(job.localId, { failedResultForms: stillFailed });
+    }
   }
 
   // --- Submission ----------------------------------------------------------
@@ -357,22 +386,42 @@ export class AlchemyQueueService {
       return;
     }
 
-    // Past the link lifetime there is nothing left to fetch, so write the whole
-    // remainder off rather than spending a request per form discovering that.
-    if (Date.now() - job.createdAt > IMAGE_URL_LIFETIME_MS) {
-      await this.patch(job.localId, {
-        failedResultForms: [
-          ...job.failedResultForms,
-          ...outstanding.map((image) => image.key),
-        ],
-      });
+    const now = Date.now();
+    const seenAt: Record<string, number> = {
+      ...(job.resultLinkFirstSeenAt ?? {}),
+    };
+    const live: UnresolvedImage[] = [];
+    const expired: string[] = [];
+    for (const image of outstanding) {
+      seenAt[image.key] ??= now;
+      // Past the link's own lifetime there is nothing left to fetch, so the
+      // form is written off rather than spending a request to discover that.
+      // Measured from the link, not the request: a job can wait in the queue
+      // for longer than its results will stay reachable.
+      if (now - seenAt[image.key] > IMAGE_URL_LIFETIME_MS) {
+        expired.push(image.key);
+      } else {
+        live.push(image);
+      }
+    }
+
+    // Recorded before anything is fetched, so a reload part-way through goes on
+    // measuring each link from when it was published rather than restarting the
+    // clock.
+    await this.patch(job.localId, {
+      resultLinkFirstSeenAt: seenAt,
+      ...(expired.length
+        ? { failedResultForms: [...job.failedResultForms, ...expired] }
+        : {}),
+    });
+    if (live.length === 0) {
       return;
     }
 
     const stored: string[] = [];
     const failed: string[] = [];
     await Promise.all(
-      outstanding.map(async (image) => {
+      live.map(async (image) => {
         const attemptKey = `${job.localId}::${image.key}`;
         try {
           const response = await fetch(image.url);
