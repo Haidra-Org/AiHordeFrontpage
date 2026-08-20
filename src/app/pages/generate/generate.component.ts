@@ -339,6 +339,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       baseline: this.modelBaseline(),
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
+      sourceWidth: state.sourceWidth ?? null,
+      sourceHeight: state.sourceHeight ?? null,
       contract: this.samplerContract(),
     });
   });

@@ -142,6 +142,121 @@ export function alphaToMaskPixels(rgba: Uint8ClampedArray): Uint8ClampedArray {
   return out;
 }
 
+/** Where an attached picture sits inside the larger canvas asked for. */
+export type OutpaintAnchor =
+  | 'top-left'
+  | 'top'
+  | 'top-right'
+  | 'left'
+  | 'center'
+  | 'right'
+  | 'bottom-left'
+  | 'bottom'
+  | 'bottom-right';
+
+/** Where the picture's top-left corner lands, given how much room is spare. */
+export function outpaintOffset(
+  spareWidth: number,
+  spareHeight: number,
+  anchor: OutpaintAnchor,
+): { x: number; y: number } {
+  const left = Math.max(0, spareWidth);
+  const top = Math.max(0, spareHeight);
+  const horizontal = anchor.endsWith('left')
+    ? 0
+    : anchor.endsWith('right')
+      ? left
+      : Math.round(left / 2);
+  const vertical = anchor.startsWith('top')
+    ? 0
+    : anchor.startsWith('bottom')
+      ? top
+      : Math.round(top / 2);
+  return { x: horizontal, y: vertical };
+}
+
+export interface OutpaintCanvas {
+  /** The picture pasted into the larger canvas, as the request's source. */
+  source: Blob | null;
+  /** White over everything the padding added, black over the picture itself. */
+  mask: Blob | null;
+  width: number;
+  height: number;
+  /** Where the original sits, so the panel can show what it is about to add. */
+  x: number;
+  y: number;
+}
+
+/**
+ * Grow a picture into a larger canvas and mark the new ground for repainting.
+ *
+ * The horde has no notion of extending an image: outpainting selects the same
+ * worker pipeline as inpainting, and the caller supplies a picture that is
+ * already the requested size with a mask over the part that is not real yet.
+ * White marks what will be painted, which is everything the padding added.
+ *
+ * The target is clamped to the horde's own edge cap and never smaller than the
+ * picture, so a request can only ever grow. Browser-only.
+ */
+export async function composeOutpaintCanvas(
+  image: SourceImage,
+  targetWidth: number,
+  targetHeight: number,
+  anchor: OutpaintAnchor,
+): Promise<OutpaintCanvas> {
+  const width = Math.min(SOURCE_MAX_EDGE, Math.max(targetWidth, image.width));
+  const height = Math.min(
+    SOURCE_MAX_EDGE,
+    Math.max(targetHeight, image.height),
+  );
+  const { x, y } = outpaintOffset(
+    width - image.width,
+    height - image.height,
+    anchor,
+  );
+  const empty = { source: null, mask: null, width, height, x, y };
+
+  const bitmap = await createImageBitmap(image.blob);
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return empty;
+    }
+    // The new ground is painted over rather than left transparent: an alpha
+    // channel on the source is read as a mask in its own right, which would
+    // describe the same region twice and in the opposite sense.
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(bitmap, x, y);
+
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+    const maskCtx = maskCanvas.getContext('2d');
+    if (!maskCtx) {
+      return empty;
+    }
+    maskCtx.fillStyle = '#ffffff';
+    maskCtx.fillRect(0, 0, width, height);
+    maskCtx.fillStyle = '#000000';
+    maskCtx.fillRect(x, y, image.width, image.height);
+
+    return {
+      source: await canvasToBlob(canvas, 'image/webp', 0.95),
+      mask: await canvasToBlob(maskCanvas, 'image/png'),
+      width,
+      height,
+      x,
+      y,
+    };
+  } finally {
+    bitmap.close();
+  }
+}
+
 export interface MaskExport {
   /** PNG blob sized to the paint layer, or null when nothing could be encoded. */
   blob: Blob | null;

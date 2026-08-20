@@ -164,6 +164,24 @@ export const SOURCE_MODES = [
 export type GenerateSourceMode = (typeof SOURCE_MODES)[number];
 
 /**
+ * Where the attached picture sits inside the canvas an outpainting request asks
+ * for. The padding falls out of the arithmetic: whatever the requested size has
+ * that the picture does not, on the sides the anchor does not hold it against.
+ */
+export const OUTPAINT_ANCHORS = [
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'center',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+] as const;
+export type GenerateOutpaintAnchor = (typeof OUTPAINT_ANCHORS)[number];
+
+/**
  * The ControlNet guidance modes every worker that offers ControlNet at all can
  * render, in the order the horde enumerates them. `hough` is the older spelling
  * of the line detector the wider vocabulary calls `mlsd`, and is the spelling an
@@ -1066,6 +1084,21 @@ export interface GenerateFormValue {
   slow_workers: boolean;
   allow_downgrade: boolean;
   sourceMode: GenerateSourceMode;
+  /**
+   * Whether image-to-image paints only where a mask says. The horde takes this
+   * as `img2img` carrying a `source_mask`, which is a different pipeline from
+   * inpainting: the masked pixels stay as the starting point rather than being
+   * erased, so the strength below still means what it means everywhere else.
+   */
+  maskEnabled: boolean;
+  /**
+   * Whether inpainting is being used to grow the picture rather than to repair
+   * it. The horde calls that `outpainting`, and it is the same pipeline: the
+   * new canvas and the mask covering it are the caller's to produce.
+   */
+  outpaintEnabled: boolean;
+  /** Where the attached picture sits inside the larger canvas being asked for. */
+  outpaintAnchor: GenerateOutpaintAnchor;
   /** img2img/controlnet/inpainting denoise strength (0.01-1). */
   denoising_strength: number;
   /** ControlNet guidance mode; empty means unset (required for controlnet). */
@@ -1157,6 +1190,9 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   slow_workers: true,
   allow_downgrade: true,
   sourceMode: 'none',
+  maskEnabled: false,
+  outpaintEnabled: false,
+  outpaintAnchor: 'center',
   denoising_strength: DEFAULT_DENOISE,
   control_type: '',
   image_is_control: false,
@@ -1474,6 +1510,9 @@ export function createGenerateForm(
     slow_workers: control(value.slow_workers),
     allow_downgrade: control(value.allow_downgrade),
     sourceMode: control(value.sourceMode),
+    maskEnabled: control(value.maskEnabled),
+    outpaintEnabled: control(value.outpaintEnabled),
+    outpaintAnchor: control(value.outpaintAnchor),
     denoising_strength: bounded(
       value.denoising_strength,
       MIN_DENOISE,
@@ -1869,10 +1908,14 @@ export function buildImageRequest(
         params.denoising_strength = value.denoising_strength;
         break;
       case 'inpainting':
-        sourceProcessing = 'inpainting';
-        // The panel offers no strength control in this mode: the masked region
-        // is replaced outright, so the request says so rather than carrying
-        // whatever strength the reader last set for img2img.
+        // Growing the canvas is the same pipeline with the mask covering what
+        // was added rather than something already in the picture, so it is a
+        // choice inside this mode rather than a mode of its own.
+        sourceProcessing = value.outpaintEnabled ? 'outpainting' : 'inpainting';
+        // The panel offers no strength control in either: the masked pixels are
+        // erased before the render starts, so a lower strength does not soften
+        // the edit, it leaves it unfinished. The request says 1 rather than
+        // carrying whatever the reader last set for image-to-image.
         params.denoising_strength = 1;
         break;
       // Remix weights its inputs through per-image `extra_source_images`
@@ -2174,12 +2217,24 @@ export function requestToFormValue(
   result.replacement_filter = request.replacement_filter !== false;
   result.disable_batching = request.disable_batching === true;
 
+  // Outpainting is inpainting with the canvas grown, and masked image-to-image
+  // is image-to-image with a mask attached, so both come back as the mode they
+  // were sent under plus the choice that distinguishes them. A request that
+  // lost either of those would reload as something the reader did not send.
   if (request.source_processing === 'inpainting') {
     result.sourceMode = 'inpainting';
+  } else if (request.source_processing === 'outpainting') {
+    result.sourceMode = 'inpainting';
+    result.outpaintEnabled = true;
   } else if (request.source_processing === 'remix') {
     result.sourceMode = 'remix';
   } else if (request.source_processing === 'img2img') {
     result.sourceMode = params.control_type ? 'controlnet' : 'img2img';
+    // ControlNet has no mask of its own: the backends pick the control pipeline
+    // over the masked one, so a mask alongside a control type is never applied
+    // and must not come back as though it had been.
+    result.maskEnabled =
+      !params.control_type && typeof request.source_mask === 'string';
   } else {
     result.sourceMode = 'none';
   }

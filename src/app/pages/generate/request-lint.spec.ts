@@ -40,6 +40,9 @@ describe('feature compatibility rules', () => {
     expect(ids).toEqual([
       'controlnet_baseline',
       'remix_baseline',
+      'mask_baseline',
+      'hires_with_mask',
+      'outpaint_target',
       'qr_code_baseline',
       'source_required',
     ]);
@@ -47,6 +50,95 @@ describe('feature compatibility rules', () => {
       expect(featureCompatRule(id).id).toBe(id);
     }
     expect(() => featureCompatRule('nope' as FeatureCompatRuleId)).toThrow();
+  });
+
+  it('warns that a mask is dropped on a family with no masked pipeline', () => {
+    const masked = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      sourceMode: 'img2img' as const,
+      maskEnabled: true,
+    };
+    expect(
+      violated(lintInput({ value: masked, baseline: 'stable_diffusion_xl' })),
+    ).not.toContain('mask_baseline');
+    expect(
+      violated(lintInput({ value: masked, baseline: 'flux_1' })),
+    ).toContain('mask_baseline');
+
+    // Inpainting is the same rule, and an unknown baseline never locks anyone
+    // out: gating here is guidance, and the horde is the only authority.
+    const painting = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      sourceMode: 'inpainting' as const,
+    };
+    expect(
+      violated(lintInput({ value: painting, baseline: 'stable_cascade' })),
+    ).toContain('mask_baseline');
+    expect(
+      violated(lintInput({ value: painting, baseline: null })),
+    ).not.toContain('mask_baseline');
+  });
+
+  it('warns about hires fix with a mask, and not without one', () => {
+    const base = { ...DEFAULT_GENERATE_FORM_VALUE, hires_fix: true };
+    expect(violated(lintInput({ value: base }))).not.toContain(
+      'hires_with_mask',
+    );
+    expect(
+      violated(
+        lintInput({
+          value: { ...base, sourceMode: 'img2img', maskEnabled: true },
+        }),
+      ),
+    ).toContain('hires_with_mask');
+    expect(
+      violated(lintInput({ value: { ...base, sourceMode: 'inpainting' } })),
+    ).toContain('hires_with_mask');
+    // ControlNet loses the mask to its own pipeline, so the pass still runs.
+    expect(
+      violated(
+        lintInput({
+          value: { ...base, sourceMode: 'controlnet', maskEnabled: true },
+        }),
+      ),
+    ).not.toContain('hires_with_mask');
+  });
+
+  it('warns when a canvas is being grown with nowhere to grow', () => {
+    const growing = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      sourceMode: 'inpainting' as const,
+      outpaintEnabled: true,
+      width: 1024,
+      height: 1024,
+    };
+    const attached = { hasSourceImage: true, baseline: 'stable_diffusion_xl' };
+
+    expect(
+      violated(
+        lintInput({
+          value: growing,
+          ...attached,
+          sourceWidth: 1024,
+          sourceHeight: 1024,
+        }),
+      ),
+    ).toContain('outpaint_target');
+    expect(
+      violated(
+        lintInput({
+          value: growing,
+          ...attached,
+          sourceWidth: 768,
+          sourceHeight: 1024,
+        }),
+      ),
+    ).not.toContain('outpaint_target');
+    // A picture whose size nobody has reported yet is left alone rather than
+    // warned about; the missing-source rule already speaks for that case.
+    expect(violated(lintInput({ value: growing, ...attached }))).not.toContain(
+      'outpaint_target',
+    );
   });
 
   it('says nothing about a default request', () => {

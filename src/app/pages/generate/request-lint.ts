@@ -1,8 +1,10 @@
 import {
   baselineSupportsControlNet,
+  baselineSupportsMask,
   baselineSupportsQrCode,
   baselineSupportsRemix,
   CONTROLNET_BASELINES,
+  MASK_BASELINES,
   QR_CODE_BASELINES,
   REMIX_BASELINES,
   type ModelRequirements,
@@ -92,7 +94,22 @@ export type FeatureCompatRuleId =
   | 'controlnet_baseline'
   | 'qr_code_baseline'
   | 'remix_baseline'
+  | 'mask_baseline'
+  | 'hires_with_mask'
+  | 'outpaint_target'
   | 'source_required';
+
+/**
+ * Whether the request carries a mask the worker software would act on. The
+ * three masked shapes the panel can send, and the one it cannot: a control type
+ * wins the pipeline choice, so a mask beside one is never applied.
+ */
+export function requestIsMasked(value: GenerateFormValue): boolean {
+  if (value.sourceMode === 'inpainting') {
+    return true;
+  }
+  return value.sourceMode === 'img2img' && value.maskEnabled;
+}
 
 /** Everything a rule may read about the request being described. */
 export interface RequestLintInput {
@@ -104,6 +121,12 @@ export interface RequestLintInput {
   requirements: ModelRequirements | null;
   /** Whether a source image blob is genuinely attached. */
   hasSourceImage: boolean;
+  /**
+   * The attached picture's own size, before anything the panel composes around
+   * it. Absent while nothing is attached, and while a caller has no answer.
+   */
+  sourceWidth?: number | null;
+  sourceHeight?: number | null;
   /** The horde's sampler contract, or null while it has not loaded. */
   contract: SamplerConstraintsDocument | null;
 }
@@ -148,6 +171,52 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
     messageKey: 'generate.source.remix_unsupported',
     applies: (input) => input.value.sourceMode === 'remix',
     satisfied: (input) => baselineSupportsRemix(input.baseline),
+  },
+  {
+    id: 'mask_baseline',
+    anchor: 'source_mode',
+    section: 'source',
+    baselines: MASK_BASELINES,
+    messageKey: 'generate.lint.mask_baseline',
+    applies: (input) => requestIsMasked(input.value),
+    satisfied: (input) => baselineSupportsMask(input.baseline),
+  },
+  {
+    // Two different failures, one rule, because the answer is the same: do not
+    // send both. With a mask attached the worker software picks the masked
+    // pipeline, which has no second pass in it, and returns the render at the
+    // smaller size the first pass was shrunk to. While painting it drops the
+    // flag outright. Wording them alike would claim a size error the painting
+    // modes never produce.
+    id: 'hires_with_mask',
+    anchor: 'hires',
+    section: 'size',
+    baselines: [],
+    messageKey: 'generate.lint.hires_with_mask',
+    applies: (input) => input.value.hires_fix && requestIsMasked(input.value),
+    satisfied: () => false,
+  },
+  {
+    id: 'outpaint_target',
+    anchor: 'source_mode',
+    section: 'source',
+    baselines: [],
+    messageKey: 'generate.lint.outpaint_target',
+    applies: (input) =>
+      input.value.sourceMode === 'inpainting' && input.value.outpaintEnabled,
+    // Growing the canvas needs somewhere to grow into. The panel composes the
+    // larger picture itself, so a target no bigger than the attachment leaves
+    // it nothing to add and the request is an ordinary inpaint. A picture whose
+    // size is not known yet is left alone: source_required already covers the
+    // case where there is none, and guessing would warn about nothing.
+    satisfied: (input) => {
+      const width = input.sourceWidth ?? 0;
+      const height = input.sourceHeight ?? 0;
+      if (width <= 0 || height <= 0) {
+        return true;
+      }
+      return input.value.width > width || input.value.height > height;
+    },
   },
   {
     id: 'qr_code_baseline',

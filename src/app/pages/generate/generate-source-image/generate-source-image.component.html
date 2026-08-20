@@ -85,7 +85,7 @@
             class="w-full rounded-lg"
             alt="{{ 'generate.source.preview_alt' | transloco }}"
           />
-          @if (mode() === "inpainting") {
+          @if (brushActive()) {
             <canvas
               #paintCanvas
               class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
@@ -217,7 +217,81 @@
       </label>
     }
 
-    @if (mode() === "inpainting" && previewUrl()) {
+    @if (mode() === "img2img") {
+      <div>
+        <label class="gs-switch gs-switch-row">
+          <span>{{ "generate.source.mask_enabled_label" | transloco }}</span>
+          <input type="checkbox" [formControl]="form().controls.maskEnabled" />
+          <span class="gs-switch-track"
+            ><span class="gs-switch-knob"></span
+          ></span>
+        </label>
+        <div class="gs-field-head mt-1">
+          <p class="gs-sublabel">
+            {{ "generate.source.mask_enabled_hint" | transloco }}
+          </p>
+          <app-gs-help topic="img2img_mask" />
+        </div>
+      </div>
+    }
+
+    @if (mode() === "inpainting") {
+      <div>
+        <label class="gs-switch gs-switch-row">
+          <span>{{ "generate.source.outpaint_label" | transloco }}</span>
+          <input
+            type="checkbox"
+            [formControl]="form().controls.outpaintEnabled"
+          />
+          <span class="gs-switch-track"
+            ><span class="gs-switch-knob"></span
+          ></span>
+        </label>
+        <div class="gs-field-head mt-1">
+          <p class="gs-sublabel">
+            {{ "generate.source.outpaint_hint" | transloco }}
+          </p>
+          <app-gs-help topic="outpainting" />
+        </div>
+      </div>
+    }
+
+    @if (mode() === "inpainting" && outpaintEnabled()) {
+      <div appTutAnchor="outpaint_anchor">
+        <label class="gs-slabel" for="generate-outpaint-anchor">
+          {{ "generate.source.outpaint_anchor_label" | transloco }}
+        </label>
+        <select
+          id="generate-outpaint-anchor"
+          class="gs-native-select gs-native-select--sm mt-1.5"
+          [formControl]="form().controls.outpaintAnchor"
+        >
+          @for (anchor of anchors; track anchor) {
+            <option [value]="anchor">
+              {{ "generate.source.outpaint_anchor_" + anchor | transloco }}
+            </option>
+          }
+        </select>
+        @if (outpaintCanvas(); as canvas) {
+          <p class="gs-sublabel gs-mono mt-1">
+            {{
+              "generate.source.outpaint_summary"
+                | transloco
+                  : {
+                      width: canvas.width,
+                      height: canvas.height,
+                    }
+            }}
+          </p>
+        } @else {
+          <p class="gs-sublabel mt-1">
+            {{ "generate.source.outpaint_no_room" | transloco }}
+          </p>
+        }
+      </div>
+    }
+
+    @if (brushActive() && previewUrl()) {
       <div class="flex flex-col gap-2" appTutAnchor="mask">
         <div>
           <label class="gs-slabel" for="generate-brush">

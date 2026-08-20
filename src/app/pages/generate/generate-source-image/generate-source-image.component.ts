@@ -29,11 +29,13 @@ import {
   DENOISE_STEP,
   EXTRA_SOURCE_STRENGTH_STEP,
   GenerateFormGroup,
+  GenerateOutpaintAnchor,
   GenerateSourceMode,
   MAX_DENOISE,
   MAX_EXTRA_SOURCE_STRENGTH,
   MIN_DENOISE,
   MIN_EXTRA_SOURCE_STRENGTH,
+  OUTPAINT_ANCHORS,
   SOURCE_MODES,
   rangeFillPercent,
 } from '../generate-form.model';
@@ -44,8 +46,10 @@ import type {
   RequestWarning,
 } from '../request-lint';
 import {
+  OutpaintCanvas,
   SourceImage,
   blobToSourceImage,
+  composeOutpaintCanvas,
   exportMaskFromPaintLayer,
   fileToSourceImage,
 } from '../../../helper/source-image';
@@ -66,6 +70,13 @@ export interface GenerateSourceState {
   mode: GenerateSourceMode;
   sourceBlob: Blob | null;
   maskBlob: Blob | null;
+  /**
+   * The attached picture's own size, or null when nothing is attached. Growing
+   * a canvas is the one thing the panel composes rather than sends, so it has
+   * to know how much of the requested size is already covered.
+   */
+  sourceWidth?: number | null;
+  sourceHeight?: number | null;
   /**
    * Always set by this component (empty outside remix), but optional so a
    * caller can still write a source state literal without it.
@@ -183,6 +194,8 @@ export class GenerateSourceImageComponent implements OnInit {
   /** The source dimensions the paint canvas is currently sized for. */
   private paintCanvasFor: SourceImage | null = null;
   private drawing = false;
+  /** Which outpaint composition is current, so a late reply can be dropped. */
+  private outpaintToken = 0;
 
   public readonly mode = signal<GenerateSourceMode>('none');
   /**
@@ -192,6 +205,47 @@ export class GenerateSourceImageComponent implements OnInit {
    * in sync so selecting a control type re-evaluates the local bindings.
    */
   private readonly controlType = signal<ImageControlType | ''>('');
+
+  /** Reactive mirrors of the two masked choices, kept in sync the same way. */
+  public readonly maskEnabled = signal(false);
+  public readonly outpaintEnabled = signal(false);
+  /** And of the size the canvas is being grown to, and where the picture sits. */
+  private readonly targetWidth = signal(0);
+  private readonly targetHeight = signal(0);
+  public readonly outpaintAnchor = signal<GenerateOutpaintAnchor>('center');
+
+  /**
+   * The picture pasted into the larger canvas, with the border that is about to
+   * be painted. Recomputed whenever the ask changes, because this is the one
+   * request the panel composes rather than describes.
+   */
+  public readonly outpaintCanvas = signal<OutpaintCanvas | null>(null);
+
+  public readonly anchors = OUTPAINT_ANCHORS;
+
+  /** Whether the size being asked for leaves any room around the picture. */
+  public readonly outpaintHasRoom = computed(() => {
+    const image = this.sourceImage();
+    if (!image) {
+      return false;
+    }
+    return (
+      this.targetWidth() > image.width || this.targetHeight() > image.height
+    );
+  });
+
+  /**
+   * Whether the brush is on show. Image-to-image paints only when asked to;
+   * inpainting always does, except while it is growing the canvas, where the
+   * mask is the border the panel works out rather than anything drawn.
+   */
+  public readonly brushActive = computed(() => {
+    const mode = this.mode();
+    if (mode === 'inpainting') {
+      return !this.outpaintEnabled();
+    }
+    return mode === 'img2img' && this.maskEnabled();
+  });
 
   public readonly valid = computed(() => this.computeValid());
 
@@ -217,7 +271,10 @@ export class GenerateSourceImageComponent implements OnInit {
     if (mode === 'controlnet' && this.controlType() === '') {
       return 'generate.source.error_no_control_type';
     }
-    if (mode === 'inpainting' && !this.maskPainted()) {
+    if (mode === 'inpainting' && this.outpaintEnabled()) {
+      return 'generate.source.error_no_room';
+    }
+    if (this.brushActive() && !this.maskPainted()) {
       return 'generate.source.error_no_mask';
     }
     if (mode === 'remix' && !this.remixAllowed()) {
@@ -234,7 +291,7 @@ export class GenerateSourceImageComponent implements OnInit {
     effect(() => {
       const ref = this.paintCanvasRef();
       const image = this.sourceImage();
-      if (!ref || !image || this.mode() !== 'inpainting') {
+      if (!ref || !image || !this.brushActive()) {
         return;
       }
       if (this.paintCanvasFor !== image) {
@@ -256,6 +313,21 @@ export class GenerateSourceImageComponent implements OnInit {
       this.emitState();
     });
 
+    // Growing the canvas is composed here rather than described to the horde,
+    // so the padded picture and its border are rebuilt whenever the ask moves.
+    effect(() => {
+      const image = this.sourceImage();
+      const width = this.targetWidth();
+      const height = this.targetHeight();
+      const anchor = this.outpaintAnchor();
+      const growing = this.mode() === 'inpainting' && this.outpaintEnabled();
+      if (!growing || !image || !this.isBrowser) {
+        this.outpaintCanvas.set(null);
+        return;
+      }
+      void this.rebuildOutpaintCanvas(image, width, height, anchor);
+    });
+
     this.destroyRef.onDestroy(() => {
       this.revokePreview();
       this.revokeExtraPreviews();
@@ -266,6 +338,8 @@ export class GenerateSourceImageComponent implements OnInit {
     const controls = this.form().controls;
     this.mode.set(controls.sourceMode.value);
     this.controlType.set(controls.control_type.value);
+    this.maskEnabled.set(controls.maskEnabled.value);
+    this.outpaintEnabled.set(controls.outpaintEnabled.value);
     controls.sourceMode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => this.onModeChanged(mode));
@@ -275,6 +349,42 @@ export class GenerateSourceImageComponent implements OnInit {
         this.controlType.set(controlType);
         this.emitState();
       });
+    controls.maskEnabled.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((enabled) => {
+        this.maskEnabled.set(enabled);
+        // Turning masking off throws the strokes away rather than keeping them
+        // for a request that no longer carries a mask.
+        if (!enabled) {
+          this.clearMask();
+        }
+        this.emitState();
+      });
+    controls.outpaintEnabled.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((enabled) => {
+        this.outpaintEnabled.set(enabled);
+        // The two are different masks: one is painted, one is the border around
+        // the picture. Neither survives a switch to the other.
+        this.clearMask();
+        this.emitState();
+      });
+
+    // The canvas being grown into is the request's own size, so the composition
+    // follows width and height rather than having controls of its own.
+    this.targetWidth.set(controls.width.value);
+    this.targetHeight.set(controls.height.value);
+    this.outpaintAnchor.set(controls.outpaintAnchor.value);
+    controls.width.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((width) => this.targetWidth.set(width));
+    controls.height.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((height) => this.targetHeight.set(height));
+    controls.outpaintAnchor.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((anchor) => this.outpaintAnchor.set(anchor));
+
     this.emitState();
   }
 
@@ -494,6 +604,38 @@ export class GenerateSourceImageComponent implements OnInit {
     ctx.fill();
   }
 
+  /**
+   * Recompose the padded picture and its border, dropping a reply that a later
+   * change has already overtaken so a slow encode cannot land on top of a
+   * newer one.
+   */
+  private async rebuildOutpaintCanvas(
+    image: SourceImage,
+    width: number,
+    height: number,
+    anchor: GenerateOutpaintAnchor,
+  ): Promise<void> {
+    const token = ++this.outpaintToken;
+    try {
+      const composed = await composeOutpaintCanvas(
+        image,
+        width,
+        height,
+        anchor,
+      );
+      if (token !== this.outpaintToken) {
+        return;
+      }
+      this.outpaintCanvas.set(composed);
+    } catch {
+      if (token === this.outpaintToken) {
+        this.outpaintCanvas.set(null);
+        this.error.set('generate.source.encode_failed');
+      }
+    }
+    this.emitState();
+  }
+
   private async refreshMask(): Promise<void> {
     const canvas = this.paintCanvasRef()?.nativeElement;
     if (!canvas || !this.isBrowser) {
@@ -592,8 +734,17 @@ export class GenerateSourceImageComponent implements OnInit {
     if (mode !== 'controlnet') {
       this.resetControlFields();
     }
-    if (mode !== 'inpainting') {
+    if (mode !== 'inpainting' && mode !== 'img2img') {
       this.clearMask();
+    }
+    // The two masked choices belong to one mode each, so leaving that mode
+    // stands them down rather than carrying them into a request that would
+    // read them differently.
+    if (mode !== 'img2img' && this.form().controls.maskEnabled.value) {
+      this.form().controls.maskEnabled.setValue(false);
+    }
+    if (mode !== 'inpainting' && this.form().controls.outpaintEnabled.value) {
+      this.form().controls.outpaintEnabled.setValue(false);
     }
     if (mode !== 'remix') {
       this.clearExtras();
@@ -631,8 +782,13 @@ export class GenerateSourceImageComponent implements OnInit {
         return hasImage;
       case 'controlnet':
         return hasImage && this.controlType() !== '';
+      // Growing the canvas needs somewhere to grow rather than a painted mask:
+      // the border is worked out from the size being asked for, and a target no
+      // larger than the picture leaves nothing to add.
       case 'inpainting':
-        return hasImage && this.maskPainted();
+        return this.outpaintEnabled()
+          ? hasImage && this.outpaintHasRoom()
+          : hasImage && this.maskPainted();
       // Extras are optional: a remix with only a primary image is a valid
       // request, so the gate is the same as img2img — plus the baseline gate,
       // because a remix the model cannot serve is rejected by the horde even
@@ -644,10 +800,26 @@ export class GenerateSourceImageComponent implements OnInit {
 
   private emitState(): void {
     const mode = this.mode();
+    const image = this.sourceImage();
+    // While the canvas is being grown, what the request carries is the padded
+    // picture and the border around it, not the attachment as it came in.
+    const grown =
+      mode === 'inpainting' && this.outpaintEnabled()
+        ? this.outpaintCanvas()
+        : null;
     this.stateChange.emit({
       mode,
-      sourceBlob: this.sourceImage()?.blob ?? null,
-      maskBlob: mode === 'inpainting' ? this.maskBlob() : null,
+      sourceBlob: grown ? grown.source : (image?.blob ?? null),
+      maskBlob: grown
+        ? grown.mask
+        : this.brushActive()
+          ? this.maskBlob()
+          : null,
+      // The attachment's own size, not the canvas composed around it: what a
+      // caller wants to know is how much the reader brought, so it can say
+      // whether the size being asked for leaves anything to add.
+      sourceWidth: image?.width ?? null,
+      sourceHeight: image?.height ?? null,
       extras:
         mode === 'remix'
           ? this.extras().map((extra) => ({

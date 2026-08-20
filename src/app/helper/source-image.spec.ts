@@ -4,6 +4,7 @@ import {
   alphaHasPaint,
   alphaToMaskPixels,
   computeScaledSize,
+  outpaintOffset,
 } from './source-image';
 
 describe('computeScaledSize', () => {
@@ -52,5 +53,29 @@ describe('alphaToMaskPixels', () => {
     const out = alphaToMaskPixels(input);
     expect(Array.from(out.slice(0, 4))).toEqual([0, 0, 0, 255]);
     expect(Array.from(out.slice(4, 8))).toEqual([255, 255, 255, 255]);
+  });
+});
+
+describe('outpaintOffset', () => {
+  it('puts the picture where the anchor says and splits the rest evenly', () => {
+    expect(outpaintOffset(400, 200, 'top-left')).toEqual({ x: 0, y: 0 });
+    expect(outpaintOffset(400, 200, 'bottom-right')).toEqual({
+      x: 400,
+      y: 200,
+    });
+    expect(outpaintOffset(400, 200, 'center')).toEqual({ x: 200, y: 100 });
+    expect(outpaintOffset(400, 200, 'top')).toEqual({ x: 200, y: 0 });
+    expect(outpaintOffset(400, 200, 'left')).toEqual({ x: 0, y: 100 });
+  });
+
+  it('rounds an odd remainder rather than leaving a fractional offset', () => {
+    // A canvas offset by half a pixel would resample the picture it is meant to
+    // be leaving untouched.
+    expect(outpaintOffset(101, 0, 'center')).toEqual({ x: 51, y: 0 });
+  });
+
+  it('never places the picture outside a canvas no larger than itself', () => {
+    expect(outpaintOffset(0, 0, 'bottom-right')).toEqual({ x: 0, y: 0 });
+    expect(outpaintOffset(-50, -50, 'center')).toEqual({ x: 0, y: 0 });
   });
 });

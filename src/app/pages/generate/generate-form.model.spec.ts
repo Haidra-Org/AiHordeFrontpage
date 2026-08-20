@@ -361,6 +361,37 @@ describe('buildImageRequest source processing', () => {
     expect(request.source_processing).toBe('inpainting');
     expect(request.params?.denoising_strength).toBe(1);
   });
+
+  it('keeps a masked image-to-image request on img2img processing', () => {
+    // The mask rides as source_mask rather than changing the mode: it selects a
+    // different pipeline in the worker, one that keeps what is under the mask,
+    // so the strength still means what it means without one.
+    const request = buildImageRequest(
+      value({
+        sourceMode: 'img2img',
+        maskEnabled: true,
+        denoising_strength: 0.45,
+      }),
+      { hasSourceImage: true },
+    );
+    expect(request.source_processing).toBe('img2img');
+    expect(request.params?.denoising_strength).toBe(0.45);
+  });
+
+  it('sends outpainting when the canvas is being grown, at full strength', () => {
+    const request = buildImageRequest(
+      value({
+        sourceMode: 'inpainting',
+        outpaintEnabled: true,
+        denoising_strength: 0.3,
+      }),
+      { hasSourceImage: true },
+    );
+    expect(request.source_processing).toBe('outpainting');
+    // The masked pixels are erased before the render starts either way, so a
+    // lower strength leaves the edit unfinished rather than softening it.
+    expect(request.params?.denoising_strength).toBe(1);
+  });
 });
 
 describe('buildImageRequest advanced params', () => {
@@ -777,6 +808,41 @@ describe('requestToFormValue', () => {
         .sourceMode,
     ).toBe('inpainting');
     expect(requestToFormValue({ prompt: 'x' }).sourceMode).toBe('none');
+  });
+
+  it('rebuilds the two masked choices a mode alone does not carry', () => {
+    const masked = requestToFormValue({
+      prompt: 'x',
+      source_processing: 'img2img',
+      source_mask: 'data:image/png;base64,AAAA',
+    });
+    expect(masked.sourceMode).toBe('img2img');
+    expect(masked.maskEnabled).toBe(true);
+
+    // ControlNet wins the pipeline choice in the worker, so a mask alongside a
+    // control type was never applied and must not reload as though it had been.
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        source_processing: 'img2img',
+        source_mask: 'data:image/png;base64,AAAA',
+        params: { control_type: 'canny' },
+      }).maskEnabled,
+    ).toBe(false);
+
+    const grown = requestToFormValue({
+      prompt: 'x',
+      source_processing: 'outpainting',
+    });
+    expect(grown.sourceMode).toBe('inpainting');
+    expect(grown.outpaintEnabled).toBe(true);
+
+    const repaired = requestToFormValue({
+      prompt: 'x',
+      source_processing: 'inpainting',
+    });
+    expect(repaired.outpaintEnabled).toBe(false);
+    expect(repaired.maskEnabled).toBe(false);
   });
 
   it('maps loras and tis back with defaulted strengths', () => {

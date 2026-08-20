@@ -40,6 +40,19 @@ export const QR_CODE_BASELINES: readonly string[] = [
  */
 export const CONTROLNET_BASELINES: readonly string[] = ['stable_diffusion_1'];
 
+/**
+ * Baselines whose models can be given a mask at all. The worker software picks
+ * a model family's own pipeline ahead of the masked ones, and only the
+ * checkpoint families have a masked pipeline to pick; on Flux, Cascade, Qwen
+ * and Z-Image a mask is dropped without a word and the whole picture is
+ * redrawn. Masked image-to-image, inpainting and outpainting share the rule.
+ */
+export const MASK_BASELINES: readonly string[] = [
+  'stable_diffusion_1',
+  'stable_diffusion_2',
+  'stable_diffusion_xl',
+];
+
 /** Model name -> normalised baseline. */
 export type ModelBaselineMap = Record<string, string>;
 
@@ -255,6 +268,10 @@ export function baselineSupportsQrCode(baseline: string | null): boolean {
 
 export function baselineSupportsControlNet(baseline: string | null): boolean {
   return baselineSupports(baseline, CONTROLNET_BASELINES);
+}
+
+export function baselineSupportsMask(baseline: string | null): boolean {
+  return baselineSupports(baseline, MASK_BASELINES);
 }
 
 /**
