@@ -671,9 +671,6 @@
 
 /* ------- Picker chrome ----------------------------------------------- */
 
-.gs-cv-panel {
-  max-width: 980px;
-}
 .gs-cv-cols {
   display: inline-flex;
   align-items: center;
@@ -1105,6 +1102,14 @@
   border: 1px solid var(--gs-border);
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+/* Asking for more columns asks for a wider picker, not narrower cards: the panel
+   grows to keep each preview around 200px until the viewport runs out, and only
+   then do the cards take the loss. Declared after the scoped panel width, and in
+   a file loaded after the studio's, so it outranks both 660px rules. */
+.gs-modal-panel.gs-cv-panel {
+  width: max(660px, calc(var(--gs-civit-cols, 3) * 210px + 30px));
+  max-width: 92vw;
 }
 .gs-civit-scope .gs-modal-header {
   flex: none;

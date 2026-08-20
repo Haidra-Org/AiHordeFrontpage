@@ -6,7 +6,10 @@
   aria-modal="true"
   tabindex="0"
 >
-  <div class="gs-modal-panel gs-cv-panel gs-fadeup">
+  <div
+    class="gs-modal-panel gs-cv-panel gs-fadeup"
+    [style.--gs-civit-cols]="columns()"
+  >
     <div class="gs-modal-header">
       <div class="gs-modal-title">
         {{ "generate.civitai.title" | transloco }}
@@ -149,11 +152,7 @@
 
     <div class="gs-modal-body">
       @if (loading()) {
-        <div
-          class="gs-civit-grid"
-          [style.--gs-civit-cols]="columns()"
-          aria-hidden="true"
-        >
+        <div class="gs-civit-grid" aria-hidden="true">
           @for (n of [1, 2, 3, 4, 5, 6]; track n) {
             <div class="gs-civit-card">
               <div class="gs-civit-thumb gs-shimmer"></div>
@@ -176,7 +175,7 @@
           {{ "generate.civitai.empty" | transloco }}
         </div>
       } @else {
-        <div class="gs-civit-grid" [style.--gs-civit-cols]="columns()">
+        <div class="gs-civit-grid">
           @for (model of results(); track model.id; let i = $index) {
             <div
               class="gs-civit-card"
