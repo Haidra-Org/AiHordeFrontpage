@@ -6,7 +6,11 @@
        group takes all of it bar the end, where the group's own notes and
        actions sit as their own controls. Nesting them in the opening press
        would leave them unreachable; leaving them inside the body stranded them
-       on a line of their own above the first field. -->
+       on a line of their own above the first field.
+
+       They belong to the open group, though. Folded, the head is a line of
+       values, and a control competing with that line reads as one more thing
+       to decide before the group has even been opened. -->
   <div class="gs-group-head">
     <button
       type="button"
@@ -36,7 +40,9 @@
         ></span>
       }
     </button>
-    <ng-content select="[groupActions]" />
+    @if (open()) {
+      <ng-content select="[groupActions]" />
+    }
   </div>
   @if (open()) {
     <div [id]="bodyId" class="gs-group-body">
