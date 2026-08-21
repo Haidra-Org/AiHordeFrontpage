@@ -13866,7 +13866,7 @@ html:has(app-gs-sheet) {
    it is open. It sits in the modal band, above the nav's own layer. */
 .gen-studio .gs-prompt-editor {
   position: fixed;
-  inset: var(--nav-height-mobile, 64px) 0 0 0;
+  inset: var(--nav-height-mobile-compact, 48px) 0 0 0;
   z-index: 60;
   display: flex;
   flex-direction: column;
