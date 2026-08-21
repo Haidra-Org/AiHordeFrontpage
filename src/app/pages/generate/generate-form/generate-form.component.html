@@ -115,6 +115,63 @@
           </div>
         }
       </div>
+      <!-- What the reader has moved away from the panel's own starting point,
+           counted in one place. Absent while nothing has moved: a count of zero
+           is a claim about nothing. -->
+      @if (ledgerCount(); as changed) {
+        <div class="gs-ledger" #ledgerContainer>
+          <button
+            #ledgerBtn
+            type="button"
+            class="gs-mini-btn gs-ledger-btn"
+            (click)="toggleLedger()"
+            [attr.aria-expanded]="ledgerOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="
+              'generate.form.ledger_label' | transloco: { count: changed }
+            "
+            [title]="
+              'generate.form.ledger_label' | transloco: { count: changed }
+            "
+          >
+            <!-- The mark is drawn as well as counted: at the panel widths that
+                 drop the toolbar's labels a bare number beside five icons says
+                 nothing about what it counts. -->
+            <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+            <span class="gs-ledger-count">{{ changed }}</span>
+            <span class="gs-mini-btn-label">{{
+              "generate.form.ledger_short" | transloco
+            }}</span>
+          </button>
+          @if (ledgerOpen()) {
+            <div
+              class="gs-ledger-pop"
+              role="dialog"
+              [attr.aria-label]="
+                'generate.form.ledger_label' | transloco: { count: changed }
+              "
+            >
+              @for (section of ledgerSections(); track section.section) {
+                <p class="gs-ledger-head">{{ section.titleKey | transloco }}</p>
+                <ul class="gs-ledger-list">
+                  @for (row of section.rows; track row.field) {
+                    <li class="gs-ledger-item">
+                      <span>{{ row.labelKey | transloco }}</span>
+                      <button
+                        type="button"
+                        class="gs-ledger-reset"
+                        (click)="resetField(row.field)"
+                      >
+                        {{ "generate.form.ledger_reset" | transloco }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      }
       <!-- Quiet by design: it undoes a session's worth of choices, so it sits
            with the other header tools rather than beside anything it clears.
            It asks first, because a reader who meant to press its neighbour has

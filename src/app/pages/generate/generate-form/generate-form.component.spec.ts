@@ -1,6 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { GROUP_IDS, GenerateFormComponent } from './generate-form.component';
+import {
+  FIELD_LABEL_KEY,
+  GROUP_IDS,
+  GenerateFormComponent,
+} from './generate-form.component';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
@@ -2356,5 +2360,62 @@ describe('GenerateFormComponent kudos breakdown', () => {
         .querySelector<HTMLButtonElement>('.gs-kudos-btn')
         ?.getAttribute('aria-expanded'),
     ).toBe('false');
+  });
+});
+
+describe('GenerateFormComponent changed-settings ledger', () => {
+  const COPY = en as Record<string, string>;
+
+  it('names every setting it can list', () => {
+    const unnamed = Object.values(FIELD_LABEL_KEY).filter((key) => !COPY[key]);
+    expect(unnamed).toEqual([]);
+  });
+
+  it('counts what the form is no longer carrying its defaults for', async () => {
+    const { component } = await createComponent(null);
+
+    // The harness starts the form with a prompt, a model, a size and steps.
+    expect(component.ledgerCount()).toBe(5);
+  });
+
+  it('lists a setting under the card it lives in', async () => {
+    const { component, fixture, form } = await createComponent(null);
+    form.controls.tiling.setValue(true);
+    fixture.detectChanges();
+
+    const sampling = component
+      .ledgerSections()
+      .find((section) => section.section === 'sampling');
+    expect(sampling?.rows.map((row) => row.field)).toContain('tiling');
+
+    const compose = component
+      .ledgerSections()
+      .find((section) => section.section === 'compose');
+    expect(compose?.rows.map((row) => row.field)).toContain('prompt');
+  });
+
+  it('puts one setting back without touching the rest', async () => {
+    const { component, fixture, form } = await createComponent(null);
+
+    component.resetField('steps');
+    fixture.detectChanges();
+
+    expect(form.controls.steps.value).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+    expect(form.controls.prompt.value).toBe('a fox');
+    expect(component.ledgerCount()).toBe(4);
+  });
+
+  it('restores a list setting as its own copy of the default', async () => {
+    const { component, fixture, form } = await createComponent(null);
+    form.controls.post_processing.setValue(['GFPGAN']);
+    fixture.detectChanges();
+
+    component.resetField('post_processing');
+    fixture.detectChanges();
+
+    expect(form.controls.post_processing.value).toEqual([]);
+    expect(form.controls.post_processing.value).not.toBe(
+      DEFAULT_GENERATE_FORM_VALUE.post_processing,
+    );
   });
 });

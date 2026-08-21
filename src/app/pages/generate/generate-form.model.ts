@@ -2373,6 +2373,33 @@ export function kudosBreakdown(
   return lines;
 }
 
+/**
+ * Fields the changed-settings ledger never lists. `styleDetach` records which
+ * sections of a style the reader opted out of, which is bookkeeping about
+ * another setting rather than a setting of its own.
+ */
+const LEDGER_EXCLUDED: readonly (keyof GenerateFormValue)[] = ['styleDetach'];
+
+/**
+ * Every setting the form is no longer carrying its default for, in the order
+ * the form declares them. This is the same comparison a group's changed mark
+ * makes, gathered across the whole panel so a reader can see at once what they
+ * have moved and put any of it back.
+ */
+export function changedFields(
+  value: GenerateFormValue,
+): (keyof GenerateFormValue)[] {
+  return (
+    Object.keys(DEFAULT_GENERATE_FORM_VALUE) as (keyof GenerateFormValue)[]
+  )
+    .filter((field) => !LEDGER_EXCLUDED.includes(field))
+    .filter(
+      (field) =>
+        JSON.stringify(value[field]) !==
+        JSON.stringify(DEFAULT_GENERATE_FORM_VALUE[field]),
+    );
+}
+
 /** What a reader's kudos balance buys at the price this request was quoted. */
 export interface KudosAffordability {
   /** The balance the arithmetic was done against. */

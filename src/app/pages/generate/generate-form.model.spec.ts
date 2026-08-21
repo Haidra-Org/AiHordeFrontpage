@@ -26,6 +26,7 @@ import {
   isSnappableSize,
   kudosBreakdown,
   modelWaitEstimate,
+  changedFields,
   kudosAffordability,
   workerRequirementForRequest,
   karrasRequirementHint,
@@ -1907,5 +1908,49 @@ describe('kudosAffordability', () => {
       more: 0,
       short: true,
     });
+  });
+});
+
+describe('changedFields', () => {
+  it('lists nothing for a form still carrying its defaults', () => {
+    expect(changedFields({ ...DEFAULT_GENERATE_FORM_VALUE })).toEqual([]);
+  });
+
+  it('lists a setting the reader moved', () => {
+    expect(
+      changedFields({ ...DEFAULT_GENERATE_FORM_VALUE, steps: 40 }),
+    ).toEqual(['steps']);
+  });
+
+  it('compares by value rather than by reference', () => {
+    expect(
+      changedFields({ ...DEFAULT_GENERATE_FORM_VALUE, loras: [] }),
+    ).toEqual([]);
+    expect(
+      changedFields({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        post_processing: ['GFPGAN'],
+      }),
+    ).toEqual(['post_processing']);
+  });
+
+  it('never lists the record of which style sections were detached', () => {
+    expect(
+      changedFields({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        styleDetach: { style: 'a', sections: ['model'] },
+      }),
+    ).toEqual([]);
+  });
+
+  it('keeps the order the form declares its settings in', () => {
+    expect(
+      changedFields({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        tiling: true,
+        prompt: 'a fox',
+        steps: 40,
+      }),
+    ).toEqual(['prompt', 'steps', 'tiling']);
   });
 });

@@ -50,6 +50,7 @@ import {
   GenerateFormGroup,
   GenerateFormValue,
   DEFAULT_GENERATE_FORM_VALUE,
+  changedFields,
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
   CFG_STEP,
@@ -277,6 +278,109 @@ const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
   horde: 'generate.form.horde_section',
   transparent: 'generate.form.transparent_section',
   qr: 'generate.form.qr_section',
+};
+
+/** A setting the changed-settings ledger can list. */
+type LedgerField = Exclude<keyof GenerateFormValue, 'styleDetach'>;
+
+/** Where a ledger row is listed: a collapsible group, or the compose cards. */
+type LedgerSection = GroupId | 'compose';
+
+/** One changed setting, as the ledger lists it. */
+export interface LedgerRow {
+  field: LedgerField;
+  labelKey: string;
+}
+
+/** The changed settings of one panel area, listed under its heading. */
+export interface LedgerGroupRows {
+  section: LedgerSection;
+  titleKey: string;
+  rows: LedgerRow[];
+}
+
+/**
+ * What to call each setting in the changed-settings ledger. Most reuse the
+ * label the control already wears; the rest name a control whose own label is a
+ * heading or an icon and so cannot be borrowed. Declared in full rather than
+ * derived so a new field cannot reach the ledger unnamed.
+ */
+export const FIELD_LABEL_KEY: Readonly<Record<LedgerField, string>> = {
+  styleName: 'generate.form.ledger_styleName',
+  prompt: 'generate.form.prompt_label',
+  negativePrompt: 'generate.form.ledger_negativePrompt',
+  n: 'generate.form.ledger_n',
+  model: 'generate.form.model_label',
+  sampler_name: 'generate.form.ledger_sampler_name',
+  steps: 'generate.form.ledger_steps',
+  cfg_scale: 'generate.form.ledger_cfg_scale',
+  clip_skip: 'generate.form.ledger_clip_skip',
+  seed: 'generate.form.seed_label',
+  width: 'generate.form.ledger_width',
+  height: 'generate.form.ledger_height',
+  post_processing: 'generate.form.ledger_post_processing',
+  hires_fix: 'generate.form.hires_fix_label',
+  tiling: 'generate.form.tiling_label',
+  nsfw: 'generate.form.nsfw_label',
+  censor_nsfw: 'generate.form.censor_nsfw_label',
+  trusted_workers: 'generate.form.trusted_workers_label',
+  slow_workers: 'generate.form.slow_workers_label',
+  allow_downgrade: 'generate.form.ledger_allow_downgrade',
+  sourceMode: 'generate.form.ledger_sourceMode',
+  maskEnabled: 'generate.form.ledger_maskEnabled',
+  outpaintEnabled: 'generate.form.ledger_outpaintEnabled',
+  outpaintAnchor: 'generate.form.ledger_outpaintAnchor',
+  denoising_strength: 'generate.form.ledger_denoising_strength',
+  control_type: 'generate.form.ledger_control_type',
+  image_is_control: 'generate.form.ledger_image_is_control',
+  return_control_map: 'generate.form.ledger_return_control_map',
+  scheduler: 'generate.form.scheduler_label',
+  sampler_eta: 'generate.form.sampler_eta_label',
+  sampler_s_noise: 'generate.form.sampler_s_noise_label',
+  sampler_s_churn: 'generate.form.sampler_s_churn_label',
+  sampler_s_tmin: 'generate.form.sampler_s_tmin_label',
+  sampler_s_tmax: 'generate.form.sampler_s_tmax_label',
+  sampler_order: 'generate.form.sampler_order_label',
+  sampler_solver_type: 'generate.form.sampler_solver_type_label',
+  flow_shift: 'generate.form.flow_shift_label',
+  facefixer_strength: 'generate.form.ledger_facefixer_strength',
+  hires_fix_denoising_strength: 'generate.form.ledger_hires_denoise',
+  seed_variation: 'generate.form.ledger_seed_variation',
+  loras: 'generate.form.ledger_loras',
+  tis: 'generate.form.ledger_tis',
+  transparent: 'generate.form.transparent_label',
+  shared: 'generate.form.shared_label',
+  extra_slow_workers: 'generate.form.extra_slow_workers_label',
+  replacement_filter: 'generate.form.replacement_filter_label',
+  disable_batching: 'generate.form.ledger_disable_batching',
+  webhook: 'generate.form.webhook_label',
+  workers: 'generate.form.ledger_workers',
+  workerBlacklist: 'generate.form.ledger_workerBlacklist',
+  qrText: 'generate.form.ledger_qrText',
+  qrXOffset: 'generate.form.ledger_qrXOffset',
+  qrYOffset: 'generate.form.ledger_qrYOffset',
+  qrModuleDrawer: 'generate.form.ledger_qrModuleDrawer',
+  rememberExtras: 'generate.form.ledger_rememberExtras',
+};
+
+/**
+ * Which area of the panel a setting lives in, for a ledger that lists rows
+ * under the card the reader would go to. Built from the group tables, with
+ * everything the collapsible groups do not claim falling to the always-open
+ * compose cards.
+ */
+const FIELD_GROUP: ReadonlyMap<LedgerField, LedgerSection> = new Map(
+  (Object.keys(FIELD_LABEL_KEY) as LedgerField[]).map((field) => [
+    field,
+    (GROUP_IDS.find((group) => GROUP_FIELDS[group].includes(field)) ??
+      'compose') as LedgerSection,
+  ]),
+);
+
+/** The heading each ledger section is listed under. */
+const LEDGER_SECTION_TITLE_KEY: Readonly<Record<LedgerSection, string>> = {
+  compose: 'generate.form.ledger_compose',
+  ...GROUP_TITLE_KEY,
 };
 
 /** Where the reader's open groups are remembered between visits. */
@@ -1086,6 +1190,67 @@ export class GenerateFormComponent implements OnInit {
     );
   }
 
+  /** Whether the changed-settings ledger is open. */
+  public readonly ledgerOpen = signal(false);
+
+  private readonly ledgerRef =
+    viewChild<ElementRef<HTMLElement>>('ledgerContainer');
+
+  private readonly ledgerBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('ledgerBtn');
+
+  public toggleLedger(): void {
+    this.ledgerOpen.update((open) => !open);
+  }
+
+  public closeLedger(): void {
+    this.ledgerOpen.set(false);
+  }
+
+  /**
+   * Everything the panel is no longer carrying its default for, gathered under
+   * the card each setting lives in. Sections with nothing changed are absent
+   * rather than listed empty.
+   */
+  public readonly ledgerSections = computed<LedgerGroupRows[]>(() => {
+    const value = this.value();
+    if (!value) {
+      return [];
+    }
+    const sections = new Map<LedgerSection, LedgerRow[]>();
+    for (const field of changedFields(value) as LedgerField[]) {
+      const section = FIELD_GROUP.get(field) ?? 'compose';
+      const rows = sections.get(section) ?? [];
+      rows.push({ field, labelKey: FIELD_LABEL_KEY[field] });
+      sections.set(section, rows);
+    }
+    return [...sections].map(([section, rows]) => ({
+      section,
+      titleKey: LEDGER_SECTION_TITLE_KEY[section],
+      rows,
+    }));
+  });
+
+  /** How many settings the ledger is holding, for the count it wears. */
+  public readonly ledgerCount = computed(() =>
+    this.ledgerSections().reduce(
+      (total, section) => total + section.rows.length,
+      0,
+    ),
+  );
+
+  /**
+   * Put one setting back to what the panel started with. The control is written
+   * rather than the whole form, so nothing else the reader has moved is touched.
+   */
+  public resetField(field: LedgerField): void {
+    const control = this.form().controls[field];
+    control.setValue(
+      structuredClone(DEFAULT_GENERATE_FORM_VALUE[field]) as never,
+    );
+    control.markAsDirty();
+  }
+
   /** A count worded for the number it carries, the studio's plural idiom. */
   private counted(key: string, count: number): string {
     return this.transloco.translate(
@@ -1814,6 +1979,12 @@ export class GenerateFormComponent implements OnInit {
         this.closeKudos();
       }
     }
+    if (this.ledgerOpen()) {
+      const anchor = this.ledgerRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeLedger();
+      }
+    }
   }
 
   public onDocumentEscape(): void {
@@ -1831,6 +2002,10 @@ export class GenerateFormComponent implements OnInit {
     if (this.kudosOpen()) {
       this.closeKudos();
       this.kudosBtn()?.nativeElement.focus();
+    }
+    if (this.ledgerOpen()) {
+      this.closeLedger();
+      this.ledgerBtn()?.nativeElement.focus();
     }
     if (!this.historyOpen()) {
       return;
