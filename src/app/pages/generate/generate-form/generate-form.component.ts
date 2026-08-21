@@ -321,6 +321,7 @@ const SUMMARY_SEPARATOR = ' · ';
   host: {
     '(document:pointerdown)': 'onDocumentPointerDown($event)',
     '(document:keydown.escape)': 'onDocumentEscape()',
+    '(window:resize)': 'onWindowResize()',
   },
 })
 export class GenerateFormComponent implements OnInit {
@@ -410,6 +411,8 @@ export class GenerateFormComponent implements OnInit {
     viewChild<ElementRef<HTMLButtonElement>>('presetsBtn');
   /** Whether the reset control is asking before it clears anything. */
   public readonly resetConfirmOpen = signal(false);
+  /** Which side the reset confirm opens from on wide layouts. */
+  public readonly resetPopAlign = signal<'left' | 'right'>('left');
   /** The confirm's anchor, used to detect click-away dismissals. */
   private readonly resetRef =
     viewChild<ElementRef<HTMLElement>>('resetContainer');
@@ -1905,11 +1908,47 @@ export class GenerateFormComponent implements OnInit {
    * the button offers the question and the answer sits under it.
    */
   public toggleResetConfirm(): void {
-    this.resetConfirmOpen.update((open) => !open);
+    const open = !this.resetConfirmOpen();
+    this.resetConfirmOpen.set(open);
+    if (!open) {
+      return;
+    }
+    this.setResetPopAlign();
   }
 
   public closeResetConfirm(): void {
     this.resetConfirmOpen.set(false);
+  }
+
+  /** Keep the confirm in view as the viewport changes while it is open. */
+  public onWindowResize(): void {
+    if (!this.resetConfirmOpen()) {
+      return;
+    }
+    this.setResetPopAlign();
+  }
+
+  /** Flip the confirm to the trigger's right when opening left would clip. */
+  private setResetPopAlign(): void {
+    this.resetPopAlign.set('left');
+    if (window.innerWidth <= 1023.98) {
+      return;
+    }
+    const anchor = this.resetRef()?.nativeElement;
+    if (!anchor) {
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    const panelWidth = 232;
+    const gutter = 12;
+    const leftEdge = rect.right - panelWidth;
+    if (leftEdge >= gutter) {
+      return;
+    }
+    const rightEdge = rect.left + panelWidth;
+    if (rightEdge <= window.innerWidth - gutter) {
+      this.resetPopAlign.set('right');
+    }
   }
 
   /** Dismiss the confirm and leave the settings alone. */

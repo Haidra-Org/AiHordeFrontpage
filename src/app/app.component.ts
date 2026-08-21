@@ -24,6 +24,7 @@ import { NetworkStatusComponent } from './components/network-status/network-stat
 import { StickyRegistryService } from './services/sticky-registry.service';
 import { NeedWorkersNotifierService } from './services/need-workers-notifier.service';
 import { NavBarComponent } from './components/nav-bar/nav-bar.component';
+import { isStudioRoute } from './components/nav-bar/nav-items';
 import { ToastBarComponent } from './components/toast-bar/toast-bar.component';
 import { scrollToAnchorWhenReady } from './helper/scroll-utils';
 
@@ -74,7 +75,7 @@ export class AppComponent implements OnInit {
    *    on-canvas controls and add nothing on a single-screen tool.
    */
   private readonly onStudioRoute = computed(() =>
-    this.currentUrl().startsWith('/generate'),
+    isStudioRoute(this.currentUrl()),
   );
   public readonly hideFooter = this.onStudioRoute;
   public readonly hideFloatingControls = this.onStudioRoute;

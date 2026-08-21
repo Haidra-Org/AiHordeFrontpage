@@ -113,6 +113,36 @@
     }
   }
 
+  /* Over a studio the bar is drawn a size down. The studios stack their own
+     chrome under this one and are worked in rather than read, so every band the
+     site bar takes is a band of the panel the reader is using. Nothing is
+     dropped: the same links at the same order, one step shorter. The sticky
+     registry measures what it is given, so the offset below follows. */
+  .nav-shell--compact .nav-container {
+    @apply h-12;
+  }
+
+  @media (min-width: 76.8125rem) {
+    .nav-shell--compact .nav-container {
+      @apply h-14;
+    }
+  }
+
+  .nav-shell--compact .logo-image {
+    @apply h-7 w-auto;
+  }
+
+  .nav-shell--compact .logo-text {
+    @apply text-lg;
+  }
+
+  /* The star count keeps its place: it is how the project asks, and a studio
+     is where a reader spends their time. It moves beside the title rather than
+     under it, which is what the full-height bar had the room for. */
+  .nav-shell--compact .logo-text-group {
+    @apply flex-row items-center gap-3;
+  }
+
   /* Logo hover effect */
   header .logo-container a:hover {
     @apply scale-105;

@@ -138,6 +138,7 @@
         @if (resetConfirmOpen()) {
           <div
             class="gs-reset-pop"
+            [class.gs-reset-pop--open-right]="resetPopAlign() === 'right'"
             role="dialog"
             [attr.aria-label]="'generate.form.reset_confirm' | transloco"
           >
@@ -1939,7 +1940,7 @@
 
   <!-- Sticky footer: batch stepper, dimensions, kudos, Generate -->
   <footer class="gs-footer">
-    <div class="mb-2.5 flex items-center justify-between gap-3">
+    <div class="gs-footer-meta flex items-center justify-between gap-3">
       <div class="flex w-full flex-wrap items-center gap-2">
         <span class="gs-label">{{ "generate.footer.batch" | transloco }}</span>
         <app-gs-help topic="batch" />

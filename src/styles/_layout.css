@@ -30,6 +30,17 @@
     }
   }
 
+  /* The studios wear the compact bar, so they reserve the compact height: the
+     difference between the two would otherwise sit above the studio's own tool
+     row as a band of nothing. */
+  .wrapper--flush {
+    padding-top: var(--nav-height-mobile-compact);
+
+    @media (min-width: 76.8125rem) {
+      padding-top: var(--nav-height-desktop-compact);
+    }
+  }
+
   /* Full-height studio routes (/generate/*): pin the wrapper to a DEFINITE
      viewport height so the flex -> grid chain below can resolve a real height
      (letting each studio panel scroll internally) and so the min-height:100vh

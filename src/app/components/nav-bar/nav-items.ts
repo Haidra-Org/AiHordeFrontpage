@@ -95,3 +95,13 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
 ];
+
+/**
+ * Whether a URL is inside one of the studios. The studios stack their own
+ * chrome under the site bar and are worked in rather than read, so the bar is
+ * drawn a size down over them; a route that merely starts with the same letters
+ * (`/generated-something`) is not one of them.
+ */
+export function isStudioRoute(url: string): boolean {
+  return /^\/(generate|alchemy)(\/|$|\?|#)/.test(url);
+}

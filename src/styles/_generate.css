@@ -1143,11 +1143,54 @@
     position: relative;
   }
 }
+/* The foot of a studio panel: what the request will cost and the one action
+   that sends it. Quiet, because it is under the eye for the whole session and
+   the settings above it are what the reader is working in. */
 .gen-studio .gs-footer {
   flex: none;
   border-top: 1px solid var(--gs-border);
-  padding: 12px 16px;
+  padding: var(--gs-space-2-5) var(--gs-space-3);
   background: var(--gs-panel);
+}
+.gen-studio .gs-footer-meta {
+  margin-bottom: var(--gs-space-2-5);
+}
+/* Once the panel is widened the foot is one row: the readings on the left and
+   the action at its own width on the right. A button drawn the width of the
+   whole screen shouts an emphasis it does not need and takes a band of the
+   panel with it. At the panel's resting width the readings need the row to
+   themselves, so the two stay stacked there. */
+@media (min-width: 1024px) {
+  .gen-studio.gs-workspace--wide .gs-footer,
+  .gen-studio.gs-workspace--max .gs-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--gs-space-3);
+  }
+  .gen-studio.gs-workspace--wide .gs-footer-meta,
+  .gen-studio.gs-workspace--max .gs-footer-meta {
+    min-width: 0;
+    flex: 1 1 auto;
+    margin-bottom: 0;
+  }
+  .gen-studio.gs-workspace--wide .gs-footer .gs-submit-hint,
+  .gen-studio.gs-workspace--max .gs-footer .gs-submit-hint {
+    order: 1;
+    flex: none;
+    margin-top: 0;
+  }
+  .gen-studio.gs-workspace--wide .gs-footer .gs-genbtn,
+  .gen-studio.gs-workspace--max .gs-footer .gs-genbtn {
+    order: 2;
+    width: auto;
+    min-width: 12rem;
+    flex: none;
+  }
+  /* The widest panel has no results pane beside it, so the foot would otherwise
+     run the whole screen: its contents keep to a readable measure. */
+  .gen-studio.gs-workspace--max .gs-footer {
+    max-width: var(--gs-footer-max, 72rem);
+  }
 }
 
 /* ------- fields ----------------------------------------------------- */
@@ -1645,6 +1688,10 @@
   border: 1px solid var(--gs-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.gen-studio .gs-reset-pop.gs-reset-pop--open-right {
+  left: 0;
+  right: auto;
 }
 /* Once the header tools can wrap, the reset trigger may no longer sit at the
   row's far right. If the confirm stays anchored to that wrapped position it
@@ -2531,18 +2578,20 @@
   border-right: 1px solid var(--gs-border);
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
-/* The panel's one primary action: the button anatomy at full width, a step
-   larger than the buttons inside the cards. */
+/* The panel's one primary action: the button anatomy, a step larger than the
+   buttons inside the cards. It carries no lift of its own: it is the only
+   filled thing at the foot of the panel, which is emphasis enough. */
 .gen-studio .gs-genbtn {
   width: 100%;
-  min-height: 44px;
+  min-height: 40px;
   gap: var(--gs-space-2);
   font-size: var(--gs-text-md);
   font-weight: 700;
-  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.28);
 }
-.gen-studio .gs-genbtn:disabled {
-  box-shadow: none;
+@media (pointer: coarse) {
+  .gen-studio .gs-genbtn {
+    min-height: 44px;
+  }
 }
 
 /* ------- results pane ---------------------------------------------- */

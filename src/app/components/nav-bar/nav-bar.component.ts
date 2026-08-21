@@ -29,7 +29,7 @@ import { IconComponent } from '../icon/icon.component';
 import { NavDropdownComponent } from '../nav-dropdown/nav-dropdown.component';
 import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 import { NavItem } from './nav-item';
-import { NAV_ITEMS } from './nav-items';
+import { NAV_ITEMS, isStudioRoute } from './nav-items';
 
 @Component({
   selector: 'app-nav-bar',
@@ -75,6 +75,14 @@ export class NavBarComponent implements OnInit, OnDestroy {
     ),
     { initialValue: inject(Router).url },
   );
+
+  /**
+   * Whether the nav is over a studio. The studios are worked in rather than
+   * read: their own chrome (the tool row, the panel head, the foot) stacks
+   * under this one, and every band it takes is a band of the panel the reader
+   * is actually using. Same bar, drawn a size down.
+   */
+  public readonly compact = computed(() => isStudioRoute(this.currentUrl()));
 
   // ── Notification helpers ──
   public readonly contributeNotifications =

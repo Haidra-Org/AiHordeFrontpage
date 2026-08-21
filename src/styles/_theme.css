@@ -159,6 +159,11 @@
      ================================================================= */
   --nav-height-mobile: 64px;
   --nav-height-desktop: 80px;
+  /* The same bar over a studio, drawn a size down. Kept beside the full heights
+     because whatever reserves room for the fixed bar has to reserve the height
+     the bar is actually drawn at, or the difference is left as an empty band. */
+  --nav-height-mobile-compact: 48px;
+  --nav-height-desktop-compact: 56px;
 
   /* =================================================================
      SHADOWS (project-specific)
