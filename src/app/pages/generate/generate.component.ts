@@ -87,7 +87,14 @@ import {
   promptHistoryFromJobs,
   requestToFormValue,
   stripEphemeralExtras,
+  workerRequirementForRequest,
 } from './generate-form.model';
+import {
+  WorkerPoolService,
+  evaluateWorkerFeasibility,
+  type WorkerFeasibility,
+  type WorkerRequirement,
+} from '../../services/worker-pool.service';
 import {
   ImageMetaPanelComponent,
   MetaApplyEvent,
@@ -184,6 +191,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
+  private readonly workerPool = inject(WorkerPoolService);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly tryIt = inject(GsTryItService);
@@ -350,6 +358,25 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public readonly kudosLines = computed<readonly KudosBreakdownLine[]>(() =>
     kudosBreakdown(this.formValue(), this.samplerContract()),
   );
+
+  /**
+   * What the request would ask of a worker, refreshed on the same debounce as
+   * the estimate rather than per keystroke: the answer only changes when the
+   * settings settle, and every keystroke would re-scan the whole worker list.
+   */
+  private readonly workerRequirement = signal<WorkerRequirement | null>(null);
+
+  /**
+   * How many workers could take the request, and what to say when none can.
+   * Null until the request has been built or while the worker list is unknown,
+   * which is what keeps a failed fetch from putting a warning on the footer.
+   */
+  public readonly feasibility = computed<WorkerFeasibility | null>(() => {
+    const requirement = this.workerRequirement();
+    return requirement === null
+      ? null
+      : evaluateWorkerFeasibility(this.workerPool.workers(), requirement);
+  });
 
   /** What to say about the wait for the picked model, as the popover's last line. */
   public readonly waitLine = computed<WaitEstimate>(() => {
@@ -1137,6 +1164,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     });
     // Attach the source image (but never the mask) so controlnet/img2img cost
     // differences are reflected in the estimate.
+    // Read off the request before the source bytes go on it, so nothing holds
+    // a reference to the base64 payload once the estimate has been sent.
+    this.workerRequirement.set(workerRequirementForRequest(request));
+    this.workerPool.load();
     if (hasSourceImage && this.sourceBase64 !== null) {
       request.source_image = this.sourceBase64;
     }

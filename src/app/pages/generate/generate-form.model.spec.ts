@@ -26,6 +26,7 @@ import {
   isSnappableSize,
   kudosBreakdown,
   modelWaitEstimate,
+  workerRequirementForRequest,
   karrasRequirementHint,
   nativeSizeHint,
   nativeSquareFor,
@@ -1766,5 +1767,98 @@ describe('what to say about the wait', () => {
     expect(modelWaitEstimate({ name: 'a', count: 0, eta: 10000 }).key).toBe(
       'generate.form.model_no_workers',
     );
+  });
+});
+
+describe('workerRequirementForRequest', () => {
+  it('asks nothing of a worker for a plain prompt-only request', () => {
+    expect(
+      workerRequirementForRequest({
+        prompt: 'a cat',
+        params: { width: 512, height: 512 },
+      }),
+    ).toEqual({
+      model: '',
+      width: 512,
+      height: 512,
+      nsfw: false,
+      needsImg2Img: false,
+      needsPainting: false,
+      needsControlNet: false,
+      needsExtendedControlNet: false,
+      trustedOnly: false,
+      workers: [],
+      workerBlacklist: false,
+    });
+  });
+
+  it('reads the model, the size and the adult mark off the request', () => {
+    const requirement = workerRequirementForRequest({
+      prompt: 'a cat',
+      models: [' Deliberate '],
+      nsfw: true,
+      params: { width: 1024, height: 768 },
+    });
+    expect(requirement.model).toBe('Deliberate');
+    expect(requirement.width).toBe(1024);
+    expect(requirement.height).toBe(768);
+    expect(requirement.nsfw).toBe(true);
+  });
+
+  it('maps image-to-image and painting onto different capabilities', () => {
+    const img2img = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'img2img',
+    });
+    expect(img2img.needsImg2Img).toBe(true);
+    expect(img2img.needsPainting).toBe(false);
+
+    for (const processing of ['inpainting', 'outpainting'] as const) {
+      const painting = workerRequirementForRequest({
+        prompt: 'a cat',
+        source_processing: processing,
+      });
+      expect(painting.needsPainting).toBe(true);
+      expect(painting.needsImg2Img).toBe(false);
+    }
+  });
+
+  it('separates the guidance modes only a recent bridge understands', () => {
+    const legacy = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'img2img',
+      params: { control_type: LEGACY_CONTROL_TYPES[0] },
+    });
+    expect(legacy.needsControlNet).toBe(true);
+    expect(legacy.needsExtendedControlNet).toBe(false);
+
+    const extended = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'img2img',
+      params: { control_type: EXTENDED_CONTROL_TYPES[0] },
+    });
+    expect(extended.needsControlNet).toBe(true);
+    expect(extended.needsExtendedControlNet).toBe(true);
+  });
+
+  it('leaves remix without a capability demand', () => {
+    const remix = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'remix',
+    });
+    expect(remix.needsImg2Img).toBe(false);
+    expect(remix.needsPainting).toBe(false);
+  });
+
+  it('carries the routing list and its mode through', () => {
+    const requirement = workerRequirementForRequest({
+      prompt: 'a cat',
+      trusted_workers: true,
+      workers: ['abc'],
+      worker_blacklist: true,
+    });
+    expect(requirement.trustedOnly).toBe(true);
+    expect(requirement.workers).toEqual(['abc']);
+    expect(requirement.workerBlacklist).toBe(true);
   });
 });

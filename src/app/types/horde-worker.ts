@@ -50,6 +50,12 @@ export interface HordeWorker {
   'post-processing'?: boolean;
   lora?: boolean;
   controlnet?: boolean;
+  /**
+   * Whether the worker offers the guidance modes beyond the nine every
+   * ControlNet-capable worker has always had. It is opt-in and needs a recent
+   * bridge, so it is reported separately from `controlnet`.
+   */
+  extended_controlnet?: boolean;
   sdxl_controlnet?: boolean;
   max_length?: number;
   max_context_length?: number;

@@ -6502,6 +6502,36 @@
   color: var(--gs-muted);
 }
 
+/* ------- who can take this, beside the estimate ---------------------- */
+/* Quiet by default: a healthy answer is a fact, not something to look at. It
+   only takes on the warnings amber when nobody can serve the request, and it
+   is text rather than a control because there is nothing to open. */
+.gen-studio .gs-fit {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--gs-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gen-studio .gs-fit app-icon {
+  flex: none;
+  margin-top: 1px;
+}
+/* A warning is a whole sentence naming a setting to loosen, so it claims most
+   of the row rather than the gap the healthy count fits in. */
+.gen-studio .gs-fit--warn {
+  flex: 1 1 58%;
+  color: #b45309;
+  font-weight: 600;
+}
+.dark .gen-studio .gs-fit--warn {
+  color: #fbbf24;
+}
+
 /* The count a folded group wears while a warning is about something inside it.
    The same amber as the warnings beside Generate, at the size of the mark it
    sits beside: it is an offer to look, and never a barrier. */

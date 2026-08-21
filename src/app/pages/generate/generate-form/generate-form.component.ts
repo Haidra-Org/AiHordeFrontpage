@@ -123,6 +123,7 @@ import {
 } from '../request-lint';
 import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
+import type { WorkerFeasibility } from '../../../services/worker-pool.service';
 import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
@@ -348,6 +349,12 @@ export class GenerateFormComponent implements OnInit {
   public readonly kudosLines = input<readonly KudosBreakdownLine[]>([]);
   /** What to say about the wait for the picked model, as the popover's tail. */
   public readonly waitLine = input<WaitEstimate | null>(null);
+  /**
+   * How many workers could take the request as it stands, and what to say when
+   * none can. Null when the answer is unknown, and the footer then says nothing
+   * rather than guessing; it never stands between the reader and Generate.
+   */
+  public readonly feasibility = input<WorkerFeasibility | null>(null);
   /** Style-forced parameters, used to flag controls a style overrides. */
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */

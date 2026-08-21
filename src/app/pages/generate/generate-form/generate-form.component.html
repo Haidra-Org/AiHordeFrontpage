@@ -1940,7 +1940,9 @@
 
   <!-- Sticky footer: batch stepper, dimensions, kudos, Generate -->
   <footer class="gs-footer">
-    <div class="gs-footer-meta flex items-center justify-between gap-3">
+    <div
+      class="gs-footer-meta flex flex-wrap items-center justify-between gap-3"
+    >
       <div class="flex w-full flex-wrap items-center gap-2">
         <span class="gs-label">{{ "generate.footer.batch" | transloco }}</span>
         <app-gs-help topic="batch" />
@@ -1989,7 +1991,27 @@
               | transloco: { count: lintWarnings().length }
           }}
         }
+        @if (feasibility(); as fit) {
+          @if (fit.blockedBy !== null) {
+            {{ fit.message.key | transloco: fit.message.params }}
+          }
+        }
       </p>
+      <!-- Who could take the request, in the same row as the price: both are
+           claims about the settings as they stand. Silent when the horde's
+           worker list is unknown, and never a barrier to submitting. -->
+      @if (feasibility(); as fit) {
+        <p class="gs-fit" [class.gs-fit--warn]="fit.blockedBy !== null">
+          @if (fit.blockedBy !== null) {
+            <app-icon
+              name="warning-triangle"
+              class="gs-ico-sm"
+              aria-hidden="true"
+            />
+          }
+          <span>{{ fit.message.key | transloco: fit.message.params }}</span>
+        </p>
+      }
       <!-- The price, beside the button rather than on it: it is a claim about
            the settings, so it has to be something the reader can press to find
            out which ones. Absent until the horde has been asked. -->

@@ -14,6 +14,7 @@ import {
 } from '../../types/style';
 import type { AppliedStyle } from '../../services/horde-styles.service';
 import type { ModelRequirements } from '../../services/model-reference.service';
+import type { WorkerRequirement } from '../../services/worker-pool.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
 import type { ActiveModel } from '../../types/active-model';
 import {
@@ -1944,6 +1945,41 @@ export function buildImageRequest(
     request.models = [model];
   }
   return applyModernSamplerSettings(request, value, options);
+}
+
+/**
+ * What a built request needs of a worker, so the studio can say how many could
+ * take it. Read off the request rather than the form because that is the thing
+ * the horde will route: a style that replaced the model or the size is already
+ * folded in, and a past generation can be asked the same question from the
+ * request it was submitted with.
+ *
+ * Remix is deliberately not mapped onto a capability. It carries a source image
+ * but which worker flag the horde routes it by is not visible in the worker
+ * list, and a demand that cannot be checked would be reported as an emptied
+ * pool that is not real.
+ */
+export function workerRequirementForRequest(
+  request: ImageGenerationRequest,
+): WorkerRequirement {
+  const params = request.params ?? {};
+  const processing = request.source_processing;
+  const controlType =
+    processing === 'img2img' ? params.control_type : undefined;
+  return {
+    model: request.models?.[0]?.trim() ?? '',
+    width: params.width ?? DEFAULT_GENERATE_FORM_VALUE.width,
+    height: params.height ?? DEFAULT_GENERATE_FORM_VALUE.height,
+    nsfw: request.nsfw === true,
+    needsImg2Img: processing === 'img2img',
+    needsPainting: processing === 'inpainting' || processing === 'outpainting',
+    needsControlNet: controlType !== undefined,
+    needsExtendedControlNet:
+      controlType !== undefined && EXTENDED_CONTROL_TYPES.includes(controlType),
+    trustedOnly: request.trusted_workers === true,
+    workers: request.workers ?? [],
+    workerBlacklist: request.worker_blacklist === true,
+  };
 }
 
 /**
