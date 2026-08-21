@@ -77,6 +77,17 @@
       </p>
     }
 
+    @if (!sourceImage() && (mode() === "img2img" || mode() === "inpainting")) {
+      <button
+        type="button"
+        class="gs-textlink self-start"
+        [disabled]="disabled()"
+        (click)="openBlankEditor()"
+      >
+        Draw from blank (preview)
+      </button>
+    }
+
     @if (previewUrl(); as src) {
       <div class="flex flex-col gap-2">
         <!-- While the canvas is being grown, the picture is shown where it will
@@ -130,6 +141,14 @@
           <button
             type="button"
             class="gs-textlink ml-auto"
+            [disabled]="disabled()"
+            (click)="openEditor()"
+          >
+            Edit image (preview)
+          </button>
+          <button
+            type="button"
+            class="gs-textlink"
             [disabled]="disabled()"
             (click)="clearImage()"
           >
@@ -473,5 +492,11 @@
       <app-icon name="warning-triangle" class="gs-ico-sm" />
       {{ message }}
     </p>
+  }
+
+  @defer (when editorDoc() !== null) {
+    @if (editorDoc(); as openDoc) {
+      <app-source-editor [doc]="openDoc" (closed)="closeEditor()" />
+    }
   }
 </div>

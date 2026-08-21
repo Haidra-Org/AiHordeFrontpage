@@ -1,0 +1,144 @@
+<div
+  class="gs-modal-overlay gs-modal-overlay--full"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+  aria-label="Source image editor (preview)"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-se-panel"
+    tabindex="-1"
+    cdkTrapFocus
+    (keydown)="onKeydown($event)"
+    (keyup)="onKeyup($event)"
+  >
+    <div class="gs-modal-header">
+      <span class="gs-modal-title">
+        Source image editor
+        <span class="gs-modal-badge">preview</span>
+      </span>
+      <span class="gs-sublabel gs-mono">
+        {{ doc().width }}×{{ doc().height }} · {{ zoomPercent() }}%
+      </span>
+      <button type="button" class="gs-se-btn" disabled title="Not wired up yet">
+        Apply
+      </button>
+      <button type="button" class="gs-se-btn" (click)="onClose()">Close</button>
+    </div>
+
+    <div class="gs-se-body">
+      <div class="gs-se-rail" role="toolbar" aria-label="Tools">
+        @for (t of tools; track t) {
+          <button
+            type="button"
+            class="gs-se-tool"
+            [class.gs-se-tool--on]="tool() === t"
+            [attr.aria-pressed]="tool() === t"
+            (click)="setTool(t)"
+          >
+            {{ labels[t] }}
+          </button>
+        }
+        <span class="gs-se-rail-gap"></span>
+        <button
+          type="button"
+          class="gs-se-tool"
+          [disabled]="!canUndo()"
+          (click)="undo()"
+        >
+          Undo
+        </button>
+        <button
+          type="button"
+          class="gs-se-tool"
+          [disabled]="!canRedo()"
+          (click)="redo()"
+        >
+          Redo
+        </button>
+      </div>
+
+      <div class="gs-se-stage-wrap">
+        <div #stageHost class="gs-se-stage"></div>
+        @if (!ready()) {
+          <p class="gs-se-loading">Loading the canvas…</p>
+        }
+      </div>
+    </div>
+
+    <div class="gs-se-bar">
+      <div class="gs-se-group" role="group" aria-label="Ink">
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="ink() === 'mask'"
+          (click)="setInk('mask')"
+        >
+          Mask ink
+        </button>
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="ink() === 'color'"
+          (click)="setInk('color')"
+        >
+          Colour ink
+        </button>
+        <input
+          type="color"
+          class="gs-se-colour"
+          aria-label="Stroke colour"
+          [value]="color()"
+          (input)="setColor($any($event.target).value)"
+        />
+      </div>
+
+      <label class="gs-se-group" for="gs-se-brush">
+        <span class="gs-sublabel">Brush {{ brushSize() }}px</span>
+        <input
+          id="gs-se-brush"
+          type="range"
+          class="gs-range"
+          [min]="minBrush"
+          [max]="maxBrush"
+          [value]="brushSize()"
+          (input)="setBrushSize($any($event.target).value)"
+        />
+      </label>
+
+      <div class="gs-se-group" role="group" aria-label="View">
+        <button type="button" class="gs-se-btn" (click)="zoomBy(1 / 1.25)">
+          −
+        </button>
+        <button type="button" class="gs-se-btn" (click)="zoomBy(1.25)">
+          +
+        </button>
+        <button type="button" class="gs-se-btn" (click)="fit()">Fit</button>
+      </div>
+
+      <div class="gs-se-group">
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="frameOn()"
+          (click)="toggleFrame()"
+        >
+          Outpaint frame
+        </button>
+        @if (frameOn()) {
+          <span class="gs-sublabel gs-mono">
+            {{ frameSize().width }}×{{ frameSize().height }}
+          </span>
+        }
+      </div>
+
+      <span class="gs-sublabel gs-se-hint">
+        Wheel zooms · middle-drag or space pans · Ctrl+Z undoes · Delete removes
+        the selection
+      </span>
+    </div>
+  </div>
+</div>

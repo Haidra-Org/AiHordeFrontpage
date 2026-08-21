@@ -53,6 +53,10 @@ import {
   exportMaskFromPaintLayer,
   fileToSourceImage,
 } from '../../../helper/source-image';
+import {
+  SourceEditorComponent,
+  type SourceEditorDoc,
+} from '../source-editor/source-editor.component';
 
 /** One remix extra source image, in the order it is submitted. */
 export interface GenerateSourceExtra {
@@ -115,6 +119,7 @@ const MAX_BRUSH = 200;
     IconComponent,
     GsHelpComponent,
     TutorialAnchorDirective,
+    SourceEditorComponent,
   ],
   templateUrl: './generate-source-image.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -546,6 +551,37 @@ export class GenerateSourceImageComponent implements OnInit {
     this.maskPainted.set(false);
     this.maskBlob.set(null);
     this.emitState();
+  }
+
+  /**
+   * The document the fullscreen editor is open on, null while it is closed. The
+   * editor is a feel spike and hands nothing back yet: closing discards.
+   */
+  public readonly editorDoc = signal<SourceEditorDoc | null>(null);
+
+  public openEditor(): void {
+    const image = this.sourceImage();
+    if (image) {
+      this.editorDoc.set({
+        image,
+        width: image.width,
+        height: image.height,
+      });
+    }
+  }
+
+  /** Open the editor on a blank sheet at the size the form is asking for. */
+  public openBlankEditor(): void {
+    const controls = this.form().controls;
+    this.editorDoc.set({
+      image: null,
+      width: controls.width.value,
+      height: controls.height.value,
+    });
+  }
+
+  public closeEditor(): void {
+    this.editorDoc.set(null);
   }
 
   public setBrushSize(value: number): void {
