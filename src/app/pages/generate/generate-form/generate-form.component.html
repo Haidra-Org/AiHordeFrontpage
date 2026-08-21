@@ -2115,7 +2115,12 @@
               (afford.more === 1
                 ? "generate.form.balance_more_one"
                 : "generate.form.balance_more_other"
-              ) | transloco: { balance: afford.balance, count: afford.more }
+              )
+                | transloco
+                  : {
+                      balance: afford.balance | formatNumber,
+                      count: afford.more | formatNumber,
+                    }
             }}
           }
         </p>

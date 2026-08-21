@@ -24,6 +24,7 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
+import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
@@ -412,6 +413,7 @@ const SUMMARY_SEPARATOR = ' · ';
   imports: [
     NgTemplateOutlet,
     ReactiveFormsModule,
+    FormatNumberPipe,
     TranslocoPipe,
     CivitaiSelectionComponent,
     IconComponent,
