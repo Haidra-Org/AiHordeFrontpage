@@ -1,0 +1,39 @@
+<section
+  class="gs-group {{ identity().className }}"
+  [class.gs-group--open]="open()"
+>
+  <!-- The whole head is the control that opens the group. Nothing else sits on
+       it, because a second control there could not be pressed without pressing
+       this one: the group's own notes and actions live inside it instead. -->
+  <button
+    type="button"
+    class="gs-group-toggle"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="bodyId"
+    (click)="toggled.emit()"
+  >
+    <app-icon
+      class="gs-chev gs-group-chev"
+      [name]="open() ? 'chevron-down' : 'chevron-right'"
+    />
+    <span class="gs-sec-chip" aria-hidden="true">
+      <app-icon [name]="identity().icon" />
+    </span>
+    <span class="gs-group-name">{{ titleKey() | transloco }}</span>
+    @if (summary()) {
+      <span class="gs-group-sum gs-mono">{{ summary() }}</span>
+    }
+    @if (changed()) {
+      <span
+        class="gs-group-dot"
+        role="img"
+        [attr.aria-label]="'generate.groups.changed' | transloco"
+      ></span>
+    }
+  </button>
+  @if (open()) {
+    <div [id]="bodyId" class="gs-group-body">
+      <ng-content />
+    </div>
+  }
+</section>

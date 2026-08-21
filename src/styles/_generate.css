@@ -190,6 +190,10 @@
   /* The one red in the studio: a field that will not submit as typed carries
      it on its edge, always beside a hint line, never as the only signal. */
   --gs-danger: #dc2626;
+  /* The mark a folded group wears while it holds a value that is not the one
+     the form starts at. Amber rather than red: it reports a choice, not a
+     fault. It carries a label, because a dot alone says nothing aloud. */
+  --gs-changed: #b45309;
   --gs-green-tint-border: #bbf7d0;
   --gs-border-soft: #f0f1f3;
   --gs-border-results: #eceef1;
@@ -328,6 +332,8 @@
   --gs-green-tint-border: rgba(34, 197, 94, 0.35);
   /* #dc2626 drops to 3.4:1 on the dark field; the lighter red holds AA. */
   --gs-danger: #f87171;
+  /* #b45309 is unreadable on the dark panel; the lighter amber holds AA. */
+  --gs-changed: #fbbf24;
   --gs-border: #2a2e37;
   --gs-border-soft: #23262d;
   --gs-border-results: #23262d;
@@ -824,38 +830,135 @@
   .gen-studio.gs-workspace--max .gs-panel {
     border-right: 0;
   }
-  /* Expanded panels lay the setting cards out as independent masonry columns.
-     The prompt and negative prompt stay full-width above them (direct children
-     of .gs-body-flow), so dragging the prompt taller never disturbs the cards.
-     Each card is kept whole with break-inside, so a tall card (e.g. one holding
-     a loaded source image) only grows ITS own column — a row-aligned grid would
-     instead force matching dead space into the neighbouring column. */
-  .gen-studio.gs-workspace--wide .gs-body-cards,
-  .gen-studio.gs-workspace--max .gs-body-cards {
-    display: block;
-    column-gap: var(--gs-space-3);
+  /* A wider panel puts the three passes side by side and does nothing else.
+     Each pass keeps the same cards in the same order at every width, so the
+     control a reader learned the position of is where they left it; widening
+     only decides how many passes are read at once. Refine and Deliver share a
+     column at double width because Deliver is the shortest of the three. */
+  .gen-studio.gs-workspace--wide .gs-zones--split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "compose refine"
+      "compose deliver";
   }
-  .gen-studio.gs-workspace--wide .gs-body-cards {
-    column-count: 2;
+  .gen-studio.gs-workspace--max .gs-zones--split {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "compose refine deliver";
   }
-  .gen-studio.gs-workspace--max .gs-body-cards {
-    column-count: 3;
+  .gen-studio.gs-workspace--wide .gs-zones--split .gs-zone--compose,
+  .gen-studio.gs-workspace--max .gs-zones--split .gs-zone--compose {
+    grid-area: compose;
   }
-  .gen-studio.gs-workspace--wide .gs-body-cards > *,
-  .gen-studio.gs-workspace--max .gs-body-cards > * {
-    break-inside: avoid;
-    margin-bottom: var(--gs-space-3);
+  .gen-studio.gs-workspace--wide .gs-zone--refine,
+  .gen-studio.gs-workspace--max .gs-zone--refine {
+    grid-area: refine;
+  }
+  .gen-studio.gs-workspace--wide .gs-zone--deliver,
+  .gen-studio.gs-workspace--max .gs-zone--deliver {
+    grid-area: deliver;
   }
   /* the "Advanced" divider reads oddly stranded in one column */
   .gen-studio.gs-workspace--wide .gs-adv-divider,
   .gen-studio.gs-workspace--max .gs-adv-divider {
     display: none;
   }
-  /* The projected source-image card must be block-level so its image can't
-     fragment across a masonry column boundary mid-card. */
-  .gen-studio .gs-body-cards > app-generate-source-image {
+  /* Only where there is more than one column is there anything to tell apart:
+     at one column the names would label a list that is already in order. */
+  .gen-studio.gs-workspace--max .gs-zones--split .gs-zone-label {
     display: block;
   }
+}
+
+/* ------- panel zones ------------------------------------------------ */
+.gen-studio .gs-zones {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+.gen-studio .gs-zone {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+/* A group at rest is a single row: its mark, its name and what it is currently
+   set to. It is quieter than a card on purpose. The cards above it are the ones
+   a request cannot be described without, so a closed group has to read as a line
+   of the panel rather than as another card competing with them. */
+.gen-studio .gs-group {
+  border: 1px solid var(--gs-card-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-card);
+}
+.gen-studio .gs-group-toggle {
+  display: flex;
+  min-width: 0;
+  min-height: 44px;
+  width: 100%;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border-radius: var(--gs-radius-md);
+  text-align: left;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-group-toggle:hover {
+  background: var(--gs-sec-tint, transparent);
+}
+.gen-studio .gs-group-chev {
+  flex: none;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-group-name {
+  flex: none;
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+/* The values run to the far end and give way first: a long summary is trimmed
+   rather than allowed to push the name off its own row. */
+.gen-studio .gs-group-sum {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--gs-muted);
+  font-size: var(--gs-text-xs);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-group-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-changed);
+}
+.gen-studio .gs-group-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-group-body {
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--gs-space-2-5);
+  padding: 0 var(--gs-space-3) var(--gs-space-3);
+}
+@media (max-width: 639.98px) {
+  .gen-studio .gs-group-body {
+    padding: 0 var(--gs-space-2-5) var(--gs-space-2-5);
+  }
+}
+
+.gen-studio .gs-zone-label {
+  display: none;
+  padding: 0 2px;
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gs-ink-muted, var(--gs-ink));
 }
 
 .gen-studio .gs-panel {
@@ -1889,18 +1992,17 @@
    settings, not a page section: the eyebrow has to read as the head of the
    controls under it, and two cards have to read as neighbours in one column. */
 .gen-studio .gs-body-flow,
-.gen-studio .gs-body-cards,
+.gen-studio .gs-zone,
 .gen-studio .gs-op-groups {
   gap: var(--gs-space-3);
 }
 .gen-studio .gs-card,
-.gen-studio .gs-body-flow > section,
-.gen-studio .gs-body-cards > section {
+.gen-studio .gs-zone > section {
   row-gap: var(--gs-space-2-5);
 }
 @media (max-width: 639.98px) {
   .gen-studio .gs-body-flow,
-  .gen-studio .gs-body-cards,
+  .gen-studio .gs-zone,
   .gen-studio .gs-op-groups {
     gap: var(--gs-space-2);
   }

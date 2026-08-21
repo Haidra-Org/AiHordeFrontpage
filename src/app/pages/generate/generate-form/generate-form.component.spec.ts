@@ -53,8 +53,16 @@ async function createComponent(
   form: GenerateFormGroup;
   submits: () => number;
 }> {
+  // Transloco is needed even with the template thrown away: the panel words its
+  // own summary lines, so the component asks for translations directly.
   await TestBed.configureTestingModule({
-    imports: [GenerateFormComponent],
+    imports: [
+      GenerateFormComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
   })
     .overrideComponent(GenerateFormComponent, { set: { template: '' } })
     .compileComponents();
@@ -278,7 +286,15 @@ describe('GenerateFormComponent prompt history', () => {
     anchor: HTMLElement;
     promptBox: HTMLTextAreaElement;
   }> {
-    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+    })
       .overrideComponent(GenerateFormComponent, {
         set: {
           template:
@@ -396,7 +412,15 @@ describe('GenerateFormComponent extras', () => {
     component: GenerateFormComponent;
     form: GenerateFormGroup;
   }> {
-    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+    })
       .overrideComponent(GenerateFormComponent, { set: { template: '' } })
       .compileComponents();
 
@@ -518,7 +542,15 @@ describe('GenerateFormComponent model recommendations', () => {
     component: GenerateFormComponent;
     form: GenerateFormGroup;
   }> {
-    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+    })
       .overrideComponent(GenerateFormComponent, { set: { template: '' } })
       .compileComponents();
 
@@ -652,7 +684,13 @@ describe('GenerateFormComponent reset', () => {
     toast: ToastService;
   }> {
     await TestBed.configureTestingModule({
-      imports: [GenerateFormComponent],
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
     })
       .overrideComponent(GenerateFormComponent, { set: { template: '' } })
       .compileComponents();
@@ -922,19 +960,35 @@ describe('GenerateFormComponent structure', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  it('gives every card of the panel a heading, and names the card by it', async () => {
+  it('names every card of the panel, by its heading or by the control that opens it', async () => {
     const host = await render();
     const sections = Array.from(
       host.querySelectorAll<HTMLElement>('section[aria-labelledby]'),
     );
+    const groups = Array.from(host.querySelectorAll<HTMLElement>('.gs-group'));
 
-    expect(sections.length).toBeGreaterThanOrEqual(9);
+    expect(sections.length + groups.length).toBeGreaterThanOrEqual(9);
     for (const section of sections) {
       const id = section.getAttribute('aria-labelledby')!;
       const heading = host.querySelector(`#${id}`);
       expect(heading, `no heading for ${id}`).not.toBeNull();
       expect(heading!.tagName).toBe('H2');
       expect(heading!.textContent?.trim()).toBeTruthy();
+    }
+    // A folded group carries no heading, so the button that unfolds it is what
+    // says the group's name and whether it is open.
+    for (const group of groups) {
+      const toggle = group.querySelector<HTMLElement>('.gs-group-toggle');
+      expect(toggle, 'a group with nothing to open it').not.toBeNull();
+      expect(
+        group.querySelector('.gs-group-name')?.textContent?.trim(),
+      ).toBeTruthy();
+      const bodyId = toggle!.getAttribute('aria-controls')!;
+      expect(bodyId).toBeTruthy();
+      // What the button says it opens is drawn exactly while it says it is open.
+      expect(host.querySelector(`#${bodyId}`) !== null).toBe(
+        toggle!.getAttribute('aria-expanded') === 'true',
+      );
     }
   });
 
@@ -1046,6 +1100,137 @@ describe('GenerateFormComponent structure', () => {
 
     expect(region).not.toBeNull();
     expect(region!.textContent?.trim()).toBe('');
+  });
+});
+
+/**
+ * The settings past the first cards fold away behind one line of their own
+ * current values. What is checked here is the contract of that line: it reports
+ * what the form holds, it says so when the form holds something other than what
+ * it started at, and which groups the reader left open survives the visit.
+ */
+describe('GenerateFormComponent settings groups', () => {
+  async function render(value: Partial<GenerateFormValue> = {}): Promise<{
+    component: GenerateFormComponent;
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+  }> {
+    // Each render is a fresh visit to the panel, and what a visit remembers of
+    // the last one is exactly the point of the folding: the storage is left
+    // standing between renders and cleared only between tests.
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        mode: 'advanced',
+        prompt: 'a fox',
+        ...value,
+      }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    return {
+      component: fixture.componentInstance,
+      host: fixture.nativeElement as HTMLElement,
+      fixture,
+    };
+  }
+
+  /** The one line a named group shows while it is folded. */
+  function summaryOf(host: HTMLElement, name: string): string {
+    const group = Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-group'),
+    ).find(
+      (candidate) =>
+        candidate
+          .querySelector('.gs-group-name')
+          ?.textContent?.trim()
+          .toLowerCase() === name.toLowerCase(),
+    );
+    expect(group, `no group called ${name}`).not.toBeUndefined();
+    return group!.querySelector('.gs-group-sum')?.textContent?.trim() ?? '';
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('reads the sampling values off the form, in the order the card sets them', async () => {
+    const { host } = await render({
+      sampler_name: 'k_euler_a',
+      steps: 30,
+      cfg_scale: 7.5,
+    });
+
+    expect(summaryOf(host, 'Sampling')).toBe('k_euler_a · 30 steps · CFG 7.5');
+  });
+
+  it('counts what the LoRA group holds, and says so when it holds nothing', async () => {
+    const { host } = await render();
+    expect(summaryOf(host, 'LoRAs & embeddings')).toBe(
+      en['generate.groups.summary_none'],
+    );
+
+    const { host: loaded } = await render({
+      loras: [{ name: 'add-detail', model: 0.8, clip: 0.8 }],
+      tis: [{ name: 'easynegative', strength: 1 }],
+    });
+    expect(summaryOf(loaded, 'LoRAs & embeddings')).toBe(
+      '1 LoRA · 1 embedding',
+    );
+  });
+
+  it('marks only the groups holding something other than the default', async () => {
+    const { component } = await render({
+      steps: DEFAULT_GENERATE_FORM_VALUE.steps,
+    });
+    expect(component.groupChanged('sampling')).toBe(false);
+
+    const { component: changed } = await render({ steps: 45 });
+    expect(changed.groupChanged('sampling')).toBe(true);
+    expect(changed.groupChanged('output')).toBe(false);
+  });
+
+  it('folds a group away on the press and remembers it for the next visit', async () => {
+    const { component, fixture } = await render();
+    expect(component.isGroupOpen('sampling')).toBe(true);
+
+    component.toggleGroup('sampling');
+    fixture.detectChanges();
+    expect(component.isGroupOpen('sampling')).toBe(false);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.gs-grid-sampling'),
+    ).toBeNull();
+
+    const { component: revisited } = await render();
+    expect(revisited.isGroupOpen('sampling')).toBe(false);
+    expect(revisited.isGroupOpen('output')).toBe(true);
+  });
+
+  it('unfolds the group holding a field the studio wants to point at', async () => {
+    const { component, fixture } = await render();
+    component.toggleGroup('sampling');
+    fixture.detectChanges();
+
+    component.openGroupForAnchor('cfg');
+    expect(component.isGroupOpen('sampling')).toBe(true);
+
+    // An anchor that lives on an always-open card asks nothing of any group.
+    component.openGroupForAnchor('prompt');
+    expect(component.isGroupOpen('sampling')).toBe(true);
   });
 });
 
@@ -1309,7 +1494,15 @@ describe('GenerateFormComponent sampler contract', () => {
   });
 
   it('falls back to the built-in samplers with no contract published', async () => {
-    await TestBed.configureTestingModule({ imports: [GenerateFormComponent] })
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+    })
       .overrideComponent(GenerateFormComponent, { set: { template: '' } })
       .compileComponents();
     const fixture = TestBed.createComponent(GenerateFormComponent);

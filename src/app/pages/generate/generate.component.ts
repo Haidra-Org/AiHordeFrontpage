@@ -612,6 +612,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.form.controls.sourceMode.setValue(mode);
   }
 
+  public openFieldGroup(anchorId: string): void {
+    this.formRef()?.openGroupForAnchor(anchorId);
+  }
+
   /**
    * Offer a tutorial's whole example through the same review panel a saved
    * preset goes through, so a bulk write is always something the reader ticked

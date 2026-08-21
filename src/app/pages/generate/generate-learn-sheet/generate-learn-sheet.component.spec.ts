@@ -48,6 +48,9 @@ class HostStub implements TutorialStudioHost {
   public setSourceMode(_mode: GenerateSourceMode): void {
     /* txt2img attaches no source image */
   }
+  public openFieldGroup(): void {
+    /* the stub panel folds nothing away */
+  }
   public openBulkApply(): void {
     /* the bulk route is the panel's, and stays there */
   }

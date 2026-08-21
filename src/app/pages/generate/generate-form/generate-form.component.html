@@ -230,189 +230,202 @@
     </div>
   </header>
 
-  <!-- Scrollable control body -->
+  <!-- Scrollable control body. The panel is read in three passes: what the
+       picture is, how it is drawn, and what comes back. Each keeps its own
+       column so that widening the panel only puts the passes side by side:
+       nothing changes place between one width and the next, and the names are
+       drawn only where there are columns to tell apart. -->
   <div class="gs-body">
-    <div class="gs-body-flow flex flex-col gap-4">
-      <!-- Prompt (compact by default; drag the grip to grow it vertically).
+    <!-- Only the panel showing every setting has three passes to lay side by
+         side; the essentials are the first pass alone, and a widened panel puts
+         them in one column rather than in a column with two empty ones. -->
+    <div class="gs-body-flow gs-zones" [class.gs-zones--split]="isAdvanced()">
+      <section
+        class="gs-zone gs-zone--compose"
+        [attr.aria-label]="'generate.zones.compose' | transloco"
+      >
+        <span class="gs-zone-label" aria-hidden="true">
+          {{ "generate.zones.compose" | transloco }}
+        </span>
+        <!-- Prompt (compact by default; drag the grip to grow it vertically).
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
-      <section
-        class="gs-sec--prompt flex flex-col gap-3"
-        appTutAnchor="prompt"
-        aria-labelledby="gs-card-prompt"
-      >
-        <div class="gs-sec-head">
-          <h2 id="gs-card-prompt" class="gs-card-title">
-            <span class="gs-sec-chip" aria-hidden="true"
-              ><app-icon name="sec-prompt"
-            /></span>
-            {{ "generate.form.prompt_section" | transloco }}
-          </h2>
-          <app-gs-help topic="prompt" />
-        </div>
-        <div class="gs-prompt-wrap" #historyContainer>
+        <section
+          class="gs-sec--prompt flex flex-col gap-3"
+          appTutAnchor="prompt"
+          aria-labelledby="gs-card-prompt"
+        >
+          <div class="gs-sec-head">
+            <h2 id="gs-card-prompt" class="gs-card-title">
+              <span class="gs-sec-chip" aria-hidden="true"
+                ><app-icon name="sec-prompt"
+              /></span>
+              {{ "generate.form.prompt_section" | transloco }}
+            </h2>
+            <app-gs-help topic="prompt" />
+          </div>
+          <div class="gs-prompt-wrap" #historyContainer>
+            <textarea
+              #promptInput
+              class="gs-textarea gs-textarea--resize"
+              [class.gs-textarea--history]="promptHistory().length > 0"
+              formControlName="prompt"
+              rows="2"
+              appRememberedHeight="aihorde.generate.prompt_height"
+              [placeholder]="'generate.form.prompt_placeholder' | transloco"
+              [attr.aria-label]="'generate.form.prompt_label' | transloco"
+              (keydown.control.enter)="onSubmitShortcut()"
+              (keydown.meta.enter)="onSubmitShortcut()"
+            ></textarea>
+            <!-- Phones only: the grip has nothing to drag there, so the box opens
+               over the screen instead. -->
+            <button
+              type="button"
+              class="gs-prompt-expand"
+              (click)="openPromptEditor('prompt')"
+              [attr.aria-label]="'generate.form.prompt_expand' | transloco"
+              [title]="'generate.form.prompt_expand' | transloco"
+            >
+              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+            </button>
+            @if (promptHistory().length > 0) {
+              <button
+                #historyBtn
+                type="button"
+                class="gs-prompt-hist-btn"
+                (click)="toggleHistory()"
+                [attr.aria-expanded]="historyOpen()"
+                [attr.aria-label]="'generate.form.history' | transloco"
+                [title]="'generate.form.history' | transloco"
+              >
+                <app-icon name="clock" class="gs-ico-sm" />
+              </button>
+              @if (historyOpen()) {
+                <div
+                  class="gs-hist-menu"
+                  role="group"
+                  [attr.aria-label]="'generate.form.history' | transloco"
+                >
+                  <div class="gs-presets-label">
+                    {{ "generate.form.history" | transloco }}
+                  </div>
+                  @for (entry of promptHistory(); track $index) {
+                    <div
+                      class="gs-hist-row"
+                      [class.gs-hist-row--open]="historyDetail() === $index"
+                    >
+                      <button
+                        type="button"
+                        class="gs-hist-item"
+                        (click)="pickHistory(entry)"
+                      >
+                        <span class="gs-hist-text">{{ entry.prompt }}</span>
+                        @if (entry.negativePrompt) {
+                          <span class="gs-hist-neg">
+                            {{
+                              "generate.form.history_negative"
+                                | transloco: { negative: entry.negativePrompt }
+                            }}
+                          </span>
+                        }
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-hist-expand"
+                        (click)="toggleHistoryDetail($index)"
+                        [attr.aria-expanded]="historyDetail() === $index"
+                        [attr.aria-controls]="'gs-hist-detail-' + $index"
+                        [attr.aria-label]="
+                          'generate.form.history_expand' | transloco
+                        "
+                        [title]="'generate.form.history_expand' | transloco"
+                      >
+                        <app-icon name="chevron-down" class="gs-ico-sm" />
+                      </button>
+                      <div
+                        class="gs-hist-detail"
+                        [id]="'gs-hist-detail-' + $index"
+                      >
+                        <div class="gs-hist-detail-inner">
+                          <p class="gs-hist-detail-label">
+                            {{ "generate.form.prompt_label" | transloco }}
+                          </p>
+                          <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
+                          @if (entry.negativePrompt) {
+                            <p class="gs-hist-detail-label">
+                              {{
+                                "generate.form.negative_prompt_label"
+                                  | transloco
+                              }}
+                            </p>
+                            <p class="gs-hist-detail-neg">
+                              {{ entry.negativePrompt }}
+                            </p>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </section>
+
+        <!-- Negative prompt (one row by default; drag the grip to grow it). The
+           help glyph sits beside the field because the row carries no label to
+           host it. -->
+        <div class="flex flex-wrap items-start gap-1.5">
           <textarea
-            #promptInput
-            class="gs-textarea gs-textarea--resize"
-            [class.gs-textarea--history]="promptHistory().length > 0"
-            formControlName="prompt"
-            rows="2"
-            appRememberedHeight="aihorde.generate.prompt_height"
-            [placeholder]="'generate.form.prompt_placeholder' | transloco"
-            [attr.aria-label]="'generate.form.prompt_label' | transloco"
+            class="gs-neg-input min-w-0 flex-1"
+            appTutAnchor="negative_prompt"
+            formControlName="negativePrompt"
+            rows="1"
+            appRememberedHeight="aihorde.generate.negative_height"
+            [placeholder]="
+              'generate.form.negative_prompt_placeholder' | transloco
+            "
+            [attr.aria-label]="
+              'generate.form.negative_prompt_label' | transloco
+            "
             (keydown.control.enter)="onSubmitShortcut()"
             (keydown.meta.enter)="onSubmitShortcut()"
           ></textarea>
-          <!-- Phones only: the grip has nothing to drag there, so the box opens
-               over the screen instead. -->
           <button
             type="button"
-            class="gs-prompt-expand"
-            (click)="openPromptEditor('prompt')"
-            [attr.aria-label]="'generate.form.prompt_expand' | transloco"
-            [title]="'generate.form.prompt_expand' | transloco"
+            class="gs-prompt-expand gs-prompt-expand--inline"
+            (click)="openPromptEditor('negative')"
+            [attr.aria-label]="'generate.form.negative_expand' | transloco"
+            [title]="'generate.form.negative_expand' | transloco"
           >
             <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
           </button>
-          @if (promptHistory().length > 0) {
-            <button
-              #historyBtn
-              type="button"
-              class="gs-prompt-hist-btn"
-              (click)="toggleHistory()"
-              [attr.aria-expanded]="historyOpen()"
-              [attr.aria-label]="'generate.form.history' | transloco"
-              [title]="'generate.form.history' | transloco"
-            >
-              <app-icon name="clock" class="gs-ico-sm" />
-            </button>
-            @if (historyOpen()) {
-              <div
-                class="gs-hist-menu"
-                role="group"
-                [attr.aria-label]="'generate.form.history' | transloco"
-              >
-                <div class="gs-presets-label">
-                  {{ "generate.form.history" | transloco }}
-                </div>
-                @for (entry of promptHistory(); track $index) {
-                  <div
-                    class="gs-hist-row"
-                    [class.gs-hist-row--open]="historyDetail() === $index"
-                  >
-                    <button
-                      type="button"
-                      class="gs-hist-item"
-                      (click)="pickHistory(entry)"
-                    >
-                      <span class="gs-hist-text">{{ entry.prompt }}</span>
-                      @if (entry.negativePrompt) {
-                        <span class="gs-hist-neg">
-                          {{
-                            "generate.form.history_negative"
-                              | transloco: { negative: entry.negativePrompt }
-                          }}
-                        </span>
-                      }
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-hist-expand"
-                      (click)="toggleHistoryDetail($index)"
-                      [attr.aria-expanded]="historyDetail() === $index"
-                      [attr.aria-controls]="'gs-hist-detail-' + $index"
-                      [attr.aria-label]="
-                        'generate.form.history_expand' | transloco
-                      "
-                      [title]="'generate.form.history_expand' | transloco"
-                    >
-                      <app-icon name="chevron-down" class="gs-ico-sm" />
-                    </button>
-                    <div
-                      class="gs-hist-detail"
-                      [id]="'gs-hist-detail-' + $index"
-                    >
-                      <div class="gs-hist-detail-inner">
-                        <p class="gs-hist-detail-label">
-                          {{ "generate.form.prompt_label" | transloco }}
-                        </p>
-                        <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
-                        @if (entry.negativePrompt) {
-                          <p class="gs-hist-detail-label">
-                            {{
-                              "generate.form.negative_prompt_label" | transloco
-                            }}
-                          </p>
-                          <p class="gs-hist-detail-neg">
-                            {{ entry.negativePrompt }}
-                          </p>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            }
-          }
+          <app-gs-help topic="negative" />
         </div>
-      </section>
 
-      <!-- Negative prompt (one row by default; drag the grip to grow it). The
-           help glyph sits beside the field because the row carries no label to
-           host it. -->
-      <div class="flex flex-wrap items-start gap-1.5">
-        <textarea
-          class="gs-neg-input min-w-0 flex-1"
-          appTutAnchor="negative_prompt"
-          formControlName="negativePrompt"
-          rows="1"
-          appRememberedHeight="aihorde.generate.negative_height"
-          [placeholder]="
-            'generate.form.negative_prompt_placeholder' | transloco
-          "
-          [attr.aria-label]="'generate.form.negative_prompt_label' | transloco"
-          (keydown.control.enter)="onSubmitShortcut()"
-          (keydown.meta.enter)="onSubmitShortcut()"
-        ></textarea>
-        <button
-          type="button"
-          class="gs-prompt-expand gs-prompt-expand--inline"
-          (click)="openPromptEditor('negative')"
-          [attr.aria-label]="'generate.form.negative_expand' | transloco"
-          [title]="'generate.form.negative_expand' | transloco"
-        >
-          <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-        </button>
-        <app-gs-help topic="negative" />
-      </div>
+        @if (promptEditor(); as field) {
+          <app-gs-prompt-editor
+            [heading]="
+              (field === 'prompt'
+                ? 'generate.form.prompt_label'
+                : 'generate.form.negative_prompt_label'
+              ) | transloco
+            "
+            [placeholder]="
+              (field === 'prompt'
+                ? 'generate.form.prompt_placeholder'
+                : 'generate.form.negative_prompt_placeholder'
+              ) | transloco
+            "
+            [control]="
+              field === 'prompt'
+                ? form().controls.prompt
+                : form().controls.negativePrompt
+            "
+            (closed)="promptEditor.set(null)"
+          />
+        }
 
-      @if (promptEditor(); as field) {
-        <app-gs-prompt-editor
-          [heading]="
-            (field === 'prompt'
-              ? 'generate.form.prompt_label'
-              : 'generate.form.negative_prompt_label'
-            ) | transloco
-          "
-          [placeholder]="
-            (field === 'prompt'
-              ? 'generate.form.prompt_placeholder'
-              : 'generate.form.negative_prompt_placeholder'
-            ) | transloco
-          "
-          [control]="
-            field === 'prompt'
-              ? form().controls.prompt
-              : form().controls.negativePrompt
-          "
-          (closed)="promptEditor.set(null)"
-        />
-      }
-
-      <!-- Setting cards. When the panel is expanded these reflow into
-           independent masonry columns; the prompt + negative above stay full
-           width so growing them never shuffles the cards. -->
-      <div class="gs-body-cards flex flex-col gap-4">
         <!-- Model & style -->
         <section
           class="gs-sec--model flex flex-col gap-3"
@@ -759,30 +772,41 @@
              attaching an image is a way of describing the work, and the dials
              that only make sense with the full panel are gated inside it. -->
         <ng-content select="[generateSourceImage]" />
+      </section>
 
-        @if (isAdvanced()) {
-          <!-- Advanced divider -->
-          <div class="gs-adv-divider gs-fadeup">
-            <span class="gs-adv-line"></span>
-            <span class="gs-adv-label">
-              <app-icon name="star" class="gs-ico-sm" />
-              {{ "generate.form.advanced_divider" | transloco }}
-            </span>
-            <span class="gs-adv-line"></span>
-          </div>
+      @if (isAdvanced()) {
+        <!-- Advanced divider -->
+        <div class="gs-adv-divider gs-fadeup">
+          <span class="gs-adv-line"></span>
+          <span class="gs-adv-label">
+            <app-icon name="star" class="gs-ico-sm" />
+            {{ "generate.form.advanced_divider" | transloco }}
+          </span>
+          <span class="gs-adv-line"></span>
+        </div>
+
+        <section
+          class="gs-zone gs-zone--refine"
+          [attr.aria-label]="'generate.zones.refine' | transloco"
+        >
+          <span class="gs-zone-label" aria-hidden="true">
+            {{ "generate.zones.refine" | transloco }}
+          </span>
 
           <!-- Sampling -->
-          <section
-            class="gs-card gs-sec--sampling flex flex-col gap-3"
-            aria-labelledby="gs-card-sampling"
+          <app-gs-group
+            section="sampling"
+            titleKey="generate.form.sampling_section"
+            [summary]="samplingSummary()"
+            [changed]="groupChanged('sampling')"
+            [open]="isGroupOpen('sampling')"
+            (toggled)="toggleGroup('sampling')"
           >
-            <div class="gs-sec-head">
-              <h2 id="gs-card-sampling" class="gs-card-title">
-                <span class="gs-sec-chip" aria-hidden="true"
-                  ><app-icon name="sec-sampling"
-                /></span>
-                {{ "generate.form.sampling_section" | transloco }}
-              </h2>
+            <!-- The note and the style lock ride inside the group rather than
+                 on its head: the head is the one control that opens the group,
+                 and a second control sharing it could not be reached by the
+                 press that opens it. -->
+            <div class="gs-group-actions">
               <app-gs-help topic="requirements" />
               @if (stylePins("sampling")) {
                 <ng-container
@@ -1334,21 +1358,19 @@
                 <app-gs-help topic="tiling" />
               </div>
             </div>
-          </section>
+          </app-gs-group>
 
           <!-- LoRAs & embeddings -->
-          <section
-            class="gs-card gs-sec--model flex flex-col gap-3"
-            aria-labelledby="gs-card-loras"
+          <app-gs-group
+            section="model"
+            titleKey="generate.form.loras_section"
             appTutAnchor="loras"
+            [summary]="lorasSummary()"
+            [changed]="groupChanged('loras')"
+            [open]="isGroupOpen('loras')"
+            (toggled)="toggleGroup('loras')"
           >
-            <div class="gs-sec-head">
-              <h2 id="gs-card-loras" class="gs-card-title">
-                <span class="gs-sec-chip" aria-hidden="true"
-                  ><app-icon name="sec-model"
-                /></span>
-                {{ "generate.form.loras_section" | transloco }}
-              </h2>
+            <div class="gs-group-actions">
               <app-gs-help topic="loras" />
               <button type="button" class="gs-civit-link" (click)="openCivit()">
                 {{ "generate.form.add_from_civitai" | transloco }}
@@ -1368,159 +1390,159 @@
                 context: { warnings: loraWarnings() }
               "
             />
-          </section>
+          </app-gs-group>
 
-          <!-- Post-process + Output -->
-          <div class="gs-grid-2 gs-grid-2--switches">
-            <section
-              class="gs-card gs-sec--finishing flex flex-col gap-3"
-              aria-labelledby="gs-card-post"
-            >
-              <h2 id="gs-card-post" class="gs-card-title--sm">
-                <span class="gs-sec-chip" aria-hidden="true"
-                  ><app-icon name="sec-finishing"
-                /></span>
-                {{ "generate.form.post_processing_section" | transloco }}
-              </h2>
-              <div>
-                <div class="gs-field-head">
-                  <label class="gs-slabel" for="generate-upscaler">
-                    {{ "generate.form.upscaler_label" | transloco }} </label
-                  ><app-gs-help topic="upscaler" />
-                </div>
-                <select
-                  id="generate-upscaler"
-                  class="gs-native-select mt-1"
-                  [value]="selectedUpscaler()"
-                  (change)="onUpscalerChange($event)"
-                >
-                  <option value="">
-                    {{ "generate.form.upscaler_none" | transloco }}
-                  </option>
-                  @for (upscaler of upscalers; track upscaler) {
-                    <option [value]="upscaler">{{ upscaler }}</option>
-                  }
-                </select>
+          <!-- Post-process -->
+          <app-gs-group
+            section="finishing"
+            titleKey="generate.form.post_processing_section"
+            [summary]="postSummary()"
+            [changed]="groupChanged('post')"
+            [open]="isGroupOpen('post')"
+            (toggled)="toggleGroup('post')"
+          >
+            <div>
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-upscaler">
+                  {{ "generate.form.upscaler_label" | transloco }} </label
+                ><app-gs-help topic="upscaler" />
               </div>
-              <div appTutAnchor="facefixer">
-                <div class="gs-field-head">
-                  <label class="gs-slabel" for="generate-facefixer">
-                    {{ "generate.form.facefixer_label" | transloco }} </label
-                  ><app-gs-help topic="facefixer" />
-                </div>
-                <select
-                  id="generate-facefixer"
-                  class="gs-native-select mt-1"
-                  [value]="selectedFaceFixer()"
-                  (change)="onFaceFixerChange($event)"
-                >
-                  <option value="">
-                    {{ "generate.form.facefixer_none" | transloco }}
-                  </option>
-                  @for (fixer of faceFixers; track fixer) {
-                    <option [value]="fixer">{{ fixer }}</option>
-                  }
-                </select>
+              <select
+                id="generate-upscaler"
+                class="gs-native-select mt-1"
+                [value]="selectedUpscaler()"
+                (change)="onUpscalerChange($event)"
+              >
+                <option value="">
+                  {{ "generate.form.upscaler_none" | transloco }}
+                </option>
+                @for (upscaler of upscalers; track upscaler) {
+                  <option [value]="upscaler">{{ upscaler }}</option>
+                }
+              </select>
+            </div>
+            <div appTutAnchor="facefixer">
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-facefixer">
+                  {{ "generate.form.facefixer_label" | transloco }} </label
+                ><app-gs-help topic="facefixer" />
               </div>
-              @if (usesFaceFixer()) {
-                <div appTutAnchor="facefixer_strength">
-                  <div class="gs-field-head">
-                    <label class="gs-slabel" for="generate-facefixer-strength">
-                      {{
-                        "generate.form.facefixer_strength_label"
-                          | transloco
-                            : {
-                                value: form().controls.facefixer_strength.value,
-                              }
-                      }} </label
-                    ><app-gs-help topic="facefixer_strength" />
-                  </div>
-                  <input
-                    id="generate-facefixer-strength"
-                    class="gs-range mt-1"
-                    type="range"
-                    formControlName="facefixer_strength"
-                    [min]="minFacefixer"
-                    [max]="maxFacefixer"
-                    step="0.05"
-                    [style.--gs-range-fill.%]="
-                      rangeFill(
-                        form().controls.facefixer_strength.value,
-                        minFacefixer,
-                        maxFacefixer
-                      )
-                    "
-                  />
+              <select
+                id="generate-facefixer"
+                class="gs-native-select mt-1"
+                [value]="selectedFaceFixer()"
+                (change)="onFaceFixerChange($event)"
+              >
+                <option value="">
+                  {{ "generate.form.facefixer_none" | transloco }}
+                </option>
+                @for (fixer of faceFixers; track fixer) {
+                  <option [value]="fixer">{{ fixer }}</option>
+                }
+              </select>
+            </div>
+            @if (usesFaceFixer()) {
+              <div appTutAnchor="facefixer_strength">
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-facefixer-strength">
+                    {{
+                      "generate.form.facefixer_strength_label"
+                        | transloco
+                          : {
+                              value: form().controls.facefixer_strength.value,
+                            }
+                    }} </label
+                  ><app-gs-help topic="facefixer_strength" />
                 </div>
-              }
-              <label class="gs-switch gs-switch-row">
-                <span>{{
-                  "generate.form.strip_background_label" | transloco
-                }}</span>
                 <input
-                  type="checkbox"
-                  [checked]="stripBackground()"
-                  (change)="onStripBackgroundChange($event)"
+                  id="generate-facefixer-strength"
+                  class="gs-range mt-1"
+                  type="range"
+                  formControlName="facefixer_strength"
+                  [min]="minFacefixer"
+                  [max]="maxFacefixer"
+                  step="0.05"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.facefixer_strength.value,
+                      minFacefixer,
+                      maxFacefixer
+                    )
+                  "
                 />
+              </div>
+            }
+            <label class="gs-switch gs-switch-row">
+              <span>{{
+                "generate.form.strip_background_label" | transloco
+              }}</span>
+              <input
+                type="checkbox"
+                [checked]="stripBackground()"
+                (change)="onStripBackgroundChange($event)"
+              />
+              <span class="gs-switch-track"
+                ><span class="gs-switch-knob"></span
+              ></span>
+            </label>
+          </app-gs-group>
+        </section>
+
+        <section
+          class="gs-zone gs-zone--deliver"
+          [attr.aria-label]="'generate.zones.deliver' | transloco"
+        >
+          <span class="gs-zone-label" aria-hidden="true">
+            {{ "generate.zones.deliver" | transloco }}
+          </span>
+
+          <!-- Output -->
+          <app-gs-group
+            section="finishing"
+            titleKey="generate.form.output_section"
+            [summary]="outputSummary()"
+            [changed]="groupChanged('output')"
+            [open]="isGroupOpen('output')"
+            (toggled)="toggleGroup('output')"
+          >
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.nsfw_label" | transloco }}</span>
+                <input type="checkbox" formControlName="nsfw" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="nsfw" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.censor_nsfw_label" | transloco }}</span>
+                <input type="checkbox" formControlName="censor_nsfw" />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="censor_nsfw" />
+            </div>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{ "generate.form.shared_label" | transloco }}</span>
+                <input type="checkbox" formControlName="shared" />
                 <span class="gs-switch-track"
                   ><span class="gs-switch-knob"></span
                 ></span>
               </label>
-            </section>
-
-            <section
-              class="gs-card gs-sec--finishing flex flex-col gap-3"
-              aria-labelledby="gs-card-output"
-            >
-              <h2 id="gs-card-output" class="gs-card-title--sm">
-                <span class="gs-sec-chip" aria-hidden="true"
-                  ><app-icon name="sec-finishing"
-                /></span>
-                {{ "generate.form.output_section" | transloco }}
-              </h2>
-              <div class="gs-opt">
-                <label class="gs-switch gs-switch-row">
-                  <span>{{ "generate.form.nsfw_label" | transloco }}</span>
-                  <input type="checkbox" formControlName="nsfw" />
-                  <span class="gs-switch-track"
-                    ><span class="gs-switch-knob"></span
-                  ></span> </label
-                ><app-gs-help topic="nsfw" />
-              </div>
-              <div class="gs-opt">
-                <label class="gs-switch gs-switch-row">
-                  <span>{{
-                    "generate.form.censor_nsfw_label" | transloco
-                  }}</span>
-                  <input type="checkbox" formControlName="censor_nsfw" />
-                  <span class="gs-switch-track"
-                    ><span class="gs-switch-knob"></span
-                  ></span> </label
-                ><app-gs-help topic="censor_nsfw" />
-              </div>
-              <div class="gs-opt">
-                <label class="gs-switch gs-switch-row">
-                  <span>{{ "generate.form.shared_label" | transloco }}</span>
-                  <input type="checkbox" formControlName="shared" />
-                  <span class="gs-switch-track"
-                    ><span class="gs-switch-knob"></span
-                  ></span>
-                </label>
-              </div>
-            </section>
-          </div>
+            </div>
+          </app-gs-group>
 
           <!-- Workers & filters -->
-          <section
-            class="gs-card gs-sec--horde flex flex-col gap-3"
-            aria-labelledby="gs-card-horde"
+          <app-gs-group
+            section="horde"
+            titleKey="generate.form.horde_section"
+            [summary]="hordeSummary()"
+            [changed]="groupChanged('horde')"
+            [open]="isGroupOpen('horde')"
+            (toggled)="toggleGroup('horde')"
           >
-            <h2 id="gs-card-horde" class="gs-card-title">
-              <span class="gs-sec-chip" aria-hidden="true"
-                ><app-icon name="sec-horde"
-              /></span>
-              {{ "generate.form.horde_section" | transloco }}
-            </h2>
             <div class="gs-opt">
               <label class="gs-switch gs-switch-row">
                 <span>{{
@@ -1728,20 +1750,18 @@
                 {{ "generate.form.remember_extras_hint" | transloco }}
               </p>
             </div>
-          </section>
+          </app-gs-group>
 
           <!-- Workflows: output modes that need a model or a worker feature
                behind them, rather than plain request settings. -->
-          <section
-            class="gs-card gs-sec--workflows flex flex-col gap-3"
-            aria-labelledby="gs-card-workflows"
+          <app-gs-group
+            section="workflows"
+            titleKey="generate.form.workflows_section"
+            [summary]="workflowsSummary()"
+            [changed]="groupChanged('workflows')"
+            [open]="isGroupOpen('workflows')"
+            (toggled)="toggleGroup('workflows')"
           >
-            <h2 id="gs-card-workflows" class="gs-card-title">
-              <span class="gs-sec-chip" aria-hidden="true"
-                ><app-icon name="sec-workflows"
-              /></span>
-              {{ "generate.form.workflows_section" | transloco }}
-            </h2>
             <p class="gs-sublabel">
               {{ "generate.form.workflows_hint" | transloco }}
             </p>
@@ -1868,9 +1888,9 @@
                 {{ "generate.form.qr_layout_hint" | transloco }}
               </p>
             </div>
-          </section>
-        }
-      </div>
+          </app-gs-group>
+        </section>
+      }
     </div>
   </div>
 

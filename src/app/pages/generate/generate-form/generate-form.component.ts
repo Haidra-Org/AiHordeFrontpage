@@ -22,7 +22,7 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
@@ -34,11 +34,13 @@ import { ModelAutocompleteComponent } from '../../../components/model-autocomple
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
 import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
+import { DatabaseService } from '../../../services/database.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
 import { StyleForcedParams } from '../../../services/horde-styles.service';
 import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
+import { GsGroupComponent } from './gs-group/gs-group.component';
 import {
   FACE_FIXERS,
   FormLoraEntry,
@@ -46,6 +48,7 @@ import {
   GenerateFormGroup,
   GenerateFormValue,
   GenerateMode,
+  DEFAULT_GENERATE_FORM_VALUE,
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
   CFG_STEP,
@@ -155,6 +158,115 @@ const KNOB_ANCHORS: readonly FieldAnchorId[] = [
 export type PromptEditorField = 'prompt' | 'negative';
 
 /**
+ * The settings groups the panel folds away behind a line of their own values.
+ * The cards a request cannot be described without (prompt, model, size, the
+ * source strip) are not groups: they are always open.
+ */
+export type GroupId =
+  | 'sampling'
+  | 'loras'
+  | 'post'
+  | 'output'
+  | 'horde'
+  | 'workflows';
+
+export const GROUP_IDS: readonly GroupId[] = [
+  'sampling',
+  'loras',
+  'post',
+  'output',
+  'horde',
+  'workflows',
+];
+
+/**
+ * Which group a control lives in, so that pointing at a control opens the group
+ * holding it first. A control the panel is not currently drawing cannot be
+ * scrolled to or rung, and an anchor missing from here would fail silently.
+ */
+const GROUP_BY_ANCHOR: Readonly<Record<string, GroupId>> = {
+  steps: 'sampling',
+  cfg: 'sampling',
+  sampler: 'sampling',
+  schedule: 'sampling',
+  seed: 'sampling',
+  clip_skip: 'sampling',
+  tiling: 'sampling',
+  advanced_sampling: 'sampling',
+  solver_type: 'sampling',
+  flow_shift: 'sampling',
+  sampler_eta: 'sampling',
+  sampler_s_noise: 'sampling',
+  sampler_s_churn: 'sampling',
+  sampler_s_tmin: 'sampling',
+  sampler_s_tmax: 'sampling',
+  sampler_order: 'sampling',
+  seed_variation: 'sampling',
+  loras: 'loras',
+  facefixer: 'post',
+  facefixer_strength: 'post',
+  upscaler: 'post',
+  transparent: 'workflows',
+  qr: 'workflows',
+  webhook: 'horde',
+  workers: 'horde',
+};
+
+/** The fields each group owns, for the mark that says it holds a changed value. */
+const GROUP_FIELDS: Readonly<
+  Record<GroupId, readonly (keyof GenerateFormValue)[]>
+> = {
+  sampling: [
+    'sampler_name',
+    'steps',
+    'cfg_scale',
+    'clip_skip',
+    'seed',
+    'scheduler',
+    'tiling',
+    'sampler_eta',
+    'sampler_s_noise',
+    'sampler_s_churn',
+    'sampler_s_tmin',
+    'sampler_s_tmax',
+    'sampler_order',
+    'sampler_solver_type',
+    'flow_shift',
+    'seed_variation',
+  ],
+  loras: ['loras', 'tis'],
+  post: ['post_processing', 'facefixer_strength'],
+  output: ['nsfw', 'censor_nsfw', 'shared'],
+  horde: [
+    'trusted_workers',
+    'slow_workers',
+    'extra_slow_workers',
+    'allow_downgrade',
+    'replacement_filter',
+    'webhook',
+    'workers',
+    'workerBlacklist',
+    'rememberExtras',
+  ],
+  workflows: [
+    'transparent',
+    'qrText',
+    'qrXOffset',
+    'qrYOffset',
+    'qrModuleDrawer',
+  ],
+};
+
+/** Where the reader's open groups are remembered between visits. */
+const GROUPS_OPEN_KEY = 'aihorde.generate.groups_open';
+
+/** What the panel does with a group it has never been told anything about. */
+const GROUP_OPEN_DEFAULT = true;
+
+/** The separator every group's summary line reads its values between. */
+const SUMMARY_SEPARATOR = ' · ';
+
+/**
  * The /generate left control panel. Presentational: every control binds to the
  * parent's form group and the parent owns kudos estimation, submission,
  * persistence, and style resolution. The panel renders a Simple/Advanced
@@ -180,6 +292,7 @@ export type PromptEditorField = 'prompt' | 'negative';
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
     StyleBrowserComponent,
+    GsGroupComponent,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -198,6 +311,8 @@ export class GenerateFormComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly anchors = inject(TutorialAnchorService);
   private readonly injector = inject(Injector);
+  private readonly transloco = inject(TranslocoService);
+  private readonly db = inject(DatabaseService);
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
@@ -720,6 +835,12 @@ export class GenerateFormComponent implements OnInit {
   });
 
   public ngOnInit(): void {
+    this.restoreGroupsOpen();
+    this.value.set(this.form().getRawValue());
+    this.form()
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.value.set(this.form().getRawValue()));
+
     const modeControl = this.form().controls.mode;
     this.mode.set(modeControl.value);
     modeControl.valueChanges
@@ -763,6 +884,181 @@ export class GenerateFormComponent implements OnInit {
       control.markAsDirty();
     }
   }
+
+  // --- Settings groups -----------------------------------------------------
+
+  private readonly groupsOpen = signal<Partial<Record<GroupId, boolean>>>({});
+
+  /** Whether `group` is currently showing its controls rather than its values. */
+  public isGroupOpen(group: GroupId): boolean {
+    return this.groupsOpen()[group] ?? GROUP_OPEN_DEFAULT;
+  }
+
+  public toggleGroup(group: GroupId): void {
+    this.setGroupOpen(group, !this.isGroupOpen(group));
+  }
+
+  /** Show `group`'s controls, whether or not the reader had folded it away. */
+  public openGroup(group: GroupId): void {
+    if (!this.isGroupOpen(group)) {
+      this.setGroupOpen(group, true);
+    }
+  }
+
+  /**
+   * Open the group holding `anchor`, if it is in one. Called before the panel
+   * points at a control: a folded group holds no element to point at.
+   */
+  public openGroupForAnchor(anchor: string): void {
+    const group = GROUP_BY_ANCHOR[anchor];
+    if (group) {
+      this.openGroup(group);
+    }
+  }
+
+  private setGroupOpen(group: GroupId, open: boolean): void {
+    const next = { ...this.groupsOpen(), [group]: open };
+    this.groupsOpen.set(next);
+    this.db.store(GROUPS_OPEN_KEY, next);
+  }
+
+  private restoreGroupsOpen(): void {
+    const stored = this.db.get(GROUPS_OPEN_KEY);
+    if (typeof stored !== 'object' || stored === null) {
+      return;
+    }
+    const next: Partial<Record<GroupId, boolean>> = {};
+    for (const group of GROUP_IDS) {
+      const value = (stored as Record<string, unknown>)[group];
+      if (typeof value === 'boolean') {
+        next[group] = value;
+      }
+    }
+    this.groupsOpen.set(next);
+  }
+
+  /**
+   * Mirror of the form's value. The summary lines and the changed marks are
+   * computed, so they need the value as a signal rather than as controls read
+   * during change detection.
+   */
+  private readonly value = signal<GenerateFormValue | null>(null);
+
+  /** Whether `group` holds anything the form did not start out with. */
+  public groupChanged(group: GroupId): boolean {
+    const value = this.value();
+    if (!value) {
+      return false;
+    }
+    return GROUP_FIELDS[group].some(
+      (field) =>
+        JSON.stringify(value[field]) !==
+        JSON.stringify(DEFAULT_GENERATE_FORM_VALUE[field]),
+    );
+  }
+
+  /** A count worded for the number it carries, the studio's plural idiom. */
+  private counted(key: string, count: number): string {
+    return this.transloco.translate(
+      `${key}${count === 1 ? '_one' : '_other'}`,
+      { count },
+    );
+  }
+
+  private summaryLine(parts: readonly (string | null)[]): string {
+    const written = parts.filter(
+      (part): part is string => part !== null && part !== '',
+    );
+    return written.length > 0
+      ? written.join(SUMMARY_SEPARATOR)
+      : this.transloco.translate('generate.groups.summary_none');
+  }
+
+  public readonly samplingSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          value.sampler_name,
+          this.transloco.translate('generate.groups.sampling_steps', {
+            count: value.steps,
+          }),
+          this.transloco.translate('generate.groups.sampling_cfg', {
+            value: value.cfg_scale,
+          }),
+        ])
+      : '';
+  });
+
+  public readonly lorasSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          value.loras.length > 0
+            ? this.counted('generate.groups.loras_count', value.loras.length)
+            : null,
+          value.tis.length > 0
+            ? this.counted('generate.groups.tis_count', value.tis.length)
+            : null,
+        ])
+      : '';
+  });
+
+  public readonly postSummary = computed(() => {
+    const value = this.value();
+    return value ? this.summaryLine(value.post_processing) : '';
+  });
+
+  public readonly outputSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          this.transloco.translate(
+            value.nsfw
+              ? 'generate.groups.output_nsfw_on'
+              : 'generate.groups.output_nsfw_off',
+          ),
+          value.shared
+            ? this.transloco.translate('generate.groups.output_shared')
+            : null,
+        ])
+      : '';
+  });
+
+  public readonly hordeSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          value.workers.length > 0
+            ? this.counted(
+                value.workerBlacklist
+                  ? 'generate.groups.horde_blocked'
+                  : 'generate.groups.horde_allowed',
+                value.workers.length,
+              )
+            : this.transloco.translate('generate.groups.horde_any'),
+          value.trusted_workers
+            ? this.transloco.translate('generate.groups.horde_trusted')
+            : null,
+          value.webhook
+            ? this.transloco.translate('generate.groups.horde_webhook')
+            : null,
+        ])
+      : '';
+  });
+
+  public readonly workflowsSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          value.transparent
+            ? this.transloco.translate('generate.groups.workflows_transparent')
+            : null,
+          value.qrText
+            ? this.transloco.translate('generate.groups.workflows_qr')
+            : null,
+        ])
+      : '';
+  });
 
   public setSizeBase(base: ModelSizeBase): void {
     this.sizeBase.set(base);
@@ -1585,14 +1881,16 @@ export class GenerateFormComponent implements OnInit {
   /**
    * Bring the control a warning or a refusal is about onto the screen and ring
    * it. A control the panel is not currently drawing is one the essentials view
-   * leaves out or the sampling knobs are folded over, so both are opened and the
-   * pointing waits for the control to exist.
+   * leaves out, one its group is folded over, or one the sampling knobs are
+   * folded over, so each is opened and the pointing waits for the control to
+   * exist.
    */
   public goToField(anchor: FieldAnchorId): void {
     this.closeLint();
     if (KNOB_ANCHORS.includes(anchor)) {
       this.advancedSamplingOpen.set(true);
     }
+    this.openGroupForAnchor(anchor);
     const element = this.anchors.element(anchor);
     if (element) {
       this.anchors.flash(element);

@@ -48,6 +48,8 @@ class HostSpy implements TutorialStudioHost {
   public readonly modes: GenerateMode[] = [];
   public readonly sourceModes: GenerateSourceMode[] = [];
   public readonly bulk: GenerateFormValue[] = [];
+  /** Every anchor the engine asked the panel to unfold the group of. */
+  public readonly openedGroupsFor: string[] = [];
   public mode: GenerateMode = 'simple';
   public sourceMode: GenerateSourceMode = 'none';
 
@@ -72,6 +74,9 @@ class HostSpy implements TutorialStudioHost {
   public setSourceMode(mode: GenerateSourceMode): void {
     this.sourceMode = mode;
     this.sourceModes.push(mode);
+  }
+  public openFieldGroup(anchorId: string): void {
+    this.openedGroupsFor.push(anchorId);
   }
   public openBulkApply(example: GenerateFormValue): void {
     this.bulk.push(example);
@@ -377,6 +382,20 @@ describe('TutorialEngineService', () => {
       expect(element.classList.contains('gs-tut-target')).toBe(true);
       expect(element.scrollIntoView).toHaveBeenCalled();
       expect(help.requestedTopic()).toBe('steps');
+    });
+
+    it('asks the panel to unfold the field before pointing at it', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const element = document.createElement('div');
+      element.scrollIntoView = vi.fn();
+      anchors.register('steps', element);
+
+      engine.goTo(3);
+      engine.focusStep();
+
+      // A folded group holds nothing to point at, so the unfolding is asked for
+      // whether or not the reader had folded it.
+      expect(host.openedGroupsFor).toContain('steps');
     });
 
     it('rings the field only when the reader asks where it is', () => {

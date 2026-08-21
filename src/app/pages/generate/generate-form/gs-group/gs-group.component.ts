@@ -1,0 +1,46 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  output,
+} from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import { SECTION_IDENTITIES, SectionId } from '../../../../content/sections';
+
+let groupInstance = 0;
+
+/**
+ * A settings group whose resting face is one line of its own current values.
+ *
+ * The panel's first cards are always open, because a request cannot be
+ * described without them. Everything past them is a group: closed it reads as
+ * its name, its section mark and what it is currently set to; open it is the
+ * card it always was. The values are passed in already worded, because what
+ * "the current values" means is a question about the form and this component
+ * only knows how to draw an answer.
+ */
+@Component({
+  selector: 'app-gs-group',
+  imports: [IconComponent, TranslocoPipe],
+  templateUrl: './gs-group.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class GsGroupComponent {
+  /** The panel area the group belongs to: its glyph and its hue come from it. */
+  public readonly section = input.required<SectionId>();
+  /** i18n key of the group's name. */
+  public readonly titleKey = input.required<string>();
+  /** The group's values in one line, shown while it is closed. */
+  public readonly summary = input('');
+  /** Whether anything inside differs from the value the form starts at. */
+  public readonly changed = input(false);
+  public readonly open = input(false);
+  public readonly toggled = output<void>();
+
+  public readonly identity = computed(() => SECTION_IDENTITIES[this.section()]);
+
+  /** Ties the head to the body it opens, for readers who cannot see the two. */
+  public readonly bodyId = `gs-group-body-${groupInstance++}`;
+}

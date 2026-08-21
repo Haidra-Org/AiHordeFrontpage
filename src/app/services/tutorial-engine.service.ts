@@ -186,6 +186,12 @@ export interface TutorialStudioHost {
   setMode(mode: GenerateMode): void;
   currentSourceMode(): GenerateSourceMode;
   setSourceMode(mode: GenerateSourceMode): void;
+  /**
+   * Unfold whichever settings group holds the named field, if one does. A group
+   * the reader folded away holds no control to point a step at, so this runs
+   * before the pointing and the pointing waits for the panel to redraw.
+   */
+  openFieldGroup(anchorId: string): void;
   /** Offer the whole example through the studio's review-and-apply panel. */
   openBulkApply(example: GenerateFormValue): void;
 }
@@ -811,6 +817,31 @@ export class TutorialEngineService {
       // previous field's note expanded would describe the wrong field.
       this.help.releaseRequested();
     }
+    if (!step?.anchorId) {
+      return;
+    }
+    this.host?.openFieldGroup(step.anchorId);
+    const element = this.anchors.element(step.anchorId);
+    if (!element) {
+      // The field's group was folded when this ran. Opening it above is a
+      // signal write, so the panel redraws and the field exists one render on;
+      // the retry is single, because a field still missing then is not one the
+      // panel draws at all.
+      if (this.isBrowser) {
+        afterNextRender(() => this.pointAt(ping), { injector: this.injector });
+      }
+      return;
+    }
+    this.pointAt(ping);
+  }
+
+  /**
+   * Ring the current step's field and bring it into view. Split from
+   * `focusStep` so that a field whose group had to be opened first can be
+   * pointed at on the render that draws it.
+   */
+  private pointAt(ping: boolean): void {
+    const step = this.step();
     if (!step?.anchorId) {
       return;
     }
