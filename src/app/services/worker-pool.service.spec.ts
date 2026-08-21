@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   evaluateWorkerFeasibility,
   largestSquareSide,
+  modelFactsFrom,
   type WorkerRequirement,
 } from './worker-pool.service';
 import { HordeWorker } from '../types/horde-worker';
@@ -241,5 +242,61 @@ describe('evaluateWorkerFeasibility', () => {
     );
     expect(result?.survivors).toBe(2);
     expect(result?.message.params['count']).toBe(2);
+  });
+});
+
+describe('modelFactsFrom', () => {
+  it('counts only workers that could pick up a job', () => {
+    const facts = modelFactsFrom([
+      worker({ id: 'a', models: ['m'] }),
+      worker({ id: 'b', models: ['m'], online: false }),
+      worker({ id: 'c', models: ['m'], maintenance_mode: true }),
+    ]);
+    expect(facts.get('m')?.workers).toBe(1);
+  });
+
+  it('keeps the largest size any of them offers', () => {
+    const facts = modelFactsFrom([
+      worker({ id: 'a', models: ['m'], max_pixels: 262_144 }),
+      worker({ id: 'b', models: ['m'], max_pixels: 4_194_304 }),
+    ]);
+    expect(facts.get('m')?.maxSide).toBe(2048);
+  });
+
+  it('counts each capability separately', () => {
+    const facts = modelFactsFrom([
+      worker({
+        id: 'a',
+        models: ['m'],
+        nsfw: true,
+        img2img: true,
+        painting: false,
+      }),
+      worker({
+        id: 'b',
+        models: ['m'],
+        nsfw: false,
+        img2img: false,
+        painting: true,
+      }),
+    ]);
+    expect(facts.get('m')).toEqual({
+      workers: 2,
+      maxSide: 1024,
+      nsfw: 1,
+      img2img: 1,
+      painting: 1,
+    });
+  });
+
+  it('gives a worker a row for every model it carries', () => {
+    const facts = modelFactsFrom([worker({ models: ['one', 'two'] })]);
+    expect([...facts.keys()].sort()).toEqual(['one', 'two']);
+  });
+
+  it('leaves a model nobody carries out of the map entirely', () => {
+    expect(modelFactsFrom([worker({ models: ['m'] })].slice(0, 0)).size).toBe(
+      0,
+    );
   });
 });

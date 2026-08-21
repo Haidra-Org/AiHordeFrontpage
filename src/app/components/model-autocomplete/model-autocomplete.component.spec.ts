@@ -3,10 +3,12 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
 import { ModelAutocompleteComponent } from './model-autocomplete.component';
 import { ActiveModel } from '../../types/active-model';
+import type { ModelWorkerFacts } from '../../services/worker-pool.service';
 import en from '../../../assets/i18n/en.json';
 
 async function render(
   models: ActiveModel[],
+  modelFacts: ReadonlyMap<string, ModelWorkerFacts> | null = null,
 ): Promise<ComponentFixture<ModelAutocompleteComponent>> {
   await TestBed.configureTestingModule({
     imports: [
@@ -27,6 +29,7 @@ async function render(
   ref.setInput('toggleAriaLabelKey', 'generate.form.model_toggle_label');
   ref.setInput('hiddenCountKey', 'generate.form.model_hidden_count');
   ref.setInput('emptyKey', 'generate.form.model_empty');
+  ref.setInput('modelFacts', modelFacts);
   fixture.detectChanges();
   fixture.componentInstance.toggleModelDropdown();
   fixture.detectChanges();
@@ -47,7 +50,33 @@ describe('ModelAutocompleteComponent', () => {
   it('counts the workers on a model somebody is serving', async () => {
     const fixture = await render([{ name: 'Deliberate', count: 4 }]);
 
-    expect(optionText(fixture)).toEqual(['Deliberate (4 workers)']);
+    expect(optionText(fixture)).toEqual(['Deliberate (4 workers)no queue']);
+  });
+
+  it('says how long a busy model is taking, as an estimate', async () => {
+    const fixture = await render([{ name: 'Deliberate', count: 4, eta: 300 }]);
+
+    expect(optionText(fixture)).toEqual(['Deliberate (4 workers)~5 min wait']);
+  });
+
+  it('says the largest size the model’s workers offer', async () => {
+    const fixture = await render(
+      [{ name: 'Deliberate', count: 4 }],
+      new Map([
+        [
+          'Deliberate',
+          { workers: 4, maxSide: 2048, nsfw: 2, img2img: 3, painting: 1 },
+        ],
+      ]),
+    );
+
+    expect(optionText(fixture)[0]).toContain('up to 2048×2048');
+  });
+
+  it('leaves the size off a model the worker list says nothing about', async () => {
+    const fixture = await render([{ name: 'Deliberate', count: 4 }], new Map());
+
+    expect(optionText(fixture)[0]).not.toContain('up to');
   });
 
   it('says nobody is serving a model rather than counting zero', async () => {
@@ -64,7 +93,9 @@ describe('ModelAutocompleteComponent', () => {
     ]);
 
     const host = fixture.nativeElement as HTMLElement;
-    expect(optionText(fixture)).toEqual(['Private Merge (2 workers)custom']);
+    expect(optionText(fixture)).toEqual([
+      'Private Merge (2 workers)customno queue',
+    ]);
     expect(
       host.querySelector('.autocomplete-custom')?.textContent?.trim(),
     ).toBe('custom');

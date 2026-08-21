@@ -1304,6 +1304,19 @@
 .dark .gen-studio .gs-sublabel--warn {
   color: #fbbf24;
 }
+/* Facts about the workers carrying the chosen model, read as a short list on
+   one line. The separator is drawn rather than typed so a fact that is left out
+   takes its separator with it. */
+.gen-studio .gs-model-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.gen-studio .gs-model-facts span + span::before {
+  content: "·";
+  margin-right: 10px;
+}
 
 /* ------- field heads + help notes ----------------------------------- */
 /* A field's label line, and a switch's row, both become wrapping flex rows so a

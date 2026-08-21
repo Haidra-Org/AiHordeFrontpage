@@ -530,6 +530,14 @@
     color: var(--color-text-secondary);
   }
 
+  /* What asking for this model is like right now: queue estimate, largest size
+     on offer. Quieter than the name it follows, because it is context. */
+  .autocomplete-live {
+    @apply ml-1 text-xs;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Empty-state message when no options match */
   .autocomplete-empty {
     @apply px-3 py-2 text-xs;

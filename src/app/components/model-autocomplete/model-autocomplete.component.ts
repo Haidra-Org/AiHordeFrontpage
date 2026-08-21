@@ -10,7 +10,12 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ActiveModel } from '../../types/active-model';
+import {
+  ActiveModel,
+  ModelEtaLabel,
+  modelEtaLabel,
+} from '../../types/active-model';
+import type { ModelWorkerFacts } from '../../services/worker-pool.service';
 
 @Component({
   selector: 'app-model-autocomplete',
@@ -40,6 +45,15 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
   public readonly emptyKey = input.required<string>();
   public readonly invalid = input(false);
   public readonly allowMultiple = input(true);
+  /**
+   * What the workers carrying each model can do, keyed by model name. Null when
+   * nothing is known about them, and each row then says only what the horde's
+   * own model list already told it.
+   */
+  public readonly modelFacts = input<ReadonlyMap<
+    string,
+    ModelWorkerFacts
+  > | null>(null);
 
   public readonly value = signal('');
   public readonly dropdownOpen = signal(false);
@@ -285,6 +299,16 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
     if (nextValue.length > 0 && !this.dropdownOpen()) {
       this.dropdownOpen.set(true);
     }
+  }
+
+  /** How long this model's queue is taking, or null when nobody carries it. */
+  public etaFor(model: ActiveModel): ModelEtaLabel | null {
+    return modelEtaLabel(model);
+  }
+
+  /** The largest square this model's workers offer, or 0 when unknown. */
+  public maxSideFor(name: string): number {
+    return this.modelFacts()?.get(name)?.maxSide ?? 0;
   }
 
   public getOptionId(index: number): string {

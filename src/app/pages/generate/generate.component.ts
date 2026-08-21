@@ -378,6 +378,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       : evaluateWorkerFeasibility(this.workerPool.workers(), requirement);
   });
 
+  /** What the workers carrying each model can do, for the model picker. */
+  public readonly modelFacts = this.workerPool.modelFacts;
+
   /** What to say about the wait for the picked model, as the popover's last line. */
   public readonly waitLine = computed<WaitEstimate>(() => {
     const name = this.formValue().model.trim();

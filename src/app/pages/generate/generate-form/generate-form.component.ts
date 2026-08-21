@@ -123,7 +123,10 @@ import {
 } from '../request-lint';
 import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
-import type { WorkerFeasibility } from '../../../services/worker-pool.service';
+import type {
+  ModelWorkerFacts,
+  WorkerFeasibility,
+} from '../../../services/worker-pool.service';
 import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
@@ -355,6 +358,14 @@ export class GenerateFormComponent implements OnInit {
    * rather than guessing; it never stands between the reader and Generate.
    */
   public readonly feasibility = input<WorkerFeasibility | null>(null);
+  /**
+   * What the workers carrying each model can do, keyed by model name. Handed to
+   * the picker so its rows can say what asking for a model is like right now.
+   */
+  public readonly modelFacts = input<ReadonlyMap<
+    string,
+    ModelWorkerFacts
+  > | null>(null);
   /** Style-forced parameters, used to flag controls a style overrides. */
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */
@@ -808,6 +819,18 @@ export class GenerateFormComponent implements OnInit {
     }
     const match = this.models().find((model) => model.name === name);
     return match ? match.count : null;
+  }
+
+  /**
+   * What the workers carrying the selected model can do between them, or null
+   * when no model is picked, nobody carries it, or the worker list is unknown.
+   */
+  public selectedModelFacts(): ModelWorkerFacts | null {
+    const name = this.form().controls.model.value.trim();
+    if (!name) {
+      return null;
+    }
+    return this.modelFacts()?.get(name) ?? null;
   }
 
   /** Resolution family the aspect presets scale to (SD1.5 512 vs SDXL 1024). */

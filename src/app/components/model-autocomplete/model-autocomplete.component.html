@@ -95,6 +95,19 @@
               "model_autocomplete.custom" | transloco
             }}</span>
           }
+          <!-- What it is like to ask for this model right now: the horde's own
+               queue estimate and the largest size its workers offer. Each is
+               absent when it is not known, rather than shown as a blank. -->
+          @if (etaFor(model); as eta) {
+            <span class="autocomplete-live">{{
+              eta.key | transloco: eta.params
+            }}</span>
+          }
+          @if (maxSideFor(model.name); as side) {
+            <span class="autocomplete-live">{{
+              "model_autocomplete.up_to" | transloco: { side: side }
+            }}</span>
+          }
         </div>
       }
 

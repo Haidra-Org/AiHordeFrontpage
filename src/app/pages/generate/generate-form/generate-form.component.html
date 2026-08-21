@@ -510,6 +510,7 @@
               formControlName="model"
               inputId="generate-model"
               [models]="models()"
+              [modelFacts]="modelFacts()"
               [allowMultiple]="false"
               placeholderKey="generate.form.model_placeholder"
               listAriaLabelKey="generate.form.model_list_label"
@@ -532,6 +533,31 @@
                 {{ "generate.form.model_hint" | transloco }}
               }
             </p>
+            <!-- What the workers carrying this model can do between them. Every
+                 fact is one the horde reports about them, and each is left out
+                 when nobody offers it rather than stated as a zero. -->
+            @if (selectedModelFacts(); as facts) {
+              <p class="gs-sublabel gs-model-facts mt-1">
+                @if (facts.maxSide > 0) {
+                  <span>{{
+                    "generate.form.model_fact_size"
+                      | transloco: { side: facts.maxSide }
+                  }}</span>
+                }
+                @if (facts.nsfw > 0) {
+                  <span>{{
+                    "generate.form.model_fact_adult"
+                      | transloco: { count: facts.nsfw }
+                  }}</span>
+                }
+                @if (facts.painting > 0) {
+                  <span>{{
+                    "generate.form.model_fact_painting"
+                      | transloco: { count: facts.painting }
+                  }}</span>
+                }
+              </p>
+            }
             <!-- The model's own recommendations, taken in one press. Absent
                  where the model names none, and once the request already
                  matches: an offer that would change nothing is not an offer. -->

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ActiveModel, mergeModelList } from './active-model';
+import { ActiveModel, mergeModelList, modelEtaLabel } from './active-model';
 
 const STATUS: ActiveModel[] = [
   { name: 'Deliberate', count: 4 },
@@ -73,5 +73,31 @@ describe('mergeModelList', () => {
     expect(mergeModelList(['', 'Flux'], [{ name: '', count: 7 }])).toEqual([
       { name: 'Flux', count: 0 },
     ]);
+  });
+});
+
+describe('modelEtaLabel', () => {
+  it('says nothing about a model nobody is carrying', () => {
+    expect(modelEtaLabel({ name: 'm', count: 0, eta: 400 })).toBeNull();
+  });
+
+  it('reports an empty queue rather than a zero wait', () => {
+    expect(modelEtaLabel({ name: 'm', count: 3, eta: 0 })?.key).toBe(
+      'model_autocomplete.eta_none',
+    );
+    expect(modelEtaLabel({ name: 'm', count: 3 })?.key).toBe(
+      'model_autocomplete.eta_none',
+    );
+  });
+
+  it('speaks in seconds under a minute and a half, minutes above', () => {
+    expect(modelEtaLabel({ name: 'm', count: 3, eta: 45 })).toEqual({
+      key: 'model_autocomplete.eta_seconds',
+      params: { seconds: 45 },
+    });
+    expect(modelEtaLabel({ name: 'm', count: 3, eta: 300 })).toEqual({
+      key: 'model_autocomplete.eta_minutes',
+      params: { minutes: 5 },
+    });
   });
 });

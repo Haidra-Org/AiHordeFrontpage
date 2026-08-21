@@ -24,6 +24,42 @@ export interface ActiveModel {
 /** Type of model: image or text */
 export type ModelType = 'image' | 'text';
 
+/** A short sentence to print, named by its translation key. */
+export interface ModelEtaLabel {
+  key: string;
+  params: Record<string, string | number>;
+}
+
+/** Below this many seconds the wait is spoken in seconds rather than minutes. */
+const ETA_MINUTES_FROM_SECONDS = 90;
+
+/**
+ * How long the horde says this model's queue will take to clear, short enough
+ * to sit on one row of a picker. It is the horde's own estimate rather than a
+ * promise, which the copy says.
+ *
+ * Null when nobody is carrying the model: the horde still reports an eta for a
+ * model with no workers, and that number means nothing.
+ */
+export function modelEtaLabel(model: ActiveModel): ModelEtaLabel | null {
+  if (model.count === 0) {
+    return null;
+  }
+  const eta = model.eta;
+  if (typeof eta !== 'number' || !Number.isFinite(eta) || eta <= 0) {
+    return { key: 'model_autocomplete.eta_none', params: {} };
+  }
+  return eta < ETA_MINUTES_FROM_SECONDS
+    ? {
+        key: 'model_autocomplete.eta_seconds',
+        params: { seconds: Math.max(1, Math.round(eta)) },
+      }
+    : {
+        key: 'model_autocomplete.eta_minutes',
+        params: { minutes: Math.round(eta / 60) },
+      };
+}
+
 /**
  * The list every model picker offers, built from the official model reference
  * with the horde's live worker counts laid over it.

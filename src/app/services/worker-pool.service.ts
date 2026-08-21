@@ -1,4 +1,10 @@
-import { Injectable, PLATFORM_ID, inject, signal } from '@angular/core';
+import {
+  Injectable,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { catchError, of } from 'rxjs';
 import { HordeWorker } from '../types/horde-worker';
@@ -220,6 +226,57 @@ function blockedMessage(
 }
 
 /**
+ * What the workers carrying one model are between them able to do. Only workers
+ * that could pick up a job at all are counted, so a model kept alive by a
+ * machine in maintenance does not read as available.
+ */
+export interface ModelWorkerFacts {
+  /** How many workers are carrying the model and could take a job. */
+  workers: number;
+  /** The largest square any of them can draw; 0 when none reports a size. */
+  maxSide: number;
+  /** How many of them accept adult content. */
+  nsfw: number;
+  /** How many of them can draw from a picture. */
+  img2img: number;
+  /** How many of them can paint into a picture. */
+  painting: number;
+}
+
+/**
+ * Fold the worker list into one entry per model. Built once per fetch rather
+ * than per picker row: the list is short but the model list is not, and the
+ * picker is opened over every model at once.
+ */
+export function modelFactsFrom(
+  workers: readonly HordeWorker[],
+): Map<string, ModelWorkerFacts> {
+  const facts = new Map<string, ModelWorkerFacts>();
+  for (const worker of workers) {
+    if (!worker.online || worker.maintenance_mode) {
+      continue;
+    }
+    const side = largestSquareSide(worker.max_pixels ?? 0);
+    for (const model of worker.models ?? []) {
+      const entry = facts.get(model) ?? {
+        workers: 0,
+        maxSide: 0,
+        nsfw: 0,
+        img2img: 0,
+        painting: 0,
+      };
+      entry.workers += 1;
+      entry.maxSide = Math.max(entry.maxSide, side);
+      entry.nsfw += worker.nsfw ? 1 : 0;
+      entry.img2img += worker.img2img === true ? 1 : 0;
+      entry.painting += worker.painting === true ? 1 : 0;
+      facts.set(model, entry);
+    }
+  }
+  return facts;
+}
+
+/**
  * How many of `workers` could take the request, and when none can, which of the
  * request's demands is the one that ruled the last of them out.
  *
@@ -275,6 +332,19 @@ export class WorkerPoolService {
 
   /** Every image worker the horde listed, or null while none are known. */
   public readonly workers = signal<readonly HordeWorker[] | null>(null);
+
+  /**
+   * What the workers carrying each model can do, folded once per fetch. Null
+   * while the worker list is unknown, which every reader of it treats as
+   * "say nothing about capability".
+   */
+  public readonly modelFacts = computed<ReadonlyMap<
+    string,
+    ModelWorkerFacts
+  > | null>(() => {
+    const list = this.workers();
+    return list === null ? null : modelFactsFrom(list);
+  });
 
   private fetchedAt = 0;
   private inFlight = false;
