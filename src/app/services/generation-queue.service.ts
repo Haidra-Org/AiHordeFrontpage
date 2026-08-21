@@ -349,6 +349,7 @@ export class GenerationQueueService {
         hordeId: result.response.id,
         kudos: result.response.kudos,
         errorMessage: undefined,
+        errorKey: undefined,
         errorRc: undefined,
       });
       return 'submitted';
@@ -478,7 +479,7 @@ export class GenerationQueueService {
     if (result.kind === 'not_found') {
       await this.patchJob(job.localId, {
         status: 'error',
-        errorMessage: 'Generation expired or was not found.',
+        errorKey: 'generate.results.error_expired',
         lastCheckedAt: now,
       });
       return;
@@ -495,7 +496,7 @@ export class GenerationQueueService {
     if (check.faulted) {
       await this.patchJob(job.localId, {
         status: 'error',
-        errorMessage: 'Generation faulted on the horde.',
+        errorKey: 'generate.results.error_faulted',
         lastCheckedAt: now,
       });
       return;
@@ -510,6 +511,7 @@ export class GenerationQueueService {
       queuePosition: check.queue_position,
       waitTime: check.wait_time,
       kudos: check.kudos,
+      isPossible: check.is_possible,
       lastCheckedAt: now,
     });
   }

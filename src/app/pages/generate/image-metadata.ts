@@ -34,6 +34,37 @@ function requestCarriesSourceInput(
   );
 }
 
+/** gen_metadata types this app has reader-facing words for. */
+const NAMED_ERROR_FIELDS = new Set([
+  'lora',
+  'ti',
+  'source_image',
+  'source_mask',
+  'extra_source_images',
+]);
+
+/**
+ * What to call the input an error is about. The horde names it in its own
+ * vocabulary, which is not the reader's, so a type the app has no words for
+ * falls back to naming it as one of the things that were sent rather than
+ * printing the raw token.
+ */
+export function imageErrorFieldKey(type: string): string {
+  return NAMED_ERROR_FIELDS.has(type)
+    ? `generate.results.field_${type}`
+    : 'generate.results.field_other';
+}
+
+/**
+ * What to say happened to it. An unfamiliar reason is reported as the input
+ * having been left out, which is what the horde does with every one of them.
+ */
+export function imageErrorReasonKey(value: string): string {
+  return ERROR_VALUES.has(value)
+    ? `generate.results.error_${value}`
+    : 'generate.results.error_other';
+}
+
 /** A failed lora/ti/source/etc. reported in a result's gen_metadata. */
 export interface ImageMetaError {
   /** Which input failed: lora | ti | source_image | source_mask | ... */

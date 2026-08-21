@@ -18,7 +18,11 @@ import {
   GenerateFormValue,
   requestToFormValue,
 } from '../generate-form.model';
-import { ImageMetaProvenance } from '../image-metadata';
+import {
+  ImageMetaProvenance,
+  imageErrorFieldKey,
+  imageErrorReasonKey,
+} from '../image-metadata';
 import { SectionIdentity, sectionIdentity } from '../../../content/sections';
 import { settingSection } from '../../../content/settings';
 
@@ -439,8 +443,8 @@ export class ImageMetaPanelComponent {
     }
     for (const error of provenance.errors) {
       rows.push({
-        label: t('generate.results.meta_error', { field: error.type }),
-        value: t('generate.results.error_' + error.value),
+        label: t(imageErrorFieldKey(error.type)),
+        value: t(imageErrorReasonKey(error.value)),
         tone: 'danger',
       });
     }

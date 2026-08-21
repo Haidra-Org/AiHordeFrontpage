@@ -12,6 +12,8 @@ import { Router } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
+import { WorkerPoolService } from '../../../services/worker-pool.service';
+import { HordeWorker } from '../../../types/horde-worker';
 import { flowSteps, isConceptFlow } from '../../../content/flows';
 import {
   LocalGenerationJob,
@@ -1158,6 +1160,109 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(component.helpDockTopic()).toBeNull();
       engine.stop();
+    });
+  });
+  describe('a queued job nobody can take', () => {
+    function queuedJob(isPossible: boolean | undefined): LocalGenerationJob {
+      return {
+        ...job('impossible-1', 'queued'),
+        request: {
+          prompt: 'a prompt',
+          models: ['Some Model'],
+          params: { width: 1024, height: 1024 },
+        },
+        queuePosition: 3,
+        waitTime: 42,
+        isPossible,
+      };
+    }
+
+    function poolWith(models: string[]): HordeWorker[] {
+      return [
+        {
+          type: 'image',
+          name: 'w',
+          id: 'w-1',
+          online: true,
+          requests_fulfilled: 0,
+          kudos_rewards: 0,
+          performance: '1',
+          threads: 1,
+          uptime: 0,
+          maintenance_mode: false,
+          paused: false,
+          nsfw: true,
+          trusted: true,
+          flagged: false,
+          suspicious: 0,
+          uncompleted_jobs: 0,
+          models,
+          bridge_agent: 'test',
+          max_pixels: 1_048_576,
+        },
+      ];
+    }
+
+    it("carries the horde's answer onto the tile", () => {
+      pendingJobs.set([queuedJob(false)]);
+
+      expect(component.tiles()[0].isPossible).toBe(false);
+    });
+
+    it('names the setting that shut every worker out', () => {
+      TestBed.inject(WorkerPoolService).workers.set(poolWith(['Another']));
+      pendingJobs.set([queuedJob(false)]);
+
+      const fit = component.tiles()[0].feasibility;
+      expect(fit?.blockedBy).toBe('model');
+      expect(TRANSLATIONS[fit!.message.key]).toContain(
+        'not carrying this model',
+      );
+    });
+
+    it('says nothing about who can take it while the workers are unknown', () => {
+      pendingJobs.set([queuedJob(false)]);
+
+      expect(component.tiles()[0].feasibility).toBeNull();
+    });
+
+    it('leaves a job the horde has not judged unmarked', () => {
+      pendingJobs.set([queuedJob(undefined)]);
+
+      expect(component.tiles()[0].isPossible).toBeUndefined();
+    });
+
+    it('shares one answer across a batch rather than asking per tile', () => {
+      TestBed.inject(WorkerPoolService).workers.set(poolWith(['Some Model']));
+      pendingJobs.set([
+        {
+          ...queuedJob(true),
+          request: {
+            prompt: 'a prompt',
+            models: ['Some Model'],
+            params: { width: 1024, height: 1024, n: 3 },
+          },
+        },
+      ]);
+
+      const tiles = component.tiles();
+      expect(tiles).toHaveLength(3);
+      expect(new Set(tiles.map((tile) => tile.feasibility))).toHaveProperty(
+        'size',
+        1,
+      );
+      expect(tiles[0].feasibility?.eligible).toBe(1);
+    });
+
+    it('opens and closes the explanation for one job at a time', () => {
+      component.toggleWaitWhy('impossible-1');
+      expect(component.waitWhyFor()).toBe('impossible-1');
+
+      component.toggleWaitWhy('other');
+      expect(component.waitWhyFor()).toBe('other');
+
+      component.toggleWaitWhy('other');
+      expect(component.waitWhyFor()).toBeNull();
     });
   });
 });

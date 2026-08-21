@@ -103,6 +103,19 @@ export interface LocalGenerationJob {
   waitTime?: number;
   errorMessage?: string;
   /**
+   * Translation key for a failure the studio itself named, as opposed to the
+   * horde's own sentence in {@link LocalGenerationJob.errorMessage}. Preferred
+   * over the message when set; jobs stored before it existed carry neither.
+   */
+  errorKey?: string;
+  /**
+   * What the horde last said about whether anyone can serve this request. False
+   * means it is queued with nobody able to pick it up, which is not an error:
+   * it waits, and runs if a worker that fits appears. Absent until the first
+   * check answers.
+   */
+  isPossible?: boolean;
+  /**
    * The horde's return code for a refused submit, where it sent one. Kept beside
    * the message so the studio can put the message under the control the code
    * names; absent on jobs that failed for any other reason.

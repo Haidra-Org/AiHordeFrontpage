@@ -902,7 +902,15 @@
                     {{ "generate.results.tile_queued" | transloco }}
                   </span>
                   @if (tile.queuePosition || tile.waitTime) {
-                    <span class="gs-tile-substatus">
+                    <!-- The wait is a claim the horde made, so it can be
+                         pressed to find out what it was made of. -->
+                    <button
+                      type="button"
+                      class="gs-tile-substatus gs-tile-substatus--why"
+                      (click)="toggleWaitWhy(tile.jobLocalId)"
+                      [attr.aria-expanded]="waitWhyFor() === tile.jobLocalId"
+                      aria-haspopup="dialog"
+                    >
                       @if (tile.queuePosition) {
                         {{
                           "generate.results.queue_position"
@@ -918,7 +926,75 @@
                             | transloco: { seconds: tile.waitTime }
                         }}
                       }
-                    </span>
+                    </button>
+                  }
+                  @if (waitWhyFor() === tile.jobLocalId) {
+                    <div
+                      class="gs-wait-why"
+                      role="dialog"
+                      [attr.aria-label]="
+                        'generate.results.queue_why' | transloco
+                      "
+                    >
+                      <p class="gs-wait-why-title">
+                        {{ "generate.results.queue_why" | transloco }}
+                      </p>
+                      <ul class="gs-wait-why-list">
+                        @if (tile.queuePosition) {
+                          <li>
+                            {{
+                              "generate.results.queue_why_position"
+                                | transloco: { position: tile.queuePosition }
+                            }}
+                          </li>
+                        }
+                        @if (tile.waitTime) {
+                          <li>
+                            {{
+                              "generate.results.queue_why_wait"
+                                | transloco: { seconds: tile.waitTime }
+                            }}
+                          </li>
+                        }
+                        @if (tile.feasibility; as fit) {
+                          <li>
+                            {{
+                              fit.message.key | transloco: fit.message.params
+                            }}
+                          </li>
+                        }
+                      </ul>
+                      <p class="gs-wait-why-note">
+                        {{ "generate.results.queue_why_note" | transloco }}
+                      </p>
+                    </div>
+                  }
+                  <!-- The horde's own answer that nobody can serve this. Said
+                       plainly and not as a failure: the job keeps its place and
+                       runs the moment a worker that fits appears. -->
+                  @if (tile.isPossible === false) {
+                    <div class="gs-tile-impossible">
+                      <app-icon
+                        name="warning-triangle"
+                        class="gs-ico-sm"
+                        aria-hidden="true"
+                      />
+                      <span class="gs-tile-impossible-title">
+                        {{ "generate.results.impossible" | transloco }}
+                      </span>
+                      @if (tile.feasibility; as fit) {
+                        @if (fit.blockedBy !== null) {
+                          <span class="gs-tile-impossible-why">
+                            {{
+                              fit.message.key | transloco: fit.message.params
+                            }}
+                          </span>
+                        }
+                      }
+                      <span class="gs-tile-impossible-note">
+                        {{ "generate.results.impossible_note" | transloco }}
+                      </span>
+                    </div>
                   }
                 </div>
               </div>
@@ -934,11 +1010,18 @@
                     name="warning-triangle"
                     class="gs-ico-sm gs-muted"
                   />
+                  <!-- The horde's own sentence where it sent one, and the
+                       studio's reader-language one where the failure is
+                       something the studio named itself. -->
                   <span class="gs-tile-msg">
-                    {{
-                      tile.errorMessage ||
-                        ("generate.results.errored" | transloco)
-                    }}
+                    @if (tile.errorKey) {
+                      {{ tile.errorKey | transloco }}
+                    } @else {
+                      {{
+                        tile.errorMessage ||
+                          ("generate.results.errored" | transloco)
+                      }}
+                    }
                   </span>
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"

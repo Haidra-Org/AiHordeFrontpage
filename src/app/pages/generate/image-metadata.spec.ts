@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { deriveImageMeta } from './image-metadata';
+import {
+  deriveImageMeta,
+  imageErrorFieldKey,
+  imageErrorReasonKey,
+} from './image-metadata';
+import en from '../../../assets/i18n/en.json';
 import { ImageGenerationRequest } from '../../types/generation';
 import { StoredJobImageMetadata } from '../../types/generation-job';
 
@@ -90,5 +95,39 @@ describe('deriveImageMeta', () => {
     expect(derived.censorReason).toBe('nsfw');
     expect(derived.aesthetic).toBe(7.5);
     expect(derived.errors).toEqual([]);
+  });
+});
+
+describe('gen_metadata in reader language', () => {
+  const copy = en as Record<string, string>;
+
+  it.each(['lora', 'ti', 'source_image', 'source_mask', 'extra_source_images'])(
+    'names the %s input in words rather than its token',
+    (type) => {
+      const key = imageErrorFieldKey(type);
+      expect(key).toBe(`generate.results.field_${type}`);
+      expect(copy[key]).toBeTruthy();
+    },
+  );
+
+  it('names an input it has no words for without printing the token', () => {
+    const key = imageErrorFieldKey('something_new');
+    expect(key).toBe('generate.results.field_other');
+    expect(copy[key]).toBeTruthy();
+  });
+
+  it.each(['download_failed', 'parse_failed', 'baseline_mismatch'])(
+    'explains %s as a sentence',
+    (value) => {
+      const key = imageErrorReasonKey(value);
+      expect(key).toBe(`generate.results.error_${value}`);
+      expect(copy[key]).toBeTruthy();
+    },
+  );
+
+  it('falls back to the one thing every unknown reason has in common', () => {
+    const key = imageErrorReasonKey('exploded');
+    expect(key).toBe('generate.results.error_other');
+    expect(copy[key]).toBeTruthy();
   });
 });

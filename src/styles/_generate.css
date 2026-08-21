@@ -3511,6 +3511,117 @@
   font-size: 10px;
   color: var(--gs-muted);
 }
+/* The wait, pressable because it is an estimate the horde made and the reader
+   is owed the parts it was made of. */
+.gen-studio .gs-tile-substatus--why {
+  position: relative;
+  border: 0;
+  padding: 2px 4px;
+  background: none;
+  font-family: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.gen-studio .gs-tile-substatus--why:hover {
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-tile-substatus--why:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-tile-substatus--why::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    min-width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+/* What the wait is made of. Sits over the placeholder rather than beside it:
+   the tile is the whole cell and there is nowhere else for it to go. */
+.gen-studio .gs-wait-why {
+  position: absolute;
+  inset: 6px;
+  z-index: 20;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 10px;
+  text-align: left;
+  background: var(--gs-pop-surface);
+  border: 1px solid var(--gs-pop-border);
+  border-radius: 9px;
+  box-shadow: var(--gs-pop-shadow);
+}
+.gen-studio .gs-wait-why-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-wait-why-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--gs-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.gen-studio .gs-wait-why-note {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--gs-muted);
+}
+/* Nobody can serve this one. Amber rather than red: the job is not lost, it is
+   waiting, and the sentence beneath says which setting is holding it there. */
+.gen-studio .gs-tile-impossible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  max-width: 100%;
+  border: 1px solid rgba(180, 83, 9, 0.34);
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.16);
+  text-align: center;
+}
+.gen-studio .gs-tile-impossible app-icon {
+  color: #b45309;
+}
+.gen-studio .gs-tile-impossible-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #b45309;
+}
+.gen-studio .gs-tile-impossible-why,
+.gen-studio .gs-tile-impossible-note {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-tile-impossible-note {
+  color: var(--gs-muted);
+}
+.dark .gen-studio .gs-tile-impossible {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.12);
+}
+.dark .gen-studio .gs-tile-impossible app-icon,
+.dark .gen-studio .gs-tile-impossible-title {
+  color: #fbbf24;
+}
 .gen-studio .gs-tile-msg {
   font-size: 11px;
   color: var(--gs-label);

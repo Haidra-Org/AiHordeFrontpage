@@ -38,6 +38,8 @@ import {
   buildImageMetadataExport,
   buildImageProvenance,
   deriveImageMeta,
+  imageErrorFieldKey,
+  imageErrorReasonKey,
 } from '../image-metadata';
 import {
   ImageMetaPanelComponent,
@@ -45,7 +47,16 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from '../image-meta-panel/image-meta-panel.component';
-import { GenerateFormValue, splitCombinedPrompt } from '../generate-form.model';
+import {
+  GenerateFormValue,
+  splitCombinedPrompt,
+  workerRequirementForRequest,
+} from '../generate-form.model';
+import {
+  WorkerPoolService,
+  evaluateWorkerFeasibility,
+  type WorkerFeasibility,
+} from '../../../services/worker-pool.service';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import { GsTutorialParkedComponent } from '../../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
@@ -139,7 +150,20 @@ interface ResultTile {
   thumb?: JobThumbnail;
   queuePosition?: number;
   waitTime?: number;
+  /**
+   * Whether the horde says anyone can serve this request. False is not a
+   * failure: the job waits, so the tile says so rather than looking stuck.
+   */
+  isPossible?: boolean;
+  /**
+   * How many workers could take this job, and which of its settings shut them
+   * out, run against the request it was submitted with. Null when the worker
+   * list is unknown, and the tile then says nothing about it.
+   */
+  feasibility?: WorkerFeasibility | null;
   errorMessage?: string;
+  /** Translation key for a failure the studio named itself. */
+  errorKey?: string;
   /** Worker censored/flagged the image (drives the NSFW marker + blur). */
   nsfw?: boolean;
   /** Why it was censored, when known ('nsfw' | 'csam'). */
@@ -253,6 +277,7 @@ export class GenerateResultsPanelComponent {
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly helpDock = inject(GsHelpDockService);
+  private readonly workerPool = inject(WorkerPoolService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
@@ -563,6 +588,7 @@ export class GenerateResultsPanelComponent {
   public readonly tiles = computed<ResultTile[]>(() => {
     const tiles: ResultTile[] = [];
     const hidden = this.hiddenJobs();
+    const workers = this.workerPool.workers();
     for (const job of this.pendingJobs()) {
       if (hidden.has(job.localId)) {
         continue;
@@ -571,6 +597,12 @@ export class GenerateResultsPanelComponent {
       const prompt = positivePrompt(job.request.prompt);
       const kind = job.status === 'processing' ? 'generating' : 'queued';
       const count = Math.max(1, job.request.params?.n ?? 1);
+      // Asked once per job rather than once per placeholder tile: a batch of
+      // eight shares one request and therefore one answer.
+      const feasibility = evaluateWorkerFeasibility(
+        workers,
+        workerRequirementForRequest(job.request),
+      );
       for (let i = 0; i < count; i++) {
         tiles.push({
           key: `${job.localId}-p${i}`,
@@ -580,6 +612,8 @@ export class GenerateResultsPanelComponent {
           dims,
           queuePosition: job.queuePosition,
           waitTime: job.waitTime,
+          isPossible: job.isPossible,
+          feasibility,
           prompt,
           request: job.request,
           retryCount: job.retryCount,
@@ -640,6 +674,7 @@ export class GenerateResultsPanelComponent {
           aspect,
           dims,
           errorMessage: job.errorMessage,
+          errorKey: job.errorKey,
           metaExport: { request: job.request },
           prompt,
           request: job.request,
@@ -808,15 +843,30 @@ export class GenerateResultsPanelComponent {
     }
     for (const error of tile.errors ?? []) {
       rows.push({
-        label: t('generate.results.meta_error', { field: error.type }),
-        value: t('generate.results.error_' + error.value),
+        label: t(imageErrorFieldKey(error.type)),
+        value: t(imageErrorReasonKey(error.value)),
         tone: 'danger',
       });
     }
     return rows;
   });
 
+  /**
+   * The job whose wait is being explained, by local id, or null. Keyed by job
+   * rather than by tile because a batch's placeholders share one wait.
+   */
+  public readonly waitWhyFor = signal<string | null>(null);
+
+  public toggleWaitWhy(jobLocalId: string): void {
+    this.waitWhyFor.update((open) => (open === jobLocalId ? null : jobLocalId));
+  }
+
   constructor() {
+    // Queued tiles explain themselves with the worker list, so it is asked for
+    // as soon as the pane exists rather than waiting on the form's own fetch:
+    // this pane is also mounted where there is no form.
+    this.workerPool.load();
+
     effect(() => {
       for (const job of this.finishedJobs()) {
         if (job.status === 'done' && !this.loaded.has(job.localId)) {
