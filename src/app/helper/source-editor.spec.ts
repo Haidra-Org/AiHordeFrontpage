@@ -167,14 +167,16 @@ describe('anchorForOffset', () => {
 });
 
 describe('editor staging', () => {
-  it('has nothing to lose before anything is touched', () => {
-    expect(hasUnappliedWork(NOTHING_TOUCHED)).toBe(false);
+  it('has nothing to lose while the session stands where it was applied', () => {
+    expect(hasUnappliedWork(true, false)).toBe(false);
   });
 
-  it('has work to lose once any of the three is touched', () => {
-    expect(hasUnappliedWork({ ...NOTHING_TOUCHED, mask: true })).toBe(true);
-    expect(hasUnappliedWork({ ...NOTHING_TOUCHED, picture: true })).toBe(true);
-    expect(hasUnappliedWork({ ...NOTHING_TOUCHED, frame: true })).toBe(true);
+  it('has work to lose once the session stands on a later step', () => {
+    expect(hasUnappliedWork(false, false)).toBe(true);
+  });
+
+  it('has work to lose for an edit no undo step can take back', () => {
+    expect(hasUnappliedWork(true, true)).toBe(true);
   });
 
   it('hands the original bytes back when only the mask was painted', () => {

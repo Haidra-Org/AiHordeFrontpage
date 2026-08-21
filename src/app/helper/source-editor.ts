@@ -208,9 +208,19 @@ export const NOTHING_TOUCHED: EditorTouched = {
   frame: false,
 };
 
-/** Whether closing now would lose work the reader has not applied. */
-export function hasUnappliedWork(touched: EditorTouched): boolean {
-  return touched.picture || touched.mask || touched.frame;
+/**
+ * Whether closing now would lose work the reader has not applied. Every pixel
+ * step takes an undo entry, so where the session stands is the top of the undo
+ * stack rather than the fact that something once happened: undoing back to the
+ * step that was last applied leaves nothing staged, however much was drawn and
+ * taken back on the way. `offHistory` carries the few edits that take no undo
+ * entry of their own, which nothing can step back from.
+ */
+export function hasUnappliedWork(
+  atLastAppliedStep: boolean,
+  offHistory: boolean,
+): boolean {
+  return offHistory || !atLastAppliedStep;
 }
 
 /**

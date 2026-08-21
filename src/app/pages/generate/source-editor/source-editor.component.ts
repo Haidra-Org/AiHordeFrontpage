@@ -227,7 +227,22 @@ export class SourceEditorComponent {
   private readonly outpaintEnabled = signal(false);
 
   private readonly touched = signal<EditorTouched>(NOTHING_TOUCHED);
-  public readonly dirty = computed(() => hasUnappliedWork(this.touched()));
+  /**
+   * The undo entry the session currently stands on, and the one it stood on
+   * when it opened or last applied. Comparing the two, rather than counting
+   * them, is what makes stepping back to the same step read as clean while a
+   * different step at the same depth reads as staged work.
+   */
+  private readonly historyStep = signal<EditorOp | null>(null);
+  private readonly appliedStep = signal<EditorOp | null>(null);
+  /** Whether an edit that takes no undo entry is standing, i.e. the ground. */
+  private readonly offHistoryEdit = signal(false);
+  public readonly dirty = computed(() =>
+    hasUnappliedWork(
+      this.historyStep() === this.appliedStep(),
+      this.offHistoryEdit(),
+    ),
+  );
 
   public readonly minBrush = MIN_BRUSH;
   public readonly maxBrush = MAX_BRUSH;
@@ -472,6 +487,7 @@ export class SourceEditorComponent {
     this.background.set(value);
     this.blankRect?.fill(value);
     this.markTouched('picture');
+    this.offHistoryEdit.set(true);
   }
 
   public toggleLockAspect(): void {
@@ -1162,6 +1178,7 @@ export class SourceEditorComponent {
   private syncHistory(): void {
     this.canUndo.set(this.undoStack.length > 0);
     this.canRedo.set(this.redoStack.length > 0);
+    this.historyStep.set(this.undoStack.at(-1) ?? null);
   }
 
   public undo(): void {
@@ -1584,6 +1601,8 @@ export class SourceEditorComponent {
       });
       this.baseImage = image;
       this.touched.set(NOTHING_TOUCHED);
+      this.appliedStep.set(this.historyStep());
+      this.offHistoryEdit.set(false);
     } finally {
       if (token === this.exportToken) {
         this.busy.set(false);
