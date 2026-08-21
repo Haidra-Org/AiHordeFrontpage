@@ -167,7 +167,8 @@ export type GroupId =
   | 'post'
   | 'output'
   | 'horde'
-  | 'workflows';
+  | 'transparent'
+  | 'qr';
 
 export const GROUP_IDS: readonly GroupId[] = [
   'sampling',
@@ -175,7 +176,8 @@ export const GROUP_IDS: readonly GroupId[] = [
   'post',
   'output',
   'horde',
-  'workflows',
+  'transparent',
+  'qr',
 ];
 
 /**
@@ -205,8 +207,8 @@ const GROUP_BY_ANCHOR: Readonly<Record<string, GroupId>> = {
   facefixer: 'post',
   facefixer_strength: 'post',
   upscaler: 'post',
-  transparent: 'workflows',
-  qr: 'workflows',
+  transparent: 'transparent',
+  qr: 'qr',
   webhook: 'horde',
   workers: 'horde',
 };
@@ -216,7 +218,7 @@ const GROUP_BY_SECTION: Readonly<Partial<Record<SectionId, GroupId>>> = {
   sampling: 'sampling',
   finishing: 'post',
   horde: 'horde',
-  workflows: 'workflows',
+  workflows: 'transparent',
 };
 
 /** The fields each group owns, for the mark that says it holds a changed value. */
@@ -255,13 +257,8 @@ const GROUP_FIELDS: Readonly<
     'workerBlacklist',
     'rememberExtras',
   ],
-  workflows: [
-    'transparent',
-    'qrText',
-    'qrXOffset',
-    'qrYOffset',
-    'qrModuleDrawer',
-  ],
+  transparent: ['transparent'],
+  qr: ['qrText', 'qrXOffset', 'qrYOffset', 'qrModuleDrawer'],
 };
 
 /** Where the reader's open groups are remembered between visits. */
@@ -1072,17 +1069,17 @@ export class GenerateFormComponent implements OnInit {
       : '';
   });
 
-  public readonly workflowsSummary = computed(() => {
+  public readonly transparentSummary = computed(() => {
     const value = this.value();
-    return value
-      ? this.summaryLine([
-          value.transparent
-            ? this.transloco.translate('generate.groups.workflows_transparent')
-            : null,
-          value.qrText
-            ? this.transloco.translate('generate.groups.workflows_qr')
-            : null,
-        ])
+    return value?.transparent
+      ? this.transloco.translate('generate.groups.workflows_transparent')
+      : '';
+  });
+
+  public readonly qrSummary = computed(() => {
+    const value = this.value();
+    return value?.qrText
+      ? this.transloco.translate('generate.groups.workflows_qr')
       : '';
   });
 

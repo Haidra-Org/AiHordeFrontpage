@@ -997,6 +997,30 @@ describe('GenerateFormComponent structure', () => {
     }
   });
 
+  it('names every pass, and gives the workflows their own', async () => {
+    // Four passes, each named wherever it is drawn: in one column the names are
+    // also what says where the cards a request cannot be described without end,
+    // which is the job the divider used to do.
+    const host = await render();
+    const zones = Array.from(host.querySelectorAll<HTMLElement>('.gs-zone'));
+
+    expect(
+      zones.map((zone) =>
+        zone.querySelector('.gs-zone-label')?.textContent?.trim(),
+      ),
+    ).toEqual(['Compose', 'Refine', 'Deliver', 'Workflows']);
+    expect(host.querySelector('.gs-rest-divider')).toBeNull();
+
+    // A workflow is a way of drawing the picture rather than a request setting,
+    // and the two share nothing else, so each is its own card.
+    const workflows = zones[3];
+    expect(
+      Array.from(workflows.querySelectorAll('.gs-group-name')).map((name) =>
+        name.textContent?.trim(),
+      ),
+    ).toEqual(['Transparent background', 'QR code']);
+  });
+
   it('names each card once, so two never claim the same heading', async () => {
     const host = await render();
     const ids = Array.from(
@@ -1253,20 +1277,20 @@ describe('GenerateFormComponent settings groups', () => {
     // Inside the body they stranded themselves on a line above the first field,
     // and inside the button they could not be pressed at all.
     const { component, fixture, host } = await render();
-    const sampling = groupNamed(host, 'Sampling');
-    const actions = sampling.querySelector('.gs-group-actions');
-
-    expect(actions, 'the group has no actions').not.toBeNull();
-    expect(actions!.closest('.gs-group-head')).not.toBeNull();
-    expect(actions!.closest('.gs-group-toggle')).toBeNull();
-    expect(actions!.closest('.gs-group-body')).toBeNull();
+    // Folded, the head is a line of values: a control competing with that line
+    // asks the reader to decide something before the group is even open.
+    expect(
+      groupNamed(host, 'Sampling').querySelector('.gs-group-actions'),
+    ).toBeNull();
 
     component.openGroup('sampling');
     fixture.detectChanges();
     const opened = groupNamed(fixture.nativeElement as HTMLElement, 'Sampling');
-    expect(
-      opened.querySelector('.gs-group-actions')!.closest('.gs-group-head'),
-    ).not.toBeNull();
+    const actions = opened.querySelector('.gs-group-actions');
+    expect(actions, 'an open group draws no actions').not.toBeNull();
+    expect(actions!.closest('.gs-group-head')).not.toBeNull();
+    expect(actions!.closest('.gs-group-toggle')).toBeNull();
+    expect(actions!.closest('.gs-group-body')).toBeNull();
     // An open group draws the controls its line described, so the line goes.
     expect(opened.querySelector('.gs-group-sum')).toBeNull();
   });
@@ -1275,10 +1299,13 @@ describe('GenerateFormComponent settings groups', () => {
     // The trigger renders its note as its own sibling, so a note opened from a
     // group's head lands in that head: it has to take the row below the name
     // rather than a place in the row beside it.
-    const { fixture, host } = await render();
-    const trigger = groupNamed(host, 'Sampling').querySelector<HTMLElement>(
-      '.gs-group-head .gs-help-btn',
-    );
+    const { component, fixture } = await render();
+    component.openGroup('sampling');
+    fixture.detectChanges();
+    const trigger = groupNamed(
+      fixture.nativeElement as HTMLElement,
+      'Sampling',
+    ).querySelector<HTMLElement>('.gs-group-head .gs-help-btn');
     expect(trigger, 'the group head has no note trigger').not.toBeNull();
 
     trigger!.click();

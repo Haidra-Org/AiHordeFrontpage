@@ -106,7 +106,7 @@ export const GUIDE_SECTIONS: readonly GuideSection[] = [
   },
   {
     id: 'workflows',
-    labelKey: 'generate.form.workflows_section',
+    labelKey: 'generate.zones.workflows',
     topics: ['transparent', 'qr'],
   },
 ];

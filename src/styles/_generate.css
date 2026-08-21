@@ -835,38 +835,23 @@
      control a reader learned the position of is where they left it; widening
      only decides how many passes are read at once. Refine and Deliver share a
      column at double width because Deliver is the shortest of the three. */
+  /* Widening splits the passes into columns and does nothing else. The split is
+     nested rather than one grid of areas: a column of cards that spans two grid
+     rows lends its height to both of them, which left a zone stacked under
+     another beginning halfway down the tallest column. Each level here holds a
+     single row, so a stacked zone starts exactly where the one above it ends. */
   .gen-studio.gs-workspace--wide .gs-zones {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas:
-      "compose refine"
-      "compose deliver";
   }
+  /* Three columns of about a width each: the first pass takes the wider one,
+     because a prompt box and a picture are what actually need room. */
   .gen-studio.gs-workspace--max .gs-zones {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "compose refine deliver";
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 2fr);
   }
-  .gen-studio.gs-workspace--wide .gs-zones .gs-zone--compose,
-  .gen-studio.gs-workspace--max .gs-zones .gs-zone--compose {
-    grid-area: compose;
-  }
-  .gen-studio.gs-workspace--wide .gs-zone--refine,
-  .gen-studio.gs-workspace--max .gs-zone--refine {
-    grid-area: refine;
-  }
-  .gen-studio.gs-workspace--wide .gs-zone--deliver,
-  .gen-studio.gs-workspace--max .gs-zone--deliver {
-    grid-area: deliver;
-  }
-  /* The divider reads oddly stranded once the groups are in a column of
-     their own: the column break already says where the first cards end. */
-  .gen-studio.gs-workspace--wide .gs-rest-divider,
-  .gen-studio.gs-workspace--max .gs-rest-divider {
-    display: none;
-  }
-  /* Only where there is more than one column is there anything to tell apart:
-     at one column the names would label a list that is already in order. */
-  .gen-studio.gs-workspace--max .gs-zones .gs-zone-label {
-    display: block;
+  .gen-studio.gs-workspace--max .gs-zone-rest {
+    display: grid;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
@@ -875,6 +860,13 @@
   display: grid;
   align-items: start;
   grid-template-columns: minmax(0, 1fr);
+}
+/* At one column these are plain stacks and inherit the flow's own spacing. */
+.gen-studio .gs-zone-rest,
+.gen-studio .gs-zone-tail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
 }
 .gen-studio .gs-zone {
   display: flex;
@@ -983,8 +975,11 @@
   }
 }
 
+/* Every column and every stacked run of cards is named. The names are what
+   tells the reader which pass they are reading, and in one column they are also
+   what says where the cards a request cannot be described without end. */
 .gen-studio .gs-zone-label {
-  display: none;
+  display: block;
   padding: 0 2px;
   font-size: var(--gs-text-2xs);
   font-weight: 700;
@@ -1989,29 +1984,6 @@
   }
 }
 
-/* ------- the divider under the always-open cards --------------------- */
-.gen-studio .gs-rest-divider {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: var(--gs-space-3) 0 var(--gs-space-2);
-}
-.gen-studio .gs-rest-line {
-  height: 1px;
-  background: var(--gs-border);
-  flex: 1;
-}
-.gen-studio .gs-rest-label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--gs-purple);
-}
-
 /* ------- cards ------------------------------------------------------ */
 .gen-studio .gs-card {
   border: 1px solid var(--gs-card-border);
@@ -2036,6 +2008,8 @@
    controls under it, and two cards have to read as neighbours in one column. */
 .gen-studio .gs-body-flow,
 .gen-studio .gs-zone,
+.gen-studio .gs-zone-rest,
+.gen-studio .gs-zone-tail,
 .gen-studio .gs-op-groups {
   gap: var(--gs-space-3);
 }
@@ -2046,6 +2020,8 @@
 @media (max-width: 639.98px) {
   .gen-studio .gs-body-flow,
   .gen-studio .gs-zone,
+  .gen-studio .gs-zone-rest,
+  .gen-studio .gs-zone-tail,
   .gen-studio .gs-op-groups {
     gap: var(--gs-space-2);
   }
@@ -9480,6 +9456,7 @@ app-gs-sweep-scrub + app-gs-door {
 }
 .gen-studio .gs-sweep-caption-text {
   min-width: 0;
+  min-height: 37px;
 }
 /* The best-of-N disclosure. Muted and last: it qualifies the frame rather than
    describes it. */

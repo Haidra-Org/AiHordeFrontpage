@@ -762,202 +762,184 @@
         <ng-content select="[generateSourceImage]" />
       </section>
 
-      <!-- The line between the cards a request cannot be described without and
-           the groups that wait folded until they are opened. -->
-      <div class="gs-rest-divider gs-fadeup">
-        <span class="gs-rest-line"></span>
-        <span class="gs-rest-label">
-          <app-icon name="star" class="gs-ico-sm" />
-          {{ "generate.form.rest_divider" | transloco }}
-        </span>
-        <span class="gs-rest-line"></span>
-      </div>
-
-      <section
-        class="gs-zone gs-zone--refine"
-        [attr.aria-label]="'generate.zones.refine' | transloco"
-      >
-        <span class="gs-zone-label" aria-hidden="true">
-          {{ "generate.zones.refine" | transloco }}
-        </span>
-
-        <!-- Sampling -->
-        <app-gs-group
-          section="sampling"
-          titleKey="generate.form.sampling_section"
-          [summary]="samplingSummary()"
-          [changed]="groupChanged('sampling')"
-          [open]="isGroupOpen('sampling')"
-          (toggled)="toggleGroup('sampling')"
+      <!-- Everything past the first pass. Nested rather than laid out in one
+           grid: a column of cards that spans two rows lends its height to both
+           of them, which left a zone stacked under another starting halfway
+           down the tallest column rather than where that zone ended. -->
+      <div class="gs-zone-rest">
+        <section
+          class="gs-zone gs-zone--refine"
+          [attr.aria-label]="'generate.zones.refine' | transloco"
         >
-          <!-- The note and the style lock ride at the end of the head, beside
-               the press that opens the group rather than inside it. -->
-          <div class="gs-group-actions" groupActions>
-            <app-gs-help topic="requirements" />
-            @if (stylePins("sampling")) {
-              <ng-container
-                *ngTemplateOutlet="
-                  styleLock;
-                  context: { section: 'sampling', value: styleSamplingText() }
-                "
-              />
-            }
-          </div>
-          <div class="gs-grid-sampling">
-            <div
-              appTutAnchor="steps"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-steps">
-                  {{ "generate.form.steps_short" | transloco }} </label
-                ><app-gs-help topic="steps" />
-                <input
-                  id="generate-steps"
-                  class="gs-numfield gs-mono ml-auto"
-                  [class.gs-field--invalid]="form().controls.steps.invalid"
-                  [attr.aria-invalid]="
-                    form().controls.steps.invalid ? 'true' : null
-                  "
-                  type="number"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  [min]="minSteps"
-                  [max]="maxSteps"
-                  step="1"
-                  [value]="form().controls.steps.value"
-                  (input)="setNumberEntry(form().controls.steps, $event)"
-                  [attr.aria-describedby]="
-                    describedBy('steps', 'generate-steps-range')
+          <span class="gs-zone-label" aria-hidden="true">
+            {{ "generate.zones.refine" | transloco }}
+          </span>
+
+          <!-- Sampling -->
+          <app-gs-group
+            section="sampling"
+            titleKey="generate.form.sampling_section"
+            [summary]="samplingSummary()"
+            [changed]="groupChanged('sampling')"
+            [open]="isGroupOpen('sampling')"
+            (toggled)="toggleGroup('sampling')"
+          >
+            <!-- The note and the style lock ride at the end of the head, beside
+                 the press that opens the group rather than inside it. -->
+            <div class="gs-group-actions" groupActions>
+              <app-gs-help topic="requirements" />
+              @if (stylePins("sampling")) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    styleLock;
+                    context: { section: 'sampling', value: styleSamplingText() }
                   "
                 />
-              </div>
-              <input
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="steps"
-                [min]="stepsSliderMin"
-                [max]="stepsSliderMax"
-                step="1"
-                [style.--gs-range-fill.%]="
-                  rangeFill(
-                    form().controls.steps.value,
-                    stepsSliderMin,
-                    stepsSliderMax
-                  )
-                "
-                [attr.aria-label]="'generate.form.steps_short' | transloco"
-              />
-              @if (form().controls.steps.invalid) {
-                <p id="generate-steps-range" class="gs-warn mt-1.5">
-                  {{
-                    "generate.form.number_out_of_range"
-                      | transloco: { min: minSteps, max: maxSteps }
-                  }}
-                </p>
               }
-              <ng-container
-                *ngTemplateOutlet="reqHint; context: { hint: stepsAdvisory() }"
-              />
-              <ng-container
-                *ngTemplateOutlet="fieldError; context: { anchor: 'steps' }"
-              />
             </div>
-            <div
-              appTutAnchor="cfg"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-cfg">
-                  {{ "generate.form.cfg_short" | transloco }} </label
-                ><app-gs-help topic="cfg" />
-                <input
-                  id="generate-cfg"
-                  class="gs-numfield gs-mono ml-auto"
-                  [class.gs-field--invalid]="form().controls.cfg_scale.invalid"
-                  [attr.aria-invalid]="
-                    form().controls.cfg_scale.invalid ? 'true' : null
-                  "
-                  type="number"
-                  inputmode="decimal"
-                  autocomplete="off"
-                  [min]="minCfg"
-                  [max]="maxCfg"
-                  [step]="cfgStep"
-                  [value]="form().controls.cfg_scale.value"
-                  (input)="setNumberEntry(form().controls.cfg_scale, $event)"
-                  [attr.aria-describedby]="
-                    describedBy('cfg', 'generate-cfg-range')
-                  "
-                />
-              </div>
-              <input
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="cfg_scale"
-                [min]="cfgSliderMin"
-                [max]="cfgSliderMax"
-                [step]="cfgStep"
-                [style.--gs-range-fill.%]="
-                  rangeFill(
-                    form().controls.cfg_scale.value,
-                    cfgSliderMin,
-                    cfgSliderMax
-                  )
-                "
-                [attr.aria-label]="'generate.form.cfg_short' | transloco"
-              />
-              @if (form().controls.cfg_scale.invalid) {
-                <p id="generate-cfg-range" class="gs-warn mt-1.5">
-                  {{
-                    "generate.form.number_out_of_range"
-                      | transloco: { min: minCfg, max: maxCfg }
-                  }}
-                </p>
-              }
-              <ng-container
-                *ngTemplateOutlet="reqHint; context: { hint: cfgAdvisory() }"
-              />
-              <ng-container
-                *ngTemplateOutlet="fieldError; context: { anchor: 'cfg' }"
-              />
-            </div>
-            <div
-              appTutAnchor="sampler"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-sampler">
-                  {{ "generate.form.sampler_label" | transloco }} </label
-                ><app-gs-help topic="sampler" />
-              </div>
-              <select
-                id="generate-sampler"
-                class="gs-native-select gs-native-select--sm mt-1.5"
-                formControlName="sampler_name"
-                [attr.aria-describedby]="describedBy('sampler')"
+            <div class="gs-grid-sampling">
+              <div
+                appTutAnchor="steps"
+                [class.gs-locked]="isSectionLocked('sampling')"
               >
-                <optgroup
-                  [label]="'generate.form.sampler_recommended' | transloco"
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-steps">
+                    {{ "generate.form.steps_short" | transloco }} </label
+                  ><app-gs-help topic="steps" />
+                  <input
+                    id="generate-steps"
+                    class="gs-numfield gs-mono ml-auto"
+                    [class.gs-field--invalid]="form().controls.steps.invalid"
+                    [attr.aria-invalid]="
+                      form().controls.steps.invalid ? 'true' : null
+                    "
+                    type="number"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    [min]="minSteps"
+                    [max]="maxSteps"
+                    step="1"
+                    [value]="form().controls.steps.value"
+                    (input)="setNumberEntry(form().controls.steps, $event)"
+                    [attr.aria-describedby]="
+                      describedBy('steps', 'generate-steps-range')
+                    "
+                  />
+                </div>
+                <input
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="steps"
+                  [min]="stepsSliderMin"
+                  [max]="stepsSliderMax"
+                  step="1"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.steps.value,
+                      stepsSliderMin,
+                      stepsSliderMax
+                    )
+                  "
+                  [attr.aria-label]="'generate.form.steps_short' | transloco"
+                />
+                @if (form().controls.steps.invalid) {
+                  <p id="generate-steps-range" class="gs-warn mt-1.5">
+                    {{
+                      "generate.form.number_out_of_range"
+                        | transloco: { min: minSteps, max: maxSteps }
+                    }}
+                  </p>
+                }
+                <ng-container
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: stepsAdvisory() }
+                  "
+                />
+                <ng-container
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'steps' }"
+                />
+              </div>
+              <div
+                appTutAnchor="cfg"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-cfg">
+                    {{ "generate.form.cfg_short" | transloco }} </label
+                  ><app-gs-help topic="cfg" />
+                  <input
+                    id="generate-cfg"
+                    class="gs-numfield gs-mono ml-auto"
+                    [class.gs-field--invalid]="
+                      form().controls.cfg_scale.invalid
+                    "
+                    [attr.aria-invalid]="
+                      form().controls.cfg_scale.invalid ? 'true' : null
+                    "
+                    type="number"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    [min]="minCfg"
+                    [max]="maxCfg"
+                    [step]="cfgStep"
+                    [value]="form().controls.cfg_scale.value"
+                    (input)="setNumberEntry(form().controls.cfg_scale, $event)"
+                    [attr.aria-describedby]="
+                      describedBy('cfg', 'generate-cfg-range')
+                    "
+                  />
+                </div>
+                <input
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="cfg_scale"
+                  [min]="cfgSliderMin"
+                  [max]="cfgSliderMax"
+                  [step]="cfgStep"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.cfg_scale.value,
+                      cfgSliderMin,
+                      cfgSliderMax
+                    )
+                  "
+                  [attr.aria-label]="'generate.form.cfg_short' | transloco"
+                />
+                @if (form().controls.cfg_scale.invalid) {
+                  <p id="generate-cfg-range" class="gs-warn mt-1.5">
+                    {{
+                      "generate.form.number_out_of_range"
+                        | transloco: { min: minCfg, max: maxCfg }
+                    }}
+                  </p>
+                }
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: cfgAdvisory() }"
+                />
+                <ng-container
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'cfg' }"
+                />
+              </div>
+              <div
+                appTutAnchor="sampler"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-sampler">
+                    {{ "generate.form.sampler_label" | transloco }} </label
+                  ><app-gs-help topic="sampler" />
+                </div>
+                <select
+                  id="generate-sampler"
+                  class="gs-native-select gs-native-select--sm mt-1.5"
+                  formControlName="sampler_name"
+                  [attr.aria-describedby]="describedBy('sampler')"
                 >
-                  @for (sampler of recommendedSamplers(); track sampler) {
-                    <option [value]="sampler">
-                      {{
-                        samplerOptionKey(sampler)
-                          | transloco
-                            : {
-                                sampler: sampler,
-                                factor: samplerWork(sampler),
-                              }
-                      }}
-                    </option>
-                  }
-                </optgroup>
-                @if (advancedSamplers().length > 0) {
                   <optgroup
-                    [label]="'generate.form.sampler_advanced' | transloco"
+                    [label]="'generate.form.sampler_recommended' | transloco"
                   >
-                    @for (sampler of advancedSamplers(); track sampler) {
+                    @for (sampler of recommendedSamplers(); track sampler) {
                       <option [value]="sampler">
                         {{
                           samplerOptionKey(sampler)
@@ -970,889 +952,955 @@
                       </option>
                     }
                   </optgroup>
-                }
-              </select>
-              <ng-container
-                *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"
-              />
-              <ng-container
-                *ngTemplateOutlet="fieldError; context: { anchor: 'sampler' }"
-              />
-              @if (samplerTierKey(); as tierKey) {
-                <p class="gs-sublabel mt-1">
-                  {{
-                    tierKey
-                      | transloco
-                        : {
-                            factor: samplerWork(
-                              form().controls.sampler_name.value
-                            ),
-                          }
-                  }}
-                </p>
-              }
-            </div>
-            <div
-              appTutAnchor="scheduler"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-scheduler">
-                  {{ "generate.form.scheduler_label" | transloco }} </label
-                ><app-gs-help topic="scheduler" />
-              </div>
-              <select
-                id="generate-scheduler"
-                class="gs-native-select gs-native-select--sm mt-1.5"
-                formControlName="scheduler"
-                [attr.aria-describedby]="describedBy('scheduler')"
-              >
-                @for (scheduler of schedulerOptions(); track scheduler) {
-                  <option [value]="scheduler">
-                    {{
-                      schedulerOptionKey(scheduler)
-                        | transloco: { scheduler: scheduler }
-                    }}
-                  </option>
-                }
-              </select>
-              <ng-container
-                *ngTemplateOutlet="
-                  reqHint;
-                  context: { hint: scheduleAdvisory() }
-                "
-              />
-              <ng-container
-                *ngTemplateOutlet="fieldError; context: { anchor: 'scheduler' }"
-              />
-            </div>
-            <div appTutAnchor="seed">
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-seed">
-                  {{ "generate.form.seed_label" | transloco }} </label
-                ><app-gs-help topic="seed" />
-              </div>
-              <div class="mt-1.5 flex gap-1.5">
-                <input
-                  id="generate-seed"
-                  class="gs-seed-input"
-                  type="text"
-                  formControlName="seed"
-                  [placeholder]="'generate.form.seed_placeholder' | transloco"
-                />
-                <button
-                  type="button"
-                  class="gs-mini-btn"
-                  (click)="clearSeed()"
-                  [attr.aria-label]="'generate.form.seed_random' | transloco"
-                  [title]="'generate.form.seed_random' | transloco"
-                >
-                  <app-icon name="refresh-alt" class="gs-ico-sm" />
-                </button>
-              </div>
-            </div>
-            <div
-              appTutAnchor="clip_skip"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-clip">
-                  {{
-                    "generate.form.clip_skip_label"
-                      | transloco: { value: form().controls.clip_skip.value }
-                  }} </label
-                ><app-gs-help topic="clip_skip" />
-              </div>
-              <input
-                id="generate-clip"
-                class="gs-range mt-1.5"
-                type="range"
-                formControlName="clip_skip"
-                [min]="minClipSkip"
-                [max]="maxClipSkip"
-                step="1"
-                [style.--gs-range-fill.%]="
-                  rangeFill(
-                    form().controls.clip_skip.value,
-                    minClipSkip,
-                    maxClipSkip
-                  )
-                "
-              />
-              <ng-container
-                *ngTemplateOutlet="
-                  reqHint;
-                  context: { hint: clipSkipAdvisory() }
-                "
-              />
-              <ng-container
-                *ngTemplateOutlet="fieldError; context: { anchor: 'clip_skip' }"
-              />
-            </div>
-          </div>
-          @if (samplerContract()) {
-            <div
-              class="gs-hairline pt-3"
-              appTutAnchor="advanced_sampling"
-              [class.gs-locked]="isSectionLocked('sampling')"
-            >
-              <div class="gs-adv-head">
-                <button
-                  type="button"
-                  class="gs-textlink flex items-center gap-1"
-                  (click)="toggleAdvancedSampling()"
-                  [attr.aria-expanded]="advancedSamplingOpen()"
-                  aria-controls="generate-advanced-sampling"
-                >
-                  <app-icon
-                    class="gs-chev"
-                    [name]="
-                      advancedSamplingOpen() ? 'chevron-down' : 'chevron-right'
-                    "
-                  />
-                  {{ "generate.form.advanced_sampling" | transloco }}
-                </button>
-                <app-gs-help topic="sampler_settings" />
-                @if (advancedSamplingCount(); as count) {
-                  @if (!advancedSamplingOpen()) {
-                    <span class="gs-count-badge">
-                      {{
-                        "generate.form.advanced_sampling_count"
-                          | transloco: { count: count }
-                      }}
-                    </span>
-                  }
-                  <button
-                    type="button"
-                    class="gs-textlink ml-auto"
-                    (click)="clearAdvancedSampling()"
-                  >
-                    {{ "generate.form.advanced_sampling_clear" | transloco }}
-                  </button>
-                }
-              </div>
-              @if (advancedSamplingOpen() && !hasAdvancedSampling()) {
-                <p id="generate-advanced-sampling" class="gs-sublabel mt-2">
-                  {{
-                    "generate.form.advanced_sampling_none"
-                      | transloco
-                        : { sampler: form().controls.sampler_name.value }
-                  }}
-                </p>
-              } @else if (advancedSamplingOpen()) {
-                <div
-                  id="generate-advanced-sampling"
-                  class="gs-grid-sampling mt-3"
-                >
-                  @for (setting of samplerSettings(); track setting[0]) {
-                    <div [appTutAnchor]="setting[0]">
-                      <label
-                        class="gs-slabel"
-                        [attr.for]="'generate-' + setting[0]"
-                      >
-                        {{
-                          "generate.form." + setting[0] + "_label" | transloco
-                        }}
-                      </label>
-                      <input
-                        class="gs-seed-input mt-1.5"
-                        type="number"
-                        inputmode="decimal"
-                        autocomplete="off"
-                        [id]="'generate-' + setting[0]"
-                        [min]="setting[1].minimum"
-                        [max]="setting[1].maximum"
-                        [step]="setting[1].integer_only ? 1 : 'any'"
-                        [placeholder]="
-                          setting[1].default === null
-                            ? ('generate.form.knob_auto' | transloco)
-                            : setting[1].default
-                        "
-                        [value]="samplerControl(setting[0]).value ?? ''"
-                        [class.gs-field--invalid]="
-                          samplerSettingInvalid(setting[0], setting[1])
-                        "
-                        [attr.aria-invalid]="
-                          samplerSettingInvalid(setting[0], setting[1])
-                            ? 'true'
-                            : null
-                        "
-                        [attr.aria-describedby]="
-                          describedBy(
-                            setting[0],
-                            samplerSettingInvalid(setting[0], setting[1])
-                              ? 'generate-' + setting[0] + '-range'
-                              : null
-                          )
-                        "
-                        (input)="
-                          setOptionalNumberEntry(
-                            samplerControl(setting[0]),
-                            $event
-                          )
-                        "
-                      />
-                      @if (samplerSettingInvalid(setting[0], setting[1])) {
-                        <p
-                          class="gs-warn mt-1.5"
-                          [id]="'generate-' + setting[0] + '-range'"
-                        >
+                  @if (advancedSamplers().length > 0) {
+                    <optgroup
+                      [label]="'generate.form.sampler_advanced' | transloco"
+                    >
+                      @for (sampler of advancedSamplers(); track sampler) {
+                        <option [value]="sampler">
                           {{
-                            "generate.form.sampler_setting_out_of_range"
+                            samplerOptionKey(sampler)
                               | transloco
                                 : {
-                                    min: setting[1].minimum,
-                                    max: setting[1].maximum,
+                                    sampler: sampler,
+                                    factor: samplerWork(sampler),
                                   }
                           }}
-                        </p>
-                      }
-                      <ng-container
-                        *ngTemplateOutlet="
-                          fieldError;
-                          context: { anchor: setting[0] }
-                        "
-                      />
-                    </div>
-                  }
-                  @if (solverTypeChoices().length > 0) {
-                    <div appTutAnchor="solver_type">
-                      <label class="gs-slabel" for="generate-solver-type">
-                        {{
-                          "generate.form.sampler_solver_type_label" | transloco
-                        }}
-                      </label>
-                      <select
-                        id="generate-solver-type"
-                        class="gs-native-select gs-native-select--sm mt-1.5"
-                        formControlName="sampler_solver_type"
-                        [attr.aria-describedby]="describedBy('solver_type')"
-                      >
-                        <option value="">
-                          {{ "generate.form.worker_default" | transloco }}
                         </option>
-                        @for (solver of solverTypeChoices(); track solver) {
-                          <option [value]="solver">{{ solver }}</option>
-                        }
-                      </select>
-                      <ng-container
-                        *ngTemplateOutlet="
-                          fieldError;
-                          context: { anchor: 'solver_type' }
-                        "
-                      />
-                    </div>
-                  }
-                  @if (flowShiftAllowed()) {
-                    <div appTutAnchor="flow_shift">
-                      <div class="gs-field-head">
-                        <label class="gs-slabel" for="generate-flow-shift">
-                          {{
-                            "generate.form.flow_shift_label" | transloco
-                          }} </label
-                        ><app-gs-help topic="flow_shift" />
-                      </div>
-                      <input
-                        id="generate-flow-shift"
-                        class="gs-seed-input mt-1.5"
-                        type="number"
-                        inputmode="decimal"
-                        autocomplete="off"
-                        [min]="minFlowShift"
-                        [max]="maxFlowShift"
-                        step="any"
-                        [placeholder]="'generate.form.knob_auto' | transloco"
-                        [value]="form().controls.flow_shift.value ?? ''"
-                        [class.gs-field--invalid]="flowShiftInvalid()"
-                        [attr.aria-invalid]="flowShiftInvalid() ? 'true' : null"
-                        [attr.aria-describedby]="
-                          describedBy(
-                            'flow_shift',
-                            flowShiftInvalid()
-                              ? 'generate-flow-shift-range'
-                              : null
-                          )
-                        "
-                        (input)="
-                          setOptionalNumberEntry(
-                            form().controls.flow_shift,
-                            $event
-                          )
-                        "
-                      />
-                      @if (flowShiftInvalid()) {
-                        <p
-                          class="gs-warn mt-1.5"
-                          id="generate-flow-shift-range"
-                        >
-                          {{
-                            "generate.form.number_out_of_range"
-                              | transloco
-                                : { min: minFlowShift, max: maxFlowShift }
-                          }}
-                        </p>
                       }
-                      <ng-container
-                        *ngTemplateOutlet="
-                          fieldError;
-                          context: { anchor: 'flow_shift' }
-                        "
-                      />
-                    </div>
+                    </optgroup>
                   }
+                </select>
+                <ng-container
+                  *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"
+                />
+                <ng-container
+                  *ngTemplateOutlet="fieldError; context: { anchor: 'sampler' }"
+                />
+                @if (samplerTierKey(); as tierKey) {
+                  <p class="gs-sublabel mt-1">
+                    {{
+                      tierKey
+                        | transloco
+                          : {
+                              factor: samplerWork(
+                                form().controls.sampler_name.value
+                              ),
+                            }
+                    }}
+                  </p>
+                }
+              </div>
+              <div
+                appTutAnchor="scheduler"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-scheduler">
+                    {{ "generate.form.scheduler_label" | transloco }} </label
+                  ><app-gs-help topic="scheduler" />
                 </div>
-                <p class="gs-sublabel mt-2">
-                  {{ "generate.form.knob_defaults_note" | transloco }}
-                </p>
+                <select
+                  id="generate-scheduler"
+                  class="gs-native-select gs-native-select--sm mt-1.5"
+                  formControlName="scheduler"
+                  [attr.aria-describedby]="describedBy('scheduler')"
+                >
+                  @for (scheduler of schedulerOptions(); track scheduler) {
+                    <option [value]="scheduler">
+                      {{
+                        schedulerOptionKey(scheduler)
+                          | transloco: { scheduler: scheduler }
+                      }}
+                    </option>
+                  }
+                </select>
+                <ng-container
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: scheduleAdvisory() }
+                  "
+                />
                 <ng-container
                   *ngTemplateOutlet="
                     fieldError;
-                    context: { anchor: 'advanced_sampling' }
+                    context: { anchor: 'scheduler' }
                   "
                 />
-              }
-            </div>
-          }
-          <!-- A whole-image switch rather than a per-step number, so it sits
-               under a rule at the foot of the card rather than in the grid of
-               sampling values above. -->
-          <div class="gs-hairline flex flex-col gap-2.5 pt-3">
-            <div class="gs-opt">
-              <label class="gs-switch gs-switch-row">
-                <span>{{ "generate.form.tiling_label" | transloco }}</span>
-                <input type="checkbox" formControlName="tiling" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span>
-              </label>
-              <app-gs-help topic="tiling" />
-            </div>
-          </div>
-        </app-gs-group>
-
-        <!-- LoRAs & embeddings -->
-        <app-gs-group
-          section="model"
-          titleKey="generate.form.loras_section"
-          appTutAnchor="loras"
-          [summary]="lorasSummary()"
-          [changed]="groupChanged('loras')"
-          [open]="isGroupOpen('loras')"
-          (toggled)="toggleGroup('loras')"
-        >
-          <div class="gs-group-actions" groupActions>
-            <app-gs-help topic="loras" />
-            <button type="button" class="gs-civit-link" (click)="openCivit()">
-              {{ "generate.form.add_from_civitai" | transloco }}
-            </button>
-          </div>
-          <app-civitai-selection
-            [loras]="loras()"
-            [tis]="tis()"
-            [baseline]="modelBaseline()"
-            (lorasChange)="setLoras($event)"
-            (tisChange)="setTis($event)"
-            (appendToPrompt)="appendToPrompt($event)"
-          />
-          <ng-container
-            *ngTemplateOutlet="lintLines; context: { warnings: loraWarnings() }"
-          />
-        </app-gs-group>
-
-        <!-- Post-process -->
-        <app-gs-group
-          section="finishing"
-          titleKey="generate.form.post_processing_section"
-          [summary]="postSummary()"
-          [changed]="groupChanged('post')"
-          [open]="isGroupOpen('post')"
-          (toggled)="toggleGroup('post')"
-        >
-          <div>
-            <div class="gs-field-head">
-              <label class="gs-slabel" for="generate-upscaler">
-                {{ "generate.form.upscaler_label" | transloco }} </label
-              ><app-gs-help topic="upscaler" />
-            </div>
-            <select
-              id="generate-upscaler"
-              class="gs-native-select mt-1"
-              [value]="selectedUpscaler()"
-              (change)="onUpscalerChange($event)"
-            >
-              <option value="">
-                {{ "generate.form.upscaler_none" | transloco }}
-              </option>
-              @for (upscaler of upscalers; track upscaler) {
-                <option [value]="upscaler">{{ upscaler }}</option>
-              }
-            </select>
-          </div>
-          <div appTutAnchor="facefixer">
-            <div class="gs-field-head">
-              <label class="gs-slabel" for="generate-facefixer">
-                {{ "generate.form.facefixer_label" | transloco }} </label
-              ><app-gs-help topic="facefixer" />
-            </div>
-            <select
-              id="generate-facefixer"
-              class="gs-native-select mt-1"
-              [value]="selectedFaceFixer()"
-              (change)="onFaceFixerChange($event)"
-            >
-              <option value="">
-                {{ "generate.form.facefixer_none" | transloco }}
-              </option>
-              @for (fixer of faceFixers; track fixer) {
-                <option [value]="fixer">{{ fixer }}</option>
-              }
-            </select>
-          </div>
-          @if (usesFaceFixer()) {
-            <div appTutAnchor="facefixer_strength">
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-facefixer-strength">
-                  {{
-                    "generate.form.facefixer_strength_label"
-                      | transloco
-                        : {
-                            value: form().controls.facefixer_strength.value,
-                          }
-                  }} </label
-                ><app-gs-help topic="facefixer_strength" />
               </div>
-              <input
-                id="generate-facefixer-strength"
-                class="gs-range mt-1"
-                type="range"
-                formControlName="facefixer_strength"
-                [min]="minFacefixer"
-                [max]="maxFacefixer"
-                step="0.05"
-                [style.--gs-range-fill.%]="
-                  rangeFill(
-                    form().controls.facefixer_strength.value,
-                    minFacefixer,
-                    maxFacefixer
-                  )
-                "
-              />
-            </div>
-          }
-          <label class="gs-switch gs-switch-row">
-            <span>{{
-              "generate.form.strip_background_label" | transloco
-            }}</span>
-            <input
-              type="checkbox"
-              [checked]="stripBackground()"
-              (change)="onStripBackgroundChange($event)"
-            />
-            <span class="gs-switch-track"
-              ><span class="gs-switch-knob"></span
-            ></span>
-          </label>
-        </app-gs-group>
-      </section>
-
-      <section
-        class="gs-zone gs-zone--deliver"
-        [attr.aria-label]="'generate.zones.deliver' | transloco"
-      >
-        <span class="gs-zone-label" aria-hidden="true">
-          {{ "generate.zones.deliver" | transloco }}
-        </span>
-
-        <!-- Output -->
-        <app-gs-group
-          section="finishing"
-          titleKey="generate.form.output_section"
-          [summary]="outputSummary()"
-          [changed]="groupChanged('output')"
-          [open]="isGroupOpen('output')"
-          (toggled)="toggleGroup('output')"
-        >
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.nsfw_label" | transloco }}</span>
-              <input type="checkbox" formControlName="nsfw" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="nsfw" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.censor_nsfw_label" | transloco }}</span>
-              <input type="checkbox" formControlName="censor_nsfw" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="censor_nsfw" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.shared_label" | transloco }}</span>
-              <input type="checkbox" formControlName="shared" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
-          </div>
-        </app-gs-group>
-
-        <!-- Workers & filters -->
-        <app-gs-group
-          section="horde"
-          titleKey="generate.form.horde_section"
-          [summary]="hordeSummary()"
-          [changed]="groupChanged('horde')"
-          [open]="isGroupOpen('horde')"
-          (toggled)="toggleGroup('horde')"
-        >
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.trusted_workers_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="trusted_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="trusted_workers" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.slow_workers_label" | transloco }}</span>
-              <input type="checkbox" formControlName="slow_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="slow_workers" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.extra_slow_workers_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="extra_slow_workers" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="extra_slow_workers" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.allow_downgrade_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="allow_downgrade" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="allow_downgrade" />
-          </div>
-          <div class="gs-opt">
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.replacement_filter_label" | transloco
-              }}</span>
-              <input type="checkbox" formControlName="replacement_filter" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="replacement_filter" />
-          </div>
-
-          <!-- Delivery and routing: still horde-side choices about who runs
-               the job and where the result goes, so they share the card with
-               the worker preferences above under a hairline. -->
-          <div class="gs-hairline flex flex-col gap-2.5 pt-3">
-            <h3 class="gs-card-title--sm">
-              {{ "generate.form.delivery_subsection" | transloco }}
-            </h3>
-
-            <div>
-              <div class="gs-field-head">
-                <label class="gs-slabel" for="generate-webhook">
-                  {{ "generate.form.webhook_label" | transloco }} </label
-                ><app-gs-help topic="webhook" />
-              </div>
-              <input
-                id="generate-webhook"
-                class="gs-seed-input mt-1.5"
-                [class.gs-field--invalid]="webhookInvalid()"
-                [attr.aria-invalid]="webhookInvalid() ? 'true' : null"
-                type="url"
-                inputmode="url"
-                autocomplete="off"
-                formControlName="webhook"
-                [maxlength]="maxWebhookLength"
-                [placeholder]="'generate.form.webhook_placeholder' | transloco"
-                aria-describedby="generate-webhook-hint"
-              />
-              @if (webhookInvalid()) {
-                <p id="generate-webhook-hint" class="gs-warn mt-1.5">
-                  {{
-                    "generate.form.webhook_invalid"
-                      | transloco
-                        : { min: minWebhookLength, max: maxWebhookLength }
-                  }}
-                </p>
-              } @else {
-                <p id="generate-webhook-hint" class="gs-sublabel mt-1.5">
-                  {{ "generate.form.webhook_hint" | transloco }}
-                </p>
-              }
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <div class="gs-field-head">
-                <span class="gs-slabel">
-                  {{
-                    "generate.form.workers_label"
-                      | transloco
-                        : { count: workerList().length, max: maxWorkers }
-                  }}
-                </span>
-                <app-gs-help topic="workers" />
-              </div>
-              <div
-                class="gs-seg gs-seg--xs"
-                role="group"
-                [attr.aria-label]="
-                  'generate.form.worker_mode_group' | transloco
-                "
-              >
-                <button
-                  type="button"
-                  class="gs-seg-opt"
-                  [attr.aria-pressed]="!form().controls.workerBlacklist.value"
-                  (click)="setWorkerBlacklist(false)"
-                >
-                  {{ "generate.form.worker_mode_allow" | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="gs-seg-opt"
-                  [attr.aria-pressed]="form().controls.workerBlacklist.value"
-                  (click)="setWorkerBlacklist(true)"
-                >
-                  {{ "generate.form.worker_mode_block" | transloco }}
-                </button>
-              </div>
-              <p class="gs-sublabel">
-                {{
-                  (form().controls.workerBlacklist.value
-                    ? "generate.form.worker_mode_block_hint"
-                    : "generate.form.worker_mode_allow_hint"
-                  ) | transloco
-                }}
-              </p>
-
-              @for (worker of workerList(); track worker; let i = $index) {
-                <div class="gs-worker-row">
-                  <span class="gs-worker-id">{{ worker }}</span>
-                  <button
-                    type="button"
-                    class="gs-worker-remove"
-                    [attr.aria-label]="
-                      'generate.form.worker_remove'
-                        | transloco: { name: worker }
-                    "
-                    (click)="removeWorker(i)"
-                  >
-                    <app-icon name="trash-modern" class="gs-ico-sm" />
-                  </button>
+              <div appTutAnchor="seed">
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-seed">
+                    {{ "generate.form.seed_label" | transloco }} </label
+                  ><app-gs-help topic="seed" />
                 </div>
-              }
-
-              @if (workerList().length < maxWorkers) {
-                <div class="flex gap-1.5">
+                <div class="mt-1.5 flex gap-1.5">
                   <input
+                    id="generate-seed"
                     class="gs-seed-input"
                     type="text"
-                    autocomplete="off"
-                    spellcheck="false"
-                    [value]="workerDraft()"
-                    [attr.aria-label]="
-                      'generate.form.worker_add_label' | transloco
-                    "
-                    [placeholder]="
-                      'generate.form.worker_add_placeholder' | transloco
-                    "
-                    (input)="workerDraft.set($any($event.target).value)"
-                    (keydown.enter)="$event.preventDefault(); addWorker()"
+                    formControlName="seed"
+                    [placeholder]="'generate.form.seed_placeholder' | transloco"
                   />
                   <button
                     type="button"
                     class="gs-mini-btn"
-                    [disabled]="!canAddWorker()"
-                    [attr.aria-label]="'generate.form.worker_add' | transloco"
-                    [title]="'generate.form.worker_add' | transloco"
-                    (click)="addWorker()"
+                    (click)="clearSeed()"
+                    [attr.aria-label]="'generate.form.seed_random' | transloco"
+                    [title]="'generate.form.seed_random' | transloco"
                   >
-                    <span aria-hidden="true">&plus;</span>
+                    <app-icon name="refresh-alt" class="gs-ico-sm" />
                   </button>
                 </div>
-              }
+              </div>
+              <div
+                appTutAnchor="clip_skip"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-clip">
+                    {{
+                      "generate.form.clip_skip_label"
+                        | transloco: { value: form().controls.clip_skip.value }
+                    }} </label
+                  ><app-gs-help topic="clip_skip" />
+                </div>
+                <input
+                  id="generate-clip"
+                  class="gs-range mt-1.5"
+                  type="range"
+                  formControlName="clip_skip"
+                  [min]="minClipSkip"
+                  [max]="maxClipSkip"
+                  step="1"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.clip_skip.value,
+                      minClipSkip,
+                      maxClipSkip
+                    )
+                  "
+                />
+                <ng-container
+                  *ngTemplateOutlet="
+                    reqHint;
+                    context: { hint: clipSkipAdvisory() }
+                  "
+                />
+                <ng-container
+                  *ngTemplateOutlet="
+                    fieldError;
+                    context: { anchor: 'clip_skip' }
+                  "
+                />
+              </div>
             </div>
-
-            <div class="gs-opt">
-              <label class="gs-switch gs-switch-row">
-                <span>{{
-                  "generate.form.remember_extras_label" | transloco
-                }}</span>
-                <input type="checkbox" formControlName="rememberExtras" />
-                <span class="gs-switch-track"
-                  ><span class="gs-switch-knob"></span
-                ></span> </label
-              ><app-gs-help topic="remember_extras" />
-            </div>
-            <p class="gs-sublabel">
-              {{ "generate.form.remember_extras_hint" | transloco }}
-            </p>
-          </div>
-        </app-gs-group>
-
-        <!-- Workflows: output modes that need a model or a worker feature
-             behind them, rather than plain request settings. -->
-        <app-gs-group
-          section="workflows"
-          titleKey="generate.form.workflows_section"
-          [summary]="workflowsSummary()"
-          [changed]="groupChanged('workflows')"
-          [open]="isGroupOpen('workflows')"
-          (toggled)="toggleGroup('workflows')"
-        >
-          <p class="gs-sublabel">
-            {{ "generate.form.workflows_hint" | transloco }}
-          </p>
-
-          <div class="gs-opt" appTutAnchor="transparent">
-            <label class="gs-switch gs-switch-row">
-              <span>{{ "generate.form.transparent_label" | transloco }}</span>
-              <input type="checkbox" formControlName="transparent" />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span> </label
-            ><app-gs-help topic="transparent" />
-          </div>
-
-          <div appTutAnchor="qr">
-            <div class="gs-field-head">
-              <label class="gs-slabel" for="generate-qr-text">
-                {{ "generate.form.qr_label" | transloco }} </label
-              ><app-gs-help topic="qr" />
-            </div>
-            <input
-              id="generate-qr-text"
-              class="gs-seed-input mt-1.5"
-              type="text"
-              autocomplete="off"
-              formControlName="qrText"
-              [attr.disabled]="qrAllowed() ? null : true"
-              [placeholder]="'generate.form.qr_placeholder' | transloco"
-              aria-describedby="generate-qr-hint"
-            />
-            <!-- The standing note beside the disabled input stands down once
-                 text is typed, because the compatibility rule then renders the
-                 same sentence below from the rule itself. Both live under the
-                 one id the input is described by, so exactly one note is ever
-                 announced with it. -->
-            <div id="generate-qr-hint">
-              @if (qrAllowed()) {
-                <p class="gs-sublabel mt-1.5">
-                  {{ "generate.form.qr_hint" | transloco }}
-                </p>
-              } @else if (!hasWarning("qr_code_baseline")) {
-                <p class="gs-warn mt-1.5">
-                  {{ "generate.form.qr_unsupported" | transloco }}
-                </p>
-              }
-              <ng-container
-                *ngTemplateOutlet="
-                  lintLines;
-                  context: { warnings: warningsFor('workflows') }
-                "
-              />
-            </div>
-            @if (qrBatchNoteVisible()) {
-              <p class="gs-sublabel mt-1.5">
-                {{ "generate.form.qr_batch_note" | transloco }}
-              </p>
+            @if (samplerContract()) {
+              <div
+                class="gs-hairline pt-3"
+                appTutAnchor="advanced_sampling"
+                [class.gs-locked]="isSectionLocked('sampling')"
+              >
+                <div class="gs-adv-head">
+                  <button
+                    type="button"
+                    class="gs-textlink flex items-center gap-1"
+                    (click)="toggleAdvancedSampling()"
+                    [attr.aria-expanded]="advancedSamplingOpen()"
+                    aria-controls="generate-advanced-sampling"
+                  >
+                    <app-icon
+                      class="gs-chev"
+                      [name]="
+                        advancedSamplingOpen()
+                          ? 'chevron-down'
+                          : 'chevron-right'
+                      "
+                    />
+                    {{ "generate.form.advanced_sampling" | transloco }}
+                  </button>
+                  <app-gs-help topic="sampler_settings" />
+                  @if (advancedSamplingCount(); as count) {
+                    @if (!advancedSamplingOpen()) {
+                      <span class="gs-count-badge">
+                        {{
+                          "generate.form.advanced_sampling_count"
+                            | transloco: { count: count }
+                        }}
+                      </span>
+                    }
+                    <button
+                      type="button"
+                      class="gs-textlink ml-auto"
+                      (click)="clearAdvancedSampling()"
+                    >
+                      {{ "generate.form.advanced_sampling_clear" | transloco }}
+                    </button>
+                  }
+                </div>
+                @if (advancedSamplingOpen() && !hasAdvancedSampling()) {
+                  <p id="generate-advanced-sampling" class="gs-sublabel mt-2">
+                    {{
+                      "generate.form.advanced_sampling_none"
+                        | transloco
+                          : { sampler: form().controls.sampler_name.value }
+                    }}
+                  </p>
+                } @else if (advancedSamplingOpen()) {
+                  <div
+                    id="generate-advanced-sampling"
+                    class="gs-grid-sampling mt-3"
+                  >
+                    @for (setting of samplerSettings(); track setting[0]) {
+                      <div [appTutAnchor]="setting[0]">
+                        <label
+                          class="gs-slabel"
+                          [attr.for]="'generate-' + setting[0]"
+                        >
+                          {{
+                            "generate.form." + setting[0] + "_label" | transloco
+                          }}
+                        </label>
+                        <input
+                          class="gs-seed-input mt-1.5"
+                          type="number"
+                          inputmode="decimal"
+                          autocomplete="off"
+                          [id]="'generate-' + setting[0]"
+                          [min]="setting[1].minimum"
+                          [max]="setting[1].maximum"
+                          [step]="setting[1].integer_only ? 1 : 'any'"
+                          [placeholder]="
+                            setting[1].default === null
+                              ? ('generate.form.knob_auto' | transloco)
+                              : setting[1].default
+                          "
+                          [value]="samplerControl(setting[0]).value ?? ''"
+                          [class.gs-field--invalid]="
+                            samplerSettingInvalid(setting[0], setting[1])
+                          "
+                          [attr.aria-invalid]="
+                            samplerSettingInvalid(setting[0], setting[1])
+                              ? 'true'
+                              : null
+                          "
+                          [attr.aria-describedby]="
+                            describedBy(
+                              setting[0],
+                              samplerSettingInvalid(setting[0], setting[1])
+                                ? 'generate-' + setting[0] + '-range'
+                                : null
+                            )
+                          "
+                          (input)="
+                            setOptionalNumberEntry(
+                              samplerControl(setting[0]),
+                              $event
+                            )
+                          "
+                        />
+                        @if (samplerSettingInvalid(setting[0], setting[1])) {
+                          <p
+                            class="gs-warn mt-1.5"
+                            [id]="'generate-' + setting[0] + '-range'"
+                          >
+                            {{
+                              "generate.form.sampler_setting_out_of_range"
+                                | transloco
+                                  : {
+                                      min: setting[1].minimum,
+                                      max: setting[1].maximum,
+                                    }
+                            }}
+                          </p>
+                        }
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: setting[0] }
+                          "
+                        />
+                      </div>
+                    }
+                    @if (solverTypeChoices().length > 0) {
+                      <div appTutAnchor="solver_type">
+                        <label class="gs-slabel" for="generate-solver-type">
+                          {{
+                            "generate.form.sampler_solver_type_label"
+                              | transloco
+                          }}
+                        </label>
+                        <select
+                          id="generate-solver-type"
+                          class="gs-native-select gs-native-select--sm mt-1.5"
+                          formControlName="sampler_solver_type"
+                          [attr.aria-describedby]="describedBy('solver_type')"
+                        >
+                          <option value="">
+                            {{ "generate.form.worker_default" | transloco }}
+                          </option>
+                          @for (solver of solverTypeChoices(); track solver) {
+                            <option [value]="solver">{{ solver }}</option>
+                          }
+                        </select>
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: 'solver_type' }
+                          "
+                        />
+                      </div>
+                    }
+                    @if (flowShiftAllowed()) {
+                      <div appTutAnchor="flow_shift">
+                        <div class="gs-field-head">
+                          <label class="gs-slabel" for="generate-flow-shift">
+                            {{
+                              "generate.form.flow_shift_label" | transloco
+                            }} </label
+                          ><app-gs-help topic="flow_shift" />
+                        </div>
+                        <input
+                          id="generate-flow-shift"
+                          class="gs-seed-input mt-1.5"
+                          type="number"
+                          inputmode="decimal"
+                          autocomplete="off"
+                          [min]="minFlowShift"
+                          [max]="maxFlowShift"
+                          step="any"
+                          [placeholder]="'generate.form.knob_auto' | transloco"
+                          [value]="form().controls.flow_shift.value ?? ''"
+                          [class.gs-field--invalid]="flowShiftInvalid()"
+                          [attr.aria-invalid]="
+                            flowShiftInvalid() ? 'true' : null
+                          "
+                          [attr.aria-describedby]="
+                            describedBy(
+                              'flow_shift',
+                              flowShiftInvalid()
+                                ? 'generate-flow-shift-range'
+                                : null
+                            )
+                          "
+                          (input)="
+                            setOptionalNumberEntry(
+                              form().controls.flow_shift,
+                              $event
+                            )
+                          "
+                        />
+                        @if (flowShiftInvalid()) {
+                          <p
+                            class="gs-warn mt-1.5"
+                            id="generate-flow-shift-range"
+                          >
+                            {{
+                              "generate.form.number_out_of_range"
+                                | transloco
+                                  : { min: minFlowShift, max: maxFlowShift }
+                            }}
+                          </p>
+                        }
+                        <ng-container
+                          *ngTemplateOutlet="
+                            fieldError;
+                            context: { anchor: 'flow_shift' }
+                          "
+                        />
+                      </div>
+                    }
+                  </div>
+                  <p class="gs-sublabel mt-2">
+                    {{ "generate.form.knob_defaults_note" | transloco }}
+                  </p>
+                  <ng-container
+                    *ngTemplateOutlet="
+                      fieldError;
+                      context: { anchor: 'advanced_sampling' }
+                    "
+                  />
+                }
+              </div>
             }
-
-            <!-- Where the code sits and how its modules are drawn. Left alone
-                 they send nothing and the workflow centres a square code, so
-                 the row is three opt-ins rather than three defaults. -->
-            <div class="gs-grid-2 mt-2.5">
-              <div>
-                <label class="gs-slabel" for="generate-qr-x-offset">
-                  {{ "generate.form.qr_x_offset_label" | transloco }}
+            <!-- A whole-image switch rather than a per-step number, so it sits
+                 under a rule at the foot of the card rather than in the grid of
+                 sampling values above. -->
+            <div class="gs-hairline flex flex-col gap-2.5 pt-3">
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.tiling_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="tiling" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
                 </label>
-                <input
-                  id="generate-qr-x-offset"
-                  class="gs-seed-input mt-1.5"
-                  type="number"
-                  min="0"
-                  step="8"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  formControlName="qrXOffset"
-                  [attr.disabled]="qrAllowed() ? null : true"
-                  [placeholder]="
-                    'generate.form.qr_offset_placeholder' | transloco
-                  "
-                  aria-describedby="generate-qr-layout-hint"
-                />
-              </div>
-              <div>
-                <label class="gs-slabel" for="generate-qr-y-offset">
-                  {{ "generate.form.qr_y_offset_label" | transloco }}
-                </label>
-                <input
-                  id="generate-qr-y-offset"
-                  class="gs-seed-input mt-1.5"
-                  type="number"
-                  min="0"
-                  step="8"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  formControlName="qrYOffset"
-                  [attr.disabled]="qrAllowed() ? null : true"
-                  [placeholder]="
-                    'generate.form.qr_offset_placeholder' | transloco
-                  "
-                  aria-describedby="generate-qr-layout-hint"
-                />
+                <app-gs-help topic="tiling" />
               </div>
             </div>
-            <div class="mt-2.5">
-              <label class="gs-slabel" for="generate-qr-module">
-                {{ "generate.form.qr_module_label" | transloco }}
-              </label>
+          </app-gs-group>
+
+          <!-- LoRAs & embeddings -->
+          <app-gs-group
+            section="model"
+            titleKey="generate.form.loras_section"
+            appTutAnchor="loras"
+            [summary]="lorasSummary()"
+            [changed]="groupChanged('loras')"
+            [open]="isGroupOpen('loras')"
+            (toggled)="toggleGroup('loras')"
+          >
+            <div class="gs-group-actions" groupActions>
+              <app-gs-help topic="loras" />
+              <button type="button" class="gs-civit-link" (click)="openCivit()">
+                {{ "generate.form.add_from_civitai" | transloco }}
+              </button>
+            </div>
+            <app-civitai-selection
+              [loras]="loras()"
+              [tis]="tis()"
+              [baseline]="modelBaseline()"
+              (lorasChange)="setLoras($event)"
+              (tisChange)="setTis($event)"
+              (appendToPrompt)="appendToPrompt($event)"
+            />
+            <ng-container
+              *ngTemplateOutlet="
+                lintLines;
+                context: { warnings: loraWarnings() }
+              "
+            />
+          </app-gs-group>
+
+          <!-- Post-process -->
+          <app-gs-group
+            section="finishing"
+            titleKey="generate.form.post_processing_section"
+            [summary]="postSummary()"
+            [changed]="groupChanged('post')"
+            [open]="isGroupOpen('post')"
+            (toggled)="toggleGroup('post')"
+          >
+            <div>
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-upscaler">
+                  {{ "generate.form.upscaler_label" | transloco }} </label
+                ><app-gs-help topic="upscaler" />
+              </div>
               <select
-                id="generate-qr-module"
-                class="gs-native-select gs-native-select--sm mt-1.5"
-                formControlName="qrModuleDrawer"
-                [attr.disabled]="qrAllowed() ? null : true"
-                aria-describedby="generate-qr-layout-hint"
+                id="generate-upscaler"
+                class="gs-native-select mt-1"
+                [value]="selectedUpscaler()"
+                (change)="onUpscalerChange($event)"
               >
                 <option value="">
-                  {{ "generate.form.qr_module_default" | transloco }}
+                  {{ "generate.form.upscaler_none" | transloco }}
                 </option>
-                @for (drawer of moduleDrawers; track drawer) {
-                  <option [value]="drawer">{{ drawer }}</option>
+                @for (upscaler of upscalers; track upscaler) {
+                  <option [value]="upscaler">{{ upscaler }}</option>
                 }
               </select>
             </div>
-            <p id="generate-qr-layout-hint" class="gs-sublabel mt-1.5">
-              {{ "generate.form.qr_layout_hint" | transloco }}
-            </p>
-          </div>
-        </app-gs-group>
-      </section>
+            <div appTutAnchor="facefixer">
+              <div class="gs-field-head">
+                <label class="gs-slabel" for="generate-facefixer">
+                  {{ "generate.form.facefixer_label" | transloco }} </label
+                ><app-gs-help topic="facefixer" />
+              </div>
+              <select
+                id="generate-facefixer"
+                class="gs-native-select mt-1"
+                [value]="selectedFaceFixer()"
+                (change)="onFaceFixerChange($event)"
+              >
+                <option value="">
+                  {{ "generate.form.facefixer_none" | transloco }}
+                </option>
+                @for (fixer of faceFixers; track fixer) {
+                  <option [value]="fixer">{{ fixer }}</option>
+                }
+              </select>
+            </div>
+            @if (usesFaceFixer()) {
+              <div appTutAnchor="facefixer_strength">
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-facefixer-strength">
+                    {{
+                      "generate.form.facefixer_strength_label"
+                        | transloco
+                          : {
+                              value: form().controls.facefixer_strength.value,
+                            }
+                    }} </label
+                  ><app-gs-help topic="facefixer_strength" />
+                </div>
+                <input
+                  id="generate-facefixer-strength"
+                  class="gs-range mt-1"
+                  type="range"
+                  formControlName="facefixer_strength"
+                  [min]="minFacefixer"
+                  [max]="maxFacefixer"
+                  step="0.05"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.facefixer_strength.value,
+                      minFacefixer,
+                      maxFacefixer
+                    )
+                  "
+                />
+              </div>
+            }
+            <label class="gs-switch gs-switch-row">
+              <span>{{
+                "generate.form.strip_background_label" | transloco
+              }}</span>
+              <input
+                type="checkbox"
+                [checked]="stripBackground()"
+                (change)="onStripBackgroundChange($event)"
+              />
+              <span class="gs-switch-track"
+                ><span class="gs-switch-knob"></span
+              ></span>
+            </label>
+          </app-gs-group>
+        </section>
+
+        <div class="gs-zone-tail">
+          <section
+            class="gs-zone gs-zone--deliver"
+            [attr.aria-label]="'generate.zones.deliver' | transloco"
+          >
+            <span class="gs-zone-label" aria-hidden="true">
+              {{ "generate.zones.deliver" | transloco }}
+            </span>
+
+            <!-- Output -->
+            <app-gs-group
+              section="finishing"
+              titleKey="generate.form.output_section"
+              [summary]="outputSummary()"
+              [changed]="groupChanged('output')"
+              [open]="isGroupOpen('output')"
+              (toggled)="toggleGroup('output')"
+            >
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.nsfw_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="nsfw" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="nsfw" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.censor_nsfw_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="censor_nsfw" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="censor_nsfw" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{ "generate.form.shared_label" | transloco }}</span>
+                  <input type="checkbox" formControlName="shared" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span>
+                </label>
+              </div>
+            </app-gs-group>
+
+            <!-- Workers & filters -->
+            <app-gs-group
+              section="horde"
+              titleKey="generate.form.horde_section"
+              [summary]="hordeSummary()"
+              [changed]="groupChanged('horde')"
+              [open]="isGroupOpen('horde')"
+              (toggled)="toggleGroup('horde')"
+            >
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.trusted_workers_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="trusted_workers" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="trusted_workers" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.slow_workers_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="slow_workers" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="slow_workers" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.extra_slow_workers_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="extra_slow_workers" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="extra_slow_workers" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.allow_downgrade_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="allow_downgrade" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="allow_downgrade" />
+              </div>
+              <div class="gs-opt">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.replacement_filter_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="replacement_filter" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="replacement_filter" />
+              </div>
+
+              <!-- Delivery and routing: still horde-side choices about who runs
+                   the job and where the result goes, so they share the card with
+                   the worker preferences above under a hairline. -->
+              <div class="gs-hairline flex flex-col gap-2.5 pt-3">
+                <h3 class="gs-card-title--sm">
+                  {{ "generate.form.delivery_subsection" | transloco }}
+                </h3>
+
+                <div>
+                  <div class="gs-field-head">
+                    <label class="gs-slabel" for="generate-webhook">
+                      {{ "generate.form.webhook_label" | transloco }} </label
+                    ><app-gs-help topic="webhook" />
+                  </div>
+                  <input
+                    id="generate-webhook"
+                    class="gs-seed-input mt-1.5"
+                    [class.gs-field--invalid]="webhookInvalid()"
+                    [attr.aria-invalid]="webhookInvalid() ? 'true' : null"
+                    type="url"
+                    inputmode="url"
+                    autocomplete="off"
+                    formControlName="webhook"
+                    [maxlength]="maxWebhookLength"
+                    [placeholder]="
+                      'generate.form.webhook_placeholder' | transloco
+                    "
+                    aria-describedby="generate-webhook-hint"
+                  />
+                  @if (webhookInvalid()) {
+                    <p id="generate-webhook-hint" class="gs-warn mt-1.5">
+                      {{
+                        "generate.form.webhook_invalid"
+                          | transloco
+                            : { min: minWebhookLength, max: maxWebhookLength }
+                      }}
+                    </p>
+                  } @else {
+                    <p id="generate-webhook-hint" class="gs-sublabel mt-1.5">
+                      {{ "generate.form.webhook_hint" | transloco }}
+                    </p>
+                  }
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <div class="gs-field-head">
+                    <span class="gs-slabel">
+                      {{
+                        "generate.form.workers_label"
+                          | transloco
+                            : { count: workerList().length, max: maxWorkers }
+                      }}
+                    </span>
+                    <app-gs-help topic="workers" />
+                  </div>
+                  <div
+                    class="gs-seg gs-seg--xs"
+                    role="group"
+                    [attr.aria-label]="
+                      'generate.form.worker_mode_group' | transloco
+                    "
+                  >
+                    <button
+                      type="button"
+                      class="gs-seg-opt"
+                      [attr.aria-pressed]="
+                        !form().controls.workerBlacklist.value
+                      "
+                      (click)="setWorkerBlacklist(false)"
+                    >
+                      {{ "generate.form.worker_mode_allow" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-seg-opt"
+                      [attr.aria-pressed]="
+                        form().controls.workerBlacklist.value
+                      "
+                      (click)="setWorkerBlacklist(true)"
+                    >
+                      {{ "generate.form.worker_mode_block" | transloco }}
+                    </button>
+                  </div>
+                  <p class="gs-sublabel">
+                    {{
+                      (form().controls.workerBlacklist.value
+                        ? "generate.form.worker_mode_block_hint"
+                        : "generate.form.worker_mode_allow_hint"
+                      ) | transloco
+                    }}
+                  </p>
+
+                  @for (worker of workerList(); track worker; let i = $index) {
+                    <div class="gs-worker-row">
+                      <span class="gs-worker-id">{{ worker }}</span>
+                      <button
+                        type="button"
+                        class="gs-worker-remove"
+                        [attr.aria-label]="
+                          'generate.form.worker_remove'
+                            | transloco: { name: worker }
+                        "
+                        (click)="removeWorker(i)"
+                      >
+                        <app-icon name="trash-modern" class="gs-ico-sm" />
+                      </button>
+                    </div>
+                  }
+
+                  @if (workerList().length < maxWorkers) {
+                    <div class="flex gap-1.5">
+                      <input
+                        class="gs-seed-input"
+                        type="text"
+                        autocomplete="off"
+                        spellcheck="false"
+                        [value]="workerDraft()"
+                        [attr.aria-label]="
+                          'generate.form.worker_add_label' | transloco
+                        "
+                        [placeholder]="
+                          'generate.form.worker_add_placeholder' | transloco
+                        "
+                        (input)="workerDraft.set($any($event.target).value)"
+                        (keydown.enter)="$event.preventDefault(); addWorker()"
+                      />
+                      <button
+                        type="button"
+                        class="gs-mini-btn"
+                        [disabled]="!canAddWorker()"
+                        [attr.aria-label]="
+                          'generate.form.worker_add' | transloco
+                        "
+                        [title]="'generate.form.worker_add' | transloco"
+                        (click)="addWorker()"
+                      >
+                        <span aria-hidden="true">&plus;</span>
+                      </button>
+                    </div>
+                  }
+                </div>
+
+                <div class="gs-opt">
+                  <label class="gs-switch gs-switch-row">
+                    <span>{{
+                      "generate.form.remember_extras_label" | transloco
+                    }}</span>
+                    <input type="checkbox" formControlName="rememberExtras" />
+                    <span class="gs-switch-track"
+                      ><span class="gs-switch-knob"></span
+                    ></span> </label
+                  ><app-gs-help topic="remember_extras" />
+                </div>
+                <p class="gs-sublabel">
+                  {{ "generate.form.remember_extras_hint" | transloco }}
+                </p>
+              </div>
+            </app-gs-group>
+          </section>
+
+          <!-- Workflows: ways of drawing the picture that need a model or a worker
+               feature behind them, rather than plain request settings. Each is its
+               own card, because they share nothing but that. -->
+          <section
+            class="gs-zone gs-zone--workflows"
+            [attr.aria-label]="'generate.zones.workflows' | transloco"
+          >
+            <span class="gs-zone-label" aria-hidden="true">
+              {{ "generate.zones.workflows" | transloco }}
+            </span>
+
+            <app-gs-group
+              section="workflows"
+              titleKey="generate.form.transparent_section"
+              [summary]="transparentSummary()"
+              [changed]="groupChanged('transparent')"
+              [open]="isGroupOpen('transparent')"
+              (toggled)="toggleGroup('transparent')"
+            >
+              <p class="gs-sublabel">
+                {{ "generate.form.transparent_hint" | transloco }}
+              </p>
+              <div class="gs-opt" appTutAnchor="transparent">
+                <label class="gs-switch gs-switch-row">
+                  <span>{{
+                    "generate.form.transparent_label" | transloco
+                  }}</span>
+                  <input type="checkbox" formControlName="transparent" />
+                  <span class="gs-switch-track"
+                    ><span class="gs-switch-knob"></span
+                  ></span> </label
+                ><app-gs-help topic="transparent" />
+              </div>
+            </app-gs-group>
+
+            <app-gs-group
+              section="workflows"
+              titleKey="generate.form.qr_section"
+              [summary]="qrSummary()"
+              [changed]="groupChanged('qr')"
+              [open]="isGroupOpen('qr')"
+              (toggled)="toggleGroup('qr')"
+            >
+              <div appTutAnchor="qr">
+                <div class="gs-field-head">
+                  <label class="gs-slabel" for="generate-qr-text">
+                    {{ "generate.form.qr_label" | transloco }} </label
+                  ><app-gs-help topic="qr" />
+                </div>
+                <input
+                  id="generate-qr-text"
+                  class="gs-seed-input mt-1.5"
+                  type="text"
+                  autocomplete="off"
+                  formControlName="qrText"
+                  [attr.disabled]="qrAllowed() ? null : true"
+                  [placeholder]="'generate.form.qr_placeholder' | transloco"
+                  aria-describedby="generate-qr-hint"
+                />
+                <!-- The standing note beside the disabled input stands down once
+                     text is typed, because the compatibility rule then renders the
+                     same sentence below from the rule itself. Both live under the
+                     one id the input is described by, so exactly one note is ever
+                     announced with it. -->
+                <div id="generate-qr-hint">
+                  @if (qrAllowed()) {
+                    <p class="gs-sublabel mt-1.5">
+                      {{ "generate.form.qr_hint" | transloco }}
+                    </p>
+                  } @else if (!hasWarning("qr_code_baseline")) {
+                    <p class="gs-warn mt-1.5">
+                      {{ "generate.form.qr_unsupported" | transloco }}
+                    </p>
+                  }
+                  <ng-container
+                    *ngTemplateOutlet="
+                      lintLines;
+                      context: { warnings: warningsFor('workflows') }
+                    "
+                  />
+                </div>
+                @if (qrBatchNoteVisible()) {
+                  <p class="gs-sublabel mt-1.5">
+                    {{ "generate.form.qr_batch_note" | transloco }}
+                  </p>
+                }
+
+                <!-- Where the code sits and how its modules are drawn. Left alone
+                     they send nothing and the workflow centres a square code, so
+                     the row is three opt-ins rather than three defaults. -->
+                <div class="gs-grid-2 mt-2.5">
+                  <div>
+                    <label class="gs-slabel" for="generate-qr-x-offset">
+                      {{ "generate.form.qr_x_offset_label" | transloco }}
+                    </label>
+                    <input
+                      id="generate-qr-x-offset"
+                      class="gs-seed-input mt-1.5"
+                      type="number"
+                      min="0"
+                      step="8"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      formControlName="qrXOffset"
+                      [attr.disabled]="qrAllowed() ? null : true"
+                      [placeholder]="
+                        'generate.form.qr_offset_placeholder' | transloco
+                      "
+                      aria-describedby="generate-qr-layout-hint"
+                    />
+                  </div>
+                  <div>
+                    <label class="gs-slabel" for="generate-qr-y-offset">
+                      {{ "generate.form.qr_y_offset_label" | transloco }}
+                    </label>
+                    <input
+                      id="generate-qr-y-offset"
+                      class="gs-seed-input mt-1.5"
+                      type="number"
+                      min="0"
+                      step="8"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      formControlName="qrYOffset"
+                      [attr.disabled]="qrAllowed() ? null : true"
+                      [placeholder]="
+                        'generate.form.qr_offset_placeholder' | transloco
+                      "
+                      aria-describedby="generate-qr-layout-hint"
+                    />
+                  </div>
+                </div>
+                <div class="mt-2.5">
+                  <label class="gs-slabel" for="generate-qr-module">
+                    {{ "generate.form.qr_module_label" | transloco }}
+                  </label>
+                  <select
+                    id="generate-qr-module"
+                    class="gs-native-select gs-native-select--sm mt-1.5"
+                    formControlName="qrModuleDrawer"
+                    [attr.disabled]="qrAllowed() ? null : true"
+                    aria-describedby="generate-qr-layout-hint"
+                  >
+                    <option value="">
+                      {{ "generate.form.qr_module_default" | transloco }}
+                    </option>
+                    @for (drawer of moduleDrawers; track drawer) {
+                      <option [value]="drawer">{{ drawer }}</option>
+                    }
+                  </select>
+                </div>
+                <p id="generate-qr-layout-hint" class="gs-sublabel mt-1.5">
+                  {{ "generate.form.qr_layout_hint" | transloco }}
+                </p>
+              </div>
+            </app-gs-group>
+          </section>
+        </div>
+      </div>
     </div>
   </div>
 
