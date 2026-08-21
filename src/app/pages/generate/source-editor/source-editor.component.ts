@@ -258,6 +258,14 @@ export class SourceEditorComponent {
   );
   /** A blank sheet is the picture, so its ground is pickable. */
   public readonly fromBlank = computed(() => this.doc().image === null);
+  /**
+   * Whether a painted mask is something the request can carry. ControlNet and
+   * remix send no mask, so offering the ink there would let a reader paint a
+   * region that goes nowhere.
+   */
+  public readonly maskAvailable = computed(
+    () => this.mode() === 'img2img' || this.mode() === 'inpainting',
+  );
 
   private konva: KonvaNamespace | null = null;
   private stage: Stage | null = null;
@@ -281,6 +289,13 @@ export class SourceEditorComponent {
 
   /** The region of the working sheet that is the picture. Crop moves it. */
   private docRect: EditorRect = { x: 0, y: 0, width: 0, height: 0 };
+  /**
+   * The picture as the request currently holds it. Apply leaves the editor open,
+   * so a second Apply has to measure itself against what the first one handed
+   * over rather than against what the session opened on; otherwise a mask-only
+   * pass would quietly hand back the pre-session bytes and undo the first.
+   */
+  private baseImage: SourceImage | null = null;
 
   private readonly undoStack: EditorOp[] = [];
   private readonly redoStack: EditorOp[] = [];
@@ -351,6 +366,9 @@ export class SourceEditorComponent {
     this.formWidth.set(controls.width.value);
     this.formHeight.set(controls.height.value);
     this.outpaintEnabled.set(controls.outpaintEnabled.value);
+    if (!this.maskAvailable()) {
+      this.ink.set('color');
+    }
     this.frameOn.set(
       controls.outpaintEnabled.value &&
         controls.sourceMode.value === 'inpainting',
@@ -360,6 +378,9 @@ export class SourceEditorComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => {
         this.mode.set(mode);
+        if (!this.maskAvailable()) {
+          this.setInk('color');
+        }
         this.syncFrameVisibility();
       });
     controls.outpaintEnabled.valueChanges
@@ -507,6 +528,7 @@ export class SourceEditorComponent {
     const doc = this.doc();
     this.docRect = { x: 0, y: 0, width: doc.width, height: doc.height };
     this.docSize.set({ width: doc.width, height: doc.height });
+    this.baseImage = doc.image;
 
     await this.buildGround();
     if (doc.image) {
@@ -980,19 +1002,26 @@ export class SourceEditorComponent {
     const drawn = this.draft;
     this.draft = null;
     this.cropDrafting = false;
-    if (drawn && this.draftKind !== 'line') {
-      if (drawn.width() < 1 || drawn.height() < 1) {
-        // A click that drew nothing leaves no shape and no history entry.
-        drawn.destroy();
-        this.undoStack.pop();
-        this.syncHistory();
-      }
+    if (drawn && this.isDegenerate(drawn)) {
+      // A click that drew nothing leaves no shape and no history entry.
+      drawn.destroy();
+      this.undoStack.pop();
+      this.syncHistory();
     }
     if (this.panFrom) {
       this.panFrom = null;
       window.removeEventListener('pointermove', this.onWindowPointerMove);
       this.applyCursor();
     }
+  }
+
+  /** Whether a shape came out too small to be anything the reader meant. */
+  private isDegenerate(shape: Shape): boolean {
+    if (this.draftKind !== 'line') {
+      return shape.width() < 1 || shape.height() < 1;
+    }
+    const points = (shape as Line).points();
+    return Math.hypot(points[2] - points[0], points[3] - points[1]) < 1;
   }
 
   // -- brush preview -------------------------------------------------------
@@ -1553,6 +1582,7 @@ export class SourceEditorComponent {
         mask,
         offset: this.frameOn() ? this.handOffset : null,
       });
+      this.baseImage = image;
       this.touched.set(NOTHING_TOUCHED);
     } finally {
       if (token === this.exportToken) {
@@ -1562,7 +1592,7 @@ export class SourceEditorComponent {
   }
 
   private async exportPicture(): Promise<SourceImage | null> {
-    const original = this.doc().image;
+    const original = this.baseImage;
     const unchanged =
       !needsPictureExport(this.touched(), this.fromBlank()) &&
       this.docRect.x === 0 &&

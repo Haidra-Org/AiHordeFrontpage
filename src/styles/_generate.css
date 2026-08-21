@@ -13808,6 +13808,9 @@ html:has(app-gs-sheet) {
    fixed, and the drawing surface is the only thing that grows, so the picture
    gets every pixel that is not chrome. */
 .gen-studio .gs-se-panel {
+  /* The discard prompt's scrim is laid over the whole editor, so the panel is
+     what it measures itself against. */
+  position: relative;
   width: 100%;
   max-width: 100%;
   height: 100%;
@@ -13995,7 +13998,21 @@ html:has(app-gs-sheet) {
   gap: var(--gs-space-3);
   padding: var(--gs-space-4);
   text-align: center;
-  background: color-mix(in srgb, var(--gs-panel) 92%, transparent);
+  /* A scrim rather than a wash over the panel: tinting the panel itself left
+     every control behind it faintly legible, which reads as a fault. */
+  background: rgba(15, 23, 42, 0.55);
+}
+.gen-studio .gs-se-confirm-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gs-space-3);
+  max-width: 40ch;
+  padding: var(--gs-space-4);
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+  box-shadow: var(--gs-elev-2);
 }
 .gen-studio .gs-se-confirm-text {
   max-width: 34ch;

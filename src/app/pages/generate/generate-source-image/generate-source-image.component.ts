@@ -574,6 +574,11 @@ export class GenerateSourceImageComponent implements OnInit {
       this.sourceImage.set(result.image);
       this.previewUrl.set(URL.createObjectURL(result.image.blob));
     }
+    // A mask the request would not carry is a mask painted for nothing, so
+    // image-to-image is switched over to the masked choice that carries it.
+    if (result.mask && this.mode() === 'img2img' && !this.maskEnabled()) {
+      this.form().controls.maskEnabled.setValue(true);
+    }
     this.maskBlob.set(result.mask);
     this.maskPainted.set(result.mask !== null);
     this.outpaintOffset.set(result.offset);

@@ -207,15 +207,17 @@
         role="group"
         [attr.aria-label]="'generate.editor.ink_label' | transloco"
       >
-        <button
-          type="button"
-          class="gs-se-btn"
-          [class.gs-se-btn--on]="ink() === 'mask'"
-          [attr.aria-pressed]="ink() === 'mask'"
-          (click)="setInk('mask')"
-        >
-          {{ "generate.editor.ink_mask" | transloco }}
-        </button>
+        @if (maskAvailable()) {
+          <button
+            type="button"
+            class="gs-se-btn"
+            [class.gs-se-btn--on]="ink() === 'mask'"
+            [attr.aria-pressed]="ink() === 'mask'"
+            (click)="setInk('mask')"
+          >
+            {{ "generate.editor.ink_mask" | transloco }}
+          </button>
+        }
         <button
           type="button"
           class="gs-se-btn"
@@ -313,20 +315,22 @@
 
     @if (confirmingClose()) {
       <div class="gs-se-confirm" role="alertdialog" aria-modal="true">
-        <p class="gs-se-confirm-text">
-          {{ "generate.editor.discard_prompt" | transloco }}
-        </p>
-        <div class="gs-se-group">
-          <button
-            type="button"
-            class="gs-se-btn gs-se-btn--primary"
-            (click)="keepEditing()"
-          >
-            {{ "generate.editor.keep" | transloco }}
-          </button>
-          <button type="button" class="gs-se-btn" (click)="discardAndClose()">
-            {{ "generate.editor.discard" | transloco }}
-          </button>
+        <div class="gs-se-confirm-card">
+          <p class="gs-se-confirm-text">
+            {{ "generate.editor.discard_prompt" | transloco }}
+          </p>
+          <div class="gs-se-group">
+            <button
+              type="button"
+              class="gs-se-btn gs-se-btn--primary"
+              (click)="keepEditing()"
+            >
+              {{ "generate.editor.keep" | transloco }}
+            </button>
+            <button type="button" class="gs-se-btn" (click)="discardAndClose()">
+              {{ "generate.editor.discard" | transloco }}
+            </button>
+          </div>
         </div>
       </div>
     }

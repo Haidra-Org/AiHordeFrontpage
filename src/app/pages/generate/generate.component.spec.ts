@@ -539,6 +539,64 @@ describe('GenerateComponent', () => {
         expect.anything(),
       );
     });
+
+    it('reattaches the stored mask alongside the picture it was painted for', async () => {
+      const source = new Blob(['s'], { type: 'image/webp' });
+      const mask = new Blob(['m'], { type: 'image/png' });
+      getJobImages.mockResolvedValue([
+        {
+          imageId: 'img-1',
+          kind: 'source',
+          blob: source,
+          mimeType: 'image/webp',
+        },
+        { imageId: 'img-2', kind: 'mask', blob: mask, mimeType: 'image/png' },
+      ]);
+      const applySource = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applySource }),
+      });
+
+      await component.onLoadSettings({
+        request: {
+          ...request,
+          source_image: 'x',
+          source_processing: 'img2img',
+        },
+        localId: 'job-1',
+        seed: null,
+      });
+
+      expect(applySource).toHaveBeenCalledWith(source, mask);
+    });
+
+    it('reattaches a picture that never had a mask with none', async () => {
+      const source = new Blob(['s'], { type: 'image/webp' });
+      getJobImages.mockResolvedValue([
+        {
+          imageId: 'img-1',
+          kind: 'source',
+          blob: source,
+          mimeType: 'image/webp',
+        },
+      ]);
+      const applySource = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applySource }),
+      });
+
+      await component.onLoadSettings({
+        request: {
+          ...request,
+          source_image: 'x',
+          source_processing: 'img2img',
+        },
+        localId: 'job-1',
+        seed: null,
+      });
+
+      expect(applySource).toHaveBeenCalledWith(source, null);
+    });
   });
 
   describe('applying a metadata selection', () => {
