@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
   OnInit,
   PLATFORM_ID,
   computed,
@@ -11,7 +10,6 @@ import {
   input,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -35,7 +33,6 @@ import {
   MAX_EXTRA_SOURCE_STRENGTH,
   MIN_DENOISE,
   MIN_EXTRA_SOURCE_STRENGTH,
-  OUTPAINT_ANCHORS,
   SOURCE_MODES,
   rangeFillPercent,
 } from '../generate-form.model';
@@ -50,12 +47,12 @@ import {
   SourceImage,
   blobToSourceImage,
   composeOutpaintCanvas,
-  exportMaskFromPaintLayer,
   fileToSourceImage,
 } from '../../../helper/source-image';
 import {
   SourceEditorComponent,
   type SourceEditorDoc,
+  type SourceEditorResult,
 } from '../source-editor/source-editor.component';
 
 /** One remix extra source image, in the order it is submitted. */
@@ -96,15 +93,11 @@ interface RemixExtra {
   previewUrl: string;
 }
 
-const DEFAULT_BRUSH = 40;
-const MIN_BRUSH = 5;
-const MAX_BRUSH = 200;
-
 /**
  * The /generate source-image section, projected into the form's
  * `[generateSourceImage]` slot. Drives the img2img / controlnet / inpainting /
  * remix controls bound to the parent form, owns the uploaded source blob, the
- * remix extra images, and (for inpainting) a paint-mask canvas, and emits a
+ * remix extra images and the mask the editor painted, and emits a
  * {@link GenerateSourceState} so the page can gate submission and enqueue the
  * blobs.
  *
@@ -169,8 +162,6 @@ export class GenerateSourceImageComponent implements OnInit {
   public readonly minDenoise = MIN_DENOISE;
   public readonly maxDenoise = MAX_DENOISE;
   public readonly denoiseStep = DENOISE_STEP;
-  public readonly minBrush = MIN_BRUSH;
-  public readonly maxBrush = MAX_BRUSH;
   public readonly maxExtras = MAX_EXTRA_SOURCE_IMAGES;
   public readonly minExtraStrength = MIN_EXTRA_SOURCE_STRENGTH;
   public readonly maxExtraStrength = MAX_EXTRA_SOURCE_STRENGTH;
@@ -190,15 +181,7 @@ export class GenerateSourceImageComponent implements OnInit {
 
   public readonly maskPainted = signal(false);
   public readonly maskBlob = signal<Blob | null>(null);
-  public readonly brushSize = signal(DEFAULT_BRUSH);
-  public readonly eraser = signal(false);
 
-  private readonly paintCanvasRef =
-    viewChild<ElementRef<HTMLCanvasElement>>('paintCanvas');
-
-  /** The source dimensions the paint canvas is currently sized for. */
-  private paintCanvasFor: SourceImage | null = null;
-  private drawing = false;
   /** Which outpaint composition is current, so a late reply can be dropped. */
   private outpaintToken = 0;
 
@@ -218,6 +201,15 @@ export class GenerateSourceImageComponent implements OnInit {
   private readonly targetWidth = signal(0);
   private readonly targetHeight = signal(0);
   public readonly outpaintAnchor = signal<GenerateOutpaintAnchor>('center');
+  /**
+   * Where the editor's frame last put the picture inside the canvas being grown.
+   * A hand placement is finer than the nine-way anchor can say, so it takes
+   * precedence while it stands; the anchor is still written alongside it so a
+   * past generation can be reproduced from its settings alone.
+   */
+  public readonly outpaintOffset = signal<{ x: number; y: number } | null>(
+    null,
+  );
 
   /**
    * The picture pasted into the larger canvas, with the border that is about to
@@ -225,8 +217,6 @@ export class GenerateSourceImageComponent implements OnInit {
    * request the panel composes rather than describes.
    */
   public readonly outpaintCanvas = signal<OutpaintCanvas | null>(null);
-
-  public readonly anchors = OUTPAINT_ANCHORS;
 
   /**
    * The composed canvas as percentages of itself, for the preview to lay the
@@ -310,26 +300,6 @@ export class GenerateSourceImageComponent implements OnInit {
   });
 
   constructor() {
-    // Keep the paint canvas sized to the current source image. Re-sizing a
-    // canvas clears it, which is exactly the reset we want on a new image.
-    // This reads only signals (never the form input), so it is safe at
-    // construction time before inputs are bound.
-    effect(() => {
-      const ref = this.paintCanvasRef();
-      const image = this.sourceImage();
-      if (!ref || !image || !this.brushActive()) {
-        return;
-      }
-      if (this.paintCanvasFor !== image) {
-        const canvas = ref.nativeElement;
-        canvas.width = image.width;
-        canvas.height = image.height;
-        this.paintCanvasFor = image;
-        this.maskPainted.set(false);
-        this.maskBlob.set(null);
-      }
-    });
-
     // The parent gates submission on the last emitted state, and validity
     // depends on `remixSupported`, which flips when the user changes model —
     // an event this component never sees. Re-emit so the parent's snapshot
@@ -346,12 +316,13 @@ export class GenerateSourceImageComponent implements OnInit {
       const width = this.targetWidth();
       const height = this.targetHeight();
       const anchor = this.outpaintAnchor();
+      const offset = this.outpaintOffset();
       const growing = this.mode() === 'inpainting' && this.outpaintEnabled();
       if (!growing || !image || !this.isBrowser) {
         this.outpaintCanvas.set(null);
         return;
       }
-      void this.rebuildOutpaintCanvas(image, width, height, anchor);
+      void this.rebuildOutpaintCanvas(image, width, height, anchor, offset);
     });
 
     this.destroyRef.onDestroy(() => {
@@ -521,10 +492,15 @@ export class GenerateSourceImageComponent implements OnInit {
 
   /**
    * Adopt an already-encoded blob as the source image, e.g. when loading a past
-   * generation's settings back into the form. Replaces any current source and
-   * clears the mask; the caller is responsible for setting the source mode.
+   * generation's settings back into the form. A mask stored alongside it is
+   * taken back with it, so a reloaded generation carries the region it was
+   * painted for rather than silently losing it. The caller is responsible for
+   * setting the source mode.
    */
-  public async applySource(blob: Blob): Promise<void> {
+  public async applySource(
+    blob: Blob,
+    mask: Blob | null = null,
+  ): Promise<void> {
     if (!this.isBrowser) {
       return;
     }
@@ -533,9 +509,9 @@ export class GenerateSourceImageComponent implements OnInit {
       this.revokePreview();
       this.sourceImage.set(image);
       this.previewUrl.set(URL.createObjectURL(image.blob));
-      this.paintCanvasFor = null;
-      this.maskPainted.set(false);
-      this.maskBlob.set(null);
+      this.outpaintOffset.set(null);
+      this.maskPainted.set(mask !== null);
+      this.maskBlob.set(mask);
       this.emitState();
     } catch {
       this.error.set('generate.source.encode_failed');
@@ -547,27 +523,27 @@ export class GenerateSourceImageComponent implements OnInit {
     this.sourceImage.set(null);
     this.previewUrl.set(null);
     this.error.set(null);
-    this.paintCanvasFor = null;
+    this.outpaintOffset.set(null);
     this.maskPainted.set(false);
     this.maskBlob.set(null);
     this.emitState();
   }
 
-  /**
-   * The document the fullscreen editor is open on, null while it is closed. The
-   * editor is a feel spike and hands nothing back yet: closing discards.
-   */
+  /** What the fullscreen editor is open on, null while it is closed. */
   public readonly editorDoc = signal<SourceEditorDoc | null>(null);
 
   public openEditor(): void {
     const image = this.sourceImage();
-    if (image) {
-      this.editorDoc.set({
-        image,
-        width: image.width,
-        height: image.height,
-      });
+    if (!image) {
+      return;
     }
+    this.editorDoc.set({
+      image,
+      mask: this.maskBlob(),
+      width: image.width,
+      height: image.height,
+      offset: this.outpaintOffset(),
+    });
   }
 
   /** Open the editor on a blank sheet at the size the form is asking for. */
@@ -575,8 +551,10 @@ export class GenerateSourceImageComponent implements OnInit {
     const controls = this.form().controls;
     this.editorDoc.set({
       image: null,
+      mask: null,
       width: controls.width.value,
       height: controls.height.value,
+      offset: null,
     });
   }
 
@@ -584,81 +562,29 @@ export class GenerateSourceImageComponent implements OnInit {
     this.editorDoc.set(null);
   }
 
-  public setBrushSize(value: number): void {
-    this.brushSize.set(
-      Math.min(MAX_BRUSH, Math.max(MIN_BRUSH, Math.round(value))),
-    );
-  }
-
-  public toggleEraser(): void {
-    this.eraser.update((on) => !on);
-  }
-
-  public clearMask(): void {
-    const canvas = this.paintCanvasRef()?.nativeElement;
-    if (canvas) {
-      canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+  /**
+   * Take what the editor staged. The picture only replaces the one held here
+   * when its bytes actually changed, so a session that painted nothing but a
+   * mask leaves the attachment and its preview alone.
+   */
+  public onEditorApplied(result: SourceEditorResult): void {
+    const current = this.sourceImage();
+    if (!current || result.image.blob !== current.blob) {
+      this.revokePreview();
+      this.sourceImage.set(result.image);
+      this.previewUrl.set(URL.createObjectURL(result.image.blob));
     }
-    this.maskPainted.set(false);
-    this.maskBlob.set(null);
+    this.maskBlob.set(result.mask);
+    this.maskPainted.set(result.mask !== null);
+    this.outpaintOffset.set(result.offset);
     this.emitState();
   }
 
-  public onPaintPointerDown(event: PointerEvent): void {
-    if (this.disabled()) {
-      return;
-    }
-    const canvas = this.paintCanvasRef()?.nativeElement;
-    if (!canvas) {
-      return;
-    }
-    this.drawing = true;
-    canvas.setPointerCapture(event.pointerId);
-    this.paintAt(event);
-  }
-
-  public onPaintPointerMove(event: PointerEvent): void {
-    if (this.drawing) {
-      this.paintAt(event);
-    }
-  }
-
-  public onPaintPointerUp(event: PointerEvent): void {
-    if (!this.drawing) {
-      return;
-    }
-    this.drawing = false;
-    const canvas = this.paintCanvasRef()?.nativeElement;
-    canvas?.releasePointerCapture(event.pointerId);
-    void this.refreshMask();
-  }
-
-  private paintAt(event: PointerEvent): void {
-    const canvas = this.paintCanvasRef()?.nativeElement;
-    if (!canvas) {
-      return;
-    }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      return;
-    }
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      return;
-    }
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
-    const radius = (this.brushSize() / 2) * (canvas.width / rect.width);
-
-    ctx.globalCompositeOperation = this.eraser()
-      ? 'destination-out'
-      : 'source-over';
-    // A translucent tint keeps the underlying image visible while painting; the
-    // stroke's alpha channel is what the mask export reads, not this colour.
-    ctx.fillStyle = 'rgba(220, 38, 38, 0.6)';
-    ctx.beginPath();
-    ctx.arc(x, y, Math.max(1, radius), 0, Math.PI * 2);
-    ctx.fill();
+  /** Forget the mask, which is all there is to forget now the editor owns it. */
+  public clearMask(): void {
+    this.maskPainted.set(false);
+    this.maskBlob.set(null);
+    this.emitState();
   }
 
   /**
@@ -671,6 +597,7 @@ export class GenerateSourceImageComponent implements OnInit {
     width: number,
     height: number,
     anchor: GenerateOutpaintAnchor,
+    offset: { x: number; y: number } | null,
   ): Promise<void> {
     const token = ++this.outpaintToken;
     try {
@@ -679,6 +606,7 @@ export class GenerateSourceImageComponent implements OnInit {
         width,
         height,
         anchor,
+        offset,
       );
       if (token !== this.outpaintToken) {
         return;
@@ -693,17 +621,6 @@ export class GenerateSourceImageComponent implements OnInit {
     this.emitState();
   }
 
-  private async refreshMask(): Promise<void> {
-    const canvas = this.paintCanvasRef()?.nativeElement;
-    if (!canvas || !this.isBrowser) {
-      return;
-    }
-    const result = await exportMaskFromPaintLayer(canvas);
-    this.maskPainted.set(result.painted);
-    this.maskBlob.set(result.blob);
-    this.emitState();
-  }
-
   private async encodeFile(file: File): Promise<void> {
     if (!this.isBrowser) {
       return;
@@ -715,7 +632,7 @@ export class GenerateSourceImageComponent implements OnInit {
       this.revokePreview();
       this.sourceImage.set(image);
       this.previewUrl.set(URL.createObjectURL(image.blob));
-      this.paintCanvasFor = null;
+      this.outpaintOffset.set(null);
       this.maskPainted.set(false);
       this.maskBlob.set(null);
       this.emitState();

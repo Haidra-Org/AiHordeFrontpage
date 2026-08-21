@@ -4,8 +4,7 @@
   (keydown.escape)="onClose()"
   role="dialog"
   aria-modal="true"
-  tabindex="0"
-  aria-label="Source image editor (preview)"
+  [attr.aria-label]="'generate.editor.title' | transloco"
 >
   <div
     #panel
@@ -15,31 +14,46 @@
     (keydown)="onKeydown($event)"
     (keyup)="onKeyup($event)"
   >
-    <div class="gs-modal-header">
-      <span class="gs-modal-title">
-        Source image editor
-        <span class="gs-modal-badge">preview</span>
+    <div class="gs-modal-header gs-se-header">
+      <span class="gs-modal-title">{{
+        "generate.editor.title" | transloco
+      }}</span>
+      <span class="gs-sublabel gs-mono gs-se-readout">
+        {{ docSize().width }}×{{ docSize().height }} · {{ zoomPercent() }}%
       </span>
-      <span class="gs-sublabel gs-mono">
-        {{ doc().width }}×{{ doc().height }} · {{ zoomPercent() }}%
-      </span>
-      <button type="button" class="gs-se-btn" disabled title="Not wired up yet">
-        Apply
+      <button
+        type="button"
+        class="gs-se-btn gs-se-btn--primary"
+        [disabled]="!ready() || busy()"
+        (click)="onApply()"
+      >
+        {{
+          busy()
+            ? ("generate.editor.applying" | transloco)
+            : ("generate.editor.apply" | transloco)
+        }}
       </button>
-      <button type="button" class="gs-se-btn" (click)="onClose()">Close</button>
+      <button type="button" class="gs-se-btn" (click)="onClose()">
+        {{ "generate.editor.close" | transloco }}
+      </button>
     </div>
 
     <div class="gs-se-body">
-      <div class="gs-se-rail" role="toolbar" aria-label="Tools">
+      <div
+        class="gs-se-rail"
+        role="toolbar"
+        [attr.aria-label]="'generate.editor.tools' | transloco"
+      >
         @for (t of tools; track t) {
           <button
             type="button"
             class="gs-se-tool"
             [class.gs-se-tool--on]="tool() === t"
             [attr.aria-pressed]="tool() === t"
+            [attr.aria-label]="'generate.editor.tool_' + t | transloco"
             (click)="setTool(t)"
           >
-            {{ labels[t] }}
+            {{ "generate.editor.tool_" + t | transloco }}
           </button>
         }
         <span class="gs-se-rail-gap"></span>
@@ -47,57 +61,192 @@
           type="button"
           class="gs-se-tool"
           [disabled]="!canUndo()"
+          [attr.aria-label]="'generate.editor.undo' | transloco"
           (click)="undo()"
         >
-          Undo
+          {{ "generate.editor.undo" | transloco }}
         </button>
         <button
           type="button"
           class="gs-se-tool"
           [disabled]="!canRedo()"
+          [attr.aria-label]="'generate.editor.redo' | transloco"
           (click)="redo()"
         >
-          Redo
+          {{ "generate.editor.redo" | transloco }}
         </button>
       </div>
 
       <div class="gs-se-stage-wrap">
         <div #stageHost class="gs-se-stage"></div>
         @if (!ready()) {
-          <p class="gs-se-loading">Loading the canvas…</p>
+          <p class="gs-se-loading">
+            {{ "generate.editor.loading" | transloco }}
+          </p>
+        }
+        @if (cropPending()) {
+          <div class="gs-se-float">
+            <button
+              type="button"
+              class="gs-se-btn gs-se-btn--primary"
+              (click)="applyCrop()"
+            >
+              {{ "generate.editor.crop_apply" | transloco }}
+            </button>
+            <button type="button" class="gs-se-btn" (click)="clearCrop()">
+              {{ "generate.editor.crop_cancel" | transloco }}
+            </button>
+          </div>
         }
       </div>
     </div>
 
+    <!-- These are the request's own settings, not a copy of them: changing one
+         here changes it in the settings panel at the same moment. -->
+    <div class="gs-se-params">
+      <div
+        class="gs-se-group gs-se-modes"
+        role="group"
+        [attr.aria-label]="'generate.editor.mode_label' | transloco"
+      >
+        <span class="gs-sublabel">{{
+          "generate.editor.mode_label" | transloco
+        }}</span>
+        @for (m of ["img2img", "inpainting"]; track m) {
+          <button
+            type="button"
+            class="gs-se-btn"
+            [class.gs-se-btn--on]="mode() === m"
+            [attr.aria-pressed]="mode() === m"
+            (click)="setMode($any(m))"
+          >
+            {{ "generate.source.mode_" + m | transloco }}
+          </button>
+        }
+      </div>
+
+      <label class="gs-se-group" for="gs-se-width">
+        <span class="gs-sublabel">{{
+          "generate.editor.width" | transloco
+        }}</span>
+        <input
+          id="gs-se-width"
+          type="number"
+          class="gs-se-number"
+          [formControl]="form().controls.width"
+          [min]="minDimension"
+          [max]="maxDimension"
+          [step]="dimensionStep"
+        />
+      </label>
+      <label class="gs-se-group" for="gs-se-height">
+        <span class="gs-sublabel">{{
+          "generate.editor.height" | transloco
+        }}</span>
+        <input
+          id="gs-se-height"
+          type="number"
+          class="gs-se-number"
+          [formControl]="form().controls.height"
+          [min]="minDimension"
+          [max]="maxDimension"
+          [step]="dimensionStep"
+        />
+      </label>
+
+      @if (denoiseAvailable()) {
+        <label class="gs-se-group gs-se-grow" for="gs-se-denoise">
+          <span class="gs-sublabel">
+            {{
+              "generate.source.denoise_label"
+                | transloco: { value: form().controls.denoising_strength.value }
+            }}
+          </span>
+          <input
+            id="gs-se-denoise"
+            type="range"
+            class="gs-range"
+            [formControl]="form().controls.denoising_strength"
+            [min]="minDenoise"
+            [max]="maxDenoise"
+            [step]="denoiseStep"
+            [style.--gs-range-fill.%]="
+              rangeFill(
+                form().controls.denoising_strength.value,
+                minDenoise,
+                maxDenoise
+              )
+            "
+          />
+        </label>
+      }
+
+      @if (frameAvailable()) {
+        <div class="gs-se-group">
+          <button
+            type="button"
+            class="gs-se-btn"
+            [class.gs-se-btn--on]="frameOn()"
+            [attr.aria-pressed]="frameOn()"
+            (click)="toggleFrame()"
+          >
+            {{ "generate.editor.grow" | transloco }}
+          </button>
+          @if (frameOn()) {
+            <span class="gs-sublabel gs-mono">
+              {{ frameSize().width }}×{{ frameSize().height }}
+            </span>
+          }
+        </div>
+      }
+    </div>
+
     <div class="gs-se-bar">
-      <div class="gs-se-group" role="group" aria-label="Ink">
+      <div
+        class="gs-se-group"
+        role="group"
+        [attr.aria-label]="'generate.editor.ink_label' | transloco"
+      >
         <button
           type="button"
           class="gs-se-btn"
           [class.gs-se-btn--on]="ink() === 'mask'"
+          [attr.aria-pressed]="ink() === 'mask'"
           (click)="setInk('mask')"
         >
-          Mask ink
+          {{ "generate.editor.ink_mask" | transloco }}
         </button>
         <button
           type="button"
           class="gs-se-btn"
           [class.gs-se-btn--on]="ink() === 'color'"
+          [attr.aria-pressed]="ink() === 'color'"
           (click)="setInk('color')"
         >
-          Colour ink
+          {{ "generate.editor.ink_colour" | transloco }}
         </button>
         <input
           type="color"
           class="gs-se-colour"
-          aria-label="Stroke colour"
+          [attr.aria-label]="'generate.editor.colour' | transloco"
           [value]="color()"
           (input)="setColor($any($event.target).value)"
         />
+        @if (fromBlank()) {
+          <input
+            type="color"
+            class="gs-se-colour"
+            [attr.aria-label]="'generate.editor.background' | transloco"
+            [value]="background()"
+            (input)="setBackground($any($event.target).value)"
+          />
+        }
       </div>
 
       <label class="gs-se-group" for="gs-se-brush">
-        <span class="gs-sublabel">Brush {{ brushSize() }}px</span>
+        <span class="gs-sublabel">
+          {{ "generate.editor.brush" | transloco: { value: brushSize() } }}
+        </span>
         <input
           id="gs-se-brush"
           type="range"
@@ -105,40 +254,81 @@
           [min]="minBrush"
           [max]="maxBrush"
           [value]="brushSize()"
+          [style.--gs-range-fill.%]="rangeFill(brushSize(), minBrush, maxBrush)"
           (input)="setBrushSize($any($event.target).value)"
         />
       </label>
 
-      <div class="gs-se-group" role="group" aria-label="View">
-        <button type="button" class="gs-se-btn" (click)="zoomBy(1 / 1.25)">
+      <div
+        class="gs-se-group"
+        role="group"
+        [attr.aria-label]="'generate.editor.view_label' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-se-btn"
+          [attr.aria-label]="'generate.editor.zoom_out' | transloco"
+          (click)="zoomBy(1 / 1.25)"
+        >
           −
         </button>
-        <button type="button" class="gs-se-btn" (click)="zoomBy(1.25)">
+        <button
+          type="button"
+          class="gs-se-btn"
+          [attr.aria-label]="'generate.editor.zoom_in' | transloco"
+          (click)="zoomBy(1.25)"
+        >
           +
         </button>
-        <button type="button" class="gs-se-btn" (click)="fit()">Fit</button>
+        <button type="button" class="gs-se-btn" (click)="fit()">
+          {{ "generate.editor.fit" | transloco }}
+        </button>
       </div>
 
       <div class="gs-se-group">
         <button
           type="button"
           class="gs-se-btn"
-          [class.gs-se-btn--on]="frameOn()"
-          (click)="toggleFrame()"
+          [class.gs-se-btn--on]="lockAspect()"
+          [attr.aria-pressed]="lockAspect()"
+          (click)="toggleLockAspect()"
         >
-          Outpaint frame
+          {{ "generate.editor.lock_aspect" | transloco }}
         </button>
-        @if (frameOn()) {
-          <span class="gs-sublabel gs-mono">
-            {{ frameSize().width }}×{{ frameSize().height }}
-          </span>
-        }
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="rotateOn()"
+          [attr.aria-pressed]="rotateOn()"
+          (click)="toggleRotate()"
+        >
+          {{ "generate.editor.rotate" | transloco }}
+        </button>
       </div>
 
       <span class="gs-sublabel gs-se-hint">
-        Wheel zooms · middle-drag or space pans · Ctrl+Z undoes · Delete removes
-        the selection
+        {{ "generate.editor.hint" | transloco }}
       </span>
     </div>
+
+    @if (confirmingClose()) {
+      <div class="gs-se-confirm" role="alertdialog" aria-modal="true">
+        <p class="gs-se-confirm-text">
+          {{ "generate.editor.discard_prompt" | transloco }}
+        </p>
+        <div class="gs-se-group">
+          <button
+            type="button"
+            class="gs-se-btn gs-se-btn--primary"
+            (click)="keepEditing()"
+          >
+            {{ "generate.editor.keep" | transloco }}
+          </button>
+          <button type="button" class="gs-se-btn" (click)="discardAndClose()">
+            {{ "generate.editor.discard" | transloco }}
+          </button>
+        </div>
+      </div>
+    }
   </div>
 </div>

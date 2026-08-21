@@ -974,7 +974,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const images = await this.queue.getJobImages(localId);
     const source = images.find((image) => image.kind === 'source');
     if (source) {
-      await ref.applySource(source.blob);
+      // The mask travels with the picture it was painted for: reattaching one
+      // without the other would leave an inpainting request describing a region
+      // nobody had marked.
+      const mask = images.find((image) => image.kind === 'mask');
+      await ref.applySource(source.blob, mask?.blob ?? null);
     }
   }
 

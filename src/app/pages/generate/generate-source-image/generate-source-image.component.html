@@ -80,11 +80,11 @@
     @if (!sourceImage() && (mode() === "img2img" || mode() === "inpainting")) {
       <button
         type="button"
-        class="gs-textlink self-start"
+        class="gs-chip self-start"
         [disabled]="disabled()"
         (click)="openBlankEditor()"
       >
-        Draw from blank (preview)
+        {{ "generate.source.draw_blank" | transloco }}
       </button>
     }
 
@@ -113,38 +113,36 @@
             </span>
           </div>
         } @else {
-          <div class="relative w-full">
-            <img
-              [src]="src"
-              class="w-full rounded-lg"
-              alt="{{ 'generate.source.preview_alt' | transloco }}"
-            />
-            @if (brushActive()) {
-              <canvas
-                #paintCanvas
-                class="absolute inset-0 h-full w-full cursor-crosshair touch-none rounded-lg opacity-70"
-                (pointerdown)="onPaintPointerDown($event)"
-                (pointermove)="onPaintPointerMove($event)"
-                (pointerup)="onPaintPointerUp($event)"
-                (pointerleave)="onPaintPointerUp($event)"
-              ></canvas>
-            }
-          </div>
+          <img
+            [src]="src"
+            class="w-full rounded-lg"
+            alt="{{ 'generate.source.preview_alt' | transloco }}"
+          />
         }
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           @if (sourceImage(); as img) {
             <span class="gs-sublabel gs-mono">
               {{ img.width }}×{{ img.height }} · webp
             </span>
           }
+          @if (maskPainted()) {
+            <span class="gs-badge gs-badge--mask">
+              {{ "generate.source.badge_mask" | transloco }}
+            </span>
+          }
+          @if (outpaintEnabled() && outpaintHasRoom()) {
+            <span class="gs-badge gs-badge--grow">
+              {{ "generate.source.badge_grow" | transloco }}
+            </span>
+          }
           <button
             type="button"
-            class="gs-textlink ml-auto"
+            class="gs-chip ml-auto"
             [disabled]="disabled()"
             (click)="openEditor()"
           >
-            Edit image (preview)
+            {{ "generate.source.edit_image" | transloco }}
           </button>
           <button
             type="button"
@@ -301,22 +299,8 @@
 
     @if (mode() === "inpainting" && outpaintEnabled()) {
       <div appTutAnchor="outpaint_anchor">
-        <label class="gs-slabel" for="generate-outpaint-anchor">
-          {{ "generate.source.outpaint_anchor_label" | transloco }}
-        </label>
-        <select
-          id="generate-outpaint-anchor"
-          class="gs-native-select gs-native-select--sm mt-1.5"
-          [formControl]="form().controls.outpaintAnchor"
-        >
-          @for (anchor of anchors; track anchor) {
-            <option [value]="anchor">
-              {{ "generate.source.outpaint_anchor_" + anchor | transloco }}
-            </option>
-          }
-        </select>
         @if (outpaintCanvas(); as canvas) {
-          <p class="gs-sublabel gs-mono mt-1">
+          <p class="gs-sublabel gs-mono">
             {{
               "generate.source.outpaint_summary"
                 | transloco
@@ -327,7 +311,7 @@
             }}
           </p>
         } @else {
-          <p class="gs-sublabel mt-1">
+          <p class="gs-sublabel">
             {{ "generate.source.outpaint_no_room" | transloco }}
           </p>
         }
@@ -336,42 +320,22 @@
 
     @if (brushActive() && previewUrl()) {
       <div class="flex flex-col gap-2" appTutAnchor="mask">
-        <div>
-          <label class="gs-slabel" for="generate-brush">
-            {{
-              "generate.source.brush_label" | transloco: { value: brushSize() }
-            }}
-          </label>
-          <input
-            id="generate-brush"
-            class="gs-range mt-1.5"
-            type="range"
-            [min]="minBrush"
-            [max]="maxBrush"
-            step="1"
-            [value]="brushSize()"
-            [style.--gs-range-fill.%]="
-              rangeFill(brushSize(), minBrush, maxBrush)
-            "
-            (input)="setBrushSize(+$any($event.target).value)"
-          />
-        </div>
-        <div class="flex gap-1.5">
+        @if (maskPainted()) {
+          <p class="gs-sublabel">
+            {{ "generate.source.mask_hint" | transloco }}
+          </p>
           <button
             type="button"
-            class="gs-chip"
-            [class.gs-chip--active]="eraser()"
-            (click)="toggleEraser()"
+            class="gs-chip self-start"
+            (click)="clearMask()"
           >
-            {{ "generate.source.eraser_label" | transloco }}
-          </button>
-          <button type="button" class="gs-chip" (click)="clearMask()">
             {{ "generate.source.clear_mask" | transloco }}
           </button>
-        </div>
-        <p class="gs-sublabel">
-          {{ "generate.source.mask_hint" | transloco }}
-        </p>
+        } @else {
+          <p class="gs-sublabel">
+            {{ "generate.source.mask_missing" | transloco }}
+          </p>
+        }
       </div>
     }
 
@@ -496,7 +460,12 @@
 
   @defer (when editorDoc() !== null) {
     @if (editorDoc(); as openDoc) {
-      <app-source-editor [doc]="openDoc" (closed)="closeEditor()" />
+      <app-source-editor
+        [doc]="openDoc"
+        [form]="form()"
+        (applied)="onEditorApplied($event)"
+        (closed)="closeEditor()"
+      />
     }
   }
 </div>

@@ -13804,8 +13804,8 @@ html:has(app-gs-sheet) {
   pointer-events: none;
 }
 
-/* The fullscreen source editor. Spike surface: the panel is the whole viewport,
-   the rail is fixed, and the stage is the only thing that grows, so the canvas
+/* The fullscreen source editor: the panel is the whole viewport, the rail is
+   fixed, and the drawing surface is the only thing that grows, so the picture
    gets every pixel that is not chrome. */
 .gen-studio .gs-se-panel {
   width: 100%;
@@ -13863,20 +13863,9 @@ html:has(app-gs-sheet) {
   flex: 1;
   min-width: 0;
   min-height: 0;
-  /* The checker says where the sheet ends, so a white document does not read as
-     part of the panel it sits in. */
+  /* Plain, because the checker is drawn over the picture's own extent instead:
+     that is what tells a see-through picture apart from the space around it. */
   background-color: var(--gs-field-soft);
-  background-image:
-    linear-gradient(45deg, rgba(127, 127, 127, 0.18) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(127, 127, 127, 0.18) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(127, 127, 127, 0.18) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(127, 127, 127, 0.18) 75%);
-  background-size: 24px 24px;
-  background-position:
-    0 0,
-    0 12px,
-    12px -12px,
-    -12px 0;
 }
 .gen-studio .gs-se-stage {
   position: absolute;
@@ -13938,4 +13927,146 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-se-hint {
   margin-left: auto;
+}
+.gen-studio .gs-se-readout {
+  margin-right: auto;
+}
+.gen-studio .gs-se-btn--primary {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue);
+  color: #fff;
+}
+.gen-studio .gs-se-btn--primary:disabled {
+  opacity: 0.5;
+}
+.gen-studio .gs-se-tool:focus-visible,
+.gen-studio .gs-se-btn:focus-visible,
+.gen-studio .gs-se-colour:focus-visible,
+.gen-studio .gs-se-number:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+/* The request's own settings, sat between the picture and the drawing controls
+   so that what the model is being asked for stays in view while drawing. */
+.gen-studio .gs-se-params {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border-top: 1px solid var(--gs-border-results);
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-se-grow {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+.gen-studio .gs-se-number {
+  width: 88px;
+  min-height: 44px;
+  padding: 0 var(--gs-space-2);
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  font-size: var(--gs-text-xs);
+}
+.gen-studio .gs-se-float {
+  position: absolute;
+  left: 50%;
+  bottom: var(--gs-space-3);
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-se-confirm {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-4);
+  text-align: center;
+  background: color-mix(in srgb, var(--gs-panel) 92%, transparent);
+}
+.gen-studio .gs-se-confirm-text {
+  max-width: 34ch;
+  color: var(--gs-ink);
+  font-size: var(--gs-text-sm);
+}
+
+/* Below this the rail cannot hold a column of tools beside the picture, so it
+   becomes a strip under it and the settings fold into their own rows. */
+@media (max-width: 640px) {
+  .gen-studio .gs-se-body {
+    flex-direction: column;
+  }
+  .gen-studio .gs-se-rail {
+    order: 2;
+    flex-direction: row;
+    border-right: none;
+    border-top: 1px solid var(--gs-border-results);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .gen-studio .gs-se-rail-gap {
+    height: auto;
+    width: var(--gs-space-3);
+    flex: none;
+  }
+  .gen-studio .gs-se-tool {
+    min-width: 64px;
+    flex: none;
+  }
+  .gen-studio .gs-se-stage-wrap {
+    order: 1;
+  }
+  .gen-studio .gs-se-params,
+  .gen-studio .gs-se-bar {
+    gap: var(--gs-space-2);
+    padding: var(--gs-space-2);
+  }
+  .gen-studio .gs-se-hint {
+    display: none;
+  }
+  .gen-studio .gs-se-header .gs-modal-title {
+    font-size: var(--gs-text-sm);
+  }
+  .gen-studio .gs-se-readout {
+    /* The size and the zoom are a whole line to themselves rather than being
+       squeezed out by the two buttons that have to stay reachable. */
+    order: 3;
+    flex-basis: 100%;
+    margin-right: 0;
+  }
+}
+
+/* What the editor has already been told, shown on the card that opens it. */
+.gen-studio .gs-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--gs-space-2);
+  min-height: 24px;
+  border: 1px solid transparent;
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+}
+.gen-studio .gs-badge--mask {
+  border-color: color-mix(in srgb, var(--gs-blue) 40%, transparent);
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-badge--grow {
+  border-color: color-mix(in srgb, var(--gs-sec-source) 40%, transparent);
+  background: var(--gs-sec-source-tint);
+  color: var(--gs-sec-source);
 }
