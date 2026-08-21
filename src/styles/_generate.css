@@ -2194,6 +2194,10 @@
 .gen-studio .gs-range--purple {
   --gs-range-accent: var(--gs-purple);
 }
+/* A slider whose useful travel is short reads badly stretched across a wide card. */
+.gen-studio .gs-range--capped {
+  max-width: 26rem;
+}
 .gen-studio .gs-range:disabled {
   opacity: 0.55;
   cursor: not-allowed;
