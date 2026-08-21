@@ -14037,12 +14037,22 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-se-hint {
     display: none;
   }
+  .gen-studio .gs-se-header {
+    flex-wrap: wrap;
+  }
   .gen-studio .gs-se-header .gs-modal-title {
+    /* Left to wrap, the title stacks a word per line and drives the two buttons
+       that have to stay reachable off the row. */
+    flex: 1 1 auto;
+    min-width: 0;
     font-size: var(--gs-text-sm);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .gen-studio .gs-se-readout {
-    /* The size and the zoom are a whole line to themselves rather than being
-       squeezed out by the two buttons that have to stay reachable. */
+    /* The size and the zoom take a line of their own rather than competing with
+       the buttons for what is left of the first one. */
     order: 3;
     flex-basis: 100%;
     margin-right: 0;
