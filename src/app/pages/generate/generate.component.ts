@@ -608,6 +608,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * the reader is looking at.
    */
   private tutorialInSheet(): boolean {
+    return this.isNarrowViewport();
+  }
+
+  /** Panel-width controls are desktop-only; mobile stacks panes vertically. */
+  public panelCanExpand(): boolean {
+    return !this.embedded() && !this.isNarrowViewport();
+  }
+
+  private isNarrowViewport(): boolean {
     return (
       this.isBrowser &&
       globalThis.matchMedia?.('(max-width: 1023.98px)').matches === true
