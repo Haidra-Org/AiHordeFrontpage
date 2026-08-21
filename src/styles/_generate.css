@@ -891,15 +891,34 @@
   background: var(--gs-card);
 }
 /* The head is the row; the press that opens the group takes all of it that the
-   group's own actions do not. */
+   group's own actions do not. It wraps, because the `?` note those actions open
+   is a paragraph about the whole group and asks for a row of its own: the help
+   trigger renders its note as a sibling, so without the wrap the paragraph
+   would be squeezed into the row beside the name it explains. */
 .gen-studio .gs-group-head {
   display: flex;
   min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
+  column-gap: var(--gs-space-2);
+}
+.gen-studio .gs-group-head:has(.gs-group-actions) {
   padding-right: var(--gs-space-2);
 }
-.gen-studio .gs-group-head:has(> .gs-group-actions:empty) {
-  padding-right: 0;
+/* The note and the capsule under it take the row below the head and stand in
+   from the card's edge the way the body's own contents do. Ordered last so the
+   full-width note wraps under every action rather than between them: the note
+   is written beside the trigger that opens it, and the actions after it would
+   otherwise be pushed onto a row of their own. */
+.gen-studio .gs-group-head .gs-help-note,
+.gen-studio .gs-group-head .gs-help-see {
+  order: 1;
+  flex: 1 0 100%;
+  max-width: calc(100% - var(--gs-space-3));
+  margin-left: var(--gs-space-3);
+}
+.gen-studio .gs-group-head:has(.gs-help-note) {
+  padding-bottom: var(--gs-space-3);
 }
 .gen-studio .gs-group-toggle {
   display: flex;
@@ -946,11 +965,11 @@
   border-radius: var(--gs-radius-pill);
   background: var(--gs-changed);
 }
+/* The actions are laid out by the head itself rather than by a box of their
+   own: a wrapper here would catch the `?` note and keep it in the head's first
+   row instead of letting it wrap under it. */
 .gen-studio .gs-group-actions {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--gs-space-2);
+  display: contents;
 }
 .gen-studio .gs-group-body {
   display: flex;

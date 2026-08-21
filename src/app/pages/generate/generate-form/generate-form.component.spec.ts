@@ -1271,6 +1271,28 @@ describe('GenerateFormComponent settings groups', () => {
     expect(opened.querySelector('.gs-group-sum')).toBeNull();
   });
 
+  it('gives the note a group opens a row under the head, not a slot in it', async () => {
+    // The trigger renders its note as its own sibling, so a note opened from a
+    // group's head lands in that head: it has to take the row below the name
+    // rather than a place in the row beside it.
+    const { fixture, host } = await render();
+    const trigger = groupNamed(host, 'Sampling').querySelector<HTMLElement>(
+      '.gs-group-head .gs-help-btn',
+    );
+    expect(trigger, 'the group head has no note trigger').not.toBeNull();
+
+    trigger!.click();
+    fixture.detectChanges();
+
+    const note = groupNamed(
+      fixture.nativeElement as HTMLElement,
+      'Sampling',
+    ).querySelector('[role="note"]');
+    expect(note, 'the note did not open').not.toBeNull();
+    expect(note!.closest('.gs-group-head')).not.toBeNull();
+    expect(note!.closest('.gs-group-toggle')).toBeNull();
+  });
+
   it('folds everything back up in one press, and remembers that too', async () => {
     const { component, fixture } = await render();
     component.openGroup('sampling');
