@@ -385,6 +385,25 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * re-judge it locally, it just stops repeating a sentence about a value that
    * is no longer in the form.
    */
+  /**
+   * The reference entry a `?` note opens is mounted in the results pane, and the
+   * widest panel hides that pane: opening one there would succeed into nothing,
+   * so the panel steps back to the width that still shows the results and the
+   * entry arrives where the reader is looking for it.
+   *
+   * It stays at that width once the entry closes. A reader following notes
+   * reads several in a row, and a panel that snapped back to full between them
+   * would take the pane away again on every one.
+   */
+  private readonly dockNeedsResults = effect(() => {
+    const open = this.helpDock.isOpen();
+    untracked(() => {
+      if (open && this.panelSize() === 'full') {
+        this.panelSize.set('double');
+      }
+    });
+  });
+
   private readonly rejectionSync = effect(() => {
     const value = this.formValue();
     const refused = this.queue

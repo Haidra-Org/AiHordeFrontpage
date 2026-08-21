@@ -1037,6 +1037,35 @@ describe('GenerateComponent', () => {
       component.helpDock.close();
       expect(component.helpDock.topic()).toBeNull();
     });
+
+    it('gives the entry the results pane back when the panel had taken it', () => {
+      // The docked entry lives in the results pane, and the widest panel draws
+      // no results pane: opening one there has to make room for it or the press
+      // does nothing a reader can see.
+      const dock = TestBed.inject(GsHelpDockService);
+      component.panelSize.set('full');
+
+      dock.open('steps');
+      TestBed.tick();
+
+      expect(component.panelSize()).toBe('double');
+
+      // Closing leaves the width where it is: a reader following notes reads
+      // several, and going back to full between them takes the pane away again.
+      dock.close();
+      TestBed.tick();
+      expect(component.panelSize()).toBe('double');
+    });
+
+    it('leaves a panel that already shows results at its width', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+      component.panelSize.set('double');
+
+      dock.open('cfg');
+      TestBed.tick();
+
+      expect(component.panelSize()).toBe('double');
+    });
   });
 
   describe('try-it host', () => {
