@@ -77,6 +77,7 @@ import {
   STEPS_SLIDER_MAX,
   STEPS_SLIDER_MIN,
   DIMENSION_STEP,
+  KudosAffordability,
   KudosBreakdownLine,
   ModelSizeBase,
   PanelSize,
@@ -366,6 +367,12 @@ export class GenerateFormComponent implements OnInit {
     string,
     ModelWorkerFacts
   > | null>(null);
+  /**
+   * What the reader's kudos balance buys at the quoted price. Null for an
+   * anonymous reader, who has no balance to read, and the footer then says
+   * nothing about money at all.
+   */
+  public readonly affordability = input<KudosAffordability | null>(null);
   /** Style-forced parameters, used to flag controls a style overrides. */
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */

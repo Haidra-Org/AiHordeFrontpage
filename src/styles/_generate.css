@@ -6645,6 +6645,23 @@
   flex: none;
   margin-top: 1px;
 }
+/* What the reader has to spend, in the same quiet register as the count of who
+   can serve the request. Amber only when the price is above the balance. */
+.gen-studio .gs-bal {
+  flex: none;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--gs-muted);
+  font-variant-numeric: tabular-nums;
+}
+.gen-studio .gs-bal--short {
+  color: #b45309;
+  font-weight: 600;
+}
+.dark .gen-studio .gs-bal--short {
+  color: #fbbf24;
+}
+
 /* A warning is a whole sentence naming a setting to loosen, so it claims most
    of the row rather than the gap the healthy count fits in. */
 .gen-studio .gs-fit--warn {

@@ -2373,6 +2373,38 @@ export function kudosBreakdown(
   return lines;
 }
 
+/** What a reader's kudos balance buys at the price this request was quoted. */
+export interface KudosAffordability {
+  /** The balance the arithmetic was done against. */
+  balance: number;
+  /** How many further requests at this price the balance covers after this one. */
+  more: number;
+  /** Whether this one alone costs more than the balance holds. */
+  short: boolean;
+}
+
+/**
+ * What the balance buys, or null when the question cannot be answered honestly:
+ * an anonymous reader has no balance to read, and a quote that has not arrived
+ * (or is zero, which a free request is) has no price to divide by.
+ *
+ * The horde is the only authority on whether a submit is accepted, so a short
+ * balance is a warning about the price and never a bar on the button.
+ */
+export function kudosAffordability(
+  balance: number | null,
+  quote: number | null,
+): KudosAffordability | null {
+  if (balance === null || quote === null || quote <= 0) {
+    return null;
+  }
+  return {
+    balance: Math.round(balance),
+    more: Math.max(0, Math.floor(balance / quote) - 1),
+    short: quote > balance,
+  };
+}
+
 /** How long the picked model is taking right now, as a line to print. */
 export interface WaitEstimate {
   key: string;

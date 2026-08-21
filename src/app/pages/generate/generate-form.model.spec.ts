@@ -26,6 +26,7 @@ import {
   isSnappableSize,
   kudosBreakdown,
   modelWaitEstimate,
+  kudosAffordability,
   workerRequirementForRequest,
   karrasRequirementHint,
   nativeSizeHint,
@@ -1860,5 +1861,51 @@ describe('workerRequirementForRequest', () => {
     expect(requirement.trustedOnly).toBe(true);
     expect(requirement.workers).toEqual(['abc']);
     expect(requirement.workerBlacklist).toBe(true);
+  });
+});
+
+describe('kudosAffordability', () => {
+  it('says nothing without a balance to read', () => {
+    expect(kudosAffordability(null, 20)).toBeNull();
+  });
+
+  it('says nothing before a quote has come back', () => {
+    expect(kudosAffordability(500, null)).toBeNull();
+  });
+
+  it('says nothing about a request the horde is not charging for', () => {
+    expect(kudosAffordability(500, 0)).toBeNull();
+  });
+
+  it('counts what is left after this one', () => {
+    expect(kudosAffordability(100, 20)).toEqual({
+      balance: 100,
+      more: 4,
+      short: false,
+    });
+  });
+
+  it('reports no further ones when the balance covers only this', () => {
+    expect(kudosAffordability(30, 20)).toEqual({
+      balance: 30,
+      more: 0,
+      short: false,
+    });
+  });
+
+  it('marks a request that costs more than the balance holds', () => {
+    expect(kudosAffordability(10, 20)).toEqual({
+      balance: 10,
+      more: 0,
+      short: true,
+    });
+  });
+
+  it('never reports a negative count for a balance in the red', () => {
+    expect(kudosAffordability(-50, 20)).toEqual({
+      balance: -50,
+      more: 0,
+      short: true,
+    });
   });
 });

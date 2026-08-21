@@ -2038,6 +2038,31 @@
           <span>{{ fit.message.key | transloco: fit.message.params }}</span>
         </p>
       }
+      <!-- What the reader has to spend, next to what this costs. Absent for an
+           anonymous reader, whose balance the studio cannot read, and never a
+           bar on the button: the horde decides what it will accept. -->
+      @if (affordability(); as afford) {
+        <p class="gs-bal" [class.gs-bal--short]="afford.short">
+          @if (afford.short) {
+            {{
+              "generate.form.balance_short"
+                | transloco: { balance: afford.balance }
+            }}
+          } @else if (afford.more === 0) {
+            {{
+              "generate.form.balance_last"
+                | transloco: { balance: afford.balance }
+            }}
+          } @else {
+            {{
+              (afford.more === 1
+                ? "generate.form.balance_more_one"
+                : "generate.form.balance_more_other"
+              ) | transloco: { balance: afford.balance, count: afford.more }
+            }}
+          }
+        </p>
+      }
       <!-- The price, beside the button rather than on it: it is a claim about
            the settings, so it has to be something the reader can press to find
            out which ones. Absent until the horde has been asked. -->

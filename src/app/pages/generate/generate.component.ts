@@ -39,6 +39,7 @@ import { ImagePostProcessor } from '../../types/style';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
+import { AuthService } from '../../services/auth.service';
 import { SamplerConstraintsService } from '../../services/sampler-constraints.service';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import {
@@ -82,6 +83,7 @@ import {
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  kudosAffordability,
   kudosBreakdown,
   modelWaitEstimate,
   promptHistoryFromJobs,
@@ -192,6 +194,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly workerPool = inject(WorkerPoolService);
+  private readonly auth = inject(AuthService);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly tryIt = inject(GsTryItService);
@@ -380,6 +383,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** What the workers carrying each model can do, for the model picker. */
   public readonly modelFacts = this.workerPool.modelFacts;
+
+  /**
+   * What the reader's kudos balance buys at the quoted price. Null for an
+   * anonymous reader, who has no balance the studio can read, and while no
+   * quote has come back.
+   */
+  public readonly affordability = computed(() =>
+    kudosAffordability(this.auth.kudos(), this.kudos()),
+  );
 
   /** What to say about the wait for the picked model, as the popover's last line. */
   public readonly waitLine = computed<WaitEstimate>(() => {
