@@ -1423,6 +1423,41 @@ describe('GenerateComponent request warnings', () => {
 
     fixture.destroy();
   });
+
+  it('warns about a canvas with no room to grow from the simple panel', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    await createWholeStudio({ 'sdxl model': 'stable_diffusion_xl' });
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.form.patchValue({
+      mode: 'simple',
+      model: 'sdxl model',
+      sourceMode: 'inpainting',
+      outpaintEnabled: true,
+      width: 1024,
+      height: 1024,
+    });
+    fixture.detectChanges();
+    // Stand in for the attachment the card would have emitted: the size asked
+    // for matches the picture, so there is nothing to grow into.
+    fixture.componentInstance.sourceState.set({
+      mode: 'inpainting',
+      sourceBlob: new Blob([new Uint8Array([1])], { type: 'image/webp' }),
+      maskBlob: null,
+      sourceWidth: 1024,
+      sourceHeight: 1024,
+      valid: true,
+    });
+    fixture.detectChanges();
+
+    expect(
+      fixture.componentInstance.lintWarnings().map((warning) => warning.id),
+    ).toContain('outpaint_target');
+
+    fixture.destroy();
+  });
 });
 
 describe('GenerateComponent skip link', () => {
