@@ -187,6 +187,11 @@
   /* The `?` glyph's box. A row without a trigger reserves this width so the
      controls in a group still end on one edge. */
   --gs-help-trigger: 24px;
+  /* How far a switch may travel from the words it belongs to. A card widened to
+     a third of the screen would otherwise leave the two at opposite ends of the
+     row, with nothing between them to carry the eye across; every option row
+     shares the one bound, so the switches still stand in a column. */
+  --gs-opt-max: 26rem;
   /* The one red in the studio: a field that will not submit as typed carries
      it on its edge, always beside a hint line, never as the only signal. */
   --gs-danger: #dc2626;
@@ -1244,6 +1249,7 @@
 .gen-studio .gs-field-head,
 .gen-studio .gs-opt {
   display: flex;
+  max-width: var(--gs-opt-max);
   flex-wrap: wrap;
   align-items: center;
   gap: var(--gs-space-2);
