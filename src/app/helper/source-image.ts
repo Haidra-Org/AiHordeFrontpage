@@ -142,6 +142,45 @@ export function alphaToMaskPixels(rgba: Uint8ClampedArray): Uint8ClampedArray {
   return out;
 }
 
+/** The RGB an inverted mask is painted back in, so a rehydrated stroke is
+ *  visible in the same ink it was laid down in. */
+export interface MaskInk {
+  r: number;
+  g: number;
+  b: number;
+}
+
+/** Above this luminance a mask pixel counts as "repaint this". */
+const MASK_LUMINANCE_THRESHOLD = 128;
+
+/**
+ * Turn a black/white mask buffer back into a paint buffer, the inverse of
+ * {@link alphaToMaskPixels}. White (the region to regenerate) becomes `ink` at
+ * full alpha; black becomes fully transparent.
+ *
+ * Round-tripping is exact in coverage but not in colour: the mask carries only
+ * where the brush went, so the ink is supplied by the caller rather than
+ * recovered. Encoders that resample edges are tolerated by thresholding
+ * luminance rather than demanding pure white.
+ */
+export function maskPixelsToAlpha(
+  rgba: Uint8ClampedArray,
+  ink: MaskInk,
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(rgba.length);
+  for (let i = 0; i < rgba.length; i += 4) {
+    // Rec. 601 luma: the mask is grey by construction, but a resampled edge
+    // need not be, and this keeps such a pixel on the side it looks like.
+    const luma = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
+    const on = rgba[i + 3] > 0 && luma >= MASK_LUMINANCE_THRESHOLD;
+    out[i] = ink.r;
+    out[i + 1] = ink.g;
+    out[i + 2] = ink.b;
+    out[i + 3] = on ? 255 : 0;
+  }
+  return out;
+}
+
 /** Where an attached picture sits inside the larger canvas asked for. */
 export type OutpaintAnchor =
   | 'top-left'
@@ -175,6 +214,11 @@ export function outpaintOffset(
   return { x: horizontal, y: vertical };
 }
 
+/** Keep a hand-placed picture wholly inside the room there is for it. */
+function clampOffset(value: number, spare: number): number {
+  return Math.round(Math.min(Math.max(0, spare), Math.max(0, value)));
+}
+
 export interface OutpaintCanvas {
   /** The picture pasted into the larger canvas, as the request's source. */
   source: Blob | null;
@@ -197,23 +241,30 @@ export interface OutpaintCanvas {
  *
  * The target is clamped to the horde's own edge cap and never smaller than the
  * picture, so a request can only ever grow. Browser-only.
+ *
+ * `offset` places the picture freely, as the editor's draggable frame does; the
+ * nine-way `anchor` is the fallback when no placement was chosen by hand. An
+ * offset is clamped so the picture stays wholly inside the canvas, because a
+ * part hanging outside it would simply be lost.
  */
 export async function composeOutpaintCanvas(
   image: SourceImage,
   targetWidth: number,
   targetHeight: number,
   anchor: OutpaintAnchor,
+  offset?: { x: number; y: number } | null,
 ): Promise<OutpaintCanvas> {
   const width = Math.min(SOURCE_MAX_EDGE, Math.max(targetWidth, image.width));
   const height = Math.min(
     SOURCE_MAX_EDGE,
     Math.max(targetHeight, image.height),
   );
-  const { x, y } = outpaintOffset(
-    width - image.width,
-    height - image.height,
-    anchor,
-  );
+  const { x, y } = offset
+    ? {
+        x: clampOffset(offset.x, width - image.width),
+        y: clampOffset(offset.y, height - image.height),
+      }
+    : outpaintOffset(width - image.width, height - image.height, anchor);
   const empty = { source: null, mask: null, width, height, x, y };
 
   const bitmap = await createImageBitmap(image.blob);

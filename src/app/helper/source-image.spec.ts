@@ -4,6 +4,7 @@ import {
   alphaHasPaint,
   alphaToMaskPixels,
   computeScaledSize,
+  maskPixelsToAlpha,
   outpaintOffset,
 } from './source-image';
 
@@ -53,6 +54,43 @@ describe('alphaToMaskPixels', () => {
     const out = alphaToMaskPixels(input);
     expect(Array.from(out.slice(0, 4))).toEqual([0, 0, 0, 255]);
     expect(Array.from(out.slice(4, 8))).toEqual([255, 255, 255, 255]);
+  });
+});
+
+describe('maskPixelsToAlpha', () => {
+  const ink = { r: 56, g: 189, b: 248 };
+
+  it('paints white back as opaque ink and black as nothing', () => {
+    const input = new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]);
+    const out = maskPixelsToAlpha(input, ink);
+    expect(Array.from(out.slice(0, 4))).toEqual([56, 189, 248, 0]);
+    expect(Array.from(out.slice(4, 8))).toEqual([56, 189, 248, 255]);
+  });
+
+  it('round-trips a painted region back to a painted region', () => {
+    const painted = new Uint8ClampedArray([
+      9, 9, 9, 0, 9, 9, 9, 200, 9, 9, 9, 0,
+    ]);
+    const restored = maskPixelsToAlpha(alphaToMaskPixels(painted), ink);
+    expect(restored[3]).toBe(0);
+    expect(restored[7]).toBe(255);
+    expect(restored[11]).toBe(0);
+    expect(alphaHasPaint(restored)).toBe(true);
+  });
+
+  it('keeps a resampled grey edge on the side it looks like', () => {
+    const input = new Uint8ClampedArray([60, 60, 60, 255, 200, 200, 200, 255]);
+    const out = maskPixelsToAlpha(input, ink);
+    expect(out[3]).toBe(0);
+    expect(out[7]).toBe(255);
+  });
+
+  it('treats a transparent mask pixel as unpainted whatever its colour', () => {
+    const out = maskPixelsToAlpha(
+      new Uint8ClampedArray([255, 255, 255, 0]),
+      ink,
+    );
+    expect(out[3]).toBe(0);
   });
 });
 
