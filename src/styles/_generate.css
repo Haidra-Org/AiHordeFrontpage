@@ -890,11 +890,22 @@
   border-radius: var(--gs-radius-md);
   background: var(--gs-card);
 }
+/* The head is the row; the press that opens the group takes all of it that the
+   group's own actions do not. */
+.gen-studio .gs-group-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding-right: var(--gs-space-2);
+}
+.gen-studio .gs-group-head:has(> .gs-group-actions:empty) {
+  padding-right: 0;
+}
 .gen-studio .gs-group-toggle {
   display: flex;
   min-width: 0;
   min-height: 44px;
-  width: 100%;
+  flex: 1 1 auto;
   align-items: center;
   gap: var(--gs-space-2);
   padding: var(--gs-space-2) var(--gs-space-3);
@@ -937,6 +948,7 @@
 }
 .gen-studio .gs-group-actions {
   display: flex;
+  flex: none;
   align-items: center;
   gap: var(--gs-space-2);
 }
@@ -8938,6 +8950,7 @@ app-gs-sweep-scrub {
   border-radius: var(--gs-radius-md);
   background: var(--gs-stage);
   color: var(--gs-stage-ink);
+  max-width: 640px;
 }
 .gen-studio .gs-plate-head {
   display: flex;
@@ -9435,7 +9448,7 @@ app-gs-sweep-scrub + app-gs-door {
 /* The setting and its value lead the caption as one token, and the sentence
    about what it did to the picture wraps under it on a narrow column. */
 .gen-studio .gs-sweep-caption {
-  display: flex;
+  display: grid;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--gs-space-2) var(--gs-space-2);
@@ -12852,7 +12865,7 @@ html:has(app-gs-sheet) {
   align-items: center;
   gap: var(--gs-space-2);
   min-width: 0;
-  max-width: 100%;
+  max-width: fit-content;
   padding: var(--gs-space-1) var(--gs-space-3);
   border: 1px solid var(--gs-sec-tint-border);
   border-radius: var(--gs-radius-pill);

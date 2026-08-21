@@ -2,35 +2,42 @@
   class="gs-group {{ identity().className }}"
   [class.gs-group--open]="open()"
 >
-  <!-- The whole head is the control that opens the group. Nothing else sits on
-       it, because a second control there could not be pressed without pressing
-       this one: the group's own notes and actions live inside it instead. -->
-  <button
-    type="button"
-    class="gs-group-toggle"
-    [attr.aria-expanded]="open()"
-    [attr.aria-controls]="bodyId"
-    (click)="toggled.emit()"
-  >
-    <app-icon
-      class="gs-chev gs-group-chev"
-      [name]="open() ? 'chevron-down' : 'chevron-right'"
-    />
-    <span class="gs-sec-chip" aria-hidden="true">
-      <app-icon [name]="identity().icon" />
-    </span>
-    <span class="gs-group-name">{{ titleKey() | transloco }}</span>
-    @if (summary()) {
-      <span class="gs-group-sum gs-mono">{{ summary() }}</span>
-    }
-    @if (changed()) {
-      <span
-        class="gs-group-dot"
-        role="img"
-        [attr.aria-label]="'generate.groups.changed' | transloco"
-      ></span>
-    }
-  </button>
+  <!-- The head is a row rather than a single control: the press that opens the
+       group takes all of it bar the end, where the group's own notes and
+       actions sit as their own controls. Nesting them in the opening press
+       would leave them unreachable; leaving them inside the body stranded them
+       on a line of their own above the first field. -->
+  <div class="gs-group-head">
+    <button
+      type="button"
+      class="gs-group-toggle"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="bodyId"
+      (click)="toggled.emit()"
+    >
+      <app-icon
+        class="gs-chev gs-group-chev"
+        [name]="open() ? 'chevron-down' : 'chevron-right'"
+      />
+      <span class="gs-sec-chip" aria-hidden="true">
+        <app-icon [name]="identity().icon" />
+      </span>
+      <span class="gs-group-name">{{ titleKey() | transloco }}</span>
+      <!-- An open group is showing the controls its summary would describe, so
+         the line stands down and leaves the head to the actions. -->
+      @if (summary() && !open()) {
+        <span class="gs-group-sum gs-mono">{{ summary() }}</span>
+      }
+      @if (changed()) {
+        <span
+          class="gs-group-dot"
+          role="img"
+          [attr.aria-label]="'generate.groups.changed' | transloco"
+        ></span>
+      }
+    </button>
+    <ng-content select="[groupActions]" />
+  </div>
   @if (open()) {
     <div [id]="bodyId" class="gs-group-body">
       <ng-content />

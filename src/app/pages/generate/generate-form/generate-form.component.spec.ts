@@ -1158,6 +1158,20 @@ describe('GenerateFormComponent settings groups', () => {
   }
 
   /** The one line a named group shows while it is folded. */
+  function groupNamed(host: HTMLElement, name: string): HTMLElement {
+    const group = Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-group'),
+    ).find(
+      (candidate) =>
+        candidate
+          .querySelector('.gs-group-name')
+          ?.textContent?.trim()
+          .toLowerCase() === name.toLowerCase(),
+    );
+    expect(group, `no group called ${name}`).not.toBeUndefined();
+    return group!;
+  }
+
   function summaryOf(host: HTMLElement, name: string): string {
     const group = Array.from(
       host.querySelectorAll<HTMLElement>('.gs-group'),
@@ -1186,11 +1200,11 @@ describe('GenerateFormComponent settings groups', () => {
     expect(summaryOf(host, 'Sampling')).toBe('k_euler_a · 30 steps · CFG 7.5');
   });
 
-  it('counts what the LoRA group holds, and says so when it holds nothing', async () => {
+  it('counts what the LoRA group holds, and draws no line when it holds nothing', async () => {
+    // A group left as it started carries no values to read, and a phrase
+    // standing in for the absence reads as a value of its own.
     const { host } = await render();
-    expect(summaryOf(host, 'LoRAs & embeddings')).toBe(
-      en['generate.groups.summary_none'],
-    );
+    expect(summaryOf(host, 'LoRAs & embeddings')).toBe('');
 
     const { host: loaded } = await render({
       loras: [{ name: 'add-detail', model: 0.8, clip: 0.8 }],
@@ -1233,6 +1247,46 @@ describe('GenerateFormComponent settings groups', () => {
     const { component: revisited } = await render();
     expect(revisited.isGroupOpen('sampling')).toBe(true);
     expect(revisited.isGroupOpen('output')).toBe(false);
+  });
+
+  it('keeps the actions of a group on its head, beside the press that opens it', async () => {
+    // Inside the body they stranded themselves on a line above the first field,
+    // and inside the button they could not be pressed at all.
+    const { component, fixture, host } = await render();
+    const sampling = groupNamed(host, 'Sampling');
+    const actions = sampling.querySelector('.gs-group-actions');
+
+    expect(actions, 'the group has no actions').not.toBeNull();
+    expect(actions!.closest('.gs-group-head')).not.toBeNull();
+    expect(actions!.closest('.gs-group-toggle')).toBeNull();
+    expect(actions!.closest('.gs-group-body')).toBeNull();
+
+    component.openGroup('sampling');
+    fixture.detectChanges();
+    const opened = groupNamed(fixture.nativeElement as HTMLElement, 'Sampling');
+    expect(
+      opened.querySelector('.gs-group-actions')!.closest('.gs-group-head'),
+    ).not.toBeNull();
+    // An open group draws the controls its line described, so the line goes.
+    expect(opened.querySelector('.gs-group-sum')).toBeNull();
+  });
+
+  it('folds everything back up in one press, and remembers that too', async () => {
+    const { component, fixture } = await render();
+    component.openGroup('sampling');
+    component.openGroup('horde');
+    fixture.detectChanges();
+    expect(component.anyGroupOpen()).toBe(true);
+
+    component.foldAllGroups();
+    fixture.detectChanges();
+
+    expect(GROUP_IDS.filter((group) => component.isGroupOpen(group))).toEqual(
+      [],
+    );
+    expect(component.anyGroupOpen()).toBe(false);
+    const { component: revisited } = await render();
+    expect(revisited.anyGroupOpen()).toBe(false);
   });
 
   it('unfolds the group holding a field the studio wants to point at', async () => {

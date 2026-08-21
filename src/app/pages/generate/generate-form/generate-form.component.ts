@@ -886,6 +886,25 @@ export class GenerateFormComponent implements OnInit {
     this.setGroupOpen(group, !this.isGroupOpen(group));
   }
 
+  /** Whether anything is open to fold, which is what offers the action. */
+  public anyGroupOpen(): boolean {
+    return GROUP_IDS.some((group) => this.isGroupOpen(group));
+  }
+
+  /**
+   * Fold every group back up, returning the panel to the face it opens with.
+   * Written through the same store as a single fold, so the panel is still
+   * folded on the next visit.
+   */
+  public foldAllGroups(): void {
+    const next: Partial<Record<GroupId, boolean>> = { ...this.groupsOpen() };
+    for (const group of GROUP_IDS) {
+      next[group] = false;
+    }
+    this.groupsOpen.set(next);
+    this.db.store(GROUPS_OPEN_KEY, next);
+  }
+
   /**
    * Show `group`'s controls, whether or not the reader had folded it away.
    * Reports whether the group was folded, so a caller that narrates what it
@@ -969,13 +988,16 @@ export class GenerateFormComponent implements OnInit {
     );
   }
 
+  /**
+   * A group's current values in one line, or nothing at all when it holds none
+   * worth reading. A group left as it started says so by having no line and no
+   * changed mark; a phrase standing in for the absence reads as a value of its
+   * own and was taken for one.
+   */
   private summaryLine(parts: readonly (string | null)[]): string {
-    const written = parts.filter(
-      (part): part is string => part !== null && part !== '',
-    );
-    return written.length > 0
-      ? written.join(SUMMARY_SEPARATOR)
-      : this.transloco.translate('generate.groups.summary_none');
+    return parts
+      .filter((part): part is string => part !== null && part !== '')
+      .join(SUMMARY_SEPARATOR);
   }
 
   public readonly samplingSummary = computed(() => {

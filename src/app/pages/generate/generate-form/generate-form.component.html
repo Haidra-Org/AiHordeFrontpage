@@ -163,6 +163,20 @@
           </div>
         }
       </div>
+      @if (anyGroupOpen()) {
+        <button
+          type="button"
+          class="gs-mini-btn"
+          (click)="foldAllGroups()"
+          [attr.aria-label]="'generate.groups.fold_all' | transloco"
+          [title]="'generate.groups.fold_all' | transloco"
+        >
+          <app-icon name="chevron-double-up" class="gs-ico-sm" />
+          <span class="gs-mini-btn-label">{{
+            "generate.groups.fold_all_short" | transloco
+          }}</span>
+        </button>
+      }
       <button
         type="button"
         class="gs-mini-btn"
@@ -776,11 +790,9 @@
           [open]="isGroupOpen('sampling')"
           (toggled)="toggleGroup('sampling')"
         >
-          <!-- The note and the style lock ride inside the group rather than
-               on its head: the head is the one control that opens the group,
-               and a second control sharing it could not be reached by the
-               press that opens it. -->
-          <div class="gs-group-actions">
+          <!-- The note and the style lock ride at the end of the head, beside
+               the press that opens the group rather than inside it. -->
+          <div class="gs-group-actions" groupActions>
             <app-gs-help topic="requirements" />
             @if (stylePins("sampling")) {
               <ng-container
@@ -1328,7 +1340,7 @@
           [open]="isGroupOpen('loras')"
           (toggled)="toggleGroup('loras')"
         >
-          <div class="gs-group-actions">
+          <div class="gs-group-actions" groupActions>
             <app-gs-help topic="loras" />
             <button type="button" class="gs-civit-link" (click)="openCivit()">
               {{ "generate.form.add_from_civitai" | transloco }}
