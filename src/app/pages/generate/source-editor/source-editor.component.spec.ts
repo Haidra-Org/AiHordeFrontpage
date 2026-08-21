@@ -6,6 +6,8 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   createGenerateForm,
 } from '../generate-form.model';
+import { APP_ICONS } from '../../../icons';
+import en from '../../../../assets/i18n/en.json';
 
 /**
  * The editor with no stage behind it: the template is dropped, so Konva is
@@ -107,5 +109,30 @@ describe('what closing the editor asks about', () => {
     editor.setBackground('#101010');
 
     expect(editor.dirty()).toBe(true);
+  });
+});
+
+/**
+ * The rail draws marks rather than names, so a tool with no mark is a blank
+ * square and a tool with no wording is a button nothing can announce. Both
+ * failures are silent on the screen, so they are stated here instead.
+ */
+describe('the tools on the rail', () => {
+  it('gives every tool a mark the registry knows and a name to be called by', async () => {
+    const editor = await createEditor();
+    const translations = en as Record<string, string>;
+
+    for (const tool of editor.tools) {
+      expect(
+        APP_ICONS[editor.toolIcon(tool)],
+        `no mark for ${tool}`,
+      ).toBeTruthy();
+      expect(
+        translations[`generate.editor.tool_${tool}`],
+        `no name for ${tool}`,
+      ).toBeTruthy();
+    }
+    expect(APP_ICONS['arrow-undo']).toBeTruthy();
+    expect(APP_ICONS['arrow-redo']).toBeTruthy();
   });
 });

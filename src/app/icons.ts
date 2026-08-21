@@ -285,4 +285,26 @@ export const APP_ICONS: Record<string, string> = {
   // The tint is what is in it: the work is done to a picture already in hand.
   'sec-alchemy':
     '<path fill="currentColor" fill-opacity=".16" stroke="none" d="M6.35 15.25h11.3l1.55 2.6a1.65 1.65 0 0 1-1.4 2.4H6.2a1.65 1.65 0 0 1-1.4-2.4z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3.75v5.9L4.8 17.85a1.65 1.65 0 0 0 1.4 2.4h11.6a1.65 1.65 0 0 0 1.4-2.4L14 9.65v-5.9"/><path stroke-linecap="round" stroke-width="2" d="M8.75 3.75h6.5"/><circle cx="10.25" cy="17.25" r="1" fill="currentColor" stroke="none"/>',
+
+  // ── Source editor tools ──────────────────────────────────────────────
+  // Plain strokes rather than the duotone the section marks wear: a rail of
+  // eight glyphs read side by side stays legible on line weight alone, and the
+  // accent belongs to whichever tool is currently in hand.
+  eraser:
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.4 19.25h10.85M4.9 15.75l6.6-6.6a1.75 1.75 0 0 1 2.48 0l3.87 3.87a1.75 1.75 0 0 1 0 2.48l-3.5 3.5a1.75 1.75 0 0 1-1.24.5H8.4a1.75 1.75 0 0 1-1.24-.5l-2.26-2.27a1.75 1.75 0 0 1 0-2.48z"/><path stroke-linecap="round" stroke-width="2" d="m9.9 10.75 5.6 5.6"/>',
+  'shape-rect':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.75 5.75h12.5c.55 0 1 .45 1 1v10.5c0 .55-.45 1-1 1H5.75c-.55 0-1-.45-1-1V6.75c0-.55.45-1 1-1z"/>',
+  'shape-ellipse':
+    '<ellipse cx="12" cy="12" rx="7.25" ry="5.75" stroke-width="2"/>',
+  'shape-line':
+    '<path stroke-linecap="round" stroke-width="2" d="m6.25 17.75 11.5-11.5"/><circle cx="6.25" cy="17.75" r="1.75" stroke-width="2"/><circle cx="17.75" cy="6.25" r="1.75" stroke-width="2"/>',
+  'cursor-select':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m5.75 4.25 4.9 15.1 2.4-6.05 6.05-2.4z"/><path stroke-linecap="round" stroke-width="2" d="m13.6 13.6 5.65 5.65"/>',
+  crop: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 2.75v14.5h14.5M2.75 6.75h14.5v14.5"/>',
+  'hand-pan':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.75 11V5.5a1.5 1.5 0 0 1 3 0V11m0-.5V4.75a1.5 1.5 0 0 1 3 0V11m0-.75a1.5 1.5 0 0 1 3 0V15a5.25 5.25 0 0 1-5.25 5.25h-1A5.25 5.25 0 0 1 8.75 15v-1.5m0-2.5a1.5 1.5 0 0 0-3 0v3.25"/>',
+  'arrow-undo':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.75 6.75 4.75 10.75l4 4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.75 10.75h9.5a5 5 0 0 1 0 10h-3"/>',
+  'arrow-redo':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15.25 6.75 4 4-4 4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.25 10.75h-9.5a5 5 0 0 0 0 10h3"/>',
 };

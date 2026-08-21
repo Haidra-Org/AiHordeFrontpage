@@ -44,6 +44,9 @@
         role="toolbar"
         [attr.aria-label]="'generate.editor.tools' | transloco"
       >
+        <!-- The tools wear their marks: eight names stacked beside the picture
+             cost it width it needs more than they do. The name is still the
+             button's name, and a hover still reports it. -->
         @for (t of tools; track t) {
           <button
             type="button"
@@ -51,9 +54,10 @@
             [class.gs-se-tool--on]="tool() === t"
             [attr.aria-pressed]="tool() === t"
             [attr.aria-label]="'generate.editor.tool_' + t | transloco"
+            [title]="'generate.editor.tool_' + t | transloco"
             (click)="setTool(t)"
           >
-            {{ "generate.editor.tool_" + t | transloco }}
+            <app-icon [name]="toolIcon(t)" />
           </button>
         }
         <span class="gs-se-rail-gap"></span>
@@ -62,18 +66,20 @@
           class="gs-se-tool"
           [disabled]="!canUndo()"
           [attr.aria-label]="'generate.editor.undo' | transloco"
+          [title]="'generate.editor.undo' | transloco"
           (click)="undo()"
         >
-          {{ "generate.editor.undo" | transloco }}
+          <app-icon name="arrow-undo" />
         </button>
         <button
           type="button"
           class="gs-se-tool"
           [disabled]="!canRedo()"
           [attr.aria-label]="'generate.editor.redo' | transloco"
+          [title]="'generate.editor.redo' | transloco"
           (click)="redo()"
         >
-          {{ "generate.editor.redo" | transloco }}
+          <app-icon name="arrow-redo" />
         </button>
       </div>
 

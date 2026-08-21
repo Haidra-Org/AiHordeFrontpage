@@ -52,6 +52,7 @@ import {
 import type { Stage } from 'konva/lib/Stage';
 import type { Layer } from 'konva/lib/Layer';
 import type { KonvaEventObject, Node } from 'konva/lib/Node';
+import { IconComponent } from '../../../components/icon/icon.component';
 import type { Shape } from 'konva/lib/Shape';
 import type { Line } from 'konva/lib/shapes/Line';
 import type { Rect } from 'konva/lib/shapes/Rect';
@@ -183,7 +184,7 @@ function rectOf(node: Rect): EditorRect {
  */
 @Component({
   selector: 'app-source-editor',
-  imports: [A11yModule, ReactiveFormsModule, TranslocoPipe],
+  imports: [A11yModule, ReactiveFormsModule, TranslocoPipe, IconComponent],
   templateUrl: './source-editor.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -264,6 +265,26 @@ export class SourceEditorComponent {
     'crop',
     'pan',
   ];
+
+  /**
+   * The glyph each tool is known by on the rail. The rail is a column beside the
+   * picture, so the tools wear their marks rather than their names; the name is
+   * still what the button is called, and still what a hover reports.
+   */
+  private readonly toolIcons: Readonly<Record<SourceEditorTool, string>> = {
+    brush: 'paintbrush',
+    eraser: 'eraser',
+    rect: 'shape-rect',
+    ellipse: 'shape-ellipse',
+    line: 'shape-line',
+    select: 'cursor-select',
+    crop: 'crop',
+    pan: 'hand-pan',
+  };
+
+  public toolIcon(tool: SourceEditorTool): string {
+    return this.toolIcons[tool];
+  }
 
   /** Whether the picture is being grown, which is the only time a frame helps. */
   public readonly frameAvailable = computed(() => this.mode() === 'inpainting');

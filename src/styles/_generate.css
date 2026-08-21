@@ -1876,12 +1876,23 @@
   color: var(--gs-ink);
   border-color: var(--gs-sec, var(--gs-blue));
 }
-/* The chosen one wears its area's tint as a surface, so a card's selection is
-   read in the same hue as the card's mark and top edge. */
+/* The chosen one wears its area's hue as a surface, so a card's selection is
+   read in the same hue as the card's mark and top edge. The hue is mixed back
+   towards the card rather than laid on at full strength: a panel of chips is
+   read past on the way to the picture, and a saturated block holds the eye
+   longer than the choice it reports is worth. */
 .gen-studio .gs-chip--active {
-  color: var(--gs-ink);
-  border-color: var(--gs-sec, var(--gs-blue));
-  background: var(--gs-sec-tint, var(--gs-blue-tint));
+  color: var(--gs-card);
+  border-color: color-mix(
+    in srgb,
+    var(--gs-sec, var(--gs-blue)) 60%,
+    var(--gs-card)
+  );
+  background: color-mix(
+    in srgb,
+    var(--gs-sec, var(--gs-blue)) 74%,
+    var(--gs-card)
+  );
 }
 .gen-studio .gs-chip:disabled {
   opacity: 0.55;
@@ -2251,7 +2262,13 @@
   border-radius: var(--gs-radius-pill);
   outline: none;
   cursor: pointer;
-  --gs-range-accent: var(--gs-blue);
+  /* The dial fills in the hue of the card holding it, damped towards the panel
+     grey: the fill is there to be read off, not to be looked at. */
+  --gs-range-accent: color-mix(
+    in srgb,
+    var(--gs-sec, var(--gs-blue)) 62%,
+    var(--gs-muted)
+  );
 }
 .gen-studio .gs-range::-webkit-slider-runnable-track {
   height: 4px;
@@ -13946,26 +13963,30 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-se-rail-gap {
   height: var(--gs-space-3);
 }
+/* A square the width of the rail, because the rail holds marks rather than
+   names now and a 44px target is what a finger needs of either. */
 .gen-studio .gs-se-tool {
-  min-width: 76px;
-  min-height: 44px;
-  padding: 0 var(--gs-space-2);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--gs-field-border);
   border-radius: var(--gs-radius-md);
   background: var(--gs-panel);
   color: var(--gs-ink);
-  font-size: var(--gs-text-xs);
-  font-weight: 600;
   cursor: pointer;
 }
 .gen-studio .gs-se-tool:disabled {
   opacity: 0.45;
   cursor: default;
 }
+/* The tool in hand wears the source hue mixed back towards the card it sits on
+   rather than the hue at full strength: the rail is read past on the way to the
+   picture, and a saturated block there pulls harder than the picture does. */
 .gen-studio .gs-se-tool--on {
-  border-color: var(--gs-blue);
-  background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  border-color: color-mix(in srgb, var(--gs-sec-source) 60%, var(--gs-panel));
+  background: color-mix(in srgb, var(--gs-sec-source) 74%, var(--gs-panel));
+  color: var(--gs-panel);
 }
 .gen-studio .gs-se-stage-wrap {
   position: relative;
