@@ -19,8 +19,7 @@ describe('GsTryItService', () => {
   let anchors: TutorialAnchorService;
   let host: TryItHost & {
     applyFields: ReturnType<typeof vi.fn>;
-    setMode: ReturnType<typeof vi.fn>;
-    currentMode: ReturnType<typeof vi.fn>;
+    openFieldGroup: ReturnType<typeof vi.fn>;
   };
   let row: HTMLElement;
 
@@ -37,8 +36,7 @@ describe('GsTryItService', () => {
     anchors = TestBed.inject(TutorialAnchorService);
     host = {
       applyFields: vi.fn(),
-      setMode: vi.fn(),
-      currentMode: vi.fn().mockReturnValue('advanced'),
+      openFieldGroup: vi.fn().mockReturnValue(false),
       currentSourceMode: vi.fn().mockReturnValue('img2img'),
     };
     row = document.createElement('div');
@@ -54,7 +52,6 @@ describe('GsTryItService', () => {
 
     // A value that needs nothing switched on asks for nothing switched on.
     expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 }, []);
-    expect(host.setMode).not.toHaveBeenCalled();
   });
 
   it('passes on the post-processors a value needs enabled', () => {
@@ -75,13 +72,17 @@ describe('GsTryItService', () => {
     );
   });
 
-  it('shows the area the field lives in before writing into it', () => {
-    host.currentMode.mockReturnValue('simple');
+  it('unfolds the group the field lives in before writing into it', () => {
+    // A chip writing into a folded group would land somewhere the reader
+    // cannot see, and read as a chip that did nothing.
     service.registerHost(host);
 
     service.apply(TRY_STEPS);
 
-    expect(host.setMode).toHaveBeenCalledWith('advanced');
+    expect(host.openFieldGroup).toHaveBeenCalledWith('steps');
+    expect(host.openFieldGroup.mock.invocationCallOrder[0]).toBeLessThan(
+      host.applyFields.mock.invocationCallOrder[0],
+    );
   });
 
   it('writes nothing when no studio is listening', () => {

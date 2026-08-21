@@ -19,11 +19,7 @@ import {
   flowFollowable,
   flowSteps,
 } from '../../../content/flows';
-import {
-  GenerateFormValue,
-  GenerateMode,
-  GenerateSourceMode,
-} from '../generate-form.model';
+import { GenerateFormValue, GenerateSourceMode } from '../generate-form.model';
 import { environment } from '../../../../environments/environment';
 import en from '../../../../assets/i18n/en.json';
 import stubIndex from '../../../testing/fixtures/sweep-index.stub.json';
@@ -45,20 +41,15 @@ class HostStub implements TutorialStudioHost {
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
   }
-  public currentMode(): GenerateMode {
-    return 'advanced';
-  }
-  public setMode(): void {
-    /* the panel never reveals on its own account */
-  }
   public currentSourceMode(): GenerateSourceMode {
     return 'none';
   }
   public setSourceMode(_mode: GenerateSourceMode): void {
     /* txt2img attaches no source image */
   }
-  public openFieldGroup(): void {
-    /* the stub panel folds nothing away */
+  public openFieldGroup(): boolean {
+    // The stub panel folds nothing away, so nothing is ever unfolded for it.
+    return false;
   }
   public openBulkApply(example: GenerateFormValue): void {
     this.bulk.push(example);
@@ -440,7 +431,7 @@ describe('GenerateLearnPanelComponent', () => {
         'aria-label',
       ),
     ).toBe(TRANSLATIONS['generate.learn.level_label']);
-    expect(TRANSLATIONS['generate.learn.reveal.advanced']).toBeTruthy();
+    expect(TRANSLATIONS['generate.learn.reveal.group']).toBeTruthy();
     expect(TRANSLATIONS['generate.learn.reveal.source']).toBeTruthy();
   });
 });

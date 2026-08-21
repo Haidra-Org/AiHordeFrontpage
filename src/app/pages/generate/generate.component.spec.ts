@@ -180,7 +180,6 @@ describe('GenerateComponent', () => {
 
   it('enqueues a request built from the form and toasts on success', async () => {
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'a castle on a hill',
       seed: '',
       post_processing: ['GFPGAN'],
@@ -227,7 +226,6 @@ describe('GenerateComponent', () => {
 
   it('blocks enqueue and shows validation when the source section is invalid', async () => {
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'a valid prompt',
       sourceMode: 'controlnet',
     });
@@ -248,7 +246,6 @@ describe('GenerateComponent', () => {
     const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
     const maskBlob = new Blob([new Uint8Array([2])], { type: 'image/png' });
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'inpaint here',
       sourceMode: 'inpainting',
       denoising_strength: 0.6,
@@ -282,7 +279,6 @@ describe('GenerateComponent', () => {
     const first = new Blob([new Uint8Array([2])], { type: 'image/webp' });
     const second = new Blob([new Uint8Array([3])], { type: 'image/webp' });
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'remix these',
       sourceMode: 'remix',
     });
@@ -316,7 +312,6 @@ describe('GenerateComponent', () => {
   it('leaves remix extras out of enqueue when the mode is not remix', async () => {
     const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'img2img',
       sourceMode: 'img2img',
     });
@@ -415,7 +410,6 @@ describe('GenerateComponent', () => {
         'AlbedoBase XL (SDXL)': 'stable_diffusion_xl',
       });
       component.form.patchValue({
-        mode: 'advanced',
         prompt: 'a castle on a hill',
         model: 'AlbedoBase XL (SDXL)',
         qrText: 'https://haidra.net',
@@ -433,11 +427,11 @@ describe('GenerateComponent', () => {
     });
   });
 
-  it('submits advanced-only fields at their defaults in simple mode', async () => {
-    // Simple mode keeps the simple controls (prompt/model/size/batch/style) but
-    // resets advanced-only fields, so a persisted advanced value cannot leak in.
+  it('submits every setting the form holds, folded away or not', async () => {
+    // The submitted values are the form's own. A setting made inside a group
+    // the reader has since folded shut is still a setting they made, and the
+    // panel never discards one behind their back.
     component.form.patchValue({
-      mode: 'simple',
       prompt: 'a castle on a hill',
       post_processing: ['GFPGAN'],
       steps: 40,
@@ -448,17 +442,16 @@ describe('GenerateComponent', () => {
 
     const request = enqueue.mock.calls[0][0] as ImageGenerationRequest;
     expect(request.prompt).toBe('a castle on a hill');
-    expect(request.params?.post_processing).toBeUndefined();
-    expect(request.params?.steps).toBe(25);
-    expect(request.params?.seed).toBeUndefined();
+    expect(request.params?.post_processing).toEqual(['GFPGAN']);
+    expect(request.params?.steps).toBe(40);
+    expect(request.params?.seed).toBe('99');
   });
 
-  it('submits an attached source image in simple mode', async () => {
-    // The source card is offered at both detail levels, so a picture attached
-    // in the simple panel reaches the request rather than being stripped.
+  it('submits an attached source image', async () => {
+    // The source card is one of the always-open ones, so a picture attached to
+    // it reaches the request.
     const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
     component.form.patchValue({
-      mode: 'simple',
       prompt: 'a plain image',
       sourceMode: 'img2img',
       denoising_strength: 0.4,
@@ -485,7 +478,6 @@ describe('GenerateComponent', () => {
     // Controlnet is advanced-only, so its control type stays out of what the
     // simple panel submits even when a past session left one behind.
     component.form.patchValue({
-      mode: 'simple',
       prompt: 'a plain image',
       control_type: 'canny',
     });
@@ -498,7 +490,6 @@ describe('GenerateComponent', () => {
 
   it('applies a selected style to the built request', async () => {
     component.form.patchValue({
-      mode: 'advanced',
       prompt: 'a cat',
       styleName: 'Test',
     });
@@ -633,7 +624,6 @@ describe('GenerateComponent', () => {
 
     it('resets unchecked parameters to their defaults in replace mode', async () => {
       component.form.patchValue({
-        mode: 'advanced',
         prompt: 'something else',
         steps: 12,
         width: 512,
@@ -661,7 +651,6 @@ describe('GenerateComponent', () => {
 
     it('leaves unchecked parameters on their current values in overlay mode', async () => {
       component.form.patchValue({
-        mode: 'advanced',
         prompt: 'keep me',
         steps: 12,
         width: 512,
@@ -682,8 +671,8 @@ describe('GenerateComponent', () => {
       expect(value.steps).toBe(12);
     });
 
-    it('opens the form in advanced mode and drops any selected style', async () => {
-      component.form.patchValue({ mode: 'simple', styleName: 'Test' });
+    it('drops any selected style', async () => {
+      component.form.patchValue({ styleName: 'Test' });
 
       await component.onApplyMeta({
         request,
@@ -692,7 +681,6 @@ describe('GenerateComponent', () => {
         mode: 'overlay',
       });
 
-      expect(component.form.controls.mode.value).toBe('advanced');
       expect(component.form.controls.styleName.value).toBe('');
     });
 
@@ -738,7 +726,6 @@ describe('GenerateComponent', () => {
   describe('style provenance', () => {
     it('records the selected style on the job and counts the use', async () => {
       component.form.patchValue({
-        mode: 'advanced',
         prompt: 'a cat',
         styleName: 'Test',
       });
@@ -752,7 +739,7 @@ describe('GenerateComponent', () => {
     });
 
     it('records nothing when no style is selected', async () => {
-      component.form.patchValue({ mode: 'advanced', prompt: 'a cat' });
+      component.form.patchValue({ prompt: 'a cat' });
 
       await component.onCreate();
 
@@ -762,7 +749,7 @@ describe('GenerateComponent', () => {
   });
 
   describe('use as source', () => {
-    it('switches to advanced img2img and attaches the stored result', async () => {
+    it('switches to img2img and attaches the stored result', async () => {
       const blob = new Blob(['x'], { type: 'image/webp' });
       getJobImages.mockResolvedValue([
         { imageId: 'img-1', kind: 'result', blob, mimeType: 'image/webp' },
@@ -776,7 +763,6 @@ describe('GenerateComponent', () => {
 
       await component.onUseAsSource({ localId: 'job-1', imageId: 'img-1' });
 
-      expect(component.form.controls.mode.value).toBe('advanced');
       expect(component.form.controls.sourceMode.value).toBe('img2img');
       expect(applySource).toHaveBeenCalledWith(blob);
       expect(toastSuccess).toHaveBeenCalledWith(
@@ -793,7 +779,7 @@ describe('GenerateComponent', () => {
       Object.defineProperty(component, 'sourceImageRef', {
         value: () => ({ applySource: vi.fn().mockResolvedValue(undefined) }),
       });
-      component.form.patchValue({ mode: 'advanced', sourceMode: 'inpainting' });
+      component.form.patchValue({ sourceMode: 'inpainting' });
 
       await component.onUseAsSource({ localId: 'job-1', imageId: 'img-1' });
 
@@ -831,13 +817,12 @@ describe('GenerateComponent', () => {
     ]);
   });
   describe('images pasted or dropped on the studio', () => {
-    it('switches the form into advanced img2img before attaching', async () => {
+    it('switches the form into img2img before attaching', async () => {
       await component.onDroppedImage(
         new File(['x'], 'shot.png', { type: 'image/png' }),
       );
 
       const value = component.form.getRawValue();
-      expect(value.mode).toBe('advanced');
       expect(value.sourceMode).toBe('img2img');
       // The source section is not rendered in this template-less harness, so the
       // attach itself cannot land and is reported as a failure.
@@ -847,7 +832,7 @@ describe('GenerateComponent', () => {
     });
 
     it('keeps an already-chosen source mode instead of forcing img2img', async () => {
-      component.form.patchValue({ mode: 'advanced', sourceMode: 'controlnet' });
+      component.form.patchValue({ sourceMode: 'controlnet' });
 
       await component.onDroppedImage(
         new File(['x'], 'shot.png', { type: 'image/png' }),
@@ -998,15 +983,6 @@ describe('GenerateComponent', () => {
       expect(value.facefixer_strength).toBe(0.75);
     });
 
-    it('reports and sets the panel mode a step needs revealed', () => {
-      expect(component.currentMode()).toBe(DEFAULT_GENERATE_FORM_VALUE.mode);
-
-      component.setMode('advanced');
-
-      expect(component.currentMode()).toBe('advanced');
-      expect(component.form.controls.mode.value).toBe('advanced');
-    });
-
     it('opens a bulk apply through the same review panel a preset uses', () => {
       component.openBulkApply({
         ...DEFAULT_GENERATE_FORM_VALUE,
@@ -1077,8 +1053,6 @@ describe('GenerateComponent', () => {
       await arrived.whenStable();
 
       expect(arrived.componentInstance.form.getRawValue().steps).toBe(40);
-      // The field lives in the advanced panel, so the panel is showing it.
-      expect(arrived.componentInstance.currentMode()).toBe('advanced');
       arrived.destroy();
     });
   });
@@ -1086,7 +1060,6 @@ describe('GenerateComponent', () => {
   describe('preset load', () => {
     const preset = (): GenerateFormValue => ({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a castle',
       steps: 42,
       n: 4,
@@ -1124,7 +1097,6 @@ describe('GenerateComponent', () => {
         prompt: 'a fox',
         n: 2,
         styleName: 'Test',
-        mode: 'simple',
       });
       component.onApplyPreset(preset());
 
@@ -1138,7 +1110,6 @@ describe('GenerateComponent', () => {
       expect(applied.prompt).toBe('a fox');
       expect(applied.n).toBe(2);
       expect(applied.styleName).toBe('');
-      expect(applied.mode).toBe('advanced');
     });
 
     it('leaves the form alone when the review is dismissed', () => {
@@ -1371,7 +1342,6 @@ describe('GenerateComponent request warnings', () => {
 
     // ControlNet on an SDXL model, with no image attached: two rules fire.
     fixture.componentInstance.form.patchValue({
-      mode: 'advanced',
       model: 'sdxl model',
       sourceMode: 'controlnet',
     });
@@ -1409,7 +1379,6 @@ describe('GenerateComponent request warnings', () => {
     fixture.detectChanges();
 
     fixture.componentInstance.form.patchValue({
-      mode: 'simple',
       model: 'flux model',
       sourceMode: 'img2img',
       maskEnabled: true,
@@ -1432,7 +1401,6 @@ describe('GenerateComponent request warnings', () => {
     fixture.detectChanges();
 
     fixture.componentInstance.form.patchValue({
-      mode: 'simple',
       model: 'sdxl model',
       sourceMode: 'inpainting',
       outpaintEnabled: true,

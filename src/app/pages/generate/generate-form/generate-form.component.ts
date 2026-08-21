@@ -47,7 +47,6 @@ import {
   FormTiEntry,
   GenerateFormGroup,
   GenerateFormValue,
-  GenerateMode,
   DEFAULT_GENERATE_FORM_VALUE,
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
@@ -212,6 +211,14 @@ const GROUP_BY_ANCHOR: Readonly<Record<string, GroupId>> = {
   workers: 'horde',
 };
 
+/** The group each folded panel area resolves to; see `openGroupForSection`. */
+const GROUP_BY_SECTION: Readonly<Partial<Record<SectionId, GroupId>>> = {
+  sampling: 'sampling',
+  finishing: 'post',
+  horde: 'horde',
+  workflows: 'workflows',
+};
+
 /** The fields each group owns, for the mark that says it holds a changed value. */
 const GROUP_FIELDS: Readonly<
   Record<GroupId, readonly (keyof GenerateFormValue)[]>
@@ -260,8 +267,12 @@ const GROUP_FIELDS: Readonly<
 /** Where the reader's open groups are remembered between visits. */
 const GROUPS_OPEN_KEY = 'aihorde.generate.groups_open';
 
-/** What the panel does with a group it has never been told anything about. */
-const GROUP_OPEN_DEFAULT = true;
+/**
+ * What the panel does with a group it has never been told anything about. A
+ * group starts folded: the always-open cards are what a request is described
+ * with, and everything past them waits until it is asked for.
+ */
+const GROUP_OPEN_DEFAULT = false;
 
 /** The separator every group's summary line reads its values between. */
 const SUMMARY_SEPARATOR = ' · ';
@@ -775,15 +786,6 @@ export class GenerateFormComponent implements OnInit {
     return match ? match.count : null;
   }
 
-  /**
-   * Reactive mirror of the form's `mode` control. The form control is not a
-   * signal, so template `@if` blocks cannot depend on it directly in this
-   * zoneless app; the segmented toggle and a `mode.valueChanges` subscription
-   * keep this in sync so switching modes shows/hides the advanced controls.
-   */
-  public readonly mode = signal<GenerateMode>('simple');
-  public readonly isAdvanced = computed(() => this.mode() === 'advanced');
-
   /** Resolution family the aspect presets scale to (SD1.5 512 vs SDXL 1024). */
   public readonly sizeBase = signal<ModelSizeBase>(1024);
   public readonly presets = computed(() => buildAspectPresets(this.sizeBase()));
@@ -841,12 +843,6 @@ export class GenerateFormComponent implements OnInit {
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.value.set(this.form().getRawValue()));
 
-    const modeControl = this.form().controls.mode;
-    this.mode.set(modeControl.value);
-    modeControl.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((mode) => this.mode.set(mode));
-
     const controls = this.form().controls;
     this.selectedSampler.set(controls.sampler_name.value);
     controls.sampler_name.valueChanges
@@ -877,14 +873,6 @@ export class GenerateFormComponent implements OnInit {
       });
   }
 
-  public setMode(mode: GenerateMode): void {
-    const control = this.form().controls.mode;
-    if (control.value !== mode) {
-      control.setValue(mode);
-      control.markAsDirty();
-    }
-  }
-
   // --- Settings groups -----------------------------------------------------
 
   private readonly groupsOpen = signal<Partial<Record<GroupId, boolean>>>({});
@@ -898,22 +886,38 @@ export class GenerateFormComponent implements OnInit {
     this.setGroupOpen(group, !this.isGroupOpen(group));
   }
 
-  /** Show `group`'s controls, whether or not the reader had folded it away. */
-  public openGroup(group: GroupId): void {
-    if (!this.isGroupOpen(group)) {
-      this.setGroupOpen(group, true);
+  /**
+   * Show `group`'s controls, whether or not the reader had folded it away.
+   * Reports whether the group was folded, so a caller that narrates what it
+   * opened says so only when something actually moved.
+   */
+  public openGroup(group: GroupId): boolean {
+    if (this.isGroupOpen(group)) {
+      return false;
     }
+    this.setGroupOpen(group, true);
+    return true;
   }
 
   /**
    * Open the group holding `anchor`, if it is in one. Called before the panel
    * points at a control: a folded group holds no element to point at.
    */
-  public openGroupForAnchor(anchor: string): void {
+  public openGroupForAnchor(anchor: string): boolean {
     const group = GROUP_BY_ANCHOR[anchor];
-    if (group) {
-      this.openGroup(group);
-    }
+    return group ? this.openGroup(group) : false;
+  }
+
+  /**
+   * Open the group holding the named panel area's card, if that area is one of
+   * the folded ones. Backs the glossary's "show me this part of the panel":
+   * ringing a group's closed head would point at a line of values rather than
+   * at the controls the reader asked to be shown. Finishing owns two groups and
+   * resolves to the first of them, which is the one the pointing lands on.
+   */
+  public openGroupForSection(section: SectionId): boolean {
+    const group = GROUP_BY_SECTION[section];
+    return group ? this.openGroup(group) : false;
   }
 
   private setGroupOpen(group: GroupId, open: boolean): void {
@@ -1880,10 +1884,9 @@ export class GenerateFormComponent implements OnInit {
 
   /**
    * Bring the control a warning or a refusal is about onto the screen and ring
-   * it. A control the panel is not currently drawing is one the essentials view
-   * leaves out, one its group is folded over, or one the sampling knobs are
-   * folded over, so each is opened and the pointing waits for the control to
-   * exist.
+   * it. A control the panel is not currently drawing is one its group is folded
+   * over, or one the sampling knobs are folded over, so each is opened and the
+   * pointing waits for the control to exist.
    */
   public goToField(anchor: FieldAnchorId): void {
     this.closeLint();
@@ -1895,9 +1898,6 @@ export class GenerateFormComponent implements OnInit {
     if (element) {
       this.anchors.flash(element);
       return;
-    }
-    if (!this.isAdvanced()) {
-      this.setMode('advanced');
     }
     afterNextRender(
       () => {

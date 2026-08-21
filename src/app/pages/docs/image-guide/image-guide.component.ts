@@ -82,7 +82,7 @@ const SECTION_BY_GUIDE_STEP: Readonly<Record<string, SectionId>> = {
   model: 'model',
   dimensions: 'size',
   generate: 'horde',
-  advanced: 'sampling',
+  settings: 'sampling',
 };
 
 /** What a topic with no strip published for it offers, without allocating. */

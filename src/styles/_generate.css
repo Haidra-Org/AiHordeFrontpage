@@ -835,18 +835,18 @@
      control a reader learned the position of is where they left it; widening
      only decides how many passes are read at once. Refine and Deliver share a
      column at double width because Deliver is the shortest of the three. */
-  .gen-studio.gs-workspace--wide .gs-zones--split {
+  .gen-studio.gs-workspace--wide .gs-zones {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas:
       "compose refine"
       "compose deliver";
   }
-  .gen-studio.gs-workspace--max .gs-zones--split {
+  .gen-studio.gs-workspace--max .gs-zones {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
     grid-template-areas: "compose refine deliver";
   }
-  .gen-studio.gs-workspace--wide .gs-zones--split .gs-zone--compose,
-  .gen-studio.gs-workspace--max .gs-zones--split .gs-zone--compose {
+  .gen-studio.gs-workspace--wide .gs-zones .gs-zone--compose,
+  .gen-studio.gs-workspace--max .gs-zones .gs-zone--compose {
     grid-area: compose;
   }
   .gen-studio.gs-workspace--wide .gs-zone--refine,
@@ -857,14 +857,15 @@
   .gen-studio.gs-workspace--max .gs-zone--deliver {
     grid-area: deliver;
   }
-  /* the "Advanced" divider reads oddly stranded in one column */
-  .gen-studio.gs-workspace--wide .gs-adv-divider,
-  .gen-studio.gs-workspace--max .gs-adv-divider {
+  /* The divider reads oddly stranded once the groups are in a column of
+     their own: the column break already says where the first cards end. */
+  .gen-studio.gs-workspace--wide .gs-rest-divider,
+  .gen-studio.gs-workspace--max .gs-rest-divider {
     display: none;
   }
   /* Only where there is more than one column is there anything to tell apart:
      at one column the names would label a list that is already in order. */
-  .gen-studio.gs-workspace--max .gs-zones--split .gs-zone-label {
+  .gen-studio.gs-workspace--max .gs-zones .gs-zone-label {
     display: block;
   }
 }
@@ -1957,19 +1958,19 @@
   }
 }
 
-/* ------- advanced divider ------------------------------------------- */
-.gen-studio .gs-adv-divider {
+/* ------- the divider under the always-open cards --------------------- */
+.gen-studio .gs-rest-divider {
   display: flex;
   align-items: center;
   gap: 9px;
   margin: var(--gs-space-3) 0 var(--gs-space-2);
 }
-.gen-studio .gs-adv-line {
+.gen-studio .gs-rest-line {
   height: 1px;
   background: var(--gs-border);
   flex: 1;
 }
-.gen-studio .gs-adv-label {
+.gen-studio .gs-rest-label {
   display: flex;
   align-items: center;
   gap: 5px;

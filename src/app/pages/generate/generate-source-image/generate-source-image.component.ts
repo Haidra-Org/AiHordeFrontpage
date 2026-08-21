@@ -193,22 +193,8 @@ export class GenerateSourceImageComponent implements OnInit {
    */
   private readonly controlType = signal<ImageControlType | ''>('');
 
-  /**
-   * Reactive mirror of the panel's detail level, kept in sync the same way. The
-   * card is shown at both levels; this decides which of its dials come with it.
-   */
-  public readonly advanced = signal(false);
-
-  /**
-   * The ways of starting from a picture this detail level offers. Controlnet is
-   * advanced-only, because choosing it without the control-type select would be
-   * a request that can never be completed.
-   */
-  public readonly modes = computed(() =>
-    this.advanced()
-      ? SOURCE_MODES
-      : SOURCE_MODES.filter((mode) => mode !== 'controlnet'),
-  );
+  /** The ways of starting from a picture the card offers. */
+  public readonly modes = SOURCE_MODES;
 
   /** Reactive mirrors of the two masked choices, kept in sync the same way. */
   public readonly maskEnabled = signal(false);
@@ -350,16 +336,12 @@ export class GenerateSourceImageComponent implements OnInit {
   public ngOnInit(): void {
     const controls = this.form().controls;
     this.mode.set(controls.sourceMode.value);
-    this.advanced.set(controls.mode.value === 'advanced');
     this.controlType.set(controls.control_type.value);
     this.maskEnabled.set(controls.maskEnabled.value);
     this.outpaintEnabled.set(controls.outpaintEnabled.value);
     controls.sourceMode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => this.onModeChanged(mode));
-    controls.mode.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((mode) => this.advanced.set(mode === 'advanced'));
     controls.control_type.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((controlType) => {

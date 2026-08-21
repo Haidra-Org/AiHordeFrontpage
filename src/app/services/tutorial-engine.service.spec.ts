@@ -24,7 +24,6 @@ import { GsHelpService } from './gs-help.service';
 import { TutorialAnchorService } from './tutorial-anchor.service';
 import {
   GenerateFormValue,
-  GenerateMode,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
 import manifest from '../testing/fixtures/example-manifest.stub.json';
@@ -45,12 +44,23 @@ const [PROMPT, NEGATIVE] = splitCombinedPrompt(request.prompt);
 /** Records what the studio was asked to do, and answers for the form's state. */
 class HostSpy implements TutorialStudioHost {
   public readonly applied: Partial<GenerateFormValue>[] = [];
-  public readonly modes: GenerateMode[] = [];
   public readonly sourceModes: GenerateSourceMode[] = [];
   public readonly bulk: GenerateFormValue[] = [];
   /** Every anchor the engine asked the panel to unfold the group of. */
   public readonly openedGroupsFor: string[] = [];
-  public mode: GenerateMode = 'simple';
+  /**
+   * The fields whose group is currently folded, which is what the panel's own
+   * first visit looks like. Unfolding one is what the engine narrates, so the
+   * spy has to be able to answer whether anything actually moved.
+   */
+  public readonly folded = new Set<string>([
+    'steps',
+    'cfg',
+    'sampler',
+    'seed',
+    'transparent',
+    'qr',
+  ]);
   public sourceMode: GenerateSourceMode = 'none';
 
   public applyFields(fields: Partial<GenerateFormValue>): void {
@@ -61,13 +71,6 @@ class HostSpy implements TutorialStudioHost {
       this.sourceMode = fields.sourceMode;
     }
   }
-  public currentMode(): GenerateMode {
-    return this.mode;
-  }
-  public setMode(mode: GenerateMode): void {
-    this.mode = mode;
-    this.modes.push(mode);
-  }
   public currentSourceMode(): GenerateSourceMode {
     return this.sourceMode;
   }
@@ -75,8 +78,9 @@ class HostSpy implements TutorialStudioHost {
     this.sourceMode = mode;
     this.sourceModes.push(mode);
   }
-  public openFieldGroup(anchorId: string): void {
+  public openFieldGroup(anchorId: string): boolean {
     this.openedGroupsFor.push(anchorId);
+    return this.folded.delete(anchorId);
   }
   public openBulkApply(example: GenerateFormValue): void {
     this.bulk.push(example);
@@ -226,20 +230,20 @@ describe('TutorialEngineService', () => {
       expect(engine.step()?.id).toBe('size');
     });
 
-    it('opens advanced settings before a step that lives there, and says so', () => {
+    it('unfolds the group a folded field sits in, and says so', () => {
       engine.goTo(3);
 
-      expect(host.modes).toEqual(['advanced']);
+      expect(host.openedGroupsFor).toContain('steps');
       expect(engine.step()?.id).toBe('steps');
-      expect(engine.revealNote()).toBe('advanced');
+      expect(engine.revealNote()).toBe('group');
     });
 
-    it('says nothing about a section the reader already had open', () => {
-      host.mode = 'advanced';
+    it('says nothing about a group the reader already had open', () => {
+      host.folded.delete('steps');
 
       engine.goTo(3);
 
-      expect(host.modes).toEqual(['advanced']);
+      expect(host.openedGroupsFor).toContain('steps');
       expect(engine.revealNote()).toBeNull();
     });
 
@@ -662,11 +666,11 @@ describe('TutorialEngineService', () => {
       expect(engine.completed()).toBe(true);
     });
 
-    it('opens the panel and the source section the steps live in', () => {
-      // Advanced first, since the source card is only there; the source mode
-      // follows on the step that needs the strength slider to exist.
-      expect(host.modes).toEqual(['advanced']);
-      expect(engine.revealNote()).toBe('advanced');
+    it('opens the source section the steps live in', () => {
+      // The source card is one of the always-open ones, so its first step has
+      // nothing to narrate; the source mode follows on the step that needs the
+      // strength slider to exist.
+      expect(engine.revealNote()).toBeNull();
 
       engine.goTo(2);
 
@@ -763,21 +767,20 @@ describe('TutorialEngineService', () => {
       // The sampling values are the payload's, not the studio's defaults.
       expect(engine.onFinale()).toBe(true);
       expect(engine.canApply()).toBe(false);
-      expect(host.modes).toContain('advanced');
 
       engine.notifySubmitted();
       expect(engine.completed()).toBe(true);
     });
 
-    it('opens Advanced for the two controls that live there', () => {
-      // The prompt is on the panel either way, so the first step narrates
-      // nothing; the workflow field is the one that has to open it.
+    it('unfolds the group holding the field the workflow is chosen by', () => {
+      // The prompt is an always-open card, so the first step narrates nothing;
+      // the workflow field is the one that has to be unfolded.
       expect(engine.revealNote()).toBeNull();
 
       engine.goTo(1);
 
-      expect(engine.revealNote()).toBe('advanced');
-      expect(host.mode).toBe('advanced');
+      expect(engine.revealNote()).toBe('group');
+      expect(host.openedGroupsFor).toContain('qr');
     });
   });
 
@@ -818,7 +821,7 @@ describe('TutorialEngineService', () => {
       expect(engine.step()?.id).toBe('where_next');
       expect(engine.step()?.startsFlow).toBe('txt2img');
       expect(host.applied).toEqual([]);
-      expect(host.modes).toEqual([]);
+      expect(host.openedGroupsFor).toEqual([]);
 
       engine.stop();
       expect(engine.active()).toBe(false);

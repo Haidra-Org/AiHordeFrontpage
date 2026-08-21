@@ -10,7 +10,7 @@
   </div>
 
   <div class="flex flex-wrap gap-1.5" role="group" appTutAnchor="source_mode">
-    @for (m of modes(); track m) {
+    @for (m of modes; track m) {
       <button
         type="button"
         class="gs-chip"
@@ -189,10 +189,9 @@
       </div>
     }
 
-    <!-- Controlnet is only offered at the advanced detail level, so these dials
-         come with it. They still render for a controlnet choice carried into
-         the simple panel: a mode the request would send has to stay settable,
-         or the card would hide the one control its own validation asks for. -->
+    <!-- The guidance dials come with the controlnet choice: a mode the request
+         would send has to stay settable, or the card would hide the one control
+         its own validation asks for. -->
     @if (mode() === "controlnet") {
       <div appTutAnchor="control_type">
         <label class="gs-slabel" for="generate-control-type">
@@ -343,10 +342,7 @@
       </div>
     }
 
-    <!-- Blending in further pictures is an advanced dial, but anything already
-         blended in stays on show at either detail level: the request carries
-         those images, so the card must not hide them. -->
-    @if (mode() === "remix" && (advanced() || extras().length > 0)) {
+    @if (mode() === "remix") {
       <div class="flex flex-col gap-2" appTutAnchor="remix_extras">
         <span class="gs-slabel">
           {{
@@ -404,7 +400,7 @@
           </div>
         }
 
-        @if (advanced() && canAddExtra()) {
+        @if (canAddExtra()) {
           <label
             class="gs-add-tile"
             [class.gs-chip--active]="extraDragActive()"

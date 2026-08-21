@@ -12,11 +12,7 @@ import {
   TutorialStudioHost,
 } from '../../../services/tutorial-engine.service';
 import { flowSteps } from '../../../content/flows';
-import {
-  GenerateFormValue,
-  GenerateMode,
-  GenerateSourceMode,
-} from '../generate-form.model';
+import { GenerateFormValue, GenerateSourceMode } from '../generate-form.model';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
@@ -36,20 +32,15 @@ class HostStub implements TutorialStudioHost {
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
   }
-  public currentMode(): GenerateMode {
-    return 'advanced';
-  }
-  public setMode(): void {
-    /* the sheet never reveals on its own account */
-  }
   public currentSourceMode(): GenerateSourceMode {
     return 'none';
   }
   public setSourceMode(_mode: GenerateSourceMode): void {
     /* txt2img attaches no source image */
   }
-  public openFieldGroup(): void {
-    /* the stub panel folds nothing away */
+  public openFieldGroup(): boolean {
+    // The stub panel folds nothing away, so nothing is ever unfolded for it.
+    return false;
   }
   public openBulkApply(): void {
     /* the bulk route is the panel's, and stays there */

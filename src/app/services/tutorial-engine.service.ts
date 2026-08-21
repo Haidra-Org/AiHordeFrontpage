@@ -19,7 +19,6 @@ import {
 import { GsHelpDockService } from './gs-help-dock.service';
 import {
   GenerateFormValue,
-  GenerateMode,
   GenerateSourceMode,
   requestToFormValue,
 } from '../pages/generate/generate-form.model';
@@ -182,16 +181,15 @@ export function stepFieldLabelKey(anchorId: string): string {
 export interface TutorialStudioHost {
   /** Write the named fields, leaving everything else alone. */
   applyFields(fields: Partial<GenerateFormValue>): void;
-  currentMode(): GenerateMode;
-  setMode(mode: GenerateMode): void;
   currentSourceMode(): GenerateSourceMode;
   setSourceMode(mode: GenerateSourceMode): void;
   /**
-   * Unfold whichever settings group holds the named field, if one does. A group
-   * the reader folded away holds no control to point a step at, so this runs
-   * before the pointing and the pointing waits for the panel to redraw.
+   * Unfold whichever settings group holds the named field, if one does, and say
+   * whether one was actually folded. A group the reader folded away holds no
+   * control to point a step at, so this runs before the pointing and the
+   * pointing waits for the panel to redraw.
    */
-  openFieldGroup(anchorId: string): void;
+  openFieldGroup(anchorId: string): boolean;
   /** Offer the whole example through the studio's review-and-apply panel. */
   openBulkApply(example: GenerateFormValue): void;
 }
@@ -766,7 +764,7 @@ export class TutorialEngineService {
     if (!step) {
       return;
     }
-    this.revealed.set(this.applyReveal(step.reveal));
+    this.revealed.set(this.applyReveal(step));
     if (!this.isBrowser) {
       return;
     }
@@ -774,29 +772,29 @@ export class TutorialEngineService {
   }
 
   /**
-   * Show the section the step lives in, returning the `generate.learn.reveal.*`
-   * key naming what was opened, or null when nothing had to change.
+   * Show what the step needs shown, returning the `generate.learn.reveal.*` key
+   * naming what was opened, or null when nothing had to change. Only actual
+   * movement is narrated: naming a section that never moved would teach the
+   * reader to distrust the narration.
    */
-  private applyReveal(reveal: FlowReveal | undefined): string | null {
-    if (!reveal || !this.host) {
+  private applyReveal(step: FlowStep): string | null {
+    if (!this.host) {
       return null;
     }
     let note: string | null = null;
-    if (reveal.mode) {
-      // Only news when the reader was not already there; narrating a section
-      // that never moved would teach them to distrust the narration.
-      if (this.host.currentMode() !== reveal.mode) {
-        note = reveal.mode === 'advanced' ? 'advanced' : null;
-      }
-      this.host.setMode(reveal.mode);
-    }
-    if (reveal.sourceMode) {
-      // Same rule as the mode above: a sourced flow revealing its mode on every
-      // one of its steps would narrate an opening that happened once.
+    const reveal: FlowReveal | undefined = step.reveal;
+    if (reveal?.sourceMode) {
       if (this.host.currentSourceMode() !== reveal.sourceMode) {
-        note = note ?? 'source';
+        note = 'source';
       }
       this.host.setSourceMode(reveal.sourceMode);
+    }
+    // The step's own field decides which group has to be unfolded, so a step
+    // states the control it is about and nothing about where that control
+    // lives. `focusStep` opens the same group again on a re-point, which is why
+    // the note is taken here and only here.
+    if (step.anchorId && this.host.openFieldGroup(step.anchorId)) {
+      note = note ?? 'group';
     }
     return note;
   }

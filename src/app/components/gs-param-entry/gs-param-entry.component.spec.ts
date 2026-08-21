@@ -159,9 +159,8 @@ describe('GsParamEntryComponent', () => {
       await setUp({ topic: 'steps', mode: 'dock' });
       const host = {
         applyFields: vi.fn(),
-        currentMode: vi.fn().mockReturnValue('advanced'),
+        openFieldGroup: vi.fn().mockReturnValue(false),
         currentSourceMode: vi.fn().mockReturnValue('img2img'),
-        setMode: vi.fn(),
       };
       TestBed.inject(GsTryItService).registerHost(host);
 

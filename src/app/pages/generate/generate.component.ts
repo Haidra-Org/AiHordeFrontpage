@@ -74,7 +74,6 @@ import {
   DEFAULT_GENERATE_FORM_VALUE,
   FACE_FIXERS,
   GenerateFormValue,
-  GenerateMode,
   GenerateSourceMode,
   KudosBreakdownLine,
   PanelSize,
@@ -87,7 +86,6 @@ import {
   modelWaitEstimate,
   promptHistoryFromJobs,
   requestToFormValue,
-  simpleModeValue,
   stripEphemeralExtras,
 } from './generate-form.model';
 import {
@@ -95,7 +93,11 @@ import {
   MetaApplyEvent,
   MetaApplyMode,
 } from './image-meta-panel/image-meta-panel.component';
-import { PANEL_SECTION_IDS, SECTION_IDENTITIES } from '../../content/sections';
+import {
+  PANEL_SECTION_IDS,
+  SECTION_IDENTITIES,
+  SectionId,
+} from '../../content/sections';
 import {
   FieldRejection,
   RequestWarning,
@@ -326,13 +328,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * that live in different cards. The count beside Generate, the popover and
    * each card's inline line are three views of this one list.
    *
-   * The value linted is the one that would actually be submitted, so simple
-   * mode is linted against the defaults it sends rather than whatever an
-   * earlier advanced session left in the hidden controls.
+   * The value linted is the one that would actually be submitted, which is the
+   * form's own value: every setting the panel holds is submitted, whether the
+   * group holding it is open or folded.
    */
   public readonly lintWarnings = computed<readonly RequestWarning[]>(() => {
-    const raw = this.formValue();
-    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    const value = this.formValue();
     const state = this.sourceState();
     return evaluateRequestLint({
       value,
@@ -345,16 +346,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     });
   });
 
-  /**
-   * What the estimate is made of, in the reader's own settings. Simple mode is
-   * projected the same way the warnings are, so the lines describe the request
-   * that would actually be sent rather than the advanced controls behind it.
-   */
-  public readonly kudosLines = computed<readonly KudosBreakdownLine[]>(() => {
-    const raw = this.formValue();
-    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
-    return kudosBreakdown(value, this.samplerContract());
-  });
+  /** What the estimate is made of, in the reader's own settings. */
+  public readonly kudosLines = computed<readonly KudosBreakdownLine[]>(() =>
+    kudosBreakdown(this.formValue(), this.samplerContract()),
+  );
 
   /** What to say about the wait for the picked model, as the popover's last line. */
   public readonly waitLine = computed<WaitEstimate>(() => {
@@ -591,18 +586,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.form.markAsDirty();
   }
 
-  public currentMode(): GenerateMode {
-    return this.form.controls.mode.value;
-  }
-
-  public setMode(mode: GenerateMode): void {
-    this.form.controls.mode.setValue(mode);
-  }
-
   /**
    * Read off the tracked value rather than the control, so a surface asking
-   * inside a computed is re-run when the reader changes mode: a try-it chip that
-   * only appears on a sourced request has to appear and disappear with it.
+   * inside a computed is re-run when the source mode changes: a try-it chip
+   * that only appears on a sourced request has to appear and disappear with it.
    */
   public currentSourceMode(): GenerateSourceMode {
     return this.formValue().sourceMode;
@@ -612,8 +599,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.form.controls.sourceMode.setValue(mode);
   }
 
-  public openFieldGroup(anchorId: string): void {
-    this.formRef()?.openGroupForAnchor(anchorId);
+  public openFieldGroup(anchorId: string): boolean {
+    return this.formRef()?.openGroupForAnchor(anchorId) ?? false;
   }
 
   /**
@@ -673,13 +660,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * The form value to actually submit/estimate. Advanced mode submits the form
-   * as-is; simple mode strips advanced-only fields back to their defaults (see
-   * {@link simpleModeValue}) so a simple request is clean and predictable.
+   * The form value to actually submit/estimate: the form's own value, save for
+   * the one field the panel disables without being able to clear.
    */
   private effectiveValue(): GenerateFormValue {
-    const raw = this.form.getRawValue();
-    const value = raw.mode === 'simple' ? simpleModeValue(raw) : raw;
+    const value = this.form.getRawValue();
     // A qrText typed before switching to a model that cannot serve the
     // qr_code workflow would make the horde reject the whole request; the
     // form disables the input in that state, and the built request (submit,
@@ -734,9 +719,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * Apply the reviewed selection of a preset. `replace` restores the preset as
    * it was saved and then resets the parameters the user unticked, so the fields
    * the review panel never offers (batch size, worker and sharing preferences,
-   * the saved mode and style) still come back with it. `overlay` grafts only the
-   * ticked parameters onto the current form, and since a style would force its
-   * own values back over them the form drops to advanced without one.
+   * the saved style) still come back with it. `overlay` grafts only the ticked
+   * parameters onto the current form, and since a style would force its own
+   * values back over them the form takes the graft without one.
    *
    * Values come from the preset itself rather than from the request the panel
    * was shown, which only carries the fields the horde API has.
@@ -775,7 +760,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         // Index assignment is sound: pending and next share the field's type.
         (next as Record<keyof GenerateFormValue, unknown>)[key] = pending[key];
       }
-      next.mode = 'advanced';
       next.styleName = '';
     }
     this.form.setValue(next);
@@ -811,9 +795,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       // Index assignment is sound: source and next share the field's type.
       (next as Record<keyof GenerateFormValue, unknown>)[key] = source[key];
     }
-    // The applied parameters are advanced ones, and a selected style would force
-    // its own values over the top of them, so neither survives an apply.
-    next.mode = 'advanced';
+    // A selected style would force its own values over the top of the applied
+    // parameters, so it does not survive an apply.
     next.styleName = '';
 
     const usesSource = event.keys.some((key) =>
@@ -872,9 +855,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /**
    * Attach a past result as the form's source image, exactly as a manual upload
-   * would: the form is switched into advanced img2img first (the source section
-   * only exists there, and simple mode drops any source), then the stored blob is
-   * handed to the section itself.
+   * would: the form is switched to img2img first, then the stored blob is handed
+   * to the section itself.
    */
   public async onUseAsSource(event: {
     localId: string;
@@ -919,19 +901,18 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * Put the form in advanced img2img (the only mode the source section exists in)
-   * and hand back the section once it has rendered.
+   * Put the form on a sourced mode and hand back the source section once it has
+   * rendered.
    */
   private async openSourceSection(): Promise<GenerateSourceImageComponent | null> {
     this.form.patchValue({
-      mode: 'advanced',
       sourceMode:
         this.form.controls.sourceMode.value === 'none'
           ? 'img2img'
           : this.form.controls.sourceMode.value,
     });
-    // The source section is rendered inside the advanced block, so it may only
-    // exist after the change above has been rendered.
+    // The section's contents follow the source mode, so what the caller wants
+    // to reach may only exist after the change above has been rendered.
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     return this.sourceImageRef() ?? null;
   }
@@ -1205,7 +1186,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
           // The panel's hue classes are declared inside `.gen-studio` and the
           // glossary is mounted outside it, so the modal has its own set.
           iconColorClass: `glossary-sec--${id}`,
-          action: () => this.showSection(identity.className),
+          action: () => this.showSection(id, identity.className),
         };
       }),
     });
@@ -1216,26 +1197,25 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /**
    * Bring one of the panel's cards onto the screen and ring it, in the same
-   * gesture a try-it chip uses. A card the reader cannot currently see is one
-   * the simple panel does not draw, so the panel is opened out and the pointing
-   * waits for the card to exist; no hue is passed, because the card is already
-   * wearing its own.
+   * gesture a try-it chip uses. An area the reader folded away is unfolded
+   * first, so the pointing lands on the controls rather than on a line of
+   * values; no hue is passed, because the card is already wearing its own.
    */
-  private showSection(className: string): void {
+  private showSection(section: SectionId, className: string): void {
     if (!this.isBrowser) {
       return;
     }
-    const card = this.document.querySelector<HTMLElement>(
-      `.gs-panel .${className}`,
-    );
-    if (card) {
-      this.anchors.flash(card);
+    const opened = this.formRef()?.openGroupForSection(section) ?? false;
+    if (!opened) {
+      const card = this.document.querySelector<HTMLElement>(
+        `.gs-panel .${className}`,
+      );
+      if (card) {
+        this.anchors.flash(card);
+      }
       return;
     }
-    if (this.currentMode() === 'advanced') {
-      return;
-    }
-    this.setMode('advanced');
+    // The group's controls exist one render on from the signal write above.
     afterNextRender(
       () => {
         const revealed = this.document.querySelector<HTMLElement>(

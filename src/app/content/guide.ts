@@ -131,7 +131,7 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
   { id: 'dimensions', sweeps: ['resolution'] },
   { id: 'generate', sweeps: [] },
   { id: 'results', sweeps: [] },
-  { id: 'advanced', sweeps: [] },
+  { id: 'settings', sweeps: [] },
 ];
 
 /** The DOM id of a part of the guide, which is what the contents rail aims at. */

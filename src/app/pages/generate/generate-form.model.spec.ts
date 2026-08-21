@@ -46,7 +46,6 @@ import {
   stepsAdvisory,
   suggestedSettings,
   suggestedSettingsCount,
-  simpleModeValue,
   sizeBaseFor,
   sizeSuitsNativeSquare,
   stepsRequirementHint,
@@ -110,56 +109,25 @@ function value(overrides: Partial<GenerateFormValue> = {}): GenerateFormValue {
   return { ...DEFAULT_GENERATE_FORM_VALUE, ...overrides };
 }
 
-describe('simpleModeValue', () => {
-  it('keeps the simple-mode fields and resets everything else to defaults', () => {
-    const result = simpleModeValue(
+describe('the settings a request is built from', () => {
+  it('carries every setting the form holds, whatever is folded away', () => {
+    // The panel discloses settings a group at a time and submits all of them:
+    // a value set behind a fold reaches the request exactly as one set in the
+    // always-open cards does.
+    const request = buildImageRequest(
       value({
-        mode: 'simple',
-        styleName: 'Cinematic',
         prompt: 'a fox',
-        negativePrompt: 'blurry',
-        n: 3,
-        model: 'flux',
-        width: 768,
-        height: 512,
-        // Shown outside the advanced gate, so they have to survive.
-        sourceMode: 'img2img',
-        denoising_strength: 0.4,
-        maskEnabled: true,
-        hires_fix: true,
-        // Advanced-only fields that must be discarded in simple mode.
         steps: 40,
         post_processing: ['GFPGAN'],
-        control_type: 'canny',
         seed: '12345',
         nsfw: true,
       }),
     );
 
-    expect(result.styleName).toBe('Cinematic');
-    expect(result.prompt).toBe('a fox');
-    expect(result.negativePrompt).toBe('blurry');
-    expect(result.n).toBe(3);
-    expect(result.model).toBe('flux');
-    expect(result.width).toBe(768);
-    expect(result.height).toBe(512);
-
-    expect(result.sourceMode).toBe('img2img');
-    expect(result.denoising_strength).toBe(0.4);
-    expect(result.maskEnabled).toBe(true);
-    expect(result.hires_fix).toBe(true);
-
-    expect(result.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
-    expect(result.post_processing).toEqual([]);
-    expect(result.control_type).toBe('');
-    expect(result.seed).toBe('');
-    expect(result.nsfw).toBe(false);
-  });
-
-  it('does not mutate the input value', () => {
-    const original = value({ mode: 'simple', steps: 40 });
-    simpleModeValue(original);
-    expect(original.steps).toBe(40);
+    expect(request.params?.steps).toBe(40);
+    expect(request.params?.post_processing).toEqual(['GFPGAN']);
+    expect(request.params?.seed).toBe('12345');
+    expect(request.nsfw).toBe(true);
   });
 });
 
@@ -718,9 +686,15 @@ describe('coerceFormValue', () => {
     ]);
   });
 
-  it('rejects a junk mode and keeps a valid one', () => {
-    expect(coerceFormValue({ mode: 'bogus' }).mode).toBe('simple');
-    expect(coerceFormValue({ mode: 'advanced' }).mode).toBe('advanced');
+  it('drops a stored detail level rather than carrying it back in', () => {
+    // Nothing in the panel is gated on a detail level any more, and the form
+    // group has no control to take one: a payload still holding one from an
+    // earlier session has to come back without it, or `setValue` would throw
+    // on a key the group does not know.
+    const coerced = coerceFormValue({ mode: 'advanced', steps: 30 });
+    expect('mode' in coerced).toBe(false);
+    expect(coerced.steps).toBe(30);
+    expect(() => createGenerateForm(coerced)).not.toThrow();
   });
 
   it('clamps facefixer, hires denoise and seed_variation into range', () => {
@@ -779,8 +753,6 @@ describe('requestToFormValue', () => {
     expect(result.scheduler).toBe('karras');
     expect(result.nsfw).toBe(true);
     expect(result.censor_nsfw).toBe(false);
-    // Loading always opens advanced so every recovered field is visible.
-    expect(result.mode).toBe('advanced');
   });
 
   it('prefers a named schedule over the legacy flag when both ride along', () => {

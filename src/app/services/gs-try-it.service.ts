@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import {
   GenerateFormValue,
-  GenerateMode,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
@@ -31,8 +30,11 @@ export interface TryItHost {
     fields: Partial<GenerateFormValue>,
     addPostProcessors?: readonly ImagePostProcessor[],
   ): void;
-  currentMode(): GenerateMode;
-  setMode(mode: GenerateMode): void;
+  /**
+   * Unfold whichever settings group holds the named field, if one does and it
+   * is folded. A group at rest draws no control to write into or point at.
+   */
+  openFieldGroup(anchorId: string): boolean;
   /**
    * Which kind of request the panel is currently building. A value that only
    * survives on a request carrying a source image is withheld rather than
@@ -104,24 +106,22 @@ export class GsTryItService {
   }
 
   /**
-   * Write a value and show where it went. Every field the reference offers
-   * lives in the advanced panel, so a reader in simple mode is moved there
-   * first: applying a setting into a section they cannot see would leave the
-   * chip looking broken.
+   * Write a value and show where it went. A field the reference offers may sit
+   * in a folded group, so the group is unfolded first: applying a setting into
+   * a section the reader cannot see would leave the chip looking broken.
    */
   public apply(entry: SettingApply): void {
     if (!this.host || !this.offerable(entry)) {
       return;
     }
-    if (this.host.currentMode() !== 'advanced') {
-      this.host.setMode('advanced');
-    }
+    this.host.openFieldGroup(entry.anchorId);
     this.host.applyFields(entry.fields, entry.addPostProcessors ?? []);
     if (!this.isBrowser) {
       return;
     }
-    // The row may only have come into existence with the mode change (or with
-    // the toggle the value itself turned on), so the pointing waits a render.
+    // The row may only have come into existence with the group unfolding (or
+    // with the toggle the value itself turned on), so the pointing waits a
+    // render.
     afterNextRender(() => this.flash(entry.anchorId), {
       injector: this.injector,
     });

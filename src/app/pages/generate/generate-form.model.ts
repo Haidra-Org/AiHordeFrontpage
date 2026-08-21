@@ -221,10 +221,6 @@ export const MAX_DENOISE = 1;
 export const DENOISE_STEP = 0.01;
 export const DEFAULT_DENOISE = 0.75;
 
-/** Top-level UI mode. Persisted for convenience but never sent to the API. */
-export const GENERATE_MODES = ['simple', 'advanced'] as const;
-export type GenerateMode = (typeof GENERATE_MODES)[number];
-
 /**
  * How wide the control panel is expanded, to trade horizontal space for less
  * vertical scrolling. `normal` is the single-column panel; `double` widens it
@@ -1056,8 +1052,6 @@ export interface StyleDetachState {
  * storage and what {@link buildImageRequest} maps into a horde request.
  */
 export interface GenerateFormValue {
-  /** UI mode only; not sent to the API. Simple mode drives generation via styles. */
-  mode: GenerateMode;
   /** Selected style-preset name; '' means no style. */
   styleName: string;
   /** Sections the user opted out of the style for; see {@link StyleDetachState}. */
@@ -1167,7 +1161,6 @@ export type GenerateFormControls = {
 export type GenerateFormGroup = FormGroup<GenerateFormControls>;
 
 export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
-  mode: 'simple',
   styleName: '',
   styleDetach: { style: '', sections: [] },
   prompt: '',
@@ -1391,12 +1384,6 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       merged.styleDetach = coerceStyleDetach(value);
       continue;
     }
-    if (key === 'mode') {
-      if ((GENERATE_MODES as readonly string[]).includes(value as string)) {
-        merged.mode = value as GenerateMode;
-      }
-      continue;
-    }
     if (key === 'loras') {
       if (Array.isArray(value)) {
         merged.loras = value
@@ -1487,7 +1474,6 @@ export function createGenerateForm(
       validators: [Validators.min(min), Validators.max(max)],
     });
   return new FormGroup<GenerateFormControls>({
-    mode: control(value.mode),
     styleName: control(value.styleName),
     styleDetach: control(value.styleDetach),
     prompt: control(value.prompt),
@@ -1560,63 +1546,13 @@ export function createGenerateForm(
 }
 
 /**
- * The fields the simple-mode UI exposes to the user. Width/height are included
- * because the aspect-ratio presets set them in simple mode; the rest are the
- * prompt, negative prompt, model, batch count, and selected style (plus any
- * per-section opt-outs from it, which the model and dimension locks offer here).
- *
- * The source-image fields and the hires pair are here because their controls
- * are rendered outside the advanced gate: a field the reader can see and set
- * has to reach the request, or the panel would show a choice it then discards.
- * Control type stays out, because the controlnet mode is advanced-only.
- */
-export const SIMPLE_MODE_FIELDS = [
-  'mode',
-  'styleName',
-  'styleDetach',
-  'prompt',
-  'negativePrompt',
-  'n',
-  'model',
-  'width',
-  'height',
-  'sourceMode',
-  'denoising_strength',
-  'maskEnabled',
-  'outpaintEnabled',
-  'outpaintAnchor',
-  'hires_fix',
-  'hires_fix_denoising_strength',
-] as const satisfies readonly (keyof GenerateFormValue)[];
-
-/**
- * Project a form snapshot down to what simple mode submits. Simple mode keeps
- * only the {@link SIMPLE_MODE_FIELDS}; every advanced-only field is reset to its
- * default rather than carrying whatever a prior advanced-mode session persisted.
- * This is the least-surprising rule: switching to simple mode always yields a
- * clean request (default sampler/steps/cfg, no post-processing, default
- * worker/output options), and any style the user picked is still applied on top
- * afterwards via {@link buildStyledImageRequest}.
- */
-export function simpleModeValue(value: GenerateFormValue): GenerateFormValue {
-  const result: GenerateFormValue = { ...DEFAULT_GENERATE_FORM_VALUE };
-  for (const key of SIMPLE_MODE_FIELDS) {
-    // Index assignment is sound: each key copies the same-typed field across.
-    (result as Record<keyof GenerateFormValue, unknown>)[key] = value[key];
-  }
-  return result;
-}
-
-/**
  * The fields a "reset all settings" leaves alone. The two prompts are the work
- * rather than a setting; `mode` is the panel's own detail level; `sourceMode`
- * stays because dropping it back to `none` would detach the image the reset
- * promises to keep.
+ * rather than a setting; `sourceMode` stays because dropping it back to `none`
+ * would detach the image the reset promises to keep.
  */
 export const RESET_KEPT_FIELDS = [
   'prompt',
   'negativePrompt',
-  'mode',
   'sourceMode',
 ] as const satisfies readonly (keyof GenerateFormValue)[];
 
@@ -2133,8 +2069,7 @@ function tiConfigToForm(ti: StyleTextualInversionConfig): FormTiEntry {
  * a stored request, so a past generation's settings can be loaded back into the
  * form. It is inherently lossy (a request carries no style name, and the base64
  * source image lives outside it), so `styleName` is cleared and the caller
- * re-attaches any source blob separately. The result opens in advanced mode so
- * every recovered field is visible and editable.
+ * re-attaches any source blob separately.
  */
 export function requestToFormValue(
   request: ImageGenerationRequest,
@@ -2145,7 +2080,6 @@ export function requestToFormValue(
   const [positive, negative] = splitCombinedPrompt(request.prompt);
   result.prompt = positive;
   result.negativePrompt = negative;
-  result.mode = 'advanced';
   result.styleName = '';
 
   if (request.models && request.models.length > 0) {

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { GenerateFormComponent } from './generate-form.component';
+import { GROUP_IDS, GenerateFormComponent } from './generate-form.component';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
@@ -70,7 +70,6 @@ async function createComponent(
   const fixture = TestBed.createComponent(GenerateFormComponent);
   const form = createGenerateForm({
     ...DEFAULT_GENERATE_FORM_VALUE,
-    mode: 'advanced',
     prompt: 'a fox',
     model: 'my model',
     width: 512,
@@ -427,7 +426,6 @@ describe('GenerateFormComponent extras', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       ...value,
     });
     fixture.componentRef.setInput('form', form);
@@ -557,7 +555,6 @@ describe('GenerateFormComponent model recommendations', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       ...value,
     });
     fixture.componentRef.setInput('form', form);
@@ -698,7 +695,6 @@ describe('GenerateFormComponent reset', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox in the snow',
       negativePrompt: 'blurry',
       sourceMode: 'img2img',
@@ -751,7 +747,7 @@ describe('GenerateFormComponent reset', () => {
     expect(value.n).toBe(DEFAULT_GENERATE_FORM_VALUE.n);
   });
 
-  it('keeps the prompts, the detail level and the attached source mode', async () => {
+  it('keeps the prompts and the attached source mode', async () => {
     const { component, form } = await createDirty();
 
     component.resetSettings();
@@ -759,7 +755,6 @@ describe('GenerateFormComponent reset', () => {
     const value = form.getRawValue();
     expect(value.prompt).toBe('a fox in the snow');
     expect(value.negativePrompt).toBe('blurry');
-    expect(value.mode).toBe('advanced');
     expect(value.sourceMode).toBe('img2img');
   });
 
@@ -887,7 +882,6 @@ describe('GenerateFormComponent model availability', () => {
       'form',
       createGenerateForm({
         ...DEFAULT_GENERATE_FORM_VALUE,
-        mode: 'advanced',
         prompt: 'a fox',
         model,
       }),
@@ -946,7 +940,6 @@ describe('GenerateFormComponent structure', () => {
       'form',
       createGenerateForm({
         ...DEFAULT_GENERATE_FORM_VALUE,
-        mode: 'advanced',
         prompt: 'a fox',
       }),
     );
@@ -958,6 +951,18 @@ describe('GenerateFormComponent structure', () => {
   async function render(): Promise<HTMLElement> {
     const fixture = await renderFixture();
     return fixture.nativeElement as HTMLElement;
+  }
+
+  /**
+   * Unfold every group, which is what a reader who has opened them has. The
+   * panel draws a folded group's controls nowhere, so a structural claim about
+   * one of them has to be made against a panel that is showing it.
+   */
+  function unfoldAll(fixture: ComponentFixture<GenerateFormComponent>): void {
+    for (const group of GROUP_IDS) {
+      fixture.componentInstance.openGroup(group);
+    }
+    fixture.detectChanges();
   }
 
   it('names every card of the panel, by its heading or by the control that opens it', async () => {
@@ -1002,7 +1007,9 @@ describe('GenerateFormComponent structure', () => {
   });
 
   it('offers the QR layout controls, and only the shapes the workflow accepts', async () => {
-    const host = await render();
+    const fixture = await renderFixture();
+    unfoldAll(fixture);
+    const host = fixture.nativeElement as HTMLElement;
     const drawer = host.querySelector<HTMLSelectElement>('#generate-qr-module');
 
     expect(host.querySelector('#generate-qr-x-offset')).not.toBeNull();
@@ -1018,6 +1025,7 @@ describe('GenerateFormComponent structure', () => {
 
   it('disables the QR layout controls with the payload box they belong to', async () => {
     const fixture = await renderFixture();
+    unfoldAll(fixture);
     const host = fixture.nativeElement as HTMLElement;
 
     fixture.componentRef.setInput('qrSupported', false);
@@ -1060,6 +1068,7 @@ describe('GenerateFormComponent structure', () => {
 
   it('lets a typed step count run past the slider, and marks one past the horde', async () => {
     const fixture = await renderFixture();
+    unfoldAll(fixture);
     const host = fixture.nativeElement as HTMLElement;
     const form = fixture.componentInstance.form();
     const field = host.querySelector<HTMLInputElement>('#generate-steps')!;
@@ -1135,7 +1144,6 @@ describe('GenerateFormComponent settings groups', () => {
       'form',
       createGenerateForm({
         ...DEFAULT_GENERATE_FORM_VALUE,
-        mode: 'advanced',
         prompt: 'a fox',
         ...value,
       }),
@@ -1204,29 +1212,37 @@ describe('GenerateFormComponent settings groups', () => {
     expect(changed.groupChanged('output')).toBe(false);
   });
 
-  it('folds a group away on the press and remembers it for the next visit', async () => {
+  it('starts every group folded, and remembers each one opened', async () => {
+    // All-folded is the panel's plain face: the cards a request cannot be
+    // described without are open, and nothing else is until it is asked for.
     const { component, fixture } = await render();
-    expect(component.isGroupOpen('sampling')).toBe(true);
-
-    component.toggleGroup('sampling');
-    fixture.detectChanges();
-    expect(component.isGroupOpen('sampling')).toBe(false);
+    expect(GROUP_IDS.filter((group) => component.isGroupOpen(group))).toEqual(
+      [],
+    );
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.gs-grid-sampling'),
     ).toBeNull();
 
+    component.toggleGroup('sampling');
+    fixture.detectChanges();
+    expect(component.isGroupOpen('sampling')).toBe(true);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.gs-grid-sampling'),
+    ).not.toBeNull();
+
     const { component: revisited } = await render();
-    expect(revisited.isGroupOpen('sampling')).toBe(false);
-    expect(revisited.isGroupOpen('output')).toBe(true);
+    expect(revisited.isGroupOpen('sampling')).toBe(true);
+    expect(revisited.isGroupOpen('output')).toBe(false);
   });
 
   it('unfolds the group holding a field the studio wants to point at', async () => {
-    const { component, fixture } = await render();
-    component.toggleGroup('sampling');
-    fixture.detectChanges();
+    const { component } = await render();
 
-    component.openGroupForAnchor('cfg');
+    expect(component.openGroupForAnchor('cfg')).toBe(true);
     expect(component.isGroupOpen('sampling')).toBe(true);
+    // Nothing moved the second time, and a caller narrating the unfold has to
+    // be able to tell the two apart.
+    expect(component.openGroupForAnchor('cfg')).toBe(false);
 
     // An anchor that lives on an always-open card asks nothing of any group.
     component.openGroupForAnchor('prompt');
@@ -1306,7 +1322,6 @@ describe('GenerateFormComponent sampler contract', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       sampler_name: 'k_euler',
       ...value,
@@ -1508,7 +1523,7 @@ describe('GenerateFormComponent sampler contract', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     fixture.componentRef.setInput(
       'form',
-      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, mode: 'advanced' }),
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE }),
     );
     fixture.detectChanges();
 
@@ -1551,7 +1566,6 @@ describe('GenerateFormComponent on the published contract', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       ...value,
     });
@@ -1698,7 +1712,6 @@ describe('GenerateFormComponent cost and size advice', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       ...value,
     });
@@ -1842,7 +1855,6 @@ describe('GenerateFormComponent advisory lines', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       model: 'a model',
       ...value,
@@ -2005,7 +2017,6 @@ describe('GenerateFormComponent suggested settings', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       model: 'a model',
       ...value,
@@ -2104,7 +2115,6 @@ describe('GenerateFormComponent kudos breakdown', () => {
     const fixture = TestBed.createComponent(GenerateFormComponent);
     const form = createGenerateForm({
       ...DEFAULT_GENERATE_FORM_VALUE,
-      mode: 'advanced',
       prompt: 'a fox',
       model: 'a model',
       ...value,

@@ -1,13 +1,15 @@
 import {
   GenerateFormValue,
-  GenerateMode,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
 import { SectionId } from './sections';
 
-/** What a step needs shown before it can point at anything. */
+/**
+ * What a step needs shown before it can point at anything. Only the source mode
+ * is stated: the settings group holding a step's field is unfolded from the
+ * step's own anchor, so a step never has to name where its control lives.
+ */
 export interface FlowReveal {
-  mode?: GenerateMode;
   sourceMode?: GenerateSourceMode;
 }
 
@@ -123,7 +125,6 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'steps',
         helpTopic: 'steps',
         sweepParameters: ['steps'],
-        reveal: { mode: 'advanced' },
         applyFields: ['steps'],
       },
       {
@@ -131,21 +132,18 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'cfg',
         helpTopic: 'cfg',
         sweepParameters: ['cfg_scale'],
-        reveal: { mode: 'advanced' },
         applyFields: ['cfg_scale'],
       },
       {
         id: 'sampler',
         anchorId: 'sampler',
         helpTopic: 'sampler',
-        reveal: { mode: 'advanced' },
         applyFields: ['sampler_name'],
       },
       {
         id: 'seed',
         anchorId: 'seed',
         helpTopic: 'seed',
-        reveal: { mode: 'advanced' },
         applyFields: ['seed'],
       },
       // The finale offers nothing to apply: pressing Generate is the step.
@@ -165,12 +163,10 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'source',
         anchorId: 'source',
         helpTopic: 'source',
-        reveal: { mode: 'advanced' },
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
-        reveal: { mode: 'advanced' },
         applyFields: ['sourceMode'],
       },
       {
@@ -180,7 +176,7 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'denoise',
         helpTopic: 'denoise',
         sweepParameters: ['denoising_strength'],
-        reveal: { mode: 'advanced', sourceMode: 'img2img' },
+        reveal: { sourceMode: 'img2img' },
         applyFields: ['denoising_strength'],
       },
       {
@@ -208,12 +204,10 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'source',
         anchorId: 'source',
         helpTopic: 'source',
-        reveal: { mode: 'advanced' },
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
-        reveal: { mode: 'advanced' },
         applyFields: ['sourceMode'],
       },
       {
@@ -221,7 +215,7 @@ export const FLOWS: readonly FlowDef[] = [
         // so this step points at the brush and writes nothing.
         id: 'mask',
         anchorId: 'mask',
-        reveal: { mode: 'advanced', sourceMode: 'inpainting' },
+        reveal: { sourceMode: 'inpainting' },
       },
       {
         id: 'prompt',
@@ -245,25 +239,23 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'source',
         anchorId: 'source',
         helpTopic: 'source',
-        reveal: { mode: 'advanced' },
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
-        reveal: { mode: 'advanced' },
         applyFields: ['sourceMode'],
       },
       {
         id: 'control_type',
         anchorId: 'control_type',
-        reveal: { mode: 'advanced', sourceMode: 'controlnet' },
+        reveal: { sourceMode: 'controlnet' },
         applyFields: ['control_type'],
       },
       {
         id: 'denoise',
         anchorId: 'denoise',
         helpTopic: 'denoise',
-        reveal: { mode: 'advanced', sourceMode: 'controlnet' },
+        reveal: { sourceMode: 'controlnet' },
         applyFields: ['denoising_strength'],
       },
       {
@@ -284,12 +276,10 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'source',
         anchorId: 'source',
         helpTopic: 'source',
-        reveal: { mode: 'advanced' },
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
-        reveal: { mode: 'advanced' },
         applyFields: ['sourceMode'],
       },
       {
@@ -299,7 +289,7 @@ export const FLOWS: readonly FlowDef[] = [
         // what to put in them, as the source step above it does.
         id: 'extras',
         anchorId: 'remix_extras',
-        reveal: { mode: 'advanced', sourceMode: 'remix' },
+        reveal: { sourceMode: 'remix' },
       },
       {
         id: 'prompt',
@@ -330,7 +320,6 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'transparent',
         anchorId: 'transparent',
         helpTopic: 'transparent',
-        reveal: { mode: 'advanced' },
         applyFields: ['transparent'],
       },
       { id: 'model', anchorId: 'model', applyFields: ['model'] },
@@ -354,7 +343,6 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'qr',
         anchorId: 'qr',
         helpTopic: 'qr',
-        reveal: { mode: 'advanced' },
         applyFields: ['qrText'],
       },
       { id: 'model', anchorId: 'model', applyFields: ['model'] },
@@ -368,7 +356,6 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'cfg',
         helpTopic: 'cfg',
         sweepParameters: ['cfg_scale'],
-        reveal: { mode: 'advanced' },
         applyFields: ['cfg_scale', 'steps', 'sampler_name', 'scheduler'],
       },
       { id: 'generate', anchorId: 'generate' },
@@ -396,7 +383,6 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'facefixer',
         anchorId: 'facefixer',
         helpTopic: 'facefixer',
-        reveal: { mode: 'advanced' },
         applyFields: ['post_processing', 'facefixer_strength'],
       },
       { id: 'regenerate', anchorId: 'generate' },

@@ -242,21 +242,34 @@ describe('the techniques that work from a source image', () => {
     expect(extras?.applyFields).toBeUndefined();
   });
 
-  it('opens the panel and the mode each control lives under', () => {
-    // The source card is advanced-only, and the strength, the control type and
-    // the brush each exist only under one of the modes.
+  it('opens the source mode each control lives under', () => {
+    // The strength, the control type and the brush each exist only under one of
+    // the source modes, so a step pointing at one has to name that mode.
     const problems = SOURCED.flatMap((id) =>
       flowSteps(id)
         .filter((step) => GATED_BY[step.anchorId ?? ''])
         .filter(
           (step) =>
-            step.reveal?.mode !== 'advanced' ||
-            !GATED_BY[step.anchorId!].includes(step.reveal.sourceMode ?? ''),
+            !GATED_BY[step.anchorId!].includes(step.reveal?.sourceMode ?? ''),
         )
         .map((step) => `${id}.${step.id}`),
     );
 
     expect(problems).toEqual([]);
+  });
+
+  it('leaves the folding of a settings group to the field a step names', () => {
+    // A group is unfolded from the anchor the step already names, so no step
+    // states where its control lives; a step naming a detail level would be
+    // naming a distinction the panel no longer draws.
+    for (const flow of FLOWS) {
+      for (const step of flow.steps) {
+        expect(
+          Object.keys(step.reveal ?? {}),
+          `${flow.id}.${step.id}`,
+        ).not.toContain('mode');
+      }
+    }
   });
 
   it('takes the source mode from the example rather than restating it', () => {
@@ -281,7 +294,9 @@ describe('the techniques that live in the workflow and finishing cards', () => {
     );
     expect(toggle?.anchorId).toBe('transparent');
     expect(toggle?.applyFields).toEqual(['transparent']);
-    expect(toggle?.reveal).toEqual({ mode: 'advanced' });
+    // The switch lives in a folded group, and the group is opened from the
+    // anchor rather than from anything the step states.
+    expect(toggle?.reveal).toBeUndefined();
   });
 
   it('writes the QR payload, and the sampling recipe as one set', () => {
