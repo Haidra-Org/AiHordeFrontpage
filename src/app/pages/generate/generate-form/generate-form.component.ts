@@ -263,6 +263,17 @@ const GROUP_FIELDS: Readonly<
   qr: ['qrText', 'qrXOffset', 'qrYOffset', 'qrModuleDrawer'],
 };
 
+/** What each group is called, for a count that has to name the group it is in. */
+const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
+  sampling: 'generate.form.sampling_section',
+  loras: 'generate.form.loras_section',
+  post: 'generate.form.post_processing_section',
+  output: 'generate.form.output_section',
+  horde: 'generate.form.horde_section',
+  transparent: 'generate.form.transparent_section',
+  qr: 'generate.form.qr_section',
+};
+
 /** Where the reader's open groups are remembered between visits. */
 const GROUPS_OPEN_KEY = 'aihorde.generate.groups_open';
 
@@ -906,6 +917,58 @@ export class GenerateFormComponent implements OnInit {
     }
     this.groupsOpen.set(next);
     this.db.store(GROUPS_OPEN_KEY, next);
+  }
+
+  /**
+   * The warnings about controls inside each group, by the anchor each names.
+   * Read by the folded head's count and by the press that opens it at the
+   * control: a fold is the reader's own and never stands for a problem dealt
+   * with.
+   */
+  private readonly warningsByGroup = computed(() => {
+    const byGroup = new Map<GroupId, RequestWarning[]>();
+    for (const warning of this.lintWarnings()) {
+      const group = GROUP_BY_ANCHOR[warning.anchor];
+      if (!group) {
+        continue;
+      }
+      const held = byGroup.get(group);
+      if (held) {
+        held.push(warning);
+      } else {
+        byGroup.set(group, [warning]);
+      }
+    }
+    return byGroup;
+  });
+
+  public groupLintCount(group: GroupId): number {
+    return this.warningsByGroup().get(group)?.length ?? 0;
+  }
+
+  public groupLintLabel(group: GroupId): string {
+    const count = this.groupLintCount(group);
+    if (count === 0) {
+      return '';
+    }
+    const name: string = this.transloco.translate(GROUP_TITLE_KEY[group]);
+    return this.transloco.translate(
+      `generate.groups.lint_count${count === 1 ? '_one' : '_other'}`,
+      { count, group: name },
+    );
+  }
+
+  /**
+   * Open a folded group at the first control one of its warnings is about, in
+   * the same gesture the warnings beside Generate use.
+   */
+  public goToGroupLint(group: GroupId): void {
+    const anchor = this.warningsByGroup().get(group)?.[0]?.anchor;
+    if (anchor) {
+      this.goToField(anchor);
+    } else {
+      this.openGroup(group);
+    }
   }
 
   /**

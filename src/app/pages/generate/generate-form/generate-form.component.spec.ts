@@ -1320,6 +1320,43 @@ describe('GenerateFormComponent settings groups', () => {
     expect(note!.closest('.gs-group-toggle')).toBeNull();
   });
 
+  it('never lets a fold hide a problem inside the group', async () => {
+    // The fold is the reader's own and stands for nothing having been dealt
+    // with, so a warning about a control inside a folded group is counted on
+    // its head, and pressing that count opens the group at the control.
+    const { component, fixture } = await render();
+    fixture.componentRef.setInput('lintWarnings', [
+      {
+        id: 'steps_high',
+        section: 'sampling',
+        anchor: 'steps',
+        titleKey: 'x',
+        bodyKey: 'y',
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(component.groupLintCount('sampling')).toBe(1);
+    expect(component.groupLintCount('output')).toBe(0);
+    const chip = groupNamed(
+      fixture.nativeElement as HTMLElement,
+      'Sampling',
+    ).querySelector<HTMLElement>('.gs-group-lint');
+    expect(chip, 'the folded group reports nothing').not.toBeNull();
+    expect(chip!.textContent?.trim()).toBe('1');
+
+    chip!.click();
+    fixture.detectChanges();
+    expect(component.isGroupOpen('sampling')).toBe(true);
+    // Open, the controls speak for themselves and the count stands down.
+    expect(
+      groupNamed(
+        fixture.nativeElement as HTMLElement,
+        'Sampling',
+      ).querySelector('.gs-group-lint'),
+    ).toBeNull();
+  });
+
   it('folds everything back up in one press, and remembers that too', async () => {
     const { component, fixture } = await render();
     component.openGroup('sampling');

@@ -40,6 +40,21 @@
         ></span>
       }
     </button>
+    <!-- A folded group still has to report a problem inside it: the fold is the
+         reader's, and the warning is not theirs to have dismissed. It sits
+         outside the opening press so that it can take the reader to the control
+         the warning is about rather than merely to the group. -->
+    @if (!open() && lintCount() > 0) {
+      <button
+        type="button"
+        class="gs-group-lint"
+        (click)="lintPressed.emit()"
+        [attr.aria-label]="lintLabel()"
+      >
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ lintCount() }}
+      </button>
+    }
     @if (open()) {
       <ng-content select="[groupActions]" />
     }

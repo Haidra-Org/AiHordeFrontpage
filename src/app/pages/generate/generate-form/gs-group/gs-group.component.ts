@@ -37,7 +37,17 @@ export class GsGroupComponent {
   /** Whether anything inside differs from the value the form starts at. */
   public readonly changed = input(false);
   public readonly open = input(false);
+  /**
+   * How many of the panel's warnings are about controls inside this group. A
+   * fold hides the controls, and a warning the reader cannot see is one they
+   * cannot answer, so a folded group carries the count on its head.
+   */
+  public readonly lintCount = input(0);
+  /** What that count says aloud, worded for the number by the panel. */
+  public readonly lintLabel = input('');
   public readonly toggled = output<void>();
+  /** Pressed the count: open the group and point at what the warning is about. */
+  public readonly lintPressed = output<void>();
 
   public readonly identity = computed(() => SECTION_IDENTITIES[this.section()]);
 

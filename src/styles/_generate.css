@@ -895,9 +895,13 @@
 .gen-studio .gs-group-head {
   display: flex;
   min-width: 0;
-  flex-wrap: wrap;
   align-items: center;
   column-gap: var(--gs-space-2);
+}
+/* Only a head holding a note wraps. A folded head is one line by definition,
+   and wrapping it would drop the count it wears onto a line of its own. */
+.gen-studio .gs-group-head:has(.gs-help-note) {
+  flex-wrap: wrap;
 }
 .gen-studio .gs-group-head:has(.gs-group-actions) {
   padding-right: var(--gs-space-2);
@@ -1642,10 +1646,11 @@
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
-/* On a phone the trigger sits mid-header, where neither edge of a panel this
-   wide is on screen. Pin it to the viewport instead, as the presets menu does,
-   so the question and both answers are always fully readable. */
-@media (max-width: 640px) {
+/* Once the header tools can wrap, the reset trigger may no longer sit at the
+  row's far right. If the confirm stays anchored to that wrapped position it
+  can run off-screen left, so from tablet widths down it detaches from the
+  trigger and pins to the viewport like the presets menu. */
+@media (max-width: 1023.98px) {
   .gen-studio .gs-reset-pop {
     position: fixed;
     top: calc(var(--nav-height-mobile) + 8px);
@@ -6432,6 +6437,37 @@
   color: var(--gs-muted);
 }
 
+/* The count a folded group wears while a warning is about something inside it.
+   The same amber as the warnings beside Generate, at the size of the mark it
+   sits beside: it is an offer to look, and never a barrier. */
+.gen-studio .gs-group-lint {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid rgba(180, 83, 9, 0.32);
+  border-radius: var(--gs-radius-pill);
+  background: rgba(251, 191, 36, 0.14);
+  color: #b45309;
+  font-size: var(--gs-text-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+.gen-studio .gs-group-lint:hover {
+  background: rgba(251, 191, 36, 0.22);
+}
+.gen-studio .gs-group-lint:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.dark .gen-studio .gs-group-lint {
+  border-color: rgba(251, 191, 36, 0.32);
+  background: rgba(251, 191, 36, 0.1);
+  color: #fbbf24;
+}
+
 /* ------- request warnings beside Generate ---------------------------- */
 /* Amber and quiet: it is an offer to look, never a barrier, so it never takes
    the alarm colours a blocked action would. The popover opens upward because
@@ -10449,10 +10485,11 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-main {
   flex: 1 1 320px;
   min-width: 0;
+  max-width: 33%;
 }
 .gen-studio .gs-learn-example {
   flex: 0 1 220px;
-  margin: 26px 0 0;
+  margin: 12px 0 0;
 }
 .gen-studio .gs-learn-thumb {
   width: 100%;

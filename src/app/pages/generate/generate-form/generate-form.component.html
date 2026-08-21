@@ -795,6 +795,9 @@
             [changed]="groupChanged('sampling')"
             [open]="isGroupOpen('sampling')"
             (toggled)="toggleGroup('sampling')"
+            [lintCount]="groupLintCount('sampling')"
+            [lintLabel]="groupLintLabel('sampling')"
+            (lintPressed)="goToGroupLint('sampling')"
           >
             <!-- The note and the style lock ride at the end of the head, beside
                  the press that opens the group rather than inside it. -->
@@ -1361,6 +1364,9 @@
             [changed]="groupChanged('loras')"
             [open]="isGroupOpen('loras')"
             (toggled)="toggleGroup('loras')"
+            [lintCount]="groupLintCount('loras')"
+            [lintLabel]="groupLintLabel('loras')"
+            (lintPressed)="goToGroupLint('loras')"
           >
             <div class="gs-group-actions" groupActions>
               <app-gs-help topic="loras" />
@@ -1392,6 +1398,9 @@
             [changed]="groupChanged('post')"
             [open]="isGroupOpen('post')"
             (toggled)="toggleGroup('post')"
+            [lintCount]="groupLintCount('post')"
+            [lintLabel]="groupLintLabel('post')"
+            (lintPressed)="goToGroupLint('post')"
           >
             <div>
               <div class="gs-field-head">
@@ -1497,6 +1506,9 @@
               [changed]="groupChanged('output')"
               [open]="isGroupOpen('output')"
               (toggled)="toggleGroup('output')"
+              [lintCount]="groupLintCount('output')"
+              [lintLabel]="groupLintLabel('output')"
+              (lintPressed)="goToGroupLint('output')"
             >
               <div class="gs-opt">
                 <label class="gs-switch gs-switch-row">
@@ -1537,6 +1549,9 @@
               [changed]="groupChanged('horde')"
               [open]="isGroupOpen('horde')"
               (toggled)="toggleGroup('horde')"
+              [lintCount]="groupLintCount('horde')"
+              [lintLabel]="groupLintLabel('horde')"
+              (lintPressed)="goToGroupLint('horde')"
             >
               <div class="gs-opt">
                 <label class="gs-switch gs-switch-row">
@@ -1772,6 +1787,9 @@
               [changed]="groupChanged('transparent')"
               [open]="isGroupOpen('transparent')"
               (toggled)="toggleGroup('transparent')"
+              [lintCount]="groupLintCount('transparent')"
+              [lintLabel]="groupLintLabel('transparent')"
+              (lintPressed)="goToGroupLint('transparent')"
             >
               <p class="gs-sublabel">
                 {{ "generate.form.transparent_hint" | transloco }}
@@ -1796,6 +1814,9 @@
               [changed]="groupChanged('qr')"
               [open]="isGroupOpen('qr')"
               (toggled)="toggleGroup('qr')"
+              [lintCount]="groupLintCount('qr')"
+              [lintLabel]="groupLintLabel('qr')"
+              (lintPressed)="goToGroupLint('qr')"
             >
               <div appTutAnchor="qr">
                 <div class="gs-field-head">

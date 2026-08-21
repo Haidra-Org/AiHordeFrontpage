@@ -334,6 +334,8 @@
   "generate.zones.refine": "Refine",
   "generate.zones.deliver": "Deliver",
   "generate.zones.workflows": "Workflows",
+  "generate.groups.lint_count_one": "1 thing to look at in {{ group }}",
+  "generate.groups.lint_count_other": "{{ count }} things to look at in {{ group }}",
   "generate.groups.changed": "Changed from the default",
   "generate.form.open_guide": "Read the walkthrough for this panel",
   "generate.form.open_guide_short": "Walkthrough",
