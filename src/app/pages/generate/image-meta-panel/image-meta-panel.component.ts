@@ -22,6 +22,7 @@ import {
   ImageMetaProvenance,
   imageErrorFieldKey,
   imageErrorReasonKey,
+  kudosDiverged,
 } from '../image-metadata';
 import { SectionIdentity, sectionIdentity } from '../../../content/sections';
 import { settingSection } from '../../../content/settings';
@@ -439,6 +440,30 @@ export class ImageMetaPanelComponent {
         label: t('generate.results.meta_aesthetic'),
         value: provenance.aesthetic.toFixed(2),
         tone: 'good',
+      });
+    }
+    // What it was quoted against what it cost. Shown together, and flagged only
+    // when they part by more than the fractional tail both carry.
+    const kudos = provenance.kudos;
+    if (kudos?.quoted != null || kudos?.charged != null) {
+      const diverged = kudosDiverged(kudos);
+      rows.push({
+        label: t('generate.results.meta_kudos'),
+        value:
+          kudos.quoted == null || kudos.charged == null
+            ? t('generate.results.meta_kudos_one', {
+                kudos: Math.round(kudos.charged ?? kudos.quoted ?? 0),
+              })
+            : t(
+                diverged
+                  ? 'generate.results.meta_kudos_diverged'
+                  : 'generate.results.meta_kudos_both',
+                {
+                  quoted: Math.round(kudos.quoted),
+                  charged: Math.round(kudos.charged),
+                },
+              ),
+        tone: diverged ? 'warn' : 'default',
       });
     }
     for (const error of provenance.errors) {

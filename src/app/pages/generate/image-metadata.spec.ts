@@ -3,6 +3,7 @@ import {
   deriveImageMeta,
   imageErrorFieldKey,
   imageErrorReasonKey,
+  kudosDiverged,
 } from './image-metadata';
 import en from '../../../assets/i18n/en.json';
 import { ImageGenerationRequest } from '../../types/generation';
@@ -129,5 +130,22 @@ describe('gen_metadata in reader language', () => {
     const key = imageErrorReasonKey('exploded');
     expect(key).toBe('generate.results.error_other');
     expect(copy[key]).toBeTruthy();
+  });
+});
+
+describe('kudosDiverged', () => {
+  it('says nothing about a job that was never quoted or never charged', () => {
+    expect(kudosDiverged(null)).toBe(false);
+    expect(kudosDiverged({ quoted: null, charged: 40 })).toBe(false);
+    expect(kudosDiverged({ quoted: 40, charged: null })).toBe(false);
+  });
+
+  it('lets the fractional tail both figures carry pass unremarked', () => {
+    expect(kudosDiverged({ quoted: 40.2, charged: 40.9 })).toBe(false);
+  });
+
+  it('flags a whole kudos of difference either way', () => {
+    expect(kudosDiverged({ quoted: 40, charged: 52 })).toBe(true);
+    expect(kudosDiverged({ quoted: 52, charged: 40 })).toBe(true);
   });
 });

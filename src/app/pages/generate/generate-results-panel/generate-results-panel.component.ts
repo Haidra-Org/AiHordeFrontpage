@@ -28,6 +28,7 @@ import { LocalGenerationJob } from '../../../types/generation-job';
 import {
   StoredJobImage,
   StoredJobImageMetadata,
+  sessionStatsToday,
 } from '../../../types/generation-job';
 import { Router, RouterLink } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
@@ -40,6 +41,7 @@ import {
   deriveImageMeta,
   imageErrorFieldKey,
   imageErrorReasonKey,
+  kudosDiverged,
 } from '../image-metadata';
 import {
   ImageMetaPanelComponent,
@@ -658,6 +660,7 @@ export class GenerateResultsPanelComponent {
               thumb.metadata,
               derived,
               job.styleName ?? null,
+              { quoted: job.quotedKudos ?? null, charged: job.kudos ?? null },
             ),
             prompt,
             request: job.request,
@@ -841,6 +844,25 @@ export class GenerateResultsPanelComponent {
         tone: csam ? 'danger' : 'warn',
       });
     }
+    // The price, quoted against charged, so the raw JSON is not the only place
+    // the two can be compared.
+    const kudos = tile.provenance?.kudos;
+    if (kudos?.quoted != null && kudos.charged != null) {
+      const diverged = kudosDiverged(kudos);
+      rows.push({
+        label: t('generate.results.meta_kudos'),
+        value: t(
+          diverged
+            ? 'generate.results.meta_kudos_diverged'
+            : 'generate.results.meta_kudos_both',
+          {
+            quoted: Math.round(kudos.quoted),
+            charged: Math.round(kudos.charged),
+          },
+        ),
+        tone: diverged ? 'warn' : undefined,
+      });
+    }
     for (const error of tile.errors ?? []) {
       rows.push({
         label: t(imageErrorFieldKey(error.type)),
@@ -850,6 +872,17 @@ export class GenerateResultsPanelComponent {
     }
     return rows;
   });
+
+  /**
+   * What today came to: pictures back, kudos spent, and the mean wait. Read off
+   * the job history the studio already holds, so it costs no request.
+   */
+  public readonly sessionStats = computed(() =>
+    sessionStatsToday(this.queue.jobs(), Date.now()),
+  );
+
+  /** Whether the day's tally is expanded. Closed on arrival; it is a footnote. */
+  public readonly statsOpen = signal(false);
 
   /**
    * The job whose wait is being explained, by local id, or null. Keyed by job

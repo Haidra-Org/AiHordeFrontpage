@@ -98,7 +98,17 @@ export interface LocalGenerationJob {
   updatedAt: number;
   request: ImageGenerationRequest;
   hordeId?: string;
+  /**
+   * The running kudos figure: what the horde quoted at submit while the job is
+   * in flight, and what it actually charged once the job is done.
+   */
   kudos?: number;
+  /**
+   * What the horde quoted when it accepted the submit, kept apart from
+   * {@link LocalGenerationJob.kudos} because that field is overwritten with the
+   * charge as the job runs. Absent on jobs stored before it existed.
+   */
+  quotedKudos?: number;
   queuePosition?: number;
   waitTime?: number;
   errorMessage?: string;
@@ -136,6 +146,57 @@ export interface LocalGenerationJob {
    * hammer the check endpoint immediately after a reload.
    */
   lastCheckedAt?: number;
+}
+
+/** What a day at the studio came to, read off the jobs already held locally. */
+export interface SessionStats {
+  /** Pictures that came back today. */
+  images: number;
+  /** Kudos the horde charged for them. */
+  kudos: number;
+  /** Mean seconds from asking to arriving, or null when nothing finished. */
+  averageWaitSeconds: number | null;
+}
+
+/**
+ * The day's work, counted from the local job history rather than asked for over
+ * the network: every figure here is something the studio already recorded, so
+ * the line costs nothing and is right even offline.
+ *
+ * "Today" runs from local midnight, which is the day the reader is having
+ * rather than the horde's own.
+ */
+export function sessionStatsToday(
+  jobs: readonly LocalGenerationJob[],
+  now: number,
+): SessionStats {
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  const since = midnight.getTime();
+
+  let images = 0;
+  let kudos = 0;
+  let waitTotal = 0;
+  let waited = 0;
+  for (const job of jobs) {
+    if (job.status !== 'done' || job.createdAt < since) {
+      continue;
+    }
+    images += job.resultImageIds.length;
+    kudos += job.kudos ?? 0;
+    const wait = job.updatedAt - job.createdAt;
+    if (wait > 0) {
+      waitTotal += wait;
+      waited += 1;
+    }
+  }
+
+  return {
+    images,
+    kudos: Math.round(kudos),
+    averageWaitSeconds:
+      waited === 0 ? null : Math.round(waitTotal / waited / 1000),
+  };
 }
 
 /**

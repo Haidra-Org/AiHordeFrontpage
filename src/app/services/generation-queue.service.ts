@@ -348,6 +348,9 @@ export class GenerationQueueService {
         status: 'requested',
         hordeId: result.response.id,
         kudos: result.response.kudos,
+        // The same figure, kept where nothing later overwrites it, so the
+        // finished job can be shown against what it was quoted.
+        quotedKudos: result.response.kudos,
         errorMessage: undefined,
         errorKey: undefined,
         errorRc: undefined,

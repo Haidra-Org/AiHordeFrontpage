@@ -254,6 +254,49 @@
           {{ "generate.results.filter_errors" | transloco }}
         </button>
       }
+
+      <!-- What today came to. Folded away by default: it is a footnote to the
+           work, not part of doing it, and every figure is read off the jobs
+           already stored here rather than asked for. -->
+      @if (sessionStats(); as stats) {
+        @if (stats.images > 0) {
+          <div class="gs-today">
+            <button
+              type="button"
+              class="gs-view-toggle"
+              [class.gs-view-toggle--on]="statsOpen()"
+              [attr.aria-expanded]="statsOpen()"
+              (click)="statsOpen.set(!statsOpen())"
+            >
+              <app-icon name="clock" class="gs-ico-sm" />
+              {{
+                (stats.images === 1
+                  ? "generate.results.today_one"
+                  : "generate.results.today_other"
+                ) | transloco: { count: stats.images }
+              }}
+            </button>
+            @if (statsOpen()) {
+              <ul class="gs-today-list">
+                <li>
+                  {{
+                    "generate.results.today_kudos"
+                      | transloco: { kudos: stats.kudos }
+                  }}
+                </li>
+                @if (stats.averageWaitSeconds !== null) {
+                  <li>
+                    {{
+                      "generate.results.today_wait"
+                        | transloco: { seconds: stats.averageWaitSeconds }
+                    }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      }
     </div>
   }
 

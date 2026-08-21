@@ -155,14 +155,47 @@ export interface ImageMetaProvenance {
   errors: ImageMetaError[];
   /** The style preset the job was submitted with, when it recorded one. */
   styleName: string | null;
+  /** What the job's price came to, quoted and charged; see {@link JobKudos}. */
+  kudos: JobKudos | null;
+}
+
+/**
+ * What the horde said a job would cost when it took it, and what it charged
+ * once the job finished. Held together so the two can be shown against each
+ * other rather than one silently replacing the other.
+ */
+export interface JobKudos {
+  quoted: number | null;
+  charged: number | null;
+}
+
+/**
+ * How far the charge may sit from the quote before it is worth remarking on.
+ * Both figures carry a fractional tail, so an exact comparison would flag every
+ * job; a whole kudos is the smallest difference a reader could act on.
+ */
+const KUDOS_DIVERGENCE = 1;
+
+/**
+ * Whether the charge is far enough from the quote to be worth pointing at.
+ * False whenever either figure is missing: nothing can be said about a job that
+ * was never quoted, and a job still running has not been charged.
+ */
+export function kudosDiverged(kudos: JobKudos | null): boolean {
+  if (kudos?.quoted == null || kudos.charged == null) {
+    return false;
+  }
+  return Math.abs(kudos.charged - kudos.quoted) >= KUDOS_DIVERGENCE;
 }
 
 export function buildImageProvenance(
   metadata: StoredJobImageMetadata | undefined,
   derived: DerivedImageMeta,
   styleName: string | null = null,
+  kudos: JobKudos | null = null,
 ): ImageMetaProvenance {
   return {
+    kudos,
     seed: metadata?.seed ?? null,
     model: metadata?.model ?? null,
     workerName: metadata?.workerName ?? null,

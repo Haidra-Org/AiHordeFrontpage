@@ -2988,6 +2988,25 @@
   padding: 8px 22px;
   border-bottom: 1px solid var(--gs-border-results);
 }
+/* The day's tally, at the end of the view bar. Its detail unfolds in place
+   rather than in a popover: three numbers do not earn one. */
+.gen-studio .gs-today {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.gen-studio .gs-today-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+  font-variant-numeric: tabular-nums;
+}
 .gen-studio .gs-view-ctl {
   display: inline-flex;
   align-items: center;
