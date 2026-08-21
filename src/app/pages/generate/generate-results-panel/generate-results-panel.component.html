@@ -426,9 +426,12 @@
           <div class="gs-empty-sub">
             {{ "generate.results.empty_sub" | transloco }}
           </div>
-          <a class="gs-guide-cta" [routerLink]="guideLink">
-            <app-icon name="question-mark-circle" class="gs-ico-sm" />
-            {{ "generate.guide.open_empty" | transloco }}
+          <!-- The way in from an empty pane is the whole shelf of reading, not
+               one page about this screen: a reader who has generated nothing yet
+               does not know which of their questions this page would answer. -->
+          <a class="gs-guide-cta" [routerLink]="docsLink">
+            <app-icon name="academic-cap" class="gs-ico-sm" />
+            {{ "generate.results.empty_learn" | transloco }}
           </a>
           <!-- Starting from nothing is the hardest part of a prompt box, so the
                empty state offers a few prompts to depart from. -->

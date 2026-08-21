@@ -163,6 +163,18 @@
           </div>
         }
       </div>
+      <!-- The walkthrough, from the toolbar of the panel it walks through. -->
+      <a
+        class="gs-mini-btn"
+        [routerLink]="guideLink"
+        [attr.aria-label]="'generate.form.open_guide' | transloco"
+        [title]="'generate.form.open_guide' | transloco"
+      >
+        <app-icon name="document-text" class="gs-ico-sm" />
+        <span class="gs-mini-btn-label">{{
+          "generate.form.open_guide_short" | transloco
+        }}</span>
+      </a>
       @if (anyGroupOpen()) {
         <button
           type="button"

@@ -939,12 +939,14 @@ describe('GenerateResultsPanelComponent', () => {
     expect(used).toEqual(['a misty mountain lake']);
   });
 
-  it('sends both of its guide affordances to the guide page', () => {
-    // The guide left the pane for a routed page of the Learn area, so the bar
-    // button and the empty state's way in are links rather than pane state.
+  it('sends an empty pane to the reading rather than to one page of it', () => {
+    // A reader who has generated nothing yet does not know which of their
+    // questions a page about this screen would answer, so the way in from the
+    // empty pane is the whole shelf. The bar keeps its link to the walkthrough.
+    expect(component.docsLink).toBe('/docs/image');
     expect(component.guideLink).toBe('/docs/image/guide');
     expect(TRANSLATIONS['generate.guide.open']).toBeTruthy();
-    expect(TRANSLATIONS['generate.guide.open_empty']).toBeTruthy();
+    expect(TRANSLATIONS['generate.results.empty_learn']).toBeTruthy();
     expect('guideOpen' in component).toBe(false);
   });
 

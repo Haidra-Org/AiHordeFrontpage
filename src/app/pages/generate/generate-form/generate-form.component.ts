@@ -15,6 +15,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
 import {
   AbstractControl,
   FormControl,
@@ -301,6 +303,7 @@ const SUMMARY_SEPARATOR = ' · ';
     CivitaiPickerComponent,
     StyleBrowserComponent,
     GsGroupComponent,
+    RouterLink,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -310,6 +313,9 @@ const SUMMARY_SEPARATOR = ' · ';
   },
 })
 export class GenerateFormComponent implements OnInit {
+  /** The walkthrough this panel is the subject of. */
+  public readonly guideLink = DOCS_IMAGE_GUIDE;
+
   private readonly destroyRef = inject(DestroyRef);
   public readonly presetsSvc = inject(GeneratePresetsService);
   /* Below 1024px the tool switcher is a bottom bar and carries nothing but the
