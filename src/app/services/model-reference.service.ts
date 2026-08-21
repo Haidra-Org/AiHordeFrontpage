@@ -34,6 +34,17 @@ export const QR_CODE_BASELINES: readonly string[] = [
 ];
 
 /**
+ * Baselines the layerdiffuse pipeline has weights for (SD 1.5 and SDXL). A
+ * transparent request against any other baseline is not refused: the worker
+ * software leaves the graph unrewired and returns an ordinary opaque picture,
+ * so this is guidance rather than something the horde would reject on.
+ */
+export const TRANSPARENT_BASELINES: readonly string[] = [
+  'stable_diffusion_1',
+  'stable_diffusion_xl',
+];
+
+/**
  * Baselines the horde has ControlNet annotators for. The models are SD 1.5
  * ControlNets, so a control_type asked of any other family is dropped or
  * refused rather than guiding the image.
@@ -266,6 +277,10 @@ export function baselineSupportsQrCode(baseline: string | null): boolean {
   return baselineSupports(baseline, QR_CODE_BASELINES);
 }
 
+export function baselineSupportsTransparent(baseline: string | null): boolean {
+  return baselineSupports(baseline, TRANSPARENT_BASELINES);
+}
+
 export function baselineSupportsControlNet(baseline: string | null): boolean {
   return baselineSupports(baseline, CONTROLNET_BASELINES);
 }
@@ -358,6 +373,11 @@ export class ModelReferenceService {
   /** Whether `modelName` can serve the QR-code workflow; permissive when unknown. */
   public supportsQrCode(modelName: string): boolean {
     return baselineSupportsQrCode(this.baselineFor(modelName));
+  }
+
+  /** Whether `modelName` can render a transparent background; permissive when unknown. */
+  public supportsTransparent(modelName: string): boolean {
+    return baselineSupportsTransparent(this.baselineFor(modelName));
   }
 
   private fetch(): void {

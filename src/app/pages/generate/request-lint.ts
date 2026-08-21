@@ -3,10 +3,12 @@ import {
   baselineSupportsMask,
   baselineSupportsQrCode,
   baselineSupportsRemix,
+  baselineSupportsTransparent,
   CONTROLNET_BASELINES,
   MASK_BASELINES,
   QR_CODE_BASELINES,
   REMIX_BASELINES,
+  TRANSPARENT_BASELINES,
   type ModelRequirements,
 } from '../../services/model-reference.service';
 import {
@@ -57,6 +59,7 @@ export type FieldAnchorId =
   | 'source_mode'
   | 'control_type'
   | 'qr'
+  | 'transparent'
   | 'generate'
   | 'advanced_sampling'
   | 'solver_type'
@@ -93,6 +96,7 @@ export interface FeatureCompatRule {
 export type FeatureCompatRuleId =
   | 'controlnet_baseline'
   | 'qr_code_baseline'
+  | 'transparent_baseline'
   | 'remix_baseline'
   | 'mask_baseline'
   | 'hires_with_mask'
@@ -228,6 +232,15 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
     messageKey: 'generate.form.qr_unsupported',
     applies: (input) => input.value.qrText.trim() !== '',
     satisfied: (input) => baselineSupportsQrCode(input.baseline),
+  },
+  {
+    id: 'transparent_baseline',
+    anchor: 'transparent',
+    section: 'workflows',
+    baselines: TRANSPARENT_BASELINES,
+    messageKey: 'generate.lint.transparent_baseline',
+    applies: (input) => input.value.transparent,
+    satisfied: (input) => baselineSupportsTransparent(input.baseline),
   },
   {
     id: 'source_required',

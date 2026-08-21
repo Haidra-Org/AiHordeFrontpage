@@ -44,6 +44,7 @@ describe('feature compatibility rules', () => {
       'hires_with_mask',
       'outpaint_target',
       'qr_code_baseline',
+      'transparent_baseline',
       'source_required',
     ]);
     for (const id of ids) {
@@ -210,6 +211,32 @@ describe('feature compatibility rules', () => {
     it('stays silent on an unknown baseline, and with no QR text', () => {
       expect(violated(qr(null))).toEqual([]);
       expect(violated(qr('stable_cascade', '   '))).toEqual([]);
+    });
+  });
+
+  describe('transparent_baseline', () => {
+    const transparent = (baseline: string | null) =>
+      lintInput({
+        value: { ...DEFAULT_GENERATE_FORM_VALUE, transparent: true },
+        baseline,
+      });
+
+    it('passes on SD 1.5 and SDXL', () => {
+      expect(violated(transparent('stable_diffusion_1'))).toEqual([]);
+      expect(violated(transparent('stable_diffusion_xl'))).toEqual([]);
+    });
+
+    it('fires on any other baseline', () => {
+      expect(violated(transparent('stable_cascade'))).toEqual([
+        'transparent_baseline',
+      ]);
+    });
+
+    it('stays silent on an unknown baseline, and when transparent is off', () => {
+      expect(violated(transparent(null))).toEqual([]);
+      expect(violated(lintInput({ baseline: 'stable_cascade' }))).not.toContain(
+        'transparent_baseline',
+      );
     });
   });
 

@@ -136,6 +136,7 @@
   "generate.lint.outpaint_target": "Extending needs a size larger than your picture in at least one direction. Raise the width or the height to make room.",
   "generate.workers.available_one": "1 worker can take this",
   "generate.workers.available_other": "{{ count }} workers can take this",
+  "generate.lint.transparent_baseline": "Transparent backgrounds need a Stable Diffusion 1.5 or SDXL model. Other models will draw an ordinary opaque picture.",
   "generate.workers.none_available": "No workers are online right now, so this will wait until one comes back.",
   "generate.workers.none_model_one": "1 worker is online and it is not carrying this model. Pick another model, or leave it blank for any.",
   "generate.workers.none_model_other": "{{ count }} workers are online and none are carrying this model. Pick another model, or leave it blank for any.",

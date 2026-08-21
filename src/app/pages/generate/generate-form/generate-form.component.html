@@ -1889,6 +1889,12 @@
                   ></span> </label
                 ><app-gs-help topic="transparent" />
               </div>
+              <ng-container
+                *ngTemplateOutlet="
+                  lintLines;
+                  context: { warnings: transparentWarnings() }
+                "
+              />
             </app-gs-group>
 
             <app-gs-group
@@ -1936,7 +1942,7 @@
                   <ng-container
                     *ngTemplateOutlet="
                       lintLines;
-                      context: { warnings: warningsFor('workflows') }
+                      context: { warnings: qrWarnings() }
                     "
                   />
                 </div>

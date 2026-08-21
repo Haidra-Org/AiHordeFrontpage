@@ -2339,6 +2339,20 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /**
+   * As {@link loraWarnings}, for the transparent-background toggle. Read by
+   * anchor rather than by section: the QR card shares the `workflows` section
+   * and already renders its own baseline warning inline.
+   */
+  public transparentWarnings(): readonly RequestWarning[] {
+    return warningsAtAnchor(this.lintWarnings(), 'transparent');
+  }
+
+  /** As {@link transparentWarnings}, for the QR-code text field. */
+  public qrWarnings(): readonly RequestWarning[] {
+    return warningsAtAnchor(this.lintWarnings(), 'qr');
+  }
+
+  /**
    * Whether a named compatibility rule is currently firing. Cards that already
    * carry the rule's sentence as a standing note beside the control it disables
    * read this so the reader is never shown the same line twice.

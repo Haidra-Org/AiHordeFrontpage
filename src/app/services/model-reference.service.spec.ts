@@ -10,6 +10,7 @@ import {
   ModelReferenceService,
   baselineSupportsQrCode,
   baselineSupportsRemix,
+  baselineSupportsTransparent,
   coerceBaselineMap,
   coerceRequirements,
   coerceModelNames,
@@ -156,9 +157,16 @@ describe('baseline capability rules', () => {
     expect(baselineSupportsQrCode('stable_cascade')).toBe(false);
   });
 
+  it('allows a transparent background on SD 1.5 and SDXL', () => {
+    expect(baselineSupportsTransparent('stable_diffusion_1')).toBe(true);
+    expect(baselineSupportsTransparent('stable_diffusion_xl')).toBe(true);
+    expect(baselineSupportsTransparent('stable_cascade')).toBe(false);
+  });
+
   it('fails open on an unknown baseline', () => {
     expect(baselineSupportsRemix(null)).toBe(true);
     expect(baselineSupportsQrCode(null)).toBe(true);
+    expect(baselineSupportsTransparent(null)).toBe(true);
   });
 });
 
@@ -205,6 +213,8 @@ describe('ModelReferenceService', () => {
     expect(service.supportsRemix('Deliberate')).toBe(false);
     expect(service.supportsQrCode('Deliberate')).toBe(true);
     expect(service.supportsQrCode('Flux')).toBe(false);
+    expect(service.supportsTransparent('Deliberate')).toBe(true);
+    expect(service.supportsTransparent('Flux')).toBe(false);
   });
 
   it('loads the requirements alongside the baselines', () => {

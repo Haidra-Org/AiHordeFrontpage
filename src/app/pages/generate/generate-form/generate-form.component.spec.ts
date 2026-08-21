@@ -828,6 +828,13 @@ describe('GenerateFormComponent request warnings', () => {
       key: 'generate.form.qr_unsupported',
       params: {},
     },
+    {
+      id: 'transparent_baseline',
+      section: 'workflows',
+      anchor: 'transparent',
+      key: 'generate.lint.transparent_baseline',
+      params: {},
+    },
   ];
 
   it('hands each card only its own warnings, and answers for a named rule', async () => {
@@ -840,8 +847,15 @@ describe('GenerateFormComponent request warnings', () => {
     ]);
     expect(component.warningsFor('workflows').map((w) => w.id)).toEqual([
       'qr_code_baseline',
+      'transparent_baseline',
     ]);
     expect(component.warningsFor('sampling')).toEqual([]);
+    expect(component.qrWarnings().map((w) => w.id)).toEqual([
+      'qr_code_baseline',
+    ]);
+    expect(component.transparentWarnings().map((w) => w.id)).toEqual([
+      'transparent_baseline',
+    ]);
     expect(component.hasWarning('qr_code_baseline')).toBe(true);
     expect(component.hasWarning('remix_baseline')).toBe(false);
   });
