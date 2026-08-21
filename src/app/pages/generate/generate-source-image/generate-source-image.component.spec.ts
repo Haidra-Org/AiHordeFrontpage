@@ -268,6 +268,58 @@ describe('GenerateSourceImageComponent', () => {
   });
 });
 
+describe('what the simple panel offers', () => {
+  it('withholds controlnet until the panel is on its advanced level', async () => {
+    const { component, form } = await createComponent();
+
+    expect(component.advanced()).toBe(false);
+    expect(component.modes()).not.toContain('controlnet');
+    expect(component.modes()).toContain('img2img');
+    expect(component.modes()).toContain('inpainting');
+    expect(component.modes()).toContain('remix');
+
+    form.controls.mode.setValue('advanced');
+    expect(component.advanced()).toBe(true);
+    expect(component.modes()).toContain('controlnet');
+  });
+
+  it('reads the detail level the form already holds on init', async () => {
+    await TestBed.configureTestingModule({
+      imports: [GenerateSourceImageComponent],
+      providers: [{ provide: PLATFORM_ID, useValue: 'browser' }],
+    })
+      .overrideComponent(GenerateSourceImageComponent, {
+        set: { template: '' },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateSourceImageComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, mode: 'advanced' }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.advanced()).toBe(true);
+  });
+
+  it('still emits the masked choices at the simple level', async () => {
+    // Masking is reachable from the simple panel, so the state it emits has to
+    // carry the mask the request lint and the queue both read.
+    const { component, form, states } = await createComponent();
+    const mask = new Blob([new Uint8Array([2])], { type: 'image/png' });
+
+    component.sourceImage.set(fakeImage());
+    component.maskPainted.set(true);
+    component.maskBlob.set(mask);
+    form.controls.sourceMode.setValue('img2img');
+    form.controls.maskEnabled.setValue(true);
+
+    expect(component.advanced()).toBe(false);
+    expect(states.at(-1)!.maskBlob).toBe(mask);
+  });
+});
+
 describe('the masked choices inside a mode', () => {
   it('carries a mask on image-to-image once masking is asked for', async () => {
     // The queue attaches whatever mask the emitted state names, so this is the

@@ -1564,6 +1564,11 @@ export function createGenerateForm(
  * because the aspect-ratio presets set them in simple mode; the rest are the
  * prompt, negative prompt, model, batch count, and selected style (plus any
  * per-section opt-outs from it, which the model and dimension locks offer here).
+ *
+ * The source-image fields and the hires pair are here because their controls
+ * are rendered outside the advanced gate: a field the reader can see and set
+ * has to reach the request, or the panel would show a choice it then discards.
+ * Control type stays out, because the controlnet mode is advanced-only.
  */
 export const SIMPLE_MODE_FIELDS = [
   'mode',
@@ -1575,6 +1580,13 @@ export const SIMPLE_MODE_FIELDS = [
   'model',
   'width',
   'height',
+  'sourceMode',
+  'denoising_strength',
+  'maskEnabled',
+  'outpaintEnabled',
+  'outpaintAnchor',
+  'hires_fix',
+  'hires_fix_denoising_strength',
 ] as const satisfies readonly (keyof GenerateFormValue)[];
 
 /**
@@ -1582,9 +1594,9 @@ export const SIMPLE_MODE_FIELDS = [
  * only the {@link SIMPLE_MODE_FIELDS}; every advanced-only field is reset to its
  * default rather than carrying whatever a prior advanced-mode session persisted.
  * This is the least-surprising rule: switching to simple mode always yields a
- * clean request (default sampler/steps/cfg, no source image, no post-processing,
- * default worker/output options), and any style the user picked is still applied
- * on top afterwards via {@link buildStyledImageRequest}.
+ * clean request (default sampler/steps/cfg, no post-processing, default
+ * worker/output options), and any style the user picked is still applied on top
+ * afterwards via {@link buildStyledImageRequest}.
  */
 export function simpleModeValue(value: GenerateFormValue): GenerateFormValue {
   const result: GenerateFormValue = { ...DEFAULT_GENERATE_FORM_VALUE };
@@ -1599,7 +1611,7 @@ export function simpleModeValue(value: GenerateFormValue): GenerateFormValue {
  * The fields a "reset all settings" leaves alone. The two prompts are the work
  * rather than a setting; `mode` is the panel's own detail level; `sourceMode`
  * stays because dropping it back to `none` would detach the image the reset
- * promises to keep (and, in simple mode, discard it outright).
+ * promises to keep.
  */
 export const RESET_KEPT_FIELDS = [
   'prompt',

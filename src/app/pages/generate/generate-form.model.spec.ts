@@ -122,10 +122,15 @@ describe('simpleModeValue', () => {
         model: 'flux',
         width: 768,
         height: 512,
+        // Shown outside the advanced gate, so they have to survive.
+        sourceMode: 'img2img',
+        denoising_strength: 0.4,
+        maskEnabled: true,
+        hires_fix: true,
         // Advanced-only fields that must be discarded in simple mode.
         steps: 40,
         post_processing: ['GFPGAN'],
-        sourceMode: 'img2img',
+        control_type: 'canny',
         seed: '12345',
         nsfw: true,
       }),
@@ -139,9 +144,14 @@ describe('simpleModeValue', () => {
     expect(result.width).toBe(768);
     expect(result.height).toBe(512);
 
+    expect(result.sourceMode).toBe('img2img');
+    expect(result.denoising_strength).toBe(0.4);
+    expect(result.maskEnabled).toBe(true);
+    expect(result.hires_fix).toBe(true);
+
     expect(result.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
     expect(result.post_processing).toEqual([]);
-    expect(result.sourceMode).toBe('none');
+    expect(result.control_type).toBe('');
     expect(result.seed).toBe('');
     expect(result.nsfw).toBe(false);
   });

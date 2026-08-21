@@ -754,6 +754,12 @@
           </div>
         </section>
 
+        <!-- Starting from a picture (projected by the parent page). It sits
+             with the other compose cards rather than behind the advanced gate:
+             attaching an image is a way of describing the work, and the dials
+             that only make sense with the full panel are gated inside it. -->
+        <ng-content select="[generateSourceImage]" />
+
         @if (isAdvanced()) {
           <!-- Advanced divider -->
           <div class="gs-adv-divider gs-fadeup">
@@ -764,9 +770,6 @@
             </span>
             <span class="gs-adv-line"></span>
           </div>
-
-          <!-- Source image / ControlNet (projected by the parent page) -->
-          <ng-content select="[generateSourceImage]" />
 
           <!-- Sampling -->
           <section

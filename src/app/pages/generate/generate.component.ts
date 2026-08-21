@@ -623,21 +623,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * React to any form change: refresh the style hints, and when the user leaves
-   * advanced mode drop any lingering source-image state so a simple-mode request
-   * can never carry a source the (now-hidden) source section still remembers.
+   * React to any form change: refresh the style hints. The source section is
+   * shown in both detail levels, so its state stands whichever one is current.
    */
   private onFormChanged(): void {
     this.formValue.set(this.form.getRawValue());
     this.refreshForcedParams();
-    if (
-      this.form.controls.mode.value === 'simple' &&
-      this.sourceState().mode !== 'none'
-    ) {
-      this.sourceState.set(DEFAULT_SOURCE_STATE);
-      this.cachedSourceBlob = null;
-      this.sourceBase64 = null;
-    }
   }
 
   /**

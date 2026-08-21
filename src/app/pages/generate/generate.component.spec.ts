@@ -453,12 +453,15 @@ describe('GenerateComponent', () => {
     expect(request.params?.seed).toBeUndefined();
   });
 
-  it('ignores a persisted source image in simple mode', async () => {
+  it('submits an attached source image in simple mode', async () => {
+    // The source card is offered at both detail levels, so a picture attached
+    // in the simple panel reaches the request rather than being stripped.
     const sourceBlob = new Blob([new Uint8Array([1])], { type: 'image/webp' });
     component.form.patchValue({
       mode: 'simple',
       prompt: 'a plain image',
       sourceMode: 'img2img',
+      denoising_strength: 0.4,
     });
     component.sourceState.set({
       mode: 'img2img',
@@ -471,10 +474,26 @@ describe('GenerateComponent', () => {
 
     const [request, sources] = enqueue.mock.calls[0] as [
       ImageGenerationRequest,
-      unknown,
+      { blob: Blob }[],
     ];
-    expect(request.source_processing).toBeUndefined();
-    expect(sources).toBeUndefined();
+    expect(request.source_processing).toBe('img2img');
+    expect(request.params?.denoising_strength).toBe(0.4);
+    expect(sources?.[0]?.blob).toBe(sourceBlob);
+  });
+
+  it('still resets the controlnet dials in simple mode', async () => {
+    // Controlnet is advanced-only, so its control type stays out of what the
+    // simple panel submits even when a past session left one behind.
+    component.form.patchValue({
+      mode: 'simple',
+      prompt: 'a plain image',
+      control_type: 'canny',
+    });
+
+    await component.onCreate();
+
+    const request = enqueue.mock.calls[0][0] as ImageGenerationRequest;
+    expect(request.params?.control_type).toBeUndefined();
   });
 
   it('applies a selected style to the built request', async () => {
@@ -1376,6 +1395,31 @@ describe('GenerateComponent request warnings', () => {
     expect(popover).not.toBeNull();
     expect(popover?.querySelectorAll('.gs-lint-item')).toHaveLength(2);
     expect(indicator()?.getAttribute('aria-expanded')).toBe('true');
+
+    fixture.destroy();
+  });
+
+  it('warns about a masked request made from the simple panel', async () => {
+    // The masked choices are reachable at the simple detail level, so the rules
+    // that read them have to be evaluated against what simple mode submits.
+    Element.prototype.scrollIntoView = vi.fn();
+    await createWholeStudio({ 'flux model': 'flux_1' });
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.form.patchValue({
+      mode: 'simple',
+      model: 'flux model',
+      sourceMode: 'img2img',
+      maskEnabled: true,
+      hires_fix: true,
+    });
+    fixture.detectChanges();
+
+    expect(
+      fixture.componentInstance.lintWarnings().map((warning) => warning.id),
+    ).toEqual(expect.arrayContaining(['mask_baseline', 'hires_with_mask']));
 
     fixture.destroy();
   });

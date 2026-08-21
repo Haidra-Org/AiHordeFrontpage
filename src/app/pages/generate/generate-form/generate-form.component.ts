@@ -162,7 +162,8 @@ export type PromptEditorField = 'prompt' | 'negative';
  * hidden in simple mode), and a sticky footer with the batch stepper, live
  * dimensions/kudos readout, and the Generate button. The source-image
  * (img2img / controlnet / inpaint) controls are projected through the
- * `[generateSourceImage]` slot by the parent and only shown in advanced mode.
+ * `[generateSourceImage]` slot by the parent and sit with the compose cards in
+ * both detail levels; that section gates its own advanced-only dials.
  */
 @Component({
   selector: 'app-generate-form',
