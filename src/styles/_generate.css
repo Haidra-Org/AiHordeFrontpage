@@ -192,6 +192,11 @@
      row, with nothing between them to carry the eye across; every option row
      shares the one bound, so the switches still stand in a column. */
   --gs-opt-max: 26rem;
+  /* The widened panel's column split, as numbers rather than as one template:
+     the foot is capped to the first column and has to be told the same figures
+     the grid above it is laid out on. */
+  --gs-zone-first: 1.15;
+  --gs-zone-span: 3.15;
   /* The one red in the studio: a field that will not submit as typed carries
      it on its edge, always beside a hint line, never as the only signal. */
   --gs-danger: #dc2626;
@@ -850,6 +855,9 @@
   }
   /* Three columns of about a width each: the first pass takes the wider one,
      because a prompt box and a picture are what actually need room. */
+  /* 1.15fr and 2fr: the same figures `--gs-zone-first` and `--gs-zone-span`
+     carry for the foot's cap. `fr` cannot be written inside calc(), so the
+     template states them and the token pair is what keeps the two in step. */
   .gen-studio.gs-workspace--max .gs-zones {
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 2fr);
   }
@@ -1186,10 +1194,18 @@
     min-width: 12rem;
     flex: none;
   }
-  /* The widest panel has no results pane beside it, so the foot would otherwise
-     run the whole screen: its contents keep to a readable measure. */
+  /* The widest panel has no results pane beside it, and a foot run right across
+     it would put the one action a screen away from everything it acts on. It is
+     capped to the first column instead: the readings start where that column
+     starts and the action ends where it ends, so both edges land on a line the
+     panel already draws. */
   .gen-studio.gs-workspace--max .gs-footer {
-    max-width: var(--gs-footer-max, 72rem);
+    max-width: calc(
+      (100% - 2 * var(--gs-space-4) - var(--gs-space-3)) *
+        var(--gs-zone-first) / var(--gs-zone-span) + 2 * var(--gs-space-4)
+    );
+    padding-right: var(--gs-space-4);
+    padding-left: var(--gs-space-4);
   }
 }
 
