@@ -17,6 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { A11yModule } from '@angular/cdk/a11y';
 import { ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { DatabaseService } from '../../../services/database.service';
 import { useScrollLock } from '../../../helper/scroll-lock';
 import {
   MAX_DENOISE,
@@ -73,6 +74,8 @@ export interface SourceEditorDoc {
   height: number;
   /** Where the picture sits in the canvas being grown, when placed by hand. */
   offset: { x: number; y: number } | null;
+  /** Which ink mode to start on when the editor opens. */
+  initialInk?: SourceEditorInk;
 }
 
 /** What Apply hands back to the source card to commit. */
@@ -94,6 +97,23 @@ export type SourceEditorTool =
 
 /** Which of the two inks a brush stroke is laid down in. */
 export type SourceEditorInk = 'mask' | 'color';
+
+type PointerOffsetDirection =
+  | 'up'
+  | 'up-right'
+  | 'right'
+  | 'down-right'
+  | 'down'
+  | 'down-left'
+  | 'left'
+  | 'up-left';
+
+interface SourceEditorPointerPrefs {
+  enabled: boolean;
+  direction: PointerOffsetDirection;
+  x: number;
+  y: number;
+}
 
 /** The placement an undoable move or resize records, either side of a gesture. */
 interface NodePlacement {
@@ -150,6 +170,34 @@ const SCREEN_POINT_SPACING = 3;
 const STROKE_TENSION = 0.3;
 /** The checker that says which part of the sheet is see-through, in screen px. */
 const CHECKER_SQUARE = 8;
+const SHAPE_INK_ATTR = 'editorInk';
+const SHAPE_EDITABLE_ATTR = 'editorShapeEditable';
+/** A second finger arriving this quickly means "pinch", not "start drawing". */
+const PINCH_CANCEL_WINDOW_MS = 450;
+/** Past this screen-space travel, a mark is intentional and should not cancel. */
+const PINCH_CANCEL_MAX_TRAVEL_PX = 32;
+/** Touch must travel this far before a mark is created at all. */
+const TOUCH_DRAW_SLOP_PX = 14;
+/** Briefly block new touch draw starts after pinch ends. */
+const POST_PINCH_DRAW_COOLDOWN_MS = 260;
+const MIN_POINTER_OFFSET_PX = 0;
+const MAX_POINTER_OFFSET_PX = 200;
+const DEFAULT_POINTER_OFFSET_X_PX = 32;
+const DEFAULT_POINTER_OFFSET_Y_PX = 56;
+const POINTER_PREFS_KEY = 'aihorde.generate.source_editor.pointer_prefs';
+
+interface TouchDrawCandidate {
+  node: Shape;
+  kind: 'stroke' | 'shape';
+  startedAt: number;
+  undoDepth: number;
+  touchedBefore: EditorTouched;
+}
+
+interface PendingTouchDraw {
+  point: { x: number; y: number };
+  tool: 'brush' | 'eraser' | 'rect' | 'ellipse' | 'line';
+}
 
 function placementOf(node: Node): NodePlacement {
   return {
@@ -192,6 +240,7 @@ export class SourceEditorComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly destroyRef = inject(DestroyRef);
   private readonly scrollLock = useScrollLock();
+  private readonly db = inject(DatabaseService);
 
   public readonly doc = input.required<SourceEditorDoc>();
   public readonly form = input.required<GenerateFormGroup>();
@@ -202,12 +251,27 @@ export class SourceEditorComponent {
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly stageHost =
     viewChild<ElementRef<HTMLDivElement>>('stageHost');
+  private readonly toolsRail =
+    viewChild<ElementRef<HTMLDivElement>>('toolsRail');
+  private readonly paramsRow =
+    viewChild<ElementRef<HTMLDivElement>>('paramsRow');
+  private readonly footerRow =
+    viewChild<ElementRef<HTMLDivElement>>('footerRow');
 
   public readonly tool = signal<SourceEditorTool>('brush');
+  private readonly lastDrawTool = signal<SourceEditorTool>('brush');
   public readonly ink = signal<SourceEditorInk>('mask');
   public readonly brushSize = signal(40);
   public readonly color = signal('#f43f5e');
   public readonly background = signal('#ffffff');
+  public readonly showImageLayer = signal(true);
+  public readonly showMaskLayer = signal(true);
+  public readonly pointerOffsetOn = signal(false);
+  public readonly pointerOffsetMenuOpen = signal(false);
+  public readonly pointerOffsetDirection =
+    signal<PointerOffsetDirection>('up-right');
+  public readonly pointerOffsetX = signal(DEFAULT_POINTER_OFFSET_X_PX);
+  public readonly pointerOffsetY = signal(DEFAULT_POINTER_OFFSET_Y_PX);
   public readonly zoomPercent = signal(100);
   public readonly frameOn = signal(false);
   public readonly frameSize = signal({ width: 0, height: 0 });
@@ -250,6 +314,8 @@ export class SourceEditorComponent {
   public readonly minDenoise = MIN_DENOISE;
   public readonly maxDenoise = MAX_DENOISE;
   public readonly denoiseStep = DENOISE_STEP;
+  public readonly minPointerOffset = MIN_POINTER_OFFSET_PX;
+  public readonly maxPointerOffset = MAX_POINTER_OFFSET_PX;
   public readonly minDimension = MIN_DIMENSION;
   public readonly maxDimension = MAX_DIMENSION;
   public readonly dimensionStep = DIMENSION_STEP;
@@ -264,6 +330,17 @@ export class SourceEditorComponent {
     'select',
     'crop',
     'pan',
+  ];
+
+  public readonly pointerOffsetDirections: readonly PointerOffsetDirection[] = [
+    'up',
+    'up-right',
+    'right',
+    'down-right',
+    'down',
+    'down-left',
+    'left',
+    'up-left',
   ];
 
   /**
@@ -303,6 +380,16 @@ export class SourceEditorComponent {
     () => this.mode() === 'img2img' || this.mode() === 'inpainting',
   );
 
+  /** Header copy and accents that make the current ink mode unmistakable. */
+  public readonly inkModeLabel = computed(() =>
+    this.ink() === 'mask'
+      ? 'generate.editor.ink_mode_mask'
+      : 'generate.editor.ink_mode_colour',
+  );
+  public readonly inkModeIcon = computed(() =>
+    this.ink() === 'mask' ? 'warning-triangle-filled' : 'paintbrush',
+  );
+
   private konva: KonvaNamespace | null = null;
   private stage: Stage | null = null;
   private groundLayer: Layer | null = null;
@@ -322,6 +409,7 @@ export class SourceEditorComponent {
   private brushRing: Circle | null = null;
   private dimRects: Rect[] = [];
   private resizeObserver: ResizeObserver | null = null;
+  private readonly scrollHintTeardowns: (() => void)[] = [];
 
   /** The region of the working sheet that is the picture. Crop moves it. */
   private docRect: EditorRect = { x: 0, y: 0, width: 0, height: 0 };
@@ -364,6 +452,13 @@ export class SourceEditorComponent {
   private writingSize = false;
   /** How far apart two fingers were, so a pinch can be read as a scale. */
   private pinchFrom: { distance: number; scale: number } | null = null;
+  /** Tool held before auto-pan on pinch, so it can be restored afterwards. */
+  private pinchToolBefore: SourceEditorTool | null = null;
+  private autoPanFromPinch = false;
+  private pinchGestureActive = false;
+  private suppressDrawUntil = 0;
+  private touchDrawCandidate: TouchDrawCandidate | null = null;
+  private pendingTouchDraw: PendingTouchDraw | null = null;
   /** Which export is current, so a slow encode overtaken by a newer Apply is
    *  dropped rather than landing on top of it. */
   private exportToken = 0;
@@ -373,6 +468,7 @@ export class SourceEditorComponent {
   private readonly onWindowPointerUp = (): void => this.endGesture();
 
   constructor() {
+    this.loadPointerPrefs();
     afterNextRender(() => void this.setup());
     if (this.isBrowser) {
       this.scrollLock.enable();
@@ -386,6 +482,10 @@ export class SourceEditorComponent {
       window.removeEventListener('pointerup', this.onWindowPointerUp);
     }
     this.resizeObserver?.disconnect();
+    for (const teardown of this.scrollHintTeardowns) {
+      teardown();
+    }
+    this.scrollHintTeardowns.length = 0;
     this.stage?.destroy();
   }
 
@@ -439,6 +539,19 @@ export class SourceEditorComponent {
       });
   }
 
+  /** Honor the caller's starting ink choice when one is provided. */
+  private applyInitialInk(): void {
+    const requested = this.doc().initialInk;
+    if (!requested) {
+      return;
+    }
+    if (requested === 'mask' && !this.maskAvailable()) {
+      this.ink.set('color');
+      return;
+    }
+    this.ink.set(requested);
+  }
+
   public setMode(mode: GenerateSourceMode): void {
     this.form().controls.sourceMode.setValue(mode);
   }
@@ -471,6 +584,10 @@ export class SourceEditorComponent {
   }
 
   public setTool(tool: SourceEditorTool): void {
+    if (tool !== 'pan') {
+      this.lastDrawTool.set(tool);
+    }
+    this.pendingTouchDraw = null;
     this.tool.set(tool);
     if (tool !== 'select') {
       this.select(null);
@@ -480,19 +597,110 @@ export class SourceEditorComponent {
     }
     // Only the select and crop tools move things about: otherwise a stroke that
     // starts on a shape or on the frame would drag it instead of painting.
-    for (const child of this.shapeLayer?.getChildren() ?? []) {
-      if (child !== this.transformer) {
-        child.draggable(tool === 'select');
-      }
+    for (const shape of this.editableShapes()) {
+      shape.draggable(tool === 'select');
     }
     this.uiLayer?.listening(tool === 'select' || tool === 'crop');
     this.updateBrushRing();
     this.applyCursor();
   }
 
+  private isDrawTool(
+    tool: SourceEditorTool,
+  ): tool is 'brush' | 'eraser' | 'rect' | 'ellipse' | 'line' {
+    return (
+      tool === 'brush' ||
+      tool === 'eraser' ||
+      tool === 'rect' ||
+      tool === 'ellipse' ||
+      tool === 'line'
+    );
+  }
+
+  /** A pinch should own movement; stop any one-finger pan that was running. */
+  private stopPanForPinch(): void {
+    if (!this.panFrom) {
+      return;
+    }
+    this.panFrom = null;
+    window.removeEventListener('pointermove', this.onWindowPointerMove);
+    this.applyCursor();
+  }
+
+  /** Quick touch affordance: switch between panning and the last draw tool. */
+  public togglePanTool(): void {
+    if (this.tool() === 'pan') {
+      this.setTool(this.lastDrawTool());
+      return;
+    }
+    this.setTool('pan');
+  }
+
   public setInk(ink: SourceEditorInk): void {
     this.ink.set(ink);
+    if (ink === 'mask' && !this.showMaskLayer()) {
+      this.showMaskLayer.set(true);
+      this.syncLayerVisibility();
+    }
     this.updateBrushRing();
+  }
+
+  public toggleImageVisibility(): void {
+    this.showImageLayer.update((shown) => !shown);
+    this.syncLayerVisibility();
+  }
+
+  public toggleMaskVisibility(): void {
+    this.showMaskLayer.update((shown) => !shown);
+    this.syncLayerVisibility();
+  }
+
+  public togglePointerOffset(): void {
+    const next = !this.pointerOffsetOn();
+    this.pointerOffsetOn.set(next);
+    if (!next) {
+      this.pointerOffsetMenuOpen.set(false);
+    }
+    this.persistPointerPrefs();
+  }
+
+  public togglePointerOffsetMenu(): void {
+    this.pointerOffsetMenuOpen.update((open) => !open);
+  }
+
+  /** Close floating offset settings when a click lands outside it. */
+  public onPanelClick(event: MouseEvent): void {
+    if (!this.pointerOffsetMenuOpen()) {
+      return;
+    }
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+      return;
+    }
+    if (target.closest('#gs-se-offset-menu')) {
+      return;
+    }
+    if (target.closest('[aria-controls="gs-se-offset-menu"]')) {
+      return;
+    }
+    this.pointerOffsetMenuOpen.set(false);
+  }
+
+  public setPointerOffsetDirection(value: string): void {
+    if (this.isPointerOffsetDirection(value)) {
+      this.pointerOffsetDirection.set(value);
+      this.persistPointerPrefs();
+    }
+  }
+
+  public setPointerOffsetX(value: string): void {
+    this.pointerOffsetX.set(this.clampPointerOffset(value));
+    this.persistPointerPrefs();
+  }
+
+  public setPointerOffsetY(value: string): void {
+    this.pointerOffsetY.set(this.clampPointerOffset(value));
+    this.persistPointerPrefs();
   }
 
   public setBrushSize(value: string): void {
@@ -536,6 +744,7 @@ export class SourceEditorComponent {
       return;
     }
     this.bindForm();
+    this.applyInitialInk();
     const konva = (await import('konva')).default;
     this.konva = konva;
     const bounds = host.getBoundingClientRect();
@@ -548,9 +757,9 @@ export class SourceEditorComponent {
 
     this.groundLayer = new konva.Layer({ listening: false });
     this.imageLayer = new konva.Layer({ listening: false });
-    this.colorLayer = new konva.Layer({ listening: false });
+    this.colorLayer = new konva.Layer({ listening: true });
     this.shapeLayer = new konva.Layer();
-    this.maskLayer = new konva.Layer({ listening: false });
+    this.maskLayer = new konva.Layer({ listening: true });
     this.uiLayer = new konva.Layer({ listening: false });
     stage.add(
       this.groundLayer,
@@ -560,7 +769,7 @@ export class SourceEditorComponent {
       this.maskLayer,
       this.uiLayer,
     );
-    this.maskLayer.getNativeCanvasElement().style.opacity = `${MASK_LAYER_OPACITY}`;
+    this.syncLayerVisibility();
 
     const doc = this.doc();
     this.docRect = { x: 0, y: 0, width: doc.width, height: doc.height };
@@ -606,6 +815,7 @@ export class SourceEditorComponent {
     this.buildBrushRing();
     this.bindStage();
     this.observeResize(host);
+    this.setupScrollHints();
     this.syncFrameVisibility();
     this.fit();
     this.applyCursor();
@@ -729,6 +939,37 @@ export class SourceEditorComponent {
     this.resizeObserver.observe(host);
   }
 
+  /** Mark rails that still have content to scroll to either side. */
+  private setupScrollHints(): void {
+    const rows = [
+      this.toolsRail()?.nativeElement,
+      this.paramsRow()?.nativeElement,
+      this.footerRow()?.nativeElement,
+    ].filter((row): row is HTMLDivElement => row !== undefined);
+    for (const row of rows) {
+      this.bindScrollHints(row);
+    }
+  }
+
+  private bindScrollHints(row: HTMLDivElement): void {
+    const update = (): void => {
+      const maxScrollLeft = row.scrollWidth - row.clientWidth;
+      const canScroll = maxScrollLeft > 1;
+      row.dataset['scrollLeft'] =
+        canScroll && row.scrollLeft > 1 ? 'true' : 'false';
+      row.dataset['scrollRight'] =
+        canScroll && row.scrollLeft < maxScrollLeft - 1 ? 'true' : 'false';
+    };
+    row.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update, { passive: true });
+    update();
+    requestAnimationFrame(update);
+    this.scrollHintTeardowns.push(() => {
+      row.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    });
+  }
+
   /** Frame the whole sheet with a margin, and centre it. */
   public fit(): void {
     const stage = this.stage;
@@ -813,12 +1054,33 @@ export class SourceEditorComponent {
       this.scaleAround(pointer, stage.scaleX() * factor);
     });
     stage.on('pointerdown', (event) => this.onPointerDown(event));
-    stage.on('pointermove', () => this.onPointerMove());
+    stage.on('pointermove', (event) => this.onPointerMove(event));
+    stage.on('touchstart', (event) => this.onTouchStart(event));
     stage.on('touchmove', (event) => this.onTouchMove(event));
-    stage.on('touchend', () => {
-      this.pinchFrom = null;
+    stage.on('touchend touchcancel', (event) => {
+      const touchEvent = event.evt as TouchEvent;
+      if (touchEvent.touches.length < 2) {
+        this.pinchFrom = null;
+        this.endPinchPan();
+      }
     });
     window.addEventListener('pointerup', this.onWindowPointerUp);
+  }
+
+  /** Two fingers scale the view about the point between them. */
+  private onTouchStart(event: KonvaEventObject<TouchEvent>): void {
+    if (event.evt.touches.length < 2) {
+      return;
+    }
+    this.pinchGestureActive = true;
+    this.pendingTouchDraw = null;
+    this.cancelRecentTouchDrawCandidateForPinch(true);
+    this.stopPanForPinch();
+    if (this.tool() !== 'pan' && !this.autoPanFromPinch) {
+      this.pinchToolBefore = this.tool();
+      this.autoPanFromPinch = true;
+      this.setTool('pan');
+    }
   }
 
   /** Two fingers scale the view about the point between them. */
@@ -826,13 +1088,23 @@ export class SourceEditorComponent {
     const touches = event.evt.touches;
     const stage = this.stage;
     if (touches.length !== 2 || !stage) {
+      this.endPinchPan();
       return;
     }
+    this.pinchGestureActive = true;
     event.evt.preventDefault();
+    this.pendingTouchDraw = null;
+    this.cancelRecentTouchDrawCandidateForPinch();
+    this.stopPanForPinch();
     // A pinch is never also a stroke: whatever the first finger began is
     // abandoned rather than dragged about by the second.
     this.stroke = null;
     this.draft = null;
+    if (this.tool() !== 'pan' && !this.autoPanFromPinch) {
+      this.pinchToolBefore = this.tool();
+      this.autoPanFromPinch = true;
+      this.setTool('pan');
+    }
     const [first, second] = [touches[0], touches[1]];
     const distance = Math.hypot(
       second.clientX - first.clientX,
@@ -851,6 +1123,23 @@ export class SourceEditorComponent {
       centre,
       this.pinchFrom.scale * (distance / this.pinchFrom.distance),
     );
+  }
+
+  /** Restore the pre-pinch tool when pan was entered automatically. */
+  private endPinchPan(): void {
+    if (this.pinchGestureActive) {
+      this.suppressDrawUntil = Date.now() + POST_PINCH_DRAW_COOLDOWN_MS;
+      this.pinchGestureActive = false;
+    }
+    if (!this.autoPanFromPinch) {
+      return;
+    }
+    this.autoPanFromPinch = false;
+    const previous = this.pinchToolBefore;
+    this.pinchToolBefore = null;
+    if (previous && this.tool() === 'pan') {
+      this.setTool(previous);
+    }
   }
 
   // -- drawing -------------------------------------------------------------
@@ -873,24 +1162,35 @@ export class SourceEditorComponent {
       this.selectAt(event.target);
       return;
     }
-    const point = stage.getRelativePointerPosition();
-    if (!point) {
+    const rawPoint = stage.getRelativePointerPosition();
+    if (!rawPoint) {
+      return;
+    }
+    const fromTouch = event.evt.pointerType === 'touch';
+    if (fromTouch && Date.now() < this.suppressDrawUntil) {
+      event.evt.preventDefault();
       return;
     }
     if (tool === 'crop') {
-      this.startCrop(point, event.target);
+      this.startCrop(rawPoint, event.target);
+      return;
+    }
+    const point = this.offsetDrawPoint(rawPoint, event.evt.pointerType);
+    if (fromTouch && this.isDrawTool(tool)) {
+      this.pendingTouchDraw = { point, tool };
       return;
     }
     if (tool === 'brush' || tool === 'eraser') {
-      this.startStroke(point, tool);
+      this.startStroke(point, tool, fromTouch);
     } else {
-      this.startShape(point, tool);
+      this.startShape(point, tool, fromTouch);
     }
   }
 
   private startStroke(
     point: { x: number; y: number },
     tool: 'brush' | 'eraser',
+    fromTouch = false,
   ): void {
     const konva = this.konva;
     const target = this.inkLayer();
@@ -912,6 +1212,15 @@ export class SourceEditorComponent {
     this.stroke = stroke;
     this.lastPoint = point;
     this.push({ kind: 'add', node: stroke, parent: target });
+    this.touchDrawCandidate = fromTouch
+      ? {
+          node: stroke,
+          kind: 'stroke',
+          startedAt: Date.now(),
+          undoDepth: this.undoStack.length - 1,
+          touchedBefore: this.touched(),
+        }
+      : null;
     this.markTouched(this.ink() === 'mask' ? 'mask' : 'picture');
   }
 
@@ -928,12 +1237,15 @@ export class SourceEditorComponent {
   private startShape(
     point: { x: number; y: number },
     tool: 'rect' | 'ellipse' | 'line',
+    fromTouch = false,
   ): void {
     const konva = this.konva;
-    const layer = this.shapeLayer;
+    const layer = this.inkLayer();
     if (!konva || !layer) {
       return;
     }
+    const ink = this.ink();
+    const stroke = ink === 'mask' ? MASK_INK : this.color();
     const shape: Shape =
       tool === 'rect'
         ? new konva.Rect({
@@ -941,7 +1253,7 @@ export class SourceEditorComponent {
             y: point.y,
             width: 0,
             height: 0,
-            fill: this.color(),
+            fill: stroke,
           })
         : tool === 'ellipse'
           ? new konva.Ellipse({
@@ -949,33 +1261,74 @@ export class SourceEditorComponent {
               y: point.y,
               radiusX: 0,
               radiusY: 0,
-              fill: this.color(),
+              fill: stroke,
             })
           : new konva.Line({
               points: [point.x, point.y, point.x, point.y],
-              stroke: this.color(),
+              stroke,
               strokeWidth: this.imageBrushSize(),
               lineCap: 'round',
             });
+    shape.setAttr(SHAPE_INK_ATTR, ink);
+    shape.setAttr(SHAPE_EDITABLE_ATTR, true);
     layer.add(shape);
     this.bindShape(shape);
     this.draft = shape;
     this.draftKind = tool;
     this.draftOrigin = point;
     this.push({ kind: 'add', node: shape, parent: layer });
-    this.markTouched('picture');
+    this.touchDrawCandidate = fromTouch
+      ? {
+          node: shape,
+          kind: 'shape',
+          startedAt: Date.now(),
+          undoDepth: this.undoStack.length - 1,
+          touchedBefore: this.touched(),
+        }
+      : null;
+    this.markTouched(ink === 'mask' ? 'mask' : 'picture');
   }
 
-  private onPointerMove(): void {
+  private onPointerMove(event?: KonvaEventObject<PointerEvent>): void {
     const stage = this.stage;
     if (!stage) {
       return;
     }
-    const point = stage.getRelativePointerPosition();
-    if (!point) {
+    const rawPoint = stage.getRelativePointerPosition();
+    if (!rawPoint) {
       return;
     }
+    const point = this.offsetDrawPoint(rawPoint, event?.evt.pointerType);
     this.moveBrushRing(point);
+    const pendingTouch = this.pendingTouchDraw;
+    if (pendingTouch) {
+      const scale = this.stage?.scaleX() ?? 1;
+      const travelPx =
+        Math.hypot(
+          point.x - pendingTouch.point.x,
+          point.y - pendingTouch.point.y,
+        ) * scale;
+      if (travelPx < TOUCH_DRAW_SLOP_PX) {
+        return;
+      }
+      if (pendingTouch.tool === 'brush' || pendingTouch.tool === 'eraser') {
+        this.startStroke(pendingTouch.point, pendingTouch.tool, true);
+        if (this.stroke) {
+          this.lastPoint = pendingTouch.point;
+          this.stroke.points([
+            pendingTouch.point.x,
+            pendingTouch.point.y,
+            point.x,
+            point.y,
+          ]);
+          this.lastPoint = point;
+        }
+      } else {
+        this.startShape(pendingTouch.point, pendingTouch.tool, true);
+        this.resizeDraft(point);
+      }
+      this.pendingTouchDraw = null;
+    }
     if (this.stroke) {
       const gate = pointSpacing(SCREEN_POINT_SPACING, stage.scaleX());
       const dx = point.x - this.lastPoint.x;
@@ -1036,6 +1389,8 @@ export class SourceEditorComponent {
 
   private endGesture(): void {
     this.stroke = null;
+    this.touchDrawCandidate = null;
+    this.pendingTouchDraw = null;
     const drawn = this.draft;
     this.draft = null;
     this.cropDrafting = false;
@@ -1148,7 +1503,7 @@ export class SourceEditorComponent {
       return;
     }
     const hit = target === this.stage ? null : target;
-    this.select(hit?.getLayer() === this.shapeLayer ? hit : null);
+    this.select(hit && this.isEditableShape(hit) ? hit : null);
   }
 
   private select(node: Node | null): void {
@@ -1169,23 +1524,47 @@ export class SourceEditorComponent {
           before,
           after: placementOf(shape),
         });
-        this.markTouched('picture');
+        this.markTouched(
+          this.inkOfShape(shape) === 'mask' ? 'mask' : 'picture',
+        );
       }
     });
   }
 
   public deleteSelection(): void {
-    const layer = this.shapeLayer;
-    const nodes = this.transformer?.nodes() ?? [];
-    if (!layer || !nodes.length) {
+    const nodes = (this.transformer?.nodes() ?? []) as Shape[];
+    if (!nodes.length) {
       return;
     }
+    const layerForNode = (node: Shape): Layer | null => {
+      const layer = node.getLayer();
+      return layer && (layer === this.colorLayer || layer === this.maskLayer)
+        ? layer
+        : null;
+    };
+    let touchedPicture = false;
+    let touchedMask = false;
     this.select(null);
     for (const node of nodes) {
+      const layer = layerForNode(node);
+      if (!layer) {
+        continue;
+      }
+      const ink = this.inkOfShape(node);
+      if (ink === 'mask') {
+        touchedMask = true;
+      } else {
+        touchedPicture = true;
+      }
       node.remove();
-      this.push({ kind: 'remove', node: node as Shape, parent: layer });
+      this.push({ kind: 'remove', node, parent: layer });
     }
-    this.markTouched('picture');
+    if (touchedPicture) {
+      this.markTouched('picture');
+    }
+    if (touchedMask) {
+      this.markTouched('mask');
+    }
   }
 
   // -- history -------------------------------------------------------------
@@ -1643,11 +2022,7 @@ export class SourceEditorComponent {
     if (unchanged) {
       return original;
     }
-    const canvas = this.renderLayers([
-      this.imageLayer,
-      this.colorLayer,
-      this.shapeLayer,
-    ]);
+    const canvas = this.renderLayers([this.imageLayer, this.colorLayer]);
     if (!canvas) {
       return original;
     }
@@ -1787,6 +2162,190 @@ export class SourceEditorComponent {
     const host = this.stageHost()?.nativeElement;
     if (host) {
       host.style.cursor = cursor;
+    }
+  }
+
+  private clampPointerOffset(value: string | number): number {
+    const parsed = typeof value === 'number' ? value : Number(value);
+    if (!Number.isFinite(parsed)) {
+      return MIN_POINTER_OFFSET_PX;
+    }
+    return Math.min(
+      MAX_POINTER_OFFSET_PX,
+      Math.max(MIN_POINTER_OFFSET_PX, Math.round(parsed)),
+    );
+  }
+
+  private isPointerOffsetDirection(
+    value: string,
+  ): value is PointerOffsetDirection {
+    return this.pointerOffsetDirections.includes(
+      value as PointerOffsetDirection,
+    );
+  }
+
+  private loadPointerPrefs(): void {
+    const stored = this.db.get<Partial<SourceEditorPointerPrefs>>(
+      POINTER_PREFS_KEY,
+      {},
+    );
+    if (typeof stored !== 'object' || stored === null) {
+      return;
+    }
+    if (typeof stored.enabled === 'boolean') {
+      this.pointerOffsetOn.set(stored.enabled);
+    }
+    if (
+      typeof stored.direction === 'string' &&
+      this.isPointerOffsetDirection(stored.direction)
+    ) {
+      this.pointerOffsetDirection.set(stored.direction);
+    }
+    if (typeof stored.x === 'number' || typeof stored.x === 'string') {
+      this.pointerOffsetX.set(this.clampPointerOffset(stored.x));
+    }
+    if (typeof stored.y === 'number' || typeof stored.y === 'string') {
+      this.pointerOffsetY.set(this.clampPointerOffset(stored.y));
+    }
+  }
+
+  private persistPointerPrefs(): void {
+    this.db.store(POINTER_PREFS_KEY, {
+      enabled: this.pointerOffsetOn(),
+      direction: this.pointerOffsetDirection(),
+      x: this.pointerOffsetX(),
+      y: this.pointerOffsetY(),
+    } satisfies SourceEditorPointerPrefs);
+  }
+
+  private directionVector(direction: PointerOffsetDirection): {
+    x: -1 | 0 | 1;
+    y: -1 | 0 | 1;
+  } {
+    switch (direction) {
+      case 'up':
+        return { x: 0, y: -1 };
+      case 'up-right':
+        return { x: 1, y: -1 };
+      case 'right':
+        return { x: 1, y: 0 };
+      case 'down-right':
+        return { x: 1, y: 1 };
+      case 'down':
+        return { x: 0, y: 1 };
+      case 'down-left':
+        return { x: -1, y: 1 };
+      case 'left':
+        return { x: -1, y: 0 };
+      case 'up-left':
+        return { x: -1, y: -1 };
+    }
+  }
+
+  /** Shift touch draw placement away from the finger for visibility. */
+  private offsetDrawPoint(
+    point: { x: number; y: number },
+    pointerType: string | undefined,
+  ): { x: number; y: number } {
+    if (!this.pointerOffsetOn() || pointerType !== 'touch') {
+      return point;
+    }
+    const scale = this.stage?.scaleX() ?? 1;
+    const direction = this.directionVector(this.pointerOffsetDirection());
+    return {
+      x: point.x + (direction.x * this.pointerOffsetX()) / scale,
+      y: point.y + (direction.y * this.pointerOffsetY()) / scale,
+    };
+  }
+
+  /**
+   * Touch can begin as a one-finger mark before a second finger lands to pinch.
+   * If that happens quickly and the mark is still tiny, roll it back.
+   */
+  private cancelRecentTouchDrawCandidateForPinch(force = false): void {
+    const candidate = this.touchDrawCandidate;
+    if (!candidate) {
+      return;
+    }
+    if (!force && Date.now() - candidate.startedAt > PINCH_CANCEL_WINDOW_MS) {
+      this.touchDrawCandidate = null;
+      return;
+    }
+    if (force) {
+      candidate.node.destroy();
+      const op = this.undoStack[candidate.undoDepth];
+      if (op?.kind === 'add' && op.node === candidate.node) {
+        this.undoStack.splice(candidate.undoDepth, 1);
+        this.syncHistory();
+      }
+      this.touched.set(candidate.touchedBefore);
+      this.touchDrawCandidate = null;
+      return;
+    }
+    const scale = this.stage?.scaleX() ?? 1;
+    if (candidate.kind === 'stroke') {
+      const stroke = candidate.node as Line;
+      const points = stroke.points();
+      const count = points.length;
+      if (count >= 4) {
+        const startX = points[0] ?? 0;
+        const startY = points[1] ?? 0;
+        const endX = points[count - 2] ?? startX;
+        const endY = points[count - 1] ?? startY;
+        const travelPx = Math.hypot(endX - startX, endY - startY) * scale;
+        if (travelPx > PINCH_CANCEL_MAX_TRAVEL_PX) {
+          this.touchDrawCandidate = null;
+          return;
+        }
+      }
+    } else {
+      const widthPx = candidate.node.width() * scale;
+      const heightPx = candidate.node.height() * scale;
+      if (Math.max(widthPx, heightPx) > PINCH_CANCEL_MAX_TRAVEL_PX) {
+        this.touchDrawCandidate = null;
+        return;
+      }
+    }
+    candidate.node.destroy();
+    const op = this.undoStack[candidate.undoDepth];
+    if (op?.kind === 'add' && op.node === candidate.node) {
+      this.undoStack.splice(candidate.undoDepth, 1);
+      this.syncHistory();
+    }
+    this.touched.set(candidate.touchedBefore);
+    this.touchDrawCandidate = null;
+  }
+
+  private inkOfShape(node: Node): SourceEditorInk {
+    return node.getAttr(SHAPE_INK_ATTR) === 'mask' ? 'mask' : 'color';
+  }
+
+  private isEditableShape(node: Node): node is Shape {
+    return node.getAttr(SHAPE_EDITABLE_ATTR) === true;
+  }
+
+  private editableShapes(): Shape[] {
+    const candidates = [
+      ...(this.colorLayer?.getChildren() ?? []),
+      ...(this.maskLayer?.getChildren() ?? []),
+      ...(this.shapeLayer?.getChildren() ?? []),
+    ];
+    return candidates.filter((node): node is Shape =>
+      this.isEditableShape(node),
+    );
+  }
+
+  /** Layer visibility toggles are display-only helpers and do not affect export. */
+  private syncLayerVisibility(): void {
+    const imageCanvas = this.imageLayer?.getNativeCanvasElement();
+    if (imageCanvas) {
+      imageCanvas.style.opacity = this.showImageLayer() ? '1' : '0';
+    }
+    const maskCanvas = this.maskLayer?.getNativeCanvasElement();
+    if (maskCanvas) {
+      maskCanvas.style.opacity = this.showMaskLayer()
+        ? `${MASK_LAYER_OPACITY}`
+        : '0';
     }
   }
 }

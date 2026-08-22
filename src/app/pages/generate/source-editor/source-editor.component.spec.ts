@@ -9,6 +9,8 @@ import {
 import { APP_ICONS } from '../../../icons';
 import en from '../../../../assets/i18n/en.json';
 
+const POINTER_PREFS_KEY = 'aihorde.generate.source_editor.pointer_prefs';
+
 /**
  * The editor with no stage behind it: the template is dropped, so Konva is
  * never fetched and the undo stack can be driven directly. Enough to state what
@@ -134,5 +136,126 @@ describe('the tools on the rail', () => {
     }
     expect(APP_ICONS['arrow-undo']).toBeTruthy();
     expect(APP_ICONS['arrow-redo']).toBeTruthy();
+  });
+
+  it('switches the header mode message with the selected ink', async () => {
+    const editor = await createEditor();
+
+    expect(editor.inkModeLabel()).toBe('generate.editor.ink_mode_mask');
+    expect(editor.inkModeIcon()).toBe('warning-triangle-filled');
+    editor.setInk('color');
+    expect(editor.inkModeLabel()).toBe('generate.editor.ink_mode_colour');
+    expect(editor.inkModeIcon()).toBe('paintbrush');
+  });
+
+  it('keeps layer visibility toggles as explicit independent state', async () => {
+    const editor = await createEditor();
+
+    expect(editor.showImageLayer()).toBe(true);
+    expect(editor.showMaskLayer()).toBe(true);
+
+    editor.toggleImageVisibility();
+    editor.toggleMaskVisibility();
+
+    expect(editor.showImageLayer()).toBe(false);
+    expect(editor.showMaskLayer()).toBe(false);
+  });
+
+  it('offers pointer offset controls with clamped slider values', async () => {
+    localStorage.removeItem(POINTER_PREFS_KEY);
+    const editor = await createEditor();
+
+    expect(editor.pointerOffsetOn()).toBe(false);
+    expect(editor.pointerOffsetMenuOpen()).toBe(false);
+    expect(editor.pointerOffsetDirection()).toBe('up-right');
+
+    editor.togglePointerOffset();
+    expect(editor.pointerOffsetOn()).toBe(true);
+    expect(editor.pointerOffsetMenuOpen()).toBe(false);
+
+    editor.togglePointerOffsetMenu();
+    expect(editor.pointerOffsetMenuOpen()).toBe(true);
+
+    editor.setPointerOffsetDirection('down-left');
+    expect(editor.pointerOffsetDirection()).toBe('down-left');
+
+    editor.setPointerOffsetDirection('invalid-direction');
+    expect(editor.pointerOffsetDirection()).toBe('down-left');
+
+    editor.setPointerOffsetX('9999');
+    editor.setPointerOffsetY('-9999');
+    expect(editor.pointerOffsetX()).toBe(editor.maxPointerOffset);
+    expect(editor.pointerOffsetY()).toBe(editor.minPointerOffset);
+
+    editor.togglePointerOffset();
+    expect(editor.pointerOffsetOn()).toBe(false);
+    expect(editor.pointerOffsetMenuOpen()).toBe(false);
+  });
+
+  it('closes offset settings when clicking outside the popup', async () => {
+    localStorage.removeItem(POINTER_PREFS_KEY);
+    const editor = await createEditor();
+
+    editor.togglePointerOffsetMenu();
+    expect(editor.pointerOffsetMenuOpen()).toBe(true);
+
+    const trigger = document.createElement('button');
+    trigger.setAttribute('aria-controls', 'gs-se-offset-menu');
+    editor.onPanelClick({ target: trigger } as MouseEvent);
+    expect(editor.pointerOffsetMenuOpen()).toBe(true);
+
+    const menu = document.createElement('div');
+    menu.id = 'gs-se-offset-menu';
+    const inside = document.createElement('span');
+    menu.append(inside);
+    editor.onPanelClick({ target: inside } as MouseEvent);
+    expect(editor.pointerOffsetMenuOpen()).toBe(true);
+
+    const outside = document.createElement('div');
+    editor.onPanelClick({ target: outside } as MouseEvent);
+    expect(editor.pointerOffsetMenuOpen()).toBe(false);
+  });
+
+  it('hydrates pointer offset controls from saved preferences', async () => {
+    localStorage.removeItem(POINTER_PREFS_KEY);
+    localStorage.setItem(
+      POINTER_PREFS_KEY,
+      JSON.stringify({
+        enabled: true,
+        direction: 'down-left',
+        x: 64,
+        y: 28,
+      }),
+    );
+
+    const editor = await createEditor();
+
+    expect(editor.pointerOffsetOn()).toBe(true);
+    expect(editor.pointerOffsetDirection()).toBe('down-left');
+    expect(editor.pointerOffsetX()).toBe(64);
+    expect(editor.pointerOffsetY()).toBe(28);
+  });
+
+  it('persists pointer offset preference changes to storage', async () => {
+    localStorage.removeItem(POINTER_PREFS_KEY);
+    const editor = await createEditor();
+
+    editor.togglePointerOffset();
+    editor.setPointerOffsetDirection('left');
+    editor.setPointerOffsetX('42');
+    editor.setPointerOffsetY('19');
+
+    const stored = JSON.parse(
+      localStorage.getItem(POINTER_PREFS_KEY) ?? '{}',
+    ) as {
+      enabled: boolean;
+      direction: string;
+      x: number;
+      y: number;
+    };
+    expect(stored.enabled).toBe(true);
+    expect(stored.direction).toBe('left');
+    expect(stored.x).toBe(42);
+    expect(stored.y).toBe(19);
   });
 });

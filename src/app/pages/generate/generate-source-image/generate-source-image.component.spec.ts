@@ -238,6 +238,38 @@ describe('GenerateSourceImageComponent', () => {
     expect(states.at(-1)!.extras![0].strength).toBe(component.minExtraStrength);
   });
 
+  it('opens draw-blank editor with colour as the initial ink', async () => {
+    const { component, form } = await createComponent();
+    form.controls.width.setValue(768);
+    form.controls.height.setValue(512);
+
+    component.openBlankEditor();
+
+    expect(component.editorDoc()).toMatchObject({
+      image: null,
+      mask: null,
+      width: 768,
+      height: 512,
+      offset: null,
+      initialInk: 'color',
+    });
+  });
+
+  it('opens regular image editor without forcing a startup ink', async () => {
+    const { component } = await createComponent();
+    const image = fakeImage();
+    component.sourceImage.set(image);
+
+    component.openEditor();
+
+    expect(component.editorDoc()).toMatchObject({
+      image,
+      width: image.width,
+      height: image.height,
+    });
+    expect(component.editorDoc()?.initialInk).toBeUndefined();
+  });
+
   it('discards the extras when leaving remix', async () => {
     const { component, states } = await createComponent();
     component.sourceImage.set(fakeImage());
@@ -265,6 +297,29 @@ describe('GenerateSourceImageComponent', () => {
     expect(component.error()).toBe('generate.source.encode_failed');
     expect(component.encoding()).toBe(false);
     expect(states.length).toBe(before);
+  });
+
+  it('tracks and clears the mask overlay URL when a drawn mask is applied', async () => {
+    const { component } = await createComponent();
+    const source = fakeImage();
+    const mask = new Blob(['m'], { type: 'image/png' });
+    const createSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:mask-applied');
+    const revokeSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined);
+
+    component.sourceImage.set(source);
+    component.onEditorApplied({ image: source, mask, offset: null });
+
+    expect(createSpy).toHaveBeenCalledWith(mask);
+    expect(component.maskPreviewUrl()).toBe('blob:mask-applied');
+
+    component.clearMask();
+
+    expect(revokeSpy).toHaveBeenCalledWith('blob:mask-applied');
+    expect(component.maskPreviewUrl()).toBeNull();
   });
 });
 

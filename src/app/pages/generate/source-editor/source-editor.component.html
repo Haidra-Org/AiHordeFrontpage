@@ -11,19 +11,34 @@
     class="gs-modal-panel gs-se-panel"
     tabindex="-1"
     cdkTrapFocus
+    (click)="onPanelClick($event)"
     (keydown)="onKeydown($event)"
     (keyup)="onKeyup($event)"
   >
     <div class="gs-modal-header gs-se-header">
-      <span class="gs-modal-title">{{
-        "generate.editor.title" | transloco
-      }}</span>
+      <div class="gs-se-head-copy">
+        <span class="gs-modal-title"
+          >{{ "generate.editor.title" | transloco }}
+          -
+          <span class="gs-modal-title-rider">
+            {{ "generate.editor.title_preview_rider" | transloco }}
+          </span>
+        </span>
+        <p
+          class="gs-se-ink-mode"
+          [class.gs-se-ink-mode--mask]="ink() === 'mask'"
+          [class.gs-se-ink-mode--colour]="ink() === 'color'"
+        >
+          <app-icon [name]="inkModeIcon()" class="gs-se-ink-mode-icon" />
+          <span>{{ inkModeLabel() | transloco }}</span>
+        </p>
+      </div>
       <span class="gs-sublabel gs-mono gs-se-readout">
         {{ docSize().width }}×{{ docSize().height }} · {{ zoomPercent() }}%
       </span>
       <button
         type="button"
-        class="gs-se-btn gs-se-btn--primary"
+        class="gs-se-btn gs-se-btn--primary gs-se-header-action"
         [disabled]="!ready() || busy()"
         (click)="onApply()"
       >
@@ -33,13 +48,77 @@
             : ("generate.editor.apply" | transloco)
         }}
       </button>
-      <button type="button" class="gs-se-btn" (click)="onClose()">
+      <button
+        type="button"
+        class="gs-se-btn gs-se-header-action"
+        (click)="onClose()"
+      >
         {{ "generate.editor.close" | transloco }}
       </button>
+      <div
+        class="gs-se-mobile-actions"
+        role="group"
+        [attr.aria-label]="'generate.editor.tools' | transloco"
+      >
+        <div class="gs-se-mobile-actions-side gs-se-mobile-actions-side--left">
+          <button
+            type="button"
+            class="gs-se-btn gs-se-btn--mobile"
+            [disabled]="!canUndo()"
+            [attr.aria-label]="'generate.editor.undo' | transloco"
+            (click)="undo()"
+          >
+            <app-icon name="arrow-undo" />
+          </button>
+          <button
+            type="button"
+            class="gs-se-btn gs-se-btn--mobile"
+            [disabled]="!canRedo()"
+            [attr.aria-label]="'generate.editor.redo' | transloco"
+            (click)="redo()"
+          >
+            <app-icon name="arrow-redo" />
+          </button>
+        </div>
+        <p class="gs-se-mobile-tool">
+          <app-icon [name]="toolIcon(tool())" class="gs-se-mobile-tool-icon" />
+          <span>{{ "generate.editor.tool_" + tool() | transloco }}</span>
+          @if (pointerOffsetOn()) {
+            <span>
+              - {{ "generate.editor.pointer_offset_short" | transloco }} ({{
+                "generate.editor.pointer_offset_direction_" +
+                  pointerOffsetDirection() | transloco
+              }})
+            </span>
+          }
+        </p>
+        <div class="gs-se-mobile-actions-side gs-se-mobile-actions-side--right">
+          <button
+            type="button"
+            class="gs-se-btn gs-se-btn--primary gs-se-btn--mobile"
+            [disabled]="!ready() || busy()"
+            (click)="onApply()"
+          >
+            {{
+              busy()
+                ? ("generate.editor.applying" | transloco)
+                : ("generate.editor.apply" | transloco)
+            }}
+          </button>
+          <button
+            type="button"
+            class="gs-se-btn gs-se-btn--mobile"
+            (click)="onClose()"
+          >
+            {{ "generate.editor.close" | transloco }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="gs-se-body">
       <div
+        #toolsRail
         class="gs-se-rail"
         role="toolbar"
         [attr.aria-label]="'generate.editor.tools' | transloco"
@@ -63,7 +142,7 @@
         <span class="gs-se-rail-gap"></span>
         <button
           type="button"
-          class="gs-se-tool"
+          class="gs-se-tool gs-se-tool--history"
           [disabled]="!canUndo()"
           [attr.aria-label]="'generate.editor.undo' | transloco"
           [title]="'generate.editor.undo' | transloco"
@@ -73,7 +152,7 @@
         </button>
         <button
           type="button"
-          class="gs-se-tool"
+          class="gs-se-tool gs-se-tool--history"
           [disabled]="!canRedo()"
           [attr.aria-label]="'generate.editor.redo' | transloco"
           [title]="'generate.editor.redo' | transloco"
@@ -84,7 +163,22 @@
       </div>
 
       <div class="gs-se-stage-wrap">
-        <div #stageHost class="gs-se-stage"></div>
+        <div
+          #stageHost
+          class="gs-se-stage"
+          [class.gs-se-stage--mask]="ink() === 'mask'"
+          [class.gs-se-stage--colour]="ink() === 'color'"
+        ></div>
+        <button
+          type="button"
+          class="gs-se-pan-fab"
+          [class.gs-se-pan-fab--on]="tool() === 'pan'"
+          [attr.aria-pressed]="tool() === 'pan'"
+          (click)="togglePanTool()"
+        >
+          <app-icon name="hand-pan" class="gs-se-pan-fab-icon" />
+          <span>{{ "generate.editor.tool_pan" | transloco }}</span>
+        </button>
         @if (!ready()) {
           <p class="gs-se-loading">
             {{ "generate.editor.loading" | transloco }}
@@ -109,7 +203,7 @@
 
     <!-- These are the request's own settings, not a copy of them: changing one
          here changes it in the settings panel at the same moment. -->
-    <div class="gs-se-params">
+    <div #paramsRow class="gs-se-params">
       <div
         class="gs-se-group gs-se-modes"
         role="group"
@@ -207,7 +301,7 @@
       }
     </div>
 
-    <div class="gs-se-bar">
+    <div #footerRow class="gs-se-bar">
       <div
         class="gs-se-group"
         role="group"
@@ -216,7 +310,7 @@
         @if (maskAvailable()) {
           <button
             type="button"
-            class="gs-se-btn"
+            class="gs-se-btn gs-se-ink-btn gs-se-ink-btn--mask"
             [class.gs-se-btn--on]="ink() === 'mask'"
             [attr.aria-pressed]="ink() === 'mask'"
             (click)="setInk('mask')"
@@ -226,7 +320,7 @@
         }
         <button
           type="button"
-          class="gs-se-btn"
+          class="gs-se-btn gs-se-ink-btn gs-se-ink-btn--colour"
           [class.gs-se-btn--on]="ink() === 'color'"
           [attr.aria-pressed]="ink() === 'color'"
           (click)="setInk('color')"
@@ -275,6 +369,34 @@
         <button
           type="button"
           class="gs-se-btn"
+          [class.gs-se-btn--on]="!showImageLayer()"
+          [attr.aria-pressed]="!showImageLayer()"
+          (click)="toggleImageVisibility()"
+        >
+          {{
+            (showImageLayer()
+              ? "generate.editor.hide_image"
+              : "generate.editor.show_image"
+            ) | transloco
+          }}
+        </button>
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="!showMaskLayer()"
+          [attr.aria-pressed]="!showMaskLayer()"
+          (click)="toggleMaskVisibility()"
+        >
+          {{
+            (showMaskLayer()
+              ? "generate.editor.hide_mask"
+              : "generate.editor.show_mask"
+            ) | transloco
+          }}
+        </button>
+        <button
+          type="button"
+          class="gs-se-btn"
           [attr.aria-label]="'generate.editor.zoom_out' | transloco"
           (click)="zoomBy(1 / 1.25)"
         >
@@ -303,6 +425,7 @@
         >
           {{ "generate.editor.lock_aspect" | transloco }}
         </button>
+        <!-- Not yet implemented
         <button
           type="button"
           class="gs-se-btn"
@@ -312,12 +435,109 @@
         >
           {{ "generate.editor.rotate" | transloco }}
         </button>
+        -->
+      </div>
+
+      <div class="gs-se-group gs-se-offset-controls">
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="pointerOffsetOn()"
+          [attr.aria-pressed]="pointerOffsetOn()"
+          (click)="togglePointerOffset()"
+        >
+          {{ "generate.editor.pointer_offset_toggle" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-se-btn"
+          [class.gs-se-btn--on]="pointerOffsetMenuOpen()"
+          [attr.aria-pressed]="pointerOffsetMenuOpen()"
+          [attr.aria-expanded]="pointerOffsetMenuOpen()"
+          aria-controls="gs-se-offset-menu"
+          (click)="togglePointerOffsetMenu()"
+        >
+          {{ "generate.editor.pointer_offset_menu" | transloco }}
+        </button>
       </div>
 
       <span class="gs-sublabel gs-se-hint">
         {{ "generate.editor.hint" | transloco }}
       </span>
     </div>
+
+    @if (pointerOffsetMenuOpen()) {
+      <div
+        id="gs-se-offset-menu"
+        class="gs-se-offset-menu gs-se-offset-menu--floating"
+        role="group"
+        [attr.aria-label]="'generate.editor.pointer_offset_menu' | transloco"
+      >
+        <label
+          class="gs-se-group gs-se-offset-field"
+          for="gs-se-offset-direction"
+        >
+          <span class="gs-sublabel">{{
+            "generate.editor.pointer_offset_direction" | transloco
+          }}</span>
+          <select
+            id="gs-se-offset-direction"
+            class="gs-se-number gs-se-offset-select"
+            (change)="setPointerOffsetDirection($any($event.target).value)"
+          >
+            @for (direction of pointerOffsetDirections; track direction) {
+              <option
+                [value]="direction"
+                [selected]="pointerOffsetDirection() === direction"
+              >
+                {{
+                  "generate.editor.pointer_offset_direction_" + direction
+                    | transloco
+                }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="gs-se-group gs-se-offset-field" for="gs-se-offset-x">
+          <span class="gs-sublabel">{{
+            "generate.editor.pointer_offset_x"
+              | transloco: { value: pointerOffsetX() }
+          }}</span>
+          <input
+            id="gs-se-offset-x"
+            type="range"
+            class="gs-range"
+            [min]="minPointerOffset"
+            [max]="maxPointerOffset"
+            [value]="pointerOffsetX()"
+            [style.--gs-range-fill.%]="
+              rangeFill(pointerOffsetX(), minPointerOffset, maxPointerOffset)
+            "
+            (input)="setPointerOffsetX($any($event.target).value)"
+          />
+        </label>
+
+        <label class="gs-se-group gs-se-offset-field" for="gs-se-offset-y">
+          <span class="gs-sublabel">{{
+            "generate.editor.pointer_offset_y"
+              | transloco: { value: pointerOffsetY() }
+          }}</span>
+          <input
+            id="gs-se-offset-y"
+            type="range"
+            class="gs-range"
+            [min]="minPointerOffset"
+            [max]="maxPointerOffset"
+            [value]="pointerOffsetY()"
+            [style.--gs-range-fill.%]="
+              rangeFill(pointerOffsetY(), minPointerOffset, maxPointerOffset)
+            "
+            (input)="setPointerOffsetY($any($event.target).value)"
+          />
+        </label>
+      </div>
+    }
 
     @if (confirmingClose()) {
       <div class="gs-se-confirm" role="alertdialog" aria-modal="true">

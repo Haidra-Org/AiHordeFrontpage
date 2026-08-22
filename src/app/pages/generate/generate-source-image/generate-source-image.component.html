@@ -113,11 +113,21 @@
             </span>
           </div>
         } @else {
-          <img
-            [src]="src"
-            class="w-full rounded-lg"
-            alt="{{ 'generate.source.preview_alt' | transloco }}"
-          />
+          <div class="gs-source-preview">
+            <img
+              [src]="src"
+              class="gs-source-preview-image"
+              alt="{{ 'generate.source.preview_alt' | transloco }}"
+            />
+            @if (maskPreviewUrl(); as maskSrc) {
+              <img
+                [src]="maskSrc"
+                class="gs-source-preview-mask"
+                alt=""
+                aria-hidden="true"
+              />
+            }
+          </div>
         }
 
         <div class="flex flex-wrap items-center gap-2">

@@ -180,6 +180,7 @@ export class GenerateSourceImageComponent implements OnInit {
 
   public readonly maskPainted = signal(false);
   public readonly maskBlob = signal<Blob | null>(null);
+  public readonly maskPreviewUrl = signal<string | null>(null);
 
   /** Which outpaint composition is current, so a late reply can be dropped. */
   private outpaintToken = 0;
@@ -329,6 +330,7 @@ export class GenerateSourceImageComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => {
       this.revokePreview();
+      this.revokeMaskPreview();
       this.revokeExtraPreviews();
     });
   }
@@ -512,8 +514,7 @@ export class GenerateSourceImageComponent implements OnInit {
       this.sourceImage.set(image);
       this.previewUrl.set(URL.createObjectURL(image.blob));
       this.outpaintOffset.set(null);
-      this.maskPainted.set(mask !== null);
-      this.maskBlob.set(mask);
+      this.setMask(mask);
       this.emitState();
     } catch {
       this.error.set('generate.source.encode_failed');
@@ -526,8 +527,7 @@ export class GenerateSourceImageComponent implements OnInit {
     this.previewUrl.set(null);
     this.error.set(null);
     this.outpaintOffset.set(null);
-    this.maskPainted.set(false);
-    this.maskBlob.set(null);
+    this.setMask(null);
     this.emitState();
   }
 
@@ -557,6 +557,7 @@ export class GenerateSourceImageComponent implements OnInit {
       width: controls.width.value,
       height: controls.height.value,
       offset: null,
+      initialInk: 'color',
     });
   }
 
@@ -581,16 +582,14 @@ export class GenerateSourceImageComponent implements OnInit {
     if (result.mask && this.mode() === 'img2img' && !this.maskEnabled()) {
       this.form().controls.maskEnabled.setValue(true);
     }
-    this.maskBlob.set(result.mask);
-    this.maskPainted.set(result.mask !== null);
+    this.setMask(result.mask);
     this.outpaintOffset.set(result.offset);
     this.emitState();
   }
 
   /** Forget the mask, which is all there is to forget now the editor owns it. */
   public clearMask(): void {
-    this.maskPainted.set(false);
-    this.maskBlob.set(null);
+    this.setMask(null);
     this.emitState();
   }
 
@@ -751,6 +750,24 @@ export class GenerateSourceImageComponent implements OnInit {
     if (url && this.isBrowser) {
       URL.revokeObjectURL(url);
     }
+  }
+
+  /** Keep a source-mask overlay URL in sync with the mask blob lifecycle. */
+  private setMask(mask: Blob | null): void {
+    this.revokeMaskPreview();
+    this.maskBlob.set(mask);
+    this.maskPainted.set(mask !== null);
+    if (mask && this.isBrowser) {
+      this.maskPreviewUrl.set(URL.createObjectURL(mask));
+    }
+  }
+
+  private revokeMaskPreview(): void {
+    const url = this.maskPreviewUrl();
+    if (url && this.isBrowser) {
+      URL.revokeObjectURL(url);
+    }
+    this.maskPreviewUrl.set(null);
   }
 
   private computeValid(): boolean {
