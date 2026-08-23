@@ -2377,6 +2377,100 @@ describe('GenerateFormComponent kudos breakdown', () => {
   });
 });
 
+describe('GenerateFormComponent docked Generate', () => {
+  async function render(): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.componentRef.setInput('pinnable', true);
+    fixture.detectChanges();
+    return { host: fixture.nativeElement as HTMLElement, fixture };
+  }
+
+  /**
+   * Docking is CSS: what a spec can hold is that the class the stylesheet acts
+   * on is on the footer's own submit row, and that the row still holds the
+   * form's submit button rather than a stand-in for it.
+   */
+  it('docks the footer row that holds the real submit', async () => {
+    const { host, fixture } = await render();
+    const row = host.querySelector<HTMLElement>('.gs-submitrow');
+
+    expect(row).not.toBeNull();
+    expect(row!.classList.contains('gs-submitrow--pinned')).toBe(false);
+
+    fixture.componentRef.setInput('pinGenerate', true);
+    fixture.detectChanges();
+
+    expect(row!.classList.contains('gs-submitrow--pinned')).toBe(true);
+    const button = row!.querySelector<HTMLButtonElement>('.gs-genbtn');
+    expect(button?.type).toBe('submit');
+    expect(button?.closest('form')).not.toBeNull();
+    expect(host.querySelectorAll('.gs-genbtn').length).toBe(1);
+    expect(row!.querySelector('.gs-batch')).not.toBeNull();
+  });
+
+  it('keeps the docked button on the form invalid state', async () => {
+    const { host, fixture } = await render();
+    fixture.componentRef.setInput('pinGenerate', true);
+    fixture.detectChanges();
+
+    const button = host.querySelector<HTMLButtonElement>(
+      '.gs-submitrow--pinned .gs-genbtn',
+    );
+    expect(button?.disabled).toBe(false);
+
+    fixture.componentInstance.form().controls.prompt.setErrors({
+      required: true,
+    });
+    fixture.detectChanges();
+
+    expect(button?.disabled).toBe(true);
+  });
+
+  it('offers the switch only where the studio owns the screen', async () => {
+    const { host, fixture } = await render();
+    const pinButton = (): HTMLButtonElement | null =>
+      host.querySelector<HTMLButtonElement>(
+        `[aria-label="${en['generate.form.pin_generate']}"]`,
+      );
+
+    expect(pinButton()?.getAttribute('aria-pressed')).toBe('false');
+
+    let asked: boolean | null = null;
+    fixture.componentInstance.pinGenerateChange.subscribe((on) => (asked = on));
+    pinButton()!.click();
+    expect(asked).toBe(true);
+
+    fixture.componentRef.setInput('pinnable', false);
+    fixture.detectChanges();
+
+    expect(pinButton()).toBeNull();
+    expect(
+      host
+        .querySelector<HTMLElement>('.gs-submitrow')
+        ?.classList.contains('gs-submitrow--pinned'),
+    ).toBe(false);
+  });
+});
+
 describe('GenerateFormComponent changed-settings ledger', () => {
   const COPY = en as Record<string, string>;
 

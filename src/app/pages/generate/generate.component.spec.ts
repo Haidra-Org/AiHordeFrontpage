@@ -250,6 +250,22 @@ describe('GenerateComponent', () => {
     );
   });
 
+  it('remembers the pinned Generate preference across visits', () => {
+    component.setPinGenerate(true);
+
+    expect(component.pinGenerate()).toBe(true);
+    expect(localStorage.getItem('aihorde.generate.pinned_generate')).toBe(
+      'true',
+    );
+
+    component.setPinGenerate(false);
+
+    expect(component.pinGenerate()).toBe(false);
+    expect(localStorage.getItem('aihorde.generate.pinned_generate')).toBe(
+      'false',
+    );
+  });
+
   it('surfaces enqueue failures through the toast with error details', async () => {
     const consoleError = vi
       .spyOn(console, 'error')

@@ -131,6 +131,9 @@ const STORAGE_KEY = 'aihorde.generate.form';
 /** Whether Generate opens the review dialog instead of sending straight away. */
 const REVIEW_KEY = 'aihorde.generate.review_before_send';
 
+/** Whether Generate stays at the foot of the screen on a narrow viewport. */
+const PIN_GENERATE_KEY = 'aihorde.generate.pinned_generate';
+
 /** What the glossary files the studio's this-page entries under. */
 const STUDIO_GLOSSARY_PAGE_ID = 'generate-image';
 
@@ -274,6 +277,13 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * asking for a look first.
    */
   public readonly reviewBeforeSend = signal(this.db.get(REVIEW_KEY) === true);
+
+  /**
+   * Whether Generate is kept at the foot of a narrow screen. Off by default:
+   * the bar costs a band of a phone's screen, and it only pays for itself for
+   * someone sending one request after another.
+   */
+  public readonly pinGenerate = signal(this.db.get(PIN_GENERATE_KEY) === true);
 
   /** What the review dialog is holding, or null while nothing awaits a look. */
   public readonly pendingReview = signal<SubmitPlan | null>(null);
@@ -1100,6 +1110,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public setReviewBeforeSend(on: boolean): void {
     this.reviewBeforeSend.set(on);
     this.db.store(REVIEW_KEY, on);
+  }
+
+  /** Turn the pinned Generate bar on or off, and remember it. */
+  public setPinGenerate(on: boolean): void {
+    this.pinGenerate.set(on);
+    this.db.store(PIN_GENERATE_KEY, on);
   }
 
   /** Send exactly what the dialog was showing; the plan is not rebuilt. */

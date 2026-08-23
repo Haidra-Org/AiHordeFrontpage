@@ -276,6 +276,25 @@
           "generate.form.review_before_send_short" | transloco
         }}</span>
       </button>
+      <!-- Only a screen that scrolls the studio as one page can lose Generate
+           off the bottom; wider ones keep it in view either way, and the switch
+           there is a preference the reader carries to their phone. -->
+      @if (pinnable()) {
+        <button
+          type="button"
+          class="gs-mini-btn"
+          [class.gs-mini-btn--on]="pinGenerate()"
+          [attr.aria-pressed]="pinGenerate()"
+          (click)="togglePinGenerate()"
+          [attr.aria-label]="'generate.form.pin_generate' | transloco"
+          [title]="'generate.form.pin_generate_hint' | transloco"
+        >
+          <app-icon name="pin" class="gs-ico-sm" />
+          <span class="gs-mini-btn-label">{{
+            "generate.form.pin_generate_short" | transloco
+          }}</span>
+        </button>
+      }
       @if (expandable()) {
         <button
           type="button"
@@ -2465,8 +2484,13 @@
     <ng-container
       *ngTemplateOutlet="fieldError; context: { anchor: 'generate' }"
     />
+    <!-- Batch and Generate are one gesture, so the docked bar takes the row
+         whole rather than lifting the button out of it: the button that ends up
+         above the thumb is this button, with its own disabled state, its own
+         count and the form's own submit. -->
     <div
-      class="flex items-center justify-between gap-2"
+      class="gs-submitrow flex items-center justify-between gap-2"
+      [class.gs-submitrow--pinned]="generatePinned()"
       [class.flex-wrap]="panelSize() === 'normal'"
       [class.flex-nowrap]="panelSize() !== 'normal'"
       [class.w-full]="panelSize() === 'normal'"

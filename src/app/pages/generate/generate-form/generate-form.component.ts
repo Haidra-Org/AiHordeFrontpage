@@ -545,9 +545,25 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly reviewBeforeSend = input(false);
 
+  /**
+   * Whether keeping Generate on screen is on offer at all. False where the
+   * panel is a guest on another page: the bar belongs to the studio's own
+   * screen, which is the only place it has a bottom to sit above.
+   */
+  public readonly pinnable = input(false);
+
+  /**
+   * Whether Generate is kept at the foot of the screen. Narrow viewports act on
+   * it; wider ones keep the button in the footer either way, where it is always
+   * in view. The parent owns the preference; the panel draws the switch and
+   * wears the class that docks its own footer row.
+   */
+  public readonly pinGenerate = input(false);
+
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
   public readonly reviewBeforeSendChange = output<boolean>();
+  public readonly pinGenerateChange = output<boolean>();
   /** Ask the parent to open a preview of the request this form would submit. */
   public readonly preview = output<void>();
   /** Load a saved/recent preset back into the form (via the parent's confirm). */
@@ -2125,6 +2141,15 @@ export class GenerateFormComponent implements OnInit {
 
   public toggleReviewBeforeSend(): void {
     this.reviewBeforeSendChange.emit(!this.reviewBeforeSend());
+  }
+
+  public togglePinGenerate(): void {
+    this.pinGenerateChange.emit(!this.pinGenerate());
+  }
+
+  /** Whether the footer's submit row is the docked bar rather than a row. */
+  public generatePinned(): boolean {
+    return this.pinnable() && this.pinGenerate();
   }
 
   /** Take focus back to Generate once the review dialog has closed. */
