@@ -1132,6 +1132,42 @@
   font-size: 16px;
   letter-spacing: -0.01em;
 }
+/* A way out of the panel, not a control in it: the title line's own quiet
+   link, in the register of the `?` beside it rather than the tool row's
+   buttons. It keeps its word at every width. */
+.gen-studio .gs-title-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 8px;
+  margin-left: -4px;
+  border: 1px solid transparent;
+  border-radius: var(--gs-radius-pill);
+  color: var(--gs-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.gen-studio .gs-title-link:hover {
+  color: var(--gs-blue);
+  border-color: var(--gs-border);
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-title-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-title-link {
+    min-height: 44px;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-title-link {
+    border-color: ButtonText;
+  }
+}
 /* A track with a 3px inset, so the selected option reads as a tile lifted out
    of a well rather than a button sitting on a strip. */
 .gen-studio .gs-seg {
@@ -1836,10 +1872,91 @@
 .gen-studio .gs-reset {
   position: relative;
 }
+/* ------- the docked utility chips ----------------------------------- */
+/* What is reached for while working down the panel, kept at the foot of the
+   body instead of the header the reader has already scrolled past. It is the
+   last thing in the body's flow and rides the foot of the scroll while there
+   is body left to read, so at the end it settles above the footer rather than
+   covering Generate. The chips wear the source editor's floating grammar:
+   small, worded, and with nothing to dismiss. */
+.gen-studio .gs-dock {
+  position: sticky;
+  bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom) + 8px);
+  /* Over the panel's own cards, under the tool bar (44), the sheet (45) and
+     every modal surface (60+). */
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-3);
+  /* The rail spans the panel; only the chips on it take a press, so the cards
+     it floats over stay reachable. */
+  pointer-events: none;
+}
+.gen-studio .gs-dock > * {
+  pointer-events: auto;
+}
+/* Where the docked Generate bar takes the foot of the screen, the chips stack
+   above it rather than behind it. */
+@media (max-width: 1023.98px) {
+  .gen-studio form:has(.gs-submitrow--pinned) .gs-dock {
+    bottom: calc(
+      var(--gs-tabbar-height) + var(--gs-pinbar-height) +
+        env(safe-area-inset-bottom) + 8px
+    );
+  }
+}
+/* From here the body is its own scroll pane and nothing is docked to the
+   screen beneath it, so the chips ride the foot of the pane itself. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-dock {
+    bottom: var(--gs-space-2);
+  }
+}
+.gen-studio .gs-dock-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-pill);
+  background: color-mix(in srgb, var(--gs-panel) 92%, transparent);
+  color: var(--gs-ink);
+  box-shadow: var(--gs-elev-2);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.gen-studio .gs-dock-chip:hover {
+  border-color: var(--gs-blue);
+  color: var(--gs-blue);
+}
+.gen-studio .gs-dock-chip:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-dock-chip-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-dock-chip {
+    min-height: 44px;
+    padding: 0 12px;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-dock-chip {
+    border-color: ButtonText;
+  }
+}
+
 /* ------- the changed-settings ledger -------------------------------- */
 /* A count of what the reader has moved, and a way to move any of it back. It
-   wears the toolbar's own button shape with the number leading, because the
-   number is the whole claim. */
+   rides the docked cluster with the number leading, because the number is the
+   whole claim. */
 .gen-studio .gs-ledger {
   position: relative;
 }
@@ -1862,11 +1979,12 @@
   color: #fbbf24;
 }
 .gen-studio .gs-ledger-pop {
-  /* Hangs from the left of its button: the button sits at the start of the
-     toolbar, so a panel aligned to its right edge would run off the screen. */
+  /* Opens upward from a chip that rides the foot of the panel, and from the
+     chip's right edge, which is the edge the cluster is docked to. Which side
+     it ends up on is answered against the screen when it opens. */
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  bottom: calc(100% + 8px);
+  right: 0;
   z-index: 30;
   width: min(280px, calc(100vw - 24px));
   max-height: min(60vh, 420px);
@@ -2057,14 +2175,10 @@
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
-.gen-studio .gs-reset-pop.gs-reset-pop--open-right {
-  left: 0;
-  right: auto;
-}
-/* Once the header tools can wrap, the reset trigger may no longer sit at the
-  row's far right. If the confirm stays anchored to that wrapped position it
-  can run off-screen left, so from tablet widths down it detaches from the
-  trigger and pins to the viewport like the presets menu. */
+/* The confirm hangs inside the ledger's own scrolling panel, which on a phone
+  leaves it little room and can cut it off. From tablet widths down it detaches
+  from the trigger and pins to the viewport like the presets menu, where it has
+  the width of the screen to be read in. */
 @media (max-width: 1023.98px) {
   .gen-studio .gs-reset-pop {
     position: fixed;
@@ -7032,10 +7146,6 @@
   border: 1px solid var(--gs-pop-border);
   border-radius: 11px;
   box-shadow: var(--gs-pop-shadow);
-}
-.gen-studio .gs-kudos-pop.gs-kudos-pop--open-right {
-  left: 0;
-  right: auto;
 }
 .gen-studio .gs-kudos-title {
   font-size: 12px;

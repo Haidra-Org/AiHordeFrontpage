@@ -2619,15 +2619,6 @@ describe('GenerateFormComponent Options list', () => {
     expect(optionRow(host, en['generate.shell.fullscreen'])).not.toBeNull();
   });
 
-  it('keeps the walkthrough reachable from the list', async () => {
-    const { host, fixture } = await render();
-    openOptions(host, fixture);
-    const row = optionRow(host, en['generate.form.open_guide_short']);
-
-    expect(row).not.toBeNull();
-    expect(row!.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
-  });
-
   it('is the bottom sheet rather than a popover on a phone', async () => {
     const { host, fixture } = await render();
     fixture.componentRef.setInput('narrow', true);
@@ -2641,34 +2632,33 @@ describe('GenerateFormComponent Options list', () => {
     ).not.toBeNull();
   });
 
-  it('drops the header walkthrough where the row cannot carry its word', async () => {
+  it('keeps the walkthrough on the title line at every width', async () => {
     const { host, fixture } = await render();
-    const headerGuide = (): HTMLElement | null =>
-      host.querySelector<HTMLElement>('.gs-tools a.gs-mini-btn');
+    const titleLink = (): HTMLAnchorElement | null =>
+      host.querySelector<HTMLAnchorElement>(
+        '.gs-panel-header > a.gs-title-link',
+      );
 
-    expect(headerGuide()?.textContent).toContain(
+    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
+    expect(titleLink()?.textContent).toContain(
       en['generate.form.open_guide_short'],
     );
 
     fixture.componentRef.setInput('narrow', true);
     fixture.detectChanges();
 
-    expect(headerGuide()).toBeNull();
+    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
+    expect(titleLink()?.textContent).toContain(
+      en['generate.form.open_guide_short'],
+    );
   });
 
-  it('offers folding at every width, not only where the panel widens', async () => {
+  it('leaves the walkthrough out of the tool row and the list', async () => {
     const { host, fixture } = await render();
-    fixture.componentRef.setInput('narrow', true);
-    fixture.componentRef.setInput('expandable', false);
-    fixture.detectChanges();
-    const foldButton = Array.from(
-      host.querySelectorAll<HTMLElement>('.gs-tools .gs-mini-btn'),
-    ).find(
-      (button) =>
-        button.getAttribute('aria-label') === en['generate.groups.fold_all'],
-    );
+    openOptions(host, fixture);
 
-    expect(foldButton).toBeDefined();
+    expect(host.querySelector('.gs-tools a')).toBeNull();
+    expect(optionRow(host, en['generate.form.open_guide_short'])).toBeNull();
   });
 
   it('carries a word on every header tool', async () => {
@@ -2678,6 +2668,120 @@ describe('GenerateFormComponent Options list', () => {
     ).filter((button) => !button.querySelector('.gs-mini-btn-label'));
 
     expect(wordless).toEqual([]);
+  });
+});
+
+describe('GenerateFormComponent docked chips', () => {
+  async function render(): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+    );
+    fixture.detectChanges();
+    return { host: fixture.nativeElement as HTMLElement, fixture };
+  }
+
+  const foldChip = (host: HTMLElement): HTMLElement | null =>
+    Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-dock .gs-dock-chip'),
+    ).find(
+      (chip) =>
+        chip.getAttribute('aria-label') === en['generate.groups.fold_all'],
+    ) ?? null;
+
+  it('holds the ledger and the fold-up rather than the header row', async () => {
+    const { host, fixture } = await render();
+    // The panel remembers folds, so the starting point is stated rather than
+    // assumed: every group folded, then one opened.
+    fixture.componentInstance.foldAllGroups();
+    fixture.componentInstance.toggleGroup('sampling');
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-tools .gs-ledger-btn')).toBeNull();
+    expect(host.querySelector('.gs-dock .gs-ledger-btn')).not.toBeNull();
+    expect(foldChip(host)).not.toBeNull();
+    const headerFold = Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-tools .gs-mini-btn'),
+    ).filter(
+      (button) =>
+        button.getAttribute('aria-label') === en['generate.groups.fold_all'],
+    );
+    expect(headerFold).toEqual([]);
+  });
+
+  it('counts what has moved on the ledger chip, and says nothing at zero', async () => {
+    const { host, fixture } = await render();
+    const chip = (): HTMLElement | null =>
+      host.querySelector<HTMLElement>('.gs-dock .gs-ledger-btn');
+
+    expect(chip()?.getAttribute('aria-label')).toBe(
+      en['generate.form.ledger_label'].replace('{{ count }}', '1'),
+    );
+    expect(chip()?.textContent).toContain(en['generate.form.ledger_short']);
+
+    fixture.componentInstance.form().controls.prompt.setValue('');
+    fixture.detectChanges();
+
+    expect(chip()).toBeNull();
+  });
+
+  it('offers the fold-up only while a group is open', async () => {
+    const { host, fixture } = await render();
+    fixture.componentInstance.foldAllGroups();
+    fixture.detectChanges();
+
+    expect(foldChip(host)).toBeNull();
+
+    fixture.componentInstance.toggleGroup('sampling');
+    fixture.detectChanges();
+
+    expect(foldChip(host)).not.toBeNull();
+
+    foldChip(host)!.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.anyGroupOpen()).toBe(false);
+    expect(foldChip(host)).toBeNull();
+  });
+
+  it('opens the ledger from its chip, with the reset inside it', async () => {
+    const { host, fixture } = await render();
+    const chip = host.querySelector<HTMLButtonElement>(
+      '.gs-dock .gs-ledger-btn',
+    )!;
+
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+
+    chip.click();
+    fixture.detectChanges();
+    const pop = host.querySelector<HTMLElement>('.gs-dock .gs-ledger-pop');
+
+    expect(pop).not.toBeNull();
+    expect(pop!.getAttribute('role')).toBe('dialog');
+    expect(pop!.querySelector('.gs-reset-btn')).not.toBeNull();
+
+    fixture.componentInstance.onDocumentEscape();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-ledger-pop')).toBeNull();
+    expect(document.activeElement).toBe(
+      host.querySelector('.gs-dock .gs-ledger-btn'),
+    );
   });
 });
 

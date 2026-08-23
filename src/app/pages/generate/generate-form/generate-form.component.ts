@@ -33,6 +33,7 @@ import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.dir
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
 import { CivitaiSelectionComponent } from '../../../components/civitai-selection/civitai-selection.component';
 import { RememberedHeightDirective } from '../../../directives/remembered-height.directive';
+import { EdgeAwarePopoverDirective } from '../../../directives/edge-aware-popover.directive';
 import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs-prompt-editor.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
@@ -435,13 +436,13 @@ const SUMMARY_SEPARATOR = ' · ';
     GsGroupComponent,
     RouterLink,
     GsSheetComponent,
+    EdgeAwarePopoverDirective,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:pointerdown)': 'onDocumentPointerDown($event)',
     '(document:keydown.escape)': 'onDocumentEscape()',
-    '(window:resize)': 'onWindowResize()',
   },
 })
 export class GenerateFormComponent implements OnInit {
@@ -598,8 +599,6 @@ export class GenerateFormComponent implements OnInit {
     viewChild<ElementRef<HTMLButtonElement>>('optionsBtn');
   /** Whether the reset control is asking before it clears anything. */
   public readonly resetConfirmOpen = signal(false);
-  /** Which side the reset confirm opens from on wide layouts. */
-  public readonly resetPopAlign = signal<'left' | 'right'>('left');
   /** The confirm's anchor, used to detect click-away dismissals. */
   private readonly resetRef =
     viewChild<ElementRef<HTMLElement>>('resetContainer');
@@ -626,8 +625,6 @@ export class GenerateFormComponent implements OnInit {
     viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
   /** Whether the estimate's breakdown popover is open. */
   public readonly kudosOpen = signal(false);
-  /** Which side the kudos breakdown opens from. */
-  public readonly kudosPopAlign = signal<'left' | 'right'>('left');
   /** The breakdown popover's anchor, used to detect click-away dismissals. */
   private readonly kudosRef =
     viewChild<ElementRef<HTMLElement>>('kudosContainer');
@@ -2440,49 +2437,11 @@ export class GenerateFormComponent implements OnInit {
    * the button offers the question and the answer sits under it.
    */
   public toggleResetConfirm(): void {
-    const open = !this.resetConfirmOpen();
-    this.resetConfirmOpen.set(open);
-    if (!open) {
-      return;
-    }
-    this.setResetPopAlign();
+    this.resetConfirmOpen.update((open) => !open);
   }
 
   public closeResetConfirm(): void {
     this.resetConfirmOpen.set(false);
-  }
-
-  /** Keep the confirm in view as the viewport changes while it is open. */
-  public onWindowResize(): void {
-    if (this.resetConfirmOpen()) {
-      this.setResetPopAlign();
-    }
-    if (this.kudosOpen()) {
-      this.setKudosPopAlign();
-    }
-  }
-
-  /** Flip the confirm to the trigger's right when opening left would clip. */
-  private setResetPopAlign(): void {
-    this.resetPopAlign.set('left');
-    if (window.innerWidth <= 1023.98) {
-      return;
-    }
-    const anchor = this.resetRef()?.nativeElement;
-    if (!anchor) {
-      return;
-    }
-    const rect = anchor.getBoundingClientRect();
-    const panelWidth = 232;
-    const gutter = 12;
-    const leftEdge = rect.right - panelWidth;
-    if (leftEdge >= gutter) {
-      return;
-    }
-    const rightEdge = rect.left + panelWidth;
-    if (rightEdge <= window.innerWidth - gutter) {
-      this.resetPopAlign.set('right');
-    }
   }
 
   /** Dismiss the confirm and leave the settings alone. */
@@ -2679,36 +2638,11 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public toggleKudos(): void {
-    const open = !this.kudosOpen();
-    this.kudosOpen.set(open);
-    if (!open) {
-      return;
-    }
-    this.setKudosPopAlign();
+    this.kudosOpen.update((open) => !open);
   }
 
   public closeKudos(): void {
     this.kudosOpen.set(false);
-  }
-
-  /** Flip the kudos popover to the trigger's right when leftward would clip. */
-  private setKudosPopAlign(): void {
-    this.kudosPopAlign.set('left');
-    const anchor = this.kudosRef()?.nativeElement;
-    if (!anchor) {
-      return;
-    }
-    const rect = anchor.getBoundingClientRect();
-    const panelWidth = Math.min(320, window.innerWidth - 24);
-    const gutter = 12;
-    const leftEdge = rect.right - panelWidth;
-    if (leftEdge >= gutter) {
-      return;
-    }
-    const rightEdge = rect.left + panelWidth;
-    if (rightEdge <= window.innerWidth - gutter) {
-      this.kudosPopAlign.set('right');
-    }
   }
 
   /** The warnings belonging to one card, for its own inline lines. */
