@@ -362,6 +362,7 @@ export class GenerateResultsPanelComponent {
   /** The technique the finished tutorial hands on to, offered on the card. */
   public readonly nextTutorial = this.tutorial.nextFlow;
   public readonly finishedTutorial = this.tutorial.finishedFlowId;
+  public readonly finishedTutorialRelated = this.tutorial.finishedFlowRelated;
 
   public startNextTutorial(flowId: string): void {
     this.tutorial.dismissCompletion();

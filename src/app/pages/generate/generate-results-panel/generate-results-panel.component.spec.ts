@@ -991,6 +991,29 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.tutorialCompleted()).toBe(false);
   });
 
+  it('closes the face fix walkthrough with the way to repair a finished picture', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('facefix');
+    engine.goTo(engine.total() - 1);
+    engine.notifySubmitted();
+
+    // The reader is holding the picture at this point, which is the moment the
+    // other area becomes the right answer rather than a distraction.
+    const related = component.finishedTutorialRelated();
+    expect(related?.link).toBe('/docs/alchemy/fix_faces');
+    expect(TRANSLATIONS[related?.bodyKey ?? '']).toBeTruthy();
+    expect(TRANSLATIONS[related?.linkKey ?? '']).toBeTruthy();
+  });
+
+  it('closes a walkthrough that repairs nothing with no such offer', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    void engine.start('txt2img');
+    engine.goTo(engine.total() - 1);
+    engine.notifySubmitted();
+
+    expect(component.finishedTutorialRelated()).toBeNull();
+  });
+
   it('gives the pane header to the tutorial while one is open, and takes it back', () => {
     // The template is stubbed here, so the header's inputs are read off the
     // component: what it names, where it is, whether it offers worlds.

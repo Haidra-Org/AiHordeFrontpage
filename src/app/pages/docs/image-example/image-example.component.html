@@ -232,6 +232,17 @@
                     </li>
                   }
                 </ol>
+                <!-- Read before the handoff, because it is addressed to a
+                     reader this technique cannot help: the picture is already
+                     made, and the pass taught here is asked for beforehand. -->
+                @if (relatedElsewhere(); as related) {
+                  <p class="gs-tut-body gs-tut-related">
+                    {{ related.bodyKey | transloco }}
+                    <a class="gs-tut-related-link" [routerLink]="related.link">
+                      {{ related.linkKey | transloco }}
+                    </a>
+                  </p>
+                }
                 <!-- One lesson hands on to the next, in a sentence that says
                      what was learned and where it leads, so the reader can
                      chain rather than go back to the picker. -->

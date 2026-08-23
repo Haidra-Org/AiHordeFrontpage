@@ -366,6 +366,16 @@
           <p class="gs-learn-done-body">
             {{ "generate.learn.done.queue" | transloco }}
           </p>
+          <!-- Said here as well as on the page, because the reader is now
+               holding the finished picture the other area is for. -->
+          @if (finishedTutorialRelated(); as related) {
+            <p class="gs-learn-done-body">
+              {{ related.bodyKey | transloco }}
+              <a class="gs-tut-related-link" [routerLink]="related.link">
+                {{ related.linkKey | transloco }}
+              </a>
+            </p>
+          }
           <!-- One lesson hands on to the next, so a reader who has just made
                something can carry straight on rather than go back to the
                picker to find out what comes after. -->

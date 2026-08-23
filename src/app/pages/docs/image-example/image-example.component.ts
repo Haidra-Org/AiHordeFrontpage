@@ -14,7 +14,7 @@ import {
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { forkJoin, map, of } from 'rxjs';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
@@ -115,6 +115,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
 @Component({
   selector: 'app-docs-image-example',
   imports: [
+    RouterLink,
     TranslocoPipe,
     IconComponent,
     GsAnchorLinkComponent,
@@ -367,6 +368,15 @@ export class DocsImageExampleComponent {
   public readonly nextFlowId = computed<string | null>(() => {
     const id = this.activeId();
     return id ? (flowDef(id)?.next ?? null) : null;
+  });
+
+  /**
+   * The other area that does this technique's job to a finished picture, for
+   * the reader who has one already. Null on every flow that names none.
+   */
+  public readonly relatedElsewhere = computed<FlowDef['related'] | null>(() => {
+    const id = this.activeId();
+    return id ? (flowDef(id)?.related ?? null) : null;
   });
 
   public goToFlow(flowId: string): void {

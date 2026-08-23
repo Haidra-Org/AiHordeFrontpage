@@ -2,6 +2,7 @@ import {
   GenerateFormValue,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
+import { docsAlchemyUseCaseLink } from './docs-links';
 import { SectionId } from './sections';
 
 /**
@@ -86,6 +87,22 @@ export interface FlowDef {
    * The last technique in the chain names none.
    */
   next?: string;
+  /**
+   * Somewhere outside the technique chain that does this flow's job to a
+   * picture that already exists, offered beside the handoff. A technique
+   * teaches what to ask for while the picture is still being made, which is no
+   * use to a reader holding a finished one; a flow whose subject is also an
+   * alchemy operation says where that reader should go instead. Optional, and
+   * carried by the one flow that needs it: a flow naming none renders nothing.
+   */
+  related?: {
+    /** The sentence that says why the reader is being sent away. */
+    bodyKey: string;
+    /** The link's own words, which name the destination rather than the area. */
+    linkKey: string;
+    /** Where the link goes, from {@link docsAlchemyUseCaseLink} and its siblings. */
+    link: string;
+  };
 }
 
 /**
@@ -365,6 +382,15 @@ export const FLOWS: readonly FlowDef[] = [
     id: 'facefix',
     next: 'transparent',
     section: 'finishing',
+    // The repair pass this flow teaches is asked for before the picture is
+    // made. A reader who already has the picture cannot use it, and rerunning
+    // the request would cost them the image they came with; alchemy repairs the
+    // one they have, so the flow says so rather than letting them regenerate.
+    related: {
+      bodyKey: 'generate.learn.flows.facefix.related.body',
+      linkKey: 'generate.learn.flows.facefix.related.link',
+      link: docsAlchemyUseCaseLink('fix_faces'),
+    },
     steps: [
       {
         id: 'prompt',

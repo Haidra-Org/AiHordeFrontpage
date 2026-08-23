@@ -11469,6 +11469,21 @@ app-gs-compare-wipe {
   max-width: 68ch;
 }
 
+/* The aside for a reader whose picture is already made, which is a different
+   reader from the one the handoff under it addresses. Set apart by a rule of
+   its own so it is not taken for the recap. */
+.gen-studio .gs-tut-related {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-tut-related-link,
+.gs-learn-done .gs-tut-related-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 /* The Learn page's way into the studio. */
 /* The hand-off at the foot of the steps: eyebrow, the recap, and a door to the
    next technique in the chain. */

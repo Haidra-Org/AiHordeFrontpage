@@ -436,6 +436,33 @@ describe('DocsImageExampleComponent', () => {
     );
   });
 
+  it('points a reader holding a finished picture at the alchemy page', async () => {
+    harness = await createPage('facefix');
+    flushAll(harness);
+
+    const translations = en as Record<string, string>;
+    const aside = harness.query<HTMLElement>('.gs-tut-related');
+    expect(aside).toHaveLength(1);
+    expect(aside[0].textContent).toContain(
+      translations['generate.learn.flows.facefix.related.body'],
+    );
+
+    const link = aside[0].querySelector<HTMLAnchorElement>(
+      '.gs-tut-related-link',
+    );
+    expect(link?.textContent?.trim()).toBe(
+      translations['generate.learn.flows.facefix.related.link'],
+    );
+    expect(link?.getAttribute('href')).toBe('/docs/alchemy/fix_faces');
+  });
+
+  it('offers the finished-picture aside on no other technique', async () => {
+    harness = await createPage('txt2img');
+    flushAll(harness);
+
+    expect(harness.query('.gs-tut-related')).toHaveLength(0);
+  });
+
   it('offers no wipe for a flow that starts from nothing', async () => {
     harness = await createPage('txt2img');
     flushAll(harness);

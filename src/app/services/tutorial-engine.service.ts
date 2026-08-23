@@ -36,6 +36,7 @@ import {
 } from '../content/examples';
 import {
   FLOWS,
+  FlowDef,
   FlowReveal,
   FlowStep,
   flowDef,
@@ -748,6 +749,18 @@ export class TutorialEngineService {
     const finished = this.finishedFlow();
     return finished ? (flowDef(finished)?.next ?? null) : null;
   });
+
+  /**
+   * Where the flow that just finished sends a reader holding a picture that is
+   * already made, or null where it names nowhere. Read by the completion card
+   * beside the handoff, and cleared with it.
+   */
+  public readonly finishedFlowRelated = computed<FlowDef['related'] | null>(
+    () => {
+      const finished = this.finishedFlow();
+      return finished ? (flowDef(finished)?.related ?? null) : null;
+    },
+  );
 
   public dismissCompletion(): void {
     this.finished.set(false);
