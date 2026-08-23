@@ -1,5 +1,6 @@
 import { zipSync, type Zippable } from 'fflate';
 import { StoredJobImage } from '../../types/generation-job';
+import { embedWebpExif } from '../../helper/webp-exif';
 
 /** Pick a file extension from an image MIME type, defaulting to webp. */
 function extensionFor(mimeType: string): string {
@@ -32,10 +33,14 @@ export function imageFileName(image: StoredJobImage, index: number): string {
  * caller wraps them in a Blob and triggers the download. When `metaByImageId` is
  * given, a `<name>.json` metadata sidecar is written next to each image whose id
  * it carries, so an export keeps each image's parameters and returned data.
+ * `parametersByImageId` carries the same settings as A1111 `parameters` text,
+ * written into each image's own EXIF so the image stays self-describing once it
+ * has left the archive.
  */
 export async function buildJobImageArchive(
   images: StoredJobImage[],
   metaByImageId?: Map<string, string>,
+  parametersByImageId?: Map<string, string>,
 ): Promise<Uint8Array> {
   const files: Zippable = {};
   const encoder = new TextEncoder();
@@ -43,7 +48,8 @@ export async function buildJobImageArchive(
     images.map(async (image, index) => {
       const bytes = new Uint8Array(await image.blob.arrayBuffer());
       const name = imageFileName(image, index);
-      files[name] = bytes;
+      const parameters = parametersByImageId?.get(image.imageId);
+      files[name] = parameters ? embedWebpExif(bytes, parameters) : bytes;
       const meta = metaByImageId?.get(image.imageId);
       if (meta) {
         const stem = name.replace(/\.[^.]+$/, '');

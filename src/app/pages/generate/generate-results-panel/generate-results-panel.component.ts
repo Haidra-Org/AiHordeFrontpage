@@ -33,11 +33,13 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive } from '../generate-archive';
+import { embedWebpExifInBlob } from '../../../helper/webp-exif';
 import {
   ImageMetaError,
   ImageMetaProvenance,
   buildImageMetadataExport,
   buildImageProvenance,
+  buildParametersText,
   deriveImageMeta,
   imageErrorFieldKey,
   imageErrorReasonKey,
@@ -1357,7 +1359,13 @@ export class GenerateResultsPanelComponent {
     this.flippedTile.set(null);
   }
 
-  public downloadTile(tile: ResultTile): void {
+  /**
+   * Save one result. The stored blob is fetched rather than the tile's own
+   * object URL because the settings are written into the file's EXIF on the way
+   * out, and that needs the bytes; an image whose EXIF cannot be written is
+   * saved unchanged.
+   */
+  public async downloadTile(tile: ResultTile): Promise<void> {
     if (!tile.thumb) {
       return;
     }
@@ -1367,11 +1375,21 @@ export class GenerateResultsPanelComponent {
         ? 'jpg'
         : 'webp';
     const stem = tile.seed ? `seed-${tile.seed}` : tile.thumb.imageId;
-    this.triggerDownload(
-      tile.thumb.url,
-      `${(tile.imageIndex ?? 0) + 1}-${stem}.${extension}`,
-      false,
+    const filename = `${(tile.imageIndex ?? 0) + 1}-${stem}.${extension}`;
+    const blob = await this.resultBlob(tile);
+    if (!blob) {
+      this.triggerDownload(tile.thumb.url, filename, false);
+      return;
+    }
+    const embedded = await embedWebpExifInBlob(
+      blob,
+      buildParametersText(
+        tile.applyRequest ?? tile.request,
+        tile.thumb.metadata,
+      ),
     );
+    const url = URL.createObjectURL(embedded);
+    this.triggerDownload(url, filename, true);
   }
 
   /** Copy a tile's seed to the clipboard for reuse in a later request. */
@@ -1883,6 +1901,7 @@ export class GenerateResultsPanelComponent {
   ): Promise<void> {
     const images: StoredJobImage[] = [];
     const metaByImageId = new Map<string, string>();
+    const parametersByImageId = new Map<string, string>();
     for (const job of done) {
       const jobImages = await this.queue.getJobImages(job.localId);
       const results = jobImages.filter((image) => image.kind === 'result');
@@ -1893,15 +1912,27 @@ export class GenerateResultsPanelComponent {
           image.metadata,
           job.request,
           derived,
+          { quoted: job.quotedKudos ?? null, charged: job.kudos ?? null },
         );
         metaByImageId.set(image.imageId, JSON.stringify(record, null, 2));
+        parametersByImageId.set(
+          image.imageId,
+          buildParametersText(
+            requestForApply(job.request, image.metadata?.seed),
+            image.metadata,
+          ),
+        );
       }
       images.push(...results);
     }
     if (images.length === 0) {
       return;
     }
-    const bytes = await buildJobImageArchive(images, metaByImageId);
+    const bytes = await buildJobImageArchive(
+      images,
+      metaByImageId,
+      parametersByImageId,
+    );
     const blob = new Blob([bytes as BlobPart], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
     this.triggerDownload(url, filename, true);

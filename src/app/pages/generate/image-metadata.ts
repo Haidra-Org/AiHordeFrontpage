@@ -1,5 +1,6 @@
 import { ImageGenerationRequest } from '../../types/generation';
 import { StoredJobImageMetadata } from '../../types/generation-job';
+import { splitCombinedPrompt } from './generate-form.model';
 
 /** gen_metadata values that mark an entry as a failure worth surfacing. */
 const ERROR_VALUES = new Set([
@@ -210,6 +211,85 @@ export function buildImageProvenance(
 }
 
 /**
+ * Horde sampler names against the names the A1111 `parameters` format uses. A
+ * sampler with no entry here is written through as-is, which readers accept.
+ */
+const A1111_SAMPLER_NAMES: Record<string, string> = {
+  k_lms: 'LMS',
+  k_heun: 'Heun',
+  k_euler: 'Euler',
+  k_euler_a: 'Euler a',
+  k_dpm_2: 'DPM2',
+  k_dpm_2_a: 'DPM2 a',
+  k_dpm_fast: 'DPM fast',
+  k_dpm_adaptive: 'DPM adaptive',
+  k_dpmpp_2s_a: 'DPM++ 2S a',
+  k_dpmpp_2m: 'DPM++ 2M',
+  k_dpmpp_sde: 'DPM++ SDE',
+  k_dpmpp_3m_sde: 'DPM++ 3M SDE',
+  DDIM: 'DDIM',
+  lcm: 'LCM',
+};
+
+/**
+ * The generation settings as A1111 `parameters` text: the prompt, then the
+ * negative prompt, then one comma-separated line of settings. This is the shape
+ * A1111 and Civitai parse metadata out of, so a downloaded image opened in
+ * either of them reports how it was made.
+ *
+ * `metadata` is what the worker returned, and wins over the request for seed and
+ * model: a request that let the horde choose either one still produced a
+ * concrete value, and that value is the one that reproduces the image.
+ */
+export function buildParametersText(
+  request: ImageGenerationRequest | undefined,
+  metadata: StoredJobImageMetadata | undefined,
+): string {
+  if (!request) {
+    return '';
+  }
+  const [prompt, negative] = splitCombinedPrompt(request.prompt ?? '');
+  const params = request.params ?? {};
+  const settings: string[] = [];
+  const push = (key: string, value: string | number | undefined): void => {
+    if (value !== undefined && value !== '' && value !== null) {
+      settings.push(`${key}: ${value}`);
+    }
+  };
+
+  push('Steps', params.steps);
+  const sampler = params.sampler_name;
+  push(
+    'Sampler',
+    sampler ? (A1111_SAMPLER_NAMES[sampler] ?? sampler) : undefined,
+  );
+  if (params.karras) {
+    push('Schedule type', 'Karras');
+  } else {
+    push('Schedule type', params.scheduler);
+  }
+  push('CFG scale', params.cfg_scale);
+  push('Seed', metadata?.seed ?? params.seed);
+  if (params.width && params.height) {
+    push('Size', `${params.width}x${params.height}`);
+  }
+  push('Model', metadata?.model ?? request.models?.[0]);
+  push('Clip skip', params.clip_skip);
+  if (request.source_processing) {
+    push('Denoising strength', params.denoising_strength);
+  }
+
+  const lines = [prompt];
+  if (negative) {
+    lines.push(`Negative prompt: ${negative}`);
+  }
+  if (settings.length > 0) {
+    lines.push(settings.join(', '));
+  }
+  return lines.join('\n');
+}
+
+/**
  * A serialisable metadata record for one image: its input parameters (the
  * submitted request) plus everything the horde returned about it. Used both by
  * the per-image metadata modal and the sidecar JSON written into Download All.
@@ -219,6 +299,7 @@ export function buildImageMetadataExport(
   metadata: StoredJobImageMetadata | undefined,
   request: ImageGenerationRequest | undefined,
   derived: DerivedImageMeta,
+  kudos: JobKudos | null = null,
 ): Record<string, unknown> {
   return {
     image_id: imageId,
@@ -228,6 +309,7 @@ export function buildImageMetadataExport(
       id: metadata?.workerId ?? null,
       name: metadata?.workerName ?? null,
     },
+    kudos,
     state: metadata?.state ?? null,
     censored: derived.censored,
     censorship_reason: derived.censorReason,
