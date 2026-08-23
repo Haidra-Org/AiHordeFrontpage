@@ -21,10 +21,121 @@
     >
       <app-icon name="question-mark-circle" class="gs-ico-sm" />
     </button>
-    <div class="flex items-center gap-2">
-      <!-- Puts the whole studio on the screen, chrome and all set aside. Draws
-           nothing where the browser only ever does that to video. -->
-      <app-fullscreen-toggle />
+    <div class="flex items-center gap-2 gs-tools">
+      <!-- What the reader has moved away from the panel's own starting point,
+           counted in one place. Absent while nothing has moved: a count of zero
+           is a claim about nothing. -->
+      @if (ledgerCount(); as changed) {
+        <div class="gs-ledger" #ledgerContainer>
+          <button
+            #ledgerBtn
+            type="button"
+            class="gs-mini-btn gs-ledger-btn"
+            (click)="toggleLedger()"
+            [attr.aria-expanded]="ledgerOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="
+              'generate.form.ledger_label' | transloco: { count: changed }
+            "
+            [title]="
+              'generate.form.ledger_label' | transloco: { count: changed }
+            "
+          >
+            <!-- The mark is drawn as well as counted: the number alone is a
+                 quantity of nothing in particular. -->
+            <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+            <span class="gs-ledger-count">{{ changed }}</span>
+            <span class="gs-mini-btn-label">{{
+              "generate.form.ledger_short" | transloco
+            }}</span>
+          </button>
+          @if (ledgerOpen()) {
+            <div
+              class="gs-ledger-pop"
+              role="dialog"
+              [attr.aria-label]="
+                'generate.form.ledger_label' | transloco: { count: changed }
+              "
+            >
+              <p class="gs-ledger-title">
+                {{
+                  "generate.form.ledger_title" | transloco: { count: changed }
+                }}
+              </p>
+              <!-- Quiet by design: it undoes a session's worth of choices, so it sits
+                with the other header tools rather than beside anything it clears.
+                It asks first, because a reader who meant to press its neighbour has
+                lost everything they set by the time the toast offers the undo. -->
+              <div class="gs-reset" #resetContainer>
+                <button
+                  #resetBtn
+                  type="button"
+                  class="gs-mini-btn gs-reset-btn"
+                  (click)="toggleResetConfirm()"
+                  [attr.aria-expanded]="resetConfirmOpen()"
+                  aria-haspopup="dialog"
+                  [attr.aria-label]="'generate.form.reset' | transloco"
+                  [title]="'generate.form.reset_title' | transloco"
+                >
+                  <app-icon name="refresh-alt" class="gs-ico-sm" />
+                  <span class="gs-mini-btn-label">{{
+                    "generate.form.reset_short" | transloco
+                  }}</span>
+                </button>
+                @if (resetConfirmOpen()) {
+                  <div
+                    class="gs-reset-pop"
+                    [class.gs-reset-pop--open-right]="
+                      resetPopAlign() === 'right'
+                    "
+                    role="dialog"
+                    [attr.aria-label]="
+                      'generate.form.reset_confirm' | transloco
+                    "
+                  >
+                    <p class="gs-reset-ask">
+                      {{ "generate.form.reset_confirm" | transloco }}
+                    </p>
+                    <div class="gs-reset-actions">
+                      <button
+                        type="button"
+                        class="gs-reset-go"
+                        (click)="resetSettings()"
+                      >
+                        {{ "generate.form.reset_confirm_yes" | transloco }}
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-reset-keep"
+                        (click)="keepSettings()"
+                      >
+                        {{ "generate.form.reset_confirm_no" | transloco }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+              @for (section of ledgerSections(); track section.section) {
+                <p class="gs-ledger-head">{{ section.titleKey | transloco }}</p>
+                <ul class="gs-ledger-list">
+                  @for (row of section.rows; track row.field) {
+                    <li class="gs-ledger-item">
+                      <span>{{ row.labelKey | transloco }}</span>
+                      <button
+                        type="button"
+                        class="gs-ledger-reset"
+                        (click)="resetField(row.field)"
+                      >
+                        {{ "generate.form.ledger_reset" | transloco }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </div>
+      }
       <div class="gs-presets" #presetsContainer>
         <button
           #presetsBtn
@@ -118,182 +229,20 @@
           </div>
         }
       </div>
-      <!-- What the reader has moved away from the panel's own starting point,
-           counted in one place. Absent while nothing has moved: a count of zero
-           is a claim about nothing. -->
-      @if (ledgerCount(); as changed) {
-        <div class="gs-ledger" #ledgerContainer>
-          <button
-            #ledgerBtn
-            type="button"
-            class="gs-mini-btn gs-ledger-btn"
-            (click)="toggleLedger()"
-            [attr.aria-expanded]="ledgerOpen()"
-            aria-haspopup="dialog"
-            [attr.aria-label]="
-              'generate.form.ledger_label' | transloco: { count: changed }
-            "
-            [title]="
-              'generate.form.ledger_label' | transloco: { count: changed }
-            "
-          >
-            <!-- The mark is drawn as well as counted: at the panel widths that
-                 drop the toolbar's labels a bare number beside five icons says
-                 nothing about what it counts. -->
-            @if (expandable()) {
-              <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
-            }
-            <span class="gs-ledger-count">{{ changed }}</span>
-            <span class="gs-mini-btn-label">{{
-              "generate.form.ledger_short" | transloco
-            }}</span>
-          </button>
-          @if (ledgerOpen()) {
-            <div
-              class="gs-ledger-pop"
-              role="dialog"
-              [attr.aria-label]="
-                'generate.form.ledger_label' | transloco: { count: changed }
-              "
-            >
-              <p class="gs-ledger-title">
-                {{
-                  "generate.form.ledger_title" | transloco: { count: changed }
-                }}
-              </p>
-              <!-- Quiet by design: it undoes a session's worth of choices, so it sits
-                with the other header tools rather than beside anything it clears.
-                It asks first, because a reader who meant to press its neighbour has
-                lost everything they set by the time the toast offers the undo. -->
-              <div class="gs-reset" #resetContainer>
-                <button
-                  #resetBtn
-                  type="button"
-                  class="gs-mini-btn gs-reset-btn"
-                  (click)="toggleResetConfirm()"
-                  [attr.aria-expanded]="resetConfirmOpen()"
-                  aria-haspopup="dialog"
-                  [attr.aria-label]="'generate.form.reset' | transloco"
-                  [title]="'generate.form.reset_title' | transloco"
-                >
-                  <app-icon name="refresh-alt" class="gs-ico-sm" />
-                  <span class="gs-mini-btn-label">{{
-                    "generate.form.reset_short" | transloco
-                  }}</span>
-                </button>
-                @if (resetConfirmOpen()) {
-                  <div
-                    class="gs-reset-pop"
-                    [class.gs-reset-pop--open-right]="
-                      resetPopAlign() === 'right'
-                    "
-                    role="dialog"
-                    [attr.aria-label]="
-                      'generate.form.reset_confirm' | transloco
-                    "
-                  >
-                    <p class="gs-reset-ask">
-                      {{ "generate.form.reset_confirm" | transloco }}
-                    </p>
-                    <div class="gs-reset-actions">
-                      <button
-                        type="button"
-                        class="gs-reset-go"
-                        (click)="resetSettings()"
-                      >
-                        {{ "generate.form.reset_confirm_yes" | transloco }}
-                      </button>
-                      <button
-                        type="button"
-                        class="gs-reset-keep"
-                        (click)="keepSettings()"
-                      >
-                        {{ "generate.form.reset_confirm_no" | transloco }}
-                      </button>
-                    </div>
-                  </div>
-                }
-              </div>
-              @for (section of ledgerSections(); track section.section) {
-                <p class="gs-ledger-head">{{ section.titleKey | transloco }}</p>
-                <ul class="gs-ledger-list">
-                  @for (row of section.rows; track row.field) {
-                    <li class="gs-ledger-item">
-                      <span>{{ row.labelKey | transloco }}</span>
-                      <button
-                        type="button"
-                        class="gs-ledger-reset"
-                        (click)="resetField(row.field)"
-                      >
-                        {{ "generate.form.ledger_reset" | transloco }}
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
-          }
-        </div>
-      }
-
-      <!-- The walkthrough, from the toolbar of the panel it walks through. -->
-      <a
-        class="gs-mini-btn"
-        [routerLink]="guideLink"
-        [attr.aria-label]="'generate.form.open_guide' | transloco"
-        [title]="'generate.form.open_guide' | transloco"
-      >
-        <app-icon name="document-text" class="gs-ico-sm" />
-        <span class="gs-mini-btn-label">{{
-          "generate.form.open_guide_short" | transloco
-        }}</span>
-      </a>
-      <button
-        type="button"
-        class="gs-mini-btn"
-        (click)="onPreview()"
-        [attr.aria-label]="'generate.form.preview_request' | transloco"
-        [title]="'generate.form.preview_request' | transloco"
-      >
-        <app-icon name="code-bracket" class="gs-ico-sm" />
-        <span class="gs-mini-btn-label">{{
-          "generate.form.preview_request_short" | transloco
-        }}</span>
-      </button>
-      <!-- The standing version of the button above it: one asks to see this
-           request, this one asks to see every request before it goes. -->
-      <button
-        type="button"
-        class="gs-mini-btn"
-        [class.gs-mini-btn--on]="reviewBeforeSend()"
-        [attr.aria-pressed]="reviewBeforeSend()"
-        (click)="toggleReviewBeforeSend()"
-        [attr.aria-label]="'generate.form.review_before_send' | transloco"
-        [title]="'generate.form.review_before_send_hint' | transloco"
-      >
-        <app-icon name="clipboard-document" class="gs-ico-sm" />
-        <span class="gs-mini-btn-label">{{
-          "generate.form.review_before_send_short" | transloco
-        }}</span>
-      </button>
-      <!-- Only a screen that scrolls the studio as one page can lose Generate
-           off the bottom; wider ones keep it in view either way, and the switch
-           there is a preference the reader carries to their phone. -->
-      @if (pinnable()) {
-        <button
-          type="button"
+      <!-- The walkthrough, from the toolbar of the panel it walks through. It
+           stands down where the row cannot carry its word, and is reached from
+           the Options menu instead, which is the same list either way. -->
+      @if (!narrow()) {
+        <a
           class="gs-mini-btn"
-          [class.gs-mini-btn--on]="pinGenerate()"
-          [attr.aria-pressed]="pinGenerate()"
-          (click)="togglePinGenerate()"
-          [attr.aria-label]="'generate.form.pin_generate' | transloco"
-          [title]="'generate.form.pin_generate_hint' | transloco"
+          [routerLink]="guideLink"
+          [attr.aria-label]="'generate.form.open_guide' | transloco"
         >
-          <app-icon name="pin" class="gs-ico-sm" />
+          <app-icon name="document-text" class="gs-ico-sm" aria-hidden="true" />
           <span class="gs-mini-btn-label">{{
-            "generate.form.pin_generate_short" | transloco
+            "generate.form.open_guide_short" | transloco
           }}</span>
-        </button>
+        </a>
       }
       @if (expandable()) {
         <button
@@ -306,16 +255,11 @@
               : 'generate.panel.widen'
             ) | transloco
           "
-          [title]="
-            (panelSize() === 'full'
-              ? 'generate.panel.narrow'
-              : 'generate.panel.widen'
-            ) | transloco
-          "
         >
           <app-icon
             [name]="panelSize() === 'full' ? 'panel-narrow' : 'panel-widen'"
             class="gs-ico-sm"
+            aria-hidden="true"
           />
           <span class="gs-mini-btn-label">{{
             (panelSize() === "full"
@@ -324,21 +268,57 @@
             ) | transloco
           }}</span>
         </button>
-        @if (anyGroupOpen()) {
-          <button
-            type="button"
-            class="gs-mini-btn"
-            (click)="foldAllGroups()"
-            [attr.aria-label]="'generate.groups.fold_all' | transloco"
-            [title]="'generate.groups.fold_all' | transloco"
-          >
-            <app-icon name="chevron-double-up" class="gs-ico-sm" />
-            <span class="gs-mini-btn-label">{{
-              "generate.groups.fold_all_short" | transloco
-            }}</span>
-          </button>
-        }
       }
+      <!-- Folding acts on the panel's groups, which exist at every width. -->
+      @if (anyGroupOpen()) {
+        <button
+          type="button"
+          class="gs-mini-btn"
+          (click)="foldAllGroups()"
+          [attr.aria-label]="'generate.groups.fold_all' | transloco"
+        >
+          <app-icon
+            name="chevron-double-up"
+            class="gs-ico-sm"
+            aria-hidden="true"
+          />
+          <span class="gs-mini-btn-label">{{
+            "generate.groups.fold_all_short" | transloco
+          }}</span>
+        </button>
+      }
+      <!-- Everything that cannot carry its own word across the header at every
+           width. One list, two presentations: a popover where there is room
+           beside the button, and the studio's bottom sheet on a phone. -->
+      <div class="gs-options" #optionsContainer>
+        <button
+          #optionsBtn
+          type="button"
+          class="gs-mini-btn"
+          [class.gs-mini-btn--on]="optionsOpen()"
+          (click)="toggleOptions()"
+          [attr.aria-expanded]="optionsOpen()"
+          aria-haspopup="dialog"
+        >
+          <app-icon
+            name="adjustments-horizontal"
+            class="gs-ico-sm"
+            aria-hidden="true"
+          />
+          <span class="gs-mini-btn-label">{{
+            "generate.form.options" | transloco
+          }}</span>
+        </button>
+        @if (optionsOpen() && !narrow()) {
+          <div
+            class="gs-options-pop"
+            role="dialog"
+            [attr.aria-label]="'generate.form.options' | transloco"
+          >
+            <ng-container *ngTemplateOutlet="optionsRows" />
+          </div>
+        }
+      </div>
     </div>
   </header>
 
@@ -2553,6 +2533,125 @@
     </div>
   </footer>
 </form>
+
+<!-- The Options list on a phone. Same rows in the same order as the popover:
+     the sheet is where there is room to read them, not a different list. It
+     sits outside the form so a fixed sheet is not a child of the scrolling
+     panel. -->
+@if (optionsOpen() && narrow()) {
+  <app-gs-sheet
+    [startExpanded]="true"
+    [label]="'generate.form.options' | transloco"
+    (closed)="closeOptionsAndFocus()"
+  >
+    <span sheet-bar class="gs-sheet-title">{{
+      "generate.form.options" | transloco
+    }}</span>
+    <div class="gs-options-rows">
+      <ng-container *ngTemplateOutlet="optionsRows" />
+    </div>
+  </app-gs-sheet>
+}
+
+<!-- The Options rows, written once and drawn into whichever surface the width
+     calls for. A preference stays put when it is flipped, because its state is
+     the answer; an action closes the list, because its result is elsewhere. -->
+<ng-template #optionsRows>
+  <p class="gs-opt-head">
+    {{ "generate.form.options_sending" | transloco }}
+  </p>
+  <button
+    type="button"
+    class="gs-opt-row gs-opt-row--switch"
+    [class.gs-opt-row--on]="reviewBeforeSend()"
+    [attr.aria-pressed]="reviewBeforeSend()"
+    (click)="toggleReviewBeforeSend()"
+  >
+    <app-icon name="clipboard-document" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.form.review_before_send" | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.form.review_before_send_hint" | transloco
+      }}</span>
+    </span>
+    <span class="gs-opt-state" aria-hidden="true">{{
+      (reviewBeforeSend()
+        ? "generate.form.options_on"
+        : "generate.form.options_off"
+      ) | transloco
+    }}</span>
+  </button>
+  <button type="button" class="gs-opt-row" (click)="previewFromOptions()">
+    <app-icon name="code-bracket" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.form.preview_request" | transloco
+      }}</span>
+    </span>
+  </button>
+
+  <p class="gs-opt-head">{{ "generate.form.options_view" | transloco }}</p>
+  @if (pinnable()) {
+    <button
+      type="button"
+      class="gs-opt-row gs-opt-row--switch"
+      [class.gs-opt-row--on]="pinGenerate()"
+      [attr.aria-pressed]="pinGenerate()"
+      (click)="togglePinGenerate()"
+    >
+      <app-icon name="pin" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.form.pin_generate" | transloco
+        }}</span>
+        <span class="gs-opt-hint">{{
+          "generate.form.pin_generate_hint" | transloco
+        }}</span>
+      </span>
+      <span class="gs-opt-state" aria-hidden="true">{{
+        (pinGenerate()
+          ? "generate.form.options_on"
+          : "generate.form.options_off"
+        ) | transloco
+      }}</span>
+    </button>
+  }
+  <!-- Nothing is drawn where the browser only ever gives the screen to video. -->
+  @if (fullscreen.available) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [attr.aria-pressed]="fullscreen.active()"
+      (click)="toggleFullscreen()"
+    >
+      <app-icon
+        [name]="
+          fullscreen.active() ? 'arrows-pointing-in' : 'arrows-pointing-out'
+        "
+        class="gs-ico-sm"
+        aria-hidden="true"
+      />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{ fullscreenLabelKey() | transloco }}</span>
+      </span>
+    </button>
+  }
+  <!-- Kept in the list at every width, even where the header carries it too:
+       the list is the only route to it on a phone. -->
+  <a class="gs-opt-row" [routerLink]="guideLink" (click)="closeOptions()">
+    <app-icon name="document-text" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.form.open_guide_short" | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.form.open_guide" | transloco
+      }}</span>
+    </span>
+  </a>
+</ng-template>
 
 @if (civitOpen()) {
   <app-civitai-picker

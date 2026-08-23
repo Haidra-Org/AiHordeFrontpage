@@ -26,7 +26,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { FullscreenToggleComponent } from '../../../components/fullscreen-toggle/fullscreen-toggle.component';
+import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
+import { FullscreenService } from '../../../services/fullscreen.service';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
@@ -433,7 +434,7 @@ const SUMMARY_SEPARATOR = ' · ';
     StyleBrowserComponent,
     GsGroupComponent,
     RouterLink,
-    FullscreenToggleComponent,
+    GsSheetComponent,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -453,6 +454,8 @@ export class GenerateFormComponent implements OnInit {
      tools, so this header is the studio's top line and the place the glossary
      is reached from. The shell's copy takes over from 1024px up. */
   public readonly glossary = inject(GlossaryService);
+  /** Backs the Options list's full-screen row; the header carries no toggle. */
+  public readonly fullscreen = inject(FullscreenService);
   private readonly toast = inject(ToastService);
   private readonly anchors = inject(TutorialAnchorService);
   private readonly injector = inject(Injector);
@@ -501,6 +504,13 @@ export class GenerateFormComponent implements OnInit {
   public readonly panelSize = input<PanelSize>('normal');
   /** Whether the expand/collapse control is offered (off when embedded). */
   public readonly expandable = input(true);
+  /**
+   * Whether the studio is stacked rather than side by side. The parent owns the
+   * one media-query listener, so the panel and the shell cannot disagree about
+   * which width they are drawing for. It decides how the Options list is
+   * presented and whether the header has room for the walkthrough's word.
+   */
+  public readonly narrow = input(false);
   /** Recent distinct prompts for the quick-pick, newest first. */
   public readonly promptHistory = input<readonly PromptHistoryEntry[]>([]);
   /**
@@ -578,6 +588,14 @@ export class GenerateFormComponent implements OnInit {
   /** The presets toggle, so the parent's load panel can hand focus back to it. */
   private readonly presetsBtn =
     viewChild<ElementRef<HTMLButtonElement>>('presetsBtn');
+  /** Whether the Options list is showing, as a popover or as the sheet. */
+  public readonly optionsOpen = signal(false);
+  /** The Options popover's anchor, used to detect click-away dismissals. */
+  private readonly optionsRef =
+    viewChild<ElementRef<HTMLElement>>('optionsContainer');
+  /** The Options trigger, which dismissals hand focus back to. */
+  private readonly optionsBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('optionsBtn');
   /** Whether the reset control is asking before it clears anything. */
   public readonly resetConfirmOpen = signal(false);
   /** Which side the reset confirm opens from on wide layouts. */
@@ -2139,6 +2157,43 @@ export class GenerateFormComponent implements OnInit {
     this.preview.emit();
   }
 
+  // --- Options list --------------------------------------------------------
+
+  public toggleOptions(): void {
+    this.optionsOpen.update((open) => !open);
+  }
+
+  public closeOptions(): void {
+    this.optionsOpen.set(false);
+  }
+
+  /**
+   * Dismiss the list and put focus back where it was opened from. Every route
+   * out of the list that leaves the reader on this page uses it, so a keyboard
+   * never lands on the document after the list stops existing.
+   */
+  public closeOptionsAndFocus(): void {
+    this.closeOptions();
+    this.optionsBtn()?.nativeElement.focus();
+  }
+
+  /** The one-off version of "review before sending", from the same list. */
+  public previewFromOptions(): void {
+    this.closeOptions();
+    this.onPreview();
+  }
+
+  public toggleFullscreen(): void {
+    void this.fullscreen.toggle();
+    this.closeOptionsAndFocus();
+  }
+
+  public fullscreenLabelKey(): string {
+    return this.fullscreen.active()
+      ? 'generate.shell.fullscreen_exit'
+      : 'generate.shell.fullscreen';
+  }
+
   public toggleReviewBeforeSend(): void {
     this.reviewBeforeSendChange.emit(!this.reviewBeforeSend());
   }
@@ -2224,6 +2279,15 @@ export class GenerateFormComponent implements OnInit {
         this.closeLedger();
       }
     }
+    // Only the popover is dismissed by a press beside it. The sheet is not a
+    // descendant of the trigger, and a sheet the reader is reading through is
+    // not something to take away on the first tap inside it.
+    if (this.optionsOpen() && !this.narrow()) {
+      const anchor = this.optionsRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeOptions();
+      }
+    }
   }
 
   public onDocumentEscape(): void {
@@ -2257,6 +2321,11 @@ export class GenerateFormComponent implements OnInit {
     if (this.ledgerOpen()) {
       this.closeLedger();
       this.ledgerBtn()?.nativeElement.focus();
+    }
+    // The sheet unwinds itself a stop at a time and tells us when it is done,
+    // so escape is only ours to answer while the list is a popover.
+    if (this.optionsOpen() && !this.narrow()) {
+      this.closeOptionsAndFocus();
     }
     if (!this.historyOpen()) {
       return;

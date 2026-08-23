@@ -1760,26 +1760,30 @@
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
 }
-/* Panel-header tools carry a word under the glyph on a phone. Four unlabelled
-   glyphs in a row are read one at a time or not at all, and the header is the
-   one place in the studio where a mistaken press costs the whole session's
-   settings. A pointer keeps the tooltip and the glyph alone. */
+/* Panel-header tools carry their word at every width. A glyph on its own is a
+   guess, and on touch there is no tooltip to resolve the guess with; the header
+   is also the one place in the studio where a mistaken press costs the whole
+   session's settings. A control that cannot afford its word at some width
+   belongs in the Options list at that width rather than shrinking to a mark. */
 .gen-studio .gs-mini-btn-label {
-  display: none;
+  display: block;
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
 }
+.gen-studio .gs-mini-btn:has(.gs-mini-btn-label) {
+  gap: 5px;
+  padding: 0 var(--gs-space-2);
+}
 @media (max-width: 640px) {
+  /* The word goes under the glyph where the row is narrowest: it keeps the
+     target 44px tall without spending width a phone has not got. */
   .gen-studio .gs-mini-btn:has(.gs-mini-btn-label) {
     flex-direction: column;
     gap: 3px;
     min-width: 54px;
     min-height: 44px;
     padding: 5px 7px;
-  }
-  .gen-studio .gs-mini-btn-label {
-    display: block;
   }
 }
 /* The glossary trigger at the end of a tool's header row. It is the studio's
@@ -1922,6 +1926,119 @@
 .gen-studio .gs-ledger-reset:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
+}
+
+/* ------- the Options list ------------------------------------------- */
+/* One list of the header's standing preferences and its stray actions, drawn
+   as a popover beside its button where there is room and as the studio's
+   bottom sheet where there is not. Both draw the same rows from one template,
+   so the two presentations cannot drift apart. */
+.gen-studio .gs-options {
+  position: relative;
+}
+.gen-studio .gs-options-pop {
+  /* Hangs from the right of its button: the button ends the tool row, so a
+     panel aligned to its left edge would run off the panel. */
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  width: min(300px, calc(100vw - 24px));
+  max-height: min(70vh, 480px);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--gs-pop-surface);
+  border: 1px solid var(--gs-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.gen-studio .gs-options-rows {
+  padding: 4px 2px 8px;
+}
+.gen-studio .gs-opt-head {
+  margin-top: 10px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-opt-head:first-child {
+  margin-top: 0;
+}
+.gen-studio .gs-opt-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  margin-top: 2px;
+  padding: 9px 8px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: none;
+  color: var(--gs-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-opt-row:hover {
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-opt-row:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+/* A preference that is on wears the lit state its header button used to. */
+.gen-studio .gs-opt-row--on {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-opt-row--on .gs-opt-label,
+.gen-studio .gs-opt-row--on .gs-opt-state {
+  color: var(--gs-blue);
+}
+.gen-studio .gs-opt-row app-icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--gs-label);
+}
+.gen-studio .gs-opt-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.gen-studio .gs-opt-label {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.gen-studio .gs-opt-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--gs-muted);
+}
+/* The word beside a switch row says which way it is set without reading the
+   row's colour, which is the only cue a lit border gives on its own. */
+.gen-studio .gs-opt-state {
+  flex: none;
+  align-self: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-opt-row {
+    min-height: 44px;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-opt-row--on {
+    border-color: Highlight;
+  }
 }
 
 .gen-studio .gs-reset-pop {

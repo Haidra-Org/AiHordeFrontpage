@@ -676,8 +676,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /** The CSS mobile breakpoint as a signal: crossing it re-renders what it
-      hides, rather than leaving a stale control until some other pass runs. */
-  private readonly isNarrow = signal(false);
+      hides, rather than leaving a stale control until some other pass runs.
+      The panel reads it too, so there is one listener rather than one per
+      component that needs to know which layout it is drawing for. */
+  public readonly isNarrow = signal(false);
 
   private watchViewport(): void {
     const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');

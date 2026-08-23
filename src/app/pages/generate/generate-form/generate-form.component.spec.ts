@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import {
   FIELD_LABEL_KEY,
@@ -26,6 +27,8 @@ import type { ModelRequirements } from '../../../services/model-reference.servic
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
 import type { ActiveModel } from '../../../types/active-model';
 import { ToastService } from '../../../services/toast.service';
+import { FullscreenService } from '../../../services/fullscreen.service';
+import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
 import en from '../../../../assets/i18n/en.json';
@@ -2377,6 +2380,29 @@ describe('GenerateFormComponent kudos breakdown', () => {
   });
 });
 
+/** The Options list's trigger, which is the last tool in the header row. */
+function optionsButton(host: HTMLElement): HTMLButtonElement {
+  return host.querySelector<HTMLButtonElement>('.gs-options .gs-mini-btn')!;
+}
+
+function openOptions(
+  host: HTMLElement,
+  fixture: ComponentFixture<GenerateFormComponent>,
+): void {
+  optionsButton(host).click();
+  fixture.detectChanges();
+}
+
+/** A row of the Options list, found the way a reader finds it: by its word. */
+function optionRow(host: HTMLElement, label: string): HTMLElement | null {
+  return (
+    Array.from(host.querySelectorAll<HTMLElement>('.gs-opt-row')).find(
+      (row) =>
+        row.querySelector('.gs-opt-label')?.textContent?.trim() === label,
+    ) ?? null
+  );
+}
+
 describe('GenerateFormComponent docked Generate', () => {
   async function render(): Promise<{
     host: HTMLElement;
@@ -2447,27 +2473,211 @@ describe('GenerateFormComponent docked Generate', () => {
 
   it('offers the switch only where the studio owns the screen', async () => {
     const { host, fixture } = await render();
-    const pinButton = (): HTMLButtonElement | null =>
-      host.querySelector<HTMLButtonElement>(
-        `[aria-label="${en['generate.form.pin_generate']}"]`,
-      );
+    const pinRow = (): HTMLElement | null =>
+      optionRow(host, en['generate.form.pin_generate']);
 
-    expect(pinButton()?.getAttribute('aria-pressed')).toBe('false');
+    openOptions(host, fixture);
+    expect(pinRow()?.getAttribute('aria-pressed')).toBe('false');
 
     let asked: boolean | null = null;
     fixture.componentInstance.pinGenerateChange.subscribe((on) => (asked = on));
-    pinButton()!.click();
+    pinRow()!.click();
     expect(asked).toBe(true);
 
     fixture.componentRef.setInput('pinnable', false);
     fixture.detectChanges();
 
-    expect(pinButton()).toBeNull();
+    expect(pinRow()).toBeNull();
     expect(
       host
         .querySelector<HTMLElement>('.gs-submitrow')
         ?.classList.contains('gs-submitrow--pinned'),
     ).toBe(false);
+  });
+});
+
+describe('GenerateFormComponent Options list', () => {
+  /**
+   * A browser that puts an ordinary element on the whole screen, and one that
+   * only ever does that to video. `available` is decided in the real service's
+   * constructor from the document, so the two cases are separate providers
+   * rather than a property a test can move.
+   */
+  function fullscreenStub(available: boolean): FullscreenService {
+    return {
+      available,
+      active: signal(false),
+      toggle: (): Promise<void> => Promise.resolve(),
+      setTarget: (): void => undefined,
+    } as unknown as FullscreenService;
+  }
+
+  async function render(available = false): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: FullscreenService, useValue: fullscreenStub(available) },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+    );
+    fixture.componentRef.setInput('pinnable', true);
+    fixture.detectChanges();
+    return { host: fixture.nativeElement as HTMLElement, fixture };
+  }
+
+  it('names itself as a menu and says whether it is open', async () => {
+    const { host, fixture } = await render();
+    const button = optionsButton(host);
+
+    expect(button.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(button.textContent).toContain(en['generate.form.options']);
+    expect(host.querySelector('.gs-options-pop')).toBeNull();
+
+    openOptions(host, fixture);
+
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(host.querySelector('.gs-options-pop')).not.toBeNull();
+  });
+
+  it('hands focus back to its button when escape closes it', async () => {
+    const { host, fixture } = await render();
+    openOptions(host, fixture);
+
+    fixture.componentInstance.onDocumentEscape();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.optionsOpen()).toBe(false);
+    expect(host.querySelector('.gs-options-pop')).toBeNull();
+    expect(document.activeElement).toBe(optionsButton(host));
+  });
+
+  it('closes on a press beside it', async () => {
+    const { host, fixture } = await render();
+    openOptions(host, fixture);
+
+    fixture.componentInstance.onDocumentPointerDown({
+      target: document.body,
+    } as unknown as PointerEvent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.optionsOpen()).toBe(false);
+  });
+
+  it('shows each standing preference as it stands and flips it', async () => {
+    const { host, fixture } = await render();
+    openOptions(host, fixture);
+    const reviewRow = (): HTMLElement | null =>
+      optionRow(host, en['generate.form.review_before_send']);
+
+    expect(reviewRow()?.getAttribute('aria-pressed')).toBe('false');
+
+    let asked: boolean | null = null;
+    fixture.componentInstance.reviewBeforeSendChange.subscribe(
+      (on) => (asked = on),
+    );
+    reviewRow()!.click();
+    fixture.detectChanges();
+
+    expect(asked).toBe(true);
+    // The parent owns the preference, so the row only reads it back.
+    fixture.componentRef.setInput('reviewBeforeSend', true);
+    fixture.detectChanges();
+
+    expect(reviewRow()?.getAttribute('aria-pressed')).toBe('true');
+    expect(reviewRow()?.classList.contains('gs-opt-row--on')).toBe(true);
+    // A preference stays put when it is flipped: its state is the answer.
+    expect(fixture.componentInstance.optionsOpen()).toBe(true);
+  });
+
+  it('leaves out the full-screen row where the browser has no such thing', async () => {
+    const { host, fixture } = await render(false);
+    openOptions(host, fixture);
+
+    expect(optionRow(host, en['generate.shell.fullscreen'])).toBeNull();
+  });
+
+  it('offers full screen where the browser has it', async () => {
+    const { host, fixture } = await render(true);
+    openOptions(host, fixture);
+
+    expect(optionRow(host, en['generate.shell.fullscreen'])).not.toBeNull();
+  });
+
+  it('keeps the walkthrough reachable from the list', async () => {
+    const { host, fixture } = await render();
+    openOptions(host, fixture);
+    const row = optionRow(host, en['generate.form.open_guide_short']);
+
+    expect(row).not.toBeNull();
+    expect(row!.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
+  });
+
+  it('is the bottom sheet rather than a popover on a phone', async () => {
+    const { host, fixture } = await render();
+    fixture.componentRef.setInput('narrow', true);
+    fixture.detectChanges();
+    openOptions(host, fixture);
+
+    expect(host.querySelector('.gs-options-pop')).toBeNull();
+    expect(host.querySelector('app-gs-sheet')).not.toBeNull();
+    expect(
+      optionRow(host, en['generate.form.review_before_send']),
+    ).not.toBeNull();
+  });
+
+  it('drops the header walkthrough where the row cannot carry its word', async () => {
+    const { host, fixture } = await render();
+    const headerGuide = (): HTMLElement | null =>
+      host.querySelector<HTMLElement>('.gs-tools a.gs-mini-btn');
+
+    expect(headerGuide()?.textContent).toContain(
+      en['generate.form.open_guide_short'],
+    );
+
+    fixture.componentRef.setInput('narrow', true);
+    fixture.detectChanges();
+
+    expect(headerGuide()).toBeNull();
+  });
+
+  it('offers folding at every width, not only where the panel widens', async () => {
+    const { host, fixture } = await render();
+    fixture.componentRef.setInput('narrow', true);
+    fixture.componentRef.setInput('expandable', false);
+    fixture.detectChanges();
+    const foldButton = Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-tools .gs-mini-btn'),
+    ).find(
+      (button) =>
+        button.getAttribute('aria-label') === en['generate.groups.fold_all'],
+    );
+
+    expect(foldButton).toBeDefined();
+  });
+
+  it('carries a word on every header tool', async () => {
+    const { host } = await render();
+    const wordless = Array.from(
+      host.querySelectorAll<HTMLElement>('.gs-tools .gs-mini-btn'),
+    ).filter((button) => !button.querySelector('.gs-mini-btn-label'));
+
+    expect(wordless).toEqual([]);
   });
 });
 
