@@ -442,20 +442,46 @@ describe('GenerateResultsPanelComponent', () => {
       await loadThumbnails();
     });
 
-    it('advances to the next surviving image immediately', () => {
+    it('requires confirmation before removing the generation', () => {
       component.openViewer(component.viewerTiles()[0]);
 
-      component.requestDelete(['a']);
+      component.requestViewerDelete('a');
 
+      expect(component.viewerDeletePending()).toBe('a');
+      expect(component.viewerKey()).toBe('a-a-img');
+      expect(component.undoPending()).toBe(false);
+      expect(toastSuccess).not.toHaveBeenCalled();
+    });
+
+    it('advances to the next surviving image after confirmation', () => {
+      component.openViewer(component.viewerTiles()[0]);
+      component.requestViewerDelete('a');
+
+      component.confirmViewerDelete();
+
+      expect(component.viewerDeletePending()).toBeNull();
       expect(component.viewerKey()).toBe('b-b-img');
       // Still recoverable: nothing has reached the queue yet.
       expect(deleteJob).not.toHaveBeenCalled();
     });
 
-    it('closes the viewer when nothing survives', () => {
+    it('keeps the viewer unchanged when confirmation is cancelled', () => {
       component.openViewer(component.viewerTiles()[0]);
+      component.requestViewerDelete('a');
 
-      component.requestDelete(['a', 'b']);
+      component.cancelViewerDelete();
+
+      expect(component.viewerDeletePending()).toBeNull();
+      expect(component.viewerKey()).toBe('a-a-img');
+      expect(component.undoPending()).toBe(false);
+    });
+
+    it('closes the viewer when the confirmed job has no surviving image', () => {
+      finishedJobs.set([job('a', 'done')]);
+      component.openViewer(component.viewerTiles()[0]);
+      component.requestViewerDelete('a');
+
+      component.confirmViewerDelete();
 
       expect(component.viewerKey()).toBeNull();
     });

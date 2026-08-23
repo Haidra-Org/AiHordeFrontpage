@@ -979,6 +979,16 @@
                         'generate.results.queue_why' | transloco
                       "
                     >
+                      <button
+                        type="button"
+                        class="gs-wait-why-close"
+                        (click)="toggleWaitWhy(tile.jobLocalId)"
+                        [attr.aria-label]="
+                          'generate.results.queue_why_close' | transloco
+                        "
+                      >
+                        <app-icon name="x-mark" class="gs-ico-sm" />
+                      </button>
                       <p class="gs-wait-why-title">
                         {{ "generate.results.queue_why" | transloco }}
                       </p>
@@ -1158,7 +1168,10 @@
       tabindex="-1"
       [attr.aria-label]="'generate.results.viewer' | transloco"
     >
-      <div class="gs-viewer-main">
+      <div
+        class="gs-viewer-main"
+        [attr.inert]="viewerDeletePending() !== null ? '' : null"
+      >
         <div class="gs-viewer-top">
           <span
             class="gs-viewer-counter gs-mono"
@@ -1314,7 +1327,7 @@
           <button
             type="button"
             class="gs-viewer-act gs-viewer-act--danger"
-            (click)="requestDelete([view.jobLocalId])"
+            (click)="requestViewerDelete(view.jobLocalId)"
           >
             <app-icon name="trash-modern" />
             {{ "generate.results.delete" | transloco }}
@@ -1331,6 +1344,7 @@
         ></button>
         <app-image-meta-panel
           class="gs-viewer-meta"
+          [attr.inert]="viewerDeletePending() !== null ? '' : null"
           [request]="tile.applyRequest ?? null"
           [provenance]="tile.provenance ?? null"
           [localId]="tile.jobLocalId"
@@ -1344,6 +1358,52 @@
           (pinToggle)="toggleMetaPin()"
           (closed)="closeMeta()"
         />
+      }
+      @if (viewerDeletePending() !== null) {
+        <div
+          class="gs-modal-overlay gs-viewer-confirm"
+          (click)="onViewerDeleteBackdrop($event)"
+          (keydown.escape)="cancelViewerDelete()"
+          tabindex="-1"
+        >
+          <div
+            #viewerDeletePanel
+            class="gs-modal-panel gs-modal-panel--sm gs-fadeup"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="gs-viewer-delete-title"
+            aria-describedby="gs-viewer-delete-description"
+          >
+            <div class="gs-modal-header">
+              <div id="gs-viewer-delete-title" class="gs-modal-title">
+                <app-icon name="trash-modern" class="gs-ico-sm" />
+                {{ "generate.results.viewer_delete_title" | transloco }}
+              </div>
+            </div>
+            <div class="gs-modal-body">
+              <p id="gs-viewer-delete-description" class="gs-confirm-text">
+                {{ "generate.results.viewer_delete_body" | transloco }}
+              </p>
+            </div>
+            <div class="gs-modal-footer">
+              <button
+                #viewerDeleteCancel
+                type="button"
+                class="gs-tile-btn"
+                (click)="cancelViewerDelete()"
+              >
+                {{ "generate.results.viewer_delete_cancel" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-modal-done gs-modal-done--danger"
+                (click)="confirmViewerDelete()"
+              >
+                {{ "generate.results.viewer_delete_action" | transloco }}
+              </button>
+            </div>
+          </div>
+        </div>
       }
     </div>
   </div>

@@ -13,7 +13,9 @@
 
   /* Toast container - fixed positioned wrapper for toast stack */
   .toast-container {
-    @apply fixed right-4 z-50 flex flex-col gap-2;
+    @apply fixed right-4 flex flex-col gap-2;
+    /* App-level feedback stays visible above viewers and modal overlays. */
+    z-index: 70;
     top: calc(var(--sticky-offset, 0px) + 1rem);
     max-width: calc(100vw - 2rem);
   }

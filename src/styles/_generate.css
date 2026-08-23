@@ -3669,6 +3669,39 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--gs-ink);
+  /* Room for the close button standing in the corner. */
+  padding-right: 26px;
+}
+.gen-studio .gs-wait-why-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-wait-why-close:hover {
+  background: var(--gs-field-soft);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-wait-why-close:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-wait-why-close::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 }
 .gen-studio .gs-wait-why-list {
   display: flex;
@@ -5391,6 +5424,10 @@
   width: 100%;
   height: 100%;
   outline: none;
+}
+.gen-studio .gs-viewer-confirm {
+  /* Above every viewer surface, including its metadata panel. */
+  z-index: 3;
 }
 .gen-studio .gs-viewer-main {
   flex: 1;

@@ -158,7 +158,7 @@ interface ResultTile {
    */
   isPossible?: boolean;
   /**
-   * How many workers could take this job, and which of its settings shut them
+   * How many workers could generate this job, and which of its settings shut them
    * out, run against the request it was submitted with. Null when the worker
    * list is unknown, and the tile then says nothing about it.
    */
@@ -791,8 +791,16 @@ export class GenerateResultsPanelComponent {
 
   private readonly viewerPanel =
     viewChild<ElementRef<HTMLElement>>('viewerPanel');
+  private readonly viewerDeletePanel =
+    viewChild<ElementRef<HTMLElement>>('viewerDeletePanel');
+  private readonly viewerDeleteCancel =
+    viewChild<ElementRef<HTMLButtonElement>>('viewerDeleteCancel');
+  /** The job awaiting explicit confirmation from the full-screen viewer. */
+  public readonly viewerDeletePending = signal<string | null>(null);
   /** The element focus returns to when the viewer closes. */
   private previousActiveElement: HTMLElement | null = null;
+  /** The viewer control focus returns to when its delete dialog is cancelled. */
+  private viewerDeleteReturnFocus: HTMLElement | null = null;
   private viewerKeydown: ((event: KeyboardEvent) => void) | null = null;
   /** Where a viewer drag started, for the swipe-to-navigate gesture. */
   private swipeOriginX: number | null = null;
@@ -1054,6 +1062,48 @@ export class GenerateResultsPanelComponent {
     this.requestDelete([...this.selectedJobs()]);
   }
 
+  /** Ask for explicit confirmation before deleting from the immersive viewer. */
+  public requestViewerDelete(localId: string): void {
+    if (!localId) {
+      return;
+    }
+    this.viewerDeleteReturnFocus =
+      typeof document !== 'undefined' &&
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    this.viewerDeletePending.set(localId);
+    // Render the alert dialog before moving focus into its safest action.
+    setTimeout(() => this.viewerDeleteCancel()?.nativeElement.focus(), 0);
+  }
+
+  public cancelViewerDelete(): void {
+    if (this.viewerDeletePending() === null) {
+      return;
+    }
+    this.viewerDeletePending.set(null);
+    const returnFocus = this.viewerDeleteReturnFocus;
+    this.viewerDeleteReturnFocus = null;
+    setTimeout(() => returnFocus?.focus(), 0);
+  }
+
+  public confirmViewerDelete(): void {
+    const localId = this.viewerDeletePending();
+    if (localId === null) {
+      return;
+    }
+    this.viewerDeletePending.set(null);
+    this.viewerDeleteReturnFocus = null;
+    this.requestDelete([localId]);
+  }
+
+  /** Cancel only when the confirmation backdrop itself was pressed. */
+  public onViewerDeleteBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.cancelViewerDelete();
+    }
+  }
+
   /** Whether an Undo is currently on offer (drives the specs and the grid). */
   public readonly undoPending = computed(() => this.hiddenJobs().size > 0);
 
@@ -1135,6 +1185,8 @@ export class GenerateResultsPanelComponent {
     if (this.viewerKey() === null) {
       return;
     }
+    this.viewerDeletePending.set(null);
+    this.viewerDeleteReturnFocus = null;
     this.viewerKey.set(null);
     this.closeMeta();
     this.detachViewerKeys();
@@ -1232,9 +1284,11 @@ export class GenerateResultsPanelComponent {
   private onViewerKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
-      // Unwind one layer at a time: raw JSON, then the metadata panel, then the
-      // viewer itself.
-      if (this.metaJsonOpen()) {
+      // Unwind one layer at a time: delete confirmation, raw JSON, metadata,
+      // then the viewer itself.
+      if (this.viewerDeletePending() !== null) {
+        this.cancelViewerDelete();
+      } else if (this.metaJsonOpen()) {
         this.metaJsonOpen.set(false);
       } else if (this.metaTile()) {
         this.closeMeta();
@@ -1245,6 +1299,9 @@ export class GenerateResultsPanelComponent {
     }
     if (event.key === 'Tab') {
       this.trapViewerFocus(event);
+      return;
+    }
+    if (this.viewerDeletePending() !== null) {
       return;
     }
     // Arrow navigation belongs to the images, not to the metadata panel's form
@@ -1263,7 +1320,9 @@ export class GenerateResultsPanelComponent {
 
   /** Keep Tab inside the viewer (including its metadata panel). */
   private trapViewerFocus(event: KeyboardEvent): void {
-    const panel = this.viewerPanel()?.nativeElement;
+    const panel =
+      this.viewerDeletePanel()?.nativeElement ??
+      this.viewerPanel()?.nativeElement;
     if (!panel) {
       return;
     }
@@ -1338,7 +1397,7 @@ export class GenerateResultsPanelComponent {
    * parent does the attaching; this only says which image.
    */
   /**
-   * Take this image's settings with its own seed held, so the next request
+   * Carry this image's settings with its own seed held, so the next request
    * lands next door to it rather than somewhere else entirely.
    */
   /** The metadata panel's three actions, on the image the panel is showing. */
