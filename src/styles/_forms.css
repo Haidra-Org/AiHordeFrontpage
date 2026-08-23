@@ -537,6 +537,11 @@
     color: var(--color-text-secondary);
     font-variant-numeric: tabular-nums;
   }
+  /* Adjacent readings separate visually without the strings carrying their
+     own punctuation. Generated content stays out of the accessible text. */
+  .autocomplete-live + .autocomplete-live::before {
+    content: "· ";
+  }
 
   /* Empty-state message when no options match */
   .autocomplete-empty {

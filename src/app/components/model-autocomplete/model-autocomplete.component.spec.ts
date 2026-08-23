@@ -70,13 +70,13 @@ describe('ModelAutocompleteComponent', () => {
       ]),
     );
 
-    expect(optionText(fixture)[0]).toContain('up to 2048×2048');
+    expect(optionText(fixture)[0]).toContain('2048×2048 max');
   });
 
   it('leaves the size off a model the worker list says nothing about', async () => {
     const fixture = await render([{ name: 'Deliberate', count: 4 }], new Map());
 
-    expect(optionText(fixture)[0]).not.toContain('up to');
+    expect(optionText(fixture)[0]).not.toContain('max');
   });
 
   it('says nobody is serving a model rather than counting zero', async () => {
