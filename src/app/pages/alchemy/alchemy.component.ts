@@ -61,6 +61,7 @@ import {
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy-results-browser/alchemy-results-browser.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { FullscreenToggleComponent } from '../../components/fullscreen-toggle/fullscreen-toggle.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
 import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
@@ -149,6 +150,7 @@ interface AlchemyOperationGroup {
     GsHelpComponent,
     GsParamEntryComponent,
     GsSheetComponent,
+    FullscreenToggleComponent,
   ],
   templateUrl: './alchemy.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

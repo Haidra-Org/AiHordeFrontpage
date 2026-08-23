@@ -26,6 +26,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { FullscreenToggleComponent } from '../../../components/fullscreen-toggle/fullscreen-toggle.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
@@ -425,6 +426,7 @@ const SUMMARY_SEPARATOR = ' · ';
     StyleBrowserComponent,
     GsGroupComponent,
     RouterLink,
+    FullscreenToggleComponent,
   ],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

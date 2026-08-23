@@ -10,6 +10,9 @@
   "generate.shell.tab_image_short": "Image",
   "generate.shell.tab_alchemy_short": "Alchemy",
   "generate.shell.tab_docs_short": "Learn",
+  "generate.shell.fullscreen": "Full screen",
+  "generate.shell.fullscreen_exit": "Exit full screen",
+  "generate.shell.fullscreen_exit_short": "Exit",
 
   "docs.title": "Documentation",
   "docs.nav_link": "Docs",

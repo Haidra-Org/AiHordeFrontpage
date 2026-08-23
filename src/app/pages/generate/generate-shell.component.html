@@ -1,7 +1,22 @@
-<div class="gen-studio gs-shell">
+<div class="gen-studio gs-shell" #shell>
   <app-gs-tool-tabs />
 
   <div class="gs-shell-outlet">
     <router-outlet />
   </div>
+
+  <!-- The way back to the page, drawn only while the studio has the screen.
+       Escape and the system gesture do the same thing; this is for the reader
+       on a phone, who has neither. -->
+  @if (fullscreen.active()) {
+    <button
+      type="button"
+      class="gs-fs-exit"
+      (click)="fullscreen.exit()"
+      [attr.aria-label]="'generate.shell.fullscreen_exit' | transloco"
+    >
+      <app-icon name="arrows-pointing-in" class="gs-ico-sm" />
+      <span>{{ "generate.shell.fullscreen_exit_short" | transloco }}</span>
+    </button>
+  }
 </div>

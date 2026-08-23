@@ -819,6 +819,57 @@
   }
 }
 
+/* ------- whole screen ---------------------------------------------- */
+/* The browser paints its own backdrop behind whatever it puts on the screen,
+   and an element with a see-through background lets that black through. The
+   shell already declares the canvas, so this only pins the height and gives the
+   scroll back to it: on a phone the page is what scrolls, and once the shell is
+   the screen the page no longer moves. */
+.gen-studio.gs-shell:fullscreen,
+.gen-studio.gs-shell:-webkit-full-screen {
+  height: 100%;
+  overflow-y: auto;
+  background: var(--gs-canvas);
+}
+/* The way back, over the top-right corner of the studio. It clears the tool
+   row wide and the safe area on a phone, and stays quiet: this is a way out,
+   not a thing to press. */
+.gen-studio .gs-fs-exit {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 10px);
+  right: calc(env(safe-area-inset-right) + 10px);
+  z-index: 46;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-label);
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-pill);
+  box-shadow: var(--gs-elev-2);
+  opacity: 0.85;
+  cursor: pointer;
+}
+.gen-studio .gs-fs-exit:hover {
+  color: var(--gs-ink);
+  opacity: 1;
+}
+.gen-studio .gs-fs-exit:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-fs-exit {
+    height: 44px;
+    padding: 0 16px;
+  }
+}
+
 /* ------- panel expand (double / full width) ------------------------ */
 .gen-studio .gs-expand {
   display: inline-flex;

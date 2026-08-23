@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateShellComponent } from './generate-shell.component';
 import { GlossaryService } from '../../services/glossary.service';
+import { FullscreenService } from '../../services/fullscreen.service';
 import { DOCS_IMAGE } from '../../content/docs-links';
 import en from '../../../assets/i18n/en.json';
 
@@ -16,6 +17,7 @@ const translations = en as Record<string, string>;
 describe('GenerateShellComponent', () => {
   let fixture: ComponentFixture<GenerateShellComponent>;
   let router: Router;
+  let fullscreenActive: WritableSignal<boolean>;
 
   const links = (): HTMLAnchorElement[] =>
     Array.from(
@@ -30,6 +32,19 @@ describe('GenerateShellComponent', () => {
   };
 
   beforeEach(async () => {
+    fullscreenActive = signal(false);
+    const fullscreen = {
+      available: true,
+      active: fullscreenActive.asReadonly(),
+      setTarget: () => undefined,
+      toggle: () => Promise.resolve(),
+      enter: () => Promise.resolve(),
+      exit: () => {
+        fullscreenActive.set(false);
+        return Promise.resolve();
+      },
+    } as unknown as FullscreenService;
+
     await TestBed.configureTestingModule({
       imports: [
         GenerateShellComponent,
@@ -44,6 +59,7 @@ describe('GenerateShellComponent', () => {
           { path: 'generate/alchemy', component: StubPageComponent },
           { path: 'docs/image', component: StubPageComponent },
         ]),
+        { provide: FullscreenService, useValue: fullscreen },
       ],
     }).compileComponents();
 
@@ -131,6 +147,27 @@ describe('GenerateShellComponent', () => {
     button.click();
 
     expect(glossary.isOpen()).toBe(true);
+  });
+
+  it('offers the way back only while the studio has the screen', () => {
+    // jsdom grants no fullscreen, so the state is driven directly: what matters
+    // here is that the floating control follows it and names itself plainly.
+    const exit = (): HTMLButtonElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('.gs-fs-exit');
+
+    expect(exit()).toBeNull();
+
+    fullscreenActive.set(true);
+    fixture.detectChanges();
+
+    expect(exit()?.getAttribute('aria-label')).toBe(
+      translations['generate.shell.fullscreen_exit'],
+    );
+
+    fullscreenActive.set(false);
+    fixture.detectChanges();
+
+    expect(exit()).toBeNull();
   });
 
   it('has a short name for every tool to fall back on', () => {
