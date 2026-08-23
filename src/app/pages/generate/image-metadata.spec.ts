@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildParametersText,
   deriveImageMeta,
   imageErrorFieldKey,
   imageErrorReasonKey,
@@ -147,5 +148,90 @@ describe('kudosDiverged', () => {
   it('flags a whole kudos of difference either way', () => {
     expect(kudosDiverged({ quoted: 40, charged: 52 })).toBe(true);
     expect(kudosDiverged({ quoted: 52, charged: 40 })).toBe(true);
+  });
+});
+
+describe('buildParametersText', () => {
+  const metadata: StoredJobImageMetadata = {
+    seed: '99',
+    model: 'Deliberate',
+  };
+
+  it('writes the three A1111 lines, with the returned seed and model', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a fox ### blurry, watermark',
+      models: ['AlbedoBase XL'],
+      params: {
+        steps: 30,
+        sampler_name: 'k_euler_a',
+        cfg_scale: 7.5,
+        seed: '1',
+        width: 1024,
+        height: 768,
+        clip_skip: 2,
+      },
+    };
+    expect(buildParametersText(request, metadata)).toBe(
+      [
+        'a fox',
+        'Negative prompt: blurry, watermark',
+        'Steps: 30, Sampler: Euler a, CFG scale: 7.5, Seed: 99, Size: 1024x768, Model: Deliberate, Clip skip: 2',
+      ].join('\n'),
+    );
+  });
+
+  it('falls back to the request when the worker reported no seed or model', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a fox',
+      models: ['AlbedoBase XL'],
+      params: { seed: '1', steps: 20 },
+    };
+    expect(buildParametersText(request, undefined)).toBe(
+      'a fox\nSteps: 20, Seed: 1, Model: AlbedoBase XL',
+    );
+  });
+
+  it('passes an unmapped sampler name through as the horde named it', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a fox',
+      params: { sampler_name: 'k_something_new' },
+    };
+    expect(buildParametersText(request, undefined)).toContain(
+      'Sampler: k_something_new',
+    );
+  });
+
+  it('names the schedule, preferring Karras over a named scheduler', () => {
+    const karras: ImageGenerationRequest = {
+      prompt: 'a fox',
+      params: { karras: true, scheduler: 'simple' },
+    };
+    expect(buildParametersText(karras, undefined)).toContain(
+      'Schedule type: Karras',
+    );
+    const scheduled: ImageGenerationRequest = {
+      prompt: 'a fox',
+      params: { scheduler: 'simple' },
+    };
+    expect(buildParametersText(scheduled, undefined)).toContain(
+      'Schedule type: simple',
+    );
+  });
+
+  it('reports denoising strength only where it did something', () => {
+    const params = { denoising_strength: 0.6 };
+    expect(
+      buildParametersText({ prompt: 'a fox', params }, undefined),
+    ).not.toContain('Denoising');
+    expect(
+      buildParametersText(
+        { prompt: 'a fox', params, source_processing: 'img2img' },
+        undefined,
+      ),
+    ).toContain('Denoising strength: 0.6');
+  });
+
+  it('has nothing to say about a job with no request', () => {
+    expect(buildParametersText(undefined, metadata)).toBe('');
   });
 });
