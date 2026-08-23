@@ -260,6 +260,22 @@
           "generate.form.preview_request_short" | transloco
         }}</span>
       </button>
+      <!-- The standing version of the button above it: one asks to see this
+           request, this one asks to see every request before it goes. -->
+      <button
+        type="button"
+        class="gs-mini-btn"
+        [class.gs-mini-btn--on]="reviewBeforeSend()"
+        [attr.aria-pressed]="reviewBeforeSend()"
+        (click)="toggleReviewBeforeSend()"
+        [attr.aria-label]="'generate.form.review_before_send' | transloco"
+        [title]="'generate.form.review_before_send_hint' | transloco"
+      >
+        <app-icon name="clipboard-document" class="gs-ico-sm" />
+        <span class="gs-mini-btn-label">{{
+          "generate.form.review_before_send_short" | transloco
+        }}</span>
+      </button>
       @if (expandable()) {
         <button
           type="button"
@@ -2490,11 +2506,17 @@
         </span>
       </div>
       <button
+        #generateBtn
         type="submit"
         class="gs-genbtn"
         appTutAnchor="generate"
         [disabled]="form().invalid"
-        [title]="'generate.form.ctrl_enter_hint' | transloco"
+        [title]="
+          (reviewBeforeSend()
+            ? 'generate.form.ctrl_enter_review_hint'
+            : 'generate.form.ctrl_enter_hint'
+          ) | transloco
+        "
       >
         <app-icon name="star" class="gs-ico-sm" />
         {{

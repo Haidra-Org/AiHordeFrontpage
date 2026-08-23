@@ -1,0 +1,125 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="cancel()"
+  tabindex="-1"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-review-panel gs-fadeup"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gs-review-title"
+    aria-describedby="gs-review-description"
+    tabindex="-1"
+  >
+    <div class="gs-modal-header">
+      <div id="gs-review-title" class="gs-modal-title">
+        <app-icon name="clipboard-document" class="gs-ico-sm" />
+        {{ "generate.review.title" | transloco }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="cancel()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <!-- What the request costs and comes back as, said once at the top: the
+         three things a reader checks before spending anything. -->
+    <div class="gs-review-facts">
+      <span class="gs-review-fact">
+        {{
+          (batch() === 1
+            ? "generate.review.batch_one"
+            : "generate.review.batch_other"
+          ) | transloco: { count: batch() }
+        }}
+      </span>
+      <span class="gs-review-fact">
+        {{ "generate.footer.dimensions" | transloco: dimensions() }}
+      </span>
+      @if (kudos() !== null) {
+        <span class="gs-review-fact">
+          {{ "generate.review.kudos" | transloco: { kudos: kudos() } }}
+        </span>
+      }
+    </div>
+
+    <div class="gs-meta-seg gs-review-seg" role="group">
+      <button
+        type="button"
+        class="gs-meta-seg-opt"
+        [class.gs-meta-seg-opt--on]="view() === 'summary'"
+        [attr.aria-pressed]="view() === 'summary'"
+        (click)="setView('summary')"
+      >
+        {{ "generate.review.tab_summary" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="gs-meta-seg-opt"
+        [class.gs-meta-seg-opt--on]="view() === 'json'"
+        [attr.aria-pressed]="view() === 'json'"
+        (click)="setView('json')"
+      >
+        {{ "generate.review.tab_json" | transloco }}
+      </button>
+    </div>
+
+    <div class="gs-modal-body gs-review-body">
+      @if (view() === "summary") {
+        @for (group of groups(); track group.id) {
+          <div class="gs-meta-group">
+            <div class="gs-meta-group-head gs-meta-group-head--info">
+              <span class="gs-meta-group-title">{{
+                group.titleKey | transloco
+              }}</span>
+            </div>
+            @for (row of group.rows; track row.id) {
+              <div class="gs-meta-row gs-meta-row--info">
+                <span
+                  class="gs-meta-key"
+                  [class]="row.identity?.className ?? ''"
+                >
+                  @if (row.identity; as identity) {
+                    <span class="gs-sec-chip gs-sec-chip--sm" aria-hidden="true"
+                      ><app-icon [name]="identity.icon"
+                    /></span>
+                  }
+                  {{ row.labelKey | transloco }}
+                </span>
+                <span class="gs-meta-val">{{ row.value }}</span>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <pre class="gs-api-code"><code [innerHTML]="highlighted()"></code></pre>
+      }
+    </div>
+
+    <div class="gs-modal-footer">
+      <span id="gs-review-description" class="gs-modal-foot-note">
+        {{ "generate.review.description" | transloco }}
+      </span>
+      <div class="flex items-center gap-2">
+        <button type="button" class="gs-tile-btn" (click)="cancel()">
+          {{ "generate.review.cancel" | transloco }}
+        </button>
+        <button type="button" class="gs-modal-done" (click)="confirm()">
+          <app-icon name="star" class="gs-ico-sm" />
+          {{
+            (batch() === 1
+              ? "generate.review.send_one"
+              : "generate.review.send_other"
+            ) | transloco: { count: batch() }
+          }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

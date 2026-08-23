@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { highlightJson } from '../../../helper/json-formatter';
 
 /** A labelled, tone-coloured highlight row shown above the raw JSON. */
 export interface JsonModalHighlight {
@@ -44,6 +45,9 @@ export class StudioJsonModalComponent {
       return '{}';
     }
   });
+
+  /** The body escapes its own markup, so the spans are the only HTML in it. */
+  public readonly highlighted = computed(() => highlightJson(this.json()));
 
   public close(): void {
     this.closed.emit();

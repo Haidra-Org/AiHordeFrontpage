@@ -538,8 +538,16 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly fieldRejection = input<FieldRejection | null>(null);
 
+  /**
+   * Whether Generate stops at a review of the request instead of sending it.
+   * The parent owns the preference and the dialog; the panel only draws the
+   * switch and says what pressing Generate is about to do.
+   */
+  public readonly reviewBeforeSend = input(false);
+
   public readonly create = output<void>();
   public readonly panelSizeChange = output<PanelSize>();
+  public readonly reviewBeforeSendChange = output<boolean>();
   /** Ask the parent to open a preview of the request this form would submit. */
   public readonly preview = output<void>();
   /** Load a saved/recent preset back into the form (via the parent's confirm). */
@@ -625,6 +633,10 @@ export class GenerateFormComponent implements OnInit {
   /** The prompt box, so a picked history entry or starter prompt can focus it. */
   private readonly promptInput =
     viewChild<ElementRef<HTMLTextAreaElement>>('promptInput');
+
+  /** The submit button, so the review dialog can hand focus back to it. */
+  private readonly generateBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('generateBtn');
 
   private readonly selectedSampler = signal<string>('');
   public readonly recommendedSamplers = computed(() => {
@@ -2109,6 +2121,15 @@ export class GenerateFormComponent implements OnInit {
 
   public onPreview(): void {
     this.preview.emit();
+  }
+
+  public toggleReviewBeforeSend(): void {
+    this.reviewBeforeSendChange.emit(!this.reviewBeforeSend());
+  }
+
+  /** Take focus back to Generate once the review dialog has closed. */
+  public focusGenerateButton(): void {
+    this.generateBtn()?.nativeElement.focus();
   }
 
   // --- Presets menu --------------------------------------------------------

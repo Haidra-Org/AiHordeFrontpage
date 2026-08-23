@@ -49,7 +49,9 @@
       [samplerContract]="samplerContract()"
       [lintWarnings]="lintWarnings()"
       [fieldRejection]="fieldRejection()"
+      [reviewBeforeSend]="reviewBeforeSend()"
       (panelSizeChange)="panelSize.set($event)"
+      (reviewBeforeSendChange)="setReviewBeforeSend($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
       (applySettings)="onApplyPreset($event)"
@@ -146,6 +148,15 @@
   }
   <!-- On a phone a parked tutorial's way back sits where the sheet was. -->
   <app-gs-tutorial-parked class="gs-parked-host gs-parked-host--phone" />
+
+  @if (pendingReview(); as plan) {
+    <app-generate-review-modal
+      [request]="plan.request"
+      [kudos]="kudos()"
+      (confirmed)="confirmReview()"
+      (cancelled)="cancelReview()"
+    />
+  }
 
   @if (previewRequest(); as request) {
     <app-studio-json-modal

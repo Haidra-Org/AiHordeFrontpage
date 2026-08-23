@@ -1694,6 +1694,13 @@
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
+/* A header tool that is a standing choice rather than a one-off press wears
+   the same lit state the results pane's view switches do. */
+.gen-studio .gs-mini-btn--on {
+  color: var(--gs-blue);
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
 /* Panel-header tools carry a word under the glyph on a phone. Four unlabelled
    glyphs in a row are read one at a time or not at all, and the header is the
    one place in the studio where a mistaken press costs the whole session's
@@ -5100,6 +5107,49 @@
   white-space: pre-wrap;
   word-break: break-word;
   overflow-x: auto;
+}
+/* The code surface is dark in both themes, so the shared JSON token colours
+   (which follow the page's theme) are re-stated here against it. */
+.gen-studio .gs-api-code .json-key {
+  color: #93c5fd;
+}
+.gen-studio .gs-api-code .json-string {
+  color: #86efac;
+}
+.gen-studio .gs-api-code .json-number {
+  color: #fcd34d;
+}
+.gen-studio .gs-api-code .json-boolean {
+  color: #f9a8d4;
+}
+.gen-studio .gs-api-code .json-null {
+  color: #94a3b8;
+}
+
+/* ------- review before sending: the last look at a request ------- */
+.gen-studio .gs-review-panel {
+  width: min(680px, 94vw);
+}
+.gen-studio .gs-review-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+  padding: 0 var(--gs-space-4);
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-review-fact {
+  padding: 2px 8px;
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-field);
+}
+.gen-studio .gs-review-seg {
+  margin: var(--gs-space-2) var(--gs-space-4) 0;
+}
+.gen-studio .gs-review-body {
+  max-height: min(52vh, 520px);
+  overflow-y: auto;
 }
 .gen-studio .gs-api-section-title {
   margin-bottom: 8px;

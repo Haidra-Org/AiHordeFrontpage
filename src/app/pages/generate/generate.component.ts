@@ -65,6 +65,7 @@ import {
 import { GenerateLearnSheetComponent } from './generate-learn-sheet/generate-learn-sheet.component';
 import { GsTutorialParkedComponent } from '../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
+import { GenerateReviewModalComponent } from './generate-review-modal/generate-review-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
@@ -127,6 +128,9 @@ const DEFAULT_SOURCE_STATE: GenerateSourceState = {
 
 const STORAGE_KEY = 'aihorde.generate.form';
 
+/** Whether Generate opens the review dialog instead of sending straight away. */
+const REVIEW_KEY = 'aihorde.generate.review_before_send';
+
 /** What the glossary files the studio's this-page entries under. */
 const STUDIO_GLOSSARY_PAGE_ID = 'generate-image';
 
@@ -144,6 +148,13 @@ const STUDIO_GLOSSARY_TERM_IDS: readonly string[] = [
   'model',
 ];
 const KUDOS_DEBOUNCE_MS = 1000;
+
+/** Everything one press of Generate would send, built once and sent unchanged. */
+interface SubmitPlan {
+  request: ImageGenerationRequest;
+  sourceImages: EnqueueSourceImage[];
+  styleName: string;
+}
 
 /**
  * Form fields that only mean anything with a source image attached. Applying any
@@ -172,6 +183,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GenerateResultsPanelComponent,
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
+    GenerateReviewModalComponent,
     StudioImageDropDirective,
     GsSheetComponent,
     GsParamEntryComponent,
@@ -255,6 +267,16 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** The built request shown in the pre-submit preview modal, or null. */
   public readonly previewRequest = signal<unknown>(null);
+
+  /**
+   * Whether Generate stops at the review dialog instead of sending. Off by
+   * default: the studio's own habit is press-and-go, and this is the reader
+   * asking for a look first.
+   */
+  public readonly reviewBeforeSend = signal(this.db.get(REVIEW_KEY) === true);
+
+  /** What the review dialog is holding, or null while nothing awaits a look. */
+  public readonly pendingReview = signal<SubmitPlan | null>(null);
 
   /**
    * What the review-and-apply panel calls the settings it is showing. A preset
@@ -1055,36 +1077,81 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   public async onCreate(): Promise<void> {
+    const plan = this.planSubmit();
+    if (!plan) {
+      return;
+    }
+    if (this.reviewBeforeSend()) {
+      this.pendingReview.set(plan);
+      return;
+    }
+    await this.submit(plan);
+  }
+
+  /** Turn the option on or off, and remember it for the next visit. */
+  public setReviewBeforeSend(on: boolean): void {
+    this.reviewBeforeSend.set(on);
+    this.db.store(REVIEW_KEY, on);
+  }
+
+  /** Send exactly what the dialog was showing; the plan is not rebuilt. */
+  public async confirmReview(): Promise<void> {
+    const plan = this.pendingReview();
+    this.pendingReview.set(null);
+    this.formRef()?.focusGenerateButton();
+    if (plan) {
+      await this.submit(plan);
+    }
+  }
+
+  public cancelReview(): void {
+    this.pendingReview.set(null);
+    this.formRef()?.focusGenerateButton();
+  }
+
+  /**
+   * Everything one press of Generate would send, or null when the form is not
+   * in a state to send anything. The single build: the review dialog reads what
+   * this returns and {@link submit} sends that same object.
+   */
+  private planSubmit(): SubmitPlan | null {
     const promptControl = this.form.controls.prompt;
     if (promptControl.value.trim().length === 0) {
       promptControl.markAsTouched();
-      return;
+      return null;
     }
     const effective = this.effectiveValue();
     const usesSource = effective.sourceMode !== 'none';
     const state = this.sourceState();
     if (usesSource && !state.valid) {
       this.sourceValidationVisible.set(true);
-      return;
+      return null;
     }
     const hasSourceImage = usesSource && state.sourceBlob !== null;
-    const request = buildStyledImageRequest(
-      effective,
-      this.resolveApplied(effective),
-      this.buildOptions(hasSourceImage),
-    );
-    const sourceImages = usesSource ? this.buildEnqueueSources(state) : [];
+    return {
+      request: buildStyledImageRequest(
+        effective,
+        this.resolveApplied(effective),
+        this.buildOptions(hasSourceImage),
+      ),
+      sourceImages: usesSource ? this.buildEnqueueSources(state) : [],
+      styleName: effective.styleName,
+    };
+  }
+
+  private async submit(plan: SubmitPlan): Promise<void> {
+    const { request, sourceImages, styleName } = plan;
     try {
       await this.queue.enqueue(
         request,
         sourceImages.length > 0 ? sourceImages : undefined,
         // The request itself keeps no trace of the style that shaped it, so the
         // selection is recorded on the job for the results grid to group by.
-        effective.styleName ? { styleName: effective.styleName } : undefined,
+        styleName ? { styleName } : undefined,
       );
       // One submit is one use of the style, however many images it asks for.
-      if (effective.styleName) {
-        this.styleUsage.increment(effective.styleName);
+      if (styleName) {
+        this.styleUsage.increment(styleName);
       }
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());

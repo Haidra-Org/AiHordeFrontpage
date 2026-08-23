@@ -12,20 +12,20 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
-import {
-  FormLoraEntry,
-  FormTiEntry,
-  GenerateFormValue,
-  requestToFormValue,
-} from '../generate-form.model';
+import { GenerateFormValue, requestToFormValue } from '../generate-form.model';
 import {
   ImageMetaProvenance,
   imageErrorFieldKey,
   imageErrorReasonKey,
   kudosDiverged,
 } from '../image-metadata';
-import { SectionIdentity, sectionIdentity } from '../../../content/sections';
-import { settingSection } from '../../../content/settings';
+import {
+  MetaGroup,
+  MetaRow,
+  MetaRowDeps,
+  buildMetaGroups,
+  metaAssetIds,
+} from './image-meta-rows';
 
 /** How unchecked parameters are treated when the selection is applied. */
 export type MetaApplyMode = 'replace' | 'overlay';
@@ -38,37 +38,6 @@ export interface MetaApplyEvent {
   localId: string;
   keys: (keyof GenerateFormValue)[];
   mode: MetaApplyMode;
-}
-
-/** A parameter row: a human value plus the form fields applying it writes. */
-interface MetaRow {
-  id: string;
-  labelKey: string;
-  value: string;
-  keys: readonly (keyof GenerateFormValue)[];
-  /** The panel card the field lives on, or null where it lives on none. */
-  identity: SectionIdentity | null;
-}
-
-/** A row as it is written out, before the vocabulary says where its field is. */
-type MetaRowSeed = Omit<MetaRow, 'identity'>;
-
-interface MetaGroup {
-  id: string;
-  titleKey: string;
-  rows: MetaRow[];
-}
-
-/**
- * Put each row on the card its field belongs to. Row ids are the studio's own
- * setting ids, so the vocabulary answers for them directly; a row it has no
- * answer for takes no mark rather than a neutral one.
- */
-function placed(rows: MetaRowSeed[]): MetaRow[] {
-  return rows.map((row) => ({
-    ...row,
-    identity: sectionIdentity(settingSection(row.id)),
-  }));
 }
 
 /** A read-only provenance row: reported by the horde, never applicable. */
@@ -149,159 +118,19 @@ export class ImageMetaPanelComponent {
     return request ? requestToFormValue(request) : null;
   });
 
+  /**
+   * What the row builder needs from this component's injectables. Read inside
+   * the computed below, so a name arriving from the resolver still re-runs it.
+   */
+  private readonly rowDeps: MetaRowDeps = {
+    translate: (key, params) => this.transloco.translate(key, params),
+    assetLabel: (id, isVersion) =>
+      this.resolver.metaFor({ id, isVersion })?.label ?? null,
+  };
+
   public readonly groups = computed<MetaGroup[]>(() => {
     const value = this.formValue();
-    const request = this.request();
-    if (!value || !request) {
-      return [];
-    }
-    const t = (key: string): string => this.transloco.translate(key);
-    const on = t('generate.results.meta_on');
-    const off = t('generate.results.meta_off');
-    const label = (id: string): string => `generate.results.meta_row_${id}`;
-
-    const prompt: MetaRowSeed[] = [
-      {
-        id: 'prompt',
-        labelKey: label('prompt'),
-        value: value.prompt,
-        keys: ['prompt'],
-      },
-    ];
-    if (value.negativePrompt) {
-      prompt.push({
-        id: 'negative',
-        labelKey: label('negative'),
-        value: value.negativePrompt,
-        keys: ['negativePrompt'],
-      });
-    }
-
-    const sampling: MetaRowSeed[] = [
-      {
-        id: 'model',
-        labelKey: label('model'),
-        value: value.model || t('generate.results.meta_any_model'),
-        keys: ['model'],
-      },
-      {
-        id: 'sampler',
-        labelKey: label('sampler'),
-        value: value.sampler_name,
-        keys: ['sampler_name'],
-      },
-      {
-        id: 'steps',
-        labelKey: label('steps'),
-        value: String(value.steps),
-        keys: ['steps'],
-      },
-      {
-        id: 'cfg',
-        labelKey: label('cfg'),
-        value: String(value.cfg_scale),
-        keys: ['cfg_scale'],
-      },
-      {
-        id: 'seed',
-        labelKey: label('seed'),
-        value: value.seed || t('generate.results.meta_random'),
-        keys: ['seed'],
-      },
-      {
-        id: 'schedule',
-        labelKey: label('schedule'),
-        value: value.scheduler,
-        keys: ['scheduler'],
-      },
-      {
-        id: 'hires',
-        labelKey: label('hires'),
-        value: value.hires_fix ? on : off,
-        keys: ['hires_fix', 'hires_fix_denoising_strength'],
-      },
-    ];
-    if (value.loras.length > 0) {
-      sampling.push({
-        id: 'loras',
-        labelKey: label('loras'),
-        value: value.loras.map((lora) => this.loraLabel(lora)).join(' · '),
-        keys: ['loras'],
-      });
-    }
-    if (value.tis.length > 0) {
-      sampling.push({
-        id: 'tis',
-        labelKey: label('tis'),
-        value: value.tis.map((ti) => this.tiLabel(ti)).join(' · '),
-        keys: ['tis'],
-      });
-    }
-    if (value.post_processing.length > 0) {
-      sampling.push({
-        id: 'post',
-        labelKey: label('post'),
-        value: value.post_processing.join(', '),
-        keys: ['post_processing', 'facefixer_strength'],
-      });
-    }
-    // The img2img/controlnet/inpainting setup only exists when the generation
-    // actually used a source image, and it travels as one row: applying half of
-    // it (a denoise without a source mode, say) would build an invalid request.
-    if (value.sourceMode !== 'none') {
-      // The mode alone no longer names what was sent: the same two chips cover
-      // four of the horde's processings, and the choice that tells them apart
-      // has to be both shown and carried, or re-applying this row would rebuild
-      // a different request from the one it is describing.
-      const detail = value.control_type
-        ? value.control_type
-        : value.sourceMode === 'img2img' && value.maskEnabled
-          ? 'masked'
-          : value.sourceMode === 'inpainting' && value.outpaintEnabled
-            ? 'outpainting'
-            : null;
-      sampling.push({
-        id: 'source',
-        labelKey: label('source'),
-        value: detail ? `${value.sourceMode} · ${detail}` : value.sourceMode,
-        keys: [
-          'sourceMode',
-          'maskEnabled',
-          'outpaintEnabled',
-          'outpaintAnchor',
-          'denoising_strength',
-          'control_type',
-          'image_is_control',
-          'return_control_map',
-        ],
-      });
-    }
-
-    return [
-      {
-        id: 'prompt',
-        titleKey: 'generate.results.meta_group_prompt',
-        rows: placed(prompt),
-      },
-      {
-        id: 'sampling',
-        titleKey: 'generate.results.meta_group_sampling',
-        rows: placed(sampling),
-      },
-      {
-        id: 'size',
-        titleKey: 'generate.results.meta_group_size',
-        rows: placed([
-          {
-            // Width and height are one row: nobody wants half a resolution.
-            id: 'size',
-            labelKey: label('size'),
-            value: `${value.width} × ${value.height}`,
-            keys: ['width', 'height'],
-          },
-        ]),
-      },
-    ];
+    return value ? buildMetaGroups(value, this.rowDeps) : [];
   });
 
   // --- CivitAI asset names -------------------------------------------------
@@ -314,86 +143,9 @@ export class ImageMetaPanelComponent {
    */
   private resolveAssetNames(): void {
     const value = this.formValue();
-    if (!value) {
-      return;
+    if (value) {
+      this.resolver.requestAll(metaAssetIds(value));
     }
-    this.resolver.requestAll([
-      ...value.loras.map((lora) => ({
-        id: lora.name,
-        isVersion: lora.is_version === true,
-      })),
-      // A textual inversion is always a model-page id: the horde's TI payload
-      // has no version flag. A stored id that is really a version is repaired
-      // by the resolver rather than guessed at here.
-      ...value.tis.map((ti) => ({ id: ti.name, isVersion: false })),
-    ]);
-  }
-
-  private assetName(
-    id: string,
-    isVersion: boolean,
-    label: string | undefined,
-    fallbackKey: string,
-  ): string {
-    if (label) {
-      return label;
-    }
-    const resolved = this.resolver.metaFor({ id, isVersion })?.label;
-    if (resolved) {
-      return resolved;
-    }
-    // Never show a bare number: an unresolved id still reads as an identifier.
-    return /^\d+$/.test(id)
-      ? this.transloco.translate(fallbackKey, { id })
-      : id;
-  }
-
-  private loraLabel(entry: FormLoraEntry): string {
-    const t = (key: string, params?: Record<string, unknown>): string =>
-      this.transloco.translate(key, params);
-    const name = this.assetName(
-      entry.name,
-      entry.is_version === true,
-      entry.label,
-      'generate.results.meta_lora_id',
-    );
-    const attributes = [
-      t('generate.results.meta_weight_model', {
-        value: entry.model,
-      }),
-    ];
-    // The clip weight is only worth showing when it diverges from the model one.
-    if (entry.clip !== entry.model) {
-      attributes.push(
-        t('generate.results.meta_weight_clip', { value: entry.clip }),
-      );
-    }
-    if (entry.inject_trigger) {
-      attributes.push(
-        t('generate.results.meta_inject', { target: entry.inject_trigger }),
-      );
-    }
-    return `${name} (${attributes.join(', ')})`;
-  }
-
-  private tiLabel(entry: FormTiEntry): string {
-    const t = (key: string, params?: Record<string, unknown>): string =>
-      this.transloco.translate(key, params);
-    const name = this.assetName(
-      entry.name,
-      false,
-      entry.label,
-      'generate.results.meta_ti_id',
-    );
-    const attributes = [
-      t('generate.results.meta_weight_strength', { value: entry.strength }),
-    ];
-    if (entry.inject_ti) {
-      attributes.push(
-        t('generate.results.meta_inject', { target: entry.inject_ti }),
-      );
-    }
-    return `${name} (${attributes.join(', ')})`;
   }
 
   public readonly infoRows = computed<MetaInfoRow[]>(() => {

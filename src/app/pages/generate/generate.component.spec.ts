@@ -195,6 +195,61 @@ describe('GenerateComponent', () => {
     expect(toastSuccess).toHaveBeenCalled();
   });
 
+  it('sends straight away while review before sending is off', async () => {
+    component.form.controls.prompt.setValue('a castle on a hill');
+
+    await component.onCreate();
+
+    expect(component.pendingReview()).toBeNull();
+    expect(enqueue).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds the request for review instead of sending it', async () => {
+    component.setReviewBeforeSend(true);
+    component.form.controls.prompt.setValue('a castle on a hill');
+
+    await component.onCreate();
+
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(component.pendingReview()?.request.prompt).toBe(
+      'a castle on a hill',
+    );
+  });
+
+  it('sends nothing when the review is cancelled', async () => {
+    component.setReviewBeforeSend(true);
+    component.form.controls.prompt.setValue('a castle on a hill');
+    await component.onCreate();
+
+    component.cancelReview();
+
+    expect(component.pendingReview()).toBeNull();
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('sends the identical object the review was showing', async () => {
+    component.setReviewBeforeSend(true);
+    component.form.controls.prompt.setValue('a castle on a hill');
+    await component.onCreate();
+    const reviewed = component.pendingReview()?.request;
+
+    // Changing the form after the review opened must not change what goes.
+    component.form.controls.prompt.setValue('something else entirely');
+    await component.confirmReview();
+
+    expect(enqueue).toHaveBeenCalledTimes(1);
+    expect(enqueue.mock.calls[0][0]).toBe(reviewed);
+    expect(component.pendingReview()).toBeNull();
+  });
+
+  it('remembers the review preference across visits', () => {
+    component.setReviewBeforeSend(true);
+
+    expect(localStorage.getItem('aihorde.generate.review_before_send')).toBe(
+      'true',
+    );
+  });
+
   it('surfaces enqueue failures through the toast with error details', async () => {
     const consoleError = vi
       .spyOn(console, 'error')
