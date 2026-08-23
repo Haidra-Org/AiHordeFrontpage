@@ -20,8 +20,12 @@ export const WORKER_POOL_TTL_MS = 3 * 60 * 1000;
  * with a synthetic request and stays independent of the studio's own shape.
  */
 export interface WorkerRequirement {
-  /** The chosen model, or '' for "any model", which every worker satisfies. */
-  model: string;
+  /**
+   * The models the request would accept, primary first. Empty means "any
+   * model", which every worker satisfies; several mean any one of them will do,
+   * which is how the horde itself reads the request's `models`.
+   */
+  models: readonly string[];
   width: number;
   height: number;
   /** Whether the request is marked as adult; a SFW request any worker may take. */
@@ -81,12 +85,17 @@ export function largestSquareSide(maxPixels: number): number {
   return Math.floor(Math.sqrt(maxPixels) / 64) * 64;
 }
 
-/** Whether a worker is carrying `model`; an empty model asks nothing of it. */
-function servesModel(worker: HordeWorker, model: string): boolean {
-  if (model === '') {
+/**
+ * Whether `worker` is carrying any of `models`. An empty list asks nothing of
+ * it, and a list of several asks only that one of them is served: the horde
+ * routes a job to whichever worker can take it, not to all of them.
+ */
+function servesModel(worker: HordeWorker, models: readonly string[]): boolean {
+  if (models.length === 0) {
     return true;
   }
-  return worker.models?.includes(model) ?? false;
+  const carried = worker.models ?? [];
+  return models.some((model) => carried.includes(model));
 }
 
 /**
@@ -122,8 +131,8 @@ function filtersFor(requirement: WorkerRequirement): WorkerFilter[] {
     },
     {
       id: 'model',
-      applies: requirement.model !== '',
-      keep: (worker) => servesModel(worker, requirement.model),
+      applies: requirement.models.length > 0,
+      keep: (worker) => servesModel(worker, requirement.models),
     },
     {
       // The hires pass does not loosen this: the first pass is drawn small and
@@ -292,18 +301,18 @@ export interface WorkerPickOption {
   maxSide: number;
   nsfw: boolean;
   img2img: boolean;
-  /** Whether it is carrying `model`; true when no model is named. */
+  /** Whether it is carrying any of the named models; true when none is named. */
   servesModel: boolean;
 }
 
 /**
  * The workers a request can usefully be pinned to: the ones that could pick up
- * a job at all, with the workers carrying `model` first so the reader meets the
- * ones that can serve what they are asking for before the rest.
+ * a job at all, with the workers carrying one of `models` first so the reader
+ * meets the ones that can serve what they are asking for before the rest.
  */
 export function pickableWorkers(
   workers: readonly HordeWorker[] | null,
-  model: string,
+  models: readonly string[],
 ): readonly WorkerPickOption[] {
   if (workers === null) {
     return [];
@@ -317,7 +326,7 @@ export function pickableWorkers(
       maxSide: largestSquareSide(worker.max_pixels ?? 0),
       nsfw: worker.nsfw,
       img2img: worker.img2img === true,
-      servesModel: servesModel(worker, model),
+      servesModel: servesModel(worker, models),
     }))
     .sort((left, right) => {
       if (left.servesModel !== right.servesModel) {

@@ -1362,6 +1362,26 @@
   margin-right: 10px;
 }
 
+/* One row per further model the request would also accept. Same shape as a
+   pinned worker's row, without the mono treatment: a model name is a word the
+   reader chose off a list, not an ID they pasted. */
+.gen-studio .gs-model-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 9px;
+  border: 1px solid var(--gs-border);
+  border-radius: 10px;
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-model-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
+}
+
 /* ------- field heads + help notes ----------------------------------- */
 /* A field's label line, and a switch's row, both become wrapping flex rows so a
    help trigger can sit after the label and its note can claim the next line

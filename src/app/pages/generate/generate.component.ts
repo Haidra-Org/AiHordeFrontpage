@@ -87,6 +87,7 @@ import {
   kudosBreakdown,
   modelWaitEstimate,
   promptHistoryFromJobs,
+  requestModelNames,
   requestToFormValue,
   stripEphemeralExtras,
   workerRequirementForRequest,
@@ -111,6 +112,7 @@ import {
   FieldRejection,
   RequestWarning,
   evaluateRequestLint,
+  type LintModelSelection,
   rejectionField,
   rejectionWatchValue,
   warningsInSection,
@@ -323,6 +325,24 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       : this.modelReference.baselineFor(model);
   });
 
+  /**
+   * Every model the request would accept with the baseline each resolves to,
+   * primary first. This is what the model-dependent lint rules are judged
+   * against: the request only has to be servable by one of them.
+   */
+  public readonly selectedModels = computed<readonly LintModelSelection[]>(
+    () => {
+      const value = this.formValue();
+      // Read unconditionally so the answers refresh when the reference lands.
+      const baselines = this.modelReference.baselines();
+      return requestModelNames(value.model, value.extraModels).map((name) => ({
+        name,
+        baseline:
+          baselines === null ? null : this.modelReference.baselineFor(name),
+      }));
+    },
+  );
+
   /** The settings the selected model recommends, or null when it names none. */
   public readonly modelRequirements = computed(() => {
     const model = this.formValue().model.trim();
@@ -349,6 +369,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     return evaluateRequestLint({
       value,
       baseline: this.modelBaseline(),
+      selectedModels: this.selectedModels(),
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
       sourceWidth: state.sourceWidth ?? null,

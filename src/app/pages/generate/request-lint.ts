@@ -123,12 +123,30 @@ export function requestIsMasked(value: GenerateFormValue): boolean {
   return value.sourceMode === 'img2img' && value.maskEnabled;
 }
 
+/**
+ * One selected model and the baseline it resolves to. The baseline is null
+ * wherever the reference has no answer, which every rule reading it treats as
+ * "say nothing".
+ */
+export interface LintModelSelection {
+  name: string;
+  baseline: string | null;
+}
+
 /** Everything a rule may read about the request being described. */
 export interface RequestLintInput {
   /** The form value that would actually be submitted (simple mode already projected). */
   value: GenerateFormValue;
-  /** The selected model's normalised baseline; null when nothing is known. */
+  /** The primary model's normalised baseline; null when nothing is known. */
   baseline: string | null;
+  /**
+   * Every model the request would accept, primary first. Absent or empty falls
+   * back to the primary alone, so a caller that knows of only one model keeps
+   * the answers it always got. A request naming several is asking for any one
+   * of them, so a model-dependent rule warns only when none of them satisfies
+   * it.
+   */
+  selectedModels?: readonly LintModelSelection[];
   /** The settings the selected model recommends, or null when it names none. */
   requirements: ModelRequirements | null;
   /** Whether a source image blob is genuinely attached. */
@@ -284,6 +302,36 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
   },
 ];
 
+/**
+ * The models the request would accept, as the rules read them: what the caller
+ * listed, or the primary model alone when it listed nothing.
+ */
+export function lintModelSelections(
+  input: RequestLintInput,
+): readonly LintModelSelection[] {
+  const listed = input.selectedModels ?? [];
+  return listed.length > 0
+    ? listed
+    : [{ name: input.value.model, baseline: input.baseline }];
+}
+
+/**
+ * The same input as asked about one of the selected models: a rule reading the
+ * model name or its baseline then answers for that model rather than for the
+ * primary. Every other field is shared, so a rule about anything else gives the
+ * same answer whichever selection it is handed.
+ */
+function inputForSelection(
+  input: RequestLintInput,
+  selection: LintModelSelection,
+): RequestLintInput {
+  return {
+    ...input,
+    baseline: selection.baseline,
+    value: { ...input.value, model: selection.name },
+  };
+}
+
 /** The rule `id` names, for a caller that wants to word one of them itself. */
 export function featureCompatRule(id: FeatureCompatRuleId): FeatureCompatRule {
   const rule = FEATURE_COMPAT_RULES.find((entry) => entry.id === id);
@@ -293,12 +341,21 @@ export function featureCompatRule(id: FeatureCompatRuleId): FeatureCompatRule {
   return rule;
 }
 
-/** The compat rules the request currently violates, in table order. */
+/**
+ * The compat rules the request currently violates, in table order. With several
+ * models named the request only has to be servable by one of them, so a rule is
+ * violated when no selected model satisfies it.
+ */
 export function violatedCompatRules(
   input: RequestLintInput,
 ): readonly FeatureCompatRule[] {
+  const selections = lintModelSelections(input);
   return FEATURE_COMPAT_RULES.filter(
-    (rule) => rule.applies(input) && !rule.satisfied(input),
+    (rule) =>
+      rule.applies(input) &&
+      !selections.some((selection) =>
+        rule.satisfied(inputForSelection(input, selection)),
+      ),
   );
 }
 
@@ -384,6 +441,37 @@ export function loraBaselineWarning(
       count: mismatched.length,
       extra,
     },
+  };
+}
+
+/**
+ * A note that the selected models were trained differently, so the advice the
+ * panel is showing beside the size and sampling controls follows the first of
+ * them. Every recommendation the model reference carries is one model's, and
+ * showing two models' figures at once under one control would contradict
+ * itself; naming the model the figures belong to is what makes them readable.
+ *
+ * Silent while the models agree, and while fewer than two of them resolve to a
+ * baseline at all: an unknown baseline is not a disagreement.
+ */
+export function mixedBaselineWarning(
+  input: RequestLintInput,
+): RequestWarning | null {
+  const selections = lintModelSelections(input);
+  const baselines = new Set(
+    selections
+      .map((selection) => selection.baseline)
+      .filter((baseline): baseline is string => baseline !== null),
+  );
+  if (baselines.size < 2) {
+    return null;
+  }
+  return {
+    id: 'models_mixed',
+    section: 'model',
+    anchor: 'model',
+    key: 'generate.lint.models_mixed',
+    params: { model: selections[0].name },
   };
 }
 
@@ -534,7 +622,14 @@ export function evaluateRequestLint(
 
   push(loraLimitWarning(value));
   push(tiLimitWarning(value));
-  push(loraBaselineWarning(value, baseline));
+  // A LoRA that suits any one of the selected models is not a mismatch: that
+  // model can serve the request. The line shown is the primary's, which is the
+  // model the rest of the panel's advice speaks for.
+  const loraLines = lintModelSelections(input).map((selection) =>
+    loraBaselineWarning(value, selection.baseline),
+  );
+  push(loraLines.every((line) => line !== null) ? loraLines[0] : null);
+  push(mixedBaselineWarning(input));
   push(namedWorkerWarning(input));
 
   for (const rule of violatedCompatRules(input)) {
@@ -690,7 +785,7 @@ export function rejectionWatchValue(
     case 'generate':
       return `${value.n}|${value.prompt}`;
     case 'model':
-      return value.model;
+      return [value.model, ...value.extraModels].join('|');
     case 'loras':
       return [
         value.loras.length,

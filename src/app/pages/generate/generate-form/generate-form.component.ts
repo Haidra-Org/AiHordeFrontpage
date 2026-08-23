@@ -66,6 +66,7 @@ import {
   MAX_SEED_VARIATION,
   MAX_STEPS,
   MAX_WEBHOOK_LENGTH,
+  MAX_REQUEST_MODELS,
   MAX_WORKERS,
   MIN_BATCH,
   MIN_CFG_SCALE,
@@ -103,8 +104,10 @@ import {
   isValidWebhook,
   LEGACY_SCHEDULERS,
   nativeSquareFor,
+  normalizeExtraModels,
   normalizeWorkers,
   rangeFillPercent,
+  requestModelNames,
   resetFormValue,
   samplerRequirementHint,
   scheduleAdvisory,
@@ -316,6 +319,7 @@ export const FIELD_LABEL_KEY: Readonly<Record<LedgerField, string>> = {
   negativePrompt: 'generate.form.ledger_negativePrompt',
   n: 'generate.form.ledger_n',
   model: 'generate.form.model_label',
+  extraModels: 'generate.form.ledger_extraModels',
   sampler_name: 'generate.form.ledger_sampler_name',
   steps: 'generate.form.ledger_steps',
   cfg_scale: 'generate.form.ledger_cfg_scale',
@@ -907,9 +911,10 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly workerOptions = computed<readonly WorkerPickOption[]>(() => {
     const listed = new Set(this.value()?.workers ?? []);
+    const value = this.value();
     return pickableWorkers(
       this.activeWorkers(),
-      this.value()?.model.trim() ?? '',
+      value ? requestModelNames(value.model, value.extraModels) : [],
     ).filter((option) => !listed.has(option.id));
   });
 
@@ -1020,6 +1025,76 @@ export class GenerateFormComponent implements OnInit {
       'linear-gradient(135deg,#fbcfe8,#f0abfc)',
     ];
     return grads[index % grads.length];
+  }
+
+  /** How many models one request may name, counting the primary. */
+  public readonly maxModels = MAX_REQUEST_MODELS;
+
+  /**
+   * The picker for a further model. Held here rather than in the form group:
+   * the draft is not a setting, and nothing is added to the request until the
+   * reader confirms it.
+   */
+  public readonly extraModelDraft = new FormControl<string>('', {
+    nonNullable: true,
+  });
+
+  /** Whether the picker for a further model is showing. */
+  public readonly extraModelOpen = signal(false);
+
+  /** The further models the request would also accept, beside the primary. */
+  public extraModelList(): readonly string[] {
+    return this.form().controls.extraModels.value;
+  }
+
+  /** Whether there is room for another model, and a primary to sit beside. */
+  public canOfferModel(): boolean {
+    return (
+      this.form().controls.model.value.trim() !== '' &&
+      this.extraModelList().length + 1 < MAX_REQUEST_MODELS
+    );
+  }
+
+  /** Show the picker for a further model, ready to be typed into. */
+  public openExtraModel(): void {
+    this.extraModelDraft.setValue('');
+    this.extraModelOpen.set(true);
+  }
+
+  public canAddExtraModel(): boolean {
+    const draft = this.extraModelDraft.value.trim();
+    return (
+      draft !== '' &&
+      draft !== this.form().controls.model.value.trim() &&
+      !this.extraModelList().includes(draft)
+    );
+  }
+
+  /**
+   * Put the drafted model on the list. `normalizeExtraModels` is what the
+   * request builder applies too, so a duplicate or over-cap entry is dropped
+   * here rather than silently disappearing at submit time.
+   */
+  public addExtraModel(): void {
+    if (!this.canAddExtraModel()) {
+      return;
+    }
+    const controls = this.form().controls;
+    controls.extraModels.setValue(
+      normalizeExtraModels(controls.model.value, [
+        ...controls.extraModels.value,
+        this.extraModelDraft.value,
+      ]),
+    );
+    controls.extraModels.markAsDirty();
+    this.extraModelDraft.setValue('');
+    this.extraModelOpen.set(false);
+  }
+
+  public removeExtraModel(index: number): void {
+    const control = this.form().controls.extraModels;
+    control.setValue(control.value.filter((_, position) => position !== index));
+    control.markAsDirty();
   }
 
   /** Worker count for the selected model, or null when "any model". */

@@ -280,6 +280,14 @@ export const DEFAULT_EXTRA_SOURCE_STRENGTH = 1;
 /** The horde services at most this many named workers per request. */
 export const MAX_WORKERS = 5;
 
+/**
+ * How many models one request may name. The horde's own bound on `models` is
+ * not published, so this is the studio's: past a handful the request stops
+ * being "any of these similar models" and the reader can no longer tell which
+ * one drew the picture.
+ */
+export const MAX_REQUEST_MODELS = 5;
+
 /** Schema bounds on the webhook URL the horde POSTs each generation to. */
 export const MIN_WEBHOOK_LENGTH = 10;
 export const MAX_WEBHOOK_LENGTH = 1024;
@@ -1062,6 +1070,15 @@ export interface GenerateFormValue {
   n: number;
   /** A single model name, or an empty string for "any model". */
   model: string;
+  /**
+   * Further model names the request would also accept, beside
+   * {@link GenerateFormValue.model}. The horde reads `models` as "any of these
+   * may serve it", so these widen who can take the job without changing which
+   * model the panel's own advice speaks for: every hint, every recommendation
+   * and every style still follows the primary above. Capped at
+   * {@link MAX_REQUEST_MODELS} counting the primary.
+   */
+  extraModels: string[];
   sampler_name: ImageSamplerName;
   steps: number;
   cfg_scale: number;
@@ -1168,6 +1185,7 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   negativePrompt: '',
   n: 1,
   model: '',
+  extraModels: [],
   sampler_name: 'k_euler_a',
   steps: 25,
   cfg_scale: 7.5,
@@ -1237,6 +1255,41 @@ export function normalizeWorkers(raw: readonly string[]): string[] {
     }
   }
   return [...seen];
+}
+
+/**
+ * Every model name one request would accept, primary first: trimmed,
+ * de-duplicated, blanks dropped, capped at {@link MAX_REQUEST_MODELS}. An empty
+ * result means "any model", which is what an unpicked primary has always meant.
+ */
+export function requestModelNames(
+  primary: string,
+  extras: readonly string[],
+): string[] {
+  const seen = new Set<string>();
+  for (const entry of [primary, ...extras]) {
+    const name = entry.trim();
+    if (name !== '') {
+      seen.add(name);
+    }
+    if (seen.size === MAX_REQUEST_MODELS) {
+      break;
+    }
+  }
+  return [...seen];
+}
+
+/**
+ * The secondary models as the form should hold them: everything
+ * {@link requestModelNames} keeps beside `primary`. Applied when loading a
+ * persisted list and when reading a past request back into the form.
+ */
+export function normalizeExtraModels(
+  primary: string,
+  extras: readonly string[],
+): string[] {
+  const names = requestModelNames(primary, extras);
+  return primary.trim() === '' ? names : names.slice(1);
 }
 
 /**
@@ -1427,6 +1480,15 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
+    if (key === 'extraModels') {
+      if (Array.isArray(value)) {
+        merged.extraModels = normalizeExtraModels(
+          merged.model,
+          value.filter((item): item is string => typeof item === 'string'),
+        );
+      }
+      continue;
+    }
     if (key === 'webhook') {
       if (typeof value === 'string') {
         merged.webhook = value.slice(0, MAX_WEBHOOK_LENGTH);
@@ -1481,6 +1543,7 @@ export function createGenerateForm(
     negativePrompt: control(value.negativePrompt),
     n: bounded(value.n, MIN_BATCH, MAX_API_BATCH),
     model: control(value.model),
+    extraModels: control(value.extraModels),
     sampler_name: control(value.sampler_name),
     steps: bounded(value.steps, MIN_STEPS, MAX_STEPS),
     cfg_scale: bounded(value.cfg_scale, MIN_CFG_SCALE, MAX_CFG_SCALE),
@@ -1940,9 +2003,11 @@ export function buildImageRequest(
     request.worker_blacklist = value.workerBlacklist;
   }
 
-  const model = value.model.trim();
-  if (model) {
-    request.models = [model];
+  // The horde reads `models` as "any of these may serve it", so the primary
+  // model and every extra ride together, primary first.
+  const models = requestModelNames(value.model, value.extraModels);
+  if (models.length > 0) {
+    request.models = models;
   }
   return applyModernSamplerSettings(request, value, options);
 }
@@ -1967,7 +2032,10 @@ export function workerRequirementForRequest(
   const controlType =
     processing === 'img2img' ? params.control_type : undefined;
   return {
-    model: request.models?.[0]?.trim() ?? '',
+    models:
+      request.models
+        ?.map((name) => name.trim())
+        .filter((name) => name !== '') ?? [],
     width: params.width ?? DEFAULT_GENERATE_FORM_VALUE.width,
     height: params.height ?? DEFAULT_GENERATE_FORM_VALUE.height,
     nsfw: request.nsfw === true,
@@ -2045,6 +2113,9 @@ export function buildStyledImageRequest(
 
   request.params = params;
   if (pinned('model') && forced.model !== undefined) {
+    // A style that pins a model replaces the whole list: it is naming the model
+    // its settings were written for, so widening the routing past it would send
+    // the style's numbers to a model they were never meant for.
     request.models = [forced.model];
   }
   // A style names its schedule as the legacy boolean, so the modern pass runs
@@ -2119,7 +2190,14 @@ export function requestToFormValue(
   result.styleName = '';
 
   if (request.models && request.models.length > 0) {
+    // The horde's list is unordered as far as routing goes, but the first name
+    // is the one the panel's advice will speak for, which is what the form's
+    // own primary means.
     result.model = request.models[0];
+    result.extraModels = normalizeExtraModels(
+      result.model,
+      request.models.slice(1),
+    );
   }
   if (params.sampler_name) result.sampler_name = params.sampler_name;
   if (typeof params.steps === 'number') result.steps = params.steps;

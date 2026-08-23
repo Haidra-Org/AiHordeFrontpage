@@ -527,7 +527,7 @@ describe('namedWorkerWarning', () => {
     overrides: Partial<WorkerRequirement> = {},
   ): WorkerRequirement {
     return {
-      model: '',
+      models: [],
       width: 512,
       height: 512,
       nsfw: false,
@@ -557,7 +557,7 @@ describe('namedWorkerWarning', () => {
     expect(
       namedWorkerWarning(
         lintInput({
-          requirement: pinned({ workerBlacklist: true, model: 'other' }),
+          requirement: pinned({ workerBlacklist: true, models: ['other'] }),
           workers: [poolWorker()],
         }),
       ),
@@ -576,7 +576,7 @@ describe('namedWorkerWarning', () => {
     expect(
       namedWorkerWarning(
         lintInput({
-          requirement: pinned({ model: 'stable_diffusion' }),
+          requirement: pinned({ models: ['stable_diffusion'] }),
           workers: [poolWorker()],
         }),
       ),
@@ -607,7 +607,7 @@ describe('namedWorkerWarning', () => {
       string,
     ][] = [
       [{}, { online: false }, 'generate.lint.worker_available'],
-      [{ model: 'other_model' }, {}, 'generate.lint.worker_model'],
+      [{ models: ['other_model'] }, {}, 'generate.lint.worker_model'],
       [{ nsfw: true }, { nsfw: false }, 'generate.lint.worker_nsfw'],
       [
         { needsImg2Img: true },
@@ -682,7 +682,7 @@ describe('namedWorkerWarning', () => {
     const warning = namedWorkerWarning(
       lintInput({
         requirement: pinned({
-          model: 'stable_diffusion',
+          models: ['stable_diffusion'],
           workers: ['worker-1', 'worker-2'],
         }),
         workers: [
@@ -905,6 +905,185 @@ describe('LoRA and embedding warnings', () => {
 
     expect(rejectionWatchValue('loras', before)).not.toBe(
       rejectionWatchValue('loras', after),
+    );
+  });
+});
+
+describe('a request naming several models', () => {
+  const lora = (
+    name: string,
+    extra: Partial<LoraSelection> = {},
+  ): LoraSelection => ({ name, model: 1, clip: 1, ...extra });
+
+  const ids = (input: RequestLintInput): string[] =>
+    evaluateRequestLint(input).map((warning) => warning.id);
+
+  const painting = (
+    models: readonly { name: string; baseline: string | null }[],
+  ): RequestLintInput =>
+    lintInput({
+      value: {
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        sourceMode: 'inpainting',
+        model: models[0].name,
+        extraModels: models.slice(1).map((entry) => entry.name),
+      },
+      baseline: models[0].baseline,
+      selectedModels: models,
+      hasSourceImage: true,
+    });
+
+  it('lets one model that can serve the request answer for all of them', () => {
+    expect(
+      violated(
+        painting([
+          { name: 'DreamShaper XL', baseline: 'stable_diffusion_xl' },
+          { name: 'Deliberate Inpainting', baseline: 'stable_diffusion_1' },
+        ]),
+      ),
+    ).not.toContain('inpainting_model');
+  });
+
+  it('warns when none of them can', () => {
+    expect(
+      violated(
+        painting([
+          { name: 'DreamShaper XL', baseline: 'stable_diffusion_xl' },
+          { name: 'Anything Diffusion', baseline: 'stable_diffusion_1' },
+        ]),
+      ),
+    ).toContain('inpainting_model');
+  });
+
+  it('judges a baseline rule against the whole set', () => {
+    const transparent = (
+      models: readonly { name: string; baseline: string | null }[],
+    ): RequestLintInput =>
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          transparent: true,
+          model: models[0].name,
+          extraModels: models.slice(1).map((entry) => entry.name),
+        },
+        baseline: models[0].baseline,
+        selectedModels: models,
+      });
+
+    expect(
+      violated(
+        transparent([
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: 'stable_diffusion_xl' },
+        ]),
+      ),
+    ).toEqual([]);
+    expect(
+      violated(
+        transparent([
+          { name: 'a', baseline: 'flux_1' },
+          { name: 'b', baseline: 'stable_cascade' },
+        ]),
+      ),
+    ).toContain('transparent_baseline');
+  });
+
+  it('keeps a LoRA that suits any one of the selected models', () => {
+    const withModels = (
+      models: readonly { name: string; baseline: string | null }[],
+    ): RequestLintInput =>
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          loras: [lora('1', { baseModel: 'Pony' })],
+          model: models[0].name,
+          extraModels: models.slice(1).map((entry) => entry.name),
+        },
+        baseline: models[0].baseline,
+        selectedModels: models,
+      });
+
+    expect(
+      ids(
+        withModels([
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: 'stable_diffusion_xl' },
+        ]),
+      ),
+    ).not.toContain('lora_baseline');
+    expect(
+      ids(
+        withModels([
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: 'stable_diffusion_2' },
+        ]),
+      ),
+    ).toContain('lora_baseline');
+  });
+
+  it('says which model the panel is advising for when they differ', () => {
+    const warning = evaluateRequestLint(
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          model: 'a',
+          extraModels: ['b'],
+        },
+        baseline: 'stable_diffusion_1',
+        selectedModels: [
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: 'stable_diffusion_xl' },
+        ],
+      }),
+    ).find((entry) => entry.id === 'models_mixed');
+
+    expect(warning).toMatchObject({
+      anchor: 'model',
+      key: 'generate.lint.models_mixed',
+      params: { model: 'a' },
+    });
+  });
+
+  it('says nothing about models that agree, or that nothing is known about', () => {
+    const selections = (
+      models: readonly { name: string; baseline: string | null }[],
+    ): RequestLintInput =>
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          model: models[0].name,
+          extraModels: models.slice(1).map((entry) => entry.name),
+        },
+        baseline: models[0].baseline,
+        selectedModels: models,
+      });
+
+    expect(
+      ids(
+        selections([
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: 'stable_diffusion_1' },
+        ]),
+      ),
+    ).not.toContain('models_mixed');
+    expect(
+      ids(
+        selections([
+          { name: 'a', baseline: 'stable_diffusion_1' },
+          { name: 'b', baseline: null },
+        ]),
+      ),
+    ).not.toContain('models_mixed');
+  });
+
+  it('clears a model rejection once an extra model changes', () => {
+    const before = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      model: 'a',
+      extraModels: ['b'],
+    };
+    expect(rejectionWatchValue('model', before)).not.toBe(
+      rejectionWatchValue('model', { ...before, extraModels: ['c'] }),
     );
   });
 });

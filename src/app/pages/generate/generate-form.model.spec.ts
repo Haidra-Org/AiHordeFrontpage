@@ -32,8 +32,10 @@ import {
   karrasRequirementHint,
   nativeSizeHint,
   nativeSquareFor,
+  MAX_REQUEST_MODELS,
   normalizeWorkers,
   promptHistoryFromJobs,
+  resetFormValue,
   requestToFormValue,
   cfgPlusPlusHint,
   samplerRequirementHint,
@@ -1780,7 +1782,7 @@ describe('workerRequirementForRequest', () => {
         params: { width: 512, height: 512 },
       }),
     ).toEqual({
-      model: '',
+      models: [],
       width: 512,
       height: 512,
       nsfw: false,
@@ -1794,14 +1796,14 @@ describe('workerRequirementForRequest', () => {
     });
   });
 
-  it('reads the model, the size and the adult mark off the request', () => {
+  it('reads the models, the size and the adult mark off the request', () => {
     const requirement = workerRequirementForRequest({
       prompt: 'a cat',
-      models: [' Deliberate '],
+      models: [' Deliberate ', 'Anything Diffusion'],
       nsfw: true,
       params: { width: 1024, height: 768 },
     });
-    expect(requirement.model).toBe('Deliberate');
+    expect(requirement.models).toEqual(['Deliberate', 'Anything Diffusion']);
     expect(requirement.width).toBe(1024);
     expect(requirement.height).toBe(768);
     expect(requirement.nsfw).toBe(true);
@@ -1952,5 +1954,87 @@ describe('changedFields', () => {
         steps: 40,
       }),
     ).toEqual(['prompt', 'steps', 'tiling']);
+  });
+});
+
+describe('a request naming several models', () => {
+  it('sends the primary first and every extra after it', () => {
+    const request = buildImageRequest(
+      value({
+        prompt: 'a fox',
+        model: 'Deliberate',
+        extraModels: ['Anything Diffusion', 'Dreamshaper'],
+      }),
+    );
+    expect(request.models).toEqual([
+      'Deliberate',
+      'Anything Diffusion',
+      'Dreamshaper',
+    ]);
+  });
+
+  it('drops blanks, repeats and anything past the cap', () => {
+    const extras = ['a', ' a ', '', 'b', 'c', 'd', 'e', 'f'];
+    const request = buildImageRequest(
+      value({ prompt: 'a fox', model: ' Deliberate ', extraModels: extras }),
+    );
+    expect(request.models).toEqual(['Deliberate', 'a', 'b', 'c', 'd']);
+    expect(request.models?.length).toBe(MAX_REQUEST_MODELS);
+  });
+
+  it('sends nothing when no model is picked at all', () => {
+    expect(
+      buildImageRequest(value({ prompt: 'a fox' })).models,
+    ).toBeUndefined();
+  });
+
+  it('asks a worker for any one of them', () => {
+    const requirement = workerRequirementForRequest(
+      buildImageRequest(
+        value({ prompt: 'a fox', model: 'a', extraModels: ['b'] }),
+      ),
+    );
+    expect(requirement.models).toEqual(['a', 'b']);
+  });
+
+  it('reads back with the first model primary and the rest beside it', () => {
+    const built = buildImageRequest(
+      value({ prompt: 'a fox', model: 'a', extraModels: ['b', 'c'] }),
+    );
+    const restored = requestToFormValue(built);
+    expect(restored.model).toBe('a');
+    expect(restored.extraModels).toEqual(['b', 'c']);
+    expect(buildImageRequest(restored).models).toEqual(built.models);
+  });
+
+  it('does not read the primary back as an extra of itself', () => {
+    const restored = requestToFormValue({
+      prompt: 'a fox',
+      models: ['a', 'a', 'b'],
+    });
+    expect(restored.model).toBe('a');
+    expect(restored.extraModels).toEqual(['b']);
+  });
+
+  it('is listed in the ledger and cleared by a reset', () => {
+    const picked = value({ model: 'a', extraModels: ['b'] });
+    expect(changedFields(picked)).toEqual(['model', 'extraModels']);
+    expect(resetFormValue(picked).extraModels).toEqual([]);
+  });
+
+  it('drops a persisted list that repeats the primary or overruns the cap', () => {
+    const restored = coerceFormValue({
+      model: 'a',
+      extraModels: ['a', 'b', 'c', 'd', 'e', 'f', 7],
+    });
+    expect(restored.extraModels).toEqual(['b', 'c', 'd', 'e']);
+  });
+
+  it('narrows to the model a style pins', () => {
+    const request = buildStyledImageRequest(
+      value({ prompt: 'a fox', model: 'a', extraModels: ['b'] }),
+      { prompt: 'a fox', forcedParams: { model: 'styled' } },
+    );
+    expect(request.models).toEqual(['styled']);
   });
 });

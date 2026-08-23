@@ -42,7 +42,7 @@ function requirement(
   overrides: Partial<WorkerRequirement> = {},
 ): WorkerRequirement {
   return {
-    model: '',
+    models: [],
     width: 512,
     height: 512,
     nsfw: false,
@@ -117,7 +117,7 @@ describe('evaluateWorkerFeasibility', () => {
   it('an empty model asks nothing of the worker', () => {
     const result = evaluateWorkerFeasibility(
       [worker({ models: [] })],
-      requirement({ model: '' }),
+      requirement({ models: [] }),
     );
     expect(result?.eligible).toBe(1);
   });
@@ -125,7 +125,7 @@ describe('evaluateWorkerFeasibility', () => {
   it('reports the model when nobody carries it', () => {
     const result = evaluateWorkerFeasibility(
       [worker({ id: 'a' }), worker({ id: 'b' })],
-      requirement({ model: 'Some Other Model' }),
+      requirement({ models: ['Some Other Model'] }),
     );
     expect(result?.blockedBy).toBe('model');
     expect(result?.message).toEqual({
@@ -228,7 +228,7 @@ describe('evaluateWorkerFeasibility', () => {
     // about first, so that is what the reader is told to loosen.
     const result = evaluateWorkerFeasibility(
       [worker({ models: ['other'], max_pixels: 262_144 })],
-      requirement({ model: 'wanted', width: 1024, height: 1024 }),
+      requirement({ models: ['wanted'], width: 1024, height: 1024 }),
     );
     expect(result?.blockedBy).toBe('model');
   });
@@ -249,7 +249,7 @@ describe('evaluateWorkerFeasibility', () => {
 
 describe('pickableWorkers', () => {
   it('offers nothing while the worker list is unknown', () => {
-    expect(pickableWorkers(null, '')).toEqual([]);
+    expect(pickableWorkers(null, [])).toEqual([]);
   });
 
   it('leaves out workers that could not pick up a job', () => {
@@ -259,7 +259,7 @@ describe('pickableWorkers', () => {
         worker({ id: 'b', name: 'Down', online: false }),
         worker({ id: 'c', name: 'Resting', maintenance_mode: true }),
       ],
-      '',
+      [],
     );
     expect(options.map((option) => option.id)).toEqual(['a']);
   });
@@ -271,7 +271,7 @@ describe('pickableWorkers', () => {
         worker({ id: 'b', name: 'Marigold', models: ['other'] }),
         worker({ id: 'c', name: 'Sunflower', models: ['wanted'] }),
       ],
-      'wanted',
+      ['wanted'],
     );
     expect(options.map((option) => option.name)).toEqual([
       'Sunflower',
@@ -288,7 +288,7 @@ describe('pickableWorkers', () => {
   it('carries the facts a worker is chosen by', () => {
     const [option] = pickableWorkers(
       [worker({ models: ['a', 'b'], max_pixels: 262_144, img2img: false })],
-      '',
+      [],
     );
     expect(option).toEqual({
       id: 'id-1',
@@ -311,7 +311,7 @@ describe('workerShortfall', () => {
     expect(
       workerShortfall(
         worker({ models: ['other'], max_pixels: 262_144 }),
-        requirement({ model: 'wanted', width: 1024, height: 1024 }),
+        requirement({ models: ['wanted'], width: 1024, height: 1024 }),
       ),
     ).toBe('model');
     expect(
@@ -385,5 +385,56 @@ describe('modelFactsFrom', () => {
     expect(modelFactsFrom([worker({ models: ['m'] })].slice(0, 0)).size).toBe(
       0,
     );
+  });
+});
+
+describe('a request naming several models', () => {
+  it('keeps a worker carrying any one of them', () => {
+    const result = evaluateWorkerFeasibility(
+      [
+        worker({ id: 'a', models: ['wanted'] }),
+        worker({ id: 'b', models: ['also wanted'] }),
+        worker({ id: 'c', models: ['neither'] }),
+      ],
+      requirement({ models: ['wanted', 'also wanted'] }),
+    );
+    expect(result?.eligible).toBe(2);
+  });
+
+  it('empties the pool only when nobody carries any of them', () => {
+    const result = evaluateWorkerFeasibility(
+      [worker({ models: ['neither'] })],
+      requirement({ models: ['wanted', 'also wanted'] }),
+    );
+    expect(result?.blockedBy).toBe('model');
+  });
+
+  it('asks the same of a worker the request is pinned to', () => {
+    expect(
+      workerShortfall(
+        worker({ models: ['also wanted'] }),
+        requirement({ models: ['wanted', 'also wanted'] }),
+      ),
+    ).toBeNull();
+    expect(
+      workerShortfall(
+        worker({ models: ['neither'] }),
+        requirement({ models: ['wanted', 'also wanted'] }),
+      ),
+    ).toBe('model');
+  });
+
+  it('offers the workers carrying any of them first', () => {
+    const options = pickableWorkers(
+      [
+        worker({ id: 'a', name: 'Zephyr', models: ['other'] }),
+        worker({ id: 'b', name: 'Marigold', models: ['also wanted'] }),
+      ],
+      ['wanted', 'also wanted'],
+    );
+    expect(options.map((option) => option.name)).toEqual([
+      'Marigold',
+      'Zephyr',
+    ]);
   });
 });

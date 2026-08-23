@@ -633,6 +633,69 @@
                 }
               </p>
             }
+            <!-- Further models the request would also accept. The horde sends
+                 the job to whichever of them a worker is carrying, so this is a
+                 way of asking for any of several similar models without caring
+                 which one answers. -->
+            @for (name of extraModelList(); track name; let i = $index) {
+              <div class="gs-model-row mt-1.5">
+                <span class="gs-model-name">{{ name }}</span>
+                <button
+                  type="button"
+                  class="gs-worker-remove"
+                  [attr.aria-label]="
+                    'generate.form.model_also_remove' | transloco: { name }
+                  "
+                  (click)="removeExtraModel(i)"
+                >
+                  <app-icon name="trash-modern" class="gs-ico-sm" />
+                </button>
+              </div>
+            }
+            @if (extraModelList().length > 0) {
+              <p class="gs-sublabel mt-1">
+                {{ "generate.form.model_also_hint" | transloco }}
+              </p>
+            }
+            @if (canOfferModel()) {
+              @if (extraModelOpen()) {
+                <div class="flex gap-1.5 mt-1.5">
+                  <app-model-autocomplete
+                    class="grow"
+                    [formControl]="extraModelDraft"
+                    inputId="generate-model-also"
+                    [models]="models()"
+                    [modelFacts]="modelFacts()"
+                    [allowMultiple]="false"
+                    placeholderKey="generate.form.model_also_placeholder"
+                    listAriaLabelKey="generate.form.model_also_list_label"
+                    toggleAriaLabelKey="generate.form.model_toggle_label"
+                    hiddenCountKey="generate.form.model_hidden_count"
+                    emptyKey="generate.form.model_empty"
+                  />
+                  <button
+                    type="button"
+                    class="gs-mini-btn"
+                    [disabled]="!canAddExtraModel()"
+                    [attr.aria-label]="
+                      'generate.form.model_also_add' | transloco
+                    "
+                    [title]="'generate.form.model_also_add' | transloco"
+                    (click)="addExtraModel()"
+                  >
+                    <span aria-hidden="true">&plus;</span>
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  class="gs-textlink mt-1.5"
+                  (click)="openExtraModel()"
+                >
+                  {{ "generate.form.model_also" | transloco }}
+                </button>
+              }
+            }
             <!-- The model's own recommendations, taken in one press. Absent
                  where the model names none, and once the request already
                  matches: an offer that would change nothing is not an offer. -->
