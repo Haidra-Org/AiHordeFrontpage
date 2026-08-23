@@ -5,6 +5,7 @@ import {
   RequestLintInput,
   evaluateRequestLint,
   featureCompatRule,
+  namedWorkerWarning,
   rejectionField,
   rejectionWatchValue,
   violatedCompatRules,
@@ -13,6 +14,8 @@ import {
 } from './request-lint';
 import { DEFAULT_GENERATE_FORM_VALUE } from './generate-form.model';
 import type { LoraSelection } from '../../types/civitai-asset';
+import type { HordeWorker } from '../../types/horde-worker';
+import type { WorkerRequirement } from '../../services/worker-pool.service';
 import { coerceSamplerConstraints } from '../../types/sampler-constraints';
 import live from '../../testing/fixtures/sampler-constraints.stub.json';
 
@@ -486,6 +489,220 @@ describe('evaluateRequestLint', () => {
     ]);
     expect(warningsInSection(warnings, 'workflows').map((w) => w.key)).toEqual([
       'generate.form.qr_unsupported',
+    ]);
+  });
+});
+
+describe('namedWorkerWarning', () => {
+  function poolWorker(overrides: Partial<HordeWorker> = {}): HordeWorker {
+    return {
+      type: 'image',
+      name: 'Sunflower',
+      id: 'worker-1',
+      online: true,
+      requests_fulfilled: 0,
+      kudos_rewards: 0,
+      performance: '1 megapixelsteps per second',
+      threads: 1,
+      uptime: 0,
+      maintenance_mode: false,
+      paused: false,
+      nsfw: true,
+      trusted: true,
+      flagged: false,
+      suspicious: 0,
+      uncompleted_jobs: 0,
+      models: ['stable_diffusion'],
+      bridge_agent: 'test',
+      max_pixels: 1_048_576,
+      img2img: true,
+      painting: true,
+      controlnet: true,
+      extended_controlnet: true,
+      ...overrides,
+    };
+  }
+
+  function pinned(
+    overrides: Partial<WorkerRequirement> = {},
+  ): WorkerRequirement {
+    return {
+      model: '',
+      width: 512,
+      height: 512,
+      nsfw: false,
+      needsImg2Img: false,
+      needsPainting: false,
+      needsControlNet: false,
+      needsExtendedControlNet: false,
+      trustedOnly: false,
+      workers: ['worker-1'],
+      workerBlacklist: false,
+      ...overrides,
+    };
+  }
+
+  it('says nothing while the worker list or the request is unknown', () => {
+    expect(
+      namedWorkerWarning(lintInput({ requirement: pinned(), workers: null })),
+    ).toBeNull();
+    expect(
+      namedWorkerWarning(
+        lintInput({ requirement: null, workers: [poolWorker()] }),
+      ),
+    ).toBeNull();
+  });
+
+  it('says nothing about an avoid list or an empty one', () => {
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ workerBlacklist: true, model: 'other' }),
+          workers: [poolWorker()],
+        }),
+      ),
+    ).toBeNull();
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ workers: [] }),
+          workers: [poolWorker()],
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it('says nothing when the named worker can take the request', () => {
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ model: 'stable_diffusion' }),
+          workers: [poolWorker()],
+        }),
+      ),
+    ).toBeNull();
+  });
+
+  it('names an ID the horde is not listing', () => {
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ workers: ['typo'] }),
+          workers: [poolWorker()],
+        }),
+      ),
+    ).toEqual({
+      id: 'named_worker',
+      section: 'horde',
+      anchor: 'workers',
+      key: 'generate.lint.worker_unknown',
+      params: { name: 'typo' },
+    });
+  });
+
+  it('names the worker and the demand it cannot meet', () => {
+    const reasons: [
+      Partial<WorkerRequirement>,
+      Partial<HordeWorker>,
+      string,
+    ][] = [
+      [{}, { online: false }, 'generate.lint.worker_available'],
+      [{ model: 'other_model' }, {}, 'generate.lint.worker_model'],
+      [{ nsfw: true }, { nsfw: false }, 'generate.lint.worker_nsfw'],
+      [
+        { needsImg2Img: true },
+        { img2img: false },
+        'generate.lint.worker_img2img',
+      ],
+      [
+        { needsPainting: true },
+        { painting: false },
+        'generate.lint.worker_painting',
+      ],
+      [
+        { needsControlNet: true },
+        { controlnet: false },
+        'generate.lint.worker_controlnet',
+      ],
+      [
+        { needsExtendedControlNet: true },
+        { extended_controlnet: false },
+        'generate.lint.worker_controlnet_extended',
+      ],
+      [
+        { trustedOnly: true },
+        { trusted: false },
+        'generate.lint.worker_trusted',
+      ],
+    ];
+    for (const [requirement, worker, key] of reasons) {
+      expect(
+        namedWorkerWarning(
+          lintInput({
+            requirement: pinned(requirement),
+            workers: [poolWorker(worker)],
+          }),
+        ),
+      ).toEqual({
+        id: 'named_worker',
+        section: 'horde',
+        anchor: 'workers',
+        key,
+        params: { name: 'Sunflower' },
+      });
+    }
+  });
+
+  it('quotes the largest size the named worker offers', () => {
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ width: 1024, height: 1536 }),
+          workers: [poolWorker()],
+        }),
+      ),
+    ).toEqual({
+      id: 'named_worker',
+      section: 'horde',
+      anchor: 'workers',
+      key: 'generate.lint.worker_size',
+      params: { name: 'Sunflower', side: 1024 },
+    });
+    expect(
+      namedWorkerWarning(
+        lintInput({
+          requirement: pinned({ width: 1024, height: 1536 }),
+          workers: [poolWorker({ max_pixels: undefined })],
+        }),
+      )?.key,
+    ).toBe('generate.lint.worker_size_unknown');
+  });
+
+  it('reports the first named worker that cannot serve, one line at a time', () => {
+    const warning = namedWorkerWarning(
+      lintInput({
+        requirement: pinned({
+          model: 'stable_diffusion',
+          workers: ['worker-1', 'worker-2'],
+        }),
+        workers: [
+          poolWorker(),
+          poolWorker({ id: 'worker-2', name: 'Moonflower', models: [] }),
+        ],
+      }),
+    );
+    expect(warning?.params).toEqual({ name: 'Moonflower' });
+  });
+
+  it('is carried by the whole request lint', () => {
+    const warnings = evaluateRequestLint(
+      lintInput({
+        requirement: pinned({ workers: ['typo'] }),
+        workers: [poolWorker()],
+      }),
+    );
+    expect(warningsAtAnchor(warnings, 'workers').map((w) => w.id)).toEqual([
+      'named_worker',
     ]);
   });
 });

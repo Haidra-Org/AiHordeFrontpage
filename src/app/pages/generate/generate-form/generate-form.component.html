@@ -1755,7 +1755,7 @@
                   }
                 </div>
 
-                <div class="flex flex-col gap-1.5">
+                <div class="flex flex-col gap-1.5" appTutAnchor="workers">
                   <div class="gs-field-head">
                     <span class="gs-slabel">
                       {{
@@ -1805,13 +1805,18 @@
 
                   @for (worker of workerList(); track worker; let i = $index) {
                     <div class="gs-worker-row">
-                      <span class="gs-worker-id">{{ worker }}</span>
+                      <span class="gs-worker-id">
+                        @if (workerName(worker); as name) {
+                          <span class="gs-worker-name">{{ name }}</span>
+                        }
+                        {{ worker }}
+                      </span>
                       <button
                         type="button"
                         class="gs-worker-remove"
                         [attr.aria-label]="
                           'generate.form.worker_remove'
-                            | transloco: { name: worker }
+                            | transloco: { name: workerName(worker) ?? worker }
                         "
                         (click)="removeWorker(i)"
                       >
@@ -1821,36 +1826,134 @@
                   }
 
                   @if (workerList().length < maxWorkers) {
-                    <div class="flex gap-1.5">
-                      <input
-                        class="gs-seed-input"
-                        type="text"
-                        autocomplete="off"
-                        spellcheck="false"
-                        [value]="workerDraft()"
-                        [attr.aria-label]="
-                          'generate.form.worker_add_label' | transloco
-                        "
-                        [placeholder]="
-                          'generate.form.worker_add_placeholder' | transloco
-                        "
-                        (input)="workerDraft.set($any($event.target).value)"
-                        (keydown.enter)="$event.preventDefault(); addWorker()"
-                      />
-                      <button
-                        type="button"
-                        class="gs-mini-btn"
-                        [disabled]="!canAddWorker()"
-                        [attr.aria-label]="
-                          'generate.form.worker_add' | transloco
-                        "
-                        [title]="'generate.form.worker_add' | transloco"
-                        (click)="addWorker()"
-                      >
-                        <span aria-hidden="true">&plus;</span>
-                      </button>
+                    <!-- Either way of naming a worker: the ID pasted from
+                         somewhere else, or one chosen off the list of who is
+                         online, which is the only way to name one without
+                         going hunting for its ID first. -->
+                    <div class="gs-worker-pick" #workerPickContainer>
+                      <div class="flex gap-1.5">
+                        <input
+                          class="gs-seed-input"
+                          type="text"
+                          autocomplete="off"
+                          spellcheck="false"
+                          [value]="workerDraft()"
+                          [attr.aria-label]="
+                            'generate.form.worker_add_label' | transloco
+                          "
+                          [placeholder]="
+                            'generate.form.worker_add_placeholder' | transloco
+                          "
+                          (input)="workerDraft.set($any($event.target).value)"
+                          (keydown.enter)="$event.preventDefault(); addWorker()"
+                        />
+                        <button
+                          #workerPickBtn
+                          type="button"
+                          class="gs-mini-btn"
+                          [attr.aria-expanded]="workerPickOpen()"
+                          aria-haspopup="listbox"
+                          [attr.aria-label]="
+                            'generate.form.worker_pick' | transloco
+                          "
+                          [title]="'generate.form.worker_pick' | transloco"
+                          (click)="toggleWorkerPick()"
+                        >
+                          <span aria-hidden="true">&#9662;</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-mini-btn"
+                          [disabled]="!canAddWorker()"
+                          [attr.aria-label]="
+                            'generate.form.worker_add' | transloco
+                          "
+                          [title]="'generate.form.worker_add' | transloco"
+                          (click)="addWorker()"
+                        >
+                          <span aria-hidden="true">&plus;</span>
+                        </button>
+                      </div>
+                      @if (workerPickOpen()) {
+                        <div
+                          class="gs-worker-pop"
+                          role="listbox"
+                          [attr.aria-label]="
+                            'generate.form.worker_pick_list' | transloco
+                          "
+                        >
+                          @for (option of workerMatches(); track option.id) {
+                            <button
+                              type="button"
+                              class="gs-worker-opt"
+                              role="option"
+                              [attr.aria-selected]="false"
+                              [attr.aria-label]="
+                                'generate.form.worker_pick_add'
+                                  | transloco: { name: option.name }
+                              "
+                              (click)="pickWorker(option)"
+                            >
+                              <span class="gs-worker-opt-name">{{
+                                option.name
+                              }}</span>
+                              <!-- What choosing this one would mean for the
+                                   request being written. Each fact is left out
+                                   where the worker does not offer it, rather
+                                   than shown as a no. -->
+                              <span class="gs-worker-opt-facts">
+                                @if (option.servesModel) {
+                                  <span class="gs-worker-opt-carries">{{
+                                    "generate.form.worker_pick_carries"
+                                      | transloco
+                                  }}</span>
+                                }
+                                <span>{{
+                                  (option.models === 1
+                                    ? "generate.form.worker_pick_models_one"
+                                    : "generate.form.worker_pick_models_other"
+                                  ) | transloco: { count: option.models }
+                                }}</span>
+                                @if (option.maxSide > 0) {
+                                  <span>{{
+                                    "generate.form.worker_pick_up_to"
+                                      | transloco: { side: option.maxSide }
+                                  }}</span>
+                                }
+                                @if (option.img2img) {
+                                  <span>{{
+                                    "generate.form.worker_pick_img2img"
+                                      | transloco
+                                  }}</span>
+                                }
+                                @if (option.nsfw) {
+                                  <span>{{
+                                    "generate.form.worker_pick_nsfw" | transloco
+                                  }}</span>
+                                }
+                              </span>
+                            </button>
+                          }
+                          @if (workerMatches().length === 0) {
+                            <p class="gs-worker-opt-empty">
+                              {{
+                                (workerOptions().length === 0
+                                  ? "generate.form.worker_pick_unknown"
+                                  : "generate.form.worker_pick_empty"
+                                ) | transloco
+                              }}
+                            </p>
+                          }
+                        </div>
+                      }
                     </div>
                   }
+                  <ng-container
+                    *ngTemplateOutlet="
+                      lintLines;
+                      context: { warnings: workerWarnings() }
+                    "
+                  />
                 </div>
 
                 <div class="gs-opt">

@@ -354,6 +354,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       sourceWidth: state.sourceWidth ?? null,
       sourceHeight: state.sourceHeight ?? null,
       contract: this.samplerContract(),
+      workers: this.workerPool.workers(),
+      requirement: this.workerRequirement(),
     });
   });
 
@@ -383,6 +385,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** What the workers carrying each model can do, for the model picker. */
   public readonly modelFacts = this.workerPool.modelFacts;
+
+  /** Every worker the horde is listing, for the routing picker. */
+  public readonly activeWorkers = this.workerPool.workers;
 
   /**
    * What the reader's kudos balance buys at the quoted price. Null for an

@@ -32,6 +32,12 @@ import {
   type RequirementHint,
 } from './generate-form.model';
 import type { SectionId } from '../../content/sections';
+import type { HordeWorker } from '../../types/horde-worker';
+import {
+  largestSquareSide,
+  workerShortfall,
+  type WorkerRequirement,
+} from '../../services/worker-pool.service';
 import {
   SAMPLER_SETTING_NAMES,
   type SamplerConstraintsDocument,
@@ -60,6 +66,7 @@ export type FieldAnchorId =
   | 'control_type'
   | 'qr'
   | 'transparent'
+  | 'workers'
   | 'generate'
   | 'advanced_sampling'
   | 'solver_type'
@@ -134,6 +141,17 @@ export interface RequestLintInput {
   sourceHeight?: number | null;
   /** The horde's sampler contract, or null while it has not loaded. */
   contract: SamplerConstraintsDocument | null;
+  /**
+   * The image workers the horde is listing, absent or null while none are
+   * known, which every rule reading them treats as "say nothing".
+   */
+  workers?: readonly HordeWorker[] | null;
+  /**
+   * What the built request asks of a worker, absent or null before one has been
+   * built. Read rather than rebuilt from {@link RequestLintInput.value} so the
+   * routing rules judge the same demands the footer's count is made from.
+   */
+  requirement?: WorkerRequirement | null;
 }
 
 /** One warning the request currently earns. */
@@ -369,6 +387,63 @@ export function loraBaselineWarning(
   };
 }
 
+/** The routing warning, worded for one named worker's own shortfall. */
+function namedWorkerLine(
+  key: string,
+  params: Record<string, string | number>,
+): RequestWarning {
+  return {
+    id: 'named_worker',
+    section: 'horde',
+    anchor: 'workers',
+    key: `generate.lint.${key}`,
+    params,
+  };
+}
+
+/**
+ * A worker the request is pinned to that cannot serve it as configured. The
+ * horde routes an allow list by worker id and simply waits when nobody on it
+ * can take the job, so without this the only symptom is a request that never
+ * starts.
+ *
+ * Only the first such worker is reported, and only in allow mode: a list of
+ * workers to avoid makes no claim that any of them can serve the request, and
+ * one line per control is what the panel draws. Clearing the named one surfaces
+ * the next.
+ *
+ * Silent wherever it cannot be sure — no worker list fetched, no request built
+ * yet — because a false warning against a working request is worse than none.
+ */
+export function namedWorkerWarning(
+  input: RequestLintInput,
+): RequestWarning | null {
+  const requirement = input.requirement ?? null;
+  const workers = input.workers ?? null;
+  if (requirement === null || workers === null || requirement.workerBlacklist) {
+    return null;
+  }
+  for (const id of requirement.workers) {
+    const worker = workers.find((candidate) => candidate.id === id);
+    if (!worker) {
+      return namedWorkerLine('worker_unknown', { name: id });
+    }
+    const shortfall = workerShortfall(worker, requirement);
+    if (shortfall === null) {
+      continue;
+    }
+    const name = worker.name;
+    if (shortfall === 'size') {
+      const side = largestSquareSide(worker.max_pixels ?? 0);
+      return side > 0
+        ? namedWorkerLine('worker_size', { name, side })
+        : namedWorkerLine('worker_size_unknown', { name });
+    }
+    return namedWorkerLine(`worker_${shortfall}`, { name });
+  }
+  return null;
+}
+
 /**
  * Turn a field's one advisory line into a warning, or null where the field has
  * no line or its line does not contradict the form. Every card's inline line
@@ -460,6 +535,7 @@ export function evaluateRequestLint(
   push(loraLimitWarning(value));
   push(tiLimitWarning(value));
   push(loraBaselineWarning(value, baseline));
+  push(namedWorkerWarning(input));
 
   for (const rule of violatedCompatRules(input)) {
     warnings.push({

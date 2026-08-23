@@ -277,6 +277,74 @@ export function modelFactsFrom(
 }
 
 /**
+ * One worker as the routing picker offers it: enough to recognise the machine
+ * by and to tell whether it can serve the request being written, without the
+ * reader having to know its id.
+ */
+export interface WorkerPickOption {
+  /** The id the horde routes by, which is what the request carries. */
+  id: string;
+  /** The name its owner gave it, which is what the reader recognises. */
+  name: string;
+  /** How many models it is carrying. */
+  models: number;
+  /** The largest square it can draw; 0 when it reports no budget. */
+  maxSide: number;
+  nsfw: boolean;
+  img2img: boolean;
+  /** Whether it is carrying `model`; true when no model is named. */
+  servesModel: boolean;
+}
+
+/**
+ * The workers a request can usefully be pinned to: the ones that could pick up
+ * a job at all, with the workers carrying `model` first so the reader meets the
+ * ones that can serve what they are asking for before the rest.
+ */
+export function pickableWorkers(
+  workers: readonly HordeWorker[] | null,
+  model: string,
+): readonly WorkerPickOption[] {
+  if (workers === null) {
+    return [];
+  }
+  return workers
+    .filter((worker) => worker.online && !worker.maintenance_mode)
+    .map((worker) => ({
+      id: worker.id,
+      name: worker.name,
+      models: worker.models?.length ?? 0,
+      maxSide: largestSquareSide(worker.max_pixels ?? 0),
+      nsfw: worker.nsfw,
+      img2img: worker.img2img === true,
+      servesModel: servesModel(worker, model),
+    }))
+    .sort((left, right) => {
+      if (left.servesModel !== right.servesModel) {
+        return left.servesModel ? -1 : 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
+}
+
+/**
+ * The first demand of the request `worker` cannot meet, or null when it could
+ * take the job. Routing is left out: this answers whether a worker the reader
+ * named can serve the request, which the naming itself never decides.
+ */
+export function workerShortfall(
+  worker: HordeWorker,
+  requirement: WorkerRequirement,
+): WorkerFilterId | null {
+  for (const filter of filtersFor(requirement)) {
+    if (filter.applies && filter.id !== 'routing' && !filter.keep(worker)) {
+      return filter.id;
+    }
+  }
+  return null;
+}
+
+/**
  * How many of `workers` could take the request, and when none can, which of the
  * request's demands is the one that ruled the last of them out.
  *

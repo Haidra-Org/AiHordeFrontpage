@@ -3,6 +3,8 @@ import {
   evaluateWorkerFeasibility,
   largestSquareSide,
   modelFactsFrom,
+  pickableWorkers,
+  workerShortfall,
   type WorkerRequirement,
 } from './worker-pool.service';
 import { HordeWorker } from '../types/horde-worker';
@@ -242,6 +244,91 @@ describe('evaluateWorkerFeasibility', () => {
     );
     expect(result?.survivors).toBe(2);
     expect(result?.message.params['count']).toBe(2);
+  });
+});
+
+describe('pickableWorkers', () => {
+  it('offers nothing while the worker list is unknown', () => {
+    expect(pickableWorkers(null, '')).toEqual([]);
+  });
+
+  it('leaves out workers that could not pick up a job', () => {
+    const options = pickableWorkers(
+      [
+        worker({ id: 'a', name: 'Up' }),
+        worker({ id: 'b', name: 'Down', online: false }),
+        worker({ id: 'c', name: 'Resting', maintenance_mode: true }),
+      ],
+      '',
+    );
+    expect(options.map((option) => option.id)).toEqual(['a']);
+  });
+
+  it('puts the workers carrying the chosen model first, then sorts by name', () => {
+    const options = pickableWorkers(
+      [
+        worker({ id: 'a', name: 'Zephyr', models: ['other'] }),
+        worker({ id: 'b', name: 'Marigold', models: ['other'] }),
+        worker({ id: 'c', name: 'Sunflower', models: ['wanted'] }),
+      ],
+      'wanted',
+    );
+    expect(options.map((option) => option.name)).toEqual([
+      'Sunflower',
+      'Marigold',
+      'Zephyr',
+    ]);
+    expect(options.map((option) => option.servesModel)).toEqual([
+      true,
+      false,
+      false,
+    ]);
+  });
+
+  it('carries the facts a worker is chosen by', () => {
+    const [option] = pickableWorkers(
+      [worker({ models: ['a', 'b'], max_pixels: 262_144, img2img: false })],
+      '',
+    );
+    expect(option).toEqual({
+      id: 'id-1',
+      name: 'Worker',
+      models: 2,
+      maxSide: 512,
+      nsfw: true,
+      img2img: false,
+      servesModel: true,
+    });
+  });
+});
+
+describe('workerShortfall', () => {
+  it('is null for a worker that could take the request', () => {
+    expect(workerShortfall(worker(), requirement())).toBeNull();
+  });
+
+  it('names the first demand the worker cannot meet', () => {
+    expect(
+      workerShortfall(
+        worker({ models: ['other'], max_pixels: 262_144 }),
+        requirement({ model: 'wanted', width: 1024, height: 1024 }),
+      ),
+    ).toBe('model');
+    expect(
+      workerShortfall(
+        worker({ img2img: false }),
+        requirement({ needsImg2Img: true }),
+      ),
+    ).toBe('img2img');
+  });
+
+  it('ignores routing, which says nothing about what a worker can do', () => {
+    expect(
+      workerShortfall(
+        worker({ id: 'a' }),
+        requirement({ workers: ['b'], workerBlacklist: false }),
+      ),
+    ).toBeNull();
   });
 });
 

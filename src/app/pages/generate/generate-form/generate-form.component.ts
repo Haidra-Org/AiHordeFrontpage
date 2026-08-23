@@ -127,10 +127,13 @@ import {
 } from '../request-lint';
 import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
-import type {
-  ModelWorkerFacts,
-  WorkerFeasibility,
+import {
+  pickableWorkers,
+  type ModelWorkerFacts,
+  type WorkerFeasibility,
+  type WorkerPickOption,
 } from '../../../services/worker-pool.service';
+import type { HordeWorker } from '../../../types/horde-worker';
 import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
@@ -475,6 +478,11 @@ export class GenerateFormComponent implements OnInit {
     string,
     ModelWorkerFacts
   > | null>(null);
+  /**
+   * Every worker the horde is listing, for the routing picker. Null while none
+   * are known, and the picker then offers nothing rather than an empty list.
+   */
+  public readonly activeWorkers = input<readonly HordeWorker[] | null>(null);
   /**
    * What the reader's kudos balance buys at the quoted price. Null for an
    * anonymous reader, who has no balance to read, and the footer then says
@@ -883,9 +891,77 @@ export class GenerateFormComponent implements OnInit {
   /** The worker ID typed into the add field, before it joins the list. */
   public readonly workerDraft = signal('');
 
+  /** Whether the list of workers to choose from is showing. */
+  public readonly workerPickOpen = signal(false);
+
+  private readonly workerPickRef = viewChild<ElementRef<HTMLElement>>(
+    'workerPickContainer',
+  );
+
+  private readonly workerPickBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('workerPickBtn');
+
+  /**
+   * The workers the request could be pinned to, best first. A worker already on
+   * the list is left out: the row for it is right above, with its own remove.
+   */
+  public readonly workerOptions = computed<readonly WorkerPickOption[]>(() => {
+    const listed = new Set(this.value()?.workers ?? []);
+    return pickableWorkers(
+      this.activeWorkers(),
+      this.value()?.model.trim() ?? '',
+    ).filter((option) => !listed.has(option.id));
+  });
+
+  /**
+   * The rows the typed text leaves standing. Both the name and the id are
+   * searched: a reader who pasted an id gets the same answer as one who
+   * remembers what the machine is called.
+   */
+  public readonly workerMatches = computed<readonly WorkerPickOption[]>(() => {
+    const search = this.workerDraft().trim().toLowerCase();
+    const options = this.workerOptions();
+    if (search === '') {
+      return options;
+    }
+    return options.filter(
+      (option) =>
+        option.name.toLowerCase().includes(search) ||
+        option.id.toLowerCase().includes(search),
+    );
+  });
+
+  public toggleWorkerPick(): void {
+    this.workerPickOpen.set(!this.workerPickOpen());
+  }
+
+  public closeWorkerPick(): void {
+    this.workerPickOpen.set(false);
+  }
+
+  /** Put a chosen worker on the list, without the reader typing its id. */
+  public pickWorker(option: WorkerPickOption): void {
+    const control = this.form().controls.workers;
+    control.setValue(normalizeWorkers([...control.value, option.id]));
+    this.workerDraft.set('');
+    this.closeWorkerPick();
+    this.workerPickBtn()?.nativeElement.focus();
+  }
+
   /** The worker IDs the request is currently pinned to. */
   public workerList(): readonly string[] {
     return this.form().controls.workers.value;
+  }
+
+  /**
+   * What a listed worker is called, or null when the horde is not listing it.
+   * A row shows the name over the id where there is one: the id is what the
+   * request carries, the name is what the reader recognises.
+   */
+  public workerName(id: string): string | null {
+    return (
+      this.activeWorkers()?.find((worker) => worker.id === id)?.name ?? null
+    );
   }
 
   public canAddWorker(): boolean {
@@ -2009,6 +2085,12 @@ export class GenerateFormComponent implements OnInit {
         this.closeFit();
       }
     }
+    if (this.workerPickOpen()) {
+      const anchor = this.workerPickRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeWorkerPick();
+      }
+    }
     if (this.balanceOpen()) {
       const anchor = this.balanceRef()?.nativeElement;
       if (anchor && !anchor.contains(target)) {
@@ -2042,6 +2124,10 @@ export class GenerateFormComponent implements OnInit {
     if (this.fitOpen()) {
       this.closeFit();
       this.fitBtn()?.nativeElement.focus();
+    }
+    if (this.workerPickOpen()) {
+      this.closeWorkerPick();
+      this.workerPickBtn()?.nativeElement.focus();
     }
     if (this.balanceOpen()) {
       this.closeBalance();
@@ -2461,6 +2547,14 @@ export class GenerateFormComponent implements OnInit {
   /** As {@link transparentWarnings}, for the QR-code text field. */
   public qrWarnings(): readonly RequestWarning[] {
     return warningsAtAnchor(this.lintWarnings(), 'qr');
+  }
+
+  /**
+   * As {@link transparentWarnings}, for the worker list. Read by anchor: the
+   * horde card also owns the delivery webhook and the worker preferences.
+   */
+  public workerWarnings(): readonly RequestWarning[] {
+    return warningsAtAnchor(this.lintWarnings(), 'workers');
   }
 
   /**
