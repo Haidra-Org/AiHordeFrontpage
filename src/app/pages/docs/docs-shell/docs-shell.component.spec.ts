@@ -35,6 +35,20 @@ describe('DocsShellComponent', () => {
       ).querySelectorAll<HTMLAnchorElement>('.gs-hub-nav-link'),
     );
 
+  const areaLinks = (): HTMLAnchorElement[] =>
+    Array.from(
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLAnchorElement>('.gs-docs-area-link'),
+    );
+
+  const studioLinks = (): HTMLAnchorElement[] =>
+    Array.from(
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLAnchorElement>('.gs-docs-studio-link'),
+    );
+
   /** The phone's bottom bar of creation tools, drawn by the shell. */
   const tools = (): HTMLAnchorElement[] =>
     Array.from(
@@ -94,20 +108,8 @@ describe('DocsShellComponent', () => {
     await go('/docs');
 
     expect(links()).toHaveLength(0);
-    expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.gs-docs-crumbs'),
-    ).toBeNull();
-  });
-
-  it('names the area being read, and the way back out of it', async () => {
-    await go('/docs/image/settings');
-
-    const crumbs = (fixture.nativeElement as HTMLElement).querySelector(
-      '.gs-docs-crumbs',
-    );
-    expect(crumbs?.textContent).toContain(translations['docs.title']);
-    expect(crumbs?.textContent).toContain(translations[IMAGE.labelKey]);
-    expect(crumbs?.querySelector('a')?.getAttribute('href')).toBe('/docs');
+    expect(areaLinks()).toHaveLength(0);
+    expect(studioLinks()).toHaveLength(0);
   });
 
   it('offers one entry per page of the area, in order, each with its href', async () => {
@@ -117,6 +119,27 @@ describe('DocsShellComponent', () => {
     expect(links().map((link) => link.getAttribute('href'))).toEqual(
       IMAGE.entries.map((entry) => entry.link),
     );
+  });
+
+  it('keeps the two docs areas visible as one switcher and marks the one being read', async () => {
+    await go('/docs/alchemy/enlarge');
+
+    expect(areaLinks().map((link) => link.getAttribute('href'))).toEqual([
+      '/docs/image',
+      '/docs/alchemy',
+    ]);
+    expect(
+      areaLinks().map((link) => link.getAttribute('aria-current')),
+    ).toEqual([null, 'page']);
+  });
+
+  it('keeps direct return links into both studios in the docs chrome', async () => {
+    await go('/docs/image/guide');
+
+    expect(studioLinks().map((link) => link.getAttribute('href'))).toEqual([
+      STUDIO_IMAGE,
+      STUDIO_ALCHEMY,
+    ]);
   });
 
   it('carries the entry glyph beside a label of its own', async () => {
@@ -149,6 +172,10 @@ describe('DocsShellComponent', () => {
     await go('/docs/image');
 
     expect(translations['generate.learn.nav_label']).toBeTruthy();
+    expect(translations['docs.area_switcher_label']).toBeTruthy();
+    expect(translations['docs.studio_jump_label']).toBeTruthy();
+    expect(translations['docs.studio_jump_image']).toBeTruthy();
+    expect(translations['docs.studio_jump_alchemy']).toBeTruthy();
     for (const area of DOCS_AREAS) {
       expect(
         translations[area.labelKey],
@@ -166,6 +193,16 @@ describe('DocsShellComponent', () => {
         .querySelector('.gs-hub-nav')
         ?.getAttribute('aria-label'),
     ).toBe(translations['generate.learn.nav_label']);
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.gs-docs-areas')
+        ?.getAttribute('aria-label'),
+    ).toBe(translations['docs.area_switcher_label']);
+    expect(
+      (fixture.nativeElement as HTMLElement)
+        .querySelector('.gs-docs-studio-jumps')
+        ?.getAttribute('aria-label'),
+    ).toBe(translations['docs.studio_jump_label']);
   });
 
   it('marks the area landing page only on the landing page', async () => {
@@ -206,10 +243,9 @@ describe('DocsShellComponent', () => {
   it('switches to the alchemy area, chrome and all, on its own URLs', async () => {
     await go('/docs/alchemy/enlarge');
 
-    const crumbs = (fixture.nativeElement as HTMLElement).querySelector(
-      '.gs-docs-crumbs',
-    );
-    expect(crumbs?.textContent).toContain(translations['docs.area_alchemy']);
+    expect(
+      areaLinks().map((link) => link.getAttribute('aria-current')),
+    ).toEqual([null, 'page']);
     expect(links()).toHaveLength(ALCHEMY.entries.length);
     expect(current()).toBe(translations['alchemy.usecases.enlarge.title']);
   });
@@ -232,7 +268,7 @@ describe('DocsShellComponent', () => {
   });
 
   it('draws the bar only as the bottom bar, never as a second row of chrome', async () => {
-    // The wide screen already has crumbs and the area's own row of pages.
+    // The wide screen already has the docs bridge and the area's own row.
     await go('/docs/image');
 
     expect(

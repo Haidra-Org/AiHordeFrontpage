@@ -24,7 +24,8 @@ import {
   DOCS_IMAGE,
   DOCS_IMAGE_GUIDE,
   DOCS_IMAGE_SETTINGS,
-  DOCS_ROOT,
+  STUDIO_ALCHEMY,
+  STUDIO_IMAGE,
   docsAlchemyUseCaseLink,
   docsExampleLink,
 } from '../../../content/docs-links';
@@ -70,6 +71,15 @@ export interface DocsArea {
   /** The area's landing page, and the prefix every page of it sits under. */
   root: string;
   entries: readonly DocsNavEntry[];
+}
+
+/** One entry of the docs area switcher and studio jump row. */
+export interface DocsAreaBridgeEntry {
+  id: string;
+  labelKey: string;
+  icon: string;
+  docsLink: string;
+  studioLink: string;
 }
 
 /**
@@ -144,9 +154,8 @@ export const DOCS_AREAS: readonly DocsArea[] = [
 ];
 
 /**
- * The documentation area's shell: the name of the area being read, the way back
- * up to the documentation, and that area's own subnav above the outlet its pages
- * render in.
+ * The documentation area's shell: area and studio wayfinding above the outlet
+ * and each area's own subnav.
  *
  * A URL that names no area carries neither. `/docs` itself lands on the one area
  * there is, so this is the moment before that redirect rather than a page.
@@ -175,7 +184,17 @@ export class DocsShellComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  public readonly docsRoot = DOCS_ROOT;
+  public readonly studioImage = STUDIO_IMAGE;
+  public readonly studioAlchemy = STUDIO_ALCHEMY;
+
+  public readonly areaBridgeEntries: readonly DocsAreaBridgeEntry[] =
+    DOCS_AREAS.map((area) => ({
+      id: area.id,
+      labelKey: area.labelKey,
+      icon: area.icon,
+      docsLink: area.root,
+      studioLink: area.id === 'alchemy' ? STUDIO_ALCHEMY : STUDIO_IMAGE,
+    }));
 
   /** Whether the chrome is pinned, which is where the CSS pins it. */
   private readonly chromePinned = signal(false);
@@ -247,6 +266,10 @@ export class DocsShellComponent {
     return entry.exact
       ? path === entry.activePath
       : path === entry.activePath || path.startsWith(`${entry.activePath}/`);
+  }
+
+  public isCurrentArea(areaId: string): boolean {
+    return this.area()?.id === areaId;
   }
 
   /**

@@ -1,30 +1,60 @@
-<!-- The area being read, and the way back out of it. Both are absent on a URL
-     that names no area, which is `/docs` itself on its way to the one area
+<!-- The area being read, plus area and studio wayfinding. Both are absent on a
+     URL that names no area, which is `/docs` itself on its way to the one area
      there is. -->
 @if (area(); as current) {
-  <!-- Crumbs and tabs are one block of chrome, so on a phone they pin and
-       scroll together: pinning the tabs alone left the crumbs sliding under
-       them, which read as a broken window. While it is pinned it takes its
-       place in the sticky registry, which is where it gets its own `top` from
-       and how the page under it knows how much is standing over it. -->
+  <!-- This chrome and the page row are one block, so on a phone they pin and
+       scroll together. While pinned it takes its place in the sticky registry,
+       which is where it gets its own `top` from and how the page under it
+       knows how much is standing over it. -->
   <div class="gs-docs-chrome" [appStickyHeader]="chromeOrder()">
-    <nav
-      class="gs-docs-crumbs"
-      [attr.aria-label]="'docs.breadcrumb_label' | transloco"
-    >
-      <a class="gs-docs-crumb" [routerLink]="docsRoot">
-        {{ "docs.title" | transloco }}
-      </a>
-      <span class="gs-docs-crumb-sep" aria-hidden="true">/</span>
-      <span class="gs-docs-crumb gs-docs-crumb--here" aria-current="page">
-        {{ current.labelKey | transloco }}
-      </span>
-    </nav>
+    <div class="gs-docs-bridge" [attr.data-area]="current.id">
+      <nav
+        class="gs-docs-areas"
+        [attr.aria-label]="'docs.area_switcher_label' | transloco"
+      >
+        @for (entry of areaBridgeEntries; track entry.id) {
+          <a
+            class="gs-docs-area-link"
+            [class.gs-docs-area-link--image]="entry.id === 'image'"
+            [class.gs-docs-area-link--alchemy]="entry.id === 'alchemy'"
+            [routerLink]="entry.docsLink"
+            [attr.aria-current]="isCurrentArea(entry.id) ? 'page' : null"
+          >
+            <app-icon [name]="entry.icon" class="gs-docs-area-icon" />
+            <span>{{ entry.labelKey | transloco }}</span>
+          </a>
+        }
+      </nav>
+
+      <nav
+        class="gs-docs-studio-jumps"
+        [attr.aria-label]="'docs.studio_jump_label' | transloco"
+      >
+        <a
+          class="gs-docs-studio-link gs-docs-studio-link--image"
+          [routerLink]="studioImage"
+        >
+          <app-icon name="photo" class="gs-docs-studio-icon" />
+          <span>{{ "docs.studio_jump_image" | transloco }}</span>
+          <app-icon name="arrow-right" class="gs-docs-studio-arrow" />
+        </a>
+        <a
+          class="gs-docs-studio-link gs-docs-studio-link--alchemy"
+          [routerLink]="studioAlchemy"
+        >
+          <app-icon name="beaker" class="gs-docs-studio-icon" />
+          <span>{{ "docs.studio_jump_alchemy" | transloco }}</span>
+          <app-icon name="arrow-right" class="gs-docs-studio-arrow" />
+        </a>
+      </nav>
+    </div>
 
     <!-- One scrolling row rather than a wrapping one: an area is a short list of
        pages and it should cost one line of every page it sits on. -->
     <nav
       class="gs-hub-nav"
+      [class.gs-hub-nav--image]="current.id === 'image'"
+      [class.gs-hub-nav--alchemy]="current.id === 'alchemy'"
       [attr.aria-label]="'generate.learn.nav_label' | transloco"
     >
       @for (entry of entries(); track entry.activePath) {
@@ -51,8 +81,8 @@
 <!-- The reader arrives here from the studio's bottom bar on a phone, so the bar
      stays with them: without it, reading a page is a one-way door and the way
      back has to be hunted for. Last in the page's reading order, because it is
-     the way out rather than the way in, and only ever the bottom bar: up there
-     this area has crumbs and its own row of pages. -->
+  the way out rather than the way in, and only ever the bottom bar: up there
+  this area has its own wayfinding rows. -->
 @if (showToolTabs()) {
   <app-gs-tool-tabs [wideRow]="false" [docsCurrent]="true" />
 }

@@ -11125,34 +11125,133 @@ app-gs-compare-wipe {
   }
 }
 
-/* Where the reader is, and the way back out. One line, quiet, above the row of
-   pages: the area's own name is the page's h1 and does not need saying twice. */
-.gs-docs .gs-docs-crumbs {
+/* Desktop bridge between docs and studio: it keeps area switching and
+   "return to studio" in the same visible place, which shortens the path back
+   when a docs deep-link pulls someone out of /generate. */
+.gs-docs .gs-docs-bridge {
   display: flex;
   align-items: center;
-  gap: var(--gs-space-2);
-  padding: var(--gs-space-3) var(--gs-space-4);
-  font-size: var(--gs-text-md);
-  color: var(--gs-ink-2);
+  justify-content: space-between;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2) var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border);
-  background: var(--gs-panel);
+  background: linear-gradient(
+    90deg,
+    var(--gs-card) 0%,
+    color-mix(in srgb, var(--gs-panel) 92%, var(--gs-blue) 8%) 100%
+  );
 }
-.gs-docs .gs-docs-crumb {
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
+.gs-docs .gs-docs-areas {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-width: 0;
 }
-.gs-docs a.gs-docs-crumb:hover,
-.gs-docs a.gs-docs-crumb:focus-visible {
-  color: var(--gs-ink);
-  border-bottom-color: currentColor;
-}
-.gs-docs .gs-docs-crumb--here {
-  color: var(--gs-ink);
+.gs-docs .gs-docs-area-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-height: 36px;
+  padding: 0 var(--gs-space-3);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--gs-ink-2);
+  background: transparent;
+  font-size: var(--gs-text-sm);
   font-weight: 600;
+  text-decoration: none;
 }
-.gs-docs .gs-docs-crumb-sep {
-  color: var(--gs-label);
+.gs-docs .gs-docs-area-link:hover {
+  color: var(--gs-ink);
+  background: var(--gs-panel);
+  border-color: var(--gs-border-soft);
+  text-decoration: none;
+}
+.gs-docs .gs-docs-area-link:focus-visible,
+.gs-docs .gs-docs-studio-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+}
+.gs-docs .gs-docs-area-link[aria-current] {
+  background: var(--gs-panel);
+  border-color: var(--gs-border);
+  color: var(--gs-ink);
+}
+.gs-docs .gs-docs-area-link--image[aria-current] {
+  border-color: color-mix(in srgb, #1d4ed8 35%, var(--gs-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #1d4ed8 12%, transparent);
+}
+.gs-docs .gs-docs-area-link--alchemy[aria-current] {
+  border-color: color-mix(in srgb, #9333ea 35%, var(--gs-border));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #9333ea 12%, transparent);
+}
+.gs-docs app-icon.gs-docs-area-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  color: inherit;
+  opacity: 0.85;
+}
+.gs-docs .gs-docs-studio-jumps {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.gs-docs .gs-docs-studio-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-height: 36px;
+  padding: 0 var(--gs-space-3);
+  border-radius: 999px;
+  border: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+.gs-docs .gs-docs-studio-link:hover {
+  color: var(--gs-ink);
+  border-color: var(--gs-border-soft);
+  background: var(--gs-card);
+  text-decoration: none;
+}
+.gs-docs .gs-docs-studio-link--image:hover {
+  border-color: color-mix(in srgb, #1d4ed8 40%, var(--gs-border));
+}
+.gs-docs .gs-docs-studio-link--alchemy:hover {
+  border-color: color-mix(in srgb, #9333ea 40%, var(--gs-border));
+}
+.gs-docs app-icon.gs-docs-studio-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+.gs-docs app-icon.gs-docs-studio-arrow {
+  display: inline-flex;
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+}
+
+@media (max-width: 1023.98px) {
+  /* Phone already has the shared bottom bar under the thumb; this row is for
+     desktop wayfinding and would only crowd mobile chrome. */
+  .gs-docs .gs-docs-bridge {
+    display: none;
+  }
+}
+@media (max-width: 1299.98px) {
+  .gs-docs .gs-docs-bridge {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gs-docs .gs-docs-studio-jumps {
+    justify-content: flex-start;
+  }
 }
 
 /* One scrolling row rather than a wrapping one: the list is short and should
@@ -11227,6 +11326,16 @@ app-gs-compare-wipe {
 .gen-studio .gs-hub-nav-link[aria-current]::before {
   background: var(--gs-blue);
 }
+.gen-studio
+  .gs-hub-nav.gs-hub-nav--image
+  .gs-hub-nav-link[aria-current]::before {
+  background: #1d4ed8;
+}
+.gen-studio
+  .gs-hub-nav.gs-hub-nav--alchemy
+  .gs-hub-nav-link[aria-current]::before {
+  background: #9333ea;
+}
 .gen-studio app-icon.gs-hub-nav-mark {
   display: inline-flex;
   flex: none;
@@ -11242,6 +11351,18 @@ app-gs-compare-wipe {
 .gen-studio .gs-hub-nav-link[aria-current] .gs-hub-nav-mark {
   color: var(--gs-blue);
   opacity: 1;
+}
+.gen-studio
+  .gs-hub-nav.gs-hub-nav--image
+  .gs-hub-nav-link[aria-current]
+  .gs-hub-nav-mark {
+  color: #1d4ed8;
+}
+.gen-studio
+  .gs-hub-nav.gs-hub-nav--alchemy
+  .gs-hub-nav-link[aria-current]
+  .gs-hub-nav-mark {
+  color: #9333ea;
 }
 
 /* On mobile the studio scrolls with the page, so a subnav pins under the site
