@@ -3894,10 +3894,6 @@
   font-weight: 700;
   font-size: 15px;
 }
-.gen-studio .gs-modal-title-rider {
-  font-size: 12px;
-  color: var(--gs-muted);
-}
 .gen-studio .gs-modal-badge {
   font-size: 10px;
   font-weight: 600;
@@ -3905,6 +3901,28 @@
   border-radius: 999px;
   background: var(--gs-seg-track);
   color: var(--gs-label);
+}
+/* The one mark that says the studio is still being built. It is the house pill
+   in the quietest reading of it: the name it sits beside is what the reader came
+   for, and the chip is a note about that name rather than something to act on.
+   Both themes come out of the shared tokens, which is what keeps the small text
+   legible on either panel. */
+.gen-studio .gs-beta-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-seg-track);
+  color: var(--gs-label);
+  white-space: nowrap;
+  vertical-align: middle;
 }
 .gen-studio .gs-modal-close {
   display: inline-flex;
@@ -15186,7 +15204,12 @@ html:has(app-gs-sheet) {
     flex: 1 1 auto;
     min-width: 0;
   }
-  .gen-studio .gs-modal-title-rider {
+  /* The editor's header has to hold the title, the ink mode and the readout in
+     one narrow row; the chip is the one thing there that says nothing about the
+     picture, so it is what gives way. The page title's own chip stays: it is
+     never drawn, and hiding it would take "Beta" out of the heading a screen
+     reader announces. */
+  .gen-studio .gs-se-head-copy .gs-beta-chip {
     display: none;
   }
   .gen-studio .gs-se-ink-mode {

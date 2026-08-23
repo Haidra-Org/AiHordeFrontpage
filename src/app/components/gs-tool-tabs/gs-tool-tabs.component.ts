@@ -57,6 +57,9 @@ import {
           <app-icon name="photo" class="gs-ico-sm" />
           <span class="gs-subtab-long" aria-hidden="true">
             {{ 'generate.shell.tab_image' | transloco }}
+            <span class="gs-beta-chip">{{
+              'generate.beta_badge' | transloco
+            }}</span>
           </span>
           <span class="gs-subtab-short" aria-hidden="true">
             {{ 'generate.shell.tab_image_short' | transloco }}

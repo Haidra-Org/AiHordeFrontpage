@@ -115,11 +115,18 @@ describe('GenerateShellComponent', () => {
     // arrives with a clipped word.
     expect(
       links().map((link) => [
-        link.querySelector('.gs-subtab-long')?.textContent?.trim(),
+        link
+          .querySelector('.gs-subtab-long')
+          ?.textContent?.replace(/\s+/g, ' ')
+          .trim(),
         link.querySelector('.gs-subtab-short')?.textContent?.trim(),
       ]),
     ).toEqual([
-      [translations['generate.shell.tab_image'], 'Image'],
+      // The image tool wears the studio's Beta chip beside its name.
+      [
+        `${translations['generate.shell.tab_image']} ${translations['generate.beta_badge']}`,
+        'Image',
+      ],
       [translations['generate.shell.tab_alchemy'], 'Alchemy'],
       [translations['generate.shell.tab_docs'], 'Learn'],
     ]);

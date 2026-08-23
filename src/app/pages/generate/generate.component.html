@@ -13,7 +13,10 @@
        a visible title would spend a line saying what the tab bar already says.
        It is here so the panel's cards and the results pane have a heading to sit
        beneath rather than starting the document's outline at level two. -->
-  <h1 class="sr-only">{{ "generate.title" | transloco }}</h1>
+  <h1 class="sr-only">
+    {{ "generate.title" | transloco }}
+    <span class="gs-beta-chip">{{ "generate.beta_badge" | transloco }}</span>
+  </h1>
 
   <!-- Keyboard users land in the control panel first; the results pane is a long
        scroll away past every setting, so it gets a skip link. -->
