@@ -595,6 +595,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.tryIt.registerHost(this);
     this.destroyRef.onDestroy(() => this.tryIt.unregisterHost(this));
 
+    this.watchViewport();
     this.registerGlossaryContext();
     const armedApply = this.tryIt.consumeArmed();
     if (armedApply && this.isBrowser) {
@@ -656,19 +657,26 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * the reader is looking at.
    */
   private tutorialInSheet(): boolean {
-    return this.isNarrowViewport();
+    return this.isNarrow();
   }
 
   /** Panel-width controls are desktop-only; mobile stacks panes vertically. */
   public panelCanExpand(): boolean {
-    return !this.embedded() && !this.isNarrowViewport();
+    return !this.embedded() && !this.isNarrow();
   }
 
-  private isNarrowViewport(): boolean {
-    return (
-      this.isBrowser &&
-      globalThis.matchMedia?.('(max-width: 1023.98px)').matches === true
-    );
+  /** The CSS mobile breakpoint as a signal: crossing it re-renders what it
+      hides, rather than leaving a stale control until some other pass runs. */
+  private readonly isNarrow = signal(false);
+
+  private watchViewport(): void {
+    const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');
+    if (!mq) return;
+    this.isNarrow.set(mq.matches);
+    const onChange = (event: MediaQueryListEvent): void =>
+      this.isNarrow.set(event.matches);
+    mq.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
   }
 
   // --- Follow-along tutorial host ------------------------------------------
