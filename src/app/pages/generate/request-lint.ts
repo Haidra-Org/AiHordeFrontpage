@@ -95,6 +95,7 @@ export interface FeatureCompatRule {
 
 export type FeatureCompatRuleId =
   | 'controlnet_baseline'
+  | 'inpainting_model'
   | 'qr_code_baseline'
   | 'transparent_baseline'
   | 'remix_baseline'
@@ -164,6 +165,18 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
     messageKey: 'generate.lint.controlnet_baseline',
     applies: (input) => input.value.sourceMode === 'controlnet',
     satisfied: (input) => baselineSupportsControlNet(input.baseline),
+  },
+  {
+    id: 'inpainting_model',
+    anchor: 'model',
+    section: 'model',
+    baselines: [],
+    messageKey: 'generate.lint.inpainting_model',
+    applies: (input) => input.value.sourceMode === 'inpainting',
+    // The horde routes by model name, and inpainting-capable checkpoints are
+    // labeled that way in the model list. Keep this advisory because names are
+    // community-maintained and can drift.
+    satisfied: (input) => /inpaint/i.test(input.value.model),
   },
   {
     id: 'remix_baseline',

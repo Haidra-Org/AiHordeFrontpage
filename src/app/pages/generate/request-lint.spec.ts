@@ -39,6 +39,7 @@ describe('feature compatibility rules', () => {
     const ids = FEATURE_COMPAT_RULES.map((rule) => rule.id);
     expect(ids).toEqual([
       'controlnet_baseline',
+      'inpainting_model',
       'remix_baseline',
       'mask_baseline',
       'hires_with_mask',
@@ -189,6 +190,48 @@ describe('feature compatibility rules', () => {
 
     it('stays silent on an unknown baseline', () => {
       expect(violated(remix(null))).toEqual([]);
+    });
+  });
+
+  describe('inpainting_model', () => {
+    const inpainting = (model: string): RequestLintInput =>
+      lintInput({
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          sourceMode: 'inpainting',
+          model,
+        },
+        hasSourceImage: true,
+      });
+
+    it('passes when the selected model is marked as inpainting', () => {
+      expect(violated(inpainting('Deliberate Inpainting'))).not.toContain(
+        'inpainting_model',
+      );
+      expect(violated(inpainting('foo-INPAINT-v2'))).not.toContain(
+        'inpainting_model',
+      );
+    });
+
+    it('fires when inpainting mode uses a non-inpainting model', () => {
+      expect(violated(inpainting('DreamShaper XL'))).toContain(
+        'inpainting_model',
+      );
+      expect(violated(inpainting(''))).toContain('inpainting_model');
+    });
+
+    it('stays silent when inpainting mode is unused', () => {
+      expect(
+        violated(
+          lintInput({
+            value: {
+              ...DEFAULT_GENERATE_FORM_VALUE,
+              sourceMode: 'img2img',
+              model: 'DreamShaper XL',
+            },
+          }),
+        ),
+      ).not.toContain('inpainting_model');
     });
   });
 
