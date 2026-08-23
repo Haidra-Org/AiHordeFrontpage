@@ -375,6 +375,24 @@ export class UnitConversionService {
   }
 
   /**
+   * Formats a number for a compact chip: no scale below 1000, and a single
+   * decimal above it with the point dropped when rounding lands back on a
+   * whole number, since a trailing ".0" would claim a precision the chip
+   * does not carry. Shares the same human prefix table as
+   * {@link formatLargeNumber}, so "6.3M" and "6.3 million" always agree.
+   */
+  formatCompactNumber(value: number, decimals = 1): string {
+    const prefix = this.getHumanPrefix(value);
+    if (!prefix.short) {
+      return Math.round(value).toString();
+    }
+    const scaled = (value / prefix.threshold)
+      .toFixed(decimals)
+      .replace(/\.0+$/, '');
+    return `${scaled}${prefix.short}`;
+  }
+
+  /**
    * Get the appropriate human-readable prefix for a value
    */
   private getHumanPrefix(value: number): {

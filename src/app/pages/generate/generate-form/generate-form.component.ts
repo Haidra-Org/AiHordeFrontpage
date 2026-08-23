@@ -24,7 +24,6 @@ import {
 } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { merge } from 'rxjs';
-import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
@@ -38,6 +37,7 @@ import { GeneratePresetsService } from '../../../services/generate-presets.servi
 import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
+import { UnitConversionService } from '../../../services/unit-conversion.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
 import { StyleForcedParams } from '../../../services/horde-styles.service';
@@ -413,7 +413,6 @@ const SUMMARY_SEPARATOR = ' · ';
   imports: [
     NgTemplateOutlet,
     ReactiveFormsModule,
-    FormatNumberPipe,
     TranslocoPipe,
     CivitaiSelectionComponent,
     IconComponent,
@@ -450,6 +449,7 @@ export class GenerateFormComponent implements OnInit {
   private readonly injector = inject(Injector);
   private readonly transloco = inject(TranslocoService);
   private readonly db = inject(DatabaseService);
+  private readonly units = inject(UnitConversionService);
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
@@ -570,6 +570,8 @@ export class GenerateFormComponent implements OnInit {
     viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
   /** Whether the estimate's breakdown popover is open. */
   public readonly kudosOpen = signal(false);
+  /** Which side the kudos breakdown opens from. */
+  public readonly kudosPopAlign = signal<'left' | 'right'>('left');
   /** The breakdown popover's anchor, used to detect click-away dismissals. */
   private readonly kudosRef =
     viewChild<ElementRef<HTMLElement>>('kudosContainer');
@@ -584,6 +586,24 @@ export class GenerateFormComponent implements OnInit {
   /** The warnings toggle, so dismissing with a key hands focus back to it. */
   private readonly lintBtn =
     viewChild<ElementRef<HTMLButtonElement>>('lintBtn');
+  /** Whether the worker-feasibility popover beside Generate is open. */
+  public readonly fitOpen = signal(false);
+  /** The feasibility popover's anchor, used to detect click-away dismissals. */
+  private readonly fitRef = viewChild<ElementRef<HTMLElement>>('fitContainer');
+  /** The feasibility toggle, so dismissing with a key hands focus back to it. */
+  private readonly fitBtn = viewChild<ElementRef<HTMLButtonElement>>('fitBtn');
+  /** Whether the kudos-balance popover beside Generate is open. */
+  public readonly balanceOpen = signal(false);
+  /** The balance popover's anchor, used to detect click-away dismissals. */
+  private readonly balanceRef =
+    viewChild<ElementRef<HTMLElement>>('balanceContainer');
+  /** The balance toggle, so dismissing with a key hands focus back to it. */
+  private readonly balanceBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('balanceBtn');
+  /** A kudos amount, abbreviated for the balance chip. */
+  public abbreviateKudos(value: number): string {
+    return this.units.formatCompactNumber(value);
+  }
 
   /** Which prompt field, if any, is open in the full-screen editor. */
   public readonly promptEditor = signal<PromptEditorField | null>(null);
@@ -1981,6 +2001,18 @@ export class GenerateFormComponent implements OnInit {
         this.closeKudos();
       }
     }
+    if (this.fitOpen()) {
+      const anchor = this.fitRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeFit();
+      }
+    }
+    if (this.balanceOpen()) {
+      const anchor = this.balanceRef()?.nativeElement;
+      if (anchor && !anchor.contains(target)) {
+        this.closeBalance();
+      }
+    }
     if (this.ledgerOpen()) {
       const anchor = this.ledgerRef()?.nativeElement;
       if (anchor && !anchor.contains(target)) {
@@ -2004,6 +2036,14 @@ export class GenerateFormComponent implements OnInit {
     if (this.kudosOpen()) {
       this.closeKudos();
       this.kudosBtn()?.nativeElement.focus();
+    }
+    if (this.fitOpen()) {
+      this.closeFit();
+      this.fitBtn()?.nativeElement.focus();
+    }
+    if (this.balanceOpen()) {
+      this.closeBalance();
+      this.balanceBtn()?.nativeElement.focus();
     }
     if (this.ledgerOpen()) {
       this.closeLedger();
@@ -2136,10 +2176,12 @@ export class GenerateFormComponent implements OnInit {
 
   /** Keep the confirm in view as the viewport changes while it is open. */
   public onWindowResize(): void {
-    if (!this.resetConfirmOpen()) {
-      return;
+    if (this.resetConfirmOpen()) {
+      this.setResetPopAlign();
     }
-    this.setResetPopAlign();
+    if (this.kudosOpen()) {
+      this.setKudosPopAlign();
+    }
   }
 
   /** Flip the confirm to the trigger's right when opening left would clip. */
@@ -2304,6 +2346,48 @@ export class GenerateFormComponent implements OnInit {
     this.lintOpen.set(false);
   }
 
+  public toggleFit(): void {
+    this.fitOpen.update((open) => !open);
+  }
+
+  public closeFit(): void {
+    this.fitOpen.set(false);
+  }
+
+  public toggleBalance(): void {
+    this.balanceOpen.update((open) => !open);
+  }
+
+  public closeBalance(): void {
+    this.balanceOpen.set(false);
+  }
+
+  /** What the balance chip says in full, shared by its label and its popover. */
+  public balanceMessage(afford: KudosAffordability): {
+    key: string;
+    params: Record<string, string | number>;
+  } {
+    const balance = this.formatNumber(afford.balance);
+    if (afford.short) {
+      return { key: 'generate.form.balance_short', params: { balance } };
+    }
+    if (afford.more === 0) {
+      return { key: 'generate.form.balance_last', params: { balance } };
+    }
+    return {
+      key:
+        afford.more === 1
+          ? 'generate.form.balance_more_one'
+          : 'generate.form.balance_more_other',
+      params: { balance, count: this.formatNumber(afford.more) },
+    };
+  }
+
+  /** A count as the reader's own locale groups it, matching the `formatNumber` pipe. */
+  private formatNumber(value: number): string {
+    return new Intl.NumberFormat(this.transloco.getActiveLang()).format(value);
+  }
+
   /** The estimate as it is spoken: whole kudos, never a decimal tail. */
   public kudosShown(): number {
     return Math.round(this.kudos() ?? 0);
@@ -2317,11 +2401,36 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public toggleKudos(): void {
-    this.kudosOpen.update((open) => !open);
+    const open = !this.kudosOpen();
+    this.kudosOpen.set(open);
+    if (!open) {
+      return;
+    }
+    this.setKudosPopAlign();
   }
 
   public closeKudos(): void {
     this.kudosOpen.set(false);
+  }
+
+  /** Flip the kudos popover to the trigger's right when leftward would clip. */
+  private setKudosPopAlign(): void {
+    this.kudosPopAlign.set('left');
+    const anchor = this.kudosRef()?.nativeElement;
+    if (!anchor) {
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    const panelWidth = Math.min(320, window.innerWidth - 24);
+    const gutter = 12;
+    const leftEdge = rect.right - panelWidth;
+    if (leftEdge >= gutter) {
+      return;
+    }
+    const rightEdge = rect.left + panelWidth;
+    if (rightEdge <= window.innerWidth - gutter) {
+      this.kudosPopAlign.set('right');
+    }
   }
 
   /** The warnings belonging to one card, for its own inline lines. */

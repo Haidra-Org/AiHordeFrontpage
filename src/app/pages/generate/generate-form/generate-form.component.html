@@ -137,7 +137,9 @@
             <!-- The mark is drawn as well as counted: at the panel widths that
                  drop the toolbar's labels a bare number beside five icons says
                  nothing about what it counts. -->
-            <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+            @if (expandable()) {
+              <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+            }
             <span class="gs-ledger-count">{{ changed }}</span>
             <span class="gs-mini-btn-label">{{
               "generate.form.ledger_short" | transloco
@@ -151,6 +153,64 @@
                 'generate.form.ledger_label' | transloco: { count: changed }
               "
             >
+              <p class="gs-ledger-title">
+                {{
+                  "generate.form.ledger_title" | transloco: { count: changed }
+                }}
+              </p>
+              <!-- Quiet by design: it undoes a session's worth of choices, so it sits
+                with the other header tools rather than beside anything it clears.
+                It asks first, because a reader who meant to press its neighbour has
+                lost everything they set by the time the toast offers the undo. -->
+              <div class="gs-reset" #resetContainer>
+                <button
+                  #resetBtn
+                  type="button"
+                  class="gs-mini-btn gs-reset-btn"
+                  (click)="toggleResetConfirm()"
+                  [attr.aria-expanded]="resetConfirmOpen()"
+                  aria-haspopup="dialog"
+                  [attr.aria-label]="'generate.form.reset' | transloco"
+                  [title]="'generate.form.reset_title' | transloco"
+                >
+                  <app-icon name="refresh-alt" class="gs-ico-sm" />
+                  <span class="gs-mini-btn-label">{{
+                    "generate.form.reset_short" | transloco
+                  }}</span>
+                </button>
+                @if (resetConfirmOpen()) {
+                  <div
+                    class="gs-reset-pop"
+                    [class.gs-reset-pop--open-right]="
+                      resetPopAlign() === 'right'
+                    "
+                    role="dialog"
+                    [attr.aria-label]="
+                      'generate.form.reset_confirm' | transloco
+                    "
+                  >
+                    <p class="gs-reset-ask">
+                      {{ "generate.form.reset_confirm" | transloco }}
+                    </p>
+                    <div class="gs-reset-actions">
+                      <button
+                        type="button"
+                        class="gs-reset-go"
+                        (click)="resetSettings()"
+                      >
+                        {{ "generate.form.reset_confirm_yes" | transloco }}
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-reset-keep"
+                        (click)="keepSettings()"
+                      >
+                        {{ "generate.form.reset_confirm_no" | transloco }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
               @for (section of ledgerSections(); track section.section) {
                 <p class="gs-ledger-head">{{ section.titleKey | transloco }}</p>
                 <ul class="gs-ledger-list">
@@ -172,55 +232,7 @@
           }
         </div>
       }
-      <!-- Quiet by design: it undoes a session's worth of choices, so it sits
-           with the other header tools rather than beside anything it clears.
-           It asks first, because a reader who meant to press its neighbour has
-           lost everything they set by the time the toast offers the undo. -->
-      <div class="gs-reset" #resetContainer>
-        <button
-          #resetBtn
-          type="button"
-          class="gs-mini-btn gs-reset-btn"
-          (click)="toggleResetConfirm()"
-          [attr.aria-expanded]="resetConfirmOpen()"
-          aria-haspopup="dialog"
-          [attr.aria-label]="'generate.form.reset' | transloco"
-          [title]="'generate.form.reset_title' | transloco"
-        >
-          <app-icon name="refresh-alt" class="gs-ico-sm" />
-          <span class="gs-mini-btn-label">{{
-            "generate.form.reset_short" | transloco
-          }}</span>
-        </button>
-        @if (resetConfirmOpen()) {
-          <div
-            class="gs-reset-pop"
-            [class.gs-reset-pop--open-right]="resetPopAlign() === 'right'"
-            role="dialog"
-            [attr.aria-label]="'generate.form.reset_confirm' | transloco"
-          >
-            <p class="gs-reset-ask">
-              {{ "generate.form.reset_confirm" | transloco }}
-            </p>
-            <div class="gs-reset-actions">
-              <button
-                type="button"
-                class="gs-reset-go"
-                (click)="resetSettings()"
-              >
-                {{ "generate.form.reset_confirm_yes" | transloco }}
-              </button>
-              <button
-                type="button"
-                class="gs-reset-keep"
-                (click)="keepSettings()"
-              >
-                {{ "generate.form.reset_confirm_no" | transloco }}
-              </button>
-            </div>
-          </div>
-        }
-      </div>
+
       <!-- The walkthrough, from the toolbar of the panel it walks through. -->
       <a
         class="gs-mini-btn"
@@ -233,20 +245,6 @@
           "generate.form.open_guide_short" | transloco
         }}</span>
       </a>
-      @if (anyGroupOpen()) {
-        <button
-          type="button"
-          class="gs-mini-btn"
-          (click)="foldAllGroups()"
-          [attr.aria-label]="'generate.groups.fold_all' | transloco"
-          [title]="'generate.groups.fold_all' | transloco"
-        >
-          <app-icon name="chevron-double-up" class="gs-ico-sm" />
-          <span class="gs-mini-btn-label">{{
-            "generate.groups.fold_all_short" | transloco
-          }}</span>
-        </button>
-      }
       <button
         type="button"
         class="gs-mini-btn"
@@ -288,6 +286,20 @@
             ) | transloco
           }}</span>
         </button>
+        @if (anyGroupOpen()) {
+          <button
+            type="button"
+            class="gs-mini-btn"
+            (click)="foldAllGroups()"
+            [attr.aria-label]="'generate.groups.fold_all' | transloco"
+            [title]="'generate.groups.fold_all' | transloco"
+          >
+            <app-icon name="chevron-double-up" class="gs-ico-sm" />
+            <span class="gs-mini-btn-label">{{
+              "generate.groups.fold_all_short" | transloco
+            }}</span>
+          </button>
+        }
       }
     </div>
   </header>
@@ -601,7 +613,10 @@
                       | transloco: { side: facts.maxSide }
                   }}</span>
                 }
-                @if (facts.nsfw > 0) {
+                <!-- Many models are marked NSFW, but there is no point displaying
+                 fact_adult to the user unless they also have enabled NSFW content. 
+                 for the request -->
+                @if (facts.nsfw > 0 && form().controls.nsfw.value) {
                   <span>{{
                     "generate.form.model_fact_adult"
                       | transloco: { count: facts.nsfw }
@@ -2032,42 +2047,6 @@
     <div
       class="gs-footer-meta flex flex-wrap items-center justify-between gap-3"
     >
-      <div class="flex w-full flex-wrap items-center gap-2">
-        <span class="gs-label">{{ "generate.footer.batch" | transloco }}</span>
-        <app-gs-help topic="batch" />
-        <div class="gs-batch">
-          <button
-            type="button"
-            class="gs-batch-btn"
-            (click)="stepBatch(-1)"
-            [disabled]="form().controls.n.value <= minBatch"
-            [attr.aria-label]="'generate.footer.batch_decrease' | transloco"
-          >
-            <span aria-hidden="true">&minus;</span>
-          </button>
-          <span class="gs-batch-count">{{ form().controls.n.value }}</span>
-          <button
-            type="button"
-            class="gs-batch-btn"
-            (click)="stepBatch(1)"
-            [disabled]="form().controls.n.value >= maxBatch"
-            [attr.aria-label]="'generate.footer.batch_increase' | transloco"
-          >
-            <span aria-hidden="true">&plus;</span>
-          </button>
-        </div>
-        <span class="gs-sublabel">
-          ·
-          {{
-            "generate.footer.dimensions"
-              | transloco
-                : {
-                    width: form().controls.width.value,
-                    height: form().controls.height.value,
-                  }
-          }}
-        </span>
-      </div>
       <!-- A warning appearing is a change to the request that nobody announced,
            and the indicator beside Generate is silent to a reader who cannot see
            it. This region is always in the document, so that when it fills the
@@ -2086,50 +2065,102 @@
           }
         }
       </p>
-      <!-- Who could take the request, in the same row as the price: both are
-           claims about the settings as they stand. Silent when the horde's
+      <!-- Who could take the request, as its own pill beside the price: both
+           are claims about the settings as they stand. Silent when the horde's
            worker list is unknown, and never a barrier to submitting. -->
       @if (feasibility(); as fit) {
-        <p class="gs-fit" [class.gs-fit--warn]="fit.blockedBy !== null">
-          @if (fit.blockedBy !== null) {
-            <app-icon
-              name="warning-triangle"
-              class="gs-ico-sm"
-              aria-hidden="true"
-            />
+        <div class="gs-fit" #fitContainer>
+          <button
+            #fitBtn
+            type="button"
+            class="gs-fit-btn"
+            [class.gs-fit-btn--warn]="fit.blockedBy !== null"
+            (click)="toggleFit()"
+            [attr.aria-expanded]="fitOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="fit.message.key | transloco: fit.message.params"
+            [title]="fit.message.key | transloco: fit.message.params"
+          >
+            @if (fit.blockedBy !== null) {
+              <app-icon
+                name="warning-triangle"
+                class="gs-ico-sm"
+                aria-hidden="true"
+              />
+            }
+            <span class="gs-mono" aria-hidden="true">{{ fit.eligible }}</span>
+            <span class="gs-fit-unit" aria-hidden="true">{{
+              (fit.eligible === 1
+                ? "generate.form.workers_unit_one"
+                : "generate.form.workers_unit_other"
+              ) | transloco
+            }}</span>
+          </button>
+          @if (fitOpen()) {
+            <div
+              class="gs-fit-pop"
+              role="dialog"
+              [attr.aria-label]="
+                fit.message.key | transloco: fit.message.params
+              "
+            >
+              <p class="gs-fit-note">
+                {{ fit.message.key | transloco: fit.message.params }}
+              </p>
+            </div>
           }
-          <span>{{ fit.message.key | transloco: fit.message.params }}</span>
-        </p>
+        </div>
       }
-      <!-- What the reader has to spend, next to what this costs. Absent for an
-           anonymous reader, whose balance the studio cannot read, and never a
-           bar on the button: the horde decides what it will accept. -->
+      <!-- What the reader has to spend, as its own pill next to what this
+           costs. Absent for an anonymous reader, whose balance the studio
+           cannot read, and never a bar on the button: the horde decides what
+           it will accept. -->
       @if (affordability(); as afford) {
-        <p class="gs-bal" [class.gs-bal--short]="afford.short">
-          @if (afford.short) {
-            {{
-              "generate.form.balance_short"
-                | transloco: { balance: afford.balance }
-            }}
-          } @else if (afford.more === 0) {
-            {{
-              "generate.form.balance_last"
-                | transloco: { balance: afford.balance }
-            }}
-          } @else {
-            {{
-              (afford.more === 1
-                ? "generate.form.balance_more_one"
-                : "generate.form.balance_more_other"
-              )
-                | transloco
-                  : {
-                      balance: afford.balance | formatNumber,
-                      count: afford.more | formatNumber,
-                    }
-            }}
+        @let message = balanceMessage(afford);
+        <div class="gs-bal" #balanceContainer>
+          <button
+            #balanceBtn
+            type="button"
+            class="gs-bal-btn"
+            [class.gs-bal-btn--warn]="afford.short"
+            (click)="toggleBalance()"
+            [attr.aria-expanded]="balanceOpen()"
+            aria-haspopup="dialog"
+            [attr.aria-label]="message.key | transloco: message.params"
+            [title]="message.key | transloco: message.params"
+          >
+            @if (afford.short) {
+              <app-icon
+                name="warning-triangle"
+                class="gs-ico-sm"
+                aria-hidden="true"
+              />
+            }
+            <span class="gs-mono" aria-hidden="true">{{
+              abbreviateKudos(afford.balance)
+            }}</span>
+            <span class="gs-bal-unit" aria-hidden="true">{{
+              "generate.form.kudos_unit" | transloco
+            }}</span>
+            @if (!afford.short) {
+              <span class="gs-bal-sep" aria-hidden="true">/</span>
+              <span class="gs-mono" aria-hidden="true">{{
+                abbreviateKudos(afford.more)
+              }}</span>
+            }
+          </button>
+          @if (balanceOpen()) {
+            <div
+              class="gs-bal-pop"
+              role="dialog"
+              [attr.aria-label]="message.key | transloco: message.params"
+            >
+              <p class="gs-bal-note">
+                {{ message.key | transloco: message.params }}
+              </p>
+            </div>
           }
-        </p>
+        </div>
       }
       <!-- The price, beside the button rather than on it: it is a claim about
            the settings, so it has to be something the reader can press to find
@@ -2162,6 +2193,7 @@
           @if (kudosOpen()) {
             <div
               class="gs-kudos-pop"
+              [class.gs-kudos-pop--open-right]="kudosPopAlign() === 'right'"
               role="dialog"
               [attr.aria-label]="
                 kudosWhyKey() | transloco: { kudos: kudosShown() }
@@ -2248,21 +2280,62 @@
     <ng-container
       *ngTemplateOutlet="fieldError; context: { anchor: 'generate' }"
     />
-    <button
-      type="submit"
-      class="gs-genbtn"
-      appTutAnchor="generate"
-      [disabled]="form().invalid"
-      [title]="'generate.form.ctrl_enter_hint' | transloco"
+    <div
+      class="flex items-center justify-between gap-2"
+      [class.flex-wrap]="panelSize() === 'normal'"
+      [class.flex-nowrap]="panelSize() !== 'normal'"
+      [class.w-full]="panelSize() === 'normal'"
     >
-      <app-icon name="star" class="gs-ico-sm" />
-      {{
-        (form().controls.n.value === 1
-          ? "generate.footer.generate_one"
-          : "generate.footer.generate_other"
-        ) | transloco: { count: form().controls.n.value }
-      }}
-    </button>
+      <div class="flex items-center gap-2">
+        <div class="gs-batch">
+          <button
+            type="button"
+            class="gs-batch-btn"
+            (click)="stepBatch(-1)"
+            [disabled]="form().controls.n.value <= minBatch"
+            [attr.aria-label]="'generate.footer.batch_decrease' | transloco"
+          >
+            <span aria-hidden="true">&minus;</span>
+          </button>
+          <span class="gs-batch-count">{{ form().controls.n.value }}</span>
+          <button
+            type="button"
+            class="gs-batch-btn"
+            (click)="stepBatch(1)"
+            [disabled]="form().controls.n.value >= maxBatch"
+            [attr.aria-label]="'generate.footer.batch_increase' | transloco"
+          >
+            <span aria-hidden="true">&plus;</span>
+          </button>
+        </div>
+        <span class="gs-sublabel">
+          ·
+          {{
+            "generate.footer.dimensions"
+              | transloco
+                : {
+                    width: form().controls.width.value,
+                    height: form().controls.height.value,
+                  }
+          }}
+        </span>
+      </div>
+      <button
+        type="submit"
+        class="gs-genbtn"
+        appTutAnchor="generate"
+        [disabled]="form().invalid"
+        [title]="'generate.form.ctrl_enter_hint' | transloco"
+      >
+        <app-icon name="star" class="gs-ico-sm" />
+        {{
+          (form().controls.n.value === 1
+            ? "generate.footer.generate_one"
+            : "generate.footer.generate_other"
+          ) | transloco: { count: form().controls.n.value }
+        }}
+      </button>
+    </div>
   </footer>
 </form>
 

@@ -577,10 +577,14 @@ export class GenerateSourceImageComponent implements OnInit {
       this.sourceImage.set(result.image);
       this.previewUrl.set(URL.createObjectURL(result.image.blob));
     }
-    // A mask the request would not carry is a mask painted for nothing, so
-    // image-to-image is switched over to the masked choice that carries it.
-    if (result.mask && this.mode() === 'img2img' && !this.maskEnabled()) {
-      this.form().controls.maskEnabled.setValue(true);
+    // The editor owns the masked choice now that the switch is gone from the
+    // card: a mask painted turns it on, and a mask erased turns it back off,
+    // or image-to-image would be left demanding a mask with nothing to say no.
+    if (this.mode() === 'img2img') {
+      const masked = result.mask !== null;
+      if (this.maskEnabled() !== masked) {
+        this.form().controls.maskEnabled.setValue(masked);
+      }
     }
     this.setMask(result.mask);
     this.outpaintOffset.set(result.offset);
@@ -590,6 +594,11 @@ export class GenerateSourceImageComponent implements OnInit {
   /** Forget the mask, which is all there is to forget now the editor owns it. */
   public clearMask(): void {
     this.setMask(null);
+    // Image-to-image stands the masked choice down with the mask itself: the
+    // switch that used to do so is editor-owned now.
+    if (this.mode() === 'img2img' && this.form().controls.maskEnabled.value) {
+      this.form().controls.maskEnabled.setValue(false);
+    }
     this.emitState();
   }
 
