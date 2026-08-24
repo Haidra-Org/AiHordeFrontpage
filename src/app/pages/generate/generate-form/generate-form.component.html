@@ -600,19 +600,21 @@
           </div>
         </section>
 
-        <!-- Aspect + resolution -->
-        <section
-          class="gs-card gs-sec--size flex flex-col gap-3"
+        <!-- Aspect + resolution. Folded it reads as the size, which is what the
+             card was there to report; open it is the card it always was. -->
+        <app-gs-group
+          section="size"
+          titleKey="generate.form.dimensions_section"
           appTutAnchor="size"
-          aria-labelledby="gs-card-size"
+          [summary]="dimensionsSummary()"
+          [changed]="groupChanged('dimensions')"
+          [open]="isGroupOpen('dimensions')"
+          (toggled)="toggleGroup('dimensions')"
+          [lintCount]="groupLintCount('dimensions')"
+          [lintLabel]="groupLintLabel('dimensions')"
+          (lintPressed)="goToGroupLint('dimensions')"
         >
-          <div class="gs-sec-head">
-            <h2 id="gs-card-size" class="gs-card-title--sm">
-              <span class="gs-sec-chip" aria-hidden="true"
-                ><app-icon name="sec-size"
-              /></span>
-              {{ "generate.form.dimensions_section" | transloco }}
-            </h2>
+          <div class="gs-group-actions" groupActions>
             <app-gs-help topic="size" />
             @if (stylePins("dimensions")) {
               <ng-container
@@ -634,7 +636,7 @@
               <button
                 type="button"
                 class="gs-seg-opt"
-                [attr.aria-pressed]="sizeBase() === 512"
+                [attr.aria-pressed]="sizeFamily() === 512"
                 [disabled]="isSectionLocked('dimensions')"
                 (click)="setSizeBase(512)"
               >
@@ -643,7 +645,7 @@
               <button
                 type="button"
                 class="gs-seg-opt"
-                [attr.aria-pressed]="sizeBase() === 1024"
+                [attr.aria-pressed]="sizeFamily() === 1024"
                 [disabled]="isSectionLocked('dimensions')"
                 (click)="setSizeBase(1024)"
               >
@@ -678,6 +680,17 @@
                 {{ preset.labelKey | transloco }}
               </button>
             }
+            <!-- The chips are square or wide; this is how a tall picture is
+                 asked for, and it turns a custom size over too. -->
+            <button
+              type="button"
+              class="gs-chip gs-chip--swap ml-auto"
+              [disabled]="isSectionLocked('dimensions')"
+              (click)="swapDimensions()"
+            >
+              <app-icon name="arrows-up-down" />
+              {{ "generate.aspect.swap" | transloco }}
+            </button>
           </div>
           <div [class.gs-locked]="isSectionLocked('dimensions')">
             <button
@@ -817,7 +830,7 @@
               </div>
             }
           </div>
-        </section>
+        </app-gs-group>
 
         <!-- Starting from a picture (projected by the parent page). It sits
              with the other compose cards: attaching an image is a way of
@@ -1468,9 +1481,16 @@
                   {{ "generate.form.upscaler_none" | transloco }}
                 </option>
                 @for (upscaler of upscalers; track upscaler) {
-                  <option [value]="upscaler">{{ upscaler }}</option>
+                  <option [value]="upscaler">
+                    {{ "alchemy.form_names." + upscaler | transloco }}
+                  </option>
                 }
               </select>
+              @if (selectedUpscaler(); as upscaler) {
+                <p class="gs-sublabel mt-1">
+                  {{ "alchemy.form_meta." + upscaler + ".desc" | transloco }}
+                </p>
+              }
             </div>
             <div appTutAnchor="facefixer">
               <div class="gs-field-head">
@@ -1488,9 +1508,16 @@
                   {{ "generate.form.facefixer_none" | transloco }}
                 </option>
                 @for (fixer of faceFixers; track fixer) {
-                  <option [value]="fixer">{{ fixer }}</option>
+                  <option [value]="fixer">
+                    {{ "alchemy.form_names." + fixer | transloco }}
+                  </option>
                 }
               </select>
+              @if (selectedFaceFixer(); as fixer) {
+                <p class="gs-sublabel mt-1">
+                  {{ "alchemy.form_meta." + fixer + ".desc" | transloco }}
+                </p>
+              }
             </div>
             @if (usesFaceFixer()) {
               <div appTutAnchor="facefixer_strength">

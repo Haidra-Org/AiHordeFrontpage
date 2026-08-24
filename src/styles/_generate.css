@@ -2472,6 +2472,24 @@
     min-height: 36px;
   }
 }
+/* The swap sits in the row of shapes but does not report one, so it keeps the
+   chip's shape without the chip's chosen state and reads as an action. */
+.gen-studio .gs-chip--swap {
+  gap: var(--gs-space-1);
+  font-weight: 500;
+  color: var(--gs-muted);
+  background: transparent;
+  border-style: dashed;
+}
+.gen-studio .gs-chip--swap .icon {
+  width: 1em;
+  height: 1em;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-chip--swap {
+    min-height: 44px;
+  }
+}
 
 /* In a forced-colours theme every surface collapses to the system canvas, so
    each control has to carry its own edge to keep its shape, and the selected

@@ -86,6 +86,7 @@ import {
   KudosAffordability,
   KudosBreakdownLine,
   ModelSizeBase,
+  ModelSizeFamily,
   PanelSize,
   PromptHistoryEntry,
   QR_MODULE_DRAWERS,
@@ -115,7 +116,9 @@ import {
   scheduleAdvisory,
   sd15HiresHint,
   sizeAdvisory,
-  sizeBaseFor,
+  sizeFamilyFor,
+  liftSizeBase,
+  rescalePresetToBase,
   stepsAdvisory,
   suggestedSamplers,
   suggestedSettings,
@@ -176,10 +179,13 @@ export type PromptEditorField = 'prompt' | 'negative';
 
 /**
  * The settings groups the panel folds away behind a line of their own values.
- * The cards a request cannot be described without (prompt, model, size, the
- * source strip) are not groups: they are always open.
+ * The cards a request cannot be described without (prompt, model, the source
+ * strip) are not groups: they are always open. Dimensions is a group even
+ * though it sits among them, because its folded line carries the size in full
+ * and every request already has one.
  */
 export type GroupId =
+  | 'dimensions'
   | 'sampling'
   | 'loras'
   | 'post'
@@ -189,6 +195,7 @@ export type GroupId =
   | 'qr';
 
 export const GROUP_IDS: readonly GroupId[] = [
+  'dimensions',
   'sampling',
   'loras',
   'post',
@@ -204,6 +211,9 @@ export const GROUP_IDS: readonly GroupId[] = [
  * scrolled to or rung, and an anchor missing from here would fail silently.
  */
 const GROUP_BY_ANCHOR: Readonly<Record<string, GroupId>> = {
+  size: 'dimensions',
+  hires: 'dimensions',
+  hires_denoise: 'dimensions',
   steps: 'sampling',
   cfg: 'sampling',
   sampler: 'sampling',
@@ -233,6 +243,7 @@ const GROUP_BY_ANCHOR: Readonly<Record<string, GroupId>> = {
 
 /** The group each folded panel area resolves to; see `openGroupForSection`. */
 const GROUP_BY_SECTION: Readonly<Partial<Record<SectionId, GroupId>>> = {
+  size: 'dimensions',
   sampling: 'sampling',
   finishing: 'post',
   horde: 'horde',
@@ -286,6 +297,7 @@ function stylePinsField(
 const GROUP_FIELDS: Readonly<
   Record<GroupId, readonly (keyof GenerateFormValue)[]>
 > = {
+  dimensions: ['width', 'height', 'hires_fix', 'hires_fix_denoising_strength'],
   sampling: [
     'sampler_name',
     'steps',
@@ -324,6 +336,7 @@ const GROUP_FIELDS: Readonly<
 
 /** What each group is called, for a count that has to name the group it is in. */
 const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
+  dimensions: 'generate.form.dimensions_section',
   sampling: 'generate.form.sampling_section',
   loras: 'generate.form.loras_section',
   post: 'generate.form.post_processing_section',
@@ -1205,8 +1218,20 @@ export class GenerateFormComponent implements OnInit {
     return this.modelFacts()?.get(name) ?? null;
   }
 
-  /** Resolution family the aspect presets scale to (SD1.5 512 vs SDXL 1024). */
-  public readonly sizeBase = signal<ModelSizeBase>(1024);
+  /** The family the picked model belongs to (SD1.5 512 vs SDXL 1024). */
+  public readonly sizeFamily = signal<ModelSizeFamily>(1024);
+
+  /** Whether the hires pass is on, which the offered sizes follow. */
+  private readonly hiresOn = signal(false);
+
+  /**
+   * The family the shapes are offered at. The hires pass draws at the trained
+   * size and enlarges, so while it is on the panel offers the family above the
+   * model's own rather than the one it would draw in a single pass.
+   */
+  public readonly sizeBase = computed<ModelSizeBase>(() =>
+    liftSizeBase(this.sizeFamily(), this.hiresOn()),
+  );
   public readonly presets = computed(() => buildAspectPresets(this.sizeBase()));
 
   /**
@@ -1228,25 +1253,54 @@ export class GenerateFormComponent implements OnInit {
   private snappingSize = false;
 
   /**
-   * Follow the selected model's baseline: preselect the aspect-preset family it
-   * belongs to, and move still-pristine dimensions onto its native square.
+   * The hires state the size was last snapped for, so that turning the pass on
+   * or off is told apart from the panel merely being rendered again.
+   */
+  private lastHires: boolean | null = null;
+
+  /**
+   * Follow the selected model's baseline and the hires pass: preselect the
+   * family the shapes are offered at, and move a size the panel itself put
+   * there onto the matching one in it.
+   *
+   * Two kinds of size may be moved, and nothing else. Turning the hires pass on
+   * or off moves a size that is one of the offered shapes onto the same shape
+   * in the family now in force, because it was the panel that decided what that
+   * shape's size was. A model change moves a still-pristine square onto the new
+   * baseline's native square. A size typed on the sliders is the reader's own
+   * and is left alone in both cases.
    */
   private readonly baselineSizeSync = effect(() => {
     const baseline = this.modelBaseline();
-    const native = nativeSquareFor(baseline);
-    const base = sizeBaseFor(baseline);
-    if (native === null || base === null || this.sizeTouched()) {
-      return;
-    }
+    const hires = this.hiresOn();
+    const hiresChanged = this.lastHires !== null && this.lastHires !== hires;
+    this.lastHires = hires;
     const controls = this.form().controls;
-    if (
-      controls.width.disabled ||
-      controls.height.disabled ||
-      !isSnappableSize(controls.width.value, controls.height.value)
-    ) {
+    if (controls.width.disabled || controls.height.disabled) {
       return;
     }
-    this.sizeBase.set(base);
+    if (hiresChanged) {
+      const moved = rescalePresetToBase(
+        controls.width.value,
+        controls.height.value,
+        this.sizeBase(),
+      );
+      if (moved !== null) {
+        this.snappingSize = true;
+        this.form().patchValue(moved);
+        this.snappingSize = false;
+      }
+      return;
+    }
+    const native = nativeSquareFor(baseline);
+    const family = sizeFamilyFor(baseline);
+    if (native === null || family === null || this.sizeTouched()) {
+      return;
+    }
+    if (!isSnappableSize(controls.width.value, controls.height.value)) {
+      return;
+    }
+    this.sizeFamily.set(family);
     if (controls.width.value === native && controls.height.value === native) {
       return;
     }
@@ -1263,6 +1317,10 @@ export class GenerateFormComponent implements OnInit {
       .subscribe(() => this.value.set(this.form().getRawValue()));
 
     const controls = this.form().controls;
+    this.hiresOn.set(controls.hires_fix.value);
+    controls.hires_fix.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((on) => this.hiresOn.set(on));
     this.selectedSampler.set(controls.sampler_name.value);
     controls.sampler_name.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -1532,6 +1590,34 @@ export class GenerateFormComponent implements OnInit {
       .join(SUMMARY_SEPARATOR);
   }
 
+  /**
+   * The size, and the hires pass when it is on. Every request has a size, so
+   * this line is never empty: the group can be folded from the start and still
+   * answer the question the card was there to answer.
+   */
+  public readonly dimensionsSummary = computed(() => {
+    const value = this.value();
+    return value
+      ? this.summaryLine([
+          this.transloco.translate('generate.groups.dimensions_size', {
+            width: value.width,
+            height: value.height,
+          }),
+          value.hires_fix
+            ? this.transloco.translate('generate.groups.dimensions_hires')
+            : null,
+          value.hires_fix &&
+          value.hires_fix_denoising_strength !==
+            DEFAULT_GENERATE_FORM_VALUE.hires_fix_denoising_strength
+            ? this.transloco.translate(
+                'generate.groups.dimensions_hires_denoise',
+                { value: value.hires_fix_denoising_strength },
+              )
+            : null,
+        ])
+      : '';
+  });
+
   public readonly samplingSummary = computed(() => {
     const value = this.value();
     return value
@@ -1689,8 +1775,8 @@ export class GenerateFormComponent implements OnInit {
       : '';
   });
 
-  public setSizeBase(base: ModelSizeBase): void {
-    this.sizeBase.set(base);
+  public setSizeBase(family: ModelSizeFamily): void {
+    this.sizeFamily.set(family);
     this.sizeTouched.set(true);
   }
 
@@ -1699,9 +1785,29 @@ export class GenerateFormComponent implements OnInit {
     this.form().controls.width.markAsDirty();
   }
 
+  /**
+   * Whether the current size is this shape. Either way round counts: the chips
+   * offer square and wide shapes only, and the swap turns the chosen one on its
+   * side, so a tall picture is still the shape the reader picked.
+   */
   public isPresetActive(width: number, height: number): boolean {
     const controls = this.form().controls;
-    return controls.width.value === width && controls.height.value === height;
+    const current = [controls.width.value, controls.height.value];
+    return (
+      (current[0] === width && current[1] === height) ||
+      (current[0] === height && current[1] === width)
+    );
+  }
+
+  /** Turn the current size on its side, whether it came from a chip or not. */
+  public swapDimensions(): void {
+    const controls = this.form().controls;
+    this.form().patchValue({
+      width: controls.height.value,
+      height: controls.width.value,
+    });
+    controls.width.markAsDirty();
+    controls.height.markAsDirty();
   }
 
   // --- Model recommendations ----------------------------------------------

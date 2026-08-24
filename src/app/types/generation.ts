@@ -1,4 +1,5 @@
 import {
+  IMAGE_POST_PROCESSORS,
   ImageSamplerName,
   ImagePostProcessor,
   StyleLoraConfig,
@@ -303,27 +304,10 @@ export const ALCHEMY_DATA_FORMS = [
 
 /**
  * Forms that return a processed image (upscalers, face fixers, background
- * removal). The exact set is enforced server-side by AI-Horde's
- * KNOWN_POST_PROCESSORS.
+ * removal). The same vocabulary image generation offers as `post_processing`,
+ * so both read from one list.
  */
-export const ALCHEMY_POST_PROCESSOR_FORMS = [
-  'GFPGAN',
-  'GFPGANv1.3',
-  'CodeFormers',
-  'RestoreFormer',
-  'RealESRGAN_x4plus',
-  'RealESRGAN_x2plus',
-  'RealESRGAN_x4plus_anime_6B',
-  'NMKD_Siax',
-  '4x_AnimeSharp',
-  '4xNomos8kSC',
-  '4xLSDIRplus',
-  '4xNomosWebPhoto_RealPLKSR',
-  '4xNomos2_realplksr_dysample',
-  '4xNomos2_hq_dat2',
-  '2xModernSpanimationV1',
-  'strip_background',
-] as const;
+export const ALCHEMY_POST_PROCESSOR_FORMS = IMAGE_POST_PROCESSORS;
 
 /**
  * Annotation is separate from data and post-processing because it needs a

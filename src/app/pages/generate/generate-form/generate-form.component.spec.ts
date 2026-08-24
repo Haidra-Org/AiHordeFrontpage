@@ -8,12 +8,14 @@ import {
 } from './generate-form.component';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
+  FACE_FIXERS,
   GenerateFormGroup,
   GenerateFormValue,
   MAX_STEPS,
   QR_MODULE_DRAWERS,
   SAMPLERS,
   STEPS_SLIDER_MAX,
+  UPSCALERS,
   buildStyledImageRequest,
   createGenerateForm,
   kudosBreakdown,
@@ -674,9 +676,9 @@ describe('GenerateFormComponent model recommendations', () => {
 
     form.controls.hires_fix.setValue(true);
     expect(component.hiresSuggested()).toBe(false);
-    expect(component.sizeAdvisory()?.key).toBe(
-      'generate.form.requirement.native_size',
-    );
+    // With the pass on, 1024 is one of the sizes the panel offers this model
+    // and drawing above native is the point, so it is no longer drift.
+    expect(component.sizeAdvisory()).toBeNull();
   });
 });
 
@@ -1409,6 +1411,138 @@ describe('GenerateFormComponent settings groups', () => {
     component.openGroupForAnchor('prompt');
     expect(component.isGroupOpen('sampling')).toBe(true);
   });
+
+  it('unfolds the dimensions group to point at the size', async () => {
+    const { component } = await render();
+
+    expect(component.isGroupOpen('dimensions')).toBe(false);
+    expect(component.openGroupForAnchor('size')).toBe(true);
+    expect(component.isGroupOpen('dimensions')).toBe(true);
+  });
+
+  it('turns the picture on its side without losing the shape it was set to', async () => {
+    const { component, fixture, host } = await render({
+      width: 1216,
+      height: 832,
+    });
+    component.openGroup('dimensions');
+    fixture.detectChanges();
+
+    const chips = Array.from(
+      groupNamed(
+        fixture.nativeElement as HTMLElement,
+        'Dimensions',
+      ).querySelectorAll<HTMLElement>('.gs-chip'),
+    );
+    const threeTwo = chips.find((chip) => chip.textContent?.trim() === '3:2')!;
+    expect(threeTwo.classList).toContain('gs-chip--active');
+
+    host.querySelector<HTMLElement>('.gs-chip--swap')!.click();
+    fixture.detectChanges();
+
+    const form = component.form();
+    expect(form.controls.width.value).toBe(832);
+    expect(form.controls.height.value).toBe(1216);
+    // The shape is the same one; only which way up it is has changed.
+    expect(threeTwo.classList).toContain('gs-chip--active');
+    expect(component.isPresetActive(1216, 832)).toBe(true);
+  });
+
+  it('lifts the shapes and the chosen size when the hires pass goes on', async () => {
+    // The pass draws at the trained size and enlarges, so an SD 1.5 request
+    // with it on is asked what to enlarge to rather than what to draw.
+    const { component, fixture } = await render({ hires_fix: false });
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+    expect(component.presets().map((preset) => preset.width)).toEqual([
+      512, 704, 768, 896,
+    ]);
+    component.applyPreset(768, 512);
+    fixture.detectChanges();
+
+    component.form().controls.hires_fix.setValue(true);
+    fixture.detectChanges();
+
+    expect(component.presets().map((preset) => preset.width)).toEqual([
+      1024, 1152, 1216, 1344, 1408, 1536,
+    ]);
+    // The same shape, at the size the family now in force gives it.
+    expect(component.form().controls.width.value).toBe(1216);
+    expect(component.form().controls.height.value).toBe(832);
+
+    component.form().controls.hires_fix.setValue(false);
+    fixture.detectChanges();
+    expect(component.form().controls.width.value).toBe(768);
+    expect(component.form().controls.height.value).toBe(512);
+  });
+
+  it('leaves a size nobody chose from the shapes where it is', async () => {
+    const { component, fixture } = await render({
+      width: 960,
+      height: 576,
+      hires_fix: false,
+    });
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    component.form().controls.hires_fix.setValue(true);
+    fixture.detectChanges();
+
+    expect(component.form().controls.width.value).toBe(960);
+    expect(component.form().controls.height.value).toBe(576);
+  });
+
+  it('turns a custom size over too', async () => {
+    const { component, fixture } = await render({ width: 960, height: 576 });
+    component.openGroup('dimensions');
+    fixture.detectChanges();
+
+    component.swapDimensions();
+
+    expect(component.form().controls.width.value).toBe(576);
+    expect(component.form().controls.height.value).toBe(960);
+  });
+
+  it('offers every upscaler and face fixer the horde knows, named for reading', async () => {
+    const { component, fixture } = await render({
+      post_processing: ['4xNomos8kSC'],
+    });
+    component.openGroup('post');
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+
+    const optionValues = (id: string): string[] =>
+      Array.from(host.querySelectorAll<HTMLOptionElement>(`#${id} option`)).map(
+        (option) => option.value,
+      );
+
+    expect(optionValues('generate-upscaler')).toEqual(['', ...UPSCALERS]);
+    expect(optionValues('generate-facefixer')).toEqual(['', ...FACE_FIXERS]);
+    // The ids alone cannot be told apart on sight, so each option wears the
+    // name alchemy prints for it and the chosen one explains itself.
+    expect(
+      Array.from(
+        host.querySelectorAll<HTMLOptionElement>('#generate-upscaler option'),
+      ).map((option) => option.textContent?.trim()),
+    ).toContain(en['alchemy.form_names.4xNomos8kSC']);
+    expect(
+      host.querySelector('#generate-upscaler')?.parentElement?.textContent,
+    ).toContain(en['alchemy.form_meta.4xNomos8kSC.desc']);
+  });
+
+  it('carries the size on the dimensions line, and the hires pass with it', async () => {
+    // Every request has a size, so this group can be folded from the start and
+    // still answer the question the card was there to answer.
+    const { host } = await render();
+    expect(summaryOf(host, 'Dimensions')).toBe('1024 × 1024');
+
+    const { host: enlarged } = await render({
+      width: 1216,
+      height: 832,
+      hires_fix: true,
+    });
+    expect(summaryOf(enlarged, 'Dimensions')).toBe('1216 × 832 · Hires fix');
+  });
 });
 
 /**
@@ -1496,6 +1630,12 @@ describe('GenerateFormComponent sampler contract', () => {
     fixture.componentRef.setInput('form', form);
     fixture.componentRef.setInput('samplerContract', contract);
     fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.detectChanges();
+    // The sampling controls sit in a folded group, and a claim about a control
+    // has to be made against a panel that is drawing it.
+    for (const group of GROUP_IDS) {
+      fixture.componentInstance.openGroup(group);
+    }
     fixture.detectChanges();
     return {
       fixture,
@@ -1740,6 +1880,12 @@ describe('GenerateFormComponent on the published contract', () => {
     fixture.componentRef.setInput('samplerContract', contract);
     fixture.componentRef.setInput('modelBaseline', baseline);
     fixture.detectChanges();
+    // The sampling controls sit in a folded group, and a claim about a control
+    // has to be made against a panel that is drawing it.
+    for (const group of GROUP_IDS) {
+      fixture.componentInstance.openGroup(group);
+    }
+    fixture.detectChanges();
     return {
       fixture,
       component: fixture.componentInstance,
@@ -1885,6 +2031,12 @@ describe('GenerateFormComponent cost and size advice', () => {
     fixture.componentRef.setInput('form', form);
     fixture.componentRef.setInput('samplerContract', contract);
     fixture.componentRef.setInput('modelBaseline', baseline);
+    fixture.detectChanges();
+    // The controls these lines sit under live in folded groups, and a panel
+    // that is not drawing a control draws no line under it either.
+    for (const group of GROUP_IDS) {
+      fixture.componentInstance.openGroup(group);
+    }
     fixture.detectChanges();
     return {
       fixture,
@@ -2042,6 +2194,12 @@ describe('GenerateFormComponent advisory lines', () => {
     fixture.componentRef.setInput('modelRequirements', requirements);
     fixture.componentRef.setInput('samplerContract', contract);
     fixture.componentRef.setInput('lintWarnings', warnings);
+    fixture.detectChanges();
+    // A folded group draws none of its lines, and the claim here is that every
+    // warning the count reports is one the reader can read.
+    for (const group of GROUP_IDS) {
+      fixture.componentInstance.openGroup(group);
+    }
     fixture.detectChanges();
     return {
       host: fixture.nativeElement as HTMLElement,

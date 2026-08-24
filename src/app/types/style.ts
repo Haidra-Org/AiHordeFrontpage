@@ -60,17 +60,35 @@ export interface StyleTextualInversionConfig {
 export type ImageSamplerName = string;
 
 /**
+ * Every post-processor the horde knows, mirroring its `KNOWN_POST_PROCESSORS`.
+ * Image generation and alchemy draw on the same vocabulary, so alchemy's
+ * `ALCHEMY_POST_PROCESSOR_FORMS` is this list rather than a copy of it; the
+ * order is the one the alchemy panel offers them in. Which of these a given
+ * worker can actually run is decided server-side.
+ */
+export const IMAGE_POST_PROCESSORS = [
+  'GFPGAN',
+  'GFPGANv1.3',
+  'CodeFormers',
+  'RestoreFormer',
+  'RealESRGAN_x4plus',
+  'RealESRGAN_x2plus',
+  'RealESRGAN_x4plus_anime_6B',
+  'NMKD_Siax',
+  '4x_AnimeSharp',
+  '4xNomos8kSC',
+  '4xLSDIRplus',
+  '4xNomosWebPhoto_RealPLKSR',
+  '4xNomos2_realplksr_dysample',
+  '4xNomos2_hq_dat2',
+  '2xModernSpanimationV1',
+  'strip_background',
+] as const;
+
+/**
  * Post-processing options for image generation.
  */
-export type ImagePostProcessor =
-  | 'GFPGAN'
-  | 'RealESRGAN_x4plus'
-  | 'RealESRGAN_x2plus'
-  | 'RealESRGAN_x4plus_anime_6B'
-  | 'NMKD_Siax'
-  | 'CodeFormers'
-  | '4x_AnimeSharp'
-  | 'strip_background';
+export type ImagePostProcessor = (typeof IMAGE_POST_PROCESSORS)[number];
 
 /**
  * Parameters for image style generation.

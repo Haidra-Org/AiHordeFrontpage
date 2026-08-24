@@ -7,6 +7,7 @@ import {
   ImageSourceProcessing,
 } from '../../types/generation';
 import {
+  IMAGE_POST_PROCESSORS,
   ImagePostProcessor,
   ImageSamplerName,
   StyleLoraConfig,
@@ -73,30 +74,29 @@ export const SAMPLERS: readonly ImageSamplerName[] = [
 ];
 
 /**
- * Post-processors offered as a multi-select. A subset of the samplers the horde
- * knows about, chosen for image generation (upscalers, face fixers, background
- * strip) rather than the full alchemy catalogue.
+ * Every post-processor a request may carry. The horde decides which of them a
+ * worker can run, so the form offers the whole vocabulary.
  */
-export const POST_PROCESSORS: readonly ImagePostProcessor[] = [
-  'GFPGAN',
-  'CodeFormers',
-  'RealESRGAN_x4plus',
-  'RealESRGAN_x4plus_anime_6B',
-  'NMKD_Siax',
-  '4x_AnimeSharp',
-  'strip_background',
-];
+export const POST_PROCESSORS: readonly ImagePostProcessor[] =
+  IMAGE_POST_PROCESSORS;
 
 /**
- * Upscaler post-processors offered as a single-choice "Upscale" control. A
- * subset of {@link POST_PROCESSORS}; picking one replaces any other upscaler in
- * the `post_processing` array so at most one runs.
+ * Upscaler post-processors offered as a single-choice "Upscale" control.
+ * Picking one replaces any other upscaler in the `post_processing` array so at
+ * most one runs. The long-standing ones come first, then the newer models.
  */
 export const UPSCALERS: readonly ImagePostProcessor[] = [
   'RealESRGAN_x4plus',
+  'RealESRGAN_x2plus',
   'RealESRGAN_x4plus_anime_6B',
   'NMKD_Siax',
   '4x_AnimeSharp',
+  '4xNomos8kSC',
+  '4xLSDIRplus',
+  '4xNomosWebPhoto_RealPLKSR',
+  '4xNomos2_realplksr_dysample',
+  '4xNomos2_hq_dat2',
+  '2xModernSpanimationV1',
 ];
 
 /**
@@ -105,7 +105,9 @@ export const UPSCALERS: readonly ImagePostProcessor[] = [
  */
 export const FACE_FIXERS: readonly ImagePostProcessor[] = [
   'GFPGAN',
+  'GFPGANv1.3',
   'CodeFormers',
+  'RestoreFormer',
 ];
 
 /** The background-strip post-processor, toggled independently of the above. */
@@ -363,15 +365,6 @@ export const MAX_HIRES_DENOISE = 1;
 export const DEFAULT_HIRES_DENOISE = 0.65;
 
 /**
- * Post-processors that are face fixers; `facefixer_strength` is only meaningful
- * (and only emitted) when one of these is selected.
- */
-const FACE_FIXER_POST_PROCESSORS: readonly ImagePostProcessor[] = [
-  'GFPGAN',
-  'CodeFormers',
-];
-
-/**
  * Total-pixel budget above which the form warns that the request may be slow or
  * rejected by workers. Chosen to sit above the common SDXL 1024x1024 baseline so
  * ordinary requests do not trip it.
@@ -379,7 +372,10 @@ const FACE_FIXER_POST_PROCESSORS: readonly ImagePostProcessor[] = [
 export const PIXEL_WARN_THRESHOLD = 1536 * 1536;
 
 /** The base resolution family a set of aspect presets is scaled to. */
-export type ModelSizeBase = 512 | 1024;
+export type ModelSizeBase = 512 | 1024 | 1536;
+
+/** The family a model belongs to, before the hires pass lifts it. */
+export type ModelSizeFamily = 512 | 1024;
 
 export interface AspectPreset {
   /** Transloco key for the preset button label. */
@@ -388,27 +384,97 @@ export interface AspectPreset {
   height: number;
 }
 
+/**
+ * The shapes each family is offered in. Every preset is square or wide, and the
+ * swap control turns a chosen shape on its side, so a reader picks a shape once
+ * and an orientation once instead of reading a list of both.
+ *
+ * The 512 family stops at 16:9. Models trained at 512 stack a second subject
+ * into the spare width at 21:9 rather than framing one subject wider, and the
+ * shapes it does offer are the ones the 1024 family also offers, so lifting one
+ * family to the next always lands on the same shape.
+ *
+ * The 1536 family is what a 1024 model is offered while the hires pass is on.
+ * Its widest shape stays inside {@link PIXEL_WARN_THRESHOLD}, so choosing a
+ * preset never trips the panel's own budget warning.
+ */
 const ASPECT_PRESETS: Record<ModelSizeBase, readonly AspectPreset[]> = {
   512: [
     { labelKey: 'generate.aspect.square', width: 512, height: 512 },
+    { labelKey: 'generate.aspect.landscape_4_3', width: 704, height: 512 },
     { labelKey: 'generate.aspect.landscape_3_2', width: 768, height: 512 },
     { labelKey: 'generate.aspect.landscape_16_9', width: 896, height: 512 },
-    { labelKey: 'generate.aspect.portrait_2_3', width: 512, height: 768 },
-    { labelKey: 'generate.aspect.portrait_9_16', width: 512, height: 896 },
   ],
   1024: [
     { labelKey: 'generate.aspect.square', width: 1024, height: 1024 },
+    { labelKey: 'generate.aspect.landscape_4_3', width: 1152, height: 896 },
     { labelKey: 'generate.aspect.landscape_3_2', width: 1216, height: 832 },
     { labelKey: 'generate.aspect.landscape_16_9', width: 1344, height: 768 },
-    { labelKey: 'generate.aspect.portrait_2_3', width: 832, height: 1216 },
-    { labelKey: 'generate.aspect.portrait_9_16', width: 768, height: 1344 },
+    { labelKey: 'generate.aspect.landscape_2_1', width: 1408, height: 704 },
+    { labelKey: 'generate.aspect.landscape_21_9', width: 1536, height: 640 },
+  ],
+  1536: [
+    { labelKey: 'generate.aspect.square', width: 1536, height: 1536 },
+    { labelKey: 'generate.aspect.landscape_4_3', width: 1728, height: 1344 },
+    { labelKey: 'generate.aspect.landscape_3_2', width: 1792, height: 1216 },
+    { labelKey: 'generate.aspect.landscape_16_9', width: 2048, height: 1152 },
+    { labelKey: 'generate.aspect.landscape_2_1', width: 2048, height: 1024 },
+    { labelKey: 'generate.aspect.landscape_21_9', width: 2304, height: 960 },
   ],
 };
+
+const ASPECT_BASES: readonly ModelSizeBase[] = [512, 1024, 1536];
 
 export function buildAspectPresets(
   base: ModelSizeBase,
 ): readonly AspectPreset[] {
   return ASPECT_PRESETS[base];
+}
+
+/** The preset of `base` that `width`x`height` is, either way round. */
+function presetOfBase(
+  base: ModelSizeBase,
+  width: number,
+  height: number,
+): AspectPreset | null {
+  const long = Math.max(width, height);
+  const short = Math.min(width, height);
+  return (
+    ASPECT_PRESETS[base].find(
+      (preset) => preset.width === long && preset.height === short,
+    ) ?? null
+  );
+}
+
+/**
+ * The same shape in the `base` family, when `width`x`height` is a shape some
+ * family offers and `base` offers it at another size. Null for a size nothing
+ * offers: a custom size is the reader's own and is never moved.
+ *
+ * Orientation is kept, so a picture set on its side stays on its side.
+ */
+export function rescalePresetToBase(
+  width: number,
+  height: number,
+  base: ModelSizeBase,
+): { width: number; height: number } | null {
+  const portrait = height > width;
+  for (const family of ASPECT_BASES) {
+    const current = presetOfBase(family, width, height);
+    if (current === null) {
+      continue;
+    }
+    const target = ASPECT_PRESETS[base].find(
+      (preset) => preset.labelKey === current.labelKey,
+    );
+    if (!target || target === current) {
+      return null;
+    }
+    return portrait
+      ? { width: target.height, height: target.width }
+      : { width: target.width, height: target.height };
+  }
+  return null;
 }
 
 // --- Model recommendations ------------------------------------------------
@@ -437,13 +503,37 @@ export function nativeSquareFor(baseline: string | null): number | null {
   return BASELINE_NATIVE_SQUARES[baseline] ?? DEFAULT_NATIVE_SQUARE;
 }
 
-/** The aspect-preset family that suits `baseline`, or null when unknown. */
-export function sizeBaseFor(baseline: string | null): ModelSizeBase | null {
+/** The family `baseline`'s models belong to, or null when unknown. */
+export function sizeFamilyFor(baseline: string | null): ModelSizeFamily | null {
   const native = nativeSquareFor(baseline);
   if (native === null) {
     return null;
   }
   return native <= 768 ? 512 : 1024;
+}
+
+/**
+ * The family one step above `family`, which is what the hires pass is for: it
+ * draws at the trained size and enlarges, so the sizes worth asking for while
+ * it is on are the ones above what the model draws natively.
+ */
+export function liftSizeBase(
+  family: ModelSizeFamily,
+  hiresFix: boolean,
+): ModelSizeBase {
+  if (!hiresFix) {
+    return family;
+  }
+  return family === 512 ? 1024 : 1536;
+}
+
+/** The aspect-preset family to offer for `baseline`, or null when unknown. */
+export function sizeBaseFor(
+  baseline: string | null,
+  hiresFix: boolean,
+): ModelSizeBase | null {
+  const family = sizeFamilyFor(baseline);
+  return family === null ? null : liftSizeBase(family, hiresFix);
 }
 
 /**
@@ -465,19 +555,32 @@ export function isSnappableSize(width: number, height: number): boolean {
 
 /**
  * How far the shorter side may sit from the native square before the size reads
- * as belonging to another baseline family. The bounds are asymmetric because the
- * aspect presets shrink the shorter side (down to 0.75x at 16:9) but never grow
- * it, while a size carried over from a larger family overshoots it outright.
+ * as belonging to another baseline family. The bounds are asymmetric because a
+ * wide shape shrinks the shorter side but never grows it, while a size carried
+ * over from a larger family overshoots it outright.
  */
 const NATIVE_SIZE_MIN_RATIO = 0.75;
 const NATIVE_SIZE_MAX_RATIO = 1.5;
 
-/** Whether `width`x`height` reads as belonging to the `native` square's family. */
+/**
+ * Whether `width`x`height` reads as belonging to the `native` square's family.
+ *
+ * A shape the family itself offers always does, either way round. The widest of
+ * them cut the shorter side past what the ratio band would allow, and a size the
+ * panel put there on the reader's press must not then be read back as belonging
+ * to another family.
+ */
 export function sizeSuitsNativeSquare(
   native: number,
   width: number,
   height: number,
 ): boolean {
+  if (
+    ASPECT_PRESETS[native as ModelSizeBase] !== undefined &&
+    presetOfBase(native as ModelSizeBase, width, height) !== null
+  ) {
+    return true;
+  }
   const shortest = Math.min(width, height);
   return (
     shortest >= native * NATIVE_SIZE_MIN_RATIO &&
@@ -747,9 +850,20 @@ export function nativeSizeHint(
   baseline: string | null,
   width: number,
   height: number,
+  hiresFix: boolean,
 ): RequirementHint | null {
   const native = nativeSquareFor(baseline);
   if (native === null || sizeSuitsNativeSquare(native, width, height)) {
+    return null;
+  }
+  // While the hires pass is on, the panel offers the family above the model's
+  // own and drawing above native is the point, so its shapes are not drift.
+  const family = sizeFamilyFor(baseline);
+  if (
+    hiresFix &&
+    family !== null &&
+    presetOfBase(liftSizeBase(family, true), width, height) !== null
+  ) {
     return null;
   }
   return hint('native_size', { size: `${native}×${native}` }, false);
@@ -906,7 +1020,7 @@ export function sizeAdvisory(
   return firstAdvisory([
     pixelBudgetHint(width, height),
     sd15HiresHint(baseline, width, height, hiresFix),
-    nativeSizeHint(baseline, width, height),
+    nativeSizeHint(baseline, width, height, hiresFix),
   ]);
 }
 
@@ -1878,7 +1992,7 @@ export function buildImageRequest(
   }
   // facefixer_strength is meaningless unless a face fixer is post-processing.
   const usesFaceFixer = value.post_processing.some((processor) =>
-    FACE_FIXER_POST_PROCESSORS.includes(processor),
+    FACE_FIXERS.includes(processor),
   );
   if (usesFaceFixer) {
     params.facefixer_strength = value.facefixer_strength;

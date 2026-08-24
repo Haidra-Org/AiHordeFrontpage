@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildAspectPresets,
+  rescalePresetToBase,
   buildImageRequest,
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
@@ -10,7 +11,9 @@ import {
   LEGACY_CONTROL_TYPES,
   MAX_CFG_SCALE,
   MAX_CLIP_SKIP,
+  MAX_DIMENSION,
   MAX_STEPS,
+  PIXEL_WARN_THRESHOLD,
   MIN_CFG_SCALE,
   MIN_STEPS,
   rangeFillPercent,
@@ -209,6 +212,25 @@ describe('buildImageRequest', () => {
       buildImageRequest(value({ post_processing: ['GFPGAN', 'CodeFormers'] }))
         .params?.post_processing,
     ).toEqual(['GFPGAN', 'CodeFormers']);
+  });
+
+  it('sends the newer post-processors as they are named', () => {
+    // Which of them a worker can run is settled by the horde, so the request
+    // carries the name the reader picked rather than a substitute.
+    expect(
+      buildImageRequest(
+        value({ post_processing: ['4xNomos8kSC', 'RestoreFormer'] }),
+      ).params?.post_processing,
+    ).toEqual(['4xNomos8kSC', 'RestoreFormer']);
+    // A face fixer among them is what makes the strength worth sending.
+    expect(
+      buildImageRequest(
+        value({
+          post_processing: ['4xNomos8kSC', 'RestoreFormer'],
+          facefixer_strength: 0.4,
+        }),
+      ).params?.facefixer_strength,
+    ).toBe(0.4);
   });
 
   it('attaches hires_fix and tiling only when enabled', () => {
@@ -632,6 +654,14 @@ describe('coerceFormValue', () => {
     expect(merged.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
     expect(merged.post_processing).toEqual(['GFPGAN']);
     expect('unknownField' in merged).toBe(false);
+  });
+
+  it('keeps a newer post-processor a stored value carries', () => {
+    expect(
+      coerceFormValue({
+        post_processing: ['2xModernSpanimationV1', 'GFPGANv1.3'],
+      }).post_processing,
+    ).toEqual(['2xModernSpanimationV1', 'GFPGANv1.3']);
   });
 
   it('rejects a junk source mode and keeps a valid one', () => {
@@ -1130,19 +1160,52 @@ describe('baseline size defaults', () => {
     expect(nativeSquareFor('stable_diffusion_xl')).toBe(1024);
     expect(nativeSquareFor('stable_cascade')).toBe(1024);
     expect(nativeSquareFor('flux_1')).toBe(1024);
-    expect(sizeBaseFor('stable_diffusion_1')).toBe(512);
-    expect(sizeBaseFor('stable_diffusion_2')).toBe(512);
-    expect(sizeBaseFor('flux_1')).toBe(1024);
+    expect(sizeBaseFor('stable_diffusion_1', false)).toBe(512);
+    expect(sizeBaseFor('stable_diffusion_2', false)).toBe(512);
+    expect(sizeBaseFor('flux_1', false)).toBe(1024);
+  });
+
+  it('offers the family above the model while the hires pass is on', () => {
+    // The pass draws at the trained size and enlarges, so the sizes worth
+    // asking for are the ones a single pass could not hold.
+    expect(sizeBaseFor('stable_diffusion_1', true)).toBe(1024);
+    expect(sizeBaseFor('stable_diffusion_2', true)).toBe(1024);
+    expect(sizeBaseFor('stable_diffusion_xl', true)).toBe(1536);
+    expect(sizeBaseFor('flux_1', true)).toBe(1536);
   });
 
   it('assumes a baseline it has never seen is a modern one', () => {
     expect(nativeSquareFor('some_future_baseline')).toBe(1024);
-    expect(sizeBaseFor('some_future_baseline')).toBe(1024);
+    expect(sizeBaseFor('some_future_baseline', false)).toBe(1024);
   });
 
   it('answers nothing when no baseline is known', () => {
     expect(nativeSquareFor(null)).toBeNull();
-    expect(sizeBaseFor(null)).toBeNull();
+    expect(sizeBaseFor(null, false)).toBeNull();
+  });
+
+  it('carries a chosen shape between families, keeping which way up it is', () => {
+    expect(rescalePresetToBase(768, 512, 1024)).toEqual({
+      width: 1216,
+      height: 832,
+    });
+    expect(rescalePresetToBase(512, 768, 1024)).toEqual({
+      width: 832,
+      height: 1216,
+    });
+    expect(rescalePresetToBase(1216, 832, 512)).toEqual({
+      width: 768,
+      height: 512,
+    });
+    expect(rescalePresetToBase(1216, 832, 1536)).toEqual({
+      width: 1792,
+      height: 1216,
+    });
+    // A shape the family it is going to does not offer stays where it is, and
+    // so does a size no family offers at all.
+    expect(rescalePresetToBase(1536, 640, 512)).toBeNull();
+    expect(rescalePresetToBase(960, 576, 1024)).toBeNull();
+    expect(rescalePresetToBase(1024, 1024, 1024)).toBeNull();
   });
 
   it('only treats a baseline native square as snappable', () => {
@@ -1157,6 +1220,79 @@ describe('baseline size defaults', () => {
     ).toBe(true);
     expect(isSnappableSize(1216, 832)).toBe(false);
     expect(isSnappableSize(640, 640)).toBe(false);
+  });
+
+  it('offers each family the shapes it renders well, square or wide', () => {
+    // Every preset is square or landscape: the panel's swap turns the chosen
+    // shape on its side, so a tall picture is the same choice made once.
+    expect(
+      buildAspectPresets(1024).map((preset) => [
+        preset.labelKey,
+        preset.width,
+        preset.height,
+      ]),
+    ).toEqual([
+      ['generate.aspect.square', 1024, 1024],
+      ['generate.aspect.landscape_4_3', 1152, 896],
+      ['generate.aspect.landscape_3_2', 1216, 832],
+      ['generate.aspect.landscape_16_9', 1344, 768],
+      ['generate.aspect.landscape_2_1', 1408, 704],
+      ['generate.aspect.landscape_21_9', 1536, 640],
+    ]);
+    // The 512 family stops short of the widest shapes: models trained at 512
+    // stack a second subject into the spare width rather than framing one.
+    expect(
+      buildAspectPresets(512).map((preset) => [
+        preset.labelKey,
+        preset.width,
+        preset.height,
+      ]),
+    ).toEqual([
+      ['generate.aspect.square', 512, 512],
+      ['generate.aspect.landscape_4_3', 704, 512],
+      ['generate.aspect.landscape_3_2', 768, 512],
+      ['generate.aspect.landscape_16_9', 896, 512],
+    ]);
+    // What a 1024 model is offered while the hires pass is on.
+    expect(
+      buildAspectPresets(1536).map((preset) => [
+        preset.labelKey,
+        preset.width,
+        preset.height,
+      ]),
+    ).toEqual([
+      ['generate.aspect.square', 1536, 1536],
+      ['generate.aspect.landscape_4_3', 1728, 1344],
+      ['generate.aspect.landscape_3_2', 1792, 1216],
+      ['generate.aspect.landscape_16_9', 2048, 1152],
+      ['generate.aspect.landscape_2_1', 2048, 1024],
+      ['generate.aspect.landscape_21_9', 2304, 960],
+    ]);
+    for (const preset of [
+      ...buildAspectPresets(512),
+      ...buildAspectPresets(1024),
+      ...buildAspectPresets(1536),
+    ]) {
+      expect(preset.width).toBeGreaterThanOrEqual(preset.height);
+      expect(preset.width % 64).toBe(0);
+      expect(preset.height % 64).toBe(0);
+      expect(preset.width).toBeLessThanOrEqual(MAX_DIMENSION);
+      // A preset must never trip the panel's own budget warning.
+      expect(preset.width * preset.height).toBeLessThanOrEqual(
+        PIXEL_WARN_THRESHOLD,
+      );
+    }
+    // Every shape a family offers is offered by the family above it, so lifting
+    // one for the hires pass always lands on the same shape.
+    for (const [lower, upper] of [
+      [512, 1024],
+      [1024, 1536],
+    ] as const) {
+      const above = buildAspectPresets(upper).map((preset) => preset.labelKey);
+      for (const preset of buildAspectPresets(lower)) {
+        expect(above).toContain(preset.labelKey);
+      }
+    }
   });
 
   it('accepts the aspect presets of a family as suiting its native square', () => {
@@ -1269,13 +1405,27 @@ describe('requirement hints', () => {
   });
 
   it('notes an off-family size without calling it a violation', () => {
-    expect(nativeSizeHint('stable_diffusion_xl', 1024, 1024)).toBeNull();
-    expect(nativeSizeHint('stable_diffusion_xl', 512, 512)).toEqual({
+    expect(nativeSizeHint('stable_diffusion_xl', 1024, 1024, false)).toBeNull();
+    expect(nativeSizeHint('stable_diffusion_xl', 512, 512, false)).toEqual({
       key: 'generate.form.requirement.native_size',
       params: { size: '1024×1024' },
       violated: false,
     });
-    expect(nativeSizeHint(null, 512, 512)).toBeNull();
+    expect(nativeSizeHint(null, 512, 512, false)).toBeNull();
+  });
+
+  it('says nothing about a size the hires pass is there to reach', () => {
+    // 1216x832 is off-family for an SD 1.5 model in one pass, and exactly what
+    // the panel offers it while the pass is on.
+    expect(
+      nativeSizeHint('stable_diffusion_1', 1216, 832, false),
+    ).not.toBeNull();
+    expect(nativeSizeHint('stable_diffusion_1', 1216, 832, true)).toBeNull();
+    expect(nativeSizeHint('stable_diffusion_1', 1024, 1024, true)).toBeNull();
+    // A size the shapes never offered is still measured against the model.
+    expect(
+      nativeSizeHint('stable_diffusion_1', 1280, 1280, true),
+    ).not.toBeNull();
   });
 
   it('warns an SD 1.5 request past 768px with no hires pass', () => {
