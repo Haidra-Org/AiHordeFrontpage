@@ -5987,7 +5987,10 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  padding: 12px 10px calc(14px + env(safe-area-inset-bottom));
+  /* The viewer covers the studio's tab bar, so the row is the last thing above
+     the bottom of the screen and clears the home indicator itself. The fallback
+     keeps the clearance where env() is unknown. */
+  padding: 12px 10px calc(14px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
 }
 .gen-studio .gs-viewer-act {
@@ -6060,6 +6063,8 @@
 @media (max-width: 430px) {
   .gen-studio .gs-viewer-actions {
     gap: 6px;
+    /* Tighter sides, but the clearance from the bottom edge stays. */
+    padding: 10px 8px calc(12px + env(safe-area-inset-bottom, 0px));
   }
   .gen-studio .gs-viewer-act {
     padding: 7px 9px;

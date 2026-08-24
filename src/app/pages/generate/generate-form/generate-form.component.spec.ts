@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   FIELD_LABEL_KEY,
   GROUP_IDS,
@@ -17,6 +17,7 @@ import {
   STEPS_SLIDER_MAX,
   UPSCALERS,
   buildStyledImageRequest,
+  coerceFormValue,
   createGenerateForm,
   kudosBreakdown,
   modelWaitEstimate,
@@ -28,6 +29,7 @@ import {
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
 import type { ActiveModel } from '../../../types/active-model';
+import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
 import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
@@ -3025,6 +3027,31 @@ describe('GenerateFormComponent pinned model', () => {
     expect(form.controls.model.disabled).toBe(false);
   });
 
+  it('keeps the reader own model through a reload while a style pins one', async () => {
+    const { form } = await createComponent(FORCED);
+    expect(form.controls.model.value).toBe(FORCED.model);
+
+    // What the studio would have written to storage and read back afterwards.
+    const persisted = coerceFormValue(
+      JSON.parse(JSON.stringify(form.getRawValue())),
+    );
+    expect(persisted.modelBeforeStyle).toBe('my model');
+
+    const reloaded = TestBed.createComponent(GenerateFormComponent);
+    const reloadedForm = createGenerateForm(persisted);
+    reloaded.componentRef.setInput('form', reloadedForm);
+    reloaded.componentRef.setInput('forcedParams', FORCED);
+    reloaded.detectChanges();
+    expect(reloadedForm.controls.model.value).toBe(FORCED.model);
+
+    reloaded.componentRef.setInput('forcedParams', null);
+    reloadedForm.controls.styleName.setValue('');
+    reloaded.detectChanges();
+
+    expect(reloadedForm.controls.model.value).toBe('my model');
+    expect(reloadedForm.controls.modelBeforeStyle.value).toBeNull();
+  });
+
   it('carries on from the style model once the reader takes the model back', async () => {
     const { fixture, component, form } = await createComponent(FORCED);
 
@@ -3157,5 +3184,129 @@ describe('GenerateFormComponent censor switch', () => {
 
     expect(form.controls.censor_nsfw.disabled).toBe(false);
     expect(form.getRawValue().censor_nsfw).toBe(true);
+  });
+});
+
+describe('GenerateFormComponent worker picker keyboard', () => {
+  // Which groups are folded is remembered, so each render starts from nothing.
+  beforeEach(() => localStorage.clear());
+
+  const worker = (id: string, name: string): HordeWorker =>
+    ({
+      type: 'image',
+      id,
+      name,
+      online: true,
+      maintenance_mode: false,
+      nsfw: false,
+      models: ['a model'],
+      max_pixels: 1024 * 1024,
+      img2img: true,
+      requests_fulfilled: 0,
+      kudos_rewards: 0,
+      performance: '',
+      threads: 1,
+      uptime: 0,
+      paused: false,
+      trusted: true,
+      flagged: false,
+      suspicious: 0,
+      uncompleted_jobs: 0,
+      bridge_agent: '',
+    }) as HordeWorker;
+
+  async function renderPicker(): Promise<{
+    host: HTMLElement;
+    fixture: ComponentFixture<GenerateFormComponent>;
+    options: HTMLButtonElement[];
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.componentRef.setInput('activeWorkers', [
+      worker('id-one', 'Alpha'),
+      worker('id-two', 'Beta'),
+      worker('id-three', 'Gamma'),
+    ]);
+    fixture.detectChanges();
+
+    if (!fixture.componentInstance.isGroupOpen('horde')) {
+      fixture.componentInstance.toggleGroup('horde');
+    }
+    fixture.detectChanges();
+    fixture.componentInstance.toggleWorkerPick();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const options = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.gs-worker-opt'),
+    );
+    expect(options.length).toBe(3);
+    return { host, fixture, options };
+  }
+
+  const press = (element: HTMLElement, key: string): void => {
+    element.dispatchEvent(
+      new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+    );
+  };
+
+  it('moves focus to the next row on ArrowDown', async () => {
+    const { fixture, options } = await renderPicker();
+    options[0].focus();
+
+    press(options[0], 'ArrowDown');
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(options[1]);
+    expect(options[1].tabIndex).toBe(0);
+    expect(options[0].tabIndex).toBe(-1);
+  });
+
+  it('wraps at both ends and jumps with Home and End', async () => {
+    const { fixture, options } = await renderPicker();
+    options[0].focus();
+
+    press(options[0], 'ArrowUp');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(options[2]);
+
+    press(options[2], 'ArrowDown');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(options[0]);
+
+    press(options[0], 'End');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(options[2]);
+
+    press(options[2], 'Home');
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(options[0]);
+  });
+
+  it('leaves one tab stop on the list and names its rows as options', async () => {
+    const { host, options } = await renderPicker();
+
+    expect(host.querySelector('.gs-worker-pop')?.getAttribute('role')).toBe(
+      'listbox',
+    );
+    expect(
+      options.every((option) => option.getAttribute('role') === 'option'),
+    ).toBe(true);
+    expect(options.filter((option) => option.tabIndex === 0).length).toBe(1);
   });
 });

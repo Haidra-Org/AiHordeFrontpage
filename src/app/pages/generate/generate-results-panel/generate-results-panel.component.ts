@@ -1287,6 +1287,7 @@ export class GenerateResultsPanelComponent {
     if (!image) {
       return;
     }
+    this.borrowedFrom = this.fullscreen.target();
     this.fullscreen.setTarget(image);
     this.fullscreenBorrowed.set(true);
     await this.fullscreen.enter();
@@ -1297,16 +1298,17 @@ export class GenerateResultsPanelComponent {
     }
   }
 
-  /** Give the whole-screen target back to the studio shell that owns it. */
+  /** What the whole screen was set to before the viewer borrowed it. */
+  private borrowedFrom: HTMLElement | null = null;
+
+  /** Give the whole-screen target back to whoever set it before the viewer. */
   private releaseFullscreenTarget(): void {
     if (!this.fullscreenBorrowed()) {
       return;
     }
     this.fullscreenBorrowed.set(false);
-    const shell = this.host.nativeElement.closest<HTMLElement>('.gs-shell');
-    if (shell) {
-      this.fullscreen.setTarget(shell);
-    }
+    this.fullscreen.setTarget(this.borrowedFrom);
+    this.borrowedFrom = null;
   }
 
   /**

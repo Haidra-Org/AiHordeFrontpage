@@ -31,8 +31,16 @@ export class FullscreenService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT) as FullscreenCapableDocument;
 
-  private target: HTMLElement | null = null;
+  private readonly _target = signal<HTMLElement | null>(null);
   private readonly _active = signal(false);
+
+  /**
+   * The element that would go on the whole screen. A caller borrowing the
+   * screen for something of its own reads this first so it can hand back what
+   * was here rather than guess at it.
+   */
+  public readonly target: Signal<HTMLElement | null> =
+    this._target.asReadonly();
 
   /** Whether the shell is on the whole screen right now. */
   public readonly active: Signal<boolean> = this._active.asReadonly();
@@ -55,7 +63,7 @@ export class FullscreenService {
 
   /** The element that goes on screen. The shell owns it and clears it on the way out. */
   setTarget(element: HTMLElement | null): void {
-    this.target = element;
+    this._target.set(element);
   }
 
   async toggle(): Promise<void> {
@@ -67,7 +75,7 @@ export class FullscreenService {
   }
 
   async enter(): Promise<void> {
-    const element = this.target as FullscreenCapableElement | null;
+    const element = this._target() as FullscreenCapableElement | null;
     if (!this.available || !element) return;
 
     const request =
@@ -104,7 +112,7 @@ export class FullscreenService {
       this.document.fullscreenElement ??
       this.document.webkitFullscreenElement ??
       null;
-    const target = this.target;
+    const target = this._target();
     this._active.set(
       current !== null &&
         target !== null &&

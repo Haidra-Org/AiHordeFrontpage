@@ -1185,6 +1185,14 @@ export interface GenerateFormValue {
   /** A single model name, or an empty string for "any model". */
   model: string;
   /**
+   * The model the reader picked before a style pinned one over
+   * {@link GenerateFormValue.model}, so clearing the style hands their own pick
+   * back. It rides the persisted form value because a style survives a reload
+   * and the pick it replaced has to survive with it. Empty when no style is
+   * pinning a model, and never sent with a request.
+   */
+  modelBeforeStyle: string | null;
+  /**
    * Further model names the request would also accept, beside
    * {@link GenerateFormValue.model}. The horde reads `models` as "any of these
    * may serve it", so these widen who can take the job without changing which
@@ -1299,6 +1307,7 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   negativePrompt: '',
   n: 1,
   model: '',
+  modelBeforeStyle: null,
   extraModels: [],
   sampler_name: 'k_euler_a',
   steps: 25,
@@ -1548,6 +1557,12 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
+    if (key === 'modelBeforeStyle') {
+      if (value === null || typeof value === 'string') {
+        merged.modelBeforeStyle = value;
+      }
+      continue;
+    }
     if (key === 'styleDetach') {
       merged.styleDetach = coerceStyleDetach(value);
       continue;
@@ -1657,6 +1672,7 @@ export function createGenerateForm(
     negativePrompt: control(value.negativePrompt),
     n: bounded(value.n, MIN_BATCH, MAX_API_BATCH),
     model: control(value.model),
+    modelBeforeStyle: control(value.modelBeforeStyle),
     extraModels: control(value.extraModels),
     sampler_name: control(value.sampler_name),
     steps: bounded(value.steps, MIN_STEPS, MAX_STEPS),
@@ -2567,10 +2583,14 @@ export function kudosBreakdown(
 
 /**
  * Fields the changed-settings ledger never lists. `styleDetach` records which
- * sections of a style the reader opted out of, which is bookkeeping about
- * another setting rather than a setting of its own.
+ * sections of a style the reader opted out of, and `modelBeforeStyle` holds the
+ * model pick a style is standing on: both are bookkeeping about another setting
+ * rather than settings of their own.
  */
-const LEDGER_EXCLUDED: readonly (keyof GenerateFormValue)[] = ['styleDetach'];
+const LEDGER_EXCLUDED: readonly (keyof GenerateFormValue)[] = [
+  'styleDetach',
+  'modelBeforeStyle',
+];
 
 /**
  * Every setting the form is no longer carrying its default for, in the order

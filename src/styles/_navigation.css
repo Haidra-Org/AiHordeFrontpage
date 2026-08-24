@@ -118,6 +118,18 @@
      site bar takes is a band of the panel the reader is using. Nothing is
      dropped: the same links at the same order, one step shorter. The sticky
      registry measures what it is given, so the offset below follows. */
+  /* Bold uppercase headings scroll under this bar, and at the wash the
+     full-height bar wears they read through it as smudged text. The compact bar
+     is drawn nearly solid instead; the blur stays, so what passes under it is
+     still softened rather than sharp. */
+  .nav-shell--compact {
+    background: rgb(255 255 255 / 0.95);
+  }
+
+  .dark .nav-shell--compact {
+    background: rgb(17 24 39 / 0.94);
+  }
+
   .nav-shell--compact .nav-container {
     @apply h-12;
   }

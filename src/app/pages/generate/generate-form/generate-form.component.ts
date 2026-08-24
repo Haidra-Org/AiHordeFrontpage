@@ -13,6 +13,7 @@ import {
   output,
   signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -347,7 +348,10 @@ const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
 };
 
 /** A setting the changed-settings ledger can list. */
-type LedgerField = Exclude<keyof GenerateFormValue, 'styleDetach'>;
+type LedgerField = Exclude<
+  keyof GenerateFormValue,
+  'styleDetach' | 'modelBeforeStyle'
+>;
 
 /** Where a ledger row is listed: a collapsible group, or the compose cards. */
 type LedgerSection = GroupId | 'compose';
@@ -1004,6 +1008,22 @@ export class GenerateFormComponent implements OnInit {
   private readonly workerPickBtn =
     viewChild<ElementRef<HTMLButtonElement>>('workerPickBtn');
 
+  private readonly workerOptBtns =
+    viewChildren<ElementRef<HTMLButtonElement>>('workerOptBtn');
+
+  /**
+   * Which row of the picker the keyboard is on. The rows are buttons, so one of
+   * them holds the tab stop and the arrows move it between them rather than
+   * making the reader tab through every row to reach the one they want.
+   */
+  private readonly workerPickActive = signal(0);
+
+  /** The row holding the tab stop, kept inside a list the typing has shortened. */
+  public readonly workerPickTabStop = computed(() => {
+    const count = this.workerMatches().length;
+    return count === 0 ? 0 : Math.min(this.workerPickActive(), count - 1);
+  });
+
   /**
    * The workers the request could be pinned to, best first. A worker already on
    * the list is left out: the row for it is right above, with its own remove.
@@ -1037,6 +1057,39 @@ export class GenerateFormComponent implements OnInit {
 
   public toggleWorkerPick(): void {
     this.workerPickOpen.set(!this.workerPickOpen());
+    this.workerPickActive.set(0);
+  }
+
+  /**
+   * Move between picker rows: the arrows step and wrap, Home and End jump to
+   * the ends. Choosing a row is left to the button itself, which Enter and
+   * Space already press.
+   */
+  public onWorkerOptionKeydown(event: KeyboardEvent, index: number): void {
+    const count = this.workerMatches().length;
+    if (count === 0) {
+      return;
+    }
+    let next: number;
+    switch (event.key) {
+      case 'ArrowDown':
+        next = index + 1 < count ? index + 1 : 0;
+        break;
+      case 'ArrowUp':
+        next = index > 0 ? index - 1 : count - 1;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = count - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    this.workerPickActive.set(next);
+    this.workerOptBtns()[next]?.nativeElement.focus();
   }
 
   public closeWorkerPick(): void {
@@ -2180,33 +2233,31 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /**
-   * The model the reader picked before a style pinned one over it, so clearing
-   * the style hands their own pick back rather than leaving the style's behind.
-   */
-  private modelBeforePin: string | null = null;
-
-  /**
    * Show the model a style pins in the model field itself. The request already
    * runs on that model, so a field left showing the reader's own pick names a
    * model nothing will use.
    */
   private syncPinnedModel(): void {
     const control = this.form().controls.model;
+    // The pick a style stands on lives in the form value rather than in a field
+    // here, so it comes back with the rest of the form after a reload and the
+    // style can still be cleared off it.
+    const before = this.form().controls.modelBeforeStyle;
     const pinned = this.isFieldLocked('model')
       ? (this.forcedParams()?.model ?? null)
       : null;
     if (pinned !== null) {
-      if (this.modelBeforePin === null) {
-        this.modelBeforePin = control.value;
+      if (before.value === null) {
+        before.setValue(control.value);
       }
       if (control.value !== pinned) {
         control.setValue(pinned);
       }
       return;
     }
-    if (this.modelBeforePin !== null) {
-      control.setValue(this.modelBeforePin);
-      this.modelBeforePin = null;
+    if (before.value !== null) {
+      control.setValue(before.value);
+      before.setValue(null);
     }
   }
 
@@ -2296,7 +2347,7 @@ export class GenerateFormComponent implements OnInit {
     if (section === 'model') {
       // The reader carries on from the style's model, so the pick they had
       // before it is no longer waiting to come back.
-      this.modelBeforePin = null;
+      controls.modelBeforeStyle.setValue(null);
       set(controls.model, forced.model);
     }
     if (section === 'dimensions') {

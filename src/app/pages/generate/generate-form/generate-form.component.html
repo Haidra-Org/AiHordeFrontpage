@@ -1865,14 +1865,19 @@
                         >
                           @for (option of workerMatches(); track option.id) {
                             <button
+                              #workerOptBtn
                               type="button"
                               class="gs-worker-opt"
                               role="option"
                               [attr.aria-selected]="false"
+                              [tabIndex]="
+                                workerPickTabStop() === $index ? 0 : -1
+                              "
                               [attr.aria-label]="
                                 'generate.form.worker_pick_add'
                                   | transloco: { name: option.name }
                               "
+                              (keydown)="onWorkerOptionKeydown($event, $index)"
                               (click)="pickWorker(option)"
                             >
                               <span class="gs-worker-opt-name">{{

@@ -182,6 +182,25 @@ describe('FullscreenService', () => {
     expect(service.active()).toBe(true);
   });
 
+  it('names the element it holds so a borrower can put it back', () => {
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    const shell = makeElement(doc, 'standard');
+    const picture = makeElement(doc, 'standard');
+
+    expect(service.target()).toBeNull();
+
+    service.setTarget(shell);
+    expect(service.target()).toBe(shell);
+
+    const borrowedFrom = service.target();
+    service.setTarget(picture);
+    expect(service.target()).toBe(picture);
+
+    service.setTarget(borrowedFrom);
+    expect(service.target()).toBe(shell);
+  });
+
   it('stays out of the way once the shell that owned the element is gone', async () => {
     const { doc } = makeDocument('standard');
     const service = serviceWith(doc);

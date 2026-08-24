@@ -131,6 +131,7 @@ type EditorOp =
   | { kind: 'remove'; node: Shape; parent: Layer }
   | { kind: 'place'; node: Shape; before: NodePlacement; after: NodePlacement }
   | { kind: 'crop'; before: EditorRect; after: EditorRect }
+  | { kind: 'background'; before: string; after: string }
   | {
       kind: 'frame';
       before: { rect: EditorRect; width: number; height: number };
@@ -330,13 +331,8 @@ export class SourceEditorComponent {
    */
   private readonly historyStep = signal<EditorOp | null>(null);
   private readonly appliedStep = signal<EditorOp | null>(null);
-  /** Whether an edit that takes no undo entry is standing, i.e. the ground. */
-  private readonly offHistoryEdit = signal(false);
   public readonly dirty = computed(() =>
-    hasUnappliedWork(
-      this.historyStep() === this.appliedStep(),
-      this.offHistoryEdit(),
-    ),
+    hasUnappliedWork(this.historyStep() === this.appliedStep()),
   );
 
   public readonly minBrush = MIN_BRUSH;
@@ -747,10 +743,18 @@ export class SourceEditorComponent {
   }
 
   public setBackground(value: string): void {
+    const before = this.background();
+    if (before === value) {
+      return;
+    }
+    this.applyBackground(value);
+    this.markTouched('picture');
+    this.push({ kind: 'background', before, after: value });
+  }
+
+  private applyBackground(value: string): void {
     this.background.set(value);
     this.blankRect?.fill(value);
-    this.markTouched('picture');
-    this.offHistoryEdit.set(true);
   }
 
   public toggleLockAspect(): void {
@@ -1695,6 +1699,10 @@ export class SourceEditorComponent {
       this.applyDocRect(backwards ? op.before : op.after);
       return;
     }
+    if (op.kind === 'background') {
+      this.applyBackground(backwards ? op.before : op.after);
+      return;
+    }
     if (op.kind === 'frame') {
       const target = backwards ? op.before : op.after;
       this.frameRect?.setAttrs(target.rect);
@@ -2086,7 +2094,6 @@ export class SourceEditorComponent {
       this.baseImage = image;
       this.touched.set(NOTHING_TOUCHED);
       this.appliedStep.set(this.historyStep());
-      this.offHistoryEdit.set(false);
     } finally {
       if (token === this.exportToken) {
         this.busy.set(false);

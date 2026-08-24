@@ -105,12 +105,37 @@ describe('what closing the editor asks about', () => {
     expect(editor.dirty()).toBe(true);
   });
 
-  it('asks about a ground colour, which no step can take back', async () => {
+  it('asks about a ground colour', async () => {
     const editor = await createEditor();
 
     editor.setBackground('#101010');
 
     expect(editor.dirty()).toBe(true);
+  });
+
+  it('takes a ground colour back on undo and puts it on again on redo', async () => {
+    const editor = await createEditor();
+    const first = editor.background();
+
+    editor.setBackground('#101010');
+    expect(editor.canUndo()).toBe(true);
+
+    editor.undo();
+    expect(editor.background()).toBe(first);
+    expect(editor.dirty()).toBe(false);
+
+    editor.redo();
+    expect(editor.background()).toBe('#101010');
+    expect(editor.dirty()).toBe(true);
+  });
+
+  it('records nothing for a ground colour that is already on', async () => {
+    const editor = await createEditor();
+
+    editor.setBackground(editor.background());
+
+    expect(editor.canUndo()).toBe(false);
+    expect(editor.dirty()).toBe(false);
   });
 });
 
