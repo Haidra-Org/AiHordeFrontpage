@@ -199,20 +199,29 @@ describe('the tools on the rail', () => {
     editor.togglePointerOffsetMenu();
     expect(editor.pointerOffsetMenuOpen()).toBe(true);
 
+    const clickOn = (target: Element): MouseEvent => {
+      const event = new MouseEvent('click');
+      Object.defineProperty(event, 'target', {
+        value: target,
+        configurable: true,
+      });
+      return event;
+    };
+
     const trigger = document.createElement('button');
     trigger.setAttribute('aria-controls', 'gs-se-offset-menu');
-    editor.onPanelClick({ target: trigger } as MouseEvent);
+    editor.onPanelClick(clickOn(trigger));
     expect(editor.pointerOffsetMenuOpen()).toBe(true);
 
     const menu = document.createElement('div');
     menu.id = 'gs-se-offset-menu';
     const inside = document.createElement('span');
     menu.append(inside);
-    editor.onPanelClick({ target: inside } as MouseEvent);
+    editor.onPanelClick(clickOn(inside));
     expect(editor.pointerOffsetMenuOpen()).toBe(true);
 
     const outside = document.createElement('div');
-    editor.onPanelClick({ target: outside } as MouseEvent);
+    editor.onPanelClick(clickOn(outside));
     expect(editor.pointerOffsetMenuOpen()).toBe(false);
   });
 

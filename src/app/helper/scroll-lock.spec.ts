@@ -6,7 +6,7 @@ import { ScrollLockService, useScrollLock } from './scroll-lock';
 
 const strategy = { enable: vi.fn(), disable: vi.fn() };
 
-const configure = (platformId: object = 'browser'): void => {
+const configure = (platformId = 'browser'): void => {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [

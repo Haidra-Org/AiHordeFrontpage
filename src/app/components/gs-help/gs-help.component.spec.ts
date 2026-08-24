@@ -161,7 +161,9 @@ describe('GsHelpComponent', () => {
       click(0);
       fixture.detectChanges();
 
-      const see = fixture.nativeElement.querySelector('.gs-help-see');
+      const see = fixture.nativeElement.querySelector(
+        '.gs-help-see',
+      ) as HTMLElement;
       expect(see).not.toBeNull();
       expect(hasReference('steps')).toBe(true);
 
@@ -202,7 +204,9 @@ describe('GsHelpComponent', () => {
       click(2);
 
       expect(hasReference('prompt_emphasis')).toBe(true);
-      const see = fixture.nativeElement.querySelector('.gs-help-see');
+      const see = fixture.nativeElement.querySelector(
+        '.gs-help-see',
+      ) as HTMLElement;
       expect(see).not.toBeNull();
       expect(see.classList.contains('gs-sec--prompt')).toBe(true);
     });

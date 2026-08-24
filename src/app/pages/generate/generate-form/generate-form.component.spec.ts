@@ -1425,6 +1425,7 @@ describe('GenerateFormComponent sampler contract', () => {
       k_euler: {
         name: 'k_euler',
         presentation_tier: 'recommended',
+        work_profile: null,
         solver_type_choices: [],
         accepted_settings: {
           sampler_s_churn: {
@@ -1434,10 +1435,12 @@ describe('GenerateFormComponent sampler contract', () => {
             integer_only: false,
           },
         },
+        applies_cfg_pp: false,
       },
       dpmpp_2m_sde: {
         name: 'dpmpp_2m_sde',
         presentation_tier: 'advanced',
+        work_profile: null,
         solver_type_choices: ['midpoint', 'heun'],
         accepted_settings: {
           sampler_eta: {
@@ -1447,6 +1450,7 @@ describe('GenerateFormComponent sampler contract', () => {
             integer_only: false,
           },
         },
+        applies_cfg_pp: false,
       },
     },
     hard_constraints: {
@@ -1458,6 +1462,8 @@ describe('GenerateFormComponent sampler contract', () => {
       },
     },
     presentation_tiers: { recommended: ['k_euler'] },
+    recommendations: [],
+    advisories: { cfg_pp_advised_max_cfg_scale: null },
   };
 
   async function renderWithContract(

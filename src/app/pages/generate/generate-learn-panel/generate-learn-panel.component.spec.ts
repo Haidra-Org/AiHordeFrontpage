@@ -330,7 +330,7 @@ describe('GenerateLearnPanelComponent', () => {
     const SWEEP_INDEX = `${environment.evidenceBaseUrl}/index.json`;
 
     /** Answer the one index fetch a rendered scrubber makes. */
-    async function serveLibrary(body: unknown): Promise<void> {
+    async function serveLibrary(body: object): Promise<void> {
       const http = TestBed.inject(HttpTestingController);
       http.expectOne(SWEEP_INDEX).flush(body);
       await new Promise((resolve) => setTimeout(resolve, 0));

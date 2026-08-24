@@ -38,6 +38,7 @@ const PROVENANCE: ImageMetaProvenance = {
   aesthetic: 7.1,
   errors: [],
   styleName: 'Anime',
+  kudos: null,
 };
 
 describe('ImageMetaPanelComponent', () => {
@@ -283,7 +284,7 @@ describe('ImageMetaPanelComponent', () => {
       steps: 30,
       cfg_scale: 6.5,
       seed: '33812009',
-      karras: true,
+      scheduler: 'karras',
       width: 1024,
       height: 1024,
     };

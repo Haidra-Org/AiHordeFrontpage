@@ -96,12 +96,12 @@ function withAnimations(
   animations: { animationName: string; startTime: number }[],
   body: () => void,
 ): void {
-  const doc = document as Document & { getAnimations?: () => Animation[] };
-  doc.getAnimations = () => animations as unknown as Animation[];
+  const original = document.getAnimations;
+  document.getAnimations = () => animations as unknown as Animation[];
   try {
     body();
   } finally {
-    delete doc.getAnimations;
+    document.getAnimations = original;
   }
 }
 
@@ -120,7 +120,7 @@ describe('TutorialEngineService', () => {
    * together, so a test that answered only the payload would leave the engine
    * waiting on a request it never sees.
    */
-  function flushExample(directory: string, payload: unknown = request): void {
+  function flushExample(directory: string, payload: object = request): void {
     http
       .expectOne(`${EXAMPLES_ROOT}/${directory}/request.json`)
       .flush(structuredClone(payload));

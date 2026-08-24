@@ -190,7 +190,15 @@ describe('GlossaryModalComponent', () => {
     }
 
     it('narrows the page entries and the controls beside them', () => {
-      open(ENTRIES, [STUDIO_CONTROLS[0]]);
+      const control = STUDIO_CONTROLS[0];
+      open(ENTRIES, [
+        {
+          id: control.id,
+          titleKey: control.labelKey,
+          descriptionKey: control.bodyKey,
+          iconName: control.icon,
+        },
+      ]);
       expect(all('.glossary-page-entry')).toHaveLength(3);
 
       typeFilter('seed');

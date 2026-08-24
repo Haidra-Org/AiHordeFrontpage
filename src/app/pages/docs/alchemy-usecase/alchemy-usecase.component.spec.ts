@@ -174,7 +174,7 @@ describe('DocsAlchemyUseCaseComponent', () => {
 
     expect(el().textContent).toContain('Enlarge a picture');
     expect(all('.gs-ref-variant-name')).toHaveLength(
-      alchemyUseCase('enlarge')?.forms.length,
+      alchemyUseCase('enlarge')!.forms.length,
     );
     // Named as the tool names them, which is not the API's form id.
     expect(el().textContent).toContain('RealESRGAN x4 (anime)');

@@ -104,6 +104,11 @@ export class FullscreenService {
       this.document.fullscreenElement ??
       this.document.webkitFullscreenElement ??
       null;
-    this._active.set(current !== null);
+    const target = this.target;
+    this._active.set(
+      current !== null &&
+        target !== null &&
+        (current === target || target.contains(current)),
+    );
   };
 }

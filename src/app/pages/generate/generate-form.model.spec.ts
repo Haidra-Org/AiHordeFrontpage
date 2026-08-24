@@ -72,6 +72,7 @@ const samplerContract: SamplerConstraintsDocument = {
     k_euler: {
       name: 'k_euler',
       presentation_tier: 'recommended',
+      work_profile: null,
       solver_type_choices: [],
       accepted_settings: {
         sampler_s_churn: {
@@ -81,10 +82,12 @@ const samplerContract: SamplerConstraintsDocument = {
           integer_only: false,
         },
       },
+      applies_cfg_pp: false,
     },
     dpmpp_2m_sde: {
       name: 'dpmpp_2m_sde',
       presentation_tier: 'recommended',
+      work_profile: null,
       solver_type_choices: ['midpoint', 'heun'],
       accepted_settings: {
         sampler_eta: {
@@ -94,6 +97,7 @@ const samplerContract: SamplerConstraintsDocument = {
           integer_only: false,
         },
       },
+      applies_cfg_pp: false,
     },
   },
   hard_constraints: {
@@ -105,6 +109,8 @@ const samplerContract: SamplerConstraintsDocument = {
     },
   },
   presentation_tiers: { recommended: ['k_euler', 'dpmpp_2m_sde'] },
+  recommendations: [],
+  advisories: { cfg_pp_advised_max_cfg_scale: null },
 };
 
 const baselineForModel = (model: string): string | null =>
@@ -575,7 +581,7 @@ describe('buildStyledImageRequest', () => {
       model: 'user-model',
       steps: 25,
       cfg_scale: 7.5,
-      karras: true,
+      scheduler: 'karras',
     });
     const applied: AppliedStyle = {
       prompt: 'stylised a fox ### blurry',

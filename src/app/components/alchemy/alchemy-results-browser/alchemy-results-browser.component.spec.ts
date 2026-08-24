@@ -134,9 +134,9 @@ describe('AlchemyResultsBrowserComponent', () => {
     fixture.detectChanges();
 
     const sources = [
-      ...fixture.nativeElement.querySelectorAll<HTMLImageElement>(
-        '.gs-gtile .gs-tile-img',
-      ),
+      ...(
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLImageElement>('.gs-gtile .gs-tile-img'),
     ].map((img) => img.getAttribute('src'));
     expect(sources).toEqual(['/assets/full.webp', '/assets/thumb.webp']);
     expect(fixture.nativeElement.querySelectorAll('.gs-gtile-ph').length).toBe(

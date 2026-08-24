@@ -61,8 +61,9 @@ const makeElement = (
 ): HTMLElement => {
   const element = {} as Record<string, unknown>;
   const request = vi.fn(() => {
-    if (flavour === 'standard') doc.fullscreenElement = element as Element;
-    else doc.webkitFullscreenElement = element as Element;
+    if (flavour === 'standard')
+      doc.fullscreenElement = element as unknown as Element;
+    else doc.webkitFullscreenElement = element as unknown as Element;
     return Promise.resolve();
   });
   element[
@@ -152,6 +153,33 @@ describe('FullscreenService', () => {
 
     expect(service.active()).toBe(false);
     expect(doc.fullscreenElement).toBeNull();
+  });
+
+  it('stays inactive when some other element on the page goes fullscreen', () => {
+    // The browser fullscreen state is document-wide; a video player or another
+    // widget going fullscreen must not make this service claim it is active.
+    const { doc, fire } = makeDocument('standard');
+    const service = serviceWith(doc);
+    service.setTarget(document.createElement('div'));
+
+    doc.fullscreenElement = document.createElement('video');
+    fire();
+
+    expect(service.active()).toBe(false);
+  });
+
+  it('stays active when the element the browser reports is nested inside the target', () => {
+    const { doc, fire } = makeDocument('standard');
+    const service = serviceWith(doc);
+    const target = document.createElement('div');
+    const nested = document.createElement('div');
+    target.appendChild(nested);
+    service.setTarget(target);
+
+    doc.fullscreenElement = nested;
+    fire();
+
+    expect(service.active()).toBe(true);
   });
 
   it('stays out of the way once the shell that owned the element is gone', async () => {

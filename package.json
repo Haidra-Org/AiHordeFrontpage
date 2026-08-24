@@ -20,6 +20,9 @@
     "lint:fix": "ng lint --fix",
     "format": "prettier --write \"src/**/*.{ts,html,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,css,json}\"",
+    "typecheck:app": "tsc --noEmit -p tsconfig.app.json",
+    "typecheck:spec": "tsc --noEmit -p tsconfig.spec.json",
+    "typecheck": "npm run typecheck:app && npm run typecheck:spec",
     "prepare": "husky"
   },
   "private": true,

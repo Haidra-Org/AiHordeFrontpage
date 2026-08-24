@@ -18,7 +18,7 @@ describe('GsTryItService', () => {
   let service: GsTryItService;
   let anchors: TutorialAnchorService;
   let host: TryItHost & {
-    applyFields: ReturnType<typeof vi.fn>;
+    applyFields: ReturnType<typeof vi.fn<TryItHost['applyFields']>>;
     openFieldGroup: ReturnType<typeof vi.fn>;
   };
   let row: HTMLElement;
@@ -35,7 +35,7 @@ describe('GsTryItService', () => {
     service = TestBed.inject(GsTryItService);
     anchors = TestBed.inject(TutorialAnchorService);
     host = {
-      applyFields: vi.fn(),
+      applyFields: vi.fn<TryItHost['applyFields']>(),
       openFieldGroup: vi.fn().mockReturnValue(false),
       currentSourceMode: vi.fn().mockReturnValue('img2img'),
     };

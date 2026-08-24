@@ -399,7 +399,8 @@ export interface AlchemyFormResult {
   nsfw?: boolean;
   vectorize?: string;
   palette?: unknown;
-  describe?: string;
+  /** A record of named fields; readers accept nothing else. */
+  describe?: string | Record<string, unknown>;
   interrogation?: InterrogationDetails;
   [key: string]: unknown;
 }
