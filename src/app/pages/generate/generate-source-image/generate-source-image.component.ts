@@ -14,11 +14,20 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
-import { ImageControlType } from '../../../types/generation';
+import {
+  AnnotationControlType,
+  ImageControlType,
+} from '../../../types/generation';
+import { annotationDetectorDescriptionKey } from '../../../content/alchemy-usecases';
+import {
+  DOCS_IMAGE_CONTROL_TYPES,
+  docsControlTypeAnchor,
+} from '../../../content/docs-links';
 import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
 import {
   EXTENDED_CONTROL_TYPES,
@@ -108,6 +117,7 @@ interface RemixExtra {
   selector: 'app-generate-source-image',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     TranslocoPipe,
     IconComponent,
     GsHelpComponent,
@@ -155,6 +165,19 @@ export class GenerateSourceImageComponent implements OnInit {
   public hasWarning(id: FeatureCompatRuleId): boolean {
     return this.lintWarnings().some((warning) => warning.id === id);
   }
+
+  /** What the chosen guidance mode reads, in the words the picker uses for it. */
+  public controlTypeNoteKey(type: ImageControlType): string {
+    return annotationDetectorDescriptionKey(canonicalControlType(type));
+  }
+
+  /** The place on that page where the chosen mode is shown against the others. */
+  public controlTypeAnchor(type: ImageControlType): string {
+    return docsControlTypeAnchor(canonicalControlType(type));
+  }
+
+  /** The page every guidance mode is shown on. */
+  public readonly controlTypesLink = DOCS_IMAGE_CONTROL_TYPES;
 
   public readonly legacyControlTypes = LEGACY_CONTROL_TYPES;
   public readonly extendedControlTypes = EXTENDED_CONTROL_TYPES;
@@ -837,4 +860,13 @@ export class GenerateSourceImageComponent implements OnInit {
       valid: this.computeValid(),
     });
   }
+}
+
+/**
+ * The mode under the name the rest of the site knows it by. `hough` is the
+ * older spelling of `mlsd` and the same detector, so both are read against the
+ * one description and land on the one place in the reference.
+ */
+function canonicalControlType(type: ImageControlType): AnnotationControlType {
+  return type === 'hough' ? 'mlsd' : type;
 }

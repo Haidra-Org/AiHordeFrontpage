@@ -24,6 +24,7 @@ import {
   settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
+  settingSweepStripControlType,
   settingSweepsAreCoequal,
   settingTitleKey,
 } from './settings';
@@ -67,6 +68,8 @@ export interface ReferenceTopic {
   links: readonly SettingLink[];
   glossaryTerms: readonly string[];
   strip: string | null;
+  /** The guidance mode that strip was rendered against, where it names one. */
+  stripControlType: string | null;
   alsoStrips: readonly SweepStripRef[];
   /** Whether the further strips stand as peers of the first rather than under it. */
   coequalStrips: boolean;
@@ -142,6 +145,7 @@ function settingTopicFor(id: string): ReferenceTopic | null {
     links: reference?.links ?? [],
     glossaryTerms: reference?.glossaryTerms ?? [],
     strip: settingSweepStrip(id),
+    stripControlType: settingSweepStripControlType(id),
     alsoStrips: settingSweepAlsoStrips(id),
     coequalStrips: settingSweepsAreCoequal(id),
     grid: settingSweepGrid(id),
@@ -177,6 +181,7 @@ function alchemyTopicFor(id: string): ReferenceTopic | null {
     links: useCase.links ?? [],
     glossaryTerms: [],
     strip: useCase.strip ?? null,
+    stripControlType: null,
     alsoStrips: [],
     coequalStrips: false,
     grid: null,

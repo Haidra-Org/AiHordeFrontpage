@@ -30,6 +30,7 @@ import {
   settingLeadKey,
   settingProseLabelKey,
   settingSweepStrip,
+  settingSweepStripControlType,
   settingTitleKey,
 } from '../../../content/settings';
 import { docsSettingLink } from '../../../content/docs-links';
@@ -272,7 +273,12 @@ export class DocsSettingsIndexComponent {
     if (!parameter) {
       return null;
     }
-    const strip = this.sweeps.strip(parameter);
+    const strip = this.sweeps.strip(
+      parameter,
+      undefined,
+      undefined,
+      settingSweepStripControlType(id) ?? undefined,
+    );
     if (!strip) {
       return null;
     }

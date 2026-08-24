@@ -1,5 +1,6 @@
 import { GenerateFormValue } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
+import { DOCS_IMAGE_CONTROL_TYPES } from './docs-links';
 import { SectionId, PANEL_SECTION_IDS } from './sections';
 
 /**
@@ -131,6 +132,12 @@ export interface SweepStripRef {
 export interface SettingSweeps {
   /** The strip that shows the setting changing across its range. */
   strip?: string;
+  /**
+   * The guidance mode that strip was rendered against, where the library swept
+   * the field once per detector. Absent everywhere else, and absent is itself a
+   * choice: it asks for the strip rendered against no detector at all.
+   */
+  stripControlType?: string;
   /**
    * Further strips shown under the primary one, in declaration order. A second
    * strip here is evidence about the same setting from another angle rather
@@ -292,6 +299,16 @@ export interface SettingEntry {
 const MODELS_LINK: SettingLink = {
   labelKey: 'generate.reference.link_models',
   routerLink: '/details/models',
+};
+
+/**
+ * Where the thirty-three guidance modes are shown rather than listed. The
+ * choice between them is a comparison, and the entry here is what the picker
+ * does with one rather than what each of them keeps.
+ */
+const CONTROL_TYPES_LINK: SettingLink = {
+  labelKey: 'generate.reference.link_control_types',
+  routerLink: DOCS_IMAGE_CONTROL_TYPES,
 };
 
 /**
@@ -542,6 +559,39 @@ export const SETTINGS: readonly SettingEntry[] = [
       related: ['source', 'hires_denoise'],
     },
     sweeps: { strip: 'denoising_strength' },
+  },
+  {
+    // Which reading of the source the render is held to. The picker is the one
+    // control in the studio whose thirty-three values are the subject rather
+    // than a scale, so the entry says what choosing one does and sends the
+    // reader to the page that shows what each of them keeps.
+    id: 'control_type',
+    section: 'source',
+    reference: {
+      related: ['source', 'img2img', 'denoise'],
+      links: [CONTROL_TYPES_LINK],
+      glossaryTerms: ['controlnet'],
+    },
+  },
+  {
+    // The weight on the hold a control map has over the render. There is no
+    // control in the panel for it, because the public horde does not carry the
+    // field; the entry exists because the strips do, and a reader who has met
+    // the guidance modes will ask what the dial beside them does.
+    id: 'control_strength',
+    section: 'source',
+    reference: {
+      // No bounds: the panel has no control whose limits could be quoted, and
+      // the numbers here are the band the strips were rendered across.
+      range: { typical: '1.25-1.45', default: '1' },
+      related: ['control_type', 'source', 'denoise'],
+      links: [CONTROL_TYPES_LINK],
+      glossaryTerms: ['controlnet'],
+    },
+    // The field was swept once per detector, so the strip has to name the one
+    // it is read on. Naming none would offer the strip rendered against no
+    // detector at all, which is the QR workflow's own.
+    sweeps: { strip: 'control_strength', stripControlType: 'canny' },
   },
 
   // --- sampling ---
@@ -928,9 +978,9 @@ const SETTING_BY_ID: ReadonlyMap<string, SettingEntry> = new Map(
  */
 export const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   cfg_scale: 'cfg',
-  // Both QR strips are readings of the one field the panel has: the payload box
-  // that selects the workflow. Neither has a control of its own to be named by.
-  control_strength: 'qr',
+  // The treatments are a reading of the one field the panel has: the payload
+  // box that selects the workflow. The strength beside them is the control
+  // strength setting, which has an entry of its own.
   qr_style: 'qr',
   denoising_strength: 'denoise',
   // The masked readings belong to the mode that adds them, not to the plain
@@ -1020,6 +1070,11 @@ export function hasReference(id: string): boolean {
 /** The strip a setting has pictures for, or null when the library has none. */
 export function settingSweepStrip(id: string): string | null {
   return settingEntry(id)?.sweeps?.strip ?? null;
+}
+
+/** The guidance mode a setting's strip was rendered against, where it names one. */
+export function settingSweepStripControlType(id: string): string | null {
+  return settingEntry(id)?.sweeps?.stripControlType ?? null;
 }
 
 /** The further strips shown under a setting's primary one, in reading order. */

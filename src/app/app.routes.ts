@@ -108,6 +108,16 @@ export const routes: Routes = [
           ),
       },
       { path: 'image/learn', redirectTo: 'image', pathMatch: 'full' },
+      // Every way a render can be held to a source picture, read as one page:
+      // the choice is between the seven kinds of guidance before it is between
+      // thirty-three names, and that is a comparison rather than a page each.
+      {
+        path: 'image/control-types',
+        loadComponent: () =>
+          import('./pages/docs/control-types/control-types.component').then(
+            (c) => c.DocsControlTypesComponent,
+          ),
+      },
       {
         path: 'image/guide',
         loadComponent: () =>

@@ -73,6 +73,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
+    path: 'docs/image/control-types',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'docs/image/settings',
     renderMode: RenderMode.Prerender,
   },

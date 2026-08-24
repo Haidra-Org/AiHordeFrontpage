@@ -84,6 +84,7 @@ describe('DocsShellComponent', () => {
           { path: 'docs/image/learn/:flow', component: StubPageComponent },
           { path: 'docs/image/settings', component: StubPageComponent },
           { path: 'docs/image/settings/:param', component: StubPageComponent },
+          { path: 'docs/image/control-types', component: StubPageComponent },
           { path: 'docs/image/guide', component: StubPageComponent },
           { path: 'docs/alchemy', component: StubPageComponent },
           { path: 'docs/alchemy/:useCase', component: StubPageComponent },
@@ -164,6 +165,7 @@ describe('DocsShellComponent', () => {
       null,
       'page',
       null,
+      null,
     ]);
     expect(links().some((link) => link.className.includes('--on'))).toBe(false);
   });
@@ -224,8 +226,15 @@ describe('DocsShellComponent', () => {
       'generate.learn.nav_overview',
       'generate.learn.nav_tutorials',
       'generate.learn.nav_settings',
+      'docs.nav_control_types',
       'generate.learn.nav_guide',
     ]);
+  });
+
+  it('marks the control types entry on the page that shows them', async () => {
+    await go('/docs/image/control-types');
+
+    expect(current()).toBe(translations['docs.nav_control_types']);
   });
 
   it('keeps the settings entry marked on one setting page', async () => {

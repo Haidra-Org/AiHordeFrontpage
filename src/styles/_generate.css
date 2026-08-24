@@ -12896,6 +12896,84 @@ app-gs-compare-wipe {
   color: var(--gs-ink-2);
 }
 
+/* ------- control types: one mode, read on three examples ------------- */
+/* The strength strip belongs to the group above it rather than to the page, so
+   it is set in from the tiles it is a footnote to. */
+.gen-studio .gs-ref-maps-group app-gs-sweep-scrub {
+  display: block;
+  margin-top: var(--gs-space-4);
+}
+.gen-studio .gs-ctl-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-4);
+  max-width: min(58rem, 100%);
+  /* Three worlds stacked run taller than any viewport, and the viewer body
+     only scrolls inside itself on narrow screens; this layer has to at every
+     width, or the wheel moves the page behind it and the lower worlds are
+     never reached. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.gen-studio .gs-ctl-lead {
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ctl-world {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-ctl-world-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--gs-space-2);
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ctl-world-model {
+  font-size: var(--gs-text-xs);
+  font-weight: 400;
+  color: var(--gs-ink-2);
+}
+/* The three frames stay side by side at every width: the whole claim is that
+   the map came from the source and the render came from the map, and a column
+   of three pictures on a phone reads as three unrelated ones. */
+.gen-studio .gs-ctl-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-ctl-frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+  margin: 0;
+  min-width: 0;
+}
+.gen-studio .gs-ctl-frame img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--gs-radius-sm);
+  border: 1px solid var(--gs-card-border);
+  background: var(--gs-stage);
+}
+.gen-studio .gs-ctl-frame figcaption {
+  font-size: var(--gs-text-xs);
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ctl-caption {
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.6;
+  color: var(--gs-ink-2);
+}
+
 /* ------- settings reference: one entry ------------------------------- */
 .gen-studio .gs-ref-entry {
   display: block;

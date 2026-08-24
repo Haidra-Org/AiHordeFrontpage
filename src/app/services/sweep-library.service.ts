@@ -31,7 +31,36 @@ export interface SweepStop {
    * request to read.
    */
   sidecar?: string | null;
+  /**
+   * The guidance mode this frame was rendered with, on the strips that vary or
+   * hold one: the horde's own detector name, e.g. `canny`. Null on every strip
+   * that has nothing to do with ControlNet.
+   */
+  control_type?: string | null;
+  /**
+   * Which kind of structure that mode reads, matching the ids the detector
+   * picker groups by. Published on the gallery strips and null elsewhere.
+   */
+  control_group?: string | null;
+  /**
+   * Path to the map the detector drew, relative to the library root, on the
+   * frames published with one. The map is what the render was held to, so it is
+   * shown beside it rather than assembled from the frame's own path.
+   */
+  control_map?: string | null;
 }
+
+/**
+ * How the generator asks a strip to be laid out. `strip` is the scrubber,
+ * `grid` is a two-axis plate, `tile_repeat_3x3` is a strip whose frames only
+ * read once they are repeated, and `triptych` is a frame published with the
+ * source and the map it was drawn from.
+ */
+export type SweepPresentation =
+  | 'strip'
+  | 'grid'
+  | 'tile_repeat_3x3'
+  | 'triptych';
 
 /** One side of a grid plate: what it varies, and the values it varies it over. */
 export interface SweepGridAxis {
@@ -73,12 +102,7 @@ export interface SweepStrip {
   strip_id: string;
   /** API field name being swept, e.g. `steps` or `cfg_scale`. */
   parameter: string;
-  /**
-   * How the generator asks the strip to be laid out. `strip` is the scrubber,
-   * `grid` is a two-axis plate, and `tile_repeat_3x3` is a strip whose frames
-   * are single tiles that only read once they are repeated.
-   */
-  presentation: string;
+  presentation: SweepPresentation;
   caption: string;
   /** False when a stop failed to render, which takes the strip out of use. */
   complete: boolean;
@@ -251,18 +275,36 @@ export class SweepLibraryService {
    * the named scene on any model, then the same model on any scene, then
    * whatever was published for the parameter. Null when nothing matches, which
    * is what the consumers render for.
+   *
+   * `controlType` picks between the strips of one parameter that were rendered
+   * against different guidance modes. It is matched exactly, and a caller that
+   * names none is only offered the strips that name none either: a strip
+   * rendered against a detector is about that detector, and handing it to a
+   * surface that never asked about one would answer a question nobody put.
    */
   public strip(
     parameter: string,
     modelSlug?: string,
     sceneId?: string,
+    controlType?: string,
   ): SweepStrip | null {
+    const wanted = controlType ?? null;
     return this.best(
       parameter,
-      (entry) => entry.presentation !== 'grid',
+      (entry) =>
+        entry.presentation !== 'grid' && stripControlType(entry) === wanted,
       modelSlug,
       sceneId,
     );
+  }
+
+  /**
+   * One strip by the id the index publishes it under, for the surfaces that
+   * cite particular strips rather than asking for the best one of a parameter.
+   * A gallery laid out across three scenes is naming those three scenes.
+   */
+  public stripById(stripId: string): SweepStrip | null {
+    return this.strips().find((entry) => entry.strip_id === stripId) ?? null;
   }
 
   /**
@@ -368,6 +410,11 @@ export class SweepLibraryService {
       this.settled.set(true);
     }
   }
+}
+
+/** The guidance mode a whole strip was rendered against, where it names one. */
+function stripControlType(strip: SweepStrip): string | null {
+  return strip.stops[0]?.control_type ?? null;
 }
 
 /**

@@ -16,6 +16,7 @@ import {
   settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
+  settingSweepStripControlType,
   settingTitleKey,
   sweepVariantPair,
 } from './settings';
@@ -264,14 +265,28 @@ describe('settings sweeps', () => {
     );
   });
 
-  it('files both QR strips under the one field the panel has', () => {
-    // Neither the strength nor the treatments have a control of their own: the
-    // payload box is what selects the workflow, and both strips are about it.
+  it('shows the QR workflow the strength strip rendered for it', () => {
+    // The treatments have no control of their own, so they are filed under the
+    // payload box that selects the workflow. The strength is a setting in its
+    // own right, and the strip the workflow shows is the one rendered without a
+    // detector, which the library picks out by control type.
     expect(settingSweepStrip('qr')).toBe('control_strength');
+    expect(settingSweepStripControlType('qr')).toBeNull();
     expect(settingSweepAlsoStrips('qr')).toEqual([{ parameter: 'qr_style' }]);
-    expect(settingIdFor('control_strength')).toBe('qr');
     expect(settingIdFor('qr_style')).toBe('qr');
     expect(settingLabelKey('qr_style')).toBe(settingLabelKey('qr'));
+  });
+
+  it('reads control strength as its own setting, on a map it names', () => {
+    expect(settingIdFor('control_strength')).toBe('control_strength');
+    expect(settingSection('control_strength')).toBe('source');
+    expect(settingLabelKey('control_strength')).toBe(
+      settingTitleKey('control_strength'),
+    );
+    // Without a named mode the picker would offer the QR workflow's strip,
+    // which is a different subject rendered from the same field.
+    expect(settingSweepStrip('control_strength')).toBe('control_strength');
+    expect(settingSweepStripControlType('control_strength')).toBe('canny');
   });
 
   it('has nothing to show for a setting no strip was rendered for', () => {

@@ -209,6 +209,7 @@ const TRADEOFF_ICONS = {
     @if (sweepParameter(); as parameter) {
       <app-gs-sweep-scrub
         [parameter]="parameter"
+        [controlType]="sweepControlType()"
         [startExpanded]="opensItself()"
       />
     }
@@ -399,6 +400,14 @@ export class GsParamEntryComponent {
   );
 
   public readonly sweepParameter = computed(() => this.entry()?.strip ?? null);
+
+  /**
+   * The guidance mode the strip was rendered against, on the fields the library
+   * swept once per detector. Undefined asks for the strip rendered against none.
+   */
+  public readonly sweepControlType = computed(
+    () => this.entry()?.stripControlType ?? undefined,
+  );
 
   /**
    * The further strips, each carrying whether it is one render over time. The

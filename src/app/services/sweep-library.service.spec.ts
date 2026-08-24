@@ -154,6 +154,59 @@ describe('SweepLibraryService', () => {
     expect(sweeps.strip('steps_cfg_grid')).toBeNull();
   });
 
+  it('offers a strip rendered against a mode only where one was asked for', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    // A caller that named no guidance mode is answering a question about the
+    // field itself, and a strip rendered against one detector is not that.
+    expect(sweeps.strip('controlnet_gallery')).toBeNull();
+    expect(
+      sweeps.strip('controlnet_gallery', undefined, undefined, 'canny')
+        ?.strip_id,
+    ).toBe('controlnet-gallery/deliberate/courier-ink');
+    expect(
+      sweeps.strip('controlnet_gallery', undefined, undefined, 'seg'),
+    ).toBeNull();
+
+    // The strength field was swept both against detectors and against the QR
+    // workflow, which has none. A caller naming no mode gets the workflow's.
+    expect(sweeps.strip('control_strength')?.strip_id).toBe(
+      'control-strength/albedobase-xl/cloud-sea',
+    );
+    expect(
+      sweeps.strip('control_strength', undefined, undefined, 'canny')?.strip_id,
+    ).toBe('control-strength/canny/deliberate/courier-ink');
+  });
+
+  it('hands out one strip by the id the library publishes it under', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    expect(
+      sweeps.stripById('controlnet-gallery/deliberate/courier-ink')?.parameter,
+    ).toBe('controlnet_gallery');
+    expect(sweeps.stripById('nothing/published/here')).toBeNull();
+  });
+
+  it('carries the map a guided frame was held to, beside the frame', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    const gallery = sweeps.stripById(
+      'controlnet-gallery/deliberate/courier-ink',
+    )!;
+    const canny = gallery.stops[0];
+    expect(canny.control_type).toBe('canny');
+    expect(canny.control_group).toBe('edges');
+    expect(sweeps.assetUrl(canny.control_map!)).toBe(
+      `${environment.evidenceBaseUrl}/controlnet-gallery/deliberate/courier-ink/001_canny_map.webp`,
+    );
+  });
+
   it('builds urls for the files a strip names beside its stops', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);

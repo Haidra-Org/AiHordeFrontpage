@@ -195,9 +195,12 @@
          its own validation asks for. -->
     @if (mode() === "controlnet") {
       <div appTutAnchor="control_type">
-        <label class="gs-slabel" for="generate-control-type">
-          {{ "generate.source.control_type_label" | transloco }}
-        </label>
+        <div class="gs-field-head">
+          <label class="gs-slabel" for="generate-control-type">
+            {{ "generate.source.control_type_label" | transloco }}
+          </label>
+          <app-gs-help topic="control_type" />
+        </div>
         <select
           id="generate-control-type"
           class="gs-native-select gs-native-select--sm mt-1.5"
@@ -224,6 +227,22 @@
             }
           </optgroup>
         </select>
+        <!-- What the chosen mode reads, in the same words the alchemy picker
+             gives it, and the way to see it against the other thirty-two. -->
+        @if (form().controls.control_type.value; as chosen) {
+          <p class="gs-sublabel mt-1">
+            {{ controlTypeNoteKey(chosen) | transloco }}
+            <a
+              [routerLink]="controlTypesLink"
+              [fragment]="controlTypeAnchor(chosen)"
+            >
+              {{
+                "generate.source.control_type_more"
+                  | transloco: { name: chosen }
+              }}
+            </a>
+          </p>
+        }
         <p class="gs-sublabel mt-1">
           {{ "generate.source.control_type_hint" | transloco }}
         </p>

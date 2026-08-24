@@ -920,6 +920,11 @@ export class GsSweepScrubComponent {
   /** Narrow the strip to one scene. */
   public readonly sceneId = input<string | undefined>(undefined);
   /**
+   * Narrow the strip to the one rendered against a guidance mode, where the
+   * library published several of the same field against different ones.
+   */
+  public readonly controlType = input<string | undefined>(undefined);
+  /**
    * Open the strip without waiting to be asked. A page whose whole subject is
    * one setting has nothing to bury the pictures under, so it shows them; every
    * other surface sits inside prose and keeps the offer.
@@ -1026,6 +1031,7 @@ export class GsSweepScrubComponent {
       this.activeParameter(),
       this.modelSlug() ?? this.sweeps.studioModelSlug(),
       this.sceneId(),
+      this.controlType(),
     ),
   );
 
@@ -1038,6 +1044,7 @@ export class GsSweepScrubComponent {
         pair.parameter,
         this.modelSlug() ?? this.sweeps.studioModelSlug(),
         this.sceneId(),
+        this.controlType(),
       )
     );
   });

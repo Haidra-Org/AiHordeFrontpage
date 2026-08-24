@@ -23,6 +23,9 @@ export const DOCS_IMAGE_SETTINGS = `${DOCS_IMAGE}/settings`;
 /** The worked examples, one page per technique. */
 export const DOCS_IMAGE_EXAMPLES = `${DOCS_IMAGE}/learn`;
 
+/** Every guidance mode a ControlNet render can be held to, with pictures. */
+export const DOCS_IMAGE_CONTROL_TYPES = `${DOCS_IMAGE}/control-types`;
+
 /** The alchemy studio's documentation: one page per thing it is used for. */
 export const DOCS_ALCHEMY = `${DOCS_ROOT}/alchemy`;
 
@@ -38,6 +41,15 @@ export function docsSettingLink(id: string): string {
 /** One technique's worked example. */
 export function docsExampleLink(flowId: string): string {
   return `${DOCS_IMAGE_EXAMPLES}/${flowId}`;
+}
+
+/**
+ * The place on the control types page where one mode is shown. The whole page
+ * is one subject read group by group, so a mode is a place on it rather than a
+ * page of its own.
+ */
+export function docsControlTypeAnchor(type: string): string {
+  return `gs-ref-ctl-${type}`;
 }
 
 /** One thing alchemy is used for, and the forms that do it. */

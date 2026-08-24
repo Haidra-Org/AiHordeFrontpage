@@ -885,6 +885,117 @@
           "sidecar": "sampler-solver-type/albedobase-xl/person/002_heun.json"
         }
       ]
+    },
+    {
+      "strip_id": "controlnet-gallery/deliberate/courier-ink",
+      "parameter": "controlnet_gallery",
+      "presentation": "triptych",
+      "caption": "",
+      "rationale": "One example per guidance mode, on one source, one model and one seed.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "courier-ink",
+        "label": "The courier, asked for in ink and watercolour",
+        "prompt": "ink and watercolour illustration of a courier on an airship deck"
+      },
+      "source_image": "controlnet-gallery/deliberate/courier-ink/source.webp",
+      "varying": ["control_type"],
+      "stops": [
+        {
+          "value": "canny",
+          "label": "canny",
+          "caption": "Canny drew one clean outline for everything it could find.",
+          "file": "controlnet-gallery/deliberate/courier-ink/001_canny.webp",
+          "sidecar": "controlnet-gallery/deliberate/courier-ink/001_canny.json",
+          "control_type": "canny",
+          "control_group": "edges",
+          "control_map": "controlnet-gallery/deliberate/courier-ink/001_canny_map.webp"
+        },
+        {
+          "value": "openpose",
+          "label": "openpose",
+          "caption": "Openpose kept the stance and nothing else.",
+          "file": "controlnet-gallery/deliberate/courier-ink/023_openpose.webp",
+          "sidecar": "controlnet-gallery/deliberate/courier-ink/023_openpose.json",
+          "control_type": "openpose",
+          "control_group": "pose",
+          "control_map": "controlnet-gallery/deliberate/courier-ink/023_openpose_map.webp"
+        }
+      ]
+    },
+    {
+      "strip_id": "control-strength/albedobase-xl/cloud-sea",
+      "parameter": "control_strength",
+      "presentation": "strip",
+      "caption": "The QR workflow's one dial, on a code that has to stay scannable.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL",
+        "baseline": "stable_diffusion_xl",
+        "note": "The SDXL model the workflow strips are rendered on."
+      },
+      "scene": {
+        "scene_id": "cloud-sea",
+        "label": "A code over a sea of cloud",
+        "prompt": "a sea of cloud lit from below"
+      },
+      "varying": ["control_strength"],
+      "stops": [
+        {
+          "value": 1.25,
+          "label": "1_25",
+          "caption": "The loosest of the strip.",
+          "file": "control-strength/albedobase-xl/cloud-sea/001_1_25.webp"
+        },
+        {
+          "value": 1.6,
+          "label": "1_6",
+          "caption": "The strictest of the strip.",
+          "file": "control-strength/albedobase-xl/cloud-sea/008_1_6.webp"
+        }
+      ]
+    },
+    {
+      "strip_id": "control-strength/canny/deliberate/courier-ink",
+      "parameter": "control_strength",
+      "presentation": "strip",
+      "caption": "How hard an outline map holds the render.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "courier-ink",
+        "label": "The courier, asked for in ink and watercolour",
+        "prompt": "ink and watercolour illustration of a courier on an airship deck"
+      },
+      "varying": ["control_strength"],
+      "stops": [
+        {
+          "value": 1.25,
+          "label": "1_25",
+          "caption": "The loosest of the eight.",
+          "file": "control-strength/canny/deliberate/courier-ink/001_1_25.webp",
+          "control_type": "canny"
+        },
+        {
+          "value": 1.6,
+          "label": "1_6",
+          "caption": "The strictest reading of the outline.",
+          "file": "control-strength/canny/deliberate/courier-ink/008_1_6.webp",
+          "control_type": "canny"
+        }
+      ]
     }
   ]
 }

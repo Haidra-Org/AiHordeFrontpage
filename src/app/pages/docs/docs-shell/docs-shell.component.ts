@@ -22,6 +22,7 @@ import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import {
   DOCS_ALCHEMY,
   DOCS_IMAGE,
+  DOCS_IMAGE_CONTROL_TYPES,
   DOCS_IMAGE_GUIDE,
   DOCS_IMAGE_SETTINGS,
   STUDIO_ALCHEMY,
@@ -116,6 +117,13 @@ export const DOCS_AREAS: readonly DocsArea[] = [
         link: DOCS_IMAGE_SETTINGS,
         activePath: DOCS_IMAGE_SETTINGS,
         icon: 'adjustments-horizontal',
+        exact: false,
+      },
+      {
+        labelKey: 'docs.nav_control_types',
+        link: DOCS_IMAGE_CONTROL_TYPES,
+        activePath: DOCS_IMAGE_CONTROL_TYPES,
+        icon: 'sec-source',
         exact: false,
       },
       {
