@@ -251,10 +251,19 @@ export function buildMetaGroups(
         : value.sourceMode === 'inpainting' && value.outpaintEnabled
           ? 'outpainting'
           : null;
+    // A control strength set beside a control type reads as a further note on
+    // the detail rather than a row of its own.
+    const strength =
+      value.control_type && value.control_strength !== null
+        ? deps.translate('generate.results.meta_control_strength', {
+            value: value.control_strength,
+          })
+        : null;
+    const setup = detail ? `${value.sourceMode} · ${detail}` : value.sourceMode;
     sampling.push({
       id: 'source',
       labelKey: label('source'),
-      value: detail ? `${value.sourceMode} · ${detail}` : value.sourceMode,
+      value: strength ? `${setup} · ${strength}` : setup,
       keys: [
         'sourceMode',
         'maskEnabled',
@@ -262,8 +271,34 @@ export function buildMetaGroups(
         'outpaintAnchor',
         'denoising_strength',
         'control_type',
+        'control_strength',
         'image_is_control',
         'return_control_map',
+      ],
+    });
+  }
+
+  // The QR workflow applies a control map of its own, with no control type and
+  // often no source image, so a strength set under it belongs to the payload
+  // row: anywhere else it would be shown nowhere and lost on re-apply.
+  if (value.qrText) {
+    const carried = value.sourceMode !== 'none' && value.control_type !== '';
+    const qrStrength =
+      !carried && value.control_strength !== null
+        ? deps.translate('generate.results.meta_control_strength', {
+            value: value.control_strength,
+          })
+        : null;
+    sampling.push({
+      id: 'qr',
+      labelKey: label('qr'),
+      value: qrStrength ? `${value.qrText} · ${qrStrength}` : value.qrText,
+      keys: [
+        'qrText',
+        'qrXOffset',
+        'qrYOffset',
+        'qrModuleDrawer',
+        ...(carried ? [] : (['control_strength'] as const)),
       ],
     });
   }

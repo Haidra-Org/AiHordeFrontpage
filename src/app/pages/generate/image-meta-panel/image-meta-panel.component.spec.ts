@@ -120,6 +120,49 @@ describe('ImageMetaPanelComponent', () => {
     expect(source?.keys).toContain('denoising_strength');
   });
 
+  it('shows and carries a control strength set under the QR workflow', () => {
+    fixture.componentRef.setInput('request', {
+      ...REQUEST,
+      params: {
+        ...REQUEST.params,
+        workflow: 'qr_code',
+        control_strength: 1.35,
+        extra_texts: [{ text: 'https://aihorde.net', reference: 'qr_code' }],
+      },
+    } satisfies ImageGenerationRequest);
+    fixture.detectChanges();
+
+    const rows = component.groups()[1].rows;
+    const qr = rows.find((row) => row.id === 'qr');
+
+    expect(qr?.keys).toContain('qrText');
+    expect(qr?.keys).toContain('control_strength');
+    expect(qr?.value).toContain('https://aihorde.net');
+    // The payload alone is not the whole row: the strength rides beside it.
+    expect(qr?.value).not.toBe('https://aihorde.net');
+    expect(rows.find((row) => row.id === 'source')).toBeUndefined();
+  });
+
+  it('leaves a control-type strength on the source row', () => {
+    fixture.componentRef.setInput('request', {
+      ...REQUEST,
+      source_processing: 'img2img',
+      params: {
+        ...REQUEST.params,
+        control_type: 'canny',
+        control_strength: 1.35,
+      },
+    } satisfies ImageGenerationRequest);
+    fixture.detectChanges();
+
+    const rows = component.groups()[1].rows;
+
+    expect(rows.find((row) => row.id === 'source')?.keys).toContain(
+      'control_strength',
+    );
+    expect(rows.find((row) => row.id === 'qr')).toBeUndefined();
+  });
+
   it('renders provenance as read-only info rows', () => {
     const rows = component.infoRows();
 

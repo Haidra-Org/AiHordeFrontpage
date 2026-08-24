@@ -128,6 +128,11 @@ export interface ImageGenerationParams {
   extra_texts?: ImageGenerationExtraText[];
   transparent?: boolean;
   control_type?: ImageControlType;
+  /**
+   * How hard the control map holds the render (0.01-3). Only accepted beside a
+   * `control_type`; left out, the worker renders at its own default of 1.
+   */
+  control_strength?: number;
   /** Treat `source_image` as an already-computed control map (skip annotation). */
   image_is_control?: boolean;
   /** Return the derived control map instead of a generated image; no render happens. */

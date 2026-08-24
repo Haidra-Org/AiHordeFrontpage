@@ -353,6 +353,53 @@ describe('buildImageRequest source processing', () => {
     expect(on.params?.return_control_map).toBe(true);
   });
 
+  it('sends control_strength only where a control map is in the request', () => {
+    const unset = buildImageRequest(
+      value({ sourceMode: 'controlnet', control_type: 'canny' }),
+      { hasSourceImage: true },
+    );
+    expect(unset.params?.control_strength).toBeUndefined();
+
+    const set = buildImageRequest(
+      value({
+        sourceMode: 'controlnet',
+        control_type: 'canny',
+        control_strength: 1.35,
+      }),
+      { hasSourceImage: true },
+    );
+    expect(set.params?.control_strength).toBe(1.35);
+
+    // The QR workflow applies a control map of its own, so the field rides a
+    // request that names no control type at all.
+    const qr = buildImageRequest(
+      value({ qrText: 'https://aihorde.net', control_strength: 1.4 }),
+    );
+    expect(qr.params?.workflow).toBe('qr_code');
+    expect(qr.params?.control_strength).toBe(1.4);
+
+    // With neither the horde refuses the request, so nothing is sent.
+    const orphan = buildImageRequest(
+      value({ sourceMode: 'img2img', control_strength: 1.4 }),
+      { hasSourceImage: true },
+    );
+    expect(orphan.params?.control_strength).toBeUndefined();
+  });
+
+  it('leaves an out-of-range control_strength out of the request', () => {
+    for (const strength of [0, 3.5]) {
+      const request = buildImageRequest(
+        value({
+          sourceMode: 'controlnet',
+          control_type: 'canny',
+          control_strength: strength,
+        }),
+        { hasSourceImage: true },
+      );
+      expect(request.params?.control_strength).toBeUndefined();
+    }
+  });
+
   it('omits control_type when it is unset for controlnet', () => {
     const request = buildImageRequest(
       value({ sourceMode: 'controlnet', control_type: '' }),
@@ -672,6 +719,15 @@ describe('coerceFormValue', () => {
   });
 
   it('rejects a junk control type and keeps a valid one', () => {
+    expect(coerceFormValue({ control_strength: 1.35 }).control_strength).toBe(
+      1.35,
+    );
+    expect(coerceFormValue({ control_strength: null }).control_strength).toBe(
+      null,
+    );
+    expect(
+      coerceFormValue({ control_strength: 'strong' }).control_strength,
+    ).toBe(null);
     expect(coerceFormValue({ control_type: 'bogus' }).control_type).toBe('');
     expect(coerceFormValue({ control_type: 'openpose' }).control_type).toBe(
       'openpose',
@@ -831,6 +887,36 @@ describe('requestToFormValue', () => {
         .sourceMode,
     ).toBe('inpainting');
     expect(requestToFormValue({ prompt: 'x' }).sourceMode).toBe('none');
+  });
+
+  it('reloads a control strength only beside the map it was sent with', () => {
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        source_processing: 'img2img',
+        params: { control_type: 'canny', control_strength: 1.35 },
+      }).control_strength,
+    ).toBe(1.35);
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        params: { workflow: 'qr_code', control_strength: 1.4 },
+      }).control_strength,
+    ).toBe(1.4);
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        source_processing: 'img2img',
+        params: { control_strength: 1.35 },
+      }).control_strength,
+    ).toBeNull();
+    expect(
+      requestToFormValue({
+        prompt: 'x',
+        source_processing: 'img2img',
+        params: { control_type: 'canny' },
+      }).control_strength,
+    ).toBeNull();
   });
 
   it('rebuilds the two masked choices a mode alone does not carry', () => {
@@ -1946,6 +2032,7 @@ describe('workerRequirementForRequest', () => {
       needsPainting: false,
       needsControlNet: false,
       needsExtendedControlNet: false,
+      needsControlStrength: false,
       trustedOnly: false,
       workers: [],
       workerBlacklist: false,
@@ -1999,6 +2086,22 @@ describe('workerRequirementForRequest', () => {
     });
     expect(extended.needsControlNet).toBe(true);
     expect(extended.needsExtendedControlNet).toBe(true);
+  });
+
+  it('demands a recent bridge only where a control strength rides along', () => {
+    const plain = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'img2img',
+      params: { control_type: LEGACY_CONTROL_TYPES[0] },
+    });
+    expect(plain.needsControlStrength).toBe(false);
+
+    const weighted = workerRequirementForRequest({
+      prompt: 'a cat',
+      source_processing: 'img2img',
+      params: { control_type: LEGACY_CONTROL_TYPES[0], control_strength: 1.2 },
+    });
+    expect(weighted.needsControlStrength).toBe(true);
   });
 
   it('leaves remix without a capability demand', () => {

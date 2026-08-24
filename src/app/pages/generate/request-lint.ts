@@ -64,6 +64,7 @@ export type FieldAnchorId =
   | 'source'
   | 'source_mode'
   | 'control_type'
+  | 'control_strength'
   | 'qr'
   | 'transparent'
   | 'workers'
@@ -704,6 +705,8 @@ const REJECTION_ANCHORS: ReadonlyMap<string, FieldAnchorId> = new Map([
   ['ControlNetUnsupported', 'source'],
   ['ControlNetInpaintingMismatch', 'source'],
   ['InvalidControlType', 'control_type'],
+  ['ControlStrengthWithoutControlType', 'control_strength'],
+  ['ControlStrengthOutOfRange', 'control_strength'],
   ['KudosUpfront', 'generate'],
   ['InsufficientKudos', 'generate'],
   ['TooManyPrompts', 'generate'],
@@ -782,6 +785,8 @@ export function rejectionWatchValue(
       return value.sourceMode;
     case 'control_type':
       return value.control_type;
+    case 'control_strength':
+      return value.control_strength;
     case 'generate':
       return `${value.n}|${value.prompt}`;
     case 'model':

@@ -2889,6 +2889,11 @@
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
+/* --gs-blue is the same #1d4ed8 in both themes and sinks into the dark card at
+   2.15:1, so the ring takes the lighter blue the dark theme uses elsewhere. */
+.dark .gen-studio .gs-range:focus-visible {
+  outline-color: #93c5fd;
+}
 @media (pointer: coarse) {
   .gen-studio .gs-range {
     height: 24px;

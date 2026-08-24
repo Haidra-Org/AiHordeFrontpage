@@ -2132,6 +2132,62 @@
                   {{ "generate.form.qr_layout_hint" | transloco }}
                 </p>
               </div>
+              <!-- The workflow applies a control map of its own, so the weight on
+                   that map is settable here as well as beside a control type. It
+                   arrives with the payload the workflow reads and leaves with it,
+                   because the horde refuses the field with neither in the
+                   request. -->
+              @if (qrWorkflowOn()) {
+                <div class="mt-2.5">
+                  <div class="gs-field-head">
+                    <label class="gs-slabel" for="generate-qr-control-strength">
+                      @if (controlStrength() === null) {
+                        {{
+                          "generate.source.control_strength_label_unset"
+                            | transloco
+                        }}
+                      } @else {
+                        {{
+                          "generate.source.control_strength_label"
+                            | transloco: { value: controlStrength() }
+                        }}
+                      }
+                    </label>
+                    <app-gs-help topic="control_strength" />
+                  </div>
+                  <input
+                    id="generate-qr-control-strength"
+                    class="gs-range mt-1.5"
+                    type="range"
+                    [min]="minControlStrength"
+                    [max]="maxControlStrength"
+                    [step]="controlStrengthStep"
+                    [value]="controlStrength() ?? defaultControlStrength"
+                    [style.--gs-range-fill.%]="
+                      controlStrength() === null
+                        ? 0
+                        : rangeFill(
+                            controlStrength() ?? defaultControlStrength,
+                            minControlStrength,
+                            maxControlStrength
+                          )
+                    "
+                    (input)="setControlStrength(+$any($event.target).value)"
+                  />
+                  <p class="gs-sublabel mt-1">
+                    {{ "generate.form.qr_control_strength_hint" | transloco }}
+                  </p>
+                  @if (controlStrength() !== null) {
+                    <button
+                      type="button"
+                      class="gs-textlink mt-1"
+                      (click)="clearControlStrength()"
+                    >
+                      {{ "generate.source.control_strength_clear" | transloco }}
+                    </button>
+                  }
+                </div>
+              }
             </app-gs-group>
           </section>
         </div>

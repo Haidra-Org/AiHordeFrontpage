@@ -145,6 +145,45 @@ describe('GenerateSourceImageComponent', () => {
     expect(form.controls.control_type.value).toBe('');
     expect(form.controls.image_is_control.value).toBe(false);
   });
+  it('drops the control strength with the control type it was set beside', async () => {
+    const { component, form } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    component.setMode('controlnet');
+    form.controls.control_type.setValue('canny');
+    expect(component.controlStrength()).toBeNull();
+
+    component.setControlStrength(1.35);
+    expect(form.controls.control_strength.value).toBe(1.35);
+    expect(component.controlStrength()).toBe(1.35);
+
+    component.setMode('img2img');
+    expect(form.controls.control_strength.value).toBeNull();
+  });
+
+  it('keeps the control strength the QR workflow can still send', async () => {
+    const { component, form } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    component.setMode('controlnet');
+    form.controls.control_type.setValue('canny');
+    component.setControlStrength(1.4);
+    form.controls.qrText.setValue('https://aihorde.net');
+
+    component.setMode('img2img');
+
+    expect(form.controls.control_type.value).toBe('');
+    expect(form.controls.control_strength.value).toBe(1.4);
+  });
+
+  it('holds the control strength inside the range the horde takes', async () => {
+    const { component, form } = await createComponent();
+    component.setControlStrength(9);
+    expect(form.controls.control_strength.value).toBe(3);
+    component.setControlStrength(0);
+    expect(form.controls.control_strength.value).toBe(0.01);
+    component.clearControlStrength();
+    expect(form.controls.control_strength.value).toBeNull();
+  });
+
   it('offers remix while support is unknown and blocks it when unsupported', async () => {
     const { fixture, component, form } = await createComponent();
 

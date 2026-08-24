@@ -535,6 +535,7 @@ describe('namedWorkerWarning', () => {
       needsPainting: false,
       needsControlNet: false,
       needsExtendedControlNet: false,
+      needsControlStrength: false,
       trustedOnly: false,
       workers: ['worker-1'],
       workerBlacklist: false,
@@ -628,6 +629,11 @@ describe('namedWorkerWarning', () => {
         { needsExtendedControlNet: true },
         { extended_controlnet: false },
         'generate.lint.worker_controlnet_extended',
+      ],
+      [
+        { needsControlStrength: true },
+        { bridge_agent: 'AI Horde Worker reGen:17.9.1:https://example.com' },
+        'generate.lint.worker_control_strength',
       ],
       [
         { trustedOnly: true },
@@ -740,6 +746,8 @@ describe('rejectionField', () => {
       ['ControlNetUnsupported', 'source'],
       ['ControlNetInpaintingMismatch', 'source'],
       ['InvalidControlType', 'control_type'],
+      ['ControlStrengthWithoutControlType', 'control_strength'],
+      ['ControlStrengthOutOfRange', 'control_strength'],
       ['KudosUpfront', 'generate'],
       ['TooManyPrompts', 'generate'],
       ['InvalidModel', 'model'],
@@ -761,6 +769,12 @@ describe('rejectionWatchValue', () => {
     const value = { ...DEFAULT_GENERATE_FORM_VALUE, flow_shift: 3 };
     expect(rejectionWatchValue('flow_shift', value)).toBe(3);
     expect(rejectionWatchValue('model', value)).toBe(value.model);
+    expect(
+      rejectionWatchValue('control_strength', {
+        ...value,
+        control_strength: 2,
+      }),
+    ).toBe(2);
     expect(rejectionWatchValue('sampler_eta', value)).toBe(value.sampler_eta);
     expect(
       rejectionWatchValue('scheduler', {

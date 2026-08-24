@@ -169,6 +169,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
   'sourceMode',
   'denoising_strength',
   'control_type',
+  'control_strength',
   'image_is_control',
   'return_control_map',
 ];

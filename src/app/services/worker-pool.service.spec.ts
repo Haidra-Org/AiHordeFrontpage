@@ -50,6 +50,7 @@ function requirement(
     needsPainting: false,
     needsControlNet: false,
     needsExtendedControlNet: false,
+    needsControlStrength: false,
     trustedOnly: false,
     workers: [],
     workerBlacklist: false,
@@ -181,6 +182,11 @@ describe('evaluateWorkerFeasibility', () => {
       { needsExtendedControlNet: true },
       { extended_controlnet: false },
     ],
+    [
+      'control_strength',
+      { needsControlStrength: true },
+      { bridge_agent: 'AI Horde Worker reGen:17.9.1:https://example.com' },
+    ],
   ])('reports the missing %s capability', (id, need, lack) => {
     const result = evaluateWorkerFeasibility(
       [worker(lack)],
@@ -188,6 +194,28 @@ describe('evaluateWorkerFeasibility', () => {
     );
     expect(result?.blockedBy).toBe(id);
     expect(result?.message.key).toBe(`generate.workers.none_${id}_one`);
+  });
+
+  it('takes a control strength only from reGen 18 or newer', () => {
+    const accepted = evaluateWorkerFeasibility(
+      [
+        worker({
+          bridge_agent: 'AI Horde Worker reGen:18.0.0:https://example.com',
+        }),
+      ],
+      requirement({ needsControlStrength: true }),
+    );
+    expect(accepted?.eligible).toBe(1);
+
+    const otherSoftware = evaluateWorkerFeasibility(
+      [
+        worker({
+          bridge_agent: 'Some Other Bridge:20.0.0:https://example.com',
+        }),
+      ],
+      requirement({ needsControlStrength: true }),
+    );
+    expect(otherSoftware?.blockedBy).toBe('control_strength');
   });
 
   it('reports the trusted-only setting when it empties the pool', () => {

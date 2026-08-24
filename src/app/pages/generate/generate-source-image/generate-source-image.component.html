@@ -257,6 +257,74 @@
           </p>
         }
       </div>
+      <!-- The weight only means anything beside a chosen mode, and the horde
+           refuses a request that carries one without the other, so the slider
+           arrives with the mode and leaves with it. -->
+      @if (controlType() !== "") {
+        <div appTutAnchor="control_strength">
+          <div class="gs-field-head">
+            <label class="gs-slabel" for="generate-control-strength">
+              @if (controlStrength() === null) {
+                {{ "generate.source.control_strength_label_unset" | transloco }}
+              } @else {
+                {{
+                  "generate.source.control_strength_label"
+                    | transloco: { value: controlStrength() }
+                }}
+              }
+            </label>
+            <app-gs-help topic="control_strength" />
+          </div>
+          <input
+            id="generate-control-strength"
+            class="gs-range mt-1.5"
+            type="range"
+            [min]="minControlStrength"
+            [max]="maxControlStrength"
+            [step]="controlStrengthStep"
+            [value]="controlStrength() ?? defaultControlStrength"
+            [style.--gs-range-fill.%]="
+              controlStrength() === null
+                ? 0
+                : rangeFill(
+                    controlStrength() ?? defaultControlStrength,
+                    minControlStrength,
+                    maxControlStrength
+                  )
+            "
+            [disabled]="disabled()"
+            [attr.aria-describedby]="
+              rejectionFor('control_strength')
+                ? 'generate-rejection-control_strength'
+                : null
+            "
+            (input)="setControlStrength(+$any($event.target).value)"
+          />
+          <p class="gs-sublabel mt-1">
+            {{ "generate.source.control_strength_hint" | transloco }}
+          </p>
+          @if (controlStrength() !== null) {
+            <button
+              type="button"
+              class="gs-textlink mt-1"
+              [disabled]="disabled()"
+              (click)="clearControlStrength()"
+            >
+              {{ "generate.source.control_strength_clear" | transloco }}
+            </button>
+          }
+          @if (rejectionFor("control_strength"); as message) {
+            <p
+              id="generate-rejection-control_strength"
+              class="gs-warn mt-1.5"
+              role="alert"
+            >
+              <app-icon name="warning-triangle" class="gs-ico-sm" />
+              {{ message }}
+            </p>
+          }
+        </div>
+      }
       <label class="gs-switch gs-switch-row">
         <span>{{ "generate.source.image_is_control_label" | transloco }}</span>
         <input

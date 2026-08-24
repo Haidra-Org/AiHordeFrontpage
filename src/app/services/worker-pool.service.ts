@@ -8,6 +8,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { catchError, of } from 'rxjs';
 import { HordeWorker } from '../types/horde-worker';
+import { bridgeTakesControlStrength } from '../helper/bridge-agent';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { API_BASE_URL } from './api-config';
 
@@ -35,6 +36,11 @@ export interface WorkerRequirement {
   needsControlNet: boolean;
   /** Whether the chosen guidance mode is one only a recent bridge understands. */
   needsExtendedControlNet: boolean;
+  /**
+   * Whether the request carries a control strength, which only the horde's own
+   * bridge accepts, and only from reGen 18 onwards.
+   */
+  needsControlStrength: boolean;
   trustedOnly: boolean;
   /** Worker ids the request is pinned to or steered away from. */
   workers: readonly string[];
@@ -56,6 +62,7 @@ export type WorkerFilterId =
   | 'painting'
   | 'controlnet'
   | 'controlnet_extended'
+  | 'control_strength'
   | 'trusted'
   | 'routing';
 
@@ -166,6 +173,11 @@ function filtersFor(requirement: WorkerRequirement): WorkerFilter[] {
       id: 'controlnet_extended',
       applies: requirement.needsExtendedControlNet,
       keep: (worker) => worker.extended_controlnet === true,
+    },
+    {
+      id: 'control_strength',
+      applies: requirement.needsControlStrength,
+      keep: (worker) => bridgeTakesControlStrength(worker.bridge_agent),
     },
     {
       id: 'trusted',

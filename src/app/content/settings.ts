@@ -574,16 +574,15 @@ export const SETTINGS: readonly SettingEntry[] = [
     },
   },
   {
-    // The weight on the hold a control map has over the render. There is no
-    // control in the panel for it, because the public horde does not carry the
-    // field; the entry exists because the strips do, and a reader who has met
-    // the guidance modes will ask what the dial beside them does.
+    // The weight on the hold a control map has over the render. It rides beside
+    // a chosen guidance mode and nowhere else, so the panel only offers it once
+    // one is chosen, and leaves it unset until the reader moves it.
     id: 'control_strength',
     section: 'source',
     reference: {
-      // No bounds: the panel has no control whose limits could be quoted, and
-      // the numbers here are the band the strips were rendered across.
-      range: { typical: '1.25-1.45', default: '1' },
+      // The bounds are the horde's own; the typical band is where the strips
+      // stopped paying for themselves.
+      range: { min: 0.01, max: 3, typical: '1.25-1.45', default: '1' },
       related: ['control_type', 'source', 'denoise'],
       links: [CONTROL_TYPES_LINK],
       glossaryTerms: ['controlnet'],

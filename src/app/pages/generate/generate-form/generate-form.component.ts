@@ -59,6 +59,10 @@ import {
   CFG_SLIDER_MAX,
   CFG_SLIDER_MIN,
   CFG_STEP,
+  CONTROL_STRENGTH_STEP,
+  DEFAULT_CONTROL_STRENGTH,
+  MAX_CONTROL_STRENGTH,
+  MIN_CONTROL_STRENGTH,
   MAX_BATCH,
   MAX_CFG_SCALE,
   MAX_CLIP_SKIP,
@@ -403,6 +407,7 @@ export const FIELD_LABEL_KEY: Readonly<Record<LedgerField, string>> = {
   outpaintAnchor: 'generate.form.ledger_outpaintAnchor',
   denoising_strength: 'generate.form.ledger_denoising_strength',
   control_type: 'generate.form.ledger_control_type',
+  control_strength: 'generate.form.ledger_control_strength',
   image_is_control: 'generate.form.ledger_image_is_control',
   return_control_map: 'generate.form.ledger_return_control_map',
   scheduler: 'generate.form.scheduler_label',
@@ -995,6 +1000,41 @@ export class GenerateFormComponent implements OnInit {
   /** Whether the QR-code control accepts input; unknown support reads as yes. */
   public readonly qrAllowed = computed(() => this.qrSupported() !== false);
 
+  public readonly minControlStrength = MIN_CONTROL_STRENGTH;
+  public readonly maxControlStrength = MAX_CONTROL_STRENGTH;
+  public readonly controlStrengthStep = CONTROL_STRENGTH_STEP;
+  public readonly defaultControlStrength = DEFAULT_CONTROL_STRENGTH;
+
+  /**
+   * Whether the QR workflow is on. The workflow applies a ControlNet of its own,
+   * which is what makes the control strength settable from this card as well as
+   * from the source-image card.
+   */
+  public readonly qrWorkflowOn = computed(
+    () => (this.value()?.qrText ?? '').trim() !== '',
+  );
+
+  /** The weight set on the control map, or null while the worker's own stands. */
+  public readonly controlStrength = computed(
+    () => this.value()?.control_strength ?? null,
+  );
+
+  /** Set the weight from the slider, which only moves in the horde's range. */
+  public setControlStrength(strength: number): void {
+    const control = this.form().controls.control_strength;
+    control.setValue(
+      Math.min(MAX_CONTROL_STRENGTH, Math.max(MIN_CONTROL_STRENGTH, strength)),
+    );
+    control.markAsDirty();
+  }
+
+  /** Take the weight off and let the worker render at its own default. */
+  public clearControlStrength(): void {
+    const control = this.form().controls.control_strength;
+    control.setValue(null);
+    control.markAsDirty();
+  }
+
   /** The worker ID typed into the add field, before it joins the list. */
   public readonly workerDraft = signal('');
 
@@ -1385,6 +1425,20 @@ export class GenerateFormComponent implements OnInit {
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.revealAdvancedSampling());
+    // A strength the request can no longer carry is dropped rather than kept
+    // out of sight: the horde refuses it without a control map, and the ledger
+    // would otherwise list a setting nothing is sending.
+    controls.qrText.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((text) => {
+        if (
+          text.trim() === '' &&
+          controls.control_type.value === '' &&
+          controls.control_strength.value !== null
+        ) {
+          controls.control_strength.setValue(null);
+        }
+      });
     controls.styleName.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onStyleNameChanged());

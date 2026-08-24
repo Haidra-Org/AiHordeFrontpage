@@ -30,6 +30,8 @@ import {
 } from '../../../content/docs-links';
 import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
 import {
+  CONTROL_STRENGTH_STEP,
+  DEFAULT_CONTROL_STRENGTH,
   EXTENDED_CONTROL_TYPES,
   LEGACY_CONTROL_TYPES,
   DEFAULT_EXTRA_SOURCE_STRENGTH,
@@ -38,8 +40,10 @@ import {
   GenerateFormGroup,
   GenerateOutpaintAnchor,
   GenerateSourceMode,
+  MAX_CONTROL_STRENGTH,
   MAX_DENOISE,
   MAX_EXTRA_SOURCE_STRENGTH,
+  MIN_CONTROL_STRENGTH,
   MIN_DENOISE,
   MIN_EXTRA_SOURCE_STRENGTH,
   SOURCE_MODES,
@@ -181,6 +185,10 @@ export class GenerateSourceImageComponent implements OnInit {
 
   public readonly legacyControlTypes = LEGACY_CONTROL_TYPES;
   public readonly extendedControlTypes = EXTENDED_CONTROL_TYPES;
+  public readonly minControlStrength = MIN_CONTROL_STRENGTH;
+  public readonly maxControlStrength = MAX_CONTROL_STRENGTH;
+  public readonly controlStrengthStep = CONTROL_STRENGTH_STEP;
+  public readonly defaultControlStrength = DEFAULT_CONTROL_STRENGTH;
   public readonly minDenoise = MIN_DENOISE;
   public readonly maxDenoise = MAX_DENOISE;
   public readonly denoiseStep = DENOISE_STEP;
@@ -215,7 +223,13 @@ export class GenerateSourceImageComponent implements OnInit {
    * this zoneless app; the `control_type.valueChanges` subscription keeps this
    * in sync so selecting a control type re-evaluates the local bindings.
    */
-  private readonly controlType = signal<ImageControlType | ''>('');
+  public readonly controlType = signal<ImageControlType | ''>('');
+  /**
+   * Mirror of the form's `control_strength`, kept in sync the same way, so the
+   * slider and the line reading it repaint in this zoneless app. Null is the
+   * unset state: the request carries no strength and the worker uses its own.
+   */
+  public readonly controlStrength = signal<number | null>(null);
 
   /** The ways of starting from a picture the card offers. */
   public readonly modes = SOURCE_MODES;
@@ -362,6 +376,7 @@ export class GenerateSourceImageComponent implements OnInit {
     const controls = this.form().controls;
     this.mode.set(controls.sourceMode.value);
     this.controlType.set(controls.control_type.value);
+    this.controlStrength.set(controls.control_strength.value);
     this.maskEnabled.set(controls.maskEnabled.value);
     this.outpaintEnabled.set(controls.outpaintEnabled.value);
     controls.sourceMode.valueChanges
@@ -371,8 +386,21 @@ export class GenerateSourceImageComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((controlType) => {
         this.controlType.set(controlType);
+        // A strength with no control map is a request the horde refuses, so
+        // dropping the type drops the weight, unless the QR workflow is on and
+        // applying a control map of its own.
+        if (
+          controlType === '' &&
+          controls.qrText.value.trim() === '' &&
+          controls.control_strength.value !== null
+        ) {
+          controls.control_strength.setValue(null);
+        }
         this.emitState();
       });
+    controls.control_strength.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((strength) => this.controlStrength.set(strength));
     controls.maskEnabled.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((enabled) => {
@@ -775,6 +803,22 @@ export class GenerateSourceImageComponent implements OnInit {
     if (controls.return_control_map.value) {
       controls.return_control_map.setValue(false);
     }
+  }
+
+  /** Take the weight off the control map's hold and send nothing for it. */
+  public clearControlStrength(): void {
+    this.form().controls.control_strength.setValue(null);
+    this.form().markAsDirty();
+  }
+
+  /** Set the weight from the slider, which only moves in the horde's range. */
+  public setControlStrength(strength: number): void {
+    const clamped = Math.min(
+      MAX_CONTROL_STRENGTH,
+      Math.max(MIN_CONTROL_STRENGTH, strength),
+    );
+    this.form().controls.control_strength.setValue(clamped);
+    this.form().markAsDirty();
   }
 
   private revokePreview(): void {

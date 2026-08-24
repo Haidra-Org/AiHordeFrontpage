@@ -27,6 +27,10 @@ import {
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
 import { RichTooltipDirective } from '../../../helper/rich-tooltip.directive';
+import {
+  parseBridgeAgent,
+  type ParsedBridgeAgent,
+} from '../../../helper/bridge-agent';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 import { extractApiError } from '../../../helper/extract-api-error';
@@ -384,32 +388,13 @@ export class WorkerCardComponent {
   }
 
   /**
-   * Parse bridge agent string into components.
-   * Format: "software_name:version:contact_or_url"
-   * Only parses if there are at least 2 colons (3 parts).
-   * The contact/URL part may contain additional colons (e.g., https://).
+   * The worker's bridge agent split up for display. The card falls back to the
+   * raw string unless all three parts are there, so a partial agent string is
+   * shown as the worker wrote it rather than half-rendered.
    */
-  public getParsedBridgeAgent(): {
-    name: string;
-    version: string;
-    contact: string;
-  } | null {
-    const agent = this.worker().bridge_agent;
-    if (!agent) return null;
-
-    const firstColon = agent.indexOf(':');
-    if (firstColon === -1) return null;
-
-    const secondColon = agent.indexOf(':', firstColon + 1);
-    if (secondColon === -1) return null;
-
-    const name = agent.substring(0, firstColon);
-    const version = agent.substring(firstColon + 1, secondColon);
-    const contact = agent.substring(secondColon + 1);
-
-    if (!name || !version || !contact) return null;
-
-    return { name, version, contact };
+  public getParsedBridgeAgent(): ParsedBridgeAgent | null {
+    const parsed = parseBridgeAgent(this.worker().bridge_agent);
+    return parsed && parsed.contact ? parsed : null;
   }
 
   public getSortedModels(): string[] {

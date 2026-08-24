@@ -1072,6 +1072,38 @@ describe('GenerateFormComponent structure', () => {
     ]);
   });
 
+  it('offers the control strength with the QR payload, unset until it is moved', async () => {
+    const fixture = await renderFixture();
+    unfoldAll(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+    const component = fixture.componentInstance;
+    const form = component.form();
+
+    expect(host.querySelector('#generate-qr-control-strength')).toBeNull();
+
+    form.controls.qrText.setValue('https://aihorde.net');
+    fixture.detectChanges();
+    const slider = host.querySelector<HTMLInputElement>(
+      '#generate-qr-control-strength',
+    );
+    expect(slider).not.toBeNull();
+    expect(component.controlStrength()).toBeNull();
+    // While it is unset the track carries no fill: a painted one would read as
+    // a weight that was chosen.
+    expect(slider?.style.getPropertyValue('--gs-range-fill')).toBe('0%');
+
+    component.setControlStrength(1.4);
+    fixture.detectChanges();
+    expect(form.controls.control_strength.value).toBe(1.4);
+    expect(slider?.style.getPropertyValue('--gs-range-fill')).not.toBe('0%');
+
+    // Nothing is left carrying a control map, so the weight goes with it.
+    form.controls.qrText.setValue('');
+    fixture.detectChanges();
+    expect(form.controls.control_strength.value).toBeNull();
+    expect(host.querySelector('#generate-qr-control-strength')).toBeNull();
+  });
+
   it('disables the QR layout controls with the payload box they belong to', async () => {
     const fixture = await renderFixture();
     unfoldAll(fixture);

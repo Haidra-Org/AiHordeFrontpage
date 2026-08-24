@@ -219,6 +219,17 @@ export const CONTROL_TYPES: readonly ImageControlType[] = [
   ...EXTENDED_CONTROL_TYPES,
 ];
 
+/**
+ * How hard a control map holds the render. The horde takes 0.01 to 3 and only
+ * beside a control type; a request that leaves it out is rendered at the
+ * worker's own default of 1, which is why the panel starts unset.
+ */
+export const MIN_CONTROL_STRENGTH = 0.01;
+export const MAX_CONTROL_STRENGTH = 3;
+export const CONTROL_STRENGTH_STEP = 0.01;
+/** What the slider is seeded with, matching the default it stands in for. */
+export const DEFAULT_CONTROL_STRENGTH = 1;
+
 export const MIN_DENOISE = 0.01;
 export const MAX_DENOISE = 1;
 export const DENOISE_STEP = 0.01;
@@ -1237,6 +1248,12 @@ export interface GenerateFormValue {
   denoising_strength: number;
   /** ControlNet guidance mode; empty means unset (required for controlnet). */
   control_type: ImageControlType | '';
+  /**
+   * Weight on the control map's hold, or null to send nothing and leave the
+   * worker on its own default. Only ever sent beside a control type: the horde
+   * refuses the field on its own.
+   */
+  control_strength: number | null;
   image_is_control: boolean;
   return_control_map: boolean;
   /**
@@ -1330,6 +1347,7 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   outpaintAnchor: 'center',
   denoising_strength: DEFAULT_DENOISE,
   control_type: '',
+  control_strength: null,
   image_is_control: false,
   return_control_map: false,
   scheduler: 'karras',
@@ -1547,7 +1565,8 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       key === 'sampler_s_tmin' ||
       key === 'sampler_s_tmax' ||
       key === 'sampler_order' ||
-      key === 'flow_shift'
+      key === 'flow_shift' ||
+      key === 'control_strength'
     ) {
       if (
         value === null ||
@@ -1699,6 +1718,7 @@ export function createGenerateForm(
       MAX_DENOISE,
     ),
     control_type: control(value.control_type),
+    control_strength: control(value.control_strength),
     image_is_control: control(value.image_is_control),
     return_control_map: control(value.return_control_map),
     scheduler: control(value.scheduler),
@@ -2091,6 +2111,19 @@ export function buildImageRequest(
     params.extra_texts = extraTexts;
   }
 
+  // The weight on a control map is only accepted where there is a control map:
+  // beside a control type, or under the QR workflow, which applies a ControlNet
+  // of its own. Carried anywhere else, or outside the horde's bounds, the
+  // request is refused, so it is written once here where both are decided.
+  if (
+    (params.control_type !== undefined || params.workflow === 'qr_code') &&
+    value.control_strength !== null &&
+    value.control_strength >= MIN_CONTROL_STRENGTH &&
+    value.control_strength <= MAX_CONTROL_STRENGTH
+  ) {
+    params.control_strength = value.control_strength;
+  }
+
   const request: ImageGenerationRequest = {
     prompt: combinePrompt(value.prompt, value.negativePrompt),
     params,
@@ -2174,6 +2207,9 @@ export function workerRequirementForRequest(
     needsControlNet: controlType !== undefined,
     needsExtendedControlNet:
       controlType !== undefined && EXTENDED_CONTROL_TYPES.includes(controlType),
+    // Read off the built request rather than the control type: the QR workflow
+    // carries a control strength without one.
+    needsControlStrength: params.control_strength !== undefined,
     trustedOnly: request.trusted_workers === true,
     workers: request.workers ?? [],
     workerBlacklist: request.worker_blacklist === true,
@@ -2387,6 +2423,14 @@ export function requestToFormValue(
     result.denoising_strength = params.denoising_strength;
   }
   if (params.control_type) result.control_type = params.control_type;
+  // Comes back only where the request could have carried it, so a reload cannot
+  // seed a strength the studio would then have to drop.
+  if (
+    typeof params.control_strength === 'number' &&
+    (params.control_type !== undefined || params.workflow === 'qr_code')
+  ) {
+    result.control_strength = params.control_strength;
+  }
   result.image_is_control = params.image_is_control === true;
   result.return_control_map = params.return_control_map === true;
   if (Array.isArray(params.loras)) {
