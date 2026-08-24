@@ -129,7 +129,7 @@ export interface ImageGenerationParams {
   control_type?: ImageControlType;
   /** Treat `source_image` as an already-computed control map (skip annotation). */
   image_is_control?: boolean;
-  /** Ask the worker to also return the derived control map alongside the result. */
+  /** Return the derived control map instead of a generated image; no render happens. */
   return_control_map?: boolean;
 }
 
