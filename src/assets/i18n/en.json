@@ -1131,6 +1131,7 @@
   "generate.sweeps.tile_solo_alt": "The single tile that was rendered, with this setting {{ value }}",
   "generate.sweeps.source_label": "Starting image",
   "generate.sweeps.source_alt": "The image these examples were painted over",
+  "generate.sweeps.control_map_label": "Control map",
   "generate.sweeps.variant_label": "Which kind of sampler these examples use",
   "generate.sweeps.variant_base": "A sampler that re-rolls",
   "generate.sweeps.variant_alt": "A sampler that settles",

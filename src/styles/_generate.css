@@ -10905,7 +10905,7 @@ app-gs-sweep-scrub + app-gs-door {
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-loading,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-pair-caps,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-options,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-source,
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-sources,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-controls,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-provenance,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-request,
@@ -11221,11 +11221,21 @@ app-gs-compare-wipe {
   color: var(--gs-ink-2);
 }
 
+/* The source and, where a detector drew one, the map beside it: two of the same
+   plate rather than one above the other, because they are read against each
+   other. They wrap on a narrow plate instead of shrinking below the size at
+   which a map's lines are visible at all. */
+.gen-studio .gs-sweep-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2) var(--gs-space-4);
+  margin: 0 0 var(--gs-space-2);
+}
 .gen-studio .gs-sweep-source {
   display: flex;
   align-items: center;
   gap: var(--gs-space-2);
-  margin: 0 0 var(--gs-space-2);
+  margin: 0;
 }
 .gen-studio .gs-sweep-source-img {
   flex: 0 0 auto;

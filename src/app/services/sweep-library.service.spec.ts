@@ -218,6 +218,23 @@ describe('SweepLibraryService', () => {
     );
   });
 
+  it('carries the map a whole strip was guided by, beside its source', async () => {
+    const loaded = sweeps.ensureLoaded();
+    http.expectOne(indexUrl).flush(stubIndex);
+    await loaded;
+
+    const guided = sweeps.strip(
+      'control_strength',
+      undefined,
+      undefined,
+      'canny',
+    )!;
+    expect(sweeps.assetUrl(guided.control_map!)).toBe(
+      `${environment.evidenceBaseUrl}/control-strength/canny/deliberate/courier-ink/source_map.webp`,
+    );
+    expect(sweeps.strip('denoising_strength')!.control_map ?? null).toBeNull();
+  });
+
   it('reads named alternatives apart from a range, off the stops themselves', async () => {
     const loaded = sweeps.ensureLoaded();
     http.expectOne(indexUrl).flush(stubIndex);

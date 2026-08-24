@@ -979,6 +979,8 @@
         "label": "The courier, asked for in ink and watercolour",
         "prompt": "ink and watercolour illustration of a courier on an airship deck"
       },
+      "source_image": "control-strength/canny/deliberate/courier-ink/source.webp",
+      "control_map": "control-strength/canny/deliberate/courier-ink/source_map.webp",
       "varying": ["control_strength"],
       "stops": [
         {

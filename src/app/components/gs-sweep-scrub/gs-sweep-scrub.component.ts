@@ -606,21 +606,40 @@ const VIEWER_FOCUSABLE =
       }
 
       <div class="gs-plate-body">
-        @if (sourceUrl(); as source) {
-          <!-- What the sweep was painted over. Without it the low end of a
+        @if (sourceUrl() || controlMapUrl()) {
+          <!-- What the sweep was painted over, and where a detector was in
+               play, the map it was held to. Without the source the low end of a
                denoising strip looks like a weak render rather than a faithful
-               one. -->
-          <figure class="gs-sweep-source">
-            <img
-              class="gs-sweep-source-img"
-              [src]="source"
-              [alt]="'generate.sweeps.source_alt' | transloco"
-              loading="lazy"
-            />
-            <figcaption class="gs-sweep-source-cap">
-              {{ 'generate.sweeps.source_label' | transloco }}
-            </figcaption>
-          </figure>
+               one; without the map a strength strip is a dial with nothing at
+               the far end of it. -->
+          <div class="gs-sweep-sources">
+            @if (sourceUrl(); as source) {
+              <figure class="gs-sweep-source">
+                <img
+                  class="gs-sweep-source-img"
+                  [src]="source"
+                  [alt]="'generate.sweeps.source_alt' | transloco"
+                  loading="lazy"
+                />
+                <figcaption class="gs-sweep-source-cap">
+                  {{ 'generate.sweeps.source_label' | transloco }}
+                </figcaption>
+              </figure>
+            }
+            @if (controlMapUrl(); as map) {
+              <figure class="gs-sweep-source">
+                <img
+                  class="gs-sweep-source-img gs-sweep-map-img"
+                  [src]="map"
+                  [alt]="'generate.sweeps.control_map_label' | transloco"
+                  loading="lazy"
+                />
+                <figcaption class="gs-sweep-source-cap">
+                  {{ 'generate.sweeps.control_map_label' | transloco }}
+                </figcaption>
+              </figure>
+            }
+          </div>
         }
 
         @if (categorical()) {
@@ -1124,6 +1143,12 @@ export class GsSweepScrubComponent {
   public readonly sourceUrl = computed(() => {
     const source = this.strip()?.source_image;
     return source ? this.sweeps.assetUrl(source) : null;
+  });
+
+  /** The map the strip was guided by, on the strips held to one guidance mode. */
+  public readonly controlMapUrl = computed(() => {
+    const map = this.strip()?.control_map;
+    return map ? this.sweeps.assetUrl(map) : null;
   });
 
   public readonly lastIndex = computed(

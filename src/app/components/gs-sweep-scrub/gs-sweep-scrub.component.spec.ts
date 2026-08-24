@@ -20,6 +20,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
   template: `<app-gs-sweep-scrub
     [parameter]="parameter"
     [modelSlug]="modelSlug"
+    [controlType]="controlType"
     [startExpanded]="startExpanded"
     [viewerFirst]="viewerFirst"
     [register]="register"
@@ -28,6 +29,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 class HostComponent {
   public parameter = 'steps';
   public modelSlug: string | undefined = undefined;
+  public controlType: string | undefined = undefined;
   public startExpanded = false;
   public viewerFirst = false;
   public register: 'full' | 'filmcard' = 'full';
@@ -160,6 +162,8 @@ describe('GsSweepScrubComponent', () => {
     modelSlug?: string;
     /** Which sweep to put on show; the steps strip unless said otherwise. */
     parameter?: string;
+    /** Which guidance mode's strip, where the field was swept against several. */
+    controlType?: string;
     /** Whether the surface opens the strip without waiting to be asked. */
     startExpanded?: boolean;
     /** Whether the offer opens the full-size layer instead of the plate. */
@@ -200,6 +204,7 @@ describe('GsSweepScrubComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.modelSlug = options?.modelSlug;
     fixture.componentInstance.parameter = options?.parameter ?? 'steps';
+    fixture.componentInstance.controlType = options?.controlType;
     fixture.componentInstance.startExpanded = options?.startExpanded ?? false;
     fixture.componentInstance.viewerFirst = options?.viewerFirst ?? false;
     fixture.componentInstance.register = options?.register ?? 'full';
@@ -677,6 +682,43 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
 
     expect(find('.gs-sweep-viewer-body .gs-sweep-source-img')).not.toBeNull();
+  });
+
+  it('shows the map beside the source on a strip a detector guided', async () => {
+    await setUp({ parameter: 'control_strength', controlType: 'canny' });
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    expect(
+      find<HTMLImageElement>('.gs-sweep-map-img')!.getAttribute('src'),
+    ).toBe(
+      `${environment.evidenceBaseUrl}/control-strength/canny/deliberate/courier-ink/source_map.webp`,
+    );
+    expect(find<HTMLImageElement>('.gs-sweep-map-img')!.alt).toBe(
+      en['generate.sweeps.control_map_label'],
+    );
+    expect(el().textContent).toContain(en['generate.sweeps.control_map_label']);
+    // Beside the starting image rather than instead of it, and the same plate.
+    expect(all('.gs-sweep-sources .gs-sweep-source-img')).toHaveLength(2);
+
+    // Two stops, so the strip is a wipe and its own control is the way to
+    // full size; the pair goes with the source and the map either way.
+    find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-viewer-body .gs-sweep-map-img')).not.toBeNull();
+  });
+
+  it('shows no map where the strip carries none', async () => {
+    await setUp({ parameter: 'denoising_strength' });
+    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
+    fixture.detectChanges();
+
+    expect(find('.gs-sweep-source-img')).not.toBeNull();
+    expect(find('.gs-sweep-map-img')).toBeNull();
+    expect(el().textContent).not.toContain(
+      en['generate.sweeps.control_map_label'],
+    );
   });
 
   describe('the second reading of steps', () => {

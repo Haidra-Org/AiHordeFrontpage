@@ -117,6 +117,13 @@ export interface SweepStrip {
    * strips that start from one (img2img denoising). Null everywhere else.
    */
   source_image?: string | null;
+  /**
+   * The map the strip's detector drew from that source, relative to the library
+   * root, on the strips held to one guidance mode. What the whole strip was
+   * guided by, so it belongs to the strip rather than to a frame. Null
+   * everywhere else.
+   */
+  control_map?: string | null;
 }
 
 /** The whole library's manifest, as published beside the images. */
