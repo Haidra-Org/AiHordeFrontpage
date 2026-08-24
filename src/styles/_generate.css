@@ -1866,11 +1866,14 @@
 .gen-studio .gs-reset-btn {
   position: relative;
 }
-/* The confirm hangs off the button, in the presets menu's grammar. It opens
-   leftward: the reset control sits at the right end of the tool row, where a
-   panel anchored to its left edge runs off a phone. */
+/* The reset control lives inside the ledger popover, and its confirm sits in
+   the flow directly under it rather than floating: the ledger is a scroll box,
+   and a floating confirm either scrolls out of that box while still open or
+   has to detach to the viewport, far from the press that asked for it. */
 .gen-studio .gs-reset {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 /* ------- the docked utility chips ----------------------------------- */
 /* What is reached for while working down the panel, kept at the foot of the
@@ -2160,12 +2163,8 @@
 }
 
 .gen-studio .gs-reset-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 30;
-  width: 232px;
-  max-width: calc(100vw - 24px);
+  align-self: stretch;
+  margin-top: 6px;
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -2174,19 +2173,6 @@
   border: 1px solid var(--gs-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
-}
-/* The confirm hangs inside the ledger's own scrolling panel, which on a phone
-  leaves it little room and can cut it off. From tablet widths down it detaches
-  from the trigger and pins to the viewport like the presets menu, where it has
-  the width of the screen to be read in. */
-@media (max-width: 1023.98px) {
-  .gen-studio .gs-reset-pop {
-    position: fixed;
-    top: calc(var(--nav-height-mobile) + 8px);
-    left: 12px;
-    right: 12px;
-    width: auto;
-  }
 }
 .gen-studio .gs-reset-ask {
   font-size: var(--gs-text-xs);
