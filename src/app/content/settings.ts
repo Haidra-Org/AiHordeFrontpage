@@ -582,7 +582,7 @@ export const SETTINGS: readonly SettingEntry[] = [
     reference: {
       // The bounds are the horde's own; the typical band is where the strips
       // stopped paying for themselves.
-      range: { min: 0.01, max: 3, typical: '1.25-1.45', default: '1' },
+      range: { min: 0.01, max: 3, typical: '0.5-0.9', default: '1' },
       related: ['control_type', 'source', 'denoise'],
       links: [CONTROL_TYPES_LINK],
       glossaryTerms: ['controlnet'],
