@@ -13147,6 +13147,19 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-back {
   align-self: flex-start;
 }
+/* --gs-blue is the same #1d4ed8 in both themes and sinks into the dark page at
+   2.8:1, text and focus ring alike, so the reference links take the lighter
+   blue the dark theme uses for links elsewhere. */
+.dark .gen-studio .gs-ref-link,
+.dark .gen-studio .gs-ref-full,
+.dark .gen-studio .gs-ref-back {
+  color: #93c5fd;
+}
+.dark .gen-studio .gs-ref-link:focus-visible,
+.dark .gen-studio .gs-ref-full:focus-visible,
+.dark .gen-studio .gs-ref-back:focus-visible {
+  outline-color: #93c5fd;
+}
 /* The ways back off a routed entry: the page the reader left, when a chip sent
    them, and always the index. */
 .gen-studio .gs-ref-ways {
