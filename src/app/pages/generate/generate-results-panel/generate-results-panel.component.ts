@@ -32,7 +32,7 @@ import {
 } from '../../../types/generation-job';
 import { Router, RouterLink } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
-import { buildJobImageArchive } from '../generate-archive';
+import { buildJobImageArchive, extensionFor } from '../generate-archive';
 import { embedWebpExifInBlob } from '../../../helper/webp-exif';
 import {
   ImageMetaError,
@@ -67,6 +67,9 @@ import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-w
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
+import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
+import { EdgeAwarePopoverDirective } from '../../../directives/edge-aware-popover.directive';
+import { FullscreenService } from '../../../services/fullscreen.service';
 import {
   TutorialEngineService,
   TutorialLevel,
@@ -261,6 +264,8 @@ function positivePrompt(prompt: string): string {
     GsWorldPickerComponent,
     GsParamEntryComponent,
     GsSettingChipComponent,
+    GsSheetComponent,
+    EdgeAwarePopoverDirective,
     RouterLink,
   ],
   templateUrl: './generate-results-panel.component.html',
@@ -282,6 +287,8 @@ export class GenerateResultsPanelComponent {
   private readonly tutorial = inject(TutorialEngineService);
   private readonly helpDock = inject(GsHelpDockService);
   private readonly workerPool = inject(WorkerPoolService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  public readonly fullscreen = inject(FullscreenService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly perRowOptions = PER_ROW_OPTIONS;
@@ -794,6 +801,32 @@ export class GenerateResultsPanelComponent {
 
   private readonly viewerPanel =
     viewChild<ElementRef<HTMLElement>>('viewerPanel');
+  /** The enlarged image itself, which is what goes on the whole screen. */
+  private readonly viewerImg =
+    viewChild<ElementRef<HTMLImageElement>>('viewerImg');
+  private readonly viewerMoreBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('viewerMoreBtn');
+  private readonly viewerMoreRef =
+    viewChild<ElementRef<HTMLElement>>('viewerMoreRef');
+  /**
+   * Whether the viewer's remaining actions are showing. Everything that cannot
+   * carry its own word across the action row at this width lives in this one
+   * list, drawn as a popover beside its button where there is room and as the
+   * studio's bottom sheet where there is not.
+   */
+  public readonly viewerMoreOpen = signal(false);
+  /**
+   * Whether the studio is drawing its narrow layout. The action list needs to
+   * know which of its two presentations exists, and the picture takes the whole
+   * viewport, so this is a question about the screen rather than about the pane.
+   */
+  public readonly viewerNarrow = signal(false);
+  /**
+   * Whether the picture, rather than the studio, is the thing on the whole
+   * screen. One target serves the whole studio, so the viewer borrows it and
+   * hands it back; this says whether the borrow is outstanding.
+   */
+  private readonly fullscreenBorrowed = signal(false);
   private readonly viewerDeletePanel =
     viewChild<ElementRef<HTMLElement>>('viewerDeletePanel');
   private readonly viewerDeleteCancel =
@@ -910,6 +943,7 @@ export class GenerateResultsPanelComponent {
     // as soon as the pane exists rather than waiting on the form's own fetch:
     // this pane is also mounted where there is no form.
     this.workerPool.load();
+    this.watchViewport();
 
     effect(() => {
       for (const job of this.finishedJobs()) {
@@ -1191,6 +1225,8 @@ export class GenerateResultsPanelComponent {
     this.viewerDeletePending.set(null);
     this.viewerDeleteReturnFocus = null;
     this.viewerKey.set(null);
+    this.viewerMoreOpen.set(false);
+    this.releaseFullscreenTarget();
     this.closeMeta();
     this.detachViewerKeys();
     this.previousActiveElement?.focus();
@@ -1202,6 +1238,92 @@ export class GenerateResultsPanelComponent {
     if (event.target === event.currentTarget) {
       this.closeViewer();
     }
+  }
+
+  // --- The viewer's action list -------------------------------------------
+
+  public toggleViewerMore(): void {
+    this.viewerMoreOpen.update((open) => !open);
+  }
+
+  public closeViewerMore(): void {
+    this.viewerMoreOpen.set(false);
+  }
+
+  /**
+   * Dismiss the list and put focus back on the button that opened it. Every row
+   * uses it, so a keyboard never lands on the document after the list stops
+   * existing; a row that then closes the viewer moves focus on again itself.
+   */
+  public closeViewerMoreAndFocus(): void {
+    this.closeViewerMore();
+    this.viewerMoreBtn()?.nativeElement.focus();
+  }
+
+  /** Whether the picture itself currently has the whole screen. */
+  public readonly imageFullscreen = computed(
+    () => this.fullscreenBorrowed() && this.fullscreen.active(),
+  );
+
+  public viewerFullscreenLabelKey(): string {
+    return this.imageFullscreen()
+      ? 'generate.shell.fullscreen_exit'
+      : 'generate.shell.fullscreen';
+  }
+
+  /**
+   * Put the picture on the whole screen, or take it off again. The image
+   * element goes rather than the viewer around it, so nothing of the studio is
+   * left in the corners of the screen the reader asked for the picture on.
+   */
+  public async viewerFullscreen(): Promise<void> {
+    this.closeViewerMore();
+    if (this.imageFullscreen()) {
+      await this.fullscreen.exit();
+      this.releaseFullscreenTarget();
+      return;
+    }
+    const image = this.viewerImg()?.nativeElement;
+    if (!image) {
+      return;
+    }
+    this.fullscreen.setTarget(image);
+    this.fullscreenBorrowed.set(true);
+    await this.fullscreen.enter();
+    // A refused request leaves the page as it was, so the target goes straight
+    // back rather than waiting for a viewer the reader never left.
+    if (!this.fullscreen.active()) {
+      this.releaseFullscreenTarget();
+    }
+  }
+
+  /** Give the whole-screen target back to the studio shell that owns it. */
+  private releaseFullscreenTarget(): void {
+    if (!this.fullscreenBorrowed()) {
+      return;
+    }
+    this.fullscreenBorrowed.set(false);
+    const shell = this.host.nativeElement.closest<HTMLElement>('.gs-shell');
+    if (shell) {
+      this.fullscreen.setTarget(shell);
+    }
+  }
+
+  /**
+   * Follow the CSS breakpoint at which the studio stops stacking, so a control
+   * the layout has moved is re-drawn where it now lives rather than left stale
+   * until some other pass runs.
+   */
+  private watchViewport(): void {
+    const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');
+    if (!mq) {
+      return;
+    }
+    this.viewerNarrow.set(mq.matches);
+    const onChange = (event: MediaQueryListEvent): void =>
+      this.viewerNarrow.set(event.matches);
+    mq.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => mq.removeEventListener('change', onChange));
   }
 
   public viewerNext(): void {
@@ -1287,10 +1409,15 @@ export class GenerateResultsPanelComponent {
   private onViewerKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
-      // Unwind one layer at a time: delete confirmation, raw JSON, metadata,
-      // then the viewer itself.
+      // Unwind one layer at a time: delete confirmation, the action list, raw
+      // JSON, metadata, then the viewer itself. The sheet answers escape for
+      // itself and tells us it is done, so only the popover is ours to close.
       if (this.viewerDeletePending() !== null) {
         this.cancelViewerDelete();
+      } else if (this.viewerMoreOpen()) {
+        if (!this.viewerNarrow()) {
+          this.closeViewerMoreAndFocus();
+        }
       } else if (this.metaJsonOpen()) {
         this.metaJsonOpen.set(false);
       } else if (this.metaTile()) {
@@ -1304,7 +1431,7 @@ export class GenerateResultsPanelComponent {
       this.trapViewerFocus(event);
       return;
     }
-    if (this.viewerDeletePending() !== null) {
+    if (this.viewerDeletePending() !== null || this.viewerMoreOpen()) {
       return;
     }
     // Arrow navigation belongs to the images, not to the metadata panel's form
@@ -1370,11 +1497,7 @@ export class GenerateResultsPanelComponent {
     if (!tile.thumb) {
       return;
     }
-    const extension = tile.thumb.mimeType.includes('png')
-      ? 'png'
-      : tile.thumb.mimeType.includes('jpeg')
-        ? 'jpg'
-        : 'webp';
+    const extension = extensionFor(tile.thumb.mimeType);
     const stem = tile.seed ? `seed-${tile.seed}` : tile.thumb.imageId;
     const filename = `${(tile.imageIndex ?? 0) + 1}-${stem}.${extension}`;
     const blob = await this.resultBlob(tile);
@@ -1410,15 +1533,6 @@ export class GenerateResultsPanelComponent {
     }
   }
 
-  /**
-   * Hand a result to the form's source-image section. The blob lives in the
-   * image store, and the source section belongs to the parent page, so the
-   * parent does the attaching; this only says which image.
-   */
-  /**
-   * Carry this image's settings with its own seed held, so the next request
-   * lands next door to it rather than somewhere else entirely.
-   */
   /** The metadata panel's three actions, on the image the panel is showing. */
   public onQuickAction(action: ImageQuickAction, tile: ResultTile): void {
     if (action === 'variation') {
@@ -1430,6 +1544,10 @@ export class GenerateResultsPanelComponent {
     }
   }
 
+  /**
+   * Carry this image's settings with its own seed held, so the next request
+   * lands next door to it rather than somewhere else entirely.
+   */
   public makeVariation(tile: ResultTile): void {
     this.loadOwnSettings(tile, tile.seed ?? null);
   }
@@ -1451,6 +1569,11 @@ export class GenerateResultsPanelComponent {
     this.unflip();
   }
 
+  /**
+   * Hand a result to the form's source-image section. The blob lives in the
+   * image store, and the source section belongs to the parent page, so the
+   * parent does the attaching; this only says which image.
+   */
   public reuseAsSource(tile: ResultTile): void {
     if (!tile.thumb) {
       return;
@@ -1607,10 +1730,19 @@ export class GenerateResultsPanelComponent {
 
   /** Close the menu when a press lands outside it. */
   public onDocumentPointerDown(event: PointerEvent): void {
+    const target = event.target as Element | null;
+    // Only the popover is dismissed by a press beside it. The sheet is not a
+    // descendant of its trigger, and a list the reader is reading through is not
+    // something to take away on the first tap inside it.
+    if (this.viewerMoreOpen() && !this.viewerNarrow()) {
+      const anchor = this.viewerMoreRef()?.nativeElement;
+      if (anchor && target && !anchor.contains(target)) {
+        this.closeViewerMore();
+      }
+    }
     if (!this.tileMenu()) {
       return;
     }
-    const target = event.target as Element | null;
     if (target?.closest('.gs-tile-menu')) {
       return;
     }
@@ -1962,7 +2094,9 @@ export class GenerateResultsPanelComponent {
     anchor.download = filename;
     anchor.click();
     if (revoke) {
-      URL.revokeObjectURL(url);
+      // The browser reads the href while it handles the click, so the URL has
+      // to outlive the dispatch rather than only the call that started it.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     }
   }
 

@@ -1223,7 +1223,7 @@
             (click)="onViewerImageClick()"
             [attr.aria-label]="'generate.results.close' | transloco"
           >
-            <img class="gs-viewer-img" [src]="view.url" alt="" />
+            <img #viewerImg class="gs-viewer-img" [src]="view.url" alt="" />
           </button>
           @if (viewerCount() > 1) {
             <button
@@ -1246,102 +1246,106 @@
             }
           </div>
         }
-        <!-- What to do next, ahead of the rest: on a phone this row is the
-             whole answer and everything below it scrolls. -->
-        <div class="gs-quick-acts gs-quick-acts--viewer">
+        <!-- What to do next. Only what carries its own word across this width
+             is here; on a phone that is three buttons, and everything else is
+             one press away in the list at the end of the row. -->
+        <div class="gs-viewer-actions">
           <button
             type="button"
-            class="gs-quick-act gs-quick-act--primary"
+            class="gs-viewer-act gs-viewer-act--primary"
             (click)="makeVariation(view)"
           >
             <app-icon name="squares-2x2" />
             {{ "generate.results.make_variation" | transloco }}
           </button>
-          <button
-            type="button"
-            class="gs-quick-act"
-            [disabled]="!view.thumb"
-            (click)="reuseAsSource(view)"
-          >
-            <app-icon name="refresh-alt" />
-            {{ "generate.results.reuse" | transloco }}
-          </button>
-          <button
-            type="button"
-            class="gs-quick-act"
-            (click)="copySettings(view)"
-          >
-            <app-icon name="adjustments-horizontal" />
-            {{ "generate.results.copy_settings" | transloco }}
-          </button>
-        </div>
-        <div class="gs-viewer-actions">
-          <button
-            type="button"
-            class="gs-viewer-act gs-viewer-act--primary"
-            [disabled]="!view.thumb"
-            (click)="downloadTile(view)"
-          >
-            <app-icon name="arrow-down-tray" />
-            {{ "generate.results.download" | transloco }}
-          </button>
-          @if (canCopyImage) {
+          @if (!viewerNarrow()) {
             <button
               type="button"
               class="gs-viewer-act"
               [disabled]="!view.thumb"
-              (click)="copyImage(view)"
+              (click)="reuseAsSource(view)"
             >
-              <app-icon name="clipboard" />
-              {{ "generate.results.copy_image" | transloco }}
+              <app-icon name="refresh-alt" />
+              {{ "generate.results.reuse" | transloco }}
             </button>
-          }
-          @if (canShareImage) {
+            <button
+              type="button"
+              class="gs-viewer-act"
+              (click)="copySettings(view)"
+            >
+              <app-icon name="adjustments-horizontal" />
+              {{ "generate.results.copy_settings" | transloco }}
+            </button>
             <button
               type="button"
               class="gs-viewer-act"
               [disabled]="!view.thumb"
-              (click)="shareImage(view)"
+              (click)="downloadTile(view)"
             >
-              <app-icon name="external-link" />
-              {{ "generate.results.share" | transloco }}
+              <app-icon name="arrow-down-tray" />
+              {{ "generate.results.download" | transloco }}
+            </button>
+            <button
+              type="button"
+              class="gs-viewer-act"
+              [class.gs-viewer-act--on]="metaOpen()"
+              (click)="toggleMeta(view)"
+            >
+              <app-icon name="bars-4" />
+              {{ "generate.results.metadata" | transloco }}
             </button>
           }
-          <button
-            type="button"
-            class="gs-viewer-act"
-            [disabled]="!view.seed"
-            (click)="copySeed(view)"
-          >
-            <app-icon name="copy" />
-            {{ "generate.results.copy_seed" | transloco }}
-          </button>
-          <button
-            type="button"
-            class="gs-viewer-act"
-            [disabled]="!view.thumb"
-            (click)="sendToAlchemy(view)"
-          >
-            <app-icon name="beaker" />
-            {{ "generate.results.send_alchemy" | transloco }}
-          </button>
-          <button
-            type="button"
-            class="gs-viewer-act"
-            [class.gs-viewer-act--on]="metaOpen()"
-            (click)="toggleMeta(view)"
-          >
-            <app-icon name="bars-4" />
-            {{ "generate.results.metadata" | transloco }}
-          </button>
-          <button
-            type="button"
-            class="gs-viewer-act gs-viewer-act--danger"
-            (click)="requestViewerDelete(view.jobLocalId)"
-          >
-            <app-icon name="trash-modern" />
-            {{ "generate.results.delete" | transloco }}
-          </button>
+          <!-- Nothing is drawn where the browser only ever gives the screen to
+               video, which is every iPhone. -->
+          @if (fullscreen.available) {
+            <button
+              type="button"
+              class="gs-viewer-act"
+              [attr.aria-pressed]="imageFullscreen()"
+              (click)="viewerFullscreen()"
+            >
+              <app-icon
+                [name]="
+                  imageFullscreen()
+                    ? 'arrows-pointing-in'
+                    : 'arrows-pointing-out'
+                "
+              />
+              {{ viewerFullscreenLabelKey() | transloco }}
+            </button>
+          }
+          <div class="gs-viewer-more" #viewerMoreRef>
+            <button
+              #viewerMoreBtn
+              type="button"
+              class="gs-viewer-act"
+              [class.gs-viewer-act--on]="viewerMoreOpen()"
+              [attr.aria-expanded]="viewerMoreOpen()"
+              aria-haspopup="dialog"
+              (click)="toggleViewerMore()"
+            >
+              <app-icon name="ellipsis-vertical" />
+              {{ "generate.results.viewer_more" | transloco }}
+            </button>
+            @if (viewerMoreOpen() && !viewerNarrow()) {
+              <div
+                class="gs-options-pop gs-viewer-pop"
+                appEdgeAware
+                edgeAlign="end"
+                role="dialog"
+                [attr.aria-label]="
+                  'generate.results.viewer_more_title' | transloco
+                "
+              >
+                <ng-container
+                  *ngTemplateOutlet="
+                    viewerMoreRows;
+                    context: { $implicit: view }
+                  "
+                />
+              </div>
+            }
+          </div>
         </div>
       </div>
       @if (metaTile(); as tile) {
@@ -1415,9 +1419,174 @@
           </div>
         </div>
       }
+      <!-- The same list on a phone, where a popover has nowhere to hang. It is
+           inside the viewer so the focus trap reaches its rows. -->
+      @if (viewerMoreOpen() && viewerNarrow()) {
+        <app-gs-sheet
+          [startExpanded]="true"
+          [label]="'generate.results.viewer_more_title' | transloco"
+          (closed)="closeViewerMoreAndFocus()"
+        >
+          <span sheet-bar class="gs-sheet-title">{{
+            "generate.results.viewer_more_title" | transloco
+          }}</span>
+          <div class="gs-options-rows">
+            <ng-container
+              *ngTemplateOutlet="viewerMoreRows; context: { $implicit: view }"
+            />
+          </div>
+        </app-gs-sheet>
+      }
     </div>
   </div>
 }
+
+<!-- The viewer's remaining actions, written once and drawn into whichever
+     surface the width calls for. What the row above already carries is left
+     out here rather than said twice. -->
+<ng-template #viewerMoreRows let-view>
+  <p class="gs-opt-head">
+    {{ "generate.results.viewer_more_use" | transloco }}
+  </p>
+  @if (viewerNarrow()) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [disabled]="!view.thumb"
+      (click)="closeViewerMoreAndFocus(); reuseAsSource(view)"
+    >
+      <app-icon name="refresh-alt" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.reuse" | transloco
+        }}</span>
+      </span>
+    </button>
+    <button
+      type="button"
+      class="gs-opt-row"
+      (click)="closeViewerMoreAndFocus(); copySettings(view)"
+    >
+      <app-icon
+        name="adjustments-horizontal"
+        class="gs-ico-sm"
+        aria-hidden="true"
+      />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.copy_settings" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
+  <button
+    type="button"
+    class="gs-opt-row"
+    [disabled]="!view.thumb"
+    (click)="closeViewerMoreAndFocus(); sendToAlchemy(view)"
+  >
+    <app-icon name="beaker" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.send_alchemy" | transloco
+      }}</span>
+    </span>
+  </button>
+
+  <p class="gs-opt-head">
+    {{ "generate.results.viewer_more_keep" | transloco }}
+  </p>
+  @if (viewerNarrow()) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [disabled]="!view.thumb"
+      (click)="closeViewerMoreAndFocus(); downloadTile(view)"
+    >
+      <app-icon name="arrow-down-tray" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.download" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
+  @if (canCopyImage) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [disabled]="!view.thumb"
+      (click)="closeViewerMoreAndFocus(); copyImage(view)"
+    >
+      <app-icon name="clipboard" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.copy_image" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
+  @if (canShareImage) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [disabled]="!view.thumb"
+      (click)="closeViewerMoreAndFocus(); shareImage(view)"
+    >
+      <app-icon name="external-link" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.share" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
+  <button
+    type="button"
+    class="gs-opt-row"
+    [disabled]="!view.seed"
+    (click)="closeViewerMoreAndFocus(); copySeed(view)"
+  >
+    <app-icon name="copy" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.copy_seed" | transloco
+      }}</span>
+    </span>
+  </button>
+
+  <p class="gs-opt-head">
+    {{ "generate.results.viewer_more_manage" | transloco }}
+  </p>
+  @if (viewerNarrow()) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      [class.gs-opt-row--on]="metaOpen()"
+      [attr.aria-pressed]="metaOpen()"
+      (click)="closeViewerMoreAndFocus(); toggleMeta(view)"
+    >
+      <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.metadata" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
+  <button
+    type="button"
+    class="gs-opt-row gs-opt-row--danger"
+    (click)="closeViewerMoreAndFocus(); requestViewerDelete(view.jobLocalId)"
+  >
+    <app-icon name="trash-modern" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.delete" | transloco
+      }}</span>
+    </span>
+  </button>
+</ng-template>
 
 @if (tileMenu(); as menu) {
   <div

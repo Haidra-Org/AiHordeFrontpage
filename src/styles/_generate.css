@@ -1122,7 +1122,7 @@
 /* The tool group is one flex item, so on a 360px phone its four buttons and the
    detail toggle overran the header's edge by a few pixels rather than wrapping
    with it. The group wraps inside itself the same way. */
-.gen-studio .gs-panel-header > .flex {
+.gen-studio .gs-panel-header .gs-tools {
   min-width: 0;
   max-width: 100%;
   flex-wrap: wrap;
@@ -2126,6 +2126,15 @@
   flex: none;
   margin-top: 1px;
   color: var(--gs-label);
+}
+/* A row that destroys something says so before it is pressed, the same way its
+   button does wherever else the studio offers a deletion. */
+.gen-studio .gs-opt-row--danger .gs-opt-label,
+.gen-studio .gs-opt-row--danger app-icon {
+  color: var(--gs-danger);
+}
+.gen-studio .gs-opt-row--danger:hover {
+  background: var(--gs-danger-tint);
 }
 .gen-studio .gs-opt-text {
   display: flex;
@@ -6014,7 +6023,22 @@
   display: inline-flex;
   flex: none;
 }
-/* Six pills do not fit one narrow row; tighten them before they wrap twice. */
+@media (pointer: coarse) {
+  .gen-studio .gs-viewer-act {
+    min-height: 44px;
+  }
+}
+/* The row's own list, which hangs upwards: the row is the last thing above the
+   bottom of the screen, so a panel below its button would be off it. */
+.gen-studio .gs-viewer-more {
+  position: relative;
+}
+.gen-studio .gs-viewer-pop {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+/* Whatever the width, the row is one line of words. Where a word would not fit
+   the control is in the list instead, so the pills only tighten here. */
 @media (max-width: 430px) {
   .gen-studio .gs-viewer-actions {
     gap: 6px;
@@ -6023,6 +6047,19 @@
     padding: 7px 9px;
     font-size: 10.5px;
   }
+}
+/* The picture alone takes the screen, so it fills what it is given and drops
+   the corners it wore inside the viewer's own frame. */
+.gen-studio .gs-viewer-img:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  background: #000;
+}
+/* Nothing of the studio's tab row is visible under the viewer, so the list it
+   hosts sits on the bottom edge rather than clear of a bar that is not there. */
+.gen-studio .gs-viewer .gs-sheet {
+  bottom: 0;
 }
 
 /* ------- the three next moves on a finished image -------------------- */
@@ -6083,29 +6120,6 @@
    toggle, which is a choice about the checkboxes below and not about these. */
 .gen-studio .gs-meta-foot .gs-quick-acts {
   flex: 1 0 100%;
-}
-
-/* Under the enlarged image the row is centred like the actions beneath it, and
-   reads light-on-dark because the viewer is dark in both themes. */
-.gen-studio .gs-quick-acts--viewer {
-  flex: none;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 10px 0;
-}
-.gen-studio .gs-quick-acts--viewer .gs-quick-act {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.08);
-  color: #f3f4f6;
-}
-.gen-studio .gs-quick-acts--viewer .gs-quick-act:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-}
-.gen-studio .gs-quick-acts--viewer .gs-quick-act--primary {
-  border-color: transparent;
-  background: var(--gs-blue);
-  color: #fff;
 }
 
 /* On a tile the row sits just clear of the seed bar. It exists only from the
@@ -7594,8 +7608,8 @@
     height: 64px;
   }
   .gen-studio .gs-viewer-x {
-    min-width: 40px;
-    min-height: 40px;
+    min-width: 44px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
   }

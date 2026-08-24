@@ -3,7 +3,7 @@ import { StoredJobImage } from '../../types/generation-job';
 import { embedWebpExif } from '../../helper/webp-exif';
 
 /** Pick a file extension from an image MIME type, defaulting to webp. */
-function extensionFor(mimeType: string): string {
+export function extensionFor(mimeType: string): string {
   if (mimeType.includes('png')) {
     return 'png';
   }
